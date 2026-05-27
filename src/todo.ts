@@ -493,7 +493,7 @@ class TodoKanban {
         <div class="border-t border-slate-100 dark:border-slate-800 pt-2.5 flex items-center justify-between gap-2 mt-1 select-none">
           <div class="flex flex-col gap-1 overflow-hidden">
             <span class="block text-[8px] text-slate-350 dark:text-slate-600 font-bold uppercase tracking-wider leading-none">Prazo</span>
-            <span class="text-[9px] text-slate-500 dark:text-slate-455 font-bold leading-none">${formatarDataBr(c.date)}</span>
+            <span class="text-[9px] text-slate-500 dark:text-slate-455 font-bold leading-none">${formatarDataBr(c.date) || 'Sem prazo'}</span>
           </div>
           
           <div class="flex items-center gap-2 shrink-0 select-none">
@@ -713,22 +713,22 @@ class TodoKanban {
             <div class="grid grid-cols-2 gap-4">
               <!-- Prazo -->
               <div>
-                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Prazo Limite *</label>
-                <input id="todo-card-date" type="date" required value="${card?.date || hoje}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-850 dark:text-slate-100 font-medium text-sm" />
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Prazo Limite</label>
+                <input id="todo-card-date" type="date" value="${card?.date || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-850 dark:text-slate-100 font-medium text-sm" />
               </div>
 
               <!-- Categoria / Tag -->
               <div>
-                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Etiqueta / Tag *</label>
-                <input id="todo-card-label" type="text" required placeholder="ex: Feature, Mapeamento" value="${card?.label || 'Feature'}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-850 dark:text-slate-100 font-medium text-sm" />
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Etiqueta / Tag</label>
+                <input id="todo-card-label" type="text" placeholder="ex: Feature, Mapeamento" value="${card?.label || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-850 dark:text-slate-100 font-medium text-sm" />
               </div>
             </div>
 
             <div class="grid grid-cols-2 gap-4">
               <!-- Prioridade -->
               <div>
-                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Nível de Prioridade *</label>
-                <select id="todo-card-priority" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-850 dark:text-slate-100 font-medium text-sm">
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Nível de Prioridade</label>
+                <select id="todo-card-priority" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-850 dark:text-slate-100 font-medium text-sm">
                   <option value="low" ${card?.priority === 'low' ? 'selected' : ''}>Baixa</option>
                   <option value="medium" ${!card || card.priority === 'medium' ? 'selected' : ''}>Média</option>
                   <option value="high" ${card?.priority === 'high' ? 'selected' : ''}>Alta</option>
