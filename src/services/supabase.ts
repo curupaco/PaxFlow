@@ -1,6 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 import { PerfilConsultor } from '../types';
 
+declare const process: any;
+
 // Suporta ambientes baseados em Node (process.env) ou no navegador/Vite
 const supabaseUrl = (typeof process !== 'undefined' && process.env?.SUPABASE_URL) || '';
 const supabaseAnonKey = (typeof process !== 'undefined' && process.env?.SUPABASE_ANON_KEY) || '';

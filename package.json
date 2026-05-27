@@ -10,6 +10,11 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@supabase/supabase-js": "^2.106.2"
+    "@supabase/supabase-js": "^2.106.2",
+    "sortablejs": "^1.15.7"
+  },
+  "devDependencies": {
+    "@types/sortablejs": "^1.15.9",
+    "typescript": "^6.0.3"
   }
 }
