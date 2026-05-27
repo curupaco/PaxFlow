@@ -705,7 +705,7 @@ export class ClientesPage {
         <!-- Cabeçalho -->
         <header class="bg-white/80 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-30 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div class="flex items-center gap-3">
-            <span class="p-3 bg-gradient-to-tr from-indigo-500 to-indigo-600 text-white rounded-2xl text-2xl font-black shadow-lg shadow-indigo-500/30">PF</span>
+            <img src="/logo.png" alt="PaxFlow Logo" class="h-10 w-auto object-contain" />
             <div>
               <h1 class="text-2xl font-black text-slate-800 tracking-tight">Gestão de Passageiros</h1>
               <p class="text-xs text-slate-500 font-medium">CRM e Ficha Única de Documentos do Cliente</p>
