@@ -35,12 +35,31 @@ export async function loginConsultor(email, password) {
             .eq('id', authData.user.id)
             .single();
         if (perfilError) {
-            console.warn('Erro ao obter o perfil do consultor:', perfilError.message);
-            // Retorna o usuário autenticado mesmo se houver erro ao buscar o perfil (tabela não criada ou perfil inexistente)
+            console.warn('Perfil não encontrado ou erro ao buscar. Criando perfil padrão de fallback:', perfilError.message);
+            const fallbackPerfil = {
+                id: authData.user.id,
+                nome: authData.user.user_metadata?.nome || 'Consultor Novo',
+                email: authData.user.email || '',
+                role: 'consultor',
+                ativo: true
+            };
+            // Tenta inserir o perfil no banco de forma proativa para consultas futuras
+            try {
+                await supabase.from('profiles').insert({
+                    id: fallbackPerfil.id,
+                    nome: fallbackPerfil.nome,
+                    email: fallbackPerfil.email,
+                    role: fallbackPerfil.role,
+                    ativo: fallbackPerfil.ativo
+                });
+            }
+            catch (insertErr) {
+                console.warn('Erro ao inserir perfil padrão de fallback:', insertErr);
+            }
             return {
                 user: authData.user,
-                perfil: null,
-                error: perfilError,
+                perfil: fallbackPerfil,
+                error: null, // Retorna null no erro para que o login prossiga com sucesso
             };
         }
         return {
@@ -79,10 +98,18 @@ export async function getSessaoAtual() {
             .eq('id', session.user.id)
             .single();
         if (perfilError) {
+            console.warn('Perfil ausente na sessão ativa. Usando perfil padrão de fallback:', perfilError.message);
+            const fallbackPerfil = {
+                id: session.user.id,
+                nome: session.user.user_metadata?.nome || 'Consultor Novo',
+                email: session.user.email || '',
+                role: 'consultor',
+                ativo: true
+            };
             return {
                 user: session.user,
-                perfil: null,
-                error: perfilError,
+                perfil: fallbackPerfil,
+                error: null, // Retorna null para prosseguir a sessão ativa sem travar a interface
             };
         }
         return {
