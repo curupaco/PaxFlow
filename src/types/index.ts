@@ -28,6 +28,9 @@ export interface GlobalSettings {
   prazoReembolsoDias: number; // Prazo padrão em dias para conclusão de reembolsos
   notificacoesAtivas: boolean;
   emailSuporte: string;
+  googleRefreshToken?: string; // Token de renovação persistido para integração com o Google Drive
+  slaPreEmbarqueDias?: number; // Dias de SLA para alertas de embarque
+  slaPosViagemDias?: number; // Dias de SLA para contatos de pós-venda
   createdAt?: string;
   updatedAt?: string;
 }
