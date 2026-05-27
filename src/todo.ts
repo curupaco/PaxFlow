@@ -43,7 +43,10 @@ class TodoKanban {
    * Remove emojis de uma string para manter uma iconografia modernizada
    */
   private cleanEmoji(str: string): string {
-    return str.replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF]/g, '').trim();
+    return str
+      .replace(/[\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF]/g, '')
+      .replace(/[\u2B50\u26A1\u23F3\u23F0\u23E9-\u23EC]/g, '')
+      .trim();
   }
 
   /**
@@ -856,10 +859,10 @@ class TodoKanban {
 
           <div class="space-y-4 max-h-[300px] overflow-y-auto custom-scrollbar pr-1" id="manage-cols-list-container">
             ${this.columns.map((col, idx) => `
-              <div class="flex items-center gap-2 p-2 border border-slate-200/60 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-850/40">
-                <span class="text-slate-400 dark:text-slate-500 font-bold text-xs select-none pl-1">#${idx + 1}</span>
-                <input type="text" data-col-edit-id="${col.id}" value="${this.cleanEmoji(col.title)}" class="flex-1 px-3 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 rounded-lg text-slate-800 dark:text-slate-100 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-indigo-500" />
-                <button data-delete-col-id="${col.id}" class="p-2 hover:bg-rose-50 dark:hover:bg-rose-950/20 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-lg transition animate-card-in" title="Remover Coluna">
+              <div class="flex items-center gap-3 p-2.5 border border-slate-200/60 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950/50 hover:bg-slate-100/50 dark:hover:bg-slate-950/80 transition">
+                <span class="text-slate-500 dark:text-slate-400 font-extrabold text-xs select-none pl-1">#${idx + 1}</span>
+                <input type="text" data-col-edit-id="${col.id}" value="${this.cleanEmoji(col.title)}" class="flex-1 px-3 py-1.5 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-lg text-slate-800 dark:text-slate-100 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                <button data-delete-col-id="${col.id}" class="p-2 hover:bg-rose-50 dark:hover:bg-rose-955/20 text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-450 rounded-lg transition animate-card-in" title="Remover Coluna">
                   <svg width="14" height="14" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                   </svg>
