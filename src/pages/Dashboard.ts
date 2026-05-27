@@ -124,7 +124,17 @@ export class Dashboard {
       }
 
       if (data) {
-        this.settings = data as GlobalSettings;
+        this.settings = {
+          id: data.id,
+          agencyName: data.agency_name || data.agencyName || 'PaxFlow CRM',
+          taxaCancelamentoPadrao: data.taxa_cancelamento_padrao || 0,
+          prazoReembolsoDias: data.prazo_reembolso_dias || 3,
+          notificacoesAtivas: data.notificacoes_ativas ?? true,
+          emailSuporte: data.email_suporte || 'suporte@paxflow.com.br',
+          googleRefreshToken: data.google_refresh_token,
+          slaPreEmbarqueDias: data.sla_pre_embarque_dias,
+          slaPosViagemDias: data.sla_pos_viagem_dias
+        };
         // Mapeia colunas específicas se presentes no banco de dados
         if (data.sla_pre_embarque_dias !== undefined) {
           this.slaPreEmbarqueDias = Number(data.sla_pre_embarque_dias);
@@ -239,8 +249,11 @@ export class Dashboard {
 
           if (!tripId || !newStatus || !oldStatus) return;
 
-          // Se nenhuma mudança de coluna ocorreu, não faz nada
-          if (newStatus === oldStatus) return;
+          // Se nenhuma mudança de coluna ocorreu, avisa sobre reordenação visual
+          if (newStatus === oldStatus) {
+            this.showToast('Viagem reordenada na coluna!', 'success');
+            return;
+          }
 
           // Regra Especial: Se mover para "Reembolso Solicitado", abre o modal
           if (newStatus === 'reembolso_solicitado') {
@@ -272,6 +285,20 @@ export class Dashboard {
 
       this.sortables.push(sortable);
     });
+
+    // Habilita reordenação das colunas (estágios) no Kanban!
+    const boardEl = document.getElementById('kanban-columns-container');
+    if (boardEl) {
+      const columnSortable = new Sortable(boardEl, {
+        animation: 200,
+        handle: '.column-header', // Permite arrastar segurando pelo cabeçalho da coluna
+        ghostClass: 'kanban-ghost-class',
+        onEnd: () => {
+          this.showToast('Ordem das colunas atualizada visualmente!', 'success');
+        }
+      });
+      this.sortables.push(columnSortable);
+    }
   }
 
   /**
@@ -1218,7 +1245,7 @@ export class Dashboard {
         <main class="flex-1 p-6 flex flex-col gap-6 overflow-hidden">
           
           <!-- Grid de Colunas Kanban -->
-          <div class="flex-1 grid grid-cols-1 lg:grid-cols-5 gap-5 items-start overflow-x-auto pb-4 custom-scrollbar">
+          <div id="kanban-columns-container" class="flex-1 grid grid-cols-1 lg:grid-cols-5 gap-5 items-start overflow-x-auto pb-4 custom-scrollbar">
             
             <!-- Coluna: Fechado -->
             ${this.renderColuna('Fechado', 'fechado', colunasMap.fechado, 'border-t-emerald-500 bg-emerald-500/5', 'bg-emerald-500')}
@@ -1271,7 +1298,7 @@ export class Dashboard {
     return `
       <div class="flex flex-col min-w-[280px] h-[calc(100vh-200px)] bg-white border border-slate-200/80 rounded-2xl shadow-sm border-t-4 ${styleBorders}">
         <!-- Header da Coluna -->
-        <div class="px-4 py-3.5 flex items-center justify-between border-b border-slate-100 bg-slate-50/50 rounded-t-2xl">
+        <div class="column-header px-4 py-3.5 flex items-center justify-between border-b border-slate-100 bg-slate-50/50 rounded-t-2xl cursor-grab active:cursor-grabbing">
           <h3 class="text-sm font-black text-slate-700 tracking-tight uppercase">${titulo}</h3>
           <span class="px-2 py-0.5 text-xs text-white font-bold rounded-full ${styleBadge}">${items.length}</span>
         </div>
