@@ -99,11 +99,55 @@ class TodoKanban {
   }
 
   /**
-   * Carrega o estado das colunas e cartões diretamente do Supabase
+   * Carrega o estado das colunas e cartões diretamente do Supabase e migra dados locais se existirem
    */
   private async loadStateFromSupabase(): Promise<void> {
     try {
-      // 1. Busca colunas ordenadas por position
+      // 1. Executa migração se necessário
+      const migrated = localStorage.getItem('paxflow-todo-migrated');
+      if (!migrated) {
+        const savedCardsStr = localStorage.getItem('paxflow-todo-cards');
+        const savedColsStr = localStorage.getItem('paxflow-todo-cols');
+        if (savedCardsStr) {
+          try {
+            const localCards: TodoCard[] = JSON.parse(savedCardsStr);
+            const localCols: Column[] = savedColsStr ? JSON.parse(savedColsStr) : [];
+            
+            if (localCols.length > 0) {
+              const colInserts = localCols.map((col, idx) => ({
+                id: col.id,
+                title: this.cleanEmoji(col.title),
+                position: idx
+              }));
+              await supabase.from('todo_columns').upsert(colInserts, { onConflict: 'id' });
+            }
+
+            if (localCards.length > 0) {
+              const cardInserts = localCards.map(c => ({
+                id: c.id,
+                column_id: c.columnId,
+                title: c.title,
+                description: c.description || '',
+                date: c.date || '',
+                label: c.label || '',
+                priority: c.priority || 'medium',
+                owner: c.owner || 'Não Definido',
+                position: c.position || 0
+              }));
+              await supabase.from('todo_cards').upsert(cardInserts, { onConflict: 'id' });
+            }
+            
+            localStorage.setItem('paxflow-todo-migrated', 'true');
+            console.log('Migração automática de dados locais concluída com sucesso!');
+          } catch (e) {
+            console.error('Erro na migração automática de localStorage:', e);
+          }
+        } else {
+          localStorage.setItem('paxflow-todo-migrated', 'true');
+        }
+      }
+
+      // 2. Busca colunas ordenadas por position
       const { data: colsData, error: colsErr } = await supabase
         .from('todo_columns')
         .select('*')
@@ -134,7 +178,7 @@ class TodoKanban {
         await supabase.from('todo_columns').insert(inserts);
       }
 
-      // 2. Busca cartões ordenados por position
+      // 3. Busca cartões ordenados por position
       const { data: cardsData, error: cardsErr } = await supabase
         .from('todo_cards')
         .select('*')
@@ -316,24 +360,7 @@ class TodoKanban {
           </div>
         </div>
 
-                <div class="flex flex-wrap items-center gap-3">
-          <!-- Importar JSON -->
-          <button id="btn-importar" title="Importar Quadro JSON" class="p-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 rounded-xl transition border border-slate-200/60 dark:border-slate-750 flex items-center justify-center gap-1.5 font-bold text-xs">
-            <svg width="16" height="16" class="w-4 h-4 text-slate-500 dark:text-slate-450" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
-            </svg>
-            Importar
-          </button>
-          <input type="file" id="input-importar-file" accept=".json" class="hidden" />
-
-          <!-- Exportar JSON -->
-          <button id="btn-exportar" title="Exportar Quadro JSON" class="p-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 rounded-xl transition border border-slate-200/60 dark:border-slate-750 flex items-center justify-center gap-1.5 font-bold text-xs">
-            <svg width="16" height="16" class="w-4 h-4 text-slate-500 dark:text-slate-450" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-            </svg>
-            Exportar
-          </button>
-
+        <div class="flex flex-wrap items-center gap-3">
           <!-- Gerenciar Colunas -->
           <button id="btn-gerenciar-colunas" title="Configurar Colunas" class="p-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 rounded-xl transition border border-slate-200/60 dark:border-slate-750 flex items-center justify-center gap-1.5 font-bold text-xs">
             <svg width="16" height="16" class="w-4 h-4 text-slate-500 dark:text-slate-450" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
@@ -523,20 +550,12 @@ class TodoKanban {
     return `
       <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/85 p-4 rounded-xl shadow-sm hover:shadow-md hover:border-slate-350 dark:hover:border-slate-700/80 transition transform hover:-translate-y-0.5 group relative flex flex-col gap-3 select-none cursor-grab active:cursor-grabbing animate-card-in" data-card-id="${c.id}">
         
-        <!-- Tag / Categoria -->
-        <div class="flex items-center justify-between gap-2">
-          ${c.label ? `
-            <span class="px-2.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-full font-black text-[9px] uppercase tracking-wide border border-slate-200/30 dark:border-slate-750/30">
-              <svg width="10" height="10" class="w-2.5 h-2.5 inline mr-1 text-slate-400 dark:text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581a1.125 1.125 0 001.59 0l4.318-4.318a1.125 1.125 0 000-1.59L9.568 3z" />
-                <path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6z" />
-              </svg>
-              ${c.label}
-            </span>
-          ` : '<span></span>'}
-
-          <!-- Ações Rápidas no Hover + Toggle de Descrição -->
-          <div class="flex items-center gap-1.5 select-none">
+        <!-- Cabeçalho do Card: Título & Ações Rápidas -->
+        <div class="flex items-start justify-between gap-2.5">
+          <h4 class="text-xs font-bold text-slate-700 dark:text-slate-200 leading-snug break-words flex-1">
+            ${c.title}
+          </h4>
+          <div class="flex items-center gap-1 select-none shrink-0">
             ${c.description ? `
               <button data-toggle-desc-id="${c.id}" class="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded transition text-xs font-bold leading-none flex items-center justify-center" title="Expandir/Recolher descrição">
                 <svg width="14" height="14" class="w-3.5 h-3.5 transform transition-transform duration-200 text-slate-400 dark:text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
@@ -544,13 +563,13 @@ class TodoKanban {
                 </svg>
               </button>
             ` : ''}
-            <div class="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-opacity duration-200 select-none">
+            <div class="opacity-0 group-hover:opacity-100 flex items-center gap-0.5 transition-opacity duration-200 select-none">
               <button data-edit-card-id="${c.id}" class="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded transition" title="Editar Cartão">
                 <svg width="14" height="14" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                 </svg>
               </button>
-              <button data-delete-card-id="${c.id}" class="p-1 hover:bg-rose-50 dark:hover:bg-rose-950/20 text-slate-300 hover:text-rose-600 dark:hover:text-rose-450 rounded transition" title="Excluir Cartão">
+              <button data-delete-card-id="${c.id}" class="p-1 hover:bg-rose-50 dark:hover:bg-rose-950/20 text-slate-300 hover:text-rose-600 dark:hover:text-rose-455 rounded transition" title="Excluir Cartão">
                 <svg width="14" height="14" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
@@ -559,10 +578,18 @@ class TodoKanban {
           </div>
         </div>
 
-        <!-- Título -->
-        <h4 class="text-xs font-bold text-slate-700 dark:text-slate-200 leading-snug break-words">
-          ${c.title}
-        </h4>
+        <!-- Tag / Categoria se houver -->
+        ${c.label ? `
+          <div class="flex items-center">
+            <span class="px-2.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-full font-black text-[9px] uppercase tracking-wide border border-slate-200/30 dark:border-slate-750/30">
+              <svg width="10" height="10" class="w-2.5 h-2.5 inline mr-1 text-slate-400 dark:text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581a1.125 1.125 0 001.59 0l4.318-4.318a1.125 1.125 0 000-1.59L9.568 3z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6z" />
+              </svg>
+              ${c.label}
+            </span>
+          </div>
+        ` : ''}
 
         <!-- Descrição Colapsável -->
         ${c.description ? `
@@ -742,25 +769,6 @@ class TodoKanban {
       this.renderColumns();
     });
 
-    // Botão Exportar JSON
-    document.getElementById('btn-exportar')?.addEventListener('click', () => {
-      this.exportBoard();
-    });
-
-    // Botão Importar JSON (Dispara input oculto)
-    const btnImportar = document.getElementById('btn-importar');
-    const inputImportarFile = document.getElementById('input-importar-file') as HTMLInputElement;
-    btnImportar?.addEventListener('click', () => {
-      inputImportarFile?.click();
-    });
-
-    // Listener do upload de arquivo JSON
-    inputImportarFile?.addEventListener('change', (e) => {
-      const file = inputImportarFile.files?.[0];
-      if (file) {
-        this.importBoard(file);
-      }
-    });
   }
 
   /**
