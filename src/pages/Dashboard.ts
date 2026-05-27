@@ -642,6 +642,434 @@ export class Dashboard {
   }
 
   /**
+   * Abre o Modal Dinâmico de Edição de Viagem e Gestão de Produtos
+   */
+  private async openEdicaoEProdutosModal(tripId: string): Promise<void> {
+    try {
+      this.renderModalOverlay();
+      const modalContent = document.getElementById('modal-content-container');
+      if (!modalContent) return;
+
+      modalContent.innerHTML = `
+        <div class="p-6 text-center text-slate-500 text-sm font-semibold">
+          Carregando dados da viagem...
+        </div>
+      `;
+
+      // 1. Busca detalhes da viagem
+      const { data: viagem, error: errViagem } = await supabase
+        .from('viagens')
+        .select('*, cliente:clientes(*)')
+        .eq('id', tripId)
+        .single();
+
+      if (errViagem) throw errViagem;
+
+      // 2. Busca lista de clientes
+      const { data: clientes, error: errClientes } = await supabase
+        .from('clientes')
+        .select('id, nome')
+        .order('nome', { ascending: true });
+
+      if (errClientes) throw errClientes;
+
+      // 3. Renderiza a estrutura do Modal com as Abas
+      this.renderEdicaoEProdutosModalContent(viagem, clientes || []);
+      
+      // 4. Carrega e exibe os produtos da viagem
+      await this.loadAndRenderProdutosViagem(tripId);
+
+    } catch (err: any) {
+      console.error('Erro ao carregar detalhes da viagem:', err);
+      this.showToast('Erro ao carregar detalhes da viagem.', 'error');
+      this.closeModal();
+    }
+  }
+
+  /**
+   * Renderiza a estrutura interna do Modal de Edição & Produtos
+   */
+  private renderEdicaoEProdutosModalContent(v: any, clientes: any[]): void {
+    const modalContent = document.getElementById('modal-content-container');
+    if (!modalContent) return;
+
+    modalContent.innerHTML = `
+      <div class="p-6">
+        <!-- Topo com Título e Fechar -->
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+          <div>
+            <h3 class="text-lg font-black text-slate-800 flex items-center gap-1.5">✈️ Gerenciar Viagem</h3>
+            <p class="text-xs text-slate-400 font-semibold">Destino: <span class="font-bold text-slate-600">${v.destino}</span> &bull; Loc: <span class="font-bold text-slate-600">${v.codigo_localizador || 'Sem LOC'}</span></p>
+          </div>
+          <button id="btn-close-edit-modal-x" class="text-slate-400 hover:text-rose-500 font-bold transition">✕</button>
+        </div>
+
+        <!-- Seletor de Abas Premium -->
+        <div class="flex items-center gap-2 border-b border-slate-100 mb-5 pb-px">
+          <button id="tab-detalhes-btn" class="border-b-2 border-indigo-600 px-4 py-2 text-sm font-black text-indigo-600 transition">
+            📝 Detalhes e Edição
+          </button>
+          <button id="tab-produtos-btn" class="border-b-2 border-transparent px-4 py-2 text-sm font-semibold text-slate-400 hover:text-slate-700 transition">
+            🛍️ Produtos e Serviços
+          </button>
+        </div>
+
+        <!-- CONTEÚDO DA ABA 1: DETALHES E EDIÇÃO -->
+        <div id="tab-detalhes-content" class="space-y-4">
+          <form id="form-editar-viagem" class="space-y-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Passageiro / Cliente *</label>
+              <select id="edit-viagem-cliente" required class="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-medium text-sm">
+                ${clientes.map(c => `<option value="${c.id}" ${c.id === v.cliente_id ? 'selected' : ''}>${c.nome}</option>`).join('')}
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Destino *</label>
+              <input id="edit-viagem-destino" type="text" required value="${v.destino}" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-medium text-sm" />
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Localizador (LOC)</label>
+                <input id="edit-viagem-loc" type="text" value="${v.codigo_localizador || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-medium text-sm uppercase" />
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Valor Total (R$) *</label>
+                <input id="edit-viagem-valor" type="number" step="0.01" required value="${v.valor_total || 0}" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-medium text-sm" />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Data de Ida *</label>
+                <input id="edit-viagem-ida" type="date" required value="${v.data_ida || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-medium text-sm" />
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Data de Volta *</label>
+                <input id="edit-viagem-volta" type="date" required value="${v.data_volta || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-medium text-sm" />
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Status / Etapa *</label>
+              <select id="edit-viagem-status" required class="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-medium text-sm">
+                <option value="pos_venda" ${v.status === 'pos_venda' ? 'selected' : ''}>Pós-Venda</option>
+                <option value="fechado" ${v.status === 'fechado' ? 'selected' : ''}>Fechado</option>
+                <option value="pre_embarque" ${v.status === 'pre_embarque' ? 'selected' : ''}>Pré-Embarque</option>
+                <option value="pos_viagem" ${v.status === 'pos_viagem' ? 'selected' : ''}>Pós-Viagem</option>
+                <option value="reembolso_solicitado" ${v.status === 'reembolso_solicitado' ? 'selected' : ''}>Reembolso Solicitado</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Observações Operacionais</label>
+              <textarea id="edit-viagem-obs" rows="2.5" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 text-sm font-medium">${v.observacoes || ''}</textarea>
+            </div>
+
+            <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 mt-4">
+              <button id="btn-cancel-edit" type="button" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs tracking-wider rounded-xl transition uppercase">Cancelar</button>
+              <button type="submit" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/10 transition uppercase">Salvar Alterações</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- CONTEÚDO DA ABA 2: PRODUTOS E SERVIÇOS -->
+        <div id="tab-produtos-content" class="hidden space-y-5">
+          
+          <!-- Lista de Produtos Existentes -->
+          <div>
+            <h4 class="text-xs font-black text-slate-400 uppercase tracking-wide mb-2.5">Produtos Cadastrados nesta Viagem</h4>
+            <div id="lista-produtos-viagem-container" class="space-y-2 max-h-[220px] overflow-y-auto pr-1 custom-scrollbar">
+              <p class="text-center text-xs text-slate-400 font-medium py-4">Buscando produtos...</p>
+            </div>
+          </div>
+
+          <!-- Formulário de Novo Produto (Inline) -->
+          <div class="border-t border-slate-100 pt-4">
+            <h4 class="text-xs font-black text-indigo-600 uppercase tracking-wide mb-3 flex items-center gap-1">➕ Adicionar Produto / Serviço</h4>
+            
+            <form id="form-novo-produto" class="space-y-3 bg-slate-50/50 border border-slate-100 p-3.5 rounded-xl">
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">Tipo *</label>
+                  <select id="prod-tipo" required class="w-full px-2.5 py-1.5 border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 font-medium text-xs">
+                    <option value="voo">Voo</option>
+                    <option value="hotel">Hotel</option>
+                    <option value="seguro">Seguro</option>
+                    <option value="passeio">Passeio</option>
+                    <option value="outro">Outro</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">Fornecedor *</label>
+                  <input id="prod-fornecedor" type="text" required placeholder="ex: LATAM, Hilton" class="w-full px-2.5 py-1.5 border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 font-medium text-xs" />
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">Descrição *</label>
+                <input id="prod-descricao" type="text" required placeholder="ex: Voo GRU-JFK ou Quarto Deluxe" class="w-full px-2.5 py-1.5 border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 font-medium text-xs" />
+              </div>
+
+              <div class="grid grid-cols-3 gap-2">
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">Código (LOC)</label>
+                  <input id="prod-reserva" type="text" placeholder="ex: LOC12" class="w-full px-2 py-1.5 border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 font-medium text-xs uppercase" />
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">Custo (R$) *</label>
+                  <input id="prod-custo" type="number" step="0.01" required placeholder="0.00" class="w-full px-2 py-1.5 border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 font-medium text-xs" />
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">Venda (R$) *</label>
+                  <input id="prod-venda" type="number" step="0.01" required placeholder="0.00" class="w-full px-2 py-1.5 border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 font-medium text-xs" />
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">Data do Serviço *</label>
+                  <input id="prod-data" type="date" required class="w-full px-2.5 py-1.5 border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 font-medium text-xs" />
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">Status *</label>
+                  <select id="prod-status" required class="w-full px-2.5 py-1.5 border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 font-medium text-xs">
+                    <option value="reservado">Reservado</option>
+                    <option value="emitido" selected>Emitido</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="flex justify-end pt-1">
+                <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-[10px] tracking-wider rounded-lg shadow-sm transition uppercase">
+                  Adicionar Produto
+                </button>
+              </div>
+            </form>
+          </div>
+
+        </div>
+
+      </div>
+    `;
+
+    // Fechar Modal
+    const handleClose = () => this.closeModal();
+    document.getElementById('btn-close-edit-modal-x')?.addEventListener('click', handleClose);
+    document.getElementById('btn-cancel-edit')?.addEventListener('click', handleClose);
+
+    // Seletores de Abas
+    const tabDetalhesBtn = document.getElementById('tab-detalhes-btn');
+    const tabProdutosBtn = document.getElementById('tab-produtos-btn');
+    const tabDetalhesContent = document.getElementById('tab-detalhes-content');
+    const tabProdutosContent = document.getElementById('tab-produtos-content');
+
+    tabDetalhesBtn?.addEventListener('click', () => {
+      tabDetalhesBtn.className = 'border-b-2 border-indigo-600 px-4 py-2 text-sm font-black text-indigo-600 transition';
+      if (tabProdutosBtn) tabProdutosBtn.className = 'border-b-2 border-transparent px-4 py-2 text-sm font-semibold text-slate-400 hover:text-slate-700 transition';
+      tabDetalhesContent?.classList.remove('hidden');
+      tabProdutosContent?.classList.add('hidden');
+    });
+
+    tabProdutosBtn?.addEventListener('click', () => {
+      tabProdutosBtn.className = 'border-b-2 border-indigo-600 px-4 py-2 text-sm font-black text-indigo-600 transition';
+      if (tabDetalhesBtn) tabDetalhesBtn.className = 'border-b-2 border-transparent px-4 py-2 text-sm font-semibold text-slate-400 hover:text-slate-700 transition';
+      tabProdutosContent?.classList.remove('hidden');
+      tabDetalhesContent?.classList.add('hidden');
+    });
+
+    // Submissão do Formulário de Edição da Viagem
+    const formEditar = document.getElementById('form-editar-viagem') as HTMLFormElement;
+    formEditar?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const clienteId = (document.getElementById('edit-viagem-cliente') as HTMLSelectElement).value;
+      const destino = (document.getElementById('edit-viagem-destino') as HTMLInputElement).value;
+      const loc = (document.getElementById('edit-viagem-loc') as HTMLInputElement).value;
+      const valor = parseFloat((document.getElementById('edit-viagem-valor') as HTMLInputElement).value);
+      const dataIda = (document.getElementById('edit-viagem-ida') as HTMLInputElement).value;
+      const dataVolta = (document.getElementById('edit-viagem-volta') as HTMLInputElement).value;
+      const status = (document.getElementById('edit-viagem-status') as HTMLSelectElement).value;
+      const obs = (document.getElementById('edit-viagem-obs') as HTMLTextAreaElement).value;
+
+      const payload = {
+        cliente_id: clienteId,
+        destino: destino,
+        codigo_localizador: loc || null,
+        valor_total: valor,
+        data_ida: dataIda,
+        data_volta: dataVolta,
+        status: status,
+        observacoes: obs || null
+      };
+
+      try {
+        const { error } = await supabase
+          .from('viagens')
+          .update(payload)
+          .eq('id',  v.id);
+
+        if (error) throw error;
+
+        this.showToast('Viagem atualizada com sucesso!', 'success');
+        this.closeModal();
+        await this.loadViagens();
+        this.render();
+        this.setupDragAndDrop();
+      } catch (err: any) {
+        console.error('Erro ao editar viagem:', err);
+        this.showToast(`Erro ao editar viagem: ${err.message}`, 'error');
+      }
+    });
+
+    // Submissão do Formulário de Novo Produto
+    const formNovoProduto = document.getElementById('form-novo-produto') as HTMLFormElement;
+    formNovoProduto?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const tipo = (document.getElementById('prod-tipo') as HTMLSelectElement).value;
+      const fornecedor = (document.getElementById('prod-fornecedor') as HTMLInputElement).value;
+      const descricao = (document.getElementById('prod-descricao') as HTMLInputElement).value;
+      const reserva = (document.getElementById('prod-reserva') as HTMLInputElement).value;
+      const custo = parseFloat((document.getElementById('prod-custo') as HTMLInputElement).value);
+      const venda = parseFloat((document.getElementById('prod-venda') as HTMLInputElement).value);
+      const dataServico = (document.getElementById('prod-data') as HTMLInputElement).value;
+      const status = (document.getElementById('prod-status') as HTMLSelectElement).value;
+
+      const payload = {
+        viagem_id: v.id,
+        tipo,
+        fornecedor,
+        descricao,
+        codigo_reserva: reserva || null,
+        valor_custo: custo,
+        valor_venda: venda,
+        status,
+        data_servico: dataServico
+      };
+
+      try {
+        const { error } = await supabase
+          .from('produtos_viagem')
+          .insert(payload);
+
+        if (error) throw error;
+
+        this.showToast('Produto adicionado à viagem com sucesso!', 'success');
+        formNovoProduto.reset();
+        await this.loadAndRenderProdutosViagem(v.id);
+      } catch (err: any) {
+        console.error('Erro ao adicionar produto:', err);
+        this.showToast(`Erro ao adicionar produto: ${err.message}`, 'error');
+      }
+    });
+  }
+
+  /**
+   * Carrega os produtos da viagem do banco e renderiza na Aba 2
+   */
+  private async loadAndRenderProdutosViagem(tripId: string): Promise<void> {
+    const container = document.getElementById('lista-produtos-viagem-container');
+    if (!container) return;
+
+    try {
+      const { data: produtos, error } = await supabase
+        .from('produtos_viagem')
+        .select('*')
+        .eq('viagem_id', tripId)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+
+      if (!produtos || produtos.length === 0) {
+        container.innerHTML = `
+          <p class="text-center text-xs text-slate-400 font-medium py-6">
+            Nenhum produto cadastrado para esta viagem.
+          </p>
+        `;
+        return;
+      }
+
+      const formatarData = (dStr: string) => {
+        if (!dStr) return '';
+        const parts = dStr.split('-');
+        if (parts.length !== 3) return dStr;
+        return `${parts[2]}/${parts[1]}/${parts[0]}`;
+      };
+
+      container.innerHTML = produtos.map(p => {
+        const iconesMap: { [key: string]: string } = {
+          voo: '✈️',
+          hotel: '🏨',
+          seguro: '🛡️',
+          passeio: '🎟️',
+          outro: '📦'
+        };
+
+        return `
+          <div class="flex items-center justify-between gap-3 p-3 bg-slate-50 border border-slate-200/60 rounded-xl hover:bg-slate-100/50 transition">
+            <div class="flex items-start gap-2.5 overflow-hidden">
+              <span class="text-lg p-1 bg-white border border-slate-100 rounded-lg shadow-sm flex items-center justify-center">${iconesMap[p.tipo] || '📦'}</span>
+              <div class="overflow-hidden bg-slate-50/10">
+                <span class="block text-xs font-black text-slate-700 truncate leading-tight">${p.fornecedor} &bull; ${p.descricao}</span>
+                <span class="block text-[10px] text-slate-400 font-bold leading-normal">
+                  ${p.codigo_reserva ? `LOC: <span class="text-slate-600 font-extrabold">${p.codigo_reserva}</span> &bull; ` : ''} 
+                  Data: <span class="text-slate-600 font-semibold">${formatarData(p.data_servico)}</span>
+                </span>
+              </div>
+            </div>
+            
+            <div class="flex items-center gap-3.5">
+              <div class="text-right">
+                <span class="block text-xs font-black text-indigo-600">R$ ${p.valor_venda?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                <span class="block text-[9px] text-slate-400 font-semibold">Custo: R$ ${p.valor_custo?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+              </div>
+              <button data-delete-prod-id="${p.id}" class="p-1.5 hover:bg-rose-50 text-slate-300 hover:text-rose-600 rounded-md transition text-xs font-bold" title="Remover Produto">
+                🗑️
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Ouvintes de exclusão de produtos
+      container.querySelectorAll('[data-delete-prod-id]').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const prodId = btn.getAttribute('data-delete-prod-id');
+          if (!prodId) return;
+
+          if (confirm('Deseja realmente remover este produto da viagem?')) {
+            try {
+              const { error } = await supabase
+                .from('produtos_viagem')
+                .delete()
+                .eq('id', prodId);
+
+              if (error) throw error;
+
+              this.showToast('Produto removido com sucesso!', 'success');
+              await this.loadAndRenderProdutosViagem(tripId);
+            } catch (err: any) {
+              console.error('Erro ao remover produto:', err);
+              this.showToast(`Erro ao remover produto: ${err.message}`, 'error');
+            }
+          }
+        });
+      });
+
+    } catch (err: any) {
+      console.error('Erro ao listar produtos da viagem:', err);
+      container.innerHTML = `
+        <p class="text-center text-xs text-rose-500 font-bold py-4">
+          Falha ao buscar produtos.
+        </p>
+      `;
+    }
+  }
+
+  /**
    * Cria o overlay estrutural do modal se ele ainda não existir e abre a exibição
    */
   private renderModalOverlay(): void {
@@ -823,6 +1251,16 @@ export class Dashboard {
     // Evento de Criação de Nova Viagem
     document.getElementById('btn-nova-viagem')?.addEventListener('click', () => {
       this.openNovaViagemModal();
+    });
+
+    // Evento de cliques nos cards do Kanban para Abrir Detalhes/Edição/Produtos
+    this.container.querySelectorAll('[data-trip-id]').forEach(card => {
+      card.addEventListener('click', () => {
+        const tripId = card.getAttribute('data-trip-id');
+        if (tripId) {
+          this.openEdicaoEProdutosModal(tripId);
+        }
+      });
     });
   }
 
