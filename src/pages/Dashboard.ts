@@ -143,10 +143,10 @@ export class Dashboard {
    */
   private async loadViagens(): Promise<void> {
     try {
-      // Junção com a tabela de clientes para obter informações completas
+      // Junção com a tabela de clientes e reembolsos para obter informações completas
       let query = supabase
         .from('viagens')
-        .select('*, cliente:clientes(*)');
+        .select('*, cliente:clientes(*), reembolsos(*)');
 
       // Regra de Exibição: Consultores normais só veem seus próprios cards; admins veem todos.
       if (this.perfil && this.perfil.role !== 'admin') {
@@ -686,11 +686,17 @@ export class Dashboard {
    * Renderiza a estrutura HTML de um card de viagem individual
    */
   private renderCard(v: any): string {
-    const sla = this.checkSLA(v);
+    // Verifica se há algum reembolso concluído (status === 'pago')
+    const reembolsoConcluido = v.reembolsos && v.reembolsos.some((r: any) => r.status === 'pago');
     
-    // Classes CSS dinâmicas baseadas nos alertas de SLA
+    const sla = reembolsoConcluido ? { alert: false, type: null, text: '' } : this.checkSLA(v);
+    
+    // Classes CSS dinâmicas baseadas nos alertas de SLA ou reembolso finalizado
     let cardClasses = 'bg-white p-4 rounded-xl border border-slate-200 hover:border-slate-300 shadow-sm hover:shadow-md transition-all cursor-grab active:cursor-grabbing relative overflow-hidden group';
-    if (sla.alert) {
+    
+    if (reembolsoConcluido) {
+      cardClasses = 'bg-emerald-50/30 border border-emerald-500/80 shadow-emerald-500/10 p-4 rounded-xl shadow-sm hover:shadow-md transition-all cursor-grab active:cursor-grabbing relative overflow-hidden group';
+    } else if (sla.alert) {
       if (sla.type === 'pre-embarque') {
         cardClasses += ' animate-sla-urgent';
       } else if (sla.type === 'pos-viagem') {
@@ -749,8 +755,12 @@ export class Dashboard {
           </div>
         ` : ''}
 
-        <!-- Alerta de SLA visual (se aplicável) -->
-        ${sla.alert ? `
+        <!-- Alerta de SLA visual ou Status de Reembolso Concluído -->
+        ${reembolsoConcluido ? `
+          <div class="mt-2.5 px-2.5 py-1.5 rounded-lg text-[10px] font-black tracking-wide flex items-center justify-center gap-1 bg-emerald-100/85 text-emerald-800 border border-emerald-200">
+            ✅ Reembolso Concluído!
+          </div>
+        ` : sla.alert ? `
           <div class="mt-2.5 px-2.5 py-1.5 rounded-lg text-[10px] font-black tracking-wide flex items-center gap-1 animate-pulse ${
             sla.type === 'pre-embarque' 
               ? 'bg-rose-50 text-rose-600 border border-rose-100' 
