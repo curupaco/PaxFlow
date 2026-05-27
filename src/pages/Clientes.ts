@@ -237,7 +237,27 @@ export class ClientesPage {
    * Atualiza a ficha de detalhes do cliente selecionado (ou abre formulário limpo para cadastro)
    */
   private selecionarCliente(cliente: Cliente | null): void {
-    this.clienteSelecionado = cliente;
+    if (cliente === null) {
+      // Cria um objeto de cliente vazio para novo cadastro
+      this.clienteSelecionado = {
+        id: '', // ID vazio indica novo cadastro
+        nome: '',
+        email: '',
+        telefone: '',
+        documento: '',
+        dataNascimento: '',
+        endereco: '',
+        observacoes: '',
+        consultorResponsavelId: this.user?.id || '',
+        passaporteNumero: '',
+        passaporteValidade: '',
+        vistosInformacoes: '',
+        googleDriveFolderUrl: ''
+      };
+    } else {
+      this.clienteSelecionado = cliente;
+    }
+    
     this.filtrarERenderizarLista(); // Atualiza seleção na lista lateral
     this.renderFichaDetalhada();
     this.setupFormEventListeners();
@@ -253,7 +273,7 @@ export class ClientesPage {
     form?.addEventListener('submit', async (e) => {
       e.preventDefault();
 
-      const isEditing = !!this.clienteSelecionado;
+      const isEditing = !!(this.clienteSelecionado && this.clienteSelecionado.id);
       
       const nomeVal = (document.getElementById('input-nome') as HTMLInputElement).value;
       const emailVal = (document.getElementById('input-email') as HTMLInputElement).value;
@@ -290,8 +310,7 @@ export class ClientesPage {
           if (error) throw error;
           this.showToast('Ficha do cliente atualizada com sucesso!', 'success');
         } else {
-          // Inicializa novo cliente com pasta vazia no Google Drive por padrão se quiser, 
-          // mas o upload criará dinamicamente
+          // Inicializa novo cliente no Supabase
           const { error } = await supabase
             .from('clientes')
             .insert(payload);
