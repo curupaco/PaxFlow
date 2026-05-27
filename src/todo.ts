@@ -1,4 +1,5 @@
 import Sortable from 'sortablejs';
+import { supabase } from './services/supabase';
 
 // --- DEFINIÇÃO DE INTERFACES ---
 interface Column {
@@ -15,6 +16,7 @@ interface TodoCard {
   label: string; // Tag decorativa
   priority: 'low' | 'medium' | 'high' | 'urgent';
   owner: string; // Dono do card
+  position?: number;
 }
 
 class TodoKanban {
@@ -32,11 +34,12 @@ class TodoKanban {
   /**
    * Inicializa o Quadro Kanban
    */
-  public init(): void {
+  public async init(): Promise<void> {
     this.applyInitialTheme();
-    this.loadState();
+    await this.loadStateFromSupabase();
     this.render();
     this.setupGlobalEventListeners();
+    this.setupRealtimeChannel();
   }
 
   /**
@@ -96,21 +99,101 @@ class TodoKanban {
   }
 
   /**
-   * Carrega o estado salvo ou define estado padrão de demonstração
+   * Carrega o estado das colunas e cartões diretamente do Supabase
    */
-  private loadState(): void {
+  private async loadStateFromSupabase(): Promise<void> {
+    try {
+      // 1. Busca colunas ordenadas por position
+      const { data: colsData, error: colsErr } = await supabase
+        .from('todo_columns')
+        .select('*')
+        .order('position', { ascending: true });
+
+      if (colsErr) throw colsErr;
+
+      if (colsData && colsData.length > 0) {
+        this.columns = colsData.map((col: any) => ({
+          id: col.id,
+          title: this.cleanEmoji(col.title)
+        }));
+      } else {
+        // Se a tabela estiver vazia, cria e insere as colunas padrão de demonstração
+        this.columns = [
+          { id: 'col-backlog', title: 'Backlog de Ideias' },
+          { id: 'col-todo', title: 'A Fazer / Prioridades' },
+          { id: 'col-progress', title: 'Em Progresso' },
+          { id: 'col-done', title: 'Concluído' }
+        ];
+
+        const inserts = this.columns.map((col, idx) => ({
+          id: col.id,
+          title: col.title,
+          position: idx
+        }));
+
+        await supabase.from('todo_columns').insert(inserts);
+      }
+
+      // 2. Busca cartões ordenados por position
+      const { data: cardsData, error: cardsErr } = await supabase
+        .from('todo_cards')
+        .select('*')
+        .order('position', { ascending: true });
+
+      if (cardsErr) throw cardsErr;
+
+      if (cardsData) {
+        this.cards = cardsData.map((c: any) => ({
+          id: c.id,
+          columnId: c.column_id,
+          title: c.title,
+          description: c.description || '',
+          date: c.date || '',
+          label: c.label || '',
+          priority: c.priority || 'medium',
+          owner: c.owner,
+          position: c.position || 0
+        }));
+      }
+
+    } catch (err: any) {
+      console.error('Erro ao carregar dados do Supabase:', err);
+      // Fallback para LocalStorage se a conexão falhar temporariamente
+      this.loadStateFromLocalStorageFallback();
+    }
+  }
+
+  /**
+   * Inscreve-se nos canais Realtime do Supabase para ouvir qualquer mudança
+   */
+  private setupRealtimeChannel(): void {
+    supabase
+      .channel('todo-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'todo_columns' }, async () => {
+        await this.loadStateFromSupabase();
+        this.renderColumns();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'todo_cards' }, async () => {
+        await this.loadStateFromSupabase();
+        this.renderColumns();
+      })
+      .subscribe();
+  }
+
+  /**
+   * Fallback de segurança para LocalStorage caso o Supabase não esteja disponível
+   */
+  private loadStateFromLocalStorageFallback(): void {
     const savedCols = localStorage.getItem('paxflow-todo-cols');
     const savedCards = localStorage.getItem('paxflow-todo-cards');
 
     if (savedCols) {
       const parsed = JSON.parse(savedCols);
-      // Higieniza qualquer coluna preexistente no localstorage contra emojis
       this.columns = parsed.map((col: Column) => ({
         id: col.id,
         title: this.cleanEmoji(col.title)
       }));
     } else {
-      // Colunas Iniciais Padrão (Sem emojis na string pura)
       this.columns = [
         { id: 'col-backlog', title: 'Backlog de Ideias' },
         { id: 'col-todo', title: 'A Fazer / Prioridades' },
@@ -122,7 +205,6 @@ class TodoKanban {
     if (savedCards) {
       this.cards = JSON.parse(savedCards);
     } else {
-      // Cartões de Demonstração Iniciais
       this.cards = [
         {
           id: 'card-demo-1',
@@ -527,7 +609,7 @@ class TodoKanban {
         ghostClass: 'sortable-ghost',
         dragClass: 'sortable-drag',
         draggable: '[data-card-id]',
-        onEnd: (e) => {
+        onEnd: async (e) => {
           const cardId = e.item.getAttribute('data-card-id');
           const targetColId = e.to.getAttribute('data-col-target-id');
           
@@ -536,6 +618,22 @@ class TodoKanban {
             const card = this.cards.find(c => c.id === cardId);
             if (card) {
               card.columnId = targetColId;
+              
+              // Recalcula e sincroniza as posições de todos os cards da coluna afetada
+              const children = Array.from(e.to.querySelectorAll('[data-card-id]'));
+              const updates = children.map((el, index) => {
+                const id = el.getAttribute('data-card-id') || '';
+                const c = this.cards.find(x => x.id === id);
+                if (c) {
+                  c.position = index; // atualiza em memória
+                }
+                return supabase
+                  .from('todo_cards')
+                  .update({ column_id: targetColId, position: index })
+                  .eq('id', id);
+              });
+              
+              await Promise.all(updates);
               this.saveState();
               this.renderColumns(); // Redesenha para atualizar contadores e slots vazios
             }
@@ -568,11 +666,12 @@ class TodoKanban {
 
     // Botões Excluir Cartão
     document.querySelectorAll('[data-delete-card-id]').forEach(btn => {
-      btn.addEventListener('click', (e) => {
+      btn.addEventListener('click', async (e) => {
         e.stopPropagation();
         const cardId = btn.getAttribute('data-delete-card-id');
         if (cardId && confirm('Deseja realmente excluir este cartão de prioridade?')) {
           this.cards = this.cards.filter(c => c.id !== cardId);
+          await supabase.from('todo_cards').delete().eq('id', cardId);
           this.saveState();
           this.renderColumns();
         }
@@ -792,7 +891,7 @@ class TodoKanban {
 
     // Formulário Submit
     const form = document.getElementById('form-todo-card') as HTMLFormElement;
-    form?.addEventListener('submit', (e) => {
+    form?.addEventListener('submit', async (e) => {
       e.preventDefault();
 
       const title = (document.getElementById('todo-card-title') as HTMLInputElement).value;
@@ -804,7 +903,7 @@ class TodoKanban {
       const columnId = (document.getElementById('todo-card-column') as HTMLSelectElement).value;
 
       if (isEditing && card) {
-        // Editar
+        // Editar localmente primeiro
         card.title = title;
         card.description = description;
         card.date = date;
@@ -812,6 +911,21 @@ class TodoKanban {
         card.priority = priority;
         card.owner = owner;
         card.columnId = columnId;
+
+        // Grava no Supabase
+        await supabase
+          .from('todo_cards')
+          .update({
+            title,
+            description,
+            date,
+            label,
+            priority,
+            owner,
+            column_id: columnId
+          })
+          .eq('id', card.id);
+
         this.showToast('Cartão de prioridade atualizado!');
       } else {
         // Criar Novo
@@ -823,9 +937,26 @@ class TodoKanban {
           date,
           label,
           priority,
-          owner
+          owner,
+          position: this.cards.length
         };
         this.cards.push(newCard);
+
+        // Grava no Supabase
+        await supabase
+          .from('todo_cards')
+          .insert({
+            id: newCard.id,
+            column_id: newCard.columnId,
+            title: newCard.title,
+            description: newCard.description,
+            date: newCard.date,
+            label: newCard.label,
+            priority: newCard.priority,
+            owner: newCard.owner,
+            position: newCard.position
+          });
+
         this.showToast('Novo cartão adicionado com sucesso!');
       }
 
@@ -913,7 +1044,7 @@ class TodoKanban {
     document.getElementById('btn-close-cols-modal')?.addEventListener('click', handleClose);
 
     // Inserir Nova Coluna Inline
-    document.getElementById('btn-add-column-inline')?.addEventListener('click', () => {
+    document.getElementById('btn-add-column-inline')?.addEventListener('click', async () => {
       const input = document.getElementById('input-new-column-title') as HTMLInputElement;
       const val = input.value.trim();
       if (!val) return;
@@ -921,6 +1052,13 @@ class TodoKanban {
       const newColId = 'col-' + Date.now();
       this.columns.push({ id: newColId, title: val });
       
+      // Insere no Supabase
+      await supabase.from('todo_columns').insert({
+        id: newColId,
+        title: val,
+        position: this.columns.length
+      });
+
       // Recarrega o modal de colunas para listar a recém-criada
       handleClose();
       setTimeout(() => this.openColumnsModal(), 300);
@@ -928,7 +1066,7 @@ class TodoKanban {
 
     // Excluir Coluna
     document.querySelectorAll('[data-delete-col-id]').forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         const colId = btn.getAttribute('data-delete-col-id');
         if (!colId) return;
 
@@ -941,16 +1079,19 @@ class TodoKanban {
 
         this.columns = this.columns.filter(col => col.id !== colId);
         
+        // Exclui no Supabase
+        await supabase.from('todo_columns').delete().eq('id', colId);
+
         handleClose();
         setTimeout(() => this.openColumnsModal(), 300);
       });
     });
 
     // Salvar Alterações de Nomes
-    document.getElementById('btn-save-cols')?.addEventListener('click', () => {
-      let mudouAlgum = false;
+    document.getElementById('btn-save-cols')?.addEventListener('click', async () => {
+      const updates = [];
 
-      document.querySelectorAll('[data-col-edit-id]').forEach(input => {
+      for (const input of Array.from(document.querySelectorAll('[data-col-edit-id]'))) {
         const colId = input.getAttribute('data-col-edit-id');
         const val = (input as HTMLInputElement).value.trim();
         
@@ -958,10 +1099,19 @@ class TodoKanban {
           const col = this.columns.find(col => col.id === colId);
           if (col && col.title !== val) {
             col.title = val;
-            mudouAlgum = true;
+            updates.push(
+              supabase
+                .from('todo_columns')
+                .update({ title: val })
+                .eq('id', colId)
+            );
           }
         }
-      });
+      }
+
+      if (updates.length > 0) {
+        await Promise.all(updates);
+      }
 
       this.saveState();
       this.renderColumns();
