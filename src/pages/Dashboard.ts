@@ -323,9 +323,9 @@ export class Dashboard {
         modalContent.innerHTML = `
           <div class="p-6 text-center">
             <div class="text-amber-500 text-4xl mb-3">⚠️</div>
-            <h3 class="text-lg font-bold text-slate-800 mb-2">Nenhum produto cadastrado</h3>
-            <p class="text-sm text-slate-500 mb-6">Esta viagem não possui produtos/serviços vinculados para reembolso.</p>
-            <button id="btn-cancel-modal" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg transition">
+            <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100 mb-2">Nenhum produto cadastrado</h3>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mb-6 font-medium">Esta viagem não possui produtos/serviços vinculados para reembolso.</p>
+            <button id="btn-cancel-modal" class="px-5 py-2.5 bg-slate-100 dark:bg-slate-850 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-250 font-medium rounded-lg transition">
               Voltar
             </button>
           </div>
@@ -340,53 +340,44 @@ export class Dashboard {
       // Renderiza o formulário de reembolso no modal
       modalContent.innerHTML = `
         <div class="p-6">
-          <div class="flex items-center justify-between border-b border-slate-100 pb-4 mb-6">
-            <h3 class="text-xl font-bold text-slate-800 flex items-center gap-2">
-              <span class="p-2 bg-rose-50 text-rose-500 rounded-lg text-lg">💸</span>
+          <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4 mb-6">
+            <h3 class="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+              <span class="p-2 bg-rose-50 dark:bg-rose-950/40 text-rose-500 dark:text-rose-400 rounded-lg text-lg">💸</span>
               Solicitar Reembolso / Cancelamento
             </h3>
-            <button id="btn-close-x" class="text-slate-400 hover:text-slate-600 transition text-lg">&times;</button>
+            <button id="btn-close-x" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-350 transition text-lg">&times;</button>
           </div>
           
           <form id="form-reembolso" class="space-y-5">
             <div>
-              <label class="block text-sm font-semibold text-slate-700 mb-2">Selecione o Produto a Cancelar *</label>
-              <select id="select-produto" required class="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-rose-500 bg-white text-slate-800 font-medium">
-                <option value="" disabled selected>Escolha um produto da viagem...</option>
+              <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Selecione o Produto a Cancelar *</label>
+              <select id="select-produto" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-rose-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 font-medium">
+                <option value="" disabled selected class="text-slate-400 dark:text-slate-500">Escolha um produto da viagem...</option>
                 ${produtos.map(p => `
-                  <option value="${p.id}" data-valor="${p.valor_venda}">
-                    [${p.tipo.toUpperCase()}] ${p.fornecedor} - ${p.descricao} (Venda: R$ ${p.valor_venda.toLocaleString('pt-BR', { minimumFractionDigits: 2 })})
+                  <option value="${p.id}" data-valor="${p.valor_venda}" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">
+                    [${p.tipo.toUpperCase()}] ${p.fornecedor} - ${p.descricao} (Venda: R$ ${Number(p.valor_venda || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })})
                   </option>
                 `).join('')}
               </select>
             </div>
 
             <div>
-              <label class="block text-sm font-semibold text-slate-700 mb-2">Valor do Reembolso Solicitado (R$) *</label>
+              <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Valor do Reembolso Solicitado (R$) *</label>
               <div class="relative">
-                <span class="absolute left-3.5 top-2.5 text-slate-400 font-medium">R$</span>
-                <input id="input-valor-reembolso" type="number" step="0.01" min="0" required placeholder="0,00" class="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-rose-500 text-slate-800 font-semibold" />
+                <span class="absolute left-3.5 top-2.5 text-slate-400 dark:text-slate-500 font-medium">R$</span>
+                <input id="input-valor-reembolso" type="number" step="0.01" min="0" required placeholder="0,00" class="w-full pl-10 pr-4 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-rose-500 text-slate-800 dark:text-slate-100 font-semibold" />
               </div>
-              <p class="text-xs text-slate-400 mt-1.5">Sugerido por padrão o valor integral de venda do produto.</p>
+              <p class="text-xs text-slate-400 dark:text-slate-500 mt-1.5 font-medium">Sugerido por padrão o valor integral de venda do produto.</p>
             </div>
 
             <div>
-              <label class="block text-sm font-semibold text-slate-700 mb-2">Motivo do Cancelamento / Justificativa *</label>
-              <textarea id="textarea-motivo" required placeholder="Descreva de forma detalhada o motivo do cancelamento solicitado..." rows="3" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-rose-500 text-slate-800 text-sm"></textarea>
+              <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Motivo / Justificativa do Cancelamento</label>
+              <textarea id="textarea-motivo" placeholder="Justifique o motivo do cancelamento para documentar o processo..." rows="3" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-rose-500 text-slate-800 dark:text-slate-100 text-sm font-medium"></textarea>
             </div>
 
-            <div>
-              <label class="block text-sm font-semibold text-slate-700 mb-2">Status Inicial do Reembolso</label>
-              <input type="text" value="Aguardando Fornecedor" disabled class="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg bg-slate-50 text-slate-500 font-semibold" />
-            </div>
-
-            <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 mt-6">
-              <button id="btn-cancel-form" type="button" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition">
-                Cancelar
-              </button>
-              <button type="submit" class="px-5 py-2.5 bg-rose-500 hover:bg-rose-600 text-white font-semibold rounded-lg shadow-lg shadow-rose-500/20 transition">
-                Confirmar Solicitação
-              </button>
+            <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+              <button id="btn-cancel-modal" type="button" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold rounded-xl transition uppercase text-xs tracking-wider">Cancelar</button>
+              <button type="submit" class="px-6 py-2.5 bg-rose-500 hover:bg-rose-600 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-rose-500/20 transition uppercase">Solicitar Reembolso</button>
             </div>
           </form>
         </div>
@@ -411,7 +402,7 @@ export class Dashboard {
       };
       
       document.getElementById('btn-close-x')?.addEventListener('click', handleCancel);
-      document.getElementById('btn-cancel-form')?.addEventListener('click', handleCancel);
+      document.getElementById('btn-cancel-modal')?.addEventListener('click', handleCancel);
 
       // Tratamento do envio do formulário
       const form = document.getElementById('form-reembolso') as HTMLFormElement;
@@ -550,64 +541,64 @@ export class Dashboard {
 
       modalContent.innerHTML = `
         <div class="p-6">
-          <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
-            <h3 class="text-lg font-black text-slate-800 flex items-center gap-1.5">✈️ Nova Viagem / Card</h3>
+          <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 mb-4">
+            <h3 class="text-lg font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5">✈️ Nova Viagem / Card</h3>
             <button id="btn-close-viagem-x" class="text-slate-400 hover:text-rose-500 font-bold transition">✕</button>
           </div>
 
           <form id="form-nova-viagem" class="space-y-4">
             <div>
-              <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Passageiro / Cliente *</label>
-              <select id="select-viagem-cliente" required class="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-medium text-sm">
-                <option value="">Selecione o cliente...</option>
-                ${clientes.map(c => `<option value="${c.id}">${c.nome}</option>`).join('')}
+              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Passageiro / Cliente *</label>
+              <select id="select-viagem-cliente" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm">
+                <option value="" class="text-slate-450 dark:text-slate-500">Selecione o cliente...</option>
+                ${clientes.map(c => `<option value="${c.id}" class="bg-white dark:bg-slate-800 text-slate-850 dark:text-slate-150">${c.nome}</option>`).join('')}
               </select>
             </div>
 
             <div>
-              <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Destino *</label>
-              <input id="input-viagem-destino" type="text" required placeholder="ex: Paris, Orlando, etc." class="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-medium text-sm" />
+              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Destino *</label>
+              <input id="input-viagem-destino" type="text" required placeholder="ex: Paris, Orlando, etc." class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm" />
             </div>
 
             <div class="grid grid-cols-2 gap-4">
               <div>
-                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Localizador (LOC)</label>
-                <input id="input-viagem-loc" type="text" placeholder="ex: AX3R9" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-medium text-sm uppercase" />
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Localizador (LOC)</label>
+                <input id="input-viagem-loc" type="text" placeholder="ex: AX3R9" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm uppercase" />
               </div>
               <div>
-                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Valor Total (R$) *</label>
-                <input id="input-viagem-valor" type="number" step="0.01" required placeholder="0.00" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-medium text-sm" />
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Valor Total (R$) *</label>
+                <input id="input-viagem-valor" type="number" step="0.01" required placeholder="0.00" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm" />
               </div>
             </div>
 
             <div class="grid grid-cols-2 gap-4">
               <div>
-                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Data de Ida *</label>
-                <input id="input-viagem-ida" type="date" required class="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-medium text-sm" />
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Data de Ida *</label>
+                <input id="input-viagem-ida" type="date" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm" />
               </div>
               <div>
-                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Data de Volta *</label>
-                <input id="input-viagem-volta" type="date" required class="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-medium text-sm" />
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Data de Volta *</label>
+                <input id="input-viagem-volta" type="date" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm" />
               </div>
             </div>
 
             <div>
-              <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Status / Etapa Inicial *</label>
-              <select id="select-viagem-status" required class="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-medium text-sm">
-                <option value="pos_venda">Pós-Venda</option>
-                <option value="fechado">Fechado</option>
-                <option value="pre_embarque">Pré-Embarque</option>
-                <option value="pos_viagem">Pós-Viagem</option>
+              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Status / Etapa Inicial *</label>
+              <select id="select-viagem-status" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm">
+                <option value="pos_venda" class="bg-white dark:bg-slate-800">Pós-Venda</option>
+                <option value="fechado" class="bg-white dark:bg-slate-800">Fechado</option>
+                <option value="pre_embarque" class="bg-white dark:bg-slate-800">Pré-Embarque</option>
+                <option value="pos_viagem" class="bg-white dark:bg-slate-800">Pós-Viagem</option>
               </select>
             </div>
 
             <div>
-              <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Observações Operacionais</label>
-              <textarea id="textarea-viagem-obs" placeholder="Detalhes de voo, hotel, etc." rows="2" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-medium text-sm"></textarea>
+              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Observações Operacionais</label>
+              <textarea id="textarea-viagem-obs" placeholder="Detalhes de voo, hotel, etc." rows="2" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm"></textarea>
             </div>
 
-            <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 mt-4">
-              <button id="btn-cancel-viagem" type="button" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs tracking-wider rounded-xl transition uppercase">Cancelar</button>
+            <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800 mt-4">
+              <button id="btn-cancel-viagem" type="button" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs tracking-wider rounded-xl transition uppercase">Cancelar</button>
               <button type="submit" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/10 transition uppercase">Criar Viagem</button>
             </div>
           </form>
@@ -723,20 +714,20 @@ export class Dashboard {
     modalContent.innerHTML = `
       <div class="p-6">
         <!-- Topo com Título e Fechar -->
-        <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+        <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 mb-4">
           <div>
-            <h3 class="text-lg font-black text-slate-800 flex items-center gap-1.5">✈️ Gerenciar Viagem</h3>
-            <p class="text-xs text-slate-400 font-semibold">Destino: <span class="font-bold text-slate-600">${v.destino}</span> &bull; Loc: <span class="font-bold text-slate-600">${v.codigo_localizador || 'Sem LOC'}</span></p>
+            <h3 class="text-lg font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5">✈️ Gerenciar Viagem</h3>
+            <p class="text-xs text-slate-400 dark:text-slate-500 font-semibold">Destino: <span class="font-bold text-slate-600 dark:text-slate-300">${v.destino}</span> &bull; Loc: <span class="font-bold text-slate-600 dark:text-slate-300">${v.codigo_localizador || 'Sem LOC'}</span></p>
           </div>
-          <button id="btn-close-edit-modal-x" class="text-slate-400 hover:text-rose-500 font-bold transition">✕</button>
+          <button id="btn-close-edit-modal-x" class="text-slate-400 hover:text-rose-500 dark:text-slate-500 dark:hover:text-rose-450 font-bold transition">✕</button>
         </div>
 
         <!-- Seletor de Abas Premium -->
-        <div class="flex items-center gap-2 border-b border-slate-100 mb-5 pb-px">
-          <button id="tab-detalhes-btn" class="border-b-2 border-indigo-600 px-4 py-2 text-sm font-black text-indigo-600 transition">
+        <div class="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 mb-5 pb-px">
+          <button id="tab-detalhes-btn" class="border-b-2 border-indigo-600 dark:border-indigo-400 px-4 py-2 text-sm font-black text-indigo-600 dark:text-indigo-400 transition">
             📝 Detalhes e Edição
           </button>
-          <button id="tab-produtos-btn" class="border-b-2 border-transparent px-4 py-2 text-sm font-semibold text-slate-400 hover:text-slate-700 transition">
+          <button id="tab-produtos-btn" class="border-b-2 border-transparent px-4 py-2 text-sm font-semibold text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200 transition">
             🛍️ Produtos e Serviços
           </button>
         </div>
@@ -745,57 +736,57 @@ export class Dashboard {
         <div id="tab-detalhes-content" class="space-y-4">
           <form id="form-editar-viagem" class="space-y-4">
             <div>
-              <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Passageiro / Cliente *</label>
-              <select id="edit-viagem-cliente" required class="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-medium text-sm">
-                ${clientes.map(c => `<option value="${c.id}" ${c.id === v.cliente_id ? 'selected' : ''}>${c.nome}</option>`).join('')}
+              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Passageiro / Cliente *</label>
+              <select id="edit-viagem-cliente" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm">
+                ${clientes.map(c => `<option value="${c.id}" class="bg-white dark:bg-slate-800" ${c.id === v.cliente_id ? 'selected' : ''}>${c.nome}</option>`).join('')}
               </select>
             </div>
 
             <div>
-              <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Destino *</label>
-              <input id="edit-viagem-destino" type="text" required value="${v.destino}" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-medium text-sm" />
+              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Destino *</label>
+              <input id="edit-viagem-destino" type="text" required value="${v.destino}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm" />
             </div>
 
             <div class="grid grid-cols-2 gap-4">
               <div>
-                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Localizador (LOC)</label>
-                <input id="edit-viagem-loc" type="text" value="${v.codigo_localizador || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-medium text-sm uppercase" />
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Localizador (LOC)</label>
+                <input id="edit-viagem-loc" type="text" value="${v.codigo_localizador || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm uppercase" />
               </div>
               <div>
-                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Valor Total (R$) *</label>
-                <input id="edit-viagem-valor" type="number" step="0.01" required value="${v.valor_total || 0}" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-medium text-sm" />
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Valor Total (R$) *</label>
+                <input id="edit-viagem-valor" type="number" step="0.01" required value="${v.valor_total || 0}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm" />
               </div>
             </div>
 
             <div class="grid grid-cols-2 gap-4">
               <div>
-                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Data de Ida *</label>
-                <input id="edit-viagem-ida" type="date" required value="${v.data_ida || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-medium text-sm" />
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Data de Ida *</label>
+                <input id="edit-viagem-ida" type="date" required value="${v.data_ida || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm" />
               </div>
               <div>
-                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Data de Volta *</label>
-                <input id="edit-viagem-volta" type="date" required value="${v.data_volta || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-medium text-sm" />
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Data de Volta *</label>
+                <input id="edit-viagem-volta" type="date" required value="${v.data_volta || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm" />
               </div>
             </div>
 
             <div>
-              <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Status / Etapa *</label>
-              <select id="edit-viagem-status" required class="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-medium text-sm">
-                <option value="pos_venda" ${v.status === 'pos_venda' ? 'selected' : ''}>Pós-Venda</option>
-                <option value="fechado" ${v.status === 'fechado' ? 'selected' : ''}>Fechado</option>
-                <option value="pre_embarque" ${v.status === 'pre_embarque' ? 'selected' : ''}>Pré-Embarque</option>
-                <option value="pos_viagem" ${v.status === 'pos_viagem' ? 'selected' : ''}>Pós-Viagem</option>
-                <option value="reembolso_solicitado" ${v.status === 'reembolso_solicitado' ? 'selected' : ''}>Reembolso Solicitado</option>
+              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Status / Etapa *</label>
+              <select id="edit-viagem-status" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm">
+                <option value="pos_venda" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100" ${v.status === 'pos_venda' ? 'selected' : ''}>Pós-Venda</option>
+                <option value="fechado" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100" ${v.status === 'fechado' ? 'selected' : ''}>Fechado</option>
+                <option value="pre_embarque" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100" ${v.status === 'pre_embarque' ? 'selected' : ''}>Pré-Embarque</option>
+                <option value="pos_viagem" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100" ${v.status === 'pos_viagem' ? 'selected' : ''}>Pós-Viagem</option>
+                <option value="reembolso_solicitado" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100" ${v.status === 'reembolso_solicitado' ? 'selected' : ''}>Reembolso Solicitado</option>
               </select>
             </div>
 
             <div>
-              <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Observações Operacionais</label>
-              <textarea id="edit-viagem-obs" rows="2.5" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 text-sm font-medium">${v.observacoes || ''}</textarea>
+              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Observações Operacionais</label>
+              <textarea id="edit-viagem-obs" rows="2.5" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 text-sm font-medium">${v.observacoes || ''}</textarea>
             </div>
 
-            <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 mt-4">
-              <button id="btn-cancel-edit" type="button" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs tracking-wider rounded-xl transition uppercase">Cancelar</button>
+            <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800 mt-4">
+              <button id="btn-cancel-edit" type="button" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs tracking-wider rounded-xl transition uppercase">Cancelar</button>
               <button type="submit" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/10 transition uppercase">Salvar Alterações</button>
             </div>
           </form>
@@ -806,64 +797,64 @@ export class Dashboard {
           
           <!-- Lista de Produtos Existentes -->
           <div>
-            <h4 class="text-xs font-black text-slate-400 uppercase tracking-wide mb-2.5">Produtos Cadastrados nesta Viagem</h4>
+            <h4 class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-2.5">Produtos Cadastrados nesta Viagem</h4>
             <div id="lista-produtos-viagem-container" class="space-y-2 max-h-[220px] overflow-y-auto pr-1 custom-scrollbar">
-              <p class="text-center text-xs text-slate-400 font-medium py-4">Buscando produtos...</p>
+              <p class="text-center text-xs text-slate-400 dark:text-slate-500 font-medium py-4">Buscando produtos...</p>
             </div>
           </div>
 
           <!-- Formulário de Novo Produto (Inline) -->
-          <div class="border-t border-slate-100 pt-4">
-            <h4 class="text-xs font-black text-indigo-600 uppercase tracking-wide mb-3 flex items-center gap-1">➕ Adicionar Produto / Serviço</h4>
+          <div class="border-t border-slate-100 dark:border-slate-800 pt-4">
+            <h4 class="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wide mb-3 flex items-center gap-1">➕ Adicionar Produto / Serviço</h4>
             
-            <form id="form-novo-produto" class="space-y-3 bg-slate-50/50 border border-slate-100 p-3.5 rounded-xl">
+            <form id="form-novo-produto" class="space-y-3 bg-slate-50/50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800 p-3.5 rounded-xl">
               <div class="grid grid-cols-2 gap-3">
                 <div>
-                  <label class="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">Tipo *</label>
-                  <select id="prod-tipo" required class="w-full px-2.5 py-1.5 border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 font-medium text-xs">
-                    <option value="voo">Voo</option>
-                    <option value="hotel">Hotel</option>
-                    <option value="seguro">Seguro</option>
-                    <option value="passeio">Passeio</option>
-                    <option value="outro">Outro</option>
+                  <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Tipo *</label>
+                  <select id="prod-tipo" required class="w-full px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-xs">
+                    <option value="voo" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">Voo</option>
+                    <option value="hotel" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">Hotel</option>
+                    <option value="seguro" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">Seguro</option>
+                    <option value="passeio" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">Passeio</option>
+                    <option value="outro" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">Outro</option>
                   </select>
                 </div>
                 <div>
-                  <label class="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">Fornecedor *</label>
-                  <input id="prod-fornecedor" type="text" required placeholder="ex: LATAM, Hilton" class="w-full px-2.5 py-1.5 border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 font-medium text-xs" />
+                  <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Fornecedor *</label>
+                  <input id="prod-fornecedor" type="text" required placeholder="ex: LATAM, Hilton" class="w-full px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-xs" />
                 </div>
               </div>
 
               <div>
-                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">Descrição *</label>
-                <input id="prod-descricao" type="text" required placeholder="ex: Voo GRU-JFK ou Quarto Deluxe" class="w-full px-2.5 py-1.5 border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 font-medium text-xs" />
+                <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Descrição *</label>
+                <input id="prod-descricao" type="text" required placeholder="ex: Voo GRU-JFK ou Quarto Deluxe" class="w-full px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-xs" />
               </div>
 
               <div class="grid grid-cols-3 gap-2">
                 <div>
-                  <label class="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">Código (LOC)</label>
-                  <input id="prod-reserva" type="text" placeholder="ex: LOC12" class="w-full px-2 py-1.5 border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 font-medium text-xs uppercase" />
+                  <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Código (LOC)</label>
+                  <input id="prod-reserva" type="text" placeholder="ex: LOC12" class="w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-xs uppercase" />
                 </div>
                 <div>
-                  <label class="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">Custo (R$) *</label>
-                  <input id="prod-custo" type="number" step="0.01" required placeholder="0.00" class="w-full px-2 py-1.5 border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 font-medium text-xs" />
+                  <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Custo (R$) *</label>
+                  <input id="prod-custo" type="number" step="0.01" required placeholder="0.00" class="w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-xs" />
                 </div>
                 <div>
-                  <label class="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">Venda (R$) *</label>
-                  <input id="prod-venda" type="number" step="0.01" required placeholder="0.00" class="w-full px-2 py-1.5 border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 font-medium text-xs" />
+                  <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Venda (R$) *</label>
+                  <input id="prod-venda" type="number" step="0.01" required placeholder="0.00" class="w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-xs" />
                 </div>
               </div>
 
               <div class="grid grid-cols-2 gap-3">
                 <div>
-                  <label class="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">Data do Serviço *</label>
-                  <input id="prod-data" type="date" required class="w-full px-2.5 py-1.5 border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 font-medium text-xs" />
+                  <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Data do Serviço *</label>
+                  <input id="prod-data" type="date" required class="w-full px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-xs" />
                 </div>
                 <div>
-                  <label class="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">Status *</label>
-                  <select id="prod-status" required class="w-full px-2.5 py-1.5 border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 font-medium text-xs">
-                    <option value="reservado">Reservado</option>
-                    <option value="emitido" selected>Emitido</option>
+                  <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Status *</label>
+                  <select id="prod-status" required class="w-full px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-xs">
+                    <option value="reservado" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">Reservado</option>
+                    <option value="emitido" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100" selected>Emitido</option>
                   </select>
                 </div>
               </div>
@@ -893,15 +884,15 @@ export class Dashboard {
     const tabProdutosContent = document.getElementById('tab-produtos-content');
 
     tabDetalhesBtn?.addEventListener('click', () => {
-      tabDetalhesBtn.className = 'border-b-2 border-indigo-600 px-4 py-2 text-sm font-black text-indigo-600 transition';
-      if (tabProdutosBtn) tabProdutosBtn.className = 'border-b-2 border-transparent px-4 py-2 text-sm font-semibold text-slate-400 hover:text-slate-700 transition';
+      tabDetalhesBtn.className = 'border-b-2 border-indigo-600 dark:border-indigo-400 px-4 py-2 text-sm font-black text-indigo-600 dark:text-indigo-400 transition';
+      if (tabProdutosBtn) tabProdutosBtn.className = 'border-b-2 border-transparent px-4 py-2 text-sm font-semibold text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200 transition';
       tabDetalhesContent?.classList.remove('hidden');
       tabProdutosContent?.classList.add('hidden');
     });
 
     tabProdutosBtn?.addEventListener('click', () => {
-      tabProdutosBtn.className = 'border-b-2 border-indigo-600 px-4 py-2 text-sm font-black text-indigo-600 transition';
-      if (tabDetalhesBtn) tabDetalhesBtn.className = 'border-b-2 border-transparent px-4 py-2 text-sm font-semibold text-slate-400 hover:text-slate-700 transition';
+      tabProdutosBtn.className = 'border-b-2 border-indigo-600 dark:border-indigo-400 px-4 py-2 text-sm font-black text-indigo-600 dark:text-indigo-400 transition';
+      if (tabDetalhesBtn) tabDetalhesBtn.className = 'border-b-2 border-transparent px-4 py-2 text-sm font-semibold text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200 transition';
       tabProdutosContent?.classList.remove('hidden');
       tabDetalhesContent?.classList.add('hidden');
     });
@@ -1020,7 +1011,8 @@ export class Dashboard {
 
       const formatarData = (dStr: string) => {
         if (!dStr) return '';
-        const parts = dStr.split('-');
+        const dataApenas = dStr.includes('T') ? dStr.split('T')[0] : dStr.split(' ')[0];
+        const parts = dataApenas.split('-');
         if (parts.length !== 3) return dStr;
         return `${parts[2]}/${parts[1]}/${parts[0]}`;
       };
@@ -1035,24 +1027,24 @@ export class Dashboard {
         };
 
         return `
-          <div class="flex items-center justify-between gap-3 p-3 bg-slate-50 border border-slate-200/60 rounded-xl hover:bg-slate-100/50 transition">
+          <div class="flex items-center justify-between gap-3 p-3 bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-850 rounded-xl hover:bg-slate-100/50 dark:hover:bg-slate-800/80 transition">
             <div class="flex items-start gap-2.5 overflow-hidden">
-              <span class="text-lg p-1 bg-white border border-slate-100 rounded-lg shadow-sm flex items-center justify-center">${iconesMap[p.tipo] || '📦'}</span>
+              <span class="text-lg p-1 bg-white dark:bg-slate-700 border border-slate-100 dark:border-slate-650 rounded-lg shadow-sm flex items-center justify-center">${iconesMap[p.tipo] || '📦'}</span>
               <div class="overflow-hidden bg-slate-50/10">
-                <span class="block text-xs font-black text-slate-700 truncate leading-tight">${p.fornecedor} &bull; ${p.descricao}</span>
-                <span class="block text-[10px] text-slate-400 font-bold leading-normal">
-                  ${p.codigo_reserva ? `LOC: <span class="text-slate-600 font-extrabold">${p.codigo_reserva}</span> &bull; ` : ''} 
-                  Data: <span class="text-slate-600 font-semibold">${formatarData(p.data_servico)}</span>
+                <span class="block text-xs font-black text-slate-700 dark:text-slate-200 truncate leading-tight">${p.fornecedor} &bull; ${p.descricao}</span>
+                <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold leading-normal">
+                  ${p.codigo_reserva ? `LOC: <span class="text-slate-600 dark:text-slate-350 font-extrabold">${p.codigo_reserva}</span> &bull; ` : ''} 
+                  Data: <span class="text-slate-600 dark:text-slate-350 font-semibold">${formatarData(p.data_servico)}</span>
                 </span>
               </div>
             </div>
             
             <div class="flex items-center gap-3.5">
               <div class="text-right">
-                <span class="block text-xs font-black text-indigo-600">R$ ${p.valor_venda?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-                <span class="block text-[9px] text-slate-400 font-semibold">Custo: R$ ${p.valor_custo?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                <span class="block text-xs font-black text-indigo-600 dark:text-indigo-400">R$ ${Number(p.valor_venda || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                <span class="block text-[9px] text-slate-400 dark:text-slate-500 font-semibold">Custo: R$ ${Number(p.valor_custo || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
               </div>
-              <button data-delete-prod-id="${p.id}" class="p-1.5 hover:bg-rose-50 text-slate-300 hover:text-rose-600 rounded-md transition text-xs font-bold" title="Remover Produto">
+              <button data-delete-prod-id="${p.id}" class="p-1.5 hover:bg-rose-50 dark:hover:bg-rose-950/20 text-slate-300 dark:text-slate-550 hover:text-rose-600 dark:hover:text-rose-450 rounded-md transition text-xs font-bold" title="Remover Produto">
                 🗑️
               </button>
             </div>
@@ -1106,7 +1098,7 @@ export class Dashboard {
       overlay.id = 'modal-overlay';
       overlay.className = 'fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center opacity-0 pointer-events-none transition-all duration-300';
       overlay.innerHTML = `
-        <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden border border-slate-100 transform scale-95 transition-all duration-300" id="modal-container">
+        <div class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden border border-slate-100 dark:border-slate-800 transform scale-95 transition-all duration-300" id="modal-container">
           <div id="modal-content-container"></div>
         </div>
       `;
@@ -1238,17 +1230,17 @@ export class Dashboard {
                 ${(this.perfil?.nome || 'C').substring(0, 2).toUpperCase()}
               </div>
               <!-- Theme Toggle -->
-              <button id="theme-toggle-btn" title="Alternar Tema" class="p-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-400 dark:text-slate-550 rounded-xl transition border border-slate-200/40 dark:border-slate-700/40 flex items-center justify-center">
-                <svg class="w-4.5 h-4.5 dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              <button id="theme-toggle-btn" title="Alternar Tema" class="p-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-400 dark:text-slate-555 rounded-xl transition border border-slate-200/40 dark:border-slate-700/40 flex items-center justify-center">
+                <svg width="20" height="20" class="w-5 h-5 dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
                 </svg>
-                <svg class="w-4.5 h-4.5 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                <svg width="20" height="20" class="w-5 h-5 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.364l-.707-.707M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
               </button>
               <!-- Logout -->
               <button id="btn-logout" title="Sair do Sistema" class="p-2.5 bg-slate-100 hover:bg-rose-50 dark:bg-slate-800 dark:hover:bg-rose-950/30 text-slate-400 hover:text-rose-500 dark:text-slate-500 dark:hover:text-rose-400 rounded-xl transition border border-slate-200/40 dark:border-slate-700/40 flex items-center justify-center">
-                <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                <svg width="20" height="20" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                 </svg>
               </button>
@@ -1352,10 +1344,11 @@ export class Dashboard {
       }
     }
 
-    // Formatações de datas
+    // Formatações de datas robusta
     const formatarData = (dStr: string) => {
       if (!dStr) return '';
-      const parts = dStr.split('-');
+      const dataApenas = dStr.includes('T') ? dStr.split('T')[0] : dStr.split(' ')[0];
+      const parts = dataApenas.split('-');
       if (parts.length !== 3) return dStr;
       return `${parts[2]}/${parts[1]}/${parts[0]}`;
     };
@@ -1369,7 +1362,7 @@ export class Dashboard {
             ${v.codigo_localizador || 'S/ LOC'}
           </span>
           <span class="text-xs font-black text-indigo-600 dark:text-indigo-400">
-            R$ ${v.valor_total?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+            R$ ${Number(v.valor_total || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
           </span>
         </div>
 
