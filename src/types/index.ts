@@ -45,6 +45,10 @@ export interface Cliente {
   endereco?: string;
   observacoes?: string;
   consultorResponsavelId: string; // ID do consultor que cadastrou/atende
+  passaporteNumero?: string; // Número do passaporte
+  passaporteValidade?: string; // Data de validade (YYYY-MM-DD)
+  vistosInformacoes?: string; // Detalhes sobre vistos ativos do cliente
+  googleDriveFolderUrl?: string; // URL da pasta dedicada criada no Google Drive da agência
   createdAt?: string;
   updatedAt?: string;
 }
