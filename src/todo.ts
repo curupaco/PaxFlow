@@ -58,7 +58,7 @@ class TodoKanban {
   private getColumnIconSvg(columnId: string): string {
     const iconClass = "w-4 h-4 text-indigo-500 dark:text-indigo-400 shrink-0";
     const normalized = columnId.toLowerCase();
-    
+
     if (normalized.includes('backlog')) {
       // Document text list icon
       return `
@@ -112,7 +112,7 @@ class TodoKanban {
           try {
             const localCards: TodoCard[] = JSON.parse(savedCardsStr);
             const localCols: Column[] = savedColsStr ? JSON.parse(savedColsStr) : [];
-            
+
             if (localCols.length > 0) {
               const colInserts = localCols.map((col, idx) => ({
                 id: col.id,
@@ -136,7 +136,7 @@ class TodoKanban {
               }));
               await supabase.from('todo_cards').upsert(cardInserts, { onConflict: 'id' });
             }
-            
+
             localStorage.setItem('paxflow-todo-migrated', 'true');
             console.log('Migração automática de dados locais concluída com sucesso!');
           } catch (e) {
@@ -291,7 +291,7 @@ class TodoKanban {
   private saveState(): void {
     localStorage.setItem('paxflow-todo-cols', JSON.stringify(this.columns));
     localStorage.setItem('paxflow-todo-cards', JSON.stringify(this.cards));
-    
+
     // Atualiza o indicador visual de salvo
     const badge = document.getElementById('save-status-badge');
     if (badge) {
@@ -348,7 +348,7 @@ class TodoKanban {
           <img src="/logo.png" alt="PaxFlow Logo" class="h-10 w-auto object-contain" />
           <div>
             <h1 class="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight flex items-center gap-2">
-              <span>PaxFlow Prioridades</span>
+              <span>PaxFlow - Cockpit</span>
             </h1>
             <p class="text-xs text-slate-500 dark:text-slate-400 font-medium flex items-center gap-1.5">
               <span>Quadro de Mapeamento & Levantamento</span> &bull; 
@@ -466,7 +466,7 @@ class TodoKanban {
       // Filtra cartões pertencentes a esta coluna
       const colCards = this.cards.filter(c => {
         const matchesCol = c.columnId === col.id;
-        const matchesSearch = !this.searchFilter || 
+        const matchesSearch = !this.searchFilter ||
           c.title.toLowerCase().includes(this.searchFilter.toLowerCase()) ||
           c.owner.toLowerCase().includes(this.searchFilter.toLowerCase()) ||
           c.description.toLowerCase().includes(this.searchFilter.toLowerCase()) ||
@@ -535,7 +535,7 @@ class TodoKanban {
     };
 
     const prioridadeClass = badgeColors[c.priority] || badgeColors.medium;
-    
+
     // Tratamento de data brasileiro
     const formatarDataBr = (dStr: string) => {
       if (!dStr) return '';
@@ -639,13 +639,13 @@ class TodoKanban {
         onEnd: async (e) => {
           const cardId = e.item.getAttribute('data-card-id');
           const targetColId = e.to.getAttribute('data-col-target-id');
-          
+
           if (cardId && targetColId) {
             // Atualiza a coluna no array de cartões
             const card = this.cards.find(c => c.id === cardId);
             if (card) {
               card.columnId = targetColId;
-              
+
               // Recalcula e sincroniza as posições de todos os cards da coluna afetada
               const children = Array.from(e.to.querySelectorAll('[data-card-id]'));
               const updates = children.map((el, index) => {
@@ -659,7 +659,7 @@ class TodoKanban {
                   .update({ column_id: targetColId, position: index })
                   .eq('id', id);
               });
-              
+
               await Promise.all(updates);
               this.saveState();
               this.renderColumns(); // Redesenha para atualizar contadores e slots vazios
@@ -790,16 +790,16 @@ class TodoKanban {
           
           <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
             <h3 class="text-lg font-black text-slate-850 dark:text-slate-100 flex items-center gap-2">
-              ${isEditing 
-                ? `<svg width="18" height="18" class="w-4.5 h-4.5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              ${isEditing
+        ? `<svg width="18" height="18" class="w-4.5 h-4.5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                      <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                    </svg>
                    <span>Editar Cartão</span>`
-                : `<svg width="18" height="18" class="w-4.5 h-4.5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+        : `<svg width="18" height="18" class="w-4.5 h-4.5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                    </svg>
                    <span>Novo Cartão de Prioridade</span>`
-              }
+      }
             </h3>
             <button id="btn-close-card-modal" class="text-slate-400 hover:text-rose-500 font-bold transition">✕</button>
           </div>
@@ -855,11 +855,10 @@ class TodoKanban {
               <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Coluna de Destino *</label>
               <select id="todo-card-column" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-850 dark:text-slate-100 font-medium text-sm">
                 ${this.columns.map(col => `
-                  <option value="${col.id}" ${
-                    isEditing 
-                      ? (card.columnId === col.id ? 'selected' : '') 
-                      : (defaultColId === col.id ? 'selected' : '')
-                  }>${this.cleanEmoji(col.title)}</option>
+                  <option value="${col.id}" ${isEditing
+          ? (card.columnId === col.id ? 'selected' : '')
+          : (defaultColId === col.id ? 'selected' : '')
+        }>${this.cleanEmoji(col.title)}</option>
                 `).join('')}
               </select>
             </div>
@@ -879,7 +878,7 @@ class TodoKanban {
     // Animação de abertura
     const overlay = document.getElementById('todo-card-modal-overlay');
     const modal = document.getElementById('todo-card-modal-card');
-    
+
     setTimeout(() => {
       overlay?.classList.add('opacity-100');
       modal?.classList.remove('scale-95');
@@ -1035,7 +1034,7 @@ class TodoKanban {
     // Animação de abertura
     const overlay = document.getElementById('todo-cols-modal-overlay');
     const modal = document.getElementById('todo-cols-modal-card');
-    
+
     setTimeout(() => {
       overlay?.classList.add('opacity-100');
       modal?.classList.remove('scale-95');
@@ -1059,7 +1058,7 @@ class TodoKanban {
 
       const newColId = 'col-' + Date.now();
       this.columns.push({ id: newColId, title: val });
-      
+
       // Insere no Supabase
       await supabase.from('todo_columns').insert({
         id: newColId,
@@ -1086,7 +1085,7 @@ class TodoKanban {
         }
 
         this.columns = this.columns.filter(col => col.id !== colId);
-        
+
         // Exclui no Supabase
         await supabase.from('todo_columns').delete().eq('id', colId);
 
@@ -1102,7 +1101,7 @@ class TodoKanban {
       for (const input of Array.from(document.querySelectorAll('[data-col-edit-id]'))) {
         const colId = input.getAttribute('data-col-edit-id');
         const val = (input as HTMLInputElement).value.trim();
-        
+
         if (colId && val) {
           const col = this.columns.find(col => col.id === colId);
           if (col && col.title !== val) {
@@ -1148,7 +1147,7 @@ class TodoKanban {
     a.download = `paxflow-prioridades-export-${new Date().toISOString().split('T')[0]}.json`;
     document.body.appendChild(a);
     a.click();
-    
+
     // Limpeza
     setTimeout(() => {
       document.body.removeChild(a);
