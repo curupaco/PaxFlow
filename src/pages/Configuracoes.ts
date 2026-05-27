@@ -440,8 +440,8 @@ export class ConfiguracoesPage {
           throw new Error('Erro ao criar registro de autenticação do usuário.');
         }
 
-        // 2. Insere os dados correspondentes na tabela profiles
-        const { error: profileError } = await supabase.from('profiles').insert({
+        // 2. Insere ou atualiza os dados correspondentes na tabela profiles (evita conflito se houver trigger automática no Supabase)
+        const { error: profileError } = await supabase.from('profiles').upsert({
           id: authData.user.id,
           nome,
           email,

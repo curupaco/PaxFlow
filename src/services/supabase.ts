@@ -65,9 +65,9 @@ export async function loginConsultor(email: string, password: string): Promise<{
         ativo: true
       };
 
-      // Tenta inserir o perfil no banco de forma proativa para consultas futuras
+      // Tenta criar ou atualizar o perfil no banco de forma proativa para consultas futuras
       try {
-        await supabase.from('profiles').insert({
+        await supabase.from('profiles').upsert({
           id: fallbackPerfil.id,
           nome: fallbackPerfil.nome,
           email: fallbackPerfil.email,
