@@ -218,14 +218,14 @@ class App {
       <div class="min-h-screen flex flex-col md:flex-row bg-slate-50/50 dark:bg-slate-950 transition-colors duration-200">
         
         <!-- Sidebar Menu -->
-        <aside class="w-full md:w-64 bg-slate-900 text-slate-300 flex flex-col border-r border-slate-800/60 shadow-xl z-20">
+        <aside class="w-full md:w-64 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 flex flex-col border-r border-slate-200 dark:border-slate-800/60 shadow-xl z-20 transition-all duration-200">
           
           <!-- Logo & Título -->
-          <div class="p-6 border-b border-slate-800 flex items-center gap-2.5">
+          <div class="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center gap-2.5">
             <img src="/logo.png" alt="PaxFlow Logo" class="h-10 w-10 object-contain filter drop-shadow-md" />
             <div>
-              <span class="block text-base font-black text-white tracking-tight">PaxFlow</span>
-              <span class="block text-[10px] text-slate-500 font-bold uppercase tracking-wider">CRM de Pós-Venda</span>
+              <span class="block text-base font-black text-slate-800 dark:text-white tracking-tight">PaxFlow</span>
+              <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">CRM de Pós-Venda</span>
             </div>
           </div>
 
@@ -234,37 +234,50 @@ class App {
             <div class="space-y-1.5">
               
               <!-- Link: Dashboard Kanban -->
-              <button id="nav-dashboard" class="w-full px-4 py-3 rounded-xl flex items-center gap-3 font-semibold text-xs text-left transition select-none">
-                <span>📊</span> Kanban Operacional
+              <button id="nav-dashboard" class="w-full px-4 py-3 rounded-xl flex items-center gap-3 font-semibold text-xs text-left transition select-none group">
+                <svg class="w-4.5 h-4.5 text-slate-400 group-hover:text-slate-600 dark:text-slate-500 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                </svg>
+                <span>Kanban Operacional</span>
               </button>
 
               <!-- Link: Clientes -->
-              <button id="nav-clientes" class="w-full px-4 py-3 rounded-xl flex items-center gap-3 font-semibold text-xs text-left transition select-none">
-                <span>👤</span> Ficha de Clientes
+              <button id="nav-clientes" class="w-full px-4 py-3 rounded-xl flex items-center gap-3 font-semibold text-xs text-left transition select-none group">
+                <svg class="w-4.5 h-4.5 text-slate-400 group-hover:text-slate-600 dark:text-slate-500 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span>Ficha de Clientes</span>
               </button>
 
               <!-- Link: Reembolsos -->
-              <button id="nav-reembolsos" class="w-full px-4 py-3 rounded-xl flex items-center gap-3 font-semibold text-xs text-left transition select-none">
-                <span>💸</span> Central de Reembolsos
+              <button id="nav-reembolsos" class="w-full px-4 py-3 rounded-xl flex items-center gap-3 font-semibold text-xs text-left transition select-none group">
+                <svg class="w-4.5 h-4.5 text-slate-400 group-hover:text-slate-600 dark:text-slate-500 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>Central de Reembolsos</span>
               </button>
 
               <!-- Link: Configurações (Somente ADMIN) -->
               ${this.perfil?.role === 'admin' ? `
-                <button id="nav-configuracoes" class="w-full px-4 py-3 rounded-xl flex items-center gap-3 font-semibold text-xs text-left transition select-none">
-                  <span>⚙️</span> Configurações Admin
+                <button id="nav-configuracoes" class="w-full px-4 py-3 rounded-xl flex items-center gap-3 font-semibold text-xs text-left transition select-none group">
+                  <svg class="w-4.5 h-4.5 text-slate-400 group-hover:text-slate-600 dark:text-slate-500 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  <span>Configurações Admin</span>
                 </button>
               ` : ''}
 
             </div>
 
             <!-- Identidade no rodapé da Sidebar -->
-            <div class="border-t border-slate-800 pt-4 flex items-center gap-3 mt-4">
-              <div class="w-8 h-8 bg-indigo-500/10 text-indigo-400 font-black rounded-lg flex items-center justify-center text-xs border border-indigo-500/20">
+            <div class="border-t border-slate-100 dark:border-slate-800 pt-4 flex items-center gap-3 mt-4">
+              <div class="w-8 h-8 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 font-black rounded-lg flex items-center justify-center text-xs border border-indigo-100 dark:border-indigo-900/40">
                 ${(this.perfil?.nome || 'C').substring(0,2).toUpperCase()}
               </div>
               <div class="overflow-hidden">
-                <span class="block text-[11px] font-extrabold text-white truncate">${this.perfil?.nome || 'Consultor'}</span>
-                <span class="block text-[9px] text-slate-500 font-semibold truncate capitalize">${this.perfil?.role || 'consultor'}</span>
+                <span class="block text-[11px] font-extrabold text-slate-700 dark:text-white truncate">${this.perfil?.nome || 'Consultor'}</span>
+                <span class="block text-[9px] text-slate-450 dark:text-slate-500 font-semibold truncate capitalize">${this.perfil?.role || 'consultor'}</span>
               </div>
             </div>
           </nav>
@@ -315,9 +328,9 @@ class App {
       const btn = document.getElementById(`nav-${p}`);
       if (btn) {
         if (p === page) {
-          btn.className = 'w-full px-4 py-3 rounded-xl flex items-center gap-3 font-extrabold text-xs text-left transition select-none bg-indigo-600 text-white shadow-lg shadow-indigo-600/10';
+          btn.className = 'w-full px-4 py-3 rounded-xl flex items-center gap-3 font-extrabold text-xs text-left transition select-none bg-indigo-600 text-white shadow-lg shadow-indigo-600/15 group';
         } else {
-          btn.className = 'w-full px-4 py-3 rounded-xl flex items-center gap-3 font-semibold text-xs text-left transition select-none text-slate-400 hover:text-white hover:bg-slate-800/40';
+          btn.className = 'w-full px-4 py-3 rounded-xl flex items-center gap-3 font-semibold text-xs text-left transition select-none text-slate-500 hover:text-slate-800 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800/40 group';
         }
       }
     });
