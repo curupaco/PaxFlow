@@ -362,10 +362,17 @@ class TodoKanban {
             </span>
           ` : '<span></span>'}
 
-          <!-- Ações Rápidas no Hover -->
-          <div class="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-opacity duration-200 select-none">
-            <button data-edit-card-id="${c.id}" class="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded transition text-[11px]" title="Editar Cartão">✏️</button>
-            <button data-delete-card-id="${c.id}" class="p-1 hover:bg-rose-50 dark:hover:bg-rose-950/20 text-slate-300 hover:text-rose-600 dark:hover:text-rose-450 rounded transition text-[11px]" title="Excluir Cartão">🗑️</button>
+          <!-- Ações Rápidas no Hover + Toggle de Descrição -->
+          <div class="flex items-center gap-1.5 select-none">
+            ${c.description ? `
+              <button data-toggle-desc-id="${c.id}" class="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded transition text-xs font-bold leading-none" title="Expandir/Recolher descrição">
+                ▼
+              </button>
+            ` : ''}
+            <div class="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-opacity duration-200 select-none">
+              <button data-edit-card-id="${c.id}" class="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded transition text-[11px]" title="Editar Cartão">✏️</button>
+              <button data-delete-card-id="${c.id}" class="p-1 hover:bg-rose-50 dark:hover:bg-rose-950/20 text-slate-300 hover:text-rose-600 dark:hover:text-rose-450 rounded transition text-[11px]" title="Excluir Cartão">🗑️</button>
+            </div>
           </div>
         </div>
 
@@ -374,9 +381,9 @@ class TodoKanban {
           ${c.title}
         </h4>
 
-        <!-- Descrição -->
+        <!-- Descrição Colapsável -->
         ${c.description ? `
-          <p class="text-[11px] text-slate-400 dark:text-slate-500 font-medium leading-normal break-words">
+          <p id="desc-${c.id}" class="hidden text-[11px] text-slate-400 dark:text-slate-500 font-medium leading-normal break-words pt-1.5 border-t border-slate-100 dark:border-slate-800/40 animate-card-in">
             ${c.description}
           </p>
         ` : ''}
@@ -467,6 +474,29 @@ class TodoKanban {
           this.cards = this.cards.filter(c => c.id !== cardId);
           this.saveState();
           this.renderColumns();
+        }
+      });
+    });
+
+    // Botão Toggle da Descrição
+    document.querySelectorAll('[data-toggle-desc-id]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const cardId = btn.getAttribute('data-toggle-desc-id');
+        if (!cardId) return;
+
+        const descEl = document.getElementById(`desc-${cardId}`);
+        if (descEl) {
+          const isHidden = descEl.classList.contains('hidden');
+          if (isHidden) {
+            descEl.classList.remove('hidden');
+            btn.textContent = '▲';
+            btn.classList.add('text-indigo-500', 'dark:text-indigo-400');
+          } else {
+            descEl.classList.add('hidden');
+            btn.textContent = '▼';
+            btn.classList.remove('text-indigo-500', 'dark:text-indigo-400');
+          }
         }
       });
     });
