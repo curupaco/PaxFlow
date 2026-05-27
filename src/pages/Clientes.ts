@@ -203,20 +203,20 @@ export class ClientesPage {
       const isSelected = this.clienteSelecionado?.id === c.id;
       const passSla = this.checkPassaporteSLA(c.passaporteValidade);
       
-      let borderSlaClass = 'border-l-4 border-l-slate-200';
-      if (passSla.status === 'expired') borderSlaClass = 'border-l-4 border-l-rose-500 bg-rose-50/20';
-      if (passSla.status === 'warning') borderSlaClass = 'border-l-4 border-l-amber-500 bg-amber-50/20';
+      let borderSlaClass = 'border-l-4 border-l-slate-200 dark:border-l-slate-700';
+      if (passSla.status === 'expired') borderSlaClass = 'border-l-4 border-l-rose-500 bg-rose-50/20 dark:bg-rose-950/10';
+      if (passSla.status === 'warning') borderSlaClass = 'border-l-4 border-l-amber-500 bg-amber-50/20 dark:bg-amber-950/10';
       if (passSla.status === 'ok') borderSlaClass = 'border-l-4 border-l-emerald-500';
 
       return `
         <button data-cliente-id="${c.id}" class="w-full text-left p-4 rounded-xl border ${
           isSelected 
-            ? 'border-indigo-200 bg-indigo-50/40 text-indigo-900 shadow-sm' 
-            : 'border-slate-100 hover:border-slate-200 bg-white hover:bg-slate-50/50 text-slate-700'
+            ? 'border-indigo-200 dark:border-indigo-500/30 bg-indigo-50/40 dark:bg-indigo-950/20 text-indigo-900 dark:text-indigo-200 shadow-sm' 
+            : 'border-slate-100 dark:border-slate-800/80 hover:border-slate-200 dark:hover:border-slate-750 bg-white dark:bg-slate-900 hover:bg-slate-50/50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
         } transition flex items-center justify-between gap-3 ${borderSlaClass} group">
           <div class="overflow-hidden">
             <span class="block text-sm font-black truncate">${c.nome}</span>
-            <span class="block text-[11px] text-slate-400 font-semibold truncate group-hover:text-slate-500 transition">${c.email}</span>
+            <span class="block text-[11px] text-slate-400 dark:text-slate-500 font-semibold truncate group-hover:text-slate-500 dark:group-hover:text-slate-400 transition">${c.email}</span>
           </div>
           <span class="text-xs">👤</span>
         </button>
@@ -450,12 +450,12 @@ export class ClientesPage {
     // Se nenhum cliente estiver selecionado, exibe uma bela tela inicial (Glassmorphic)
     if (!c) {
       fichaEl.innerHTML = `
-        <div class="h-full min-h-[500px] bg-white border border-slate-200/80 rounded-2xl flex flex-col items-center justify-center p-8 text-center shadow-sm">
-          <div class="w-20 h-20 bg-indigo-50/50 text-indigo-500 rounded-3xl flex items-center justify-center text-4xl mb-4 border border-indigo-100/30 shadow-inner animate-pulse">
+        <div class="h-full min-h-[500px] bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl flex flex-col items-center justify-center p-8 text-center shadow-sm">
+          <div class="w-20 h-20 bg-indigo-50/50 dark:bg-indigo-950/40 text-indigo-500 dark:text-indigo-400 rounded-3xl flex items-center justify-center text-4xl mb-4 border border-indigo-100/30 dark:border-indigo-900/30 shadow-inner animate-pulse">
             👥
           </div>
-          <h3 class="text-xl font-black text-slate-800 tracking-tight mb-2">Ficha de Gestão de Clientes</h3>
-          <p class="text-sm text-slate-400 max-w-sm mb-6 font-medium">Selecione um cliente na barra lateral para editar suas informações, validar passaportes ou anexar arquivos diretamente no Google Drive corporativo.</p>
+          <h3 class="text-xl font-black text-slate-800 dark:text-slate-200 tracking-tight mb-2">Ficha de Gestão de Clientes</h3>
+          <p class="text-sm text-slate-400 dark:text-slate-500 max-w-sm mb-6 font-medium">Selecione um cliente na barra lateral para editar suas informações, validar passaportes ou anexar arquivos diretamente no Google Drive corporativo.</p>
           <button id="btn-novo-cliente-vazio" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-lg shadow-indigo-600/10 transition">
             ➕ Cadastrar Novo Cliente
           </button>
@@ -472,28 +472,28 @@ export class ClientesPage {
     const passSla = this.checkPassaporteSLA(c.passaporteValidade);
     
     // Classes de input do passaporte se expirar ou expitado
-    let passValidadeInputClass = 'w-full px-3.5 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-semibold';
-    if (passSla.status === 'expired') passValidadeInputClass += ' passport-expired-alert text-rose-600';
-    if (passSla.status === 'warning') passValidadeInputClass += ' passport-expired-alert text-amber-600';
+    let passValidadeInputClass = 'w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold';
+    if (passSla.status === 'expired') passValidadeInputClass += ' passport-expired-alert text-rose-600 dark:text-rose-450';
+    if (passSla.status === 'warning') passValidadeInputClass += ' passport-expired-alert text-amber-600 dark:text-amber-450';
 
     const isNew = !c.id;
 
     fichaEl.innerHTML = `
-      <div class="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm flex flex-col gap-6">
+      <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-6 shadow-sm flex flex-col gap-6">
         
         <!-- Topo da Ficha: Nome & Botão Google Drive -->
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-5">
           <div class="flex items-center gap-3">
-            <div class="w-12 h-12 bg-indigo-50 border border-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center font-bold text-lg shadow-inner">
+            <div class="w-12 h-12 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/40 text-indigo-600 dark:text-indigo-400 rounded-xl flex items-center justify-center font-bold text-lg shadow-inner">
               ${isNew ? 'NC' : (c.nome || 'NC').substring(0,2).toUpperCase()}
             </div>
             <div>
-              <h2 class="text-xl font-black text-slate-800 leading-snug tracking-tight">
+              <h2 class="text-xl font-black text-slate-800 dark:text-slate-200 leading-snug tracking-tight">
                 ${isNew ? 'Novo Cliente / Passageiro' : c.nome}
               </h2>
-              <p class="text-xs text-slate-400 font-semibold flex items-center gap-1">
+              <p class="text-xs text-slate-400 dark:text-slate-500 font-semibold flex items-center gap-1">
                 <span>Cadastro e Documentação</span>
-                ${!isNew ? `&bull; <span class="text-indigo-600 font-bold">${c.email}</span>` : ''}
+                ${!isNew ? `&bull; <span class="text-indigo-600 dark:text-indigo-400 font-bold">${c.email}</span>` : ''}
               </p>
             </div>
           </div>
@@ -504,7 +504,7 @@ export class ClientesPage {
               <span class="text-lg">📁</span> Abrir Pasta no Google Drive
             </a>
           ` : `
-            <span class="px-4 py-2 bg-slate-50 text-slate-400 rounded-lg text-xs font-semibold border border-slate-200/40 text-center">
+            <span class="px-4 py-2 bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 rounded-lg text-xs font-semibold border border-slate-200/40 dark:border-slate-700/40 text-center">
               Sem pasta ativa no Drive
             </span>
           `)}
@@ -514,45 +514,45 @@ export class ClientesPage {
           
           <!-- Seção 1: Informações Pessoais -->
           <div>
-            <h3 class="text-sm font-black text-indigo-600 uppercase tracking-wider mb-4 border-b border-indigo-50/50 pb-1">1. Dados Pessoais e Contato</h3>
+            <h3 class="text-sm font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-4 border-b border-indigo-50/50 dark:border-slate-800 pb-1">1. Dados Pessoais e Contato</h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5">Nome Completo *</label>
-                <input id="input-nome" type="text" required value="${c.nome}" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-medium" />
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Nome Completo *</label>
+                <input id="input-nome" type="text" required value="${c.nome}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium" />
               </div>
               <div>
-                <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5">E-mail *</label>
-                <input id="input-email" type="email" required value="${c.email}" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-medium" />
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">E-mail *</label>
+                <input id="input-email" type="email" required value="${c.email}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium" />
               </div>
               <div>
-                <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5">Telefone/WhatsApp *</label>
-                <input id="input-telefone" type="tel" required value="${c.telefone}" placeholder="(XX) 9XXXX-XXXX" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-medium" />
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Telefone/WhatsApp *</label>
+                <input id="input-telefone" type="tel" required value="${c.telefone}" placeholder="(XX) 9XXXX-XXXX" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium" />
               </div>
               <div>
-                <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5">Documento (CPF/RG) *</label>
-                <input id="input-documento" type="text" required value="${c.documento}" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-medium" />
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Documento (CPF/RG) *</label>
+                <input id="input-documento" type="text" required value="${c.documento}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium" />
               </div>
               <div>
-                <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5">Data de Nascimento</label>
-                <input id="input-data-nasc" type="date" value="${c.dataNascimento || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-medium" />
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Data de Nascimento</label>
+                <input id="input-data-nasc" type="date" value="${c.dataNascimento || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium" />
               </div>
               <div>
-                <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5">Endereço Residencial</label>
-                <input id="input-endereco" type="text" value="${c.endereco || ''}" placeholder="Rua, Número, Bairro, Cidade..." class="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-medium" />
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Endereço Residencial</label>
+                <input id="input-endereco" type="text" value="${c.endereco || ''}" placeholder="Rua, Número, Bairro, Cidade..." class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium" />
               </div>
             </div>
           </div>
 
           <!-- Seção 2: Documentação Internacional (Passaporte & Vistos) -->
-          <div class="border-t border-slate-100 pt-5">
-            <h3 class="text-sm font-black text-indigo-600 uppercase tracking-wider mb-4 border-b border-indigo-50/50 pb-1">2. Documentação Internacional</h3>
+          <div class="border-t border-slate-100 dark:border-slate-800 pt-5">
+            <h3 class="text-sm font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-4 border-b border-indigo-50/50 dark:border-slate-800 pb-1">2. Documentação Internacional</h3>
             
             <!-- Alertas Visuais de SLA do Passaporte -->
             ${passSla.status !== 'none' && passSla.status !== 'ok' ? `
               <div class="mb-4 px-4 py-3 rounded-xl flex items-center gap-2 text-xs font-bold ${
                 passSla.status === 'expired' 
-                  ? 'bg-rose-50 text-rose-600 border border-rose-100' 
-                  : 'bg-amber-50 text-amber-600 border border-amber-100 animate-pulse'
+                  ? 'bg-rose-50 dark:bg-rose-950/45 text-rose-600 dark:text-rose-400 border border-rose-100 dark:border-rose-900/50' 
+                  : 'bg-amber-50 dark:bg-amber-950/45 text-amber-600 dark:text-amber-450 border border-amber-100 dark:border-amber-900/50 animate-pulse'
               }">
                 <span>${passSla.status === 'expired' ? '🚨' : '⚠️'}</span>
                 <p>${passSla.message}</p>
@@ -561,34 +561,34 @@ export class ClientesPage {
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5">Número do Passaporte</label>
-                <input id="input-pass-numero" type="text" placeholder="ex: AB123456" value="${c.passaporteNumero || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-medium" />
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Número do Passaporte</label>
+                <input id="input-pass-numero" type="text" placeholder="ex: AB123456" value="${c.passaporteNumero || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium" />
               </div>
               <div>
-                <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5">Validade do Passaporte</label>
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Validade do Passaporte</label>
                 <input id="input-pass-validade" type="date" value="${c.passaporteValidade || ''}" class="${passValidadeInputClass}" />
               </div>
               <div class="md:col-span-2">
-                <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5">Vistos Ativos (Detalhes)</label>
-                <textarea id="textarea-vistos" placeholder="Informe os vistos que o cliente possui (ex: Americano B1/B2 válido até 12/2030, Canadense e-TA, etc.)" rows="2.5" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 text-sm font-medium">${c.vistosInformacoes || ''}</textarea>
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Vistos Ativos (Detalhes)</label>
+                <textarea id="textarea-vistos" placeholder="Informe os vistos que o cliente possui (ex: Americano B1/B2 válido até 12/2030, Canadense e-TA, etc.)" rows="2.5" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 text-sm font-medium">${c.vistosInformacoes || ''}</textarea>
               </div>
             </div>
           </div>
 
           <!-- Seção 3: Anexos e Upload Google Drive (Exibida apenas para clientes existentes) -->
           ${isNew ? '' : `
-            <div class="border-t border-slate-100 pt-5">
-              <h3 class="text-sm font-black text-indigo-600 uppercase tracking-wider mb-3 border-b border-indigo-50/50 pb-1">3. Upload Seguro de Documentos (Google Drive Agência)</h3>
-              <p class="text-xs text-slate-400 mb-3.5 font-medium">Os arquivos anexados serão inseridos automaticamente em uma pasta estruturada do Google Drive central da agência, sem vinculação com contas pessoais.</p>
+            <div class="border-t border-slate-100 dark:border-slate-800 pt-5">
+              <h3 class="text-sm font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-3 border-b border-indigo-50/50 dark:border-slate-800 pb-1">3. Upload Seguro de Documentos (Google Drive Agência)</h3>
+              <p class="text-xs text-slate-400 dark:text-slate-500 mb-3.5 font-medium">Os arquivos anexados serão inseridos automaticamente em uma pasta estruturada do Google Drive central da agência, sem vinculação com contas pessoais.</p>
               
               <!-- Componente de Upload Drag & Drop -->
               <div class="relative">
                 <input type="file" id="file-input-documento" accept="image/*,application/pdf" class="hidden" />
-                <div id="upload-dropzone" class="border-2 border-dashed border-slate-200 hover:border-indigo-400/80 bg-slate-50/30 hover:bg-slate-50 rounded-2xl p-6 text-center cursor-pointer transition transform hover:-translate-y-0.5 flex flex-col items-center justify-center space-y-2 group">
+                <div id="upload-dropzone" class="border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-indigo-400/80 bg-slate-50/30 dark:bg-slate-800/10 hover:bg-slate-50 dark:hover:bg-slate-800/40 rounded-2xl p-6 text-center cursor-pointer transition transform hover:-translate-y-0.5 flex flex-col items-center justify-center space-y-2 group">
                   <div id="upload-zone-visual" class="flex flex-col items-center justify-center space-y-2">
                     <span class="text-3xl filter group-hover:scale-110 transition duration-300">📤</span>
-                    <p class="text-sm text-slate-700 font-extrabold">Arraste e solte arquivos aqui</p>
-                    <p class="text-xs text-slate-400 font-semibold">Ou clique para selecionar (PDF, JPEG, PNG - Máx. 10MB)</p>
+                    <p class="text-sm text-slate-700 dark:text-slate-300 font-extrabold">Arraste e solte arquivos aqui</p>
+                    <p class="text-xs text-slate-400 dark:text-slate-500 font-semibold">Ou clique para selecionar (PDF, JPEG, PNG - Máx. 10MB)</p>
                   </div>
                 </div>
               </div>
@@ -596,13 +596,13 @@ export class ClientesPage {
           `}
 
           <!-- Seção 4: Observações Gerais -->
-          <div class="border-t border-slate-100 pt-5">
-            <h3 class="text-sm font-black text-slate-700 uppercase mb-3">Observações Adicionais</h3>
-            <textarea id="textarea-observacoes" placeholder="Informações de suporte adicionais sobre o passageiro..." rows="2.5" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 text-sm font-medium">${c.observacoes || ''}</textarea>
+          <div class="border-t border-slate-100 dark:border-slate-800 pt-5">
+            <h3 class="text-sm font-black text-slate-700 dark:text-slate-300 uppercase mb-3">Observações Adicionais</h3>
+            <textarea id="textarea-observacoes" placeholder="Informações de suporte adicionais sobre o passageiro..." rows="2.5" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 text-sm font-medium">${c.observacoes || ''}</textarea>
           </div>
 
           <!-- Ações Finais do Formulário -->
-          <div class="flex items-center justify-end gap-3 pt-5 border-t border-slate-100">
+          <div class="flex items-center justify-end gap-3 pt-5 border-t border-slate-100 dark:border-slate-800">
             <button type="submit" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-sm tracking-wider rounded-xl shadow-lg shadow-indigo-600/10 transition uppercase">
               ${isNew ? 'Cadastrar Cliente' : 'Salvar Alterações'}
             </button>
@@ -700,40 +700,47 @@ export class ClientesPage {
    */
   private render(): void {
     this.container.innerHTML = `
-      <div class="min-h-screen bg-slate-50/50 flex flex-col font-sans">
+      <div class="min-h-screen bg-slate-50/50 dark:bg-slate-950 flex flex-col font-sans transition-colors duration-200">
         
         <!-- Cabeçalho -->
-        <header class="bg-white/80 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-30 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <header class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 sticky top-0 z-30 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 transition-colors duration-200">
           <div class="flex items-center gap-3">
             <img src="/logo.png" alt="PaxFlow Logo" class="h-10 w-auto object-contain" />
             <div>
-              <h1 class="text-2xl font-black text-slate-800 tracking-tight">Gestão de Passageiros</h1>
-              <p class="text-xs text-slate-500 font-medium">CRM e Ficha Única de Documentos do Cliente</p>
+              <h1 class="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight">Gestão de Passageiros</h1>
+              <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">CRM e Ficha Única de Documentos do Cliente</p>
             </div>
           </div>
-          <button id="btn-novo-cliente" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/20 flex items-center gap-1.5 transition transform hover:-translate-y-0.5 uppercase">
-            ➕ Novo Cliente
-          </button>
+          <div class="flex items-center gap-3">
+            <!-- Theme Toggle -->
+            <button id="theme-toggle-btn" title="Alternar Tema" class="p-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-400 dark:text-slate-500 rounded-xl transition border border-slate-200/40 dark:border-slate-700/40">
+              <span class="dark:hidden">🌙</span>
+              <span class="hidden dark:inline">☀️</span>
+            </button>
+            <button id="btn-novo-cliente" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/20 flex items-center gap-1.5 transition transform hover:-translate-y-0.5 uppercase">
+              ➕ Novo Cliente
+            </button>
+          </div>
         </header>
 
         <!-- Corpo Principal com Duas Colunas -->
         <main class="flex-1 p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           
           <!-- Coluna Esquerda: Lista de Clientes (Busca & Navegação) -->
-          <div class="lg:col-span-4 bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm flex flex-col gap-4">
+          <div class="lg:col-span-4 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-4 shadow-sm flex flex-col gap-4">
             
             <!-- Barra de Busca -->
             <div>
-              <label class="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-1.5">Pesquisar Cliente</label>
+              <label class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-1.5">Pesquisar Cliente</label>
               <div class="relative">
                 <span class="absolute left-3.5 top-3 text-slate-400 text-sm">🔍</span>
-                <input id="input-busca-cliente" type="text" placeholder="Nome, email ou CPF/RG..." class="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-medium text-sm" />
+                <input id="input-busca-cliente" type="text" placeholder="Nome, email ou CPF/RG..." class="w-full pl-9 pr-4 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 font-medium text-sm" />
               </div>
             </div>
 
             <!-- Listagem Container -->
             <div>
-              <label class="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-2">Clientes Ativos</label>
+              <label class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-2">Clientes Ativos</label>
               <div id="lista-clientes-container" class="max-h-[600px] overflow-y-auto space-y-2.5 pr-1 custom-scrollbar">
                 <!-- Injetado via JS -->
               </div>

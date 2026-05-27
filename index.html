@@ -1,15 +1,15 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PaxFlow - CRM & Gestão de Pós-Venda</title>
-  
+
   <!-- Tailwind CSS via CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
-      darkMode: 'class',
       theme: {
         extend: {
           fontFamily: {
@@ -19,30 +19,27 @@
       }
     }
   </script>
-  
+
   <!-- Google Fonts Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+    rel="stylesheet">
 
   <style>
-    * {
-      transition: background-color 0.2s ease, border-color 0.2s ease, text-color 0.2s ease, fill 0.2s ease, stroke 0.2s ease;
-    }
     body {
       background-color: #f8fafc;
     }
-    .dark body {
-      background-color: #0b0f19;
-    }
   </style>
 </head>
+
 <body class="text-slate-800 antialiased min-h-screen flex flex-col font-sans">
-  
+
   <!-- Container Principal do Aplicativo -->
   <div id="app" class="flex-1 flex flex-col min-h-screen"></div>
 
   <!-- Script de Entrada Principal (Vite / TypeScript) -->
   <script type="module" src="/src/main.ts"></script>
 </body>
+
 </html>

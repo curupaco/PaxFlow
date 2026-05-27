@@ -11,15 +11,27 @@ class App {
   private perfil: PerfilConsultor | null = null;
   private currentActivePage: string = 'dashboard';
   private currentPageInstance: any = null;
+  private theme: 'light' | 'dark' = 'light';
 
   constructor(container: HTMLElement) {
     this.container = container;
+    
+    // Delegação global de eventos para alternância de tema
+    document.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement;
+      const btn = target.closest('#theme-toggle-btn');
+      if (btn) {
+        e.preventDefault();
+        this.toggleTheme();
+      }
+    });
   }
 
   /**
    * Inicializa o aplicativo verificando a sessão ativa
    */
   public async init(): Promise<void> {
+    this.applyInitialTheme();
     this.renderLoading();
 
     try {
@@ -40,13 +52,74 @@ class App {
   }
 
   /**
+   * Verifica e aplica o tema inicial (salvo no localStorage ou preferência do SO)
+   */
+  private applyInitialTheme(): void {
+    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
+    if (savedTheme) {
+      this.theme = savedTheme;
+    } else {
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      this.theme = prefersDark ? 'dark' : 'light';
+    }
+    this.updateDOMTheme();
+  }
+
+  /**
+   * Atualiza a classe dark no elemento raiz do documento
+   */
+  private updateDOMTheme(): void {
+    if (this.theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }
+
+  /**
+   * Alterna o tema de forma interativa com toast de confirmação
+   */
+  private toggleTheme(): void {
+    this.theme = this.theme === 'light' ? 'dark' : 'light';
+    localStorage.setItem('theme', this.theme);
+    this.updateDOMTheme();
+    this.showToast(`Modo ${this.theme === 'dark' ? 'Escuro' : 'Claro'} ativado!`, 'success');
+  }
+
+  /**
+   * Exibe mensagens flutuantes (Toasts) globais do app
+   */
+  private showToast(message: string, type: 'success' | 'error' = 'success'): void {
+    const toastId = 'paxflow-toast';
+    let toast = document.getElementById(toastId);
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = toastId;
+      toast.className = 'fixed bottom-5 right-5 px-5 py-3.5 rounded-xl shadow-2xl text-white font-semibold text-sm z-50 transition-all duration-300 transform translate-y-10 opacity-0 flex items-center gap-2';
+      document.body.appendChild(toast);
+    }
+
+    const isSuccess = type === 'success';
+    toast.className = `fixed bottom-5 right-5 px-5 py-3.5 rounded-xl shadow-2xl text-white font-semibold text-sm z-50 transition-all duration-300 transform translate-y-0 opacity-100 flex items-center gap-2 ${
+      isSuccess ? 'bg-emerald-600 shadow-emerald-600/20' : 'bg-rose-600 shadow-rose-600/20'
+    }`;
+    toast.innerHTML = `${isSuccess ? '✅' : '❌'} ${message}`;
+
+    setTimeout(() => {
+      if (toast) {
+        toast.className = 'fixed bottom-5 right-5 px-5 py-3.5 rounded-xl shadow-2xl text-white font-semibold text-sm z-50 transition-all duration-300 transform translate-y-10 opacity-0 flex items-center gap-2 pointer-events-none';
+      }
+    }, 3500);
+  }
+
+  /**
    * Exibe tela de carregamento geral
    */
   private renderLoading(): void {
     this.container.innerHTML = `
-      <div class="min-h-screen bg-slate-50 flex flex-col items-center justify-center space-y-4">
+      <div class="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center space-y-4 transition-colors duration-200">
         <div class="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-        <p class="text-slate-500 font-semibold animate-pulse">Inicializando PaxFlow CRM...</p>
+        <p class="text-slate-500 dark:text-slate-400 font-semibold animate-pulse">Inicializando PaxFlow CRM...</p>
       </div>
     `;
   }
@@ -56,8 +129,8 @@ class App {
    */
   private renderLogin(): void {
     this.container.innerHTML = `
-      <div class="min-h-screen bg-slate-50 flex items-center justify-center p-6 bg-gradient-to-tr from-slate-100 to-indigo-50/40">
-        <div class="max-w-md w-full bg-white border border-slate-200/80 p-8 rounded-3xl shadow-2xl flex flex-col gap-6 relative overflow-hidden">
+      <div class="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-6 bg-gradient-to-tr from-slate-100 to-indigo-50/40 dark:from-slate-950 dark:to-indigo-950/20 transition-colors duration-200">
+        <div class="max-w-md w-full bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-8 rounded-3xl shadow-2xl flex flex-col gap-6 relative overflow-hidden transition-all">
           
           <!-- Detalhe decorativo de gradiente no topo -->
           <div class="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-600"></div>
@@ -65,33 +138,33 @@ class App {
           <!-- Cabeçalho de Identidade -->
           <div class="text-center flex flex-col items-center">
             <span class="p-4 bg-gradient-to-tr from-indigo-500 to-indigo-600 text-white rounded-3xl text-3xl font-black shadow-xl shadow-indigo-500/30 mb-4 select-none">PF</span>
-            <h2 class="text-2xl font-black text-slate-800 tracking-tight">Entrar no PaxFlow</h2>
-            <p class="text-xs text-slate-400 font-semibold mt-1.5">Painel de CRM & Gestão de Pós-Venda</p>
+            <h2 class="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight">Entrar no PaxFlow</h2>
+            <p class="text-xs text-slate-400 dark:text-slate-500 font-semibold mt-1.5">Painel de CRM & Gestão de Pós-Venda</p>
           </div>
 
-          <div id="login-error-container" class="hidden px-4 py-3 rounded-xl bg-rose-50 text-rose-600 text-xs font-bold border border-rose-100">
+          <div id="login-error-container" class="hidden px-4 py-3 rounded-xl bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 text-xs font-bold border border-rose-100 dark:border-rose-900/50">
             <!-- Erro de login -->
           </div>
 
           <!-- Formulário -->
           <form id="form-login" class="space-y-4.5">
-            <div>
-              <label class="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">E-mail do Consultor *</label>
-              <input id="input-login-email" type="email" required placeholder="seuemail@agencia.com" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-semibold text-sm" />
-            </div>
+             <div>
+               <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">E-mail do Consultor *</label>
+               <input id="input-login-email" type="email" required placeholder="seuemail@agencia.com" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+             </div>
 
-            <div>
-              <label class="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Senha de Acesso *</label>
-              <input id="input-login-password" type="password" required placeholder="••••••••" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-semibold text-sm" />
-            </div>
+             <div>
+               <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Senha de Acesso *</label>
+               <input id="input-login-password" type="password" required placeholder="••••••••" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+             </div>
 
             <button type="submit" id="btn-login-submit" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/10 transition uppercase mt-2.5 flex items-center justify-center">
               Acessar Painel
             </button>
           </form>
 
-          <div class="border-t border-slate-100 pt-4 text-center">
-            <span class="text-[10px] text-slate-400 font-medium">PaxFlow &bull; Sistema Restrito e Criptografado</span>
+          <div class="border-t border-slate-100 dark:border-slate-800 pt-4 text-center">
+            <span class="text-[10px] text-slate-400 dark:text-slate-500 font-medium">PaxFlow &bull; Sistema Restrito e Criptografado</span>
           </div>
 
         </div>
@@ -130,7 +203,7 @@ class App {
         btn.disabled = false;
         btn.textContent = 'Acessar Painel';
         if (errorContainer) {
-          errorContainer.className = 'px-4 py-3 rounded-xl bg-rose-50 text-rose-600 text-xs font-bold border border-rose-100';
+          errorContainer.className = 'px-4 py-3 rounded-xl bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 text-xs font-bold border border-rose-100 dark:border-rose-900/50';
           errorContainer.textContent = err.message || 'Erro inesperado no servidor.';
         }
       }
@@ -142,10 +215,10 @@ class App {
    */
   private renderAppShell(): void {
     this.container.innerHTML = `
-      <div class="min-h-screen flex flex-col md:flex-row bg-slate-50/50">
+      <div class="min-h-screen flex flex-col md:flex-row bg-slate-50/50 dark:bg-slate-950 transition-colors duration-200">
         
         <!-- Sidebar Menu -->
-        <aside class="w-full md:w-64 bg-slate-900 text-slate-300 flex flex-col border-r border-slate-800 shadow-xl z-20">
+        <aside class="w-full md:w-64 bg-slate-900 text-slate-300 flex flex-col border-r border-slate-800/60 shadow-xl z-20">
           
           <!-- Logo & Título -->
           <div class="p-6 border-b border-slate-800 flex items-center gap-2.5">
@@ -198,7 +271,7 @@ class App {
         </aside>
 
         <!-- Área Principal de Exibição de Conteúdo -->
-        <div id="page-content" class="flex-1 flex flex-col overflow-hidden min-w-0">
+        <div id="page-content" class="flex-1 flex flex-col overflow-hidden min-w-0 bg-slate-50/50 dark:bg-slate-950">
           <!-- Injetado dinamicamente via router -->
         </div>
 

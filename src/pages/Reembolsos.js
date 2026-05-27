@@ -7,6 +7,9 @@ if (typeof document !== 'undefined') {
       background-color: rgba(248, 250, 252, 0.6) !important;
       transform: translateY(-0.5px);
     }
+    .dark .table-row-hover:hover {
+      background-color: rgba(15, 23, 42, 0.6) !important;
+    }
     .custom-scrollbar::-webkit-scrollbar {
       width: 6px;
       height: 6px;
@@ -18,8 +21,14 @@ if (typeof document !== 'undefined') {
       background: #cbd5e1;
       border-radius: 4px;
     }
+    .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #475569;
+    }
     .custom-scrollbar::-webkit-scrollbar-thumb:hover {
       background: #94a3b8;
+    }
+    .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #64748b;
     }
   `;
     document.head.appendChild(style);
@@ -260,23 +269,28 @@ export class ReembolsosPage {
             return `${parts[2]}/${parts[1]}/${parts[0]}`;
         };
         this.container.innerHTML = `
-      <div class="min-h-screen bg-slate-50/50 flex flex-col font-sans">
+      <div class="min-h-screen bg-slate-50/50 dark:bg-slate-950 flex flex-col font-sans transition-colors duration-200">
         
         <!-- Cabeçalho -->
-        <header class="bg-white/80 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-30 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <header class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 sticky top-0 z-30 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 transition-colors duration-200">
           <div class="flex items-center gap-3">
             <img src="/logo.png" alt="PaxFlow Logo" class="h-10 w-auto object-contain" />
             <div>
-              <h1 class="text-2xl font-black text-slate-800 tracking-tight">Central de Reembolsos</h1>
-              <p class="text-xs text-slate-500 font-medium">Controle de Cancelamentos e SLAs em Tempo Real</p>
+              <h1 class="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight">Central de Reembolsos</h1>
+              <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Controle de Cancelamentos e SLAs em Tempo Real</p>
             </div>
           </div>
           <div class="flex items-center gap-3">
             <div class="text-right hidden sm:block">
-              <span class="block text-sm font-extrabold text-slate-700">${this.perfil?.nome || 'Consultor'}</span>
-              <span class="block text-[10px] text-indigo-600 font-bold uppercase tracking-wider">${this.perfil?.role || 'consultor'}</span>
+              <span class="block text-sm font-extrabold text-slate-700 dark:text-slate-300">${this.perfil?.nome || 'Consultor'}</span>
+              <span class="block text-[10px] text-indigo-600 dark:text-indigo-400 font-bold uppercase tracking-wider">${this.perfil?.role || 'consultor'}</span>
             </div>
-            <button id="btn-logout" class="p-2.5 bg-slate-100 hover:bg-rose-50 text-slate-400 hover:text-rose-500 rounded-xl transition border border-slate-200/40">
+            <!-- Theme Toggle -->
+            <button id="theme-toggle-btn" title="Alternar Tema" class="p-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-400 dark:text-slate-500 rounded-xl transition border border-slate-200/40 dark:border-slate-700/40">
+              <span class="dark:hidden">🌙</span>
+              <span class="hidden dark:inline">☀️</span>
+            </button>
+            <button id="btn-logout" class="p-2.5 bg-slate-100 hover:bg-rose-50 dark:bg-slate-800 dark:hover:bg-rose-950/30 text-slate-400 hover:text-rose-500 dark:text-slate-500 dark:hover:text-rose-400 rounded-xl transition border border-slate-200/40 dark:border-slate-700/40">
               🚪
             </button>
           </div>
@@ -286,50 +300,50 @@ export class ReembolsosPage {
           
           <!-- Cards de Métricas Premium -->
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            <div class="bg-white border border-slate-200/60 p-5 rounded-2xl shadow-sm flex items-center justify-between">
+            <div class="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 p-5 rounded-2xl shadow-sm flex items-center justify-between">
               <div>
-                <span class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Total de Processos</span>
-                <span class="text-2xl font-black text-slate-800">${totalReembolsos}</span>
+                <span class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Total de Processos</span>
+                <span class="text-2xl font-black text-slate-800 dark:text-slate-200">${totalReembolsos}</span>
               </div>
-              <span class="p-3 bg-indigo-50 text-indigo-500 rounded-xl text-lg font-bold">📋</span>
+              <span class="p-3 bg-indigo-50 dark:bg-indigo-950/45 text-indigo-500 dark:text-indigo-400 rounded-xl text-lg font-bold">📋</span>
             </div>
 
-            <div class="bg-white border border-slate-200/60 p-5 rounded-2xl shadow-sm flex items-center justify-between">
+            <div class="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 p-5 rounded-2xl shadow-sm flex items-center justify-between">
               <div>
-                <span class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Aguardando Fornecedor</span>
-                <span class="text-2xl font-black text-amber-600">${aguardandoFornecedor}</span>
+                <span class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Aguardando Fornecedor</span>
+                <span class="text-2xl font-black text-amber-600 dark:text-amber-400">${aguardandoFornecedor}</span>
               </div>
-              <span class="p-3 bg-amber-50 text-amber-500 rounded-xl text-lg font-bold">⏳</span>
+              <span class="p-3 bg-amber-50 dark:bg-amber-950/45 text-amber-500 dark:text-amber-450 rounded-xl text-lg font-bold">⏳</span>
             </div>
 
-            <div class="bg-white border border-slate-200/60 p-5 rounded-2xl shadow-sm flex items-center justify-between">
+            <div class="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 p-5 rounded-2xl shadow-sm flex items-center justify-between">
               <div>
-                <span class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Reembolsos Pagos (Concluídos)</span>
-                <span class="text-2xl font-black text-emerald-600">${concluidos}</span>
+                <span class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Reembolsos Pagos (Concluídos)</span>
+                <span class="text-2xl font-black text-emerald-600 dark:text-emerald-400">${concluidos}</span>
               </div>
-              <span class="p-3 bg-emerald-50 text-emerald-500 rounded-xl text-lg font-bold">✅</span>
+              <span class="p-3 bg-emerald-50 dark:bg-emerald-950/45 text-emerald-500 dark:text-emerald-455 rounded-xl text-lg font-bold">✅</span>
             </div>
 
-            <div class="bg-white border border-slate-200/60 p-5 rounded-2xl shadow-sm flex items-center justify-between">
+            <div class="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 p-5 rounded-2xl shadow-sm flex items-center justify-between">
               <div>
-                <span class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Valor Pago (Aprovado)</span>
-                <span class="text-xl font-black text-indigo-600">R$ ${somaTotalReembolsado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                <span class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Valor Pago (Aprovado)</span>
+                <span class="text-xl font-black text-indigo-600 dark:text-indigo-400">R$ ${somaTotalReembolsado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
               </div>
-              <span class="p-3 bg-indigo-50 text-indigo-600 rounded-xl text-lg font-bold">💰</span>
+              <span class="p-3 bg-indigo-50 dark:bg-indigo-950/45 text-indigo-600 dark:text-indigo-455 rounded-xl text-lg font-bold">💰</span>
             </div>
           </div>
 
           <!-- Tabela de Reembolsos -->
-          <div class="bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden flex flex-col">
-            <div class="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/40">
-              <h2 class="text-sm font-black text-slate-700 tracking-wider uppercase">Fila de Reembolsos Ativos</h2>
-              <span class="px-2.5 py-1 bg-indigo-50 text-indigo-700 font-extrabold text-[10px] rounded border border-indigo-100 uppercase tracking-wider">${this.reembolsos.length} solicitações</span>
+          <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden flex flex-col">
+            <div class="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/40 dark:bg-slate-900/40">
+              <h2 class="text-sm font-black text-slate-700 dark:text-slate-300 tracking-wider uppercase">Fila de Reembolsos Ativos</h2>
+              <span class="px-2.5 py-1 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400 font-extrabold text-[10px] rounded border border-indigo-100 dark:border-indigo-900/40 uppercase tracking-wider">${this.reembolsos.length} solicitações</span>
             </div>
 
             <div class="overflow-x-auto custom-scrollbar">
               <table class="w-full text-left border-collapse">
                 <thead>
-                  <tr class="bg-slate-50 text-[10px] text-slate-400 font-black uppercase tracking-wider border-b border-slate-100">
+                  <tr class="bg-slate-50 dark:bg-slate-850 text-[10px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
                     <th class="py-4 px-5">Cliente</th>
                     <th class="py-4 px-5">Viagem / Localizador</th>
                     <th class="py-4 px-5">Produto Cancelado</th>
@@ -340,10 +354,10 @@ export class ReembolsosPage {
                     <th class="py-4 px-5 text-center">Status / Ação</th>
                   </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-100 text-sm text-slate-700 font-semibold bg-white/50">
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-sm text-slate-700 dark:text-slate-350 font-semibold bg-white/50 dark:bg-slate-900/30">
                   ${this.reembolsos.length === 0 ? `
                     <tr>
-                      <td colspan="8" class="py-12 text-center text-slate-400 text-xs font-semibold">
+                      <td colspan="8" class="py-12 text-center text-slate-400 dark:text-slate-500 text-xs font-semibold">
                         Nenhuma solicitação de reembolso ativa encontrada.
                       </td>
                     </tr>
@@ -354,57 +368,57 @@ export class ReembolsosPage {
                       <tr class="table-row-hover transition duration-150">
                         <!-- Cliente -->
                         <td class="py-4.5 px-5">
-                          <span class="block text-slate-800 font-bold">${r.viagem?.cliente?.nome || 'Cliente Desconhecido'}</span>
-                          <span class="block text-[10px] text-slate-400 font-semibold">${r.viagem?.cliente?.email || 'Sem e-mail'}</span>
+                          <span class="block text-slate-800 dark:text-slate-200 font-bold">${r.viagem?.cliente?.nome || 'Cliente Desconhecido'}</span>
+                          <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-semibold">${r.viagem?.cliente?.email || 'Sem e-mail'}</span>
                         </td>
                         
                         <!-- Viagem / Localizador -->
                         <td class="py-4.5 px-5">
-                          <span class="block text-slate-800 font-bold">✈️ ${r.viagem?.destino || 'Sem Destino'}</span>
-                          <span class="inline-block px-1.5 py-0.5 mt-0.5 bg-slate-100 text-slate-500 font-extrabold text-[9px] rounded uppercase border border-slate-200/50">
+                          <span class="block text-slate-800 dark:text-slate-200 font-bold">✈️ ${r.viagem?.destino || 'Sem Destino'}</span>
+                          <span class="inline-block px-1.5 py-0.5 mt-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-extrabold text-[9px] rounded uppercase border border-slate-200/50 dark:border-slate-750">
                             LOC: ${r.viagem?.codigo_localizador || 'S/ LOC'}
                           </span>
                         </td>
-
+ 
                         <!-- Produto Cancelado -->
                         <td class="py-4.5 px-5">
-                          <span class="block text-slate-700 font-bold">[${(r.produto?.tipo || 'outro').toUpperCase()}]</span>
-                          <span class="block text-[11px] text-slate-400 font-medium truncate max-w-[160px]">${r.produto?.descricao || 'Sem descrição'}</span>
+                          <span class="block text-slate-700 dark:text-slate-300 font-bold">[${(r.produto?.tipo || 'outro').toUpperCase()}]</span>
+                          <span class="block text-[11px] text-slate-400 dark:text-slate-500 font-medium truncate max-w-[160px]">${r.produto?.descricao || 'Sem descrição'}</span>
                         </td>
-
+ 
                         <!-- Fornecedor -->
                         <td class="py-4.5 px-5">
-                          <span class="text-slate-600 font-bold">${r.produto?.fornecedor || 'Fornecedor n/d'}</span>
+                          <span class="text-slate-600 dark:text-slate-400 font-bold">${r.produto?.fornecedor || 'Fornecedor n/d'}</span>
                         </td>
-
+ 
                         <!-- Valor -->
                         <td class="py-4.5 px-5">
-                          <span class="text-indigo-600 font-black">
+                          <span class="text-indigo-600 dark:text-indigo-400 font-black">
                             R$ ${(r.valor_solicitado || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                           </span>
                         </td>
-
+ 
                         <!-- Solicitação -->
-                        <td class="py-4.5 px-5 text-slate-500 font-bold text-xs">
+                        <td class="py-4.5 px-5 text-slate-500 dark:text-slate-400 font-bold text-xs">
                           ${formatarData(r.data_solicitacao)}
                         </td>
-
+ 
                         <!-- SLA Cronômetro -->
                         <td class="py-4.5 px-5">
                           ${isPago ? `
-                            <span class="inline-block px-2.5 py-1 bg-emerald-50 text-emerald-700 font-extrabold text-[10px] rounded-lg border border-emerald-100 flex items-center gap-1 max-w-fit">
+                            <span class="inline-block px-2.5 py-1 bg-emerald-50 dark:bg-emerald-950/45 text-emerald-700 dark:text-emerald-450 font-extrabold text-[10px] rounded-lg border border-emerald-100 dark:border-emerald-900/40 flex items-center gap-1 max-w-fit">
                               ✅ Concluído em ${formatarData(r.data_resolucao)}
                             </span>
                           ` : `
-                            <span class="sla-active-timer text-xs font-black text-rose-600 bg-rose-50/70 border border-rose-100/50 px-2.5 py-1 rounded-lg max-w-fit flex items-center" data-created-at="${dataAberturaStr}">
+                            <span class="sla-active-timer text-xs font-black text-rose-600 dark:text-rose-400 bg-rose-50/70 dark:bg-rose-950/20 border border-rose-100/50 dark:border-rose-900/30 px-2.5 py-1 rounded-lg max-w-fit flex items-center" data-created-at="${dataAberturaStr}">
                               Calculando...
                             </span>
                           `}
                         </td>
-
+ 
                         <!-- Status / Ação -->
                         <td class="py-4.5 px-5 text-center">
-                          <select data-reembolso-id="${r.id}" class="select-status-reembolso px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white text-slate-800">
+                          <select data-reembolso-id="${r.id}" class="select-status-reembolso px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">
                             <option value="Aguardando Fornecedor" ${r.status === 'Aguardando Fornecedor' || r.status === 'solicitado' ? 'selected' : ''}>Aguardando Fornecedor</option>
                             <option value="em_analise" ${r.status === 'em_analise' ? 'selected' : ''}>Em Análise</option>
                             <option value="aprovado" ${r.status === 'aprovado' ? 'selected' : ''}>Aprovado</option>

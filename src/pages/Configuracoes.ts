@@ -16,6 +16,15 @@ if (typeof document !== 'undefined') {
       border-color: #e8eaed;
       box-shadow: 0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15);
     }
+    .dark .google-btn {
+      background-color: #1e293b;
+      border: 1px solid #334155;
+      color: #e2e8f0;
+    }
+    .dark .google-btn:hover {
+      background-color: #334155;
+      border-color: #475569;
+    }
     @keyframes googlePulse {
       0%, 100% { transform: scale(1); }
       50% { transform: scale(1.02); }
@@ -503,26 +512,31 @@ export class ConfiguracoesPage {
     const drivesConectado = !!this.settings.googleRefreshToken;
 
     this.container.innerHTML = `
-      <div class="min-h-screen bg-slate-50/50 flex flex-col font-sans">
+      <div class="min-h-screen bg-slate-50/50 dark:bg-slate-950 flex flex-col font-sans transition-colors duration-200">
         
         <!-- Cabeçalho -->
-        <header class="bg-white/80 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-30 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <header class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 sticky top-0 z-30 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 transition-colors duration-200">
           <div class="flex items-center gap-3">
             <img src="/logo.png" alt="PaxFlow Logo" class="h-10 w-auto object-contain" />
             <div>
-              <h1 class="text-2xl font-black text-slate-800 tracking-tight">Painel de Configurações</h1>
-              <p class="text-xs text-slate-500 font-medium flex items-center gap-1">
+              <h1 class="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight">Painel de Configurações</h1>
+              <p class="text-xs text-slate-500 dark:text-slate-400 font-medium flex items-center gap-1">
                 <span>Configurações Globais</span> &bull; 
-                <span class="text-indigo-600 font-bold uppercase tracking-wider text-[10px]">Administrador</span>
+                <span class="text-indigo-600 dark:text-indigo-400 font-bold uppercase tracking-wider text-[10px]">Administrador</span>
               </p>
             </div>
           </div>
           <div class="flex items-center gap-3">
             <div class="text-right hidden sm:block">
-              <span class="block text-sm font-extrabold text-slate-700">${this.perfil?.nome || 'Administrador'}</span>
-              <span class="block text-xs text-slate-400">${this.perfil?.email || this.user.email}</span>
+              <span class="block text-sm font-extrabold text-slate-700 dark:text-slate-300">${this.perfil?.nome || 'Administrador'}</span>
+              <span class="block text-xs text-slate-400 dark:text-slate-500">${this.perfil?.email || this.user.email}</span>
             </div>
-            <button id="btn-logout" class="p-2.5 bg-slate-100 hover:bg-rose-50 text-slate-400 hover:text-rose-500 rounded-xl transition border border-slate-200/40">
+            <!-- Theme Toggle -->
+            <button id="theme-toggle-btn" title="Alternar Tema" class="p-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-400 dark:text-slate-500 rounded-xl transition border border-slate-200/40 dark:border-slate-700/40">
+              <span class="dark:hidden">🌙</span>
+              <span class="hidden dark:inline">☀️</span>
+            </button>
+            <button id="btn-logout" class="p-2.5 bg-slate-100 hover:bg-rose-50 dark:bg-slate-800 dark:hover:bg-rose-950/30 text-slate-400 hover:text-rose-500 dark:text-slate-500 dark:hover:text-rose-400 rounded-xl transition border border-slate-200/40 dark:border-slate-700/40">
               🚪
             </button>
           </div>
@@ -532,9 +546,9 @@ export class ConfiguracoesPage {
         <main class="flex-1 p-6 max-w-4xl mx-auto w-full grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
           
           <!-- Coluna Esquerda: Formulário de SLA e Regras -->
-          <div class="md:col-span-8 bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm">
-            <h2 class="text-lg font-black text-slate-800 tracking-tight border-b border-slate-100 pb-3.5 mb-5 flex items-center gap-2">
-              <span class="p-2 bg-indigo-50 text-indigo-500 rounded-lg text-sm">⚙️</span>
+          <div class="md:col-span-8 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
+            <h2 class="text-lg font-black text-slate-800 dark:text-slate-250 tracking-tight border-b border-slate-100 dark:border-slate-800 pb-3.5 mb-5 flex items-center gap-2">
+              <span class="p-2 bg-indigo-50 dark:bg-indigo-950/45 text-indigo-500 dark:text-indigo-400 rounded-lg text-sm">⚙️</span>
               Regras do Negócio & Parâmetros de SLAs
             </h2>
 
@@ -542,48 +556,48 @@ export class ConfiguracoesPage {
               
               <!-- Nome da Agência -->
               <div>
-                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Nome da Agência de Viagens *</label>
-                <input id="input-agency-name" type="text" required value="${this.settings.agencyName}" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-semibold" />
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Nome da Agência de Viagens *</label>
+                <input id="input-agency-name" type="text" required value="${this.settings.agencyName}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold" />
               </div>
 
               <!-- E-mail de Suporte -->
               <div>
-                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">E-mail de Suporte e Alertas *</label>
-                <input id="input-email-suporte" type="email" required value="${this.settings.emailSuporte}" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-semibold" />
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">E-mail de Suporte e Alertas *</label>
+                <input id="input-email-suporte" type="email" required value="${this.settings.emailSuporte}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold" />
               </div>
 
               <!-- Seção de SLAs -->
-              <div class="border-t border-slate-100 pt-5 space-y-4">
-                <h3 class="text-xs font-black text-indigo-600 uppercase tracking-wider mb-2">Parâmetros das Colunas do Kanban</h3>
+              <div class="border-t border-slate-100 dark:border-slate-800 pt-5 space-y-4">
+                <h3 class="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-2">Parâmetros das Colunas do Kanban</h3>
                 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <!-- SLA Pré-Embarque -->
                   <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Dias Alerta Pré-Embarque *</label>
-                    <input id="input-sla-pre" type="number" min="1" required value="${this.settings.slaPreEmbarqueDias}" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-bold" />
-                    <p class="text-[10px] text-slate-400 mt-1.5 font-medium leading-relaxed">Dispara alerta visual vermelho no card se a data de embarque estiver a menos dias do que este limite.</p>
+                    <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Dias Alerta Pré-Embarque *</label>
+                    <input id="input-sla-pre" type="number" min="1" required value="${this.settings.slaPreEmbarqueDias}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-bold" />
+                    <p class="text-[10px] text-slate-400 dark:text-slate-550 mt-1.5 font-medium leading-relaxed">Dispara alerta visual vermelho no card se a data de embarque estiver a menos dias do que este limite.</p>
                   </div>
 
                   <!-- SLA Pós-Viagem -->
                   <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Dias Alerta Pós-Viagem *</label>
-                    <input id="input-sla-pos" type="number" min="1" required value="${this.settings.slaPosViagemDias}" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-bold" />
-                    <p class="text-[10px] text-slate-400 mt-1.5 font-medium leading-relaxed">Dispara alerta visual laranja se a viagem já terminou e o pós-venda não foi fechado dentro deste limite.</p>
+                    <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Dias Alerta Pós-Viagem *</label>
+                    <input id="input-sla-pos" type="number" min="1" required value="${this.settings.slaPosViagemDias}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-bold" />
+                    <p class="text-[10px] text-slate-400 dark:text-slate-550 mt-1.5 font-medium leading-relaxed">Dispara alerta visual laranja se a viagem já terminou e o pós-venda não foi fechado dentro deste limite.</p>
                   </div>
                 </div>
               </div>
 
               <!-- Taxa Padrão de Cancelamento -->
-              <div class="border-t border-slate-100 pt-5">
+              <div class="border-t border-slate-100 dark:border-slate-800 pt-5">
                 <div>
-                  <label class="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Taxa de Cancelamento Retida (%)</label>
-                  <input id="input-taxa" type="number" step="0.01" min="0" max="100" value="${this.settings.taxaCancelamentoPadrao}" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-bold" />
-                  <p class="text-[10px] text-slate-400 mt-1.5 font-medium">Taxa retida padrão sugerida durante a solicitação de reembolsos.</p>
+                  <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Taxa de Cancelamento Retida (%)</label>
+                  <input id="input-taxa" type="number" step="0.01" min="0" max="100" value="${this.settings.taxaCancelamentoPadrao}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-bold" />
+                  <p class="text-[10px] text-slate-400 dark:text-slate-550 mt-1.5 font-medium">Taxa retida padrão sugerida durante a solicitação de reembolsos.</p>
                 </div>
               </div>
 
               <!-- Botão de Ação -->
-              <div class="flex justify-end pt-4 border-t border-slate-100 mt-6">
+              <div class="flex justify-end pt-4 border-t border-slate-100 dark:border-slate-800 mt-6">
                 <button type="submit" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/10 transition uppercase">
                   Salvar Parâmetros
                 </button>
@@ -593,27 +607,27 @@ export class ConfiguracoesPage {
           </div>
 
           <!-- Coluna Direita: Vinculação OAuth2 do Google Drive -->
-          <div class="md:col-span-4 bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm flex flex-col gap-5">
-            <h2 class="text-sm font-black text-slate-800 tracking-tight border-b border-slate-100 pb-3 flex items-center gap-2">
-              <span class="p-1.5 bg-emerald-50 text-emerald-500 rounded-lg text-xs">☁️</span>
-              Integração Segura Google Drive
+          <div class="md:col-span-4 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm flex flex-col gap-5">
+            <h2 class="text-sm font-black text-slate-800 dark:text-slate-250 tracking-tight border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2">
+              <span class="p-1.5 bg-emerald-50 dark:bg-emerald-950/45 text-emerald-50 dark:text-emerald-400 rounded-lg text-xs">☁️</span>
+              Integração Google Drive
             </h2>
 
-            <p class="text-xs text-slate-400 font-medium leading-relaxed">
+            <p class="text-xs text-slate-400 dark:text-slate-500 font-medium leading-relaxed">
               O PaxFlow realiza o upload de passaportes e vistos de forma centralizada em uma conta única do Google Drive pertencente à agência.
             </p>
 
             <!-- Card de Status da Integração -->
-            <div class="border border-slate-100 rounded-xl p-4 flex flex-col items-center justify-center text-center gap-2 bg-slate-50/50">
+            <div class="border border-slate-100 dark:border-slate-800 rounded-xl p-4 flex flex-col items-center justify-center text-center gap-2 bg-slate-50/50 dark:bg-slate-950/40">
               ${drivesConectado ? `
                 <span class="text-3xl">✅</span>
-                <span class="px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-100 font-black text-[9px] rounded uppercase tracking-wider">Conectado</span>
-                <p class="text-[10px] text-slate-500 font-bold mt-1">Conta central autorizada</p>
-                <p class="text-[8px] text-slate-300 font-medium truncate max-w-[170px] select-all">Token: ${this.settings.googleRefreshToken?.substring(0,25)}...</p>
+                <span class="px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/45 text-emerald-700 dark:text-emerald-450 border border-emerald-100 dark:border-emerald-900/40 font-black text-[9px] rounded uppercase tracking-wider">Conectado</span>
+                <p class="text-[10px] text-slate-500 dark:text-slate-400 font-bold mt-1">Conta central autorizada</p>
+                <p class="text-[8px] text-slate-350 dark:text-slate-600 font-medium truncate max-w-[170px] select-all">Token: ${this.settings.googleRefreshToken?.substring(0,25)}...</p>
               ` : `
                 <span class="text-3xl">⚠️</span>
-                <span class="px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-100 font-black text-[9px] rounded uppercase tracking-wider">Sem Integração</span>
-                <p class="text-[10px] text-slate-400 font-semibold mt-1">É necessário realizar a vinculação corporativa para ativar uploads.</p>
+                <span class="px-2 py-0.5 bg-amber-50 dark:bg-amber-950/45 text-amber-700 dark:text-amber-400 border border-amber-100 dark:border-amber-900/40 font-black text-[9px] rounded uppercase tracking-wider">Sem Integração</span>
+                <p class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold mt-1">É necessário realizar a vinculação corporativa para ativar uploads.</p>
               `}
             </div>
 
@@ -622,7 +636,7 @@ export class ConfiguracoesPage {
               <button id="btn-google-auth" class="w-full py-3 px-4 rounded-xl flex items-center justify-center gap-2.5 transition shadow-sm font-extrabold text-xs tracking-wider uppercase ${
                 drivesConectado 
                   ? 'google-btn border-slate-200' 
-                  : 'bg-indigo-50 border border-indigo-200/50 text-indigo-700 hover:bg-indigo-100/50 google-attention'
+                  : 'bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200/50 dark:border-indigo-900/50 text-indigo-700 dark:text-indigo-400 hover:bg-indigo-100/50 google-attention'
               }">
                 <span class="text-base select-none">
                   <span class="text-blue-600 font-extrabold">G</span><span class="text-red-500 font-extrabold">o</span><span class="text-yellow-500 font-extrabold">o</span><span class="text-blue-600 font-extrabold">g</span><span class="text-green-500 font-extrabold">l</span><span class="text-red-500 font-extrabold">e</span>
@@ -631,7 +645,7 @@ export class ConfiguracoesPage {
               </button>
             </div>
             
-            <p class="text-[9px] text-slate-400 font-medium leading-normal text-center">
+            <p class="text-[9px] text-slate-400 dark:text-slate-500 font-medium leading-normal text-center">
               Apenas contas Google autorizadas podem armazenar arquivos. Os consultores não têm acesso direto às credenciais.
             </p>
 

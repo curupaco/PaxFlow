@@ -1103,32 +1103,32 @@ export class Dashboard {
                 totalSlaAlerts++;
         });
         this.container.innerHTML = `
-      <div class="min-h-screen bg-slate-50/50 flex flex-col font-sans">
+      <div class="min-h-screen bg-slate-50/50 dark:bg-slate-950 flex flex-col font-sans transition-colors duration-200">
         
         <!-- CABEÇALHO DO OPERACIONAL -->
-        <header class="bg-white/80 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-30 px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
+        <header class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 sticky top-0 z-30 px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 transition-colors duration-200">
           <div class="flex items-center gap-3">
             <img src="/logo.png" alt="PaxFlow Logo" class="h-10 w-auto object-contain" />
             <div>
-              <h1 class="text-2xl font-black text-slate-800 tracking-tight">${this.settings.agencyName}</h1>
-              <p class="text-xs text-slate-500 font-medium flex items-center gap-1.5">
+              <h1 class="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight">${this.settings.agencyName}</h1>
+              <p class="text-xs text-slate-500 dark:text-slate-400 font-medium flex items-center gap-1.5">
                 <span>Painel Operacional</span> &bull; 
-                <span class="px-2 py-0.5 bg-slate-100 rounded text-slate-700 font-bold uppercase tracking-wider text-[10px]">${this.perfil?.role || 'consultor'}</span>
+                <span class="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded text-slate-700 dark:text-slate-300 font-bold uppercase tracking-wider text-[10px]">${this.perfil?.role || 'consultor'}</span>
               </p>
             </div>
           </div>
           
           <div class="flex flex-wrap items-center gap-4">
             <!-- Stats Rápidos -->
-            <div class="flex items-center gap-2 bg-slate-100/60 p-1.5 rounded-xl border border-slate-200/30">
+            <div class="flex items-center gap-2 bg-slate-100/60 dark:bg-slate-800/40 p-1.5 rounded-xl border border-slate-200/30 dark:border-slate-700/30">
               <div class="px-3.5 py-1.5 text-center">
-                <span class="block text-xs text-slate-400 font-bold uppercase tracking-wider">Viagens</span>
-                <span class="text-sm font-black text-slate-700">${this.viagens.length}</span>
+                <span class="block text-xs text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">Viagens</span>
+                <span class="text-sm font-black text-slate-700 dark:text-slate-200">${this.viagens.length}</span>
               </div>
-              <div class="w-px h-6 bg-slate-200"></div>
+              <div class="w-px h-6 bg-slate-200 dark:bg-slate-700"></div>
               <div class="px-3.5 py-1.5 text-center">
-                <span class="block text-xs text-slate-400 font-bold uppercase tracking-wider">SLAs Ativos</span>
-                <span class="text-sm font-black ${totalSlaAlerts > 0 ? 'text-rose-600 animate-pulse' : 'text-slate-700'}">${totalSlaAlerts}</span>
+                <span class="block text-xs text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">SLAs Ativos</span>
+                <span class="text-sm font-black ${totalSlaAlerts > 0 ? 'text-rose-600 animate-pulse' : 'text-slate-700 dark:text-slate-200'}">${totalSlaAlerts}</span>
               </div>
             </div>
 
@@ -1140,13 +1140,19 @@ export class Dashboard {
             <!-- Identidade do Consultor Logado -->
             <div class="flex items-center gap-3 pl-2">
               <div class="text-right hidden sm:block">
-                <span class="block text-sm font-extrabold text-slate-700">${this.perfil?.nome || 'Consultor'}</span>
-                <span class="block text-xs text-slate-400">${this.perfil?.email || this.user.email}</span>
+                <span class="block text-sm font-extrabold text-slate-700 dark:text-slate-300">${this.perfil?.nome || 'Consultor'}</span>
+                <span class="block text-xs text-slate-400 dark:text-slate-500">${this.perfil?.email || this.user.email}</span>
               </div>
-              <div class="w-10 h-10 bg-indigo-50 text-indigo-600 font-bold rounded-xl flex items-center justify-center border border-indigo-100">
+              <div class="w-10 h-10 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 font-bold rounded-xl flex items-center justify-center border border-indigo-100 dark:border-indigo-900/40">
                 ${(this.perfil?.nome || 'C').substring(0, 2).toUpperCase()}
               </div>
-              <button id="btn-logout" title="Sair do Sistema" class="p-2.5 bg-slate-100 hover:bg-rose-50 text-slate-400 hover:text-rose-500 rounded-xl transition border border-slate-200/40">
+              <!-- Theme Toggle -->
+              <button id="theme-toggle-btn" title="Alternar Tema" class="p-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-400 dark:text-slate-500 rounded-xl transition border border-slate-200/40 dark:border-slate-700/40">
+                <span class="dark:hidden">🌙</span>
+                <span class="hidden dark:inline">☀️</span>
+              </button>
+              <!-- Logout -->
+              <button id="btn-logout" title="Sair do Sistema" class="p-2.5 bg-slate-100 hover:bg-rose-50 dark:bg-slate-800 dark:hover:bg-rose-950/30 text-slate-400 hover:text-rose-500 dark:text-slate-500 dark:hover:text-rose-400 rounded-xl transition border border-slate-200/40 dark:border-slate-700/40">
                 🚪
               </button>
             </div>
@@ -1204,18 +1210,18 @@ export class Dashboard {
      */
     renderColuna(titulo, status, items, styleBorders, styleBadge) {
         return `
-      <div class="flex flex-col min-w-[280px] h-[calc(100vh-200px)] bg-white border border-slate-200/80 rounded-2xl shadow-sm border-t-4 ${styleBorders}">
+      <div class="flex flex-col min-w-[280px] h-[calc(100vh-200px)] bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl shadow-sm border-t-4 ${styleBorders} transition-colors duration-200">
         <!-- Header da Coluna -->
-        <div class="column-header px-4 py-3.5 flex items-center justify-between border-b border-slate-100 bg-slate-50/50 rounded-t-2xl cursor-grab active:cursor-grabbing">
-          <h3 class="text-sm font-black text-slate-700 tracking-tight uppercase">${titulo}</h3>
+        <div class="column-header px-4 py-3.5 flex items-center justify-between border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 rounded-t-2xl cursor-grab active:cursor-grabbing">
+          <h3 class="text-sm font-black text-slate-700 dark:text-slate-300 tracking-tight uppercase">${titulo}</h3>
           <span class="px-2 py-0.5 text-xs text-white font-bold rounded-full ${styleBadge}">${items.length}</span>
         </div>
 
         <!-- Lista de Cards (Sortable area) -->
         <div id="col-${status}" data-status="${status}" class="flex-1 p-3 overflow-y-auto space-y-3 custom-scrollbar min-h-[150px]">
           ${items.length === 0 ? `
-            <div class="h-28 border border-dashed border-slate-200 rounded-xl flex items-center justify-center p-4 text-center">
-              <span class="text-xs text-slate-400 font-medium">Solte viagens aqui</span>
+            <div class="h-28 border border-dashed border-slate-200 dark:border-slate-800/85 rounded-xl flex items-center justify-center p-4 text-center">
+              <span class="text-xs text-slate-400 dark:text-slate-500 font-medium">Solte viagens aqui</span>
             </div>
           ` : items.map(v => this.renderCard(v)).join('')}
         </div>
@@ -1230,9 +1236,9 @@ export class Dashboard {
         const reembolsoConcluido = v.reembolsos && v.reembolsos.some((r) => r.status === 'pago');
         const sla = reembolsoConcluido ? { alert: false, type: null, text: '' } : this.checkSLA(v);
         // Classes CSS dinâmicas baseadas nos alertas de SLA ou reembolso finalizado
-        let cardClasses = 'bg-white p-4 rounded-xl border border-slate-200 hover:border-slate-300 shadow-sm hover:shadow-md transition-all cursor-grab active:cursor-grabbing relative overflow-hidden group';
+        let cardClasses = 'bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-750 shadow-sm hover:shadow-md dark:shadow-slate-950/30 transition-all cursor-grab active:cursor-grabbing relative overflow-hidden group';
         if (reembolsoConcluido) {
-            cardClasses = 'bg-emerald-50/30 border border-emerald-500/80 shadow-emerald-500/10 p-4 rounded-xl shadow-sm hover:shadow-md transition-all cursor-grab active:cursor-grabbing relative overflow-hidden group';
+            cardClasses = 'bg-emerald-50/30 dark:bg-emerald-950/10 border border-emerald-500/80 dark:border-emerald-500/50 shadow-emerald-500/10 dark:shadow-emerald-950/20 p-4 rounded-xl shadow-sm hover:shadow-md transition-all cursor-grab active:cursor-grabbing relative overflow-hidden group';
         }
         else if (sla.alert) {
             if (sla.type === 'pre-embarque') {
@@ -1256,53 +1262,53 @@ export class Dashboard {
         
         <!-- Linha do Localizador & Preço -->
         <div class="flex items-center justify-between gap-2 mb-2.5">
-          <span class="px-2 py-0.5 bg-slate-100 text-slate-600 font-extrabold text-[10px] rounded tracking-wider border border-slate-200/55 uppercase">
+          <span class="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-extrabold text-[10px] rounded tracking-wider border border-slate-200/55 dark:border-slate-700/55 uppercase">
             ${v.codigo_localizador || 'S/ LOC'}
           </span>
-          <span class="text-xs font-black text-indigo-600">
+          <span class="text-xs font-black text-indigo-600 dark:text-indigo-400">
             R$ ${v.valor_total?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
           </span>
         </div>
 
         <!-- Título do Destino -->
-        <h4 class="text-sm font-black text-slate-800 leading-snug group-hover:text-indigo-600 transition mb-1 flex items-center gap-1">
+        <h4 class="text-sm font-black text-slate-800 dark:text-slate-200 leading-snug group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition mb-1 flex items-center gap-1">
           ✈️ ${v.destino}
         </h4>
 
         <!-- Nome do Cliente/Passageiro -->
-        <p class="text-xs text-slate-500 font-extrabold mb-3 flex items-center gap-1.5">
-          <span class="text-slate-400">👤</span> ${v.cliente?.nome || 'Cliente Desconhecido'}
+        <p class="text-xs text-slate-500 dark:text-slate-400 font-extrabold mb-3 flex items-center gap-1.5">
+          <span class="text-slate-400 dark:text-slate-500">👤</span> ${v.cliente?.nome || 'Cliente Desconhecido'}
         </p>
 
         <!-- Calendário/Datas -->
-        <div class="grid grid-cols-2 gap-2 text-[10px] text-slate-400 font-semibold border-t border-slate-100 pt-2 mb-2">
+        <div class="grid grid-cols-2 gap-2 text-[10px] text-slate-400 dark:text-slate-500 font-semibold border-t border-slate-100 dark:border-slate-800 pt-2 mb-2">
           <div>
-            <span class="block text-slate-300 font-bold uppercase tracking-wider text-[8px]">Data Ida</span>
-            <span class="text-slate-600 font-bold">${formatarData(v.data_ida)}</span>
+            <span class="block text-slate-350 dark:text-slate-600 font-bold uppercase tracking-wider text-[8px]">Data Ida</span>
+            <span class="text-slate-600 dark:text-slate-455 font-bold">${formatarData(v.data_ida)}</span>
           </div>
           <div>
-            <span class="block text-slate-300 font-bold uppercase tracking-wider text-[8px]">Data Volta</span>
-            <span class="text-slate-600 font-bold">${formatarData(v.data_volta)}</span>
+            <span class="block text-slate-355 dark:text-slate-600 font-bold uppercase tracking-wider text-[8px]">Data Volta</span>
+            <span class="text-slate-600 dark:text-slate-455 font-bold">${formatarData(v.data_volta)}</span>
           </div>
         </div>
 
         <!-- Se for Admin, exibe o consultor responsável pela venda -->
         ${this.perfil?.role === 'admin' ? `
-          <div class="border-t border-slate-50 pt-1.5 mt-1.5 flex items-center justify-between text-[9px] text-slate-400 font-medium">
+          <div class="border-t border-slate-50 dark:border-slate-800/40 pt-1.5 mt-1.5 flex items-center justify-between text-[9px] text-slate-400 dark:text-slate-500 font-medium">
             <span>Consultor Resp:</span>
-            <span class="font-extrabold text-slate-600">${v.consultor_id === this.user.id ? 'Você' : 'Outro Consultor'}</span>
+            <span class="font-extrabold text-slate-600 dark:text-slate-400">${v.consultor_id === this.user.id ? 'Você' : 'Outro Consultor'}</span>
           </div>
         ` : ''}
 
         <!-- Alerta de SLA visual ou Status de Reembolso Concluído -->
         ${reembolsoConcluido ? `
-          <div class="mt-2.5 px-2.5 py-1.5 rounded-lg text-[10px] font-black tracking-wide flex items-center justify-center gap-1 bg-emerald-100/85 text-emerald-800 border border-emerald-200">
+          <div class="mt-2.5 px-2.5 py-1.5 rounded-lg text-[10px] font-black tracking-wide flex items-center justify-center gap-1 bg-emerald-100/85 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/50">
             ✅ Reembolso Concluído!
           </div>
         ` : sla.alert ? `
           <div class="mt-2.5 px-2.5 py-1.5 rounded-lg text-[10px] font-black tracking-wide flex items-center gap-1 animate-pulse ${sla.type === 'pre-embarque'
-            ? 'bg-rose-50 text-rose-600 border border-rose-100'
-            : 'bg-amber-50 text-amber-600 border border-amber-100'}">
+            ? 'bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 border border-rose-100 dark:border-rose-900/55'
+            : 'bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 border border-amber-100 dark:border-amber-900/55'}">
             ${sla.text}
           </div>
         ` : ''}
