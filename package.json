@@ -4,6 +4,8 @@
   "description": "Sistema de Gestão de Pós-Venda e Fluxo de Passageiros para Agências de Viagem",
   "main": "index.js",
   "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -15,6 +17,7 @@
   },
   "devDependencies": {
     "@types/sortablejs": "^1.15.9",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vite": "^5.4.21"
   }
 }
