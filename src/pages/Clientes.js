@@ -212,7 +212,27 @@ export class ClientesPage {
      * Atualiza a ficha de detalhes do cliente selecionado (ou abre formulário limpo para cadastro)
      */
     selecionarCliente(cliente) {
-        this.clienteSelecionado = cliente;
+        if (cliente === null) {
+            // Cria um objeto de cliente vazio para novo cadastro
+            this.clienteSelecionado = {
+                id: '', // ID vazio indica novo cadastro
+                nome: '',
+                email: '',
+                telefone: '',
+                documento: '',
+                dataNascimento: '',
+                endereco: '',
+                observacoes: '',
+                consultorResponsavelId: this.user?.id || '',
+                passaporteNumero: '',
+                passaporteValidade: '',
+                vistosInformacoes: '',
+                googleDriveFolderUrl: ''
+            };
+        }
+        else {
+            this.clienteSelecionado = cliente;
+        }
         this.filtrarERenderizarLista(); // Atualiza seleção na lista lateral
         this.renderFichaDetalhada();
         this.setupFormEventListeners();
@@ -225,7 +245,7 @@ export class ClientesPage {
         // Tratamento de envio do formulário de cadastro/edição
         form?.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const isEditing = !!this.clienteSelecionado;
+            const isEditing = !!(this.clienteSelecionado && this.clienteSelecionado.id);
             const nomeVal = document.getElementById('input-nome').value;
             const emailVal = document.getElementById('input-email').value;
             const telefoneVal = document.getElementById('input-telefone').value;
@@ -250,6 +270,7 @@ export class ClientesPage {
                 consultor_responsavel_id: this.user.id
             };
             try {
+                let recemCriado = null;
                 if (isEditing && this.clienteSelecionado) {
                     const { error } = await supabase
                         .from('clientes')
@@ -258,28 +279,41 @@ export class ClientesPage {
                     if (error)
                         throw error;
                     this.showToast('Ficha do cliente atualizada com sucesso!', 'success');
+                    await this.loadClientes();
+                    recemCriado = this.clientes.find(c => c.id === this.clienteSelecionado?.id) || null;
                 }
                 else {
-                    // Inicializa novo cliente com pasta vazia no Google Drive por padrão se quiser, 
-                    // mas o upload criará dinamicamente
-                    const { error } = await supabase
+                    // Inicializa novo cliente no Supabase
+                    const { data, error } = await supabase
                         .from('clientes')
-                        .insert(payload);
+                        .insert(payload)
+                        .select();
                     if (error)
                         throw error;
                     this.showToast('Cliente cadastrado com sucesso!', 'success');
+                    await this.loadClientes();
+                    if (data && data.length > 0) {
+                        const d = data[0];
+                        recemCriado = {
+                            id: d.id,
+                            nome: d.nome,
+                            email: d.email,
+                            telefone: d.telefone,
+                            documento: d.documento,
+                            dataNascimento: d.data_nascimento || d.dataNascimento,
+                            endereco: d.endereco,
+                            observacoes: d.observacoes,
+                            consultorResponsavelId: d.consultor_responsavel_id || d.consultorResponsavelId,
+                            passaporteNumero: d.passaporte_numero || d.passaporteNumero,
+                            passaporteValidade: d.passaporte_validade || d.passaporteValidade,
+                            vistosInformacoes: d.vistos_informacoes || d.vistosInformacoes,
+                            googleDriveFolderUrl: d.google_drive_folder_url || d.googleDriveFolderUrl,
+                            createdAt: d.created_at,
+                            updatedAt: d.updated_at
+                        };
+                    }
                 }
-                await this.loadClientes();
-                // Se estava cadastrando novo, seleciona o último correspondente pelo e-mail
-                if (!isEditing) {
-                    const recemCriado = this.clientes.find(c => c.email === emailVal) || null;
-                    this.selecionarCliente(recemCriado);
-                }
-                else {
-                    // Atualiza dados no visual
-                    const atualizado = this.clientes.find(c => c.id === this.clienteSelecionado?.id) || null;
-                    this.selecionarCliente(atualizado);
-                }
+                this.selecionarCliente(recemCriado);
             }
             catch (err) {
                 console.error('Erro ao salvar cliente:', err);
@@ -390,6 +424,7 @@ export class ClientesPage {
             passValidadeInputClass += ' passport-expired-alert text-rose-600';
         if (passSla.status === 'warning')
             passValidadeInputClass += ' passport-expired-alert text-amber-600';
+        const isNew = !c.id;
         fichaEl.innerHTML = `
       <div class="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm flex flex-col gap-6">
         
@@ -397,19 +432,21 @@ export class ClientesPage {
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
           <div class="flex items-center gap-3">
             <div class="w-12 h-12 bg-indigo-50 border border-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center font-bold text-lg shadow-inner">
-              ${c.nome.substring(0, 2).toUpperCase()}
+              ${isNew ? 'NC' : (c.nome || 'NC').substring(0, 2).toUpperCase()}
             </div>
             <div>
-              <h2 class="text-xl font-black text-slate-800 leading-snug tracking-tight">${c.nome}</h2>
+              <h2 class="text-xl font-black text-slate-800 leading-snug tracking-tight">
+                ${isNew ? 'Novo Cliente / Passageiro' : c.nome}
+              </h2>
               <p class="text-xs text-slate-400 font-semibold flex items-center gap-1">
-                <span>Cadastro e Documentação</span> &bull; 
-                <span class="text-indigo-600 font-bold">${c.email}</span>
+                <span>Cadastro e Documentação</span>
+                ${!isNew ? `&bull; <span class="text-indigo-600 font-bold">${c.email}</span>` : ''}
               </p>
             </div>
           </div>
 
-          <!-- Botão Proeminente do Google Drive (Exibido apenas quando a URL existe) -->
-          ${c.googleDriveFolderUrl ? `
+          <!-- Botão Proeminente do Google Drive (Exibido apenas para clientes existentes) -->
+          ${isNew ? '' : (c.googleDriveFolderUrl ? `
             <a href="${c.googleDriveFolderUrl}" target="_blank" class="px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-extrabold text-xs tracking-wide rounded-xl shadow-md shadow-emerald-600/10 flex items-center justify-center gap-2 transition transform hover:-translate-y-0.5 uppercase">
               <span class="text-lg">📁</span> Abrir Pasta no Google Drive
             </a>
@@ -417,7 +454,7 @@ export class ClientesPage {
             <span class="px-4 py-2 bg-slate-50 text-slate-400 rounded-lg text-xs font-semibold border border-slate-200/40 text-center">
               Sem pasta ativa no Drive
             </span>
-          `}
+          `)}
         </div>
 
         <form id="form-cliente" class="space-y-6">
@@ -483,23 +520,25 @@ export class ClientesPage {
             </div>
           </div>
 
-          <!-- Seção 3: Anexos e Upload Google Drive -->
-          <div class="border-t border-slate-100 pt-5">
-            <h3 class="text-sm font-black text-indigo-600 uppercase tracking-wider mb-3 border-b border-indigo-50/50 pb-1">3. Upload Seguro de Documentos (Google Drive Agência)</h3>
-            <p class="text-xs text-slate-400 mb-3.5 font-medium">Os arquivos anexados serão inseridos automaticamente em uma pasta estruturada do Google Drive central da agência, sem vinculação com contas pessoais.</p>
-            
-            <!-- Componente de Upload Drag & Drop -->
-            <div class="relative">
-              <input type="file" id="file-input-documento" accept="image/*,application/pdf" class="hidden" />
-              <div id="upload-dropzone" class="border-2 border-dashed border-slate-200 hover:border-indigo-400/80 bg-slate-50/30 hover:bg-slate-50 rounded-2xl p-6 text-center cursor-pointer transition transform hover:-translate-y-0.5 flex flex-col items-center justify-center space-y-2 group">
-                <div id="upload-zone-visual" class="flex flex-col items-center justify-center space-y-2">
-                  <span class="text-3xl filter group-hover:scale-110 transition duration-300">📤</span>
-                  <p class="text-sm text-slate-700 font-extrabold">Arraste e solte arquivos aqui</p>
-                  <p class="text-xs text-slate-400 font-semibold">Ou clique para selecionar (PDF, JPEG, PNG - Máx. 10MB)</p>
+          <!-- Seção 3: Anexos e Upload Google Drive (Exibida apenas para clientes existentes) -->
+          ${isNew ? '' : `
+            <div class="border-t border-slate-100 pt-5">
+              <h3 class="text-sm font-black text-indigo-600 uppercase tracking-wider mb-3 border-b border-indigo-50/50 pb-1">3. Upload Seguro de Documentos (Google Drive Agência)</h3>
+              <p class="text-xs text-slate-400 mb-3.5 font-medium">Os arquivos anexados serão inseridos automaticamente em uma pasta estruturada do Google Drive central da agência, sem vinculação com contas pessoais.</p>
+              
+              <!-- Componente de Upload Drag & Drop -->
+              <div class="relative">
+                <input type="file" id="file-input-documento" accept="image/*,application/pdf" class="hidden" />
+                <div id="upload-dropzone" class="border-2 border-dashed border-slate-200 hover:border-indigo-400/80 bg-slate-50/30 hover:bg-slate-50 rounded-2xl p-6 text-center cursor-pointer transition transform hover:-translate-y-0.5 flex flex-col items-center justify-center space-y-2 group">
+                  <div id="upload-zone-visual" class="flex flex-col items-center justify-center space-y-2">
+                    <span class="text-3xl filter group-hover:scale-110 transition duration-300">📤</span>
+                    <p class="text-sm text-slate-700 font-extrabold">Arraste e solte arquivos aqui</p>
+                    <p class="text-xs text-slate-400 font-semibold">Ou clique para selecionar (PDF, JPEG, PNG - Máx. 10MB)</p>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          `}
 
           <!-- Seção 4: Observações Gerais -->
           <div class="border-t border-slate-100 pt-5">
@@ -510,7 +549,7 @@ export class ClientesPage {
           <!-- Ações Finais do Formulário -->
           <div class="flex items-center justify-end gap-3 pt-5 border-t border-slate-100">
             <button type="submit" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-sm tracking-wider rounded-xl shadow-lg shadow-indigo-600/10 transition uppercase">
-              Salvar Alterações
+              ${isNew ? 'Cadastrar Cliente' : 'Salvar Alterações'}
             </button>
           </div>
 

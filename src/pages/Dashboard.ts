@@ -484,6 +484,164 @@ export class Dashboard {
   }
 
   /**
+   * Abre o Modal Interativo de Criação de Viagem / Card
+   */
+  private async openNovaViagemModal(): Promise<void> {
+    try {
+      this.renderModalOverlay();
+      const modalContent = document.getElementById('modal-content-container');
+      if (!modalContent) return;
+
+      modalContent.innerHTML = `
+        <div class="p-6 text-center text-slate-500 text-sm font-semibold">
+          Carregando passageiros...
+        </div>
+      `;
+
+      // Busca clientes ativos do banco para associar à viagem
+      const { data: clientes, error: errClientes } = await supabase
+        .from('clientes')
+        .select('id, nome')
+        .order('nome', { ascending: true });
+
+      if (errClientes) throw errClientes;
+
+      if (!clientes || clientes.length === 0) {
+        modalContent.innerHTML = `
+          <div class="p-6 text-center">
+            <span class="text-3xl">👥</span>
+            <h3 class="text-lg font-bold text-slate-800 mt-2 mb-1">Nenhum cliente cadastrado</h3>
+            <p class="text-xs text-slate-400 mb-4">É necessário cadastrar pelo menos um cliente para criar uma viagem.</p>
+            <div class="flex justify-center gap-3">
+              <button id="btn-fechar-aviso" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs tracking-wider rounded-xl transition uppercase">Fechar</button>
+            </div>
+          </div>
+        `;
+        document.getElementById('btn-fechar-aviso')?.addEventListener('click', () => this.closeModal());
+        return;
+      }
+
+      modalContent.innerHTML = `
+        <div class="p-6">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+            <h3 class="text-lg font-black text-slate-800 flex items-center gap-1.5">✈️ Nova Viagem / Card</h3>
+            <button id="btn-close-viagem-x" class="text-slate-400 hover:text-rose-500 font-bold transition">✕</button>
+          </div>
+
+          <form id="form-nova-viagem" class="space-y-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Passageiro / Cliente *</label>
+              <select id="select-viagem-cliente" required class="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-medium text-sm">
+                <option value="">Selecione o cliente...</option>
+                ${clientes.map(c => `<option value="${c.id}">${c.nome}</option>`).join('')}
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Destino *</label>
+              <input id="input-viagem-destino" type="text" required placeholder="ex: Paris, Orlando, etc." class="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-medium text-sm" />
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Localizador (LOC)</label>
+                <input id="input-viagem-loc" type="text" placeholder="ex: AX3R9" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-medium text-sm uppercase" />
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Valor Total (R$) *</label>
+                <input id="input-viagem-valor" type="number" step="0.01" required placeholder="0.00" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-medium text-sm" />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Data de Ida *</label>
+                <input id="input-viagem-ida" type="date" required class="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-medium text-sm" />
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Data de Volta *</label>
+                <input id="input-viagem-volta" type="date" required class="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-medium text-sm" />
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Status / Etapa Inicial *</label>
+              <select id="select-viagem-status" required class="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-medium text-sm">
+                <option value="pos_venda">Pós-Venda</option>
+                <option value="fechado">Fechado</option>
+                <option value="pre_embarque">Pré-Embarque</option>
+                <option value="pos_viagem">Pós-Viagem</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Observações Operacionais</label>
+              <textarea id="textarea-viagem-obs" placeholder="Detalhes de voo, hotel, etc." rows="2" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-medium text-sm"></textarea>
+            </div>
+
+            <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 mt-4">
+              <button id="btn-cancel-viagem" type="button" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs tracking-wider rounded-xl transition uppercase">Cancelar</button>
+              <button type="submit" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/10 transition uppercase">Criar Viagem</button>
+            </div>
+          </form>
+        </div>
+      `;
+
+      const handleClose = () => this.closeModal();
+      document.getElementById('btn-close-viagem-x')?.addEventListener('click', handleClose);
+      document.getElementById('btn-cancel-viagem')?.addEventListener('click', handleClose);
+
+      const form = document.getElementById('form-nova-viagem') as HTMLFormElement;
+      form?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const clienteId = (document.getElementById('select-viagem-cliente') as HTMLSelectElement).value;
+        const destino = (document.getElementById('input-viagem-destino') as HTMLInputElement).value;
+        const loc = (document.getElementById('input-viagem-loc') as HTMLInputElement).value;
+        const valor = parseFloat((document.getElementById('input-viagem-valor') as HTMLInputElement).value);
+        const dataIda = (document.getElementById('input-viagem-ida') as HTMLInputElement).value;
+        const dataVolta = (document.getElementById('input-viagem-volta') as HTMLInputElement).value;
+        const status = (document.getElementById('select-viagem-status') as HTMLSelectElement).value;
+        const obs = (document.getElementById('textarea-viagem-obs') as HTMLTextAreaElement).value;
+
+        const payload = {
+          cliente_id: clienteId,
+          consultor_id: this.user.id,
+          destino: destino,
+          codigo_localizador: loc || null,
+          valor_total: valor,
+          data_ida: dataIda,
+          data_volta: dataVolta,
+          status: status,
+          observacoes: obs || null
+        };
+
+        try {
+          const { error } = await supabase
+            .from('viagens')
+            .insert(payload);
+
+          if (error) throw error;
+
+          this.showToast('Viagem cadastrada com sucesso no Kanban!', 'success');
+          this.closeModal();
+          await this.loadViagens();
+          this.render();
+          this.setupDragAndDrop();
+        } catch (err: any) {
+          console.error('Erro ao cadastrar viagem:', err);
+          this.showToast(`Erro ao criar viagem: ${err.message}`, 'error');
+        }
+      });
+
+    } catch (err: any) {
+      console.error('Erro ao abrir modal de nova viagem:', err);
+      this.showToast('Erro ao carregar modal de criação.', 'error');
+      this.closeModal();
+    }
+  }
+
+  /**
    * Cria o overlay estrutural do modal se ele ainda não existir e abre a exibição
    */
   private renderModalOverlay(): void {
@@ -607,6 +765,11 @@ export class Dashboard {
               </div>
             </div>
 
+            <!-- Botão Criar Card / Nova Viagem -->
+            <button id="btn-nova-viagem" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/20 flex items-center gap-1.5 transition transform hover:-translate-y-0.5 uppercase">
+              ➕ Nova Viagem
+            </button>
+
             <!-- Identidade do Consultor Logado -->
             <div class="flex items-center gap-3 pl-2">
               <div class="text-right hidden sm:block">
@@ -655,6 +818,11 @@ export class Dashboard {
         await logoutConsultor();
         window.location.reload();
       }
+    });
+
+    // Evento de Criação de Nova Viagem
+    document.getElementById('btn-nova-viagem')?.addEventListener('click', () => {
+      this.openNovaViagemModal();
     });
   }
 
