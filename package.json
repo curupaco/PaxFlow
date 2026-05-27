@@ -16,6 +16,7 @@
     "sortablejs": "^1.15.7"
   },
   "devDependencies": {
+    "@types/node": "^25.9.1",
     "@types/sortablejs": "^1.15.9",
     "typescript": "^6.0.3",
     "vite": "^5.4.21"
