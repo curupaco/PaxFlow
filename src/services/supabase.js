@@ -1,7 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
-// Suporta ambientes baseados em Node (process.env) ou no navegador/Vite
-const supabaseUrl = (typeof process !== 'undefined' && process.env?.SUPABASE_URL) || '';
-const supabaseAnonKey = (typeof process !== 'undefined' && process.env?.SUPABASE_ANON_KEY) || '';
+// Suporta ambientes baseados em Node (process.env) ou no navegador/Vite (import.meta.env)
+const supabaseUrl = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_URL) ||
+    (typeof process !== 'undefined' && process.env?.SUPABASE_URL) ||
+    '';
+const supabaseAnonKey = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_ANON_KEY) ||
+    (typeof process !== 'undefined' && process.env?.SUPABASE_ANON_KEY) ||
+    '';
 if (!supabaseUrl || !supabaseAnonKey) {
     console.warn('Aviso: As variáveis de ambiente SUPABASE_URL e/ou SUPABASE_ANON_KEY não foram configuradas. ' +
         'Certifique-se de defini-las para o correto funcionamento da conexão.');
