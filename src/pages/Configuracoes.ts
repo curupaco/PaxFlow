@@ -428,6 +428,7 @@ export class ConfiguracoesPage {
           email,
           password: senha,
           options: {
+            emailRedirectTo: window.location.origin,
             data: {
               nome,
             }
