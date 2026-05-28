@@ -798,7 +798,10 @@ export class OrcamentosPage {
       <div class="p-6">
         <div class="flex items-center justify-between border-b border-slate-150 dark:border-slate-800 pb-3 mb-5">
           <h3 class="text-lg font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
-            <span>📥 Novo Orçamento</span>
+            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" class="w-5 h-5 text-indigo-500 mr-1.5 shrink-0">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0a2 2 0 01-2 2H6a2 2 0 01-2-2m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+            </svg>
+            <span>Novo Orçamento</span>
           </h3>
           <button id="btn-close-modal-x" class="text-slate-400 hover:text-rose-500 font-bold transition text-lg">&times;</button>
         </div>
@@ -826,8 +829,8 @@ export class OrcamentosPage {
               <input id="input-orc-destino" type="text" required placeholder="ex: Miami, EUA" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
             </div>
             <div>
-              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Data Estimada *</label>
-              <input id="input-orc-data" type="date" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Data Estimada (DD/MM/AAAA) *</label>
+              <input id="input-orc-data" type="text" required placeholder="DD/MM/AAAA" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
             </div>
           </div>
 
@@ -869,6 +872,19 @@ export class OrcamentosPage {
     const closeModal = () => this.closeModal();
     document.getElementById('btn-close-modal-x')?.addEventListener('click', closeModal);
     document.getElementById('btn-cancel-modal')?.addEventListener('click', closeModal);
+
+    // Máscara e auto-formatação para a Data Estimada (dd/mm/aaaa) em conformidade com .cursorrules
+    const dataInput = document.getElementById('input-orc-data') as HTMLInputElement;
+    dataInput?.addEventListener('input', () => {
+      let v = dataInput.value.replace(/\D/g, '').slice(0, 8);
+      if (v.length >= 5) {
+        dataInput.value = `${v.slice(0, 2)}/${v.slice(2, 4)}/${v.slice(4)}`;
+      } else if (v.length >= 3) {
+        dataInput.value = `${v.slice(0, 2)}/${v.slice(2)}`;
+      } else {
+        dataInput.value = v;
+      }
+    });
 
     // Gerenciador de Tags
     const tagsContainer = document.getElementById('tags-container-modal') as HTMLElement;
@@ -913,9 +929,19 @@ export class OrcamentosPage {
       const telVal = (document.getElementById('input-orc-telefone') as HTMLInputElement).value.trim();
       const emailVal = (document.getElementById('input-orc-email') as HTMLInputElement).value.trim();
       const destinoVal = (document.getElementById('input-orc-destino') as HTMLInputElement).value;
-      const dataVal = (document.getElementById('input-orc-data') as HTMLInputElement).value;
+      const dataRaw = (document.getElementById('input-orc-data') as HTMLInputElement).value.trim();
       const tempVal = (document.getElementById('select-orc-temp') as HTMLSelectElement).value as 'Frio' | 'Normal' | 'Quente';
       const consultorVal = (document.getElementById('select-orc-consultor') as HTMLSelectElement).value;
+
+      // Validação do padrão DD/MM/AAAA estipulado no .cursorrules
+      const dateRegex = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+      if (!dateRegex.test(dataRaw)) {
+        this.showToast('Por favor, informe a data no formato correto DD/MM/AAAA.', 'error');
+        return;
+      }
+
+      const [, dia, mes, ano] = dataRaw.match(dateRegex)!;
+      const dataVal = `${ano}-${mes}-${dia}`;
 
       if (!telVal && !emailVal) {
         this.showToast('Por favor, informe pelo menos um meio de contato (Telefone ou E-mail).', 'error');

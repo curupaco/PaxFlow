@@ -10,7 +10,7 @@ class App {
   private container: HTMLElement;
   private user: any = null;
   private perfil: PerfilConsultor | null = null;
-  private currentActivePage: string = 'dashboard';
+  private currentActivePage: string = 'orcamentos';
   private currentPageInstance: any = null;
   private theme: 'light' | 'dark' = 'light';
 
@@ -198,7 +198,7 @@ class App {
         this.user = user;
         this.perfil = perfil;
         this.renderAppShell();
-        this.navigate('dashboard');
+        this.navigate('orcamentos');
 
       } catch (err: any) {
         btn.disabled = false;
@@ -362,7 +362,7 @@ class App {
         this.currentPageInstance = new ConfiguracoesPage(pageContentEl);
         break;
       default:
-        this.currentPageInstance = new Dashboard(pageContentEl);
+        this.currentPageInstance = new OrcamentosPage(pageContentEl);
     }
 
     if (this.currentPageInstance) {
