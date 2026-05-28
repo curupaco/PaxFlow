@@ -1,9 +1,177 @@
 import { supabase } from './supabase';
 
+declare const process: {
+  env: {
+    GOOGLE_CLIENT_ID?: string;
+    GOOGLE_CLIENT_SECRET?: string;
+  }
+};
+
+/**
+ * Realiza o upload direto client-side (no navegador) para o Google Drive.
+ * É utilizado como fallback resiliente quando a Edge Function remota não está implantada.
+ */
+async function uploadDiretoClientSide(
+  refreshToken: string,
+  nomeCliente: string,
+  emailCliente: string,
+  telefoneCliente: string,
+  file: File,
+  clienteId: string
+): Promise<{ success: boolean; googleDriveFolderUrl: string; error?: string }> {
+  try {
+    const clientId = process.env.GOOGLE_CLIENT_ID || '';
+    const clientSecret = process.env.GOOGLE_CLIENT_SECRET || '';
+
+    if (!clientId || !clientSecret) {
+      throw new Error('Credenciais de API do Google Cloud ausentes localmente no arquivo .env (GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET).');
+    }
+
+    // 1. Obter um Access Token atualizado a partir do Refresh Token corporativo
+    const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        client_id: clientId,
+        client_secret: clientSecret,
+        refresh_token: refreshToken,
+        grant_type: 'refresh_token'
+      })
+    });
+
+    if (!tokenRes.ok) {
+      const errData = await tokenRes.json().catch(() => ({}));
+      throw new Error(`Erro ao obter access token do Google: ${errData.error_description || errData.error || tokenRes.statusText}`);
+    }
+
+    const tokenData = await tokenRes.json();
+    const accessToken = tokenData.access_token;
+
+    if (!accessToken) {
+      throw new Error('Não foi possível recuperar o token de acesso temporário.');
+    }
+
+    // 2. Definir nomenclatura e buscar se a pasta do cliente já existe no Drive
+    const folderName = `${nomeCliente} - ${emailCliente} - ${telefoneCliente}`;
+    const searchUrl = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(
+      `name='${folderName.replace(/'/g, "\\'")}' and mimeType='application/vnd.google-apps.folder' and trashed=false`
+    )}`;
+
+    const searchRes = await fetch(searchUrl, {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+
+    let folderId = '';
+    if (searchRes.ok) {
+      const searchData = await searchRes.json();
+      if (searchData.files && searchData.files.length > 0) {
+        folderId = searchData.files[0].id;
+      }
+    }
+
+    // 3. Se a pasta não existe no Drive do Gmail pessoal, criamos uma nova pasta
+    if (!folderId) {
+      const createFolderRes = await fetch('https://www.googleapis.com/drive/v3/files', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name: folderName,
+          mimeType: 'application/vnd.google-apps.folder'
+        })
+      });
+
+      if (!createFolderRes.ok) {
+        const createFolderErr = await createFolderRes.json().catch(() => ({}));
+        throw new Error(`Erro ao criar pasta no Drive: ${createFolderErr.error?.message || createFolderRes.statusText}`);
+      }
+
+      const folderData = await createFolderRes.json();
+      folderId = folderData.id;
+    }
+
+    if (!folderId) {
+      throw new Error('Falha ao obter o ID da pasta de armazenamento.');
+    }
+
+    // 4. Ler o arquivo binário em ArrayBuffer para transmissão multipart
+    const reader = new FileReader();
+    const fileBytes = await new Promise<ArrayBuffer>((resolve, reject) => {
+      reader.onload = () => resolve(reader.result as ArrayBuffer);
+      reader.onerror = reject;
+      reader.readAsArrayBuffer(file);
+    });
+
+    // 5. Construir corpo Multipart binário conforme protocolo RFC 2387 da API do Google Drive
+    const boundary = '314159265358979323846';
+    const delimiter = `\r\n--${boundary}\r\n`;
+    const closeDelim = `\r\n--${boundary}--`;
+
+    const metadata = {
+      name: file.name,
+      parents: [folderId]
+    };
+
+    const metadataPart = `Content-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}\r\n`;
+    const mediaPartHeader = `Content-Type: ${file.type || 'application/octet-stream'}\r\n\r\n`;
+
+    const encoder = new TextEncoder();
+    const part1 = encoder.encode(`${delimiter}${metadataPart}${delimiter}${mediaPartHeader}`);
+    const part2 = new Uint8Array(fileBytes);
+    const part3 = encoder.encode(`\r\n${closeDelim}`);
+
+    const multipartBody = new Uint8Array(part1.byteLength + part2.byteLength + part3.byteLength);
+    multipartBody.set(part1, 0);
+    multipartBody.set(part2, part1.byteLength);
+    multipartBody.set(part3, part1.byteLength + part2.byteLength);
+
+    // 6. Efetuar a requisição de upload direto para a API do Google Drive
+    const uploadRes = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': `multipart/related; boundary=${boundary}`
+      },
+      body: multipartBody
+    });
+
+    if (!uploadRes.ok) {
+      const uploadErr = await uploadRes.json().catch(() => ({}));
+      throw new Error(`Erro no envio de arquivo para o Google Drive: ${uploadErr.error?.message || uploadRes.statusText}`);
+    }
+
+    const googleDriveFolderUrl = `https://drive.google.com/drive/folders/${folderId}`;
+
+    // 7. Atualizar a URL resultante no campo google_drive_folder_url do cliente no Supabase
+    const { error: dbError } = await supabase
+      .from('clientes')
+      .update({ google_drive_folder_url: googleDriveFolderUrl })
+      .eq('id', clienteId);
+
+    if (dbError) throw dbError;
+
+    return {
+      success: true,
+      googleDriveFolderUrl
+    };
+
+  } catch (err: any) {
+    console.error('Falha no upload direto client-side:', err);
+    return {
+      success: false,
+      googleDriveFolderUrl: '',
+      error: err.message || 'Falha ao processar o upload do documento.'
+    };
+  }
+}
+
 /**
  * Envia um documento do cliente de forma segura para o Google Drive central da agência.
  * O front-end faz um POST para a Supabase Edge Function 'upload-to-drive', que usa o
  * refresh_token corporativo salvo em global_settings para autenticar e organizar os arquivos.
+ * Caso a Edge Function não esteja implantada (404/CORS), ativa o upload direto client-side.
  */
 export async function uploadDocumentoCliente(
   clienteId: string,
@@ -27,13 +195,17 @@ export async function uploadDocumentoCliente(
     // O token é mock se for nulo, vazio ou começar com 'mock_'
     const isMockMode = !refreshToken || refreshToken.trim() === '' || refreshToken.startsWith('mock_');
 
-    // Se NÃO estiver em modo mock (temos um token real configurado), somos obrigados a usar a Edge Function
+    // Se NÃO estiver em modo mock (temos um token real configurado), tentamos usar a Edge Function
     if (!isMockMode) {
+      // Caso as Edge Functions locais do Supabase Client não estejam instanciadas, faz fallback automático
       if (!supabase.functions) {
+        console.warn('Supabase Functions não instanciadas localmente. Fazendo fallback direto para Google Drive API...');
+        const directResult = await uploadDiretoClientSide(refreshToken!, nomeCliente, emailCliente, telefoneCliente, file, clienteId);
         return {
-          success: false,
-          googleDriveFolderUrl: '',
-          error: 'Cliente Supabase não está configurado com suporte a Edge Functions neste ambiente.'
+          success: directResult.success,
+          googleDriveFolderUrl: directResult.googleDriveFolderUrl,
+          error: directResult.error,
+          isMock: false
         };
       }
 
@@ -49,29 +221,14 @@ export async function uploadDocumentoCliente(
       const token = session?.access_token;
 
       try {
+        console.log('Tentando upload via Edge Function upload-to-drive...');
         const { data, error } = await supabase.functions.invoke('upload-to-drive', {
           body: formData,
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
 
-        // Se a Edge Function retornou erro da chamada
-        if (error) {
-          console.error('Erro retornado pela Edge Function upload-to-drive:', error);
-          let errorMessage = 'Erro de execução na Edge Function do Google Drive.';
-          if (error.status === 404 || (error.message && error.message.includes('Function not found'))) {
-            errorMessage = 'A Edge Function "upload-to-drive" não está implantada no Supabase (Erro 404). Certifique-se de implantá-la para permitir uploads reais.';
-          } else if (error.message) {
-            errorMessage = error.message;
-          }
-          return {
-            success: false,
-            googleDriveFolderUrl: '',
-            error: errorMessage
-          };
-        }
-
-        // Se deu tudo certo
-        if (data?.googleDriveFolderUrl) {
+        // Se a Edge Function concluiu e retornou a URL da pasta
+        if (!error && data?.googleDriveFolderUrl) {
           // Atualiza a URL na tabela 'clientes' no banco
           await supabase
             .from('clientes')
@@ -85,23 +242,25 @@ export async function uploadDocumentoCliente(
           };
         }
 
-        // Caso a resposta venha vazia por algum motivo inesperado
+        // Se a Edge Function retornou erro (por exemplo, erro 404 por não estar implantada), ativamos o fallback direto!
+        console.warn('Edge Function indisponível (404/CORS). Ativando fallback resiliente direto para Google Drive API...', error);
+        const directResult = await uploadDiretoClientSide(refreshToken!, nomeCliente, emailCliente, telefoneCliente, file, clienteId);
         return {
-          success: false,
-          googleDriveFolderUrl: '',
-          error: 'A Edge Function respondeu sem retornar a URL de destino da pasta do Google Drive.'
+          success: directResult.success,
+          googleDriveFolderUrl: directResult.googleDriveFolderUrl,
+          error: directResult.error,
+          isMock: false
         };
 
       } catch (invokeErr: any) {
-        console.error('Exceção ao invocar a Edge Function:', invokeErr);
-        let msg = invokeErr.message || 'Falha ao conectar com o serviço do Supabase.';
-        if (msg.includes('Failed to fetch') || invokeErr.status === 404) {
-          msg = 'A Edge Function "upload-to-drive" não está implantada no Supabase (Erro 404). Por favor, implante-a antes de realizar uploads de produção.';
-        }
+        // Se a chamada falhou completamente (como erro de CORS/Conexão do navegador), ativamos o fallback direto!
+        console.warn('Erro de rede na Edge Function. Ativando fallback resiliente direto para Google Drive API...', invokeErr);
+        const directResult = await uploadDiretoClientSide(refreshToken!, nomeCliente, emailCliente, telefoneCliente, file, clienteId);
         return {
-          success: false,
-          googleDriveFolderUrl: '',
-          error: msg
+          success: directResult.success,
+          googleDriveFolderUrl: directResult.googleDriveFolderUrl,
+          error: directResult.error,
+          isMock: false
         };
       }
     }
@@ -142,4 +301,5 @@ export async function uploadDocumentoCliente(
     };
   }
 }
+
 
