@@ -768,7 +768,7 @@ export class OrcamentosPage {
         <div class="border-t border-slate-100 dark:border-slate-800 pt-3 mt-1 flex items-center justify-between gap-2">
           
           <!-- Avatar e botão de alteração do Consultor -->
-          <div class="flex items-center gap-1.5 overflow-hidden">
+          <div class="flex items-center gap-1.5">
             <div title="Responsável: ${dono?.nome || 'Consultor'}">
               ${getAvatarSvg(dono?.avatar_url, dono?.nome || 'Consultor', 'w-6 h-6')}
             </div>
@@ -783,7 +783,7 @@ export class OrcamentosPage {
                 <path stroke-linecap="round" stroke-linejoin="round" d="M7 8h10M7 8l3-3M7 8l3 3M17 16H7m10 0l-3-3m3 3l-3 3" />
               </svg>
             </button>
-            <button data-action="lembrar-depois" data-id="${o.id}" title="Me Lembre Depois" class="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-450 hover:text-indigo-600 rounded transition flex items-center justify-center shrink-0">
+            <button data-action="lembrar-depois" data-id="${o.id}" title="Me Lembre Depois" class="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 dark:text-slate-500 hover:text-indigo-600 rounded transition flex items-center justify-center shrink-0">
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
               </svg>

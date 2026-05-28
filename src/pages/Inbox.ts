@@ -52,6 +52,22 @@ if (typeof document !== 'undefined') {
     .custom-scrollbar::-webkit-scrollbar-thumb:hover {
       background: rgba(156, 163, 175, 0.5);
     }
+    @keyframes ring-glow {
+      0% {
+        box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7);
+      }
+      70% {
+        box-shadow: 0 0 0 6px rgba(245, 158, 11, 0);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
+      }
+    }
+    .unread-avatar-glow {
+      animation: ring-glow 2s infinite;
+      box-shadow: 0 0 0 2.5px #f59e0b;
+      border-radius: 0.75rem;
+    }
   `;
   document.head.appendChild(style);
 }
@@ -419,6 +435,33 @@ export class InboxPage {
   }
 
   /**
+   * Retrieves list of locally read alert IDs from localStorage
+   */
+  private getReadLocalAlerts(): string[] {
+    try {
+      const val = localStorage.getItem('paxflow_read_alerts');
+      return val ? JSON.parse(val) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  /**
+   * Marks a specific alert ID as read
+   */
+  private markAlertAsRead(id: string): void {
+    try {
+      const list = this.getReadLocalAlerts();
+      if (!list.includes(id)) {
+        list.push(id);
+        localStorage.setItem('paxflow_read_alerts', JSON.stringify(list));
+      }
+    } catch (err) {
+      console.error('Erro ao marcar alerta como lido:', err);
+    }
+  }
+
+  /**
    * Triggers the load loading placeholder
    */
   private renderLoading(): void {
@@ -457,6 +500,10 @@ export class InboxPage {
     const totalPassport = this.alerts.filter(a => a.type === 'passport' && !a.arquivado).length;
     const totalRefund = this.alerts.filter(a => a.type === 'refund' && !a.arquivado).length;
 
+    // Determine unread alerts status for visual header badge indicator
+    const readList = this.getReadLocalAlerts();
+    const hasUnread = this.alerts.some(a => !a.arquivado && !readList.includes(a.id));
+
     // 2. Build the main page container markup
     this.container.innerHTML = `
       <div class="min-h-screen bg-slate-50/50 dark:bg-slate-950 flex flex-col font-sans transition-colors duration-200">
@@ -479,8 +526,8 @@ export class InboxPage {
               <span class="block text-sm font-extrabold text-slate-700 dark:text-slate-300">${this.perfil?.nome || 'Consultor'}</span>
               <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">${this.perfil?.role === 'admin' ? 'Administrador' : 'Consultor'}</span>
             </div>
-            <div class="w-10 h-10 border border-slate-200 dark:border-slate-850 rounded-xl overflow-hidden flex items-center justify-center bg-white dark:bg-slate-900">
-              ${getAvatarSvg(this.perfil?.avatar_url, this.perfil?.nome?.charAt(0) || 'C', 'w-full h-full')}
+            <div class="${hasUnread ? 'unread-avatar-glow' : ''}">
+              ${getAvatarSvg(this.perfil?.avatar_url, this.perfil?.nome?.charAt(0) || 'C', 'w-10 h-10')}
             </div>
             <!-- Theme toggle button -->
             <button id="theme-toggle-btn" title="Alternar Tema" class="p-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-400 dark:text-slate-500 rounded-xl transition border border-slate-200/40 dark:border-slate-700/40 flex items-center justify-center">
@@ -646,11 +693,16 @@ export class InboxPage {
                     badgeText = 'Reembolso SLA';
                   }
 
+                  const isUnread = !a.arquivado && !readList.includes(a.id);
+
                   return `
-                    <div class="inbox-card inbox-glass p-5 rounded-2xl border border-white/60 dark:border-slate-900/60 shadow-sm flex items-start gap-4 cursor-pointer" data-alert-id="${a.id}">
+                    <div class="inbox-card inbox-glass p-5 rounded-2xl border ${isUnread ? 'border-indigo-200 dark:border-indigo-900/60 bg-indigo-50/5 dark:bg-indigo-950/5' : 'border-white/60 dark:border-slate-900/60'} shadow-sm flex items-start gap-4 cursor-pointer relative" data-alert-id="${a.id}">
                       
+                      <!-- Unread Indicator Dot -->
+                      ${isUnread ? `<span class="absolute top-5 left-2 w-2 h-2 rounded-full bg-indigo-650 dark:bg-indigo-400 animate-pulse"></span>` : ''}
+
                       <!-- Avatar -->
-                      <div class="w-10 h-10 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden flex items-center justify-center bg-white dark:bg-slate-900 flex-shrink-0">
+                      <div class="w-10 h-10 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden flex items-center justify-center bg-white dark:bg-slate-900 flex-shrink-0 ${isUnread ? 'ring-2 ring-indigo-500/20' : ''}">
                         ${getAvatarSvg(a.senderAvatar, a.sender.charAt(0), 'w-full h-full')}
                       </div>
 
@@ -806,6 +858,7 @@ export class InboxPage {
 
         const alertItem = this.filteredAlerts.find(a => a.id === alertId);
         if (alertItem) {
+          this.markAlertAsRead(alertId);
           this.openEmailReaderModal(alertItem);
         }
       });
@@ -936,6 +989,9 @@ export class InboxPage {
       modalOverlay.classList.add('opacity-0');
       setTimeout(() => {
         modalOverlay.remove();
+        // Redraw workspace immediately to remove read highlight and update glows
+        this.render();
+        this.setupEventListeners();
       }, 200);
     };
 
