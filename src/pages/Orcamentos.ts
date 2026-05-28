@@ -1050,18 +1050,19 @@ export class OrcamentosPage {
         </div>
 
         <p class="text-xs text-slate-400 dark:text-slate-500 mb-4 font-semibold">
-          Para avançar o orçamento de <span class="font-extrabold text-indigo-600 dark:text-indigo-400">${orc.nomeCliente}</span> para o estágio de <strong>AGUARDANDO</strong>, é obrigatório registrar o resumo da proposta comercial e fazer upload do documento corporativo no Google Drive.
+          Para avançar o orçamento de <span class="font-extrabold text-indigo-600 dark:text-indigo-400">${orc.nomeCliente}</span> para o estágio de <strong>AGUARDANDO</strong>, é obrigatório registrar o resumo da proposta comercial ou fazer upload do documento corporativo (pelo menos um dos dois).
         </p>
 
         <form id="form-enviar-proposta" class="space-y-5">
           <div>
-            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Resumo / Notas da Negociação *</label>
-            <textarea id="textarea-orc-notas" required placeholder="Insira o escopo da cotação, hotéis ofertados, voos, valores, tarifas e qualquer observação importante da negociação..." rows="4.5" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 text-sm font-semibold"></textarea>
+            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Resumo / Notas da Negociação</label>
+            <textarea id="textarea-orc-notas" placeholder="Insira o escopo da cotação, hotéis ofertados, voos, valores, tarifas e qualquer observação importante da negociação..." rows="4.5" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 text-sm font-semibold"></textarea>
+            <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">Obrigatório caso não anexe o documento da proposta.</p>
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Upload de Documento da Proposta (PDF/Imagem) *</label>
-            <input type="file" id="file-input-proposta" accept="application/pdf,image/*" class="hidden" required />
+            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Upload de Documento da Proposta (PDF/Imagem)</label>
+            <input type="file" id="file-input-proposta" accept="application/pdf,image/*" class="hidden" />
             <div id="upload-proposta-dropzone" class="border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-indigo-400/80 bg-slate-50/30 dark:bg-slate-800/10 hover:bg-slate-50 dark:hover:bg-slate-800/40 rounded-2xl p-6 text-center cursor-pointer transition transform hover:-translate-y-0.5 flex flex-col items-center justify-center space-y-2 group">
               <div id="upload-proposta-visual" class="flex flex-col items-center justify-center space-y-2">
                 <span class="text-3xl filter group-hover:scale-110 transition duration-300">📄</span>
@@ -1072,6 +1073,7 @@ export class OrcamentosPage {
             <div id="selected-file-label" class="hidden text-xs text-emerald-600 dark:text-emerald-450 font-bold mt-2 flex items-center gap-1">
               <span>✅</span> <span id="file-name-span"></span>
             </div>
+            <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">Obrigatório caso o campo de notas acima esteja vazio.</p>
           </div>
 
           <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-150 dark:border-slate-800">
@@ -1109,54 +1111,76 @@ export class OrcamentosPage {
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
 
-      if (!selectedFile) {
-        this.showToast('Você deve anexar o arquivo da proposta comercial.', 'error');
+      const notasVal = (document.getElementById('textarea-orc-notas') as HTMLTextAreaElement).value.trim();
+
+      if (!notasVal && !selectedFile) {
+        this.showToast('Por favor, preencha o Resumo/Notas ou anexe o arquivo da proposta comercial.', 'error');
         return;
       }
 
       const submitBtn = document.getElementById('btn-submit-proposta') as HTMLButtonElement;
       submitBtn.disabled = true;
-      submitBtn.textContent = 'Enviando ao Drive...';
 
-      visual.innerHTML = `
-        <div class="flex flex-col items-center justify-center space-y-2">
-          <div class="w-8 h-8 border-3 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-          <p class="text-xs text-slate-500 font-bold animate-pulse">Processando upload corporativo...</p>
-        </div>
-      `;
+      if (selectedFile) {
+        submitBtn.textContent = 'Enviando ao Drive...';
+        visual.innerHTML = `
+          <div class="flex flex-col items-center justify-center space-y-2">
+            <div class="w-8 h-8 border-3 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+            <p class="text-xs text-slate-500 font-bold animate-pulse">Processando upload corporativo...</p>
+          </div>
+        `;
+      } else {
+        submitBtn.textContent = 'Processando...';
+      }
 
       try {
-        // Envia o documento via Edge Function/Mock do Google Drive
-        // Formata os contatos para extrair e-mail de teste ou campos vazios
-        const parts = orc.contato.split('/');
-        const email = parts.length > 1 ? parts[1].trim() : 'lead@orcamentos.com';
-        const telefone = parts.length > 0 ? parts[0].trim() : '(11) 90000-0000';
+        if (selectedFile) {
+          // Envia o documento via Edge Function/Mock do Google Drive
+          // Formata os contatos para extrair e-mail de teste ou campos vazios
+          const parts = orc.contato.split('/');
+          const email = parts.length > 1 ? parts[1].trim() : 'lead@orcamentos.com';
+          const telefone = parts.length > 0 ? parts[0].trim() : '(11) 90000-0000';
 
-        const result = await uploadDocumentoCliente(
-          orc.id,
-          orc.nomeCliente,
-          email,
-          telefone,
-          selectedFile
-        );
+          const result = await uploadDocumentoCliente(
+            orc.id,
+            orc.nomeCliente,
+            email,
+            telefone,
+            selectedFile
+          );
 
-        if (result.success && result.googleDriveFolderUrl) {
-          orc.notasNegociacao = (document.getElementById('textarea-orc-notas') as HTMLTextAreaElement).value;
-          orc.documentosUrl = orc.documentosUrl || [];
-          orc.documentosUrl.push(result.googleDriveFolderUrl);
+          if (result.success && result.googleDriveFolderUrl) {
+            orc.notasNegociacao = notasVal;
+            orc.documentosUrl = orc.documentosUrl || [];
+            orc.documentosUrl.push(result.googleDriveFolderUrl);
+            orc.status = 'AGUARDANDO';
+
+            const success = await this.persistOrcamento(orc);
+            if (success) {
+              this.showToast('Proposta enviada com sucesso ao cliente!', 'success');
+              this.closeModal();
+              await this.loadOrcamentos();
+              this.render();
+            } else {
+              throw new Error('Falha ao atualizar orçamento.');
+            }
+          } else {
+            throw new Error(result.error || 'Erro no upload.');
+          }
+        } else {
+          // Apenas atualiza as notas da proposta sem fazer upload
+          orc.notasNegociacao = notasVal;
           orc.status = 'AGUARDANDO';
 
           const success = await this.persistOrcamento(orc);
           if (success) {
-            this.showToast('Proposta enviada com sucesso ao cliente!', 'success');
+            this.showToast('Orçamento avançado com sucesso!', 'success');
             this.closeModal();
             await this.loadOrcamentos();
             this.render();
           } else {
             throw new Error('Falha ao atualizar orçamento.');
           }
-        } else {
-          throw new Error(result.error || 'Erro no upload.');
         }
 
       } catch (err: any) {
@@ -1164,6 +1188,15 @@ export class OrcamentosPage {
         this.showToast(`Erro ao avançar proposta: ${err.message}`, 'error');
         submitBtn.disabled = false;
         submitBtn.textContent = 'Avançar Orçamento 🚀';
+
+        // Restaurar visual da dropzone em caso de falha de upload
+        if (selectedFile) {
+          visual.innerHTML = `
+            <span class="text-3xl filter group-hover:scale-110 transition duration-300">📄</span>
+            <p class="text-sm text-slate-700 dark:text-slate-300 font-extrabold">Selecionar arquivo de proposta</p>
+            <p class="text-xs text-slate-400 dark:text-slate-500 font-semibold">Clique para anexar arquivo (Máx. 15MB)</p>
+          `;
+        }
       }
     });
   }
