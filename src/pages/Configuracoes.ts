@@ -1,4 +1,4 @@
-import { supabase, getSessaoAtual, atualizarSenhaAtual } from '../services/supabase';
+import { supabase, getSessaoAtual, atualizarSenhaAtual, salvarSenhaLocal } from '../services/supabase';
 import { PerfilConsultor, GlobalSettings } from '../types';
 import { createClient } from '@supabase/supabase-js';
 import { getAvatarSvg, AVATAR_OPTIONS, mesclarAvataresLocais, salvarAvatarLocal } from '../services/avatars';
@@ -531,6 +531,9 @@ export class ConfiguracoesPage {
           throw new Error('Erro ao criar registro de autenticação do usuário.');
         }
 
+        // Salva a senha localmente para viabilizar login direto em sandbox
+        salvarSenhaLocal(email, senha);
+
         // 2. Insere ou atualiza os dados correspondentes na tabela profiles (evita conflito se houver trigger automática no Supabase)
         const { error: profileError } = await supabase.from('profiles').upsert({
           id: authData.user.id,
@@ -788,17 +791,17 @@ export class ConfiguracoesPage {
               if (passwordErr) throw passwordErr;
             }
           } else {
-            // Nota de desenvolvimento: se for outro usuário, e digitou a senha, podemos disparar um redefinição, 
-            // ou em ambiente de desenvolvimento local, notificamos sucesso e permitimos a simulação de alteração direta.
+            // Se for outro usuário, e digitou a senha, salvamos localmente na sandbox para permitir login direto e instantâneo
             if (senhaVal) {
-              // Dispara redefinição no Supabase conectada real, ou simula o update
+              salvarSenhaLocal(c.email, senhaVal);
+
               try {
                 await supabase.auth.resetPasswordForEmail(c.email, {
                   redirectTo: window.location.origin
                 });
                 console.log(`[Dev] Solicitação de redefinição de senha para ${c.email} enviada ao Supabase.`);
               } catch (authErr) {
-                console.warn('Falha ao acionar redefinição de senha oficial:', authErr);
+                console.warn('Falha ao acionar redefinição de senha oficial (usando bypass sandbox local):', authErr);
               }
             }
           }
