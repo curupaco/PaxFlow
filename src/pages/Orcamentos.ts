@@ -39,6 +39,7 @@ export class OrcamentosPage {
   private consultores: PerfilConsultor[] = [];
   private loading: boolean = false;
   private isFallbackMode: boolean = false;
+  private realtimeChannel: any = null;
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -69,6 +70,9 @@ export class OrcamentosPage {
 
       // 4. Configurar ouvintes de eventos da página principal
       this.setupGlobalEventListeners();
+
+      // 5. Configurar Canal Realtime do Supabase
+      this.setupRealtimeChannel();
 
     } catch (err: any) {
       console.error('Erro ao inicializar OrcamentosPage:', err);
@@ -1460,10 +1464,27 @@ export class OrcamentosPage {
   }
 
   /**
+   * Configura o Canal de Comunicação em Tempo Real do Supabase
+   */
+  private setupRealtimeChannel(): void {
+    if (this.isFallbackMode) return;
+
+    this.realtimeChannel = supabase
+      .channel('orcamentos-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orcamentos' }, async () => {
+        await this.loadOrcamentos();
+        this.render();
+      })
+      .subscribe();
+  }
+
+  /**
    * Limpeza de listeners ao fechar ou transicionar a página
    */
   public destroy(): void {
-    // Implementações de limpeza se necessárias
+    if (this.realtimeChannel) {
+      supabase.removeChannel(this.realtimeChannel);
+    }
   }
 }
 export default OrcamentosPage;
