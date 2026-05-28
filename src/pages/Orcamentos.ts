@@ -14,6 +14,7 @@ if (typeof document !== 'undefined') {
     }
     .card-orcamento {
       transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
     }
     .card-orcamento:hover {
       transform: translateY(-2px);
@@ -523,6 +524,25 @@ export class OrcamentosPage {
             this.showToast('Erro ao deletar orçamento.', 'error');
           }
         }
+      });
+    });
+
+    // Click no Card inteiro (excluindo cliques em botões e ações do card) para abrir visualização/edição em qualquer coluna
+    this.container.querySelectorAll('.card-orcamento').forEach(card => {
+      card.addEventListener('click', (e) => {
+        const target = e.target as HTMLElement;
+        // Se clicar em um botão, link ou outro elemento de ação, não abre o modal principal
+        if (
+          target.closest('button') || 
+          target.closest('a') || 
+          target.closest('[data-action]') ||
+          target.tagName === 'BUTTON' ||
+          target.tagName === 'A'
+        ) {
+          return;
+        }
+        const id = (card as HTMLElement).dataset.id;
+        if (id) this.openVerNotasModal(id);
       });
     });
   }
@@ -1740,12 +1760,12 @@ export class OrcamentosPage {
         <form id="form-lembrar-depois" class="space-y-4">
           <div>
             <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Data do Alerta *</label>
-            <input id="input-lembrete-data" type="date" required min="${hoje}" value="${hoje}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-850 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+            <input id="input-lembrete-data" type="text" placeholder="DD/MM/YYYY" required value="${this.formatarDataBr(hoje)}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
           </div>
 
           <div>
             <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Período *</label>
-            <select id="select-lembrete-periodo" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-850 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm">
+            <select id="select-lembrete-periodo" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm">
               <option value="manha">🌅 Manhã</option>
               <option value="tarde" selected>☀️ Tarde</option>
               <option value="noite">🌙 Noite</option>
@@ -1764,14 +1784,38 @@ export class OrcamentosPage {
     document.getElementById('btn-close-modal-x')?.addEventListener('click', closeModal);
     document.getElementById('btn-cancel-modal')?.addEventListener('click', closeModal);
 
+    // Auto-mask para data em formato DD/MM/YYYY
+    const dataInput = document.getElementById('input-lembrete-data') as HTMLInputElement;
+    dataInput?.addEventListener('input', () => {
+      let v = dataInput.value.replace(/\D/g, '');
+      if (v.length > 8) v = v.slice(0, 8);
+      if (v.length > 4) {
+        dataInput.value = `${v.slice(0, 2)}/${v.slice(2, 4)}/${v.slice(4)}`;
+      } else if (v.length > 2) {
+        dataInput.value = `${v.slice(0, 2)}/${v.slice(2)}`;
+      } else {
+        dataInput.value = v;
+      }
+    });
+
     const form = document.getElementById('form-lembrar-depois') as HTMLFormElement;
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
 
-      const dataLembrete = (document.getElementById('input-lembrete-data') as HTMLInputElement).value;
+      const dataLembreteRaw = (document.getElementById('input-lembrete-data') as HTMLInputElement).value.trim();
       const periodo = (document.getElementById('select-lembrete-periodo') as HTMLSelectElement).value;
 
-      if (!dataLembrete || !periodo) return;
+      if (!dataLembreteRaw || !periodo) return;
+
+      // Validação do formato DD/MM/YYYY
+      const regexData = /^\d{2}\/\d{2}\/\d{4}$/;
+      if (!regexData.test(dataLembreteRaw)) {
+        showCustomAlert('Por favor, insira a data no formato DD/MM/YYYY (ex: 28/05/2026).', 'Formato de Data Inválido');
+        return;
+      }
+
+      const parts = dataLembreteRaw.split('/');
+      const dataLembrete = `${parts[2]}-${parts[1]}-${parts[0]}`; // Converte para YYYY-MM-DD para o banco
 
       try {
         const { error } = await supabase
