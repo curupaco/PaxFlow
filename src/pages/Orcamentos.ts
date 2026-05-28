@@ -283,7 +283,7 @@ export class OrcamentosPage {
         documentos_url: o.documentosUrl || []
       };
 
-      if (o.id && !o.id.startsWith('orc-demo')) {
+      if (o.id && !o.id.startsWith('orc-')) {
         const { error } = await supabase
           .from('orcamentos')
           .update(payload)
@@ -336,6 +336,14 @@ export class OrcamentosPage {
   private formatarDataBr(dStr?: string): string {
     if (!dStr) return 'Não definida';
     const parts = dStr.split('-');
+    if (parts.length !== 3) return dStr;
+    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  }
+
+  private formatarDataInputBr(dStr?: string): string {
+    if (!dStr) return '';
+    const dataApenas = dStr.includes('T') ? dStr.split('T')[0] : dStr.split(' ')[0];
+    const parts = dataApenas.split('-');
     if (parts.length !== 3) return dStr;
     return `${parts[2]}/${parts[1]}/${parts[0]}`;
   }
@@ -1232,16 +1240,16 @@ export class OrcamentosPage {
                 <input id="input-fechar-via-loc" type="text" placeholder="ex: F3R9W (opcional)" class="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm uppercase" />
               </div>
               <div>
-                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Data de Ida *</label>
-                <input id="input-fechar-via-ida" type="date" required value="${orc.dataViagem || ''}" class="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Data de Ida (DD/MM/AAAA) *</label>
+                <input id="input-fechar-via-ida" type="text" required placeholder="DD/MM/AAAA" value="${this.formatarDataInputBr(orc.dataViagem)}" class="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
               </div>
               <div>
-                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Data de Volta *</label>
-                <input id="input-fechar-via-volta" type="date" required class="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Data de Volta (DD/MM/AAAA) *</label>
+                <input id="input-fechar-via-volta" type="text" required placeholder="DD/MM/AAAA" class="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
               </div>
               <div>
                 <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Valor da Venda (R$) *</label>
-                <input id="input-fechar-via-valor" type="number" step="0.01" required placeholder="0.00" class="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+                <input id="input-fechar-via-valor" type="text" required placeholder="0,00" class="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
               </div>
               <div>
                 <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Etapa Inicial Operacional *</label>
@@ -1287,11 +1295,32 @@ export class OrcamentosPage {
 
         const vDestino = (document.getElementById('input-fechar-via-destino') as HTMLInputElement).value;
         const vLoc = (document.getElementById('input-fechar-via-loc') as HTMLInputElement).value;
-        const vIda = (document.getElementById('input-fechar-via-ida') as HTMLInputElement).value;
-        const vVolta = (document.getElementById('input-fechar-via-volta') as HTMLInputElement).value;
-        const vValor = parseFloat((document.getElementById('input-fechar-via-valor') as HTMLInputElement).value);
+        const vIdaRaw = (document.getElementById('input-fechar-via-ida') as HTMLInputElement).value.trim();
+        const vVoltaRaw = (document.getElementById('input-fechar-via-volta') as HTMLInputElement).value.trim();
+        const vValorRaw = (document.getElementById('input-fechar-via-valor') as HTMLInputElement).value.trim();
         const vStatus = (document.getElementById('select-fechar-via-status') as HTMLSelectElement).value;
         const vObs = (document.getElementById('textarea-fechar-via-obs') as HTMLTextAreaElement).value;
+
+        const dateRegex = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+        if (!dateRegex.test(vIdaRaw)) {
+          throw new Error('Por favor, informe a Data de Ida no formato correto DD/MM/AAAA.');
+        }
+        if (!dateRegex.test(vVoltaRaw)) {
+          throw new Error('Por favor, informe a Data de Volta no formato correto DD/MM/AAAA.');
+        }
+
+        const [, idaDia, idaMes, idaAno] = vIdaRaw.match(dateRegex)!;
+        const vIda = `${idaAno}-${idaMes}-${idaDia}`;
+
+        const [, voltaDia, voltaMes, voltaAno] = vVoltaRaw.match(dateRegex)!;
+        const vVolta = `${voltaAno}-${voltaMes}-${voltaDia}`;
+
+        const parseDoubleBr = (valStr: string): number => {
+          const clean = valStr.replace(/R\$\s?/gi, '').replace(/\./g, '').replace(',', '.').trim();
+          const num = parseFloat(clean);
+          return isNaN(num) ? 0 : num;
+        };
+        const vValor = parseDoubleBr(vValorRaw);
 
         let clienteId = 'cli-mocked-' + Math.random().toString(36).substr(2, 9);
         let folderDriveUrl = orc.documentosUrl && orc.documentosUrl.length > 0 ? orc.documentosUrl[0] : '';

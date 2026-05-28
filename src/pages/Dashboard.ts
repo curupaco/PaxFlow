@@ -590,18 +590,18 @@ export class Dashboard {
               </div>
               <div>
                 <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Valor Total (R$) *</label>
-                <input id="input-viagem-valor" type="number" step="0.01" required placeholder="0.00" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm" />
+                <input id="input-viagem-valor" type="text" required placeholder="0,00" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm" />
               </div>
             </div>
 
             <div class="grid grid-cols-2 gap-4">
               <div>
-                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Data de Ida *</label>
-                <input id="input-viagem-ida" type="date" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm" />
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Data de Ida (DD/MM/AAAA) *</label>
+                <input id="input-viagem-ida" type="text" required placeholder="DD/MM/AAAA" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm" />
               </div>
               <div>
-                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Data de Volta *</label>
-                <input id="input-viagem-volta" type="date" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm" />
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Data de Volta (DD/MM/AAAA) *</label>
+                <input id="input-viagem-volta" type="text" required placeholder="DD/MM/AAAA" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm" />
               </div>
             </div>
 
@@ -639,11 +639,35 @@ export class Dashboard {
         const clienteId = (document.getElementById('select-viagem-cliente') as HTMLSelectElement).value;
         const destino = (document.getElementById('input-viagem-destino') as HTMLInputElement).value;
         const loc = (document.getElementById('input-viagem-loc') as HTMLInputElement).value;
-        const valor = parseFloat((document.getElementById('input-viagem-valor') as HTMLInputElement).value);
-        const dataIda = (document.getElementById('input-viagem-ida') as HTMLInputElement).value;
-        const dataVolta = (document.getElementById('input-viagem-volta') as HTMLInputElement).value;
+        const valorRaw = (document.getElementById('input-viagem-valor') as HTMLInputElement).value.trim();
+        const dataIdaRaw = (document.getElementById('input-viagem-ida') as HTMLInputElement).value.trim();
+        const dataVoltaRaw = (document.getElementById('input-viagem-volta') as HTMLInputElement).value.trim();
         const status = (document.getElementById('select-viagem-status') as HTMLSelectElement).value;
         const obs = (document.getElementById('textarea-viagem-obs') as HTMLTextAreaElement).value;
+
+        // Validação e conversão das datas brasileiras
+        const dateRegex = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+        if (!dateRegex.test(dataIdaRaw)) {
+          this.showToast('Por favor, informe a Data de Ida no formato correto DD/MM/AAAA.', 'error');
+          return;
+        }
+        if (!dateRegex.test(dataVoltaRaw)) {
+          this.showToast('Por favor, informe a Data de Volta no formato correto DD/MM/AAAA.', 'error');
+          return;
+        }
+
+        const [, idaDia, idaMes, idaAno] = dataIdaRaw.match(dateRegex)!;
+        const dataIda = `${idaAno}-${idaMes}-${idaDia}`;
+
+        const [, voltaDia, voltaMes, voltaAno] = dataVoltaRaw.match(dateRegex)!;
+        const dataVolta = `${voltaAno}-${voltaMes}-${voltaDia}`;
+
+        const parseDoubleBr = (valStr: string): number => {
+          const clean = valStr.replace(/R\$\s?/gi, '').replace(/\./g, '').replace(',', '.').trim();
+          const num = parseFloat(clean);
+          return isNaN(num) ? 0 : num;
+        };
+        const valor = parseDoubleBr(valorRaw);
 
         const payload = {
           cliente_id: clienteId,
@@ -777,18 +801,18 @@ export class Dashboard {
               </div>
               <div>
                 <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Valor Total (R$) *</label>
-                <input id="edit-viagem-valor" type="number" step="0.01" required value="${v.valor_total || 0}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm" />
+                <input id="edit-viagem-valor" type="text" required value="${v.valor_total ? Number(v.valor_total).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '0,00'}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm" />
               </div>
             </div>
 
             <div class="grid grid-cols-2 gap-4">
               <div>
-                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Data de Ida *</label>
-                <input id="edit-viagem-ida" type="date" required value="${v.data_ida || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm" />
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Data de Ida (DD/MM/AAAA) *</label>
+                <input id="edit-viagem-ida" type="text" required value="${v.data_ida ? (v.data_ida.includes('-') ? v.data_ida.split('-')[2] + '/' + v.data_ida.split('-')[1] + '/' + v.data_ida.split('-')[0] : v.data_ida) : ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm" />
               </div>
               <div>
-                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Data de Volta *</label>
-                <input id="edit-viagem-volta" type="date" required value="${v.data_volta || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm" />
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Data de Volta (DD/MM/AAAA) *</label>
+                <input id="edit-viagem-volta" type="text" required value="${v.data_volta ? (v.data_volta.includes('-') ? v.data_volta.split('-')[2] + '/' + v.data_volta.split('-')[1] + '/' + v.data_volta.split('-')[0] : v.data_volta) : ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm" />
               </div>
             </div>
 
@@ -860,18 +884,18 @@ export class Dashboard {
                 </div>
                 <div>
                   <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Custo (R$) *</label>
-                  <input id="prod-custo" type="number" step="0.01" required placeholder="0.00" class="w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-xs" />
+                  <input id="prod-custo" type="text" required placeholder="0,00" class="w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-xs" />
                 </div>
                 <div>
                   <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Venda (R$) *</label>
-                  <input id="prod-venda" type="number" step="0.01" required placeholder="0.00" class="w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-xs" />
+                  <input id="prod-venda" type="text" required placeholder="0,00" class="w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-xs" />
                 </div>
               </div>
 
               <div class="grid grid-cols-2 gap-3">
                 <div>
-                  <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Data do Serviço *</label>
-                  <input id="prod-data" type="date" required class="w-full px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-xs" />
+                  <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Data do Serviço (DD/MM/AAAA) *</label>
+                  <input id="prod-data" type="text" required placeholder="DD/MM/AAAA" class="w-full px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-xs" />
                 </div>
                 <div>
                   <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Status *</label>
@@ -928,11 +952,35 @@ export class Dashboard {
       const clienteId = (document.getElementById('edit-viagem-cliente') as HTMLSelectElement).value;
       const destino = (document.getElementById('edit-viagem-destino') as HTMLInputElement).value;
       const loc = (document.getElementById('edit-viagem-loc') as HTMLInputElement).value;
-      const valor = parseFloat((document.getElementById('edit-viagem-valor') as HTMLInputElement).value);
-      const dataIda = (document.getElementById('edit-viagem-ida') as HTMLInputElement).value;
-      const dataVolta = (document.getElementById('edit-viagem-volta') as HTMLInputElement).value;
+      const valorRaw = (document.getElementById('edit-viagem-valor') as HTMLInputElement).value.trim();
+      const dataIdaRaw = (document.getElementById('edit-viagem-ida') as HTMLInputElement).value.trim();
+      const dataVoltaRaw = (document.getElementById('edit-viagem-volta') as HTMLInputElement).value.trim();
       const status = (document.getElementById('edit-viagem-status') as HTMLSelectElement).value;
       const obs = (document.getElementById('edit-viagem-obs') as HTMLTextAreaElement).value;
+
+      // Validação e conversão das datas brasileiras
+      const dateRegex = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+      if (!dateRegex.test(dataIdaRaw)) {
+        this.showToast('Por favor, informe a Data de Ida no formato correto DD/MM/AAAA.', 'error');
+        return;
+      }
+      if (!dateRegex.test(dataVoltaRaw)) {
+        this.showToast('Por favor, informe a Data de Volta no formato correto DD/MM/AAAA.', 'error');
+        return;
+      }
+
+      const [, idaDia, idaMes, idaAno] = dataIdaRaw.match(dateRegex)!;
+      const dataIda = `${idaAno}-${idaMes}-${idaDia}`;
+
+      const [, voltaDia, voltaMes, voltaAno] = dataVoltaRaw.match(dateRegex)!;
+      const dataVolta = `${voltaAno}-${voltaMes}-${voltaDia}`;
+
+      const parseDoubleBr = (valStr: string): number => {
+        const clean = valStr.replace(/R\$\s?/gi, '').replace(/\./g, '').replace(',', '.').trim();
+        const num = parseFloat(clean);
+        return isNaN(num) ? 0 : num;
+      };
+      const valor = parseDoubleBr(valorRaw);
 
       const payload = {
         cliente_id: clienteId,
@@ -973,10 +1021,28 @@ export class Dashboard {
       const fornecedor = (document.getElementById('prod-fornecedor') as HTMLInputElement).value;
       const descricao = (document.getElementById('prod-descricao') as HTMLInputElement).value;
       const reserva = (document.getElementById('prod-reserva') as HTMLInputElement).value;
-      const custo = parseFloat((document.getElementById('prod-custo') as HTMLInputElement).value);
-      const venda = parseFloat((document.getElementById('prod-venda') as HTMLInputElement).value);
-      const dataServico = (document.getElementById('prod-data') as HTMLInputElement).value;
+      const custoRaw = (document.getElementById('prod-custo') as HTMLInputElement).value.trim();
+      const vendaRaw = (document.getElementById('prod-venda') as HTMLInputElement).value.trim();
+      const dataServicoRaw = (document.getElementById('prod-data') as HTMLInputElement).value.trim();
       const status = (document.getElementById('prod-status') as HTMLSelectElement).value;
+
+      // Validação e conversão das datas brasileiras
+      const dateRegex = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+      if (!dateRegex.test(dataServicoRaw)) {
+        this.showToast('Por favor, informe a Data do Serviço no formato correto DD/MM/AAAA.', 'error');
+        return;
+      }
+
+      const [, servDia, servMes, servAno] = dataServicoRaw.match(dateRegex)!;
+      const dataServico = `${servAno}-${servMes}-${servDia}`;
+
+      const parseDoubleBr = (valStr: string): number => {
+        const clean = valStr.replace(/R\$\s?/gi, '').replace(/\./g, '').replace(',', '.').trim();
+        const num = parseFloat(clean);
+        return isNaN(num) ? 0 : num;
+      };
+      const custo = parseDoubleBr(custoRaw);
+      const venda = parseDoubleBr(vendaRaw);
 
       const payload = {
         viagem_id: v.id,
@@ -1121,7 +1187,7 @@ export class Dashboard {
       overlay.id = 'modal-overlay';
       overlay.className = 'fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center opacity-0 pointer-events-none transition-all duration-300';
       overlay.innerHTML = `
-        <div class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden border border-slate-100 dark:border-slate-800 transform scale-95 transition-all duration-300" id="modal-container">
+        <div class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 w-full max-w-lg rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-800 transform scale-95 transition-all duration-300 max-h-[90vh] overflow-y-auto custom-scrollbar" id="modal-container">
           <div id="modal-content-container"></div>
         </div>
       `;
