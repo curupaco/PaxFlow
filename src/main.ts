@@ -470,7 +470,7 @@ class App {
     };
 
     overlay.innerHTML = `
-      <div class="bg-white dark:bg-slate-900 w-full max-w-[440px] rounded-3xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 transform scale-95 transition-all duration-300 flex flex-col relative" id="meu-perfil-card">
+      <div class="bg-white dark:bg-slate-900 w-full max-w-[440px] rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 transform scale-95 transition-all duration-300 flex flex-col relative max-h-[90vh] overflow-y-auto custom-scrollbar" id="meu-perfil-card">
         
         <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-600"></div>
 
