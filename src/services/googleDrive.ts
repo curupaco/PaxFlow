@@ -12,6 +12,8 @@ declare const process: {
  * É utilizado como fallback resiliente quando a Edge Function remota não está implantada.
  */
 async function uploadDiretoClientSide(
+  clientId: string,
+  clientSecret: string,
   refreshToken: string,
   nomeCliente: string,
   emailCliente: string,
@@ -20,9 +22,6 @@ async function uploadDiretoClientSide(
   clienteId: string
 ): Promise<{ success: boolean; googleDriveFolderUrl: string; error?: string }> {
   try {
-    const clientId = process.env.GOOGLE_CLIENT_ID || '';
-    const clientSecret = process.env.GOOGLE_CLIENT_SECRET || '';
-
     if (!clientId || !clientSecret) {
       throw new Error('Credenciais de API do Google Cloud ausentes localmente no arquivo .env (GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET).');
     }
@@ -197,10 +196,24 @@ export async function uploadDocumentoCliente(
 
     // Se NÃO estiver em modo mock (temos um token real configurado), tentamos usar a Edge Function
     if (!isMockMode) {
+      // 1.1 Parse do token combinado (Client ID + Client Secret + Refresh Token)
+      let clientId = process.env.GOOGLE_CLIENT_ID || '';
+      let clientSecret = process.env.GOOGLE_CLIENT_SECRET || '';
+      let realRefreshToken = refreshToken || '';
+
+      if (realRefreshToken.includes('|||')) {
+        const parts = realRefreshToken.split('|||');
+        if (parts.length === 3) {
+          clientId = parts[0];
+          clientSecret = parts[1];
+          realRefreshToken = parts[2];
+        }
+      }
+
       // Caso as Edge Functions locais do Supabase Client não estejam instanciadas, faz fallback automático
       if (!supabase.functions) {
         console.warn('Supabase Functions não instanciadas localmente. Fazendo fallback direto para Google Drive API...');
-        const directResult = await uploadDiretoClientSide(refreshToken!, nomeCliente, emailCliente, telefoneCliente, file, clienteId);
+        const directResult = await uploadDiretoClientSide(clientId, clientSecret, realRefreshToken, nomeCliente, emailCliente, telefoneCliente, file, clienteId);
         return {
           success: directResult.success,
           googleDriveFolderUrl: directResult.googleDriveFolderUrl,
@@ -244,7 +257,7 @@ export async function uploadDocumentoCliente(
 
         // Se a Edge Function retornou erro (por exemplo, erro 404 por não estar implantada), ativamos o fallback direto!
         console.warn('Edge Function indisponível (404/CORS). Ativando fallback resiliente direto para Google Drive API...', error);
-        const directResult = await uploadDiretoClientSide(refreshToken!, nomeCliente, emailCliente, telefoneCliente, file, clienteId);
+        const directResult = await uploadDiretoClientSide(clientId, clientSecret, realRefreshToken, nomeCliente, emailCliente, telefoneCliente, file, clienteId);
         return {
           success: directResult.success,
           googleDriveFolderUrl: directResult.googleDriveFolderUrl,
@@ -255,7 +268,7 @@ export async function uploadDocumentoCliente(
       } catch (invokeErr: any) {
         // Se a chamada falhou completamente (como erro de CORS/Conexão do navegador), ativamos o fallback direto!
         console.warn('Erro de rede na Edge Function. Ativando fallback resiliente direto para Google Drive API...', invokeErr);
-        const directResult = await uploadDiretoClientSide(refreshToken!, nomeCliente, emailCliente, telefoneCliente, file, clienteId);
+        const directResult = await uploadDiretoClientSide(clientId, clientSecret, realRefreshToken, nomeCliente, emailCliente, telefoneCliente, file, clienteId);
         return {
           success: directResult.success,
           googleDriveFolderUrl: directResult.googleDriveFolderUrl,
@@ -301,5 +314,3 @@ export async function uploadDocumentoCliente(
     };
   }
 }
-
-

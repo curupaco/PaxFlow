@@ -610,28 +610,28 @@ export class ConfiguracoesPage {
             </button>
             
             <div class="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-end">
-              <button id="btn-oauth-cancel" class="text-xs font-bold text-slate-400 dark:text-slate-500 hover:text-slate-650 dark:hover:text-slate-300 transition uppercase py-2 px-3">
-                Cancelar
-              </button>
-            </div>
-          </div>
-
-          <!-- CONTEÚDO DA TAB: PRODUÇÃO (REAL) -->
+              <button id="btn-oauth-cancel" class="text-xs font-bold text-slate-400 dark:text-slate-500 hover:text-slate-650 dark:hover:text-slate-300 transition          <!-- CONTEÚDO DA TAB: PRODUÇÃO (REAL) -->
           <div id="oauth-step-production" class="space-y-4 hidden">
-            <div class="bg-indigo-50/50 dark:bg-indigo-950/30 p-4 rounded-xl border border-indigo-100/40 dark:border-indigo-900/40 text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-semibold space-y-2">
-              <p class="font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wide">💼 Requisitos de Integração Real:</p>
-              <p>1. Crie credenciais OAuth2 de Aplicativo Web no **Google Cloud Console**.</p>
-              <p>2. Salve os valores criptográficos gerados no seu arquivo <code class="font-mono bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-1 py-0.5 rounded text-indigo-500">.env</code>.</p>
-              <p class="text-rose-500 dark:text-rose-450 font-extrabold flex items-start gap-1">
-                <span>⚠️</span>
-                <span>IMPORTANTE: Não utilize seu e-mail e senha pessoal do Gmail nos campos GOOGLE_CLIENT_ID e GOOGLE_CLIENT_SECRET do seu .env! Esses campos exigem chaves hash geradas pelo Google Cloud.</span>
-              </p>
+            <div class="bg-indigo-50/50 dark:bg-indigo-950/30 p-4 rounded-xl border border-indigo-100/40 dark:border-indigo-900/40 text-xs text-slate-650 dark:text-slate-400 leading-relaxed font-semibold space-y-2">
+              <p class="font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wide">💼 Configuração de Produção Resiliente:</p>
+              <p>Insira os parâmetros obtidos no Google Cloud para permitir que a integração funcione em qualquer ambiente, inclusive no **paxflow.pages.dev**!</p>
             </div>
             
             <div class="space-y-2">
-              <label class="block text-[10px] font-black text-slate-450 dark:text-slate-400 uppercase tracking-wide mb-1.5">Insira o Google Refresh Token Real *</label>
-              <input id="input-oauth-real-token" type="text" placeholder="Cole o Refresh Token OAuth2 corporativo aqui..." class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-850 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100" />
-              <p class="text-[9px] text-slate-400 dark:text-slate-500 leading-normal font-medium">Você pode gerar este token a partir de um fluxo de autorização OAuth2 corporativo padrão ou script auxiliar.</p>
+              <div>
+                <label class="block text-[10px] font-black text-slate-450 dark:text-slate-405 uppercase tracking-wide mb-1">Google Client ID *</label>
+                <input id="input-oauth-real-client-id" type="text" placeholder="Cole o seu Client ID do Google Cloud aqui..." value="${process.env.GOOGLE_CLIENT_ID || ''}" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-850 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100" />
+              </div>
+              
+              <div>
+                <label class="block text-[10px] font-black text-slate-450 dark:text-slate-405 uppercase tracking-wide mb-1">Google Client Secret *</label>
+                <input id="input-oauth-real-client-secret" type="password" placeholder="Cole o seu Client Secret aqui..." value="${process.env.GOOGLE_CLIENT_SECRET || ''}" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-850 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100" />
+              </div>
+
+              <div>
+                <label class="block text-[10px] font-black text-slate-450 dark:text-slate-405 uppercase tracking-wide mb-1">Google Refresh Token Real *</label>
+                <input id="input-oauth-real-token" type="text" placeholder="Cole o Refresh Token gerado aqui..." class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-850 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100" />
+              </div>
             </div>
 
             <div class="flex items-center justify-end gap-3 pt-2.5 border-t border-slate-100 dark:border-slate-800">
@@ -692,9 +692,22 @@ export class ConfiguracoesPage {
     });
 
     document.getElementById('btn-oauth-real-save')?.addEventListener('click', () => {
-      const realTokenInput = document.getElementById('input-oauth-real-token') as HTMLInputElement;
-      if (realTokenInput) {
-        this.concluirOAuth2Real(realTokenInput.value);
+      const clientIdInput = document.getElementById('input-oauth-real-client-id') as HTMLInputElement;
+      const clientSecretInput = document.getElementById('input-oauth-real-client-secret') as HTMLInputElement;
+      const tokenInput = document.getElementById('input-oauth-real-token') as HTMLInputElement;
+      
+      if (clientIdInput && clientSecretInput && tokenInput) {
+        const cid = clientIdInput.value.trim();
+        const sec = clientSecretInput.value.trim();
+        const tok = tokenInput.value.trim();
+        
+        if (!cid || !sec || !tok) {
+          alert('Por favor, preencha todos os três campos obrigatórios da integração real.');
+          return;
+        }
+        
+        const combinedToken = `${cid}|||${sec}|||${tok}`;
+        this.concluirOAuth2Real(combinedToken);
       }
     });
   }
