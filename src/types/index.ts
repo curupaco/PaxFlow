@@ -133,3 +133,15 @@ export interface Orcamento {
   updatedAt?: string;
 }
 
+/**
+ * Representa um lembrete manual agendado para um orçamento ("Me Lembre Depois").
+ */
+export interface Lembrete {
+  id: string;
+  orcamentoId: string;
+  consultorId: string;
+  dataLembrete: string; // YYYY-MM-DD
+  periodo: 'manha' | 'tarde' | 'noite';
+  arquivado: boolean;
+  createdAt?: string;
+}

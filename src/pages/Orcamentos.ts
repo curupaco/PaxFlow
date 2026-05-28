@@ -2,7 +2,7 @@ import { supabase, getSessaoAtual } from '../services/supabase';
 import { uploadDocumentoCliente } from '../services/googleDrive';
 import { Orcamento, PerfilConsultor } from '../types';
 import { getAvatarSvg, mesclarAvataresLocais } from '../services/avatars';
-import { showCustomConfirm } from '../services/dialog';
+import { showCustomConfirm, showCustomAlert } from '../services/dialog';
 
 // Injeta estilos específicos premium para o Kanban de Orçamentos
 if (typeof document !== 'undefined') {
@@ -50,7 +50,7 @@ export class OrcamentosPage {
   /**
    * Inicializa a página de Orçamentos
    */
-  public async init(): Promise<void> {
+  public async init(targetId?: string): Promise<void> {
     this.renderLoading();
 
     try {
@@ -86,6 +86,11 @@ export class OrcamentosPage {
 
       // 5. Configurar Canal Realtime do Supabase
       this.setupRealtimeChannel();
+
+      // 6. Deep linking from Inbox
+      if (targetId) {
+        this.openVerNotasModal(targetId);
+      }
 
     } catch (err: any) {
       console.error('Erro ao inicializar OrcamentosPage:', err);
@@ -482,6 +487,14 @@ export class OrcamentosPage {
       });
     });
 
+    // Botão Lembrar Depois (🔔)
+    this.container.querySelectorAll('[data-action="lembrar-depois"]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = (btn as HTMLElement).dataset.id;
+        if (id) this.openLembrarDepoisModal(id);
+      });
+    });
+
     // Botões de Visualizar Notas/Documentos
     this.container.querySelectorAll('[data-action="ver-notas"]').forEach(btn => {
       btn.addEventListener('click', (e) => {
@@ -696,10 +709,17 @@ export class OrcamentosPage {
             <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-semibold truncate mt-0.5">${o.contato}</span>
           </div>
           
-          <!-- Seletor de Temperatura -->
-          <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider shrink-0 ${tempClass}">
-            ${o.temperatura}
-          </span>
+          <div class="flex flex-col items-end gap-1 shrink-0">
+            <!-- Seletor de Temperatura -->
+            <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${tempClass}">
+              ${o.temperatura}
+            </span>
+            ${isAdmin ? `
+              <span class="px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-wide bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-400 border border-indigo-100/30 dark:border-indigo-900/30" title="Consultor Responsável: ${dono?.nome || 'Consultor'}">
+                👤 ${(dono?.nome || 'Consultor').split(' ')[0]}
+              </span>
+            ` : ''}
+          </div>
         </div>
 
         <!-- Informações do Destino e Data da Viagem -->
@@ -753,13 +773,19 @@ export class OrcamentosPage {
               ${getAvatarSvg(dono?.avatar_url, dono?.nome || 'Consultor', 'w-6 h-6')}
             </div>
             ${isAdmin ? `
-              <span class="text-[9px] font-black text-indigo-650 dark:text-indigo-400 truncate max-w-[85px] select-none" title="Responsável: ${dono?.nome || 'Consultor'}">
+              <span class="text-[9px] font-black text-indigo-650 dark:text-indigo-400 truncate max-w-[65px] select-none" title="Responsável: ${dono?.nome || 'Consultor'}">
                 ${(dono?.nome || 'Consultor').split(' ')[0]}
               </span>
             ` : ''}
             <button data-action="mudar-consultor" data-id="${o.id}" title="Reatribuir Consultor" class="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-indigo-500 dark:hover:text-indigo-400 rounded transition flex items-center justify-center shrink-0">
-              <svg width="12" height="12" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+              <svg width="14" height="14" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 7.5a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M7 8h10M7 8l3-3M7 8l3 3M17 16H7m10 0l-3-3m3 3l-3 3" />
+              </svg>
+            </button>
+            <button data-action="lembrar-depois" data-id="${o.id}" title="Me Lembre Depois" class="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-450 hover:text-indigo-600 rounded transition flex items-center justify-center shrink-0">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
               </svg>
             </button>
           </div>
@@ -1685,6 +1711,91 @@ export class OrcamentosPage {
     if (this.realtimeChannel) {
       supabase.removeChannel(this.realtimeChannel);
     }
+  }
+
+  /**
+   * Abre o Modal de "Me Lembre Depois" para agendamento de lembretes
+   */
+  private openLembrarDepoisModal(id: string): void {
+    const orc = this.orcamentos.find(o => o.id === id);
+    if (!orc) return;
+
+    this.renderModalOverlay();
+    const portal = document.getElementById('orcamento-modal-portal');
+    const modalContent = document.getElementById('modal-content-container');
+    if (!modalContent || !portal) return;
+
+    const hoje = new Date().toISOString().split('T')[0];
+
+    modalContent.innerHTML = `
+      <div class="p-6">
+        <div class="flex items-center justify-between border-b border-slate-150 dark:border-slate-800 pb-3 mb-5">
+          <h3 class="text-lg font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+            <span>🔔 Agendar Lembrete "Me Lembre Depois"</span>
+          </h3>
+          <button id="btn-close-modal-x" class="text-slate-400 hover:text-rose-500 font-bold transition text-lg">&times;</button>
+        </div>
+
+        <p class="text-xs text-slate-500 dark:text-slate-450 mb-4 font-semibold">
+          Defina uma data e um período para receber um alerta no seu inbox sobre o orçamento de <span class="font-extrabold text-indigo-650 dark:text-indigo-400">${orc.nomeCliente} - ${orc.destino}</span>.
+        </p>
+
+        <form id="form-lembrar-depois" class="space-y-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Data do Alerta *</label>
+            <input id="input-lembrete-data" type="date" required min="${hoje}" value="${hoje}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-850 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Período *</label>
+            <select id="select-lembrete-periodo" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-850 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm">
+              <option value="manha">🌅 Manhã</option>
+              <option value="tarde" selected>☀️ Tarde</option>
+              <option value="noite">🌙 Noite</option>
+            </select>
+          </div>
+
+          <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-150 dark:border-slate-800">
+            <button id="btn-cancel-modal" type="button" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 font-bold text-xs tracking-wider rounded-xl transition uppercase">Cancelar</button>
+            <button type="submit" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/10 transition uppercase">Agendar Alerta</button>
+          </div>
+        </form>
+      </div>
+    `;
+
+    const closeModal = () => this.closeModal();
+    document.getElementById('btn-close-modal-x')?.addEventListener('click', closeModal);
+    document.getElementById('btn-cancel-modal')?.addEventListener('click', closeModal);
+
+    const form = document.getElementById('form-lembrar-depois') as HTMLFormElement;
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const dataLembrete = (document.getElementById('input-lembrete-data') as HTMLInputElement).value;
+      const periodo = (document.getElementById('select-lembrete-periodo') as HTMLSelectElement).value;
+
+      if (!dataLembrete || !periodo) return;
+
+      try {
+        const { error } = await supabase
+          .from('lembretes')
+          .insert({
+            orcamento_id: id,
+            consultor_id: this.user.id,
+            data_lembrete: dataLembrete,
+            periodo: periodo,
+            arquivado: false
+          });
+
+        if (error) throw error;
+
+        this.showToast('Lembrete agendado com sucesso!', 'success');
+        this.closeModal();
+
+      } catch (err: any) {
+        showCustomAlert(`Erro ao agendar lembrete:\n\n${err.message || err}`, 'Erro de Agendamento');
+      }
+    });
   }
 }
 export default OrcamentosPage;

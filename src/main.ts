@@ -1,5 +1,6 @@
 import './index.css';
 import { getSessaoAtual, loginConsultor, supabase, atualizarSenhaAtual } from './services/supabase';
+import { InboxPage } from './pages/Inbox';
 import { Dashboard } from './pages/Dashboard';
 import { OrcamentosPage } from './pages/Orcamentos';
 import { ClientesPage } from './pages/Clientes';
@@ -13,7 +14,7 @@ class App {
   private container: HTMLElement;
   private user: any = null;
   private perfil: PerfilConsultor | null = null;
-  private currentActivePage: string = 'orcamentos';
+  private currentActivePage: string = 'inbox';
   private currentPageInstance: any = null;
   private theme: 'light' | 'dark' = 'light';
 
@@ -38,6 +39,12 @@ class App {
         this.perfil.avatar_url = avatar_url;
       }
       this.atualizarSidebarProfileFooter();
+    });
+
+    // Ouvinte para navegação global com suporte a parâmetros (deep linking)
+    window.addEventListener('paxflow-navigate', (e: any) => {
+      const { page, extraId } = e.detail;
+      this.navigate(page, extraId);
     });
   }
 
@@ -321,7 +328,7 @@ class App {
         this.user = user;
         this.perfil = perfil;
         this.renderAppShell();
-        this.navigate('orcamentos');
+        this.navigate('inbox');
 
       } catch (err: any) {
         btn.disabled = false;
@@ -355,6 +362,14 @@ class App {
           <nav class="flex-1 p-4 space-y-2 flex flex-col justify-between">
             <div class="space-y-1.5">
               
+              <!-- Link: Inbox de Alertas -->
+              <button id="nav-inbox" class="w-full px-4 py-3 rounded-xl flex items-center gap-3 font-semibold text-xs text-left transition select-none group">
+                <svg width="20" height="20" class="w-5 h-5 text-slate-400 group-hover:text-slate-600 dark:text-slate-500 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0a2 2 0 01-2 2H6a2 2 0 01-2-2m16 0l-8 5-8-5M6 20h12a2 2 0 002-2v-3H4v3a2 2 0 002 2z" />
+                </svg>
+                <span>Inbox de Alertas</span>
+              </button>
+
               <!-- Link: Kanban de Orçamentos -->
               <button id="nav-orcamentos" class="w-full px-4 py-3 rounded-xl flex items-center gap-3 font-semibold text-xs text-left transition select-none group">
                 <svg width="20" height="20" class="w-5 h-5 text-slate-400 group-hover:text-slate-600 dark:text-slate-500 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
@@ -664,7 +679,7 @@ class App {
    * Associa eventos aos botões de navegação lateral
    */
   private setupNavigationListeners(): void {
-    const pages = ['orcamentos', 'dashboard', 'clientes', 'reembolsos', 'configuracoes'];
+    const pages = ['inbox', 'orcamentos', 'dashboard', 'clientes', 'reembolsos', 'configuracoes'];
 
     pages.forEach(page => {
       const btn = document.getElementById(`nav-${page}`);
@@ -677,7 +692,7 @@ class App {
   /**
    * Gerencia a navegação e o roteamento entre as diferentes páginas
    */
-  private navigate(page: string): void {
+  private navigate(page: string, extraId?: string): void {
     // 1. Limpa instâncias ou temporizadores ativos na página que está saindo
     if (this.currentPageInstance && typeof this.currentPageInstance.destroy === 'function') {
       this.currentPageInstance.destroy();
@@ -689,7 +704,7 @@ class App {
     if (!pageContentEl) return;
 
     // 2. Atualiza os estilos de botões ativos na Sidebar
-    const navButtons = ['orcamentos', 'dashboard', 'clientes', 'reembolsos', 'configuracoes'];
+    const navButtons = ['inbox', 'orcamentos', 'dashboard', 'clientes', 'reembolsos', 'configuracoes'];
     navButtons.forEach(p => {
       const btn = document.getElementById(`nav-${p}`);
       if (btn) {
@@ -703,6 +718,9 @@ class App {
 
     // 3. Instancia e inicializa o componente da respectiva tela
     switch (page) {
+      case 'inbox':
+        this.currentPageInstance = new InboxPage(pageContentEl);
+        break;
       case 'dashboard':
         this.currentPageInstance = new Dashboard(pageContentEl);
         break;
@@ -719,11 +737,11 @@ class App {
         this.currentPageInstance = new ConfiguracoesPage(pageContentEl);
         break;
       default:
-        this.currentPageInstance = new OrcamentosPage(pageContentEl);
+        this.currentPageInstance = new InboxPage(pageContentEl);
     }
 
     if (this.currentPageInstance) {
-      this.currentPageInstance.init();
+      this.currentPageInstance.init(extraId);
     }
   }
 }
