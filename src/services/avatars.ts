@@ -285,9 +285,12 @@ export function obterAvatarLocal(userId: string): string | undefined {
 export function mesclarAvataresLocais(perfis: any[]): any[] {
   return perfis.map(p => {
     if (p && p.id) {
-      const local = obterAvatarLocal(p.id);
-      if (local) {
-        p.avatar_url = local;
+      // Prioriza o avatar vindo do banco, usando o localStorage como fallback se não houver avatar cadastrado no banco
+      if (!p.avatar_url) {
+        const local = obterAvatarLocal(p.id);
+        if (local) {
+          p.avatar_url = local;
+        }
       }
     }
     return p;

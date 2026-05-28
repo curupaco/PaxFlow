@@ -752,13 +752,14 @@ export class ConfiguracoesPage {
         salvarAvatarLocal(c.id, selectedAvatarId);
 
         if (!isOffline) {
-          // 1. Atualiza na tabela Profiles do Supabase (avatar_url é gerenciado localmente)
+          // 1. Atualiza na tabela Profiles do Supabase (avatar_url é persistido no banco)
           const { error: profileErr } = await supabase
             .from('profiles')
             .update({
               nome: nomeVal,
               role: roleVal,
-              ativo: ativoVal
+              ativo: ativoVal,
+              avatar_url: selectedAvatarId
             })
             .eq('id', c.id);
 

@@ -1,7 +1,7 @@
 import { supabase, getSessaoAtual } from '../services/supabase';
 import { uploadDocumentoCliente } from '../services/googleDrive';
 import { Orcamento, PerfilConsultor } from '../types';
-import { getAvatarSvg } from '../services/avatars';
+import { getAvatarSvg, mesclarAvataresLocais } from '../services/avatars';
 
 // Injeta estilos específicos premium para o Kanban de Orçamentos
 if (typeof document !== 'undefined') {
@@ -105,7 +105,7 @@ export class OrcamentosPage {
 
       if (error) throw error;
 
-      this.consultores = data as PerfilConsultor[];
+      this.consultores = mesclarAvataresLocais(data || []) as PerfilConsultor[];
     } catch (err: any) {
       console.warn('Erro ao carregar consultores da tabela "profiles" (usando fallback local):', err.message);
       // Fallback local caso a tabela ou a conexão falhe

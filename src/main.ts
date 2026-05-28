@@ -613,10 +613,10 @@ class App {
         }
 
         if (!isOffline && this.perfil) {
-          // 1. Persiste dados na tabela public profiles (avatar_url é gerenciado localmente via localStorage e auth metadata)
+          // 1. Persiste dados na tabela public profiles (avatar_url é salvo no banco de dados e sincronizado)
           const { error: profileErr } = await supabase
             .from('profiles')
-            .update({ nome: nomeVal })
+            .update({ nome: nomeVal, avatar_url: selectedAvatarId })
             .eq('id', this.perfil.id);
 
           if (profileErr) throw profileErr;

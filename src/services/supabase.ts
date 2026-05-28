@@ -67,14 +67,15 @@ export async function loginConsultor(email: string, password: string): Promise<{
         avatar_url: authData.user.user_metadata?.avatar_url || authData.user.user_metadata?.avatar || undefined
       };
 
-      // Tenta criar ou atualizar o perfil no banco de forma proativa para consultas futuras (avatar_url é local)
+      // Tenta criar ou atualizar o perfil no banco de forma proativa para consultas futuras (incluindo avatar_url)
       try {
         const { error: upsertErr } = await supabase.from('profiles').upsert({
           id: fallbackPerfil.id,
           nome: fallbackPerfil.nome,
           email: fallbackPerfil.email,
           role: fallbackPerfil.role,
-          ativo: fallbackPerfil.ativo
+          ativo: fallbackPerfil.ativo,
+          avatar_url: fallbackPerfil.avatar_url
         });
         if (upsertErr) {
           console.warn('Erro ao upsertar perfil padrão de fallback:', upsertErr);
@@ -91,11 +92,14 @@ export async function loginConsultor(email: string, password: string): Promise<{
     }
     
     if (perfilData) {
-      const local = obterAvatarLocal(perfilData.id) || 
-                    obterAvatarLocal(perfilData.email) || 
-                    obterAvatarLocal('mock-id-' + perfilData.email.replace(/[^a-zA-Z0-9]/g, ''));
-      if (local) {
-        (perfilData as PerfilConsultor).avatar_url = local;
+      // Prioriza o avatar vindo do banco de dados. Caso seja nulo/indefinido, busca no localStorage como fallback
+      if (!perfilData.avatar_url) {
+        const local = obterAvatarLocal(perfilData.id) || 
+                      obterAvatarLocal(perfilData.email) || 
+                      obterAvatarLocal('mock-id-' + perfilData.email.replace(/[^a-zA-Z0-9]/g, ''));
+        if (local) {
+          (perfilData as PerfilConsultor).avatar_url = local;
+        }
       }
     }
 
@@ -163,11 +167,14 @@ export async function getSessaoAtual(): Promise<{
     }
     
     if (perfilData) {
-      const local = obterAvatarLocal(perfilData.id) || 
-                    obterAvatarLocal(perfilData.email) || 
-                    obterAvatarLocal('mock-id-' + perfilData.email.replace(/[^a-zA-Z0-9]/g, ''));
-      if (local) {
-        (perfilData as PerfilConsultor).avatar_url = local;
+      // Prioriza o avatar vindo do banco de dados. Caso seja nulo/indefinido, busca no localStorage como fallback
+      if (!perfilData.avatar_url) {
+        const local = obterAvatarLocal(perfilData.id) || 
+                      obterAvatarLocal(perfilData.email) || 
+                      obterAvatarLocal('mock-id-' + perfilData.email.replace(/[^a-zA-Z0-9]/g, ''));
+        if (local) {
+          (perfilData as PerfilConsultor).avatar_url = local;
+        }
       }
     }
 
