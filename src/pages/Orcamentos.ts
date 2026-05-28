@@ -495,7 +495,7 @@ export class OrcamentosPage {
                 <span>Orçamentos em Aberto</span>
                 ${this.isFallbackMode ? `<span class="px-2 py-0.5 bg-amber-500/20 text-amber-600 dark:text-amber-450 border border-amber-500/30 text-[10px] font-black rounded-lg uppercase tracking-wider">Modo Offline</span>` : ''}
               </h1>
-              <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Controle de captações, cotações e propostas com fluxo de vendas rígido</p>
+              <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Controle de captações, cotações e propostas</p>
             </div>
           </div>
           <div class="flex items-center gap-3">
@@ -524,7 +524,11 @@ export class OrcamentosPage {
           <div class="w-80 bg-slate-100/70 dark:bg-slate-900/40 border border-slate-200/50 dark:border-slate-800/80 border-t-4 border-t-indigo-500 rounded-2xl p-4 flex flex-col shrink-0 orcamentos-column">
             <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-200/60 dark:border-slate-800/60 select-none">
               <div class="flex items-center gap-2">
-                <span class="p-1 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-500 dark:text-indigo-400 rounded-lg text-xs font-bold">📥</span>
+                <span class="p-1 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-500 dark:text-indigo-400 rounded-lg flex items-center justify-center shrink-0">
+                  <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" class="w-4 h-4">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0a2 2 0 01-2 2H6a2 2 0 01-2-2m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                  </svg>
+                </span>
                 <span class="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-wider">Solicitado</span>
                 <span class="px-2 py-0.5 bg-indigo-100 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-455 rounded-full text-[10px] font-black">${solicitado.length}</span>
               </div>
@@ -539,9 +543,14 @@ export class OrcamentosPage {
           <div class="w-80 bg-slate-100/70 dark:bg-slate-900/40 border border-slate-200/50 dark:border-slate-800/80 border-t-4 border-t-amber-500 rounded-2xl p-4 flex flex-col shrink-0 orcamentos-column">
             <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-200/60 dark:border-slate-800/60 select-none">
               <div class="flex items-center gap-2">
-                <span class="p-1 bg-amber-50 dark:bg-amber-950/40 text-amber-500 dark:text-amber-400 rounded-lg text-xs font-bold">⚙️</span>
+                <span class="p-1 bg-amber-50 dark:bg-amber-950/40 text-amber-500 dark:text-amber-400 rounded-lg flex items-center justify-center shrink-0">
+                  <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" class="w-4 h-4">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                </span>
                 <span class="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-wider">Em Andamento</span>
-                <span class="px-2 py-0.5 bg-amber-100 dark:bg-amber-950/80 text-amber-600 dark:text-amber-455 rounded-full text-[10px] font-black">${emAndamento.length}</span>
+                <span class="px-2 py-0.5 bg-amber-100 dark:bg-indigo-950/80 text-amber-600 dark:text-amber-455 rounded-full text-[10px] font-black">${emAndamento.length}</span>
               </div>
             </div>
             <div class="flex flex-col gap-4 overflow-y-auto max-h-[700px] pr-1 custom-scrollbar">
@@ -554,9 +563,13 @@ export class OrcamentosPage {
           <div class="w-80 bg-slate-100/70 dark:bg-slate-900/40 border border-slate-200/50 dark:border-slate-800/80 border-t-4 border-t-rose-500 rounded-2xl p-4 flex flex-col shrink-0 orcamentos-column">
             <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-200/60 dark:border-slate-800/60 select-none">
               <div class="flex items-center gap-2">
-                <span class="p-1 bg-rose-50 dark:bg-rose-950/40 text-rose-500 dark:text-rose-400 rounded-lg text-xs font-bold">⌛</span>
+                <span class="p-1 bg-rose-50 dark:bg-rose-950/40 text-rose-500 dark:text-rose-400 rounded-lg flex items-center justify-center shrink-0">
+                  <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" class="w-4 h-4">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </span>
                 <span class="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-wider">Aguardando</span>
-                <span class="px-2 py-0.5 bg-rose-100 dark:bg-rose-950/80 text-rose-600 dark:text-rose-455 rounded-full text-[10px] font-black">${aguardando.length}</span>
+                <span class="px-2 py-0.5 bg-rose-100 dark:bg-indigo-950/80 text-rose-600 dark:text-rose-455 rounded-full text-[10px] font-black">${aguardando.length}</span>
               </div>
             </div>
             <div class="flex flex-col gap-4 overflow-y-auto max-h-[700px] pr-1 custom-scrollbar">
@@ -569,9 +582,13 @@ export class OrcamentosPage {
           <div class="w-80 bg-slate-100/70 dark:bg-slate-900/40 border border-slate-200/50 dark:border-slate-800/80 border-t-4 border-t-emerald-500 rounded-2xl p-4 flex flex-col shrink-0 orcamentos-column">
             <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-200/60 dark:border-slate-800/60 select-none">
               <div class="flex items-center gap-2">
-                <span class="p-1 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-500 dark:text-emerald-400 rounded-lg text-xs font-bold">✅</span>
+                <span class="p-1 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-500 dark:text-emerald-400 rounded-lg flex items-center justify-center shrink-0">
+                  <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5" class="w-4 h-4">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </span>
                 <span class="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-wider">Concluído</span>
-                <span class="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-455 rounded-full text-[10px] font-black">${concluido.length}</span>
+                <span class="px-2 py-0.5 bg-emerald-100 dark:bg-indigo-950/80 text-emerald-600 dark:text-emerald-455 rounded-full text-[10px] font-black">${concluido.length}</span>
               </div>
             </div>
             <div class="flex flex-col gap-4 overflow-y-auto max-h-[700px] pr-1 custom-scrollbar">
@@ -792,9 +809,15 @@ export class OrcamentosPage {
             <input id="input-orc-nome" type="text" required placeholder="ex: João da Silva" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
           </div>
 
-          <div>
-            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Telefone e/ou E-mail *</label>
-            <input id="input-orc-contato" type="text" required placeholder="ex: (11) 98888-7777 / joao@email.com" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Telefone</label>
+              <input id="input-orc-telefone" type="tel" placeholder="ex: (11) 98888-7777" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">E-mail</label>
+              <input id="input-orc-email" type="email" placeholder="ex: joao@email.com" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+            </div>
           </div>
 
           <div class="grid grid-cols-2 gap-4">
@@ -887,11 +910,26 @@ export class OrcamentosPage {
       e.preventDefault();
 
       const nomeVal = (document.getElementById('input-orc-nome') as HTMLInputElement).value;
-      const contatoVal = (document.getElementById('input-orc-contato') as HTMLInputElement).value;
+      const telVal = (document.getElementById('input-orc-telefone') as HTMLInputElement).value.trim();
+      const emailVal = (document.getElementById('input-orc-email') as HTMLInputElement).value.trim();
       const destinoVal = (document.getElementById('input-orc-destino') as HTMLInputElement).value;
       const dataVal = (document.getElementById('input-orc-data') as HTMLInputElement).value;
       const tempVal = (document.getElementById('select-orc-temp') as HTMLSelectElement).value as 'Frio' | 'Normal' | 'Quente';
       const consultorVal = (document.getElementById('select-orc-consultor') as HTMLSelectElement).value;
+
+      if (!telVal && !emailVal) {
+        this.showToast('Por favor, informe pelo menos um meio de contato (Telefone ou E-mail).', 'error');
+        return;
+      }
+
+      let contatoVal = '';
+      if (telVal && emailVal) {
+        contatoVal = `${telVal} / ${emailVal}`;
+      } else if (telVal) {
+        contatoVal = telVal;
+      } else {
+        contatoVal = emailVal;
+      }
 
       const payload: Orcamento = {
         id: 'orc-' + Math.random().toString(36).substr(2, 9),

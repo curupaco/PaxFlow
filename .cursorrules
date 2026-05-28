@@ -8,6 +8,7 @@ Este arquivo define as regras estritas de desenvolvimento, padrões arquiteturai
 
 * **ANO ATUAL DE REFERÊNCIA**: **2026**.
 * **Cálculo de Datas**: Qualquer lógica, cálculo de SLA, contadores de tempo amigáveis ou geração de dados de demonstração (mock data) deve assumir o contexto temporal do ano de **2026**.
+* **Formato de Datas**: As datas exibidas na interface do usuário devem ser **sempre** formatadas no padrão brasileiro **`dd/mm/aaaa`**.
 * Evitar o uso do ano atual do sistema da máquina host caso seja diferente de 2026 para fins de consistência e simulação dos dados operacionais da agência.
 
 ---
@@ -32,6 +33,7 @@ Este arquivo define as regras estritas de desenvolvimento, padrões arquiteturai
 * **Efeitos Modernos**: Usar *Glassmorphism* (`backdrop-blur-md`, bordas semitransparentes finas de `border-slate-200/40` ou `dark:border-slate-800/60`).
 * **Interatividade**: Micro-interações táteis/visuais em elementos clicáveis (`transform hover:-translate-y-0.5 transition duration-200` e sombras dinâmicas).
 * **Scrollbars**: Scrollbars finas e elegantes personalizadas com classes utilitárias CSS.
+* **Formato Monetário**: Campos, exibições e inputs de valores monetários devem ser **sempre** representados no formato brasileiro, utilizando ponto para milhares e vírgula para decimais (ex: **`1.234,56`** ou `R$ 1.234,56`), utilizando preferencialmente `.toLocaleString('pt-BR', { minimumFractionDigits: 2 })`.
 
 ---
 
@@ -45,3 +47,5 @@ Este arquivo define as regras estritas de desenvolvimento, padrões arquiteturai
 * **Tempo Real (Realtime)**:
   * Manter a sincronização reativa global habilitando canais do Supabase Realtime (`postgres_changes`) para re-renderizar estados automaticamente quando houver modificações externas no banco.
   * Garantir a limpeza dos canais no método `destroy()` ao navegar para outras páginas.
+* 🛑 **Restrição de Controle de Versão (Git Push)**: O assistente de IA **nunca** deve propor ou executar comandos de `git push` para o GitHub ou qualquer repositório remoto. A responsabilidade e o direito de realizar pushes de código são **exclusivos do usuário**. O assistente de IA limita-se a criar commits locais se solicitado.
+
