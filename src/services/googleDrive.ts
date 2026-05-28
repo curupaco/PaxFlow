@@ -11,29 +11,67 @@ export async function uploadDocumentoCliente(
   emailCliente: string,
   telefoneCliente: string,
   file: File
-): Promise<{ success: boolean; googleDriveFolderUrl: string; error?: string }> {
+): Promise<{ success: boolean; googleDriveFolderUrl: string; error?: string; isMock?: boolean }> {
   try {
-    // 1. Preparação dos dados para a chamada HTTP
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('clienteId', clienteId);
-    formData.append('nome', nomeCliente);
-    formData.append('email', emailCliente);
-    formData.append('telefone', telefoneCliente);
+    // 1. Busca as configurações globais no Supabase para verificar o token cadastrado
+    const { data: settings, error: settingsErr } = await supabase
+      .from('global_settings')
+      .select('google_refresh_token')
+      .maybeSingle();
 
-    const { data: { session } } = await supabase.auth.getSession();
-    const token = session?.access_token;
+    if (settingsErr) {
+      console.error('Erro ao buscar global_settings no serviço de upload:', settingsErr);
+    }
 
-    // Se as Supabase Functions estiverem disponíveis, tenta invocar a Edge Function
-    if (supabase.functions) {
+    const refreshToken = settings?.google_refresh_token;
+    // O token é mock se for nulo, vazio ou começar com 'mock_'
+    const isMockMode = !refreshToken || refreshToken.trim() === '' || refreshToken.startsWith('mock_');
+
+    // Se NÃO estiver em modo mock (temos um token real configurado), somos obrigados a usar a Edge Function
+    if (!isMockMode) {
+      if (!supabase.functions) {
+        return {
+          success: false,
+          googleDriveFolderUrl: '',
+          error: 'Cliente Supabase não está configurado com suporte a Edge Functions neste ambiente.'
+        };
+      }
+
+      // Preparação dos dados para a chamada HTTP à Edge Function
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('clienteId', clienteId);
+      formData.append('nome', nomeCliente);
+      formData.append('email', emailCliente);
+      formData.append('telefone', telefoneCliente);
+
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
       try {
         const { data, error } = await supabase.functions.invoke('upload-to-drive', {
           body: formData,
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
 
-        // Se a Edge Function concluiu e retornou a URL da pasta
-        if (!error && data?.googleDriveFolderUrl) {
+        // Se a Edge Function retornou erro da chamada
+        if (error) {
+          console.error('Erro retornado pela Edge Function upload-to-drive:', error);
+          let errorMessage = 'Erro de execução na Edge Function do Google Drive.';
+          if (error.status === 404 || (error.message && error.message.includes('Function not found'))) {
+            errorMessage = 'A Edge Function "upload-to-drive" não está implantada no Supabase (Erro 404). Certifique-se de implantá-la para permitir uploads reais.';
+          } else if (error.message) {
+            errorMessage = error.message;
+          }
+          return {
+            success: false,
+            googleDriveFolderUrl: '',
+            error: errorMessage
+          };
+        }
+
+        // Se deu tudo certo
+        if (data?.googleDriveFolderUrl) {
           // Atualiza a URL na tabela 'clientes' no banco
           await supabase
             .from('clientes')
@@ -42,19 +80,35 @@ export async function uploadDocumentoCliente(
 
           return {
             success: true,
-            googleDriveFolderUrl: data.googleDriveFolderUrl
+            googleDriveFolderUrl: data.googleDriveFolderUrl,
+            isMock: false
           };
         }
-        
-        if (error) {
-          console.warn('A Edge Function retornou um erro (ativando mock local robusto):', error);
+
+        // Caso a resposta venha vazia por algum motivo inesperado
+        return {
+          success: false,
+          googleDriveFolderUrl: '',
+          error: 'A Edge Function respondeu sem retornar a URL de destino da pasta do Google Drive.'
+        };
+
+      } catch (invokeErr: any) {
+        console.error('Exceção ao invocar a Edge Function:', invokeErr);
+        let msg = invokeErr.message || 'Falha ao conectar com o serviço do Supabase.';
+        if (msg.includes('Failed to fetch') || invokeErr.status === 404) {
+          msg = 'A Edge Function "upload-to-drive" não está implantada no Supabase (Erro 404). Por favor, implante-a antes de realizar uploads de produção.';
         }
-      } catch (invokeErr) {
-        console.warn('Erro ao acionar a Edge Function (ativando fallback local):', invokeErr);
+        return {
+          success: false,
+          googleDriveFolderUrl: '',
+          error: msg
+        };
       }
     }
 
-    // 2. MOCK ROBUSTO (Fallback offline / ambiente de testes local)
+    // 2. MOCK ROBUSTO / MODO SANDBOX (Ativo se google_refresh_token for mock ou ausente)
+    console.info('Executando upload no Modo Sandbox/Simulador do PaxFlow...');
+    
     // Simula a latência de upload no servidor (1.5 segundos)
     await new Promise((resolve) => setTimeout(resolve, 1500));
 
@@ -75,15 +129,17 @@ export async function uploadDocumentoCliente(
 
     return {
       success: true,
-      googleDriveFolderUrl: mockDriveUrl
+      googleDriveFolderUrl: mockDriveUrl,
+      isMock: true
     };
 
   } catch (err: any) {
-    console.error('Erro no serviço de upload do Google Drive:', err);
+    console.error('Erro geral no serviço de upload do Google Drive:', err);
     return {
       success: false,
       googleDriveFolderUrl: '',
-      error: err.message || 'Falha ao processar o upload do documento.'
+      error: err.message || 'Falha geral ao processar o upload do documento.'
     };
   }
 }
+
