@@ -748,11 +748,16 @@ export class OrcamentosPage {
         <div class="border-t border-slate-100 dark:border-slate-800 pt-3 mt-1 flex items-center justify-between gap-2">
           
           <!-- Avatar e botão de alteração do Consultor -->
-          <div class="flex items-center gap-1.5">
+          <div class="flex items-center gap-1.5 overflow-hidden">
             <div title="Responsável: ${dono?.nome || 'Consultor'}">
               ${getAvatarSvg(dono?.avatar_url, dono?.nome || 'Consultor', 'w-6 h-6')}
             </div>
-            <button data-action="mudar-consultor" data-id="${o.id}" title="Reatribuir Consultor" class="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-indigo-500 dark:hover:text-indigo-400 rounded transition flex items-center justify-center">
+            ${isAdmin ? `
+              <span class="text-[9px] font-black text-indigo-650 dark:text-indigo-400 truncate max-w-[85px] select-none" title="Responsável: ${dono?.nome || 'Consultor'}">
+                ${(dono?.nome || 'Consultor').split(' ')[0]}
+              </span>
+            ` : ''}
+            <button data-action="mudar-consultor" data-id="${o.id}" title="Reatribuir Consultor" class="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-indigo-500 dark:hover:text-indigo-400 rounded transition flex items-center justify-center shrink-0">
               <svg width="12" height="12" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
