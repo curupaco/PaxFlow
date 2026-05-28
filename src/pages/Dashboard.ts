@@ -1,6 +1,7 @@
 import Sortable from 'sortablejs';
 import { supabase, getSessaoAtual, logoutConsultor } from '../services/supabase';
 import { Viagem, Cliente, ProdutoViagem, GlobalSettings, PerfilConsultor } from '../types';
+import { getAvatarSvg } from '../services/avatars';
 
 // Injeta estilos premium e animações micro-interativas para SLAs diretamente no DOM
 if (typeof document !== 'undefined') {
@@ -89,6 +90,17 @@ export class Dashboard {
       }
       this.user = user;
       this.perfil = perfil;
+
+      // Escuta reativamente as atualizações do perfil
+      window.addEventListener('paxflow-profile-updated', (e: any) => {
+        const { nome, avatar_url } = e.detail;
+        if (this.perfil) {
+          this.perfil.nome = nome;
+          this.perfil.avatar_url = avatar_url;
+          this.render();
+          this.setupDragAndDrop();
+        }
+      });
 
       // 2. Carregar configurações globais de SLA
       await this.loadGlobalSettings();
@@ -1242,9 +1254,7 @@ export class Dashboard {
                 <span class="block text-sm font-extrabold text-slate-700 dark:text-slate-300">${this.perfil?.nome || 'Consultor'}</span>
                 <span class="block text-xs text-slate-400 dark:text-slate-500">${this.perfil?.email || this.user.email}</span>
               </div>
-              <div class="w-10 h-10 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 font-bold rounded-xl flex items-center justify-center border border-indigo-100 dark:border-indigo-900/40">
-                ${(this.perfil?.nome || 'C').substring(0, 2).toUpperCase()}
-              </div>
+              ${getAvatarSvg(this.perfil?.avatar_url, this.perfil?.nome || 'C', 'w-10 h-10')}
               <!-- Theme Toggle -->
               <button id="theme-toggle-btn" title="Alternar Tema" class="p-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-400 dark:text-slate-555 rounded-xl transition border border-slate-200/40 dark:border-slate-700/40 flex items-center justify-center">
                 <svg width="20" height="20" class="w-5 h-5 dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">

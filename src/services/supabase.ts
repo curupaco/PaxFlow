@@ -62,7 +62,8 @@ export async function loginConsultor(email: string, password: string): Promise<{
         nome: authData.user.user_metadata?.nome || 'Consultor Novo',
         email: authData.user.email || '',
         role: 'consultor',
-        ativo: true
+        ativo: true,
+        avatar_url: authData.user.user_metadata?.avatar_url || authData.user.user_metadata?.avatar || undefined
       };
 
       // Tenta criar ou atualizar o perfil no banco de forma proativa para consultas futuras
@@ -72,7 +73,8 @@ export async function loginConsultor(email: string, password: string): Promise<{
           nome: fallbackPerfil.nome,
           email: fallbackPerfil.email,
           role: fallbackPerfil.role,
-          ativo: fallbackPerfil.ativo
+          ativo: fallbackPerfil.ativo,
+          avatar_url: fallbackPerfil.avatar_url
         });
       } catch (insertErr) {
         console.warn('Erro ao inserir perfil padrão de fallback:', insertErr);
@@ -137,7 +139,8 @@ export async function getSessaoAtual(): Promise<{
         nome: session.user.user_metadata?.nome || 'Consultor Novo',
         email: session.user.email || '',
         role: 'consultor',
-        ativo: true
+        ativo: true,
+        avatar_url: session.user.user_metadata?.avatar_url || session.user.user_metadata?.avatar || undefined
       };
 
       return {
@@ -156,3 +159,12 @@ export async function getSessaoAtual(): Promise<{
     return { user: null, perfil: null, error: err };
   }
 }
+
+/**
+ * Atualiza a senha da conta atualmente autenticada na sessão ativa.
+ */
+export async function atualizarSenhaAtual(password: string): Promise<{ error: any }> {
+  const { error } = await supabase.auth.updateUser({ password });
+  return { error };
+}
+

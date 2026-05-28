@@ -14,6 +14,7 @@ export interface PerfilConsultor {
   email: string;
   role: UserRole;
   ativo: boolean;
+  avatar_url?: string; // ID do avatar selecionado (panda, lion, fox, etc.)
   createdAt?: string;
   updatedAt?: string;
 }
