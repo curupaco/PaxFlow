@@ -1,5 +1,5 @@
 import './index.css';
-import { getSessaoAtual, loginConsultor, supabase, atualizarSenhaAtual, salvarSenhaLocal } from './services/supabase';
+import { getSessaoAtual, loginConsultor, supabase, atualizarSenhaAtual } from './services/supabase';
 import { Dashboard } from './pages/Dashboard';
 import { OrcamentosPage } from './pages/Orcamentos';
 import { ClientesPage } from './pages/Clientes';
@@ -632,7 +632,6 @@ class App {
 
           // 3. Atualiza senha se solicitada
           if (senhaVal) {
-            salvarSenhaLocal(this.perfil.email, senhaVal);
             const { error: passwordErr } = await atualizarSenhaAtual(senhaVal);
             if (passwordErr) throw passwordErr;
           }

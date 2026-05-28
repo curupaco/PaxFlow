@@ -26,35 +26,6 @@ if (!supabaseUrl || !supabaseAnonKey) {
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 /**
- * Salva localmente a senha de um usuário no ambiente de sandbox/desenvolvimento
- */
-export function salvarSenhaLocal(email: string, password: string): void {
-  try {
-    const localPasswords = JSON.parse(localStorage.getItem('paxflow-custom-passwords') || '{}');
-    localPasswords[email.toLowerCase().trim()] = password;
-    localStorage.setItem('paxflow-custom-passwords', JSON.stringify(localPasswords));
-  } catch (e) {
-    console.error('Erro ao salvar senha localmente:', e);
-  }
-}
-
-/**
- * Obtém localmente a senha de um usuário no ambiente de sandbox/desenvolvimento
- */
-export function obterSenhaLocal(email: string): string | null {
-  try {
-    const normalizedEmail = email.toLowerCase().trim();
-    if (normalizedEmail === 'emariano@agaxtur.com.br') {
-      return '005070';
-    }
-    const localPasswords = JSON.parse(localStorage.getItem('paxflow-custom-passwords') || '{}');
-    return localPasswords[normalizedEmail] || null;
-  } catch (e) {
-    return null;
-  }
-}
-
-/**
  * Realiza o login de um consultor usando email e senha.
  * Retorna os dados do usuário autenticado e seu perfil com a respectiva role (admin ou consultor).
  */
@@ -70,64 +41,6 @@ export async function loginConsultor(email: string, password: string): Promise<{
     });
 
     if (authError) {
-      // Bypass de credenciais em sandbox/desenvolvimento se houver senha local correspondente!
-      const localSenha = obterSenhaLocal(email);
-      if (localSenha && localSenha === password) {
-        console.log('[Sandbox] Credenciais customizadas locais validadas com sucesso para:', email);
-        
-        // Tenta buscar o perfil do consultor na tabela profiles do Supabase
-        const { data: perfilData, error: perfilError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('email', email.toLowerCase().trim())
-          .single();
-
-        if (perfilError || !perfilData) {
-          // Se não houver perfil no banco de dados, cria um perfil mock completo
-          const mockUser = {
-            id: 'mock-id-' + email.replace(/[^a-zA-Z0-9]/g, ''),
-            email: email,
-            user_metadata: { nome: email.split('@')[0] }
-          };
-          const mockPerfil: PerfilConsultor = {
-            id: mockUser.id,
-            nome: email.split('@')[0],
-            email: email,
-            role: 'consultor',
-            ativo: true
-          };
-
-          localStorage.setItem('paxflow-sandbox-session', JSON.stringify({ user: mockUser, perfil: mockPerfil }));
-
-          return {
-            user: mockUser,
-            perfil: mockPerfil,
-            error: null
-          };
-        }
-
-        const enrichedPerfil = perfilData as PerfilConsultor;
-        const localAvatar = obterAvatarLocal(enrichedPerfil.id);
-        if (localAvatar) {
-          enrichedPerfil.avatar_url = localAvatar;
-        }
-
-        const mockUser = {
-          id: enrichedPerfil.id,
-          email: enrichedPerfil.email,
-          user_metadata: { nome: enrichedPerfil.nome, avatar_url: enrichedPerfil.avatar_url }
-        };
-
-        // Salva a sessão simulada no LocalStorage para que o getSessaoAtual() saiba restaurá-la
-        localStorage.setItem('paxflow-sandbox-session', JSON.stringify({ user: mockUser, perfil: enrichedPerfil }));
-
-        return {
-          user: mockUser,
-          perfil: enrichedPerfil,
-          error: null
-        };
-      }
-
       return { user: null, perfil: null, error: authError };
     }
 
@@ -178,7 +91,9 @@ export async function loginConsultor(email: string, password: string): Promise<{
     }
     
     if (perfilData) {
-      const local = obterAvatarLocal(perfilData.id);
+      const local = obterAvatarLocal(perfilData.id) || 
+                    obterAvatarLocal(perfilData.email) || 
+                    obterAvatarLocal('mock-id-' + perfilData.email.replace(/[^a-zA-Z0-9]/g, ''));
       if (local) {
         (perfilData as PerfilConsultor).avatar_url = local;
       }
@@ -198,7 +113,6 @@ export async function loginConsultor(email: string, password: string): Promise<{
  * Realiza o logout do consultor autenticado.
  */
 export async function logoutConsultor(): Promise<{ error: any }> {
-  localStorage.removeItem('paxflow-sandbox-session');
   const { error } = await supabase.auth.signOut();
   return { error };
 }
@@ -212,22 +126,6 @@ export async function getSessaoAtual(): Promise<{
   error: any;
 }> {
   try {
-    // Primeiro, verifica se há uma sessão ativa simulada de sandbox/desenvolvimento
-    const sandboxSessionStr = localStorage.getItem('paxflow-sandbox-session');
-    if (sandboxSessionStr) {
-      try {
-        const { user, perfil } = JSON.parse(sandboxSessionStr);
-        // Atualiza avatar local se houver
-        const local = obterAvatarLocal(perfil.id);
-        if (local) {
-          perfil.avatar_url = local;
-        }
-        return { user, perfil, error: null };
-      } catch (e) {
-        localStorage.removeItem('paxflow-sandbox-session');
-      }
-    }
-
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
     if (sessionError) {
@@ -265,7 +163,9 @@ export async function getSessaoAtual(): Promise<{
     }
     
     if (perfilData) {
-      const local = obterAvatarLocal(perfilData.id);
+      const local = obterAvatarLocal(perfilData.id) || 
+                    obterAvatarLocal(perfilData.email) || 
+                    obterAvatarLocal('mock-id-' + perfilData.email.replace(/[^a-zA-Z0-9]/g, ''));
       if (local) {
         (perfilData as PerfilConsultor).avatar_url = local;
       }

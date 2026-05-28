@@ -1,4 +1,4 @@
-import { supabase, getSessaoAtual, atualizarSenhaAtual, salvarSenhaLocal } from '../services/supabase';
+import { supabase, getSessaoAtual, atualizarSenhaAtual } from '../services/supabase';
 import { PerfilConsultor, GlobalSettings } from '../types';
 import { createClient } from '@supabase/supabase-js';
 import { getAvatarSvg, AVATAR_OPTIONS, mesclarAvataresLocais, salvarAvatarLocal } from '../services/avatars';
@@ -531,8 +531,14 @@ export class ConfiguracoesPage {
           throw new Error('Erro ao criar registro de autenticação do usuário.');
         }
 
-        // Salva a senha localmente para viabilizar login direto em sandbox
-        salvarSenhaLocal(email, senha);
+        // Salva a senha e auto-confirma o e-mail no Supabase Auth usando a RPC administrativa
+        const { error: rpcErr } = await supabase.rpc('admin_set_user_password', {
+          user_id: authData.user.id,
+          new_password: senha
+        });
+        if (rpcErr) {
+          console.warn('Erro ao auto-confirmar credencial via RPC no Supabase Auth:', rpcErr);
+        }
 
         // 2. Insere ou atualiza os dados correspondentes na tabela profiles (evita conflito se houver trigger automática no Supabase)
         const { error: profileError } = await supabase.from('profiles').upsert({
@@ -771,10 +777,14 @@ export class ConfiguracoesPage {
               if (passwordErr) throw passwordErr;
             }
           } else {
-            // Se for outro usuário, e digitou a senha, salvamos localmente na sandbox para permitir login direto e instantâneo
+            // Se for outro usuário, e digitou a senha, chamamos a RPC para atualizar a senha no Supabase Auth de forma oficial
             if (senhaVal) {
-              salvarSenhaLocal(c.email, senhaVal);
-              console.log(`[Dev] Senha de ${c.email} atualizada com sucesso localmente na sandbox.`);
+              const { error: rpcErr } = await supabase.rpc('admin_set_user_password', {
+                user_id: c.id,
+                new_password: senhaVal
+              });
+              if (rpcErr) throw rpcErr;
+              console.log(`[Admin] Senha de ${c.email} atualizada com sucesso no Supabase Auth via RPC.`);
             }
           }
         }

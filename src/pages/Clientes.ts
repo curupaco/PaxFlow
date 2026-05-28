@@ -103,10 +103,7 @@ export class ClientesPage {
         .select('*')
         .order('nome', { ascending: true });
 
-      // Consultor comum só gerencia seus próprios clientes; admin vê tudo
-      if (this.perfil && this.perfil.role !== 'admin') {
-        query = query.eq('consultor_responsavel_id', this.user.id);
-      }
+      // Todos os consultores veem todos os clientes cadastrados no sistema
 
       const { data, error } = await query;
       if (error) throw error;
