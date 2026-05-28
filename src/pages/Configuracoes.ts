@@ -1,7 +1,7 @@
 import { supabase, getSessaoAtual, atualizarSenhaAtual } from '../services/supabase';
 import { PerfilConsultor, GlobalSettings } from '../types';
 import { createClient } from '@supabase/supabase-js';
-import { getAvatarSvg, AVATAR_OPTIONS } from '../services/avatars';
+import { getAvatarSvg, AVATAR_OPTIONS, mesclarAvataresLocais, salvarAvatarLocal } from '../services/avatars';
 
 declare const process: any;
 
@@ -188,7 +188,7 @@ export class ConfiguracoesPage {
         .order('nome', { ascending: true });
 
       if (error) throw error;
-      this.consultores = data as PerfilConsultor[];
+      this.consultores = mesclarAvataresLocais(data || []) as PerfilConsultor[];
     } catch (err: any) {
       console.error('Erro ao carregar consultores:', err);
     }
@@ -444,12 +444,12 @@ export class ConfiguracoesPage {
         <form id="form-novo-consultor" class="p-6 space-y-4">
           <div>
             <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Nome Completo *</label>
-            <input id="input-nc-nome" type="text" required placeholder="Nome do Consultor" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+            <input id="input-nc-nome" type="text" required autocomplete="name" placeholder="Nome do Consultor" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
           </div>
 
           <div>
             <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">E-mail de Acesso *</label>
-            <input id="input-nc-email" type="email" required placeholder="email@agencia.com" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+            <input id="input-nc-email" type="email" required autocomplete="username" placeholder="email@agencia.com" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
           </div>
 
           <div class="grid grid-cols-2 gap-4">
@@ -463,7 +463,7 @@ export class ConfiguracoesPage {
 
             <div>
               <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Senha Provisória *</label>
-              <input id="input-nc-senha" type="password" required minlength="6" placeholder="••••••••" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+              <input id="input-nc-senha" type="password" required autocomplete="new-password" minlength="6" placeholder="••••••••" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
             </div>
           </div>
 
@@ -624,12 +624,12 @@ export class ConfiguracoesPage {
 
           <div>
             <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Nome Completo *</label>
-            <input id="input-ec-nome" type="text" required value="${c.nome || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition" />
+            <input id="input-ec-nome" type="text" required autocomplete="name" value="${c.nome || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition" />
           </div>
 
           <div>
             <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">E-mail de Acesso</label>
-            <input id="input-ec-email" type="email" disabled value="${c.email || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-850/50 rounded-lg text-slate-400 dark:text-slate-500 font-bold text-sm cursor-not-allowed select-none" />
+            <input id="input-ec-email" type="email" disabled autocomplete="username" value="${c.email || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-850/50 rounded-lg text-slate-400 dark:text-slate-500 font-bold text-sm cursor-not-allowed select-none" />
           </div>
 
           <div class="grid grid-cols-2 gap-4">
@@ -655,7 +655,7 @@ export class ConfiguracoesPage {
             <p class="text-[10px] text-slate-400 dark:text-slate-500 mb-2 font-semibold italic">Nota de desenvolvimento: você pode alterar diretamente a senha do usuário preenchendo o campo abaixo.</p>
             <div>
               <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">Definir Nova Senha (Mínimo 6 dígitos)</label>
-              <input id="input-ec-senha" type="password" minlength="6" placeholder="Insira a nova senha diretamente" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs" />
+              <input id="input-ec-senha" type="password" minlength="6" autocomplete="new-password" placeholder="Insira a nova senha diretamente" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs" />
             </div>
           </div>
 
@@ -739,19 +739,41 @@ export class ConfiguracoesPage {
       try {
         const isOffline = supabase.from === undefined || (typeof window !== 'undefined' && window.location.hostname === 'localhost' && !import.meta.env.VITE_SUPABASE_URL);
 
-        if (!isOffline) {
-          // 1. Atualiza na tabela Profiles do Supabase
-          const { error: profileErr } = await supabase
-            .from('profiles')
-            .update({
-              nome: nomeVal,
-              avatar_url: selectedAvatarId,
-              role: roleVal,
-              ativo: ativoVal
-            })
-            .eq('id', c.id);
+        // Sempre persiste localmente
+        salvarAvatarLocal(c.id, selectedAvatarId);
 
-          if (profileErr) throw profileErr;
+        if (!isOffline) {
+          // 1. Atualiza na tabela Profiles do Supabase (tenta com avatar_url)
+          let profileErr;
+          try {
+            const { error } = await supabase
+              .from('profiles')
+              .update({
+                nome: nomeVal,
+                avatar_url: selectedAvatarId,
+                role: roleVal,
+                ativo: ativoVal
+              })
+              .eq('id', c.id);
+            profileErr = error;
+          } catch (err: any) {
+            profileErr = err;
+          }
+
+          // Se falhar (ex: coluna avatar_url não existe), tenta fallback sem avatar_url
+          if (profileErr) {
+            console.warn('Erro ao atualizar consultor com avatar_url (provavelmente coluna ausente). Tentando sem avatar_url...', profileErr);
+            const { error: fallbackErr } = await supabase
+              .from('profiles')
+              .update({
+                nome: nomeVal,
+                role: roleVal,
+                ativo: ativoVal
+              })
+              .eq('id', c.id);
+
+            if (fallbackErr) throw fallbackErr;
+          }
 
           // 2. Se for a si mesmo, atualiza também a sessão ativa no auth
           if (isSelf) {

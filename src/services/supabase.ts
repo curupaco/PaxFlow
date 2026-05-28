@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { PerfilConsultor } from '../types';
+import { obterAvatarLocal } from './avatars';
 
 declare const process: any;
 
@@ -68,14 +69,34 @@ export async function loginConsultor(email: string, password: string): Promise<{
 
       // Tenta criar ou atualizar o perfil no banco de forma proativa para consultas futuras
       try {
-        await supabase.from('profiles').upsert({
-          id: fallbackPerfil.id,
-          nome: fallbackPerfil.nome,
-          email: fallbackPerfil.email,
-          role: fallbackPerfil.role,
-          ativo: fallbackPerfil.ativo,
-          avatar_url: fallbackPerfil.avatar_url
-        });
+        let upsertErr;
+        try {
+          const { error } = await supabase.from('profiles').upsert({
+            id: fallbackPerfil.id,
+            nome: fallbackPerfil.nome,
+            email: fallbackPerfil.email,
+            role: fallbackPerfil.role,
+            ativo: fallbackPerfil.ativo,
+            avatar_url: fallbackPerfil.avatar_url
+          });
+          upsertErr = error;
+        } catch (err: any) {
+          upsertErr = err;
+        }
+
+        if (upsertErr) {
+          console.warn('Erro ao upsertar perfil com avatar_url (provavelmente coluna ausente). Tentando sem avatar_url...', upsertErr);
+          const { error: retryErr } = await supabase.from('profiles').upsert({
+            id: fallbackPerfil.id,
+            nome: fallbackPerfil.nome,
+            email: fallbackPerfil.email,
+            role: fallbackPerfil.role,
+            ativo: fallbackPerfil.ativo
+          });
+          if (retryErr) {
+            console.warn('Erro ao tentar upsert de fallback sem avatar_url:', retryErr);
+          }
+        }
       } catch (insertErr) {
         console.warn('Erro ao inserir perfil padrão de fallback:', insertErr);
       }
@@ -85,6 +106,13 @@ export async function loginConsultor(email: string, password: string): Promise<{
         perfil: fallbackPerfil,
         error: null, // Retorna null no erro para que o login prossiga com sucesso
       };
+    }
+    
+    if (perfilData) {
+      const local = obterAvatarLocal(perfilData.id);
+      if (local) {
+        (perfilData as PerfilConsultor).avatar_url = local;
+      }
     }
 
     return {
@@ -148,6 +176,13 @@ export async function getSessaoAtual(): Promise<{
         perfil: fallbackPerfil,
         error: null, // Retorna null para prosseguir a sessão ativa sem travar a interface
       };
+    }
+    
+    if (perfilData) {
+      const local = obterAvatarLocal(perfilData.id);
+      if (local) {
+        (perfilData as PerfilConsultor).avatar_url = local;
+      }
     }
 
     return {

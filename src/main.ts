@@ -1,3 +1,4 @@
+import './index.css';
 import { getSessaoAtual, loginConsultor, supabase, atualizarSenhaAtual } from './services/supabase';
 import { Dashboard } from './pages/Dashboard';
 import { OrcamentosPage } from './pages/Orcamentos';
@@ -5,7 +6,7 @@ import { ClientesPage } from './pages/Clientes';
 import { ReembolsosPage } from './pages/Reembolsos';
 import { ConfiguracoesPage } from './pages/Configuracoes';
 import { PerfilConsultor } from './types';
-import { getAvatarSvg, AVATAR_OPTIONS } from './services/avatars';
+import { getAvatarSvg, AVATAR_OPTIONS, salvarAvatarLocal } from './services/avatars';
 
 class App {
   private container: HTMLElement;
@@ -163,7 +164,7 @@ class App {
             <form id="form-login" class="space-y-4.5">
                <div>
                  <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">E-mail do Consultor *</label>
-                 <input id="input-login-email" type="email" required placeholder="seuemail@agencia.com" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition" />
+                 <input id="input-login-email" type="email" required autocomplete="username" placeholder="seuemail@agencia.com" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition" />
                </div>
 
                <div>
@@ -171,7 +172,7 @@ class App {
                    <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Senha de Acesso *</label>
                    <button type="button" id="btn-esqueci-senha" class="text-[10px] font-extrabold text-indigo-650 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-350 transition hover:underline focus:outline-none uppercase tracking-wide">Esqueci minha senha</button>
                  </div>
-                 <input id="input-login-password" type="password" required placeholder="••••••••" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition" />
+                 <input id="input-login-password" type="password" required autocomplete="current-password" placeholder="••••••••" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition" />
                </div>
 
               <button type="submit" id="btn-login-submit" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/10 transition uppercase mt-2.5 flex items-center justify-center">
@@ -188,7 +189,7 @@ class App {
                </p>
                <div>
                  <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">E-mail Cadastrado *</label>
-                 <input id="input-recovery-email" type="email" required placeholder="seuemail@agencia.com" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition" />
+                 <input id="input-recovery-email" type="email" required autocomplete="email" placeholder="seuemail@agencia.com" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition" />
                </div>
 
               <button type="submit" id="btn-recovery-submit" class="w-full py-3 bg-indigo-650 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/10 transition uppercase mt-2 flex items-center justify-center">
@@ -492,12 +493,12 @@ class App {
 
           <div>
             <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Nome Completo *</label>
-            <input id="input-mp-nome" type="text" required value="${this.perfil.nome || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition" />
+            <input id="input-mp-nome" type="text" required autocomplete="name" value="${this.perfil.nome || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition" />
           </div>
 
           <div>
             <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">E-mail de Login</label>
-            <input id="input-mp-email" type="email" disabled value="${this.perfil.email || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-850/50 rounded-lg text-slate-400 dark:text-slate-500 font-bold text-sm cursor-not-allowed select-none" />
+            <input id="input-mp-email" type="email" disabled autocomplete="username" value="${this.perfil.email || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-850/50 rounded-lg text-slate-400 dark:text-slate-500 font-bold text-sm cursor-not-allowed select-none" />
             <p class="text-[9px] text-slate-400 dark:text-slate-500 mt-1 font-semibold">O e-mail é único para login e não pode ser reconfigurado.</p>
           </div>
 
@@ -507,11 +508,11 @@ class App {
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <div>
                 <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">Nova Senha</label>
-                <input id="input-mp-senha" type="password" minlength="6" placeholder="Mín. 6 dígitos" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs" />
+                <input id="input-mp-senha" type="password" minlength="6" autocomplete="new-password" placeholder="Mín. 6 dígitos" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs" />
               </div>
               <div>
                 <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">Confirmar Senha</label>
-                <input id="input-mp-senha-confirm" type="password" minlength="6" placeholder="Confirme a senha" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs" />
+                <input id="input-mp-senha-confirm" type="password" minlength="6" autocomplete="new-password" placeholder="Confirme a senha" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs" />
               </div>
             </div>
           </div>
@@ -607,14 +608,33 @@ class App {
       try {
         const isOffline = supabase.from === undefined || (typeof window !== 'undefined' && window.location.hostname === 'localhost' && !import.meta.env.VITE_SUPABASE_URL);
 
-        if (!isOffline && this.perfil) {
-          // 1. Persiste dados na tabela public profiles
-          const { error: profileErr } = await supabase
-            .from('profiles')
-            .update({ nome: nomeVal, avatar_url: selectedAvatarId })
-            .eq('id', this.perfil.id);
+        if (this.perfil) {
+          salvarAvatarLocal(this.perfil.id, selectedAvatarId);
+        }
 
-          if (profileErr) throw profileErr;
+        if (!isOffline && this.perfil) {
+          // 1. Persiste dados na tabela public profiles (tenta com avatar_url)
+          let profileErr;
+          try {
+            const { error } = await supabase
+              .from('profiles')
+              .update({ nome: nomeVal, avatar_url: selectedAvatarId })
+              .eq('id', this.perfil.id);
+            profileErr = error;
+          } catch (err: any) {
+            profileErr = err;
+          }
+
+          // Se falhou (ex: coluna avatar_url não existe), tentamos atualizar apenas o nome
+          if (profileErr) {
+            console.warn('Falha ao atualizar perfil com avatar_url (provavelmente coluna ausente). Tentando sem avatar_url...', profileErr);
+            const { error: fallbackErr } = await supabase
+              .from('profiles')
+              .update({ nome: nomeVal })
+              .eq('id', this.perfil.id);
+
+            if (fallbackErr) throw fallbackErr;
+          }
 
           // 2. Atualiza os metadados do Supabase Auth
           const { error: authMetaErr } = await supabase.auth.updateUser({

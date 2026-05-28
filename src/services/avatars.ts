@@ -253,3 +253,44 @@ export function getAvatarSvg(avatarId: string | undefined, initials: string = 'C
     </div>
   `;
 }
+
+/**
+ * Salva localmente o avatar de um usuário como fallback se o banco de dados não suportar a coluna
+ */
+export function salvarAvatarLocal(userId: string, avatarId: string): void {
+  try {
+    const localAvatars = JSON.parse(localStorage.getItem('paxflow-user-avatars') || '{}');
+    localAvatars[userId] = avatarId;
+    localStorage.setItem('paxflow-user-avatars', JSON.stringify(localAvatars));
+  } catch (e) {
+    console.error('Erro ao salvar avatar localmente:', e);
+  }
+}
+
+/**
+ * Recupera o avatar de um usuário salvo localmente
+ */
+export function obterAvatarLocal(userId: string): string | undefined {
+  try {
+    const localAvatars = JSON.parse(localStorage.getItem('paxflow-user-avatars') || '{}');
+    return localAvatars[userId];
+  } catch (e) {
+    return undefined;
+  }
+}
+
+/**
+ * Mescla a lista de perfis do Supabase com os avatares locais
+ */
+export function mesclarAvataresLocais(perfis: any[]): any[] {
+  return perfis.map(p => {
+    if (p && p.id) {
+      const local = obterAvatarLocal(p.id);
+      if (local) {
+        p.avatar_url = local;
+      }
+    }
+    return p;
+  });
+}
+

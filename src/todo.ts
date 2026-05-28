@@ -1,3 +1,4 @@
+import './index.css';
 import Sortable from 'sortablejs';
 import { supabase } from './services/supabase';
 
