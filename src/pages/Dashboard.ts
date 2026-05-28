@@ -1116,12 +1116,17 @@ export class Dashboard {
       document.body.appendChild(overlay);
     }
     
-    // Anima a abertura
+    // Anima a abertura removendo as classes de fechamento e adicionando as de abertura
     setTimeout(() => {
-      overlay?.classList.add('opacity-100', 'pointer-events-auto');
+      if (overlay) {
+        overlay.classList.remove('opacity-0', 'pointer-events-none');
+        overlay.classList.add('opacity-100', 'pointer-events-auto');
+      }
       const container = document.getElementById('modal-container');
-      container?.classList.remove('scale-95');
-      container?.classList.add('scale-100');
+      if (container) {
+        container.classList.remove('scale-95');
+        container.classList.add('scale-100');
+      }
     }, 10);
   }
 
