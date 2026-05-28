@@ -324,6 +324,17 @@ export class OrcamentosPage {
     }
 
     try {
+      // 1. Deleta lembretes associados primeiro para evitar violação de chave estrangeira (foreign key constraints)
+      const { error: lembreteError } = await supabase
+        .from('lembretes')
+        .delete()
+        .eq('orcamento_id', id);
+
+      if (lembreteError) {
+        console.warn('Aviso: Erro ao limpar lembretes vinculados ao excluir orçamento:', lembreteError.message);
+      }
+
+      // 2. Deleta o orçamento em si
       const { error } = await supabase
         .from('orcamentos')
         .delete()
@@ -405,6 +416,8 @@ export class OrcamentosPage {
     // Botões de Transição - SOLICITADO -> INICIAR
     this.container.querySelectorAll('[data-action="iniciar"]').forEach(btn => {
       btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        e.preventDefault();
         const id = (btn as HTMLElement).dataset.id;
         if (!id) return;
         const orc = this.orcamentos.find(o => o.id === id);
@@ -423,6 +436,8 @@ export class OrcamentosPage {
     // Botões de Transição - EM ANDAMENTO -> ENVIAR PROPOSTA
     this.container.querySelectorAll('[data-action="inserir-proposta"]').forEach(btn => {
       btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
         const id = (btn as HTMLElement).dataset.id;
         if (id) this.openEnviarPropostaModal(id);
       });
@@ -431,6 +446,8 @@ export class OrcamentosPage {
     // Botões da coluna AGUARDANDO: ALTERAR
     this.container.querySelectorAll('[data-action="alterar"]').forEach(btn => {
       btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        e.preventDefault();
         const id = (btn as HTMLElement).dataset.id;
         if (!id) return;
         const orc = this.orcamentos.find(o => o.id === id);
@@ -449,6 +466,8 @@ export class OrcamentosPage {
     // Botões da coluna AGUARDANDO: DESISTIR
     this.container.querySelectorAll('[data-action="desistir"]').forEach(btn => {
       btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
         const id = (btn as HTMLElement).dataset.id;
         if (id) this.openMotivoDesistenciaModal(id);
       });
@@ -457,6 +476,8 @@ export class OrcamentosPage {
     // Botões da coluna AGUARDANDO: INICIAR NEGOCIAÇÃO (ACEITAR)
     this.container.querySelectorAll('[data-action="aceitar"]').forEach(btn => {
       btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
         const id = (btn as HTMLElement).dataset.id;
         if (id) this.openAceitarOrcamentoModal(id);
       });
@@ -465,6 +486,8 @@ export class OrcamentosPage {
     // Botão Mudar Consultor
     this.container.querySelectorAll('[data-action="mudar-consultor"]').forEach(btn => {
       btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
         const id = (btn as HTMLElement).dataset.id;
         if (id) this.openMudarConsultorModal(id);
       });
@@ -473,6 +496,8 @@ export class OrcamentosPage {
     // Botão Lembrar Depois (🔔)
     this.container.querySelectorAll('[data-action="lembrar-depois"]').forEach(btn => {
       btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
         const id = (btn as HTMLElement).dataset.id;
         if (id) this.openLembrarDepoisModal(id);
       });
@@ -481,6 +506,8 @@ export class OrcamentosPage {
     // Botões de Visualizar Notas/Documentos
     this.container.querySelectorAll('[data-action="ver-notas"]').forEach(btn => {
       btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
         const id = (btn as HTMLElement).dataset.id;
         if (id) this.openVerNotasModal(id);
       });
@@ -489,6 +516,8 @@ export class OrcamentosPage {
     // Botão Excluir (Disponível apenas para ADMIN)
     this.container.querySelectorAll('[data-action="excluir"]').forEach(btn => {
       btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        e.preventDefault();
         const id = (btn as HTMLElement).dataset.id;
         if (!id) return;
         const confirmResult = await showCustomConfirm(
