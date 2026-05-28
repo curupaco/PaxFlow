@@ -1,0 +1,47 @@
+# 🤖 PaxFlow - Diretrizes e Premissas para Assistentes de IA
+
+Este arquivo define as regras estritas de desenvolvimento, padrões arquiteturais e premissas temporais que todo assistente de IA deve seguir rigorosamente ao trabalhar no PaxFlow.
+
+---
+
+## 📅 1. Premissa Temporal Crítica (Ano Atual)
+
+* **ANO ATUAL DE REFERÊNCIA**: **2026**.
+* **Cálculo de Datas**: Qualquer lógica, cálculo de SLA, contadores de tempo amigáveis ou geração de dados de demonstração (mock data) deve assumir o contexto temporal do ano de **2026**.
+* Evitar o uso do ano atual do sistema da máquina host caso seja diferente de 2026 para fins de consistência e simulação dos dados operacionais da agência.
+
+---
+
+## 🛠️ 2. Stack Tecnológica e Arquitetura
+
+* **Front-end**: Vite + TypeScript (Single-Page Application / SPA).
+* **Renderização**: Componentização limpa utilizando injeção dinâmica de HTML via manipuladores de DOM vanilla no TypeScript.
+* **Estilização**: Uso extensivo de classes Tailwind CSS (via injeção/classes nativas) combinadas com regras de animação personalizadas injetadas diretamente nas tags `<style>` dos componentes para controle dinâmico.
+* **Banco de Dados (Backend)**: Supabase JS Client (`src/services/supabase.ts`).
+  * Utilizar consultas robustas assíncronas.
+  * Respeitar as políticas de segurança RLS (Row Level Security).
+* **Google Drive Corporativo**: Integração com Edge Functions e fallbacks em `src/services/googleDrive.ts` para uploads seguros de documentos de clientes.
+
+---
+
+## 🎨 3. Design System e Estética Premium
+
+* **Aparência Premium**: O design deve impressionar visualmente à primeira vista ("WOW effect").
+* **Temas**: Suporte nativo completo para Modo Claro (Light) e Escuro (Dark) com transições suaves.
+* **Cores**: Evitar colorações puras/genéricas (red, green, blue). Utilizar paletas HSL curadas, tons sóbrios (slate, zinc, indigo, emerald, rose, amber) e gradientes modernos.
+* **Efeitos Modernos**: Usar *Glassmorphism* (`backdrop-blur-md`, bordas semitransparentes finas de `border-slate-200/40` ou `dark:border-slate-800/60`).
+* **Interatividade**: Micro-interações táteis/visuais em elementos clicáveis (`transform hover:-translate-y-0.5 transition duration-200` e sombras dinâmicas).
+* **Scrollbars**: Scrollbars finas e elegantes personalizadas com classes utilitárias CSS.
+
+---
+
+## 🔄 4. Regras de Fluxo e Engenharia de Software
+
+* **Kanbans Controlados**:
+  * O Kanban Operacional (`Dashboard.ts`) utiliza arraste livre via `SortableJS`.
+  * O Kanban de Orçamentos (`Orcamentos.ts`) possui **arraste travado (desabilitado)**. As transições de cards ocorrem estritamente via botões de ação e modais específicos de fluxo para manter o pipeline rígido.
+* **Segurança e Contingência (Fallback)**:
+  * Toda tela/serviço que dependa do Supabase deve implementar um **Modo Fallback local robusto** (via `localStorage`) para permitir testes imediatos offline caso as tabelas de banco de dados correspondentes ainda não estejam criadas ou haja falha de rede.
+* **Tempo Real (Realtime)**:
+  * Manter a sincronização reativa global habilitando canais do Supabase Realtime (`postgres_changes`) para re-renderizar estados automaticamente quando houver modificações externas no banco.
+  * Garantir a limpeza dos canais no método `destroy()` ao navegar para outras páginas.
