@@ -448,27 +448,9 @@ export class OrcamentosPage {
 
     // Botões da coluna AGUARDANDO: DESISTIR
     this.container.querySelectorAll('[data-action="desistir"]').forEach(btn => {
-      btn.addEventListener('click', async (e) => {
+      btn.addEventListener('click', (e) => {
         const id = (btn as HTMLElement).dataset.id;
-        if (!id) return;
-        const confirmResult = await showCustomConfirm(
-          'Tem certeza de que deseja marcar este orçamento como desistência?',
-          'Marcar Desistência',
-          { isDestructive: true, confirmText: 'Confirmar Desistência', cancelText: 'Voltar' }
-        );
-        if (confirmResult) {
-          const orc = this.orcamentos.find(o => o.id === id);
-          if (orc) {
-            orc.status = 'CONCLUIDO';
-            orc.subStatus = 'DESISTENCIA';
-            const success = await this.persistOrcamento(orc);
-            if (success) {
-              this.showToast('Orçamento marcado como desistência.', 'success');
-              await this.loadOrcamentos();
-              this.render();
-            }
-          }
-        }
+        if (id) this.openMotivoDesistenciaModal(id);
       });
     });
 
@@ -1835,6 +1817,137 @@ export class OrcamentosPage {
 
       } catch (err: any) {
         showCustomAlert(`Erro ao agendar lembrete:\n\n${err.message || err}`, 'Erro de Agendamento');
+      }
+    });
+  }
+
+  private openMotivoDesistenciaModal(id: string): void {
+    const orc = this.orcamentos.find(o => o.id === id);
+    if (!orc) return;
+
+    this.renderModalOverlay();
+    const portal = document.getElementById('orcamento-modal-portal');
+    const modalContent = document.getElementById('modal-content-container');
+    if (!modalContent || !portal) return;
+
+    modalContent.innerHTML = `
+      <div class="p-6">
+        <div class="flex items-center justify-between border-b border-slate-150 dark:border-slate-800 pb-3 mb-5">
+          <h3 class="text-lg font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+            <span>🚫 Motivo da Desistência</span>
+          </h3>
+          <button id="btn-close-modal-x" class="text-slate-400 hover:text-rose-500 font-bold transition text-lg">&times;</button>
+        </div>
+
+        <p class="text-xs text-slate-500 dark:text-slate-455 mb-4 font-semibold">
+          Selecione o motivo da desistência para o orçamento de <span class="font-extrabold text-indigo-650 dark:text-indigo-400">${orc.nomeCliente} - ${orc.destino}</span>:
+        </p>
+
+        <form id="form-motivo-desistencia" class="space-y-4">
+          <div class="space-y-2.5">
+            <label class="flex items-center gap-2.5 p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-850/50 cursor-pointer transition">
+              <input type="radio" name="motivo" value="Comprou com a concorrência" required class="text-indigo-650 focus:ring-indigo-500 h-4 w-4" />
+              <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Comprou com a concorrência</span>
+            </label>
+
+            <label class="flex items-center gap-2.5 p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-850/50 cursor-pointer transition">
+              <input type="radio" name="motivo" value="Desistiu da compra" class="text-indigo-650 focus:ring-indigo-500 h-4 w-4" />
+              <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Desistiu da compra</span>
+            </label>
+
+            <label class="flex items-center gap-2.5 p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-850/50 cursor-pointer transition">
+              <input type="radio" name="motivo" value="Parou de responder" class="text-indigo-650 focus:ring-indigo-500 h-4 w-4" />
+              <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Parou de responder</span>
+            </label>
+
+            <label class="flex items-center gap-2.5 p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-850/50 cursor-pointer transition">
+              <input type="radio" name="motivo" value="Outro" id="radio-motivo-outro" class="text-indigo-650 focus:ring-indigo-500 h-4 w-4" />
+              <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Outro</span>
+            </label>
+          </div>
+
+          <!-- Linha para digitação do motivo customizado (inicialmente oculta) -->
+          <div id="container-motivo-customizado" class="hidden animate-card-in">
+            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Especifique o Motivo *</label>
+            <input id="input-motivo-customizado" type="text" placeholder="Digite o motivo da desistência..." class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+          </div>
+
+          <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-150 dark:border-slate-800">
+            <button id="btn-cancel-modal" type="button" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 font-bold text-xs tracking-wider rounded-xl transition uppercase">Cancelar</button>
+            <button type="submit" class="px-6 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-rose-600/10 transition uppercase">Confirmar Desistência</button>
+          </div>
+        </form>
+      </div>
+    `;
+
+    const closeModal = () => this.closeModal();
+    document.getElementById('btn-close-modal-x')?.addEventListener('click', closeModal);
+    document.getElementById('btn-cancel-modal')?.addEventListener('click', closeModal);
+
+    const form = document.getElementById('form-motivo-desistencia') as HTMLFormElement;
+    const containerCustom = document.getElementById('container-motivo-customizado') as HTMLElement;
+    const inputCustom = document.getElementById('input-motivo-customizado') as HTMLInputElement;
+
+    // Monitora a mudança dos radios para mostrar/ocultar o campo customizado
+    form.querySelectorAll('input[name="motivo"]').forEach(radio => {
+      radio.addEventListener('change', () => {
+        const isOutro = (radio as HTMLInputElement).value === 'Outro' && (radio as HTMLInputElement).checked;
+        if (isOutro) {
+          containerCustom.classList.remove('hidden');
+          inputCustom.setAttribute('required', 'true');
+          inputCustom.focus();
+        } else {
+          containerCustom.classList.add('hidden');
+          inputCustom.removeAttribute('required');
+          inputCustom.value = '';
+        }
+      });
+    });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const radioSelecionado = form.querySelector('input[name="motivo"]:checked') as HTMLInputElement;
+      if (!radioSelecionado) return;
+
+      let motivoFinal = radioSelecionado.value;
+      if (motivoFinal === 'Outro') {
+        motivoFinal = inputCustom.value.trim();
+        if (!motivoFinal) {
+          showCustomAlert('Por favor, especifique o motivo da desistência.', 'Motivo Requerido');
+          return;
+        }
+      }
+
+      try {
+        orc.status = 'CONCLUIDO';
+        orc.subStatus = 'DESISTENCIA';
+
+        // 1. Salvar no histórico das notas de negociação
+        const timestamp = new Date().toLocaleString('pt-BR');
+        const registroDesistencia = `[Desistência em ${timestamp}] Motivo: ${motivoFinal}`;
+        orc.notasNegociacao = orc.notasNegociacao 
+          ? `${registroDesistencia}\n----------------------------------\n${orc.notasNegociacao}`
+          : registroDesistencia;
+
+        // 2. Adicionar como tag visual no card
+        const tagMotivo = `Desistência: ${motivoFinal}`;
+        // Limpar tags anteriores que comecem com "Desistência:" para não duplicar
+        orc.tags = orc.tags.filter(t => !t.startsWith('Desistência:'));
+        orc.tags.push(tagMotivo);
+
+        const success = await this.persistOrcamento(orc);
+        if (success) {
+          this.showToast('Orçamento marcado como desistência com sucesso!', 'success');
+          this.closeModal();
+          await this.loadOrcamentos();
+          this.render();
+        } else {
+          throw new Error('Erro ao salvar no banco de dados.');
+        }
+
+      } catch (err: any) {
+        showCustomAlert(`Erro ao registrar desistência:\n\n${err.message || err}`, 'Erro de Registro');
       }
     });
   }
