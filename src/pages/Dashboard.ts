@@ -259,7 +259,15 @@ export class Dashboard {
           if (newStatus === 'reembolso_solicitado') {
             this.openRefundModal(tripId, oldStatus);
           } else {
-            // Atualização padrão de status no Supabase
+            // 1. Atualização Otimista local
+            const viagem = this.viagens.find(v => v.id === tripId);
+            if (viagem) viagem.status = newStatus;
+
+            // Renderização síncrona instantânea (sem piscar a tela com loading spinner)
+            this.render();
+            this.setupDragAndDrop();
+
+            // 2. Atualização assíncrona no Supabase
             try {
               const { error } = await supabase
                 .from('viagens')
@@ -268,16 +276,17 @@ export class Dashboard {
 
               if (error) throw error;
 
-              // Atualiza o dado localmente e re-renderiza contadores rápidos
-              const viagem = this.viagens.find(v => v.id === tripId);
-              if (viagem) viagem.status = newStatus;
-
               this.showToast('Status da viagem atualizado com sucesso!', 'success');
-              this.init(); // Recarrega para recalcular SLAs e reorganizar
             } catch (err: any) {
               console.error('Erro ao atualizar status:', err);
               this.showToast('Erro ao atualizar status da viagem.', 'error');
-              this.init(); // Recarrega para voltar o card à coluna antiga na UI
+              
+              // Se falhar, reverte o status da viagem na memória
+              if (viagem) viagem.status = oldStatus;
+              
+              // Re-renderiza para devolver o card para a coluna antiga
+              this.render();
+              this.setupDragAndDrop();
             }
           }
         }
@@ -332,7 +341,8 @@ export class Dashboard {
         `;
         document.getElementById('btn-cancel-modal')?.addEventListener('click', () => {
           this.closeModal();
-          this.init(); // Restaura o Kanban
+          this.render();
+          this.setupDragAndDrop();
         });
         return;
       }
@@ -395,10 +405,10 @@ export class Dashboard {
         }
       });
 
-      // Fechamento e cancelamento
       const handleCancel = () => {
         this.closeModal();
-        this.init(); // Recarrega o Kanban restaurando o card para a coluna de origem
+        this.render();
+        this.setupDragAndDrop();
       };
       
       document.getElementById('btn-close-x')?.addEventListener('click', handleCancel);
@@ -462,7 +472,8 @@ export class Dashboard {
     } catch (err: any) {
       console.error('Erro ao abrir modal:', err);
       this.closeModal();
-      this.init();
+      this.render();
+      this.setupDragAndDrop();
     }
   }
 
