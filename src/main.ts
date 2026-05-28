@@ -613,28 +613,13 @@ class App {
         }
 
         if (!isOffline && this.perfil) {
-          // 1. Persiste dados na tabela public profiles (tenta com avatar_url)
-          let profileErr;
-          try {
-            const { error } = await supabase
-              .from('profiles')
-              .update({ nome: nomeVal, avatar_url: selectedAvatarId })
-              .eq('id', this.perfil.id);
-            profileErr = error;
-          } catch (err: any) {
-            profileErr = err;
-          }
+          // 1. Persiste dados na tabela public profiles (avatar_url é gerenciado localmente via localStorage e auth metadata)
+          const { error: profileErr } = await supabase
+            .from('profiles')
+            .update({ nome: nomeVal })
+            .eq('id', this.perfil.id);
 
-          // Se falhou (ex: coluna avatar_url não existe), tentamos atualizar apenas o nome
-          if (profileErr) {
-            console.warn('Falha ao atualizar perfil com avatar_url (provavelmente coluna ausente). Tentando sem avatar_url...', profileErr);
-            const { error: fallbackErr } = await supabase
-              .from('profiles')
-              .update({ nome: nomeVal })
-              .eq('id', this.perfil.id);
-
-            if (fallbackErr) throw fallbackErr;
-          }
+          if (profileErr) throw profileErr;
 
           // 2. Atualiza os metadados do Supabase Auth
           const { error: authMetaErr } = await supabase.auth.updateUser({

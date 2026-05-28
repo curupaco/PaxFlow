@@ -746,37 +746,17 @@ export class ConfiguracoesPage {
         salvarAvatarLocal(c.id, selectedAvatarId);
 
         if (!isOffline) {
-          // 1. Atualiza na tabela Profiles do Supabase (tenta com avatar_url)
-          let profileErr;
-          try {
-            const { error } = await supabase
-              .from('profiles')
-              .update({
-                nome: nomeVal,
-                avatar_url: selectedAvatarId,
-                role: roleVal,
-                ativo: ativoVal
-              })
-              .eq('id', c.id);
-            profileErr = error;
-          } catch (err: any) {
-            profileErr = err;
-          }
+          // 1. Atualiza na tabela Profiles do Supabase (avatar_url é gerenciado localmente)
+          const { error: profileErr } = await supabase
+            .from('profiles')
+            .update({
+              nome: nomeVal,
+              role: roleVal,
+              ativo: ativoVal
+            })
+            .eq('id', c.id);
 
-          // Se falhar (ex: coluna avatar_url não existe), tenta fallback sem avatar_url
-          if (profileErr) {
-            console.warn('Erro ao atualizar consultor com avatar_url (provavelmente coluna ausente). Tentando sem avatar_url...', profileErr);
-            const { error: fallbackErr } = await supabase
-              .from('profiles')
-              .update({
-                nome: nomeVal,
-                role: roleVal,
-                ativo: ativoVal
-              })
-              .eq('id', c.id);
-
-            if (fallbackErr) throw fallbackErr;
-          }
+          if (profileErr) throw profileErr;
 
           // 2. Se for a si mesmo, atualiza também a sessão ativa no auth
           if (isSelf) {
@@ -794,15 +774,7 @@ export class ConfiguracoesPage {
             // Se for outro usuário, e digitou a senha, salvamos localmente na sandbox para permitir login direto e instantâneo
             if (senhaVal) {
               salvarSenhaLocal(c.email, senhaVal);
-
-              try {
-                await supabase.auth.resetPasswordForEmail(c.email, {
-                  redirectTo: window.location.origin
-                });
-                console.log(`[Dev] Solicitação de redefinição de senha para ${c.email} enviada ao Supabase.`);
-              } catch (authErr) {
-                console.warn('Falha ao acionar redefinição de senha oficial (usando bypass sandbox local):', authErr);
-              }
+              console.log(`[Dev] Senha de ${c.email} atualizada com sucesso localmente na sandbox.`);
             }
           }
         }

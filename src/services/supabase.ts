@@ -154,35 +154,17 @@ export async function loginConsultor(email: string, password: string): Promise<{
         avatar_url: authData.user.user_metadata?.avatar_url || authData.user.user_metadata?.avatar || undefined
       };
 
-      // Tenta criar ou atualizar o perfil no banco de forma proativa para consultas futuras
+      // Tenta criar ou atualizar o perfil no banco de forma proativa para consultas futuras (avatar_url é local)
       try {
-        let upsertErr;
-        try {
-          const { error } = await supabase.from('profiles').upsert({
-            id: fallbackPerfil.id,
-            nome: fallbackPerfil.nome,
-            email: fallbackPerfil.email,
-            role: fallbackPerfil.role,
-            ativo: fallbackPerfil.ativo,
-            avatar_url: fallbackPerfil.avatar_url
-          });
-          upsertErr = error;
-        } catch (err: any) {
-          upsertErr = err;
-        }
-
+        const { error: upsertErr } = await supabase.from('profiles').upsert({
+          id: fallbackPerfil.id,
+          nome: fallbackPerfil.nome,
+          email: fallbackPerfil.email,
+          role: fallbackPerfil.role,
+          ativo: fallbackPerfil.ativo
+        });
         if (upsertErr) {
-          console.warn('Erro ao upsertar perfil com avatar_url (provavelmente coluna ausente). Tentando sem avatar_url...', upsertErr);
-          const { error: retryErr } = await supabase.from('profiles').upsert({
-            id: fallbackPerfil.id,
-            nome: fallbackPerfil.nome,
-            email: fallbackPerfil.email,
-            role: fallbackPerfil.role,
-            ativo: fallbackPerfil.ativo
-          });
-          if (retryErr) {
-            console.warn('Erro ao tentar upsert de fallback sem avatar_url:', retryErr);
-          }
+          console.warn('Erro ao upsertar perfil padrão de fallback:', upsertErr);
         }
       } catch (insertErr) {
         console.warn('Erro ao inserir perfil padrão de fallback:', insertErr);
