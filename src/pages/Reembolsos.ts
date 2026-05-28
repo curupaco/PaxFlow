@@ -1,6 +1,7 @@
 import { supabase, getSessaoAtual } from '../services/supabase';
 import { PerfilConsultor, Reembolso } from '../types';
 import { getAvatarSvg } from '../services/avatars';
+import { showCustomConfirm } from '../services/dialog';
 
 // Injeta estilos premium e customizações para a Central de Reembolsos no DOM
 if (typeof document !== 'undefined') {
@@ -233,7 +234,8 @@ export class ReembolsosPage {
 
     // Evento de Logout
     document.getElementById('btn-logout')?.addEventListener('click', async () => {
-      if (confirm('Deseja realmente sair?')) {
+      const confirmResult = await showCustomConfirm('Deseja realmente sair do sistema?', 'Encerrar Sessão');
+      if (confirmResult) {
         const { logoutConsultor } = await import('../services/supabase');
         await logoutConsultor();
         window.location.reload();

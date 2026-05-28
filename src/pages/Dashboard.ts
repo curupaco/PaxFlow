@@ -2,6 +2,7 @@ import Sortable from 'sortablejs';
 import { supabase, getSessaoAtual, logoutConsultor } from '../services/supabase';
 import { Viagem, Cliente, ProdutoViagem, GlobalSettings, PerfilConsultor } from '../types';
 import { getAvatarSvg } from '../services/avatars';
+import { showCustomConfirm } from '../services/dialog';
 
 // Injeta estilos premium e animações micro-interativas para SLAs diretamente no DOM
 if (typeof document !== 'undefined') {
@@ -1148,7 +1149,12 @@ export class Dashboard {
           const prodId = btn.getAttribute('data-delete-prod-id');
           if (!prodId) return;
 
-          if (confirm('Deseja realmente remover este produto da viagem?')) {
+          const confirmResult = await showCustomConfirm(
+            'Deseja realmente remover este produto da viagem?',
+            'Remover Produto',
+            { isDestructive: true, confirmText: 'Remover', cancelText: 'Manter' }
+          );
+          if (confirmResult) {
             try {
               const { error } = await supabase
                 .from('produtos_viagem')
@@ -1368,7 +1374,8 @@ export class Dashboard {
 
     // Evento de Logout
     document.getElementById('btn-logout')?.addEventListener('click', async () => {
-      if (confirm('Deseja realmente sair do sistema?')) {
+      const confirmResult = await showCustomConfirm('Deseja realmente sair do sistema?', 'Encerrar Sessão');
+      if (confirmResult) {
         await logoutConsultor();
         window.location.reload();
       }

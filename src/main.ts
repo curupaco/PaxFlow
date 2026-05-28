@@ -7,6 +7,7 @@ import { ReembolsosPage } from './pages/Reembolsos';
 import { ConfiguracoesPage } from './pages/Configuracoes';
 import { PerfilConsultor } from './types';
 import { getAvatarSvg, AVATAR_OPTIONS, salvarAvatarLocal } from './services/avatars';
+import { showCustomAlert } from './services/dialog';
 
 class App {
   private container: HTMLElement;
@@ -593,11 +594,11 @@ class App {
 
       if (senhaVal) {
         if (senhaVal.length < 6) {
-          alert('⚠️ A nova senha deve conter pelo menos 6 caracteres.');
+          await showCustomAlert('A nova senha deve conter pelo menos 6 caracteres.', 'Senha Curta');
           return;
         }
         if (senhaVal !== senhaConfirmVal) {
-          alert('⚠️ A confirmação de senha não coincide com a nova senha.');
+          await showCustomAlert('A confirmação de senha não coincide com a nova senha.', 'Confirmação Incorreta');
           return;
         }
       }
@@ -654,7 +655,7 @@ class App {
       } catch (err: any) {
         submitBtn.disabled = false;
         submitBtn.textContent = 'Salvar Alterações';
-        alert(`❌ Erro ao atualizar perfil:\n\n${err.message || err}`);
+        await showCustomAlert(`Erro ao atualizar perfil:\n\n${err.message || err}`, 'Erro no Perfil');
       }
     });
   }

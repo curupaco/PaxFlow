@@ -2,6 +2,7 @@ import { supabase, getSessaoAtual, atualizarSenhaAtual } from '../services/supab
 import { PerfilConsultor, GlobalSettings } from '../types';
 import { createClient } from '@supabase/supabase-js';
 import { getAvatarSvg, AVATAR_OPTIONS, mesclarAvataresLocais, salvarAvatarLocal } from '../services/avatars';
+import { showCustomAlert, showCustomConfirm } from '../services/dialog';
 
 declare const process: any;
 
@@ -213,7 +214,8 @@ export class ConfiguracoesPage {
 
     // Configura o logout e theme toggle
     document.getElementById('btn-logout')?.addEventListener('click', async () => {
-      if (confirm('Deseja realmente sair?')) {
+      const confirmResult = await showCustomConfirm('Deseja realmente sair do sistema?', 'Encerrar Sessão');
+      if (confirmResult) {
         const { logoutConsultor } = await import('../services/supabase');
         await logoutConsultor();
         window.location.reload();
@@ -300,7 +302,7 @@ export class ConfiguracoesPage {
           }
         } catch (err: any) {
           console.error(err);
-          alert(`❌ Falha no Teste de Integração:\n\n${err.message || err}`);
+          await showCustomAlert(`Falha no Teste de Integração:\n\n${err.message || err}`, 'Teste de Integração');
           this.showToast('Falha no teste da conexão Google Drive.', 'error');
         } finally {
           btn.disabled = false;
@@ -309,7 +311,12 @@ export class ConfiguracoesPage {
       });
 
       document.getElementById('btn-google-disconnect')?.addEventListener('click', async () => {
-        if (confirm('Deseja realmente desconectar a integração com o Google Drive?')) {
+        const confirmResult = await showCustomConfirm(
+          'Deseja realmente desconectar a integração com o Google Drive?',
+          'Desconectar Google Drive',
+          { isDestructive: true, confirmText: 'Desconectar', cancelText: 'Manter' }
+        );
+        if (confirmResult) {
           try {
             const { error } = await supabase
               .from('global_settings')
@@ -561,7 +568,7 @@ export class ConfiguracoesPage {
         console.error('Erro ao cadastrar consultor:', err);
         submitBtn.disabled = false;
         submitBtn.textContent = 'Cadastrar Agente';
-        alert(`⚠️ Falha no Cadastro:\n\n${err.message || 'Erro inesperado na gravação dos dados.'}`);
+        await showCustomAlert(`Falha no Cadastro:\n\n${err.message || 'Erro inesperado na gravação dos dados.'}`, 'Erro de Cadastro');
       }
     });
   }
@@ -814,7 +821,7 @@ export class ConfiguracoesPage {
       } catch (err: any) {
         submitBtn.disabled = false;
         submitBtn.textContent = 'Salvar Alterações';
-        alert(`❌ Erro ao atualizar consultor:\n\n${err.message || err}`);
+        await showCustomAlert(`Erro ao atualizar consultor:\n\n${err.message || err}`, 'Erro de Atualização');
       }
     });
   }
@@ -956,11 +963,12 @@ export class ConfiguracoesPage {
     document.getElementById('btn-oauth-cancel')?.addEventListener('click', () => this.fecharSimuladorGoogleOAuth2());
     document.getElementById('btn-oauth-real-cancel')?.addEventListener('click', () => this.fecharSimuladorGoogleOAuth2());
 
-    document.getElementById('btn-oauth-acc-pessoal')?.addEventListener('click', () => {
-      alert(
-        '⚠️ Acesso Negado!\n\nPor favor, selecione apenas a conta corporativa da agência ' +
+    document.getElementById('btn-oauth-acc-pessoal')?.addEventListener('click', async () => {
+      await showCustomAlert(
+        'Por favor, selecione apenas a conta corporativa da agência ' +
         '(paxflow.agencia@gmail.com) para garantir que os arquivos sejam ' +
-        'centralizados no Drive oficial da empresa.'
+        'centralizados no Drive oficial da empresa.',
+        'Acesso Negado'
       );
     });
 
@@ -968,7 +976,7 @@ export class ConfiguracoesPage {
       this.mostrarOAuthConsentimento();
     });
 
-    document.getElementById('btn-oauth-real-save')?.addEventListener('click', () => {
+    document.getElementById('btn-oauth-real-save')?.addEventListener('click', async () => {
       const clientIdInput = document.getElementById('input-oauth-real-client-id') as HTMLInputElement;
       const clientSecretInput = document.getElementById('input-oauth-real-client-secret') as HTMLInputElement;
       const tokenInput = document.getElementById('input-oauth-real-token') as HTMLInputElement;
@@ -979,7 +987,7 @@ export class ConfiguracoesPage {
         const tok = tokenInput.value.trim();
         
         if (!cid || !sec || !tok) {
-          alert('Por favor, preencha todos os três campos obrigatórios da integração real.');
+          await showCustomAlert('Por favor, preencha todos os três campos obrigatórios da integração real.', 'Campos Obrigatórios');
           return;
         }
         
@@ -1081,7 +1089,7 @@ export class ConfiguracoesPage {
   private async concluirOAuth2Real(token: string): Promise<void> {
     if (!this.settings) return;
     if (!token || token.trim() === '') {
-      alert('Por favor, insira um token de atualização válido.');
+      await showCustomAlert('Por favor, insira um token de atualização válido.', 'Token Inválido');
       return;
     }
 

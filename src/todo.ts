@@ -1,6 +1,7 @@
 import './index.css';
 import Sortable from 'sortablejs';
 import { supabase } from './services/supabase';
+import { showCustomAlert, showCustomConfirm } from './services/dialog';
 
 // --- DEFINIÇÃO DE INTERFACES ---
 interface Column {
@@ -697,11 +698,18 @@ class TodoKanban {
       btn.addEventListener('click', async (e) => {
         e.stopPropagation();
         const cardId = btn.getAttribute('data-delete-card-id');
-        if (cardId && confirm('Deseja realmente excluir este cartão de prioridade?')) {
-          this.cards = this.cards.filter(c => c.id !== cardId);
-          await supabase.from('todo_cards').delete().eq('id', cardId);
-          this.saveState();
-          this.renderColumns();
+        if (cardId) {
+          const confirmResult = await showCustomConfirm(
+            'Deseja realmente excluir este cartão de prioridade?',
+            'Excluir Cartão',
+            { isDestructive: true, confirmText: 'Excluir', cancelText: 'Cancelar' }
+          );
+          if (confirmResult) {
+            this.cards = this.cards.filter(c => c.id !== cardId);
+            await supabase.from('todo_cards').delete().eq('id', cardId);
+            this.saveState();
+            this.renderColumns();
+          }
         }
       });
     });
@@ -1081,7 +1089,10 @@ class TodoKanban {
         // Valida se a coluna possui cards ativos
         const cardCount = this.cards.filter(c => c.columnId === colId).length;
         if (cardCount > 0) {
-          alert(`Esta coluna possui ${cardCount} cartões vinculados. Transfira os cartões antes de removê-la!`);
+          await showCustomAlert(
+            `Esta coluna possui ${cardCount} cartões vinculados. Transfira os cartões antes de removê-la!`,
+            'Coluna Ocupada'
+          );
           return;
         }
 
@@ -1163,7 +1174,7 @@ class TodoKanban {
    */
   private importBoard(file: File): void {
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       try {
         const text = e.target?.result as string;
         const data = JSON.parse(text);
@@ -1181,7 +1192,10 @@ class TodoKanban {
         this.showToast('Importação de prioridades concluída com sucesso!', 'success');
 
       } catch (err: any) {
-        alert(`❌ Falha na importação:\n\n${err.message || 'Verifique se o arquivo JSON está formatado corretamente.'}`);
+        await showCustomAlert(
+          `Falha na importação:\n\n${err.message || 'Verifique se o arquivo JSON está formatado corretamente.'}`,
+          'Erro de Importação'
+        );
       }
     };
     reader.readAsText(file);

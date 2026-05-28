@@ -2,6 +2,7 @@ import { supabase, getSessaoAtual } from '../services/supabase';
 import { uploadDocumentoCliente } from '../services/googleDrive';
 import { Orcamento, PerfilConsultor } from '../types';
 import { getAvatarSvg, mesclarAvataresLocais } from '../services/avatars';
+import { showCustomConfirm } from '../services/dialog';
 
 // Injeta estilos específicos premium para o Kanban de Orçamentos
 if (typeof document !== 'undefined') {
@@ -382,7 +383,8 @@ export class OrcamentosPage {
 
     // Evento de Logout
     document.getElementById('btn-logout')?.addEventListener('click', async () => {
-      if (confirm('Deseja realmente sair?')) {
+      const confirmResult = await showCustomConfirm('Deseja realmente sair do sistema?', 'Encerrar Sessão');
+      if (confirmResult) {
         const { logoutConsultor } = await import('../services/supabase');
         await logoutConsultor();
         window.location.reload();
@@ -443,7 +445,12 @@ export class OrcamentosPage {
       btn.addEventListener('click', async (e) => {
         const id = (btn as HTMLElement).dataset.id;
         if (!id) return;
-        if (confirm('Tem certeza de que deseja marcar este orçamento como desistência?')) {
+        const confirmResult = await showCustomConfirm(
+          'Tem certeza de que deseja marcar este orçamento como desistência?',
+          'Marcar Desistência',
+          { isDestructive: true, confirmText: 'Confirmar Desistência', cancelText: 'Voltar' }
+        );
+        if (confirmResult) {
           const orc = this.orcamentos.find(o => o.id === id);
           if (orc) {
             orc.status = 'CONCLUIDO';
@@ -488,7 +495,12 @@ export class OrcamentosPage {
       btn.addEventListener('click', async (e) => {
         const id = (btn as HTMLElement).dataset.id;
         if (!id) return;
-        if (confirm('Atenção Admin: Deseja realmente excluir este cartão permanentemente?')) {
+        const confirmResult = await showCustomConfirm(
+          'Atenção Admin: Deseja realmente excluir este cartão permanentemente?',
+          'Excluir Orçamento',
+          { isDestructive: true, confirmText: 'Excluir Permanentemente', cancelText: 'Cancelar' }
+        );
+        if (confirmResult) {
           const success = await this.deleteOrcamento(id);
           if (success) {
             this.showToast('Orçamento excluído com sucesso!', 'success');

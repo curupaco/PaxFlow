@@ -2,6 +2,7 @@ import { supabase, getSessaoAtual } from '../services/supabase';
 import { uploadDocumentoCliente } from '../services/googleDrive';
 import { getAvatarSvg } from '../services/avatars';
 import { Cliente, PerfilConsultor } from '../types';
+import { showCustomConfirm } from '../services/dialog';
 
 // Injeta estilos premium e animações interativas para a tela de Clientes no DOM
 if (typeof document !== 'undefined') {
@@ -187,7 +188,8 @@ export class ClientesPage {
 
     // Evento de Logout
     document.getElementById('btn-logout')?.addEventListener('click', async () => {
-      if (confirm('Deseja realmente sair?')) {
+      const confirmResult = await showCustomConfirm('Deseja realmente sair do sistema?', 'Encerrar Sessão');
+      if (confirmResult) {
         const { logoutConsultor } = await import('../services/supabase');
         await logoutConsultor();
         window.location.reload();
