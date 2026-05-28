@@ -1237,7 +1237,7 @@ export class Dashboard {
             </button>
 
             <!-- Identidade do Consultor Logado -->
-            <div class="flex items-center gap-3 pl-2">
+            <div class="flex items-center gap-3 pl-2 border-l border-slate-200/60 dark:border-slate-800/60">
               <div class="text-right hidden sm:block">
                 <span class="block text-sm font-extrabold text-slate-700 dark:text-slate-300">${this.perfil?.nome || 'Consultor'}</span>
                 <span class="block text-xs text-slate-400 dark:text-slate-500">${this.perfil?.email || this.user.email}</span>
