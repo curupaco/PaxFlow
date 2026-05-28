@@ -1,5 +1,6 @@
 import { getSessaoAtual, loginConsultor } from './services/supabase';
 import { Dashboard } from './pages/Dashboard';
+import { OrcamentosPage } from './pages/Orcamentos';
 import { ClientesPage } from './pages/Clientes';
 import { ReembolsosPage } from './pages/Reembolsos';
 import { ConfiguracoesPage } from './pages/Configuracoes';
@@ -233,6 +234,14 @@ class App {
           <nav class="flex-1 p-4 space-y-2 flex flex-col justify-between">
             <div class="space-y-1.5">
               
+              <!-- Link: Kanban de Orçamentos -->
+              <button id="nav-orcamentos" class="w-full px-4 py-3 rounded-xl flex items-center gap-3 font-semibold text-xs text-left transition select-none group">
+                <svg width="20" height="20" class="w-5 h-5 text-slate-400 group-hover:text-slate-600 dark:text-slate-500 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                </svg>
+                <span>Orçamentos em Aberto</span>
+              </button>
+
               <!-- Link: Dashboard Kanban -->
               <button id="nav-dashboard" class="w-full px-4 py-3 rounded-xl flex items-center gap-3 font-semibold text-xs text-left transition select-none group">
                 <svg width="20" height="20" class="w-5 h-5 text-slate-400 group-hover:text-slate-600 dark:text-slate-500 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
@@ -298,7 +307,7 @@ class App {
    * Associa eventos aos botões de navegação lateral
    */
   private setupNavigationListeners(): void {
-    const pages = ['dashboard', 'clientes', 'reembolsos', 'configuracoes'];
+    const pages = ['orcamentos', 'dashboard', 'clientes', 'reembolsos', 'configuracoes'];
 
     pages.forEach(page => {
       const btn = document.getElementById(`nav-${page}`);
@@ -323,7 +332,7 @@ class App {
     if (!pageContentEl) return;
 
     // 2. Atualiza os estilos de botões ativos na Sidebar
-    const navButtons = ['dashboard', 'clientes', 'reembolsos', 'configuracoes'];
+    const navButtons = ['orcamentos', 'dashboard', 'clientes', 'reembolsos', 'configuracoes'];
     navButtons.forEach(p => {
       const btn = document.getElementById(`nav-${p}`);
       if (btn) {
@@ -339,6 +348,9 @@ class App {
     switch (page) {
       case 'dashboard':
         this.currentPageInstance = new Dashboard(pageContentEl);
+        break;
+      case 'orcamentos':
+        this.currentPageInstance = new OrcamentosPage(pageContentEl);
         break;
       case 'clientes':
         this.currentPageInstance = new ClientesPage(pageContentEl);

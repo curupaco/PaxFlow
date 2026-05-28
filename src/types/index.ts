@@ -111,3 +111,24 @@ export interface Reembolso {
   createdAt?: string;
   updatedAt?: string;
 }
+
+/**
+ * Representa um orçamento no fluxo de prospecção.
+ */
+export interface Orcamento {
+  id: string;
+  consultorId: string;
+  nomeCliente: string;
+  contato: string;
+  destino: string;
+  dataViagem?: string; // YYYY-MM-DD
+  temperatura: 'Frio' | 'Normal' | 'Quente';
+  tags: string[];
+  status: 'SOLICITADO' | 'EM_ANDAMENTO' | 'AGUARDANDO' | 'CONCLUIDO';
+  subStatus?: 'ACEITO' | 'DESISTENCIA';
+  notasNegociacao?: string;
+  documentosUrl?: string[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
