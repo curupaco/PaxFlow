@@ -557,9 +557,9 @@ export class ConfiguracoesPage {
     overlay.className = 'fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all duration-300 opacity-0';
     
     overlay.innerHTML = `
-      <div class="bg-white dark:bg-slate-900 w-full max-w-[460px] rounded-2xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 transform scale-95 transition-all duration-300 flex flex-col" id="oauth-card">
+      <div class="bg-white dark:bg-slate-900 w-full max-w-[460px] max-h-[90vh] rounded-2xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 transform scale-95 transition-all duration-300 flex flex-col" id="oauth-card">
         
-        <div class="p-6 text-center border-b border-slate-100 dark:border-slate-800 flex flex-col items-center bg-white dark:bg-slate-900">
+        <div class="p-6 text-center border-b border-slate-100 dark:border-slate-800 flex flex-col items-center bg-white dark:bg-slate-900 shrink-0">
           <div class="flex items-center gap-1.5 mb-2.5">
             <span class="text-xl font-bold tracking-tight select-none">
               <span class="text-blue-600 font-extrabold">G</span><span class="text-red-500 font-extrabold">o</span><span class="text-yellow-500 font-extrabold">o</span><span class="text-blue-600 font-extrabold">g</span><span class="text-green-500 font-extrabold">l</span><span class="text-red-500 font-extrabold">e</span>
@@ -569,7 +569,7 @@ export class ConfiguracoesPage {
           <p class="text-[10px] text-slate-400 dark:text-slate-505 font-semibold mt-1">Autorize o armazenamento seguro de passaportes no <span class="text-indigo-600 dark:text-indigo-400 font-black">PaxFlow</span></p>
         </div>
 
-        <div class="border-b border-slate-100 dark:border-slate-800 flex text-xs font-black bg-slate-50 dark:bg-slate-950/40">
+        <div class="border-b border-slate-100 dark:border-slate-800 flex text-xs font-black bg-slate-50 dark:bg-slate-950/40 shrink-0">
           <button id="btn-popup-tab-sandbox" class="flex-1 py-3 text-center border-b-2 border-indigo-600 text-indigo-600 dark:text-indigo-400 bg-white dark:bg-slate-900 transition-all">
             🧪 Sandbox (Simulação)
           </button>
@@ -578,7 +578,7 @@ export class ConfiguracoesPage {
           </button>
         </div>
 
-        <div class="p-5 flex-1 space-y-4 bg-white dark:bg-slate-900" id="oauth-step-container">
+        <div class="p-5 flex-1 space-y-4 bg-white dark:bg-slate-900 overflow-y-auto max-h-[60vh]" id="oauth-step-container">
           <!-- CONTEÚDO DA TAB: SANDBOX (SIMULADO) -->
           <div id="oauth-step-sandbox" class="space-y-4">
             <p class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Escolha uma conta para simular:</p>
@@ -610,7 +610,13 @@ export class ConfiguracoesPage {
             </button>
             
             <div class="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-end">
-              <button id="btn-oauth-cancel" class="text-xs font-bold text-slate-400 dark:text-slate-500 hover:text-slate-650 dark:hover:text-slate-300 transition          <!-- CONTEÚDO DA TAB: PRODUÇÃO (REAL) -->
+              <button id="btn-oauth-cancel" class="text-xs font-bold text-slate-400 dark:text-slate-500 hover:text-slate-650 dark:hover:text-slate-300 transition py-2 px-3 uppercase">
+                Cancelar
+              </button>
+            </div>
+          </div>
+
+          <!-- CONTEÚDO DA TAB: PRODUÇÃO (REAL) -->
           <div id="oauth-step-production" class="space-y-4 hidden">
             <div class="bg-indigo-50/50 dark:bg-indigo-950/30 p-4 rounded-xl border border-indigo-100/40 dark:border-indigo-900/40 text-xs text-slate-650 dark:text-slate-400 leading-relaxed font-semibold space-y-2">
               <p class="font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wide">💼 Configuração de Produção Resiliente:</p>
