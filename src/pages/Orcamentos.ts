@@ -1056,7 +1056,7 @@ export class OrcamentosPage {
         <form id="form-enviar-proposta" class="space-y-5">
           <div>
             <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Resumo / Notas da Negociação</label>
-            <textarea id="textarea-orc-notas" placeholder="Insira o escopo da cotação, hotéis ofertados, voos, valores, tarifas e qualquer observação importante da negociação..." rows="4.5" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 text-sm font-semibold"></textarea>
+            <textarea id="textarea-orc-notas" placeholder="Insira o escopo da cotação, hotéis ofertados, voos, valores, tarifas e qualquer observação importante da negociação..." rows="4.5" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 text-sm font-semibold">${orc.notasNegociacao || ''}</textarea>
             <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">Obrigatório caso não anexe o documento da proposta.</p>
           </div>
 
@@ -1074,6 +1074,24 @@ export class OrcamentosPage {
               <span>✅</span> <span id="file-name-span"></span>
             </div>
             <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">Obrigatório caso o campo de notas acima esteja vazio.</p>
+
+            ${orc.documentosUrl && orc.documentosUrl.length > 0 ? `
+              <div class="mt-4 bg-indigo-50/35 dark:bg-indigo-950/10 p-3.5 rounded-xl border border-indigo-100/30 dark:border-indigo-900/35">
+                <p class="text-[10px] font-black text-indigo-650 dark:text-indigo-400 uppercase tracking-wide mb-2 flex items-center gap-1 select-none">
+                  <span>📎</span> Documentos já salvos nesta proposta
+                </p>
+                <div class="grid grid-cols-1 gap-2">
+                  ${orc.documentosUrl.map((url, index) => `
+                    <div class="flex items-center justify-between p-2 bg-white dark:bg-slate-800/60 rounded-lg text-xs font-bold text-slate-700 dark:text-slate-300 shadow-sm border border-slate-100 dark:border-slate-700/60">
+                      <a href="${url}" target="_blank" class="hover:underline hover:text-indigo-600 dark:hover:text-indigo-400 truncate flex items-center gap-1.5 uppercase tracking-wide text-[10px]">
+                        📄 Proposta #${index + 1}
+                      </a>
+                      <span class="text-[9px] bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-full uppercase tracking-wider font-black select-none border border-emerald-100/10">Salvo no Drive</span>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            ` : ''}
           </div>
 
           <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-150 dark:border-slate-800">
@@ -1112,8 +1130,9 @@ export class OrcamentosPage {
       e.preventDefault();
 
       const notasVal = (document.getElementById('textarea-orc-notas') as HTMLTextAreaElement).value.trim();
+      const temDocumentoAnterior = orc.documentosUrl && orc.documentosUrl.length > 0;
 
-      if (!notasVal && !selectedFile) {
+      if (!notasVal && !selectedFile && !temDocumentoAnterior) {
         this.showToast('Por favor, preencha o Resumo/Notas ou anexe o arquivo da proposta comercial.', 'error');
         return;
       }
