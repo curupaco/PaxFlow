@@ -354,7 +354,6 @@ class App {
             <img src="/logo.svg" alt="PaxFlow Logo" class="h-10 w-10 object-contain filter drop-shadow-md" />
             <div>
               <span class="block text-base font-black text-slate-800 dark:text-white tracking-tight">PaxFlow</span>
-              <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">CRM de Pós-Venda</span>
             </div>
           </div>
 

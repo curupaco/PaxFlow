@@ -71,3 +71,40 @@ html.dark .theme-icon-dark {
   display: block !important;
 }
 
+/* ================= TYPOGRAPHY CUSTOM SYSTEM (ROBOTO & INTER) ================= */
+
+/* Headers globally in Roboto Italic */
+h1, h2, h3, h4, h5, h6, 
+header h1, header h2, header h3,
+.page-title {
+  font-family: 'Roboto', sans-serif !important;
+  font-style: italic !important;
+}
+
+/* User names in header and sidebar must be Roboto Bold (not italic) */
+.text-right.hidden.sm\:block span:first-child,
+#sidebar-profile-trigger span:first-child,
+.username-text {
+  font-family: 'Roboto', sans-serif !important;
+  font-weight: 700 !important;
+  font-style: normal !important;
+}
+
+/* Harmonious Roboto typography system on Login Card */
+#login-card, #login-card * {
+  font-family: 'Roboto', sans-serif !important;
+}
+#login-card #login-title {
+  font-weight: 900 !important;
+  font-style: normal !important;
+}
+#login-card label {
+  font-weight: 500 !important;
+}
+#login-card input {
+  font-weight: 400 !important;
+}
+#login-card button[type="submit"] {
+  font-weight: 700 !important;
+}
+
