@@ -158,7 +158,7 @@ class App {
 
           <!-- Cabeçalho de Identidade -->
           <div class="text-center flex flex-col items-center select-none">
-            <img src="/logo.png" alt="PaxFlow Logo" class="h-16 w-16 object-contain mb-4 filter drop-shadow-xl" />
+            <img src="/logo.svg" alt="PaxFlow Logo" class="h-16 w-16 object-contain mb-4 filter drop-shadow-xl" />
             <h2 class="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight" id="login-title">Entrar no PaxFlow</h2>
             <p class="text-xs text-slate-400 dark:text-slate-500 font-semibold mt-1.5" id="login-subtitle">Painel de CRM & Gestão de Pós-Venda</p>
           </div>
@@ -351,7 +351,7 @@ class App {
           
           <!-- Logo & Título -->
           <div class="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center gap-2.5">
-            <img src="/logo.png" alt="PaxFlow Logo" class="h-10 w-10 object-contain filter drop-shadow-md" />
+            <img src="/logo.svg" alt="PaxFlow Logo" class="h-10 w-10 object-contain filter drop-shadow-md" />
             <div>
               <span class="block text-base font-black text-slate-800 dark:text-white tracking-tight">PaxFlow</span>
               <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">CRM de Pós-Venda</span>

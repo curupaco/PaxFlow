@@ -574,7 +574,7 @@ export class OrcamentosPage {
         <!-- Cabeçalho Principal -->
         <header class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 sticky top-0 z-30 px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 transition-colors duration-200">
           <div class="flex items-center gap-3">
-            <img src="/logo.png" alt="PaxFlow Logo" class="h-10 w-auto object-contain" />
+            <img src="/logo.svg" alt="PaxFlow Logo" class="h-10 w-auto object-contain" />
             <div>
               <h1 class="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight flex items-center gap-2">
                 <span>Orçamentos em Aberto</span>

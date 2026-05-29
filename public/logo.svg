@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="100%" height="100%">
+  <defs>
+    <!-- Premium linear gradient matching the original compass colors -->
+    <linearGradient id="paxflow-grad" x1="15%" y1="85%" x2="85%" y2="15%">
+      <stop offset="0%" stop-color="#0052d4" />
+      <stop offset="25%" stop-color="#00a8f5" />
+      <stop offset="55%" stop-color="#00e5a3" />
+      <stop offset="80%" stop-color="#f5af19" />
+      <stop offset="100%" stop-color="#f12711" />
+    </linearGradient>
+  </defs>
+
+  <!-- ================= CONCENTRIC ARCS (BACKGROUND - Stroke Width: 3.5) ================= -->
+  <g fill="none" stroke="url(#paxflow-grad)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Outer Circle Segments (R = 180) -->
+    <path d="M 426.1 212.6 A 180 180 0 0 0 287.4 73.9" />
+    <path d="M 212.6 73.9 A 180 180 0 0 0 73.9 212.6" />
+    <path d="M 73.9 287.4 A 180 180 0 0 0 212.6 426.1" />
+    <path d="M 287.4 426.1 A 180 180 0 0 0 426.1 287.4" />
+
+    <!-- Inner Circle Segments (R = 162) -->
+    <path d="M 408.5 216.3 A 162 162 0 0 0 283.7 91.5" />
+    <path d="M 216.3 91.5 A 162 162 0 0 0 91.5 216.3" />
+    <path d="M 91.5 283.7 A 162 162 0 0 0 216.3 408.5" />
+    <path d="M 283.7 408.5 A 162 162 0 0 0 408.5 283.7" />
+  </g>
+
+  <!-- ================= COMPASS ROSE (FOREGROUND - Thicker Stroke Width: 4.8) ================= -->
+  <g fill="none" stroke="url(#paxflow-grad)" stroke-width="4.8" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Diagonal Star (Shorter) -->
+    <path d="M 250 225 L 345 155 L 275 250 L 345 345 L 250 275 L 155 345 L 225 250 L 155 155 Z" />
+
+    <!-- Main Star (Taller) -->
+    <path d="M 250 70 L 285 215 L 430 250 L 285 285 L 250 460 L 215 285 L 70 250 L 215 215 Z" />
+
+    <!-- Axis Dividing Lines -->
+    <line x1="250" y1="70" x2="250" y2="460" />
+    <line x1="70" y1="250" x2="430" y2="250" />
+    <line x1="155" y1="155" x2="345" y2="345" />
+    <line x1="155" y1="345" x2="345" y2="155" />
+  </g>
+</svg>
