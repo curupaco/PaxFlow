@@ -58,10 +58,33 @@ npm run dev
 
 ### Variáveis de Ambiente
 
+Crie o arquivo `.env` a partir do modelo `.env.example`:
+
 ```env
+# 1. Supabase (Obrigatório)
 VITE_SUPABASE_URL=https://seu-projeto.supabase.co
 VITE_SUPABASE_ANON_KEY=sua-chave-anon
+
+# 2. Google OAuth (Opcional - Ativa Modo Real vs Sandbox)
+# Se deixado em branco, o sistema entra em Modo Sandbox (simulador offline resiliente de uploads)
+GOOGLE_CLIENT_ID=seu-client-id-do-google-cloud.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=seu-client-secret
+GOOGLE_REDIRECT_URI=http://localhost:3000/oauth-callback
 ```
+
+---
+
+## Integração com Google Drive (Obtenção de Token)
+
+Caso decida utilizar a integração real com o Google Drive, o PaxFlow possui um script utilitário automático para gerar o `refresh_token` corporativo da agência:
+
+1. Configure as variáveis `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET` no seu arquivo `.env` (consulte o guia detalhado em [google_drive_setup.md](google_drive_setup.md)).
+2. Execute o script de autenticação local no terminal:
+   ```bash
+   node src/services/obterTokenGoogle.js
+   ```
+3. Siga o fluxo de login e concessão de permissão no navegador.
+4. O terminal capturará o código automaticamente e exibirá o seu **Refresh Token** na tela. Copie-o e salve na aba **Geral** das **Configurações Admin** do painel do PaxFlow.
 
 ---
 

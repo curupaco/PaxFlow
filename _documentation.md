@@ -240,9 +240,13 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 
 | Integração | Tipo | Descrição |
 |---|---|---|
-| Google Drive | Bidirecional | Upload de documentos, criação automática de pastas por cliente |
-| Supabase Auth | Autenticação | Login, recuperação de senha, gerenciamento de usuários |
-| Supabase Realtime | WebSocket | Sincronização ao vivo entre consultores |
+| Google Drive | Bidirecional | Upload de documentos, criação automática de pastas por cliente. Integração flexível com suporte a **Modo Real** (OAuth2 com refresh token) ou **Modo Sandbox** (simulador local resiliente). |
+| Supabase Auth | Autenticação | Login, recuperação de senha, gerenciamento de consultores. |
+| Supabase Realtime | WebSocket | Sincronização ao vivo de orçamentos, viagens e Cockpit Kanban. |
+
+### Configuração Facilitada (Google OAuth Utility)
+
+O PaxFlow fornece um script utilitário automatizado (`src/services/obterTokenGoogle.js`) que inicia um servidor local de escuta na porta 3000 para interceptar a autenticação de login do Google Drive corporativo da agência e fornecer o `refresh_token` definitivo. Para detalhes completos de configuração no Google Cloud Console e obtenção de chaves, consulte o guia passo a passo em [google_drive_setup.md](google_drive_setup.md).
 
 ### Roteiro (futuro)
 
@@ -299,9 +303,9 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 ### Fase 2: Setup (2-3 dias)
 
 1. Criação do projeto Supabase (ou uso da infra PaxFlow)
-2. Execução do script de migração do banco de dados
-3. Configuração de autenticação e criação dos consultores
-4. Configuração da integração Google Drive (se aplicável)
+2. Execução do script de modelagem do banco de dados (utilizando as DDLs e políticas RLS fornecidas no arquivo [schema.sql](schema.sql))
+3. Configuração de autenticação e criação dos consultores no Supabase Auth
+4. Configuração da integração com Google Drive (conforme o guia prático [google_drive_setup.md](google_drive_setup.md))
 5. Deploy do frontend (Cloudflare Pages ou similar)
 
 ### Fase 3: Migração de Dados (2-5 dias)
