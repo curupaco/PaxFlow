@@ -920,6 +920,13 @@ export class OrcamentosPage {
     const modalContent = document.getElementById('modal-content-container');
     if (!modalContent || !portal) return;
 
+    // Garante que o consultor logado está na lista de opções para preenchimento, mesmo que offline ou recém-criado
+    const userPertenceAosConsultores = this.consultores.some(c => c.id === this.user.id);
+    const consultoresOptions = [...this.consultores];
+    if (!userPertenceAosConsultores && this.perfil) {
+      consultoresOptions.push(this.perfil);
+    }
+
     modalContent.innerHTML = `
       <div class="p-6">
         <div class="flex items-center justify-between border-b border-slate-150 dark:border-slate-800 pb-3 mb-5">
@@ -972,7 +979,7 @@ export class OrcamentosPage {
             <div>
               <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Consultor Responsável</label>
               <select id="select-orc-consultor" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" ${this.perfil?.role !== 'admin' ? 'disabled' : ''}>
-                ${this.consultores.map(c => `<option value="${c.id}" ${c.id === this.user.id ? 'selected' : ''}>${c.nome}</option>`).join('')}
+                ${consultoresOptions.map(c => `<option value="${c.id}" ${c.id === this.user.id ? 'selected' : ''}>${c.nome}</option>`).join('')}
               </select>
             </div>
           </div>
@@ -1057,7 +1064,9 @@ export class OrcamentosPage {
       const destinoVal = (document.getElementById('input-orc-destino') as HTMLInputElement).value;
       const dataRaw = (document.getElementById('input-orc-data') as HTMLInputElement).value.trim();
       const tempVal = (document.getElementById('select-orc-temp') as HTMLSelectElement).value as 'Frio' | 'Normal' | 'Quente';
-      const consultorVal = (document.getElementById('select-orc-consultor') as HTMLSelectElement).value;
+      const consultorVal = this.perfil?.role === 'admin'
+        ? (document.getElementById('select-orc-consultor') as HTMLSelectElement).value
+        : this.user.id;
 
       // Validação do padrão DD/MM/AAAA estipulado no .cursorrules
       const dateRegex = /^(\d{2})\/(\d{2})\/(\d{4})$/;
