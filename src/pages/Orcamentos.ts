@@ -278,7 +278,7 @@ export class OrcamentosPage {
     }
 
     try {
-      const payload = {
+      const payload: any = {
         consultor_id: o.consultorId,
         nome_cliente: o.nomeCliente,
         contato: o.contato,
@@ -293,22 +293,49 @@ export class OrcamentosPage {
         documentos_url: o.documentosUrl || []
       };
 
+      let resError;
       if (o.id && !o.id.startsWith('orc-')) {
         const { error } = await supabase
           .from('orcamentos')
           .update(payload)
           .eq('id', o.id);
-        if (error) throw error;
+        resError = error;
       } else {
         const { error } = await supabase
           .from('orcamentos')
           .insert(payload);
-        if (error) throw error;
+        resError = error;
+      }
+
+      if (resError) {
+        // Se o erro for de coluna inexistente no Supabase (Postgres code 42703 ou undefined_column)
+        if (resError.code === '42703' || (resError.message && resError.message.includes('valor_proposta')) || (resError.message && resError.message.includes('column') && resError.message.includes('does not exist'))) {
+          console.warn('Aviso: Coluna "valor_proposta" não encontrada no Supabase. Salvando sem esta coluna.');
+          this.showToast('Aviso: Banco desatualizado. Salvo sem o campo de valor.', 'error');
+          
+          delete payload.valor_proposta;
+          let retryError;
+          if (o.id && !o.id.startsWith('orc-')) {
+            const { error } = await supabase
+              .from('orcamentos')
+              .update(payload)
+              .eq('id', o.id);
+            retryError = error;
+          } else {
+            const { error } = await supabase
+              .from('orcamentos')
+              .insert(payload);
+            retryError = error;
+          }
+          if (retryError) throw retryError;
+          return true;
+        }
+        throw resError;
       }
       return true;
     } catch (err: any) {
       console.error('Erro ao persistir orçamento no Supabase:', err);
-      this.showToast(`Erro de rede. Salvando localmente no navegador!`, 'error');
+      this.showToast(`Erro ao salvar no banco. Salvando localmente no navegador!`, 'error');
       // Ativa fallback para salvar as alterações em andamento
       this.isFallbackMode = true;
       this.loadOrcamentosFromLocalStorage();
