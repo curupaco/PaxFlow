@@ -128,6 +128,7 @@ export interface Orcamento {
   status: 'SOLICITADO' | 'EM_ANDAMENTO' | 'AGUARDANDO' | 'CONCLUIDO';
   subStatus?: 'ACEITO' | 'DESISTENCIA';
   notasNegociacao?: string;
+  valorProposta?: number;
   documentosUrl?: string[];
   createdAt?: string;
   updatedAt?: string;

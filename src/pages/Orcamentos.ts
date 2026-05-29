@@ -173,6 +173,7 @@ export class OrcamentosPage {
         status: d.status,
         subStatus: d.sub_status,
         notasNegociacao: d.notas_negociacao,
+        valorProposta: d.valor_proposta,
         documentosUrl: d.documentos_url || [],
         createdAt: d.created_at,
         updatedAt: d.updated_at
@@ -242,6 +243,7 @@ export class OrcamentosPage {
           tags: ['Nacional/América do Sul', 'Show'],
           status: 'AGUARDANDO',
           notasNegociacao: 'Opção de voo direto Aerolíneas Argentinas enviado, aguardando resposta sobre o hotel.',
+          valorProposta: 3450,
           documentosUrl: ['https://drive.google.com/drive/folders/mock-proposal'],
           createdAt: new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString() // 3 dias atrás
         }
@@ -287,6 +289,7 @@ export class OrcamentosPage {
         status: o.status,
         sub_status: o.subStatus || null,
         notas_negociacao: o.notasNegociacao || null,
+        valor_proposta: o.valorProposta || null,
         documentos_url: o.documentosUrl || []
       };
 
@@ -763,6 +766,12 @@ export class OrcamentosPage {
             <span>Data Viagem:</span>
             <span class="font-extrabold text-slate-700 dark:text-slate-300">${this.formatarDataBr(o.dataViagem)}</span>
           </div>
+          ${o.valorProposta !== undefined && o.valorProposta !== null ? `
+            <div class="flex justify-between items-center text-[10px] font-semibold text-slate-500 dark:text-slate-400 border-t border-slate-200/50 dark:border-slate-800/50 pt-1.5 mt-0.5">
+              <span class="text-indigo-650 dark:text-indigo-400 font-bold">Valor Proposta:</span>
+              <span class="font-black text-indigo-600 dark:text-indigo-400">R$ ${Number(o.valorProposta).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+            </div>
+          ` : ''}
         </div>
 
         <!-- Tags livres -->
@@ -1126,6 +1135,12 @@ export class OrcamentosPage {
 
         <form id="form-enviar-proposta" class="space-y-5">
           <div>
+            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Valor da Proposta Enviada (R$) *</label>
+            <input id="input-orc-valor-proposta" type="text" required placeholder="0,00" value="${orc.valorProposta ? Number(orc.valorProposta).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+            <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">Informe o valor total da proposta que foi enviada ao cliente.</p>
+          </div>
+
+          <div>
             <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Resumo / Notas da Negociação</label>
             <textarea id="textarea-orc-notas" placeholder="Insira o escopo da cotação, hotéis ofertados, voos, valores, tarifas e qualquer observação importante da negociação..." rows="4.5" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 text-sm font-semibold">${orc.notasNegociacao || ''}</textarea>
             <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">Obrigatório caso não anexe o documento da proposta.</p>
@@ -1185,6 +1200,18 @@ export class OrcamentosPage {
     const fileLabel = document.getElementById('selected-file-label') as HTMLElement;
     const fileNameSpan = document.getElementById('file-name-span') as HTMLElement;
 
+    // Máscara de Moeda Real-Time
+    const valorPropostaInput = document.getElementById('input-orc-valor-proposta') as HTMLInputElement;
+    valorPropostaInput?.addEventListener('input', () => {
+      let value = valorPropostaInput.value.replace(/\D/g, '');
+      if (value) {
+        const floatValue = parseFloat(value) / 100;
+        valorPropostaInput.value = floatValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      } else {
+        valorPropostaInput.value = '';
+      }
+    });
+
     let selectedFile: File | null = null;
 
     dropzone.addEventListener('click', () => fileInput.click());
@@ -1200,6 +1227,13 @@ export class OrcamentosPage {
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
 
+      const parseDoubleBr = (valStr: string): number => {
+        const clean = valStr.replace(/R\$\s?/gi, '').replace(/\./g, '').replace(',', '.').trim();
+        const num = parseFloat(clean);
+        return isNaN(num) ? 0 : num;
+      };
+
+      const valorPropostaVal = parseDoubleBr((document.getElementById('input-orc-valor-proposta') as HTMLInputElement).value);
       const notasVal = (document.getElementById('textarea-orc-notas') as HTMLTextAreaElement).value.trim();
       const temDocumentoAnterior = orc.documentosUrl && orc.documentosUrl.length > 0;
 
@@ -1243,6 +1277,7 @@ export class OrcamentosPage {
             orc.notasNegociacao = notasVal;
             orc.documentosUrl = orc.documentosUrl || [];
             orc.documentosUrl.push(result.googleDriveFolderUrl);
+            orc.valorProposta = valorPropostaVal;
             orc.status = 'AGUARDANDO';
 
             const success = await this.persistOrcamento(orc);
@@ -1260,6 +1295,7 @@ export class OrcamentosPage {
         } else {
           // Apenas atualiza as notas da proposta sem fazer upload
           orc.notasNegociacao = notasVal;
+          orc.valorProposta = valorPropostaVal;
           orc.status = 'AGUARDANDO';
 
           const success = await this.persistOrcamento(orc);
@@ -1372,7 +1408,7 @@ export class OrcamentosPage {
               </div>
               <div>
                 <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Valor da Venda (R$) *</label>
-                <input id="input-fechar-via-valor" type="text" required placeholder="0,00" class="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+                <input id="input-fechar-via-valor" type="text" required placeholder="0,00" value="${orc.valorProposta ? Number(orc.valorProposta).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : ''}" class="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
               </div>
               <div>
                 <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Etapa Inicial Operacional *</label>
@@ -1396,6 +1432,18 @@ export class OrcamentosPage {
         </form>
       </div>
     `;
+
+    // Máscara de Moeda Real-Time para Valor de Venda
+    const valorVendaInput = document.getElementById('input-fechar-via-valor') as HTMLInputElement;
+    valorVendaInput?.addEventListener('input', () => {
+      let value = valorVendaInput.value.replace(/\D/g, '');
+      if (value) {
+        const floatValue = parseFloat(value) / 100;
+        valorVendaInput.value = floatValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      } else {
+        valorVendaInput.value = '';
+      }
+    });
 
     // Fechamento de Modais
     const closeModal = () => this.closeModal();
@@ -1616,6 +1664,7 @@ export class OrcamentosPage {
             <div class="p-3.5 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-100 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-350">
               <span class="block">Passageiro: <strong class="text-slate-800 dark:text-slate-100">${orc.nomeCliente}</strong></span>
               <span class="block mt-1">Destino: <strong>${orc.destino}</strong> (${this.formatarDataBr(orc.dataViagem)})</span>
+              ${orc.valorProposta !== undefined && orc.valorProposta !== null ? `<span class="block mt-1">Valor da Proposta: <strong class="text-indigo-650 dark:text-indigo-400">R$ ${Number(orc.valorProposta).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong></span>` : ''}
             </div>
           </div>
 
