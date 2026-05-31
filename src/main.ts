@@ -2,6 +2,7 @@ import './index.css';
 import { getSessaoAtual, loginConsultor, supabase, atualizarSenhaAtual } from './services/supabase';
 import { InboxPage } from './pages/Inbox';
 import { Dashboard } from './pages/Dashboard';
+import { ComercialDashboard } from './pages/ComercialDashboard';
 import { OrcamentosPage } from './pages/Orcamentos';
 import { ClientesPage } from './pages/Clientes';
 import { ReembolsosPage } from './pages/Reembolsos';
@@ -14,7 +15,7 @@ class App {
   private container: HTMLElement;
   private user: any = null;
   private perfil: PerfilConsultor | null = null;
-  private currentActivePage: string = 'inbox';
+  private currentActivePage: string = 'analytics';
   private currentPageInstance: any = null;
   private theme: 'light' | 'dark' = 'light';
 
@@ -360,6 +361,14 @@ class App {
           <!-- Links de Navegação -->
           <nav class="flex-1 p-4 space-y-2 flex flex-col justify-between">
             <div class="space-y-1.5">
+
+              <!-- Link: Dashboard Comercial -->
+              <button id="nav-analytics" class="w-full px-4 py-3 rounded-xl flex items-center gap-3 font-semibold text-xs text-left transition select-none group">
+                <svg width="20" height="20" class="w-5 h-5 text-slate-400 group-hover:text-slate-600 dark:text-slate-500 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2" />
+                </svg>
+                <span>Dashboard</span>
+              </button>
               
               <!-- Link: Inbox de Alertas -->
               <button id="nav-inbox" class="w-full px-4 py-3 rounded-xl flex items-center gap-3 font-semibold text-xs text-left transition select-none group">
@@ -679,7 +688,7 @@ class App {
    * Associa eventos aos botões de navegação lateral
    */
   private setupNavigationListeners(): void {
-    const pages = ['inbox', 'orcamentos', 'dashboard', 'clientes', 'reembolsos', 'configuracoes'];
+    const pages = ['analytics', 'inbox', 'orcamentos', 'dashboard', 'clientes', 'reembolsos', 'configuracoes'];
 
     pages.forEach(page => {
       const btn = document.getElementById(`nav-${page}`);
@@ -704,7 +713,7 @@ class App {
     if (!pageContentEl) return;
 
     // 2. Atualiza os estilos de botões ativos na Sidebar
-    const navButtons = ['inbox', 'orcamentos', 'dashboard', 'clientes', 'reembolsos', 'configuracoes'];
+    const navButtons = ['analytics', 'inbox', 'orcamentos', 'dashboard', 'clientes', 'reembolsos', 'configuracoes'];
     navButtons.forEach(p => {
       const btn = document.getElementById(`nav-${p}`);
       if (btn) {
@@ -718,6 +727,9 @@ class App {
 
     // 3. Instancia e inicializa o componente da respectiva tela
     switch (page) {
+      case 'analytics':
+        this.currentPageInstance = new ComercialDashboard(pageContentEl);
+        break;
       case 'inbox':
         this.currentPageInstance = new InboxPage(pageContentEl);
         break;
