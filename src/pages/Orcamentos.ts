@@ -1670,7 +1670,11 @@ export class OrcamentosPage {
    */
   private openVerNotasModal(id: string): void {
     const orc = this.orcamentos.find(o => o.id === id);
-    if (!orc) return;
+    if (!orc) {
+      console.warn(`Orçamento com ID ${id} não encontrado na lista atual.`);
+      this.showToast(`Orçamento não encontrado ou sem permissão de acesso.`, 'error');
+      return;
+    }
 
     this.renderModalOverlay();
     const portal = document.getElementById('orcamento-modal-portal');

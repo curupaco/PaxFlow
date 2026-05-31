@@ -921,7 +921,7 @@ export class ComercialDashboard {
                 <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors">
                   <td class="py-3.5 flex items-center gap-2.5">
                     ${placingIcon}
-                    ${getAvatarSvg(r.avatarUrl, r.nome, 'w-7.5 h-7.5')}
+                    ${getAvatarSvg(r.avatarUrl, r.nome, 'w-8 h-8')}
                     <div>
                       <span class="block font-black text-slate-750 dark:text-slate-200 leading-snug">${r.nome}</span>
                       <span class="block text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wide leading-none mt-0.5">${r.email}</span>

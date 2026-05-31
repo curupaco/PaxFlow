@@ -1032,7 +1032,7 @@ export class InboxPage {
     }, 10);
 
     // Modal interaction helper actions
-    const closeModal = () => {
+    const closeModal = (isNavigatingAway = false) => {
       const modalContent = modalOverlay.querySelector('.scale-100');
       if (modalContent) {
         modalContent.classList.remove('scale-100');
@@ -1041,9 +1041,11 @@ export class InboxPage {
       modalOverlay.classList.add('opacity-0');
       setTimeout(() => {
         modalOverlay.remove();
-        // Redraw workspace immediately to remove read highlight and update glows
-        this.render();
-        this.setupEventListeners();
+        if (!isNavigatingAway) {
+          // Redraw workspace immediately to remove read highlight and update glows
+          this.render();
+          this.setupEventListeners();
+        }
       }, 200);
     };
 
@@ -1052,8 +1054,8 @@ export class InboxPage {
       if (e.target === modalOverlay) closeModal();
     });
 
-    document.getElementById('modal-close-btn')?.addEventListener('click', closeModal);
-    document.getElementById('modal-footer-close-btn')?.addEventListener('click', closeModal);
+    document.getElementById('modal-close-btn')?.addEventListener('click', () => closeModal());
+    document.getElementById('modal-footer-close-btn')?.addEventListener('click', () => closeModal());
 
     // Archive handlers
     const handleArchiveClick = async () => {
@@ -1096,7 +1098,7 @@ export class InboxPage {
         if (!orcId) return;
 
         // 1. Close Modal
-        closeModal();
+        closeModal(true);
 
         // 2. Dispatch global navigation event to redirect to Orcamentos with parameters!
         window.dispatchEvent(new CustomEvent('paxflow-navigate', {
