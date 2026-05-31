@@ -183,8 +183,31 @@ export class Dashboard {
       }
 
       this.viagens = data || [];
+      this.saveViagensToLocalStorage();
     } catch (err: any) {
-      console.error('Erro ao carregar viagens:', err.message);
+      console.warn('Erro ao carregar viagens do banco. Ativando fallback offline:', err.message);
+      this.loadViagensFromLocalStorage();
+    }
+  }
+
+  private saveViagensToLocalStorage(): void {
+    localStorage.setItem('paxflow-viagens-local', JSON.stringify(this.viagens));
+  }
+
+  private loadViagensFromLocalStorage(): void {
+    const saved = localStorage.getItem('paxflow-viagens-local');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (this.perfil && this.perfil.role !== 'admin') {
+          this.viagens = parsed.filter((v: any) => v.consultor_id === this.user.id);
+        } else {
+          this.viagens = parsed;
+        }
+      } catch (e) {
+        this.viagens = [];
+      }
+    } else {
       this.viagens = [];
     }
   }
@@ -198,7 +221,7 @@ export class Dashboard {
 
     // Regra de SLA para "Pré-Embarque"
     if (viagem.status === 'pre_embarque' && viagem.data_ida) {
-      const dataIda = new Date(viagem.data_ida);
+      const dataIda = new Date(viagem.data_ida + 'T00:00:00');
       dataIda.setHours(0, 0, 0, 0);
 
       const diferencaTempo = dataIda.getTime() - hoje.getTime();
@@ -215,7 +238,7 @@ export class Dashboard {
 
     // Regra de SLA para "Pós-Viagem" (contato obrigatório pós-retorno dentro do prazo de SLA)
     if (viagem.status === 'pos_viagem' && viagem.data_volta) {
-      const dataVolta = new Date(viagem.data_volta);
+      const dataVolta = new Date(viagem.data_volta + 'T00:00:00');
       dataVolta.setHours(0, 0, 0, 0);
 
       const diferencaTempo = hoje.getTime() - dataVolta.getTime();
@@ -275,27 +298,30 @@ export class Dashboard {
             // 1. Atualização Otimista local
             const viagem = this.viagens.find(v => v.id === tripId);
             if (viagem) viagem.status = newStatus;
-
+            this.saveViagensToLocalStorage();
+ 
             // Renderização síncrona instantânea (sem piscar a tela com loading spinner)
             this.render();
             this.setupDragAndDrop();
-
+ 
             // 2. Atualização assíncrona no Supabase
             try {
               const { error } = await supabase
                 .from('viagens')
                 .update({ status: newStatus })
                 .eq('id', tripId);
-
+ 
               if (error) throw error;
-
-              this.showToast('Status da viagem atualizado com sucesso!', 'success');
+ 
+              this.showToast('Status da viagem updated com sucesso!', 'success');
+              this.saveViagensToLocalStorage();
             } catch (err: any) {
               console.error('Erro ao atualizar status:', err);
               this.showToast('Erro ao atualizar status da viagem.', 'error');
               
               // Se falhar, reverte o status da viagem na memória
               if (viagem) viagem.status = oldStatus;
+              this.saveViagensToLocalStorage();
               
               // Re-renderiza para devolver o card para a coluna antiga
               this.render();

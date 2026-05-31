@@ -15,8 +15,11 @@ export interface PerfilConsultor {
   role: UserRole;
   ativo: boolean;
   avatar_url?: string; // ID do avatar selecionado (panda, lion, fox, etc.)
+  avatarUrl?: string; // Suporte camelCase
   createdAt?: string;
   updatedAt?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 /**
@@ -62,17 +65,25 @@ export interface Cliente {
  */
 export interface Viagem {
   id: string;
-  clienteId: string; // ID do cliente comprador/passageiro principal
-  consultorId: string; // ID do consultor responsável pela venda
+  clienteId?: string; // ID do cliente comprador/passageiro principal
+  cliente_id?: string;
+  consultorId?: string; // ID do consultor responsável pela venda
+  consultor_id?: string;
   destino: string;
-  dataIda: string; // YYYY-MM-DD
-  dataVolta: string; // YYYY-MM-DD
-  valorTotal: number;
-  status: 'planejamento' | 'confirmada' | 'em_andamento' | 'concluida' | 'cancelada';
+  dataIda?: string; // YYYY-MM-DD
+  data_ida?: string;
+  dataVolta?: string; // YYYY-MM-DD
+  data_volta?: string;
+  valorTotal?: number;
+  valor_total?: number;
+  status: 'planejamento' | 'confirmada' | 'em_andamento' | 'concluida' | 'cancelada' | 'pre_embarque' | 'pos_viagem' | 'reembolso_solicitado';
   codigoLocalizador?: string; // Código de reserva geral
+  codigo_localizador?: string;
   observacoes?: string;
   createdAt?: string;
+  created_at?: string;
   updatedAt?: string;
+  updated_at?: string;
 }
 
 /**
@@ -98,19 +109,31 @@ export interface ProdutoViagem {
  */
 export interface Reembolso {
   id: string;
-  viagemId: string; // ID da viagem relacionada
+  viagemId?: string; // ID do viagem relacionada
+  viagem_id?: string;
   produtoViagemId?: string; // ID do produto específico (opcional, caso seja reembolso total da viagem)
-  consultorSolicitanteId: string; // ID do consultor que iniciou o reembolso
-  valorSolicitado: number;
+  produto_viagem_id?: string;
+  consultorSolicitanteId?: string; // ID do consultor que iniciou o reembolso
+  consultor_solicitante_id?: string;
+  valorSolicitado?: number;
+  valor_solicitado?: number;
   valorAprovado?: number; // Preenchido após análise do financeiro/fornecedor
+  valor_aprovado?: number;
   taxaRetencao?: number; // Taxa cobrada pelo fornecedor/agência
-  status: 'solicitado' | 'em_analise' | 'aprovado' | 'recusado' | 'pago' | 'cancelado';
-  motivoCancelamento: string;
+  taxa_retencao?: number;
+  status: 'solicitado' | 'em_analise' | 'aprovado' | 'recusado' | 'pago' | 'cancelado' | 'Aguardando Fornecedor';
+  motivoCancelamento?: string;
+  motivo_cancelamento?: string;
   observacoesFinanceiras?: string;
-  dataSolicitacao: string; // ISO String ou YYYY-MM-DD
+  observacoes_financeiras?: string;
+  dataSolicitacao?: string; // ISO String ou YYYY-MM-DD
+  data_solicitacao?: string;
   dataResolucao?: string; // ISO String ou YYYY-MM-DD
+  data_resolucao?: string;
   createdAt?: string;
+  created_at?: string;
   updatedAt?: string;
+  updated_at?: string;
 }
 
 /**
