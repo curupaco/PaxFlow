@@ -1839,7 +1839,7 @@ export class ConfiguracoesPage {
                             <label class="block text-xs font-bold text-slate-500 dark:text-slate-405 uppercase tracking-wide">${field.label}</label>
                             <span class="text-[9px] text-slate-400 dark:text-slate-500 font-medium">${field.desc}</span>
                           </div>
-                          <select id="select-map-${field.key}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-850 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs font-bold text-slate-850 dark:text-slate-150">
+                          <select id="select-map-${field.key}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs font-bold text-slate-800 dark:text-slate-100">
                             <option value="">-- Não Mapear (Ignorar) --</option>
                             ${this.parsedHeaders.map(h => `
                               <option value="${h}" ${h === selectedVal ? 'selected' : ''}>${h}</option>
@@ -1860,13 +1860,13 @@ export class ConfiguracoesPage {
                   <div class="space-y-4">
                     <div>
                       <label class="block text-xs font-bold text-slate-500 dark:text-slate-405 uppercase tracking-wide mb-1.5">Destino Padrão *</label>
-                      <input id="input-default-destino" type="text" required value="${this.defaultDestino}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-850 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs font-bold text-slate-850 dark:text-slate-150" />
+                      <input id="input-default-destino" type="text" required value="${this.defaultDestino}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs font-bold text-slate-800 dark:text-slate-100" />
                       <p class="text-[9px] text-slate-400 dark:text-slate-500 mt-1 font-medium">Os orçamentos criados terão este destino preenchido por padrão.</p>
                     </div>
 
                     <div>
                       <label class="block text-xs font-bold text-slate-500 dark:text-slate-405 uppercase tracking-wide mb-1.5">Temperatura Padrão *</label>
-                      <select id="select-default-temp" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-850 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs font-bold text-slate-850 dark:text-slate-150">
+                      <select id="select-default-temp" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs font-bold text-slate-800 dark:text-slate-100">
                         <option value="Frio" ${this.defaultTemperatura === 'Frio' ? 'selected' : ''}>Frio ❄️</option>
                         <option value="Normal" ${this.defaultTemperatura === 'Normal' ? 'selected' : ''}>Normal ⚡</option>
                         <option value="Quente" ${this.defaultTemperatura === 'Quente' ? 'selected' : ''}>Quente 🔥</option>
@@ -1875,9 +1875,15 @@ export class ConfiguracoesPage {
 
                     <div>
                       <label class="block text-xs font-bold text-slate-500 dark:text-slate-405 uppercase tracking-wide mb-1.5">Status Inicial *</label>
-                      <select id="select-default-status" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-850 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs font-bold text-slate-850 dark:text-slate-150">
+                      <select id="select-default-status" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs font-bold text-slate-800 dark:text-slate-100">
                         <option value="SOLICITADO" ${this.defaultStatus === 'SOLICITADO' ? 'selected' : ''}>Solicitado</option>
                         <option value="EM_ANDAMENTO" ${this.defaultStatus === 'EM_ANDAMENTO' ? 'selected' : ''}>Em Andamento</option>
+                        <option value="AGUARDANDO" ${this.defaultStatus === 'AGUARDANDO' ? 'selected' : ''}>Aguardando</option>
+                        <option value="CONCLUIDO" ${this.defaultStatus === 'CONCLUIDO' ? 'selected' : ''}>Concluído</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>selected' : ''}>Em Andamento</option>
                         <option value="AGUARDANDO" ${this.defaultStatus === 'AGUARDANDO' ? 'selected' : ''}>Aguardando</option>
                         <option value="CONCLUIDO" ${this.defaultStatus === 'CONCLUIDO' ? 'selected' : ''}>Concluído</option>
                       </select>
@@ -1899,7 +1905,7 @@ export class ConfiguracoesPage {
                 <div class="overflow-hidden border border-slate-100 dark:border-slate-800 rounded-2xl">
                   <table class="w-full text-left border-collapse text-xs font-semibold">
                     <thead>
-                      <tr class="bg-slate-550/5 dark:bg-slate-850/60 text-slate-500 dark:text-slate-455 uppercase border-b border-slate-100 dark:border-slate-800 tracking-wider">
+                      <tr class="bg-slate-500/5 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 uppercase border-b border-slate-100 dark:border-slate-800 tracking-wider">
                         <th class="py-3 px-4 font-black">Atendente no CSV (DIGISAC)</th>
                         <th class="py-3 px-4 font-black text-right">Consultor no PaxFlow</th>
                       </tr>
@@ -1908,12 +1914,12 @@ export class ConfiguracoesPage {
                       ${this.uniqueAttendants.map((att, idx) => {
                         const selectedConsultant = this.attendantMapping[att] || '';
                         return `
-                          <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-850/15 transition">
+                          <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/15 transition">
                             <td class="py-3.5 px-4 font-bold text-slate-800 dark:text-slate-250">
                               ${att}
                             </td>
                             <td class="py-3.5 px-4 text-right">
-                              <select id="select-atendente-mapping-${idx}" class="px-3 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-850 rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-500 text-xs font-bold text-slate-850 dark:text-slate-150 max-w-[240px]">
+                              <select id="select-atendente-mapping-${idx}" class="px-3 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-500 text-xs font-bold text-slate-800 dark:text-slate-100 max-w-[240px]">
                                 <option value="">-- Usar Consultor Padrão (${this.perfil?.nome.split(' ')[0] || 'Você'}) --</option>
                                 ${this.consultores.map(c => `
                                   <option value="${c.id}" ${c.id === selectedConsultant ? 'selected' : ''}>${c.nome}</option>
@@ -1957,11 +1963,11 @@ export class ConfiguracoesPage {
                     const consultantMatch = this.consultores.find(c => c.id === mappedConsultantId) || this.perfil;
 
                     return `
-                      <div class="bg-slate-50/50 dark:bg-slate-850/20 border border-slate-150/60 dark:border-slate-800/80 p-4 rounded-2xl flex flex-col gap-3">
+                      <div class="bg-slate-50/50 dark:bg-slate-800/20 border border-slate-200/60 dark:border-slate-800/80 p-4 rounded-2xl flex flex-col gap-3">
                         <div class="flex items-start justify-between gap-1.5">
                           <div class="overflow-hidden">
-                            <span class="block text-[11px] font-black text-slate-850 dark:text-slate-200 truncate leading-tight">${nameVal}</span>
-                            <span class="block text-[9px] text-slate-400 dark:text-slate-505 font-semibold truncate mt-0.5">${contactVal}</span>
+                            <span class="block text-[11px] font-black text-slate-800 dark:text-slate-200 truncate leading-tight">${nameVal}</span>
+                            <span class="block text-[9px] text-slate-400 dark:text-slate-400 font-semibold truncate mt-0.5">${contactVal}</span>
                           </div>
                           <span class="px-2 py-0.5 bg-rose-50 text-rose-700 dark:bg-rose-950/20 dark:text-rose-450 border border-rose-100/30 dark:border-rose-900/30 text-[8px] font-black uppercase rounded tracking-wider shrink-0">
                             ${this.defaultTemperatura}
@@ -1998,7 +2004,7 @@ export class ConfiguracoesPage {
 
               <!-- Ações do Rodapé -->
               <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-200/60 dark:border-slate-800/60">
-                <button id="btn-cancelar-importacao" class="px-5 py-3 border border-slate-200 hover:bg-slate-50 dark:border-slate-750 dark:hover:bg-slate-850 text-slate-700 dark:text-slate-300 font-extrabold text-xs tracking-wider rounded-xl transition uppercase">
+                <button id="btn-cancelar-importacao" class="px-5 py-3 border border-slate-200 hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-extrabold text-xs tracking-wider rounded-xl transition uppercase">
                   Limpar e Voltar
                 </button>
                 <button id="btn-confirmar-importacao" class="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs tracking-wider rounded-xl transition shadow-lg shadow-emerald-500/20 uppercase">
