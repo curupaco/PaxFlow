@@ -75,11 +75,21 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 
 **Central de comando operacional** que consolida todos os alertas críticos da agência em uma única caixa de entrada, estilo e-mail corporativo.
 
-- **Alertas de passaporte**: monitora automaticamente a validade dos passaportes cadastrados e dispara alertas com 180 dias de antecedência (padrão internacional) ou quando expirados
-- **Alertas de SLA de reembolso**: notifica quando um reembolso ultrapassa o prazo configurado pela agência
-- **Lembretes manuais ("Me Lembre Depois")**: agendados a partir do pipeline de orçamentos, com data e período (manhã/tarde/noite)
+- **Alertas de passaporte**: monitora automaticamente a validade dos passaportes cadastrados e dispara alertas com 180 dias de antecedência (padrão internacional) ou quando expirados (mapeados no calendário na data de expiração).
+- **Alertas de SLA de reembolso**: notifica quando um reembolso ultrapassa o prazo configurado pela agência (mapeados no calendário na data exata em que o SLA estourou: Data de Criação + Prazo de SLA).
+- **Lembretes manuais ("Me Lembre Depois")**: agendados a partir do pipeline de orçamentos, com data e período (manhã/tarde/noite) (mapeados no calendário na data agendada).
 - **Filtros**: por consultor (admin), por tipo de alerta, busca textual, ativos/arquivados/todos
-- **Leitor de mensagens corporativo**: modal com visual estilo e-mail profissional
+- **Leitor de mensagens corporativo**: modal com visual estilo e-mail profissional, integrado com deep-linking interativo e arquivamento em tempo real.
+- **Visualização em Calendário Interativo [NEW]**:
+  - **Alternador de Visualização (Toggle Switch)**: Um seletor de alta fidelidade visual (Lista / Calendário) no topo do painel. Todos os filtros da barra lateral (Ativos/Arquivados/Todos e consultores) e busca continuam 100% integrados e reativos no modo calendário.
+  - **Três Visões Operacionais**:
+    - **MÊS**: Grade proporcional de 35 a 42 dias com eventos exibidos como pílulas horizontais arredondadas (estilo Google Agenda).
+    - **SEMANA**: Grade horizontal moderna de 7 colunas (Domingo a Sábado), empilhando cards de atividades de forma vertical com demarcação do período (Manhã, Tarde, Noite).
+    - **AGENDA**: Linha do tempo (Timeline) vertical corrida e minimalista, agrupada exclusivamente por datas com eventos pendentes, exibindo avatares de remetente e atalhos rápidos.
+  - **Sumarização Dinâmica via Regex**: O calendário resume automaticamente os títulos longos e genéricos das notificações (ex: extrai o nome do passageiro e destino de forma compacta, como *"João Silva - Orlando"* em vez de *"Lembrete cadastrado - Orçamento"*).
+  - **Saliência Estética e Alinhamento**: As colunas e células possuem travamento rígido proporcional de largura (`minmax(0, 1fr)` e `min-width: 0`) para evitar qualquer distorção visual. Inclui hover tridimensional (`translateY`) e anel brilhante animado no dia atual ("Hoje").
+  - **Legenda de Cores Tooltip**: Um círculo flutuante **"?"** no topo direito do cabeçalho que exibe instantaneamente, via hover com popover puramente em CSS Tailwind, a legenda de cores e mapeamento de tipos de eventos (Lembretes = Índigo, Passaportes = Âmbar, Reembolsos = Rose).
+  - **Ação com Reuso de Modal**: Clicar em qualquer evento do calendário abre instantaneamente o leitor corporativo de e-mail existente, mantendo links funcionais e re-renderizando a tela sob arquivamento.
 
 ### 3.2 Kanban Operacional de Viagens
 
@@ -166,6 +176,14 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
   - Ativar/desativar conta
   - Cadastro de novo consultor com criação de credencial no Supabase Auth
   - Modal de edição com troca de avatar e redefinição de senha
+- **Aba Importações [NEW]**:
+  - **Dropzone dashed interativa**: Área visual premium para carregar e arrastar arquivos de chamados/oportunidades (CSV).
+  - **Mecanismo de Parse Autocontido**: Parser desenvolvido em TypeScript puro com detecção automática do delimitador de colunas (vírgula `,` ou ponto-e-vírgula `;`) e tratamento avançado de aspas e quebras de linha nas células.
+  - **Mapeador Dinâmico De-Para**: Permite correlacionar visualmente colunas do CSV com as propriedades de Orçamento (Nome, Contato, Notas, Tags, Data da Viagem, Valor da Proposta, Atendente).
+  - **Processadores de Formato Resilientes**: Converte automaticamente dados financeiros brasileiros (ex: `R$ 1.500,00` em float `1500.00`) e datas brasileiras (ex: `31/12/2026` para `2026-12-31`).
+  - **Fuzzy Consultant Matching**: O PaxFlow analisa os nomes de atendentes únicos identificados no CSV e realiza um pré-mapeamento automático por aproximação nominal aos consultores ativos da plataforma (`profiles` table), fornecendo seletores individuais e definição de consultor fallback para registros em branco ou desconhecidos.
+  - **Preview em Tempo Real**: Carrossel contendo 3 cards de preview formatados idênticos ao Kanban, permitindo inspecionar e validar os dados antes do salvamento definitivo.
+  - **Salva em Lote (Batch Insert)**: Envio otimizado para o Supabase `orcamentos` com feedback em barra de progresso visual.
 
 ### 3.7 Quadro de Planejamento Interno — Cockpit
 

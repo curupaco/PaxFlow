@@ -82,7 +82,7 @@ if (typeof document !== 'undefined') {
     }
     .calendar-grid {
       display: grid;
-      grid-template-columns: repeat(7, 1fr);
+      grid-template-columns: repeat(7, minmax(0, 1fr));
       gap: 1px;
       background: rgba(226, 232, 240, 0.8);
       border-radius: 1.25rem;
@@ -116,6 +116,7 @@ if (typeof document !== 'undefined') {
       flex-direction: column;
       gap: 0.35rem;
       position: relative;
+      min-width: 0; /* Lock standard content contraction */
     }
     .dark .calendar-day-cell {
       background: #1e293b;
@@ -175,6 +176,7 @@ if (typeof document !== 'undefined') {
       border: none;
       text-align: left;
       width: 100%;
+      display: block; /* Force contract inside cells */
     }
     .calendar-event-pill:hover {
       transform: translateY(-1px);
@@ -188,7 +190,7 @@ if (typeof document !== 'undefined') {
     /* Week Columns layout */
     .calendar-week-container {
       display: grid;
-      grid-template-columns: repeat(7, 1fr);
+      grid-template-columns: repeat(7, minmax(0, 1fr));
       gap: 0.75rem;
     }
     .calendar-week-column {
@@ -200,6 +202,7 @@ if (typeof document !== 'undefined') {
       display: flex;
       flex-direction: column;
       gap: 0.5rem;
+      min-width: 0; /* Lock standard column contraction */
     }
     .dark .calendar-week-column {
       background: rgba(30, 41, 59, 0.4);
@@ -1036,7 +1039,7 @@ export class InboxPage {
           </div>
 
           <!-- Navigation Controls -->
-          <div class="flex items-center gap-1.5 w-full sm:w-auto justify-center sm:justify-end">
+          <div class="flex items-center gap-1.5 w-full sm:w-auto justify-center sm:justify-end relative">
             <button id="cal-nav-prev" class="p-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-slate-500 dark:text-slate-400 transition" title="Período Anterior">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
             </button>
@@ -1046,6 +1049,32 @@ export class InboxPage {
             <button id="cal-nav-next" class="p-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-slate-500 dark:text-slate-400 transition" title="Próximo Período">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
             </button>
+
+            <!-- Legend help tooltip trigger -->
+            <div class="relative group ml-1 flex items-center">
+              <button id="cal-legend-btn" class="w-9 h-9 inline-flex items-center justify-center bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 rounded-xl transition border border-slate-200/40 dark:border-slate-700/40 font-bold text-xs shadow-sm cursor-help focus:outline-none" title="Legenda de Cores">
+                ?
+              </button>
+              
+              <!-- Popover Legend Tooltip -->
+              <div class="absolute right-0 top-11 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-2xl w-56 opacity-0 scale-95 pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto transition-all duration-200 z-50">
+                <h4 class="text-xs font-black text-slate-850 dark:text-slate-250 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800/80 pb-2 mb-3 text-left">Legenda de Cores</h4>
+                <div class="space-y-2.5 text-left">
+                  <div class="flex items-center gap-2.5">
+                    <span class="w-3.5 h-3.5 rounded-md badge-gradient-indigo flex-shrink-0"></span>
+                    <span class="text-xs font-bold text-slate-650 dark:text-slate-350">Lembretes Manuais</span>
+                  </div>
+                  <div class="flex items-center gap-2.5">
+                    <span class="w-3.5 h-3.5 rounded-md badge-gradient-amber flex-shrink-0"></span>
+                    <span class="text-xs font-bold text-slate-650 dark:text-slate-350">Passaportes SLA</span>
+                  </div>
+                  <div class="flex items-center gap-2.5">
+                    <span class="w-3.5 h-3.5 rounded-md badge-gradient-rose flex-shrink-0"></span>
+                    <span class="text-xs font-bold text-slate-650 dark:text-slate-350">Reembolsos SLA</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
         </div>
@@ -1069,6 +1098,23 @@ export class InboxPage {
     } else {
       return this.renderAgendaCalendar();
     }
+  }
+
+  /**
+   * Summarizes alert titles for compact view representations
+   */
+  private getEventSummary(a: AlertItem): string {
+    if (a.type === 'manual') {
+      const match = a.subject.match(/\[(.*?)\]/);
+      return match && match[1] ? match[1] : 'Lembrete';
+    } else if (a.type === 'passport') {
+      const match = a.subject.match(/passageiro\s+(.*?)\s+está/);
+      return match && match[1] ? `Passaporte: ${match[1]}` : 'Passaporte SLA';
+    } else if (a.type === 'refund') {
+      const match = a.subject.match(/reembolso de\s+(.*?)\s+excedeu/);
+      return match && match[1] ? `Reembolso: ${match[1]}` : 'Reembolso SLA';
+    }
+    return a.title;
   }
 
   /**
@@ -1158,9 +1204,10 @@ export class InboxPage {
               if (a.type === 'passport') colorClass = 'badge-gradient-amber';
               if (a.type === 'refund') colorClass = 'badge-gradient-rose';
 
+              const summary = this.getEventSummary(a);
               const displayTitle = a.type === 'manual' && a.periodText 
-                ? `[${a.periodText}] ${a.title}`
-                : a.title;
+                ? `[${a.periodText}] ${summary}`
+                : summary;
 
               return `
                 <button class="calendar-event-pill ${colorClass}" data-alert-id="${a.id}" title="${a.title} - ${a.subject}">
@@ -1246,7 +1293,7 @@ export class InboxPage {
                   </div>
                   
                   <div class="pl-2">
-                    <h5 class="text-xs font-extrabold text-slate-850 dark:text-slate-200 line-clamp-1 leading-snug">${a.title}</h5>
+                    <h5 class="text-xs font-extrabold text-slate-850 dark:text-slate-200 line-clamp-1 leading-snug">${this.getEventSummary(a)}</h5>
                     <p class="text-[10px] text-slate-500 dark:text-slate-450 line-clamp-2 leading-relaxed mt-0.5">${a.subject}</p>
                   </div>
                 </div>

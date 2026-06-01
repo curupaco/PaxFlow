@@ -20,12 +20,12 @@ Plataforma SaaS de CRM operacional focada no pós-venda turístico: acompanhamen
 
 ## Funcionalidades
 
-- **Mission Control (Inbox)** — Central de alertas com SLA de passaporte (180d), reembolsos atrasados e lembretes manuais agendados
+- **Mission Control (Inbox)** — Central de alertas estilo e-mail com SLA de passaporte (180d), reembolsos atrasados e lembretes manuais. **Inclui nova Visualização em Calendário unificada com visões de MÊS (grid de dias), SEMANA (grade de 7 colunas) e AGENDA (timeline vertical), sumarização inteligente via Regex e legenda hover tooltip.**
 - **Kanban de Viagens** — 5 colunas (Fechado → Pós-Venda → Pré-Embarque → Pós-Viagem → Reembolso) com drag-and-drop, SLAs visuais e gestão de produtos
-- **Pipeline de Orçamentos** — 4 estágios (Solicitado → Em Andamento → Aguardando → Concluído) com temperatura de lead, tags, notas e upload de documentos
+- **Pipeline de Orçamentos** — 4 estágios (Solicitado → Em Andamento → Aguardando → Concluído) com temperatura de lead, tags, notas e upload de documentos.
 - **CRM de Clientes** — Ficha única com passaporte/visto, validade monitorada por SLA, upload drag-and-drop para Google Drive com pastas automáticas por cliente
 - **Central de Reembolsos** — Tabela com cronômetro SLA em tempo real, status inline e métricas consolidadas
-- **Painel Administrativo** — Configuração de SLAs, gestão de consultores, integração Google Drive
+- **Painel Administrativo (Configurações)** — Configuração de SLAs, gestão de consultores, integração Google Drive. **Agora com aba "Importações" exclusiva para admin para importação em lote de chamados DIGISAC (CSV) com mapeamento inteligente de colunas, conversor monetário/temporal e fuzzy match de atendentes.**
 - **Cockpit de Tarefas** — Kanban interno standalone (todo.html) para planejamento da equipe
 
 ---
@@ -106,15 +106,16 @@ src/
 ├── types/
 │   └── index.ts      # Interfaces TypeScript do domínio
 ├── pages/
-│   ├── Inbox.ts      # Mission Control (alertas SLA)
+│   ├── Inbox.ts      # Mission Control (alertas SLA + Calendário)
 │   ├── Dashboard.ts  # Kanban de viagens
 │   ├── Orcamentos.ts # Pipeline de orçamentos
 │   ├── Clientes.ts   # CRM de clientes
 │   ├── Reembolsos.ts # Central de reembolsos
-│   └── Configuracoes.ts # Painel admin
+│   └── Configuracoes.ts # Painel admin (Configurações + Importador CSV)
 ├── services/
 │   ├── supabase.ts   # Cliente Supabase + auth + perfil
 │   ├── googleDrive.ts # Upload Google Drive OAuth2
+│   ├── csvImporter.ts # Parser e importador de CSV inteligente
 │   ├── dialog.ts     # Componentes de modal/dialog
 │   └── avatars.ts    # Geração de avatares
 ├── todo.ts           # Kanban interno (standalone)
