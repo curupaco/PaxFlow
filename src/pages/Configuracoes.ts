@@ -3,7 +3,7 @@ import { PerfilConsultor, GlobalSettings } from '../types';
 import { createClient } from '@supabase/supabase-js';
 import { getAvatarSvg, AVATAR_OPTIONS, mesclarAvataresLocais, salvarAvatarLocal } from '../services/avatars';
 import { showCustomAlert, showCustomConfirm } from '../services/dialog';
-import { parseCSV, batchInsertOrcamentos } from '../services/csvImporter';
+import { parseCSV, batchInsertOrcamentos, formatBrDateToYmd, parseBrFloat } from '../services/csvImporter';
 
 declare const process: any;
 
@@ -1196,7 +1196,7 @@ export class ConfiguracoesPage {
     });
 
     // Ouvintes dos seletores de mapeamento de colunas
-    ['nome', 'contato', 'atendente', 'tags', 'notas'].forEach(field => {
+    ['nome', 'contato', 'atendente', 'tags', 'notas', 'data_viagem', 'valor_proposta'].forEach(field => {
       const select = document.getElementById(`select-map-${field}`) as HTMLSelectElement;
       select?.addEventListener('change', () => {
         this.columnMapping[field] = select.value;
@@ -1260,7 +1260,9 @@ export class ConfiguracoesPage {
       contato: this.parsedHeaders.find(h => /n[uú]mero/i.test(h) || /contato/i.test(h) || /telefone/i.test(h) || /celular/i.test(h)) || this.parsedHeaders[2] || '',
       atendente: this.parsedHeaders.find(h => /atendente/i.test(h) || /operador/i.test(h) || /consultor/i.test(h)) || this.parsedHeaders[3] || '',
       tags: this.parsedHeaders.find(h => /tags/i.test(h) || /tag/i.test(h)) || this.parsedHeaders[4] || '',
-      notas: this.parsedHeaders.find(h => /resumo/i.test(h) || /protocolo/i.test(h) || /assunto/i.test(h)) || this.parsedHeaders[0] || ''
+      notas: this.parsedHeaders.find(h => /resumo/i.test(h) || /protocolo/i.test(h) || /assunto/i.test(h)) || this.parsedHeaders[0] || '',
+      data_viagem: this.parsedHeaders.find(h => /data.*in[ií]cio/i.test(h) || /data.*viagem/i.test(h)) || '',
+      valor_proposta: this.parsedHeaders.find(h => /valor/i.test(h) || /proposta/i.test(h) || /pre[cç]o/i.test(h)) || ''
     };
 
     this.extractUniqueAttendants();
@@ -1323,6 +1325,8 @@ export class ConfiguracoesPage {
       const atendenteIndex = this.parsedHeaders.indexOf(this.columnMapping['atendente']);
       const tagsIndex = this.parsedHeaders.indexOf(this.columnMapping['tags']);
       const notasIndex = this.parsedHeaders.indexOf(this.columnMapping['notas']);
+      const dataViagemIndex = this.parsedHeaders.indexOf(this.columnMapping['data_viagem']);
+      const valorPropostaIndex = this.parsedHeaders.indexOf(this.columnMapping['valor_proposta']);
 
       const payloads = this.csvRows.map(row => {
         const rawAtendente = atendenteIndex !== -1 ? (row[atendenteIndex] || '').trim() : '';
@@ -1341,6 +1345,12 @@ export class ConfiguracoesPage {
           ? `${rawNotas}\n\n(Chamado importado do DIGISAC)` 
           : 'Chamado importado do DIGISAC';
 
+        const rawDataViagem = dataViagemIndex !== -1 ? (row[dataViagemIndex] || '').trim() : '';
+        const data_viagem = rawDataViagem ? formatBrDateToYmd(rawDataViagem) : null;
+
+        const rawValorProposta = valorPropostaIndex !== -1 ? (row[valorPropostaIndex] || '').trim() : '';
+        const valor_proposta = rawValorProposta ? parseBrFloat(rawValorProposta) : null;
+
         return {
           consultor_id: consultorId,
           nome_cliente: nomeCliente,
@@ -1350,6 +1360,8 @@ export class ConfiguracoesPage {
           status: this.defaultStatus,
           tags,
           notas_negociacao: notasNegociacao,
+          data_viagem,
+          valor_proposta,
           documentos_url: []
         };
       });
@@ -1830,7 +1842,9 @@ export class ConfiguracoesPage {
                       { key: 'contato', label: 'Contato/Telefone *', desc: 'Número de WhatsApp, celular ou e-mail.' },
                       { key: 'atendente', label: 'Atendente/Operador', desc: 'Atribui a responsabilidade pelo lead.' },
                       { key: 'tags', label: 'Tags do Chamado', desc: 'Tags do DIGISAC convertidas em tags de orçamento.' },
-                      { key: 'notas', label: 'Notas e Protocolo', desc: 'Notas de negociação, assunto ou resumo do chamado.' }
+                      { key: 'notas', label: 'Notas e Protocolo', desc: 'Notas de negociação, assunto ou resumo do chamado.' },
+                      { key: 'data_viagem', label: 'Data da Viagem', desc: 'Data em que a viagem ocorrerá.' },
+                      { key: 'valor_proposta', label: 'Valor da Proposta', desc: 'Valor monetário estimado ou proposto.' }
                     ].map(field => {
                       const selectedVal = this.columnMapping[field.key] || '';
                       return `
@@ -1945,6 +1959,8 @@ export class ConfiguracoesPage {
                     const contatoCol = this.columnMapping['contato'];
                     const atendenteCol = this.columnMapping['atendente'];
                     const tagsCol = this.columnMapping['tags'];
+                    const dataViagemCol = this.columnMapping['data_viagem'];
+                    const valorPropostaCol = this.columnMapping['valor_proposta'];
 
                     const nameVal = row[this.parsedHeaders.indexOf(nomeCol)] || 'Cliente Importado';
                     const contactVal = row[this.parsedHeaders.indexOf(contatoCol)] || '';
@@ -1955,27 +1971,43 @@ export class ConfiguracoesPage {
                     const mappedConsultantId = this.attendantMapping[rawAtendente || '(Sem Atendente)'] || '';
                     const consultantMatch = this.consultores.find(c => c.id === mappedConsultantId) || this.perfil;
 
+                    const rawDataViagem = dataViagemCol ? row[this.parsedHeaders.indexOf(dataViagemCol)] : '';
+                    const rawValorProposta = valorPropostaCol ? row[this.parsedHeaders.indexOf(valorPropostaCol)] : '';
+                    const valorPropostaVal = rawValorProposta ? parseBrFloat(rawValorProposta) : null;
+
                     return `
                       <div class="bg-slate-50/50 dark:bg-slate-800/20 border border-slate-200/60 dark:border-slate-800/80 p-4 rounded-2xl flex flex-col gap-3">
                         <div class="flex items-start justify-between gap-1.5">
                           <div class="overflow-hidden">
-                            <span class="block text-[11px] font-black text-slate-800 dark:text-slate-200 truncate leading-tight">${nameVal}</span>
+                            <span class="block text-[11px] font-black text-slate-850 dark:text-slate-200 truncate leading-tight">${nameVal}</span>
                             <span class="block text-[9px] text-slate-400 dark:text-slate-400 font-semibold truncate mt-0.5">${contactVal}</span>
                           </div>
-                          <span class="px-2 py-0.5 bg-rose-50 text-rose-700 dark:bg-rose-950/20 dark:text-rose-450 border border-rose-100/30 dark:border-rose-900/30 text-[8px] font-black uppercase rounded tracking-wider shrink-0">
+                          <span class="px-2 py-0.5 bg-rose-50 text-rose-700 dark:bg-rose-950/20 dark:text-rose-455 border border-rose-100/30 dark:border-rose-900/30 text-[8px] font-black uppercase rounded tracking-wider shrink-0">
                             ${this.defaultTemperatura}
                           </span>
                         </div>
 
-                        <div class="flex flex-col gap-1 text-[9px] font-semibold text-slate-500 dark:text-slate-450 bg-white dark:bg-slate-900/30 p-2 rounded-xl border border-slate-100 dark:border-slate-800/50">
+                        <div class="flex flex-col gap-1 text-[9px] font-semibold text-slate-500 dark:text-slate-455 bg-white dark:bg-slate-900/30 p-2 rounded-xl border border-slate-100 dark:border-slate-800/50">
                           <div class="flex justify-between">
                             <span>Destino:</span>
                             <span class="font-extrabold text-slate-700 dark:text-slate-350 truncate max-w-[110px]">${this.defaultDestino}</span>
                           </div>
                           <div class="flex justify-between">
                             <span>Status:</span>
-                            <span class="font-extrabold text-slate-750 dark:text-slate-300">${this.defaultStatus}</span>
+                            <span class="font-extrabold text-slate-700 dark:text-slate-300">${this.defaultStatus}</span>
                           </div>
+                          ${rawDataViagem ? `
+                            <div class="flex justify-between">
+                              <span>Data Viagem:</span>
+                              <span class="font-extrabold text-slate-700 dark:text-slate-300 truncate max-w-[110px]">${rawDataViagem.split(' ')[0]}</span>
+                            </div>
+                          ` : ''}
+                          ${valorPropostaVal !== null ? `
+                            <div class="flex justify-between">
+                              <span>Valor Proposta:</span>
+                              <span class="font-black text-indigo-650 dark:text-indigo-400">R$ ${valorPropostaVal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                            </div>
+                          ` : ''}
                           <div class="flex justify-between mt-1 pt-1 border-t border-slate-100 dark:border-slate-800/50">
                             <span>Consultor:</span>
                             <span class="font-black text-indigo-650 dark:text-indigo-400">👤 ${consultantMatch?.nome.split(' ')[0] || 'Consultor'}</span>

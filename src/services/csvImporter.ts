@@ -156,3 +156,37 @@ export async function batchInsertOrcamentos(
     return { success: false, count: 0, error: err };
   }
 }
+
+/**
+ * Converte datas brasileiras (DD/MM/YYYY hh:mm:ss ou DD/MM/YYYY) para formato ISO DATE (YYYY-MM-DD)
+ */
+export function formatBrDateToYmd(dateStr: string): string | null {
+  if (!dateStr) return null;
+  const datePart = dateStr.trim().split(' ')[0];
+  if (!datePart) return null;
+  const parts = datePart.split('/');
+  if (parts.length === 3) {
+    const day = parts[0].padStart(2, '0');
+    const month = parts[1].padStart(2, '0');
+    const year = parts[2];
+    if (year.length === 4) {
+      return `${year}-${month}-${day}`;
+    }
+  }
+  return null;
+}
+
+/**
+ * Converte representações monetárias brasileiras (ex: R$ 1.234,56 ou 1234,56) para float padrão
+ */
+export function parseBrFloat(valStr: string): number | null {
+  if (!valStr) return null;
+  let clean = valStr.replace(/R\$\s?/gi, '').replace(/\s/g, '');
+  if (clean.includes('.') && clean.includes(',')) {
+    clean = clean.replace(/\./g, '').replace(/,/g, '.');
+  } else if (clean.includes(',')) {
+    clean = clean.replace(/,/g, '.');
+  }
+  const parsed = parseFloat(clean);
+  return isNaN(parsed) ? null : parsed;
+}
