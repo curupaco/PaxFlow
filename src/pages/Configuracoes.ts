@@ -1883,14 +1883,7 @@ export class ConfiguracoesPage {
                       </select>
                     </div>
                   </div>
-                </div>selected' : ''}>Em Andamento</option>
-                        <option value="AGUARDANDO" ${this.defaultStatus === 'AGUARDANDO' ? 'selected' : ''}>Aguardando</option>
-                        <option value="CONCLUIDO" ${this.defaultStatus === 'CONCLUIDO' ? 'selected' : ''}>Concluído</option>
-                      </select>
-                    </div>
-                  </div>
                 </div>
-
               </div>
 
               <!-- Atribuição de Consultores -->
