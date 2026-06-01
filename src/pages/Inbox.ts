@@ -68,6 +68,199 @@ if (typeof document !== 'undefined') {
       box-shadow: 0 0 0 2.5px #f59e0b;
       border-radius: 0.75rem;
     }
+
+    /* Premium Calendar Grid Styles */
+    .calendar-container {
+      background: rgba(255, 255, 255, 0.4);
+      border-radius: 1.5rem;
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      backdrop-filter: blur(12px);
+    }
+    .dark .calendar-container {
+      background: rgba(15, 23, 42, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+    }
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 1px;
+      background: rgba(226, 232, 240, 0.8);
+      border-radius: 1.25rem;
+      overflow: hidden;
+      border: 1px solid rgba(226, 232, 240, 0.8);
+    }
+    .dark .calendar-grid {
+      background: rgba(51, 65, 85, 0.5);
+      border: 1px solid rgba(51, 65, 85, 0.5);
+    }
+    .calendar-day-header {
+      background: #f8fafc;
+      padding: 0.75rem 0.5rem;
+      text-align: center;
+      font-size: 0.75rem;
+      font-weight: 800;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .dark .calendar-day-header {
+      background: #0f172a;
+      color: #94a3b8;
+    }
+    .calendar-day-cell {
+      background: #ffffff;
+      min-height: 120px;
+      padding: 0.5rem;
+      transition: background-color 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      position: relative;
+    }
+    .dark .calendar-day-cell {
+      background: #1e293b;
+    }
+    .calendar-day-cell:hover {
+      background: #f1f5f9;
+    }
+    .dark .calendar-day-cell:hover {
+      background: #334155;
+    }
+    .calendar-day-cell.other-month {
+      background: #f8fafc;
+      color: #94a3b8;
+      opacity: 0.5;
+    }
+    .dark .calendar-day-cell.other-month {
+      background: #0f172a;
+      color: #475569;
+    }
+    .calendar-day-cell.today {
+      background: #f5f7ff;
+      border: 2px solid #6366f1;
+    }
+    .dark .calendar-day-cell.today {
+      background: #1e1b4b;
+      border: 2px solid #818cf8;
+    }
+    .calendar-day-number {
+      font-size: 0.75rem;
+      font-weight: 800;
+      color: #475569;
+    }
+    .dark .calendar-day-number {
+      color: #cbd5e1;
+    }
+    .calendar-day-cell.today .calendar-day-number {
+      color: #4f46e5;
+      font-weight: 900;
+    }
+    .dark .calendar-day-cell.today .calendar-day-number {
+      color: #a5b4fc;
+    }
+
+    /* Event Pill style */
+    .calendar-event-pill {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.5rem;
+      color: #ffffff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+      border: none;
+      text-align: left;
+      width: 100%;
+    }
+    .calendar-event-pill:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.15);
+      filter: brightness(1.08);
+    }
+    .calendar-event-pill:active {
+      transform: translateY(0);
+    }
+
+    /* Week Columns layout */
+    .calendar-week-container {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 0.75rem;
+    }
+    .calendar-week-column {
+      background: rgba(255, 255, 255, 0.6);
+      border-radius: 1.25rem;
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      padding: 0.75rem;
+      min-height: 480px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .dark .calendar-week-column {
+      background: rgba(30, 41, 59, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+    }
+    .calendar-week-day-header {
+      text-align: center;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid #e2e8f0;
+      margin-bottom: 0.25rem;
+    }
+    .dark .calendar-week-day-header {
+      border-bottom-color: #334155;
+    }
+
+    /* Agenda Timeline layout */
+    .agenda-timeline {
+      position: relative;
+      padding-left: 2rem;
+    }
+    .agenda-timeline::before {
+      content: '';
+      position: absolute;
+      left: 9px;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: #e2e8f0;
+    }
+    .dark .agenda-timeline::before {
+      background: #334155;
+    }
+    .agenda-day-group {
+      position: relative;
+      margin-bottom: 2rem;
+    }
+    .agenda-day-dot {
+      position: absolute;
+      left: -2rem;
+      top: 0.25rem;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #cbd5e1;
+      border: 4px solid #ffffff;
+      transform: translateX(0);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .dark .agenda-day-dot {
+      background: #475569;
+      border-color: #0f172a;
+    }
+    .agenda-day-group.today .agenda-day-dot {
+      background: #6366f1;
+      border-color: #eef2ff;
+      box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+    }
+    .dark .agenda-day-group.today .agenda-day-dot {
+      background: #818cf8;
+      border-color: #1e1b4b;
+    }
   `;
   document.head.appendChild(style);
 }
@@ -87,6 +280,7 @@ interface AlertItem {
   consultorId: string;
   consultorNome: string;
   createdAt: string;
+  eventDate: string; // Target event date (YYYY-MM-DD)
 }
 
 export class InboxPage {
@@ -101,6 +295,11 @@ export class InboxPage {
   private selectedConsultantFilter: string = 'todos';
   private searchQuery: string = '';
   private consultants: PerfilConsultor[] = [];
+  
+  // Calendar specific state
+  private currentView: 'list' | 'calendar' = 'list';
+  private calendarMode: 'month' | 'week' | 'agenda' = 'month';
+  private calendarSelectedDate: Date = new Date();
   
   // Global settings
   private prazoReembolsoDias: number = 3;
@@ -211,13 +410,13 @@ export class InboxPage {
     try {
       // --- PART 1: MANUAL REMINDERS ("Me Lembre Depois") ---
       let lembretesQuery = supabase
-        .from('lembretes')
-        .select(`
+          .from('lembretes')
+          .select(`
           *,
           orcamento:orcamentos (*),
           consultor:profiles (*)
         `)
-        .order('created_at', { ascending: false });
+          .order('created_at', { ascending: false });
 
       if (this.perfil && this.perfil.role !== 'admin') {
         lembretesQuery = lembretesQuery.eq('consultor_id', this.user.id);
@@ -247,7 +446,8 @@ export class InboxPage {
           arquivado: lem.arquivado,
           consultorId: lem.consultor_id,
           consultorNome: lem.consultor?.nome || 'Consultor',
-          createdAt: lem.created_at
+          createdAt: lem.created_at,
+          eventDate: lem.data_lembrete
         });
       });
 
@@ -282,23 +482,24 @@ export class InboxPage {
             arquivado: isArchived,
             consultorId: c.consultor_responsavel_id || '',
             consultorNome: 'PaxFlow Automático',
-            createdAt: c.created_at || new Date().toISOString()
+            createdAt: c.created_at || new Date().toISOString(),
+            eventDate: validade.split('T')[0]
           });
         }
       });
 
       // --- PART 3: REFUND SLA ALERTS ---
       let reembolsosQuery = supabase
-        .from('reembolsos')
-        .select(`
+          .from('reembolsos')
+          .select(`
           *,
           viagem:viagens (
             *,
             cliente:clientes (*)
           )
         `)
-        .not('status', 'in', '("pago","cancelado")')
-        .order('created_at', { ascending: false });
+          .not('status', 'in', '("pago","cancelado")')
+          .order('created_at', { ascending: false });
 
       const { data: reembolsosData } = await reembolsosQuery;
 
@@ -321,6 +522,10 @@ export class InboxPage {
           const clienteNome = rem.viagem?.cliente?.nome || 'Passageiro';
           const destino = rem.viagem?.destino || 'Destino';
 
+          const dataSla = new Date(rem.created_at);
+          dataSla.setDate(dataSla.getDate() + this.prazoReembolsoDias);
+          const eventDateStr = dataSla.toISOString().split('T')[0];
+
           list.push({
             id: uniqueId,
             type: 'refund',
@@ -334,7 +539,8 @@ export class InboxPage {
             arquivado: isArchived,
             consultorId: consultorId || '',
             consultorNome: 'PaxFlow Automático',
-            createdAt: rem.created_at
+            createdAt: rem.created_at,
+            eventDate: eventDateStr
           });
         }
       });
@@ -490,10 +696,7 @@ export class InboxPage {
     `;
   }
 
-  /**
-   * Render the main dashboard panel markup
-   */
-  private render(): void {
+   private render(): void {
     // 1. Calculate counters for badges
     const totalAtivos = this.alerts.filter(a => !a.arquivado).length;
     const totalManual = this.alerts.filter(a => a.type === 'manual' && !a.arquivado).length;
@@ -610,7 +813,7 @@ export class InboxPage {
               
               <!-- Folders glass card -->
               <div class="inbox-glass p-4 rounded-2xl shadow-sm space-y-2">
-                <h3 class="px-2 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Folders</h3>
+                <h3 class="px-2 text-[10px] font-black text-slate-400 dark:text-slate-550 uppercase tracking-widest mb-3">Folders</h3>
                 
                 <button id="folder-ativos" class="w-full px-3 py-2.5 rounded-xl flex items-center justify-between text-xs font-bold transition select-none ${
                   this.activeTab === 'ativos' 
@@ -663,7 +866,7 @@ export class InboxPage {
               ${this.perfil?.role === 'admin' ? `
                 <div class="inbox-glass p-4 rounded-2xl shadow-sm space-y-3">
                   <div>
-                    <h3 class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Filtro Administrativo</h3>
+                    <h3 class="text-[10px] font-black text-slate-400 dark:text-slate-550 uppercase tracking-widest mb-1">Filtro Administrativo</h3>
                     <p class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold">Exibir alertas de outro consultor:</p>
                   </div>
                   <select id="admin-consultant-select" class="w-full text-xs font-bold px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-700 dark:text-slate-250 transition">
@@ -677,7 +880,7 @@ export class InboxPage {
 
             </div>
 
-            <!-- Middle Workspace panel (Mail List Client) -->
+            <!-- Middle Workspace panel (Mail List Client / Calendar) -->
             <div class="lg:col-span-3 space-y-4">
               
               <!-- Search and filter summary bar -->
@@ -694,88 +897,105 @@ export class InboxPage {
                 <div class="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 whitespace-nowrap bg-slate-100 dark:bg-slate-900 px-3.5 py-2.5 rounded-xl border border-slate-200/40 dark:border-slate-800/40">
                   Mostrando ${this.filteredAlerts.length} de ${this.alerts.length} alertas
                 </div>
+
+                <!-- View Switcher Toggle Button Group -->
+                <div class="flex bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200/40 dark:border-slate-800/40 flex-shrink-0">
+                  <button id="view-list-btn" class="px-3.5 py-1.5 rounded-lg text-xs font-extrabold flex items-center gap-1.5 transition ${this.currentView === 'list' ? 'bg-white dark:bg-slate-800 text-indigo-650 dark:text-indigo-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-450 dark:hover:text-slate-200'}" title="Visualização em Lista">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                    Lista
+                  </button>
+                  <button id="view-calendar-btn" class="px-3.5 py-1.5 rounded-lg text-xs font-extrabold flex items-center gap-1.5 transition ${this.currentView === 'calendar' ? 'bg-white dark:bg-slate-800 text-indigo-650 dark:text-indigo-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-450 dark:hover:text-slate-200'}" title="Visualização em Calendário">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                    Calendário
+                  </button>
+                </div>
               </div>
 
-              <!-- Alerts Mail Stack -->
-              <div class="space-y-3 custom-scrollbar overflow-y-auto max-h-[calc(100vh-310px)] pr-1">
-                ${this.filteredAlerts.length === 0 ? `
-                  <div class="inbox-glass p-12 text-center rounded-2xl border border-slate-200/40 dark:border-slate-800/40">
-                    <div class="w-12 h-12 bg-slate-100 dark:bg-slate-900 text-slate-400 dark:text-slate-550 rounded-2xl flex items-center justify-center mx-auto mb-3">
-                      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                        <rect width="20" height="16" x="2" y="4" rx="2" />
-                        <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
-                      </svg>
-                    </div>
-                    <h3 class="text-sm font-black text-slate-700 dark:text-slate-350 uppercase tracking-wide">Caixa Vazia</h3>
-                    <p class="text-xs text-slate-400 dark:text-slate-500 mt-1 font-medium">Nenhum alerta ou lembrete corresponde aos filtros atuais.</p>
-                  </div>
-                ` : this.filteredAlerts.map(a => {
-                  let badgeClass = 'badge-gradient-indigo';
-                  let badgeText = 'Lembrete';
-                  if (a.type === 'passport') {
-                    badgeClass = 'badge-gradient-amber';
-                    badgeText = 'Passaporte SLA';
-                  } else if (a.type === 'refund') {
-                    badgeClass = 'badge-gradient-rose';
-                    badgeText = 'Reembolso SLA';
-                  }
-
-                  const isUnread = !a.arquivado && !readList.includes(a.id);
-
-                  return `
-                    <div class="inbox-card inbox-glass p-5 rounded-2xl border ${isUnread ? 'border-indigo-200 dark:border-indigo-900/60 bg-indigo-50/5 dark:bg-indigo-950/5' : 'border-white/60 dark:border-slate-900/60'} shadow-sm flex items-start gap-4 cursor-pointer relative" data-alert-id="${a.id}">
-                      
-                      <!-- Unread Indicator Dot -->
-                      ${isUnread ? `<span class="absolute top-5 left-2 w-2 h-2 rounded-full bg-indigo-650 dark:bg-indigo-400 animate-pulse"></span>` : ''}
-
-                      <!-- Avatar -->
-                      <div class="w-10 h-10 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden flex items-center justify-center bg-white dark:bg-slate-900 flex-shrink-0 ${isUnread ? 'ring-2 ring-indigo-500/20' : ''}">
-                        ${getAvatarSvg(a.senderAvatar, a.sender.charAt(0), 'w-full h-full')}
+              ${this.currentView === 'list' ? `
+                <!-- Alerts Mail Stack -->
+                <div class="space-y-3 custom-scrollbar overflow-y-auto max-h-[calc(100vh-310px)] pr-1">
+                  ${this.filteredAlerts.length === 0 ? `
+                    <div class="inbox-glass p-12 text-center rounded-2xl border border-slate-200/40 dark:border-slate-800/40">
+                      <div class="w-12 h-12 bg-slate-100 dark:bg-slate-900 text-slate-400 dark:text-slate-550 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                          <rect width="20" height="16" x="2" y="4" rx="2" />
+                          <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                        </svg>
                       </div>
+                      <h3 class="text-sm font-black text-slate-700 dark:text-slate-350 uppercase tracking-wide">Caixa Vazia</h3>
+                      <p class="text-xs text-slate-400 dark:text-slate-550 mt-1 font-medium">Nenhum alerta ou lembrete corresponde aos filtros atuais.</p>
+                    </div>
+                  ` : this.filteredAlerts.map(a => {
+                    let badgeClass = 'badge-gradient-indigo';
+                    let badgeText = 'Lembrete';
+                    if (a.type === 'passport') {
+                      badgeClass = 'badge-gradient-amber';
+                      badgeText = 'Passaporte SLA';
+                    } else if (a.type === 'refund') {
+                      badgeClass = 'badge-gradient-rose';
+                      badgeText = 'Reembolso SLA';
+                    }
 
-                      <!-- Text info -->
-                      <div class="flex-grow min-w-0 space-y-1">
-                        <div class="flex items-center justify-between gap-2">
-                          <span class="block text-xs font-black text-slate-800 dark:text-slate-200 truncate">${a.sender}</span>
-                          <span class="text-[10px] font-bold text-slate-400 dark:text-slate-550 whitespace-nowrap">${a.dateStr}</span>
+                    const isUnread = !a.arquivado && !readList.includes(a.id);
+
+                    return `
+                      <div class="inbox-card inbox-glass p-5 rounded-2xl border ${isUnread ? 'border-indigo-200 dark:border-indigo-900/60 bg-indigo-50/5 dark:bg-indigo-950/5' : 'border-white/60 dark:border-slate-900/60'} shadow-sm flex items-start gap-4 cursor-pointer relative" data-alert-id="${a.id}">
+                        
+                        <!-- Unread Indicator Dot -->
+                        ${isUnread ? `<span class="absolute top-5 left-2 w-2 h-2 rounded-full bg-indigo-650 dark:bg-indigo-400 animate-pulse"></span>` : ''}
+
+                        <!-- Avatar -->
+                        <div class="w-10 h-10 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden flex items-center justify-center bg-white dark:bg-slate-900 flex-shrink-0 ${isUnread ? 'ring-2 ring-indigo-500/20' : ''}">
+                          ${getAvatarSvg(a.senderAvatar, a.sender.charAt(0), 'w-full h-full')}
                         </div>
 
-                        <h4 class="text-sm font-extrabold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                          <span class="px-2 py-0.5 rounded text-[8px] font-black text-white uppercase tracking-wider ${badgeClass}">
-                            ${badgeText}
-                          </span>
-                          <span class="truncate">${a.title}</span>
-                        </h4>
-
-                        <p class="text-xs text-slate-500 dark:text-slate-450 line-clamp-2 leading-relaxed">
-                          ${a.subject}
-                        </p>
-
-                        ${this.perfil?.role === 'admin' ? `
-                          <div class="flex items-center gap-1.5 pt-1 text-[9px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-                            Consultor: ${a.consultorNome}
+                        <!-- Text info -->
+                        <div class="flex-grow min-w-0 space-y-1">
+                          <div class="flex items-center justify-between gap-2">
+                            <span class="block text-xs font-black text-slate-800 dark:text-slate-200 truncate">${a.sender}</span>
+                            <span class="text-[10px] font-bold text-slate-400 dark:text-slate-550 whitespace-nowrap">${a.dateStr}</span>
                           </div>
-                        ` : ''}
+
+                          <h4 class="text-sm font-extrabold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                            <span class="px-2 py-0.5 rounded text-[8px] font-black text-white uppercase tracking-wider ${badgeClass}">
+                              ${badgeText}
+                            </span>
+                            <span class="truncate">${a.title}</span>
+                          </h4>
+
+                          <p class="text-xs text-slate-505 dark:text-slate-450 line-clamp-2 leading-relaxed">
+                            ${a.subject}
+                          </p>
+
+                          ${this.perfil?.role === 'admin' ? `
+                            <div class="flex items-center gap-1.5 pt-1 text-[9px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                              Consultor: ${a.consultorNome}
+                            </div>
+                          ` : ''}
+                        </div>
+
+                        <!-- Archive Quick Action -->
+                        <button class="btn-archive-quick p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800/60 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white transition flex-shrink-0 self-center" title="${a.arquivado ? 'Desarquivar' : 'Arquivar'}" data-alert-id="${a.id}">
+                          ${a.arquivado ? `
+                            <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10h10a8 8 0 0 1 8 8v2M3 10l6 6m-6-6l6-6"/></svg>
+                          ` : `
+                            <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                              <polyline points="21 8 21 21 3 21 3 8"></polyline>
+                              <rect x="1" y="3" width="22" height="5"></rect>
+                              <line x1="10" y1="12" x2="14" y2="12"></line>
+                            </svg>
+                          `}
+                        </button>
+
                       </div>
-
-                      <!-- Archive Quick Action -->
-                      <button class="btn-archive-quick p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800/60 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white transition flex-shrink-0 self-center" title="${a.arquivado ? 'Desarquivar' : 'Arquivar'}" data-alert-id="${a.id}">
-                        ${a.arquivado ? `
-                          <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10h10a8 8 0 0 1 8 8v2M3 10l6 6m-6-6l6-6"/></svg>
-                        ` : `
-                          <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                            <polyline points="21 8 21 21 3 21 3 8"></polyline>
-                            <rect x="1" y="3" width="22" height="5"></rect>
-                            <line x1="10" y1="12" x2="14" y2="12"></line>
-                          </svg>
-                        `}
-                      </button>
-
-                    </div>
-                  `;
-                }).join('')}
-              </div>
+                    `;
+                  }).join('')}
+                </div>
+              ` : `
+                <!-- Calendar View Container -->
+                ${this.renderCalendarContainer()}
+              `}
 
             </div>
 
@@ -784,6 +1004,402 @@ export class InboxPage {
         </main>
       </div>
     `;
+  }
+
+  /**
+   * Builds the general layout wrapper for the calendar views
+   */
+  private renderCalendarContainer(): string {
+    const formattedTitle = this.getCalendarHeaderLabel();
+    
+    return `
+      <div class="space-y-4">
+        <!-- Calendar Control Bar -->
+        <div class="inbox-glass p-4 rounded-2xl shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+          
+          <!-- Mode Tabs -->
+          <div class="flex bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200/40 dark:border-slate-800/40 w-full sm:w-auto">
+            <button id="cal-mode-month" class="flex-grow sm:flex-grow-0 px-4 py-1.5 rounded-lg text-xs font-extrabold transition ${this.calendarMode === 'month' ? 'bg-white dark:bg-slate-800 text-indigo-650 dark:text-indigo-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-450 dark:hover:text-slate-200'}">
+              Mês
+            </button>
+            <button id="cal-mode-week" class="flex-grow sm:flex-grow-0 px-4 py-1.5 rounded-lg text-xs font-extrabold transition ${this.calendarMode === 'week' ? 'bg-white dark:bg-slate-800 text-indigo-650 dark:text-indigo-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-450 dark:hover:text-slate-200'}">
+              Semana
+            </button>
+            <button id="cal-mode-agenda" class="flex-grow sm:flex-grow-0 px-4 py-1.5 rounded-lg text-xs font-extrabold transition ${this.calendarMode === 'agenda' ? 'bg-white dark:bg-slate-800 text-indigo-650 dark:text-indigo-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-450 dark:hover:text-slate-200'}">
+              Agenda
+            </button>
+          </div>
+
+          <!-- Date Label -->
+          <div class="text-sm font-black text-slate-800 dark:text-slate-200 uppercase tracking-wide text-center">
+            ${formattedTitle}
+          </div>
+
+          <!-- Navigation Controls -->
+          <div class="flex items-center gap-1.5 w-full sm:w-auto justify-center sm:justify-end">
+            <button id="cal-nav-prev" class="p-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-slate-500 dark:text-slate-400 transition" title="Período Anterior">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+            </button>
+            <button id="cal-nav-today" class="px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-xs font-extrabold text-slate-650 dark:text-slate-300 transition border border-slate-200/40 dark:border-slate-750/40 bg-white dark:bg-slate-900 shadow-sm">
+              Hoje
+            </button>
+            <button id="cal-nav-next" class="p-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-slate-500 dark:text-slate-400 transition" title="Próximo Período">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+            </button>
+          </div>
+
+        </div>
+
+        <!-- Rendered Calendar View -->
+        <div class="custom-scrollbar overflow-y-auto max-h-[calc(100vh-310px)] pr-1">
+          ${this.renderCalendarContent()}
+        </div>
+      </div>
+    `;
+  }
+
+  /**
+   * Selects the rendering method based on current mode
+   */
+  private renderCalendarContent(): string {
+    if (this.calendarMode === 'month') {
+      return this.renderMonthCalendar();
+    } else if (this.calendarMode === 'week') {
+      return this.renderWeekCalendar();
+    } else {
+      return this.renderAgendaCalendar();
+    }
+  }
+
+  /**
+   * Generates Month Calendar Grid with events
+   */
+  private renderMonthCalendar(): string {
+    const year = this.calendarSelectedDate.getFullYear();
+    const month = this.calendarSelectedDate.getMonth();
+
+    // First day of the month
+    const firstDay = new Date(year, month, 1);
+    // Day of the week of the first day (0 = Sunday, ..., 6 = Saturday)
+    const startDayOfWeek = firstDay.getDay();
+
+    // Number of days in the current month
+    const totalDays = new Date(year, month + 1, 0).getDate();
+
+    // Number of days in the previous month
+    const prevMonthTotalDays = new Date(year, month, 0).getDate();
+
+    const cells: { date: Date; isCurrentMonth: boolean }[] = [];
+
+    // Add previous month's padding cells
+    for (let i = startDayOfWeek - 1; i >= 0; i--) {
+      cells.push({
+        date: new Date(year, month - 1, prevMonthTotalDays - i),
+        isCurrentMonth: false
+      });
+    }
+
+    // Add current month's cells
+    for (let i = 1; i <= totalDays; i++) {
+      cells.push({
+        date: new Date(year, month, i),
+        isCurrentMonth: true
+      });
+    }
+
+    // Add next month's padding cells to make a multiple of 7
+    let nextMonthDay = 1;
+    while (cells.length % 7 !== 0) {
+      cells.push({
+        date: new Date(year, month + 1, nextMonthDay++),
+        isCurrentMonth: false
+      });
+    }
+
+    const todayStr = new Date().toISOString().split('T')[0];
+
+    // Build the grid HTML
+    let html = `
+      <div class="calendar-container p-4">
+        <div class="calendar-grid">
+          <!-- Weekday headers -->
+          <div class="calendar-day-header">Dom</div>
+          <div class="calendar-day-header">Seg</div>
+          <div class="calendar-day-header">Ter</div>
+          <div class="calendar-day-header">Qua</div>
+          <div class="calendar-day-header">Qui</div>
+          <div class="calendar-day-header">Sex</div>
+          <div class="calendar-day-header">Sáb</div>
+    `;
+
+    cells.forEach(cell => {
+      // Use local timezone values for formatting correctly
+      const cellYear = cell.date.getFullYear();
+      const cellMonth = String(cell.date.getMonth() + 1).padStart(2, '0');
+      const cellDay = String(cell.date.getDate()).padStart(2, '0');
+      const cellDateStr = `${cellYear}-${cellMonth}-${cellDay}`;
+      
+      const isToday = cellDateStr === todayStr;
+      const otherMonthClass = cell.isCurrentMonth ? '' : 'other-month';
+      const todayClass = isToday ? 'today' : '';
+
+      // Find alerts for this day
+      const dayAlerts = this.filteredAlerts.filter(a => a.eventDate === cellDateStr);
+
+      html += `
+        <div class="calendar-day-cell ${otherMonthClass} ${todayClass}" data-date="${cellDateStr}">
+          <div class="flex justify-between items-center mb-1">
+            <span class="calendar-day-number">${cell.date.getDate()}</span>
+            ${isToday ? '<span class="text-[8px] bg-indigo-600 text-white font-extrabold px-1 rounded uppercase tracking-wider scale-90">Hoje</span>' : ''}
+          </div>
+          <div class="flex-grow overflow-y-auto custom-scrollbar space-y-1 max-h-[85px] w-full">
+            ${dayAlerts.map(a => {
+              let colorClass = 'badge-gradient-indigo';
+              if (a.type === 'passport') colorClass = 'badge-gradient-amber';
+              if (a.type === 'refund') colorClass = 'badge-gradient-rose';
+
+              const displayTitle = a.type === 'manual' && a.periodText 
+                ? `[${a.periodText}] ${a.title}`
+                : a.title;
+
+              return `
+                <button class="calendar-event-pill ${colorClass}" data-alert-id="${a.id}" title="${a.title} - ${a.subject}">
+                  ${displayTitle}
+                </button>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    });
+
+    html += `
+        </div>
+      </div>
+    `;
+
+    return html;
+  }
+
+  /**
+   * Generates modern 7-column Week View columns
+   */
+  private renderWeekCalendar(): string {
+    const startOfWeek = new Date(this.calendarSelectedDate);
+    const day = startOfWeek.getDay();
+    const diff = startOfWeek.getDate() - day; // adjust to Sunday
+    startOfWeek.setDate(diff);
+
+    const weekdays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+    const todayStr = new Date().toISOString().split('T')[0];
+
+    let html = `
+      <div class="calendar-container p-4">
+        <div class="calendar-week-container">
+    `;
+
+    for (let i = 0; i < 7; i++) {
+      const currentDay = new Date(startOfWeek);
+      currentDay.setDate(startOfWeek.getDate() + i);
+      
+      const cellYear = currentDay.getFullYear();
+      const cellMonth = String(currentDay.getMonth() + 1).padStart(2, '0');
+      const cellDay = String(currentDay.getDate()).padStart(2, '0');
+      const dayDateStr = `${cellYear}-${cellMonth}-${cellDay}`;
+      
+      const isToday = dayDateStr === todayStr;
+
+      const dayAlerts = this.filteredAlerts.filter(a => a.eventDate === dayDateStr);
+
+      html += `
+        <div class="calendar-week-column" data-date="${dayDateStr}">
+          <div class="calendar-week-day-header ${isToday ? 'text-indigo-650 dark:text-indigo-400' : 'text-slate-500 dark:text-slate-450'}">
+            <span class="block text-[10px] font-black uppercase tracking-wider">${weekdays[i]}</span>
+            <span class="text-xl font-black ${isToday ? 'bg-indigo-600 text-white w-8 h-8 inline-flex items-center justify-center rounded-full shadow-sm mt-0.5' : 'text-slate-800 dark:text-slate-200'}">${currentDay.getDate()}</span>
+          </div>
+          <div class="flex-grow flex flex-col gap-2 overflow-y-auto custom-scrollbar pr-0.5">
+            ${dayAlerts.length === 0 ? `
+              <div class="flex-grow flex flex-col items-center justify-center border border-dashed border-slate-250 dark:border-slate-800 rounded-xl p-3 text-center opacity-40">
+                <span class="text-[9px] font-black text-slate-350 dark:text-slate-650 uppercase tracking-widest">Sem Alertas</span>
+              </div>
+            ` : dayAlerts.map(a => {
+              let badgeClass = 'badge-gradient-indigo';
+              let badgeText = 'Lembrete';
+              if (a.type === 'passport') {
+                badgeClass = 'badge-gradient-amber';
+                badgeText = 'Passaporte';
+              } else if (a.type === 'refund') {
+                badgeClass = 'badge-gradient-rose';
+                badgeText = 'Reembolso';
+              }
+
+              return `
+                <div class="inbox-card inbox-glass p-3.5 rounded-xl border border-slate-200/50 dark:border-slate-850 bg-white/50 dark:bg-slate-900/50 cursor-pointer shadow-sm relative flex flex-col gap-1.5" data-alert-id="${a.id}">
+                  <!-- Accent color bar -->
+                  <div class="absolute left-0 top-3.5 bottom-3.5 w-1 rounded-r ${a.type === 'manual' ? 'bg-indigo-500' : a.type === 'passport' ? 'bg-amber-500' : 'bg-rose-500'}"></div>
+                  
+                  <div class="pl-2 flex items-center justify-between gap-1">
+                    <span class="px-1.5 py-0.5 rounded text-[8px] font-black text-white uppercase tracking-wider ${badgeClass}">
+                      ${badgeText}
+                    </span>
+                    ${a.periodText ? `<span class="text-[8px] font-black text-indigo-650 dark:text-indigo-400 uppercase tracking-widest bg-indigo-50 dark:bg-indigo-950/40 px-1.5 py-0.5 rounded">${a.periodText}</span>` : ''}
+                  </div>
+                  
+                  <div class="pl-2">
+                    <h5 class="text-xs font-extrabold text-slate-850 dark:text-slate-200 line-clamp-1 leading-snug">${a.title}</h5>
+                    <p class="text-[10px] text-slate-500 dark:text-slate-450 line-clamp-2 leading-relaxed mt-0.5">${a.subject}</p>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    html += `
+        </div>
+      </div>
+    `;
+
+    return html;
+  }
+
+  /**
+   * Generates premium Agenda View (Vertical chronological timeline)
+   */
+  private renderAgendaCalendar(): string {
+    // Group alerts by eventDate
+    const groups: { [key: string]: AlertItem[] } = {};
+    this.filteredAlerts.forEach(a => {
+      if (!groups[a.eventDate]) groups[a.eventDate] = [];
+      groups[a.eventDate].push(a);
+    });
+
+    // Sort dates chronologically ascending for agenda view
+    const sortedDates = Object.keys(groups).sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
+
+    if (sortedDates.length === 0) {
+      return `
+        <div class="inbox-glass p-12 text-center rounded-2xl border border-slate-200/40 dark:border-slate-800/40">
+          <div class="w-12 h-12 bg-slate-100 dark:bg-slate-900 text-slate-400 dark:text-slate-550 rounded-2xl flex items-center justify-center mx-auto mb-3">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              <rect width="20" height="16" x="2" y="4" rx="2" />
+              <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+            </svg>
+          </div>
+          <h3 class="text-sm font-black text-slate-700 dark:text-slate-350 uppercase tracking-wide">Agenda Vazia</h3>
+          <p class="text-xs text-slate-450 dark:text-slate-500 mt-1 font-medium">Nenhum evento futuro ou lembrete para exibir.</p>
+        </div>
+      `;
+    }
+
+    const todayStr = new Date().toISOString().split('T')[0];
+
+    let html = `
+      <div class="calendar-container p-6">
+        <div class="agenda-timeline">
+    `;
+
+    sortedDates.forEach(dateStr => {
+      const dateObj = new Date(dateStr + 'T00:00:00');
+      const formattedDate = dateObj.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+      const isToday = dateStr === todayStr;
+
+      html += `
+        <div class="agenda-day-group ${isToday ? 'today' : ''}">
+          <div class="agenda-day-dot"></div>
+          
+          <h4 class="text-xs font-black text-slate-450 dark:text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+            <span>${formattedDate}</span>
+            ${isToday ? '<span class="px-2 py-0.5 bg-indigo-650 dark:bg-indigo-600 text-white rounded text-[8px] font-black tracking-widest scale-90 uppercase">Hoje</span>' : ''}
+          </h4>
+          
+          <div class="space-y-3">
+            ${groups[dateStr].map(a => {
+              let badgeClass = 'badge-gradient-indigo';
+              let badgeText = 'Lembrete';
+              if (a.type === 'passport') {
+                badgeClass = 'badge-gradient-amber';
+                badgeText = 'Passaporte SLA';
+              } else if (a.type === 'refund') {
+                badgeClass = 'badge-gradient-rose';
+                badgeText = 'Reembolso SLA';
+              }
+
+              return `
+                <div class="inbox-card inbox-glass p-4 rounded-xl border border-white/60 dark:border-slate-900/60 shadow-sm flex items-start gap-4 cursor-pointer relative" data-alert-id="${a.id}">
+                  <!-- Colored indicator border on the left side of the agenda card -->
+                  <div class="absolute left-0 top-3.5 bottom-3.5 w-1 rounded-r ${a.type === 'manual' ? 'bg-indigo-500' : a.type === 'passport' ? 'bg-amber-500' : 'bg-rose-500'}"></div>
+                  
+                  <!-- Avatar -->
+                  <div class="w-9 h-9 border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden flex items-center justify-center bg-white dark:bg-slate-900 flex-shrink-0">
+                    ${getAvatarSvg(a.senderAvatar, a.sender.charAt(0), 'w-full h-full')}
+                  </div>
+
+                  <!-- Alert Content details -->
+                  <div class="flex-grow min-w-0 space-y-1 pl-1">
+                    <div class="flex items-center justify-between gap-2">
+                      <span class="block text-xs font-black text-slate-805 dark:text-slate-200 truncate">${a.sender}</span>
+                      ${a.periodText ? `<span class="text-[9px] font-extrabold text-indigo-650 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 px-2 py-0.5 rounded-md uppercase tracking-wider">${a.periodText}</span>` : ''}
+                    </div>
+
+                    <h5 class="text-sm font-extrabold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                      <span class="px-2 py-0.5 rounded text-[8px] font-black text-white uppercase tracking-wider ${badgeClass}">
+                        ${badgeText}
+                      </span>
+                      <span class="truncate">${a.title}</span>
+                    </h5>
+
+                    <p class="text-xs text-slate-500 dark:text-slate-450 line-clamp-2 leading-relaxed">
+                      ${a.subject}
+                    </p>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    });
+
+    html += `
+        </div>
+      </div>
+    `;
+
+    return html;
+  }
+
+  /**
+   * Formats the label shown in the calendar controls header
+   */
+  private getCalendarHeaderLabel(): string {
+    const meses = [
+      'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+      'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+    ];
+    if (this.calendarMode === 'month') {
+      return `${meses[this.calendarSelectedDate.getMonth()]} de ${this.calendarSelectedDate.getFullYear()}`;
+    } else if (this.calendarMode === 'week') {
+      const startOfWeek = new Date(this.calendarSelectedDate);
+      const day = startOfWeek.getDay();
+      const diff = startOfWeek.getDate() - day; // adjust to Sunday
+      startOfWeek.setDate(diff);
+
+      const endOfWeek = new Date(startOfWeek);
+      endOfWeek.setDate(startOfWeek.getDate() + 6);
+
+      const formatPart = (d: Date) => {
+        const dia = String(d.getDate()).padStart(2, '0');
+        const mes = String(d.getMonth() + 1).padStart(2, '0');
+        return `${dia}/${mes}`;
+      };
+
+      return `Semana de ${formatPart(startOfWeek)} a ${formatPart(endOfWeek)}`;
+    } else {
+      return 'Linha do Tempo de Alertas';
+    }
   }
 
   /**
@@ -840,7 +1456,77 @@ export class InboxPage {
       }
     });
 
-    // 4. Quick Archive trigger clicks
+    // 4. View Switcher Toggle listeners
+    document.getElementById('view-list-btn')?.addEventListener('click', () => {
+      this.currentView = 'list';
+      this.render();
+      this.setupEventListeners();
+    });
+    document.getElementById('view-calendar-btn')?.addEventListener('click', () => {
+      this.currentView = 'calendar';
+      this.render();
+      this.setupEventListeners();
+    });
+
+    // 5. Calendar Mode Selector Tab listeners
+    document.getElementById('cal-mode-month')?.addEventListener('click', () => {
+      this.calendarMode = 'month';
+      this.render();
+      this.setupEventListeners();
+    });
+    document.getElementById('cal-mode-week')?.addEventListener('click', () => {
+      this.calendarMode = 'week';
+      this.render();
+      this.setupEventListeners();
+    });
+    document.getElementById('cal-mode-agenda')?.addEventListener('click', () => {
+      this.calendarMode = 'agenda';
+      this.render();
+      this.setupEventListeners();
+    });
+
+    // 6. Calendar Temporal Navigation listeners
+    document.getElementById('cal-nav-prev')?.addEventListener('click', () => {
+      if (this.calendarMode === 'month') {
+        this.calendarSelectedDate.setMonth(this.calendarSelectedDate.getMonth() - 1);
+      } else if (this.calendarMode === 'week') {
+        this.calendarSelectedDate.setDate(this.calendarSelectedDate.getDate() - 7);
+      }
+      this.render();
+      this.setupEventListeners();
+    });
+    document.getElementById('cal-nav-today')?.addEventListener('click', () => {
+      this.calendarSelectedDate = new Date();
+      this.render();
+      this.setupEventListeners();
+    });
+    document.getElementById('cal-nav-next')?.addEventListener('click', () => {
+      if (this.calendarMode === 'month') {
+        this.calendarSelectedDate.setMonth(this.calendarSelectedDate.getMonth() + 1);
+      } else if (this.calendarMode === 'week') {
+        this.calendarSelectedDate.setDate(this.calendarSelectedDate.getDate() + 7);
+      }
+      this.render();
+      this.setupEventListeners();
+    });
+
+    // 7. Month View Alert Pill clicks
+    const eventPills = document.querySelectorAll('.calendar-event-pill');
+    eventPills.forEach(pill => {
+      pill.addEventListener('click', (e) => {
+        e.stopPropagation(); // Evita borbulhamento de clique no container
+        const alertId = pill.getAttribute('data-alert-id');
+        if (!alertId) return;
+
+        const alertItem = this.filteredAlerts.find(a => a.id === alertId);
+        if (alertItem) {
+          this.markAlertAsRead(alertId);
+          this.openEmailReaderModal(alertItem);
+        }
+      });
+    });
+
+    // 8. Quick Archive trigger clicks (on standard list)
     const archiveButtons = document.querySelectorAll('.btn-archive-quick');
     archiveButtons.forEach(btn => {
       btn.addEventListener('click', async (e) => {
@@ -880,7 +1566,7 @@ export class InboxPage {
       });
     });
 
-    // 5. Open Email modal reader when clicking alert cards
+    // 9. Open Email modal reader when clicking alert cards (List, Week, or Agenda)
     const alertCards = document.querySelectorAll('.inbox-card');
     alertCards.forEach(card => {
       card.addEventListener('click', () => {
@@ -895,7 +1581,7 @@ export class InboxPage {
       });
     });
 
-    // 6. Logoff / Sair do Sistema com modal de confirmação customizado
+    // 10. Logoff / Sair do Sistema com modal de confirmação customizado
     document.getElementById('btn-logout')?.addEventListener('click', async () => {
       const confirmLogout = await showCustomConfirm(
         'Tem certeza que deseja sair do sistema?',
