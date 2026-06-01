@@ -3,6 +3,7 @@ import { PerfilConsultor, GlobalSettings } from '../types';
 import { createClient } from '@supabase/supabase-js';
 import { getAvatarSvg, AVATAR_OPTIONS, mesclarAvataresLocais, salvarAvatarLocal } from '../services/avatars';
 import { showCustomAlert, showCustomConfirm } from '../services/dialog';
+import { parseCSV, batchInsertOrcamentos } from '../services/csvImporter';
 
 declare const process: any;
 
@@ -64,7 +65,18 @@ export class ConfiguracoesPage {
   private perfil: PerfilConsultor | null = null;
   private settings: GlobalSettings | null = null;
   private consultores: PerfilConsultor[] = [];
-  private activeTab: 'geral' | 'consultores' = 'geral';
+  private activeTab: 'geral' | 'consultores' | 'importacoes' = 'geral';
+
+  // Propriedades do estado de importação de CSV
+  private parsedHeaders: string[] = [];
+  private csvRows: string[][] = [];
+  private uniqueAttendants: string[] = [];
+  private columnMapping: { [key: string]: string } = {};
+  private attendantMapping: { [key: string]: string } = {};
+  private isImporting: boolean = false;
+  private defaultDestino: string = 'Importação DIGISAC';
+  private defaultTemperatura: 'Frio' | 'Normal' | 'Quente' = 'Normal';
+  private defaultStatus: 'SOLICITADO' | 'EM_ANDAMENTO' | 'AGUARDANDO' | 'CONCLUIDO' = 'SOLICITADO';
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -198,7 +210,7 @@ export class ConfiguracoesPage {
   /**
    * Altera a aba ativa e re-renderiza o componente
    */
-  private switchTab(tab: 'geral' | 'consultores'): void {
+  private switchTab(tab: 'geral' | 'consultores' | 'importacoes'): void {
     this.activeTab = tab;
     this.render();
     this.setupEventListeners();
@@ -211,6 +223,7 @@ export class ConfiguracoesPage {
     // Configura os botões das abas
     document.getElementById('tab-geral-btn')?.addEventListener('click', () => this.switchTab('geral'));
     document.getElementById('tab-consultores-btn')?.addEventListener('click', () => this.switchTab('consultores'));
+    document.getElementById('tab-importacoes-btn')?.addEventListener('click', () => this.switchTab('importacoes'));
 
     // Configura o logout e theme toggle
     document.getElementById('btn-logout')?.addEventListener('click', async () => {
@@ -221,6 +234,10 @@ export class ConfiguracoesPage {
         window.location.reload();
       }
     });
+
+    if (this.activeTab === 'importacoes') {
+      this.setupImportacoesEvents();
+    }
 
     if (this.activeTab === 'geral') {
       const form = document.getElementById('form-configuracoes') as HTMLFormElement;
@@ -1137,6 +1154,231 @@ export class ConfiguracoesPage {
   }
 
   /**
+   * Associa os eventos da aba de Importações
+   */
+  private setupImportacoesEvents(): void {
+    const dropzone = document.getElementById('csv-dropzone');
+    const fileInput = document.getElementById('csv-file-input') as HTMLInputElement;
+
+    const handleFile = (file: File) => {
+      if (!file) return;
+      if (!file.name.endsWith('.csv')) {
+        this.showToast('Por favor, envie apenas arquivos .csv!', 'error');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const text = e.target?.result as string;
+        if (!text) return;
+        this.processCsvData(text);
+      };
+      reader.readAsText(file, 'utf-8');
+    };
+
+    // Eventos de drag and drop do dropzone
+    dropzone?.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropzone.classList.add('border-indigo-500', 'bg-indigo-50/10', 'dark:bg-indigo-950/20');
+    });
+    dropzone?.addEventListener('dragleave', () => {
+      dropzone.classList.remove('border-indigo-500', 'bg-indigo-50/10', 'dark:bg-indigo-950/20');
+    });
+    dropzone?.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropzone.classList.remove('border-indigo-500', 'bg-indigo-50/10', 'dark:bg-indigo-950/20');
+      const file = e.dataTransfer?.files[0];
+      if (file) handleFile(file);
+    });
+    fileInput?.addEventListener('change', () => {
+      const file = fileInput.files?.[0];
+      if (file) handleFile(file);
+    });
+
+    // Ouvintes dos seletores de mapeamento de colunas
+    ['nome', 'contato', 'atendente', 'tags', 'notas'].forEach(field => {
+      const select = document.getElementById(`select-map-${field}`) as HTMLSelectElement;
+      select?.addEventListener('change', () => {
+        this.columnMapping[field] = select.value;
+        if (field === 'atendente') {
+          this.extractUniqueAttendants();
+          this.render();
+          this.setupEventListeners();
+        } else {
+          this.render();
+          this.setupEventListeners();
+        }
+      });
+    });
+
+    // Ouvintes de mapeamento de atendentes únicos para consultores
+    this.uniqueAttendants.forEach((att, idx) => {
+      const select = document.getElementById(`select-atendente-mapping-${idx}`) as HTMLSelectElement;
+      select?.addEventListener('change', () => {
+        this.attendantMapping[att] = select.value;
+      });
+    });
+
+    // Ouvintes de parâmetros gerais
+    const inputDestino = document.getElementById('input-default-destino') as HTMLInputElement;
+    inputDestino?.addEventListener('input', () => {
+      this.defaultDestino = inputDestino.value;
+    });
+
+    const selectTemp = document.getElementById('select-default-temp') as HTMLSelectElement;
+    selectTemp?.addEventListener('change', () => {
+      this.defaultTemperatura = selectTemp.value as 'Frio' | 'Normal' | 'Quente';
+    });
+
+    const selectStatus = document.getElementById('select-default-status') as HTMLSelectElement;
+    selectStatus?.addEventListener('change', () => {
+      this.defaultStatus = selectStatus.value as 'SOLICITADO' | 'EM_ANDAMENTO' | 'AGUARDANDO' | 'CONCLUIDO';
+    });
+
+    // Botão de confirmação de importação
+    const btnConfirmar = document.getElementById('btn-confirmar-importacao');
+    btnConfirmar?.addEventListener('click', async () => {
+      await this.executeImportFlow();
+    });
+  }
+
+  /**
+   * Processa os dados brutos de texto do CSV carregado
+   */
+  private processCsvData(text: string): void {
+    const rows = parseCSV(text);
+    if (rows.length < 2) {
+      this.showToast('O arquivo CSV parece estar vazio ou sem linhas de dados.', 'error');
+      return;
+    }
+    this.parsedHeaders = rows[0] || [];
+    this.csvRows = rows.slice(1);
+
+    // Auto-detecta mapeamento de colunas principais baseado em nomes
+    this.columnMapping = {
+      nome: this.parsedHeaders.find(h => /nome/i.test(h)) || this.parsedHeaders[1] || '',
+      contato: this.parsedHeaders.find(h => /n[uú]mero/i.test(h) || /contato/i.test(h) || /telefone/i.test(h) || /celular/i.test(h)) || this.parsedHeaders[2] || '',
+      atendente: this.parsedHeaders.find(h => /atendente/i.test(h) || /operador/i.test(h) || /consultor/i.test(h)) || this.parsedHeaders[3] || '',
+      tags: this.parsedHeaders.find(h => /tags/i.test(h) || /tag/i.test(h)) || this.parsedHeaders[4] || '',
+      notas: this.parsedHeaders.find(h => /resumo/i.test(h) || /protocolo/i.test(h) || /assunto/i.test(h)) || this.parsedHeaders[0] || ''
+    };
+
+    this.extractUniqueAttendants();
+    this.render();
+    this.setupEventListeners();
+    this.showToast('Arquivo CSV carregado e analisado com sucesso!', 'success');
+  }
+
+  /**
+   * Extrai os atendentes únicos com base na coluna de atendente selecionada
+   */
+  private extractUniqueAttendants(): void {
+    const attendantCol = this.columnMapping['atendente'];
+    const attendantColIndex = this.parsedHeaders.indexOf(attendantCol);
+    const uniqueVals = new Set<string>();
+    
+    if (attendantColIndex !== -1) {
+      this.csvRows.forEach(row => {
+        const val = row[attendantColIndex] ? row[attendantColIndex].trim() : '';
+        uniqueVals.add(val || '(Sem Atendente)');
+      });
+    } else {
+      uniqueVals.add('(Sem Atendente)');
+    }
+    this.uniqueAttendants = Array.from(uniqueVals);
+
+    // Mapeia automaticamente por correspondência inteligente (fuzzy match)
+    this.attendantMapping = {};
+    this.uniqueAttendants.forEach(att => {
+      if (att === '(Sem Atendente)' || !att) {
+        this.attendantMapping[att] = '';
+        return;
+      }
+
+      const normalizedAtt = att.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const match = this.consultores.find(c => {
+        const normalizedConsultant = c.nome.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        return normalizedConsultant.includes(normalizedAtt) || normalizedAtt.includes(normalizedConsultant);
+      });
+
+      if (match) {
+        this.attendantMapping[att] = match.id;
+      } else {
+        this.attendantMapping[att] = '';
+      }
+    });
+  }
+
+  /**
+   * Executa a gravação do lote de orçamentos mapeados no banco de dados ou local
+   */
+  private async executeImportFlow(): Promise<void> {
+    if (this.isImporting) return;
+    this.isImporting = true;
+    this.render();
+
+    try {
+      const nomeIndex = this.parsedHeaders.indexOf(this.columnMapping['nome']);
+      const contatoIndex = this.parsedHeaders.indexOf(this.columnMapping['contato']);
+      const atendenteIndex = this.parsedHeaders.indexOf(this.columnMapping['atendente']);
+      const tagsIndex = this.parsedHeaders.indexOf(this.columnMapping['tags']);
+      const notasIndex = this.parsedHeaders.indexOf(this.columnMapping['notas']);
+
+      const payloads = this.csvRows.map(row => {
+        const rawAtendente = atendenteIndex !== -1 ? (row[atendenteIndex] || '').trim() : '';
+        const lookupKey = rawAtendente || '(Sem Atendente)';
+        const consultorId = this.attendantMapping[lookupKey] || this.user.id;
+
+        const nomeCliente = (nomeIndex !== -1 ? row[nomeIndex] : '') || 'Cliente Importado';
+        const contato = contatoIndex !== -1 ? row[contatoIndex] : '';
+        const rawTags = tagsIndex !== -1 ? row[tagsIndex] : '';
+        const tags = rawTags 
+          ? rawTags.split(/[;,|]+/).map(t => t.trim()).filter(Boolean) 
+          : [];
+
+        const rawNotas = notasIndex !== -1 ? row[notasIndex] : '';
+        const notasNegociacao = rawNotas 
+          ? `${rawNotas}\n\n(Chamado importado do DIGISAC)` 
+          : 'Chamado importado do DIGISAC';
+
+        return {
+          consultor_id: consultorId,
+          nome_cliente: nomeCliente,
+          contato,
+          destino: this.defaultDestino || 'Importação DIGISAC',
+          temperatura: this.defaultTemperatura,
+          status: this.defaultStatus,
+          tags,
+          notas_negociacao: notasNegociacao,
+          documentos_url: []
+        };
+      });
+
+      const isOffline = supabase.from === undefined || (typeof window !== 'undefined' && window.location.hostname === 'localhost' && !import.meta.env.VITE_SUPABASE_URL);
+
+      const result = await batchInsertOrcamentos(payloads, this.user.id, isOffline);
+      if (result.success) {
+        await showCustomAlert(`Sucesso total!\n\nForam importados ${result.count} novos orçamentos (leads) na coluna 'Solicitado' com atribuição inteligente de consultores.`, 'Importação Concluída');
+        // Reseta o estado do componente
+        this.parsedHeaders = [];
+        this.csvRows = [];
+        this.uniqueAttendants = [];
+        this.columnMapping = {};
+        this.attendantMapping = {};
+      } else {
+        throw result.error;
+      }
+    } catch (err: any) {
+      console.error('Erro na importação de CSV:', err);
+      await showCustomAlert(`Ocorreu um erro durante a importação em lote:\n\n${err.message || err}`, 'Erro de Importação');
+    } finally {
+      this.isImporting = false;
+      this.render();
+      this.setupEventListeners();
+    }
+  }
+
+  /**
    * Exibe tela de carregamento
    */
   private renderLoading(): void {
@@ -1291,6 +1533,16 @@ export class ConfiguracoesPage {
               </svg>
               Gestão de Consultores
             </button>
+            <button id="tab-importacoes-btn" class="py-4 px-1 border-b-2 text-sm font-extrabold transition select-none flex items-center gap-2 ${
+              this.activeTab === 'importacoes' 
+                ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400' 
+                : 'border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
+            }">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              Importações
+            </button>
           </div>
         </div>
 
@@ -1421,7 +1673,7 @@ export class ConfiguracoesPage {
               </p>
             </div>
           </main>
-        ` : `
+        ` : this.activeTab === 'consultores' ? `
           <!-- Renderização da Aba: Gestão de Consultores -->
           <main class="flex-1 p-6 max-w-4xl mx-auto w-full flex flex-col gap-6 animate-fade-in">
             
@@ -1443,7 +1695,7 @@ export class ConfiguracoesPage {
               <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
                   <thead>
-                    <tr class="bg-slate-50 dark:bg-slate-850 text-[10px] text-slate-450 dark:text-slate-505 font-black uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
+                    <tr class="bg-slate-550/5 dark:bg-slate-850/60 text-[10px] text-slate-450 dark:text-slate-505 font-black uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
                       <th class="py-4 px-5">Consultor</th>
                       <th class="py-4 px-5">E-mail</th>
                       <th class="py-4 px-5 text-center">Nível de Acesso</th>
@@ -1517,6 +1769,243 @@ export class ConfiguracoesPage {
                 </table>
               </div>
             </div>
+          </main>
+        ` : `
+          <!-- Renderização da Aba: Importações -->
+          <main class="flex-1 p-6 max-w-4xl mx-auto w-full flex flex-col gap-6 animate-fade-in text-slate-800 dark:text-slate-100">
+            
+            ${this.isImporting ? `
+              <!-- Spinner de Progresso -->
+              <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-12 text-center shadow-xl flex flex-col items-center justify-center gap-4">
+                <div class="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                <h3 class="text-lg font-black tracking-tight text-slate-800 dark:text-slate-200">Importação em Lote Ativa</h3>
+                <p class="text-xs text-slate-450 dark:text-slate-500 font-semibold max-w-sm">Estamos processando as linhas do arquivo CSV e inserindo de forma performática no banco de dados. Isso pode levar alguns segundos...</p>
+              </div>
+            ` : this.parsedHeaders.length === 0 ? `
+              <!-- Dropzone Inicial -->
+              <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 shadow-sm flex flex-col gap-6">
+                <div>
+                  <h2 class="text-lg font-black tracking-tight">Importação de Histórico de Chamados</h2>
+                  <p class="text-xs text-slate-400 dark:text-slate-505 font-semibold">Alimente sua base de Orçamentos do PaxFlow importando chamados do DIGISAC</p>
+                </div>
+
+                <div id="csv-dropzone" class="border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-indigo-400 dark:hover:border-indigo-600 rounded-2xl p-12 text-center cursor-pointer transition bg-slate-50/50 dark:bg-slate-950/20 hover:bg-indigo-50/5 dark:hover:bg-indigo-950/5 flex flex-col items-center justify-center gap-3 group">
+                  <div class="w-14 h-14 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-2xl flex items-center justify-center text-3xl group-hover:scale-110 transition shadow-inner">
+                    📥
+                  </div>
+                  <div>
+                    <span class="block text-sm font-extrabold text-slate-750 dark:text-slate-300">Arraste e solte o arquivo CSV aqui</span>
+                    <span class="block text-xs text-slate-400 dark:text-slate-505 font-medium mt-1">Delimitado por ponto e vírgula (;) ou vírgula (,)</span>
+                  </div>
+                  <div class="mt-2">
+                    <label class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl transition shadow-lg shadow-indigo-600/10 cursor-pointer uppercase">
+                      Selecionar Arquivo
+                      <input id="csv-file-input" type="file" accept=".csv" class="hidden" />
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Info Box -->
+                <div class="bg-indigo-50/30 dark:bg-indigo-950/15 border border-indigo-100/50 dark:border-indigo-900/20 rounded-2xl p-5 text-xs text-slate-550 dark:text-slate-400 font-semibold leading-relaxed space-y-2">
+                  <p class="font-black text-indigo-655 dark:text-indigo-400 uppercase tracking-wider text-[10px]">💡 Como funciona a importação:</p>
+                  <p>1. Você baixa o relatório de histórico de chamados no painel do DIGISAC em formato **CSV**.</p>
+                  <p>2. Faz o upload do arquivo acima. O PaxFlow lerá os cabeçalhos das colunas automaticamente.</p>
+                  <p>3. Você faz o mapeamento ("de-para") para definir qual coluna do CSV corresponde ao nome do cliente, telefone, etc.</p>
+                  <p>4. O sistema identificará os atendentes únicos e permitirá associá-los aos seus consultores do PaxFlow.</p>
+                </div>
+              </div>
+            ` : `
+              <!-- Mapeamento e Configurações (CSV Carregado) -->
+              <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
+                
+                <!-- Coluna Esquerda: Mapeamento de Colunas -->
+                <div class="md:col-span-7 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 shadow-sm flex flex-col gap-5">
+                  <h3 class="text-sm font-black tracking-tight border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2">
+                    <span class="text-base">🔀</span> Mapeamento de Colunas (De-Para)
+                  </h3>
+
+                  <div class="space-y-4">
+                    ${[
+                      { key: 'nome', label: 'Nome do Cliente *', desc: 'Identifica o lead comprador no pipeline.' },
+                      { key: 'contato', label: 'Contato/Telefone *', desc: 'Número de WhatsApp, celular ou e-mail.' },
+                      { key: 'atendente', label: 'Atendente/Operador', desc: 'Atribui a responsabilidade pelo lead.' },
+                      { key: 'tags', label: 'Tags do Chamado', desc: 'Tags do DIGISAC convertidas em tags de orçamento.' },
+                      { key: 'notas', label: 'Notas e Protocolo', desc: 'Notas de negociação, assunto ou resumo do chamado.' }
+                    ].map(field => {
+                      const selectedVal = this.columnMapping[field.key] || '';
+                      return `
+                        <div>
+                          <div class="flex justify-between items-center mb-1">
+                            <label class="block text-xs font-bold text-slate-500 dark:text-slate-405 uppercase tracking-wide">${field.label}</label>
+                            <span class="text-[9px] text-slate-400 dark:text-slate-500 font-medium">${field.desc}</span>
+                          </div>
+                          <select id="select-map-${field.key}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-850 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs font-bold text-slate-850 dark:text-slate-150">
+                            <option value="">-- Não Mapear (Ignorar) --</option>
+                            ${this.parsedHeaders.map(h => `
+                              <option value="${h}" ${h === selectedVal ? 'selected' : ''}>${h}</option>
+                            `).join('')}
+                          </select>
+                        </div>
+                      `;
+                    }).join('')}
+                  </div>
+                </div>
+
+                <!-- Coluna Direita: Parâmetros Gerais -->
+                <div class="md:col-span-5 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 shadow-sm flex flex-col gap-5">
+                  <h3 class="text-sm font-black tracking-tight border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2">
+                    <span class="text-base">⚙️</span> Parâmetros Gerais do Lote
+                  </h3>
+
+                  <div class="space-y-4">
+                    <div>
+                      <label class="block text-xs font-bold text-slate-500 dark:text-slate-405 uppercase tracking-wide mb-1.5">Destino Padrão *</label>
+                      <input id="input-default-destino" type="text" required value="${this.defaultDestino}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-850 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs font-bold text-slate-850 dark:text-slate-150" />
+                      <p class="text-[9px] text-slate-400 dark:text-slate-500 mt-1 font-medium">Os orçamentos criados terão este destino preenchido por padrão.</p>
+                    </div>
+
+                    <div>
+                      <label class="block text-xs font-bold text-slate-500 dark:text-slate-405 uppercase tracking-wide mb-1.5">Temperatura Padrão *</label>
+                      <select id="select-default-temp" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-850 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs font-bold text-slate-850 dark:text-slate-150">
+                        <option value="Frio" ${this.defaultTemperatura === 'Frio' ? 'selected' : ''}>Frio ❄️</option>
+                        <option value="Normal" ${this.defaultTemperatura === 'Normal' ? 'selected' : ''}>Normal ⚡</option>
+                        <option value="Quente" ${this.defaultTemperatura === 'Quente' ? 'selected' : ''}>Quente 🔥</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label class="block text-xs font-bold text-slate-500 dark:text-slate-405 uppercase tracking-wide mb-1.5">Status Inicial *</label>
+                      <select id="select-default-status" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-850 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs font-bold text-slate-850 dark:text-slate-150">
+                        <option value="SOLICITADO" ${this.defaultStatus === 'SOLICITADO' ? 'selected' : ''}>Solicitado</option>
+                        <option value="EM_ANDAMENTO" ${this.defaultStatus === 'EM_ANDAMENTO' ? 'selected' : ''}>Em Andamento</option>
+                        <option value="AGUARDANDO" ${this.defaultStatus === 'AGUARDANDO' ? 'selected' : ''}>Aguardando</option>
+                        <option value="CONCLUIDO" ${this.defaultStatus === 'CONCLUIDO' ? 'selected' : ''}>Concluído</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- Atribuição de Consultores -->
+              <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 shadow-sm flex flex-col gap-5">
+                <div>
+                  <h3 class="text-sm font-black tracking-tight border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2">
+                    <span class="text-base">👤</span> Distribuição de Responsabilidade (Mapeamento de Consultores)
+                  </h3>
+                  <p class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold mt-1.5">Associamos os atendentes únicos detectados no CSV aos consultores ativos do PaxFlow.</p>
+                </div>
+
+                <div class="overflow-hidden border border-slate-100 dark:border-slate-800 rounded-2xl">
+                  <table class="w-full text-left border-collapse text-xs font-semibold">
+                    <thead>
+                      <tr class="bg-slate-550/5 dark:bg-slate-850/60 text-slate-500 dark:text-slate-455 uppercase border-b border-slate-100 dark:border-slate-800 tracking-wider">
+                        <th class="py-3 px-4 font-black">Atendente no CSV (DIGISAC)</th>
+                        <th class="py-3 px-4 font-black text-right">Consultor no PaxFlow</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800 bg-white/50 dark:bg-slate-900/30">
+                      ${this.uniqueAttendants.map((att, idx) => {
+                        const selectedConsultant = this.attendantMapping[att] || '';
+                        return `
+                          <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-850/15 transition">
+                            <td class="py-3.5 px-4 font-bold text-slate-800 dark:text-slate-250">
+                              ${att}
+                            </td>
+                            <td class="py-3.5 px-4 text-right">
+                              <select id="select-atendente-mapping-${idx}" class="px-3 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-850 rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-500 text-xs font-bold text-slate-850 dark:text-slate-150 max-w-[240px]">
+                                <option value="">-- Usar Consultor Padrão (${this.perfil?.nome.split(' ')[0] || 'Você'}) --</option>
+                                ${this.consultores.map(c => `
+                                  <option value="${c.id}" ${c.id === selectedConsultant ? 'selected' : ''}>${c.nome}</option>
+                                `).join('')}
+                              </select>
+                            </td>
+                          </tr>
+                        `;
+                      }).join('')}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Preview de Dados -->
+              <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 shadow-sm flex flex-col gap-4">
+                <div>
+                  <h3 class="text-sm font-black tracking-tight border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2">
+                    <span class="text-base">👁️</span> Pré-visualização Mapeada (Primeiros 3 Leads)
+                  </h3>
+                  <p class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold mt-1.5">Veja uma simulação de como os orçamentos serão registrados antes de prosseguir.</p>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  ${[0, 1, 2].map(idx => {
+                    const row = this.csvRows[idx];
+                    if (!row) return '';
+
+                    const nomeCol = this.columnMapping['nome'];
+                    const contatoCol = this.columnMapping['contato'];
+                    const atendenteCol = this.columnMapping['atendente'];
+                    const tagsCol = this.columnMapping['tags'];
+
+                    const nameVal = row[this.parsedHeaders.indexOf(nomeCol)] || 'Cliente Importado';
+                    const contactVal = row[this.parsedHeaders.indexOf(contatoCol)] || '';
+                    const rawTags = tagsCol ? row[this.parsedHeaders.indexOf(tagsCol)] : '';
+                    const tagsList = rawTags ? rawTags.split(/[;,|]+/).map(t => t.trim()).filter(Boolean) : [];
+
+                    const rawAtendente = atendenteCol ? row[this.parsedHeaders.indexOf(atendenteCol)] : '';
+                    const mappedConsultantId = this.attendantMapping[rawAtendente || '(Sem Atendente)'] || '';
+                    const consultantMatch = this.consultores.find(c => c.id === mappedConsultantId) || this.perfil;
+
+                    return `
+                      <div class="bg-slate-50/50 dark:bg-slate-850/20 border border-slate-150/60 dark:border-slate-800/80 p-4 rounded-2xl flex flex-col gap-3">
+                        <div class="flex items-start justify-between gap-1.5">
+                          <div class="overflow-hidden">
+                            <span class="block text-[11px] font-black text-slate-850 dark:text-slate-200 truncate leading-tight">${nameVal}</span>
+                            <span class="block text-[9px] text-slate-400 dark:text-slate-505 font-semibold truncate mt-0.5">${contactVal}</span>
+                          </div>
+                          <span class="px-2 py-0.5 bg-rose-50 text-rose-700 dark:bg-rose-950/20 dark:text-rose-450 border border-rose-100/30 dark:border-rose-900/30 text-[8px] font-black uppercase rounded tracking-wider shrink-0">
+                            ${this.defaultTemperatura}
+                          </span>
+                        </div>
+
+                        <div class="flex flex-col gap-1 text-[9px] font-semibold text-slate-500 dark:text-slate-450 bg-white dark:bg-slate-900/30 p-2 rounded-xl border border-slate-100 dark:border-slate-800/50">
+                          <div class="flex justify-between">
+                            <span>Destino:</span>
+                            <span class="font-extrabold text-slate-700 dark:text-slate-350 truncate max-w-[110px]">${this.defaultDestino}</span>
+                          </div>
+                          <div class="flex justify-between">
+                            <span>Status:</span>
+                            <span class="font-extrabold text-slate-750 dark:text-slate-300">${this.defaultStatus}</span>
+                          </div>
+                          <div class="flex justify-between mt-1 pt-1 border-t border-slate-100 dark:border-slate-800/50">
+                            <span>Consultor:</span>
+                            <span class="font-black text-indigo-650 dark:text-indigo-400">👤 ${consultantMatch?.nome.split(' ')[0] || 'Consultor'}</span>
+                          </div>
+                        </div>
+
+                        ${tagsList.length > 0 ? `
+                          <div class="flex flex-wrap gap-1">
+                            ${tagsList.slice(0, 3).map(tag => `
+                              <span class="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-450 dark:text-slate-500 border border-slate-200/40 dark:border-slate-700/40 rounded text-[7px] font-extrabold">${tag}</span>
+                            `).join('')}
+                          </div>
+                        ` : ''}
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
+              </div>
+
+              <!-- Ações do Rodapé -->
+              <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-200/60 dark:border-slate-800/60">
+                <button id="btn-cancelar-importacao" class="px-5 py-3 border border-slate-200 hover:bg-slate-50 dark:border-slate-750 dark:hover:bg-slate-850 text-slate-700 dark:text-slate-300 font-extrabold text-xs tracking-wider rounded-xl transition uppercase">
+                  Limpar e Voltar
+                </button>
+                <button id="btn-confirmar-importacao" class="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs tracking-wider rounded-xl transition shadow-lg shadow-emerald-500/20 uppercase">
+                  🚀 Confirmar Importação (${this.csvRows.length} Leads)
+                </button>
+              </div>
+            `}
           </main>
         `}
       </div>
