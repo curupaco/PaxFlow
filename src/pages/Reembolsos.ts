@@ -443,8 +443,12 @@ export class ReembolsosPage {
 
           <!-- Campo de Busca em Tempo Real -->
           <div class="relative max-w-md">
-            <span class="absolute left-3.5 top-3 text-slate-400 text-sm">🔍</span>
-            <input id="input-busca-reembolso" type="text" placeholder="Pesquisar por cliente, destino, localizador, fornecedor, status..." value="${this.buscaTermo}" class="w-full text-xs font-semibold pl-9 pr-4 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition" />
+            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <input id="input-busca-reembolso" type="text" placeholder="Pesquisar por cliente, destino, localizador, fornecedor, status..." value="${this.buscaTermo}" class="w-full text-xs font-semibold pl-10 pr-4 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition" />
           </div>
 
           <!-- Tabela de Reembolsos -->

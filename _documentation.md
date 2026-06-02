@@ -14,10 +14,11 @@
    - 3.1 [Painel de Controle — Mission Control (Inbox)](#31-mission-control-inbox-de-alertas)
    - 3.2 [Kanban Operacional de Viagens (Dashboard)](#32-kanban-operacional-de-viagens)
    - 3.3 [Pipeline de Orçamentos (Orcamentos)](#33-pipeline-de-orçamentos)
-   - 3.4 [CRM de Clientes (Clientes)](#34-crm-de-clientes)
+   - 3.4 [Gestão e Ficha de Clientes (Clientes)](#34-gestão-e-ficha-de-clientes)
    - 3.5 [Central de Reembolsos (Reembolsos)](#35-central-de-reembolsos)
    - 3.6 [Painel Administrativo (Configuracoes)](#36-painel-administrativo)
    - 3.7 [Quadro de Planejamento Interno (Todo Kanban)](#37-quadro-de-planejamento-interno---cockpit)
+   - 3.8 [Navegação e UI Shell Premium (Global UI)](#38-navegação-e-ui-shell-premium)
 4. [Diferenciais Competitivos](#4-diferenciais-competitivos)
 5. [Arquitetura Tecnológica](#5-arquitetura-tecnológica)
 6. [Segurança e Conformidade](#6-segurança-e-conformidade)
@@ -144,7 +145,7 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 - **"Me Lembre Depois"**: agenda lembretes operacionais com período (manhã/tarde/noite).
 - **Realtime & Offline**: alterações sincronizadas via WebSocket Supabase com fallback local no localStorage.
 
-### 3.4 CRM de Clientes
+### 3.4 Gestão e Ficha de Clientes
 
 **Ficha única de passageiro** com gestão documental completa.
 
@@ -216,6 +217,20 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 - Migração automática de dados locais para o banco
 - Realtime multi-usuário
 - Exportação/importação JSON do board
+
+### 3.8 Navegação e UI Shell Premium
+
+**Experiência visual e navegação avançada** em toda a interface do sistema.
+
+- **Barra Lateral (Sidebar) Colapsável**:
+  - Permite ocultar rótulos textuais e encolher a barra lateral para uma coluna estreita de ícones (`md:w-20`), ampliando significativamente a área de trabalho útil para visualização das colunas Kanban e tabelas de dados.
+  - **Persistência de Estado**: O estado colapsado é salvo automaticamente em `localStorage` (`"paxflow-sidebar-collapsed"`), garantindo que a preferência do consultor seja mantida em futuros acessos.
+  - **Responsividade Adaptativa**: Transições CSS animadas ocultam elementos textuais e centralizam ícones e fotos de perfil de forma totalmente orgânica.
+- **Campos de Busca com Lupa Vetorial**:
+  - Depreciação do antigo emoji de lupa `🔍`, substituído por um ícone vetorial minimalista em formato SVG.
+  - O ícone está posicionado de forma absoluta e perfeitamente centrado verticalmente no campo (`absolute inset-y-0 left-0 flex items-center`), garantindo harmonia estética profissional de nível corporativo em todas as listagens (Dashboard, Orçamentos, Clientes e Reembolsos).
+- **Responsividade Coesa do Cabeçalho**:
+  - Ajustes avançados de alinhamento em telas médias e compactas para evitar quebra desalinhada de caixas de busca e botões primários.
 
 ---
 

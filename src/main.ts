@@ -18,9 +18,11 @@ class App {
   private currentActivePage: string = 'analytics';
   private currentPageInstance: any = null;
   private theme: 'light' | 'dark' = 'light';
+  private sidebarCollapsed: boolean = false;
 
   constructor(container: HTMLElement) {
     this.container = container;
+    this.sidebarCollapsed = localStorage.getItem('paxflow-sidebar-collapsed') === 'true';
     
     // Delegação global de eventos para alternância de tema
     document.addEventListener('click', (e) => {
@@ -348,14 +350,19 @@ class App {
       <div class="min-h-screen flex flex-col md:flex-row bg-slate-50/50 dark:bg-slate-950 transition-colors duration-200">
         
         <!-- Sidebar Menu -->
-        <aside class="w-full md:w-64 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 flex flex-col border-r border-slate-200 dark:border-slate-800/60 shadow-xl z-20 transition-all duration-200">
+        <aside class="w-full md:${this.sidebarCollapsed ? 'w-20' : 'w-64'} bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 flex flex-col border-r border-slate-200 dark:border-slate-800/60 shadow-xl z-20 transition-all duration-200">
           
           <!-- Logo & Título -->
-          <div class="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center gap-2.5">
-            <img src="/logo.svg" alt="PaxFlow Logo" class="h-10 w-10 object-contain filter drop-shadow-md" />
-            <div>
-              <span class="block text-base font-black text-slate-800 dark:text-white tracking-tight">PaxFlow</span>
+          <div class="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2.5">
+            <div class="flex items-center gap-2.5">
+              <img src="/logo.svg" alt="PaxFlow Logo" class="h-10 w-10 object-contain filter drop-shadow-md" />
+              <span class="block text-base font-black text-slate-800 dark:text-white tracking-tight ${this.sidebarCollapsed ? 'md:hidden' : ''}">PaxFlow</span>
             </div>
+            <button id="sidebar-collapse-btn" class="p-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200/40 dark:border-slate-700/40 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hidden md:flex items-center justify-center transition">
+              <svg width="16" height="16" class="w-4 h-4 transform ${this.sidebarCollapsed ? 'rotate-180' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
           </div>
 
           <!-- Links de Navegação -->
@@ -363,62 +370,62 @@ class App {
             <div class="space-y-1.5">
 
               <!-- Link: Dashboard Comercial -->
-              <button id="nav-analytics" class="w-full px-4 py-3 rounded-xl flex items-center gap-3 font-semibold text-xs text-left transition select-none group">
+              <button id="nav-analytics" class="w-full px-4 py-3 rounded-xl flex items-center justify-center ${this.sidebarCollapsed ? '' : 'md:justify-start'} gap-3 font-semibold text-xs text-left transition select-none group">
                 <svg width="20" height="20" class="w-5 h-5 text-slate-400 group-hover:text-slate-600 dark:text-slate-500 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2" />
                 </svg>
-                <span>Dashboard</span>
+                <span class="${this.sidebarCollapsed ? 'md:hidden' : ''}">Dashboard</span>
               </button>
               
               <!-- Link: Inbox de Alertas -->
-              <button id="nav-inbox" class="w-full px-4 py-3 rounded-xl flex items-center gap-3 font-semibold text-xs text-left transition select-none group">
-                <svg width="20" height="20" class="w-5 h-5 text-slate-400 group-hover:text-slate-600 dark:text-slate-550 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              <button id="nav-inbox" class="w-full px-4 py-3 rounded-xl flex items-center justify-center ${this.sidebarCollapsed ? '' : 'md:justify-start'} gap-3 font-semibold text-xs text-left transition select-none group">
+                <svg width="20" height="20" class="w-5 h-5 text-slate-400 group-hover:text-slate-600 dark:text-slate-555 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                   <rect width="20" height="16" x="2" y="4" rx="2" />
                   <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
                 </svg>
-                <span>Inbox de Alertas</span>
+                <span class="${this.sidebarCollapsed ? 'md:hidden' : ''}">Inbox de Alertas</span>
               </button>
 
               <!-- Link: Kanban de Orçamentos -->
-              <button id="nav-orcamentos" class="w-full px-4 py-3 rounded-xl flex items-center gap-3 font-semibold text-xs text-left transition select-none group">
+              <button id="nav-orcamentos" class="w-full px-4 py-3 rounded-xl flex items-center justify-center ${this.sidebarCollapsed ? '' : 'md:justify-start'} gap-3 font-semibold text-xs text-left transition select-none group">
                 <svg width="20" height="20" class="w-5 h-5 text-slate-400 group-hover:text-slate-600 dark:text-slate-500 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                 </svg>
-                <span>Orçamentos em Aberto</span>
+                <span class="${this.sidebarCollapsed ? 'md:hidden' : ''}">Orçamentos em Aberto</span>
               </button>
 
               <!-- Link: Dashboard Kanban -->
-              <button id="nav-dashboard" class="w-full px-4 py-3 rounded-xl flex items-center gap-3 font-semibold text-xs text-left transition select-none group">
+              <button id="nav-dashboard" class="w-full px-4 py-3 rounded-xl flex items-center justify-center ${this.sidebarCollapsed ? '' : 'md:justify-start'} gap-3 font-semibold text-xs text-left transition select-none group">
                 <svg width="20" height="20" class="w-5 h-5 text-slate-400 group-hover:text-slate-600 dark:text-slate-500 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                 </svg>
-                <span>Kanban Operacional</span>
+                <span class="${this.sidebarCollapsed ? 'md:hidden' : ''}">Kanban Operacional</span>
               </button>
 
               <!-- Link: Clientes -->
-              <button id="nav-clientes" class="w-full px-4 py-3 rounded-xl flex items-center gap-3 font-semibold text-xs text-left transition select-none group">
+              <button id="nav-clientes" class="w-full px-4 py-3 rounded-xl flex items-center justify-center ${this.sidebarCollapsed ? '' : 'md:justify-start'} gap-3 font-semibold text-xs text-left transition select-none group">
                 <svg width="20" height="20" class="w-5 h-5 text-slate-400 group-hover:text-slate-600 dark:text-slate-500 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
-                <span>Ficha de Clientes</span>
+                <span class="${this.sidebarCollapsed ? 'md:hidden' : ''}">Ficha de Clientes</span>
               </button>
 
               <!-- Link: Reembolsos -->
-              <button id="nav-reembolsos" class="w-full px-4 py-3 rounded-xl flex items-center gap-3 font-semibold text-xs text-left transition select-none group">
+              <button id="nav-reembolsos" class="w-full px-4 py-3 rounded-xl flex items-center justify-center ${this.sidebarCollapsed ? '' : 'md:justify-start'} gap-3 font-semibold text-xs text-left transition select-none group">
                 <svg width="20" height="20" class="w-5 h-5 text-slate-400 group-hover:text-slate-600 dark:text-slate-500 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <span>Central de Reembolsos</span>
+                <span class="${this.sidebarCollapsed ? 'md:hidden' : ''}">Central de Reembolsos</span>
               </button>
 
               <!-- Link: Configurações (Somente ADMIN) -->
               ${this.perfil?.role === 'admin' ? `
-                <button id="nav-configuracoes" class="w-full px-4 py-3 rounded-xl flex items-center gap-3 font-semibold text-xs text-left transition select-none group">
+                <button id="nav-configuracoes" class="w-full px-4 py-3 rounded-xl flex items-center justify-center ${this.sidebarCollapsed ? '' : 'md:justify-start'} gap-3 font-semibold text-xs text-left transition select-none group">
                   <svg width="20" height="20" class="w-5 h-5 text-slate-400 group-hover:text-slate-600 dark:text-slate-500 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                     <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
-                  <span>Configurações Admin</span>
+                  <span class="${this.sidebarCollapsed ? 'md:hidden' : ''}">Configurações Admin</span>
                 </button>
               ` : ''}
 
@@ -441,6 +448,11 @@ class App {
 
     this.atualizarSidebarProfileFooter();
     this.setupNavigationListeners();
+
+    // Event listener para colapsar barra lateral
+    document.getElementById('sidebar-collapse-btn')?.addEventListener('click', () => {
+      this.toggleSidebar();
+    });
   }
 
   /**
@@ -451,9 +463,9 @@ class App {
     if (!footerContainer || !this.perfil) return;
 
     footerContainer.innerHTML = `
-      <button id="sidebar-profile-trigger" class="w-full text-left border-t border-slate-100 dark:border-slate-800 pt-4 flex items-center gap-3 hover:bg-slate-100 dark:hover:bg-slate-800/40 p-1.5 rounded-xl transition duration-200 focus:outline-none">
+      <button id="sidebar-profile-trigger" class="w-full border-t border-slate-100 dark:border-slate-800 pt-4 flex items-center justify-center ${this.sidebarCollapsed ? '' : 'md:justify-start md:px-2'} gap-3 hover:bg-slate-100 dark:hover:bg-slate-800/40 p-1.5 rounded-xl transition duration-200 focus:outline-none">
         ${getAvatarSvg(this.perfil.avatar_url, this.perfil.nome || 'Consultor', 'w-8 h-8')}
-        <div class="overflow-hidden flex-1 select-none">
+        <div class="overflow-hidden flex-1 select-none ${this.sidebarCollapsed ? 'md:hidden' : ''}">
           <span class="block text-[11px] font-extrabold text-slate-700 dark:text-white truncate">${this.perfil.nome || 'Consultor'}</span>
           <span class="block text-[9px] text-slate-450 dark:text-slate-500 font-semibold truncate capitalize">${this.perfil.role || 'consultor'}</span>
         </div>
@@ -462,6 +474,67 @@ class App {
 
     document.getElementById('sidebar-profile-trigger')?.addEventListener('click', () => {
       this.abrirModalMeuPerfil();
+    });
+  }
+
+  /**
+   * Colapsa ou expande a barra lateral com transições CSS suaves e controle reativo de elementos
+   */
+  private toggleSidebar(): void {
+    this.sidebarCollapsed = !this.sidebarCollapsed;
+    localStorage.setItem('paxflow-sidebar-collapsed', String(this.sidebarCollapsed));
+
+    const aside = this.container.querySelector('aside');
+    if (!aside) return;
+
+    const collapseBtn = document.getElementById('sidebar-collapse-btn');
+    const chevron = collapseBtn?.querySelector('svg');
+
+    if (this.sidebarCollapsed) {
+      aside.classList.remove('md:w-64');
+      aside.classList.add('md:w-20');
+      chevron?.classList.add('rotate-180');
+    } else {
+      aside.classList.remove('md:w-20');
+      aside.classList.add('md:w-64');
+      chevron?.classList.remove('rotate-180');
+    }
+
+    // Ocultar/Exibir textos do menu lateral
+    const textLabels = aside.querySelectorAll('span, #sidebar-profile-trigger div');
+    textLabels.forEach(el => {
+      if (el.id === 'sidebar-collapse-btn' || el.closest('#sidebar-collapse-btn')) return;
+      if (el.tagName === 'SPAN' && el.parentElement?.id === 'sidebar-profile-trigger') return;
+
+      if (el.textContent === 'PaxFlow' || el.closest('button') || el.closest('#sidebar-profile-trigger')) {
+        if (this.sidebarCollapsed) {
+          el.classList.add('md:hidden');
+        } else {
+          el.classList.remove('md:hidden');
+        }
+      }
+    });
+
+    // Ajustar alinhamento dos botões de navegação
+    const navButtons = aside.querySelectorAll('nav button');
+    navButtons.forEach(btn => {
+      if (btn.id === 'sidebar-profile-trigger') {
+        if (this.sidebarCollapsed) {
+          btn.classList.remove('md:justify-start', 'md:px-2');
+          btn.classList.add('justify-center');
+        } else {
+          btn.classList.remove('justify-center');
+          btn.classList.add('md:justify-start', 'md:px-2');
+        }
+      } else {
+        if (this.sidebarCollapsed) {
+          btn.classList.remove('md:justify-start');
+          btn.classList.add('justify-center');
+        } else {
+          btn.classList.remove('justify-center');
+          btn.classList.add('md:justify-start');
+        }
+      }
     });
   }
 
@@ -717,10 +790,11 @@ class App {
     navButtons.forEach(p => {
       const btn = document.getElementById(`nav-${p}`);
       if (btn) {
+        const alignmentClass = this.sidebarCollapsed ? 'justify-center' : 'md:justify-start';
         if (p === page) {
-          btn.className = 'w-full px-4 py-3 rounded-xl flex items-center gap-3 font-extrabold text-xs text-left transition select-none bg-indigo-600 text-white shadow-lg shadow-indigo-600/15 group';
+          btn.className = `w-full px-4 py-3 rounded-xl flex items-center ${alignmentClass} gap-3 font-extrabold text-xs text-left transition select-none bg-indigo-600 text-white shadow-lg shadow-indigo-600/15 group`;
         } else {
-          btn.className = 'w-full px-4 py-3 rounded-xl flex items-center gap-3 font-semibold text-xs text-left transition select-none text-slate-500 hover:text-slate-800 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800/40 group';
+          btn.className = `w-full px-4 py-3 rounded-xl flex items-center ${alignmentClass} gap-3 font-semibold text-xs text-left transition select-none text-slate-500 hover:text-slate-800 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800/40 group`;
         }
       }
     });

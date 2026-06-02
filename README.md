@@ -27,6 +27,7 @@ Plataforma SaaS de gestão operacional e fluxo de passageiros no turismo: acompa
 - **Central de Reembolsos** — Tabela com cronômetro SLA em tempo real, status inline e métricas consolidadas. **Atualizado com campo de busca em tempo real em memória abrangendo clientes, destinos, localizadores, fornecedores, tipos de serviço, status e valores formatados.**
 - **Painel Administrativo (Configurações)** — Configuração de SLAs, gestão de consultores, integração Google Drive. Inclui aba "Importações" para importação em lote de chamados DIGISAC (CSV) com mapeamento inteligente de colunas, conversor monetário/temporal e fuzzy match de atendentes.
 - **Cockpit de Tarefas** — Kanban interno standalone (todo.html) para planejamento da equipe
+- **Navegação & UI Premium (Sidebar Colapsável & Lupa Vetorial)** — Shell de navegação avançado com barra lateral colapsável sob demanda (estado persistido via `localStorage` sob a chave `"paxflow-sidebar-collapsed"`). Campos de busca unificados com ícones vetoriais modernos (SVGs Heroicons) alinhados de forma absoluta e perfeitamente centrada.
 
 ---
 

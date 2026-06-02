@@ -815,8 +815,12 @@ export class ClientesPage {
             <div>
               <label class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-1.5">Pesquisar Cliente</label>
               <div class="relative">
-                <span class="absolute left-3.5 top-3 text-slate-400 text-sm">🔍</span>
-                <input id="input-busca-cliente" type="text" placeholder="Nome, email ou CPF/RG..." class="w-full pl-9 pr-4 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 font-medium text-sm" />
+                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                <input id="input-busca-cliente" type="text" placeholder="Nome, email ou CPF/RG..." class="w-full pl-10 pr-4 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 font-medium text-sm" />
               </div>
             </div>
 
