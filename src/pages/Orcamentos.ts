@@ -72,7 +72,6 @@ export class OrcamentosPage {
           this.perfil.nome = nome;
           this.perfil.avatar_url = avatar_url;
           this.render();
-          this.setupGlobalEventListeners();
         }
       });
 
@@ -80,11 +79,8 @@ export class OrcamentosPage {
       await this.loadConsultores();
       await this.loadOrcamentos();
 
-      // 3. Renderizar interface principal
+      // 3. Renderizar interface principal (que já configura os ouvintes de eventos)
       this.render();
-
-      // 4. Configurar ouvintes de eventos da página principal
-      this.setupGlobalEventListeners();
 
       // 5. Configurar Canal Realtime do Supabase
       this.setupRealtimeChannel();
@@ -787,8 +783,8 @@ export class OrcamentosPage {
       <div id="orcamento-modal-portal"></div>
     `;
 
-    // Re-vincula os ouvintes de eventos da renderização dinâmica das colunas
-    this.setupColumnButtons();
+    // Re-vincula os ouvintes de eventos gerais e específicos do Kanban
+    this.setupGlobalEventListeners();
   }
 
   /**
