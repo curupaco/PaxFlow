@@ -55,7 +55,7 @@ async function uploadDiretoClientSide(
     const folderName = `${nomeCliente} - ${emailCliente} - ${telefoneCliente}`;
     const searchUrl = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(
       `name='${folderName.replace(/'/g, "\\'")}' and mimeType='application/vnd.google-apps.folder' and trashed=false`
-    )}`;
+    )}&supportsAllDrives=true&includeItemsFromAllDrives=true`;
 
     const searchRes = await fetch(searchUrl, {
       headers: { Authorization: `Bearer ${accessToken}` }
@@ -80,7 +80,7 @@ async function uploadDiretoClientSide(
         folderMetadata.parents = [parentFolderId];
       }
 
-      const createFolderRes = await fetch('https://www.googleapis.com/drive/v3/files', {
+      const createFolderRes = await fetch('https://www.googleapis.com/drive/v3/files?supportsAllDrives=true', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -134,7 +134,7 @@ async function uploadDiretoClientSide(
     multipartBody.set(part3, part1.byteLength + part2.byteLength);
 
     // 6. Efetuar a requisição de upload direto para a API do Google Drive
-    const uploadRes = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+    const uploadRes = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&supportsAllDrives=true', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -381,7 +381,7 @@ async function obterAccessToken(): Promise<string> {
  */
 export async function obterArquivoBlob(fileId: string): Promise<Blob> {
   const accessToken = await obterAccessToken();
-  const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+  const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&supportsAllDrives=true`, {
     headers: { Authorization: `Bearer ${accessToken}` }
   });
 
@@ -397,7 +397,7 @@ export async function obterArquivoBlob(fileId: string): Promise<Blob> {
  */
 export async function exportarGoogleDocPdf(fileId: string): Promise<Blob> {
   const accessToken = await obterAccessToken();
-  const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}/export?mimeType=application/pdf`, {
+  const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}/export?mimeType=application/pdf&supportsAllDrives=true`, {
     headers: { Authorization: `Bearer ${accessToken}` }
   });
 
