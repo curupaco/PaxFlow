@@ -408,3 +408,27 @@ export async function exportarGoogleDocPdf(fileId: string): Promise<Blob> {
   return await res.blob();
 }
 
+/**
+ * Busca o ID, nome e tipo do primeiro arquivo contido em uma pasta do Google Drive.
+ */
+export async function obterPrimeiroArquivoDaPasta(folderId: string): Promise<{ id: string; mimeType: string; name: string }> {
+  const accessToken = await obterAccessToken();
+  const query = `'${folderId}' in parents and trashed = false`;
+  const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&orderBy=createdTime%20desc&fields=files(id,mimeType,name)&supportsAllDrives=true&includeItemsFromAllDrives=true`;
+
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${accessToken}` }
+  });
+
+  if (!res.ok) {
+    throw new Error(`Erro ao listar arquivos da pasta do cliente: ${res.statusText}`);
+  }
+
+  const data = await res.json();
+  if (!data.files || data.files.length === 0) {
+    throw new Error('Nenhum documento encontrado na pasta do Google Drive deste cliente.');
+  }
+
+  return data.files[0];
+}
+

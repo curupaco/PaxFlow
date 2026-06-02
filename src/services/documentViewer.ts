@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import { obterArquivoBlob, exportarGoogleDocPdf } from './googleDrive';
+import { obterArquivoBlob, exportarGoogleDocPdf, obterPrimeiroArquivoDaPasta } from './googleDrive';
 
 export class DocumentViewer {
   private static activeObjectURL: string | null = null;
@@ -18,8 +18,10 @@ export class DocumentViewer {
     mimeType: string = 'application/pdf',
     clientData?: any
   ): Promise<void> {
-    // 1. Extrair o ID do arquivo a partir de uma URL do Drive ou ID direto
-    const fileId = this.extrairFileId(fileUrlOrId);
+    // 1. Extrair o ID do arquivo/pasta a partir de uma URL do Drive ou ID direto
+    let fileId = this.extrairFileId(fileUrlOrId);
+    let targetMimeType = mimeType;
+    let targetFileName = fileName;
 
     // 2. Criar ou obter o contêiner do modal no DOM
     let overlay = document.getElementById('paxflow-doc-viewer-overlay');
@@ -123,7 +125,21 @@ export class DocumentViewer {
         this.setupMockDownload(fileName, isPassport ? 'passport' : 'proposal', clientData);
       } else {
         // --- MODO REAL: DOWNLOAD SEGURO VIA API DO GOOGLE DRIVE ---
-        const isGoogleDoc = mimeType.includes('vnd.google-apps');
+        const isFolder = fileUrlOrId.includes('/folders/');
+        if (isFolder) {
+          const firstFile = await obterPrimeiroArquivoDaPasta(fileId);
+          fileId = firstFile.id;
+          targetMimeType = firstFile.mimeType;
+          targetFileName = firstFile.name;
+
+          // Atualizar título do cabeçalho no modal com o nome real do arquivo encontrado
+          const headerTitle = document.querySelector('#paxflow-doc-viewer-container h3');
+          if (headerTitle) {
+            headerTitle.textContent = targetFileName;
+          }
+        }
+
+        const isGoogleDoc = targetMimeType.includes('vnd.google-apps');
         let fileBlob: Blob;
 
         if (isGoogleDoc) {
@@ -138,10 +154,10 @@ export class DocumentViewer {
         }
         this.activeObjectURL = URL.createObjectURL(fileBlob);
 
-        const isImage = mimeType.startsWith('image/') || fileName.match(/\.(jpg|jpeg|png|gif|webp)$/i);
+        const isImage = targetMimeType.startsWith('image/') || targetFileName.match(/\.(jpg|jpeg|png|gif|webp)$/i);
 
         if (isImage) {
-          contentEl.innerHTML = `<img src="${this.activeObjectURL}" alt="${fileName}" class="max-w-full max-h-full object-contain rounded-lg shadow-md border border-slate-200/50 dark:border-slate-800" />`;
+          contentEl.innerHTML = `<img src="${this.activeObjectURL}" alt="${targetFileName}" class="max-w-full max-h-full object-contain rounded-lg shadow-md border border-slate-200/50 dark:border-slate-800" />`;
         } else {
           contentEl.innerHTML = `<iframe src="${this.activeObjectURL}#toolbar=0" class="w-full h-full border-0 rounded-lg shadow-sm" type="application/pdf"></iframe>`;
         }
@@ -153,7 +169,7 @@ export class DocumentViewer {
           downloadBtn.addEventListener('click', () => {
             const a = document.createElement('a');
             a.href = this.activeObjectURL!;
-            a.download = fileName;
+            a.download = targetFileName;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
