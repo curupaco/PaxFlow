@@ -34,6 +34,7 @@ CREATE TABLE IF NOT EXISTS public.global_settings (
     notificacoes_ativas BOOLEAN DEFAULT TRUE NOT NULL,
     email_suporte TEXT,
     google_refresh_token TEXT,
+    google_parent_folder_id TEXT,
     sla_pre_embarque_dias INT DEFAULT 7 NOT NULL,
     sla_pos_viagem_dias INT DEFAULT 3 NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,

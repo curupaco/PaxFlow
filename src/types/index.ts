@@ -33,6 +33,7 @@ export interface GlobalSettings {
   notificacoesAtivas: boolean;
   emailSuporte: string;
   googleRefreshToken?: string; // Token de renovação persistido para integração com o Google Drive
+  googleParentFolderId?: string; // ID da pasta mãe no Google Drive para armazenamento centralizado
   slaPreEmbarqueDias?: number; // Dias de SLA para alertas de embarque
   slaPosViagemDias?: number; // Dias de SLA para contatos de pós-venda
   createdAt?: string;

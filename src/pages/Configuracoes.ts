@@ -152,6 +152,7 @@ export class ConfiguracoesPage {
           notificacoesAtivas: data.notificacoes_ativas !== undefined ? data.notificacoes_ativas : true,
           emailSuporte: data.email_suporte || data.emailSuporte || 'suporte@paxflow.com.br',
           googleRefreshToken: data.google_refresh_token || data.googleRefreshToken,
+          googleParentFolderId: data.google_parent_folder_id || data.googleParentFolderId,
           slaPreEmbarqueDias: data.sla_pre_embarque_dias !== undefined ? data.sla_pre_embarque_dias : 7,
           slaPosViagemDias: data.sla_pos_viagem_dias !== undefined ? data.sla_pos_viagem_dias : 3
         };
@@ -181,6 +182,7 @@ export class ConfiguracoesPage {
           prazoReembolsoDias: inserted.prazo_reembolso_dias,
           notificacoesAtivas: inserted.notificacoes_ativas,
           emailSuporte: inserted.email_suporte,
+          googleParentFolderId: inserted.google_parent_folder_id,
           slaPreEmbarqueDias: inserted.sla_pre_embarque_dias,
           slaPosViagemDias: inserted.sla_pos_viagem_dias
         };
@@ -324,6 +326,30 @@ export class ConfiguracoesPage {
         } finally {
           btn.disabled = false;
           btn.innerHTML = originalText;
+        }
+      });
+
+      document.getElementById('btn-save-parent-folder')?.addEventListener('click', async () => {
+        const input = document.getElementById('input-google-parent-folder') as HTMLInputElement;
+        if (!input || !this.settings) return;
+
+        const parentFolderVal = input.value.trim() || null;
+
+        try {
+          const { error } = await supabase
+            .from('global_settings')
+            .update({ google_parent_folder_id: parentFolderVal })
+            .eq('id', this.settings.id);
+
+          if (error) throw error;
+
+          this.showToast('ID da pasta compartilhada salvo com sucesso!', 'success');
+          await this.loadSettings();
+          this.render();
+          this.setupEventListeners();
+        } catch (err: any) {
+          console.error('Erro ao salvar ID da pasta compartilhada:', err);
+          this.showToast('Erro ao salvar ID da pasta.', 'error');
         }
       });
 
@@ -1646,6 +1672,20 @@ export class ConfiguracoesPage {
                   <p class="text-[10px] text-slate-550 dark:text-slate-400 font-bold mt-1">Conexão real ativa</p>
                   <p class="text-[9px] text-slate-400 dark:text-slate-500 leading-relaxed mt-0.5">Pronto para uploads em produção no Drive oficial.</p>
                 `}
+              </div>
+
+              <!-- Configuração da Pasta Compartilhada -->
+              <div class="space-y-2 border border-slate-100 dark:border-slate-800 rounded-xl p-4 bg-slate-50/20 dark:bg-slate-950/20">
+                <label class="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">ID da Pasta Compartilhada (Opcional)</label>
+                <div class="flex gap-2">
+                  <input id="input-google-parent-folder" type="text" placeholder="Ex: 1a2b3c4d5e6f..." value="${this.settings.googleParentFolderId || ''}" class="flex-1 px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-mono" />
+                  <button id="btn-save-parent-folder" class="px-3 py-2 bg-indigo-650 hover:bg-indigo-750 text-white font-extrabold text-[10px] rounded-lg transition shadow-sm uppercase tracking-wide">
+                    Salvar
+                  </button>
+                </div>
+                <p class="text-[9px] text-slate-400 dark:text-slate-500 leading-normal font-medium">
+                  Se preenchido, novas pastas de clientes serão criadas dentro desta pasta central, herdando suas permissões e acessos.
+                </p>
               </div>
 
               <div class="space-y-2.5">

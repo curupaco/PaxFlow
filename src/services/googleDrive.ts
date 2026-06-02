@@ -19,7 +19,8 @@ async function uploadDiretoClientSide(
   emailCliente: string,
   telefoneCliente: string,
   file: File,
-  clienteId: string
+  clienteId: string,
+  parentFolderId?: string
 ): Promise<{ success: boolean; googleDriveFolderUrl: string; error?: string }> {
   try {
     if (!clientId || !clientSecret) {
@@ -70,16 +71,22 @@ async function uploadDiretoClientSide(
 
     // 3. Se a pasta não existe no Drive do Gmail pessoal, criamos uma nova pasta
     if (!folderId) {
+      const folderMetadata: any = {
+        name: folderName,
+        mimeType: 'application/vnd.google-apps.folder'
+      };
+
+      if (parentFolderId) {
+        folderMetadata.parents = [parentFolderId];
+      }
+
       const createFolderRes = await fetch('https://www.googleapis.com/drive/v3/files', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${accessToken}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          name: folderName,
-          mimeType: 'application/vnd.google-apps.folder'
-        })
+        body: JSON.stringify(folderMetadata)
       });
 
       if (!createFolderRes.ok) {
@@ -183,7 +190,7 @@ export async function uploadDocumentoCliente(
     // 1. Busca as configurações globais no Supabase para verificar o token cadastrado
     const { data: settings, error: settingsErr } = await supabase
       .from('global_settings')
-      .select('google_refresh_token')
+      .select('google_refresh_token, google_parent_folder_id')
       .maybeSingle();
 
     if (settingsErr) {
@@ -191,6 +198,7 @@ export async function uploadDocumentoCliente(
     }
 
     const refreshToken = settings?.google_refresh_token;
+    const parentFolderId = settings?.google_parent_folder_id || '';
     // O token é mock se for nulo, vazio ou começar com 'mock_'
     const isMockMode = !refreshToken || refreshToken.trim() === '' || refreshToken.startsWith('mock_');
 
@@ -213,7 +221,7 @@ export async function uploadDocumentoCliente(
       // Caso as Edge Functions locais do Supabase Client não estejam instanciadas, faz fallback automático
       if (!supabase.functions) {
         console.warn('Supabase Functions não instanciadas localmente. Fazendo fallback direto para Google Drive API...');
-        const directResult = await uploadDiretoClientSide(clientId, clientSecret, realRefreshToken, nomeCliente, emailCliente, telefoneCliente, file, clienteId);
+        const directResult = await uploadDiretoClientSide(clientId, clientSecret, realRefreshToken, nomeCliente, emailCliente, telefoneCliente, file, clienteId, parentFolderId);
         return {
           success: directResult.success,
           googleDriveFolderUrl: directResult.googleDriveFolderUrl,
@@ -229,6 +237,9 @@ export async function uploadDocumentoCliente(
       formData.append('nome', nomeCliente);
       formData.append('email', emailCliente);
       formData.append('telefone', telefoneCliente);
+      if (parentFolderId) {
+        formData.append('parentFolderId', parentFolderId);
+      }
 
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
@@ -257,7 +268,7 @@ export async function uploadDocumentoCliente(
 
         // Se a Edge Function retornou erro (por exemplo, erro 404 por não estar implantada), ativamos o fallback direto!
         console.warn('Edge Function indisponível (404/CORS). Ativando fallback resiliente direto para Google Drive API...', error);
-        const directResult = await uploadDiretoClientSide(clientId, clientSecret, realRefreshToken, nomeCliente, emailCliente, telefoneCliente, file, clienteId);
+        const directResult = await uploadDiretoClientSide(clientId, clientSecret, realRefreshToken, nomeCliente, emailCliente, telefoneCliente, file, clienteId, parentFolderId);
         return {
           success: directResult.success,
           googleDriveFolderUrl: directResult.googleDriveFolderUrl,
@@ -268,7 +279,7 @@ export async function uploadDocumentoCliente(
       } catch (invokeErr: any) {
         // Se a chamada falhou completamente (como erro de CORS/Conexão do navegador), ativamos o fallback direto!
         console.warn('Erro de rede na Edge Function. Ativando fallback resiliente direto para Google Drive API...', invokeErr);
-        const directResult = await uploadDiretoClientSide(clientId, clientSecret, realRefreshToken, nomeCliente, emailCliente, telefoneCliente, file, clienteId);
+        const directResult = await uploadDiretoClientSide(clientId, clientSecret, realRefreshToken, nomeCliente, emailCliente, telefoneCliente, file, clienteId, parentFolderId);
         return {
           success: directResult.success,
           googleDriveFolderUrl: directResult.googleDriveFolderUrl,
