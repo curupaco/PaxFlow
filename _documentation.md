@@ -135,13 +135,10 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 - **Modal de Detalhes Reformulado (`openVerNotasModal`)**:
   - Reestruturado para adotar um **layout de grid premium de duas colunas (visualizador amplo `max-w-2xl`)**:
     - **Coluna Esquerda (2/3 da largura)**: Exibe a listagem completa das Notas da Negociação e a seção dedicada a Documentos e Propostas Anexas.
-    - **Coluna Direita/Sidebar (1/3 da largura)**: Uma barra lateral corporativa com:
-      - **Status e Sub-status**: Badges de cores HSL mapeadas correspondentes.
-      - **Temperatura do Lead**: Frio / Normal / Quente (coloração de destaque baseada no calor da oportunidade).
-      - **Consultor Responsável**: Avatar customizado e nome do consultor dono do orçamento.
-      - **Ações Rápidas de Contato**: Links dinâmicos e interativos. Inicia instantaneamente uma conversa no WhatsApp Web (`https://wa.me/...`) se houver telefone, ou cria um novo e-mail (`mailto:...`).
-      - **Tags Associadas**: Badges flexíveis de tags livres registradas.
-      - **Histórico e SLA de Espera**: Data de criação do lead com cronômetro de tempo de espera/SLA decorrido.
+    - **Coluna Direita/Sidebar (1/3 da largura)**: Uma barra lateral corporativa com status, temperatura do lead, consultor com avatar, links clicáveis de contato (WhatsApp/Email), tags e cronômetro de SLA decorrido.
+- **Visualização de Propostas e Anexos Inline [NEW]**:
+  - Propostas comerciais e documentos em PDF anexados às notas de negociação no painel esquerdo podem ser abertos de forma imediata no visualizador inline.
+  - Em Modo Sandbox, exibe uma ficha comercial simulada contendo o nome do passageiro, destino, valor do pacote formatado em reais e serviços inclusos (voo, hotel, passeios) correspondentes àquele orçamento.
 - **Temperatura do lead**: Frio / Normal / Quente.
 - **Tags**: categorização livre (ex: "Família", "Lua de Mel", "Europa").
 - **"Me Lembre Depois"**: agenda lembretes operacionais com período (manhã/tarde/noite).
@@ -156,6 +153,11 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
   - Número do passaporte com alerta visual de validade.
   - Validade monitorada por SLA (mesma engine do Inbox).
   - Informações de vistos ativos.
+- **Visualizador de Documentos Inline PaxFlow [NEW]**:
+  - **Experiência Incorporada (Lightbox)**: Um modal elegante com design glassmorphic (`backdrop-blur-md bg-slate-950/60`) que permite abrir PDFs e imagens do passaporte de forma 100% interna e integrada.
+  - **Exportação Inteligente**: Arquivos nativos do Google Docs e Sheets são convertidos automaticamente para PDF na API e carregados diretamente no `<iframe>` sem redirecionar para a interface web corporativa do Google.
+  - **Simulador Interativo de Passaporte em Sandbox**: Caso a agência opere no modo de simulador local offline (sem chaves ativas do Google Drive), o PaxFlow gera de forma inteiramente dinâmica um documento visual de passaporte personalizado com o avatar do cliente, nome completo real, CPF, número do passaporte, data de validade e alertas pulsantes de SLA reais do passageiro selecionado.
+  - **Gestão de Downloads e Memória**: A barra superior inclui ações rápidas para baixar o PDF localmente, abrir a URL do arquivo bruto original no Drive e desalocar recursos e URLs temporárias da memória (`revokeObjectURL`) ao fechar o popover.
 - **Upload drag-and-drop**: arraste PDFs, JPEGs ou PNGs para enviar ao Google Drive corporativo.
 - **Pasta automática no Drive**: cada cliente tem uma pasta nomeada "[Nome] - [Email] - [Telefone]".
 - **Busca em Tempo Real Ampliada**:

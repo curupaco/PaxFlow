@@ -1725,7 +1725,7 @@ export class OrcamentosPage {
 
     const filesHtml = orc.documentosUrl && orc.documentosUrl.length > 0 
       ? orc.documentosUrl.map((url, index) => `
-          <a href="${url}" target="_blank" class="px-4 py-2.5 bg-indigo-50/50 hover:bg-indigo-100 dark:bg-indigo-950/20 dark:hover:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-xl border border-indigo-100/30 dark:border-indigo-900/30 text-xs font-black transition flex items-center justify-center gap-2 select-none uppercase tracking-wide">
+          <a href="${url}" target="_blank" data-proposal-file-url="${url}" data-proposal-file-index="${index}" class="btn-view-proposal-file px-4 py-2.5 bg-indigo-50/50 hover:bg-indigo-100 dark:bg-indigo-950/20 dark:hover:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-xl border border-indigo-100/30 dark:border-indigo-900/30 text-xs font-black transition flex items-center justify-center gap-2 select-none uppercase tracking-wide">
             📄 Documento da Proposta #${index + 1}
           </a>
         `).join('')
@@ -1890,6 +1890,30 @@ export class OrcamentosPage {
     const handleClose = () => this.closeModal();
     document.getElementById('btn-close-modal-x')?.addEventListener('click', handleClose);
     document.getElementById('btn-close-modal')?.addEventListener('click', handleClose);
+
+    // Botões de visualização de arquivos anexos
+    modalContent.querySelectorAll('.btn-view-proposal-file').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        const url = btn.getAttribute('data-proposal-file-url');
+        const indexStr = btn.getAttribute('data-proposal-file-index');
+        if (!url) return;
+
+        const index = indexStr ? parseInt(indexStr) : 0;
+        const { DocumentViewer } = await import('../services/documentViewer');
+        DocumentViewer.open(
+          `Documento da Proposta #${index + 1}.pdf`,
+          url,
+          'application/pdf',
+          {
+            nome_cliente: orc.nomeCliente,
+            destino: orc.destino,
+            valor_total: orc.valorProposta || 8500.00,
+            createdAt: orc.createdAt
+          }
+        );
+      });
+    });
   }
 
   /**

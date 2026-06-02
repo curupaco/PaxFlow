@@ -434,6 +434,20 @@ export class ClientesPage {
         }
       });
     }
+
+    // Botão de Visualização de Passaporte Inline
+    const btnViewPassport = document.getElementById('btn-view-passport-inline');
+    btnViewPassport?.addEventListener('click', async () => {
+      const { DocumentViewer } = await import('../services/documentViewer');
+      if (this.clienteSelecionado) {
+        DocumentViewer.open(
+          `Passaporte - ${this.clienteSelecionado.nome}.pdf`,
+          this.clienteSelecionado.googleDriveFolderUrl || 'mock-id',
+          'application/pdf',
+          this.clienteSelecionado
+        );
+      }
+    });
   }
 
   /**
@@ -539,9 +553,14 @@ export class ClientesPage {
 
           <!-- Botão Proeminente do Google Drive (Exibido apenas para clientes existentes) -->
           ${isNew ? '' : (c.googleDriveFolderUrl ? `
-            <a href="${c.googleDriveFolderUrl}" target="_blank" class="px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-extrabold text-xs tracking-wide rounded-xl shadow-md shadow-emerald-600/10 flex items-center justify-center gap-2 transition transform hover:-translate-y-0.5 uppercase">
-              <span class="text-lg">📁</span> Abrir Pasta no Google Drive
-            </a>
+            <div class="flex items-center gap-2.5">
+              <button type="button" id="btn-view-passport-inline" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wide rounded-xl shadow-md shadow-indigo-600/10 flex items-center justify-center gap-2 transition transform hover:-translate-y-0.5 uppercase">
+                <span class="text-lg">🔍</span> Ver Passaporte
+              </button>
+              <a href="${c.googleDriveFolderUrl}" target="_blank" class="px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-extrabold text-xs tracking-wide rounded-xl shadow-md shadow-emerald-600/10 flex items-center justify-center gap-2 transition transform hover:-translate-y-0.5 uppercase">
+                <span class="text-lg">📁</span> Pasta no Drive
+              </a>
+            </div>
           ` : `
             <span class="px-4 py-2 bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 rounded-lg text-xs font-semibold border border-slate-200/40 dark:border-slate-700/40 text-center">
               Sem pasta ativa no Drive

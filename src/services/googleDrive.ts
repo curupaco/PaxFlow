@@ -314,3 +314,86 @@ export async function uploadDocumentoCliente(
     };
   }
 }
+
+/**
+ * Recupera um access token válido a partir do refresh token do Google cadastrado nas configurações globais.
+ */
+async function obterAccessToken(): Promise<string> {
+  const { data: settings, error: settingsErr } = await supabase
+    .from('global_settings')
+    .select('google_refresh_token')
+    .maybeSingle();
+
+  if (settingsErr || !settings?.google_refresh_token) {
+    throw new Error('Chave Google Refresh Token não encontrada nas configurações globais.');
+  }
+
+  let clientId = process.env.GOOGLE_CLIENT_ID || '';
+  let clientSecret = process.env.GOOGLE_CLIENT_SECRET || '';
+  let refreshToken = settings.google_refresh_token;
+
+  if (refreshToken.includes('|||')) {
+    const parts = refreshToken.split('|||');
+    if (parts.length === 3) {
+      clientId = parts[0];
+      clientSecret = parts[1];
+      refreshToken = parts[2];
+    }
+  }
+
+  if (!clientId || !clientSecret) {
+    throw new Error('Credenciais de API do Google Cloud ausentes localmente no arquivo .env (GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET).');
+  }
+
+  const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      client_id: clientId,
+      client_secret: clientSecret,
+      refresh_token: refreshToken,
+      grant_type: 'refresh_token'
+    })
+  });
+
+  if (!tokenRes.ok) {
+    const errData = await tokenRes.json().catch(() => ({}));
+    throw new Error(`Erro ao obter access token do Google: ${errData.error_description || errData.error || tokenRes.statusText}`);
+  }
+
+  const tokenData = await tokenRes.json();
+  return tokenData.access_token;
+}
+
+/**
+ * Baixa um arquivo do Google Drive como Blob.
+ */
+export async function obterArquivoBlob(fileId: string): Promise<Blob> {
+  const accessToken = await obterAccessToken();
+  const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+    headers: { Authorization: `Bearer ${accessToken}` }
+  });
+
+  if (!res.ok) {
+    throw new Error(`Erro ao baixar arquivo do Google Drive: ${res.statusText}`);
+  }
+
+  return await res.blob();
+}
+
+/**
+ * Exporta um arquivo nativo do Google Docs como PDF Blob.
+ */
+export async function exportarGoogleDocPdf(fileId: string): Promise<Blob> {
+  const accessToken = await obterAccessToken();
+  const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}/export?mimeType=application/pdf`, {
+    headers: { Authorization: `Bearer ${accessToken}` }
+  });
+
+  if (!res.ok) {
+    throw new Error(`Erro ao exportar documento para PDF: ${res.statusText}`);
+  }
+
+  return await res.blob();
+}
+
