@@ -204,11 +204,30 @@ export class ClientesPage {
     const listaEl = document.getElementById('lista-clientes-container');
     if (!listaEl) return;
 
-    const filtrados = this.clientes.filter(c =>
-      c.nome.toLowerCase().includes(this.buscaTermo) ||
-      c.email.toLowerCase().includes(this.buscaTermo) ||
-      c.documento.includes(this.buscaTermo)
-    );
+    const filtrados = this.clientes.filter(c => {
+      const q = this.buscaTermo.trim();
+      if (!q) return true;
+
+      const nome = c.nome?.toLowerCase() || '';
+      const email = c.email?.toLowerCase() || '';
+      const documento = c.documento?.toLowerCase() || '';
+      const telefone = c.telefone?.toLowerCase() || '';
+      const endereco = c.endereco?.toLowerCase() || '';
+      const passNumero = c.passaporteNumero?.toLowerCase() || '';
+      const vistos = c.vistosInformacoes?.toLowerCase() || '';
+      const observacoes = c.observacoes?.toLowerCase() || '';
+
+      return (
+        nome.includes(q) ||
+        email.includes(q) ||
+        documento.includes(q) ||
+        telefone.includes(q) ||
+        endereco.includes(q) ||
+        passNumero.includes(q) ||
+        vistos.includes(q) ||
+        observacoes.includes(q)
+      );
+    });
 
     if (filtrados.length === 0) {
       listaEl.innerHTML = `

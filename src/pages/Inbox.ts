@@ -579,10 +579,14 @@ export class InboxPage {
     if (this.searchQuery.trim()) {
       const q = this.searchQuery.toLowerCase().trim();
       result = result.filter(a => 
-        a.title.toLowerCase().includes(q) ||
-        a.sender.toLowerCase().includes(q) ||
-        a.subject.toLowerCase().includes(q) ||
-        a.body.toLowerCase().includes(q)
+        (a.title?.toLowerCase() || '').includes(q) ||
+        (a.sender?.toLowerCase() || '').includes(q) ||
+        (a.subject?.toLowerCase() || '').includes(q) ||
+        (a.body?.toLowerCase() || '').includes(q) ||
+        (a.eventDate?.toLowerCase() || '').includes(q) ||
+        (a.dateStr?.toLowerCase() || '').includes(q) ||
+        (a.consultorNome?.toLowerCase() || '').includes(q) ||
+        (a.periodText?.toLowerCase() || '').includes(q)
       );
     }
 

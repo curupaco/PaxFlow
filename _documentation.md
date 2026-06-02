@@ -78,7 +78,9 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 - **Alertas de passaporte**: monitora automaticamente a validade dos passaportes cadastrados e dispara alertas com 180 dias de antecedência (padrão internacional) ou quando expirados (mapeados no calendário na data de expiração).
 - **Alertas de SLA de reembolso**: notifica quando um reembolso ultrapassa o prazo configurado pela agência (mapeados no calendário na data exata em que o SLA estourou: Data de Criação + Prazo de SLA).
 - **Lembretes manuais ("Me Lembre Depois")**: agendados a partir do pipeline de orçamentos, com data e período (manhã/tarde/noite) (mapeados no calendário na data agendada).
-- **Filtros**: por consultor (admin), por tipo de alerta, busca textual, ativos/arquivados/todos
+- **Busca e Filtros Omnipresentes**:
+  - Filtro por consultor (admin), por tipo de alerta, ativos/arquivados/todos.
+  - **Pesquisa em tempo real de alta precisão (client-side)**: O filtro textual da caixa de entrada foi ampliado para cobrir perfeitamente todos os campos e datas, incluindo a data alvo do evento (`eventDate`), data amigável formatada (`dateStr`), período do lembrete (`periodText`) e o nome amigável do consultor responsável na visualização administrativa.
 - **Leitor de mensagens corporativo**: modal com visual estilo e-mail profissional, integrado com deep-linking interativo e arquivamento em tempo real.
 - **Visualização em Calendário Interativo [NEW]**:
   - **Alternador de Visualização (Toggle Switch)**: Um seletor de alta fidelidade visual (Lista / Calendário) no topo do painel. Todos os filtros da barra lateral (Ativos/Arquivados/Todos e consultores) e busca continuam 100% integrados e reativos no modo calendário.
@@ -105,12 +107,16 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 | Pós-Viagem | Cliente já viajou | Borda vermelha se sem contato > N dias |
 | Reembolso Solicitado | Cancelamento em andamento | — |
 
-- **Drag-and-drop livre** com SortableJS entre todas as colunas
-- **SLAs visuais**: bordas pulsantes vermelhas (urgente) e laranjas (atenção) conforme prazos configuráveis
-- **Modal de criação de viagem**: vinculação com cliente, datas no formato DD/MM/AAAA, valor em R$
-- **Modal de edição**: duas abas — Detalhes (edição geral) e Produtos/Serviços (gestão de itens da viagem)
-- **Produtos**: voo, hotel, seguro, passeio, outros — com custo, venda, código de reserva e status
-- **Solicitação de reembolso**: ao arrastar para "Reembolso Solicitado", abre modal para selecionar produto e valor
+- **Drag-and-drop livre** com SortableJS entre todas as colunas.
+- **SLAs visuais**: bordas pulsantes vermelhas (urgente) e laranjas (atenção) conforme prazos configuráveis.
+- **Busca em Tempo Real no Cabeçalho**: Um campo de pesquisa instantânea (client-side) que filtra o Kanban dinamicamente à medida que o usuário digita, cobrindo o Destino, Código Localizador (LOC), nome, e-mail, telefone ou documento do passageiro, observações operacionais e atribuição do consultor ("Você" ou "Outro Consultor").
+- **Modal de criação de viagem**: vinculação com cliente, datas no formato DD/MM/AAAA, valor em R$.
+- **Modal de Edição & Gerenciamento Avançado**:
+  - Reestruturado em abas com layout ampliado de `max-w-2xl` para maior legibilidade.
+  - **Dono e SLA no Topo**: A aba "Detalhes e Edição" possui agora um cabeçalho proeminente contendo a identificação do Consultor Responsável com seu avatar correspondente e um indicador pulsante de Alerta de SLA ativo (se aplicável), fornecendo visibilidade direta da urgência do card.
+  - **Aba Dinâmica '💸 Histórico de Reembolsos'**: Fica visível apenas para cartões de viagem que possuam reembolsos associados no banco de dados. Exibe de forma organizada a listagem detalhada de cada solicitação vinculada: Produto afetado, Valor Solicitado, Valor Aprovado, Taxa de Retenção, Data de Solicitação e data de encerramento, Justificativa do Cancelamento e o Status do Reembolso com badges HSL temáticos.
+- **Produtos**: voo, hotel, seguro, passeio, outros — com custo, venda, código de reserva e status.
+- **Solicitação de reembolso**: ao arrastar para "Reembolso Solicitado", abre formulário automatizado que autocompleta valores com base no produto de viagem selecionado.
 
 ### 3.3 Pipeline de Orçamentos
 
@@ -125,38 +131,49 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 | Aguardando | Alterar (volta para Solicitado), Desistir (vai para Concluído), Aceitar/Vender (vai para Concluído) |
 | Concluído | Exibe sub-status: ACEITO (viagem fechada) ou DESISTÊNCIA |
 
-- **Temperatura do lead**: Frio / Normal / Quente (badges coloridos)
-- **Tags**: categorização livre (ex: "Família", "Lua de Mel", "Europa")
-- **Reatribuição de consultor**: qualquer card pode ser transferido entre consultores
-- **"Me Lembre Depois"**: agenda lembrete no Inbox do consultor
-- **Upload de documentos**: anexa arquivos ao orçamento via Google Drive
-- **Notas de negociação**: texto livre registrado a cada interação
-- **Modo offline**: dados replicados no localStorage caso o Supabase esteja indisponível
-- **Realtime**: alterações feitas por outros consultores aparecem automaticamente
+- **Busca em Tempo Real no Cabeçalho**: Pesquisa em tempo real (client-side) filtrando instantaneamente por nome do cliente, destino, contatos, temperatura, notas, tags e nome do consultor.
+- **Modal de Detalhes Reformulado (`openVerNotasModal`)**:
+  - Reestruturado para adotar um **layout de grid premium de duas colunas (visualizador amplo `max-w-2xl`)**:
+    - **Coluna Esquerda (2/3 da largura)**: Exibe a listagem completa das Notas da Negociação e a seção dedicada a Documentos e Propostas Anexas.
+    - **Coluna Direita/Sidebar (1/3 da largura)**: Uma barra lateral corporativa com:
+      - **Status e Sub-status**: Badges de cores HSL mapeadas correspondentes.
+      - **Temperatura do Lead**: Frio / Normal / Quente (coloração de destaque baseada no calor da oportunidade).
+      - **Consultor Responsável**: Avatar customizado e nome do consultor dono do orçamento.
+      - **Ações Rápidas de Contato**: Links dinâmicos e interativos. Inicia instantaneamente uma conversa no WhatsApp Web (`https://wa.me/...`) se houver telefone, ou cria um novo e-mail (`mailto:...`).
+      - **Tags Associadas**: Badges flexíveis de tags livres registradas.
+      - **Histórico e SLA de Espera**: Data de criação do lead com cronômetro de tempo de espera/SLA decorrido.
+- **Temperatura do lead**: Frio / Normal / Quente.
+- **Tags**: categorização livre (ex: "Família", "Lua de Mel", "Europa").
+- **"Me Lembre Depois"**: agenda lembretes operacionais com período (manhã/tarde/noite).
+- **Realtime & Offline**: alterações sincronizadas via WebSocket Supabase com fallback local no localStorage.
 
 ### 3.4 CRM de Clientes
 
 **Ficha única de passageiro** com gestão documental completa.
 
-- **Dados pessoais**: nome, e-mail, telefone, CPF/RG, data de nascimento, endereço
+- **Dados pessoais**: nome, e-mail, telefone, CPF/RG, data de nascimento, endereço.
 - **Documentação internacional**:
-  - Número do passaporte com alerta visual de validade
-  - Validade monitorada por SLA (mesma engine do Inbox)
-  - Informações de vistos ativos
-- **Upload drag-and-drop**: arraste PDFs, JPEGs ou PNGs para enviar ao Google Drive corporativo
-- **Pasta automática no Drive**: cada cliente tem uma pasta nomeada "[Nome] - [Email] - [Telefone]"
-- **Busca**: por nome, e-mail ou documento
-- **Seleção lateral**: lista de clientes com indicador visual de SLA do passaporte (verde/amarelo/vermelho)
+  - Número do passaporte com alerta visual de validade.
+  - Validade monitorada por SLA (mesma engine do Inbox).
+  - Informações de vistos ativos.
+- **Upload drag-and-drop**: arraste PDFs, JPEGs ou PNGs para enviar ao Google Drive corporativo.
+- **Pasta automática no Drive**: cada cliente tem uma pasta nomeada "[Nome] - [Email] - [Telefone]".
+- **Busca em Tempo Real Ampliada**:
+  - O mecanismo de busca da barra lateral foi estendido para uma busca completa de alta precisão (client-side). O usuário pode filtrar instantaneamente a lista de clientes por qualquer dado cadastrado, incluindo **telefone, e-mail, documento, endereço residencial, visto ativo, passaporte e observações gerais**.
+- **Seleção lateral**: lista de clientes com indicador visual de SLA do passaporte (verde/amarelo/vermelho).
 
 ### 3.5 Central de Reembolsos
 
 **Painel dedicado** para acompanhamento de cancelamentos e reembolsos.
 
-- **Tabela completa** com cliente, destino, produto cancelado, fornecedor, valor solicitado
-- **Cronômetro SLA em tempo real**: mostra dias, horas, minutos e segundos desde a abertura
-- **Alteração de status**: dropdown inline para avançar o fluxo (Aguardando Fornecedor → Em Análise → Aprovado → Pago)
-- **Métricas no topo**: total de processos, aguardando fornecedor, concluídos, valor total pago
-- **Filtro automático**: consultor comum vê apenas seus reembolsos; admin vê todos
+- **Tabela completa** com cliente, destino, produto cancelado, fornecedor, valor solicitado.
+- **Busca em Tempo Real Dedicada**:
+  - Adicionado campo de busca instantânea acima da tabela de reembolsos.
+  - Filtro local em memória de alto desempenho (<1ms) cobrindo **nome e e-mail do cliente, destino, localizador da viagem, tipo de produto, fornecedor, descrição do item cancelado, justificativa da solicitação, status e valores monetários formatados**.
+- **Cronômetro SLA em tempo real**: mostra dias, horas, minutos e segundos decorridos desde a abertura da solicitação.
+- **Alteração de status**: dropdown inline para avançar o fluxo (Aguardando Fornecedor → Em Análise → Aprovado → Pago).
+- **Métricas no topo**: total de processos, aguardando fornecedor, concluídos, valor total pago.
+- **Filtro automático**: consultor comum vê apenas seus reembolsos; admin vê todos.
 
 ### 3.6 Painel Administrativo
 

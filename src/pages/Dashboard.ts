@@ -71,6 +71,7 @@ export class Dashboard {
 
   private viagens: any[] = [];
   private sortables: Sortable[] = [];
+  private buscaTermo: string = '';
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -748,10 +749,10 @@ export class Dashboard {
         </div>
       `;
 
-      // 1. Busca detalhes da viagem
+      // 1. Busca detalhes da viagem com cliente, consultor e reembolsos
       const { data: viagem, error: errViagem } = await supabase
         .from('viagens')
-        .select('*, cliente:clientes(*)')
+        .select('*, cliente:clientes(*), consultor:profiles(*), reembolsos(*, produto:produtos_viagem(*))')
         .eq('id', tripId)
         .single();
 
@@ -785,6 +786,18 @@ export class Dashboard {
     const modalContent = document.getElementById('modal-content-container');
     if (!modalContent) return;
 
+    // Aumenta a largura do modal para acomodar melhor as informações adicionais
+    modalContent.classList.remove('max-w-lg');
+    modalContent.classList.add('max-w-2xl');
+
+    // Cálculos de SLA e Consultor para exibição proeminente
+    const reembolsoConcluido = v.reembolsos && v.reembolsos.some((r: any) => r.status === 'pago');
+    const sla = reembolsoConcluido ? { alert: false, type: null, text: '' } : this.checkSLA(v);
+    
+    const dono = v.consultor;
+    const consultorAvatar = dono ? getAvatarSvg(dono.avatar_url, dono.nome, 'w-6 h-6') : '👤';
+    const consultorNome = dono ? dono.nome : 'Não atribuído';
+
     modalContent.innerHTML = `
       <div class="p-6">
         <!-- Topo com Título e Fechar -->
@@ -804,10 +817,39 @@ export class Dashboard {
           <button id="tab-produtos-btn" class="border-b-2 border-transparent px-4 py-2 text-sm font-semibold text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200 transition">
             🛍️ Produtos e Serviços
           </button>
+          ${v.reembolsos && v.reembolsos.length > 0 ? `
+            <button id="tab-reembolsos-btn" class="border-b-2 border-transparent px-4 py-2 text-sm font-semibold text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200 transition">
+              💸 Histórico de Reembolsos
+            </button>
+          ` : ''}
         </div>
 
         <!-- CONTEÚDO DA ABA 1: DETALHES E EDIÇÃO -->
         <div id="tab-detalhes-content" class="space-y-4">
+          <!-- Detalhes do Dono e SLA no Topo -->
+          <div class="flex flex-wrap items-center justify-between gap-3 p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/50 dark:border-slate-800">
+            <div class="flex items-center gap-2">
+              <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Responsável:</span>
+              <div class="flex items-center gap-1.5 bg-white dark:bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-200/60 dark:border-slate-800 text-xs font-bold shadow-sm">
+                <div class="shrink-0">${consultorAvatar}</div>
+                <span class="text-slate-700 dark:text-slate-200">${consultorNome}</span>
+              </div>
+            </div>
+            
+            ${sla.alert ? `
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Alerta SLA:</span>
+                <span class="px-2.5 py-1 rounded-lg text-xs font-black tracking-wide animate-pulse border ${
+                  sla.type === 'pre-embarque' 
+                    ? 'bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 border-rose-100 dark:border-rose-900/55' 
+                    : 'bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-900/55'
+                }">
+                  ⚠️ ${sla.text}
+                </span>
+              </div>
+            ` : ''}
+          </div>
+
           <form id="form-editar-viagem" class="space-y-4">
             <div>
               <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Passageiro / Cliente *</label>
@@ -940,8 +982,98 @@ export class Dashboard {
               </div>
             </form>
           </div>
-
         </div>
+
+        <!-- CONTEÚDO DA ABA 3: HISTÓRICO DE REEMBOLSOS (DINÂMICO) -->
+        ${v.reembolsos && v.reembolsos.length > 0 ? `
+          <div id="tab-reembolsos-content" class="hidden space-y-4 max-h-[350px] overflow-y-auto pr-1 custom-scrollbar">
+            <h4 class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-wide">Solicitações de Reembolso nesta Viagem</h4>
+            <div class="space-y-3">
+              ${v.reembolsos.map((r: any) => {
+                let statusBadgeClass = 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300';
+                let statusLabel = r.status;
+                if (r.status === 'solicitado' || r.status === 'Aguardando Fornecedor') {
+                  statusBadgeClass = 'bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400 border border-amber-100/30';
+                  statusLabel = 'Aguardando Fornecedor';
+                } else if (r.status === 'em_analise') {
+                  statusBadgeClass = 'bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400 border border-blue-100/30';
+                  statusLabel = 'Em Análise';
+                } else if (r.status === 'aprovado') {
+                  statusBadgeClass = 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/30 dark:text-indigo-400 border border-indigo-100/30';
+                  statusLabel = 'Aprovado';
+                } else if (r.status === 'recusado') {
+                  statusBadgeClass = 'bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-455 border border-rose-100/30';
+                  statusLabel = 'Recusado';
+                } else if (r.status === 'pago') {
+                  statusBadgeClass = 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-450 border border-emerald-100/30';
+                  statusLabel = '💸 Pago / Concluído';
+                } else if (r.status === 'cancelado') {
+                  statusBadgeClass = 'bg-slate-50 text-slate-450 dark:bg-slate-800 dark:text-slate-500 border border-slate-200/50';
+                  statusLabel = 'Cancelado';
+                }
+
+                const dataSolicitacao = r.data_solicitacao ? new Date(r.data_solicitacao).toLocaleDateString('pt-BR') : '';
+                const dataResolucao = r.data_resolucao ? new Date(r.data_resolucao).toLocaleDateString('pt-BR') : '';
+
+                return `
+                  <div class="p-4 bg-slate-50/50 dark:bg-slate-800/20 rounded-xl border border-slate-200/60 dark:border-slate-800/80 space-y-2">
+                    <div class="flex items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-2">
+                      <span class="text-xs font-black text-indigo-650 dark:text-indigo-400">Solicitação de Reembolso</span>
+                      <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${statusBadgeClass}">
+                        ${statusLabel}
+                      </span>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-2.5 text-xs text-slate-650 dark:text-slate-350">
+                      <div>
+                        <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase">Produto Afetado:</span>
+                        <strong class="font-extrabold text-slate-800 dark:text-slate-200">${r.produto ? `[${(r.produto.tipo || 'outro').toUpperCase()}] ${r.produto.fornecedor}` : 'Viagem Integral'}</strong>
+                      </div>
+                      <div>
+                        <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase">Valor Solicitado:</span>
+                        <strong class="text-slate-800 dark:text-slate-200">R$ ${Number(r.valor_solicitado || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
+                      </div>
+                      ${r.valor_aprovado ? `
+                        <div>
+                          <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase">Valor Aprovado:</span>
+                          <strong class="text-emerald-600 dark:text-emerald-450 font-black">R$ ${Number(r.valor_aprovado).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
+                        </div>
+                      ` : ''}
+                      ${r.taxa_retencao ? `
+                        <div>
+                          <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase">Taxa Retenção:</span>
+                          <strong class="text-rose-650 dark:text-rose-450 font-bold">R$ ${Number(r.taxa_retencao).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
+                        </div>
+                      ` : ''}
+                      <div>
+                        <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase">Data Abertura:</span>
+                        <span class="font-semibold text-slate-800 dark:text-slate-200">${dataSolicitacao}</span>
+                      </div>
+                      ${dataResolucao ? `
+                        <div>
+                          <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase">Data Conclusão:</span>
+                          <span class="font-semibold text-emerald-600 dark:text-emerald-450">${dataResolucao}</span>
+                        </div>
+                      ` : ''}
+                    </div>
+
+                    <div class="pt-1.5 border-t border-slate-100 dark:border-slate-800/80">
+                      <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase">Motivo / Justificativa:</span>
+                      <p class="text-xs text-slate-700 dark:text-slate-300 font-semibold italic mt-0.5 bg-white dark:bg-slate-900/60 p-2 rounded-lg border border-slate-100 dark:border-slate-800">${r.motivo_cancelamento || 'Sem motivo registrado.'}</p>
+                    </div>
+
+                    ${r.observacoes_financeiras ? `
+                      <div class="pt-1 text-[11px]">
+                        <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase">Obs Financeiras:</span>
+                        <p class="text-slate-600 dark:text-slate-400 font-medium mt-0.5">${r.observacoes_financeiras}</p>
+                      </div>
+                    ` : ''}
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        ` : ''}
 
       </div>
     `;
@@ -951,24 +1083,41 @@ export class Dashboard {
     document.getElementById('btn-close-edit-modal-x')?.addEventListener('click', handleClose);
     document.getElementById('btn-cancel-edit')?.addEventListener('click', handleClose);
 
-    // Seletores de Abas
+    // Seletores de Abas Premium
     const tabDetalhesBtn = document.getElementById('tab-detalhes-btn');
     const tabProdutosBtn = document.getElementById('tab-produtos-btn');
+    const tabReembolsosBtn = document.getElementById('tab-reembolsos-btn');
+    
     const tabDetalhesContent = document.getElementById('tab-detalhes-content');
     const tabProdutosContent = document.getElementById('tab-produtos-content');
+    const tabReembolsosContent = document.getElementById('tab-reembolsos-content');
+
+    const resetTabs = () => {
+      tabDetalhesBtn?.setAttribute('class', 'border-b-2 border-transparent px-4 py-2 text-sm font-semibold text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200 transition');
+      tabProdutosBtn?.setAttribute('class', 'border-b-2 border-transparent px-4 py-2 text-sm font-semibold text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200 transition');
+      tabReembolsosBtn?.setAttribute('class', 'border-b-2 border-transparent px-4 py-2 text-sm font-semibold text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200 transition');
+      
+      tabDetalhesContent?.classList.add('hidden');
+      tabProdutosContent?.classList.add('hidden');
+      tabReembolsosContent?.classList.add('hidden');
+    };
 
     tabDetalhesBtn?.addEventListener('click', () => {
+      resetTabs();
       tabDetalhesBtn.className = 'border-b-2 border-indigo-600 dark:border-indigo-400 px-4 py-2 text-sm font-black text-indigo-600 dark:text-indigo-400 transition';
-      if (tabProdutosBtn) tabProdutosBtn.className = 'border-b-2 border-transparent px-4 py-2 text-sm font-semibold text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200 transition';
       tabDetalhesContent?.classList.remove('hidden');
-      tabProdutosContent?.classList.add('hidden');
     });
 
     tabProdutosBtn?.addEventListener('click', () => {
+      resetTabs();
       tabProdutosBtn.className = 'border-b-2 border-indigo-600 dark:border-indigo-400 px-4 py-2 text-sm font-black text-indigo-600 dark:text-indigo-400 transition';
-      if (tabDetalhesBtn) tabDetalhesBtn.className = 'border-b-2 border-transparent px-4 py-2 text-sm font-semibold text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200 transition';
       tabProdutosContent?.classList.remove('hidden');
-      tabDetalhesContent?.classList.add('hidden');
+    });
+
+    tabReembolsosBtn?.addEventListener('click', () => {
+      resetTabs();
+      tabReembolsosBtn.className = 'border-b-2 border-indigo-600 dark:border-indigo-400 px-4 py-2 text-sm font-black text-indigo-600 dark:text-indigo-400 transition';
+      tabReembolsosContent?.classList.remove('hidden');
     });
 
     // Submissão do Formulário de Edição da Viagem
@@ -1284,7 +1433,7 @@ export class Dashboard {
    * Renderiza a interface do Dashboard principal
    */
   private render(): void {
-    // Separa as viagens por colunas baseadas no status
+    // Separa as viagens por colunas baseadas no status aplicando a busca em tempo real
     const colunasMap: { [key: string]: any[] } = {
       fechado: [],
       pos_venda: [],
@@ -1293,7 +1442,30 @@ export class Dashboard {
       reembolso_solicitado: []
     };
 
-    this.viagens.forEach(v => {
+    const filtrados = this.viagens.filter(v => {
+      if (!this.buscaTermo) return true;
+      const q = this.buscaTermo.toLowerCase().trim();
+      const cliNome = v.cliente?.nome?.toLowerCase() || '';
+      const cliDoc = v.cliente?.documento?.toLowerCase() || '';
+      const cliEmail = v.cliente?.email?.toLowerCase() || '';
+      const cliTelefone = v.cliente?.telefone?.toLowerCase() || '';
+      const dest = v.destino?.toLowerCase() || '';
+      const loc = v.codigo_localizador?.toLowerCase() || '';
+      const obs = v.observacoes?.toLowerCase() || '';
+      const consultorNome = v.consultor_id === this.user.id ? 'você' : 'outro consultor';
+      return (
+        cliNome.includes(q) ||
+        cliDoc.includes(q) ||
+        cliEmail.includes(q) ||
+        cliTelefone.includes(q) ||
+        dest.includes(q) ||
+        loc.includes(q) ||
+        obs.includes(q) ||
+        consultorNome.includes(q)
+      );
+    });
+
+    filtrados.forEach(v => {
       if (colunasMap[v.status] !== undefined) {
         colunasMap[v.status].push(v);
       } else {
@@ -1326,7 +1498,7 @@ export class Dashboard {
           
           <div class="flex flex-wrap items-center gap-4">
             <!-- Stats Rápidos -->
-            <div class="flex items-center gap-2 bg-slate-100/60 dark:bg-slate-800/40 p-1.5 rounded-xl border border-slate-200/30 dark:border-slate-700/30">
+            <div class="flex items-center gap-2 bg-slate-100/60 dark:bg-slate-800/40 p-1.5 rounded-xl border border-slate-200/30 dark:bg-slate-700/30">
               <div class="px-3.5 py-1.5 text-center">
                 <span class="block text-xs text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">Viagens</span>
                 <span class="text-sm font-black text-slate-700 dark:text-slate-200">${this.viagens.length}</span>
@@ -1336,6 +1508,12 @@ export class Dashboard {
                 <span class="block text-xs text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">SLAs Ativos</span>
                 <span class="text-sm font-black ${totalSlaAlerts > 0 ? 'text-rose-600 animate-pulse' : 'text-slate-700 dark:text-slate-200'}">${totalSlaAlerts}</span>
               </div>
+            </div>
+
+            <!-- Campo de Busca de Viagens -->
+            <div class="relative min-w-[200px] md:min-w-[280px]">
+              <span class="absolute left-3.5 top-3.5 text-slate-400 text-sm">🔍</span>
+              <input id="input-busca-viagem" type="text" placeholder="Pesquisar viagens..." value="${this.buscaTermo}" class="w-full text-xs font-semibold pl-9 pr-4 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition" />
             </div>
 
             <!-- Botão Criar Card / Nova Viagem -->
@@ -1404,6 +1582,21 @@ export class Dashboard {
       if (confirmResult) {
         await logoutConsultor();
         window.location.reload();
+      }
+    });
+
+    // Campo de busca de viagens
+    const searchInput = document.getElementById('input-busca-viagem') as HTMLInputElement;
+    searchInput?.addEventListener('input', (e) => {
+      this.buscaTermo = (e.target as HTMLInputElement).value;
+      this.render();
+      this.setupDragAndDrop();
+
+      // Restaura o foco e coloca o cursor no final
+      const input = document.getElementById('input-busca-viagem') as HTMLInputElement;
+      if (input) {
+        input.focus();
+        input.setSelectionRange(input.value.length, input.value.length);
       }
     });
 

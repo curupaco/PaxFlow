@@ -44,6 +44,7 @@ export class ReembolsosPage {
   private perfil: PerfilConsultor | null = null;
   private reembolsos: any[] = [];
   private timerId: any = null;
+  private buscaTermo: string = '';
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -241,6 +242,21 @@ export class ReembolsosPage {
         window.location.reload();
       }
     });
+
+    // Campo de busca de reembolsos
+    const searchInput = document.getElementById('input-busca-reembolso') as HTMLInputElement;
+    searchInput?.addEventListener('input', (e) => {
+      this.buscaTermo = (e.target as HTMLInputElement).value;
+      this.render();
+      this.iniciarSlaTimer();
+
+      // Restaura o foco e coloca o cursor no final
+      const input = document.getElementById('input-busca-reembolso') as HTMLInputElement;
+      if (input) {
+        input.focus();
+        input.setSelectionRange(input.value.length, input.value.length);
+      }
+    });
   }
 
   /**
@@ -300,6 +316,39 @@ export class ReembolsosPage {
    * Renderiza a página da central de reembolsos
    */
   private render(): void {
+    // Separa e filtra os reembolsos com base no termo de busca
+    const filtrados = this.reembolsos.filter(r => {
+      if (!this.buscaTermo) return true;
+      const q = this.buscaTermo.toLowerCase().trim();
+
+      const cliNome = r.viagem?.cliente?.nome?.toLowerCase() || '';
+      const cliEmail = r.viagem?.cliente?.email?.toLowerCase() || '';
+      const dest = r.viagem?.destino?.toLowerCase() || '';
+      const loc = r.viagem?.codigo_localizador?.toLowerCase() || '';
+      const prodTipo = r.produto?.tipo?.toLowerCase() || '';
+      const prodForn = r.produto?.fornecedor?.toLowerCase() || '';
+      const prodDesc = r.produto?.descricao?.toLowerCase() || '';
+      const motivo = r.motivo_cancelamento?.toLowerCase() || '';
+      const status = r.status?.toLowerCase() || '';
+
+      const valorSolStr = Number(r.valor_solicitado || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 }).toLowerCase();
+      const valorAprovStr = r.valor_aprovado ? Number(r.valor_aprovado).toLocaleString('pt-BR', { minimumFractionDigits: 2 }).toLowerCase() : '';
+
+      return (
+        cliNome.includes(q) ||
+        cliEmail.includes(q) ||
+        dest.includes(q) ||
+        loc.includes(q) ||
+        prodTipo.includes(q) ||
+        prodForn.includes(q) ||
+        prodDesc.includes(q) ||
+        motivo.includes(q) ||
+        status.includes(q) ||
+        valorSolStr.includes(q) ||
+        valorAprovStr.includes(q)
+      );
+    });
+
     // Cálculos rápidos de estatísticas
     const totalReembolsos = this.reembolsos.length;
     const aguardandoFornecedor = this.reembolsos.filter(r => r.status === 'Aguardando Fornecedor' || r.status === 'solicitado').length;
@@ -392,11 +441,19 @@ export class ReembolsosPage {
             </div>
           </div>
 
+          <!-- Campo de Busca em Tempo Real -->
+          <div class="relative max-w-md">
+            <span class="absolute left-3.5 top-3 text-slate-400 text-sm">🔍</span>
+            <input id="input-busca-reembolso" type="text" placeholder="Pesquisar por cliente, destino, localizador, fornecedor, status..." value="${this.buscaTermo}" class="w-full text-xs font-semibold pl-9 pr-4 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition" />
+          </div>
+
           <!-- Tabela de Reembolsos -->
           <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden flex flex-col">
             <div class="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/40 dark:bg-slate-900/40">
               <h2 class="text-sm font-black text-slate-700 dark:text-slate-300 tracking-wider uppercase">Fila de Reembolsos Ativos</h2>
-              <span class="px-2.5 py-1 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400 font-extrabold text-[10px] rounded border border-indigo-100 dark:border-indigo-900/40 uppercase tracking-wider">${this.reembolsos.length} solicitações</span>
+              <span class="px-2.5 py-1 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400 font-extrabold text-[10px] rounded border border-indigo-100 dark:border-indigo-900/40 uppercase tracking-wider">
+                ${this.buscaTermo ? `${filtrados.length} de ${totalReembolsos}` : totalReembolsos} solicitações
+              </span>
             </div>
 
             <div class="overflow-x-auto custom-scrollbar">
@@ -414,13 +471,13 @@ export class ReembolsosPage {
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-sm text-slate-700 dark:text-slate-350 font-semibold bg-white/50 dark:bg-slate-900/30">
-                  ${this.reembolsos.length === 0 ? `
+                  ${filtrados.length === 0 ? `
                     <tr>
                       <td colspan="8" class="py-12 text-center text-slate-400 dark:text-slate-500 text-xs font-semibold">
-                        Nenhuma solicitação de reembolso ativa encontrada.
+                        Nenhuma solicitação de reembolso correspondente encontrada.
                       </td>
                     </tr>
-                  ` : this.reembolsos.map(r => {
+                  ` : filtrados.map(r => {
                     const isPago = r.status === 'pago';
                     const dataAberturaStr = r.created_at || r.created_at_time;
                     
