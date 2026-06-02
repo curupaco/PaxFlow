@@ -141,7 +141,7 @@ class App {
     this.container.innerHTML = `
       <div class="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center space-y-4 transition-colors duration-200">
         <div class="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-        <p class="text-slate-500 dark:text-slate-400 font-semibold animate-pulse">Inicializando PaxFlow CRM...</p>
+        <p class="text-slate-500 dark:text-slate-400 font-semibold animate-pulse">Inicializando PaxFlow...</p>
       </div>
     `;
   }
@@ -161,7 +161,7 @@ class App {
           <div class="text-center flex flex-col items-center select-none">
             <img src="/logo.svg" alt="PaxFlow Logo" class="h-16 w-16 object-contain mb-4 filter drop-shadow-xl" />
             <h2 class="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight" id="login-title">Entrar no PaxFlow</h2>
-            <p class="text-xs text-slate-400 dark:text-slate-500 font-semibold mt-1.5" id="login-subtitle">Painel de CRM & Gestão de Pós-Venda</p>
+            <p class="text-xs text-slate-400 dark:text-slate-500 font-semibold mt-1.5" id="login-subtitle">Painel Operacional</p>
           </div>
 
           <div id="login-error-container" class="hidden px-4 py-3 rounded-xl bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 text-xs font-bold border border-rose-100 dark:border-rose-900/50">
@@ -240,7 +240,7 @@ class App {
       recoveryWrapper.classList.add('hidden');
       loginWrapper.classList.remove('hidden');
       loginTitle.textContent = 'Entrar no PaxFlow';
-      loginSubtitle.textContent = 'Painel de CRM & Gestão de Pós-Venda';
+      loginSubtitle.textContent = 'Painel Operacional';
       errorContainer.className = 'hidden';
       errorContainer.innerHTML = '';
     });

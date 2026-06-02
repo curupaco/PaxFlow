@@ -1,8 +1,8 @@
 # PaxFlow
 
-**Sistema de Gestão de Pós-Venda e Fluxo de Passageiros para Agências de Viagem**
+**Plataforma de Gestão Operacional e Fluxo de Passageiros para Agências de Viagem**
 
-Plataforma SaaS de CRM operacional focada no pós-venda turístico: acompanhamento de passageiros, SLAs de passaporte/visto, pipeline de orçamentos, reembolsos e gestão documental — tudo integrado ao Google Drive e com colaboração em tempo real.
+Plataforma SaaS de gestão operacional e fluxo de passageiros no turismo: acompanhamento de viagens, SLAs de passaporte/visto, pipeline de orçamentos, reembolsos e gestão documental — tudo integrado ao Google Drive e com colaboração em tempo real.
 
 ---
 
@@ -23,7 +23,7 @@ Plataforma SaaS de CRM operacional focada no pós-venda turístico: acompanhamen
 - **Mission Control (Inbox)** — Central de alertas estilo e-mail com SLA de passaporte (180d), reembolsos atrasados e lembretes manuais. Inclui Visualização em Calendário unificada com visões de MÊS, SEMANA e AGENDA, sumarização via Regex e legenda hover tooltip. **Atualizado com busca em tempo real de alta precisão cobrindo campos estruturados, datas formatadas e o consultor responsável.**
 - **Kanban de Viagens** — 5 colunas com drag-and-drop, SLAs visuais e gestão de produtos. **Atualizado com campo de busca em tempo real de alto desempenho (destino, LOC, passageiro, consultor e observações) e modal de gerenciamento ampliado com cabeçalho de SLAs, consultor atribuído e uma aba dinâmica de Histórico de Reembolsos.**
 - **Pipeline de Orçamentos** — 4 estágios com temperatura de lead, tags, notas e upload de documentos. **Atualizado com busca em tempo real no cabeçalho e modal de visualização reformulado em grid de 2 colunas: detalhes operacionais/documentos na esquerda e uma barra lateral na direita com status, temperatura, consultor com avatar, atalhos de contato (WhatsApp/Email), tags e cronômetro de SLA decorrido. Propostas e anexos podem ser abertos de forma inline através do novo visualizador interno.**
-- **CRM de Clientes** — Ficha única com passaporte/visto, validade monitorada por SLA, upload drag-and-drop para Google Drive. **Atualizado com campo de busca omnipresente de alta abrangência e com o novo Visualizador de Documentos Inline PaxFlow, permitindo carregar com segurança passaportes e anexos do Google Drive sem redirecionamento externo. Inclui simulador Sandbox que desenha um documento de passaporte personalizado com dados reais do cliente.**
+- **Gestão e Ficha de Clientes** — Ficha única com passaporte/visto, validade monitorada por SLA, upload drag-and-drop para Google Drive. **Atualizado com campo de busca omnipresente de alta abrangência e com o novo Visualizador de Documentos Inline PaxFlow, permitindo carregar com segurança passaportes e anexos do Google Drive sem redirecionamento externo. Inclui simulador Sandbox que desenha um documento de passaporte personalizado com dados reais do cliente.**
 - **Central de Reembolsos** — Tabela com cronômetro SLA em tempo real, status inline e métricas consolidadas. **Atualizado com campo de busca em tempo real em memória abrangendo clientes, destinos, localizadores, fornecedores, tipos de serviço, status e valores formatados.**
 - **Painel Administrativo (Configurações)** — Configuração de SLAs, gestão de consultores, integração Google Drive. Inclui aba "Importações" para importação em lote de chamados DIGISAC (CSV) com mapeamento inteligente de colunas, conversor monetário/temporal e fuzzy match de atendentes.
 - **Cockpit de Tarefas** — Kanban interno standalone (todo.html) para planejamento da equipe
@@ -109,7 +109,7 @@ src/
 │   ├── Inbox.ts      # Mission Control (alertas SLA + Calendário)
 │   ├── Dashboard.ts  # Kanban de viagens
 │   ├── Orcamentos.ts # Pipeline de orçamentos
-│   ├── Clientes.ts   # CRM de clientes
+│   ├── Clientes.ts   # Gestão de clientes
 │   ├── Reembolsos.ts # Central de reembolsos
 │   └── Configuracoes.ts # Painel admin (Configurações + Importador CSV)
 ├── services/

@@ -146,7 +146,7 @@ export class ConfiguracoesPage {
       if (data) {
         this.settings = {
           id: data.id,
-          agencyName: data.agency_name || data.agencyName || 'PaxFlow CRM',
+          agencyName: data.agency_name || data.agencyName || 'PaxFlow',
           taxaCancelamentoPadrao: data.taxa_cancelamento_padrao || data.taxaCancelamentoPadrao || 0,
           prazoReembolsoDias: data.prazo_reembolso_dias || data.prazoReembolsoDias || 3,
           notificacoesAtivas: data.notificacoes_ativas !== undefined ? data.notificacoes_ativas : true,
@@ -157,7 +157,7 @@ export class ConfiguracoesPage {
         };
       } else {
         const initialPayload = {
-          agency_name: 'PaxFlow CRM',
+          agency_name: 'PaxFlow',
           taxa_cancelamento_padrao: 0,
           prazo_reembolso_dias: 3,
           notificacoes_ativas: true,

@@ -1732,7 +1732,7 @@ export class InboxPage {
             <p class="mt-6 border-t border-slate-100 dark:border-slate-800/80 pt-4 text-xs text-slate-400 dark:text-slate-500">
               Atenciosamente,<br>
               <strong>PaxFlow Cockpit Automático</strong><br>
-              Sistema de Controle Operacional de Pós-Venda
+              Gestão Operacional e Fluxo de Passageiros
             </p>
           </div>
 

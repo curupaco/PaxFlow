@@ -2,7 +2,7 @@
 -- PaxFlow — Schema do Banco de Dados PostgreSQL (Supabase)
 -- ============================================================================
 -- Este script DDL cria toda a estrutura de tabelas, restrições e relacionamentos
--- necessários para o correto funcionamento do ecossistema PaxFlow CRM.
+-- necessários para o correto funcionamento do ecossistema PaxFlow.
 -- Execute este script no SQL Editor do seu projeto Supabase.
 -- ============================================================================
 
@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS public.global_settings (
 );
 
 -- ============================================================================
--- 3. TABELA: clientes (Cadastro de Passageiros no CRM)
+-- 3. TABELA: clientes (Cadastro de Passageiros no PaxFlow)
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS public.clientes (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,

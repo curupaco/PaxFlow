@@ -58,7 +58,7 @@ export class Dashboard {
   private perfil: PerfilConsultor | null = null;
   private settings: GlobalSettings = {
     id: '',
-    agencyName: 'PaxFlow CRM',
+    agencyName: 'PaxFlow',
     taxaCancelamentoPadrao: 0,
     prazoReembolsoDias: 3,
     notificacoesAtivas: true,
@@ -140,7 +140,7 @@ export class Dashboard {
       if (data) {
         this.settings = {
           id: data.id,
-          agencyName: data.agency_name || data.agencyName || 'PaxFlow CRM',
+          agencyName: data.agency_name || data.agencyName || 'PaxFlow',
           taxaCancelamentoPadrao: data.taxa_cancelamento_padrao || 0,
           prazoReembolsoDias: data.prazo_reembolso_dias || 3,
           notificacoesAtivas: data.notificacoes_ativas ?? true,
