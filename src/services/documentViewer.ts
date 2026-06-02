@@ -48,7 +48,7 @@ export class DocumentViewer {
           
           <div class="flex items-center gap-3.5">
             <!-- Botão de Download Local (Será habilitado após carregamento) -->
-            <button id="paxflow-doc-download-btn" disabled class="px-3.5 py-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-450 dark:text-slate-500 font-extrabold text-[10px] uppercase tracking-wider rounded-lg border border-slate-200 dark:border-slate-700/80 transition flex items-center gap-1.5 opacity-50 cursor-not-allowed">
+            <button id="paxflow-doc-download-btn" disabled class="px-3.5 py-2 bg-indigo-50/50 dark:bg-indigo-950/20 text-indigo-400 dark:text-indigo-600 font-extrabold text-[10px] uppercase tracking-wider rounded-lg border border-indigo-100/20 dark:border-indigo-900/20 transition flex items-center gap-1.5 opacity-50 cursor-not-allowed">
               <span>📥</span> Download
             </button>
             
@@ -165,7 +165,7 @@ export class DocumentViewer {
         // Habilita botão de download real
         if (downloadBtn) {
           downloadBtn.disabled = false;
-          downloadBtn.className = 'px-3.5 py-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-250 font-extrabold text-[10px] uppercase tracking-wider rounded-lg border border-slate-200 dark:border-slate-700/80 transition flex items-center gap-1.5 shadow-sm cursor-pointer';
+          downloadBtn.className = 'px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/50 text-indigo-650 dark:text-indigo-400 font-extrabold text-[10px] uppercase tracking-wider rounded-lg border border-indigo-100/30 dark:border-indigo-900/30 transition flex items-center gap-1.5 shadow-sm cursor-pointer';
           downloadBtn.addEventListener('click', () => {
             const a = document.createElement('a');
             a.href = this.activeObjectURL!;
@@ -456,7 +456,7 @@ export class DocumentViewer {
     if (!downloadBtn) return;
 
     downloadBtn.disabled = false;
-    downloadBtn.className = 'px-3.5 py-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-250 font-extrabold text-[10px] uppercase tracking-wider rounded-lg border border-slate-200 dark:border-slate-700/80 transition flex items-center gap-1.5 shadow-sm cursor-pointer';
+    downloadBtn.className = 'px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/50 text-indigo-650 dark:text-indigo-400 font-extrabold text-[10px] uppercase tracking-wider rounded-lg border border-indigo-100/30 dark:border-indigo-900/30 transition flex items-center gap-1.5 shadow-sm cursor-pointer';
 
     downloadBtn.addEventListener('click', () => {
       // Cria e baixa um arquivo de texto resumido da simulação
