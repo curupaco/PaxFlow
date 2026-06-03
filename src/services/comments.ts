@@ -327,8 +327,14 @@ export class CommentsService {
     currentUserId: string,
     profiles: PerfilConsultor[]
   ): Promise<void> {
-    const otherProfiles = profiles.filter(p => p.id !== currentUserId && p.ativo);
-    if (otherProfiles.length === 0) return;
+    console.log('[Mentions] processMentions iniciado.', { commentId, texto, currentUserId, profilesCount: profiles?.length });
+    const otherProfiles = (profiles || []).filter(p => p.id !== currentUserId && p.ativo);
+    console.log('[Mentions] Consultores ativos (excluindo autor):', otherProfiles.map(p => p.nome));
+
+    if (otherProfiles.length === 0) {
+      console.warn('[Mentions] Nenhum outro consultor ativo encontrado para notificar.');
+      return;
+    }
 
     const matchedRanges: { start: number; end: number; profile: PerfilConsultor }[] = [];
 
@@ -352,6 +358,8 @@ export class CommentsService {
       }
     }
 
+    console.log('[Mentions] Ranges casados:', matchedRanges.map(r => ({ nome: r.profile.nome, start: r.start, end: r.end })));
+
     // Filtra ranges sobrepostos (ex: se houver @fernanda ganem e @fernanda no mesmo local, mantém apenas o mais longo)
     const finalMentions = matchedRanges.filter(r1 => {
       const isSubRange = matchedRanges.some(r2 => 
@@ -363,10 +371,18 @@ export class CommentsService {
       return !isSubRange;
     });
 
-    // Pega a lista única de perfis correspondentes
-    const uniqueMentions = Array.from(new Set(finalMentions.map(r => r.profile)));
+    // Pega a lista única de IDs de perfis correspondentes
+    const uniqueMentionIds = Array.from(new Set(finalMentions.map(r => r.profile.id)));
+    const uniqueMentions = uniqueMentionIds
+      .map(id => otherProfiles.find(p => p.id === id))
+      .filter((p): p is PerfilConsultor => !!p);
 
-    if (uniqueMentions.length === 0) return;
+    console.log('[Mentions] Menções finais desduplicadas:', uniqueMentions.map(p => p.nome));
+
+    if (uniqueMentions.length === 0) {
+      console.log('[Mentions] Nenhuma menção válida encontrada no texto.');
+      return;
+    }
 
     // Insere as notificações em lote
     const notificationsPayload = uniqueMentions.map(p => ({
@@ -379,12 +395,16 @@ export class CommentsService {
       arquivada: false
     }));
 
-    const { error } = await supabase
+    console.log('[Mentions] Inserindo notificações no Supabase:', notificationsPayload);
+    const { data, error } = await supabase
       .from('notificacoes')
-      .insert(notificationsPayload);
+      .insert(notificationsPayload)
+      .select();
 
     if (error) {
-      console.error('Erro ao inserir notificações de menção:', error);
+      console.error('[Mentions] Erro ao inserir notificações de menção:', error);
+    } else {
+      console.log('[Mentions] Notificações inseridas com sucesso no banco:', data);
     }
   }
 
