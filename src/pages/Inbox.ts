@@ -789,7 +789,7 @@ export class InboxPage {
       <div class="min-h-screen bg-slate-50/50 dark:bg-slate-950 flex flex-col font-sans transition-colors duration-200">
         
         <!-- Header Section -->
-        <header class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-850 sticky top-0 z-30 px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 transition-colors duration-200">
+        <header class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 sticky top-0 z-30 px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 transition-colors duration-200">
           <div class="flex items-center gap-3.5">
             <div class="p-2.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-650 dark:text-indigo-400 rounded-xl">
               <svg class="w-6 h-6 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
@@ -799,14 +799,14 @@ export class InboxPage {
             </div>
             <div>
               <h1 class="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight">Mission Control</h1>
-              <p class="text-xs text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">Inbox de Alertas & Centro Operacional</p>
+              <p class="text-xs text-slate-400 dark:text-slate-550 font-bold uppercase tracking-wider">Inbox de Alertas & Centro Operacional</p>
             </div>
           </div>
 
-          <div class="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end">
+          <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto justify-end">
             <!-- Seletor de Consultores (Apenas para Admins) -->
             ${this.perfil?.role === 'admin' ? `
-              <div class="flex items-center gap-1.5 shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-850 px-2.5 py-1.5 rounded-xl shadow-sm">
+              <div class="flex items-center gap-1.5 shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2.5 py-1.5 rounded-xl shadow-sm">
                 <span class="text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-550 select-none">Equipe:</span>
                 <select id="admin-consultant-select" class="text-xs font-bold bg-transparent text-slate-700 dark:text-slate-350 focus:outline-none cursor-pointer max-w-[150px]">
                   <option value="todos" ${this.selectedConsultantFilter === 'todos' ? 'selected' : ''}>Todos os Consultores</option>
@@ -816,31 +816,33 @@ export class InboxPage {
             ` : ''}
 
             <!-- Identidade do Consultor Logado -->
-            <div class="flex items-center gap-3 pl-2 border-l border-slate-200/60 dark:border-slate-800/60 shrink-0">
+            <div class="flex items-center justify-between sm:justify-start gap-3 pl-0 sm:pl-3 border-t sm:border-t-0 sm:border-l border-slate-200/60 dark:border-slate-800/60 pt-3 sm:pt-0 shrink-0">
               <div class="text-right hidden sm:block">
                 <span class="block text-sm font-extrabold text-slate-700 dark:text-slate-300">${this.perfil?.nome || 'Consultor'}</span>
                 <span class="block text-[10px] text-slate-400 dark:text-slate-550 font-bold uppercase tracking-wider">${this.perfil?.email || this.user.email}</span>
               </div>
-              <div class="${hasUnread ? 'unread-avatar-glow' : ''}">
-                ${getAvatarSvg(this.perfil?.avatar_url, this.perfil?.nome?.charAt(0) || 'C', 'w-10 h-10')}
+              <div class="flex items-center gap-3">
+                <div class="${hasUnread ? 'unread-avatar-glow' : ''}">
+                  ${getAvatarSvg(this.perfil?.avatar_url, this.perfil?.nome?.charAt(0) || 'C', 'w-10 h-10')}
+                </div>
+                
+                <!-- Theme toggle button -->
+                <button id="theme-toggle-btn" title="Alternar Tema" class="p-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-650 dark:text-slate-400 dark:hover:text-slate-200 rounded-xl transition border border-slate-200/40 dark:border-slate-700/40 flex items-center justify-center">
+                  <svg width="20" height="20" class="w-5 h-5 theme-icon-light" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                  </svg>
+                  <svg width="20" height="20" class="w-5 h-5 theme-icon-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.364l-.707-.707M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                </button>
+                
+                <!-- Sair do Sistema (Logout) -->
+                <button id="btn-logout" title="Sair do Sistema" class="p-2.5 bg-slate-100 hover:bg-rose-50 dark:bg-slate-800 dark:hover:bg-rose-950/30 text-slate-400 hover:text-rose-500 dark:text-slate-500 dark:hover:text-rose-400 rounded-xl transition border border-slate-200/40 dark:border-slate-700/40 flex items-center justify-center">
+                  <svg width="20" height="20" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
+                </button>
               </div>
-              
-              <!-- Theme toggle button -->
-              <button id="theme-toggle-btn" title="Alternar Tema" class="p-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-455 hover:text-slate-650 dark:text-slate-400 dark:hover:text-slate-200 rounded-xl transition border border-slate-200/40 dark:border-slate-700/40 flex items-center justify-center">
-                <svg width="20" height="20" class="w-5 h-5 theme-icon-light" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                </svg>
-                <svg width="20" height="20" class="w-5 h-5 theme-icon-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.364l-.707-.707M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-              </button>
-              
-              <!-- Sair do Sistema (Logout) -->
-              <button id="btn-logout" title="Sair do Sistema" class="p-2.5 bg-slate-100 hover:bg-rose-50 dark:bg-slate-800 dark:hover:bg-rose-950/30 text-slate-400 hover:text-rose-500 dark:text-slate-550 dark:hover:text-rose-400 rounded-xl transition border border-slate-200/40 dark:border-slate-700/40 flex items-center justify-center">
-                <svg width="20" height="20" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
-              </button>
             </div>
           </div>
         </header>
@@ -1093,7 +1095,7 @@ export class InboxPage {
     return `
       <div class="space-y-4">
         <!-- Calendar Control Bar -->
-        <div class="inbox-glass p-4 rounded-2xl shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div class="inbox-glass p-4 rounded-2xl shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4 relative z-30">
           
           <!-- Mode Tabs -->
           <div class="flex bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200/40 dark:border-slate-800/40 w-full sm:w-auto">

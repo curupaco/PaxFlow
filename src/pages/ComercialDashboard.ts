@@ -372,8 +372,7 @@ export class ComercialDashboard {
     this.container.innerHTML = `
       <div class="min-h-screen bg-slate-50/50 dark:bg-slate-950 flex flex-col font-sans transition-colors duration-200">
         
-        <!-- Cabeçalho Principal -->
-        <header class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 sticky top-0 z-30 px-6 py-4 flex flex-col lg:flex-row items-center justify-between gap-4 transition-colors duration-200">
+               <header class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 sticky top-0 z-30 px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 transition-colors duration-200">
           <div class="flex items-center gap-3">
             <img src="/logo.svg" alt="PaxFlow Logo" class="h-10 w-auto object-contain" />
             <div>
@@ -386,10 +385,10 @@ export class ComercialDashboard {
           </div>
           
           <!-- Filtros de Dashboard & Perfil -->
-          <div class="flex flex-wrap items-center gap-3 w-full lg:w-auto justify-end">
+          <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto justify-end">
             
             <!-- Seletor de Período -->
-            <div class="flex items-center gap-1.5 shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-850 px-2.5 py-1.5 rounded-xl shadow-sm">
+            <div class="flex items-center gap-1.5 shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2.5 py-1.5 rounded-xl shadow-sm">
               <span class="text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-550 select-none">Período:</span>
               <select id="select-dashboard-periodo" class="text-xs font-bold bg-transparent text-slate-700 dark:text-slate-350 focus:outline-none cursor-pointer">
                 <option value="mes_atual" ${this.selectedPeriod === 'mes_atual' ? 'selected' : ''}>Mês Atual</option>
@@ -402,7 +401,7 @@ export class ComercialDashboard {
 
             <!-- Seletor de Consultores (Apenas para Admins) -->
             ${isAdmin ? `
-              <div class="flex items-center gap-1.5 shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-850 px-2.5 py-1.5 rounded-xl shadow-sm">
+              <div class="flex items-center gap-1.5 shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2.5 py-1.5 rounded-xl shadow-sm">
                 <span class="text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-550 select-none">Equipe:</span>
                 <select id="select-dashboard-consultor" class="text-xs font-bold bg-transparent text-slate-700 dark:text-slate-350 focus:outline-none cursor-pointer max-w-[150px]">
                   <option value="todos" ${this.selectedConsultantId === 'todos' ? 'selected' : ''}>Todos os Consultores</option>
@@ -412,29 +411,31 @@ export class ComercialDashboard {
             ` : ''}
 
             <!-- Identidade do Consultor Logado -->
-            <div class="flex items-center gap-3 pl-2 border-l border-slate-200/60 dark:border-slate-800/60 shrink-0">
+            <div class="flex items-center justify-between sm:justify-start gap-3 pl-0 sm:pl-3 border-t sm:border-t-0 sm:border-l border-slate-200/60 dark:border-slate-800/60 pt-3 sm:pt-0 shrink-0">
               <div class="text-right hidden sm:block">
                 <span class="block text-sm font-extrabold text-slate-700 dark:text-slate-300">${this.perfil?.nome || 'Consultor'}</span>
-                <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">${this.perfil?.role || 'consultor'}</span>
+                <span class="block text-[10px] text-slate-400 dark:text-slate-550 font-bold uppercase tracking-wider">${this.perfil?.role || 'consultor'}</span>
               </div>
-              ${getAvatarSvg(this.perfil?.avatar_url, this.perfil?.nome || 'C', 'w-10 h-10')}
-              
-              <!-- Theme Toggle (Delegação Global cuida disso) -->
-              <button id="theme-toggle-btn" title="Alternar Tema" class="p-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-650 dark:text-slate-450 dark:hover:text-slate-250 rounded-xl transition border border-slate-200/40 dark:border-slate-700/40 flex items-center justify-center">
-                <svg width="20" height="20" class="w-5 h-5 theme-icon-light" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                </svg>
-                <svg width="20" height="20" class="w-5 h-5 theme-icon-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.364l-.707-.707M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-              </button>
-              
-              <!-- Logout -->
-              <button id="btn-logout-dash" title="Sair do Sistema" class="p-2.5 bg-slate-100 hover:bg-rose-50 dark:bg-slate-800 dark:hover:bg-rose-950/30 text-slate-400 hover:text-rose-500 dark:text-slate-500 dark:hover:text-rose-455 rounded-xl transition border border-slate-200/40 dark:border-slate-700/40 flex items-center justify-center">
-                <svg width="20" height="20" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3 3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
-              </button>
+              <div class="flex items-center gap-3">
+                ${getAvatarSvg(this.perfil?.avatar_url, this.perfil?.nome || 'C', 'w-10 h-10')}
+                
+                <!-- Theme Toggle -->
+                <button id="theme-toggle-btn" title="Alternar Tema" class="p-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-650 dark:text-slate-400 dark:hover:text-slate-200 rounded-xl transition border border-slate-200/40 dark:border-slate-700/40 flex items-center justify-center">
+                  <svg width="20" height="20" class="w-5 h-5 theme-icon-light" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                  </svg>
+                  <svg width="20" height="20" class="w-5 h-5 theme-icon-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.364l-.707-.707M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                </button>
+                
+                <!-- Logout -->
+                <button id="btn-logout-dash" title="Sair do Sistema" class="p-2.5 bg-slate-100 hover:bg-rose-50 dark:bg-slate-800 dark:hover:bg-rose-950/30 text-slate-400 hover:text-rose-500 dark:text-slate-500 dark:hover:text-rose-455 rounded-xl transition border border-slate-200/40 dark:border-slate-700/40 flex items-center justify-center">
+                  <svg width="20" height="20" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3 3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
         </header>
