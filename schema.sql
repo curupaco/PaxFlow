@@ -124,6 +124,7 @@ CREATE TABLE IF NOT EXISTS public.reembolsos (
 CREATE TABLE IF NOT EXISTS public.orcamentos (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     consultor_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
+    cliente_id UUID REFERENCES public.clientes(id) ON DELETE SET NULL,
     nome_cliente TEXT NOT NULL,
     contato TEXT NOT NULL,
     destino TEXT NOT NULL,

@@ -143,6 +143,8 @@ export interface Reembolso {
 export interface Orcamento {
   id: string;
   consultorId: string;
+  clienteId?: string;
+  cliente_id?: string;
   nomeCliente: string;
   contato: string;
   destino: string;

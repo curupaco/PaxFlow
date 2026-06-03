@@ -13,20 +13,12 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 });
 
 async function main() {
-  const { data, error } = await supabase.from('profiles').select('*');
+  const { data, error } = await supabase.from('orcamentos').select('cliente_id').limit(1);
   if (error) {
-    console.error('Error fetching profiles:', error);
+    console.error('Error fetching orcamentos client_id:', error);
     return;
   }
-
-  console.log('Total profiles found:', data.length);
-  for (const p of data) {
-    console.log('----------------------------------------');
-    console.log('ID:', p.id);
-    console.log('Nome:', p.nome);
-    console.log('Email:', p.email);
-    console.log('Role:', p.role);
-  }
+  console.log('Successfully queried orcamentos, data:', data);
 }
 
 main();

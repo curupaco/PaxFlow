@@ -40,6 +40,8 @@ export class OrcamentosPage {
   private perfil: PerfilConsultor | null = null;
   private orcamentos: Orcamento[] = [];
   private consultores: PerfilConsultor[] = [];
+  private clientes: any[] = [];
+  private selectedClienteId: string | null = null;
   private loading: boolean = false;
   private isFallbackMode: boolean = false;
   private realtimeChannel: any = null;
@@ -76,9 +78,10 @@ export class OrcamentosPage {
         }
       });
 
-      // 2. Carregar dados (Orçamentos e Consultores)
+      // 2. Carregar dados (Orçamentos, Consultores e Clientes)
       await this.loadConsultores();
       await this.loadOrcamentos();
+      await this.loadClientes();
 
       // 3. Renderizar interface principal (que já configura os ouvintes de eventos)
       this.render();
@@ -184,6 +187,43 @@ export class OrcamentosPage {
   }
 
   /**
+   * Busca todos os clientes cadastrados para o autocomplete de clientes recorrentes
+   */
+  private async loadClientes(): Promise<void> {
+    try {
+      if (this.isFallbackMode) {
+        this.loadClientesFromLocalStorage();
+        return;
+      }
+      const { data, error } = await supabase
+        .from('clientes')
+        .select('*')
+        .order('nome', { ascending: true });
+
+      if (error) throw error;
+      this.clientes = data || [];
+      localStorage.setItem('paxflow-clientes-backup', JSON.stringify(this.clientes));
+    } catch (err: any) {
+      console.warn('Erro ao carregar clientes para autocompletar (usando backup local):', err.message);
+      this.loadClientesFromLocalStorage();
+    }
+  }
+
+  private loadClientesFromLocalStorage(): void {
+    const saved = localStorage.getItem('paxflow-clientes-backup');
+    if (saved) {
+      try {
+        this.clientes = JSON.parse(saved);
+      } catch (e) {
+        console.error('Erro ao fazer parse dos clientes locais:', e);
+        this.clientes = [];
+      }
+    } else {
+      this.clientes = [];
+    }
+  }
+
+  /**
    * Carrega orçamentos salvos no LocalStorage (Modo Fallback / Offline)
    */
   private loadOrcamentosFromLocalStorage(): void {
@@ -278,6 +318,7 @@ export class OrcamentosPage {
     try {
       const payload: any = {
         consultor_id: o.consultorId,
+        cliente_id: o.cliente_id || o.clienteId || null,
         nome_cliente: o.nomeCliente,
         contato: o.contato,
         destino: o.destino,
@@ -307,11 +348,14 @@ export class OrcamentosPage {
 
       if (resError) {
         // Se o erro for de coluna inexistente no Supabase (Postgres code 42703 ou undefined_column)
-        if (resError.code === '42703' || (resError.message && resError.message.includes('valor_proposta')) || (resError.message && resError.message.includes('column') && resError.message.includes('does not exist'))) {
-          console.warn('Aviso: Coluna "valor_proposta" não encontrada no Supabase. Salvando sem esta coluna.');
-          this.showToast('Aviso: Banco desatualizado. Salvo sem o campo de valor.', 'error');
+        if (resError.code === '42703' || 
+            (resError.message && (resError.message.includes('valor_proposta') || resError.message.includes('cliente_id'))) || 
+            (resError.message && resError.message.includes('column') && resError.message.includes('does not exist'))) {
+          console.warn('Aviso: Colunas novas não encontradas no Supabase. Salvando sem valor_proposta/cliente_id.');
+          this.showToast('Aviso: Banco desatualizado. Salvo sem os campos de valor/cliente_id.', 'error');
           
           delete payload.valor_proposta;
+          delete payload.cliente_id;
           let retryError;
           if (o.id && !o.id.startsWith('orc-')) {
             const { error } = await supabase
@@ -1012,6 +1056,7 @@ export class OrcamentosPage {
    * Abre o Modal de Criação de Novo Orçamento (Estágio SOLICITADO)
    */
   private openNovoOrcamentoModal(): void {
+    this.selectedClienteId = null;
     this.renderModalOverlay();
     const portal = document.getElementById('orcamento-modal-portal');
     const modalContent = document.getElementById('modal-content-container');
@@ -1039,17 +1084,23 @@ export class OrcamentosPage {
         <form id="form-novo-orcamento" class="space-y-4">
           <div>
             <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Nome Completo do Cliente *</label>
-            <input id="input-orc-nome" type="text" required placeholder="ex: João da Silva" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+            <div class="relative">
+              <input id="input-orc-nome" type="text" required placeholder="ex: João da Silva" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" autocomplete="off" />
+            </div>
           </div>
 
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Telefone</label>
-              <input id="input-orc-telefone" type="tel" placeholder="ex: (11) 98888-7777" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+              <div class="relative">
+                <input id="input-orc-telefone" type="tel" placeholder="ex: (11) 98888-7777" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" autocomplete="off" />
+              </div>
             </div>
             <div>
               <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">E-mail</label>
-              <input id="input-orc-email" type="email" placeholder="ex: joao@email.com" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+              <div class="relative">
+                <input id="input-orc-email" type="email" placeholder="ex: joao@email.com" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" autocomplete="off" />
+              </div>
             </div>
           </div>
 
@@ -1102,6 +1153,107 @@ export class OrcamentosPage {
     const closeModal = () => this.closeModal();
     document.getElementById('btn-close-modal-x')?.addEventListener('click', closeModal);
     document.getElementById('btn-cancel-modal')?.addEventListener('click', closeModal);
+
+    // Autocomplete para clientes recorrentes
+    const inputNome = document.getElementById('input-orc-nome') as HTMLInputElement;
+    const inputTelefone = document.getElementById('input-orc-telefone') as HTMLInputElement;
+    const inputEmail = document.getElementById('input-orc-email') as HTMLInputElement;
+
+    const showLinkedClientIndicator = (nome: string) => {
+      clearLinkedClientIndicator();
+      const label = inputNome.previousElementSibling || inputNome.parentElement?.previousElementSibling;
+      if (label) {
+        const badge = document.createElement('span');
+        badge.id = 'linked-client-badge';
+        badge.className = 'ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-800/30 animate-pulse';
+        badge.innerHTML = `
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+          Cliente Cadastrado
+        `;
+        label.appendChild(badge);
+      }
+    };
+
+    const clearLinkedClientIndicator = () => {
+      document.getElementById('linked-client-badge')?.remove();
+    };
+
+    const filterAndShowSuggestions = (inputEl: HTMLInputElement, field: 'nome' | 'telefone' | 'email') => {
+      const val = inputEl.value.trim().toLowerCase();
+      document.getElementById('cliente-autocomplete-dropdown')?.remove();
+
+      if (!val || val.length < 2) {
+        return;
+      }
+
+      const matches = this.clientes.filter(c => {
+        const nomeMatch = c.nome?.toLowerCase().includes(val);
+        const telMatch = c.telefone?.replace(/\D/g, '').includes(val.replace(/\D/g, '')) || c.telefone?.toLowerCase().includes(val);
+        const emailMatch = c.email?.toLowerCase().includes(val);
+        return nomeMatch || telMatch || emailMatch;
+      });
+
+      if (matches.length === 0) return;
+
+      const dropdown = document.createElement('div');
+      dropdown.id = 'cliente-autocomplete-dropdown';
+      dropdown.className = 'absolute left-0 right-0 z-50 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl max-h-60 overflow-y-auto mt-1 divide-y divide-slate-100 dark:divide-slate-700/50 animate-slide-up';
+      
+      matches.forEach(c => {
+        const item = document.createElement('button');
+        item.type = 'button';
+        item.className = 'w-full text-left px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition flex flex-col gap-0.5 select-none focus:outline-none';
+        item.innerHTML = `
+          <span class="text-sm font-bold text-slate-850 dark:text-slate-100">${c.nome}</span>
+          <span class="text-xs text-slate-500 dark:text-slate-400 font-medium">
+            ${c.telefone ? `📞 ${c.telefone}` : ''} ${c.email ? ` | ✉️ ${c.email}` : ''}
+          </span>
+        `;
+        
+        item.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          
+          inputNome.value = c.nome || '';
+          inputTelefone.value = c.telefone || '';
+          inputEmail.value = c.email || '';
+          this.selectedClienteId = c.id;
+          
+          showLinkedClientIndicator(c.nome);
+          dropdown.remove();
+        });
+        
+        dropdown.appendChild(item);
+      });
+
+      inputEl.parentElement?.appendChild(dropdown);
+    };
+
+    const setupInputAutocomplete = (inputEl: HTMLInputElement, field: 'nome' | 'telefone' | 'email') => {
+      inputEl.addEventListener('input', () => {
+        this.selectedClienteId = null; // Reset linkage if manual edits occur
+        clearLinkedClientIndicator();
+        filterAndShowSuggestions(inputEl, field);
+      });
+
+      inputEl.addEventListener('focus', () => {
+        filterAndShowSuggestions(inputEl, field);
+      });
+    };
+
+    setupInputAutocomplete(inputNome, 'nome');
+    setupInputAutocomplete(inputTelefone, 'telefone');
+    setupInputAutocomplete(inputEmail, 'email');
+
+    // Close dropdown on click outside
+    document.addEventListener('click', (e) => {
+      if (!(e.target as HTMLElement).closest('#cliente-autocomplete-dropdown') && 
+          !(e.target as HTMLElement).closest('#input-orc-nome') &&
+          !(e.target as HTMLElement).closest('#input-orc-telefone') &&
+          !(e.target as HTMLElement).closest('#input-orc-email')) {
+        document.getElementById('cliente-autocomplete-dropdown')?.remove();
+      }
+    });
 
     // Máscara e auto-formatação para a Data Estimada (dd/mm/aaaa) em conformidade com .cursorrules
     const dataInput = document.getElementById('input-orc-data') as HTMLInputElement;
@@ -1192,6 +1344,8 @@ export class OrcamentosPage {
       const payload: Orcamento = {
         id: 'orc-' + Math.random().toString(36).substr(2, 9),
         consultorId: consultorVal,
+        clienteId: this.selectedClienteId || undefined,
+        cliente_id: this.selectedClienteId || undefined,
         nomeCliente: nomeVal,
         contato: contatoVal,
         destino: destinoVal,
@@ -1437,7 +1591,7 @@ export class OrcamentosPage {
    * Abre o modal inteligente para fechar o orçamento (AGUARDANDO -> CONCLUIDO / ACEITO)
    * Permite cadastrar automaticamente o Cliente e a Viagem pré-preenchendo os dados
    */
-  private openAceitarOrcamentoModal(id: string): void {
+  private async openAceitarOrcamentoModal(id: string): Promise<void> {
     const orc = this.orcamentos.find(o => o.id === id);
     if (!orc) return;
 
@@ -1448,8 +1602,40 @@ export class OrcamentosPage {
 
     // Tenta extrair telefone e e-mail do contato
     const parts = orc.contato.split('/');
-    const tVal = parts.length > 0 ? parts[0].trim() : '';
-    const eVal = parts.length > 1 ? parts[1].trim() : '';
+    let tVal = parts.length > 0 ? parts[0].trim() : '';
+    let eVal = parts.length > 1 ? parts[1].trim() : '';
+    let docVal = '';
+
+    let linkedClient: any = null;
+    let activeTrips: any[] = [];
+
+    const cId = orc.cliente_id || orc.clienteId;
+    if (cId) {
+      try {
+        const { data: cliData } = await supabase
+          .from('clientes')
+          .select('*')
+          .eq('id', cId)
+          .single();
+        if (cliData) {
+          linkedClient = cliData;
+          tVal = cliData.telefone || tVal;
+          eVal = cliData.email || eVal;
+          docVal = cliData.documento || docVal;
+        }
+
+        const { data: tripsData } = await supabase
+          .from('viagens')
+          .select('*')
+          .eq('cliente_id', cId)
+          .not('status', 'in', '("cancelada","concluida")');
+        if (tripsData) {
+          activeTrips = tripsData;
+        }
+      } catch (err) {
+        console.warn('Erro ao carregar dados do cliente/viagens no modal de aprovação:', err);
+      }
+    }
 
     modalContent.innerHTML = `
       <div class="p-6 max-h-[85vh] overflow-y-auto custom-scrollbar">
@@ -1463,37 +1649,65 @@ export class OrcamentosPage {
         <div class="p-4 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-450 border border-emerald-100/30 rounded-xl text-xs font-bold mb-5 leading-normal flex items-start gap-2">
           <span class="text-base select-none">🎉</span>
           <p>
-            Parabéns pela venda! Ao confirmar os dados abaixo, o PaxFlow criará **automaticamente** a ficha única do passageiro na Ficha de Clientes e adicionará a viagem no Kanban Operacional, vinculando todos os históricos.
+            Parabéns pela venda! Ao confirmar os dados abaixo, o PaxFlow criará **automaticamente** a ficha única do passageiro (se não houver) e vinculará a viagem ou adicionará os serviços/produtos à sacola da viagem selecionada.
           </p>
         </div>
 
         <form id="form-fechar-viagem" class="space-y-6">
           
-          <!-- SEÇÃO 1: DADOS DO NOVO CLIENTE -->
+          <!-- SEÇÃO 1: DADOS DO CLIENTE -->
           <div>
             <h4 class="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-3.5 border-b border-indigo-50/50 dark:border-slate-800 pb-1">1. Ficha Única do Passageiro</h4>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Nome Completo *</label>
-                <input id="input-fechar-cli-nome" type="text" required value="${orc.nomeCliente}" class="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+                <input id="input-fechar-cli-nome" type="text" required value="${linkedClient?.nome || orc.nomeCliente}" class="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" ${linkedClient ? 'readonly class="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 rounded-lg focus:outline-none text-slate-550 dark:text-slate-400 font-semibold text-sm cursor-not-allowed"' : ''} />
               </div>
               <div>
                 <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">E-mail de Contato *</label>
-                <input id="input-fechar-cli-email" type="email" required value="${eVal}" placeholder="ex: passageiro@email.com" class="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+                <input id="input-fechar-cli-email" type="email" required value="${eVal}" placeholder="ex: passageiro@email.com" class="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" ${linkedClient ? 'readonly class="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 rounded-lg focus:outline-none text-slate-550 dark:text-slate-400 font-semibold text-sm cursor-not-allowed"' : ''} />
               </div>
               <div>
                 <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Telefone/WhatsApp *</label>
-                <input id="input-fechar-cli-telefone" type="tel" required value="${tVal}" placeholder="ex: (11) 98888-7777" class="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+                <input id="input-fechar-cli-telefone" type="tel" required value="${tVal}" placeholder="ex: (11) 98888-7777" class="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" ${linkedClient ? 'readonly class="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 rounded-lg focus:outline-none text-slate-550 dark:text-slate-400 font-semibold text-sm cursor-not-allowed"' : ''} />
               </div>
               <div>
                 <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Documento de Identificação *</label>
-                <input id="input-fechar-cli-doc" type="text" required placeholder="Digite o CPF ou RG do cliente" class="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+                <input id="input-fechar-cli-doc" type="text" required value="${docVal}" placeholder="Digite o CPF ou RG do cliente" class="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" ${linkedClient ? 'readonly class="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 rounded-lg focus:outline-none text-slate-550 dark:text-slate-400 font-semibold text-sm cursor-not-allowed"' : ''} />
               </div>
             </div>
           </div>
 
+          <!-- SEÇÃO DE ESCOLHA DE FLUXO (NOVA OU EXISTENTE) -->
+          ${activeTrips.length > 0 ? `
+            <div class="border-t border-slate-100 dark:border-slate-800 pt-5">
+              <h4 class="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-3.5 border-b border-indigo-50/50 dark:border-slate-800 pb-1">Destino do Orçamento</h4>
+              <div class="flex flex-col gap-3">
+                <div class="flex items-center gap-3">
+                  <label class="flex items-center gap-2 text-sm text-slate-850 dark:text-slate-150 font-semibold cursor-pointer">
+                    <input type="radio" id="radio-fluxo-nova" name="fluxo-viagem" value="nova" checked class="w-4 h-4 text-indigo-600 border-slate-300 focus:ring-indigo-500" />
+                    <span>Criar Nova Viagem</span>
+                  </label>
+                  <label class="flex items-center gap-2 text-sm text-slate-850 dark:text-slate-150 font-semibold cursor-pointer">
+                    <input type="radio" id="radio-fluxo-existente" name="fluxo-viagem" value="existente" class="w-4 h-4 text-indigo-600 border-slate-300 focus:ring-indigo-500" />
+                    <span>Adicionar à Viagem Existente</span>
+                  </label>
+                </div>
+
+                <div id="viagem-existente-container" class="hidden mt-2">
+                  <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Selecione a Viagem Existente *</label>
+                  <select id="select-viagem-existente" class="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm">
+                    ${activeTrips.map(v => `<option value="${v.id}">${v.destino} (LOC: ${v.codigo_localizador || 'Sem LOC'}) - R$ ${Number(v.valor_total).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</option>`).join('')}
+                  </select>
+                </div>
+              </div>
+            </div>
+          ` : `
+            <input type="radio" id="radio-fluxo-nova" name="fluxo-viagem" value="nova" checked class="hidden" />
+          `}
+
           <!-- SEÇÃO 2: DADOS DO KANBAN OPERACIONAL (VIAGENS) -->
-          <div class="border-t border-slate-100 dark:border-slate-800 pt-5">
+          <div id="secao-viagem-nova" class="border-t border-slate-100 dark:border-slate-800 pt-5">
             <h4 class="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-3.5 border-b border-indigo-50/50 dark:border-slate-800 pb-1">2. Dados Operacionais da Viagem</h4>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -1531,6 +1745,31 @@ export class OrcamentosPage {
             </div>
           </div>
 
+          <!-- SEÇÃO 3: DETALHES DO PRODUTO/SERVIÇO -->
+          <div class="border-t border-slate-100 dark:border-slate-800 pt-5">
+            <h4 class="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-3.5 border-b border-indigo-50/50 dark:border-slate-800 pb-1">3. Detalhes do Produto/Serviço (Sacola)</h4>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Tipo do Serviço *</label>
+                <select id="select-prod-tipo" required class="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm">
+                  <option value="voo">Voo</option>
+                  <option value="hotel">Hotel</option>
+                  <option value="seguro">Seguro</option>
+                  <option value="passeio">Passeio</option>
+                  <option value="outro" selected>Outro</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Fornecedor *</label>
+                <input id="input-prod-fornecedor" type="text" required placeholder="ex: LATAM, Hilton, etc." class="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Descrição do Serviço *</label>
+                <input id="input-prod-descricao" type="text" required placeholder="ex: Voo GRU-MCO classe econômica" class="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+              </div>
+            </div>
+          </div>
+ 
           <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-150 dark:border-slate-800">
             <button id="btn-cancel-modal" type="button" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs tracking-wider rounded-xl transition uppercase">Cancelar</button>
             <button type="submit" id="btn-submit-fechar" class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-emerald-600/10 transition uppercase">Emitir Viagem & Confirmar 🏆</button>
@@ -1538,6 +1777,33 @@ export class OrcamentosPage {
         </form>
       </div>
     `;
+
+    // Toggle de Fluxos Nova/Existente
+    const radioNova = document.getElementById('radio-fluxo-nova') as HTMLInputElement;
+    const radioExistente = document.getElementById('radio-fluxo-existente') as HTMLInputElement;
+    const secaoViagemNova = document.getElementById('secao-viagem-nova') as HTMLElement;
+    const containerViagemExistente = document.getElementById('viagem-existente-container') as HTMLElement;
+
+    const updateFlowVisibility = () => {
+      if (radioExistente?.checked) {
+        secaoViagemNova?.classList.add('hidden');
+        containerViagemExistente?.classList.remove('hidden');
+        document.getElementById('input-fechar-via-destino')?.removeAttribute('required');
+        document.getElementById('input-fechar-via-ida')?.removeAttribute('required');
+        document.getElementById('input-fechar-via-volta')?.removeAttribute('required');
+        document.getElementById('input-fechar-via-valor')?.removeAttribute('required');
+      } else {
+        secaoViagemNova?.classList.remove('hidden');
+        containerViagemExistente?.classList.add('hidden');
+        document.getElementById('input-fechar-via-destino')?.setAttribute('required', 'true');
+        document.getElementById('input-fechar-via-ida')?.setAttribute('required', 'true');
+        document.getElementById('input-fechar-via-volta')?.setAttribute('required', 'true');
+        document.getElementById('input-fechar-via-valor')?.setAttribute('required', 'true');
+      }
+    };
+
+    radioNova?.addEventListener('change', updateFlowVisibility);
+    radioExistente?.addEventListener('change', updateFlowVisibility);
 
     // Máscara de Moeda Real-Time para Valor de Venda
     const valorVendaInput = document.getElementById('input-fechar-via-valor') as HTMLInputElement;
@@ -1570,86 +1836,172 @@ export class OrcamentosPage {
         const cTelefone = (document.getElementById('input-fechar-cli-telefone') as HTMLInputElement).value;
         const cDoc = (document.getElementById('input-fechar-cli-doc') as HTMLInputElement).value;
 
-        const vDestino = (document.getElementById('input-fechar-via-destino') as HTMLInputElement).value;
-        const vLoc = (document.getElementById('input-fechar-via-loc') as HTMLInputElement).value;
-        const vIdaRaw = (document.getElementById('input-fechar-via-ida') as HTMLInputElement).value.trim();
-        const vVoltaRaw = (document.getElementById('input-fechar-via-volta') as HTMLInputElement).value.trim();
-        const vValorRaw = (document.getElementById('input-fechar-via-valor') as HTMLInputElement).value.trim();
-        const vStatus = (document.getElementById('select-fechar-via-status') as HTMLSelectElement).value;
-        const vObs = (document.getElementById('textarea-fechar-via-obs') as HTMLTextAreaElement).value;
+        const isNovaViagem = radioNova ? radioNova.checked : true;
 
-        const dateRegex = /^(\d{2})\/(\d{2})\/(\d{4})$/;
-        if (!dateRegex.test(vIdaRaw)) {
-          throw new Error('Por favor, informe a Data de Ida no formato correto DD/MM/AAAA.');
+        const prodTipo = (document.getElementById('select-prod-tipo') as HTMLSelectElement).value;
+        const prodFornecedor = (document.getElementById('input-prod-fornecedor') as HTMLInputElement).value;
+        const prodDescricao = (document.getElementById('input-prod-descricao') as HTMLInputElement).value;
+
+        // Parse do valor da proposta
+        let vValor = orc.valorProposta || 0;
+        if (isNovaViagem) {
+          const vValorRaw = (document.getElementById('input-fechar-via-valor') as HTMLInputElement).value.trim();
+          const parseDoubleBr = (valStr: string): number => {
+            const clean = valStr.replace(/R\$\s?/gi, '').replace(/\./g, '').replace(',', '.').trim();
+            const num = parseFloat(clean);
+            return isNaN(num) ? 0 : num;
+          };
+          vValor = parseDoubleBr(vValorRaw);
         }
-        if (!dateRegex.test(vVoltaRaw)) {
-          throw new Error('Por favor, informe a Data de Volta no formato correto DD/MM/AAAA.');
-        }
 
-        const [, idaDia, idaMes, idaAno] = vIdaRaw.match(dateRegex)!;
-        const vIda = `${idaAno}-${idaMes}-${idaDia}`;
-
-        const [, voltaDia, voltaMes, voltaAno] = vVoltaRaw.match(dateRegex)!;
-        const vVolta = `${voltaAno}-${voltaMes}-${voltaDia}`;
-
-        const parseDoubleBr = (valStr: string): number => {
-          const clean = valStr.replace(/R\$\s?/gi, '').replace(/\./g, '').replace(',', '.').trim();
-          const num = parseFloat(clean);
-          return isNaN(num) ? 0 : num;
-        };
-        const vValor = parseDoubleBr(vValorRaw);
-
-        let clienteId = 'cli-mocked-' + Math.random().toString(36).substr(2, 9);
+        let clienteId = cId || 'cli-mocked-' + Math.random().toString(36).substr(2, 9);
         let folderDriveUrl = orc.documentosUrl && orc.documentosUrl.length > 0 ? orc.documentosUrl[0] : '';
 
-        // 1. Cadastrar Cliente no Supabase
+        // 1. Cadastrar/Obter Cliente no Supabase
         if (!this.isFallbackMode) {
-          const { data: newCli, error: errCli } = await supabase
-            .from('clientes')
-            .insert({
-              nome: cNome,
-              email: cEmail,
-              telefone: cTelefone,
-              documento: cDoc,
-              consultor_responsavel_id: orc.consultorId,
-              google_drive_folder_url: folderDriveUrl || null,
-              observacoes: `Criado automaticamente através do Orçamento aprovado ID ${orc.id}`
-            })
-            .select()
-            .single();
+          if (!cId) {
+            // Verificar se o cliente já existe por email ou telefone para evitar duplicidade
+            const { data: existingCli } = await supabase
+              .from('clientes')
+              .select('id')
+              .or(`email.eq.${cEmail},telefone.eq.${cTelefone}`)
+              .limit(1);
 
-          if (errCli) throw errCli;
-          if (newCli) clienteId = newCli.id;
+            if (existingCli && existingCli.length > 0) {
+              clienteId = existingCli[0].id;
+            } else {
+              const { data: newCli, error: errCli } = await supabase
+                .from('clientes')
+                .insert({
+                  nome: cNome,
+                  email: cEmail,
+                  telefone: cTelefone,
+                  documento: cDoc,
+                  consultor_responsavel_id: orc.consultorId,
+                  google_drive_folder_url: folderDriveUrl || null,
+                  observacoes: `Criado automaticamente através do Orçamento aprovado ID ${orc.id}`
+                })
+                .select()
+                .single();
+
+              if (errCli) throw errCli;
+              if (newCli) clienteId = newCli.id;
+            }
+          }
         }
 
-        // 2. Cadastrar Viagem no Supabase
-        if (!this.isFallbackMode) {
-          const { error: errVia } = await supabase
-            .from('viagens')
-            .insert({
-              cliente_id: clienteId,
-              consultor_id: orc.consultorId,
-              destino: vDestino,
-              codigo_localizador: vLoc || null,
-              valor_total: vValor,
-              data_ida: vIda,
-              data_volta: vVolta,
-              status: vStatus,
-              observacoes: vObs || null
-            });
+        if (isNovaViagem) {
+          // FLUXO: CRIAR NOVA VIAGEM
+          const vDestino = (document.getElementById('input-fechar-via-destino') as HTMLInputElement).value;
+          const vLoc = (document.getElementById('input-fechar-via-loc') as HTMLInputElement).value;
+          const vIdaRaw = (document.getElementById('input-fechar-via-ida') as HTMLInputElement).value.trim();
+          const vVoltaRaw = (document.getElementById('input-fechar-via-volta') as HTMLInputElement).value.trim();
+          const vStatus = (document.getElementById('select-fechar-via-status') as HTMLSelectElement).value;
+          const vObs = (document.getElementById('textarea-fechar-via-obs') as HTMLTextAreaElement).value;
 
-          if (errVia) throw errVia;
+          const dateRegex = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+          if (!dateRegex.test(vIdaRaw)) {
+            throw new Error('Por favor, informe a Data de Ida no formato correto DD/MM/AAAA.');
+          }
+          if (!dateRegex.test(vVoltaRaw)) {
+            throw new Error('Por favor, informe a Data de Volta no formato correto DD/MM/AAAA.');
+          }
+
+          const [, idaDia, idaMes, idaAno] = vIdaRaw.match(dateRegex)!;
+          const vIda = `${idaAno}-${idaMes}-${idaDia}`;
+
+          const [, voltaDia, voltaMes, voltaAno] = vVoltaRaw.match(dateRegex)!;
+          const vVolta = `${voltaAno}-${voltaMes}-${voltaDia}`;
+
+          let newViagemId = 'via-mocked-' + Math.random().toString(36).substr(2, 9);
+
+          // Cadastrar Viagem no Supabase
+          if (!this.isFallbackMode) {
+            const { data: newVia, error: errVia } = await supabase
+              .from('viagens')
+              .insert({
+                cliente_id: clienteId,
+                consultor_id: orc.consultorId,
+                destino: vDestino,
+                codigo_localizador: vLoc || null,
+                valor_total: vValor,
+                data_ida: vIda,
+                data_volta: vVolta,
+                status: vStatus,
+                observacoes: vObs || null
+              })
+              .select()
+              .single();
+
+            if (errVia) throw errVia;
+            if (newVia) newViagemId = newVia.id;
+          } else {
+            console.log('Modo Offline: Nova viagem mock criada no Kanban Operacional para', cNome);
+          }
+
+          // Cadastrar Produto na Viagem Recém Criada
+          if (!this.isFallbackMode) {
+            const { error: errProd } = await supabase
+              .from('produtos_viagem')
+              .insert({
+                viagem_id: newViagemId,
+                tipo: prodTipo,
+                fornecedor: prodFornecedor,
+                descricao: prodDescricao,
+                valor_custo: 0,
+                valor_venda: vValor,
+                status: 'reservado',
+                data_servico: vIda
+              });
+            if (errProd) {
+              console.warn('Aviso: Erro ao inserir produto na nova viagem:', errProd.message);
+            }
+          }
         } else {
-          // Mock local de viagem no console em modo offline
-          console.log('Modo Offline: Nova viagem mock criada no Kanban Operacional para', cNome);
+          // FLUXO: ADICIONAR À VIAGEM EXISTENTE
+          const viagemId = (document.getElementById('select-viagem-existente') as HTMLSelectElement).value;
+          const selectedTrip = activeTrips.find(v => v.id === viagemId);
+          if (!selectedTrip) throw new Error('A viagem selecionada não pôde ser encontrada.');
+
+          const novoTotal = (selectedTrip.valor_total || 0) + vValor;
+
+          if (!this.isFallbackMode) {
+            // Atualizar o valor_total da viagem
+            const { error: errUpdate } = await supabase
+              .from('viagens')
+              .update({ valor_total: novoTotal })
+              .eq('id', viagemId);
+
+            if (errUpdate) throw errUpdate;
+
+            // Inserir o produto_viagem apontando para a viagem existente
+            const { error: errProd } = await supabase
+              .from('produtos_viagem')
+              .insert({
+                viagem_id: viagemId,
+                tipo: prodTipo,
+                fornecedor: prodFornecedor,
+                descricao: prodDescricao,
+                valor_custo: 0,
+                valor_venda: vValor,
+                status: 'reservado',
+                data_servico: selectedTrip.data_ida || new Date().toISOString().split('T')[0]
+              });
+
+            if (errProd) throw errProd;
+          } else {
+            console.log(`Modo Offline: Somado R$ ${vValor} à viagem existente ID ${viagemId}. Novo total: R$ ${novoTotal}`);
+          }
         }
 
         // 3. Atualizar Orçamento para CONCLUÍDO (ACEITO)
         orc.status = 'CONCLUIDO';
         orc.subStatus = 'ACEITO';
+        orc.clienteId = clienteId;
+        orc.cliente_id = clienteId;
         await this.persistOrcamento(orc);
 
-        this.showToast('Negócio Fechado! Cliente e Viagem gerados com sucesso!', 'success');
+        this.showToast('Negócio Fechado! Cliente, Viagem e Produto processados com sucesso!', 'success');
         this.closeModal();
         await this.loadOrcamentos();
         this.render();
