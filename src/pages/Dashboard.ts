@@ -38,6 +38,17 @@ if (typeof document !== 'undefined') {
       background-color: rgba(226, 232, 240, 0.8) !important;
       border: 2px dashed #94a3b8 !important;
     }
+    .card-viagem {
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: grab;
+    }
+    .card-viagem:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.03);
+    }
+    html.dark .card-viagem:hover {
+      box-shadow: 0 10px 20px -3px rgba(0, 0, 0, 0.3), 0 4px 8px -2px rgba(0, 0, 0, 0.2);
+    }
     .kanban-drag-class {
       transform: rotate(1.5deg) scale(1.02);
       box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
@@ -1674,27 +1685,23 @@ export class Dashboard {
         </header>
 
         <!-- QUADRO KANBAN OPERACIONAL -->
-        <main class="flex-1 p-6 flex flex-col gap-6 overflow-hidden">
+        <main id="kanban-columns-container" class="flex-1 p-6 flex gap-6 items-start overflow-x-auto pb-4 custom-scrollbar">
           
-          <!-- Grid de Colunas Kanban -->
-          <div id="kanban-columns-container" class="flex-1 grid grid-cols-1 lg:grid-cols-5 gap-5 items-start overflow-x-auto pb-4 custom-scrollbar">
-            
-            <!-- Coluna: Fechado -->
-            ${this.renderColuna('Fechado', 'fechado', colunasMap.fechado, 'border-t-emerald-500 bg-emerald-500/5', 'bg-emerald-500')}
+          <!-- Coluna: Fechado -->
+          ${this.renderColuna('Fechado', 'fechado', colunasMap.fechado)}
 
-            <!-- Coluna: Pós-Venda -->
-            ${this.renderColuna('Pós-Venda', 'pos_venda', colunasMap.pos_venda, 'border-t-indigo-500 bg-indigo-500/5', 'bg-indigo-500')}
+          <!-- Coluna: Pós-Venda -->
+          ${this.renderColuna('Pós-Venda', 'pos_venda', colunasMap.pos_venda)}
 
-            <!-- Coluna: Pré-Embarque -->
-            ${this.renderColuna('Pré-Embarque', 'pre_embarque', colunasMap.pre_embarque, 'border-t-amber-500 bg-amber-500/5', 'bg-amber-500')}
+          <!-- Coluna: Pré-Embarque -->
+          ${this.renderColuna('Pré-Embarque', 'pre_embarque', colunasMap.pre_embarque)}
 
-            <!-- Coluna: Pós-Viagem -->
-            ${this.renderColuna('Pós-Viagem', 'pos_viagem', colunasMap.pos_viagem, 'border-t-violet-500 bg-violet-500/5', 'bg-violet-500')}
+          <!-- Coluna: Pós-Viagem -->
+          ${this.renderColuna('Pós-Viagem', 'pos_viagem', colunasMap.pos_viagem)}
 
-            <!-- Coluna: Reembolso Solicitado -->
-            ${this.renderColuna('Reembolso Solicitado', 'reembolso_solicitado', colunasMap.reembolso_solicitado, 'border-t-rose-500 bg-rose-500/5', 'bg-rose-500')}
+          <!-- Coluna: Reembolso Solicitado -->
+          ${this.renderColuna('Reembolso Solicitado', 'reembolso_solicitado', colunasMap.reembolso_solicitado)}
 
-          </div>
         </main>
       </div>
     `;
@@ -1750,17 +1757,66 @@ export class Dashboard {
   /**
    * Renderiza a estrutura HTML de uma coluna do Kanban
    */
-  private renderColuna(titulo: string, status: string, items: any[], styleBorders: string, styleBadge: string): string {
+  private renderColuna(titulo: string, status: string, items: any[]): string {
+    const configMap: { [key: string]: { border: string; iconBg: string; iconText: string; badgeBg: string; badgeText: string; iconSvg: string } } = {
+      fechado: {
+        border: 'border-t-emerald-500',
+        iconBg: 'bg-emerald-50 dark:bg-emerald-950/40',
+        iconText: 'text-emerald-500 dark:text-emerald-400',
+        badgeBg: 'bg-emerald-100 dark:bg-emerald-950/80',
+        badgeText: 'text-emerald-600 dark:text-emerald-455',
+        iconSvg: `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`
+      },
+      pos_venda: {
+        border: 'border-t-indigo-500',
+        iconBg: 'bg-indigo-50 dark:bg-indigo-950/40',
+        iconText: 'text-indigo-500 dark:text-indigo-400',
+        badgeBg: 'bg-indigo-100 dark:bg-indigo-950/80',
+        badgeText: 'text-indigo-600 dark:text-indigo-455',
+        iconSvg: `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>`
+      },
+      pre_embarque: {
+        border: 'border-t-amber-500',
+        iconBg: 'bg-amber-50 dark:bg-amber-950/40',
+        iconText: 'text-amber-500 dark:text-amber-400',
+        badgeBg: 'bg-amber-100 dark:bg-amber-950/80',
+        badgeText: 'text-amber-600 dark:text-amber-455',
+        iconSvg: `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>`
+      },
+      pos_viagem: {
+        border: 'border-t-violet-500',
+        iconBg: 'bg-violet-50 dark:bg-violet-950/40',
+        iconText: 'text-violet-500 dark:text-violet-400',
+        badgeBg: 'bg-violet-100 dark:bg-violet-950/80',
+        badgeText: 'text-violet-600 dark:text-violet-455',
+        iconSvg: `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>`
+      },
+      reembolso_solicitado: {
+        border: 'border-t-rose-500',
+        iconBg: 'bg-rose-50 dark:bg-rose-950/40',
+        iconText: 'text-rose-500 dark:text-rose-400',
+        badgeBg: 'bg-rose-100 dark:bg-rose-950/80',
+        badgeText: 'text-rose-600 dark:text-rose-455',
+        iconSvg: `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`
+      }
+    };
+    const cfg = configMap[status] || configMap.fechado;
+
     return `
-      <div class="flex flex-col min-w-[280px] h-[calc(100vh-200px)] bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl shadow-sm border-t-4 ${styleBorders} transition-colors duration-200">
+      <div class="w-80 h-[calc(100vh-200px)] bg-slate-100/70 dark:bg-slate-900/40 border border-slate-200/50 dark:border-slate-800/80 border-t-4 ${cfg.border} rounded-2xl p-4 flex flex-col shrink-0 transition-colors duration-200">
         <!-- Header da Coluna -->
-        <div class="column-header px-4 py-3.5 flex items-center justify-between border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 rounded-t-2xl cursor-grab active:cursor-grabbing">
-          <h3 class="text-sm font-black text-slate-700 dark:text-slate-300 tracking-tight uppercase">${titulo}</h3>
-          <span class="px-2 py-0.5 text-xs text-white font-bold rounded-full ${styleBadge}">${items.length}</span>
+        <div class="column-header flex items-center justify-between pb-3 mb-4 border-b border-slate-200/60 dark:border-slate-800/60 select-none cursor-grab active:cursor-grabbing">
+          <div class="flex items-center gap-2">
+            <span class="p-1 ${cfg.iconBg} ${cfg.iconText} rounded-lg flex items-center justify-center shrink-0">
+              ${cfg.iconSvg}
+            </span>
+            <span class="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-wider">${titulo}</span>
+            <span class="px-2 py-0.5 ${cfg.badgeBg} ${cfg.badgeText} rounded-full text-[10px] font-black">${items.length}</span>
+          </div>
         </div>
 
         <!-- Lista de Cards (Sortable area) -->
-        <div id="col-${status}" data-status="${status}" class="flex-1 p-3 overflow-y-auto space-y-3 custom-scrollbar min-h-[150px]">
+        <div id="col-${status}" data-status="${status}" class="flex-1 overflow-y-auto space-y-3 custom-scrollbar min-h-[150px] pr-1">
           ${items.length === 0 ? `
             <div class="h-28 border border-dashed border-slate-200 dark:border-slate-800/85 rounded-xl flex items-center justify-center p-4 text-center">
               <span class="text-xs text-slate-400 dark:text-slate-500 font-medium">Solte viagens aqui</span>
@@ -1781,10 +1837,10 @@ export class Dashboard {
     const sla = reembolsoConcluido ? { alert: false, type: null, text: '' } : this.checkSLA(v);
     
     // Classes CSS dinâmicas baseadas nos alertas de SLA ou reembolso finalizado
-    let cardClasses = 'bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-750 shadow-sm hover:shadow-md dark:shadow-slate-950/30 transition-all cursor-grab active:cursor-grabbing relative overflow-hidden group';
+    let cardClasses = 'bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-750 shadow-sm hover:shadow-md dark:shadow-slate-950/30 transition-all cursor-grab active:cursor-grabbing relative overflow-hidden group card-viagem';
     
     if (reembolsoConcluido) {
-      cardClasses = 'bg-emerald-50/30 dark:bg-emerald-950/10 border border-emerald-500/80 dark:border-emerald-500/50 shadow-emerald-500/10 dark:shadow-emerald-950/20 p-4 rounded-xl shadow-sm hover:shadow-md transition-all cursor-grab active:cursor-grabbing relative overflow-hidden group';
+      cardClasses = 'bg-emerald-50/30 dark:bg-emerald-950/10 border border-emerald-500/80 dark:border-emerald-500/50 shadow-emerald-500/10 dark:shadow-emerald-950/20 p-4 rounded-xl shadow-sm hover:shadow-md transition-all cursor-grab active:cursor-grabbing relative overflow-hidden group card-viagem';
     } else if (sla.alert) {
       if (sla.type === 'pre-embarque') {
         cardClasses += ' animate-sla-urgent';

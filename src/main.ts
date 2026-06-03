@@ -353,12 +353,10 @@ class App {
         <aside class="w-full md:${this.sidebarCollapsed ? 'w-20' : 'w-64'} bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 flex flex-col border-r border-slate-200 dark:border-slate-800/60 shadow-xl z-20 transition-all duration-200">
           
           <!-- Logo & Título -->
-          <div class="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2.5">
-            <div class="flex items-center gap-2.5">
-              <img src="/logo.svg" alt="PaxFlow Logo" class="h-10 w-10 object-contain filter drop-shadow-md" />
-              <span class="block text-base font-black text-slate-800 dark:text-white tracking-tight ${this.sidebarCollapsed ? 'md:hidden' : ''}">PaxFlow</span>
-            </div>
-            <button id="sidebar-collapse-btn" class="p-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200/40 dark:border-slate-700/40 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hidden md:flex items-center justify-center transition">
+          <div id="sidebar-header" class="border-b border-slate-100 dark:border-slate-800 flex items-center gap-2.5 relative transition-all duration-200 ${this.sidebarCollapsed ? 'p-5 justify-center' : 'p-6'}">
+            <img src="/logo.svg" alt="PaxFlow Logo" class="h-10 w-10 object-contain filter drop-shadow-md shrink-0" />
+            <span id="sidebar-logo-text" class="text-base font-black text-slate-800 dark:text-white tracking-tight ${this.sidebarCollapsed ? 'md:hidden' : ''}">PaxFlow</span>
+            <button id="sidebar-collapse-btn" class="absolute top-1/2 -translate-y-1/2 right-[-14px] p-1.5 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700 text-slate-455 hover:text-slate-650 dark:text-slate-400 dark:hover:text-slate-200 shadow-md hidden md:flex items-center justify-center transition z-30">
               <svg width="16" height="16" class="w-4 h-4 transform ${this.sidebarCollapsed ? 'rotate-180' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
               </svg>
@@ -490,14 +488,23 @@ class App {
     const collapseBtn = document.getElementById('sidebar-collapse-btn');
     const chevron = collapseBtn?.querySelector('svg');
 
+    const header = document.getElementById('sidebar-header');
     if (this.sidebarCollapsed) {
       aside.classList.remove('md:w-64');
       aside.classList.add('md:w-20');
       chevron?.classList.add('rotate-180');
+      if (header) {
+        header.classList.remove('p-6');
+        header.classList.add('p-5', 'justify-center');
+      }
     } else {
       aside.classList.remove('md:w-20');
       aside.classList.add('md:w-64');
       chevron?.classList.remove('rotate-180');
+      if (header) {
+        header.classList.remove('p-5', 'justify-center');
+        header.classList.add('p-6');
+      }
     }
 
     // Ocultar/Exibir textos do menu lateral

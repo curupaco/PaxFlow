@@ -58,6 +58,7 @@ export class OrcamentosPage {
   private realtimeChannel: any = null;
   private buscaTermo: string = '';
   private selectedConsultantId: string = 'todos';
+  private filterConcluido: 'todos' | 'fechada' | 'desistencia' = 'todos';
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -493,6 +494,13 @@ export class OrcamentosPage {
     // Vincular botões dentro do Kanban
     this.setupColumnButtons();
 
+    // Evento de Filtro de Concluídos (Viagem Fechada / Desistência)
+    const selectConcluido = document.getElementById('select-concluido-filtro') as HTMLSelectElement;
+    selectConcluido?.addEventListener('change', () => {
+      this.filterConcluido = selectConcluido.value as 'todos' | 'fechada' | 'desistencia';
+      this.render();
+    });
+
     // Evento de Filtro de Consultor (Admins)
     const selectConsultor = document.getElementById('select-orcamentos-consultor') as HTMLSelectElement;
     selectConsultor?.addEventListener('change', () => {
@@ -696,7 +704,13 @@ export class OrcamentosPage {
     const solicitado = filtrados.filter(o => o.status === 'SOLICITADO');
     const emAndamento = filtrados.filter(o => o.status === 'EM_ANDAMENTO');
     const aguardando = filtrados.filter(o => o.status === 'AGUARDANDO');
-    const concluido = filtrados.filter(o => o.status === 'CONCLUIDO');
+    
+    let concluido = filtrados.filter(o => o.status === 'CONCLUIDO');
+    if (this.filterConcluido === 'fechada') {
+      concluido = concluido.filter(o => o.subStatus === 'ACEITO');
+    } else if (this.filterConcluido === 'desistencia') {
+      concluido = concluido.filter(o => o.subStatus !== 'ACEITO');
+    }
 
     this.container.innerHTML = `
       <div class="min-h-screen bg-slate-50/50 dark:bg-slate-950 flex flex-col font-sans transition-colors duration-200">
@@ -845,6 +859,11 @@ export class OrcamentosPage {
                 <span class="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-wider">Concluído</span>
                 <span class="px-2 py-0.5 bg-emerald-100 dark:bg-indigo-950/80 text-emerald-600 dark:text-emerald-455 rounded-full text-[10px] font-black">${concluido.length}</span>
               </div>
+              <select id="select-concluido-filtro" class="text-[9px] font-black uppercase bg-transparent text-slate-500 dark:text-slate-400 focus:outline-none cursor-pointer max-w-[100px] border border-slate-200 dark:border-slate-800 rounded px-1.5 py-0.5 bg-white dark:bg-slate-900">
+                <option value="todos" ${this.filterConcluido === 'todos' ? 'selected' : ''}>Todos</option>
+                <option value="fechada" ${this.filterConcluido === 'fechada' ? 'selected' : ''}>Fechadas</option>
+                <option value="desistencia" ${this.filterConcluido === 'desistencia' ? 'selected' : ''}>Desistências</option>
+              </select>
             </div>
             <div class="flex flex-col gap-4 overflow-y-auto max-h-[700px] pr-1 custom-scrollbar">
               ${concluido.map(o => this.renderCardHtml(o)).join('')}
