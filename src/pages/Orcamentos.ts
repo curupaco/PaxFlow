@@ -3,6 +3,7 @@ import { uploadDocumentoCliente } from '../services/googleDrive';
 import { Orcamento, PerfilConsultor } from '../types';
 import { getAvatarSvg, mesclarAvataresLocais } from '../services/avatars';
 import { showCustomConfirm, showCustomAlert } from '../services/dialog';
+import { CommentsService } from '../services/comments';
 
 // Injeta estilos específicos premium para o Kanban de Orçamentos
 if (typeof document !== 'undefined') {
@@ -2199,6 +2200,9 @@ export class OrcamentosPage {
                 ${filesHtml}
               </div>
             </div>
+
+            <!-- Container de Comentários e Anotações -->
+            <div id="orcamento-comments-container" class="mt-4 border-t border-slate-100 dark:border-slate-800 pt-4"></div>
           </div>
 
           <!-- Coluna 3 (Sidebar - Detalhes do Card) -->
@@ -2298,6 +2302,19 @@ export class OrcamentosPage {
         );
       });
     });
+
+    // Inicializar comentários do orçamento
+    const commentsContainer = document.getElementById('orcamento-comments-container');
+    if (commentsContainer && this.user) {
+      CommentsService.renderCommentsSection(
+        commentsContainer,
+        'orcamento',
+        orc.id,
+        orc.id,
+        this.user.id,
+        this.consultores
+      );
+    }
   }
 
   /**

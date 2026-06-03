@@ -172,3 +172,35 @@ export interface Lembrete {
   arquivado: boolean;
   createdAt?: string;
 }
+
+/**
+ * Representa um comentário ou anotação em um item.
+ */
+export interface Comentario {
+  id: string;
+  tipo_item: 'orcamento' | 'viagem' | 'produto';
+  item_id: string;
+  autor_id: string;
+  texto: string;
+  created_at: string;
+  // Campos populados via JOIN
+  autor?: PerfilConsultor;
+}
+
+/**
+ * Representa uma notificação/alerta de menção.
+ */
+export interface Notificacao {
+  id: string;
+  user_id: string;
+  comentario_id: string;
+  tipo_item: 'orcamento' | 'viagem' | 'produto';
+  item_id: string;
+  parent_id: string;
+  lida: boolean;
+  arquivada: boolean;
+  created_at: string;
+  // Campos populados via JOIN
+  comentario?: Comentario;
+}
+

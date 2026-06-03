@@ -3,6 +3,7 @@ import { supabase, getSessaoAtual, logoutConsultor } from '../services/supabase'
 import { Viagem, Cliente, ProdutoViagem, GlobalSettings, PerfilConsultor } from '../types';
 import { getAvatarSvg, mesclarAvataresLocais } from '../services/avatars';
 import { showCustomConfirm } from '../services/dialog';
+import { CommentsService } from '../services/comments';
 
 // Injeta estilos premium e animações micro-interativas para SLAs diretamente no DOM
 if (typeof document !== 'undefined') {
@@ -82,7 +83,7 @@ export class Dashboard {
   /**
    * Inicializa o painel operacional: valida autenticação, busca SLAs e dados, e renderiza o quadro.
    */
-  public async init(): Promise<void> {
+  public async init(targetId?: string): Promise<void> {
     this.renderLoading();
 
     try {
@@ -120,6 +121,11 @@ export class Dashboard {
 
       // 5. Configurar Drag & Drop com SortableJS
       this.setupDragAndDrop();
+
+      // 6. Deep linking para abrir viagem específica
+      if (targetId) {
+        await this.openEdicaoEProdutosModal(targetId);
+      }
 
     } catch (err: any) {
       console.error('Erro na inicialização do Dashboard:', err);
@@ -955,6 +961,9 @@ export class Dashboard {
               <button type="submit" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/10 transition uppercase">Salvar Alterações</button>
             </div>
           </form>
+
+          <!-- Container de Comentários da Viagem -->
+          <div id="viagem-comments-container" class="mt-6 border-t border-slate-100 dark:border-slate-800 pt-4"></div>
         </div>
 
         <!-- CONTEÚDO DA ABA 2: PRODUTOS E SERVIÇOS -->
@@ -1127,6 +1136,19 @@ export class Dashboard {
     const handleClose = () => this.closeModal();
     document.getElementById('btn-close-edit-modal-x')?.addEventListener('click', handleClose);
     document.getElementById('btn-cancel-edit')?.addEventListener('click', handleClose);
+
+    // Inicializar comentários da viagem
+    const commentsContainer = document.getElementById('viagem-comments-container');
+    if (commentsContainer && this.user) {
+      CommentsService.renderCommentsSection(
+        commentsContainer,
+        'viagem',
+        v.id,
+        v.id,
+        this.user.id,
+        this.consultores
+      );
+    }
 
     // Seletores de Abas Premium
     const tabDetalhesBtn = document.getElementById('tab-detalhes-btn');
@@ -1317,6 +1339,22 @@ export class Dashboard {
         return;
       }
 
+      // Buscar quantidade de comentários para cada produto
+      const productIds = produtos.map(p => p.id);
+      const { data: commentsCountData } = await supabase
+        .from('comentarios')
+        .select('item_id')
+        .eq('tipo_item', 'produto')
+        .in('item_id', productIds);
+
+      const commentsCountMap: { [key: string]: number } = {};
+      productIds.forEach(id => { commentsCountMap[id] = 0; });
+      if (commentsCountData) {
+        commentsCountData.forEach(c => {
+          commentsCountMap[c.item_id] = (commentsCountMap[c.item_id] || 0) + 1;
+        });
+      }
+
       const formatarData = (dStr: string) => {
         if (!dStr) return '';
         const dataApenas = dStr.includes('T') ? dStr.split('T')[0] : dStr.split(' ')[0];
@@ -1334,15 +1372,17 @@ export class Dashboard {
           outro: '📦'
         };
 
+        const commentsCount = commentsCountMap[p.id] || 0;
+
         return `
           <div class="flex items-center justify-between gap-3 p-3 bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-850 rounded-xl hover:bg-slate-100/50 dark:hover:bg-slate-800/80 transition">
             <div class="flex items-start gap-2.5 overflow-hidden">
               <span class="text-lg p-1 bg-white dark:bg-slate-700 border border-slate-100 dark:border-slate-650 rounded-lg shadow-sm flex items-center justify-center">${iconesMap[p.tipo] || '📦'}</span>
               <div class="overflow-hidden bg-slate-50/10">
                 <span class="block text-xs font-black text-slate-700 dark:text-slate-200 truncate leading-tight">${p.fornecedor} &bull; ${p.descricao}</span>
-                <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold leading-normal">
-                  ${p.codigo_reserva ? `LOC: <span class="text-slate-600 dark:text-slate-350 font-extrabold">${p.codigo_reserva}</span> &bull; ` : ''} 
-                  Data: <span class="text-slate-600 dark:text-slate-350 font-semibold">${formatarData(p.data_servico)}</span>
+                <span class="block text-[10px] text-slate-400 dark:text-slate-550 font-bold leading-normal">
+                  ${p.codigo_reserva ? `LOC: <span class="text-slate-600 dark:text-slate-355 font-extrabold">${p.codigo_reserva}</span> &bull; ` : ''} 
+                  Data: <span class="text-slate-600 dark:text-slate-355 font-semibold">${formatarData(p.data_servico)}</span>
                 </span>
               </div>
             </div>
@@ -1351,6 +1391,9 @@ export class Dashboard {
               <div class="text-right">
                 <span class="block text-xs font-black text-indigo-600 dark:text-indigo-400">R$ ${Number(p.valor_venda || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
               </div>
+              <button data-comments-prod-id="${p.id}" data-comments-prod-name="${p.fornecedor} - ${p.descricao}" class="p-1.5 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-slate-300 dark:text-slate-550 hover:text-indigo-650 dark:hover:text-indigo-400 rounded-md transition text-xs font-bold flex items-center gap-1" title="Notas e Comentários">
+                💬 <span class="text-[10px]">${commentsCount}</span>
+              </button>
               <button data-delete-prod-id="${p.id}" class="p-1.5 hover:bg-rose-50 dark:hover:bg-rose-950/20 text-slate-300 dark:text-slate-550 hover:text-rose-600 dark:hover:text-rose-450 rounded-md transition text-xs font-bold" title="Remover Produto">
                 🗑️
               </button>
@@ -1358,6 +1401,28 @@ export class Dashboard {
           </div>
         `;
       }).join('');
+
+      // Ouvintes de comentários
+      container.querySelectorAll('[data-comments-prod-id]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const prodId = btn.getAttribute('data-comments-prod-id');
+          const prodName = btn.getAttribute('data-comments-prod-name') || 'Produto';
+          if (!prodId) return;
+
+          CommentsService.openProductCommentsModal(
+            prodId,
+            tripId,
+            prodName,
+            this.user.id,
+            this.consultores,
+            () => {
+              // Ao fechar, recarregar a lista para atualizar a contagem de comentários no botão
+              this.loadAndRenderProdutosViagem(tripId);
+            }
+          );
+        });
+      });
 
       // Ouvintes de exclusão de produtos
       container.querySelectorAll('[data-delete-prod-id]').forEach(btn => {

@@ -273,3 +273,37 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE OR REPLACE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- ============================================================================
+-- 12. TABELAS PARA COMENTÁRIOS E NOTIFICAÇÕES (MENÇÕES @)
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS public.comentarios (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    tipo_item VARCHAR(20) CHECK (tipo_item IN ('orcamento', 'viagem', 'produto')) NOT NULL,
+    item_id UUID NOT NULL,
+    autor_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+    texto TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS public.notificacoes (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+    comentario_id UUID REFERENCES public.comentarios(id) ON DELETE CASCADE NOT NULL,
+    tipo_item VARCHAR(20) CHECK (tipo_item IN ('orcamento', 'viagem', 'produto')) NOT NULL,
+    item_id UUID NOT NULL,
+    parent_id UUID NOT NULL, -- orcamentos.id ou viagens.id para deep linking direto
+    lida BOOLEAN DEFAULT FALSE NOT NULL,
+    arquivada BOOLEAN DEFAULT FALSE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+-- Habilitar RLS
+ALTER TABLE public.comentarios ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.notificacoes ENABLE ROW LEVEL SECURITY;
+
+-- Políticas de Acesso
+CREATE POLICY "Acesso total de comentarios para autenticados" ON public.comentarios FOR ALL TO authenticated USING (true);
+CREATE POLICY "Acesso total de notificacoes para autenticados" ON public.notificacoes FOR ALL TO authenticated USING (true);
+

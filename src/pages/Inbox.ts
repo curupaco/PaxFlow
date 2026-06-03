@@ -270,7 +270,7 @@ if (typeof document !== 'undefined') {
 
 interface AlertItem {
   id: string; // Unique combined key
-  type: 'manual' | 'passport' | 'refund';
+  type: 'manual' | 'passport' | 'refund' | 'mention';
   title: string;
   sender: string;
   senderAvatar: string;
@@ -548,6 +548,70 @@ export class InboxPage {
         }
       });
 
+      // --- PART 4: MENTION NOTIFICATIONS ---
+      const { data: notificacoesData, error: notificacoesErr } = await supabase
+        .from('notificacoes')
+        .select(`
+          *,
+          comentario:comentarios (
+            *,
+            autor:profiles (*)
+          )
+        `)
+        .eq('user_id', this.user.id)
+        .eq('arquivada', false)
+        .order('created_at', { ascending: false });
+
+      if (notificacoesErr) {
+        console.error('Erro ao buscar notificações do banco:', notificacoesErr);
+      } else {
+        (notificacoesData || []).forEach((not: any) => {
+          if (!not.comentario) return; // Comentário deleted
+
+          const dataFormatada = new Date(not.created_at).toLocaleDateString('pt-BR');
+          const author = not.comentario.autor;
+          const authorName = author ? author.nome : 'Consultor';
+          const authorAvatar = author ? author.avatar_url : 'panda';
+
+          let itemLabel = 'Item';
+          let linkAttr = '';
+          if (not.tipo_item === 'orcamento') {
+            itemLabel = 'Orçamento';
+            linkAttr = `data-orcamento-id="${not.parent_id}"`;
+          } else if (not.tipo_item === 'viagem') {
+            itemLabel = 'Viagem';
+            linkAttr = `data-viagem-id="${not.parent_id}"`;
+          } else if (not.tipo_item === 'produto') {
+            itemLabel = 'Produto';
+            linkAttr = `data-viagem-id="${not.parent_id}"`; // abre detalhes da viagem para ver o produto
+          }
+
+          list.push({
+            id: `mention-${not.id}`,
+            type: 'mention',
+            title: `💬 Menção em ${itemLabel}`,
+            sender: authorName,
+            senderAvatar: authorAvatar,
+            dateStr: dataFormatada,
+            subject: `Você foi mencionado(a) por ${authorName}.`,
+            body: `O consultor <strong>${authorName}</strong> mencionou você em um comentário no ${itemLabel}:<br><br>
+                   <div class="pl-3 border-l-4 border-indigo-500 italic text-slate-650 dark:text-slate-400 py-1.5 bg-slate-50 dark:bg-slate-800/40 rounded-r-lg my-3">
+                     "${not.comentario.texto}"
+                   </div>
+                   Clique no link abaixo para abrir e ver os detalhes:<br>
+                   <a href="#" class="inbox-deep-link font-extrabold text-indigo-600 dark:text-indigo-400 hover:underline" ${linkAttr}>
+                     [Ver Detalhes do(a) ${itemLabel}]
+                   </a>`,
+            targetId: not.parent_id,
+            arquivado: not.arquivada,
+            consultorId: not.user_id,
+            consultorNome: authorName,
+            createdAt: not.created_at,
+            eventDate: not.created_at.split('T')[0]
+          });
+        });
+      }
+
     } catch (err) {
       console.error('Erro ao compilar alertas:', err);
     }
@@ -662,12 +726,20 @@ export class InboxPage {
   /**
    * Marks a specific alert ID as read
    */
-  private markAlertAsRead(id: string): void {
+  private async markAlertAsRead(id: string): Promise<void> {
     try {
       const list = this.getReadLocalAlerts();
       if (!list.includes(id)) {
         list.push(id);
         localStorage.setItem('paxflow_read_alerts', JSON.stringify(list));
+      }
+
+      if (id.startsWith('mention-')) {
+        const notifId = id.replace('mention-', '');
+        await supabase
+          .from('notificacoes')
+          .update({ lida: true })
+          .eq('id', notifId);
       }
     } catch (err) {
       console.error('Erro ao marcar alerta como lido:', err);
@@ -939,6 +1011,9 @@ export class InboxPage {
                     } else if (a.type === 'refund') {
                       badgeClass = 'badge-gradient-rose';
                       badgeText = 'Reembolso SLA';
+                    } else if (a.type === 'mention') {
+                      badgeClass = 'bg-gradient-to-tr from-purple-500 to-indigo-650 dark:from-purple-600 dark:to-indigo-500';
+                      badgeText = 'Menção @';
                     }
 
                     const isUnread = !a.arquivado && !readList.includes(a.id);
@@ -1280,12 +1355,15 @@ export class InboxPage {
               } else if (a.type === 'refund') {
                 badgeClass = 'badge-gradient-rose';
                 badgeText = 'Reembolso';
+              } else if (a.type === 'mention') {
+                badgeClass = 'bg-gradient-to-tr from-purple-500 to-indigo-650';
+                badgeText = 'Menção @';
               }
 
               return `
                 <div class="inbox-card inbox-glass p-3.5 rounded-xl border border-slate-200/50 dark:border-slate-850 bg-white/50 dark:bg-slate-900/50 cursor-pointer shadow-sm relative flex flex-col gap-1.5" data-alert-id="${a.id}">
                   <!-- Accent color bar -->
-                  <div class="absolute left-0 top-3.5 bottom-3.5 w-1 rounded-r ${a.type === 'manual' ? 'bg-indigo-500' : a.type === 'passport' ? 'bg-amber-500' : 'bg-rose-500'}"></div>
+                  <div class="absolute left-0 top-3.5 bottom-3.5 w-1 rounded-r ${a.type === 'manual' ? 'bg-indigo-500' : a.type === 'passport' ? 'bg-amber-500' : a.type === 'mention' ? 'bg-purple-500' : 'bg-rose-500'}"></div>
                   
                   <div class="pl-2 flex items-center justify-between gap-1">
                     <span class="px-1.5 py-0.5 rounded text-[8px] font-black text-white uppercase tracking-wider ${badgeClass}">
@@ -1374,12 +1452,15 @@ export class InboxPage {
               } else if (a.type === 'refund') {
                 badgeClass = 'badge-gradient-rose';
                 badgeText = 'Reembolso SLA';
+              } else if (a.type === 'mention') {
+                badgeClass = 'bg-gradient-to-tr from-purple-500 to-indigo-650';
+                badgeText = 'Menção @';
               }
 
               return `
                 <div class="inbox-card inbox-glass p-4 rounded-xl border border-white/60 dark:border-slate-900/60 shadow-sm flex items-start gap-4 cursor-pointer relative" data-alert-id="${a.id}">
                   <!-- Colored indicator border on the left side of the agenda card -->
-                  <div class="absolute left-0 top-3.5 bottom-3.5 w-1 rounded-r ${a.type === 'manual' ? 'bg-indigo-500' : a.type === 'passport' ? 'bg-amber-500' : 'bg-rose-500'}"></div>
+                  <div class="absolute left-0 top-3.5 bottom-3.5 w-1 rounded-r ${a.type === 'manual' ? 'bg-indigo-500' : a.type === 'passport' ? 'bg-amber-500' : a.type === 'mention' ? 'bg-purple-500' : 'bg-rose-500'}"></div>
                   
                   <!-- Avatar -->
                   <div class="w-9 h-9 border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden flex items-center justify-center bg-white dark:bg-slate-900 flex-shrink-0">
@@ -1596,6 +1677,15 @@ export class InboxPage {
               .eq('id', tableId);
 
             if (error) throw error;
+          } else if (alertItem.type === 'mention') {
+            const tableId = alertId.replace('mention-', '');
+            // Update row in Supabase
+            const { error } = await supabase
+              .from('notificacoes')
+              .update({ arquivada: !alertItem.arquivado })
+              .eq('id', tableId);
+
+            if (error) throw error;
           } else {
             // Local SLA archive toggle
             this.toggleLocalAlertArchive(alertId, !alertItem.arquivado);
@@ -1803,6 +1893,14 @@ export class InboxPage {
             .eq('id', tableId);
 
           if (error) throw error;
+        } else if (item.type === 'mention') {
+          const tableId = item.id.replace('mention-', '');
+          const { error } = await supabase
+            .from('notificacoes')
+            .update({ arquivada: !item.arquivado })
+            .eq('id', tableId);
+
+          if (error) throw error;
         } else {
           this.toggleLocalAlertArchive(item.id, !item.arquivado);
         }
@@ -1830,15 +1928,25 @@ export class InboxPage {
       link.addEventListener('click', (e) => {
         e.preventDefault();
         const orcId = link.getAttribute('data-orcamento-id');
-        if (!orcId) return;
+        const viagemId = link.getAttribute('data-viagem-id');
 
-        // 1. Close Modal
-        closeModal(true);
+        if (orcId) {
+          // 1. Close Modal
+          closeModal(true);
 
-        // 2. Dispatch global navigation event to redirect to Orcamentos with parameters!
-        window.dispatchEvent(new CustomEvent('paxflow-navigate', {
-          detail: { page: 'orcamentos', extraId: orcId }
-        }));
+          // 2. Dispatch global navigation event to redirect to Orcamentos with parameters!
+          window.dispatchEvent(new CustomEvent('paxflow-navigate', {
+            detail: { page: 'orcamentos', extraId: orcId }
+          }));
+        } else if (viagemId) {
+          // 1. Close Modal
+          closeModal(true);
+
+          // 2. Dispatch global navigation event to redirect to Dashboard with parameters!
+          window.dispatchEvent(new CustomEvent('paxflow-navigate', {
+            detail: { page: 'dashboard', extraId: viagemId }
+          }));
+        }
       });
     });
   }
