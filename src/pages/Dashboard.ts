@@ -749,14 +749,30 @@ export class Dashboard {
         </div>
       `;
 
-      // 1. Busca detalhes da viagem com cliente, consultor e reembolsos
+      // 1. Busca detalhes da viagem com cliente e reembolsos
       const { data: viagem, error: errViagem } = await supabase
         .from('viagens')
-        .select('*, cliente:clientes(*), consultor:profiles(*), reembolsos(*, produto:produtos_viagem(*))')
+        .select('*, cliente:clientes(*), reembolsos(*, produto:produtos_viagem(*))')
         .eq('id', tripId)
         .single();
 
       if (errViagem) throw errViagem;
+
+      // 1.1. Busca o consultor de forma separada pois a tabela profiles não possui relacionamento direto mapeado no cache do PostgREST
+      if (viagem && viagem.consultor_id) {
+        const { data: consultorData, error: errConsultor } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', viagem.consultor_id)
+          .single();
+        if (!errConsultor && consultorData) {
+          viagem.consultor = consultorData;
+        } else {
+          viagem.consultor = null;
+        }
+      } else if (viagem) {
+        viagem.consultor = null;
+      }
 
       // 2. Busca lista de clientes
       const { data: clientes, error: errClientes } = await supabase
