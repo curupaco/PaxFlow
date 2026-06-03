@@ -54,8 +54,6 @@ export class ReembolsosPage {
    * Inicializa o painel de reembolsos: valida a sessão, busca registros e ativa o cronômetro SLA.
    */
   public async init(): Promise<void> {
-    this.renderLoading();
-
     try {
       // 1. Validar autenticação e perfil
       const { user, perfil, error } = await getSessaoAtual();

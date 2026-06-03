@@ -785,6 +785,22 @@ class App {
     const pageContentEl = document.getElementById('page-content');
     if (!pageContentEl) return;
 
+    // Garante que o container é relativo para posicionar o overlay absolutamente
+    pageContentEl.classList.add('relative');
+
+    // Injeta a animação de carregamento glassmorphic sem remover o conteúdo antigo da tela anterior
+    let overlay = document.getElementById('paxflow-loading-overlay');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'paxflow-loading-overlay';
+      overlay.className = 'absolute inset-0 bg-white/40 dark:bg-slate-950/40 backdrop-blur-sm z-40 flex flex-col items-center justify-center space-y-3 pointer-events-none animate-fade-in';
+      overlay.innerHTML = `
+        <div class="w-10 h-10 border-3 border-indigo-650 dark:border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+        <span class="text-xs font-bold text-slate-650 dark:text-slate-300 animate-pulse uppercase tracking-wider">Carregando dados...</span>
+      `;
+      pageContentEl.appendChild(overlay);
+    }
+
     // 2. Atualiza os estilos de botões ativos na Sidebar
     const navButtons = ['analytics', 'inbox', 'orcamentos', 'dashboard', 'clientes', 'reembolsos', 'configuracoes'];
     navButtons.forEach(p => {

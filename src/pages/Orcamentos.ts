@@ -4,6 +4,16 @@ import { Orcamento, PerfilConsultor } from '../types';
 import { getAvatarSvg, mesclarAvataresLocais } from '../services/avatars';
 import { showCustomConfirm, showCustomAlert } from '../services/dialog';
 import { CommentsService } from '../services/comments';
+import {
+  renderPhoneInputHTML,
+  renderEmailInputHTML,
+  renderDateInputHTML,
+  renderCurrencyInputHTML,
+  setupFormValidation,
+  getFormattedPhoneToDb,
+  formatBrDateToIso,
+  parseDoubleBr
+} from '../utils/masks';
 
 // Injeta estilos específicos premium para o Kanban de Orçamentos
 if (typeof document !== 'undefined') {
@@ -57,8 +67,6 @@ export class OrcamentosPage {
    * Inicializa a página de Orçamentos
    */
   public async init(targetId?: string): Promise<void> {
-    this.renderLoading();
-
     try {
       // 1. Validar autenticação e perfil
       const { user, perfil, error } = await getSessaoAtual();
@@ -1093,15 +1101,11 @@ export class OrcamentosPage {
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Telefone</label>
-              <div class="relative">
-                <input id="input-orc-telefone" type="tel" placeholder="ex: (11) 98888-7777" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" autocomplete="off" />
-              </div>
+              ${renderPhoneInputHTML('input-orc-telefone', '', 'ex: (11) 98888-7777', false)}
             </div>
             <div>
               <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">E-mail</label>
-              <div class="relative">
-                <input id="input-orc-email" type="email" placeholder="ex: joao@email.com" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" autocomplete="off" />
-              </div>
+              ${renderEmailInputHTML('input-orc-email', '', 'ex: joao@email.com', false)}
             </div>
           </div>
 
@@ -1112,7 +1116,7 @@ export class OrcamentosPage {
             </div>
             <div>
               <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Data Estimada (DD/MM/AAAA) *</label>
-              <input id="input-orc-data" type="text" required placeholder="DD/MM/AAAA" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+              ${renderDateInputHTML('input-orc-data', '')}
             </div>
           </div>
 
@@ -1157,6 +1161,13 @@ export class OrcamentosPage {
 
     // Autocomplete para clientes recorrentes
     const inputNome = document.getElementById('input-orc-nome') as HTMLInputElement;
+    // Inicializa a validação em tempo real para o formulário de novos orçamentos
+    setupFormValidation('form-novo-orcamento', [
+      { id: 'input-orc-telefone', type: 'phone', required: false },
+      { id: 'input-orc-email', type: 'email', required: false },
+      { id: 'input-orc-data', type: 'date' }
+    ]);
+
     const inputTelefone = document.getElementById('input-orc-telefone') as HTMLInputElement;
     const inputEmail = document.getElementById('input-orc-email') as HTMLInputElement;
 
@@ -1256,18 +1267,7 @@ export class OrcamentosPage {
       }
     });
 
-    // Máscara e auto-formatação para a Data Estimada (dd/mm/aaaa) em conformidade com .cursorrules
-    const dataInput = document.getElementById('input-orc-data') as HTMLInputElement;
-    dataInput?.addEventListener('input', () => {
-      let v = dataInput.value.replace(/\D/g, '').slice(0, 8);
-      if (v.length >= 5) {
-        dataInput.value = `${v.slice(0, 2)}/${v.slice(2, 4)}/${v.slice(4)}`;
-      } else if (v.length >= 3) {
-        dataInput.value = `${v.slice(0, 2)}/${v.slice(2)}`;
-      } else {
-        dataInput.value = v;
-      }
-    });
+    // A formatação da Data Estimada é gerenciada automaticamente pelo setupFormValidation acima
 
     // Gerenciador de Tags
     const tagsContainer = document.getElementById('tags-container-modal') as HTMLElement;
@@ -1309,7 +1309,7 @@ export class OrcamentosPage {
       e.preventDefault();
 
       const nomeVal = (document.getElementById('input-orc-nome') as HTMLInputElement).value;
-      const telVal = (document.getElementById('input-orc-telefone') as HTMLInputElement).value.trim();
+      const telVal = getFormattedPhoneToDb('input-orc-telefone');
       const emailVal = (document.getElementById('input-orc-email') as HTMLInputElement).value.trim();
       const destinoVal = (document.getElementById('input-orc-destino') as HTMLInputElement).value;
       const dataRaw = (document.getElementById('input-orc-data') as HTMLInputElement).value.trim();
@@ -1318,15 +1318,11 @@ export class OrcamentosPage {
         ? (document.getElementById('select-orc-consultor') as HTMLSelectElement).value
         : this.user.id;
 
-      // Validação do padrão DD/MM/AAAA estipulado no .cursorrules
-      const dateRegex = /^(\d{2})\/(\d{2})\/(\d{4})$/;
-      if (!dateRegex.test(dataRaw)) {
+      const dataVal = formatBrDateToIso(dataRaw);
+      if (!dataVal) {
         this.showToast('Por favor, informe a data no formato correto DD/MM/AAAA.', 'error');
         return;
       }
-
-      const [, dia, mes, ano] = dataRaw.match(dateRegex)!;
-      const dataVal = `${ano}-${mes}-${dia}`;
 
       if (!telVal && !emailVal) {
         this.showToast('Por favor, informe pelo menos um meio de contato (Telefone ou E-mail).', 'error');
@@ -1397,7 +1393,7 @@ export class OrcamentosPage {
         <form id="form-enviar-proposta" class="space-y-5">
           <div>
             <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Valor da Proposta Enviada (R$) *</label>
-            <input id="input-orc-valor-proposta" type="text" required placeholder="0,00" value="${orc.valorProposta ? Number(orc.valorProposta).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+            ${renderCurrencyInputHTML('input-orc-valor-proposta', orc.valorProposta || '')}
             <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">Informe o valor total da proposta que foi enviada ao cliente.</p>
           </div>
 
@@ -1461,17 +1457,10 @@ export class OrcamentosPage {
     const fileLabel = document.getElementById('selected-file-label') as HTMLElement;
     const fileNameSpan = document.getElementById('file-name-span') as HTMLElement;
 
-    // Máscara de Moeda Real-Time
-    const valorPropostaInput = document.getElementById('input-orc-valor-proposta') as HTMLInputElement;
-    valorPropostaInput?.addEventListener('input', () => {
-      let value = valorPropostaInput.value.replace(/\D/g, '');
-      if (value) {
-        const floatValue = parseFloat(value) / 100;
-        valorPropostaInput.value = floatValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-      } else {
-        valorPropostaInput.value = '';
-      }
-    });
+    // Inicializa a validação em tempo real do formulário de proposta
+    setupFormValidation('form-enviar-proposta', [
+      { id: 'input-orc-valor-proposta', type: 'currency' }
+    ]);
 
     let selectedFile: File | null = null;
 
@@ -1487,12 +1476,6 @@ export class OrcamentosPage {
     const form = document.getElementById('form-enviar-proposta') as HTMLFormElement;
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
-
-      const parseDoubleBr = (valStr: string): number => {
-        const clean = valStr.replace(/R\$\s?/gi, '').replace(/\./g, '').replace(',', '.').trim();
-        const num = parseFloat(clean);
-        return isNaN(num) ? 0 : num;
-      };
 
       const valorPropostaVal = parseDoubleBr((document.getElementById('input-orc-valor-proposta') as HTMLInputElement).value);
       const notasVal = (document.getElementById('textarea-orc-notas') as HTMLTextAreaElement).value.trim();
@@ -1666,11 +1649,11 @@ export class OrcamentosPage {
               </div>
               <div>
                 <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">E-mail de Contato *</label>
-                <input id="input-fechar-cli-email" type="email" required value="${eVal}" placeholder="ex: passageiro@email.com" class="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" ${linkedClient ? 'readonly class="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 rounded-lg focus:outline-none text-slate-550 dark:text-slate-400 font-semibold text-sm cursor-not-allowed"' : ''} />
+                ${renderEmailInputHTML('input-fechar-cli-email', eVal, 'ex: passageiro@email.com', true, !!linkedClient)}
               </div>
               <div>
                 <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Telefone/WhatsApp *</label>
-                <input id="input-fechar-cli-telefone" type="tel" required value="${tVal}" placeholder="ex: (11) 98888-7777" class="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" ${linkedClient ? 'readonly class="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 rounded-lg focus:outline-none text-slate-550 dark:text-slate-400 font-semibold text-sm cursor-not-allowed"' : ''} />
+                ${renderPhoneInputHTML('input-fechar-cli-telefone', tVal, 'ex: (11) 98888-7777', true, !!linkedClient)}
               </div>
               <div>
                 <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Documento de Identificação *</label>
@@ -1721,15 +1704,15 @@ export class OrcamentosPage {
               </div>
               <div>
                 <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Data de Ida (DD/MM/AAAA) *</label>
-                <input id="input-fechar-via-ida" type="text" required placeholder="DD/MM/AAAA" value="${this.formatarDataInputBr(orc.dataViagem)}" class="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+                ${renderDateInputHTML('input-fechar-via-ida', orc.dataViagem || '')}
               </div>
               <div>
                 <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Data de Volta (DD/MM/AAAA) *</label>
-                <input id="input-fechar-via-volta" type="text" required placeholder="DD/MM/AAAA" class="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+                ${renderDateInputHTML('input-fechar-via-volta', '')}
               </div>
               <div>
                 <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Valor da Venda (R$) *</label>
-                <input id="input-fechar-via-valor" type="text" required placeholder="0,00" value="${orc.valorProposta ? Number(orc.valorProposta).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : ''}" class="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+                ${renderCurrencyInputHTML('input-fechar-via-valor', orc.valorProposta || '')}
               </div>
               <div>
                 <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Etapa Inicial Operacional *</label>
@@ -1806,17 +1789,14 @@ export class OrcamentosPage {
     radioNova?.addEventListener('change', updateFlowVisibility);
     radioExistente?.addEventListener('change', updateFlowVisibility);
 
-    // Máscara de Moeda Real-Time para Valor de Venda
-    const valorVendaInput = document.getElementById('input-fechar-via-valor') as HTMLInputElement;
-    valorVendaInput?.addEventListener('input', () => {
-      let value = valorVendaInput.value.replace(/\D/g, '');
-      if (value) {
-        const floatValue = parseFloat(value) / 100;
-        valorVendaInput.value = floatValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-      } else {
-        valorVendaInput.value = '';
-      }
-    });
+    // Inicializa a validação em tempo real para fechar negócio
+    setupFormValidation('form-fechar-viagem', [
+      { id: 'input-fechar-cli-email', type: 'email', required: !linkedClient },
+      { id: 'input-fechar-cli-telefone', type: 'phone', required: !linkedClient },
+      { id: 'input-fechar-via-ida', type: 'date', required: true },
+      { id: 'input-fechar-via-volta', type: 'date', required: true },
+      { id: 'input-fechar-via-valor', type: 'currency', required: true }
+    ]);
 
     // Fechamento de Modais
     const closeModal = () => this.closeModal();
@@ -1834,7 +1814,7 @@ export class OrcamentosPage {
       try {
         const cNome = (document.getElementById('input-fechar-cli-nome') as HTMLInputElement).value;
         const cEmail = (document.getElementById('input-fechar-cli-email') as HTMLInputElement).value;
-        const cTelefone = (document.getElementById('input-fechar-cli-telefone') as HTMLInputElement).value;
+        const cTelefone = getFormattedPhoneToDb('input-fechar-cli-telefone');
         const cDoc = (document.getElementById('input-fechar-cli-doc') as HTMLInputElement).value;
 
         const isNovaViagem = radioNova ? radioNova.checked : true;
@@ -1847,11 +1827,6 @@ export class OrcamentosPage {
         let vValor = orc.valorProposta || 0;
         if (isNovaViagem) {
           const vValorRaw = (document.getElementById('input-fechar-via-valor') as HTMLInputElement).value.trim();
-          const parseDoubleBr = (valStr: string): number => {
-            const clean = valStr.replace(/R\$\s?/gi, '').replace(/\./g, '').replace(',', '.').trim();
-            const num = parseFloat(clean);
-            return isNaN(num) ? 0 : num;
-          };
           vValor = parseDoubleBr(vValorRaw);
         }
 
@@ -1900,19 +1875,15 @@ export class OrcamentosPage {
           const vStatus = (document.getElementById('select-fechar-via-status') as HTMLSelectElement).value;
           const vObs = (document.getElementById('textarea-fechar-via-obs') as HTMLTextAreaElement).value;
 
-          const dateRegex = /^(\d{2})\/(\d{2})\/(\d{4})$/;
-          if (!dateRegex.test(vIdaRaw)) {
+          const vIda = formatBrDateToIso(vIdaRaw);
+          const vVolta = formatBrDateToIso(vVoltaRaw);
+
+          if (!vIda) {
             throw new Error('Por favor, informe a Data de Ida no formato correto DD/MM/AAAA.');
           }
-          if (!dateRegex.test(vVoltaRaw)) {
+          if (!vVolta) {
             throw new Error('Por favor, informe a Data de Volta no formato correto DD/MM/AAAA.');
           }
-
-          const [, idaDia, idaMes, idaAno] = vIdaRaw.match(dateRegex)!;
-          const vIda = `${idaAno}-${idaMes}-${idaDia}`;
-
-          const [, voltaDia, voltaMes, voltaAno] = vVoltaRaw.match(dateRegex)!;
-          const vVolta = `${voltaAno}-${voltaMes}-${voltaDia}`;
 
           let newViagemId = 'via-mocked-' + Math.random().toString(36).substr(2, 9);
 

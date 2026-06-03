@@ -93,8 +93,6 @@ export class ComercialDashboard {
    * Inicializa o Dashboard: valida autenticação, busca dados e renderiza
    */
   public async init(): Promise<void> {
-    this.renderLoading();
-
     try {
       // 1. Validar autenticação e perfil
       const { user, perfil, error } = await getSessaoAtual();

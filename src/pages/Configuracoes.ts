@@ -2,6 +2,7 @@ import { supabase, getSessaoAtual, atualizarSenhaAtual } from '../services/supab
 import { PerfilConsultor, GlobalSettings } from '../types';
 import { createClient } from '@supabase/supabase-js';
 import { getAvatarSvg, AVATAR_OPTIONS, mesclarAvataresLocais, salvarAvatarLocal } from '../services/avatars';
+import { renderEmailInputHTML, setupFormValidation } from '../utils/masks';
 import { showCustomAlert, showCustomConfirm } from '../services/dialog';
 import { parseCSV, batchInsertOrcamentos, formatBrDateToYmd, parseBrFloat } from '../services/csvImporter';
 
@@ -86,8 +87,6 @@ export class ConfiguracoesPage {
    * Inicializa o painel de configurações: valida o nível de acesso admin, busca dados e renderiza.
    */
   public async init(): Promise<void> {
-    this.renderLoading();
-
     try {
       // 1. Validar autenticação e perfil
       const { user, perfil, error } = await getSessaoAtual();
@@ -243,6 +242,9 @@ export class ConfiguracoesPage {
 
     if (this.activeTab === 'geral') {
       const form = document.getElementById('form-configuracoes') as HTMLFormElement;
+      setupFormValidation('form-configuracoes', [
+        { id: 'input-email-suporte', type: 'email' }
+      ]);
       form?.addEventListener('submit', async (e) => {
         e.preventDefault();
 
@@ -499,7 +501,7 @@ export class ConfiguracoesPage {
 
           <div>
             <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">E-mail de Acesso *</label>
-            <input id="input-nc-email" type="email" required autocomplete="username" placeholder="email@agencia.com" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+            ${renderEmailInputHTML('input-nc-email', '', 'email@agencia.com')}
           </div>
 
           <div class="grid grid-cols-2 gap-4">
@@ -541,6 +543,9 @@ export class ConfiguracoesPage {
 
     // Submit handler para o cadastro
     const form = document.getElementById('form-novo-consultor') as HTMLFormElement;
+    setupFormValidation('form-novo-consultor', [
+      { id: 'input-nc-email', type: 'email' }
+    ]);
     form?.addEventListener('submit', async (e) => {
       e.preventDefault();
       
@@ -1606,7 +1611,7 @@ export class ConfiguracoesPage {
 
                 <div>
                   <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">E-mail de Suporte e Alertas *</label>
-                  <input id="input-email-suporte" type="email" required value="${this.settings.emailSuporte}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold" />
+                  ${renderEmailInputHTML('input-email-suporte', this.settings.emailSuporte || '', 'email@agencia.com')}
                 </div>
 
                 <div class="border-t border-slate-100 dark:border-slate-800 pt-5 space-y-4">

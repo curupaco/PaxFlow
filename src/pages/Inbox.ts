@@ -315,8 +315,6 @@ export class InboxPage {
    * Initializes the Inbox Cockpit page
    */
   public async init(): Promise<void> {
-    this.renderLoading();
-
     try {
       // 1. Fetch current session and user profile
       const { user, perfil, error } = await getSessaoAtual();

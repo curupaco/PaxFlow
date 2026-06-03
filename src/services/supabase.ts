@@ -29,12 +29,15 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
  * Realiza o login de um consultor usando email e senha.
  * Retorna os dados do usuário autenticado e seu perfil com a respectiva role (admin ou consultor).
  */
+let cachedSessionResult: { user: any; perfil: PerfilConsultor | null; error: any } | null = null;
+
 export async function loginConsultor(email: string, password: string): Promise<{
   user: any;
   perfil: PerfilConsultor | null;
   error: any;
 }> {
   try {
+    cachedSessionResult = null; // Limpa cache anterior ao efetuar login
     const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -117,6 +120,7 @@ export async function loginConsultor(email: string, password: string): Promise<{
  * Realiza o logout do consultor autenticado.
  */
 export async function logoutConsultor(): Promise<{ error: any }> {
+  cachedSessionResult = null; // Limpa cache ao deslogar
   const { error } = await supabase.auth.signOut();
   return { error };
 }
@@ -129,6 +133,9 @@ export async function getSessaoAtual(): Promise<{
   perfil: PerfilConsultor | null;
   error: any;
 }> {
+  if (cachedSessionResult) {
+    return cachedSessionResult;
+  }
   try {
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
@@ -178,14 +185,26 @@ export async function getSessaoAtual(): Promise<{
       }
     }
 
-    return {
+    cachedSessionResult = {
       user: session.user,
       perfil: perfilData as PerfilConsultor,
       error: null,
     };
+    return cachedSessionResult;
   } catch (err: any) {
     return { user: null, perfil: null, error: err };
   }
+}
+
+// Sincroniza o perfil em cache caso ocorra atualização reativa no sistema
+if (typeof window !== 'undefined') {
+  window.addEventListener('paxflow-profile-updated', (e: any) => {
+    const { nome, avatar_url } = e.detail;
+    if (cachedSessionResult && cachedSessionResult.perfil) {
+      cachedSessionResult.perfil.nome = nome;
+      cachedSessionResult.perfil.avatar_url = avatar_url;
+    }
+  });
 }
 
 /**

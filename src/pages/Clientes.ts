@@ -3,6 +3,14 @@ import { uploadDocumentoCliente } from '../services/googleDrive';
 import { getAvatarSvg } from '../services/avatars';
 import { Cliente, PerfilConsultor } from '../types';
 import { showCustomConfirm } from '../services/dialog';
+import {
+  renderPhoneInputHTML,
+  renderEmailInputHTML,
+  renderDateInputHTML,
+  setupFormValidation,
+  getFormattedPhoneToDb,
+  formatBrDateToIso
+} from '../utils/masks';
 
 // Injeta estilos premium e animações interativas para a tela de Clientes no DOM
 if (typeof document !== 'undefined') {
@@ -56,8 +64,6 @@ export class ClientesPage {
    * Inicializa a página de clientes: valida autenticação, busca clientes e renderiza a tela.
    */
   public async init(): Promise<void> {
-    this.renderLoading();
-
     try {
       // 1. Validar autenticação e perfil
       const { user, perfil, error } = await getSessaoAtual();
@@ -309,6 +315,25 @@ export class ClientesPage {
     const form = document.getElementById('form-cliente') as HTMLFormElement;
     
     // Tratamento de envio do formulário de cadastro/edição
+    // Inicializa a validação em tempo real para os campos de contato e datas
+    setupFormValidation('form-cliente', [
+      { id: 'input-email', type: 'email' },
+      { id: 'input-telefone', type: 'phone' },
+      { id: 'input-data-nasc', type: 'date', required: false },
+      { id: 'input-pass-validade', type: 'date', required: false }
+    ]);
+
+    // Aplica classes de alerta visual para o passaporte caso esteja expirado/alerta
+    if (this.clienteSelecionado) {
+      const passSla = this.checkPassaporteSLA(this.clienteSelecionado.passaporteValidade);
+      const passValidadeInput = document.getElementById('input-pass-validade') as HTMLInputElement;
+      if (passValidadeInput && passSla.status !== 'none' && passSla.status !== 'ok') {
+        passValidadeInput.classList.add('passport-expired-alert');
+        if (passSla.status === 'expired') passValidadeInput.classList.add('text-rose-600', 'dark:text-rose-450');
+        if (passSla.status === 'warning') passValidadeInput.classList.add('text-amber-600', 'dark:text-amber-450');
+      }
+    }
+
     form?.addEventListener('submit', async (e) => {
       e.preventDefault();
 
@@ -316,12 +341,12 @@ export class ClientesPage {
       
       const nomeVal = (document.getElementById('input-nome') as HTMLInputElement).value;
       const emailVal = (document.getElementById('input-email') as HTMLInputElement).value;
-      const telefoneVal = (document.getElementById('input-telefone') as HTMLInputElement).value;
+      const telefoneVal = getFormattedPhoneToDb('input-telefone');
       const documentoVal = (document.getElementById('input-documento') as HTMLInputElement).value;
-      const dataNascVal = (document.getElementById('input-data-nasc') as HTMLInputElement).value;
+      const dataNascVal = formatBrDateToIso((document.getElementById('input-data-nasc') as HTMLInputElement).value);
       const enderecoVal = (document.getElementById('input-endereco') as HTMLInputElement).value;
       const passNumeroVal = (document.getElementById('input-pass-numero') as HTMLInputElement).value;
-      const passValidadeVal = (document.getElementById('input-pass-validade') as HTMLInputElement).value;
+      const passValidadeVal = formatBrDateToIso((document.getElementById('input-pass-validade') as HTMLInputElement).value);
       const vistosVal = (document.getElementById('textarea-vistos') as HTMLTextAreaElement).value;
       const obsVal = (document.getElementById('textarea-observacoes') as HTMLTextAreaElement).value;
 
@@ -580,11 +605,11 @@ export class ClientesPage {
               </div>
               <div>
                 <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">E-mail *</label>
-                <input id="input-email" type="email" required value="${c.email}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium" />
+                ${renderEmailInputHTML('input-email', c.email)}
               </div>
               <div>
                 <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Telefone/WhatsApp *</label>
-                <input id="input-telefone" type="tel" required value="${c.telefone}" placeholder="(XX) 9XXXX-XXXX" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium" />
+                ${renderPhoneInputHTML('input-telefone', c.telefone)}
               </div>
               <div>
                 <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Documento (CPF/RG) *</label>
@@ -592,7 +617,7 @@ export class ClientesPage {
               </div>
               <div>
                 <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Data de Nascimento</label>
-                <input id="input-data-nasc" type="date" value="${c.dataNascimento || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium" />
+                ${renderDateInputHTML('input-data-nasc', c.dataNascimento || '', 'DD/MM/AAAA', false)}
               </div>
               <div>
                 <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Endereço Residencial</label>
@@ -624,7 +649,7 @@ export class ClientesPage {
               </div>
               <div>
                 <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Validade do Passaporte</label>
-                <input id="input-pass-validade" type="date" value="${c.passaporteValidade || ''}" class="${passValidadeInputClass}" />
+                ${renderDateInputHTML('input-pass-validade', c.passaporteValidade || '', 'DD/MM/AAAA', false)}
               </div>
               <div class="md:col-span-2">
                 <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Vistos Ativos (Detalhes)</label>
