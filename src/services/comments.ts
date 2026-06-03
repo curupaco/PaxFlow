@@ -78,14 +78,16 @@ export class CommentsService {
 
           // Destacar menções @nome no texto do comentário
           let textoFormatado = c.texto;
-          consultoresAtivos.forEach(p => {
-            const mentionTag = `@${p.nome}`;
-            if (textoFormatado.includes(mentionTag)) {
-              textoFormatado = textoFormatado.split(mentionTag).join(
-                `<span class="bg-indigo-50 dark:bg-indigo-950/40 text-indigo-650 dark:text-indigo-400 font-extrabold px-1 py-0.5 rounded text-[11px] border border-indigo-100/30 dark:border-indigo-900/30">${mentionTag}</span>`
-              );
-            }
-          });
+          if (consultoresAtivos.length > 0) {
+            const namesRegexPart = consultoresAtivos
+              .map(p => p.nome.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'))
+              .sort((a, b) => b.length - a.length)
+              .join('|');
+            const regex = new RegExp(`@(${namesRegexPart})(?=$|[\\s.,!?;:])`, 'gi');
+            textoFormatado = textoFormatado.replace(regex, (match) => {
+              return `<span class="bg-indigo-50 dark:bg-indigo-950/40 text-indigo-650 dark:text-indigo-400 font-extrabold px-1 py-0.5 rounded text-[11px] border border-indigo-100/30 dark:border-indigo-900/30">${match}</span>`;
+            });
+          }
 
           return `
             <div class="flex items-start gap-2.5 p-2.5 bg-slate-50/50 dark:bg-slate-800/10 border border-slate-100 dark:border-slate-850 rounded-xl">
@@ -202,37 +204,47 @@ export class CommentsService {
       // Encontra a última ocorrência do caractere @ antes do cursor
       const lastAtIdx = textBeforeCursor.lastIndexOf('@');
 
-      // Verifica se o @ está ativo (não está separado por espaços depois dele)
-      if (lastAtIdx !== -1 && !/\s/.test(textBeforeCursor.substring(lastAtIdx + 1))) {
-        isMentioning = true;
-        mentionSearchStart = lastAtIdx;
-        const searchTerm = textBeforeCursor.substring(lastAtIdx + 1).toLowerCase();
+      if (lastAtIdx !== -1) {
+        const charBeforeAt = lastAtIdx > 0 ? textBeforeCursor[lastAtIdx - 1] : '';
+        // Evita abrir dropdown ao digitar e-mails ou palavras normais coladas ao @
+        if (!charBeforeAt || /[\s.,!?;:]/.test(charBeforeAt)) {
+          const searchTerm = textBeforeCursor.substring(lastAtIdx + 1);
 
-        const filtered = profiles.filter(p => 
-          p.ativo && p.nome.toLowerCase().includes(searchTerm)
-        );
+          // Só ativamos a menção se o termo de busca corresponder ao início do nome de algum consultor ativo
+          // e não contiver quebra de linha
+          const filtered = profiles.filter(p => 
+            p.ativo && p.nome.toLowerCase().startsWith(searchTerm.toLowerCase())
+          );
 
-        if (filtered.length > 0) {
-          this.renderDropdownItems(dropdown, filtered, (selectedProfile) => {
-            // Substitui a menção pelo nome completo do usuário selecionado
-            const textAfterCursor = text.substring(cursor);
-            const beforeMention = text.substring(0, mentionSearchStart);
-            textarea.value = `${beforeMention}@${selectedProfile.nome} ${textAfterCursor}`;
-            textarea.focus();
-            
-            // Move cursor para depois da menção autocompletada
-            const newCursorPos = beforeMention.length + selectedProfile.nome.length + 2;
-            textarea.setSelectionRange(newCursorPos, newCursorPos);
+          if (filtered.length > 0 && !/\n/.test(searchTerm)) {
+            isMentioning = true;
+            mentionSearchStart = lastAtIdx;
 
+            this.renderDropdownItems(dropdown, filtered, (selectedProfile) => {
+              // Substitui a menção pelo nome completo do usuário selecionado
+              const textAfterCursor = text.substring(cursor);
+              const beforeMention = text.substring(0, mentionSearchStart);
+              textarea.value = `${beforeMention}@${selectedProfile.nome} ${textAfterCursor}`;
+              textarea.focus();
+              
+              // Move cursor para depois da menção autocompletada
+              const newCursorPos = beforeMention.length + selectedProfile.nome.length + 2;
+              textarea.setSelectionRange(newCursorPos, newCursorPos);
+
+              dropdown.classList.add('hidden');
+              isMentioning = false;
+            });
+
+            // Posicionar o dropdown logo acima ou abaixo do textarea
+            dropdown.className = "absolute z-50 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl max-h-40 overflow-y-auto p-1.5 min-w-[200px] text-xs font-semibold left-0 bottom-full mb-1";
+            dropdown.classList.remove('hidden');
+          } else {
             dropdown.classList.add('hidden');
             isMentioning = false;
-          });
-
-          // Posicionar o dropdown logo acima ou abaixo do textarea
-          dropdown.className = "absolute z-50 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl max-h-40 overflow-y-auto p-1.5 min-w-[200px] text-xs font-semibold left-0 bottom-full mb-1";
-          dropdown.classList.remove('hidden');
+          }
         } else {
           dropdown.classList.add('hidden');
+          isMentioning = false;
         }
       } else {
         dropdown.classList.add('hidden');
@@ -315,29 +327,49 @@ export class CommentsService {
     currentUserId: string,
     profiles: PerfilConsultor[]
   ): Promise<void> {
-    const mentions: PerfilConsultor[] = [];
+    const otherProfiles = profiles.filter(p => p.id !== currentUserId && p.ativo);
+    if (otherProfiles.length === 0) return;
 
-    // Encontra todos os usuários mencionados no comentário
-    for (const p of profiles) {
-      if (p.id === currentUserId) continue; // Ignora auto-mencionar
+    const matchedRanges: { start: number; end: number; profile: PerfilConsultor }[] = [];
 
-      // Verifica se a menção existe no texto (exemplo: @João Silva)
-      const mentionTag = `@${p.nome}`;
-      const index = texto.indexOf(mentionTag);
-
-      if (index !== -1) {
+    // Encontra todas as ocorrências de menções no texto de forma case-insensitive
+    for (const p of otherProfiles) {
+      const mentionTag = `@${p.nome.toLowerCase()}`;
+      const textLower = texto.toLowerCase();
+      
+      let index = textLower.indexOf(mentionTag);
+      while (index !== -1) {
         // Garante que a menção está delimitada (espaço, pontuação ou fim de linha)
         const charAfter = texto[index + mentionTag.length];
         if (!charAfter || /[\s.,!?;:]/.test(charAfter)) {
-          mentions.push(p);
+          matchedRanges.push({
+            start: index,
+            end: index + mentionTag.length,
+            profile: p
+          });
         }
+        index = textLower.indexOf(mentionTag, index + 1);
       }
     }
 
-    if (mentions.length === 0) return;
+    // Filtra ranges sobrepostos (ex: se houver @fernanda ganem e @fernanda no mesmo local, mantém apenas o mais longo)
+    const finalMentions = matchedRanges.filter(r1 => {
+      const isSubRange = matchedRanges.some(r2 => 
+        r2 !== r1 && 
+        r2.start <= r1.start && 
+        r2.end >= r1.end && 
+        (r2.end - r2.start) > (r1.end - r1.start)
+      );
+      return !isSubRange;
+    });
+
+    // Pega a lista única de perfis correspondentes
+    const uniqueMentions = Array.from(new Set(finalMentions.map(r => r.profile)));
+
+    if (uniqueMentions.length === 0) return;
 
     // Insere as notificações em lote
-    const notificationsPayload = mentions.map(p => ({
+    const notificationsPayload = uniqueMentions.map(p => ({
       user_id: p.id,
       comentario_id: commentId,
       tipo_item: tipoItem,
