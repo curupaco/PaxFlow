@@ -716,9 +716,9 @@ export class OrcamentosPage {
       <div class="min-h-screen bg-slate-50/50 dark:bg-slate-950 flex flex-col font-sans transition-colors duration-200">
         
         <!-- Cabeçalho Principal -->
-        <header class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 sticky top-0 z-30 px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 transition-colors duration-200">
+        <header class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 sticky top-0 z-30 px-6 py-4 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 transition-colors duration-200">
           <div class="flex items-center gap-3">
-            <img src="/logo.svg" alt="PaxFlow Logo" class="h-10 w-auto object-contain" />
+            <img src="/logo.svg" alt="PaxFlow Logo" class="h-10 w-auto object-contain md:hidden" />
             <div>
               <h1 class="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight flex items-center gap-2">
                 <span>Orçamentos em Aberto</span>
@@ -728,7 +728,7 @@ export class OrcamentosPage {
             </div>
           </div>
           
-          <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
+          <div class="flex flex-wrap items-center gap-3 w-full lg:w-auto lg:justify-end">
             <!-- Campo de Busca de Orçamentos -->
             <div class="relative min-w-[200px] md:min-w-[280px] flex-1 sm:flex-initial">
               <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">

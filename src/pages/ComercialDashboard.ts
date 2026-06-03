@@ -374,7 +374,7 @@ export class ComercialDashboard {
         
                <header class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 sticky top-0 z-30 px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 transition-colors duration-200">
           <div class="flex items-center gap-3">
-            <img src="/logo.svg" alt="PaxFlow Logo" class="h-10 w-auto object-contain" />
+            <img src="/logo.svg" alt="PaxFlow Logo" class="h-10 w-auto object-contain md:hidden" />
             <div>
               <h1 class="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight flex items-center gap-2">
                 <span>Dashboard de Resultados</span>
@@ -385,7 +385,7 @@ export class ComercialDashboard {
           </div>
           
           <!-- Filtros de Dashboard & Perfil -->
-          <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto justify-end">
+          <div class="flex flex-wrap items-center gap-3 w-full md:w-auto md:justify-end">
             
             <!-- Seletor de Período -->
             <div class="flex items-center gap-1.5 shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2.5 py-1.5 rounded-xl shadow-sm">

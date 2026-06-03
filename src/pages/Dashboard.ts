@@ -1603,14 +1603,18 @@ export class Dashboard {
       <div class="min-h-screen bg-slate-50/50 dark:bg-slate-950 flex flex-col font-sans transition-colors duration-200">
         
          <!-- CABEÇALHO DO OPERACIONAL -->
-        <header class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 sticky top-0 z-30 px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 transition-colors duration-200">
+        <header class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 sticky top-0 z-30 px-6 py-4 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 transition-colors duration-200">
           <div class="flex items-center gap-3">
-            <img src="/logo.svg" alt="PaxFlow Logo" class="h-10 w-auto object-contain" />
+            <img src="/logo.svg" alt="PaxFlow Logo" class="h-10 w-auto object-contain md:hidden" />
             <div>
               <h1 class="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight">${this.settings.agencyName}</h1>
               <p class="text-xs text-slate-500 dark:text-slate-400 font-medium flex items-center gap-1.5">
-                <span>Painel Operacional</span> &bull; 
-           <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
+                <span>Painel Operacional</span>
+              </p>
+            </div>
+          </div>
+          
+          <div class="flex flex-wrap items-center gap-3 w-full lg:w-auto lg:justify-end">
             <!-- Stats Rápidos -->
             <div class="flex items-center gap-2 bg-slate-100/60 dark:bg-slate-800/40 p-1.5 rounded-xl border border-slate-200/30 dark:bg-slate-700/30 shrink-0">
               <div class="px-3.5 py-1.5 text-center">

@@ -1515,7 +1515,7 @@ export class ConfiguracoesPage {
         
         <header class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 sticky top-0 z-30 px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 transition-colors duration-200">
           <div class="flex items-center gap-3">
-            <img src="/logo.svg" alt="PaxFlow Logo" class="h-10 w-auto object-contain animate-fade-in" />
+            <img src="/logo.svg" alt="PaxFlow Logo" class="h-10 w-auto object-contain animate-fade-in md:hidden" />
             <div>
               <h1 class="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight">Configurações Administrativas</h1>
               <p class="text-xs text-slate-500 dark:text-slate-400 font-medium flex items-center gap-1.5">
@@ -1525,7 +1525,7 @@ export class ConfiguracoesPage {
             </div>
           </div>
           
-          <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
+          <div class="flex flex-wrap items-center gap-3 w-full md:w-auto md:justify-end">
             <!-- Identidade do Consultor Logado -->
             <div class="flex items-center justify-between sm:justify-start gap-3 pl-0 sm:pl-3 border-t sm:border-t-0 sm:border-l border-slate-200/60 dark:border-slate-800/60 pt-3 sm:pt-0 shrink-0">
               <div class="text-right hidden sm:block">
