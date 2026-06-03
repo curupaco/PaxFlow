@@ -952,28 +952,24 @@ export class Dashboard {
                   </select>
                 </div>
                 <div>
-                  <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Fornecedor *</label>
-                  <input id="prod-fornecedor" type="text" required placeholder="ex: LATAM, Hilton" class="w-full px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-xs" />
+                  <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Fornecedor</label>
+                  <input id="prod-fornecedor" type="text" placeholder="ex: LATAM, Hilton" class="w-full px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-xs" />
                 </div>
               </div>
 
               <div>
-                <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Descrição *</label>
-                <input id="prod-descricao" type="text" required placeholder="ex: Voo GRU-JFK ou Quarto Deluxe" class="w-full px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-xs" />
+                <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Descrição</label>
+                <input id="prod-descricao" type="text" placeholder="ex: Voo GRU-JFK ou Quarto Deluxe" class="w-full px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-xs" />
               </div>
 
-              <div class="grid grid-cols-3 gap-2">
+              <div class="grid grid-cols-2 gap-3">
                 <div>
                   <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Código (LOC)</label>
                   <input id="prod-reserva" type="text" placeholder="ex: LOC12" class="w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-xs uppercase" />
                 </div>
                 <div>
-                  <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Custo (R$) *</label>
-                  <input id="prod-custo" type="text" required placeholder="0,00" class="w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-xs" />
-                </div>
-                <div>
                   <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Venda (R$) *</label>
-                  <input id="prod-venda" type="text" required placeholder="0,00" class="w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-xs" />
+                  <input id="prod-venda" type="text" required placeholder="0,00" class="w-full px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-xs" />
                 </div>
               </div>
 
@@ -1210,10 +1206,9 @@ export class Dashboard {
       e.preventDefault();
 
       const tipo = (document.getElementById('prod-tipo') as HTMLSelectElement).value;
-      const fornecedor = (document.getElementById('prod-fornecedor') as HTMLInputElement).value;
-      const descricao = (document.getElementById('prod-descricao') as HTMLInputElement).value;
+      const fornecedor = (document.getElementById('prod-fornecedor') as HTMLInputElement).value.trim() || 'Não informado';
+      const descricao = (document.getElementById('prod-descricao') as HTMLInputElement).value.trim() || 'Sem descrição';
       const reserva = (document.getElementById('prod-reserva') as HTMLInputElement).value;
-      const custoRaw = (document.getElementById('prod-custo') as HTMLInputElement).value.trim();
       const vendaRaw = (document.getElementById('prod-venda') as HTMLInputElement).value.trim();
       const dataServicoRaw = (document.getElementById('prod-data') as HTMLInputElement).value.trim();
       const status = (document.getElementById('prod-status') as HTMLSelectElement).value;
@@ -1233,7 +1228,6 @@ export class Dashboard {
         const num = parseFloat(clean);
         return isNaN(num) ? 0 : num;
       };
-      const custo = parseDoubleBr(custoRaw);
       const venda = parseDoubleBr(vendaRaw);
 
       const payload = {
@@ -1242,7 +1236,7 @@ export class Dashboard {
         fornecedor,
         descricao,
         codigo_reserva: reserva || null,
-        valor_custo: custo,
+        valor_custo: 0,
         valor_venda: venda,
         status,
         data_servico: dataServico
@@ -1323,7 +1317,6 @@ export class Dashboard {
             <div class="flex items-center gap-3.5">
               <div class="text-right">
                 <span class="block text-xs font-black text-indigo-600 dark:text-indigo-400">R$ ${Number(p.valor_venda || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-                <span class="block text-[9px] text-slate-400 dark:text-slate-500 font-semibold">Custo: R$ ${Number(p.valor_custo || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
               </div>
               <button data-delete-prod-id="${p.id}" class="p-1.5 hover:bg-rose-50 dark:hover:bg-rose-950/20 text-slate-300 dark:text-slate-550 hover:text-rose-600 dark:hover:text-rose-450 rounded-md transition text-xs font-bold" title="Remover Produto">
                 🗑️
