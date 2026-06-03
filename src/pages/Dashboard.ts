@@ -1,7 +1,7 @@
 import Sortable from 'sortablejs';
 import { supabase, getSessaoAtual, logoutConsultor } from '../services/supabase';
 import { Viagem, Cliente, ProdutoViagem, GlobalSettings, PerfilConsultor } from '../types';
-import { getAvatarSvg } from '../services/avatars';
+import { getAvatarSvg, mesclarAvataresLocais } from '../services/avatars';
 import { showCustomConfirm } from '../services/dialog';
 
 // Injeta estilos premium e animações micro-interativas para SLAs diretamente no DOM
@@ -70,6 +70,8 @@ export class Dashboard {
   private slaPosViagemDias: number = 3;
 
   private viagens: any[] = [];
+  private consultores: PerfilConsultor[] = [];
+  private selectedConsultantId: string = 'todos';
   private sortables: Sortable[] = [];
   private buscaTermo: string = '';
 
@@ -104,10 +106,13 @@ export class Dashboard {
         }
       });
 
-      // 2. Carregar configurações globais de SLA
+      // 2. Carregar consultores ativos
+      await this.loadConsultores();
+
+      // 3. Carregar configurações globais de SLA
       await this.loadGlobalSettings();
 
-      // 3. Buscar viagens
+      // 4. Buscar viagens
       await this.loadViagens();
 
       // 4. Renderizar interface completa
@@ -159,6 +164,34 @@ export class Dashboard {
       }
     } catch (err) {
       console.error('Falha ao carregar configurações de SLA:', err);
+    }
+  }
+
+  /**
+   * Busca todos os consultores ativos no sistema (apenas Admins)
+   */
+  private async loadConsultores(): Promise<void> {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('ativo', true)
+        .order('nome', { ascending: true });
+
+      if (error) throw error;
+
+      this.consultores = mesclarAvataresLocais(data || []) as PerfilConsultor[];
+    } catch (err: any) {
+      console.warn('Erro ao carregar consultores para filtros:', err.message);
+      this.consultores = [
+        {
+          id: this.user?.id || 'me',
+          nome: this.perfil?.nome || 'Você',
+          email: this.perfil?.email || '',
+          role: this.perfil?.role || 'consultor',
+          ativo: true
+        }
+      ];
     }
   }
 
@@ -1437,8 +1470,7 @@ export class Dashboard {
       }
     }, 3500);
   }
-
-  /**
+     /**
    * Renderiza a interface do Dashboard principal
    */
   private render(): void {
@@ -1452,6 +1484,10 @@ export class Dashboard {
     };
 
     const filtrados = this.viagens.filter(v => {
+      if (this.perfil?.role === 'admin' && this.selectedConsultantId !== 'todos') {
+        if (v.consultor_id !== this.selectedConsultantId) return false;
+      }
+
       if (!this.buscaTermo) return true;
       const q = this.buscaTermo.toLowerCase().trim();
       const cliNome = v.cliente?.nome?.toLowerCase() || '';
@@ -1492,7 +1528,7 @@ export class Dashboard {
     this.container.innerHTML = `
       <div class="min-h-screen bg-slate-50/50 dark:bg-slate-950 flex flex-col font-sans transition-colors duration-200">
         
-        <!-- CABEÇALHO DO OPERACIONAL -->
+         <!-- CABEÇALHO DO OPERACIONAL -->
         <header class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 sticky top-0 z-30 px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 transition-colors duration-200">
           <div class="flex items-center gap-3">
             <img src="/logo.svg" alt="PaxFlow Logo" class="h-10 w-auto object-contain" />
@@ -1509,12 +1545,12 @@ export class Dashboard {
             <!-- Stats Rápidos -->
             <div class="flex items-center gap-2 bg-slate-100/60 dark:bg-slate-800/40 p-1.5 rounded-xl border border-slate-200/30 dark:bg-slate-700/30">
               <div class="px-3.5 py-1.5 text-center">
-                <span class="block text-xs text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">Viagens</span>
+                <span class="block text-xs text-slate-400 dark:text-slate-550 font-bold uppercase tracking-wider">Viagens</span>
                 <span class="text-sm font-black text-slate-700 dark:text-slate-200">${this.viagens.length}</span>
               </div>
               <div class="w-px h-6 bg-slate-200 dark:bg-slate-700"></div>
               <div class="px-3.5 py-1.5 text-center">
-                <span class="block text-xs text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">SLAs Ativos</span>
+                <span class="block text-xs text-slate-400 dark:text-slate-550 font-bold uppercase tracking-wider">SLAs Ativos</span>
                 <span class="text-sm font-black ${totalSlaAlerts > 0 ? 'text-rose-600 animate-pulse' : 'text-slate-700 dark:text-slate-200'}">${totalSlaAlerts}</span>
               </div>
             </div>
@@ -1537,11 +1573,22 @@ export class Dashboard {
               Nova Viagem
             </button>
 
+            <!-- Seletor de Consultores (Apenas para Admins) -->
+            ${this.perfil?.role === 'admin' ? `
+              <div class="flex items-center gap-1.5 shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2.5 py-1.5 rounded-xl shadow-sm">
+                <span class="text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-550 select-none">Equipe:</span>
+                <select id="select-dashboard-consultor" class="text-xs font-bold bg-transparent text-slate-700 dark:text-slate-350 focus:outline-none cursor-pointer max-w-[150px]">
+                  <option value="todos" ${this.selectedConsultantId === 'todos' ? 'selected' : ''}>Todos os Consultores</option>
+                  ${this.consultores.map(c => `<option value="${c.id}" ${this.selectedConsultantId === c.id ? 'selected' : ''}>${c.nome}</option>`).join('')}
+                </select>
+              </div>
+            ` : ''}
+
             <!-- Identidade do Consultor Logado -->
             <div class="flex items-center gap-3 pl-2 border-l border-slate-200/60 dark:border-slate-800/60">
               <div class="text-right hidden sm:block">
                 <span class="block text-sm font-extrabold text-slate-700 dark:text-slate-300">${this.perfil?.nome || 'Consultor'}</span>
-                <span class="block text-xs text-slate-400 dark:text-slate-500">${this.perfil?.email || this.user.email}</span>
+                <span class="block text-xs text-slate-400 dark:text-slate-550 font-bold uppercase tracking-wider">${this.perfil?.email || this.user.email}</span>
               </div>
               ${getAvatarSvg(this.perfil?.avatar_url, this.perfil?.nome || 'C', 'w-10 h-10')}
               <!-- Theme Toggle -->
@@ -1616,6 +1663,14 @@ export class Dashboard {
     // Evento de Criação de Nova Viagem
     document.getElementById('btn-nova-viagem')?.addEventListener('click', () => {
       this.openNovaViagemModal();
+    });
+
+    // Evento de Filtro de Consultor (Admins)
+    const selectConsultor = document.getElementById('select-dashboard-consultor') as HTMLSelectElement;
+    selectConsultor?.addEventListener('change', () => {
+      this.selectedConsultantId = selectConsultor.value;
+      this.render();
+      this.setupDragAndDrop();
     });
 
     // Evento de cliques nos cards do Kanban para Abrir Detalhes/Edição/Produtos

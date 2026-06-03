@@ -44,6 +44,7 @@ export class OrcamentosPage {
   private isFallbackMode: boolean = false;
   private realtimeChannel: any = null;
   private buscaTermo: string = '';
+  private selectedConsultantId: string = 'todos';
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -439,6 +440,13 @@ export class OrcamentosPage {
     // Vincular botões dentro do Kanban
     this.setupColumnButtons();
 
+    // Evento de Filtro de Consultor (Admins)
+    const selectConsultor = document.getElementById('select-orcamentos-consultor') as HTMLSelectElement;
+    selectConsultor?.addEventListener('change', () => {
+      this.selectedConsultantId = selectConsultor.value;
+      this.render();
+    });
+
     // Evento de Logout
     document.getElementById('btn-logout')?.addEventListener('click', async () => {
       const confirmResult = await showCustomConfirm('Deseja realmente sair do sistema?', 'Encerrar Sessão');
@@ -605,6 +613,10 @@ export class OrcamentosPage {
   private render(): void {
     // Filtragem local baseada na busca em tempo real
     const filtrados = this.orcamentos.filter(o => {
+      if (this.perfil?.role === 'admin' && this.selectedConsultantId !== 'todos') {
+        if (o.consultorId !== this.selectedConsultantId) return false;
+      }
+
       if (!this.buscaTermo) return true;
       const q = this.buscaTermo.toLowerCase().trim();
       const dono = this.consultores.find(c => c.id === o.consultorId);
@@ -668,11 +680,22 @@ export class OrcamentosPage {
               <span>Novo Orçamento</span>
             </button>
 
+            <!-- Seletor de Consultores (Apenas para Admins) -->
+            ${this.perfil?.role === 'admin' ? `
+              <div class="flex items-center gap-1.5 shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2.5 py-1.5 rounded-xl shadow-sm">
+                <span class="text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-550 select-none">Equipe:</span>
+                <select id="select-orcamentos-consultor" class="text-xs font-bold bg-transparent text-slate-700 dark:text-slate-350 focus:outline-none cursor-pointer max-w-[150px]">
+                  <option value="todos" ${this.selectedConsultantId === 'todos' ? 'selected' : ''}>Todos os Consultores</option>
+                  ${this.consultores.map(c => `<option value="${c.id}" ${this.selectedConsultantId === c.id ? 'selected' : ''}>${c.nome}</option>`).join('')}
+                </select>
+              </div>
+            ` : ''}
+
             <!-- Identidade do Consultor Logado -->
             <div class="flex items-center justify-between sm:justify-start gap-3 pl-0 sm:pl-3 border-t sm:border-t-0 sm:border-l border-slate-200/60 dark:border-slate-800/60 pt-3 sm:pt-0 shrink-0">
               <div class="text-right hidden sm:block">
                 <span class="block text-sm font-extrabold text-slate-700 dark:text-slate-300">${this.perfil?.nome || 'Consultor'}</span>
-                <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">${this.perfil?.email || this.user.email}</span>
+                <span class="block text-[10px] text-slate-400 dark:text-slate-550 font-bold uppercase tracking-wider">${this.perfil?.email || this.user.email}</span>
               </div>
               <div class="flex items-center gap-3">
                 ${getAvatarSvg(this.perfil?.avatar_url, this.perfil?.nome || 'C', 'w-10 h-10')}

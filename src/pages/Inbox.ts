@@ -733,31 +733,45 @@ export class InboxPage {
             </div>
           </div>
 
-          <div class="flex items-center gap-3 pl-2 border-l border-slate-200/60 dark:border-slate-800/60">
-            <div class="text-right hidden sm:block">
-              <span class="block text-sm font-extrabold text-slate-700 dark:text-slate-300">${this.perfil?.nome || 'Consultor'}</span>
-              <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">${this.perfil?.email || this.user.email}</span>
+          <div class="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end">
+            <!-- Seletor de Consultores (Apenas para Admins) -->
+            ${this.perfil?.role === 'admin' ? `
+              <div class="flex items-center gap-1.5 shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-850 px-2.5 py-1.5 rounded-xl shadow-sm">
+                <span class="text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-550 select-none">Equipe:</span>
+                <select id="admin-consultant-select" class="text-xs font-bold bg-transparent text-slate-700 dark:text-slate-350 focus:outline-none cursor-pointer max-w-[150px]">
+                  <option value="todos" ${this.selectedConsultantFilter === 'todos' ? 'selected' : ''}>Todos os Consultores</option>
+                  ${this.consultants.map(c => `<option value="${c.id}" ${this.selectedConsultantFilter === c.id ? 'selected' : ''}>${c.nome}</option>`).join('')}
+                </select>
+              </div>
+            ` : ''}
+
+            <!-- Identidade do Consultor Logado -->
+            <div class="flex items-center gap-3 pl-2 border-l border-slate-200/60 dark:border-slate-800/60 shrink-0">
+              <div class="text-right hidden sm:block">
+                <span class="block text-sm font-extrabold text-slate-700 dark:text-slate-300">${this.perfil?.nome || 'Consultor'}</span>
+                <span class="block text-[10px] text-slate-400 dark:text-slate-550 font-bold uppercase tracking-wider">${this.perfil?.email || this.user.email}</span>
+              </div>
+              <div class="${hasUnread ? 'unread-avatar-glow' : ''}">
+                ${getAvatarSvg(this.perfil?.avatar_url, this.perfil?.nome?.charAt(0) || 'C', 'w-10 h-10')}
+              </div>
+              
+              <!-- Theme toggle button -->
+              <button id="theme-toggle-btn" title="Alternar Tema" class="p-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-455 hover:text-slate-650 dark:text-slate-400 dark:hover:text-slate-200 rounded-xl transition border border-slate-200/40 dark:border-slate-700/40 flex items-center justify-center">
+                <svg width="20" height="20" class="w-5 h-5 theme-icon-light" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                </svg>
+                <svg width="20" height="20" class="w-5 h-5 theme-icon-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.364l-.707-.707M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </button>
+              
+              <!-- Sair do Sistema (Logout) -->
+              <button id="btn-logout" title="Sair do Sistema" class="p-2.5 bg-slate-100 hover:bg-rose-50 dark:bg-slate-800 dark:hover:bg-rose-950/30 text-slate-400 hover:text-rose-500 dark:text-slate-550 dark:hover:text-rose-400 rounded-xl transition border border-slate-200/40 dark:border-slate-700/40 flex items-center justify-center">
+                <svg width="20" height="20" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+              </button>
             </div>
-            <div class="${hasUnread ? 'unread-avatar-glow' : ''}">
-              ${getAvatarSvg(this.perfil?.avatar_url, this.perfil?.nome?.charAt(0) || 'C', 'w-10 h-10')}
-            </div>
-            
-            <!-- Theme toggle button -->
-            <button id="theme-toggle-btn" title="Alternar Tema" class="p-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-450 hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-200 rounded-xl transition border border-slate-200/40 dark:border-slate-700/40 flex items-center justify-center">
-              <svg width="20" height="20" class="w-5 h-5 theme-icon-light" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-              </svg>
-              <svg width="20" height="20" class="w-5 h-5 theme-icon-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.364l-.707-.707M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-            </button>
-            
-            <!-- Sair do Sistema (Logout) -->
-            <button id="btn-logout" title="Sair do Sistema" class="p-2.5 bg-slate-100 hover:bg-rose-50 dark:bg-slate-800 dark:hover:bg-rose-950/30 text-slate-400 hover:text-rose-500 dark:text-slate-550 dark:hover:text-rose-400 rounded-xl transition border border-slate-200/40 dark:border-slate-700/40 flex items-center justify-center">
-              <svg width="20" height="20" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
-            </button>
           </div>
         </header>
 
@@ -868,22 +882,6 @@ export class InboxPage {
                 </button>
 
               </div>
-
-              <!-- Admin consultant dropdown selector -->
-              ${this.perfil?.role === 'admin' ? `
-                <div class="inbox-glass p-4 rounded-2xl shadow-sm space-y-3">
-                  <div>
-                    <h3 class="text-[10px] font-black text-slate-400 dark:text-slate-550 uppercase tracking-widest mb-1">Filtro Administrativo</h3>
-                    <p class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold">Exibir alertas de outro consultor:</p>
-                  </div>
-                  <select id="admin-consultant-select" class="w-full text-xs font-bold px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-700 dark:text-slate-250 transition">
-                    <option value="todos" ${this.selectedConsultantFilter === 'todos' ? 'selected' : ''}>🌍 Todos os Consultores</option>
-                    ${this.consultants.map(c => `
-                      <option value="${c.id}" ${this.selectedConsultantFilter === c.id ? 'selected' : ''}>👤 ${c.nome}</option>
-                    `).join('')}
-                  </select>
-                </div>
-              ` : ''}
 
             </div>
 
