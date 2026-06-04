@@ -21,6 +21,7 @@ class App {
   private currentPageInstance: any = null;
   private theme: 'light' | 'dark' = 'light';
   private sidebarCollapsed: boolean = false;
+  private mobileMenuOpen: boolean = false;
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -173,8 +174,43 @@ class App {
     this.container.innerHTML = `
       <div class="min-h-screen flex flex-col md:flex-row bg-slate-50/50 dark:bg-slate-950 transition-colors duration-200">
         
-        <!-- Sidebar Menu -->
-        <aside class="w-full md:${this.sidebarCollapsed ? 'w-20' : 'w-64'} bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 flex flex-col border-r border-slate-200 dark:border-slate-800/60 shadow-xl z-20 transition-all duration-200">
+        <!-- Mobile Top Bar (Header) -->
+        <header class="md:hidden bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800/60 px-4 py-3 flex items-center justify-between sticky top-0 z-40 shadow-sm transition-colors duration-200">
+          <div class="flex items-center gap-3">
+            <button id="mobile-menu-toggle-btn" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-650 dark:text-slate-300 transition focus:outline-none" title="Menu">
+              <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+            <div class="flex items-center gap-2">
+              <img src="/logo.svg" alt="PaxFlow Logo" class="h-8 w-8 object-contain filter drop-shadow-sm shrink-0" />
+              <span class="text-sm font-black text-slate-850 dark:text-white tracking-tight">PaxFlow</span>
+            </div>
+          </div>
+          
+          <div class="flex items-center gap-2.5">
+            <!-- Theme Toggle on Mobile -->
+            <button id="theme-toggle-btn" title="Alternar Tema" class="p-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-650 dark:text-slate-400 dark:hover:text-slate-200 rounded-xl transition border border-slate-200/40 dark:border-slate-700/40 flex items-center justify-center">
+              <svg width="18" height="18" class="w-4.5 h-4.5 theme-icon-light" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+              </svg>
+              <svg width="18" height="18" class="w-4.5 h-4.5 theme-icon-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.364l-.707-.707M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </button>
+
+            <!-- User Avatar on Mobile -->
+            <button id="mobile-profile-trigger" class="p-0.5 rounded-full border border-slate-200 dark:border-slate-750 transition focus:outline-none">
+              ${this.perfil ? getAvatarSvg(this.perfil.avatar_url, this.perfil.nome || 'Consultor', 'w-8 h-8') : ''}
+            </button>
+          </div>
+        </header>
+
+        <!-- Backdrop Mobile Menu -->
+        <div id="mobile-menu-backdrop" class="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-40 transition-opacity duration-300 opacity-0 pointer-events-none md:hidden"></div>
+        
+        <!-- Sidebar Menu (Drawer on mobile, permanent sidebar on desktop) -->
+        <aside id="app-sidebar" class="fixed md:static inset-y-0 left-0 w-64 md:${this.sidebarCollapsed ? 'w-20' : 'w-64'} bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 flex flex-col border-r border-slate-200 dark:border-slate-800/60 shadow-2xl md:shadow-xl z-50 md:z-20 transition-all duration-300 transform -translate-x-full md:translate-x-0">
           
           <!-- Logo & Título -->
           <div id="sidebar-header" class="border-b border-slate-100 dark:border-slate-800 flex items-center gap-2.5 relative transition-all duration-200 ${this.sidebarCollapsed ? 'p-5 justify-center' : 'p-6'}">
@@ -275,28 +311,72 @@ class App {
     document.getElementById('sidebar-collapse-btn')?.addEventListener('click', () => {
       this.toggleSidebar();
     });
+
+    // Event listeners para o menu mobile
+    document.getElementById('mobile-menu-toggle-btn')?.addEventListener('click', () => {
+      this.toggleMobileMenu();
+    });
+    document.getElementById('mobile-menu-backdrop')?.addEventListener('click', () => {
+      this.toggleMobileMenu(false);
+    });
+    document.getElementById('mobile-profile-trigger')?.addEventListener('click', () => {
+      this.abrirModalMeuPerfil();
+    });
+  }
+
+  /**
+   * Controla a exibição do menu lateral móvel (drawer deslizante)
+   */
+  private toggleMobileMenu(open?: boolean): void {
+    if (window.innerWidth >= 768) return;
+
+    this.mobileMenuOpen = open !== undefined ? open : !this.mobileMenuOpen;
+    
+    const sidebar = document.getElementById('app-sidebar');
+    const backdrop = document.getElementById('mobile-menu-backdrop');
+    if (!sidebar || !backdrop) return;
+
+    if (this.mobileMenuOpen) {
+      sidebar.classList.remove('-translate-x-full');
+      sidebar.classList.add('translate-x-0');
+      backdrop.classList.remove('opacity-0', 'pointer-events-none');
+      backdrop.classList.add('opacity-100', 'pointer-events-auto');
+    } else {
+      sidebar.classList.remove('translate-x-0');
+      sidebar.classList.add('-translate-x-full');
+      backdrop.classList.remove('opacity-100', 'pointer-events-auto');
+      backdrop.classList.add('opacity-0', 'pointer-events-none');
+    }
   }
 
   /**
    * Renderiza a identidade do consultor logado no rodapé da Sidebar
    */
   private atualizarSidebarProfileFooter(): void {
+    if (!this.perfil) return;
+
     const footerContainer = document.getElementById('sidebar-profile-footer-container');
-    if (!footerContainer || !this.perfil) return;
+    if (footerContainer) {
+      footerContainer.innerHTML = `
+        <button id="sidebar-profile-trigger" class="w-full border-t border-slate-100 dark:border-slate-800 pt-4 flex items-center justify-center ${this.sidebarCollapsed ? '' : 'md:justify-start md:px-2'} gap-3 hover:bg-slate-100 dark:hover:bg-slate-800/40 p-1.5 rounded-xl transition duration-200 focus:outline-none">
+          ${getAvatarSvg(this.perfil.avatar_url, this.perfil.nome || 'Consultor', 'w-8 h-8')}
+          <div class="overflow-hidden flex-1 select-none ${this.sidebarCollapsed ? 'md:hidden' : ''}">
+            <span class="block text-[11px] font-extrabold text-slate-700 dark:text-white truncate">${this.perfil.nome || 'Consultor'}</span>
+            <span class="block text-[9px] text-slate-455 dark:text-slate-500 font-semibold truncate capitalize">${this.perfil.role || 'consultor'}</span>
+          </div>
+        </button>
+      `;
 
-    footerContainer.innerHTML = `
-      <button id="sidebar-profile-trigger" class="w-full border-t border-slate-100 dark:border-slate-800 pt-4 flex items-center justify-center ${this.sidebarCollapsed ? '' : 'md:justify-start md:px-2'} gap-3 hover:bg-slate-100 dark:hover:bg-slate-800/40 p-1.5 rounded-xl transition duration-200 focus:outline-none">
-        ${getAvatarSvg(this.perfil.avatar_url, this.perfil.nome || 'Consultor', 'w-8 h-8')}
-        <div class="overflow-hidden flex-1 select-none ${this.sidebarCollapsed ? 'md:hidden' : ''}">
-          <span class="block text-[11px] font-extrabold text-slate-700 dark:text-white truncate">${this.perfil.nome || 'Consultor'}</span>
-          <span class="block text-[9px] text-slate-450 dark:text-slate-500 font-semibold truncate capitalize">${this.perfil.role || 'consultor'}</span>
-        </div>
-      </button>
-    `;
+      document.getElementById('sidebar-profile-trigger')?.addEventListener('click', () => {
+        this.abrirModalMeuPerfil();
+        this.toggleMobileMenu(false);
+      });
+    }
 
-    document.getElementById('sidebar-profile-trigger')?.addEventListener('click', () => {
-      this.abrirModalMeuPerfil();
-    });
+    const mobileProfileContainer = document.getElementById('mobile-profile-trigger');
+    if (mobileProfileContainer) {
+      mobileProfileContainer.innerHTML = getAvatarSvg(this.perfil.avatar_url, this.perfil.nome || 'Consultor', 'w-8 h-8');
+    }
   }
 
   /**
@@ -400,6 +480,7 @@ class App {
       const btn = document.getElementById(`nav-${page}`);
       btn?.addEventListener('click', () => {
         this.navigate(page);
+        this.toggleMobileMenu(false);
       });
     });
   }

@@ -1488,7 +1488,7 @@ export class ConfiguracoesPage {
           
           <div class="flex flex-wrap items-center gap-3 w-full md:w-auto md:justify-end">
             <!-- Identidade do Consultor Logado -->
-            <div class="flex items-center justify-between sm:justify-start gap-3 pl-0 sm:pl-3 border-t sm:border-t-0 sm:border-l border-slate-200/60 dark:border-slate-800/60 pt-3 sm:pt-0 shrink-0">
+            <div class="hidden md:flex items-center justify-between sm:justify-start gap-3 pl-0 sm:pl-3 border-t sm:border-t-0 sm:border-l border-slate-200/60 dark:border-slate-800/60 pt-3 sm:pt-0 shrink-0">
               <div class="text-right hidden sm:block">
                 <span class="block text-sm font-extrabold text-slate-700 dark:text-slate-300">${this.perfil?.nome || 'Administrador'}</span>
                 <span class="block text-[10px] text-slate-400 dark:text-slate-550 font-bold uppercase tracking-wider">${this.perfil?.email || this.user.email}</span>
