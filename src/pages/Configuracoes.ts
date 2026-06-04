@@ -1,6 +1,5 @@
 import { supabase, getSessaoAtual, atualizarSenhaAtual } from '../services/supabase';
 import { PerfilConsultor, GlobalSettings } from '../types';
-import { createClient } from '@supabase/supabase-js';
 import { getAvatarSvg, AVATAR_OPTIONS, mesclarAvataresLocais, salvarAvatarLocal } from '../services/avatars';
 import { renderEmailInputHTML, setupFormValidation } from '../utils/masks';
 import { showCustomAlert, showCustomConfirm } from '../services/dialog';
@@ -557,54 +556,16 @@ export class ConfiguracoesPage {
 
       submitBtn.disabled = true;
       submitBtn.textContent = 'Cadastrando...';
-
       try {
-        // Inicializa o cliente Supabase alternativo com persistSession: false
-        const secondaryClient = createClient(supabaseUrl, supabaseAnonKey, {
-          auth: {
-            persistSession: false,
-            autoRefreshToken: false,
-            detectSessionInUrl: false
-          }
+        // Invoca a RPC administrativa de criação de usuário no Supabase de forma segura
+        const { data: userId, error: rpcError } = await supabase.rpc('admin_create_user', {
+          user_email: email,
+          user_password: senha,
+          user_nome: nome,
+          user_role: role
         });
 
-        // 1. Cadastra o novo usuário na autenticação (cria a credencial)
-        const { data: authData, error: authError } = await secondaryClient.auth.signUp({
-          email,
-          password: senha,
-          options: {
-            emailRedirectTo: window.location.origin,
-            data: {
-              nome,
-            }
-          }
-        });
-
-        if (authError) throw authError;
-
-        if (!authData.user) {
-          throw new Error('Erro ao criar registro de autenticação do usuário.');
-        }
-
-        // Salva a senha e auto-confirma o e-mail no Supabase Auth usando a RPC administrativa
-        const { error: rpcErr } = await supabase.rpc('admin_set_user_password', {
-          user_id: authData.user.id,
-          new_password: senha
-        });
-        if (rpcErr) {
-          console.warn('Erro ao auto-confirmar credencial via RPC no Supabase Auth:', rpcErr);
-        }
-
-        // 2. Insere ou atualiza os dados correspondentes na tabela profiles (evita conflito se houver trigger automática no Supabase)
-        const { error: profileError } = await supabase.from('profiles').upsert({
-          id: authData.user.id,
-          nome,
-          email,
-          role,
-          ativo: true
-        });
-
-        if (profileError) throw profileError;
+        if (rpcError) throw rpcError;
 
         this.showToast('Novo consultor cadastrado com sucesso!', 'success');
         this.fecharModalNovoConsultor();
