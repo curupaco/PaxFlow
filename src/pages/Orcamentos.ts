@@ -1,6 +1,7 @@
 import { supabase, getSessaoAtual } from '../services/supabase';
 import { uploadDocumentoCliente } from '../services/googleDrive';
-import { Orcamento, PerfilConsultor } from '../types';
+import { Orcamento, PerfilConsultor, ConvertToTripOptions } from '../types';
+import { OrcamentosService } from '../services/orcamentosService';
 import { getAvatarSvg, mesclarAvataresLocais } from '../services/avatars';
 import { showCustomConfirm, showCustomAlert } from '../services/dialog';
 import { CommentsService } from '../services/comments';
@@ -86,14 +87,7 @@ export class OrcamentosPage {
    */
   private async loadConsultores(): Promise<void> {
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('ativo', true)
-        .order('nome', { ascending: true });
-
-      if (error) throw error;
-
+      const data = await OrcamentosService.loadConsultores();
       this.consultores = mesclarAvataresLocais(data || []) as PerfilConsultor[];
     } catch (err: any) {
       console.warn('Erro ao carregar consultores da tabela "profiles" (usando fallback local):', err.message);
@@ -129,37 +123,8 @@ export class OrcamentosPage {
    */
   private async loadOrcamentos(): Promise<void> {
     try {
-      let query = supabase
-        .from('orcamentos')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      // Consultor comum só vê seus próprios orçamentos
-      if (this.perfil && this.perfil.role !== 'admin') {
-        query = query.eq('consultor_id', this.user.id);
-      }
-
-      const { data, error } = await query;
-      if (error) throw error;
-
+      this.orcamentos = await OrcamentosService.loadOrcamentos(this.user, this.perfil);
       this.isFallbackMode = false;
-      this.orcamentos = (data || []).map(d => ({
-        id: d.id,
-        consultorId: d.consultor_id,
-        nomeCliente: d.nome_cliente,
-        contato: d.contato,
-        destino: d.destino,
-        dataViagem: d.data_viagem,
-        temperatura: d.temperatura,
-        tags: d.tags || [],
-        status: d.status,
-        subStatus: d.sub_status,
-        notasNegociacao: d.notas_negociacao,
-        valorProposta: d.valor_proposta,
-        documentosUrl: d.documentos_url || [],
-        createdAt: d.created_at,
-        updatedAt: d.updated_at
-      }));
     } catch (err: any) {
       console.warn('Tabela "orcamentos" indisponível ou erro na consulta. Ativando fallback de armazenamento local (localStorage):', err.message);
       this.isFallbackMode = true;
@@ -176,13 +141,7 @@ export class OrcamentosPage {
         this.loadClientesFromLocalStorage();
         return;
       }
-      const { data, error } = await supabase
-        .from('clientes')
-        .select('*')
-        .order('nome', { ascending: true });
-
-      if (error) throw error;
-      this.clientes = data || [];
+      this.clientes = await OrcamentosService.loadClientes();
       localStorage.setItem('paxflow-clientes-backup', JSON.stringify(this.clientes));
     } catch (err: any) {
       console.warn('Erro ao carregar clientes para autocompletar (usando backup local):', err.message);
@@ -297,65 +256,11 @@ export class OrcamentosPage {
     }
 
     try {
-      const payload: any = {
-        consultor_id: o.consultorId,
-        cliente_id: o.cliente_id || o.clienteId || null,
-        nome_cliente: o.nomeCliente,
-        contato: o.contato,
-        destino: o.destino,
-        data_viagem: o.dataViagem || null,
-        temperatura: o.temperatura,
-        tags: o.tags,
-        status: o.status,
-        sub_status: o.subStatus || null,
-        notas_negociacao: o.notasNegociacao || null,
-        valor_proposta: o.valorProposta || null,
-        documentos_url: o.documentosUrl || []
-      };
-
-      let resError;
-      if (o.id && !o.id.startsWith('orc-')) {
-        const { error } = await supabase
-          .from('orcamentos')
-          .update(payload)
-          .eq('id', o.id);
-        resError = error;
-      } else {
-        const { error } = await supabase
-          .from('orcamentos')
-          .insert(payload);
-        resError = error;
+      const { success, dbVersionDegraded } = await OrcamentosService.persistOrcamento(o);
+      if (dbVersionDegraded) {
+        this.showToast('Aviso: Banco desatualizado. Salvo sem os campos de valor/cliente_id.', 'error');
       }
-
-      if (resError) {
-        // Se o erro for de coluna inexistente no Supabase (Postgres code 42703 ou undefined_column)
-        if (resError.code === '42703' || 
-            (resError.message && (resError.message.includes('valor_proposta') || resError.message.includes('cliente_id'))) || 
-            (resError.message && resError.message.includes('column') && resError.message.includes('does not exist'))) {
-          console.warn('Aviso: Colunas novas não encontradas no Supabase. Salvando sem valor_proposta/cliente_id.');
-          this.showToast('Aviso: Banco desatualizado. Salvo sem os campos de valor/cliente_id.', 'error');
-          
-          delete payload.valor_proposta;
-          delete payload.cliente_id;
-          let retryError;
-          if (o.id && !o.id.startsWith('orc-')) {
-            const { error } = await supabase
-              .from('orcamentos')
-              .update(payload)
-              .eq('id', o.id);
-            retryError = error;
-          } else {
-            const { error } = await supabase
-              .from('orcamentos')
-              .insert(payload);
-            retryError = error;
-          }
-          if (retryError) throw retryError;
-          return true;
-        }
-        throw resError;
-      }
-      return true;
+      return success;
     } catch (err: any) {
       console.error('Erro ao persistir orçamento no Supabase:', err);
       this.showToast(`Erro ao salvar no banco. Salvando localmente no navegador!`, 'error');
@@ -377,24 +282,7 @@ export class OrcamentosPage {
     }
 
     try {
-      // 1. Deleta lembretes associados primeiro para evitar violação de chave estrangeira (foreign key constraints)
-      const { error: lembreteError } = await supabase
-        .from('lembretes')
-        .delete()
-        .eq('orcamento_id', id);
-
-      if (lembreteError) {
-        console.warn('Aviso: Erro ao limpar lembretes vinculados ao excluir orçamento:', lembreteError.message);
-      }
-
-      // 2. Deleta o orçamento em si
-      const { error } = await supabase
-        .from('orcamentos')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-      return true;
+      return await OrcamentosService.deleteOrcamento(id);
     } catch (err: any) {
       console.error('Erro ao deletar orçamento:', err);
       return false;
@@ -1586,25 +1474,28 @@ export class OrcamentosPage {
     const cId = orc.cliente_id || orc.clienteId;
     if (cId) {
       try {
-        const { data: cliData } = await supabase
-          .from('clientes')
-          .select('*')
-          .eq('id', cId)
-          .single();
-        if (cliData) {
-          linkedClient = cliData;
-          tVal = cliData.telefone || tVal;
-          eVal = cliData.email || eVal;
-          docVal = cliData.documento || docVal;
-        }
-
-        const { data: tripsData } = await supabase
-          .from('viagens')
-          .select('*')
-          .eq('cliente_id', cId)
-          .not('status', 'in', '("cancelada","concluida")');
-        if (tripsData) {
-          activeTrips = tripsData;
+        if (!this.isFallbackMode) {
+          const res = await OrcamentosService.loadClientDetailsAndTrips(cId);
+          linkedClient = res.linkedClient;
+          activeTrips = res.activeTrips;
+          if (linkedClient) {
+            tVal = linkedClient.telefone || tVal;
+            eVal = linkedClient.email || eVal;
+            docVal = linkedClient.documento || docVal;
+          }
+        } else {
+          // Local fallback backup lookup
+          const savedCli = localStorage.getItem('paxflow-clientes-backup');
+          if (savedCli) {
+            const list = JSON.parse(savedCli);
+            const found = list.find((c: any) => c.id === cId);
+            if (found) {
+              linkedClient = found;
+              tVal = found.telefone || tVal;
+              eVal = found.email || eVal;
+              docVal = found.documento || docVal;
+            }
+          }
         }
       } catch (err) {
         console.warn('Erro ao carregar dados do cliente/viagens no modal de aprovação:', err);
@@ -1823,145 +1714,69 @@ export class OrcamentosPage {
         let clienteId = cId || 'cli-mocked-' + Math.random().toString(36).substr(2, 9);
         let folderDriveUrl = orc.documentosUrl && orc.documentosUrl.length > 0 ? orc.documentosUrl[0] : '';
 
-        // 1. Cadastrar/Obter Cliente no Supabase
         if (!this.isFallbackMode) {
-          if (!cId) {
-            // Verificar se o cliente já existe por email ou telefone para evitar duplicidade
-            const { data: existingCli } = await supabase
-              .from('clientes')
-              .select('id')
-              .or(`email.eq.${cEmail},telefone.eq.${cTelefone}`)
-              .limit(1);
+          const options: ConvertToTripOptions = {
+            cNome,
+            cEmail,
+            cTelefone,
+            cDoc,
+            folderDriveUrl: folderDriveUrl || undefined,
+            isNovaViagem,
+            vValor,
+            prodTipo,
+            prodFornecedor,
+            prodDescricao
+          };
 
-            if (existingCli && existingCli.length > 0) {
-              clienteId = existingCli[0].id;
-            } else {
-              const { data: newCli, error: errCli } = await supabase
-                .from('clientes')
-                .insert({
-                  nome: cNome,
-                  email: cEmail,
-                  telefone: cTelefone,
-                  documento: cDoc,
-                  consultor_responsavel_id: orc.consultorId,
-                  google_drive_folder_url: folderDriveUrl || null,
-                  observacoes: `Criado automaticamente através do Orçamento aprovado ID ${orc.id}`
-                })
-                .select()
-                .single();
+          if (isNovaViagem) {
+            const vDestino = (document.getElementById('input-fechar-via-destino') as HTMLInputElement).value;
+            const vLoc = (document.getElementById('input-fechar-via-loc') as HTMLInputElement).value;
+            const vIdaRaw = (document.getElementById('input-fechar-via-ida') as HTMLInputElement).value.trim();
+            const vVoltaRaw = (document.getElementById('input-fechar-via-volta') as HTMLInputElement).value.trim();
+            const vStatus = (document.getElementById('select-fechar-via-status') as HTMLSelectElement).value;
+            const vObs = (document.getElementById('textarea-fechar-via-obs') as HTMLTextAreaElement).value;
 
-              if (errCli) throw errCli;
-              if (newCli) clienteId = newCli.id;
-            }
-          }
-        }
+            const vIda = formatBrDateToIso(vIdaRaw);
+            const vVolta = formatBrDateToIso(vVoltaRaw);
 
-        if (isNovaViagem) {
-          // FLUXO: CRIAR NOVA VIAGEM
-          const vDestino = (document.getElementById('input-fechar-via-destino') as HTMLInputElement).value;
-          const vLoc = (document.getElementById('input-fechar-via-loc') as HTMLInputElement).value;
-          const vIdaRaw = (document.getElementById('input-fechar-via-ida') as HTMLInputElement).value.trim();
-          const vVoltaRaw = (document.getElementById('input-fechar-via-volta') as HTMLInputElement).value.trim();
-          const vStatus = (document.getElementById('select-fechar-via-status') as HTMLSelectElement).value;
-          const vObs = (document.getElementById('textarea-fechar-via-obs') as HTMLTextAreaElement).value;
+            if (!vIda) throw new Error('Por favor, informe a Data de Ida no formato correto DD/MM/AAAA.');
+            if (!vVolta) throw new Error('Por favor, informe a Data de Volta no formato correto DD/MM/AAAA.');
 
-          const vIda = formatBrDateToIso(vIdaRaw);
-          const vVolta = formatBrDateToIso(vVoltaRaw);
-
-          if (!vIda) {
-            throw new Error('Por favor, informe a Data de Ida no formato correto DD/MM/AAAA.');
-          }
-          if (!vVolta) {
-            throw new Error('Por favor, informe a Data de Volta no formato correto DD/MM/AAAA.');
-          }
-
-          let newViagemId = 'via-mocked-' + Math.random().toString(36).substr(2, 9);
-
-          // Cadastrar Viagem no Supabase
-          if (!this.isFallbackMode) {
-            const { data: newVia, error: errVia } = await supabase
-              .from('viagens')
-              .insert({
-                cliente_id: clienteId,
-                consultor_id: orc.consultorId,
-                destino: vDestino,
-                codigo_localizador: vLoc || null,
-                valor_total: vValor,
-                data_ida: vIda,
-                data_volta: vVolta,
-                status: vStatus,
-                observacoes: vObs || null
-              })
-              .select()
-              .single();
-
-            if (errVia) throw errVia;
-            if (newVia) newViagemId = newVia.id;
+            options.vDestino = vDestino;
+            options.vLoc = vLoc;
+            options.vIda = vIda;
+            options.vVolta = vVolta;
+            options.vStatus = vStatus;
+            options.vObs = vObs;
           } else {
-            console.log('Modo Offline: Nova viagem mock criada no Kanban Operacional para', cNome);
+            const viagemId = (document.getElementById('select-viagem-existente') as HTMLSelectElement).value;
+            const selectedTrip = activeTrips.find(v => v.id === viagemId);
+            if (!selectedTrip) throw new Error('A viagem selecionada não pôde ser encontrada.');
+
+            options.viagemId = viagemId;
+            options.existingTripValorTotal = selectedTrip.valor_total || 0;
+            options.existingTripDataIda = selectedTrip.data_ida || undefined;
           }
 
-          // Cadastrar Produto na Viagem Recém Criada
-          if (!this.isFallbackMode) {
-            const { error: errProd } = await supabase
-              .from('produtos_viagem')
-              .insert({
-                viagem_id: newViagemId,
-                tipo: prodTipo,
-                fornecedor: prodFornecedor,
-                descricao: prodDescricao,
-                valor_custo: 0,
-                valor_venda: vValor,
-                status: 'reservado',
-                data_servico: vIda
-              });
-            if (errProd) {
-              console.warn('Aviso: Erro ao inserir produto na nova viagem:', errProd.message);
-            }
-          }
+          const convertRes = await OrcamentosService.convertToTrip(orc, options);
+          clienteId = convertRes.clienteId;
         } else {
-          // FLUXO: ADICIONAR À VIAGEM EXISTENTE
-          const viagemId = (document.getElementById('select-viagem-existente') as HTMLSelectElement).value;
-          const selectedTrip = activeTrips.find(v => v.id === viagemId);
-          if (!selectedTrip) throw new Error('A viagem selecionada não pôde ser encontrada.');
-
-          const novoTotal = (selectedTrip.valor_total || 0) + vValor;
-
-          if (!this.isFallbackMode) {
-            // Atualizar o valor_total da viagem
-            const { error: errUpdate } = await supabase
-              .from('viagens')
-              .update({ valor_total: novoTotal })
-              .eq('id', viagemId);
-
-            if (errUpdate) throw errUpdate;
-
-            // Inserir o produto_viagem apontando para a viagem existente
-            const { error: errProd } = await supabase
-              .from('produtos_viagem')
-              .insert({
-                viagem_id: viagemId,
-                tipo: prodTipo,
-                fornecedor: prodFornecedor,
-                descricao: prodDescricao,
-                valor_custo: 0,
-                valor_venda: vValor,
-                status: 'reservado',
-                data_servico: selectedTrip.data_ida || new Date().toISOString().split('T')[0]
-              });
-
-            if (errProd) throw errProd;
+          // Modo Offline (Fallback)
+          if (isNovaViagem) {
+            console.log('Modo Offline: Nova viagem mock criada no Kanban Operacional para', cNome);
           } else {
+            const viagemId = (document.getElementById('select-viagem-existente') as HTMLSelectElement).value;
+            const selectedTrip = activeTrips.find(v => v.id === viagemId);
+            const novoTotal = (selectedTrip?.valor_total || 0) + vValor;
             console.log(`Modo Offline: Somado R$ ${vValor} à viagem existente ID ${viagemId}. Novo total: R$ ${novoTotal}`);
           }
-        }
 
-        // 3. Atualizar Orçamento para CONCLUÍDO (ACEITO)
-        orc.status = 'CONCLUIDO';
-        orc.subStatus = 'ACEITO';
-        orc.clienteId = clienteId;
-        orc.cliente_id = clienteId;
-        await this.persistOrcamento(orc);
+          orc.status = 'CONCLUIDO';
+          orc.subStatus = 'ACEITO';
+          orc.clienteId = clienteId;
+          orc.cliente_id = clienteId;
+          await this.persistOrcamento(orc);
+        }
 
         this.showToast('Negócio Fechado! Cliente, Viagem e Produto processados com sucesso!', 'success');
         this.closeModal();
@@ -2462,17 +2277,7 @@ export class OrcamentosPage {
       const dataLembrete = `${parts[2]}-${parts[1]}-${parts[0]}`; // Converte para YYYY-MM-DD para o banco
 
       try {
-        const { error } = await supabase
-          .from('lembretes')
-          .insert({
-            orcamento_id: id,
-            consultor_id: this.user.id,
-            data_lembrete: dataLembrete,
-            periodo: periodo,
-            arquivado: false
-          });
-
-        if (error) throw error;
+        await OrcamentosService.createReminder(id, this.user.id, dataLembrete, periodo);
 
         this.showToast('Lembrete agendado com sucesso!', 'success');
         this.closeModal();

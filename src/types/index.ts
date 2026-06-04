@@ -225,4 +225,32 @@ export interface AlertItem {
   eventDate: string; // Data alvo do evento (YYYY-MM-DD)
 }
 
+/**
+ * Parâmetros para fechar negócio e converter orçamento em viagem/produto.
+ */
+export interface ConvertToTripOptions {
+  cNome: string;
+  cEmail: string;
+  cTelefone: string;
+  cDoc: string;
+  folderDriveUrl?: string;
+  isNovaViagem: boolean;
+  vValor: number;
+  // Se for nova viagem:
+  vDestino?: string;
+  vLoc?: string;
+  vIda?: string; // YYYY-MM-DD
+  vVolta?: string; // YYYY-MM-DD
+  vStatus?: string;
+  vObs?: string;
+  prodTipo: string;
+  prodFornecedor: string;
+  prodDescricao: string;
+  // Se for viagem existente:
+  viagemId?: string;
+  existingTripValorTotal?: number;
+  existingTripDataIda?: string;
+}
+
+
 
