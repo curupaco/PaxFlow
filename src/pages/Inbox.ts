@@ -547,7 +547,7 @@ export class InboxPage {
       });
 
       // --- PART 4: MENTION NOTIFICATIONS ---
-      const { data: notificacoesData, error: notificacoesErr } = await supabase
+      let queryNotificacoes = supabase
         .from('notificacoes')
         .select(`
           *,
@@ -556,9 +556,14 @@ export class InboxPage {
             autor:profiles (*)
           )
         `)
-        .eq('user_id', this.user.id)
         .eq('arquivada', false)
         .order('created_at', { ascending: false });
+
+      if (this.perfil && this.perfil.role !== 'admin') {
+        queryNotificacoes = queryNotificacoes.eq('user_id', this.user.id);
+      }
+
+      const { data: notificacoesData, error: notificacoesErr } = await queryNotificacoes;
 
       if (notificacoesErr) {
         console.error('Erro ao buscar notificações do banco:', notificacoesErr);

@@ -79,8 +79,16 @@ export class CommentsService {
           // Destacar menções @nome no texto do comentário
           let textoFormatado = c.texto;
           if (consultoresAtivos.length > 0) {
-            const namesRegexPart = consultoresAtivos
-              .map(p => p.nome.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'))
+            const namesToCheck: string[] = [];
+            for (const p of consultoresAtivos) {
+              namesToCheck.push(p.nome);
+              const firstName = p.nome.split(' ')[0];
+              if (firstName && firstName !== p.nome) {
+                namesToCheck.push(firstName);
+              }
+            }
+            const namesRegexPart = namesToCheck
+              .map(n => n.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'))
               .sort((a, b) => b.length - a.length)
               .join('|');
             const regex = new RegExp(`@(${namesRegexPart})(?=$|[\\s.,!?;:])`, 'gi');
@@ -338,23 +346,36 @@ export class CommentsService {
 
     const matchedRanges: { start: number; end: number; profile: PerfilConsultor }[] = [];
 
-    // Encontra todas as ocorrências de menções no texto de forma case-insensitive
+    // Normaliza a string removendo acentos/diacríticos e convertendo para minúsculas
+    const normalizeStr = (str: string) => 
+      str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+    const textNormalized = normalizeStr(texto);
+
+    // Encontra todas as ocorrências de menções no texto de forma case e accent-insensitive
     for (const p of otherProfiles) {
-      const mentionTag = `@${p.nome.toLowerCase()}`;
-      const textLower = texto.toLowerCase();
-      
-      let index = textLower.indexOf(mentionTag);
-      while (index !== -1) {
-        // Garante que a menção está delimitada (espaço, pontuação ou fim de linha)
-        const charAfter = texto[index + mentionTag.length];
-        if (!charAfter || /[\s.,!?;:]/.test(charAfter)) {
-          matchedRanges.push({
-            start: index,
-            end: index + mentionTag.length,
-            profile: p
-          });
+      const firstName = p.nome.split(' ')[0];
+      const tagsToCheck = [
+        `@${p.nome}`,
+        `@${firstName}`
+      ];
+      // Remove duplicados e normaliza cada tag de busca
+      const uniqueNormalizedTags = Array.from(new Set(tagsToCheck.map(t => normalizeStr(t))));
+
+      for (const tag of uniqueNormalizedTags) {
+        let index = textNormalized.indexOf(tag);
+        while (index !== -1) {
+          // Garante que a menção está delimitada (espaço, pontuação ou fim de linha)
+          const charAfter = texto[index + tag.length];
+          if (!charAfter || /[\s.,!?;:]/.test(charAfter)) {
+            matchedRanges.push({
+              start: index,
+              end: index + tag.length,
+              profile: p
+            });
+          }
+          index = textNormalized.indexOf(tag, index + 1);
         }
-        index = textLower.indexOf(mentionTag, index + 1);
       }
     }
 
