@@ -37,27 +37,27 @@ graph TD
 
 Para respeitar os limites de contexto e manter o consumo de tokens sob controle, o plano de refatoração foi modularizado em fases independentes:
 
-### 📋 Fase 1: Extração de Estilos (CSS Externo)
+### [x] Fase 1: Extração de Estilos (CSS Externo)
 *   **O que fazer:** Mover as centenas de linhas de CSS estático embutido em `main.ts`, `Inbox.ts`, `Orcamentos.ts` e `Clientes.ts` para arquivos `.css` externos na mesma pasta dos respectivos componentes.
 *   **Consumo de Tokens:** **BAIXÍSSIMO**
 *   **Risco de Regressão:** Nulo.
 
-### 📋 Fase 2: Service Layer do Inbox
+### [x] Fase 2: Service Layer do Inbox
 *   **O que fazer:** Criar `src/services/inboxService.ts` e extrair todas as consultas complexas do Supabase (compilação de alertas, lembretes manuais, SLAs e notificações de menção) contidas em `Inbox.ts`.
 *   **Consumo de Tokens:** **BAIXO**
 *   **Risco de Regressão:** Baixo.
 
-### 📋 Fase 3: Service Layer de Orçamentos
+### [x] Fase 3: Service Layer de Orçamentos
 *   **O que fazer:** Criar `src/services/orcamentosService.ts` e extrair todas as chamadas do banco de dados (pesquisa de leads, mudança de status de funil, reatribuição de consultor) contidas em `Orcamentos.ts`.
 *   **Consumo de Tokens:** **BAIXO**
 *   **Risco de Regressão:** Baixo.
 
-### 📋 Fase 4: Modularização de Modais e Componentes de Tela
+### [x] Fase 4: Modularização de Modais e Componentes de Tela
 *   **O que fazer:** Extrair modais gigantes como `EmailReaderModal.ts` (de `Inbox.ts`) e `VerNotasModal.ts` (de `Orcamentos.ts`) para arquivos independentes em `src/components/`.
 *   **Consumo de Tokens:** **MÉDIO**
 *   **Risco de Regressão:** Médio.
 
-### 📋 Fase 5: App Shell & Login Roteador
+### [x] Fase 5: App Shell & Login Roteador
 *   **O que fazer:** Limpar `main.ts` extraindo a página/fluxo de login e o modal de edição de perfil "Meu Perfil" para arquivos dedicados.
 *   **Consumo de Tokens:** **MÉDIO**
 *   **Risco de Regressão:** Médio.
