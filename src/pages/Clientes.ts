@@ -11,41 +11,7 @@ import {
   getFormattedPhoneToDb,
   formatBrDateToIso
 } from '../utils/masks';
-
-// Injeta estilos premium e animações interativas para a tela de Clientes no DOM
-if (typeof document !== 'undefined') {
-  const style = document.createElement('style');
-  style.textContent = `
-    .upload-zone-active {
-      background-color: rgba(79, 70, 229, 0.06) !important;
-      border-color: #4f46e5 !important;
-      transform: translateY(-2px);
-    }
-    @keyframes pulseRedBorder {
-      0%, 100% { border-color: #ef4444; box-shadow: 0 0 8px rgba(239, 68, 68, 0.3); }
-      50% { border-color: #fca5a5; box-shadow: 0 0 2px rgba(239, 68, 68, 0.1); }
-    }
-    .passport-expired-alert {
-      animation: pulseRedBorder 2s infinite ease-in-out;
-      border-width: 2px !important;
-    }
-    .custom-scrollbar::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    .custom-scrollbar::-webkit-scrollbar-thumb {
-      background: #cbd5e1;
-      border-radius: 4px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-      background: #94a3b8;
-    }
-  `;
-  document.head.appendChild(style);
-}
+import './Clientes.css';
 
 export class ClientesPage {
   private container: HTMLElement;

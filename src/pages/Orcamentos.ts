@@ -14,36 +14,7 @@ import {
   formatBrDateToIso,
   parseDoubleBr
 } from '../utils/masks';
-
-// Injeta estilos específicos premium para o Kanban de Orçamentos
-if (typeof document !== 'undefined') {
-  const style = document.createElement('style');
-  style.textContent = `
-    .orcamentos-column {
-      min-height: 550px;
-      transition: all 0.2s ease;
-    }
-    .card-orcamento {
-      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-      cursor: pointer;
-    }
-    .card-orcamento:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.03);
-    }
-    html.dark .card-orcamento:hover {
-      box-shadow: 0 10px 20px -3px rgba(0, 0, 0, 0.3), 0 4px 8px -2px rgba(0, 0, 0, 0.2);
-    }
-    @keyframes slideInUp {
-      from { opacity: 0; transform: translateY(12px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    .animate-slide-up {
-      animation: slideInUp 0.3s ease-out forwards;
-    }
-  `;
-  document.head.appendChild(style);
-}
+import './Orcamentos.css';
 
 export class OrcamentosPage {
   private container: HTMLElement;

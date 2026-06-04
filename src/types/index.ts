@@ -204,3 +204,25 @@ export interface Notificacao {
   comentario?: Comentario;
 }
 
+/**
+ * Representa um item de alerta na Caixa de Entrada (manual ou SLA)
+ */
+export interface AlertItem {
+  id: string; // Chave combinada única
+  type: 'manual' | 'passport' | 'refund' | 'mention';
+  title: string;
+  sender: string;
+  senderAvatar: string;
+  dateStr: string;
+  periodText?: string;
+  subject: string;
+  body: string;
+  targetId: string; // Para links e navegação profunda
+  arquivado: boolean;
+  consultorId: string;
+  consultorNome: string;
+  createdAt: string;
+  eventDate: string; // Data alvo do evento (YYYY-MM-DD)
+}
+
+
