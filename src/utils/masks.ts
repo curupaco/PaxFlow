@@ -418,7 +418,7 @@ export function setupFormValidation(
     if (!inputEl) return true;
 
     const value = inputEl.value;
-    const required = config.required !== false;
+    const required = config.required !== false && inputEl.hasAttribute('required');
 
     // Se estiver vazio e não for obrigatório, é válido
     if (!required && !value.trim()) {

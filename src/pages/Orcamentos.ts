@@ -1220,11 +1220,107 @@ export class OrcamentosPage {
         contatoVal = emailVal;
       }
 
+      let finalClienteId = this.selectedClienteId;
+      let isNewClientCreated = false;
+      if (!finalClienteId) {
+        // Tenta buscar se já existe um cliente com o mesmo email ou telefone para vinculação automática
+        let orQuery: string[] = [];
+        if (emailVal) orQuery.push(`email.eq.${emailVal}`);
+        if (telVal) orQuery.push(`telefone.eq.${telVal}`);
+        
+        let existingCli: any[] = [];
+        if (orQuery.length > 0) {
+          try {
+            let query = supabase.from('clientes').select('id');
+            if (orQuery.length === 1) {
+              const parts = orQuery[0].split('.eq.');
+              query = query.eq(parts[0], parts[1]);
+            } else {
+              query = query.or(orQuery.join(','));
+            }
+            const { data, error } = await query.limit(1);
+            if (!error && data && data.length > 0) {
+              existingCli = data;
+            }
+          } catch (err) {
+            console.warn('Erro ao buscar cliente existente:', err);
+          }
+        }
+        
+        if (existingCli.length > 0) {
+          finalClienteId = existingCli[0].id;
+        } else {
+          // Cadastrar novo cliente no Supabase
+          try {
+            const { data: newCli, error: errCli } = await supabase
+              .from('clientes')
+              .insert({
+                nome: nomeVal,
+                email: emailVal || null,
+                telefone: telVal || null,
+                consultor_responsavel_id: consultorVal,
+                observacoes: 'Criado automaticamente através do cadastro de Orçamento'
+              })
+              .select()
+              .single();
+              
+            if (errCli) {
+              console.error('Erro ao cadastrar cliente automaticamente no orçamento:', errCli);
+            } else if (newCli) {
+              finalClienteId = newCli.id;
+              isNewClientCreated = true;
+            }
+          } catch (err) {
+            console.error('Erro ao cadastrar cliente automaticamente no orçamento:', err);
+          }
+        }
+      }
+
+      // Se o cliente não é novo e possui orçamento aberto, pergunta sobre vinculação
+      if (finalClienteId && !isNewClientCreated) {
+        const openOrcamento = this.orcamentos.find(o => (o.clienteId === finalClienteId || o.cliente_id === finalClienteId) && o.status !== 'CONCLUIDO');
+        if (openOrcamento) {
+          const vincular = await showCustomConfirm(
+            `O cliente "${nomeVal}" já possui um orçamento em aberto para o destino "${openOrcamento.destino}".\n\nDeseja vincular estes novos produtos/serviços a esse orçamento existente ou criar um orçamento separado?`,
+            'Orçamento em Aberto Encontrado',
+            { confirmText: 'Vincular', cancelText: 'Criar Novo' }
+          );
+
+          if (vincular) {
+            const destinoOriginal = openOrcamento.destino || '';
+            const novoDestino = destinoVal;
+            if (destinoOriginal && novoDestino && !destinoOriginal.toLowerCase().includes(novoDestino.toLowerCase())) {
+              openOrcamento.destino = `${destinoOriginal} | ${novoDestino}`;
+            } else if (!destinoOriginal) {
+              openOrcamento.destino = novoDestino;
+            }
+
+            const uniqueTags = Array.from(new Set([...(openOrcamento.tags || []), ...tagsList]));
+            openOrcamento.tags = uniqueTags;
+
+            const dataFormatada = new Date().toLocaleDateString('pt-BR');
+            const novaNota = `\n\n[Solicitação adicional em ${dataFormatada}]:\nDestino: ${destinoVal}\nData Viagem: ${dataRaw}\nContato: ${contatoVal}${tagsList.length > 0 ? `\nTags: ${tagsList.join(', ')}` : ''}`;
+            openOrcamento.notasNegociacao = (openOrcamento.notasNegociacao || '') + novaNota;
+
+            const success = await this.persistOrcamento(openOrcamento);
+            if (success) {
+              this.showToast('Serviços/produtos vinculados ao orçamento existente!', 'success');
+              this.closeModal();
+              await this.loadOrcamentos();
+              this.render();
+            } else {
+              this.showToast('Erro ao atualizar orçamento existente.', 'error');
+            }
+            return;
+          }
+        }
+      }
+
       const payload: Orcamento = {
         id: 'orc-' + Math.random().toString(36).substr(2, 9),
         consultorId: consultorVal,
-        clienteId: this.selectedClienteId || undefined,
-        cliente_id: this.selectedClienteId || undefined,
+        clienteId: finalClienteId || undefined,
+        cliente_id: finalClienteId || undefined,
         nomeCliente: nomeVal,
         contato: contatoVal,
         destino: destinoVal,
@@ -1238,6 +1334,7 @@ export class OrcamentosPage {
       if (success) {
         this.showToast('Orçamento registrado com sucesso!', 'success');
         this.closeModal();
+        await this.loadClientes(); // Recarrega clientes para incluir o recém cadastrado na busca local
         await this.loadOrcamentos();
         this.render();
       } else {
@@ -1506,6 +1603,18 @@ export class OrcamentosPage {
       }
     }
 
+    let defaultFluxo = 'nova';
+    if (cId && activeTrips && activeTrips.length > 0) {
+      const vincular = await showCustomConfirm(
+        `O cliente "${orc.nomeCliente}" já possui viagens operacionais ativas (em andamento) no PaxFlow.\n\nDeseja vincular este orçamento aprovado a uma dessas viagens existentes?`,
+        'Viagem Ativa Encontrada',
+        { confirmText: 'Sim, Vincular', cancelText: 'Não, Criar Nova' }
+      );
+      if (vincular) {
+        defaultFluxo = 'existente';
+      }
+    }
+
     modalContent.innerHTML = `
       <div class="p-6 max-h-[85vh] overflow-y-auto custom-scrollbar">
         <div class="flex items-center justify-between border-b border-slate-150 dark:border-slate-800 pb-3 mb-5">
@@ -1554,16 +1663,16 @@ export class OrcamentosPage {
               <div class="flex flex-col gap-3">
                 <div class="flex items-center gap-3">
                   <label class="flex items-center gap-2 text-sm text-slate-850 dark:text-slate-150 font-semibold cursor-pointer">
-                    <input type="radio" id="radio-fluxo-nova" name="fluxo-viagem" value="nova" checked class="w-4 h-4 text-indigo-600 border-slate-300 focus:ring-indigo-500" />
+                    <input type="radio" id="radio-fluxo-nova" name="fluxo-viagem" value="nova" ${defaultFluxo === 'nova' ? 'checked' : ''} class="w-4 h-4 text-indigo-600 border-slate-300 focus:ring-indigo-500" />
                     <span>Criar Nova Viagem</span>
                   </label>
                   <label class="flex items-center gap-2 text-sm text-slate-850 dark:text-slate-150 font-semibold cursor-pointer">
-                    <input type="radio" id="radio-fluxo-existente" name="fluxo-viagem" value="existente" class="w-4 h-4 text-indigo-600 border-slate-300 focus:ring-indigo-500" />
+                    <input type="radio" id="radio-fluxo-existente" name="fluxo-viagem" value="existente" ${defaultFluxo === 'existente' ? 'checked' : ''} class="w-4 h-4 text-indigo-600 border-slate-300 focus:ring-indigo-500" />
                     <span>Adicionar à Viagem Existente</span>
                   </label>
                 </div>
 
-                <div id="viagem-existente-container" class="hidden mt-2">
+                <div id="viagem-existente-container" class="${defaultFluxo === 'existente' ? '' : 'hidden'} mt-2">
                   <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Selecione a Viagem Existente *</label>
                   <select id="select-viagem-existente" class="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm">
                     ${activeTrips.map(v => `<option value="${v.id}">${v.destino} (LOC: ${v.codigo_localizador || 'Sem LOC'}) - R$ ${Number(v.valor_total).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</option>`).join('')}
@@ -1576,7 +1685,7 @@ export class OrcamentosPage {
           `}
 
           <!-- SEÇÃO 2: DADOS DO KANBAN OPERACIONAL (VIAGENS) -->
-          <div id="secao-viagem-nova" class="border-t border-slate-100 dark:border-slate-800 pt-5">
+          <div id="secao-viagem-nova" class="${defaultFluxo === 'existente' ? 'hidden' : ''} border-t border-slate-100 dark:border-slate-800 pt-5">
             <h4 class="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-3.5 border-b border-indigo-50/50 dark:border-slate-800 pb-1">2. Dados Operacionais da Viagem</h4>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -1609,7 +1718,7 @@ export class OrcamentosPage {
               </div>
             </div>
             <div class="mt-4">
-              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Notas Operacionais</label>
+              <label class="block text-xs font-bold text-slate-550 dark:text-slate-400 uppercase mb-1.5">Notas Operacionais</label>
               <textarea id="textarea-fechar-via-obs" placeholder="Mais detalhes operacionais..." rows="2" class="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 text-sm font-semibold">${orc.notasNegociacao || ''}</textarea>
             </div>
           </div>
@@ -1653,6 +1762,8 @@ export class OrcamentosPage {
     const secaoViagemNova = document.getElementById('secao-viagem-nova') as HTMLElement;
     const containerViagemExistente = document.getElementById('viagem-existente-container') as HTMLElement;
 
+    let validator: any = null;
+
     const updateFlowVisibility = () => {
       if (radioExistente?.checked) {
         secaoViagemNova?.classList.add('hidden');
@@ -1669,19 +1780,25 @@ export class OrcamentosPage {
         document.getElementById('input-fechar-via-volta')?.setAttribute('required', 'true');
         document.getElementById('input-fechar-via-valor')?.setAttribute('required', 'true');
       }
+      if (validator) {
+        validator.validateAll();
+      }
     };
 
     radioNova?.addEventListener('change', updateFlowVisibility);
     radioExistente?.addEventListener('change', updateFlowVisibility);
 
     // Inicializa a validação em tempo real para fechar negócio
-    setupFormValidation('form-fechar-viagem', [
+    validator = setupFormValidation('form-fechar-viagem', [
       { id: 'input-fechar-cli-email', type: 'email', required: !linkedClient },
       { id: 'input-fechar-cli-telefone', type: 'phone', required: !linkedClient },
       { id: 'input-fechar-via-ida', type: 'date', required: true },
       { id: 'input-fechar-via-volta', type: 'date', required: true },
       { id: 'input-fechar-via-valor', type: 'currency', required: true }
     ]);
+
+    // Executa uma vez no início para ajustar os atributos required e a visibilidade
+    updateFlowVisibility();
 
     // Fechamento de Modais
     const closeModal = () => this.closeModal();
