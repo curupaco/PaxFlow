@@ -186,6 +186,8 @@ export class ComercialDashboard {
       this.orcamentos = (dataOrc || []).map(d => ({
         id: d.id,
         consultorId: d.consultor_id,
+        clienteId: d.cliente_id,
+        cliente_id: d.cliente_id,
         nomeCliente: d.nome_cliente,
         contato: d.contato,
         destino: d.destino,
@@ -245,6 +247,8 @@ export class ComercialDashboard {
         const mapped = (parsed || []).map((d: any) => ({
           id: d.id,
           consultorId: d.consultor_id || d.consultorId,
+          clienteId: d.cliente_id || d.clienteId,
+          cliente_id: d.cliente_id || d.clienteId,
           nomeCliente: d.nome_cliente || d.nomeCliente,
           contato: d.contato,
           destino: d.destino,

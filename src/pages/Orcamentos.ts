@@ -1611,7 +1611,8 @@ export class OrcamentosPage {
     const cId = orc.cliente_id || orc.clienteId;
     if (cId) {
       try {
-        if (!this.isFallbackMode) {
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cId);
+        if (!this.isFallbackMode && isUuid) {
           const res = await OrcamentosService.loadClientDetailsAndTrips(cId);
           linkedClient = res.linkedClient;
           activeTrips = res.activeTrips;
@@ -1689,19 +1690,19 @@ export class OrcamentosPage {
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Nome Completo *</label>
-                <input id="input-fechar-cli-nome" type="text" required value="${linkedClient?.nome || orc.nomeCliente}" class="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" ${linkedClient ? 'readonly class="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 rounded-lg focus:outline-none text-slate-550 dark:text-slate-400 font-semibold text-sm cursor-not-allowed"' : ''} />
+                <input id="input-fechar-cli-nome" type="text" required value="${linkedClient?.nome || orc.nomeCliente}" class="${linkedClient && linkedClient.nome ? 'w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 rounded-lg focus:outline-none text-slate-550 dark:text-slate-400 font-semibold text-sm cursor-not-allowed' : 'w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm'}" ${linkedClient && linkedClient.nome ? 'readonly' : ''} />
               </div>
               <div>
                 <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">E-mail de Contato *</label>
-                ${renderEmailInputHTML('input-fechar-cli-email', eVal, 'ex: passageiro@email.com', true, !!linkedClient)}
+                ${renderEmailInputHTML('input-fechar-cli-email', eVal, 'ex: passageiro@email.com', true, !!(linkedClient && linkedClient.email))}
               </div>
               <div>
                 <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Telefone/WhatsApp *</label>
-                ${renderPhoneInputHTML('input-fechar-cli-telefone', tVal, 'ex: (11) 98888-7777', true, !!linkedClient)}
+                ${renderPhoneInputHTML('input-fechar-cli-telefone', tVal, 'ex: (11) 98888-7777', true, !!(linkedClient && linkedClient.telefone))}
               </div>
               <div>
                 <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Documento de Identificação *</label>
-                <input id="input-fechar-cli-doc" type="text" required value="${docVal}" placeholder="Digite o CPF ou RG do cliente" class="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" ${linkedClient ? 'readonly class="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 rounded-lg focus:outline-none text-slate-550 dark:text-slate-400 font-semibold text-sm cursor-not-allowed"' : ''} />
+                <input id="input-fechar-cli-doc" type="text" required value="${docVal}" placeholder="Digite o CPF ou RG do cliente" class="${linkedClient && linkedClient.documento ? 'w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 rounded-lg focus:outline-none text-slate-550 dark:text-slate-400 font-semibold text-sm cursor-not-allowed' : 'w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm'}" ${linkedClient && linkedClient.documento ? 'readonly' : ''} />
               </div>
             </div>
           </div>
@@ -1769,35 +1770,10 @@ export class OrcamentosPage {
             </div>
             <div class="mt-4">
               <label class="block text-xs font-bold text-slate-550 dark:text-slate-400 uppercase mb-1.5">Notas Operacionais</label>
-              <textarea id="textarea-fechar-via-obs" placeholder="Mais detalhes operacionais..." rows="2" class="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 text-sm font-semibold">${orc.notasNegociacao || ''}</textarea>
+              <textarea id="textarea-fechar-via-obs" placeholder="Mais detalhes da viagem, observações importantes..." class="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm h-20 resize-none"></textarea>
             </div>
           </div>
 
-          <!-- SEÇÃO 3: DETALHES DO PRODUTO/SERVIÇO -->
-          <div class="border-t border-slate-100 dark:border-slate-800 pt-5">
-            <h4 class="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-3.5 border-b border-indigo-50/50 dark:border-slate-800 pb-1">3. Detalhes do Produto/Serviço (Sacola)</h4>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Tipo do Serviço *</label>
-                <select id="select-prod-tipo" required class="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm">
-                  <option value="voo">Voo</option>
-                  <option value="hotel">Hotel</option>
-                  <option value="seguro">Seguro</option>
-                  <option value="passeio">Passeio</option>
-                  <option value="outro" selected>Outro</option>
-                </select>
-              </div>
-              <div>
-                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Fornecedor *</label>
-                <input id="input-prod-fornecedor" type="text" required placeholder="ex: LATAM, Hilton, etc." class="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
-              </div>
-              <div>
-                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Descrição do Serviço *</label>
-                <input id="input-prod-descricao" type="text" required placeholder="ex: Voo GRU-MCO classe econômica" class="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
-              </div>
-            </div>
-          </div>
- 
           <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-150 dark:border-slate-800">
             <button id="btn-cancel-modal" type="button" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs tracking-wider rounded-xl transition uppercase">Cancelar</button>
             <button type="submit" id="btn-submit-fechar" class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-emerald-600/10 transition uppercase">Emitir Viagem & Confirmar 🏆</button>
@@ -1840,8 +1816,8 @@ export class OrcamentosPage {
 
     // Inicializa a validação em tempo real para fechar negócio
     validator = setupFormValidation('form-fechar-viagem', [
-      { id: 'input-fechar-cli-email', type: 'email', required: !linkedClient },
-      { id: 'input-fechar-cli-telefone', type: 'phone', required: !linkedClient },
+      { id: 'input-fechar-cli-email', type: 'email', required: !(linkedClient && linkedClient.email) },
+      { id: 'input-fechar-cli-telefone', type: 'phone', required: !(linkedClient && linkedClient.telefone) },
       { id: 'input-fechar-via-ida', type: 'date', required: true },
       { id: 'input-fechar-via-volta', type: 'date', required: true },
       { id: 'input-fechar-via-valor', type: 'currency', required: true }
@@ -1871,9 +1847,10 @@ export class OrcamentosPage {
 
         const isNovaViagem = radioNova ? radioNova.checked : true;
 
-        const prodTipo = (document.getElementById('select-prod-tipo') as HTMLSelectElement).value;
-        const prodFornecedor = (document.getElementById('input-prod-fornecedor') as HTMLInputElement).value;
-        const prodDescricao = (document.getElementById('input-prod-descricao') as HTMLInputElement).value;
+        // Default values for product since Section 3 (Sacola) was removed
+        const prodTipo = 'outro';
+        const prodFornecedor = 'PaxFlow';
+        const prodDescricao = `Serviço do orçamento para ${orc.destino}`;
 
         // Parse do valor da proposta
         let vValor = orc.valorProposta || 0;
@@ -1910,8 +1887,8 @@ export class OrcamentosPage {
             const vIda = formatBrDateToIso(vIdaRaw);
             const vVolta = formatBrDateToIso(vVoltaRaw);
 
-            if (!vIda) throw new Error('Por favor, informe a Data de Ida no formato correto DD/MM/AAAA.');
-            if (!vVolta) throw new Error('Por favor, informe a Data de Volta no formato correto DD/MM/AAAA.');
+            if (!vIda) throw new Error('Por favor, info a Data de Ida no formato correto DD/MM/AAAA.');
+            if (!vVolta) throw new Error('Por favor, info a Data de Volta no formato correto DD/MM/AAAA.');
 
             options.vDestino = vDestino;
             options.vLoc = vLoc;

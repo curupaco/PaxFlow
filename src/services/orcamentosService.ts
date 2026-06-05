@@ -38,6 +38,8 @@ export class OrcamentosService {
     return (data || []).map(d => ({
       id: d.id,
       consultorId: d.consultor_id,
+      clienteId: d.cliente_id,
+      cliente_id: d.cliente_id,
       nomeCliente: d.nome_cliente,
       contato: d.contato,
       destino: d.destino,
@@ -103,11 +105,11 @@ export class OrcamentosService {
 
     if (resError) {
       // Se o erro for de coluna inexistente no Supabase (Postgres code 42703 ou undefined_column)
-      if (
+      const isMissingColumn = 
         resError.code === '42703' ||
-        (resError.message && (resError.message.includes('valor_proposta') || resError.message.includes('cliente_id'))) ||
-        (resError.message && resError.message.includes('column') && resError.message.includes('does not exist'))
-      ) {
+        (resError.message && resError.message.includes('column') && resError.message.includes('does not exist'));
+
+      if (isMissingColumn) {
         console.warn('Aviso: Colunas novas não encontradas no Supabase. Salvando sem valor_proposta/cliente_id.');
         
         delete payload.valor_proposta;
@@ -245,9 +247,10 @@ export class OrcamentosService {
     } = options;
 
     let clienteId = orc.cliente_id || orc.clienteId || '';
+    const isMockClient = !clienteId || clienteId.startsWith('cli-offline-') || clienteId.startsWith('cli-mocked-');
 
-    // 1. Cadastrar/Obter Cliente no Supabase
-    if (!clienteId) {
+    // 1. Cadastrar/Obter/Atualizar Cliente no Supabase
+    if (isMockClient) {
       // Verificar se o cliente já existe por email ou telefone para evitar duplicidade
       const { data: existingCli, error: errExist } = await supabase
         .from('clientes')
@@ -259,6 +262,21 @@ export class OrcamentosService {
 
       if (existingCli && existingCli.length > 0) {
         clienteId = existingCli[0].id;
+        // Se encontramos o cliente cadastrado, vamos atualizar suas informações (por exemplo, o CPF que foi digitado no fechamento)
+        const { error: errUpdateCli } = await supabase
+          .from('clientes')
+          .update({
+            nome: cNome,
+            email: cEmail || null,
+            telefone: cTelefone || null,
+            documento: cDoc || null,
+            google_drive_folder_url: folderDriveUrl || null
+          })
+          .eq('id', clienteId);
+
+        if (errUpdateCli) {
+          console.warn('Aviso: Erro ao atualizar dados do cliente existente encontrado:', errUpdateCli.message);
+        }
       } else {
         const { data: newCli, error: errCli } = await supabase
           .from('clientes')
@@ -276,6 +294,22 @@ export class OrcamentosService {
 
         if (errCli) throw errCli;
         if (newCli) clienteId = newCli.id;
+      }
+    } else {
+      // Se já possui uma ID válida do Supabase, vamos atualizar suas informações (como o CPF)
+      const { error: errUpdateCli } = await supabase
+        .from('clientes')
+        .update({
+          nome: cNome,
+          email: cEmail || null,
+          telefone: cTelefone || null,
+          documento: cDoc || null,
+          google_drive_folder_url: folderDriveUrl || null
+        })
+        .eq('id', clienteId);
+
+      if (errUpdateCli) {
+        console.warn('Aviso: Erro ao atualizar dados do cliente existente:', errUpdateCli.message);
       }
     }
 
