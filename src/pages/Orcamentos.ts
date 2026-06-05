@@ -1759,14 +1759,6 @@ export class OrcamentosPage {
                 <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Valor da Venda (R$) *</label>
                 ${renderCurrencyInputHTML('input-fechar-via-valor', orc.valorProposta || '')}
               </div>
-              <div>
-                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Etapa Inicial Operacional *</label>
-                <select id="select-fechar-via-status" required class="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm">
-                  <option value="fechado">Fechado (Aguardando pós-venda)</option>
-                  <option value="pos_venda">Pós-Venda</option>
-                  <option value="pre_embarque">Pré-Embarque</option>
-                </select>
-              </div>
             </div>
             <div class="mt-4">
               <label class="block text-xs font-bold text-slate-550 dark:text-slate-400 uppercase mb-1.5">Notas Operacionais</label>
@@ -1881,7 +1873,7 @@ export class OrcamentosPage {
             const vLoc = (document.getElementById('input-fechar-via-loc') as HTMLInputElement).value;
             const vIdaRaw = (document.getElementById('input-fechar-via-ida') as HTMLInputElement).value.trim();
             const vVoltaRaw = (document.getElementById('input-fechar-via-volta') as HTMLInputElement).value.trim();
-            const vStatus = (document.getElementById('select-fechar-via-status') as HTMLSelectElement).value;
+            const vStatus = 'fechado';
             const vObs = (document.getElementById('textarea-fechar-via-obs') as HTMLTextAreaElement).value;
 
             const vIda = formatBrDateToIso(vIdaRaw);

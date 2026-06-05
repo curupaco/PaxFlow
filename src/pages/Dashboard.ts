@@ -95,6 +95,7 @@ export class Dashboard {
   private sortables: Sortable[] = [];
   private buscaTermo: string = '';
   private profileUpdatedListener: ((e: any) => void) | null = null;
+  private isFallbackMode: boolean = false;
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -237,6 +238,7 @@ export class Dashboard {
    */
   private async loadViagens(): Promise<void> {
     try {
+      this.isFallbackMode = false;
       // Junção com a tabela de clientes e reembolsos para obter informações completas
       let query = supabase
         .from('viagens')
@@ -256,6 +258,7 @@ export class Dashboard {
       this.viagens = data || [];
       this.saveViagensToLocalStorage();
     } catch (err: any) {
+      this.isFallbackMode = true;
       console.warn('Erro ao carregar viagens do banco. Ativando fallback offline:', err.message);
       this.loadViagensFromLocalStorage();
     }
@@ -360,6 +363,48 @@ export class Dashboard {
           if (newStatus === oldStatus) {
             this.showToast('Viagem reordenada na coluna!', 'success');
             return;
+          }
+
+          // Validação de saldo pendente se tentar mover para status diferente de 'fechado'
+          if (newStatus !== 'fechado') {
+            let produtos: any[] = [];
+            if (!this.isFallbackMode) {
+              try {
+                const { data, error } = await supabase
+                  .from('produtos_viagem')
+                  .select('valor_venda')
+                  .eq('viagem_id', tripId);
+                if (!error && data) {
+                  produtos = data;
+                }
+              } catch (errCheck) {
+                console.warn('Erro ao carregar produtos para validação no drag:', errCheck);
+              }
+            }
+            if (produtos.length === 0) {
+              const saved = localStorage.getItem(`paxflow-produtos-viagem-${tripId}`);
+              if (saved) {
+                try {
+                  produtos = JSON.parse(saved);
+                } catch (e) {
+                  produtos = [];
+                }
+              }
+            }
+
+            const totalProdutos = produtos.reduce((sum, p) => sum + (Number(p.valor_venda) || 0), 0);
+            const viagem = this.viagens.find(v => v.id === tripId);
+            const valorViagem = viagem ? (Number(viagem.valor_total) || 0) : 0;
+            const pendente = valorViagem - totalProdutos;
+
+            if (Math.abs(pendente) > 0.01) {
+              this.showToast(`Não é possível avançar a viagem. Existe um saldo financeiro pendente de R$ ${pendente.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}. Adicione produtos na aba "Produtos e Serviços" para zerar este saldo.`, 'error');
+              
+              // Reverte a movimentação no Kanban
+              this.render();
+              this.setupDragAndDrop();
+              return;
+            }
           }
 
           // Regra Especial: Se mover para "Reembolso Solicitado", abre o modal
@@ -997,6 +1042,22 @@ export class Dashboard {
         <!-- CONTEÚDO DA ABA 2: PRODUTOS E SERVIÇOS -->
         <div id="tab-produtos-content" class="hidden space-y-5">
           
+          <!-- Painel Financeiro (Totalizadores e Saldo Pendente) -->
+          <div id="painel-financeiro-produtos" class="grid grid-cols-3 gap-3 p-3.5 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/50 dark:border-slate-800 mb-4">
+            <div>
+              <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider leading-tight">Valor da Venda</span>
+              <strong id="fin-valor-venda" class="text-sm font-black text-slate-800 dark:text-slate-100">R$ 0,00</strong>
+            </div>
+            <div>
+              <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider leading-tight">Total em Produtos</span>
+              <strong id="fin-valor-produtos" class="text-sm font-black text-slate-800 dark:text-slate-100 font-bold">R$ 0,00</strong>
+            </div>
+            <div>
+              <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider leading-tight">Saldo Pendente</span>
+              <strong id="fin-valor-pendente" class="text-sm font-black text-rose-600 dark:text-rose-455">R$ 0,00</strong>
+            </div>
+          </div>
+          
           <!-- Lista de Produtos Existentes -->
           <div>
             <h4 class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-2.5">Produtos Cadastrados nesta Viagem</h4>
@@ -1251,6 +1312,34 @@ export class Dashboard {
 
       const valor = parseDoubleBr(valorRaw);
 
+      // Validação de saldo pendente se tentar mudar para status diferente de 'fechado'
+      if (status !== 'fechado') {
+        let produtos: any[] = [];
+        if (!this.isFallbackMode) {
+          try {
+            const { data, error } = await supabase
+              .from('produtos_viagem')
+              .select('valor_venda')
+              .eq('viagem_id', v.id);
+            if (!error && data) {
+              produtos = data;
+            }
+          } catch (e) {}
+        }
+        if (produtos.length === 0) {
+          const saved = localStorage.getItem(`paxflow-produtos-viagem-${v.id}`);
+          if (saved) {
+            try { produtos = JSON.parse(saved); } catch (e) {}
+          }
+        }
+        const totalProdutos = produtos.reduce((sum, p) => sum + (Number(p.valor_venda) || 0), 0);
+        const pendente = valor - totalProdutos;
+        if (Math.abs(pendente) > 0.01) {
+          this.showToast(`Não é possível alterar o status para "${status.replace('_', ' ')}". Existe um saldo financeiro pendente de R$ ${pendente.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}. Adicione produtos na aba "Produtos e Serviços" para zerar este saldo.`, 'error');
+          return;
+        }
+      }
+
       const payload = {
         cliente_id: clienteId,
         consultor_id: consultorId,
@@ -1344,11 +1433,23 @@ export class Dashboard {
       };
 
       try {
-        const { error } = await supabase
-          .from('produtos_viagem')
-          .insert(payload);
+        if (!this.isFallbackMode) {
+          const { error } = await supabase
+            .from('produtos_viagem')
+            .insert(payload);
 
-        if (error) throw error;
+          if (error) throw error;
+        } else {
+          // Modo offline: adiciona à lista local e salva
+          const saved = localStorage.getItem(`paxflow-produtos-viagem-${v.id}`);
+          const list = saved ? JSON.parse(saved) : [];
+          list.push({
+            ...payload,
+            id: 'prod-offline-' + Math.random().toString(36).substr(2, 9),
+            created_at: new Date().toISOString()
+          });
+          localStorage.setItem(`paxflow-produtos-viagem-${v.id}`, JSON.stringify(list));
+        }
 
         this.showToast('Produto adicionado à viagem com sucesso!', 'success');
         formNovoProduto.reset();
@@ -1367,148 +1468,207 @@ export class Dashboard {
     const container = document.getElementById('lista-produtos-viagem-container');
     if (!container) return;
 
+    let produtos: any[] = [];
+    let isError = false;
+
     try {
-      const { data: produtos, error } = await supabase
+      const { data, error } = await supabase
         .from('produtos_viagem')
         .select('*')
         .eq('viagem_id', tripId)
         .order('created_at', { ascending: true });
 
       if (error) throw error;
-
-      if (!produtos || produtos.length === 0) {
-        container.innerHTML = `
-          <p class="text-center text-xs text-slate-400 font-medium py-6">
-            Nenhum produto cadastrado para esta viagem.
-          </p>
-        `;
-        return;
+      produtos = data || [];
+      localStorage.setItem(`paxflow-produtos-viagem-${tripId}`, JSON.stringify(produtos));
+    } catch (err: any) {
+      console.error('Erro ao listar produtos da viagem:', err);
+      isError = true;
+      const saved = localStorage.getItem(`paxflow-produtos-viagem-${tripId}`);
+      if (saved) {
+        try {
+          produtos = JSON.parse(saved);
+          isError = false;
+        } catch (e) {
+          produtos = [];
+        }
       }
+    }
 
-      // Buscar quantidade de comentários para cada produto
-      const productIds = produtos.map(p => p.id);
-      const { data: commentsCountData } = await supabase
-        .from('comentarios')
-        .select('item_id')
-        .eq('tipo_item', 'produto')
-        .in('item_id', productIds);
+    if (isError) {
+      container.innerHTML = `
+        <p class="text-center text-xs text-rose-500 font-bold py-4">
+          Falha ao buscar produtos.
+        </p>
+      `;
+      return;
+    }
 
-      const commentsCountMap: { [key: string]: number } = {};
-      productIds.forEach(id => { commentsCountMap[id] = 0; });
-      if (commentsCountData) {
-        commentsCountData.forEach(c => {
-          commentsCountMap[c.item_id] = (commentsCountMap[c.item_id] || 0) + 1;
-        });
+    // Calcula e atualiza o painel financeiro (Totalizador e Saldo Pendente)
+    const viagem = this.viagens.find(x => x.id === tripId);
+    const valorTotalViagem = viagem ? (Number(viagem.valor_total) || 0) : 0;
+    const totalProdutos = produtos.reduce((sum, p) => sum + (Number(p.valor_venda) || 0), 0);
+    const saldoPendente = valorTotalViagem - totalProdutos;
+
+    const finValorVenda = document.getElementById('fin-valor-venda');
+    const finValorProdutos = document.getElementById('fin-valor-produtos');
+    const finValorPendente = document.getElementById('fin-valor-pendente');
+
+    if (finValorVenda) {
+      finValorVenda.textContent = `R$ ${valorTotalViagem.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+    }
+    if (finValorProdutos) {
+      finValorProdutos.textContent = `R$ ${totalProdutos.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+    }
+    if (finValorPendente) {
+      finValorPendente.textContent = `R$ ${saldoPendente.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+      if (Math.abs(saldoPendente) < 0.01) {
+        finValorPendente.className = 'text-sm font-black text-emerald-600 dark:text-emerald-450';
+      } else {
+        finValorPendente.className = 'text-sm font-black text-rose-600 dark:text-rose-455';
       }
+    }
 
-      const formatarData = (dStr: string) => {
-        if (!dStr) return '';
-        const dataApenas = dStr.includes('T') ? dStr.split('T')[0] : dStr.split(' ')[0];
-        const parts = dataApenas.split('-');
-        if (parts.length !== 3) return dStr;
-        return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    if (produtos.length === 0) {
+      container.innerHTML = `
+        <p class="text-center text-xs text-slate-400 font-medium py-6">
+          Nenhum produto cadastrado para esta viagem.
+        </p>
+      `;
+      return;
+    }
+
+    // Buscar quantidade de comentários para cada produto (se não estiver em fallback)
+    let commentsCountMap: { [key: string]: number } = {};
+    produtos.forEach(p => { commentsCountMap[p.id] = 0; });
+    
+    if (!this.isFallbackMode) {
+      try {
+        const productIds = produtos.map(p => p.id);
+        const { data: commentsCountData } = await supabase
+          .from('comentarios')
+          .select('item_id')
+          .eq('tipo_item', 'produto')
+          .in('item_id', productIds);
+
+        if (commentsCountData) {
+          commentsCountData.forEach(c => {
+            commentsCountMap[c.item_id] = (commentsCountMap[c.item_id] || 0) + 1;
+          });
+        }
+      } catch (errComm) {
+        console.warn('Erro ao carregar contagem de comentários de produtos:', errComm);
+      }
+    }
+
+    const formatarData = (dStr: string) => {
+      if (!dStr) return '';
+      const dataApenas = dStr.includes('T') ? dStr.split('T')[0] : dStr.split(' ')[0];
+      const parts = dataApenas.split('-');
+      if (parts.length !== 3) return dStr;
+      return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    };
+
+    container.innerHTML = produtos.map(p => {
+      const iconesMap: { [key: string]: string } = {
+        voo: '✈️',
+        hotel: '🏨',
+        seguro: '🛡️',
+        passeio: '🎟️',
+        outro: '📦'
       };
 
-      container.innerHTML = produtos.map(p => {
-        const iconesMap: { [key: string]: string } = {
-          voo: '✈️',
-          hotel: '🏨',
-          seguro: '🛡️',
-          passeio: '🎟️',
-          outro: '📦'
-        };
+      const commentsCount = commentsCountMap[p.id] || 0;
 
-        const commentsCount = commentsCountMap[p.id] || 0;
-
-        return `
-          <div class="flex items-center justify-between gap-3 p-3 bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-850 rounded-xl hover:bg-slate-100/50 dark:hover:bg-slate-800/80 transition">
-            <div class="flex items-start gap-2.5 overflow-hidden">
-              <span class="text-lg p-1 bg-white dark:bg-slate-700 border border-slate-100 dark:border-slate-650 rounded-lg shadow-sm flex items-center justify-center">${iconesMap[p.tipo] || '📦'}</span>
-              <div class="overflow-hidden bg-slate-50/10">
-                <span class="block text-xs font-black text-slate-700 dark:text-slate-200 truncate leading-tight">${p.fornecedor} &bull; ${p.descricao}</span>
-                <span class="block text-[10px] text-slate-400 dark:text-slate-550 font-bold leading-normal">
-                  ${p.codigo_reserva ? `LOC: <span class="text-slate-600 dark:text-slate-355 font-extrabold">${p.codigo_reserva}</span> &bull; ` : ''} 
-                  Data: <span class="text-slate-600 dark:text-slate-355 font-semibold">${formatarData(p.data_servico)}</span>
-                </span>
-              </div>
-            </div>
-            
-            <div class="flex items-center gap-3.5">
-              <div class="text-right">
-                <span class="block text-xs font-black text-indigo-600 dark:text-indigo-400">R$ ${Number(p.valor_venda || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-              </div>
-              <button data-comments-prod-id="${p.id}" data-comments-prod-name="${p.fornecedor} - ${p.descricao}" class="p-1.5 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-slate-300 dark:text-slate-550 hover:text-indigo-650 dark:hover:text-indigo-400 rounded-md transition text-xs font-bold flex items-center gap-1" title="Notas e Comentários">
-                💬 <span class="text-[10px]">${commentsCount}</span>
-              </button>
-              <button data-delete-prod-id="${p.id}" class="p-1.5 hover:bg-rose-50 dark:hover:bg-rose-950/20 text-slate-300 dark:text-slate-550 hover:text-rose-600 dark:hover:text-rose-450 rounded-md transition text-xs font-bold" title="Remover Produto">
-                🗑️
-              </button>
+      return `
+        <div class="flex items-center justify-between gap-3 p-3 bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-850 rounded-xl hover:bg-slate-100/50 dark:hover:bg-slate-800/80 transition">
+          <div class="flex items-start gap-2.5 overflow-hidden">
+            <span class="text-lg p-1 bg-white dark:bg-slate-700 border border-slate-100 dark:border-slate-650 rounded-lg shadow-sm flex items-center justify-center">${iconesMap[p.tipo] || '📦'}</span>
+            <div class="overflow-hidden bg-slate-50/10">
+              <span class="block text-xs font-black text-slate-700 dark:text-slate-200 truncate leading-tight">${p.fornecedor} &bull; ${p.descricao}</span>
+              <span class="block text-[10px] text-slate-400 dark:text-slate-550 font-bold leading-normal">
+                ${p.codigo_reserva ? `LOC: <span class="text-slate-600 dark:text-slate-355 font-extrabold">${p.codigo_reserva}</span> &bull; ` : ''} 
+                Data: <span class="text-slate-600 dark:text-slate-355 font-semibold">${formatarData(p.data_servico)}</span>
+              </span>
             </div>
           </div>
-        `;
-      }).join('');
+          
+          <div class="flex items-center gap-3.5">
+            <div class="text-right">
+              <span class="block text-xs font-black text-indigo-600 dark:text-indigo-400">R$ ${Number(p.valor_venda || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+            </div>
+            <button data-comments-prod-id="${p.id}" data-comments-prod-name="${p.fornecedor} - ${p.descricao}" class="p-1.5 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-slate-300 dark:text-slate-550 hover:text-indigo-650 dark:hover:text-indigo-400 rounded-md transition text-xs font-bold flex items-center gap-1" title="Notas e Comentários">
+              💬 <span class="text-[10px]">${commentsCount}</span>
+            </button>
+            <button data-delete-prod-id="${p.id}" class="p-1.5 hover:bg-rose-50 dark:hover:bg-rose-950/20 text-slate-300 dark:text-slate-550 hover:text-rose-600 dark:hover:text-rose-455 rounded-md transition text-xs font-bold" title="Remover Produto">
+              🗑️
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
 
-      // Ouvintes de comentários
-      container.querySelectorAll('[data-comments-prod-id]').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const prodId = btn.getAttribute('data-comments-prod-id');
-          const prodName = btn.getAttribute('data-comments-prod-name') || 'Produto';
-          if (!prodId) return;
+    // Ouvintes de comentários
+    container.querySelectorAll('[data-comments-prod-id]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const prodId = btn.getAttribute('data-comments-prod-id');
+        const prodName = btn.getAttribute('data-comments-prod-name') || 'Produto';
+        if (!prodId) return;
 
-          CommentsService.openProductCommentsModal(
-            prodId,
-            tripId,
-            prodName,
-            this.user.id,
-            this.consultores,
-            () => {
-              // Ao fechar, recarregar a lista para atualizar a contagem de comentários no botão
-              this.loadAndRenderProdutosViagem(tripId);
-            }
-          );
-        });
+        CommentsService.openProductCommentsModal(
+          prodId,
+          tripId,
+          prodName,
+          this.user.id,
+          this.consultores,
+          () => {
+            this.loadAndRenderProdutosViagem(tripId);
+          }
+        );
       });
+    });
 
-      // Ouvintes de exclusão de produtos
-      container.querySelectorAll('[data-delete-prod-id]').forEach(btn => {
-        btn.addEventListener('click', async (e) => {
-          e.stopPropagation();
-          const prodId = btn.getAttribute('data-delete-prod-id');
-          if (!prodId) return;
+    // Ouvintes de exclusão de produtos
+    container.querySelectorAll('[data-delete-prod-id]').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const prodId = btn.getAttribute('data-delete-prod-id');
+        if (!prodId) return;
 
-          const confirmResult = await showCustomConfirm(
-            'Deseja realmente remover este produto da viagem?',
-            'Remover Produto',
-            { isDestructive: true, confirmText: 'Remover', cancelText: 'Manter' }
-          );
-          if (confirmResult) {
-            try {
+        const confirmResult = await showCustomConfirm(
+          'Deseja realmente remover este produto da viagem?',
+          'Remover Produto',
+          { isDestructive: true, confirmText: 'Remover', cancelText: 'Manter' }
+        );
+        if (confirmResult) {
+          try {
+            if (!this.isFallbackMode) {
               const { error } = await supabase
                 .from('produtos_viagem')
                 .delete()
                 .eq('id', prodId);
 
               if (error) throw error;
-
-              this.showToast('Produto removido com sucesso!', 'success');
-              await this.loadAndRenderProdutosViagem(tripId);
-            } catch (err: any) {
-              console.error('Erro ao remover produto:', err);
-              this.showToast(`Erro ao remover produto: ${err.message}`, 'error');
+            } else {
+              // Modo offline: remove do local storage cache
+              const saved = localStorage.getItem(`paxflow-produtos-viagem-${tripId}`);
+              if (saved) {
+                const list = JSON.parse(saved);
+                const updatedList = list.filter((p: any) => p.id !== prodId);
+                localStorage.setItem(`paxflow-produtos-viagem-${tripId}`, JSON.stringify(updatedList));
+              }
             }
-          }
-        });
-      });
 
-    } catch (err: any) {
-      console.error('Erro ao listar produtos da viagem:', err);
-      container.innerHTML = `
-        <p class="text-center text-xs text-rose-500 font-bold py-4">
-          Falha ao buscar produtos.
-        </p>
-      `;
-    }
+            this.showToast('Produto removido com sucesso!', 'success');
+            await this.loadAndRenderProdutosViagem(tripId);
+          } catch (err: any) {
+            console.error('Erro ao remover produto:', err);
+            this.showToast(`Erro ao remover produto: ${err.message}`, 'error');
+          }
+        }
+      });
+    });
   }
 
   /**
