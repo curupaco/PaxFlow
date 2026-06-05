@@ -195,13 +195,34 @@ export class CommentsService {
       });
     });
 
-    // Fechar dropdown de menções quando clicar fora
-    const handleOutsideClick = (e: MouseEvent) => {
-      if (!dropdown.contains(e.target as Node) && e.target !== textarea) {
-        dropdown.classList.add('hidden');
+    let activeOutsideClickListener: ((e: MouseEvent) => void) | null = null;
+
+    const hideDropdown = () => {
+      dropdown.classList.add('hidden');
+      if (activeOutsideClickListener) {
+        document.removeEventListener('click', activeOutsideClickListener);
+        activeOutsideClickListener = null;
       }
     };
-    document.addEventListener('click', handleOutsideClick);
+
+    const showDropdown = () => {
+      if (dropdown.classList.contains('hidden')) {
+        dropdown.classList.remove('hidden');
+        if (!activeOutsideClickListener) {
+          activeOutsideClickListener = (e: MouseEvent) => {
+            if (!dropdown.contains(e.target as Node) && e.target !== textarea) {
+              hideDropdown();
+            }
+          };
+          // Usamos setTimeout para evitar que o clique atual feche imediatamente o dropdown recém-aberto
+          setTimeout(() => {
+            if (activeOutsideClickListener) {
+              document.addEventListener('click', activeOutsideClickListener);
+            }
+          }, 0);
+        }
+      }
+    };
 
     // Controle de autocompletar ao digitar
     textarea.addEventListener('input', () => {
@@ -239,23 +260,23 @@ export class CommentsService {
               const newCursorPos = beforeMention.length + selectedProfile.nome.length + 2;
               textarea.setSelectionRange(newCursorPos, newCursorPos);
 
-              dropdown.classList.add('hidden');
+              hideDropdown();
               isMentioning = false;
             });
 
             // Posicionar o dropdown logo acima ou abaixo do textarea
             dropdown.className = "absolute z-50 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl max-h-40 overflow-y-auto p-1.5 min-w-[200px] text-xs font-semibold left-0 bottom-full mb-1";
-            dropdown.classList.remove('hidden');
+            showDropdown();
           } else {
-            dropdown.classList.add('hidden');
+            hideDropdown();
             isMentioning = false;
           }
         } else {
-          dropdown.classList.add('hidden');
+          hideDropdown();
           isMentioning = false;
         }
       } else {
-        dropdown.classList.add('hidden');
+        hideDropdown();
         isMentioning = false;
       }
     });

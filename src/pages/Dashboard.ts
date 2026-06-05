@@ -94,6 +94,7 @@ export class Dashboard {
   private selectedConsultantId: string = 'todos';
   private sortables: Sortable[] = [];
   private buscaTermo: string = '';
+  private profileUpdatedListener: ((e: any) => void) | null = null;
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -114,7 +115,7 @@ export class Dashboard {
       this.perfil = perfil;
 
       // Escuta reativamente as atualizações do perfil
-      window.addEventListener('paxflow-profile-updated', (e: any) => {
+      this.profileUpdatedListener = (e: any) => {
         const { nome, avatar_url } = e.detail;
         if (this.perfil) {
           this.perfil.nome = nome;
@@ -122,7 +123,8 @@ export class Dashboard {
           this.render();
           this.setupDragAndDrop();
         }
-      });
+      };
+      window.addEventListener('paxflow-profile-updated', this.profileUpdatedListener);
 
       // 2. Carregar consultores ativos
       await this.loadConsultores();
@@ -147,6 +149,18 @@ export class Dashboard {
     } catch (err: any) {
       console.error('Erro na inicialização do Dashboard:', err);
       this.renderAuthError(`Ocorreu um erro interno: ${err.message}`);
+    }
+  }
+
+  /**
+   * Destrutor da página para limpar listeners globais e sortables
+   */
+  public destroy(): void {
+    this.sortables.forEach(s => s.destroy());
+    this.sortables = [];
+    if (this.profileUpdatedListener) {
+      window.removeEventListener('paxflow-profile-updated', this.profileUpdatedListener);
+      this.profileUpdatedListener = null;
     }
   }
 

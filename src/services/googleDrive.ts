@@ -139,8 +139,8 @@ async function obterAccessToken(): Promise<string> {
     throw new Error('Por motivos de segurança, a visualização inline de documentos reais está reservada para administradores. Por favor, clique no botão "Abrir Original" para visualizar ou baixar este arquivo diretamente na sua conta do Google Drive corporativo.');
   }
 
-  let clientId = process.env.GOOGLE_CLIENT_ID || '';
-  let clientSecret = process.env.GOOGLE_CLIENT_SECRET || '';
+  let clientId = (typeof process !== 'undefined' && process.env?.GOOGLE_CLIENT_ID) || import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+  let clientSecret = (typeof process !== 'undefined' && process.env?.GOOGLE_CLIENT_SECRET) || import.meta.env.VITE_GOOGLE_CLIENT_SECRET || '';
   let realRefreshToken = refreshToken;
 
   if (realRefreshToken.includes('|||')) {

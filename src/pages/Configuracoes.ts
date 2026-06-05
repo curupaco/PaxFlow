@@ -77,6 +77,7 @@ export class ConfiguracoesPage {
   private defaultDestino: string = 'Importação DIGISAC';
   private defaultTemperatura: 'Frio' | 'Normal' | 'Quente' = 'Normal';
   private defaultStatus: 'SOLICITADO' | 'EM_ANDAMENTO' | 'AGUARDANDO' | 'CONCLUIDO' = 'SOLICITADO';
+  private profileUpdatedListener: ((e: any) => void) | null = null;
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -97,7 +98,7 @@ export class ConfiguracoesPage {
       this.perfil = perfil;
 
       // Escuta reativamente as atualizações do perfil proprio
-      window.addEventListener('paxflow-profile-updated', (e: any) => {
+      this.profileUpdatedListener = (e: any) => {
         const { nome, avatar_url } = e.detail;
         if (this.perfil) {
           this.perfil.nome = nome;
@@ -105,7 +106,8 @@ export class ConfiguracoesPage {
           this.render();
           this.setupEventListeners();
         }
-      });
+      };
+      window.addEventListener('paxflow-profile-updated', this.profileUpdatedListener);
 
       // 2. Bloqueio Rígido de Segurança: Apenas administrador acessa esta tela
       if (!this.perfil || this.perfil.role !== 'admin') {
@@ -126,6 +128,16 @@ export class ConfiguracoesPage {
     } catch (err: any) {
       console.error('Erro na inicialização da tela de configurações:', err);
       this.renderAuthError(`Erro interno: ${err.message}`);
+    }
+  }
+
+  /**
+   * Destrutor da página para limpar listeners globais
+   */
+  public destroy(): void {
+    if (this.profileUpdatedListener) {
+      window.removeEventListener('paxflow-profile-updated', this.profileUpdatedListener);
+      this.profileUpdatedListener = null;
     }
   }
 
@@ -913,12 +925,12 @@ export class ConfiguracoesPage {
             <div class="space-y-2">
               <div>
                 <label class="block text-[10px] font-black text-slate-450 dark:text-slate-405 uppercase tracking-wide mb-1">Google Client ID *</label>
-                <input id="input-oauth-real-client-id" type="text" placeholder="Cole o seu Client ID do Google Cloud aqui..." value="${process.env.GOOGLE_CLIENT_ID || ''}" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-850 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100" />
+                <input id="input-oauth-real-client-id" type="text" placeholder="Cole o seu Client ID do Google Cloud aqui..." value="${(typeof process !== 'undefined' && process.env?.GOOGLE_CLIENT_ID) || import.meta.env.VITE_GOOGLE_CLIENT_ID || ''}" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-850 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100" />
               </div>
               
               <div>
                 <label class="block text-[10px] font-black text-slate-450 dark:text-slate-405 uppercase tracking-wide mb-1">Google Client Secret *</label>
-                <input id="input-oauth-real-client-secret" type="password" placeholder="Cole o seu Client Secret aqui..." value="${process.env.GOOGLE_CLIENT_SECRET || ''}" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-850 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100" />
+                <input id="input-oauth-real-client-secret" type="password" placeholder="Cole o seu Client Secret aqui..." value="${(typeof process !== 'undefined' && process.env?.GOOGLE_CLIENT_SECRET) || import.meta.env.VITE_GOOGLE_CLIENT_SECRET || ''}" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-850 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100" />
               </div>
 
               <div>

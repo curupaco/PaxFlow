@@ -45,6 +45,7 @@ export class ReembolsosPage {
   private reembolsos: any[] = [];
   private timerId: any = null;
   private buscaTermo: string = '';
+  private profileUpdatedListener: ((e: any) => void) | null = null;
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -65,7 +66,7 @@ export class ReembolsosPage {
       this.perfil = perfil;
 
       // Escuta reativamente as atualizações do perfil
-      window.addEventListener('paxflow-profile-updated', (e: any) => {
+      this.profileUpdatedListener = (e: any) => {
         const { nome, avatar_url } = e.detail;
         if (this.perfil) {
           this.perfil.nome = nome;
@@ -73,7 +74,8 @@ export class ReembolsosPage {
           this.render();
           this.setupEventListeners();
         }
-      });
+      };
+      window.addEventListener('paxflow-profile-updated', this.profileUpdatedListener);
 
       // 2. Buscar reembolsos
       await this.loadReembolsos();
@@ -100,6 +102,10 @@ export class ReembolsosPage {
     if (this.timerId) {
       clearInterval(this.timerId);
       this.timerId = null;
+    }
+    if (this.profileUpdatedListener) {
+      window.removeEventListener('paxflow-profile-updated', this.profileUpdatedListener);
+      this.profileUpdatedListener = null;
     }
   }
 
@@ -131,9 +137,37 @@ export class ReembolsosPage {
       } else {
         this.reembolsos = rawData;
       }
-
+      this.saveReembolsosToLocalStorage();
     } catch (err: any) {
-      console.error('Erro ao carregar reembolsos:', err.message);
+      console.warn('Erro ao carregar reembolsos do banco. Ativando fallback offline:', err.message);
+      this.loadReembolsosFromLocalStorage();
+    }
+  }
+
+  /**
+   * Salva reembolsos carregados no LocalStorage para resiliência offline
+   */
+  private saveReembolsosToLocalStorage(): void {
+    localStorage.setItem('paxflow-reembolsos-local', JSON.stringify(this.reembolsos));
+  }
+
+  /**
+   * Recupera reembolsos salvos no LocalStorage
+   */
+  private loadReembolsosFromLocalStorage(): void {
+    const saved = localStorage.getItem('paxflow-reembolsos-local');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (this.perfil && this.perfil.role !== 'admin') {
+          this.reembolsos = parsed.filter((r: any) => r.viagem && r.viagem.consultor_id === this.user.id);
+        } else {
+          this.reembolsos = parsed;
+        }
+      } catch (e) {
+        this.reembolsos = [];
+      }
+    } else {
       this.reembolsos = [];
     }
   }

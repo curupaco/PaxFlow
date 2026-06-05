@@ -84,6 +84,7 @@ export class ComercialDashboard {
   
   // Auxiliares de carregamento/offline
   private isFallbackMode: boolean = false;
+  private profileUpdatedListener: ((e: any) => void) | null = null;
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -104,7 +105,7 @@ export class ComercialDashboard {
       this.perfil = perfil;
 
       // Escuta atualizações do perfil para sincronizar o avatar/nome reativamente
-      window.addEventListener('paxflow-profile-updated', (e: any) => {
+      this.profileUpdatedListener = (e: any) => {
         const { nome, avatar_url } = e.detail;
         if (this.perfil) {
           this.perfil.nome = nome;
@@ -112,7 +113,8 @@ export class ComercialDashboard {
           this.render();
           this.setupEventListeners();
         }
-      });
+      };
+      window.addEventListener('paxflow-profile-updated', this.profileUpdatedListener);
 
       // 2. Carregar dados (consultores, orçamentos, viagens)
       await this.loadConsultores();
@@ -132,7 +134,10 @@ export class ComercialDashboard {
    * Destrutor da página (caso precise limpar timers/ouvintes)
    */
   public destroy(): void {
-    // Sem ouvintes persistentes complexos a limpar
+    if (this.profileUpdatedListener) {
+      window.removeEventListener('paxflow-profile-updated', this.profileUpdatedListener);
+      this.profileUpdatedListener = null;
+    }
   }
 
   /**

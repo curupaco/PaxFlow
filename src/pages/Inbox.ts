@@ -27,6 +27,7 @@ export class InboxPage {
   
   // Global settings
   private prazoReembolsoDias: number = 3;
+  private profileUpdatedListener: ((e: any) => void) | null = null;
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -47,7 +48,7 @@ export class InboxPage {
       this.perfil = perfil;
 
       // Handle profile updates reactively
-      window.addEventListener('paxflow-profile-updated', (e: any) => {
+      this.profileUpdatedListener = (e: any) => {
         const { nome, avatar_url } = e.detail;
         if (this.perfil) {
           this.perfil.nome = nome;
@@ -55,7 +56,8 @@ export class InboxPage {
           this.render();
           this.setupEventListeners();
         }
-      });
+      };
+      window.addEventListener('paxflow-profile-updated', this.profileUpdatedListener);
 
       // 2. Fetch global settings for refund SLAs
       await this.loadGlobalSettings();
@@ -82,7 +84,10 @@ export class InboxPage {
    * Destroy page elements if necessary
    */
   public destroy(): void {
-    // No background timers to clear, cleanly unmounts
+    if (this.profileUpdatedListener) {
+      window.removeEventListener('paxflow-profile-updated', this.profileUpdatedListener);
+      this.profileUpdatedListener = null;
+    }
   }
 
   /**

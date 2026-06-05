@@ -21,6 +21,7 @@ export class ClientesPage {
   private clienteSelecionado: Cliente | null = null;
   private carregandoUpload: boolean = false;
   private buscaTermo: string = '';
+  private profileUpdatedListener: ((e: any) => void) | null = null;
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -41,7 +42,7 @@ export class ClientesPage {
       this.perfil = perfil;
 
       // Escuta reativamente as atualizações do perfil
-      window.addEventListener('paxflow-profile-updated', (e: any) => {
+      this.profileUpdatedListener = (e: any) => {
         const { nome, avatar_url } = e.detail;
         if (this.perfil) {
           this.perfil.nome = nome;
@@ -49,7 +50,8 @@ export class ClientesPage {
           this.render();
           this.setupGlobalEventListeners();
         }
-      });
+      };
+      window.addEventListener('paxflow-profile-updated', this.profileUpdatedListener);
 
       // 2. Buscar clientes cadastrados
       await this.loadClientes();
@@ -63,6 +65,16 @@ export class ClientesPage {
     } catch (err: any) {
       console.error('Erro ao carregar ClientesPage:', err);
       this.renderAuthError(`Erro interno: ${err.message}`);
+    }
+  }
+
+  /**
+   * Limpa ouvintes de eventos globais ao desmontar a página
+   */
+  public destroy(): void {
+    if (this.profileUpdatedListener) {
+      window.removeEventListener('paxflow-profile-updated', this.profileUpdatedListener);
+      this.profileUpdatedListener = null;
     }
   }
 
@@ -280,11 +292,10 @@ export class ClientesPage {
   private setupFormEventListeners(): void {
     const form = document.getElementById('form-cliente') as HTMLFormElement;
     
-    // Tratamento de envio do formulário de cadastro/edição
     // Inicializa a validação em tempo real para os campos de contato e datas
     setupFormValidation('form-cliente', [
       { id: 'input-email', type: 'email' },
-      { id: 'input-telefone', type: 'phone' },
+      { id: 'input-telefone', type: 'phone', required: false },
       { id: 'input-data-nasc', type: 'date', required: false },
       { id: 'input-pass-validade', type: 'date', required: false }
     ]);
@@ -574,12 +585,12 @@ export class ClientesPage {
                 ${renderEmailInputHTML('input-email', c.email)}
               </div>
               <div>
-                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Telefone/WhatsApp *</label>
-                ${renderPhoneInputHTML('input-telefone', c.telefone)}
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Telefone/WhatsApp</label>
+                ${renderPhoneInputHTML('input-telefone', c.telefone, '(11) 99999-9999', false)}
               </div>
               <div>
-                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Documento (CPF/RG) *</label>
-                <input id="input-documento" type="text" required value="${c.documento}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium" />
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Documento (CPF/RG)</label>
+                <input id="input-documento" type="text" value="${c.documento || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium" />
               </div>
               <div>
                 <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Data de Nascimento</label>

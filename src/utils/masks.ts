@@ -460,6 +460,10 @@ export function setupFormValidation(
     }
 
     if (config.type === 'currency') {
+      if (!required && (value === '0,00' || !value.trim() || parseDoubleBr(value) === 0)) {
+        setFieldError(config.id, true, '');
+        return true;
+      }
       const result = validateCurrency(value);
       if (isBlur || value.trim() !== '') {
         setFieldError(config.id, result.isValid, result.message);

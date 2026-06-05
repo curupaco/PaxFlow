@@ -32,6 +32,7 @@ export class OrcamentosPage {
   private buscaTermo: string = '';
   private selectedConsultantId: string = 'todos';
   private filterConcluido: 'todos' | 'fechada' | 'desistencia' = 'todos';
+  private profileUpdatedListener: ((e: any) => void) | null = null;
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -52,14 +53,15 @@ export class OrcamentosPage {
       this.perfil = perfil;
 
       // Escuta reativamente as atualizações do perfil
-      window.addEventListener('paxflow-profile-updated', (e: any) => {
+      this.profileUpdatedListener = (e: any) => {
         const { nome, avatar_url } = e.detail;
         if (this.perfil) {
           this.perfil.nome = nome;
           this.perfil.avatar_url = avatar_url;
           this.render();
         }
-      });
+      };
+      window.addEventListener('paxflow-profile-updated', this.profileUpdatedListener);
 
       // 2. Carregar dados (Orçamentos, Consultores e Clientes)
       await this.loadConsultores();
@@ -76,12 +78,13 @@ export class OrcamentosPage {
       if (targetId) {
         this.openVerNotasModal(targetId);
       }
-
     } catch (err: any) {
-      console.error('Erro ao inicializar OrcamentosPage:', err);
-      this.renderAuthError(`Erro interno ao carregar a página: ${err.message}`);
+      console.error('Erro na inicialização de OrcamentosPage:', err);
+      this.renderAuthError(`Erro interno: ${err.message}`);
     }
   }
+
+
 
   /**
    * Busca todos os consultores cadastrados para o seletor "Mudar Consultor"
@@ -1976,11 +1979,15 @@ export class OrcamentosPage {
   }
 
   /**
-   * Limpeza de listeners ao fechar ou transicionar a página
+   * Limpeza de listeners e conexões realtime ao fechar ou transicionar a página
    */
   public destroy(): void {
     if (this.realtimeChannel) {
       supabase.removeChannel(this.realtimeChannel);
+    }
+    if (this.profileUpdatedListener) {
+      window.removeEventListener('paxflow-profile-updated', this.profileUpdatedListener);
+      this.profileUpdatedListener = null;
     }
   }
 
