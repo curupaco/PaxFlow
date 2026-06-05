@@ -242,9 +242,25 @@ export class ComercialDashboard {
     if (savedOrc) {
       try {
         const parsed = JSON.parse(savedOrc);
+        const mapped = (parsed || []).map((d: any) => ({
+          id: d.id,
+          consultorId: d.consultor_id || d.consultorId,
+          nomeCliente: d.nome_cliente || d.nomeCliente,
+          contato: d.contato,
+          destino: d.destino,
+          dataViagem: d.data_viagem || d.dataViagem,
+          temperatura: d.temperatura,
+          tags: d.tags || [],
+          status: d.status,
+          subStatus: d.sub_status || d.subStatus,
+          notasNegociacao: d.notas_negociacao || d.notasNegociacao,
+          valorProposta: d.valor_proposta !== undefined ? Number(d.valor_proposta) : (d.valorProposta !== undefined ? Number(d.valorProposta) : undefined),
+          createdAt: d.created_at || d.createdAt,
+          updatedAt: d.updated_at || d.updatedAt
+        }));
         this.orcamentos = (this.perfil && this.perfil.role !== 'admin')
-          ? parsed.filter((o: any) => o.consultorId === this.user.id)
-          : parsed;
+          ? mapped.filter((o: any) => o.consultorId === this.user.id)
+          : mapped;
       } catch (e) {
         this.orcamentos = [];
       }
@@ -255,9 +271,23 @@ export class ComercialDashboard {
     if (savedVia) {
       try {
         const parsed = JSON.parse(savedVia);
+        const mapped = (parsed || []).map((d: any) => ({
+          id: d.id,
+          clienteId: d.cliente_id || d.clienteId,
+          consultorId: d.consultor_id || d.consultorId,
+          destino: d.destino,
+          dataIda: d.data_ida || d.dataIda,
+          dataVolta: d.data_volta || d.dataVolta,
+          valorTotal: d.valor_total !== undefined ? Number(d.valor_total) : (d.valorTotal !== undefined ? Number(d.valorTotal) : 0),
+          status: d.status,
+          codigoLocalizador: d.codigo_localizador || d.codigoLocalizador,
+          observacoes: d.observacoes,
+          createdAt: d.created_at || d.createdAt,
+          updatedAt: d.updated_at || d.updatedAt
+        }));
         this.viagens = (this.perfil && this.perfil.role !== 'admin')
-          ? parsed.filter((v: any) => v.consultorId === this.user.id)
-          : parsed;
+          ? mapped.filter((v: any) => v.consultorId === this.user.id)
+          : mapped;
       } catch (e) {
         this.viagens = [];
       }
@@ -739,6 +769,12 @@ export class ComercialDashboard {
     const w3 = t2_cotacao > 0 ? (t3_negociacao / t2_cotacao) * 100 : 0;
     const w4 = t3_negociacao > 0 ? (t4_ganho / t3_negociacao) * 100 : 0;
 
+    // Percentuais absolutos para largura visual do funil (tapering width relative to Stage 1)
+    const width1 = 100;
+    const width2 = w2;
+    const width3 = t1_leads > 0 ? (t3_negociacao / t1_leads) * 100 : 0;
+    const width4 = t1_leads > 0 ? (t4_ganho / t1_leads) * 100 : 0;
+
     const formatBRL = (val: number) => val.toLocaleString('pt-BR', { maximumFractionDigits: 0 });
 
     if (total === 0) {
@@ -759,7 +795,7 @@ export class ComercialDashboard {
             <span class="font-extrabold text-slate-700 dark:text-slate-300">${t1_leads} orçamentos &bull; R$ ${formatBRL(valorTotalFunnel)}</span>
           </div>
           <div class="w-full bg-slate-100 dark:bg-slate-850 h-7 rounded-xl overflow-hidden relative">
-            <div class="bg-gradient-to-r from-indigo-500 to-indigo-650 h-full rounded-xl funnel-bar-fill transition-all duration-300" style="width: ${w1}%"></div>
+            <div class="bg-gradient-to-r from-indigo-500 to-indigo-650 h-full rounded-xl funnel-bar-fill transition-all duration-300" style="width: ${width1}%"></div>
             <span class="absolute inset-0 flex items-center pl-3.5 text-[10px] font-black text-white select-none">100% dos Leads</span>
           </div>
         </div>
@@ -771,19 +807,19 @@ export class ComercialDashboard {
             <span class="font-extrabold text-slate-700 dark:text-slate-300">${t2_cotacao} orçamentos (${(t1_leads > 0 ? (t2_cotacao/t1_leads)*100 : 0).toFixed(0)}% avanço)</span>
           </div>
           <div class="w-full bg-slate-100 dark:bg-slate-850 h-7 rounded-xl overflow-hidden relative">
-            <div class="bg-gradient-to-r from-violet-500 to-violet-650 h-full rounded-xl funnel-bar-fill transition-all duration-300" style="width: ${w2 > 0 ? Math.max(w2, 10) : 0}%"></div>
+            <div class="bg-gradient-to-r from-violet-500 to-violet-650 h-full rounded-xl funnel-bar-fill transition-all duration-300" style="width: ${width2 > 0 ? Math.max(width2, 10) : 0}%"></div>
             <span class="absolute inset-0 flex items-center pl-3.5 text-[10px] font-black ${w2 > 35 ? 'text-white' : 'text-slate-650 dark:text-slate-350'} select-none">${w2.toFixed(0)}% do volume</span>
           </div>
         </div>
 
         <!-- Nível 3: Apresentado/Aguardando -->
         <div class="space-y-1.5">
-          <div class="flex justify-between items-center text-[10px] font-bold text-slate-450 dark:text-slate-500 uppercase tracking-wide">
+          <div class="flex justify-between items-center text-[10px] font-bold text-slate-455 dark:text-slate-500 uppercase tracking-wide">
             <span>3. Proposta Enviada</span>
             <span class="font-extrabold text-slate-700 dark:text-slate-300">${t3_negociacao} orçamentos (${(t2_cotacao > 0 ? (t3_negociacao/t2_cotacao)*100 : 0).toFixed(0)}% avanço)</span>
           </div>
           <div class="w-full bg-slate-100 dark:bg-slate-850 h-7 rounded-xl overflow-hidden relative">
-            <div class="bg-gradient-to-r from-purple-500 to-purple-650 h-full rounded-xl funnel-bar-fill transition-all duration-300" style="width: ${w3 > 0 ? Math.max(w3, 10) : 0}%"></div>
+            <div class="bg-gradient-to-r from-purple-500 to-purple-650 h-full rounded-xl funnel-bar-fill transition-all duration-300" style="width: ${width3 > 0 ? Math.max(width3, 10) : 0}%"></div>
             <span class="absolute inset-0 flex items-center pl-3.5 text-[10px] font-black ${w3 > 35 ? 'text-white' : 'text-slate-650 dark:text-slate-350'} select-none">${w3.toFixed(0)}% de cotações</span>
           </div>
         </div>
@@ -795,7 +831,7 @@ export class ComercialDashboard {
             <span class="font-extrabold text-slate-700 dark:text-slate-300">${t4_ganho} fechamentos (${(t3_negociacao > 0 ? (t4_ganho/t3_negociacao)*100 : 0).toFixed(0)}% conversão final)</span>
           </div>
           <div class="w-full bg-slate-100 dark:bg-slate-850 h-7 rounded-xl overflow-hidden relative">
-            <div class="bg-gradient-to-r from-emerald-500 to-emerald-650 h-full rounded-xl funnel-bar-fill transition-all duration-300" style="width: ${w4 > 0 ? Math.max(w4, 10) : 0}%"></div>
+            <div class="bg-gradient-to-r from-emerald-500 to-emerald-650 h-full rounded-xl funnel-bar-fill transition-all duration-300" style="width: ${width4 > 0 ? Math.max(width4, 10) : 0}%"></div>
             <span class="absolute inset-0 flex items-center pl-3.5 text-[10px] font-black ${w4 > 35 ? 'text-white' : 'text-slate-650 dark:text-slate-350'} select-none">${w4.toFixed(0)}% conversão</span>
           </div>
         </div>

@@ -914,10 +914,9 @@ export class Dashboard {
           <div class="flex flex-wrap items-center justify-between gap-3 p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/50 dark:border-slate-800">
             <div class="flex items-center gap-2">
               <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Responsável:</span>
-              <div class="flex items-center gap-1.5 bg-white dark:bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-200/60 dark:border-slate-800 text-xs font-bold shadow-sm">
-                <div class="shrink-0">${consultorAvatar}</div>
-                <span class="text-slate-700 dark:text-slate-200">${consultorNome}</span>
-              </div>
+              <select id="edit-viagem-consultor" required class="px-2.5 py-1 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-700 dark:text-slate-200 text-xs font-bold shadow-sm cursor-pointer">
+                ${this.consultores.map(c => `<option value="${c.id}" ${c.id === v.consultor_id ? 'selected' : ''}>${c.nome}</option>`).join('')}
+              </select>
             </div>
             
             ${sla.alert ? `
@@ -1229,6 +1228,7 @@ export class Dashboard {
       e.preventDefault();
 
       const clienteId = (document.getElementById('edit-viagem-cliente') as HTMLSelectElement).value;
+      const consultorId = (document.getElementById('edit-viagem-consultor') as HTMLSelectElement).value;
       const destino = (document.getElementById('edit-viagem-destino') as HTMLInputElement).value;
       const loc = (document.getElementById('edit-viagem-loc') as HTMLInputElement).value;
       const valorRaw = (document.getElementById('edit-viagem-valor') as HTMLInputElement).value.trim();
@@ -1253,6 +1253,7 @@ export class Dashboard {
 
       const payload = {
         cliente_id: clienteId,
+        consultor_id: consultorId,
         destino: destino,
         codigo_localizador: loc || null,
         valor_total: valor,
@@ -1269,6 +1270,28 @@ export class Dashboard {
           .eq('id',  v.id);
 
         if (error) throw error;
+
+        // Atualização otimista/offline em memória e LocalStorage
+        const clientObj = clientes.find(c => c.id === clienteId);
+        const viagemIdx = this.viagens.findIndex(item => item.id === v.id);
+        if (viagemIdx !== -1) {
+          const existing = this.viagens[viagemIdx];
+          this.viagens[viagemIdx] = {
+            ...existing,
+            cliente_id: clienteId,
+            cliente: clientObj ? { id: clientObj.id, nome: clientObj.nome } : existing.cliente,
+            consultor_id: consultorId,
+            destino: destino,
+            codigo_localizador: loc || null,
+            valor_total: valor,
+            data_ida: dataIda,
+            data_volta: dataVolta,
+            status: status,
+            observacoes: obs || null,
+            updated_at: new Date().toISOString()
+          };
+          this.saveViagensToLocalStorage();
+        }
 
         this.showToast('Viagem atualizada com sucesso!', 'success');
         this.closeModal();
@@ -1912,7 +1935,9 @@ export class Dashboard {
         ${this.perfil?.role === 'admin' ? `
           <div class="border-t border-slate-50 dark:border-slate-800/40 pt-1.5 mt-1.5 flex items-center justify-between text-[9px] text-slate-400 dark:text-slate-500 font-medium">
             <span>Consultor Resp:</span>
-            <span class="font-extrabold text-slate-600 dark:text-slate-400">${v.consultor_id === this.user.id ? 'Você' : 'Outro Consultor'}</span>
+            <span class="font-extrabold text-slate-600 dark:text-slate-400">
+              ${v.consultor_id === this.user.id ? 'Você' : (this.consultores.find(c => c.id === v.consultor_id)?.nome || 'Outro Consultor')}
+            </span>
           </div>
         ` : ''}
 

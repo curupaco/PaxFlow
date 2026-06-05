@@ -4,11 +4,13 @@ import { CommentsService } from '../../services/comments';
 
 export interface VerNotasModalOptions {
   user: any;
+  perfil: PerfilConsultor | null;
   consultores: PerfilConsultor[];
   formatarDataBr: (dStr?: string) => string;
   calcularTempoAmigavel: (dataIso: string) => string;
   closeModal: () => void;
   showToast: (message: string, type: 'success' | 'error') => void;
+  onUpdate?: (updatedOrc: Orcamento) => Promise<boolean>;
 }
 
 export class VerNotasModal {
@@ -123,15 +125,17 @@ export class VerNotasModal {
             
             <!-- Temperatura -->
             <div>
-              <span class="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1.5">Temperatura</span>
-              <span class="px-2.5 py-1 rounded text-xs font-black uppercase tracking-wider ${tempClass} block text-center select-none">
-                ${orc.temperatura}
-              </span>
+              <span class="block text-[10px] font-black text-slate-400 dark:text-slate-505 uppercase tracking-wider mb-1.5">Temperatura</span>
+              <select id="select-detail-temperatura" class="w-full px-2.5 py-1 border border-transparent rounded text-xs font-black uppercase tracking-wider ${tempClass} text-center cursor-pointer focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                <option value="Frio" class="bg-white dark:bg-slate-900 text-sky-700 dark:text-sky-400" ${orc.temperatura === 'Frio' ? 'selected' : ''}>Frio</option>
+                <option value="Normal" class="bg-white dark:bg-slate-900 text-amber-700 dark:text-amber-400" ${orc.temperatura === 'Normal' ? 'selected' : ''}>Normal</option>
+                <option value="Quente" class="bg-white dark:bg-slate-900 text-rose-700 dark:text-rose-455" ${orc.temperatura === 'Quente' ? 'selected' : ''}>Quente</option>
+              </select>
             </div>
 
             <!-- Status do Lead -->
             <div>
-              <span class="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1.5">Status da Negociação</span>
+              <span class="block text-[10px] font-black text-slate-400 dark:text-slate-505 uppercase tracking-wider mb-1.5">Status da Negociação</span>
               <span class="px-2.5 py-1 rounded text-xs font-black uppercase tracking-wider ${statusClass} block text-center select-none">
                 ${statusText}
               </span>
@@ -140,10 +144,16 @@ export class VerNotasModal {
             <!-- Consultor Responsável -->
             <div>
               <span class="block text-[10px] font-black text-slate-400 dark:text-slate-555 uppercase tracking-wider mb-1.5">Consultor Responsável</span>
-              <div class="flex items-center gap-2 bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-200/50 dark:border-slate-800">
-                <div class="shrink-0">${consultorAvatar}</div>
-                <span class="text-xs font-extrabold text-slate-700 dark:text-slate-200 truncate leading-snug">${consultorNome}</span>
-              </div>
+              ${options.perfil?.role === 'admin' ? `
+                <select id="select-detail-responsavel" class="w-full px-2.5 py-2 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-700 dark:text-slate-200 text-xs font-bold shadow-sm cursor-pointer">
+                  ${options.consultores.map(c => `<option value="${c.id}" ${c.id === orc.consultorId ? 'selected' : ''}>${c.nome} (${c.role})</option>`).join('')}
+                </select>
+              ` : `
+                <div class="flex items-center gap-2 bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-200/50 dark:border-slate-800">
+                  <div class="shrink-0">${consultorAvatar}</div>
+                  <span class="text-xs font-extrabold text-slate-700 dark:text-slate-200 truncate leading-snug">${consultorNome}</span>
+                </div>
+              `}
             </div>
 
             <!-- Contatos Clicáveis -->
@@ -191,6 +201,41 @@ export class VerNotasModal {
     const handleClose = () => options.closeModal();
     document.getElementById('btn-close-modal-x')?.addEventListener('click', handleClose);
     document.getElementById('btn-close-modal')?.addEventListener('click', handleClose);
+
+    // Event listener para alterar temperatura
+    const selectTemp = document.getElementById('select-detail-temperatura') as HTMLSelectElement;
+    selectTemp?.addEventListener('change', async () => {
+      const newVal = selectTemp.value as 'Frio' | 'Normal' | 'Quente';
+      orc.temperatura = newVal;
+      
+      // Atualizar classe do seletor
+      selectTemp.className = `w-full px-2.5 py-1 border border-transparent rounded text-xs font-black uppercase tracking-wider text-center cursor-pointer focus:outline-none focus:ring-1 focus:ring-indigo-500 ${temperaturaClasses[newVal]}`;
+      
+      if (options.onUpdate) {
+        const success = await options.onUpdate(orc);
+        if (success) {
+          options.showToast('Temperatura atualizada!', 'success');
+        } else {
+          options.showToast('Erro ao atualizar temperatura.', 'error');
+        }
+      }
+    });
+
+    // Event listener para alterar consultor responsável (apenas admin)
+    const selectResp = document.getElementById('select-detail-responsavel') as HTMLSelectElement;
+    selectResp?.addEventListener('change', async () => {
+      const newVal = selectResp.value;
+      orc.consultorId = newVal;
+      
+      if (options.onUpdate) {
+        const success = await options.onUpdate(orc);
+        if (success) {
+          options.showToast('Consultor responsável atualizado!', 'success');
+        } else {
+          options.showToast('Erro ao reatribuir consultor.', 'error');
+        }
+      }
+    });
 
     // Botões de visualização de arquivos anexos
     modalContent.querySelectorAll('.btn-view-proposal-file').forEach(btn => {

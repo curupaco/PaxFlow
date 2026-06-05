@@ -14,7 +14,8 @@ import {
   setupFormValidation,
   getFormattedPhoneToDb,
   formatBrDateToIso,
-  parseDoubleBr
+  parseDoubleBr,
+  parsePhoneValue
 } from '../utils/masks';
 import './Orcamentos.css';
 
@@ -1109,7 +1110,16 @@ export class OrcamentosPage {
           e.stopPropagation();
           
           inputNome.value = c.nome || '';
-          inputTelefone.value = c.telefone || '';
+          if (c.telefone) {
+            const { ddi, number } = parsePhoneValue(c.telefone);
+            inputTelefone.value = number;
+            const ddiSelect = document.getElementById('input-orc-telefone-ddi') as HTMLSelectElement;
+            if (ddiSelect) {
+              ddiSelect.value = ddi;
+            }
+          } else {
+            inputTelefone.value = '';
+          }
           inputEmail.value = c.email || '';
           this.selectedClienteId = c.id;
           
@@ -1223,55 +1233,81 @@ export class OrcamentosPage {
       let finalClienteId = this.selectedClienteId;
       let isNewClientCreated = false;
       if (!finalClienteId) {
-        // Tenta buscar se já existe um cliente com o mesmo email ou telefone para vinculação automática
-        let orQuery: string[] = [];
-        if (emailVal) orQuery.push(`email.eq.${emailVal}`);
-        if (telVal) orQuery.push(`telefone.eq.${telVal}`);
-        
-        let existingCli: any[] = [];
-        if (orQuery.length > 0) {
-          try {
-            let query = supabase.from('clientes').select('id');
-            if (orQuery.length === 1) {
-              const parts = orQuery[0].split('.eq.');
-              query = query.eq(parts[0], parts[1]);
-            } else {
-              query = query.or(orQuery.join(','));
-            }
-            const { data, error } = await query.limit(1);
-            if (!error && data && data.length > 0) {
-              existingCli = data;
-            }
-          } catch (err) {
-            console.warn('Erro ao buscar cliente existente:', err);
-          }
-        }
-        
-        if (existingCli.length > 0) {
-          finalClienteId = existingCli[0].id;
+        // 1. Tenta buscar na lista local de clientes (this.clientes) por e-mail, telefone ou nome exato
+        const matchedLocal = this.clientes.find(c => 
+          (emailVal && c.email?.toLowerCase().trim() === emailVal.toLowerCase().trim()) ||
+          (telVal && c.telefone?.replace(/\D/g, '') === telVal.replace(/\D/g, '')) ||
+          (nomeVal && c.nome?.toLowerCase().trim() === nomeVal.toLowerCase().trim())
+        );
+
+        if (matchedLocal) {
+          finalClienteId = matchedLocal.id;
         } else {
-          // Cadastrar novo cliente no Supabase
-          try {
-            const { data: newCli, error: errCli } = await supabase
-              .from('clientes')
-              .insert({
-                nome: nomeVal,
-                email: emailVal || null,
-                telefone: telVal || null,
-                consultor_responsavel_id: consultorVal,
-                observacoes: 'Criado automaticamente através do cadastro de Orçamento'
-              })
-              .select()
-              .single();
+          // 2. Se não achar localmente, tenta no Supabase (se não estiver em fallback)
+          if (!this.isFallbackMode) {
+            try {
+              let orQuery: string[] = [];
+              if (emailVal) orQuery.push(`email.eq.${emailVal}`);
+              if (telVal) orQuery.push(`telefone.eq.${telVal}`);
+              if (nomeVal) orQuery.push(`nome.eq.${nomeVal}`);
               
-            if (errCli) {
-              console.error('Erro ao cadastrar cliente automaticamente no orçamento:', errCli);
-            } else if (newCli) {
-              finalClienteId = newCli.id;
-              isNewClientCreated = true;
+              let existingCli: any[] = [];
+              if (orQuery.length > 0) {
+                let query = supabase.from('clientes').select('id');
+                if (orQuery.length === 1) {
+                  const parts = orQuery[0].split('.eq.');
+                  query = query.eq(parts[0], parts[1]);
+                } else {
+                  query = query.or(orQuery.join(','));
+                }
+                const { data, error } = await query.limit(1);
+                if (!error && data && data.length > 0) {
+                  existingCli = data;
+                }
+              }
+              
+              if (existingCli.length > 0) {
+                finalClienteId = existingCli[0].id;
+              } else {
+                // Cadastrar novo cliente no Supabase
+                const { data: newCli, error: errCli } = await supabase
+                  .from('clientes')
+                  .insert({
+                    nome: nomeVal,
+                    email: emailVal || null,
+                    telefone: telVal || null,
+                    consultor_responsavel_id: consultorVal,
+                    observacoes: 'Criado automaticamente através do cadastro de Orçamento'
+                  })
+                  .select()
+                  .single();
+                  
+                if (newCli) {
+                  finalClienteId = newCli.id;
+                  isNewClientCreated = true;
+                }
+              }
+            } catch (err) {
+              console.error('Erro ao cadastrar/buscar cliente no Supabase:', err);
             }
-          } catch (err) {
-            console.error('Erro ao cadastrar cliente automaticamente no orçamento:', err);
+          }
+          
+          // 3. Se ainda assim não tiver ID (ou se for fallback mode), cria um ID offline temporário
+          if (!finalClienteId) {
+            finalClienteId = 'cli-offline-' + Math.random().toString(36).substr(2, 9);
+            isNewClientCreated = true;
+            
+            // Adiciona na lista local de clientes
+            const newLocalClient = {
+              id: finalClienteId,
+              nome: nomeVal,
+              email: emailVal,
+              telefone: telVal,
+              consultorResponsavelId: consultorVal,
+              observacoes: 'Criado automaticamente (Offline)'
+            };
+            this.clientes.push(newLocalClient);
+            localStorage.setItem('paxflow-clientes-backup', JSON.stringify(this.clientes));
           }
         }
       }
@@ -1595,6 +1631,20 @@ export class OrcamentosPage {
               tVal = found.telefone || tVal;
               eVal = found.email || eVal;
               docVal = found.documento || docVal;
+            }
+          }
+          // Local fallback backup lookup for trips
+          const savedTrips = localStorage.getItem('paxflow-viagens-local');
+          if (savedTrips) {
+            try {
+              const allTrips = JSON.parse(savedTrips);
+              activeTrips = allTrips.filter((v: any) => 
+                (v.cliente_id === cId || v.clienteId === cId) && 
+                v.status !== 'cancelada' && 
+                v.status !== 'concluida'
+              );
+            } catch (errTrips) {
+              console.warn('Erro ao fazer parse das viagens locais:', errTrips);
             }
           }
         }
@@ -1999,11 +2049,20 @@ export class OrcamentosPage {
     this.renderModalOverlay();
     VerNotasModal.open(orc, {
       user: this.user,
+      perfil: this.perfil,
       consultores: this.consultores,
       formatarDataBr: (dStr?: string) => this.formatarDataBr(dStr),
       calcularTempoAmigavel: (dataIso: string) => this.calcularTempoAmigavel(dataIso),
       closeModal: () => this.closeModal(),
-      showToast: (message: string, type: 'success' | 'error') => this.showToast(message, type)
+      showToast: (message: string, type: 'success' | 'error') => this.showToast(message, type),
+      onUpdate: async (updatedOrc) => {
+        const success = await this.persistOrcamento(updatedOrc);
+        if (success) {
+          await this.loadOrcamentos();
+          this.render();
+        }
+        return success;
+      }
     });
   }
 
