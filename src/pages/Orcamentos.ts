@@ -1082,10 +1082,19 @@ export class OrcamentosPage {
       }
 
       const matches = this.clientes.filter(c => {
-        const nomeMatch = c.nome?.toLowerCase().includes(val);
-        const telMatch = c.telefone?.replace(/\D/g, '').includes(val.replace(/\D/g, '')) || c.telefone?.toLowerCase().includes(val);
-        const emailMatch = c.email?.toLowerCase().includes(val);
-        return nomeMatch || telMatch || emailMatch;
+        if (field === 'nome') {
+          return c.nome?.toLowerCase().includes(val);
+        } else if (field === 'telefone') {
+          const digitsVal = val.replace(/\D/g, '');
+          if (!digitsVal) {
+            return c.telefone?.toLowerCase().includes(val);
+          }
+          const digitsTel = c.telefone?.replace(/\D/g, '') || '';
+          return digitsTel.includes(digitsVal) || c.telefone?.toLowerCase().includes(val);
+        } else if (field === 'email') {
+          return c.email?.toLowerCase().includes(val);
+        }
+        return false;
       });
 
       if (matches.length === 0) return;
@@ -1130,7 +1139,11 @@ export class OrcamentosPage {
         dropdown.appendChild(item);
       });
 
-      inputEl.parentElement?.appendChild(dropdown);
+      const container = inputEl.closest('.relative') || 
+                        inputEl.closest('.phone-field-wrapper') || 
+                        inputEl.closest('.email-field-wrapper') || 
+                        inputEl.parentElement;
+      container?.appendChild(dropdown);
     };
 
     const setupInputAutocomplete = (inputEl: HTMLInputElement, field: 'nome' | 'telefone' | 'email') => {

@@ -270,7 +270,7 @@ export function renderPhoneInputHTML(id: string, value: string, placeholder = '(
   const disabledClass = readonly ? 'bg-slate-50 dark:bg-slate-900 cursor-not-allowed text-slate-550 dark:text-slate-405' : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100';
 
   return `
-    <div id="${containerId}" class="phone-field-wrapper w-full">
+    <div id="${containerId}" class="phone-field-wrapper w-full relative">
       <div class="flex rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500 overflow-hidden w-full transition duration-150">
         <select id="${selectId}" ${readonly ? 'disabled' : ''} class="px-2 bg-slate-50 dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 text-xs font-semibold focus:outline-none cursor-pointer">
           ${optionsHtml}
@@ -315,7 +315,7 @@ export function renderEmailInputHTML(id: string, initialValue: string, placehold
   const disabledClass = readonly ? 'bg-slate-50 dark:bg-slate-900 cursor-not-allowed text-slate-550 dark:text-slate-405' : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100';
 
   return `
-    <div id="${containerId}" class="email-field-wrapper w-full">
+    <div id="${containerId}" class="email-field-wrapper w-full relative">
       <input id="${id}" type="email" ${readonlyAttr} ${required ? 'required' : ''} value="${initialValue || ''}" placeholder="${placeholder}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition duration-155 ${disabledClass}" autocomplete="off" />
       <p id="${errorId}" class="hidden text-xs text-rose-500 font-bold mt-1.5"></p>
     </div>

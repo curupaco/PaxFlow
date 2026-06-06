@@ -372,7 +372,7 @@ export class Dashboard {
               try {
                 const { data, error } = await supabase
                   .from('produtos_viagem')
-                  .select('valor_venda')
+                  .select('valor_venda, tarifa, taxa, comissao, fornecedor, descricao')
                   .eq('viagem_id', tripId);
                 if (!error && data) {
                   produtos = data;
@@ -399,6 +399,24 @@ export class Dashboard {
 
             if (Math.abs(pendente) > 0.01) {
               this.showToast(`Não é possível avançar a viagem. Existe um saldo financeiro pendente de R$ ${pendente.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}. Adicione produtos na aba "Produtos e Serviços" para zerar este saldo.`, 'error');
+              
+              // Reverte a movimentação no Kanban
+              this.render();
+              this.setupDragAndDrop();
+              return;
+            }
+
+            // Validação de detalhamento dos produtos
+            const produtoNaoDetalhado = produtos.find(p => {
+              const tarifa = Number(p.tarifa) || 0;
+              const taxa = Number(p.taxa) || 0;
+              const comissao = Number(p.comissao) || 0;
+              const totalDet = tarifa + taxa + comissao;
+              return Math.abs(Number(p.valor_venda || 0) - totalDet) > 0.01;
+            });
+
+            if (produtoNaoDetalhado) {
+              this.showToast(`Não é possível avançar a viagem. O produto "${produtoNaoDetalhado.fornecedor} - ${produtoNaoDetalhado.descricao}" não está com seus valores 100% detalhados (soma de Tarifa + Taxa + Comissão deve ser igual ao Valor de Venda do produto).`, 'error');
               
               // Reverte a movimentação no Kanban
               this.render();
@@ -860,7 +878,7 @@ export class Dashboard {
   /**
    * Abre o Modal Dinâmico de Edição de Viagem e Gestão de Produtos
    */
-  private async openEdicaoEProdutosModal(tripId: string): Promise<void> {
+  private async openEdicaoEProdutosModal(tripId: string, activeTab: 'detalhes' | 'produtos' = 'detalhes'): Promise<void> {
     try {
       this.renderModalOverlay();
       const modalContent = document.getElementById('modal-content-container');
@@ -906,7 +924,7 @@ export class Dashboard {
       if (errClientes) throw errClientes;
 
       // 3. Renderiza a estrutura do Modal com as Abas
-      this.renderEdicaoEProdutosModalContent(viagem, clientes || []);
+      this.renderEdicaoEProdutosModalContent(viagem, clientes || [], activeTab);
       
       // 4. Carrega e exibe os produtos da viagem
       await this.loadAndRenderProdutosViagem(tripId);
@@ -921,7 +939,7 @@ export class Dashboard {
   /**
    * Renderiza a estrutura interna do Modal de Edição & Produtos
    */
-  private renderEdicaoEProdutosModalContent(v: any, clientes: any[]): void {
+  private renderEdicaoEProdutosModalContent(v: any, clientes: any[], activeTab: 'detalhes' | 'produtos' = 'detalhes'): void {
     const modalContent = document.getElementById('modal-content-container');
     if (!modalContent) return;
 
@@ -950,10 +968,10 @@ export class Dashboard {
 
         <!-- Seletor de Abas Premium -->
         <div class="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 mb-5 pb-px">
-          <button id="tab-detalhes-btn" class="border-b-2 border-indigo-600 dark:border-indigo-400 px-4 py-2 text-sm font-black text-indigo-600 dark:text-indigo-400 transition">
+          <button id="tab-detalhes-btn" class="border-b-2 ${activeTab === 'detalhes' ? 'border-indigo-600 dark:border-indigo-400 text-indigo-600 dark:text-indigo-400 font-black' : 'border-transparent text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200 font-semibold'} px-4 py-2 text-sm transition">
             📝 Detalhes e Edição
           </button>
-          <button id="tab-produtos-btn" class="border-b-2 border-transparent px-4 py-2 text-sm font-semibold text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200 transition">
+          <button id="tab-produtos-btn" class="border-b-2 ${activeTab === 'produtos' ? 'border-indigo-600 dark:border-indigo-400 text-indigo-600 dark:text-indigo-400 font-black' : 'border-transparent text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200 font-semibold'} px-4 py-2 text-sm transition">
             🛍️ Produtos e Serviços
           </button>
           ${v.reembolsos && v.reembolsos.length > 0 ? `
@@ -964,7 +982,7 @@ export class Dashboard {
         </div>
 
         <!-- CONTEÚDO DA ABA 1: DETALHES E EDIÇÃO -->
-        <div id="tab-detalhes-content" class="space-y-4">
+        <div id="tab-detalhes-content" class="space-y-4 ${activeTab === 'produtos' ? 'hidden' : ''}">
           <!-- Detalhes do Dono e SLA no Topo -->
           <div class="flex flex-wrap items-center justify-between gap-3 p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/50 dark:border-slate-800">
             <div class="flex items-center gap-2">
@@ -1054,7 +1072,7 @@ export class Dashboard {
         </div>
 
         <!-- CONTEÚDO DA ABA 2: PRODUTOS E SERVIÇOS -->
-        <div id="tab-produtos-content" class="hidden space-y-5">
+        <div id="tab-produtos-content" class="${activeTab === 'produtos' ? '' : 'hidden'} space-y-5">
           
           <!-- Painel Financeiro (Totalizadores e Saldo Pendente) -->
           <div id="painel-financeiro-produtos" class="grid grid-cols-3 gap-3 p-3.5 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/50 dark:border-slate-800 mb-4">
@@ -1336,7 +1354,7 @@ export class Dashboard {
           try {
             const { data, error } = await supabase
               .from('produtos_viagem')
-              .select('valor_venda')
+              .select('valor_venda, tarifa, taxa, comissao, fornecedor, descricao')
               .eq('viagem_id', v.id);
             if (!error && data) {
               produtos = data;
@@ -1353,6 +1371,20 @@ export class Dashboard {
         const pendente = valor - totalProdutos;
         if (Math.abs(pendente) > 0.01) {
           this.showToast(`Não é possível alterar o status para "${status.replace('_', ' ')}". Existe um saldo financeiro pendente de R$ ${pendente.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}. Adicione produtos na aba "Produtos e Serviços" para zerar este saldo.`, 'error');
+          return;
+        }
+
+        // Validação de detalhamento dos produtos
+        const produtoNaoDetalhado = produtos.find(p => {
+          const tarifa = Number(p.tarifa) || 0;
+          const taxa = Number(p.taxa) || 0;
+          const comissao = Number(p.comissao) || 0;
+          const totalDet = tarifa + taxa + comissao;
+          return Math.abs(Number(p.valor_venda || 0) - totalDet) > 0.01;
+        });
+
+        if (produtoNaoDetalhado) {
+          this.showToast(`Não é possível alterar o status para "${status.replace('_', ' ')}". O produto "${produtoNaoDetalhado.fornecedor} - ${produtoNaoDetalhado.descricao}" não está com seus valores 100% detalhados (soma de Tarifa + Taxa + Comissão deve ser igual ao Valor de Venda do produto).`, 'error');
           return;
         }
       }
@@ -1611,9 +1643,14 @@ export class Dashboard {
       };
 
       const commentsCount = commentsCountMap[p.id] || 0;
+      const tarifa = Number(p.tarifa) || 0;
+      const taxa = Number(p.taxa) || 0;
+      const comissao = Number(p.comissao) || 0;
+      const totalDet = tarifa + taxa + comissao;
+      const isDetalhado = Math.abs(Number(p.valor_venda || 0) - totalDet) < 0.01;
 
       return `
-        <div class="flex items-center justify-between gap-3 p-3 bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-850 rounded-xl hover:bg-slate-100/50 dark:hover:bg-slate-800/80 transition">
+        <div class="product-card-clickable flex items-center justify-between gap-3 p-3 bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-850 rounded-xl hover:bg-slate-100/50 dark:hover:bg-slate-800/80 transition cursor-pointer" data-product-id="${p.id}">
           <div class="flex items-start gap-2.5 overflow-hidden">
             <span class="text-lg p-1 bg-white dark:bg-slate-700 border border-slate-100 dark:border-slate-650 rounded-lg shadow-sm flex items-center justify-center">${iconesMap[p.tipo] || '📦'}</span>
             <div class="overflow-hidden bg-slate-50/10">
@@ -1621,6 +1658,11 @@ export class Dashboard {
               <span class="block text-[10px] text-slate-400 dark:text-slate-550 font-bold leading-normal">
                 ${p.codigo_reserva ? `LOC: <span class="text-slate-600 dark:text-slate-355 font-extrabold">${p.codigo_reserva}</span> &bull; ` : ''} 
                 Data: <span class="text-slate-600 dark:text-slate-355 font-semibold">${formatarData(p.data_servico)}</span>
+              </span>
+              <span class="block text-[10px] leading-normal font-bold ${isDetalhado ? 'text-indigo-500 dark:text-indigo-400' : 'text-amber-500 dark:text-amber-450 animate-pulse'}">
+                ${isDetalhado 
+                  ? `Tarifa: R$ ${tarifa.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} &bull; Taxa: R$ ${taxa.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} &bull; Comis.: R$ ${comissao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` 
+                  : '⚠️ Detalhamento pendente (clique para detalhar)'}
               </span>
             </div>
           </div>
@@ -1701,6 +1743,19 @@ export class Dashboard {
         }
       });
     });
+
+    // Ouvintes de clique no card para detalhamento
+    container.querySelectorAll('.product-card-clickable').forEach(card => {
+      card.addEventListener('click', (e) => {
+        const target = e.target as HTMLElement;
+        if (target.closest('button')) return;
+        const prodId = card.getAttribute('data-product-id');
+        const prod = produtos.find(x => x.id === prodId);
+        if (prod) {
+          this.openProductDetailsModal(prod, tripId);
+        }
+      });
+    });
   }
 
   /**
@@ -1746,6 +1801,201 @@ export class Dashboard {
       overlay.classList.remove('opacity-100', 'pointer-events-auto');
       overlay.classList.add('opacity-0', 'pointer-events-none');
     }
+  }
+
+  /**
+   * Abre o Modal de Detalhamento de Valores (Tarifa, Taxa, Comissão) para um produto
+   */
+  private openProductDetailsModal(p: any, tripId: string): void {
+    this.renderModalOverlay();
+
+    const modalContent = document.getElementById('modal-content-container');
+    if (!modalContent) return;
+
+    // Ajusta largura do modal de volta ao padrão
+    modalContent.classList.remove('max-w-2xl');
+    modalContent.classList.add('max-w-lg');
+
+    const iconesMap: { [key: string]: string } = {
+      voo: '✈️',
+      hotel: '🏨',
+      seguro: '🛡️',
+      passeio: '🎟️',
+      outro: '📦'
+    };
+
+    const tipoIcon = iconesMap[p.tipo] || '📦';
+    const valorVenda = Number(p.valor_venda) || 0;
+
+    modalContent.innerHTML = `
+      <div class="p-6">
+        <!-- Topo com Título e Fechar -->
+        <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 mb-5">
+          <h3 class="text-lg font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+            <span class="p-1.5 bg-indigo-50 dark:bg-indigo-950/45 text-indigo-500 rounded-lg">${tipoIcon}</span>
+            <span>Detalhamento de Valores</span>
+          </h3>
+          <button id="btn-close-det-modal-x" class="text-slate-400 hover:text-rose-500 dark:text-slate-500 dark:hover:text-rose-450 font-bold transition">✕</button>
+        </div>
+
+        <!-- Resumo do Produto -->
+        <div class="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/60 dark:border-slate-850 mb-5">
+          <div class="flex justify-between items-start mb-1">
+            <span class="text-xs font-black text-slate-700 dark:text-slate-250 truncate">${p.fornecedor} &bull; ${p.descricao}</span>
+            <span class="text-xs font-black text-indigo-600 dark:text-indigo-400">Total: R$ ${valorVenda.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+          </div>
+          <span class="block text-[10px] text-slate-400 dark:text-slate-550 font-bold">
+            ${p.codigo_reserva ? `LOC: ${p.codigo_reserva} &bull; ` : ''} 
+            Serviço: ${new Date(p.data_servico).toLocaleDateString('pt-BR')}
+          </span>
+        </div>
+
+        <form id="form-detalhes-produto" class="space-y-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Tarifa (Valor Líquido)</label>
+            ${renderCurrencyInputHTML('input-prod-tarifa', p.tarifa || 0, '0,00', true)}
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Taxa (Embarque/Serviço)</label>
+            ${renderCurrencyInputHTML('input-prod-taxa', p.taxa || 0, '0,00', true)}
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Comissão da Agência</label>
+            ${renderCurrencyInputHTML('input-prod-comissao', p.comissao || 0, '0,00', true)}
+          </div>
+
+          <!-- Totalizadores Locais e Saldo Pendente -->
+          <div class="flex justify-between items-center p-3 bg-slate-50/50 dark:bg-slate-800/20 border border-slate-200/50 dark:border-slate-800/70 rounded-xl mt-4">
+            <div>
+              <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">Saldo Pendente do Produto</span>
+              <strong id="det-saldo-pendente" class="text-base font-black text-rose-600 dark:text-rose-455">R$ 0,00</strong>
+            </div>
+            <div class="text-right">
+              <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">Total Distribuído</span>
+              <span id="det-total-distribuido" class="text-sm font-black text-slate-700 dark:text-slate-300">R$ 0,00</span>
+            </div>
+          </div>
+
+          <!-- Botões de Ação -->
+          <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+            <button id="btn-cancel-det-modal" type="button" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs tracking-wider rounded-xl transition uppercase">Voltar</button>
+            <button type="submit" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/10 transition uppercase">Salvar Detalhes</button>
+          </div>
+        </form>
+      </div>
+    `;
+
+    // Eventos de Fechamento / Cancelamento (Volta para o modal da Viagem na aba de Produtos)
+    const handleClose = () => {
+      this.closeModal();
+      // Reabre o modal da Viagem na aba de Produtos
+      setTimeout(() => {
+        this.openEdicaoEProdutosModal(tripId, 'produtos');
+      }, 150);
+    };
+
+    document.getElementById('btn-close-det-modal-x')?.addEventListener('click', handleClose);
+    document.getElementById('btn-cancel-det-modal')?.addEventListener('click', handleClose);
+
+    // Inicializa a validação e formatação
+    setupFormValidation('form-detalhes-produto', [
+      { id: 'input-prod-tarifa', type: 'currency' },
+      { id: 'input-prod-taxa', type: 'currency' },
+      { id: 'input-prod-comissao', type: 'currency' }
+    ]);
+
+    const inputTarifa = document.getElementById('input-prod-tarifa') as HTMLInputElement;
+    const inputTaxa = document.getElementById('input-prod-taxa') as HTMLInputElement;
+    const inputComissao = document.getElementById('input-prod-comissao') as HTMLInputElement;
+    
+    const pendingValEl = document.getElementById('det-saldo-pendente');
+    const totalDistEl = document.getElementById('det-total-distribuido');
+
+    const updatePendingBalance = () => {
+      const tarifa = parseDoubleBr(inputTarifa.value);
+      const taxa = parseDoubleBr(inputTaxa.value);
+      const comissao = parseDoubleBr(inputComissao.value);
+
+      const totalDistributed = tarifa + taxa + comissao;
+      const pendente = valorVenda - totalDistributed;
+
+      if (totalDistEl) {
+        totalDistEl.textContent = `R$ ${totalDistributed.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+      }
+
+      if (pendingValEl) {
+        pendingValEl.textContent = `R$ ${pendente.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+        if (Math.abs(pendente) < 0.01) {
+          pendingValEl.className = 'text-base font-black text-emerald-600 dark:text-emerald-450';
+        } else {
+          pendingValEl.className = 'text-base font-black text-rose-600 dark:text-rose-455';
+        }
+      }
+    };
+
+    inputTarifa.addEventListener('input', updatePendingBalance);
+    inputTaxa.addEventListener('input', updatePendingBalance);
+    inputComissao.addEventListener('input', updatePendingBalance);
+
+    // Inicializa os valores acumulados
+    updatePendingBalance();
+
+    // Evento do Formulario
+    const form = document.getElementById('form-detalhes-produto') as HTMLFormElement;
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const tarifa = parseDoubleBr(inputTarifa.value);
+      const taxa = parseDoubleBr(inputTaxa.value);
+      const comissao = parseDoubleBr(inputComissao.value);
+
+      const totalDistributed = tarifa + taxa + comissao;
+      const pendente = valorVenda - totalDistributed;
+
+      if (Math.abs(pendente) > 0.01) {
+        this.showToast(`Não é possível salvar. A soma de Tarifa, Taxa e Comissão (R$ ${totalDistributed.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}) deve ser exatamente igual ao Valor de Venda do produto (R$ ${valorVenda.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}). Saldo restante: R$ ${pendente.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}.`, 'error');
+        return;
+      }
+
+      const payload = {
+        tarifa,
+        taxa,
+        comissao
+      };
+
+      try {
+        if (!this.isFallbackMode) {
+          const { error } = await supabase
+            .from('produtos_viagem')
+            .update(payload)
+            .eq('id', p.id);
+
+          if (error) throw error;
+        } else {
+          // Modo offline local storage
+          const saved = localStorage.getItem(`paxflow-produtos-viagem-${tripId}`);
+          if (saved) {
+            const list = JSON.parse(saved);
+            const idx = list.findIndex((x: any) => x.id === p.id);
+            if (idx !== -1) {
+              list[idx] = { ...list[idx], ...payload };
+              localStorage.setItem(`paxflow-produtos-viagem-${tripId}`, JSON.stringify(list));
+            }
+          }
+        }
+
+        this.showToast('Detalhamento de valores salvo com sucesso!', 'success');
+        
+        // Fecha e reabre o modal de viagem com a aba de produtos ativa
+        this.closeModal();
+        setTimeout(() => {
+          this.openEdicaoEProdutosModal(tripId, 'produtos');
+        }, 150);
+      } catch (err: any) {
+        console.error('Erro ao salvar detalhamento do produto:', err);
+        this.showToast(`Erro ao salvar detalhamento do produto: ${err.message}`, 'error');
+      }
+    });
   }
 
   /**
