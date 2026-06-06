@@ -1088,7 +1088,7 @@ export class Dashboard {
               <div class="grid grid-cols-2 gap-3">
                 <div>
                   <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Tipo *</label>
-                  <select id="prod-tipo" required class="w-full px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-xs">
+                  <select id="prod-tipo" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition duration-155">
                     <option value="voo" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">Voo</option>
                     <option value="hotel" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">Hotel</option>
                     <option value="seguro" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">Seguro</option>
@@ -1098,19 +1098,19 @@ export class Dashboard {
                 </div>
                 <div>
                   <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Fornecedor</label>
-                  <input id="prod-fornecedor" type="text" placeholder="ex: LATAM, Hilton" class="w-full px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-xs" />
+                  <input id="prod-fornecedor" type="text" placeholder="ex: LATAM, Hilton" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition duration-155" />
                 </div>
               </div>
 
               <div>
                 <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Descrição</label>
-                <input id="prod-descricao" type="text" placeholder="ex: Voo GRU-JFK ou Quarto Deluxe" class="w-full px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-xs" />
+                <input id="prod-descricao" type="text" placeholder="ex: Voo GRU-JFK ou Quarto Deluxe" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition duration-155" />
               </div>
 
               <div class="grid grid-cols-2 gap-3">
                 <div>
-                  <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Código (LOC)</label>
-                  <input id="prod-reserva" type="text" placeholder="ex: LOC12" class="w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-xs uppercase" />
+                  <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Código (LOC) *</label>
+                  <input id="prod-reserva" type="text" required maxlength="20" placeholder="ex: LOC12" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition duration-155 uppercase" />
                 </div>
                 <div>
                   <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Venda (R$) *</label>
@@ -1125,7 +1125,7 @@ export class Dashboard {
                 </div>
                 <div>
                   <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Status *</label>
-                  <select id="prod-status" required class="w-full px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-xs">
+                  <select id="prod-status" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition duration-155">
                     <option value="reservado" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">Reservado</option>
                     <option value="emitido" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100" selected>Emitido</option>
                   </select>
@@ -1426,10 +1426,23 @@ export class Dashboard {
       const tipo = (document.getElementById('prod-tipo') as HTMLSelectElement).value;
       const fornecedor = (document.getElementById('prod-fornecedor') as HTMLInputElement).value.trim() || 'Não informado';
       const descricao = (document.getElementById('prod-descricao') as HTMLInputElement).value.trim() || 'Sem descrição';
-      const reserva = (document.getElementById('prod-reserva') as HTMLInputElement).value;
+      const reserva = (document.getElementById('prod-reserva') as HTMLInputElement).value.trim();
       const vendaRaw = (document.getElementById('prod-venda') as HTMLInputElement).value.trim();
       const dataServicoRaw = (document.getElementById('prod-data') as HTMLInputElement).value.trim();
       const status = (document.getElementById('prod-status') as HTMLSelectElement).value;
+
+      if (!reserva) {
+        this.showToast('Por favor, informe o Código (LOC) do serviço.', 'error');
+        return;
+      }
+      if (reserva.length > 20) {
+        this.showToast('O Código (LOC) deve ter no máximo 20 caracteres.', 'error');
+        return;
+      }
+      if (/\s|[,;\/\\]/.test(reserva)) {
+        this.showToast('Insira apenas um Código (LOC) por serviço (sem espaços ou caracteres de separação).', 'error');
+        return;
+      }
 
       const dataServico = formatBrDateToIso(dataServicoRaw);
       if (!dataServico) {

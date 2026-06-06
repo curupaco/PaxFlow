@@ -118,7 +118,7 @@ CREATE OR REPLACE TRIGGER on_global_settings_view_manage
 CREATE TABLE IF NOT EXISTS public.clientes (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     nome TEXT NOT NULL,
-    email TEXT NOT NULL,
+    email TEXT,
     telefone TEXT,
     documento TEXT,
     data_nascimento DATE,
@@ -144,7 +144,7 @@ CREATE TABLE IF NOT EXISTS public.viagens (
     data_ida DATE NOT NULL,
     data_volta DATE NOT NULL,
     valor_total NUMERIC DEFAULT 0.00 NOT NULL,
-    status VARCHAR(20) CHECK (status IN ('planejamento', 'confirmada', 'em_andamento', 'concluida', 'cancelada')) DEFAULT 'planejamento' NOT NULL,
+    status VARCHAR(20) CHECK (status IN ('fechado', 'pos_venda', 'pre_embarque', 'pos_viagem', 'reembolso_solicitado')) DEFAULT 'fechado' NOT NULL,
     codigo_localizador TEXT,
     observacoes TEXT,
     data_financeiro DATE,
