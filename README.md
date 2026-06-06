@@ -21,13 +21,15 @@ Plataforma SaaS de gestão operacional e fluxo de passageiros no turismo: acompa
 ## Funcionalidades
 
 - **Mission Control (Inbox)** — Central de alertas estilo e-mail com SLA de passaporte (180d), reembolsos atrasados e lembretes manuais. Inclui Visualização em Calendário unificada com visões de MÊS, SEMANA e AGENDA, sumarização via Regex e legenda hover tooltip. **Atualizado com busca em tempo real de alta precisão cobrindo campos estruturados, datas formatadas e o consultor responsável.**
-- **Kanban de Viagens** — 5 colunas com drag-and-drop, SLAs visuais e gestão de produtos. **Atualizado com campo de busca em tempo real de alto desempenho (destino, LOC, passageiro, consultor e observações) e modal de gerenciamento ampliado com cabeçalho de SLAs, consultor atribuído e uma aba dinâmica de Histórico de Reembolsos.**
-- **Pipeline de Orçamentos** — 4 estágios com temperatura de lead, tags, notas e upload de documentos. **Atualizado com busca em tempo real no cabeçalho e modal de visualização reformulado em grid de 2 colunas: detalhes operacionais/documentos na esquerda e uma barra lateral na direita com status, temperatura, consultor com avatar, atalhos de contato (WhatsApp/Email), tags e cronômetro de SLA decorrido. Propostas e anexos podem ser abertos de forma inline através do novo visualizador interno.**
-- **Gestão e Ficha de Clientes** — Ficha única com passaporte/visto, validade monitorada por SLA, upload drag-and-drop para Google Drive. **Atualizado com campo de busca omnipresente de alta abrangência e com o novo Visualizador de Documentos Inline PaxFlow, permitindo carregar com segurança passaportes e anexos do Google Drive sem redirecionamento externo. Inclui simulador Sandbox que desenha um documento de passaporte personalizado com dados reais do cliente.**
+- **Kanban de Viagens** — 5 colunas com drag-and-drop, SLAs visuais e gestão de produtos. **Atualizado com campo de busca em tempo real de alto desempenho (destino, LOC, passageiro, consultor e observações) e modal de gerenciamento ampliado com aba de Histórico de Reembolsos e aba de Produtos/Serviços. O código de reserva (LOC) do produto/serviço agora é obrigatório (máximo 20 caracteres, código único). Apresenta trava de transição de status: a movimentação a partir de 'Fechado' exige que o saldo de produtos esteja zerado e que cada produto esteja detalhado (soma de Tarifa + Taxa + Comissão igual ao Valor de Venda do produto).**
+- **Pipeline de Orçamentos** — 4 estágios com temperatura de lead, tags, notas e upload de documentos. **Atualizado com busca em tempo real e modal de visualização em duas colunas. A busca por clientes recorrentes no autocomplete do formulário foi corrigida para precisão absoluta. Ao fechar uma venda, caso o cliente não possua documento cadastrado, exige e valida o CPF/CNPJ com máscara e verificação oficial de dígitos verificadores.**
+- **Gestão e Ficha de Clientes** — Ficha única com passaporte/visto, validade monitorada por SLA, upload para o Google Drive. **Atualizado com busca omnipresente de alta abrangência e Visualizador de Documentos Inline PaxFlow. O campo Documento conta com máscara de digitação dinâmica para CPF/CNPJ e validação matemática de dígitos verificadores contra fraudes e erros humanos, bloqueando o envio de formulários inválidos.**
 - **Central de Reembolsos** — Tabela com cronômetro SLA em tempo real, status inline e métricas consolidadas. **Atualizado com campo de busca em tempo real em memória abrangendo clientes, destinos, localizadores, fornecedores, tipos de serviço, status e valores formatados.**
 - **Painel Administrativo (Configurações)** — Configuração de SLAs, gestão de consultores, integração Google Drive. Inclui aba "Importações" para importação em lote de chamados DIGISAC (CSV) com mapeamento inteligente de colunas, conversor monetário/temporal e fuzzy match de atendentes.
-- **Cockpit de Tarefas** — Kanban interno standalone (todo.html) para planejamento da equipe
+- **Cockpit de Tarefas** — Kanban interno standalone (todo.html) para planejamento da equipe.
 - **Navegação & UI Premium (Sidebar Colapsável & Lupa Vetorial)** — Shell de navegação avançado com barra lateral colapsável sob demanda (estado persistido via `localStorage` sob a chave `"paxflow-sidebar-collapsed"`). Campos de busca unificados com ícones vetoriais modernos (SVGs Heroicons) alinhados de forma absoluta e perfeitamente centrada.
+- **Utilitários de Banco de Dados** — Acompanha o script `clean_db.sql` na raiz do projeto, permitindo efetuar uma limpeza de dados transacionais e de teste em ambientes Supabase de maneira 100% resiliente e sem interferir na infraestrutura cadastrada.
+
 
 ---
 
@@ -119,8 +121,11 @@ src/
 │   ├── csvImporter.ts # Parser e importador de CSV inteligente
 │   ├── dialog.ts     # Componentes de modal/dialog
 │   └── avatars.ts    # Geração de avatares
+├── utils/
+│   └── masks.ts      # Utilitários de máscaras, validações e formulários (CPF/CNPJ, etc.)
 ├── todo.ts           # Kanban interno (standalone)
 └── index.css         # Estilos globais + Tailwind
+
 ```
 
 ---

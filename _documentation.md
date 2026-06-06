@@ -116,7 +116,16 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
   - Reestruturado em abas com layout ampliado de `max-w-2xl` para maior legibilidade.
   - **Dono e SLA no Topo**: A aba "Detalhes e Edição" possui agora um cabeçalho proeminente contendo a identificação do Consultor Responsável com seu avatar correspondente e um indicador pulsante de Alerta de SLA ativo (se aplicável), fornecendo visibilidade direta da urgência do card.
   - **Aba Dinâmica '💸 Histórico de Reembolsos'**: Fica visível apenas para cartões de viagem que possuam reembolsos associados no banco de dados. Exibe de forma organizada a listagem detalhada de cada solicitação vinculada: Produto afetado, Valor Solicitado, Valor Aprovado, Taxa de Retenção, Data de Solicitação e data de encerramento, Justificativa do Cancelamento e o Status do Reembolso com badges HSL temáticos.
-- **Produtos**: voo, hotel, seguro, passeio, outros — com custo, venda, código de reserva e status.
+- **Produtos e Detalhamento de Valores (Novo Nível de Cadastro)**:
+  - Permite gerenciar itens de viagem (voo, hotel, seguro, passeio, outro) preenchendo fornecedor, descrição, data do serviço, valor de venda, status e o **Código de Reserva (LOC)**.
+  - **Código de Reserva (LOC) Obrigatório**: O campo LOC do produto é obrigatório (máximo 20 caracteres, código único sem espaços, barras ou delimitadores textuais).
+  - **Detalhamento de Valores**: Após salvar o produto na viagem, ao clicar no item listado na aba "Produtos e Serviços", abre-se um modal de detalhamento que permite fracionar o valor de venda nas categorias: **Tarifa (Valor Líquido)**, **Taxa** e **Comissão**.
+  - **Validação de Alinhamento**: O sistema bloqueia a gravação caso a soma `Tarifa + Taxa + Comissão` divirja centavo por centavo do `Valor de Venda` do produto, orientando o usuário em tempo real sobre o saldo restante a preencher.
+- **Trava de Segurança na Transição de Status**:
+  - Ao arrastar ou alterar o status de uma viagem no Kanban para qualquer status posterior a "Fechado" (Pós-Venda, Pré-Embarque, Pós-Viagem ou Reembolso Solicitado), o PaxFlow realiza duas validações em tempo de execução:
+    1. O valor total da viagem deve ser completamente coberto pelos produtos cadastrados (o saldo financeiro deve ser zero).
+    2. Todos os produtos adicionados a essa viagem precisam estar 100% detalhados (soma de Tarifa + Taxa + Comissão igual ao Valor de Venda de cada produto).
+    Qualquer desalinhamento impede a transição e exibe uma notificação pop-up informativa.
 - **Solicitação de reembolso**: ao arrastar para "Reembolso Solicitado", abre formulário automatizado que autocompleta valores com base no produto de viagem selecionado.
 
 ### 3.3 Pipeline de Orçamentos
@@ -133,6 +142,8 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 | Concluído | Exibe sub-status: ACEITO (viagem fechada) ou DESISTÊNCIA |
 
 - **Busca em Tempo Real no Cabeçalho**: Pesquisa em tempo real (client-side) filtrando instantaneamente por nome do cliente, destino, contatos, temperatura, notas, tags e nome do consultor.
+- **Busca Autocomplete de Clientes Recorrentes**: O mecanismo de busca de clientes existentes ao cadastrar orçamentos foi aprimorado. A digitação no campo de nome, e-mail ou telefone filtra precisamente os clientes cadastrados contra as respectivas propriedades (incluindo tratamento de caracteres não-numéricos no telefone), eliminando retornos distorcidos e ligando o orçamento de forma segura ao cliente correto.
+- **Fechamento de Venda (Close Sale)**: Ao concluir e aceitar um orçamento, se o cliente associado não possuir dados de documento em sua ficha cadastral, o sistema exibe um modal que obriga o preenchimento do CPF/CNPJ. Esse campo possui máscara e validação matemática de integridade ativa, prevenindo a persistência de identificações incorretas.
 - **Modal de Detalhes Reformulado (`openVerNotasModal`)**:
   - Reestruturado para adotar um **layout de grid premium de duas colunas (visualizador amplo `max-w-2xl`)**:
     - **Coluna Esquerda (2/3 da largura)**: Exibe a listagem completa das Notas da Negociação e a seção dedicada a Documentos e Propostas Anexas.
@@ -149,7 +160,9 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 
 **Ficha única de passageiro** com gestão documental completa.
 
-- **Dados pessoais**: nome, e-mail, telefone, CPF/RG, data de nascimento, endereço.
+- **Dados pessoais**:
+  - Nome completo, e-mail, telefone, data de nascimento e endereço.
+  - **Máscara e Validação de CPF/CNPJ**: O campo de documento possui máscara em tempo real integrada (`000.000.000-00` ou `00.000.000/0000-00` dependendo do tamanho). Realiza a validação lógica dos dígitos verificadores (checksum). Em caso de documento matematicamente inválido, o sistema impede a submissão do formulário e exibe mensagem de erro intuitiva.
 - **Documentação internacional**:
   - Número do passaporte com alerta visual de validade.
   - Validade monitorada por SLA (mesma engine do Inbox).
@@ -355,10 +368,11 @@ O PaxFlow fornece um script utilitário automatizado (`src/services/obterTokenGo
 ### Fase 2: Setup (2-3 dias)
 
 1. Criação do projeto Supabase (ou uso da infra PaxFlow)
-2. Execução do script de modelagem do banco de dados (utilizando as DDLs e políticas RLS fornecidas no arquivo [schema.sql](schema.sql))
+2. Execução do script de modelagem do banco de dados (utilizando as DDLs e políticas RLS fornecidas no arquivo [schema.sql](schema.sql)), seguido pela migração [add_product_detail_fields.sql](add_product_detail_fields.sql) para suporte ao detalhamento financeiro de produtos de viagem.
 3. Configuração de autenticação e criação dos consultores no Supabase Auth
 4. Configuração da integração com Google Drive (conforme o guia prático [google_drive_setup.md](google_drive_setup.md))
 5. Deploy do frontend (Cloudflare Pages ou similar)
+6. *(Opcional)* Limpeza resiliente de dados transacionais e de teste em lote utilizando o script [clean_db.sql](clean_db.sql) para inicialização limpa da produção.
 
 ### Fase 3: Migração de Dados (2-5 dias)
 
