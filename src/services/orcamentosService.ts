@@ -344,21 +344,6 @@ export class OrcamentosService {
       if (newVia) {
         newViagemId = newVia.id;
       }
-
-      // Cadastrar Produto na Viagem Recém Criada
-      const { error: errProd } = await supabase
-        .from('produtos_viagem')
-        .insert({
-          viagem_id: newViagemId,
-          tipo: prodTipo,
-          fornecedor: prodFornecedor,
-          descricao: prodDescricao,
-          valor_custo: 0,
-          valor_venda: vValor,
-          status: 'reservado',
-          data_servico: vIda
-        });
-      if (errProd) throw errProd;
     } else {
       // FLUXO: ADICIONAR À VIAGEM EXISTENTE
       if (!viagemId) throw new Error('A viagem selecionada não pôde ser encontrada.');
@@ -371,22 +356,6 @@ export class OrcamentosService {
         .eq('id', viagemId);
 
       if (errUpdate) throw errUpdate;
-
-      // Inserir o produto_viagem apontando para a viagem existente
-      const { error: errProd } = await supabase
-        .from('produtos_viagem')
-        .insert({
-          viagem_id: viagemId,
-          tipo: prodTipo,
-          fornecedor: prodFornecedor,
-          descricao: prodDescricao,
-          valor_custo: 0,
-          valor_venda: vValor,
-          status: 'reservado',
-          data_servico: existingTripDataIda || new Date().toISOString().split('T')[0]
-        });
-
-      if (errProd) throw errProd;
     }
 
     // 3. Atualizar Orçamento para CONCLUÍDO (ACEITO)

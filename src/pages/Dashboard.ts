@@ -750,14 +750,20 @@ export class Dashboard {
               </div>
             </div>
 
-            <div>
-              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Status / Etapa Inicial *</label>
-              <select id="select-viagem-status" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm">
-                <option value="pos_venda" class="bg-white dark:bg-slate-800">Pós-Venda</option>
-                <option value="fechado" class="bg-white dark:bg-slate-800">Fechado</option>
-                <option value="pre_embarque" class="bg-white dark:bg-slate-800">Pré-Embarque</option>
-                <option value="pos_viagem" class="bg-white dark:bg-slate-800">Pós-Viagem</option>
-              </select>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Status / Etapa Inicial *</label>
+                <select id="select-viagem-status" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm">
+                  <option value="pos_venda" class="bg-white dark:bg-slate-800">Pós-Venda</option>
+                  <option value="fechado" class="bg-white dark:bg-slate-800">Fechado</option>
+                  <option value="pre_embarque" class="bg-white dark:bg-slate-800">Pré-Embarque</option>
+                  <option value="pos_viagem" class="bg-white dark:bg-slate-800">Pós-Viagem</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Data Financeiro (DD/MM/AAAA)</label>
+                ${renderDateInputHTML('input-viagem-data-financeiro', '', 'DD/MM/AAAA', false)}
+              </div>
             </div>
 
             <div>
@@ -776,7 +782,8 @@ export class Dashboard {
       setupFormValidation('form-nova-viagem', [
         { id: 'input-viagem-valor', type: 'currency' },
         { id: 'input-viagem-ida', type: 'date' },
-        { id: 'input-viagem-volta', type: 'date' }
+        { id: 'input-viagem-volta', type: 'date' },
+        { id: 'input-viagem-data-financeiro', type: 'date', required: false }
       ]);
 
       const handleClose = () => this.closeModal();
@@ -793,11 +800,13 @@ export class Dashboard {
         const valorRaw = (document.getElementById('input-viagem-valor') as HTMLInputElement).value.trim();
         const vIdaRaw = (document.getElementById('input-viagem-ida') as HTMLInputElement).value.trim();
         const vVoltaRaw = (document.getElementById('input-viagem-volta') as HTMLInputElement).value.trim();
+        const vFinRaw = (document.getElementById('input-viagem-data-financeiro') as HTMLInputElement).value.trim();
         const status = (document.getElementById('select-viagem-status') as HTMLSelectElement).value;
         const obs = (document.getElementById('textarea-viagem-obs') as HTMLTextAreaElement).value;
 
         const vIda = formatBrDateToIso(vIdaRaw);
         const vVolta = formatBrDateToIso(vVoltaRaw);
+        const vFin = vFinRaw ? formatBrDateToIso(vFinRaw) : null;
         
         if (!vIda) {
           this.showToast('Por favor, informe a Data de Ida no formato correto DD/MM/AAAA.', 'error');
@@ -818,6 +827,7 @@ export class Dashboard {
           valor_total: valor,
           data_ida: vIda,
           data_volta: vVolta,
+          data_financeiro: vFin,
           status: status,
           observacoes: obs || null
         };
@@ -1002,7 +1012,7 @@ export class Dashboard {
               </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-3 gap-4">
               <div>
                 <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Data de Ida (DD/MM/AAAA) *</label>
                 ${renderDateInputHTML('edit-viagem-ida', v.data_ida || '')}
@@ -1010,6 +1020,10 @@ export class Dashboard {
               <div>
                 <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Data de Volta (DD/MM/AAAA) *</label>
                 ${renderDateInputHTML('edit-viagem-volta', v.data_volta || '')}
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Data Financeiro (DD/MM/AAAA)</label>
+                ${renderDateInputHTML('edit-viagem-data-financeiro', v.data_financeiro || '', 'DD/MM/AAAA', false)}
               </div>
             </div>
 
@@ -1280,7 +1294,8 @@ export class Dashboard {
     setupFormValidation('form-editar-viagem', [
       { id: 'edit-viagem-valor', type: 'currency' },
       { id: 'edit-viagem-ida', type: 'date' },
-      { id: 'edit-viagem-volta', type: 'date' }
+      { id: 'edit-viagem-volta', type: 'date' },
+      { id: 'edit-viagem-data-financeiro', type: 'date', required: false }
     ]);
 
     // Submissão do Formulário de Edição da Viagem
@@ -1295,11 +1310,13 @@ export class Dashboard {
       const valorRaw = (document.getElementById('edit-viagem-valor') as HTMLInputElement).value.trim();
       const dataIdaRaw = (document.getElementById('edit-viagem-ida') as HTMLInputElement).value.trim();
       const dataVoltaRaw = (document.getElementById('edit-viagem-volta') as HTMLInputElement).value.trim();
+      const dataFinanceiroRaw = (document.getElementById('edit-viagem-data-financeiro') as HTMLInputElement).value.trim();
       const status = (document.getElementById('edit-viagem-status') as HTMLSelectElement).value;
       const obs = (document.getElementById('edit-viagem-obs') as HTMLTextAreaElement).value;
 
       const dataIda = formatBrDateToIso(dataIdaRaw);
       const dataVolta = formatBrDateToIso(dataVoltaRaw);
+      const dataFinanceiro = dataFinanceiroRaw ? formatBrDateToIso(dataFinanceiroRaw) : null;
 
       if (!dataIda) {
         this.showToast('Por favor, informe a Data de Ida no formato correto DD/MM/AAAA.', 'error');
@@ -1348,6 +1365,7 @@ export class Dashboard {
         valor_total: valor,
         data_ida: dataIda,
         data_volta: dataVolta,
+        data_financeiro: dataFinanceiro,
         status: status,
         observacoes: obs || null
       };
@@ -1375,6 +1393,7 @@ export class Dashboard {
             valor_total: valor,
             data_ida: dataIda,
             data_volta: dataVolta,
+            data_financeiro: dataFinanceiro,
             status: status,
             observacoes: obs || null,
             updated_at: new Date().toISOString()
@@ -2090,6 +2109,13 @@ export class Dashboard {
             <span class="text-slate-600 dark:text-slate-455 font-bold">${formatarData(v.data_volta)}</span>
           </div>
         </div>
+
+        ${v.data_financeiro ? `
+          <div class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold border-t border-slate-100 dark:border-slate-800 pt-1.5 mb-1.5 flex items-center justify-between">
+            <span class="text-slate-350 dark:text-slate-600 font-bold uppercase tracking-wider text-[8px]">Data Financeiro</span>
+            <span class="text-slate-600 dark:text-slate-455 font-bold">${formatarData(v.data_financeiro)}</span>
+          </div>
+        ` : ''}
 
         <!-- Se for Admin, exibe o consultor responsável pela venda -->
         ${this.perfil?.role === 'admin' ? `

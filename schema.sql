@@ -147,6 +147,7 @@ CREATE TABLE IF NOT EXISTS public.viagens (
     status VARCHAR(20) CHECK (status IN ('planejamento', 'confirmada', 'em_andamento', 'concluida', 'cancelada')) DEFAULT 'planejamento' NOT NULL,
     codigo_localizador TEXT,
     observacoes TEXT,
+    data_financeiro DATE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );

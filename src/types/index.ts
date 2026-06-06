@@ -85,6 +85,8 @@ export interface Viagem {
   created_at?: string;
   updatedAt?: string;
   updated_at?: string;
+  data_financeiro?: string;
+  dataFinanceiro?: string;
 }
 
 /**
