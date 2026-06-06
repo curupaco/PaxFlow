@@ -1653,7 +1653,7 @@ export class Dashboard {
         <div class="product-card-clickable flex items-center justify-between gap-3 p-3 bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-850 rounded-xl hover:bg-slate-100/50 dark:hover:bg-slate-800/80 transition cursor-pointer" data-product-id="${p.id}">
           <div class="flex items-start gap-2.5 overflow-hidden">
             <span class="text-lg p-1 bg-white dark:bg-slate-700 border border-slate-100 dark:border-slate-650 rounded-lg shadow-sm flex items-center justify-center">${iconesMap[p.tipo] || '📦'}</span>
-            <div class="overflow-hidden bg-slate-50/10">
+            <div class="overflow-hidden">
               <span class="block text-xs font-black text-slate-700 dark:text-slate-200 truncate leading-tight">${p.fornecedor} &bull; ${p.descricao}</span>
               <span class="block text-[10px] text-slate-400 dark:text-slate-550 font-bold leading-normal">
                 ${p.codigo_reserva ? `LOC: <span class="text-slate-600 dark:text-slate-355 font-extrabold">${p.codigo_reserva}</span> &bull; ` : ''} 
