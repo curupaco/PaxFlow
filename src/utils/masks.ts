@@ -1,6 +1,6 @@
 export interface FieldConfig {
   id: string;
-  type: 'phone' | 'email' | 'currency' | 'date';
+  type: 'phone' | 'email' | 'currency' | 'date' | 'cpf_cnpj';
   required?: boolean;
 }
 
@@ -344,6 +344,133 @@ export function renderDateInputHTML(id: string, initialValue: string, placeholde
 }
 
 /**
+ * Valida a integridade matemática de um CPF (11 dígitos)
+ */
+export function validateCpf(cpf: string): boolean {
+  const clean = cpf.replace(/\D/g, '');
+  if (clean.length !== 11) return false;
+  if (/^(\d)\1{10}$/.test(clean)) return false;
+
+  let sum = 0;
+  for (let i = 0; i < 9; i++) {
+    sum += parseInt(clean.charAt(i), 10) * (10 - i);
+  }
+  let rev = 11 - (sum % 11);
+  if (rev === 10 || rev === 11) rev = 0;
+  if (rev !== parseInt(clean.charAt(9), 10)) return false;
+
+  sum = 0;
+  for (let i = 0; i < 10; i++) {
+    sum += parseInt(clean.charAt(i), 10) * (11 - i);
+  }
+  rev = 11 - (sum % 11);
+  if (rev === 10 || rev === 11) rev = 0;
+  if (rev !== parseInt(clean.charAt(10), 10)) return false;
+
+  return true;
+}
+
+/**
+ * Valida a integridade matemática de um CNPJ (14 dígitos)
+ */
+export function validateCnpj(cnpj: string): boolean {
+  const clean = cnpj.replace(/\D/g, '');
+  if (clean.length !== 14) return false;
+  if (/^(\d)\1{13}$/.test(clean)) return false;
+
+  let length = clean.length - 2;
+  let numbers = clean.substring(0, length);
+  const digits = clean.substring(length);
+  let sum = 0;
+  let pos = length - 7;
+  for (let i = length; i >= 1; i--) {
+    sum += parseInt(numbers.charAt(length - i), 10) * pos--;
+    if (pos < 2) pos = 9;
+  }
+  let result = sum % 11 < 2 ? 0 : 11 - (sum % 11);
+  if (result !== parseInt(digits.charAt(0), 10)) return false;
+
+  length = length + 1;
+  numbers = clean.substring(0, length);
+  sum = 0;
+  pos = length - 7;
+  for (let i = length; i >= 1; i--) {
+    sum += parseInt(numbers.charAt(length - i), 10) * pos--;
+    if (pos < 2) pos = 9;
+  }
+  result = sum % 11 < 2 ? 0 : 11 - (sum % 11);
+  if (result !== parseInt(digits.charAt(1), 10)) return false;
+
+  return true;
+}
+
+/**
+ * Valida se a string informada é um CPF ou CNPJ válido
+ */
+export function validateCpfCnpj(doc: string): ValidationResult {
+  const clean = doc.replace(/\D/g, '');
+  if (!clean) {
+    return { isValid: false, message: 'Documento é obrigatório.' };
+  }
+  if (clean.length <= 11) {
+    const ok = validateCpf(clean);
+    return {
+      isValid: ok,
+      message: ok ? '' : 'CPF inválido.'
+    };
+  } else {
+    const ok = validateCnpj(clean);
+    return {
+      isValid: ok,
+      message: ok ? '' : 'CNPJ inválido.'
+    };
+  }
+}
+
+/**
+ * Aplica máscara de CPF (até 11 dígitos) ou CNPJ (acima de 11 dígitos)
+ */
+export function formatCpfCnpj(digits: string): string {
+  const clean = digits.replace(/\D/g, '');
+  if (clean.length <= 11) {
+    if (clean.length === 0) return '';
+    if (clean.length <= 3) return clean;
+    if (clean.length <= 6) return `${clean.slice(0, 3)}.${clean.slice(3)}`;
+    if (clean.length <= 9) return `${clean.slice(0, 3)}.${clean.slice(3, 6)}.${clean.slice(6)}`;
+    return `${clean.slice(0, 3)}.${clean.slice(3, 6)}.${clean.slice(6, 9)}-${clean.slice(9, 11)}`;
+  } else {
+    const truncated = clean.slice(0, 14);
+    if (truncated.length <= 12) {
+      if (truncated.length <= 2) return truncated;
+      if (truncated.length <= 5) return `${truncated.slice(0, 2)}.${truncated.slice(2)}`;
+      if (truncated.length <= 8) return `${truncated.slice(0, 2)}.${truncated.slice(2, 5)}.${truncated.slice(5)}`;
+      return `${truncated.slice(0, 2)}.${truncated.slice(2, 5)}.${truncated.slice(5, 8)}/${truncated.slice(8)}`;
+    }
+    return `${truncated.slice(0, 2)}.${truncated.slice(2, 5)}.${truncated.slice(5, 8)}/${truncated.slice(8, 12)}-${truncated.slice(12, 14)}`;
+  }
+}
+
+/**
+ * Renderiza HTML para campo de documento (CPF/CNPJ) premium com tratamento de erro
+ */
+export function renderDocumentInputHTML(id: string, value: string, placeholder = '000.000.000-00', required = true, readonly = false): string {
+  const containerId = `${id}-container`;
+  const errorId = `${id}-error`;
+  const readonlyAttr = readonly ? 'readonly' : '';
+  const disabledClass = readonly ? 'bg-slate-50 dark:bg-slate-900 cursor-not-allowed text-slate-550 dark:text-slate-405' : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100';
+
+  const clean = value ? value.replace(/\D/g, '') : '';
+  const formatted = clean ? formatCpfCnpj(clean) : '';
+
+  return `
+    <div id="${containerId}" class="document-field-wrapper w-full relative">
+      <input id="${id}" type="text" ${readonlyAttr} ${required ? 'required' : ''} value="${formatted || ''}" placeholder="${placeholder}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition duration-155 ${disabledClass}" autocomplete="off" />
+      <p id="${errorId}" class="hidden text-xs text-rose-500 font-bold mt-1.5"></p>
+    </div>
+  `;
+}
+
+/**
  * Gerencia a validação em tempo real e regras de envio dos formulários
  */
 export function setupFormValidation(
@@ -485,6 +612,22 @@ export function setupFormValidation(
       return result.isValid;
     }
 
+    if (config.type === 'cpf_cnpj') {
+      if (!required && !value.trim()) {
+        setFieldError(config.id, true, '');
+        return true;
+      }
+      const result = validateCpfCnpj(value);
+      const digitsLen = value.replace(/\D/g, '').length;
+      if (isBlur || digitsLen >= 11) {
+        setFieldError(config.id, result.isValid, result.message);
+      } else {
+        errors.set(config.id, !result.isValid);
+        updateSubmitButtonState();
+      }
+      return result.isValid;
+    }
+
     return true;
   };
 
@@ -601,6 +744,21 @@ export function setupFormValidation(
           digits = digits.slice(0, 8);
         }
         target.value = formatDateBr(digits);
+        validateField(config, false);
+      });
+
+      inputEl.addEventListener('blur', () => {
+        validateField(config, true);
+      });
+    }
+
+    if (config.type === 'cpf_cnpj') {
+      inputEl.addEventListener('input', (e) => {
+        const target = e.target as HTMLInputElement;
+        const val = target.value;
+        const digits = val.replace(/\D/g, '');
+        
+        target.value = formatCpfCnpj(digits);
         validateField(config, false);
       });
 

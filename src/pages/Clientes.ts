@@ -7,6 +7,7 @@ import {
   renderPhoneInputHTML,
   renderEmailInputHTML,
   renderDateInputHTML,
+  renderDocumentInputHTML,
   setupFormValidation,
   getFormattedPhoneToDb,
   formatBrDateToIso
@@ -296,6 +297,7 @@ export class ClientesPage {
     setupFormValidation('form-cliente', [
       { id: 'input-email', type: 'email' },
       { id: 'input-telefone', type: 'phone', required: false },
+      { id: 'input-documento', type: 'cpf_cnpj', required: false },
       { id: 'input-data-nasc', type: 'date', required: false },
       { id: 'input-pass-validade', type: 'date', required: false }
     ]);
@@ -589,8 +591,8 @@ export class ClientesPage {
                 ${renderPhoneInputHTML('input-telefone', c.telefone, '(11) 99999-9999', false)}
               </div>
               <div>
-                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Documento (CPF/RG)</label>
-                <input id="input-documento" type="text" value="${c.documento || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium" />
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Documento (CPF/CNPJ)</label>
+                ${renderDocumentInputHTML('input-documento', c.documento || '', 'CPF ou CNPJ', false)}
               </div>
               <div>
                 <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Data de Nascimento</label>

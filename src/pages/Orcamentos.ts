@@ -11,6 +11,7 @@ import {
   renderEmailInputHTML,
   renderDateInputHTML,
   renderCurrencyInputHTML,
+  renderDocumentInputHTML,
   setupFormValidation,
   getFormattedPhoneToDb,
   formatBrDateToIso,
@@ -1715,7 +1716,7 @@ export class OrcamentosPage {
               </div>
               <div>
                 <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Documento de Identificação *</label>
-                <input id="input-fechar-cli-doc" type="text" required value="${docVal}" placeholder="Digite o CPF ou RG do cliente" class="${linkedClient && linkedClient.documento ? 'w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 rounded-lg focus:outline-none text-slate-550 dark:text-slate-400 font-semibold text-sm cursor-not-allowed' : 'w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm'}" ${linkedClient && linkedClient.documento ? 'readonly' : ''} />
+                ${renderDocumentInputHTML('input-fechar-cli-doc', docVal, 'Digite o CPF ou CNPJ do cliente', true, !!(linkedClient && linkedClient.documento))}
               </div>
             </div>
           </div>
@@ -1823,6 +1824,7 @@ export class OrcamentosPage {
     validator = setupFormValidation('form-fechar-viagem', [
       { id: 'input-fechar-cli-email', type: 'email', required: !(linkedClient && linkedClient.email) },
       { id: 'input-fechar-cli-telefone', type: 'phone', required: !(linkedClient && linkedClient.telefone) },
+      { id: 'input-fechar-cli-doc', type: 'cpf_cnpj', required: !(linkedClient && linkedClient.documento) },
       { id: 'input-fechar-via-ida', type: 'date', required: true },
       { id: 'input-fechar-via-volta', type: 'date', required: true },
       { id: 'input-fechar-via-valor', type: 'currency', required: true }
