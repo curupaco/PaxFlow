@@ -1127,7 +1127,8 @@ export class Dashboard {
               <div class="grid grid-cols-2 gap-3">
                 <div>
                   <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Código (LOC) *</label>
-                  <input id="prod-reserva" type="text" required maxlength="20" placeholder="ex: LOC12" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition duration-155 uppercase" />
+                  <input id="prod-reserva" list="existing-locs-list" type="text" required maxlength="20" placeholder="ex: LOC12" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition duration-155 uppercase" />
+                  <datalist id="existing-locs-list"></datalist>
                 </div>
                 <div>
                   <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Venda (R$) *</label>
@@ -1635,6 +1636,17 @@ export class Dashboard {
       }
     }
 
+    // Atualizar o datalist de LOCs existentes para o autocompletar do formulário
+    const datalist = document.getElementById('existing-locs-list');
+    if (datalist) {
+      const uniqueLocs = Array.from(new Set(
+        produtos
+          .map(p => (p.codigo_reserva || '').trim().toUpperCase())
+          .filter(loc => loc.length > 0)
+      ));
+      datalist.innerHTML = uniqueLocs.map(loc => `<option value="${loc}"></option>`).join('');
+    }
+
     const formatarData = (dStr: string) => {
       if (!dStr) return '';
       const dataApenas = dStr.includes('T') ? dStr.split('T')[0] : dStr.split(' ')[0];
@@ -1643,54 +1655,140 @@ export class Dashboard {
       return `${parts[2]}/${parts[1]}/${parts[0]}`;
     };
 
-    container.innerHTML = produtos.map(p => {
-      const iconesMap: { [key: string]: string } = {
-        voo: '✈️',
-        hotel: '🏨',
-        seguro: '🛡️',
-        passeio: '🎟️',
-        outro: '📦'
-      };
+    // Agrupamento de produtos por Código de Reserva (LOC)
+    const produtosAgrupados: {
+      [locKey: string]: {
+        loc: string;
+        produtos: any[];
+        valorVendaTotal: number;
+        isGroupDetalhado: boolean;
+      }
+    } = {};
 
-      const commentsCount = commentsCountMap[p.id] || 0;
+    produtos.forEach(p => {
+      const locKey = (p.codigo_reserva || 'SEM LOCALIZADOR').trim().toUpperCase();
+      if (!produtosAgrupados[locKey]) {
+        produtosAgrupados[locKey] = {
+          loc: locKey,
+          produtos: [],
+          valorVendaTotal: 0,
+          isGroupDetalhado: true
+        };
+      }
+
+      produtosAgrupados[locKey].produtos.push(p);
+      produtosAgrupados[locKey].valorVendaTotal += Number(p.valor_venda || 0);
+
       const tarifa = Number(p.tarifa) || 0;
       const taxa = Number(p.taxa) || 0;
       const comissao = Number(p.comissao) || 0;
       const totalDet = tarifa + taxa + comissao;
-      const isDetalhado = Math.abs(Number(p.valor_venda || 0) - totalDet) < 0.01;
+      const isProdDetalhado = Math.abs(Number(p.valor_venda || 0) - totalDet) < 0.01;
+      
+      if (!isProdDetalhado) {
+        produtosAgrupados[locKey].isGroupDetalhado = false;
+      }
+    });
+
+    container.innerHTML = Object.values(produtosAgrupados).map(grupo => {
+      const locKey = grupo.loc;
+      const isGroupDetalhado = grupo.isGroupDetalhado;
+      const valorVendaTotal = grupo.valorVendaTotal;
+      const subProdutos = grupo.produtos;
+
+      const innerCardsHTML = subProdutos.map(p => {
+        const iconesMap: { [key: string]: string } = {
+          voo: '✈️',
+          hotel: '🏨',
+          seguro: '🛡️',
+          passeio: '🎟️',
+          outro: '📦'
+        };
+
+        const commentsCount = commentsCountMap[p.id] || 0;
+        const tarifa = Number(p.tarifa) || 0;
+        const taxa = Number(p.taxa) || 0;
+        const comissao = Number(p.comissao) || 0;
+        const totalDet = tarifa + taxa + comissao;
+        const isDetalhado = Math.abs(Number(p.valor_venda || 0) - totalDet) < 0.01;
+
+        return `
+          <div class="product-card-clickable flex items-center justify-between gap-3 p-3 bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-850 rounded-xl hover:bg-slate-100/50 dark:hover:bg-slate-800/80 transition cursor-pointer" data-product-id="${p.id}">
+            <div class="flex items-start gap-2.5 overflow-hidden w-full">
+              <span class="text-lg p-1 bg-white dark:bg-slate-700 border border-slate-100 dark:border-slate-650 rounded-lg shadow-sm flex items-center justify-center">${iconesMap[p.tipo] || '📦'}</span>
+              <div class="overflow-hidden flex-1">
+                <span class="block text-xs font-black text-slate-700 dark:text-slate-200 truncate leading-tight">${p.fornecedor} &bull; ${p.descricao}</span>
+                <span class="block text-[10px] text-slate-400 dark:text-slate-550 font-bold leading-normal">
+                  Data: <span class="text-slate-600 dark:text-slate-355 font-semibold">${formatarData(p.data_servico)}</span>
+                </span>
+                <span class="block text-[10px] leading-normal font-bold ${isDetalhado ? 'text-indigo-500 dark:text-indigo-400' : 'text-amber-500 dark:text-amber-450 animate-pulse'}">
+                  ${isDetalhado 
+                    ? `Tarifa: R$ ${tarifa.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} &bull; Taxa: R$ ${taxa.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} &bull; Comis.: R$ ${comissao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` 
+                    : '⚠️ Detalhamento pendente (clique para detalhar)'}
+                </span>
+              </div>
+            </div>
+            
+            <div class="flex items-center gap-3.5">
+              <div class="text-right">
+                <span class="block text-xs font-black text-indigo-600 dark:text-indigo-400">R$ ${Number(p.valor_venda || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+              </div>
+              <button data-comments-prod-id="${p.id}" data-comments-prod-name="${p.fornecedor} - ${p.descricao}" class="p-1.5 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-slate-300 dark:text-slate-550 hover:text-indigo-650 dark:hover:text-indigo-400 rounded-md transition text-xs font-bold flex items-center gap-1" title="Notas e Comentários">
+                💬 <span class="text-[10px]">${commentsCount}</span>
+              </button>
+              <button data-delete-prod-id="${p.id}" class="p-1.5 hover:bg-rose-50 dark:hover:bg-rose-950/20 text-slate-300 dark:text-slate-550 hover:text-rose-600 dark:hover:text-rose-455 rounded-md transition text-xs font-bold" title="Remover Produto">
+                🗑️
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
 
       return `
-        <div class="product-card-clickable flex items-center justify-between gap-3 p-3 bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-850 rounded-xl hover:bg-slate-100/50 dark:hover:bg-slate-800/80 transition cursor-pointer" data-product-id="${p.id}">
-          <div class="flex items-start gap-2.5 overflow-hidden">
-            <span class="text-lg p-1 bg-white dark:bg-slate-700 border border-slate-100 dark:border-slate-650 rounded-lg shadow-sm flex items-center justify-center">${iconesMap[p.tipo] || '📦'}</span>
-            <div class="overflow-hidden">
-              <span class="block text-xs font-black text-slate-700 dark:text-slate-200 truncate leading-tight">${p.fornecedor} &bull; ${p.descricao}</span>
-              <span class="block text-[10px] text-slate-400 dark:text-slate-550 font-bold leading-normal">
-                ${p.codigo_reserva ? `LOC: <span class="text-slate-600 dark:text-slate-355 font-extrabold">${p.codigo_reserva}</span> &bull; ` : ''} 
-                Data: <span class="text-slate-600 dark:text-slate-355 font-semibold">${formatarData(p.data_servico)}</span>
-              </span>
-              <span class="block text-[10px] leading-normal font-bold ${isDetalhado ? 'text-indigo-500 dark:text-indigo-400' : 'text-amber-500 dark:text-amber-450 animate-pulse'}">
-                ${isDetalhado 
-                  ? `Tarifa: R$ ${tarifa.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} &bull; Taxa: R$ ${taxa.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} &bull; Comis.: R$ ${comissao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` 
-                  : '⚠️ Detalhamento pendente (clique para detalhar)'}
-              </span>
+        <div class="loc-group border border-slate-200/80 dark:border-slate-850 rounded-xl overflow-hidden mb-2 shadow-sm">
+          <!-- Header -->
+          <div class="loc-header flex items-center justify-between p-2.5 bg-slate-100/50 dark:bg-slate-800/40 cursor-pointer hover:bg-slate-200/50 dark:hover:bg-slate-800/80 transition select-none" data-loc-key="${locKey}">
+            <div class="flex items-center gap-2">
+              <!-- Chevron / Arrow indicator -->
+              <span class="loc-chevron inline-block transition-transform duration-200 text-xs text-slate-400 dark:text-slate-550" style="transform: rotate(90deg);">▶</span>
+              
+              <!-- LOC Badge -->
+              <span class="px-2 py-0.5 text-[10px] font-black tracking-wider rounded bg-indigo-100 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 uppercase">${locKey}</span>
+              
+              <!-- Badge de Alerta de detalhamento pendente -->
+              ${!isGroupDetalhado ? `<span class="px-1.5 py-0.5 text-[9px] font-black rounded bg-amber-500/10 text-amber-500 border border-amber-500/20 animate-pulse">⚠️ Detalhamento Pendente</span>` : ''}
+            </div>
+            
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-black text-indigo-600 dark:text-indigo-400">R$ ${valorVendaTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
             </div>
           </div>
           
-          <div class="flex items-center gap-3.5">
-            <div class="text-right">
-              <span class="block text-xs font-black text-indigo-600 dark:text-indigo-400">R$ ${Number(p.valor_venda || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-            </div>
-            <button data-comments-prod-id="${p.id}" data-comments-prod-name="${p.fornecedor} - ${p.descricao}" class="p-1.5 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-slate-300 dark:text-slate-550 hover:text-indigo-650 dark:hover:text-indigo-400 rounded-md transition text-xs font-bold flex items-center gap-1" title="Notas e Comentários">
-              💬 <span class="text-[10px]">${commentsCount}</span>
-            </button>
-            <button data-delete-prod-id="${p.id}" class="p-1.5 hover:bg-rose-50 dark:hover:bg-rose-950/20 text-slate-300 dark:text-slate-550 hover:text-rose-600 dark:hover:text-rose-455 rounded-md transition text-xs font-bold" title="Remover Produto">
-              🗑️
-            </button>
+          <!-- Accordion Body (contains the product cards) -->
+          <div class="loc-body border-t border-slate-100 dark:border-slate-850/50 bg-slate-50/10 dark:bg-slate-900/5 p-2 pl-4 space-y-2 border-l-2 border-l-slate-200 dark:border-l-slate-700">
+            ${innerCardsHTML}
           </div>
         </div>
       `;
     }).join('');
+
+    // Ouvinte para colapsar/expandir os acordeões de LOC
+    container.querySelectorAll('.loc-header').forEach(header => {
+      header.addEventListener('click', () => {
+        const body = header.nextElementSibling as HTMLElement;
+        const chevron = header.querySelector('.loc-chevron') as HTMLElement;
+        if (body && chevron) {
+          const isHidden = body.classList.contains('hidden');
+          if (isHidden) {
+            body.classList.remove('hidden');
+            chevron.style.transform = 'rotate(90deg)';
+          } else {
+            body.classList.add('hidden');
+            chevron.style.transform = 'rotate(0deg)';
+          }
+        }
+      });
+    });
 
     // Ouvintes de comentários
     container.querySelectorAll('[data-comments-prod-id]').forEach(btn => {
