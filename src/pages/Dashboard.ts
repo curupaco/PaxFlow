@@ -746,15 +746,9 @@ export class Dashboard {
               <input id="input-viagem-destino" type="text" required placeholder="ex: Paris, Orlando, etc." class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm" />
             </div>
 
-            <div class="grid grid-cols-2 gap-4">
-              <div>
-                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Localizador (LOC)</label>
-                <input id="input-viagem-loc" type="text" placeholder="ex: AX3R9" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm uppercase" />
-              </div>
-              <div>
-                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Valor Total (R$) *</label>
-                ${renderCurrencyInputHTML('input-viagem-valor', '')}
-              </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Valor Total (R$) *</label>
+              ${renderCurrencyInputHTML('input-viagem-valor', '')}
             </div>
 
             <div class="grid grid-cols-2 gap-4">
@@ -779,8 +773,8 @@ export class Dashboard {
                 </select>
               </div>
               <div>
-                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Data Financeiro (DD/MM/AAAA)</label>
-                ${renderDateInputHTML('input-viagem-data-financeiro', '', 'DD/MM/AAAA', false)}
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Data Financeiro (DD/MM/AAAA) *</label>
+                ${renderDateInputHTML('input-viagem-data-financeiro', '', 'DD/MM/AAAA', true)}
               </div>
             </div>
 
@@ -801,7 +795,7 @@ export class Dashboard {
         { id: 'input-viagem-valor', type: 'currency' },
         { id: 'input-viagem-ida', type: 'date' },
         { id: 'input-viagem-volta', type: 'date' },
-        { id: 'input-viagem-data-financeiro', type: 'date', required: false }
+        { id: 'input-viagem-data-financeiro', type: 'date', required: true }
       ]);
 
       const handleClose = () => this.closeModal();
@@ -814,7 +808,7 @@ export class Dashboard {
 
         const clienteId = (document.getElementById('select-viagem-cliente') as HTMLSelectElement).value;
         const destino = (document.getElementById('input-viagem-destino') as HTMLInputElement).value;
-        const loc = (document.getElementById('input-viagem-loc') as HTMLInputElement).value;
+        const loc = ''; // Removido do formulário
         const valorRaw = (document.getElementById('input-viagem-valor') as HTMLInputElement).value.trim();
         const vIdaRaw = (document.getElementById('input-viagem-ida') as HTMLInputElement).value.trim();
         const vVoltaRaw = (document.getElementById('input-viagem-volta') as HTMLInputElement).value.trim();
@@ -824,7 +818,7 @@ export class Dashboard {
 
         const vIda = formatBrDateToIso(vIdaRaw);
         const vVolta = formatBrDateToIso(vVoltaRaw);
-        const vFin = vFinRaw ? formatBrDateToIso(vFinRaw) : null;
+        const vFin = formatBrDateToIso(vFinRaw);
         
         if (!vIda) {
           this.showToast('Por favor, informe a Data de Ida no formato correto DD/MM/AAAA.', 'error');
@@ -832,6 +826,10 @@ export class Dashboard {
         }
         if (!vVolta) {
           this.showToast('Por favor, informe a Data de Volta no formato correto DD/MM/AAAA.', 'error');
+          return;
+        }
+        if (!vFin) {
+          this.showToast('Por favor, informe a Data Financeiro no formato correto DD/MM/AAAA.', 'error');
           return;
         }
 
@@ -1026,15 +1024,9 @@ export class Dashboard {
               <input id="edit-viagem-destino" type="text" required value="${v.destino}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm" />
             </div>
 
-            <div class="grid grid-cols-2 gap-4">
-              <div>
-                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Localizador (LOC)</label>
-                <input id="edit-viagem-loc" type="text" value="${v.codigo_localizador || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm uppercase" />
-              </div>
-              <div>
-                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Valor Total (R$) *</label>
-                ${renderCurrencyInputHTML('edit-viagem-valor', v.valor_total || 0)}
-              </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Valor Total (R$) *</label>
+              ${renderCurrencyInputHTML('edit-viagem-valor', v.valor_total || 0)}
             </div>
 
             <div class="grid grid-cols-3 gap-4">
@@ -1047,8 +1039,8 @@ export class Dashboard {
                 ${renderDateInputHTML('edit-viagem-volta', v.data_volta || '')}
               </div>
               <div>
-                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Data Financeiro (DD/MM/AAAA)</label>
-                ${renderDateInputHTML('edit-viagem-data-financeiro', v.data_financeiro || '', 'DD/MM/AAAA', false)}
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Data Financeiro (DD/MM/AAAA) *</label>
+                ${renderDateInputHTML('edit-viagem-data-financeiro', v.data_financeiro || '', 'DD/MM/AAAA', true)}
               </div>
             </div>
 
@@ -1320,7 +1312,7 @@ export class Dashboard {
       { id: 'edit-viagem-valor', type: 'currency' },
       { id: 'edit-viagem-ida', type: 'date' },
       { id: 'edit-viagem-volta', type: 'date' },
-      { id: 'edit-viagem-data-financeiro', type: 'date', required: false }
+      { id: 'edit-viagem-data-financeiro', type: 'date', required: true }
     ]);
 
     // Submissão do Formulário de Edição da Viagem
@@ -1331,7 +1323,7 @@ export class Dashboard {
       const clienteId = (document.getElementById('edit-viagem-cliente') as HTMLSelectElement).value;
       const consultorId = (document.getElementById('edit-viagem-consultor') as HTMLSelectElement).value;
       const destino = (document.getElementById('edit-viagem-destino') as HTMLInputElement).value;
-      const loc = (document.getElementById('edit-viagem-loc') as HTMLInputElement).value;
+      const loc = ''; // Removido do formulário
       const valorRaw = (document.getElementById('edit-viagem-valor') as HTMLInputElement).value.trim();
       const dataIdaRaw = (document.getElementById('edit-viagem-ida') as HTMLInputElement).value.trim();
       const dataVoltaRaw = (document.getElementById('edit-viagem-volta') as HTMLInputElement).value.trim();
@@ -1341,7 +1333,7 @@ export class Dashboard {
 
       const dataIda = formatBrDateToIso(dataIdaRaw);
       const dataVolta = formatBrDateToIso(dataVoltaRaw);
-      const dataFinanceiro = dataFinanceiroRaw ? formatBrDateToIso(dataFinanceiroRaw) : null;
+      const dataFinanceiro = formatBrDateToIso(dataFinanceiroRaw);
 
       if (!dataIda) {
         this.showToast('Por favor, informe a Data de Ida no formato correto DD/MM/AAAA.', 'error');
@@ -1349,6 +1341,10 @@ export class Dashboard {
       }
       if (!dataVolta) {
         this.showToast('Por favor, informe a Data de Volta no formato correto DD/MM/AAAA.', 'error');
+        return;
+      }
+      if (!dataFinanceiro) {
+        this.showToast('Por favor, informe a Data Financeiro no formato correto DD/MM/AAAA.', 'error');
         return;
       }
 
