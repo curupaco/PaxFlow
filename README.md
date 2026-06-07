@@ -14,6 +14,8 @@ Plataforma SaaS de gestão operacional e fluxo de passageiros no turismo: acompa
 | Backend & BD | Supabase (PostgreSQL + Auth + Realtime) |
 | Upload | Google Drive API (OAuth 2.0) |
 | Drag & Drop | SortableJS |
+| Gamificação | Web Audio API + Canvas-Confetti (CDN) |
+| Fotos de Perfil | Supabase Storage + Canvas API (Compactação Client-side) |
 | Deploy | Cloudflare Pages / Vercel / Netlify |
 
 ---
@@ -25,6 +27,10 @@ Plataforma SaaS de gestão operacional e fluxo de passageiros no turismo: acompa
 - **Pipeline de Orçamentos** — 4 estágios com temperatura de lead, tags, notas e upload de documentos. **Atualizado com busca em tempo real e modal de visualização em duas colunas. A busca por clientes recorrentes no autocomplete do formulário foi corrigida para precisão absoluta. Ao fechar uma venda, caso o cliente não possua documento cadastrado, exige e valida o CPF/CNPJ com máscara e verificação oficial de dígitos verificadores.**
 - **Gestão e Ficha de Clientes** — Ficha única com passaporte/visto, validade monitorada por SLA, upload para o Google Drive. **Atualizado com busca omnipresente de alta abrangência e Visualizador de Documentos Inline PaxFlow. O campo Documento conta com máscara de digitação dinâmica para CPF/CNPJ e validação matemática de dígitos verificadores contra fraudes e erros humanos, bloqueando o envio de formulários inválidos.**
 - **Central de Reembolsos** — Tabela com cronômetro SLA em tempo real, status inline e métricas consolidadas. **Atualizado com campo de busca em tempo real em memória abrangendo clientes, destinos, localizadores, fornecedores, tipos de serviço, status e valores formatados.**
+- **Sistema de Gamificação dos Consultores [NEW]** — Engajamento operacional por meio de ganho de XP e patentes temáticas (Mochileiro, Explorador, Navegador, Guia de Elite, Embaixador). Apresenta anel de progresso circular SVG gradiente e nível numérico ao redor do avatar na Sidebar (sincronizados ao vivo via Supabase Realtime) e displays de patente sob o nome do usuário.
+- **Mural de Medalhas (Badges) [NEW]** — Grade interativa no perfil com 14 medalhas conquistáveis (SLA_CHAMP, DRIVE_MASTER, COMPLIANCE_HERO, etc.) exibidas em cores (conquistada) ou cinza com cadeado (bloqueada), acompanhadas de tooltips flutuantes em CSS contendo regras de desbloqueio.
+- **Animações e Efeitos de Celebração [NEW]** — Comemoração ao subir de nível ou fechar vendas com explosões visuais de confete (canvas-confetti via CDN) e áudios de chimes musicais sintetizados dinamicamente via Web Audio API, além de um modal glassmorphic 3D.
+- **Fotos de Perfil Personalizadas [NEW]** — Upload self-service de imagens do computador ou celular integrado ao Supabase Storage. As fotos são cortadas e comprimidas no navegador via Canvas para menos de 50KB antes de subir, economizando banda e armazenamento da agência.
 - **Painel Administrativo (Configurações)** — Configuração de SLAs, gestão de consultores, integração Google Drive. Inclui aba "Importações" para importação em lote de chamados DIGISAC (CSV) com mapeamento inteligente de colunas, conversor monetário/temporal e fuzzy match de atendentes.
 - **Cockpit de Tarefas** — Kanban interno standalone (todo.html) para planejamento da equipe.
 - **Navegação & UI Premium (Sidebar Colapsável & Lupa Vetorial)** — Shell de navegação avançado com barra lateral colapsável sob demanda (estado persistido via `localStorage` sob a chave `"paxflow-sidebar-collapsed"`). Campos de busca unificados com ícones vetoriais modernos (SVGs Heroicons) alinhados de forma absoluta e perfeitamente centrada.
@@ -120,9 +126,11 @@ src/
 │   ├── googleDrive.ts # Upload Google Drive OAuth2
 │   ├── csvImporter.ts # Parser e importador de CSV inteligente
 │   ├── dialog.ts     # Componentes de modal/dialog
-│   └── avatars.ts    # Geração de avatares
+│   ├── avatars.ts    # Geração de avatares e compressão de imagem
+│   └── gamification.ts # Serviço de cálculo de nível, XP e medalhas
 ├── utils/
-│   └── masks.ts      # Utilitários de máscaras, validações e formulários (CPF/CNPJ, etc.)
+│   ├── masks.ts      # Utilitários de máscaras, validações e formulários (CPF/CNPJ, etc.)
+│   └── celebrations.ts # Comemoração de level up (confetes e som nativo)
 ├── todo.ts           # Kanban interno (standalone)
 └── index.css         # Estilos globais + Tailwind
 

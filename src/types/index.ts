@@ -20,6 +20,8 @@ export interface PerfilConsultor {
   updatedAt?: string;
   created_at?: string;
   updated_at?: string;
+  xp?: number;
+  nivel?: number;
 }
 
 /**

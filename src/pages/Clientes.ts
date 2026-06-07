@@ -3,6 +3,7 @@ import { uploadDocumentoCliente } from '../services/googleDrive';
 import { getAvatarSvg } from '../services/avatars';
 import { Cliente, PerfilConsultor } from '../types';
 import { showCustomConfirm } from '../services/dialog';
+import { registrarXp } from '../services/gamification';
 import {
   renderPhoneInputHTML,
   renderEmailInputHTML,
@@ -453,6 +454,24 @@ export class ClientesPage {
               createdAt: d.created_at,
               updatedAt: d.updated_at
             };
+          }
+        }
+
+        if (recemCriado) {
+          // 1. Cliente Completo (Nome, Email, Telefone, Documento)
+          if (recemCriado.nome && recemCriado.email && recemCriado.telefone && recemCriado.documento) {
+            await registrarXp(this.user.id, `cliente_completo_${recemCriado.id}`, 30);
+          }
+
+          // 2. Passaporte com SLA Válido (Passaporte número e validade futura)
+          if (recemCriado.passaporteNumero && recemCriado.passaporteValidade) {
+            const validadeDate = new Date(recemCriado.passaporteValidade);
+            const hoje = new Date();
+            hoje.setHours(0, 0, 0, 0);
+            validadeDate.setHours(0, 0, 0, 0);
+            if (validadeDate.getTime() >= hoje.getTime()) {
+              await registrarXp(this.user.id, `passaporte_valido_${recemCriado.id}`, 50);
+            }
           }
         }
 

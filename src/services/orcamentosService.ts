@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { PerfilConsultor, Orcamento, Cliente, ConvertToTripOptions } from '../types';
+import { registrarXp } from './gamification';
 
 export class OrcamentosService {
   /**
@@ -368,6 +369,9 @@ export class OrcamentosService {
     };
 
     await this.persistOrcamento(updatedOrcamento);
+
+    // Injetar registro de XP de fechamento de venda (100 XP)
+    await registrarXp(orc.consultorId, `venda_aceita_${orc.id}`, 100);
 
     return { clienteId, newViagemId };
   }

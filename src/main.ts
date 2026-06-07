@@ -12,6 +12,7 @@ import { MeuPerfilModal } from './components/profile/MeuPerfilModal';
 import { PerfilConsultor } from './types';
 import { getAvatarSvg } from './services/avatars';
 import { showCustomAlert } from './services/dialog';
+import { obterProgressoNivel } from './services/gamification';
 
 class App {
   private container: HTMLElement;
@@ -70,6 +71,7 @@ class App {
         this.user = user;
         this.perfil = perfil;
         this.renderAppShell();
+        this.inicializarRealtimeProfile();
         this.navigate(this.currentActivePage);
       }
     } catch (err) {
@@ -352,17 +354,32 @@ class App {
   /**
    * Renderiza a identidade do consultor logado no rodapé da Sidebar
    */
+  /**
+   * Renderiza a identidade do consultor logado no rodapé da Sidebar com anel de XP e nível
+   */
   private atualizarSidebarProfileFooter(): void {
     if (!this.perfil) return;
 
+    const progress = obterProgressoNivel(this.perfil.xp || 0);
     const footerContainer = document.getElementById('sidebar-profile-footer-container');
+
     if (footerContainer) {
       footerContainer.innerHTML = `
         <button id="sidebar-profile-trigger" class="w-full border-t border-slate-100 dark:border-slate-800 pt-4 flex items-center justify-center ${this.sidebarCollapsed ? '' : 'md:justify-start md:px-2'} gap-3 hover:bg-slate-100 dark:hover:bg-slate-800/40 p-1.5 rounded-xl transition duration-200 focus:outline-none">
-          ${getAvatarSvg(this.perfil.avatar_url, this.perfil.nome || 'Consultor', 'w-8 h-8')}
-          <div class="overflow-hidden flex-1 select-none ${this.sidebarCollapsed ? 'md:hidden' : ''}">
+          <div class="relative shrink-0 flex items-center justify-center w-11 h-11">
+            <svg class="absolute inset-0 w-11 h-11 transform -rotate-90 select-none pointer-events-none" viewBox="0 0 36 36">
+              <path class="text-slate-200 dark:text-slate-800" stroke-width="2.5" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+              <path class="text-indigo-600 dark:text-indigo-500 transition-all duration-500 ease-out" stroke-dasharray="${progress.percent}, 100" stroke-width="2.5" stroke-linecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+            </svg>
+            ${getAvatarSvg(this.perfil.avatar_url, this.perfil.nome || 'Consultor', 'w-8 h-8 relative z-10')}
+            <span class="absolute -bottom-1 -right-1 bg-indigo-600 dark:bg-indigo-500 text-white font-black text-[8px] px-1 py-0.5 rounded-full z-20 shadow-md ring-1 ring-white dark:ring-slate-900 leading-none flex items-center justify-center min-w-[14px] h-[14px]">
+              ${progress.nivel}
+            </span>
+          </div>
+          <div class="overflow-hidden flex-1 select-none text-left ${this.sidebarCollapsed ? 'md:hidden' : ''}">
             <span class="block text-[11px] font-extrabold text-slate-700 dark:text-white truncate">${this.perfil.nome || 'Consultor'}</span>
-            <span class="block text-[9px] text-slate-455 dark:text-slate-500 font-semibold truncate capitalize">${this.perfil.role || 'consultor'}</span>
+            <span class="block text-[9px] text-slate-455 dark:text-slate-500 font-semibold truncate capitalize leading-tight">${this.perfil.role || 'consultor'}</span>
+            <span class="block text-[9px] text-indigo-600 dark:text-indigo-400 font-black truncate mt-0.5 leading-none">${progress.patenteEmoji} ${progress.patente}</span>
           </div>
         </button>
       `;
@@ -375,8 +392,71 @@ class App {
 
     const mobileProfileContainer = document.getElementById('mobile-profile-trigger');
     if (mobileProfileContainer) {
-      mobileProfileContainer.innerHTML = getAvatarSvg(this.perfil.avatar_url, this.perfil.nome || 'Consultor', 'w-8 h-8');
+      mobileProfileContainer.innerHTML = `
+        <div class="relative shrink-0 flex items-center justify-center w-10 h-10">
+          <svg class="absolute inset-0 w-10 h-10 transform -rotate-90 select-none pointer-events-none" viewBox="0 0 36 36">
+            <path class="text-slate-200 dark:text-slate-800" stroke-width="2.5" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+            <path class="text-indigo-600 dark:text-indigo-500 transition-all duration-500 ease-out" stroke-dasharray="${progress.percent}, 100" stroke-width="2.5" stroke-linecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+          </svg>
+          ${getAvatarSvg(this.perfil.avatar_url, this.perfil.nome || 'Consultor', 'w-7 h-7 relative z-10')}
+          <span class="absolute -bottom-1 -right-1 bg-indigo-600 dark:bg-indigo-500 text-white font-black text-[8px] px-1 py-0.5 rounded-full z-20 shadow-md ring-1 ring-white dark:ring-slate-900 leading-none flex items-center justify-center min-w-[13px] h-[13px]">
+            ${progress.nivel}
+          </span>
+        </div>
+      `;
     }
+  }
+
+  /**
+   * Assina escutas em tempo real no Supabase para atualizar o perfil e disparar celebrações
+   */
+  private inicializarRealtimeProfile(): void {
+    if (!this.perfil) return;
+
+    // Cancela qualquer inscrição anterior
+    supabase.channel(`profile-realtime-${this.perfil.id}`).unsubscribe();
+
+    supabase
+      .channel(`profile-realtime-${this.perfil.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'profiles',
+          filter: `id=eq.${this.perfil.id}`
+        },
+        (payload: any) => {
+          const updated = payload.new;
+          if (!updated) return;
+
+          const oldLevel = this.perfil?.nivel || 1;
+          const oldXp = this.perfil?.xp || 0;
+
+          const newLevel = updated.nivel || 1;
+          const newXp = updated.xp || 0;
+
+          // Atualiza dados locais
+          if (this.perfil) {
+            this.perfil.xp = newXp;
+            this.perfil.nivel = newLevel;
+          }
+
+          // Atualiza visualmente o rodapé e re-renderiza
+          this.atualizarSidebarProfileFooter();
+
+          // Checagem de Level Up ou XP recebido
+          if (newLevel > oldLevel) {
+            import('./utils/celebrations').then(({ showLevelUpModal }) => {
+              const prog = obterProgressoNivel(newXp);
+              showLevelUpModal(newLevel, prog.patente, prog.patenteEmoji);
+            });
+          } else if (newXp > oldXp) {
+            this.showToast(`+${newXp - oldXp} XP recebido!`, 'success');
+          }
+        }
+      )
+      .subscribe();
   }
 
   /**

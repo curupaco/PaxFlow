@@ -2,6 +2,7 @@ import { PerfilConsultor } from '../../types';
 import { getAvatarSvg, AVATAR_OPTIONS, salvarAvatarLocal } from '../../services/avatars';
 import { supabase, atualizarSenhaAtual } from '../../services/supabase';
 import { showCustomAlert } from '../../services/dialog';
+import { obterProgressoNivel, BADGE_DEFINITIONS, obterMedalhasUsuario } from '../../services/gamification';
 
 export interface MeuPerfilModalOptions {
   perfil: PerfilConsultor;
@@ -19,6 +20,7 @@ export class MeuPerfilModal {
     overlay.id = 'meu-perfil-overlay';
     overlay.className = 'fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all duration-300 opacity-0';
     
+    const progress = obterProgressoNivel(perfil.xp || 0);
     let selectedAvatarId = perfil.avatar_url || '';
 
     // Grade de seleção de avatares com efeito ativo e hover de zoom
@@ -72,10 +74,33 @@ export class MeuPerfilModal {
             📷 Enviar Foto Própria
           </button>
           <h2 class="text-lg font-black text-slate-800 dark:text-slate-100 tracking-tight leading-snug mt-1">Meu Perfil</h2>
-          <p class="text-xs text-slate-400 dark:text-slate-500 font-semibold">Escolha um animal ou envie sua própria foto</p>
+          <p class="text-xs text-slate-400 dark:text-slate-500 font-semibold">Consulte seus status e gerencie suas informações</p>
         </div>
 
         <form id="form-meu-perfil" class="p-6 space-y-4">
+          <!-- Bloco de Gamificação (XP e Nível) -->
+          <div class="bg-indigo-50/30 dark:bg-indigo-950/10 border border-indigo-100/50 dark:border-indigo-900/20 rounded-2xl p-4 space-y-2.5">
+            <div class="flex justify-between items-center text-xs">
+              <span class="font-extrabold text-slate-700 dark:text-slate-350 flex items-center gap-1.5">${progress.patenteEmoji} Patente: ${progress.patente}</span>
+              <span class="font-black text-indigo-650 dark:text-indigo-400">${progress.xpAtual} / ${progress.xpProximoNivel} XP</span>
+            </div>
+            <div class="w-full bg-slate-200 dark:bg-slate-850 h-2.5 rounded-full overflow-hidden">
+              <div class="bg-gradient-to-r from-indigo-500 to-purple-600 h-full rounded-full transition-all duration-500" style="width: ${progress.percent}%"></div>
+            </div>
+            <div class="text-[10px] text-slate-455 dark:text-slate-500 font-semibold flex justify-between">
+              <span>Nível ${progress.nivel}</span>
+              <span>Faltam ${progress.xpProximoNivel - progress.xpAtual} XP para o próximo nível</span>
+            </div>
+          </div>
+
+          <!-- Grade de Medalhas -->
+          <div>
+            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2.5">Mural de Medalhas</label>
+            <div class="grid grid-cols-7 gap-2.5" id="modal-badges-grid">
+              <div class="col-span-7 py-3 text-center text-slate-450 text-xs animate-pulse">Carregando medalhas...</div>
+            </div>
+          </div>
+
           <!-- Grade de avatares -->
           <div>
             <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">Selecione uma Carinha de Animal *</label>
@@ -123,6 +148,42 @@ export class MeuPerfilModal {
     `;
 
     document.body.appendChild(overlay);
+
+    // Carregar medalhas do usuário de forma assíncrona
+    obterMedalhasUsuario(perfil.id).then(userBadges => {
+      const unlockedSet = new Set(userBadges);
+      const gridEl = document.getElementById('modal-badges-grid');
+      if (gridEl) {
+        gridEl.innerHTML = BADGE_DEFINITIONS.map(badge => {
+          const isUnlocked = unlockedSet.has(badge.key);
+          if (isUnlocked) {
+            return `
+              <div class="group relative flex flex-col items-center justify-center p-2 rounded-xl bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-150/40 dark:border-indigo-900/30 transition transform hover:scale-115 cursor-pointer shadow-sm">
+                <span class="text-xl">${badge.emoji}</span>
+                <div class="absolute bottom-full mb-2 hidden group-hover:flex flex-col bg-slate-900 text-white text-[10px] p-2.5 rounded-xl w-48 shadow-2xl border border-slate-700/50 z-[100] text-center left-1/2 -translate-x-1/2 select-none pointer-events-none">
+                  <span class="font-extrabold text-indigo-400 text-xs mb-0.5">${badge.nome}</span>
+                  <span class="text-slate-300 leading-relaxed">${badge.descricao}</span>
+                  <span class="text-[8px] text-emerald-400 font-bold uppercase mt-1">✓ Conquistada</span>
+                </div>
+              </div>
+            `;
+          } else {
+            return `
+              <div class="group relative flex flex-col items-center justify-center p-2 rounded-xl bg-slate-100/50 dark:bg-slate-800/30 border border-slate-200/50 dark:border-slate-800/50 opacity-40 hover:opacity-75 transition transform hover:scale-115 cursor-pointer filter grayscale">
+                <span class="text-xl">${badge.emoji}</span>
+                <div class="absolute bottom-full mb-2 hidden group-hover:flex flex-col bg-slate-900 text-white text-[10px] p-2.5 rounded-xl w-48 shadow-2xl border border-slate-700/50 z-[100] text-center left-1/2 -translate-x-1/2 select-none pointer-events-none">
+                  <span class="font-extrabold text-slate-400 text-xs mb-0.5">${badge.nome}</span>
+                  <span class="text-slate-350 leading-relaxed">${badge.descricao}</span>
+                  <span class="text-[8px] text-amber-500 font-bold uppercase mt-1">🔒 Bloqueada</span>
+                </div>
+              </div>
+            `;
+          }
+        }).join('');
+      }
+    }).catch(err => {
+      console.error('Erro ao carregar medalhas:', err);
+    });
 
     // Fade-in
     setTimeout(() => {
