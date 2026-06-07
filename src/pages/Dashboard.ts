@@ -835,6 +835,13 @@ export class Dashboard {
           return;
         }
 
+        const idaDate = new Date(vIda);
+        const voltaDate = new Date(vVolta);
+        if (voltaDate.getTime() < idaDate.getTime()) {
+          this.showToast('A data de volta não pode ser anterior à data de ida.', 'error');
+          return;
+        }
+
         const valor = parseDoubleBr(valorRaw);
 
         const payload = {
@@ -982,7 +989,7 @@ export class Dashboard {
         </div>
 
         <!-- CONTEÚDO DA ABA 1: DETALHES E EDIÇÃO -->
-        <div id="tab-detalhes-content" class="space-y-4 ${activeTab === 'produtos' ? 'hidden' : ''}">
+        <div id="tab-detalhes-content" class="space-y-4 tab-pane-transition ${activeTab === 'produtos' ? 'hidden' : ''}">
           <!-- Detalhes do Dono e SLA no Topo -->
           <div class="flex flex-wrap items-center justify-between gap-3 p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/50 dark:border-slate-800">
             <div class="flex items-center gap-2">
@@ -1072,7 +1079,7 @@ export class Dashboard {
         </div>
 
         <!-- CONTEÚDO DA ABA 2: PRODUTOS E SERVIÇOS -->
-        <div id="tab-produtos-content" class="${activeTab === 'produtos' ? '' : 'hidden'} space-y-5">
+        <div id="tab-produtos-content" class="${activeTab === 'produtos' ? '' : 'hidden'} space-y-5 tab-pane-transition">
           
           <!-- Painel Financeiro (Totalizadores e Saldo Pendente) -->
           <div id="painel-financeiro-produtos" class="grid grid-cols-3 gap-3 p-3.5 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/50 dark:border-slate-800 mb-4">
@@ -1161,7 +1168,7 @@ export class Dashboard {
 
         <!-- CONTEÚDO DA ABA 3: HISTÓRICO DE REEMBOLSOS (DINÂMICO) -->
         ${v.reembolsos && v.reembolsos.length > 0 ? `
-          <div id="tab-reembolsos-content" class="hidden space-y-4 max-h-[350px] overflow-y-auto pr-1 custom-scrollbar">
+          <div id="tab-reembolsos-content" class="hidden space-y-4 max-h-[350px] overflow-y-auto pr-1 custom-scrollbar tab-pane-transition">
             <h4 class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-wide">Solicitações de Reembolso nesta Viagem</h4>
             <div class="space-y-3">
               ${v.reembolsos.map((r: any) => {
@@ -1342,6 +1349,13 @@ export class Dashboard {
       }
       if (!dataVolta) {
         this.showToast('Por favor, informe a Data de Volta no formato correto DD/MM/AAAA.', 'error');
+        return;
+      }
+
+      const idaDate = new Date(dataIda);
+      const voltaDate = new Date(dataVolta);
+      if (voltaDate.getTime() < idaDate.getTime()) {
+        this.showToast('A data de volta não pode ser anterior à data de ida.', 'error');
         return;
       }
 
@@ -1766,7 +1780,7 @@ export class Dashboard {
     if (!overlay) {
       overlay = document.createElement('div');
       overlay.id = 'modal-overlay';
-      overlay.className = 'fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center opacity-0 pointer-events-none transition-all duration-300';
+      overlay.className = 'fixed inset-0 modal-overlay-blur z-50 flex items-center justify-center opacity-0 pointer-events-none';
       overlay.innerHTML = `
         <div class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 w-full max-w-lg rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-800 transform scale-95 transition-all duration-300 max-h-[90vh] overflow-y-auto custom-scrollbar" id="modal-container">
           <div id="modal-content-container"></div>

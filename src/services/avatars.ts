@@ -1,3 +1,5 @@
+import { supabase } from './supabase';
+
 export interface AvatarOption {
   id: string;
   nome: string;
@@ -239,6 +241,15 @@ export const AVATAR_OPTIONS: AvatarOption[] = [
 ];
 
 export function getAvatarSvg(avatarId: string | undefined, initials: string = 'C', extraClasses: string = 'w-10 h-10'): string {
+  // Caso o avatar seja uma URL (imagem customizada no storage do Supabase ou link externo)
+  if (avatarId && (avatarId.startsWith('http') || avatarId.startsWith('/') || avatarId.startsWith('data:'))) {
+    return `
+      <div class="${extraClasses} flex items-center justify-center rounded-xl overflow-hidden shadow-sm select-none border border-slate-200/40 dark:border-slate-700/40 transition hover:scale-105 duration-200">
+        <img src="${avatarId}" alt="Avatar de ${initials}" class="w-full h-full object-cover" />
+      </div>
+    `;
+  }
+
   const found = AVATAR_OPTIONS.find(a => a.id === avatarId);
   if (found) {
     return `<div class="${extraClasses} flex items-center justify-center rounded-xl overflow-hidden shadow-sm select-none border border-slate-200/40 dark:border-slate-700/40 transition hover:scale-105 duration-200">${found.svg}</div>`;
@@ -295,5 +306,93 @@ export function mesclarAvataresLocais(perfis: any[]): any[] {
     }
     return p;
   });
+}
+
+/**
+ * Redimensiona e comprime uma imagem para 200x200 pixels JPEG (qualidade 0.85) usando a API Canvas.
+ */
+export function comprimirAvatarImage(file: File): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error('Falha ao obter contexto 2D do Canvas.'));
+          return;
+        }
+
+        const size = 200;
+        canvas.width = size;
+        canvas.height = size;
+
+        const imgWidth = img.width;
+        const imgHeight = img.height;
+        let sx = 0, sy = 0, sWidth = imgWidth, sHeight = imgHeight;
+
+        if (imgWidth > imgHeight) {
+          sWidth = imgHeight;
+          sx = (imgWidth - imgHeight) / 2;
+        } else {
+          sHeight = imgWidth;
+          sy = (imgHeight - imgWidth) / 2;
+        }
+
+        ctx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, size, size);
+
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              resolve(blob);
+            } else {
+              reject(new Error('Falha ao exportar imagem do Canvas.'));
+            }
+          },
+          'image/jpeg',
+          0.85
+        );
+      };
+      img.onerror = () => reject(new Error('Falha ao carregar imagem.'));
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = () => reject(new Error('Falha ao ler o arquivo selecionado.'));
+    reader.readAsDataURL(file);
+  });
+}
+
+/**
+ * Envia o blob da foto para o Supabase Storage e atualiza a URL na tabela profiles.
+ */
+export async function uploadAvatarSupabase(userId: string, avatarBlob: Blob, fileExtension: string = 'jpg'): Promise<string> {
+  const filePath = `${userId}/${Date.now()}.${fileExtension}`;
+
+  // 1. Enviar para o bucket 'avatars'
+  const { data: uploadData, error: uploadError } = await supabase.storage
+    .from('avatars')
+    .upload(filePath, avatarBlob, {
+      contentType: `image/${fileExtension === 'jpg' ? 'jpeg' : fileExtension}`,
+      upsert: true
+    });
+
+  if (uploadError) throw uploadError;
+
+  // 2. Obter a URL pública da imagem recém enviada
+  const { data } = supabase.storage
+    .from('avatars')
+    .getPublicUrl(filePath);
+
+  const publicUrl = data.publicUrl;
+
+  // 3. Atualizar a coluna 'avatar_url' na tabela profiles
+  const { error: profileError } = await supabase
+    .from('profiles')
+    .update({ avatar_url: publicUrl })
+    .eq('id', userId);
+
+  if (profileError) throw profileError;
+
+  return publicUrl;
 }
 

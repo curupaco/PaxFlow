@@ -24,6 +24,12 @@ export class ClientesPage {
   private buscaTermo: string = '';
   private profileUpdatedListener: ((e: any) => void) | null = null;
 
+  // Variáveis para paginação infinita
+  private paginaAtual: number = 0;
+  private limitePagina: number = 30;
+  private hasMore: boolean = true;
+  private carregandoMais: boolean = false;
+
   constructor(container: HTMLElement) {
     this.container = container;
   }
@@ -80,22 +86,31 @@ export class ClientesPage {
   }
 
   /**
-   * Busca os clientes no Supabase, aplicando regras de acesso por consultor
+   * Busca os clientes no Supabase com paginação infinita e busca no servidor
    */
-  private async loadClientes(): Promise<void> {
+  private async loadClientes(isIncremental: boolean = false): Promise<void> {
+    if (this.carregandoMais) return;
+    if (!isIncremental) {
+      this.paginaAtual = 0;
+      this.hasMore = true;
+    }
+    this.carregandoMais = true;
     try {
       let query = supabase
         .from('clientes')
-        .select('*')
-        .order('nome', { ascending: true });
+        .select('*', { count: 'exact' })
+        .order('nome', { ascending: true })
+        .range(this.paginaAtual * this.limitePagina, (this.paginaAtual + 1) * this.limitePagina - 1);
 
-      // Todos os consultores veem todos os clientes cadastrados no sistema
+      if (this.buscaTermo.trim()) {
+        const q = `%${this.buscaTermo.trim()}%`;
+        query = query.or(`nome.ilike.${q},email.ilike.${q},documento.ilike.${q},telefone.ilike.${q}`);
+      }
 
-      const { data, error } = await query;
+      const { data, error, count } = await query;
       if (error) throw error;
 
-      // Mapeamento explícito para camelCase se o banco retornar em snake_case
-      this.clientes = (data || []).map(d => ({
+      const mapped = (data || []).map(d => ({
         id: d.id,
         nome: d.nome,
         email: d.email,
@@ -112,9 +127,19 @@ export class ClientesPage {
         createdAt: d.created_at,
         updatedAt: d.updated_at
       }));
+
+      if (isIncremental) {
+        this.clientes = [...this.clientes, ...mapped];
+      } else {
+        this.clientes = mapped;
+      }
+
+      this.hasMore = this.clientes.length < (count || 0);
     } catch (err: any) {
       console.error('Erro ao carregar lista de clientes:', err.message);
-      this.clientes = [];
+      if (!isIncremental) this.clientes = [];
+    } finally {
+      this.carregandoMais = false;
     }
   }
 
@@ -159,11 +184,29 @@ export class ClientesPage {
    * Associa os eventos gerais da tela (como busca e seleção de novo cliente)
    */
   private setupGlobalEventListeners(): void {
-    // Input de busca
+    // Input de busca com debounce
     const searchInput = document.getElementById('input-busca-cliente') as HTMLInputElement;
+    let debounceTimer: any;
     searchInput?.addEventListener('input', (e) => {
-      this.buscaTermo = (e.target as HTMLInputElement).value.toLowerCase();
-      this.filtrarERenderizarLista();
+      this.buscaTermo = (e.target as HTMLInputElement).value;
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(async () => {
+        await this.loadClientes(false);
+        this.filtrarERenderizarLista();
+      }, 300);
+    });
+
+    // Evento de scroll para paginação infinita
+    const listaEl = document.getElementById('lista-clientes-container');
+    listaEl?.addEventListener('scroll', async () => {
+      if (this.carregandoMais || !this.hasMore) return;
+      
+      const { scrollTop, clientHeight, scrollHeight } = listaEl;
+      if (scrollTop + clientHeight >= scrollHeight - 50) {
+        this.paginaAtual++;
+        await this.loadClientes(true);
+        this.filtrarERenderizarLista();
+      }
     });
 
     // Botão de novo cliente
@@ -182,37 +225,11 @@ export class ClientesPage {
     });
   }
 
-  /**
-   * Filtra e renderiza dinamicamente a barra lateral esquerda
-   */
   private filtrarERenderizarLista(): void {
     const listaEl = document.getElementById('lista-clientes-container');
     if (!listaEl) return;
 
-    const filtrados = this.clientes.filter(c => {
-      const q = this.buscaTermo.trim();
-      if (!q) return true;
-
-      const nome = c.nome?.toLowerCase() || '';
-      const email = c.email?.toLowerCase() || '';
-      const documento = c.documento?.toLowerCase() || '';
-      const telefone = c.telefone?.toLowerCase() || '';
-      const endereco = c.endereco?.toLowerCase() || '';
-      const passNumero = c.passaporteNumero?.toLowerCase() || '';
-      const vistos = c.vistosInformacoes?.toLowerCase() || '';
-      const observacoes = c.observacoes?.toLowerCase() || '';
-
-      return (
-        nome.includes(q) ||
-        email.includes(q) ||
-        documento.includes(q) ||
-        telefone.includes(q) ||
-        endereco.includes(q) ||
-        passNumero.includes(q) ||
-        vistos.includes(q) ||
-        observacoes.includes(q)
-      );
-    });
+    const filtrados = this.clientes;
 
     if (filtrados.length === 0) {
       listaEl.innerHTML = `
@@ -329,6 +346,21 @@ export class ClientesPage {
       const vistosVal = (document.getElementById('textarea-vistos') as HTMLTextAreaElement).value;
       const obsVal = (document.getElementById('textarea-observacoes') as HTMLTextAreaElement).value;
 
+      // Validação de passaporte vencido no passado
+      if (passValidadeVal) {
+        const validadeDate = new Date(passValidadeVal);
+        const hoje = new Date();
+        hoje.setHours(0, 0, 0, 0);
+        validadeDate.setHours(0, 0, 0, 0);
+        if (validadeDate.getTime() < hoje.getTime()) {
+          const confirmSave = await showCustomConfirm(
+            'A data de validade do passaporte informada está no passado (vencido). Tem certeza de que deseja salvar os dados do cliente mesmo assim?',
+            'Aviso de Passaporte Vencido'
+          );
+          if (!confirmSave) return;
+        }
+      }
+
       const payload: any = {
         nome: nomeVal,
         email: emailVal,
@@ -346,13 +378,48 @@ export class ClientesPage {
       try {
         let recemCriado: Cliente | null = null;
         if (isEditing && this.clienteSelecionado) {
-          const { error } = await supabase
+          const newUpdatedAt = new Date().toISOString();
+          // Executa o update com verificação de bloqueio otimista
+          const { data: updateData, error } = await supabase
             .from('clientes')
-            .update(payload)
-            .eq('id', this.clienteSelecionado.id);
+            .update({ ...payload, updated_at: newUpdatedAt })
+            .eq('id', this.clienteSelecionado.id)
+            .eq('updated_at', this.clienteSelecionado.updatedAt)
+            .select();
 
           if (error) throw error;
-          this.showToast('Ficha do cliente atualizada com sucesso!', 'success');
+
+          if (!updateData || updateData.length === 0) {
+            // Divergência de concorrência detectada
+            const { data: dbData } = await supabase
+              .from('clientes')
+              .select('*')
+              .eq('id', this.clienteSelecionado.id)
+              .single();
+
+            const confirmOverwrite = await showCustomConfirm(
+              `Outro consultor modificou a ficha deste cliente enquanto você editava.\n\nDeseja sobrescrever as alterações dele com os seus dados ou cancelar e atualizar a tela com os dados novos?`,
+              'Divergência de Dados (Concorrência)'
+            );
+
+            if (confirmOverwrite) {
+              const { error: forceError } = await supabase
+                .from('clientes')
+                .update({ ...payload, updated_at: new Date().toISOString() })
+                .eq('id', this.clienteSelecionado.id);
+
+              if (forceError) throw forceError;
+              this.showToast('Alterações salvas forçadamente!', 'success');
+            } else {
+              this.showToast('Atualizando dados do cliente...', 'success');
+              await this.loadClientes();
+              const freshClient = this.clientes.find(c => c.id === this.clienteSelecionado?.id) || null;
+              this.selecionarCliente(freshClient);
+              return;
+            }
+          } else {
+            this.showToast('Ficha do cliente atualizada com sucesso!', 'success');
+          }
 
           await this.loadClientes();
           recemCriado = this.clientes.find(c => c.id === this.clienteSelecionado?.id) || null;

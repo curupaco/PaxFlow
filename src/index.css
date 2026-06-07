@@ -126,3 +126,48 @@ header h1, header h2, header h3,
   animation: shake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
 }
 
+/* ================= ACCESSIBILITY & MOTION SYSTEM ================= */
+
+/* Correções de acessibilidade de contraste no modo escuro */
+html.dark input::placeholder, 
+html.dark textarea::placeholder,
+html.dark select::placeholder {
+  color: #94a3b8 !important; /* slate-400 para garantir taxa mínima de contraste de placeholders */
+}
+html.dark .text-slate-500 {
+  color: #cbd5e1 !important; /* slate-300 sob fundos escuros */
+}
+html.dark .text-slate-650 {
+  color: #e2e8f0 !important; /* slate-200 */
+}
+html.dark .text-slate-400 {
+  color: #94a3b8 !important; /* slate-400 */
+}
+html.dark .text-slate-450 {
+  color: #a1a1aa !important; /* zinc-400 */
+}
+
+/* Animação de transição lateral de abas (modais) */
+.tab-pane-transition {
+  animation: tabFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes tabFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Transições e desfoque suave para modais overlays */
+.modal-overlay-blur {
+  backdrop-filter: blur(8px) !important;
+  background-color: rgba(15, 23, 42, 0.45) !important;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+

@@ -23,7 +23,24 @@ export class MeuPerfilModal {
 
     // Grade de seleção de avatares com efeito ativo e hover de zoom
     const renderAvatarsHtml = () => {
-      return AVATAR_OPTIONS.map(opt => {
+      let html = '';
+      
+      // Se o usuário possui uma foto customizada de perfil, exibe como a primeira opção na grade
+      if (perfil.avatar_url && (perfil.avatar_url.startsWith('http') || perfil.avatar_url.startsWith('/') || perfil.avatar_url.startsWith('data:'))) {
+        const isSelected = selectedAvatarId === perfil.avatar_url;
+        html += `
+          <button type="button" data-avatar-id="${perfil.avatar_url}" class="btn-select-avatar w-12 h-12 p-0.5 rounded-xl border-2 transition duration-200 transform hover:scale-110 relative flex items-center justify-center overflow-hidden ${
+            isSelected 
+              ? 'border-indigo-600 bg-indigo-50/20 dark:bg-indigo-950/20 shadow-md ring-2 ring-indigo-500/20' 
+              : 'border-transparent hover:border-slate-350 dark:hover:border-slate-750'
+          }" title="Minha Foto Customizada">
+            <img src="${perfil.avatar_url}" alt="Minha Foto" class="w-full h-full object-cover rounded-lg" />
+            ${isSelected ? `<div class="absolute -top-1 -right-1 bg-indigo-600 text-white w-3.5 h-3.5 rounded-full flex items-center justify-center text-[8px] font-bold shadow-sm z-10">✓</div>` : ''}
+          </button>
+        `;
+      }
+
+      html += AVATAR_OPTIONS.map(opt => {
         const isSelected = selectedAvatarId === opt.id;
         return `
           <button type="button" data-avatar-id="${opt.id}" class="btn-select-avatar w-12 h-12 p-0.5 rounded-xl border-2 transition duration-200 transform hover:scale-110 relative flex items-center justify-center ${
@@ -36,6 +53,8 @@ export class MeuPerfilModal {
           </button>
         `;
       }).join('');
+
+      return html;
     };
 
     overlay.innerHTML = `
@@ -43,12 +62,17 @@ export class MeuPerfilModal {
         
         <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-600"></div>
 
-        <div class="p-6 border-b border-slate-100 dark:border-slate-800 text-center flex flex-col items-center">
-          <div id="modal-profile-avatar-preview" class="mb-3">
+        <div class="p-6 border-b border-slate-100 dark:border-slate-800 text-center flex flex-col items-center gap-2">
+          <div id="modal-profile-avatar-preview" class="cursor-pointer group relative rounded-xl overflow-hidden shadow-md">
             ${getAvatarSvg(selectedAvatarId, perfil.nome || 'Consultor', 'w-16 h-16')}
+            <div class="absolute inset-0 bg-black/50 flex items-center justify-center text-white text-[9px] font-black opacity-0 group-hover:opacity-100 transition-opacity rounded-xl">Enviar Foto</div>
           </div>
-          <h2 class="text-lg font-black text-slate-800 dark:text-slate-100 tracking-tight leading-snug">Meu Perfil</h2>
-          <p class="text-xs text-slate-400 dark:text-slate-500 font-semibold mt-1">Defina sua carinha de animal e gerencie seu acesso</p>
+          <input type="file" id="input-profile-photo-file" accept="image/*" class="hidden" />
+          <button type="button" id="btn-upload-profile-photo" class="text-[9px] bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-500 dark:text-slate-400 font-extrabold px-3 py-1.5 rounded-lg border border-slate-200/50 dark:border-slate-700/50 transition">
+            📷 Enviar Foto Própria
+          </button>
+          <h2 class="text-lg font-black text-slate-800 dark:text-slate-100 tracking-tight leading-snug mt-1">Meu Perfil</h2>
+          <p class="text-xs text-slate-400 dark:text-slate-500 font-semibold">Escolha um animal ou envie sua própria foto</p>
         </div>
 
         <form id="form-meu-perfil" class="p-6 space-y-4">
@@ -147,6 +171,57 @@ export class MeuPerfilModal {
     nomeInput?.addEventListener('input', () => {
       const preview = overlay.querySelector('#modal-profile-avatar-preview') as HTMLElement;
       preview.innerHTML = getAvatarSvg(selectedAvatarId, nomeInput.value || 'Consultor', 'w-16 h-16');
+    });
+
+    // Ouvintes para o upload de foto customizada de perfil
+    const btnUpload = overlay.querySelector('#btn-upload-profile-photo') as HTMLButtonElement;
+    const fileInput = overlay.querySelector('#input-profile-photo-file') as HTMLInputElement;
+    const preview = overlay.querySelector('#modal-profile-avatar-preview') as HTMLElement;
+
+    const triggerFileSelect = () => fileInput?.click();
+    btnUpload?.addEventListener('click', triggerFileSelect);
+    preview?.addEventListener('click', triggerFileSelect);
+
+    fileInput?.addEventListener('change', async () => {
+      const files = fileInput.files;
+      if (files && files.length > 0) {
+        const file = files[0];
+        try {
+          btnUpload.disabled = true;
+          btnUpload.textContent = 'Processando...';
+
+          // 1. Redimensionar e comprimir imagem via Canvas
+          const { comprimirAvatarImage, uploadAvatarSupabase } = await import('../../services/avatars');
+          const compressedBlob = await comprimirAvatarImage(file);
+          
+          btnUpload.textContent = 'Enviando...';
+          // 2. Fazer upload para o Supabase Storage
+          const fileExt = file.name.split('.').pop() || 'jpg';
+          const url = await uploadAvatarSupabase(perfil.id, compressedBlob, fileExt);
+          
+          // 3. Atualizar localmente a foto selecionada
+          selectedAvatarId = url;
+          perfil.avatar_url = url; // Atualiza a ficha localmente para que o seletor funcione
+          
+          // 4. Atualizar o preview do modal
+          preview.innerHTML = getAvatarSvg(selectedAvatarId, nomeInput.value || 'Consultor', 'w-16 h-16');
+          
+          // 5. Atualizar a grade de avatares para incluir a nova foto customizada
+          const grid = overlay.querySelector('#modal-avatar-selection-grid') as HTMLElement;
+          if (grid) {
+            grid.innerHTML = renderAvatarsHtml();
+            setupAvatarGridEvents();
+          }
+
+          options.showToast('Foto de perfil carregada com sucesso!', 'success');
+        } catch (err: any) {
+          console.error('Erro no upload da foto de perfil:', err);
+          options.showToast(`Falha no upload: ${err.message || err}`, 'error');
+        } finally {
+          btnUpload.disabled = false;
+          btnUpload.textContent = '📷 Enviar Foto Própria';
+        }
+      }
     });
 
     // Enviar formulário
