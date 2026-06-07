@@ -376,7 +376,7 @@ class App {
               ${progress.nivel}
             </span>
           </div>
-          <div class="overflow-hidden flex-1 select-none text-left ${this.sidebarCollapsed ? 'md:hidden' : ''}">
+          <div id="sidebar-profile-text" class="overflow-hidden flex-1 select-none text-left ${this.sidebarCollapsed ? 'md:hidden' : ''}">
             <span class="block text-[11px] font-extrabold text-slate-700 dark:text-white truncate">${this.perfil.nome || 'Consultor'}</span>
             <span class="block text-[9px] text-slate-455 dark:text-slate-500 font-semibold truncate capitalize leading-tight">${this.perfil.role || 'consultor'}</span>
             <span class="block text-[9px] text-indigo-600 dark:text-indigo-400 font-black truncate mt-0.5 leading-none">${progress.patenteEmoji} ${progress.patente}</span>
@@ -492,17 +492,12 @@ class App {
     }
 
     // Ocultar/Exibir textos do menu lateral
-    const textLabels = aside.querySelectorAll('span, #sidebar-profile-trigger div');
+    const textLabels = aside.querySelectorAll('#sidebar-logo-text, nav button:not(#sidebar-profile-trigger) > span, #sidebar-profile-text');
     textLabels.forEach(el => {
-      if (el.id === 'sidebar-collapse-btn' || el.closest('#sidebar-collapse-btn')) return;
-      if (el.tagName === 'SPAN' && el.parentElement?.id === 'sidebar-profile-trigger') return;
-
-      if (el.textContent === 'PaxFlow' || el.closest('button') || el.closest('#sidebar-profile-trigger')) {
-        if (this.sidebarCollapsed) {
-          el.classList.add('md:hidden');
-        } else {
-          el.classList.remove('md:hidden');
-        }
+      if (this.sidebarCollapsed) {
+        el.classList.add('md:hidden');
+      } else {
+        el.classList.remove('md:hidden');
       }
     });
 
