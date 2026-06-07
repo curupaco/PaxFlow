@@ -487,7 +487,7 @@ export class Dashboard {
    * Abre o Modal Dinâmico para solicitação de reembolso de um produto
    */
   private async openRefundModal(tripId: string, oldStatus: string): Promise<void> {
-    this.renderModalOverlay();
+    this.renderModalOverlay('max-w-lg');
 
     const modalContent = document.getElementById('modal-content-container');
     if (!modalContent) return;
@@ -692,7 +692,7 @@ export class Dashboard {
    */
   private async openNovaViagemModal(): Promise<void> {
     try {
-      this.renderModalOverlay();
+      this.renderModalOverlay('max-w-lg');
       const modalContent = document.getElementById('modal-content-container');
       if (!modalContent) return;
 
@@ -885,7 +885,7 @@ export class Dashboard {
    */
   private async openEdicaoEProdutosModal(tripId: string, activeTab: 'detalhes' | 'produtos' = 'detalhes'): Promise<void> {
     try {
-      this.renderModalOverlay();
+      this.renderModalOverlay('max-w-6xl');
       const modalContent = document.getElementById('modal-content-container');
       if (!modalContent) return;
 
@@ -931,7 +931,7 @@ export class Dashboard {
       // 3. Renderiza a estrutura do Modal com as Abas
       this.renderEdicaoEProdutosModalContent(viagem, clientes || [], activeTab);
       
-      // 4. Carrega e exibe os produtos da viagem
+// 4. Carrega e exibe os produtos da viagem
       await this.loadAndRenderProdutosViagem(tripId);
 
     } catch (err: any) {
@@ -941,16 +941,9 @@ export class Dashboard {
     }
   }
 
-  /**
-   * Renderiza a estrutura interna do Modal de Edição & Produtos
-   */
   private renderEdicaoEProdutosModalContent(v: any, clientes: any[], activeTab: 'detalhes' | 'produtos' = 'detalhes'): void {
     const modalContent = document.getElementById('modal-content-container');
     if (!modalContent) return;
-
-    // Aumenta a largura do modal para acomodar melhor as informações adicionais
-    modalContent.classList.remove('max-w-lg');
-    modalContent.classList.add('max-w-2xl');
 
     // Cálculos de SLA e Consultor para exibição proeminente
     const reembolsoConcluido = v.reembolsos && v.reembolsos.some((r: any) => r.status === 'pago');
@@ -960,6 +953,97 @@ export class Dashboard {
     const consultorAvatar = dono ? getAvatarSvg(dono.avatar_url, dono.nome, 'w-6 h-6') : '👤';
     const consultorNome = dono ? dono.nome : 'Não atribuído';
 
+    const renderReembolsosHTML = (): string => {
+      if (!v.reembolsos || v.reembolsos.length === 0) return '';
+      return `
+        <h4 class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-3">Solicitações de Reembolso nesta Viagem</h4>
+        <div class="space-y-3">
+          ${v.reembolsos.map((r: any) => {
+            let statusBadgeClass = 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300';
+            let statusLabel = r.status;
+            if (r.status === 'solicitado' || r.status === 'Aguardando Fornecedor') {
+              statusBadgeClass = 'bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-450 border border-amber-100/30';
+              statusLabel = 'Aguardando Fornecedor';
+            } else if (r.status === 'em_analise') {
+              statusBadgeClass = 'bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400 border border-blue-100/30';
+              statusLabel = 'Em Análise';
+            } else if (r.status === 'aprovado') {
+              statusBadgeClass = 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/30 dark:text-indigo-400 border border-indigo-100/30';
+              statusLabel = 'Aprovado';
+            } else if (r.status === 'recusado') {
+              statusBadgeClass = 'bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-455 border border-rose-100/30';
+              statusLabel = 'Recusado';
+            } else if (r.status === 'pago') {
+              statusBadgeClass = 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-450 border border-emerald-100/30';
+              statusLabel = '💸 Pago / Concluído';
+            } else if (r.status === 'cancelado') {
+              statusBadgeClass = 'bg-slate-50 text-slate-450 dark:bg-slate-800 dark:text-slate-500 border border-slate-200/50';
+              statusLabel = 'Cancelado';
+            }
+
+            const dataSolicitacao = r.data_solicitacao ? new Date(r.data_solicitacao).toLocaleDateString('pt-BR') : '';
+            const dataResolucao = r.data_resolucao ? new Date(r.data_resolucao).toLocaleDateString('pt-BR') : '';
+
+            return `
+              <div class="p-4 bg-slate-50/50 dark:bg-slate-800/20 rounded-xl border border-slate-200/60 dark:border-slate-800/80 space-y-2">
+                <div class="flex items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-2">
+                  <span class="text-xs font-black text-indigo-650 dark:text-indigo-400">Solicitação de Reembolso</span>
+                  <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${statusBadgeClass}">
+                    ${statusLabel}
+                  </span>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-2.5 text-xs text-slate-650 dark:text-slate-355">
+                  <div>
+                    <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase">Produto Afetado:</span>
+                    <strong class="font-extrabold text-slate-800 dark:text-slate-200">${r.produto ? `[${(r.produto.tipo || 'outro').toUpperCase()}] ${r.produto.fornecedor}` : 'Viagem Integral'}</strong>
+                  </div>
+                  <div>
+                    <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase">Valor Solicitado:</span>
+                    <strong class="text-slate-800 dark:text-slate-200">R$ ${Number(r.valor_solicitado || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
+                  </div>
+                  ${r.valor_aprovado ? `
+                    <div>
+                      <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase">Valor Aprovado:</span>
+                      <strong class="text-emerald-600 dark:text-emerald-450 font-black">R$ ${Number(r.valor_aprovado).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
+                    </div>
+                  ` : ''}
+                  ${r.taxa_retencao ? `
+                    <div>
+                      <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase">Taxa Retenção:</span>
+                      <strong class="text-rose-650 dark:text-rose-455 font-bold">R$ ${Number(r.taxa_retencao).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
+                    </div>
+                  ` : ''}
+                  <div>
+                    <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase">Data Abertura:</span>
+                    <span class="font-semibold text-slate-800 dark:text-slate-200">${dataSolicitacao}</span>
+                  </div>
+                  ${dataResolucao ? `
+                    <div>
+                      <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase">Data Conclusão:</span>
+                      <span class="font-semibold text-emerald-600 dark:text-emerald-450">${dataResolucao}</span>
+                    </div>
+                  ` : ''}
+                </div>
+
+                <div class="pt-1.5 border-t border-slate-100 dark:border-slate-800/80">
+                  <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase">Motivo / Justificativa:</span>
+                  <p class="text-xs text-slate-700 dark:text-slate-300 font-semibold italic mt-0.5 bg-white dark:bg-slate-900/60 p-2 rounded-lg border border-slate-100 dark:border-slate-800">${r.motivo_cancelamento || 'Sem motivo registrado.'}</p>
+                </div>
+
+                ${r.observacoes_financeiras ? `
+                  <div class="pt-1 text-[11px]">
+                    <span class="block text-[10px] text-slate-400 dark:text-slate-550 font-bold uppercase">Obs Financeiras:</span>
+                    <p class="text-slate-600 dark:text-slate-400 font-medium mt-0.5">${r.observacoes_financeiras}</p>
+                  </div>
+                ` : ''}
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+    };
+
     modalContent.innerHTML = `
       <div class="p-6">
         <!-- Topo com Título e Fechar -->
@@ -968,11 +1052,11 @@ export class Dashboard {
             <h3 class="text-lg font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5">✈️ Gerenciar Viagem</h3>
             <p class="text-xs text-slate-400 dark:text-slate-500 font-semibold">Destino: <span class="font-bold text-slate-600 dark:text-slate-300">${v.destino}</span> &bull; Loc: <span class="font-bold text-slate-600 dark:text-slate-300">${v.codigo_localizador || 'Sem LOC'}</span></p>
           </div>
-          <button id="btn-close-edit-modal-x" class="text-slate-400 hover:text-rose-500 dark:text-slate-500 dark:hover:text-rose-450 font-bold transition">✕</button>
+          <button id="btn-close-edit-modal-x" class="text-slate-400 hover:text-rose-500 dark:text-slate-500 dark:hover:text-rose-455 font-bold transition">✕</button>
         </div>
 
-        <!-- Seletor de Abas Premium -->
-        <div class="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 mb-5 pb-px">
+        <!-- Seletor de Abas Premium (visível apenas no mobile) -->
+        <div class="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 mb-5 pb-px lg:hidden">
           <button id="tab-detalhes-btn" class="border-b-2 ${activeTab === 'detalhes' ? 'border-indigo-600 dark:border-indigo-400 text-indigo-600 dark:text-indigo-400 font-black' : 'border-transparent text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200 font-semibold'} px-4 py-2 text-sm transition">
             📝 Detalhes e Edição
           </button>
@@ -986,266 +1070,194 @@ export class Dashboard {
           ` : ''}
         </div>
 
-        <!-- CONTEÚDO DA ABA 1: DETALHES E EDIÇÃO -->
-        <div id="tab-detalhes-content" class="space-y-4 tab-pane-transition ${activeTab === 'produtos' ? 'hidden' : ''}">
-          <!-- Detalhes do Dono e SLA no Topo -->
-          <div class="flex flex-wrap items-center justify-between gap-3 p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/50 dark:border-slate-800">
-            <div class="flex items-center gap-2">
-              <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Responsável:</span>
-              <select id="edit-viagem-consultor" required class="px-2.5 py-1 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-700 dark:text-slate-200 text-xs font-bold shadow-sm cursor-pointer">
-                ${this.consultores.map(c => `<option value="${c.id}" ${c.id === v.consultor_id ? 'selected' : ''}>${c.nome}</option>`).join('')}
-              </select>
-            </div>
-            
-            ${sla.alert ? `
+        <!-- Layout de duas colunas no Desktop / abas no Mobile -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+          <!-- COLUNA DA ESQUERDA (Detalhes e Edição) -->
+          <div id="tab-detalhes-content" class="space-y-4 tab-pane-transition ${activeTab === 'produtos' ? 'hidden' : ''} lg:col-span-5 lg:!block">
+            <!-- Detalhes do Dono e SLA no Topo -->
+            <div class="flex flex-wrap items-center justify-between gap-3 p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/50 dark:border-slate-800">
               <div class="flex items-center gap-2">
-                <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Alerta SLA:</span>
-                <span class="px-2.5 py-1 rounded-lg text-xs font-black tracking-wide animate-pulse border ${
-                  sla.type === 'pre-embarque' 
-                    ? 'bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 border-rose-100 dark:border-rose-900/55' 
-                    : 'bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-900/55'
-                }">
-                  ⚠️ ${sla.text}
-                </span>
+                <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Responsável:</span>
+                <select id="edit-viagem-consultor" required class="px-2.5 py-1 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-700 dark:text-slate-200 text-xs font-bold shadow-sm cursor-pointer">
+                  ${this.consultores.map(c => `<option value="${c.id}" ${c.id === v.consultor_id ? 'selected' : ''}>${c.nome}</option>`).join('')}
+                </select>
               </div>
-            ` : ''}
-          </div>
-
-          <form id="form-editar-viagem" class="space-y-4">
-            <div>
-              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Passageiro / Cliente *</label>
-              <select id="edit-viagem-cliente" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm">
-                ${clientes.map(c => `<option value="${c.id}" class="bg-white dark:bg-slate-800" ${c.id === v.cliente_id ? 'selected' : ''}>${c.nome}</option>`).join('')}
-              </select>
+              
+              ${sla.alert ? `
+                <div class="flex items-center gap-2">
+                  <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Alerta SLA:</span>
+                  <span class="px-2.5 py-1 rounded-lg text-xs font-black tracking-wide animate-pulse border ${
+                    sla.type === 'pre-embarque' 
+                      ? 'bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-455 border-rose-100 dark:border-rose-900/55' 
+                      : 'bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-455 border-amber-100 dark:border-amber-900/55'
+                  }">
+                    ⚠️ ${sla.text}
+                  </span>
+                </div>
+              ` : ''}
             </div>
 
-            <div>
-              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Destino *</label>
-              <input id="edit-viagem-destino" type="text" required value="${v.destino}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm" />
-            </div>
-
-            <div>
-              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Valor Total (R$) *</label>
-              ${renderCurrencyInputHTML('edit-viagem-valor', v.valor_total || 0)}
-            </div>
-
-            <div class="grid grid-cols-3 gap-4">
+            <form id="form-editar-viagem" class="space-y-4">
               <div>
-                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Data de Ida (DD/MM/AAAA) *</label>
-                ${renderDateInputHTML('edit-viagem-ida', v.data_ida || '')}
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Passageiro / Cliente *</label>
+                <select id="edit-viagem-cliente" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm">
+                  ${clientes.map(c => `<option value="${c.id}" class="bg-white dark:bg-slate-800" ${c.id === v.cliente_id ? 'selected' : ''}>${c.nome}</option>`).join('')}
+                </select>
               </div>
+
               <div>
-                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Data de Volta (DD/MM/AAAA) *</label>
-                ${renderDateInputHTML('edit-viagem-volta', v.data_volta || '')}
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Destino *</label>
+                <input id="edit-viagem-destino" type="text" required value="${v.destino}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm" />
               </div>
+
               <div>
-                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Data Financeiro (DD/MM/AAAA) *</label>
-                ${renderDateInputHTML('edit-viagem-data-financeiro', v.data_financeiro || '', 'DD/MM/AAAA', true)}
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Valor Total (R$) *</label>
+                ${renderCurrencyInputHTML('edit-viagem-valor', v.valor_total || 0)}
               </div>
-            </div>
 
-            <div>
-              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Status / Etapa *</label>
-              <select id="edit-viagem-status" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm">
-                <option value="pos_venda" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100" ${v.status === 'pos_venda' ? 'selected' : ''}>Pós-Venda</option>
-                <option value="fechado" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100" ${v.status === 'fechado' ? 'selected' : ''}>Fechado</option>
-                <option value="pre_embarque" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100" ${v.status === 'pre_embarque' ? 'selected' : ''}>Pré-Embarque</option>
-                <option value="pos_viagem" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100" ${v.status === 'pos_viagem' ? 'selected' : ''}>Pós-Viagem</option>
-                <option value="reembolso_solicitado" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100" ${v.status === 'reembolso_solicitado' ? 'selected' : ''}>Reembolso Solicitado</option>
-              </select>
-            </div>
-
-            <div>
-              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Observações Operacionais</label>
-              <textarea id="edit-viagem-obs" rows="2.5" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 text-sm font-medium">${v.observacoes || ''}</textarea>
-            </div>
-
-            <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800 mt-4">
-              <button id="btn-cancel-edit" type="button" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs tracking-wider rounded-xl transition uppercase">Cancelar</button>
-              <button type="submit" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/10 transition uppercase">Salvar Alterações</button>
-            </div>
-          </form>
-
-          <!-- Container de Comentários da Viagem -->
-          <div id="viagem-comments-container" class="mt-6 border-t border-slate-100 dark:border-slate-800 pt-4"></div>
-        </div>
-
-        <!-- CONTEÚDO DA ABA 2: PRODUTOS E SERVIÇOS -->
-        <div id="tab-produtos-content" class="${activeTab === 'produtos' ? '' : 'hidden'} space-y-5 tab-pane-transition">
-          
-          <!-- Painel Financeiro (Totalizadores e Saldo Pendente) -->
-          <div id="painel-financeiro-produtos" class="grid grid-cols-3 gap-3 p-3.5 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/50 dark:border-slate-800 mb-4">
-            <div>
-              <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider leading-tight">Valor da Venda</span>
-              <strong id="fin-valor-venda" class="text-sm font-black text-slate-800 dark:text-slate-100">R$ 0,00</strong>
-            </div>
-            <div>
-              <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider leading-tight">Total em Produtos</span>
-              <strong id="fin-valor-produtos" class="text-sm font-black text-slate-800 dark:text-slate-100 font-bold">R$ 0,00</strong>
-            </div>
-            <div>
-              <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider leading-tight">Saldo Pendente</span>
-              <strong id="fin-valor-pendente" class="text-sm font-black text-rose-600 dark:text-rose-455">R$ 0,00</strong>
-            </div>
-          </div>
-          
-          <!-- Lista de Produtos Existentes -->
-          <div>
-            <h4 class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-2.5">Produtos Cadastrados nesta Viagem</h4>
-            <div id="lista-produtos-viagem-container" class="space-y-2 max-h-[220px] overflow-y-auto pr-1 custom-scrollbar">
-              <p class="text-center text-xs text-slate-400 dark:text-slate-500 font-medium py-4">Buscando produtos...</p>
-            </div>
-          </div>
-
-          <!-- Formulário de Novo Produto (Inline) -->
-          <div class="border-t border-slate-100 dark:border-slate-800 pt-4">
-            <h4 class="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wide mb-3 flex items-center gap-1">➕ Adicionar Produto / Serviço</h4>
-            
-            <form id="form-novo-produto" class="space-y-3 bg-slate-50/50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800 p-3.5 rounded-xl">
-              <div class="grid grid-cols-2 gap-3">
+              <div class="grid grid-cols-3 gap-3">
                 <div>
-                  <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Tipo *</label>
-                  <select id="prod-tipo" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition duration-155">
-                    <option value="voo" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">Voo</option>
-                    <option value="hotel" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">Hotel</option>
-                    <option value="seguro" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">Seguro</option>
-                    <option value="passeio" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">Passeio</option>
-                    <option value="outro" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">Outro</option>
-                  </select>
+                  <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 leading-tight">Data Ida *</label>
+                  ${renderDateInputHTML('edit-viagem-ida', v.data_ida || '')}
                 </div>
                 <div>
-                  <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Fornecedor</label>
-                  <input id="prod-fornecedor" type="text" placeholder="ex: LATAM, Hilton" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition duration-155" />
+                  <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 leading-tight">Data Volta *</label>
+                  ${renderDateInputHTML('edit-viagem-volta', v.data_volta || '')}
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 leading-tight">Data Finan. *</label>
+                  ${renderDateInputHTML('edit-viagem-data-financeiro', v.data_financeiro || '', 'DD/MM/AAAA', true)}
                 </div>
               </div>
 
               <div>
-                <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Descrição</label>
-                <input id="prod-descricao" type="text" placeholder="ex: Voo GRU-JFK ou Quarto Deluxe" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition duration-155" />
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Status / Etapa *</label>
+                <select id="edit-viagem-status" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm">
+                  <option value="pos_venda" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100" ${v.status === 'pos_venda' ? 'selected' : ''}>Pós-Venda</option>
+                  <option value="fechado" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100" ${v.status === 'fechado' ? 'selected' : ''}>Fechado</option>
+                  <option value="pre_embarque" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100" ${v.status === 'pre_embarque' ? 'selected' : ''}>Pré-Embarque</option>
+                  <option value="pos_viagem" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100" ${v.status === 'pos_viagem' ? 'selected' : ''}>Pós-Viagem</option>
+                  <option value="reembolso_solicitado" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100" ${v.status === 'reembolso_solicitado' ? 'selected' : ''}>Reembolso Solicitado</option>
+                </select>
               </div>
 
-              <div class="grid grid-cols-2 gap-3">
-                <div>
-                  <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Código (LOC) *</label>
-                  <input id="prod-reserva" list="existing-locs-list" type="text" required maxlength="20" placeholder="ex: LOC12" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition duration-155 uppercase" />
-                  <datalist id="existing-locs-list"></datalist>
-                </div>
-                <div>
-                  <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Venda (R$) *</label>
-                  ${renderCurrencyInputHTML('prod-venda', '')}
-                </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Observações Operacionais</label>
+                <textarea id="edit-viagem-obs" rows="2.5" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 text-sm font-medium">${v.observacoes || ''}</textarea>
               </div>
 
-              <div class="grid grid-cols-2 gap-3">
-                <div>
-                  <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Data do Serviço (DD/MM/AAAA) *</label>
-                  ${renderDateInputHTML('prod-data', '')}
-                </div>
-                <div>
-                  <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Status *</label>
-                  <select id="prod-status" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition duration-155">
-                    <option value="reservado" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">Reservado</option>
-                    <option value="emitido" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100" selected>Emitido</option>
-                  </select>
-                </div>
-              </div>
-
-              <div class="flex justify-end pt-1">
-                <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-[10px] tracking-wider rounded-lg shadow-sm transition uppercase">
-                  Adicionar Produto
-                </button>
+              <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800 mt-4">
+                <button id="btn-cancel-edit" type="button" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs tracking-wider rounded-xl transition uppercase">Cancelar</button>
+                <button type="submit" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/10 transition uppercase">Salvar Alterações</button>
               </div>
             </form>
+
+            <!-- Container de Comentários da Viagem -->
+            <div id="viagem-comments-container" class="mt-6 border-t border-slate-100 dark:border-slate-800 pt-4"></div>
           </div>
+
+          <!-- COLUNA DA DIREITA (Produtos e Serviços) -->
+          <div id="tab-produtos-content" class="space-y-5 tab-pane-transition ${activeTab === 'detalhes' ? 'hidden' : ''} lg:col-span-7 lg:!block lg:!mt-0">
+            
+            <!-- Painel Financeiro (Totalizadores e Saldo Pendente) -->
+            <div id="painel-financeiro-produtos" class="grid grid-cols-3 gap-3 p-3.5 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/50 dark:border-slate-800 mb-4">
+              <div>
+                <span class="block text-[10px] text-slate-400 dark:text-slate-550 font-bold uppercase tracking-wider leading-tight">Valor da Venda</span>
+                <strong id="fin-valor-venda" class="text-sm font-black text-slate-800 dark:text-slate-100">R$ 0,00</strong>
+              </div>
+              <div>
+                <span class="block text-[10px] text-slate-400 dark:text-slate-550 font-bold uppercase tracking-wider leading-tight">Total em Produtos</span>
+                <strong id="fin-valor-produtos" class="text-sm font-black text-slate-800 dark:text-slate-100 font-bold">R$ 0,00</strong>
+              </div>
+              <div>
+                <span class="block text-[10px] text-slate-400 dark:text-slate-550 font-bold uppercase tracking-wider leading-tight">Saldo Pendente</span>
+                <strong id="fin-valor-pendente" class="text-sm font-black text-rose-600 dark:text-rose-455">R$ 0,00</strong>
+              </div>
+            </div>
+            
+            <!-- Lista de Produtos Existentes -->
+            <div>
+              <h4 class="text-xs font-black text-slate-400 dark:text-slate-550 uppercase tracking-wide mb-2.5">Produtos Cadastrados nesta Viagem</h4>
+              <div id="lista-produtos-viagem-container" class="space-y-2 max-h-[220px] lg:max-h-[350px] overflow-y-auto pr-1 custom-scrollbar">
+                <p class="text-center text-xs text-slate-400 dark:text-slate-550 font-medium py-4">Buscando produtos...</p>
+              </div>
+            </div>
+
+            <!-- Formulário de Novo Produto (Inline) -->
+            <div class="border-t border-slate-100 dark:border-slate-800 pt-4">
+              <h4 class="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wide mb-3 flex items-center gap-1">➕ Adicionar Produto / Serviço</h4>
+              
+              <form id="form-novo-produto" class="space-y-3 bg-slate-50/50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800 p-3.5 rounded-xl">
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-550 uppercase mb-0.5">Tipo *</label>
+                    <select id="prod-tipo" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition duration-155">
+                      <option value="voo" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">Voo</option>
+                      <option value="hotel" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">Hotel</option>
+                      <option value="seguro" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">Seguro</option>
+                      <option value="passeio" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">Passeio</option>
+                      <option value="outro" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">Outro</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-550 uppercase mb-0.5">Fornecedor</label>
+                    <input id="prod-fornecedor" type="text" placeholder="ex: LATAM, Hilton" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition duration-155" />
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-550 uppercase mb-0.5">Descrição</label>
+                  <input id="prod-descricao" type="text" placeholder="ex: Voo GRU-JFK ou Quarto Deluxe" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition duration-155" />
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-550 uppercase mb-0.5">Código (LOC) *</label>
+                    <input id="prod-reserva" list="existing-locs-list" type="text" required maxlength="20" placeholder="ex: LOC12" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition duration-155 uppercase" />
+                    <datalist id="existing-locs-list"></datalist>
+                  </div>
+                  <div>
+                    <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-555 uppercase mb-0.5">Venda (R$) *</label>
+                    ${renderCurrencyInputHTML('prod-venda', '')}
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-555 uppercase mb-0.5">Data do Serviço (DD/MM/AAAA) *</label>
+                    ${renderDateInputHTML('prod-data', '')}
+                  </div>
+                  <div>
+                    <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-550 uppercase mb-0.5">Status *</label>
+                    <select id="prod-status" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition duration-155">
+                      <option value="reservado" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">Reservado</option>
+                      <option value="emitido" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100" selected>Emitido</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="flex justify-end pt-1">
+                  <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-[10px] tracking-wider rounded-lg shadow-sm transition uppercase">
+                    Adicionar Produto
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <!-- Histórico de Reembolsos (Desktop inline) -->
+            ${v.reembolsos && v.reembolsos.length > 0 ? `
+              <div id="reembolsos-wrapper-desktop" class="hidden lg:block border-t border-slate-100 dark:border-slate-850 pt-4 mt-4">
+                ${renderReembolsosHTML()}
+              </div>
+            ` : ''}
+
+          </div>
+
         </div>
 
-        <!-- CONTEÚDO DA ABA 3: HISTÓRICO DE REEMBOLSOS (DINÂMICO) -->
+        <!-- ABA 3: HISTÓRICO DE REEMBOLSOS (Apenas Mobile) -->
         ${v.reembolsos && v.reembolsos.length > 0 ? `
-          <div id="tab-reembolsos-content" class="hidden space-y-4 max-h-[350px] overflow-y-auto pr-1 custom-scrollbar tab-pane-transition">
-            <h4 class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-wide">Solicitações de Reembolso nesta Viagem</h4>
-            <div class="space-y-3">
-              ${v.reembolsos.map((r: any) => {
-                let statusBadgeClass = 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300';
-                let statusLabel = r.status;
-                if (r.status === 'solicitado' || r.status === 'Aguardando Fornecedor') {
-                  statusBadgeClass = 'bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400 border border-amber-100/30';
-                  statusLabel = 'Aguardando Fornecedor';
-                } else if (r.status === 'em_analise') {
-                  statusBadgeClass = 'bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400 border border-blue-100/30';
-                  statusLabel = 'Em Análise';
-                } else if (r.status === 'aprovado') {
-                  statusBadgeClass = 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/30 dark:text-indigo-400 border border-indigo-100/30';
-                  statusLabel = 'Aprovado';
-                } else if (r.status === 'recusado') {
-                  statusBadgeClass = 'bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-455 border border-rose-100/30';
-                  statusLabel = 'Recusado';
-                } else if (r.status === 'pago') {
-                  statusBadgeClass = 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-450 border border-emerald-100/30';
-                  statusLabel = '💸 Pago / Concluído';
-                } else if (r.status === 'cancelado') {
-                  statusBadgeClass = 'bg-slate-50 text-slate-450 dark:bg-slate-800 dark:text-slate-500 border border-slate-200/50';
-                  statusLabel = 'Cancelado';
-                }
-
-                const dataSolicitacao = r.data_solicitacao ? new Date(r.data_solicitacao).toLocaleDateString('pt-BR') : '';
-                const dataResolucao = r.data_resolucao ? new Date(r.data_resolucao).toLocaleDateString('pt-BR') : '';
-
-                return `
-                  <div class="p-4 bg-slate-50/50 dark:bg-slate-800/20 rounded-xl border border-slate-200/60 dark:border-slate-800/80 space-y-2">
-                    <div class="flex items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-2">
-                      <span class="text-xs font-black text-indigo-650 dark:text-indigo-400">Solicitação de Reembolso</span>
-                      <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${statusBadgeClass}">
-                        ${statusLabel}
-                      </span>
-                    </div>
-                    
-                    <div class="grid grid-cols-2 gap-2.5 text-xs text-slate-650 dark:text-slate-350">
-                      <div>
-                        <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase">Produto Afetado:</span>
-                        <strong class="font-extrabold text-slate-800 dark:text-slate-200">${r.produto ? `[${(r.produto.tipo || 'outro').toUpperCase()}] ${r.produto.fornecedor}` : 'Viagem Integral'}</strong>
-                      </div>
-                      <div>
-                        <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase">Valor Solicitado:</span>
-                        <strong class="text-slate-800 dark:text-slate-200">R$ ${Number(r.valor_solicitado || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
-                      </div>
-                      ${r.valor_aprovado ? `
-                        <div>
-                          <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase">Valor Aprovado:</span>
-                          <strong class="text-emerald-600 dark:text-emerald-450 font-black">R$ ${Number(r.valor_aprovado).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
-                        </div>
-                      ` : ''}
-                      ${r.taxa_retencao ? `
-                        <div>
-                          <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase">Taxa Retenção:</span>
-                          <strong class="text-rose-650 dark:text-rose-450 font-bold">R$ ${Number(r.taxa_retencao).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
-                        </div>
-                      ` : ''}
-                      <div>
-                        <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase">Data Abertura:</span>
-                        <span class="font-semibold text-slate-800 dark:text-slate-200">${dataSolicitacao}</span>
-                      </div>
-                      ${dataResolucao ? `
-                        <div>
-                          <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase">Data Conclusão:</span>
-                          <span class="font-semibold text-emerald-600 dark:text-emerald-450">${dataResolucao}</span>
-                        </div>
-                      ` : ''}
-                    </div>
-
-                    <div class="pt-1.5 border-t border-slate-100 dark:border-slate-800/80">
-                      <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase">Motivo / Justificativa:</span>
-                      <p class="text-xs text-slate-700 dark:text-slate-300 font-semibold italic mt-0.5 bg-white dark:bg-slate-900/60 p-2 rounded-lg border border-slate-100 dark:border-slate-800">${r.motivo_cancelamento || 'Sem motivo registrado.'}</p>
-                    </div>
-
-                    ${r.observacoes_financeiras ? `
-                      <div class="pt-1 text-[11px]">
-                        <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase">Obs Financeiras:</span>
-                        <p class="text-slate-600 dark:text-slate-400 font-medium mt-0.5">${r.observacoes_financeiras}</p>
-                      </div>
-                    ` : ''}
-                  </div>
-                `;
-              }).join('')}
             </div>
           </div>
         ` : ''}
@@ -1869,7 +1881,7 @@ export class Dashboard {
   /**
    * Cria o overlay estrutural do modal se ele ainda não existir e abre a exibição
    */
-  private renderModalOverlay(): void {
+  private renderModalOverlay(maxWidthClass: string = 'max-w-lg'): void {
     let overlay = document.getElementById('modal-overlay');
     if (!overlay) {
       overlay = document.createElement('div');
@@ -1882,6 +1894,13 @@ export class Dashboard {
       `;
       document.body.appendChild(overlay);
     }
+
+    const container = document.getElementById('modal-container');
+    if (container) {
+      // Remove any existing max-w- class and apply the new one
+      container.className = container.className.replace(/\bmax-w-\S+/g, '');
+      container.classList.add(maxWidthClass);
+    }
     
     // Anima a abertura removendo as classes de fechamento e adicionando as de abertura
     setTimeout(() => {
@@ -1889,7 +1908,6 @@ export class Dashboard {
         overlay.classList.remove('opacity-0', 'pointer-events-none');
         overlay.classList.add('opacity-100', 'pointer-events-auto');
       }
-      const container = document.getElementById('modal-container');
       if (container) {
         container.classList.remove('scale-95');
         container.classList.add('scale-100');
@@ -1915,14 +1933,10 @@ export class Dashboard {
    * Abre o Modal de Detalhamento de Valores (Tarifa, Taxa, Comissão) para um produto
    */
   private openProductDetailsModal(p: any, tripId: string): void {
-    this.renderModalOverlay();
+    this.renderModalOverlay('max-w-lg');
 
     const modalContent = document.getElementById('modal-content-container');
     if (!modalContent) return;
-
-    // Ajusta largura do modal de volta ao padrão
-    modalContent.classList.remove('max-w-2xl');
-    modalContent.classList.add('max-w-lg');
 
     const iconesMap: { [key: string]: string } = {
       voo: '✈️',
