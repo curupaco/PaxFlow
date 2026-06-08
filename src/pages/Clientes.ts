@@ -257,7 +257,7 @@ export class ClientesPage {
             : 'border-slate-100 dark:border-slate-800/80 hover:border-slate-200 dark:hover:border-slate-750 bg-white dark:bg-slate-900 hover:bg-slate-50/50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
         } transition flex items-center justify-between gap-3 ${borderSlaClass} group">
           <div class="overflow-hidden">
-            <span class="block text-sm font-black truncate">${c.nome}</span>
+            <span class="block text-sm font-black truncate">${c.nome && c.nome !== 'NULL' ? c.nome : 'Cliente sem nome'}</span>
             <span class="block text-[11px] text-slate-400 dark:text-slate-500 font-semibold truncate group-hover:text-slate-500 dark:group-hover:text-slate-400 transition">${c.email}</span>
           </div>
           <span class="text-xs">👤</span>

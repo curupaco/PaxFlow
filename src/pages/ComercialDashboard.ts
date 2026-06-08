@@ -201,6 +201,9 @@ export class ComercialDashboard {
         createdAt: d.created_at,
         updatedAt: d.updated_at
       }));
+        // Persist orcamentos to localStorage
+        const keyOrc = `paxflow-orcamentos-${this.user?.id || 'global'}`;
+        localStorage.setItem(keyOrc, JSON.stringify(this.orcamentos));
 
       // 2. Carregar Viagens do banco
       let queryVia = supabase.from('viagens').select('*');
@@ -225,8 +228,12 @@ export class ComercialDashboard {
         createdAt: d.created_at,
         updatedAt: d.updated_at
       }));
+        // Persist viagens to localStorage
+        localStorage.setItem('paxflow-viagens-local', JSON.stringify(this.viagens));
+        // Persist viagens to localStorage
+        localStorage.setItem('paxflow-viagens-local', JSON.stringify(this.viagens));
 
-      this.isFallbackMode = false;
+  
     } catch (err: any) {
       console.warn('Ativando fallback offline no Dashboard: obtendo do LocalStorage.', err.message);
       this.isFallbackMode = true;

@@ -151,6 +151,17 @@ export class OrcamentosService {
       console.warn('Aviso: Erro ao limpar lembretes vinculados ao excluir orçamento:', lembreteError.message);
     }
 
+    // 1.1. Deleta comentários associados
+    const { error: comentariosError } = await supabase
+      .from('comentarios')
+      .delete()
+      .eq('tipo_item', 'orcamento')
+      .eq('item_id', id);
+
+    if (comentariosError) {
+      console.warn('Aviso: Erro ao limpar comentários vinculados ao excluir orçamento:', comentariosError.message);
+    }
+
     // 2. Deleta o orçamento em si
     const { error } = await supabase
       .from('orcamentos')

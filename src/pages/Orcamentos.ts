@@ -131,6 +131,7 @@ export class OrcamentosPage {
     try {
       this.orcamentos = await OrcamentosService.loadOrcamentos(this.user, this.perfil);
       this.isFallbackMode = false;
+    this.saveOrcamentosToLocalStorage();
     } catch (err: any) {
       console.warn('Tabela "orcamentos" indisponível ou erro na consulta. Ativando fallback de armazenamento local (localStorage):', err.message);
       this.isFallbackMode = true;
@@ -280,6 +281,7 @@ export class OrcamentosPage {
   /**
    * Deleta um orçamento (apenas Admins)
    */
+
   private async deleteOrcamento(id: string): Promise<boolean> {
     if (this.isFallbackMode) {
       this.orcamentos = this.orcamentos.filter(o => o.id !== id);
@@ -288,7 +290,12 @@ export class OrcamentosPage {
     }
 
     try {
-      return await OrcamentosService.deleteOrcamento(id);
+      const success = await OrcamentosService.deleteOrcamento(id);
+      if (success) {
+        this.orcamentos = this.orcamentos.filter(o => o.id !== id);
+        this.saveOrcamentosToLocalStorage();
+      }
+      return success;
     } catch (err: any) {
       console.error('Erro ao deletar orçamento:', err);
       return false;
