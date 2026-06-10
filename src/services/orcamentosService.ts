@@ -51,6 +51,7 @@ export class OrcamentosService {
       subStatus: d.sub_status,
       notasNegociacao: d.notas_negociacao,
       valorProposta: d.valor_proposta,
+      valorViagem: d.valor_viagem,
       documentosUrl: d.documentos_url || [],
       createdAt: d.created_at,
       updatedAt: d.updated_at
@@ -87,6 +88,7 @@ export class OrcamentosService {
       sub_status: o.subStatus || null,
       notas_negociacao: o.notasNegociacao || null,
       valor_proposta: o.valorProposta || null,
+      valor_viagem: o.valorViagem || null,
       documentos_url: o.documentosUrl || []
     };
 
@@ -111,10 +113,11 @@ export class OrcamentosService {
         (resError.message && resError.message.includes('column') && resError.message.includes('does not exist'));
 
       if (isMissingColumn) {
-        console.warn('Aviso: Colunas novas não encontradas no Supabase. Salvando sem valor_proposta/cliente_id.');
+        console.warn('Aviso: Colunas novas não encontradas no Supabase. Salvando sem valor_proposta/cliente_id/valor_viagem.');
         
         delete payload.valor_proposta;
         delete payload.cliente_id;
+        delete payload.valor_viagem;
         
         let retryError;
         if (o.id && !o.id.startsWith('orc-')) {
@@ -376,7 +379,8 @@ export class OrcamentosService {
       status: 'CONCLUIDO',
       subStatus: 'ACEITO',
       clienteId: clienteId,
-      cliente_id: clienteId
+      cliente_id: clienteId,
+      valorViagem: vValor
     };
 
     await this.persistOrcamento(updatedOrcamento);

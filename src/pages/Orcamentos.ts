@@ -813,6 +813,12 @@ export class OrcamentosPage {
               <span class="font-black text-indigo-600 dark:text-indigo-400">R$ ${Number(o.valorProposta).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
             </div>
           ` : ''}
+          ${o.status === 'CONCLUIDO' && o.subStatus === 'ACEITO' && o.valorViagem !== undefined && o.valorViagem !== null ? `
+            <div class="flex justify-between items-center text-[10px] font-semibold text-slate-500 dark:text-slate-400 border-t border-slate-200/50 dark:border-slate-800/50 pt-1.5 mt-0.5">
+              <span class="text-emerald-700 dark:text-emerald-450 font-bold">Valor da Viagem:</span>
+              <span class="font-black text-emerald-600 dark:text-emerald-400">R$ ${Number(o.valorViagem).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+            </div>
+          ` : ''}
         </div>
 
         <!-- Tags livres -->
@@ -1937,6 +1943,7 @@ export class OrcamentosPage {
           orc.subStatus = 'ACEITO';
           orc.clienteId = clienteId;
           orc.cliente_id = clienteId;
+          orc.valorViagem = vValor;
           await this.persistOrcamento(orc);
         }
 

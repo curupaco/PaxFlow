@@ -159,6 +159,7 @@ export interface Orcamento {
   subStatus?: 'ACEITO' | 'DESISTENCIA';
   notasNegociacao?: string;
   valorProposta?: number;
+  valorViagem?: number;
   documentosUrl?: string[];
   createdAt?: string;
   updatedAt?: string;

@@ -207,6 +207,7 @@ CREATE TABLE IF NOT EXISTS public.orcamentos (
     sub_status VARCHAR(20) CHECK (sub_status IN ('ACEITO', 'DESISTENCIA')),
     notas_negociacao TEXT,
     valor_proposta NUMERIC,
+    valor_viagem NUMERIC,
     documentos_url TEXT[] DEFAULT '{}'::TEXT[],
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
