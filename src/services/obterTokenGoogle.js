@@ -30,7 +30,7 @@ const redirectUri = envVars.GOOGLE_REDIRECT_URI || 'http://localhost:3000/oauth-
 
 if (!clientId || clientId.includes('@') || !clientSecret || clientSecret.startsWith('Pf_')) {
   console.error('\n❌ ERRO: Suas credenciais no arquivo .env ainda parecem conter e-mail ou senha pessoal.');
-  console.error('Por favor, siga os passos do guia google_drive_setup.md para criar o Client ID e Client Secret corretos no Google Cloud Console e salve no arquivo .env antes de executar este script.\n');
+  console.error('Por favor, siga os passos do guia docs/google_drive_setup.md para criar o Client ID e Client Secret corretos no Google Cloud Console e salve no arquivo .env antes de executar este script.\n');
   process.exit(1);
 }
 

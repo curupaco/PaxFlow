@@ -390,11 +390,11 @@ O PaxFlow fornece um script utilitário automatizado (`src/services/obterTokenGo
 ### Fase 2: Setup (2-3 dias)
 
 1. Criação do projeto Supabase (ou uso da infra PaxFlow)
-2. Execução do script de modelagem do banco de dados (utilizando as DDLs e políticas RLS fornecidas no arquivo [schema.sql](schema.sql)), seguido pela migração [add_product_detail_fields.sql](add_product_detail_fields.sql) para suporte ao detalhamento financeiro de produtos de viagem.
+2. Execução do script de modelagem do banco de dados (utilizando as DDLs e políticas RLS fornecidas no arquivo [schema.sql](../supabase/schema.sql)), seguido pela migração [add_product_detail_fields.sql](../supabase/add_product_detail_fields.sql) para suporte ao detalhamento financeiro de produtos de viagem.
 3. Configuração de autenticação e criação dos consultores no Supabase Auth
 4. Configuração da integração com Google Drive (conforme o guia prático [google_drive_setup.md](google_drive_setup.md))
 5. Deploy do frontend (Cloudflare Pages ou similar)
-6. *(Opcional)* Limpeza resiliente de dados transacionais e de teste em lote utilizando o script [clean_db.sql](clean_db.sql) para inicialização limpa da produção.
+6. *(Opcional)* Limpeza resiliente de dados transacionais e de teste em lote utilizando o script [clean_db.sql](../supabase/clean_db.sql) para inicialização limpa da produção.
 
 ### Fase 3: Migração de Dados (2-5 dias)
 

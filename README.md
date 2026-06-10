@@ -34,7 +34,7 @@ Plataforma SaaS de gestão operacional e fluxo de passageiros no turismo: acompa
 - **Painel Administrativo (Configurações)** — Configuração de SLAs, gestão de consultores, integração Google Drive. Inclui aba "Importações" para importação em lote de chamados DIGISAC (CSV) com mapeamento inteligente de colunas, conversor monetário/temporal e fuzzy match de atendentes.
 - **Cockpit de Tarefas** — Kanban interno standalone (todo.html) para planejamento da equipe.
 - **Navegação & UI Premium (Sidebar Colapsável & Lupa Vetorial)** — Shell de navegação avançado com barra lateral colapsável sob demanda (estado persistido via `localStorage` sob a chave `"paxflow-sidebar-collapsed"`). Campos de busca unificados com ícones vetoriais modernos (SVGs Heroicons) alinhados de forma absoluta e perfeitamente centrada.
-- **Utilitários de Banco de Dados** — Acompanha o script `clean_db.sql` na raiz do projeto, permitindo efetuar uma limpeza de dados transacionais e de teste em ambientes Supabase de maneira 100% resiliente e sem interferir na infraestrutura cadastrada.
+- **Utilitários de Banco de Dados** — Acompanha o script `supabase/clean_db.sql`, permitindo efetuar uma limpeza de dados transacionais e de teste em ambientes Supabase de maneira 100% resiliente e sem interferir na infraestrutura cadastrada.
 
 
 ---
@@ -87,7 +87,7 @@ GOOGLE_REDIRECT_URI=http://localhost:3000/oauth-callback
 
 Caso decida utilizar a integração real com o Google Drive, o PaxFlow possui um script utilitário automático para gerar o `refresh_token` corporativo da agência:
 
-1. Configure as variáveis `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET` no seu arquivo `.env` (consulte o guia detalhado em [google_drive_setup.md](google_drive_setup.md)).
+1. Configure as variáveis `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET` no seu arquivo `.env` (consulte o guia detalhado em [docs/google_drive_setup.md](docs/google_drive_setup.md)).
 2. Execute o script de autenticação local no terminal:
    ```bash
    node src/services/obterTokenGoogle.js
@@ -161,4 +161,4 @@ Este projeto é de propriedade de Thiago Costa. Todos os direitos reservados.
 
 ---
 
-> Para propostas comerciais, demonstrações ou suporte, consulte o arquivo [`_documentation.md`](_documentation.md).
+> Para propostas comerciais, demonstrações ou suporte, consulte o arquivo [`docs/documentation.md`](docs/documentation.md).
