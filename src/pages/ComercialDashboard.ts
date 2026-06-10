@@ -85,6 +85,8 @@ export class ComercialDashboard {
   // Auxiliares de carregamento/offline
   private isFallbackMode: boolean = false;
   private profileUpdatedListener: ((e: any) => void) | null = null;
+  private realtimeChannel: any = null;
+  private storageListener: ((e: StorageEvent) => void) | null = null;
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -120,7 +122,11 @@ export class ComercialDashboard {
       await this.loadConsultores();
       await this.loadData();
 
-      // 3. Renderizar interface principal
+      // 3. Configurar atualizações em tempo real (Supabase Realtime e localStorage)
+      this.setupRealtime();
+      this.setupStorageListener();
+
+      // 4. Renderizar interface principal
       this.render();
       this.setupEventListeners();
 
@@ -131,12 +137,70 @@ export class ComercialDashboard {
   }
 
   /**
+   * Configura canal em tempo real do Supabase para atualizar o Dashboard automaticamente
+   */
+  private setupRealtime(): void {
+    if (this.realtimeChannel) return;
+
+    this.realtimeChannel = supabase
+      .channel('comercial-dashboard-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'orcamentos' },
+        async (payload: any) => {
+          console.log('[ComercialDashboard] Realtime update on orcamentos:', payload.eventType);
+          await this.loadData();
+          this.renderMetricsSection();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'viagens' },
+        async (payload: any) => {
+          console.log('[ComercialDashboard] Realtime update on viagens:', payload.eventType);
+          await this.loadData();
+          this.renderMetricsSection();
+        }
+      )
+      .subscribe();
+  }
+
+  /**
+   * Configura ouvinte para sincronização do localStorage entre abas
+   */
+  private setupStorageListener(): void {
+    if (this.storageListener) return;
+
+    this.storageListener = (e: StorageEvent) => {
+      const keyOrc = `paxflow-orcamentos-${this.user?.id || 'global'}`;
+      if (e.key === keyOrc) {
+        console.log('[ComercialDashboard] localStorage update detected. Reloading...');
+        if (this.isFallbackMode) {
+          this.loadDataFromLocalStorage();
+          this.renderMetricsSection();
+        } else {
+          this.loadData().then(() => this.renderMetricsSection());
+        }
+      }
+    };
+    window.addEventListener('storage', this.storageListener);
+  }
+
+  /**
    * Destrutor da página (caso precise limpar timers/ouvintes)
    */
   public destroy(): void {
     if (this.profileUpdatedListener) {
       window.removeEventListener('paxflow-profile-updated', this.profileUpdatedListener);
       this.profileUpdatedListener = null;
+    }
+    if (this.realtimeChannel) {
+      this.realtimeChannel.unsubscribe();
+      this.realtimeChannel = null;
+    }
+    if (this.storageListener) {
+      window.removeEventListener('storage', this.storageListener);
+      this.storageListener = null;
     }
   }
 
@@ -197,7 +261,7 @@ export class ComercialDashboard {
         status: d.status,
         subStatus: d.sub_status,
         notasNegociacao: d.notas_negociacao,
-        valorProposta: d.valor_proposta ? Number(d.valor_proposta) : undefined,
+        valorProposta: d.valor_proposta !== null && d.valor_proposta !== undefined ? Number(d.valor_proposta) : undefined,
         createdAt: d.created_at,
         updatedAt: d.updated_at
       }));

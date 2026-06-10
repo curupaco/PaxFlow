@@ -96,6 +96,8 @@ export class Dashboard {
   private buscaTermo: string = '';
   private profileUpdatedListener: ((e: any) => void) | null = null;
   private isFallbackMode: boolean = false;
+  private realtimeChannel: any = null;
+  private storageListener: ((e: StorageEvent) => void) | null = null;
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -136,13 +138,17 @@ export class Dashboard {
       // 4. Buscar viagens
       await this.loadViagens();
 
-      // 4. Renderizar interface completa
+      // 5. Configurar atualizações em tempo real
+      this.setupRealtime();
+      this.setupStorageListener();
+
+      // 6. Renderizar interface completa
       this.render();
 
-      // 5. Configurar Drag & Drop com SortableJS
+      // 7. Configurar Drag & Drop com SortableJS
       this.setupDragAndDrop();
 
-      // 6. Deep linking para abrir viagem específica
+      // 8. Deep linking para abrir viagem específica
       if (targetId) {
         await this.openEdicaoEProdutosModal(targetId);
       }
@@ -154,6 +160,51 @@ export class Dashboard {
   }
 
   /**
+   * Configura canal em tempo real do Supabase para atualizar as viagens automaticamente
+   */
+  private setupRealtime(): void {
+    if (this.realtimeChannel) return;
+
+    this.realtimeChannel = supabase
+      .channel('operational-dashboard-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'viagens' },
+        async (payload: any) => {
+          console.log('[Dashboard] Realtime update on viagens:', payload.eventType);
+          await this.loadViagens();
+          this.render();
+          this.setupDragAndDrop();
+        }
+      )
+      .subscribe();
+  }
+
+  /**
+   * Configura ouvinte para sincronização do localStorage de viagens entre abas
+   */
+  private setupStorageListener(): void {
+    if (this.storageListener) return;
+
+    this.storageListener = (e: StorageEvent) => {
+      if (e.key === 'paxflow-viagens-local') {
+        console.log('[Dashboard] localStorage update detected for viagens. Reloading...');
+        if (this.isFallbackMode) {
+          this.loadViagensFromLocalStorage();
+          this.render();
+          this.setupDragAndDrop();
+        } else {
+          this.loadViagens().then(() => {
+            this.render();
+            this.setupDragAndDrop();
+          });
+        }
+      }
+    };
+    window.addEventListener('storage', this.storageListener);
+  }
+
+  /**
    * Destrutor da página para limpar listeners globais e sortables
    */
   public destroy(): void {
@@ -162,6 +213,14 @@ export class Dashboard {
     if (this.profileUpdatedListener) {
       window.removeEventListener('paxflow-profile-updated', this.profileUpdatedListener);
       this.profileUpdatedListener = null;
+    }
+    if (this.realtimeChannel) {
+      this.realtimeChannel.unsubscribe();
+      this.realtimeChannel = null;
+    }
+    if (this.storageListener) {
+      window.removeEventListener('storage', this.storageListener);
+      this.storageListener = null;
     }
   }
 
