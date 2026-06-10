@@ -250,6 +250,11 @@ export class ClientesPage {
       if (passSla.status === 'warning') borderSlaClass = 'border-l-4 border-l-amber-500 bg-amber-50/20 dark:bg-amber-950/10';
       if (passSla.status === 'ok') borderSlaClass = 'border-l-4 border-l-emerald-500';
 
+      const hasEmail = c.email && c.email.trim() !== '' && c.email !== 'NULL';
+      const contatoExibido = hasEmail 
+        ? c.email 
+        : (c.telefone && c.telefone.trim() !== '' && c.telefone !== 'NULL' ? c.telefone : '');
+
       return `
         <button data-cliente-id="${c.id}" class="w-full text-left p-4 rounded-xl border ${
           isSelected 
@@ -258,7 +263,7 @@ export class ClientesPage {
         } transition flex items-center justify-between gap-3 ${borderSlaClass} group">
           <div class="overflow-hidden">
             <span class="block text-sm font-black truncate">${c.nome && c.nome !== 'NULL' ? c.nome : 'Cliente sem nome'}</span>
-            <span class="block text-[11px] text-slate-400 dark:text-slate-500 font-semibold truncate group-hover:text-slate-500 dark:group-hover:text-slate-400 transition">${c.email}</span>
+            <span class="block text-[11px] text-slate-400 dark:text-slate-500 font-semibold truncate group-hover:text-slate-500 dark:group-hover:text-slate-400 transition">${contatoExibido}</span>
           </div>
           <span class="text-xs">👤</span>
         </button>
