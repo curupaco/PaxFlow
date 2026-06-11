@@ -10,7 +10,9 @@ import {
   setupFormValidation,
   formatCurrencyValue,
   formatBrDateToIso,
-  parseDoubleBr
+  parseDoubleBr,
+  formatDateBr,
+  validateDate
 } from '../utils/masks';
 
 // Injeta estilos premium e animações micro-interativas para SLAs diretamente no DOM
@@ -301,7 +303,7 @@ export class Dashboard {
       // Junção com a tabela de clientes e reembolsos para obter informações completas
       let query = supabase
         .from('viagens')
-        .select('*, cliente:clientes(*), reembolsos(*)');
+        .select('*, cliente:clientes(*), reembolsos(*), produtos:produtos_viagem(*)');
 
       // Regra de Exibição: Consultores normais só veem seus próprios cards; admins veem todos.
       if (this.perfil && this.perfil.role !== 'admin') {
@@ -352,19 +354,61 @@ export class Dashboard {
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
 
+    let urgentAlert: { dias: number; text: string } | null = null;
+
+    const checkDateUrgency = (dateStr: string, label: string) => {
+      if (!dateStr) return;
+      const targetDate = new Date(dateStr + 'T00:00:00');
+      targetDate.setHours(0, 0, 0, 0);
+
+      const diferencaTempo = targetDate.getTime() - hoje.getTime();
+      const diasRestantes = Math.ceil(diferencaTempo / (1000 * 60 * 60 * 24));
+
+      if (diasRestantes >= 0 && diasRestantes <= this.slaPreEmbarqueDias) {
+        if (!urgentAlert || diasRestantes < urgentAlert.dias) {
+          urgentAlert = {
+            dias: diasRestantes,
+            text: `${label} em ${diasRestantes} ${diasRestantes === 1 ? 'dia' : 'dias'}`
+          };
+        }
+      }
+    };
+
     // Regra de SLA para "Pré-Embarque"
-    if (viagem.status === 'pre_embarque' && viagem.data_ida) {
-      const dataIda = new Date(viagem.data_ida + 'T00:00:00');
-      dataIda.setHours(0, 0, 0, 0);
+    if (viagem.status === 'pre_embarque') {
+      // 1. Verificar data principal da viagem
+      checkDateUrgency(viagem.data_ida, 'Embarque');
 
-      const diferencaTempo = dataIda.getTime() - hoje.getTime();
-      const diasParaEmbarque = Math.ceil(diferencaTempo / (1000 * 60 * 60 * 24));
+      // 2. Verificar datas de cada produto/serviço
+      if (viagem.produtos && Array.isArray(viagem.produtos)) {
+        viagem.produtos.forEach((p: any) => {
+          const iconesMap: { [key: string]: string } = {
+            voo: '✈️',
+            hotel: '🏨',
+            seguro: '🛡️',
+            passeio: '🎟️',
+            outro: '📦'
+          };
+          const icon = iconesMap[p.tipo] || '📦';
+          const labelBase = `${icon} ${p.fornecedor}`;
 
-      if (diasParaEmbarque >= 0 && diasParaEmbarque <= this.slaPreEmbarqueDias) {
+          // Data principal do serviço
+          checkDateUrgency(p.data_servico, `${labelBase}`);
+
+          // Datas adicionais
+          if (p.datas_adicionais && Array.isArray(p.datas_adicionais)) {
+            p.datas_adicionais.forEach((d: any) => {
+              checkDateUrgency(d.data, `${labelBase} (${d.rotulo})`);
+            });
+          }
+        });
+      }
+
+      if (urgentAlert) {
         return {
           alert: true,
           type: 'pre-embarque',
-          text: `⚠️ Embarque em ${diasParaEmbarque} ${diasParaEmbarque === 1 ? 'dia' : 'dias'}!`
+          text: `⚠️ ${(urgentAlert as any).text}!`
         };
       }
     }
@@ -954,14 +998,33 @@ export class Dashboard {
         </div>
       `;
 
-      // 1. Busca detalhes da viagem com cliente e reembolsos
-      const { data: viagem, error: errViagem } = await supabase
-        .from('viagens')
-        .select('*, cliente:clientes(*), reembolsos(*, produto:produtos_viagem(*))')
-        .eq('id', tripId)
-        .single();
+      let viagem: any = null;
+      let errViagem: any = null;
+      try {
+        if (!this.isFallbackMode) {
+          const { data, error } = await supabase
+            .from('viagens')
+            .select('*, cliente:clientes(*), reembolsos(*, produto:produtos_viagem(*)), produtos:produtos_viagem(*)')
+            .eq('id',  tripId)
+            .single();
+          viagem = data;
+          errViagem = error;
+        }
+      } catch (e) {
+        errViagem = e;
+      }
 
-      if (errViagem) throw errViagem;
+      if (errViagem || !viagem) {
+        viagem = this.viagens.find(v => v.id === tripId);
+        if (!viagem) throw errViagem || new Error('Viagem não encontrada.');
+      }
+
+      if (viagem && !viagem.produtos) {
+        const cached = localStorage.getItem(`paxflow-produtos-viagem-${tripId}`);
+        if (cached) {
+          try { viagem.produtos = JSON.parse(cached); } catch (e) {}
+        }
+      }
 
       // 1.1. Busca o consultor de forma separada pois a tabela profiles não possui relacionamento direto mapeado no cache do PostgREST
       if (viagem && viagem.consultor_id) {
@@ -1003,6 +1066,111 @@ export class Dashboard {
   private renderEdicaoEProdutosModalContent(v: any, clientes: any[], activeTab: 'detalhes' | 'produtos' = 'detalhes'): void {
     const modalContent = document.getElementById('modal-content-container');
     if (!modalContent) return;
+
+    // Compilar cronograma geral de datas
+    const cronograma: { data: string; rotulo: string; tipo: string; cor: string }[] = [];
+
+    const formatarDataLocal = (dStr: string) => {
+      if (!dStr) return '';
+      const dataApenas = dStr.includes('T') ? dStr.split('T')[0] : dStr.split(' ')[0];
+      const parts = dataApenas.split('-');
+      if (parts.length !== 3) return dStr;
+      return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    };
+
+    if (v.data_ida) {
+      cronograma.push({
+        data: v.data_ida,
+        rotulo: '🛫 Embarque / Início da Viagem',
+        tipo: 'viagem',
+        cor: 'bg-emerald-50 dark:bg-emerald-950/45 text-emerald-700 dark:text-emerald-400 border border-emerald-100/35 dark:border-emerald-900/40'
+      });
+    }
+    if (v.data_volta) {
+      cronograma.push({
+        data: v.data_volta,
+        rotulo: '🛬 Desembarque / Fim da Viagem',
+        tipo: 'viagem',
+        cor: 'bg-rose-50 dark:bg-rose-950/45 text-rose-700 dark:text-rose-455 border border-rose-100/35 dark:border-rose-900/40'
+      });
+    }
+    if (v.data_financeiro) {
+      cronograma.push({
+        data: v.data_financeiro,
+        rotulo: '💳 Prazo Limite Financeiro',
+        tipo: 'financeiro',
+        cor: 'bg-amber-50 dark:bg-amber-950/45 text-amber-700 dark:text-amber-455 border border-amber-100/35 dark:border-amber-900/40'
+      });
+    }
+
+    if (v.produtos && v.produtos.length > 0) {
+      v.produtos.forEach((p: any) => {
+        const prodTipoUpper = (p.tipo || 'outro').toUpperCase();
+        const iconesMap: { [key: string]: string } = {
+          voo: '✈️',
+          hotel: '🏨',
+          seguro: '🛡️',
+          passeio: '🎟️',
+          outro: '📦'
+        };
+        const icon = iconesMap[p.tipo] || '📦';
+
+        if (p.data_servico) {
+          cronograma.push({
+            data: p.data_servico,
+            rotulo: `${icon} [${prodTipoUpper}] ${p.fornecedor} &bull; ${p.descricao} (Data Principal)`,
+            tipo: 'produto',
+            cor: 'bg-indigo-50 dark:bg-indigo-950/35 text-indigo-700 dark:text-indigo-400 border border-indigo-150/30 dark:border-indigo-900/30'
+          });
+        }
+
+        if (p.datas_adicionais && p.datas_adicionais.length > 0) {
+          p.datas_adicionais.forEach((d: any) => {
+            cronograma.push({
+              data: d.data,
+              rotulo: `${icon} [${prodTipoUpper}] ${p.fornecedor} &bull; ${p.descricao} (${d.rotulo})`,
+              tipo: 'produto-adicional',
+              cor: 'bg-slate-100/80 dark:bg-slate-800/40 text-slate-700 dark:text-slate-300 border border-slate-200/40 dark:border-slate-800/40'
+            });
+          });
+        }
+      });
+    }
+
+    cronograma.sort((a, b) => a.data.localeCompare(b.data));
+
+    let cronogramaHTML = '';
+    if (cronograma.length > 0) {
+      cronogramaHTML = `
+        <div class="mt-6 border-t border-slate-100 dark:border-slate-800/80 pt-4">
+          <h4 class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-3 flex items-center gap-1.5">📅 Cronograma Geral de Datas</h4>
+          <div class="relative pl-4 border-l border-slate-200 dark:border-slate-850 space-y-3.5 my-2">
+            ${cronograma.map(item => `
+              <div class="relative flex items-start gap-3">
+                <!-- Bullet indicator -->
+                <div class="absolute -left-[20.5px] top-1.5 w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-700 border border-white dark:border-slate-900"></div>
+                
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2">
+                    <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${item.cor}">
+                      ${formatarDataLocal(item.data)}
+                    </span>
+                  </div>
+                  <p class="text-xs font-bold text-slate-700 dark:text-slate-200 mt-1 leading-relaxed">${item.rotulo}</p>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    } else {
+      cronogramaHTML = `
+        <div class="mt-6 border-t border-slate-100 dark:border-slate-800/80 pt-4">
+          <h4 class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-2">📅 Cronograma Geral de Datas</h4>
+          <p class="text-xs text-slate-450 dark:text-slate-550 italic">Nenhuma data cadastrada nesta viagem.</p>
+        </div>
+      `;
+    }
 
     // Cálculos de SLA e Consultor para exibição proeminente
     const reembolsoConcluido = v.reembolsos && v.reembolsos.some((r: any) => r.status === 'pago');
@@ -1212,6 +1380,9 @@ export class Dashboard {
               </div>
             </form>
 
+            <!-- Cronograma Geral de Datas -->
+            ${cronogramaHTML}
+
             <!-- Container de Comentários da Viagem -->
             <div id="viagem-comments-container" class="mt-6 border-t border-slate-100 dark:border-slate-800 pt-4"></div>
           </div>
@@ -1294,6 +1465,14 @@ export class Dashboard {
                       <option value="emitido" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100" selected>Emitido</option>
                     </select>
                   </div>
+                </div>
+
+                <!-- Datas Adicionais -->
+                <div id="container-datas-adicionais" class="space-y-2.5 mt-2"></div>
+                <div class="flex justify-start">
+                  <button type="button" id="btn-add-data-adicional" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-350 font-black text-[9px] tracking-wider rounded-lg transition uppercase flex items-center gap-1">
+                    ➕ Adicionar Outra Data
+                  </button>
                 </div>
 
                 <div class="flex justify-end pt-1">
@@ -1532,6 +1711,49 @@ export class Dashboard {
       { id: 'prod-data', type: 'date' }
     ]);
 
+    // Evento de clique para adicionar datas adicionais dinâmicas
+    const btnAddData = document.getElementById('btn-add-data-adicional');
+    btnAddData?.addEventListener('click', () => {
+      const container = document.getElementById('container-datas-adicionais');
+      if (!container) return;
+
+      const rowId = `row-data-adicional-${Date.now()}`;
+      const newRow = document.createElement('div');
+      newRow.id = rowId;
+      newRow.className = 'grid grid-cols-[1fr_1fr_auto] gap-2 items-end bg-slate-100/50 dark:bg-slate-800/30 p-2.5 rounded-lg border border-slate-200/40 dark:border-slate-800/40';
+      newRow.innerHTML = `
+        <div>
+          <label class="block text-[8px] font-bold text-slate-400 dark:text-slate-550 uppercase mb-0.5">Rótulo (ex: Check-out)</label>
+          <input type="text" placeholder="Rótulo" required class="prod-adicional-rotulo w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition duration-155" />
+        </div>
+        <div>
+          <label class="block text-[8px] font-bold text-slate-400 dark:text-slate-555 uppercase mb-0.5">Data (DD/MM/AAAA)</label>
+          <input type="text" placeholder="DD/MM/AAAA" required class="prod-adicional-data w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition duration-155" />
+        </div>
+        <button type="button" class="btn-remove-data-adicional p-2 hover:bg-rose-50/80 dark:hover:bg-rose-950/20 text-slate-400 hover:text-rose-600 rounded-lg transition" title="Remover data">
+          🗑️
+        </button>
+      `;
+      container.appendChild(newRow);
+
+      // Máscara e validação em tempo real para o campo de data recém-criado
+      const dataInput = newRow.querySelector('.prod-adicional-data') as HTMLInputElement;
+      dataInput.addEventListener('input', (ev) => {
+        const target = ev.target as HTMLInputElement;
+        let val = target.value;
+        let digits = val.replace(/\D/g, '');
+        if (digits.length > 8) {
+          digits = digits.slice(0, 8);
+        }
+        target.value = formatDateBr(digits);
+      });
+
+      // Evento de remoção da linha
+      newRow.querySelector('.btn-remove-data-adicional')?.addEventListener('click', () => {
+        newRow.remove();
+      });
+    });
+
     // Submissão do Formulário de Novo Produto
     const formNovoProduto = document.getElementById('form-novo-produto') as HTMLFormElement;
     formNovoProduto?.addEventListener('submit', async (e) => {
@@ -1566,6 +1788,36 @@ export class Dashboard {
 
       const venda = parseDoubleBr(vendaRaw);
 
+      // Coleta e validação de datas adicionais
+      const datasAdicionais: { data: string; rotulo: string }[] = [];
+      const rotuloInputs = formNovoProduto.querySelectorAll('.prod-adicional-rotulo') as NodeListOf<HTMLInputElement>;
+      const dataInputs = formNovoProduto.querySelectorAll('.prod-adicional-data') as NodeListOf<HTMLInputElement>;
+      
+      let datesValid = true;
+      for (let i = 0; i < rotuloInputs.length; i++) {
+        const rotulo = rotuloInputs[i].value.trim();
+        const dataBr = dataInputs[i].value.trim();
+        if (!rotulo || !dataBr) {
+          this.showToast('Por favor, preencha todos os campos das datas adicionais.', 'error');
+          datesValid = false;
+          break;
+        }
+
+        const dataIso = formatBrDateToIso(dataBr);
+        if (!dataIso || !validateDate(dataBr).isValid) {
+          this.showToast(`A data "${dataBr}" para "${rotulo}" é inválida ou está em formato incorreto.`, 'error');
+          datesValid = false;
+          break;
+        }
+
+        datasAdicionais.push({
+          rotulo,
+          data: dataIso
+        });
+      }
+
+      if (!datesValid) return;
+
       const payload = {
         viagem_id: v.id,
         tipo,
@@ -1575,7 +1827,8 @@ export class Dashboard {
         valor_custo: 0,
         valor_venda: venda,
         status,
-        data_servico: dataServico
+        data_servico: dataServico,
+        datas_adicionais: datasAdicionais
       };
 
       try {
@@ -1599,7 +1852,18 @@ export class Dashboard {
 
         this.showToast('Produto adicionado à viagem com sucesso!', 'success');
         formNovoProduto.reset();
-        await this.loadAndRenderProdutosViagem(v.id);
+
+        // Limpar o container de datas adicionais
+        const containerDatas = document.getElementById('container-datas-adicionais');
+        if (containerDatas) containerDatas.innerHTML = '';
+
+        // Recarregar viagens locais/globais e atualizar visualização
+        await this.loadViagens();
+        this.render();
+        this.setupDragAndDrop();
+
+        // Reabrir o modal no estado atualizado
+        await this.openEdicaoEProdutosModal(v.id, 'produtos');
       } catch (err: any) {
         console.error('Erro ao adicionar produto:', err);
         this.showToast(`Erro ao adicionar produto: ${err.message}`, 'error');
@@ -1789,8 +2053,11 @@ export class Dashboard {
               <span class="text-lg p-1 bg-white dark:bg-slate-700 border border-slate-100 dark:border-slate-650 rounded-lg shadow-sm flex items-center justify-center">${iconesMap[p.tipo] || '📦'}</span>
               <div class="overflow-hidden flex-1">
                 <span class="block text-xs font-black text-slate-700 dark:text-slate-200 truncate leading-tight">${p.fornecedor} &bull; ${p.descricao}</span>
-                <span class="block text-[10px] text-slate-400 dark:text-slate-550 font-bold leading-normal">
-                  Data: <span class="text-slate-600 dark:text-slate-355 font-semibold">${formatarData(p.data_servico)}</span>
+                <span class="block text-[10px] text-slate-400 dark:text-slate-555 font-bold leading-normal">
+                  Data Principal: <span class="text-slate-600 dark:text-slate-355 font-semibold">${formatarData(p.data_servico)}</span>
+                  ${p.datas_adicionais && p.datas_adicionais.length > 0 ? p.datas_adicionais.map((d: any) => `
+                    <br/><span class="text-indigo-600 dark:text-indigo-400">${d.rotulo}:</span> <span class="text-slate-600 dark:text-slate-355 font-semibold">${formatarData(d.data)}</span>
+                  `).join('') : ''}
                 </span>
                 <span class="block text-[10px] leading-normal font-bold ${isDetalhado ? 'text-indigo-500 dark:text-indigo-400' : 'text-amber-500 dark:text-amber-450 animate-pulse'}">
                   ${isDetalhado 

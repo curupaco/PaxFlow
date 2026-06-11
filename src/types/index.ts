@@ -105,6 +105,8 @@ export interface ProdutoViagem {
   valorVenda: number; // Valor vendido ao cliente
   status: 'reservado' | 'emitido' | 'cancelado' | 'reembolsado';
   dataServico: string; // Data da prestação do serviço
+  datasAdicionais?: { data: string; rotulo: string }[];
+  datas_adicionais?: { data: string; rotulo: string }[];
   createdAt?: string;
   updatedAt?: string;
 }
