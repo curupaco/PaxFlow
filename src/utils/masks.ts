@@ -209,8 +209,8 @@ export function validateCurrency(val: string): ValidationResult {
   }
   
   const num = parseInt(digits, 10) / 100;
-  if (isNaN(num) || num <= 0) {
-    return { isValid: false, message: 'O valor deve ser maior que zero.' };
+  if (isNaN(num) || num < 0) {
+    return { isValid: false, message: 'O valor deve ser maior ou igual a zero.' };
   }
   
   return { isValid: true, message: '' };
