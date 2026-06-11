@@ -1185,8 +1185,8 @@ export class Dashboard {
                   ${renderDateInputHTML('edit-viagem-volta', v.data_volta || '')}
                 </div>
                 <div>
-                  <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 leading-tight">Data Finan. *</label>
-                  ${renderDateInputHTML('edit-viagem-data-financeiro', v.data_financeiro || '', 'DD/MM/AAAA', true)}
+                  <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 leading-tight">Data Finan.</label>
+                  ${renderDateInputHTML('edit-viagem-data-financeiro', v.data_financeiro || '', 'DD/MM/AAAA', false)}
                 </div>
               </div>
 
@@ -1384,7 +1384,7 @@ export class Dashboard {
       { id: 'edit-viagem-valor', type: 'currency' },
       { id: 'edit-viagem-ida', type: 'date' },
       { id: 'edit-viagem-volta', type: 'date' },
-      { id: 'edit-viagem-data-financeiro', type: 'date', required: true }
+      { id: 'edit-viagem-data-financeiro', type: 'date', required: false }
     ]);
 
     // Submissão do Formulário de Edição da Viagem
@@ -1405,7 +1405,7 @@ export class Dashboard {
 
       const dataIda = formatBrDateToIso(dataIdaRaw);
       const dataVolta = formatBrDateToIso(dataVoltaRaw);
-      const dataFinanceiro = formatBrDateToIso(dataFinanceiroRaw);
+      const dataFinanceiro = dataFinanceiroRaw ? formatBrDateToIso(dataFinanceiroRaw) : null;
 
       if (!dataIda) {
         this.showToast('Por favor, informe a Data de Ida no formato correto DD/MM/AAAA.', 'error');
@@ -1415,7 +1415,7 @@ export class Dashboard {
         this.showToast('Por favor, informe a Data de Volta no formato correto DD/MM/AAAA.', 'error');
         return;
       }
-      if (!dataFinanceiro) {
+      if (dataFinanceiroRaw && !dataFinanceiro) {
         this.showToast('Por favor, informe a Data Financeiro no formato correto DD/MM/AAAA.', 'error');
         return;
       }
@@ -1430,7 +1430,7 @@ export class Dashboard {
       const valor = parseDoubleBr(valorRaw);
 
       // Validação de saldo pendente se tentar mudar para status diferente de 'fechado'
-      if (status !== 'fechado') {
+      if (status !== v.status && status !== 'fechado') {
         let produtos: any[] = [];
         if (!this.isFallbackMode) {
           try {
