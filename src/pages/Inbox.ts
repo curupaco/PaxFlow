@@ -27,7 +27,6 @@ export class InboxPage {
   
   // Global settings
   private prazoReembolsoDias: number = 3;
-  private profileUpdatedListener: ((e: any) => void) | null = null;
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -46,18 +45,6 @@ export class InboxPage {
       }
       this.user = user;
       this.perfil = perfil;
-
-      // Handle profile updates reactively
-      this.profileUpdatedListener = (e: any) => {
-        const { nome, avatar_url } = e.detail;
-        if (this.perfil) {
-          this.perfil.nome = nome;
-          this.perfil.avatar_url = avatar_url;
-          this.render();
-          this.setupEventListeners();
-        }
-      };
-      window.addEventListener('paxflow-profile-updated', this.profileUpdatedListener);
 
       // 2. Fetch global settings for refund SLAs
       await this.loadGlobalSettings();
@@ -84,10 +71,6 @@ export class InboxPage {
    * Destroy page elements if necessary
    */
   public destroy(): void {
-    if (this.profileUpdatedListener) {
-      window.removeEventListener('paxflow-profile-updated', this.profileUpdatedListener);
-      this.profileUpdatedListener = null;
-    }
   }
 
   /**
@@ -137,6 +120,7 @@ export class InboxPage {
       console.error('Erro ao compilar alertas no serviço:', err);
     }
     this.applyFilters();
+    window.dispatchEvent(new CustomEvent('paxflow-inbox-updated'));
   }
 
   /**
@@ -239,6 +223,7 @@ export class InboxPage {
           .update({ lida: true })
           .eq('id', notifId);
       }
+      window.dispatchEvent(new CustomEvent('paxflow-inbox-updated'));
     } catch (err) {
       console.error('Erro ao marcar alerta como lido:', err);
     }
@@ -314,36 +299,6 @@ export class InboxPage {
                 </select>
               </div>
             ` : ''}
-
-            <!-- Identidade do Consultor Logado -->
-            <div class="hidden md:flex items-center justify-between sm:justify-start gap-3 pl-0 sm:pl-3 border-t sm:border-t-0 sm:border-l border-slate-200/60 dark:border-slate-800/60 pt-3 sm:pt-0 shrink-0">
-              <div class="text-right hidden sm:block">
-                <span class="block text-sm font-extrabold text-slate-700 dark:text-slate-300">${this.perfil?.nome || 'Consultor'}</span>
-                <span class="block text-[10px] text-slate-400 dark:text-slate-550 font-bold uppercase tracking-wider">${this.perfil?.email || this.user.email}</span>
-              </div>
-              <div class="flex items-center gap-3">
-                <div class="${hasUnread ? 'unread-avatar-glow' : ''}">
-                  ${getAvatarSvg(this.perfil?.avatar_url, this.perfil?.nome?.charAt(0) || 'C', 'w-10 h-10')}
-                </div>
-                
-                <!-- Theme toggle button -->
-                <button id="theme-toggle-btn" title="Alternar Tema" class="p-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-650 dark:text-slate-400 dark:hover:text-slate-200 rounded-xl transition border border-slate-200/40 dark:border-slate-700/40 flex items-center justify-center">
-                  <svg width="20" height="20" class="w-5 h-5 theme-icon-light" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                  </svg>
-                  <svg width="20" height="20" class="w-5 h-5 theme-icon-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.364l-.707-.707M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                </button>
-                
-                <!-- Sair do Sistema (Logout) -->
-                <button id="btn-logout" title="Sair do Sistema" class="p-2.5 bg-slate-100 hover:bg-rose-50 dark:bg-slate-800 dark:hover:bg-rose-950/30 text-slate-400 hover:text-rose-500 dark:text-slate-500 dark:hover:text-rose-400 rounded-xl transition border border-slate-200/40 dark:border-slate-700/40 flex items-center justify-center">
-                  <svg width="20" height="20" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                  </svg>
-                </button>
-              </div>
-            </div>
           </div>
         </header>
 
@@ -1220,18 +1175,6 @@ export class InboxPage {
       });
     });
 
-    // 10. Logoff / Sair do Sistema com modal de confirmação customizado
-    document.getElementById('btn-logout')?.addEventListener('click', async () => {
-      const confirmLogout = await showCustomConfirm(
-        'Tem certeza que deseja sair do sistema?',
-        'Confirmação de Logoff',
-        { isDestructive: true, confirmText: 'Sair do PaxFlow', cancelText: 'Cancelar' }
-      );
-      if (confirmLogout) {
-        await logoutConsultor();
-        window.location.reload();
-      }
-    });
   }
 
   /**

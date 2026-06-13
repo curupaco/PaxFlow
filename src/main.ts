@@ -11,7 +11,7 @@ import { LoginPage } from './pages/Login';
 import { MeuPerfilModal } from './components/profile/MeuPerfilModal';
 import { PerfilConsultor } from './types';
 import { getAvatarSvg } from './services/avatars';
-import { showCustomAlert } from './services/dialog';
+import { showCustomAlert, showCustomConfirm } from './services/dialog';
 import { obterProgressoNivel } from './services/gamification';
 
 class App {
@@ -46,6 +46,11 @@ class App {
         this.perfil.avatar_url = avatar_url;
       }
       this.atualizarSidebarProfileFooter();
+    });
+
+    // Ouvinte para reatividade do inbox atualizado
+    window.addEventListener('paxflow-inbox-updated', () => {
+      this.atualizarInboxBadge();
     });
 
     // Ouvinte para navegação global com suporte a parâmetros (deep linking)
@@ -238,12 +243,13 @@ class App {
               </button>
               
               <!-- Link: Inbox de Alertas -->
-              <button id="nav-inbox" class="w-full px-4 py-3 rounded-xl flex items-center justify-center ${this.sidebarCollapsed ? '' : 'md:justify-start'} gap-3 font-semibold text-xs text-left transition select-none group">
+              <button id="nav-inbox" class="w-full px-4 py-3 rounded-xl flex items-center justify-center ${this.sidebarCollapsed ? '' : 'md:justify-start'} gap-3 font-semibold text-xs text-left transition select-none group relative">
                 <svg width="20" height="20" class="w-5 h-5 text-slate-400 group-hover:text-slate-600 dark:text-slate-555 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                   <rect width="20" height="16" x="2" y="4" rx="2" />
                   <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
                 </svg>
                 <span class="${this.sidebarCollapsed ? 'md:hidden' : ''}">Inbox de Alertas</span>
+                <span id="nav-inbox-badge" class="hidden"></span>
               </button>
 
               <!-- Link: Kanban de Orçamentos -->
@@ -308,6 +314,7 @@ class App {
 
     this.atualizarSidebarProfileFooter();
     this.setupNavigationListeners();
+    this.atualizarInboxBadge();
 
     // Event listener para colapsar barra lateral
     document.getElementById('sidebar-collapse-btn')?.addEventListener('click', () => {
@@ -365,28 +372,57 @@ class App {
 
     if (footerContainer) {
       footerContainer.innerHTML = `
-        <button id="sidebar-profile-trigger" class="w-full border-t border-slate-100 dark:border-slate-800 pt-4 flex items-center justify-center ${this.sidebarCollapsed ? '' : 'md:justify-start md:px-2'} gap-3 hover:bg-slate-100 dark:hover:bg-slate-800/40 p-1.5 rounded-xl transition duration-200 focus:outline-none">
-          <div class="relative shrink-0 flex items-center justify-center w-11 h-11">
-            <svg class="absolute inset-0 w-11 h-11 transform -rotate-90 select-none pointer-events-none" viewBox="0 0 36 36">
-              <path class="text-slate-200 dark:text-slate-800" stroke-width="2.5" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-              <path class="text-indigo-600 dark:text-indigo-500 transition-all duration-500 ease-out" stroke-dasharray="${progress.percent}, 100" stroke-width="2.5" stroke-linecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-            </svg>
-            ${getAvatarSvg(this.perfil.avatar_url, this.perfil.nome || 'Consultor', 'w-8 h-8 relative z-10')}
-            <span class="absolute -bottom-1 -right-1 bg-indigo-600 dark:bg-indigo-500 text-white font-black text-[8px] px-1 py-0.5 rounded-full z-20 shadow-md ring-1 ring-white dark:ring-slate-900 leading-none flex items-center justify-center min-w-[14px] h-[14px]">
-              ${progress.nivel}
-            </span>
+        <div class="flex flex-col gap-2.5 border-t border-slate-100 dark:border-slate-800 pt-4 w-full">
+          <button id="sidebar-profile-trigger" class="w-full flex items-center justify-center ${this.sidebarCollapsed ? '' : 'md:justify-start md:px-2'} gap-3 hover:bg-slate-100 dark:hover:bg-slate-800/40 p-1.5 rounded-xl transition duration-200 focus:outline-none">
+            <div class="relative shrink-0 flex items-center justify-center w-11 h-11">
+              <svg class="absolute inset-0 w-11 h-11 transform -rotate-90 select-none pointer-events-none" viewBox="0 0 36 36">
+                <path class="text-slate-200 dark:text-slate-800" stroke-width="2.5" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                <path class="text-indigo-600 dark:text-indigo-500 transition-all duration-500 ease-out" stroke-dasharray="${progress.percent}, 100" stroke-width="2.5" stroke-linecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+              </svg>
+              ${getAvatarSvg(this.perfil.avatar_url, this.perfil.nome || 'Consultor', 'w-8 h-8 relative z-10')}
+              <span class="absolute -bottom-1 -right-1 bg-indigo-600 dark:bg-indigo-500 text-white font-black text-[8px] px-1 py-0.5 rounded-full z-20 shadow-md ring-1 ring-white dark:ring-slate-900 leading-none flex items-center justify-center min-w-[14px] h-[14px]">
+                ${progress.nivel}
+              </span>
+            </div>
+            <div id="sidebar-profile-text" class="overflow-hidden flex-1 select-none text-left ${this.sidebarCollapsed ? 'md:hidden' : ''}">
+              <span class="block text-[11px] font-extrabold text-slate-700 dark:text-white truncate">${this.perfil.nome || 'Consultor'}</span>
+              <span class="block text-[9px] text-slate-455 dark:text-slate-500 font-semibold truncate capitalize leading-tight">${this.perfil.role || 'consultor'}</span>
+              <span class="block text-[9px] text-indigo-600 dark:text-indigo-400 font-black truncate mt-0.5 leading-none">${progress.patenteEmoji} ${progress.patente}</span>
+            </div>
+          </button>
+          
+          <div class="flex items-center justify-around gap-1.5 px-2 ${this.sidebarCollapsed ? 'flex-col mt-1' : 'flex-row'}">
+            <!-- Theme Toggle -->
+            <button id="theme-toggle-btn" title="Alternar Tema" class="p-2 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/60 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-650 dark:text-slate-500 dark:hover:text-slate-200 rounded-xl transition border border-slate-200/20 dark:border-slate-700/20 flex items-center justify-center w-full">
+              <svg width="18" height="18" class="w-4.5 h-4.5 theme-icon-light" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+              </svg>
+              <svg width="18" height="18" class="w-4.5 h-4.5 theme-icon-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.364l-.707-.707M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </button>
+            <!-- Logout -->
+            <button id="sidebar-logout-btn" title="Sair do Sistema" class="p-2 bg-slate-50 hover:bg-rose-50 dark:bg-slate-800/60 dark:hover:bg-rose-950/30 text-slate-400 hover:text-rose-500 dark:text-slate-500 dark:hover:text-rose-455 rounded-xl transition border border-slate-200/20 dark:border-slate-700/20 flex items-center justify-center w-full">
+              <svg width="18" height="18" class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+            </button>
           </div>
-          <div id="sidebar-profile-text" class="overflow-hidden flex-1 select-none text-left ${this.sidebarCollapsed ? 'md:hidden' : ''}">
-            <span class="block text-[11px] font-extrabold text-slate-700 dark:text-white truncate">${this.perfil.nome || 'Consultor'}</span>
-            <span class="block text-[9px] text-slate-455 dark:text-slate-500 font-semibold truncate capitalize leading-tight">${this.perfil.role || 'consultor'}</span>
-            <span class="block text-[9px] text-indigo-600 dark:text-indigo-400 font-black truncate mt-0.5 leading-none">${progress.patenteEmoji} ${progress.patente}</span>
-          </div>
-        </button>
+        </div>
       `;
 
       document.getElementById('sidebar-profile-trigger')?.addEventListener('click', () => {
         this.abrirModalMeuPerfil();
         this.toggleMobileMenu(false);
+      });
+
+      document.getElementById('sidebar-logout-btn')?.addEventListener('click', async () => {
+        const { logoutConsultor } = await import('./services/supabase');
+        const confirmResult = await showCustomConfirm('Deseja realmente sair do sistema?', 'Encerrar Sessão');
+        if (confirmResult) {
+          await logoutConsultor();
+          window.location.reload();
+        }
       });
     }
 
@@ -635,6 +671,40 @@ class App {
       this.currentPageInstance.init(extraId);
     }
     this.atualizarSidebarProfileFooter();
+    this.atualizarInboxBadge();
+  }
+
+  /**
+   * Busca e atualiza o badge de mensagens não lidas no menu lateral de forma assíncrona
+   */
+  private async atualizarInboxBadge(): Promise<void> {
+    if (!this.user) return;
+    try {
+      const { InboxService } = await import('./services/inboxService');
+      const alerts = await InboxService.loadAndBuildAlerts(this.user, this.perfil, 3);
+      
+      const readVal = localStorage.getItem('paxflow_read_alerts');
+      const readList: string[] = readVal ? JSON.parse(readVal) : [];
+      const unreadCount = alerts.filter(a => !a.arquivado && !readList.includes(a.id)).length;
+      
+      const badge = document.getElementById('nav-inbox-badge');
+      if (badge) {
+        if (unreadCount > 0) {
+          badge.textContent = String(unreadCount);
+          badge.classList.remove('hidden');
+          if (this.sidebarCollapsed) {
+            badge.className = "absolute top-2.5 right-2.5 px-1 py-0.5 min-w-[14px] h-[14px] flex items-center justify-center rounded-full text-[8px] font-black bg-rose-500 text-white animate-pulse";
+          } else {
+            badge.className = "ml-auto px-2 py-0.5 rounded-full text-[9px] font-black bg-rose-500 text-white animate-pulse";
+          }
+        } else {
+          badge.classList.add('hidden');
+          badge.textContent = '';
+        }
+      }
+    } catch (err) {
+      console.warn('Erro ao atualizar badge do inbox:', err);
+    }
   }
 }
 
