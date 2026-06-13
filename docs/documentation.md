@@ -84,6 +84,12 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
   - Filtro por consultor (admin), por tipo de alerta, ativos/arquivados/todos.
   - **Pesquisa em tempo real de alta precisão (client-side)**: O filtro textual da caixa de entrada foi ampliado para cobrir perfeitamente todos os campos e datas, incluindo a data alvo do evento (`eventDate`), data amigável formatada (`dateStr`), período do lembrete (`periodText`) e o nome amigável do consultor responsável na visualização administrativa.
 - **Leitor de mensagens corporativo**: modal com visual estilo e-mail profissional, integrado com deep-linking interativo e arquivamento em tempo real.
+- **Sistema de Mensagens Diretas Internas (P2P)**:
+  - Permite o envio de mensagens diretas no estilo e-mail (com destinatários "Para" e "Cc" múltiplos) entre consultores da agência.
+  - **Autocomplete de Contatos**: Interface de seleção de destinatários utilizando tags/badges interativos com remoção instantânea.
+  - **Pasta de Enviadas**: Uma gaveta dedicada para acompanhamento de todas as correspondências autoradas pelo consultor logado.
+  - **Ação de Resposta (Reply)**: Botão de resposta direta integrado ao leitor de e-mail, gerando preenchimento automático do remetente e do assunto.
+  - **Status e Contadores Reativos**: Contagem individual de alertas não lidos integrada reativamente com a Sidebar principal.
 - **Visualização em Calendário Interativo [NEW]**:
   - **Alternador de Visualização (Toggle Switch)**: Um seletor de alta fidelidade visual (Lista / Calendário) no topo do painel. Todos os filtros da barra lateral (Ativos/Arquivados/Todos e consultores) e busca continuam 100% integrados e reativos no modo calendário.
   - **Três Visões Operacionais**:

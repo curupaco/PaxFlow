@@ -4,6 +4,7 @@ import { getAvatarSvg } from '../services/avatars';
 import { showCustomConfirm, showCustomAlert } from '../services/dialog';
 import { InboxService } from '../services/inboxService';
 import { EmailReaderModal } from '../components/inbox/EmailReaderModal';
+import { NewMessageModal } from '../components/inbox/NewMessageModal';
 import './Inbox.css';
 
 
@@ -15,7 +16,7 @@ export class InboxPage {
   private filteredAlerts: AlertItem[] = [];
   
   // App state
-  private activeTab: 'ativos' | 'arquivados' | 'todos' = 'ativos';
+  private activeTab: 'ativos' | 'arquivados' | 'todos' | 'enviadas' = 'ativos';
   private selectedConsultantFilter: string = 'todos';
   private searchQuery: string = '';
   private consultants: PerfilConsultor[] = [];
@@ -129,11 +130,15 @@ export class InboxPage {
   private applyFilters(): void {
     let result = [...this.alerts];
 
-    // 1. Filter by Active / Archived / All
+    // 1. Filter by Active / Archived / All / Sent
     if (this.activeTab === 'ativos') {
-      result = result.filter(a => !a.arquivado);
+      result = result.filter(a => !a.arquivado && !a.isSent);
     } else if (this.activeTab === 'arquivados') {
-      result = result.filter(a => a.arquivado);
+      result = result.filter(a => a.arquivado && !a.isSent);
+    } else if (this.activeTab === 'enviadas') {
+      result = result.filter(a => a.isSent);
+    } else if (this.activeTab === 'todos') {
+      result = result.filter(a => !a.isSent);
     }
 
     // 2. Filter by Consultant (Admin only)
@@ -260,14 +265,15 @@ export class InboxPage {
 
    private render(): void {
     // 1. Calculate counters for badges
-    const totalAtivos = this.alerts.filter(a => !a.arquivado).length;
-    const totalManual = this.alerts.filter(a => a.type === 'manual' && !a.arquivado).length;
-    const totalPassport = this.alerts.filter(a => a.type === 'passport' && !a.arquivado).length;
-    const totalRefund = this.alerts.filter(a => a.type === 'refund' && !a.arquivado).length;
+    const totalAtivos = this.alerts.filter(a => !a.arquivado && !a.isSent).length;
+    const totalManual = this.alerts.filter(a => a.type === 'manual' && !a.arquivado && !a.isSent).length;
+    const totalPassport = this.alerts.filter(a => a.type === 'passport' && !a.arquivado && !a.isSent).length;
+    const totalRefund = this.alerts.filter(a => a.type === 'refund' && !a.arquivado && !a.isSent).length;
+    const totalEnviadas = this.alerts.filter(a => a.isSent).length;
 
     // Determine unread alerts status for visual header badge indicator
     const readList = this.getReadLocalAlerts();
-    const hasUnread = this.alerts.some(a => !a.arquivado && !readList.includes(a.id));
+    const hasUnread = this.alerts.some(a => !a.arquivado && !readList.includes(a.id) && !a.isSent);
 
     // 2. Build the main page container markup
     this.container.innerHTML = `
@@ -358,10 +364,18 @@ export class InboxPage {
             
             <!-- Left Workspace sidebar (Filter Panel) -->
             <div class="lg:col-span-1 space-y-4">
+
+              <!-- Action compose button -->
+              <button id="btn-nova-mensagem" class="w-full py-3 px-4 bg-indigo-650 hover:bg-indigo-750 text-white text-xs font-black rounded-xl transition shadow-md shadow-indigo-650/10 flex items-center justify-center gap-2 mb-2 select-none">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+                </svg>
+                NOVA MENSAGEM
+              </button>
               
               <!-- Folders glass card -->
               <div class="inbox-glass p-4 rounded-2xl shadow-sm space-y-2">
-                <h3 class="px-2 text-[10px] font-black text-slate-400 dark:text-slate-550 uppercase tracking-widest mb-3">Folders</h3>
+                <h3 class="px-2 text-[10px] font-black text-slate-400 dark:text-slate-550 uppercase tracking-widest mb-3">Pastas</h3>
                 
                 <button id="folder-ativos" class="w-full px-3 py-2.5 rounded-xl flex items-center justify-between text-xs font-bold transition select-none ${
                   this.activeTab === 'ativos' 
@@ -378,6 +392,21 @@ export class InboxPage {
                   <span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">${totalAtivos}</span>
                 </button>
 
+                <button id="folder-enviadas" class="w-full px-3 py-2.5 rounded-xl flex items-center justify-between text-xs font-bold transition select-none ${
+                  this.activeTab === 'enviadas' 
+                    ? 'bg-indigo-600/10 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400' 
+                    : 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800/40'
+                }">
+                  <span class="flex items-center gap-2.5">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <line x1="22" y1="2" x2="11" y2="13"></line>
+                      <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                    Enviadas
+                  </span>
+                  <span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">${totalEnviadas}</span>
+                </button>
+
                 <button id="folder-arquivados" class="w-full px-3 py-2.5 rounded-xl flex items-center justify-between text-xs font-bold transition select-none ${
                   this.activeTab === 'arquivados' 
                     ? 'bg-indigo-600/10 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400' 
@@ -392,7 +421,7 @@ export class InboxPage {
                     Arquivados
                   </span>
                   <span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">${
-                    this.alerts.filter(a => a.arquivado).length
+                    this.alerts.filter(a => a.arquivado && !a.isSent).length
                   }</span>
                 </button>
 
@@ -405,7 +434,7 @@ export class InboxPage {
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
                     Mensagens Totais
                   </span>
-                  <span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">${this.alerts.length}</span>
+                  <span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">${this.alerts.filter(a => !a.isSent).length}</span>
                 </button>
 
               </div>
@@ -1000,6 +1029,19 @@ export class InboxPage {
       this.setupEventListeners();
     });
 
+    const folderEnviadas = document.getElementById('folder-enviadas');
+    folderEnviadas?.addEventListener('click', () => {
+      this.activeTab = 'enviadas';
+      this.applyFilters();
+      this.render();
+      this.setupEventListeners();
+    });
+
+    const btnNovaMensagem = document.getElementById('btn-nova-mensagem');
+    btnNovaMensagem?.addEventListener('click', () => {
+      this.openNewMessageModal();
+    });
+
     const folderArquivados = document.getElementById('folder-arquivados');
     folderArquivados?.addEventListener('click', () => {
       this.activeTab = 'arquivados';
@@ -1191,7 +1233,7 @@ export class InboxPage {
             .eq('id', tableId);
 
           if (error) throw error;
-        } else if (clickedItem.type === 'mention') {
+        } else if (clickedItem.type === 'mention' || clickedItem.type === 'direct_message') {
           const tableId = clickedItem.id.replace('mention-', '');
           const { error } = await supabase
             .from('notificacoes')
@@ -1212,6 +1254,30 @@ export class InboxPage {
       },
       onClose: () => {
         // Redraw workspace immediately to remove read highlight and update glows
+        this.render();
+        this.setupEventListeners();
+      },
+      onReply: (replyItem) => {
+        if (replyItem.senderId) {
+          this.openNewMessageModal({
+            senderId: replyItem.senderId,
+            senderNome: replyItem.sender,
+            assunto: replyItem.title
+          });
+        }
+      }
+    });
+  }
+
+  /**
+   * Opens the New Message modal dialog
+   */
+  private openNewMessageModal(replyTo?: { senderId: string; senderNome: string; assunto: string }): void {
+    NewMessageModal.open({
+      replyTo,
+      onSent: async () => {
+        this.showToast('Mensagem enviada com sucesso!', 'success');
+        await this.loadAndBuildAlerts();
         this.render();
         this.setupEventListeners();
       }

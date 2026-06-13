@@ -685,7 +685,7 @@ class App {
       
       const readVal = localStorage.getItem('paxflow_read_alerts');
       const readList: string[] = readVal ? JSON.parse(readVal) : [];
-      const unreadCount = alerts.filter(a => !a.arquivado && !readList.includes(a.id)).length;
+      const unreadCount = alerts.filter(a => !a.arquivado && !readList.includes(a.id) && !a.isSent).length;
       
       const badge = document.getElementById('nav-inbox-badge');
       if (badge) {

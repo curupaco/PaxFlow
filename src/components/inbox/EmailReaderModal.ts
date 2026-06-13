@@ -5,6 +5,7 @@ import { showCustomAlert } from '../../services/dialog';
 export interface EmailReaderModalOptions {
   onArchive: (item: AlertItem) => Promise<void>;
   onClose: () => void;
+  onReply?: (item: AlertItem) => void;
 }
 
 export class EmailReaderModal {
@@ -24,6 +25,9 @@ export class EmailReaderModal {
     } else if (item.type === 'refund') {
       badgeClass = 'badge-gradient-rose';
       badgeText = 'Reembolso SLA';
+    } else if (item.type === 'direct_message') {
+      badgeClass = 'bg-purple-600 text-white';
+      badgeText = 'Mensagem Direta';
     }
 
     modalOverlay.innerHTML = `
@@ -40,17 +44,19 @@ export class EmailReaderModal {
 
           <div class="flex items-center gap-1.5">
             <!-- Header Archive action -->
-            <button id="modal-archive-btn" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-slate-500 dark:text-slate-400 hover:text-indigo-600 transition" title="${item.arquivado ? 'Desarquivar Mensagem' : 'Arquivar Mensagem'}">
-              ${item.arquivado ? `
-                <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10h10a8 8 0 0 1 8 8v2M3 10l6 6m-6-6l6-6"/></svg>
-              ` : `
-                <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                  <polyline points="21 8 21 21 3 21 3 8"></polyline>
-                  <rect x="1" y="3" width="22" height="5"></rect>
-                  <line x1="10" y1="12" x2="14" y2="12"></line>
-                </svg>
-              `}
-            </button>
+            ${item.type !== 'direct_message' || !item.isSent ? `
+              <button id="modal-archive-btn" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-slate-500 dark:text-slate-400 hover:text-indigo-600 transition" title="${item.arquivado ? 'Desarquivar Mensagem' : 'Arquivar Mensagem'}">
+                ${item.arquivado ? `
+                  <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10h10a8 8 0 0 1 8 8v2M3 10l6 6m-6-6l6-6"/></svg>
+                ` : `
+                  <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                    <polyline points="21 8 21 21 3 21 3 8"></polyline>
+                    <rect x="1" y="3" width="22" height="5"></rect>
+                    <line x1="10" y1="12" x2="14" y2="12"></line>
+                  </svg>
+                `}
+              </button>
+            ` : ''}
             
             <button id="modal-close-btn" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-slate-400 hover:text-rose-500 transition" title="Fechar">
               <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -75,11 +81,15 @@ export class EmailReaderModal {
               <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
                 <div>
                   <span class="block text-sm font-extrabold text-slate-800 dark:text-slate-250 truncate">${item.sender}</span>
-                  <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-semibold truncate">De: &lt;alertas@paxflow.com.br&gt;</span>
+                  <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-semibold truncate">
+                    De: &lt;${item.type === 'direct_message' ? (item.sender === 'Você' ? 'voce' : item.sender.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '')) + '@paxflow.com.br' : 'alertas@paxflow.com.br'}&gt;
+                  </span>
                 </div>
                 <div class="text-left sm:text-right">
                   <span class="block text-[10px] font-bold text-slate-400 dark:text-slate-550">${item.dateStr}</span>
-                  <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-semibold">Para: Você</span>
+                  <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-semibold">
+                    ${item.type === 'direct_message' && item.recipientsHtml ? item.recipientsHtml : 'Para: Você'}
+                  </span>
                 </div>
               </div>
             </div>
@@ -87,33 +97,50 @@ export class EmailReaderModal {
 
           <!-- Email body (Corporate Paper design) -->
           <div class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed font-semibold bg-slate-50/40 dark:bg-slate-950/20 p-5 rounded-2xl border border-slate-200/30 dark:border-slate-850/40 shadow-inner">
-            <p class="mb-4">Prezado(a) Consultor(a),</p>
-            
-            <p class="mb-4">${item.body}</p>
+            ${item.type === 'direct_message' ? `
+              <p class="whitespace-pre-wrap">${item.body}</p>
+            ` : `
+              <p class="mb-4">Prezado(a) Consultor(a),</p>
+              
+              <p class="mb-4">${item.body}</p>
 
-            <p class="mt-6 border-t border-slate-100 dark:border-slate-800/80 pt-4 text-xs text-slate-400 dark:text-slate-505">
-              Atenciosamente,<br>
-              <strong>PaxFlow Cockpit Automático</strong><br>
-              Gestão Operacional e Fluxo de Passageiros
-            </p>
+              <p class="mt-6 border-t border-slate-100 dark:border-slate-800/80 pt-4 text-xs text-slate-400 dark:text-slate-505">
+                Atenciosamente,<br>
+                <strong>PaxFlow Cockpit Automático</strong><br>
+                Gestão Operacional e Fluxo de Passageiros
+              </p>
+            `}
           </div>
 
         </div>
 
         <!-- Modal Action Footer -->
         <div class="px-5 py-4 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-end gap-3 bg-slate-50/40 dark:bg-slate-900/40">
+          
+          <!-- Reply button on the left -->
+          ${item.type === 'direct_message' && !item.isSent && options.onReply ? `
+            <button id="modal-reply-btn" class="px-4 py-2 text-xs font-extrabold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition shadow-md shadow-emerald-600/10 flex items-center gap-1.5 mr-auto">
+              <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                <path d="M3 10h10a8 8 0 0 1 8 8v2M3 10l6 6m-6-6l6-6"/>
+              </svg>
+              Responder
+            </button>
+          ` : ''}
+
           <button id="modal-footer-close-btn" class="px-4 py-2 text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-650 dark:text-slate-300 rounded-xl transition border border-slate-200/40 dark:border-slate-700/40">
             Fechar
           </button>
           
-          <button id="modal-footer-archive-btn" class="px-4 py-2 text-xs font-extrabold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition shadow-md shadow-indigo-600/10 flex items-center gap-1.5">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-              <polyline points="21 8 21 21 3 21 3 8"></polyline>
-              <rect x="1" y="3" width="22" height="5"></rect>
-              <line x1="10" y1="12" x2="14" y2="12"></line>
-            </svg>
-            ${item.arquivado ? 'Desarquivar Mensagem' : 'Arquivar Mensagem'}
-          </button>
+          ${item.type !== 'direct_message' || !item.isSent ? `
+            <button id="modal-footer-archive-btn" class="px-4 py-2 text-xs font-extrabold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition shadow-md shadow-indigo-600/10 flex items-center gap-1.5">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                <polyline points="21 8 21 21 3 21 3 8"></polyline>
+                <rect x="1" y="3" width="22" height="5"></rect>
+                <line x1="10" y1="12" x2="14" y2="12"></line>
+              </svg>
+              ${item.arquivado ? 'Desarquivar Mensagem' : 'Arquivar Mensagem'}
+            </button>
+          ` : ''}
         </div>
 
       </div>
@@ -153,6 +180,14 @@ export class EmailReaderModal {
 
     document.getElementById('modal-close-btn')?.addEventListener('click', () => closeModal());
     document.getElementById('modal-footer-close-btn')?.addEventListener('click', () => closeModal());
+
+    // Reply handler
+    document.getElementById('modal-reply-btn')?.addEventListener('click', () => {
+      closeModal(true);
+      if (options.onReply) {
+        options.onReply(item);
+      }
+    });
 
     // Archive handlers
     const handleArchiveClick = async () => {

@@ -188,7 +188,7 @@ export class InboxService {
         }
       });
 
-      // --- PART 4: MENTION NOTIFICATIONS ---
+      // --- PART 4: MENTION & DIRECT MESSAGE NOTIFICATIONS ---
       let queryNotificacoes = supabase
         .from('notificacoes')
         .select(`
@@ -196,6 +196,14 @@ export class InboxService {
           comentario:comentarios (
             *,
             autor:profiles (*)
+          ),
+          mensagem:mensagens_diretas (
+            *,
+            remetente:profiles (*),
+            mensagem_destinatarios (
+              *,
+              destinatario:profiles (*)
+            )
           )
         `)
         .eq('arquivada', false)
@@ -211,9 +219,49 @@ export class InboxService {
         console.error('Erro ao buscar notificações do banco:', notificacoesErr);
       } else {
         (notificacoesData || []).forEach((not: any) => {
+          const dataFormatada = new Date(not.created_at).toLocaleDateString('pt-BR');
+
+          if (not.tipo_item === 'mensagem') {
+            if (!not.mensagem) return; // Mensagem deleted
+
+            const remetente = not.mensagem.remetente;
+            const senderName = remetente ? remetente.nome : 'Consultor';
+            const senderAvatar = remetente ? remetente.avatar_url : 'panda';
+
+            // Formatar destinatários
+            const dests = not.mensagem.mensagem_destinatarios || [];
+            const paraList = dests.filter((d: any) => d.tipo === 'para').map((d: any) => d.destinatario?.nome || 'Consultor');
+            const ccList = dests.filter((d: any) => d.tipo === 'cc').map((d: any) => d.destinatario?.nome || 'Consultor');
+
+            let recipientsHtml = `Para: ${paraList.join(', ')}`;
+            if (ccList.length > 0) {
+              recipientsHtml += `<br>Cc: ${ccList.join(', ')}`;
+            }
+
+            list.push({
+              id: `mention-${not.id}`, // Reusar o prefixo mention para herdar arquivamento individual na tabela notificacoes
+              type: 'direct_message',
+              title: not.mensagem.assunto,
+              sender: senderName,
+              senderAvatar: senderAvatar,
+              dateStr: dataFormatada,
+              subject: `De: ${senderName}`,
+              body: not.mensagem.conteudo,
+              targetId: not.mensagem.id,
+              arquivado: not.arquivada,
+              consultorId: not.user_id,
+              consultorNome: senderName,
+              createdAt: not.created_at,
+              eventDate: not.created_at.split('T')[0],
+              recipientsHtml,
+              isSent: false,
+              senderId: not.mensagem.remetente_id
+            });
+            return;
+          }
+
           if (!not.comentario) return; // Comentário deleted
 
-          const dataFormatada = new Date(not.created_at).toLocaleDateString('pt-BR');
           const author = not.comentario.autor;
           const authorName = author ? author.nome : 'Consultor';
           const authorAvatar = author ? author.avatar_url : 'panda';
@@ -253,6 +301,62 @@ export class InboxService {
             consultorNome: authorName,
             createdAt: not.created_at,
             eventDate: not.created_at.split('T')[0]
+          });
+        });
+      }
+
+      // --- PART 5: SENT DIRECT MESSAGES ---
+      let queryEnviadas = supabase
+        .from('mensagens_diretas')
+        .select(`
+          *,
+          remetente:profiles (*),
+          mensagem_destinatarios (
+            *,
+            destinatario:profiles (*)
+          )
+        `)
+        .eq('remetente_id', user.id)
+        .order('created_at', { ascending: false });
+
+      const { data: enviadasData, error: enviadasErr } = await queryEnviadas;
+
+      if (enviadasErr) {
+        console.error('Erro ao buscar mensagens enviadas do banco:', enviadasErr);
+      } else {
+        (enviadasData || []).forEach((msg: any) => {
+          const dataFormatada = new Date(msg.created_at).toLocaleDateString('pt-BR');
+          const senderName = msg.remetente ? msg.remetente.nome : 'Consultor';
+          const senderAvatar = msg.remetente ? msg.remetente.avatar_url : 'panda';
+
+          // Formatar destinatários
+          const dests = msg.mensagem_destinatarios || [];
+          const paraList = dests.filter((d: any) => d.tipo === 'para').map((d: any) => d.destinatario?.nome || 'Consultor');
+          const ccList = dests.filter((d: any) => d.tipo === 'cc').map((d: any) => d.destinatario?.nome || 'Consultor');
+
+          let recipientsHtml = `Para: ${paraList.join(', ')}`;
+          if (ccList.length > 0) {
+            recipientsHtml += `<br>Cc: ${ccList.join(', ')}`;
+          }
+
+          list.push({
+            id: `sent-${msg.id}`,
+            type: 'direct_message',
+            title: msg.assunto,
+            sender: 'Você',
+            senderAvatar: senderAvatar,
+            dateStr: dataFormatada,
+            subject: `Para: ${paraList.join(', ')}`,
+            body: msg.conteudo,
+            targetId: msg.id,
+            arquivado: false, // Mensagens enviadas não são arquivadas pelo remetente de forma padrão
+            consultorId: msg.remetente_id,
+            consultorNome: senderName,
+            createdAt: msg.created_at,
+            eventDate: msg.created_at.split('T')[0],
+            recipientsHtml,
+            isSent: true,
+            senderId: msg.remetente_id
           });
         });
       }

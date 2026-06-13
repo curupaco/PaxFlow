@@ -195,14 +195,34 @@ export interface Comentario {
   autor?: PerfilConsultor;
 }
 
+export interface MensagemDireta {
+  id: string;
+  remetente_id: string;
+  assunto: string;
+  conteudo: string;
+  created_at: string;
+  remetente?: PerfilConsultor;
+  mensagem_destinatarios?: MensagemDestinatario[];
+}
+
+export interface MensagemDestinatario {
+  id: string;
+  mensagem_id: string;
+  destinatario_id: string;
+  tipo: 'para' | 'cc';
+  created_at: string;
+  destinatario?: PerfilConsultor;
+}
+
 /**
- * Representa uma notificação/alerta de menção.
+ * Representa uma notificação/alerta de menção ou mensagem direta.
  */
 export interface Notificacao {
   id: string;
   user_id: string;
-  comentario_id: string;
-  tipo_item: 'orcamento' | 'viagem' | 'produto';
+  comentario_id?: string;
+  mensagem_id?: string;
+  tipo_item: 'orcamento' | 'viagem' | 'produto' | 'mensagem';
   item_id: string;
   parent_id: string;
   lida: boolean;
@@ -210,14 +230,15 @@ export interface Notificacao {
   created_at: string;
   // Campos populados via JOIN
   comentario?: Comentario;
+  mensagem?: MensagemDireta;
 }
 
 /**
- * Representa um item de alerta na Caixa de Entrada (manual ou SLA)
+ * Representa um item de alerta na Caixa de Entrada (manual, SLA ou mensagem direta)
  */
 export interface AlertItem {
   id: string; // Chave combinada única
-  type: 'manual' | 'passport' | 'refund' | 'mention';
+  type: 'manual' | 'passport' | 'refund' | 'mention' | 'direct_message';
   title: string;
   sender: string;
   senderAvatar: string;
@@ -231,6 +252,9 @@ export interface AlertItem {
   consultorNome: string;
   createdAt: string;
   eventDate: string; // Data alvo do evento (YYYY-MM-DD)
+  recipientsHtml?: string; // HTML com lista de Para e Cc
+  isSent?: boolean; // Se foi enviada pelo próprio usuário
+  senderId?: string; // ID do remetente original
 }
 
 /**
