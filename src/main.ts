@@ -685,7 +685,13 @@ class App {
       
       const readVal = localStorage.getItem('paxflow_read_alerts');
       const readList: string[] = readVal ? JSON.parse(readVal) : [];
-      const unreadCount = alerts.filter(a => !a.arquivado && !readList.includes(a.id) && !a.isSent).length;
+      const currentPerfil = this.perfil;
+      let filteredAlerts = alerts;
+      if (currentPerfil && currentPerfil.role === 'admin') {
+        filteredAlerts = alerts.filter(a => a.consultorId === currentPerfil.id);
+      }
+      
+      const unreadCount = filteredAlerts.filter(a => !a.arquivado && !readList.includes(a.id) && !a.isSent).length;
       
       const badge = document.getElementById('nav-inbox-badge');
       if (badge) {

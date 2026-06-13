@@ -53,6 +53,7 @@ export class InboxPage {
       // 3. Fetch active consultants list if current user is admin
       if (this.perfil?.role === 'admin') {
         await this.loadConsultants();
+        this.selectedConsultantFilter = this.perfil.id;
       }
 
       // 4. Fetch all reminders and build unified alert list
@@ -265,15 +266,20 @@ export class InboxPage {
 
    private render(): void {
     // 1. Calculate counters for badges
-    const totalAtivos = this.alerts.filter(a => !a.arquivado && !a.isSent).length;
-    const totalManual = this.alerts.filter(a => a.type === 'manual' && !a.arquivado && !a.isSent).length;
-    const totalPassport = this.alerts.filter(a => a.type === 'passport' && !a.arquivado && !a.isSent).length;
-    const totalRefund = this.alerts.filter(a => a.type === 'refund' && !a.arquivado && !a.isSent).length;
-    const totalEnviadas = this.alerts.filter(a => a.isSent).length;
+    let baseAlertsForCounters = [...this.alerts];
+    if (this.perfil?.role === 'admin' && this.selectedConsultantFilter !== 'todos') {
+      baseAlertsForCounters = baseAlertsForCounters.filter(a => a.consultorId === this.selectedConsultantFilter);
+    }
+
+    const totalAtivos = baseAlertsForCounters.filter(a => !a.arquivado && !a.isSent).length;
+    const totalManual = baseAlertsForCounters.filter(a => a.type === 'manual' && !a.arquivado && !a.isSent).length;
+    const totalPassport = baseAlertsForCounters.filter(a => a.type === 'passport' && !a.arquivado && !a.isSent).length;
+    const totalRefund = baseAlertsForCounters.filter(a => a.type === 'refund' && !a.arquivado && !a.isSent).length;
+    const totalEnviadas = baseAlertsForCounters.filter(a => a.isSent).length;
 
     // Determine unread alerts status for visual header badge indicator
     const readList = this.getReadLocalAlerts();
-    const hasUnread = this.alerts.some(a => !a.arquivado && !readList.includes(a.id) && !a.isSent);
+    const hasUnread = baseAlertsForCounters.some(a => !a.arquivado && !readList.includes(a.id) && !a.isSent);
 
     // 2. Build the main page container markup
     this.container.innerHTML = `
@@ -421,7 +427,7 @@ export class InboxPage {
                     Arquivados
                   </span>
                   <span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">${
-                    this.alerts.filter(a => a.arquivado && !a.isSent).length
+                    baseAlertsForCounters.filter(a => a.arquivado && !a.isSent).length
                   }</span>
                 </button>
 
@@ -434,7 +440,7 @@ export class InboxPage {
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
                     Mensagens Totais
                   </span>
-                  <span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">${this.alerts.filter(a => !a.isSent).length}</span>
+                  <span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">${baseAlertsForCounters.filter(a => !a.isSent).length}</span>
                 </button>
 
               </div>
