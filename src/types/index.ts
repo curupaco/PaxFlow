@@ -38,6 +38,7 @@ export interface GlobalSettings {
   googleParentFolderId?: string; // ID da pasta mãe no Google Drive para armazenamento centralizado
   slaPreEmbarqueDias?: number; // Dias de SLA para alertas de embarque
   slaPosViagemDias?: number; // Dias de SLA para contatos de pós-venda
+  limiteUploadMb?: number; // Limite de tamanho para upload de arquivos em MB
   createdAt?: string;
   updatedAt?: string;
 }

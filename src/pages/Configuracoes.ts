@@ -78,6 +78,7 @@ export class ConfiguracoesPage {
   private defaultTemperatura: 'Frio' | 'Normal' | 'Quente' = 'Normal';
   private defaultStatus: 'SOLICITADO' | 'EM_ANDAMENTO' | 'AGUARDANDO' | 'CONCLUIDO' = 'SOLICITADO';
   private profileUpdatedListener: ((e: any) => void) | null = null;
+  private storageError: string | null = null;
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -164,7 +165,8 @@ export class ConfiguracoesPage {
           googleRefreshToken: data.google_refresh_token || data.googleRefreshToken,
           googleParentFolderId: data.google_parent_folder_id || data.googleParentFolderId,
           slaPreEmbarqueDias: data.sla_pre_embarque_dias !== undefined ? data.sla_pre_embarque_dias : 7,
-          slaPosViagemDias: data.sla_pos_viagem_dias !== undefined ? data.sla_pos_viagem_dias : 3
+          slaPosViagemDias: data.sla_pos_viagem_dias !== undefined ? data.sla_pos_viagem_dias : 3,
+          limiteUploadMb: data.limite_upload_mb !== undefined ? data.limite_upload_mb : 25
         };
       } else {
         const initialPayload = {
@@ -174,7 +176,8 @@ export class ConfiguracoesPage {
           notificacoes_ativas: true,
           email_suporte: 'suporte@paxflow.com.br',
           sla_pre_embarque_dias: 7,
-          sla_pos_viagem_dias: 3
+          sla_pos_viagem_dias: 3,
+          limite_upload_mb: 25
         };
 
         const { data: inserted, error: insertError } = await supabase
@@ -194,9 +197,23 @@ export class ConfiguracoesPage {
           emailSuporte: inserted.email_suporte,
           googleParentFolderId: inserted.google_parent_folder_id,
           slaPreEmbarqueDias: inserted.sla_pre_embarque_dias,
-          slaPosViagemDias: inserted.sla_pos_viagem_dias
+          slaPosViagemDias: inserted.sla_pos_viagem_dias,
+          limiteUploadMb: inserted.limite_upload_mb
         };
       }
+
+      // Validar a conexão com o Supabase Storage em segundo plano ao carregar
+      try {
+        const { error: storageErr } = await supabase.storage.from('documentos-clientes').list('', { limit: 1 });
+        if (storageErr) {
+          this.storageError = storageErr.message;
+        } else {
+          this.storageError = null;
+        }
+      } catch (err: any) {
+        this.storageError = err.message || 'Erro de conexão com o Supabase Storage.';
+      }
+
     } catch (err: any) {
       console.error('Erro ao carregar configurações administrativas:', err.message);
     }
@@ -266,13 +283,15 @@ export class ConfiguracoesPage {
         const slaPreVal = Number((document.getElementById('input-sla-pre') as HTMLInputElement).value);
         const slaPosVal = Number((document.getElementById('input-sla-pos') as HTMLInputElement).value);
         const taxaVal = Number((document.getElementById('input-taxa') as HTMLInputElement).value);
+        const limiteUploadVal = Number((document.getElementById('input-limite-upload') as HTMLInputElement).value);
 
         const payload = {
           agency_name: agencyNameVal,
           email_suporte: emailSuporteVal,
           sla_pre_embarque_dias: slaPreVal,
           sla_pos_viagem_dias: slaPosVal,
-          taxa_cancelamento_padrao: taxaVal
+          taxa_cancelamento_padrao: taxaVal,
+          limite_upload_mb: limiteUploadVal
         };
 
         try {
@@ -293,102 +312,40 @@ export class ConfiguracoesPage {
         }
       });
 
-      document.getElementById('btn-google-auth')?.addEventListener('click', () => {
-        this.abrirSimuladorGoogleOAuth2();
-      });
-
       document.getElementById('btn-test-drive-connection')?.addEventListener('click', async () => {
         const btn = document.getElementById('btn-test-drive-connection') as HTMLButtonElement;
         if (!btn || !this.settings) return;
         
         btn.disabled = true;
         const originalText = btn.innerHTML;
-        btn.innerHTML = `<span class="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin inline-block align-middle mr-1.5"></span> Testando...`;
-        
-        const googleToken = this.settings.googleRefreshToken || '';
-        const isSandbox = !googleToken || googleToken.startsWith('mock_');
+        btn.innerHTML = `<span class="w-4 h-4 border-2 border-indigo-650 border-t-transparent rounded-full animate-spin inline-block align-middle mr-1.5 font-black"></span> Testando...`;
         
         try {
-          if (isSandbox) {
-            // Em modo Sandbox, simulamos sucesso instantâneo com delay visual de 1s
-            await new Promise((resolve) => setTimeout(resolve, 1000));
-            this.showToast('Conexão Sandbox ativa! A simulação de uploads está operacional (links locais).', 'success');
-          } else {
-            // Em modo Produção, invocamos a Edge Function
-            if (!supabase.functions) {
-              throw new Error('Supabase Functions não disponível neste ambiente.');
-            }
-            
-            const { data, error } = await supabase.functions.invoke('upload-to-drive', {
-              body: { test: true }
-            });
-            
-            if (error) {
-              if (error.status === 404 || (error.message && error.message.includes('Function not found'))) {
-                throw new Error('A Edge Function "upload-to-drive" não está implantada no seu Supabase (Erro 404). Por favor, implante a função para habilitar uploads reais de produção.');
-              }
-              throw new Error(error.message || 'Erro retornado pela Edge Function.');
-            }
-            
-            this.showToast('Integração com Google Drive ativa e respondendo! Teste concluído com sucesso.', 'success');
+          const { data, error } = await supabase.storage.from('documentos-clientes').list('', { limit: 1 });
+          
+          if (error) {
+            throw error;
           }
-        } catch (err: any) {
-          console.error(err);
-          await showCustomAlert(`Falha no Teste de Integração:\n\n${err.message || err}`, 'Teste de Integração');
-          this.showToast('Falha no teste da conexão Google Drive.', 'error');
-        } finally {
-          btn.disabled = false;
-          btn.innerHTML = originalText;
-        }
-      });
-
-      document.getElementById('btn-save-parent-folder')?.addEventListener('click', async () => {
-        const input = document.getElementById('input-google-parent-folder') as HTMLInputElement;
-        if (!input || !this.settings) return;
-
-        const parentFolderVal = input.value.trim() || null;
-
-        try {
-          const { error } = await supabase
-            .from('global_settings')
-            .update({ google_parent_folder_id: parentFolderVal })
-            .eq('id', this.settings.id);
-
-          if (error) throw error;
-
-          this.showToast('ID da pasta compartilhada salvo com sucesso!', 'success');
-          await this.loadSettings();
+          
+          this.storageError = null;
+          this.showToast('Conexão com Supabase Storage ativa! Bucket "documentos-clientes" acessado com sucesso.', 'success');
           this.render();
           this.setupEventListeners();
         } catch (err: any) {
-          console.error('Erro ao salvar ID da pasta compartilhada:', err);
-          this.showToast('Erro ao salvar ID da pasta.', 'error');
-        }
-      });
-
-      document.getElementById('btn-google-disconnect')?.addEventListener('click', async () => {
-        const confirmResult = await showCustomConfirm(
-          'Deseja realmente desconectar a integração com o Google Drive?',
-          'Desconectar Google Drive',
-          { isDestructive: true, confirmText: 'Desconectar', cancelText: 'Manter' }
-        );
-        if (confirmResult) {
-          try {
-            const { error } = await supabase
-              .from('global_settings')
-              .update({ google_refresh_token: null })
-              .eq('id', this.settings!.id);
-            
-            if (error) throw error;
-            
-            this.showToast('Integração com Google Drive desconectada!', 'success');
-            await this.loadSettings();
-            this.render();
-            this.setupEventListeners();
-          } catch (err: any) {
-            console.error(err);
-            this.showToast('Erro ao desconectar conta.', 'error');
-          }
+          console.error('[Storage Connection Test Error]:', err);
+          this.storageError = err.message || 'Erro de conexão com o Supabase Storage.';
+          await showCustomAlert(
+            `Falha ao conectar ao Supabase Storage:\n\n` +
+            `- Mensagem: ${this.storageError}\n\n` +
+            `Dica: Certifique-se de que o bucket 'documentos-clientes' foi criado no painel do Supabase e as políticas RLS foram aplicadas.`,
+            'Erro de Armazenamento'
+          );
+          this.showToast('Falha no teste da conexão de armazenamento.', 'error');
+          this.render();
+          this.setupEventListeners();
+        } finally {
+          btn.disabled = false;
+          btn.innerHTML = originalText;
         }
       });
     }
@@ -848,316 +805,6 @@ export class ConfiguracoesPage {
   }
 
   /**
-   * Abre o simulador visual Google OAuth2
-   */
-  private abrirSimuladorGoogleOAuth2(): void {
-    const overlay = document.createElement('div');
-    overlay.id = 'oauth-simulator-overlay';
-    overlay.className = 'fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all duration-300 opacity-0';
-    
-    overlay.innerHTML = `
-      <div class="bg-white dark:bg-slate-900 w-full max-w-[460px] max-h-[90vh] rounded-2xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 transform scale-95 transition-all duration-300 flex flex-col" id="oauth-card">
-        
-        <div class="p-6 text-center border-b border-slate-100 dark:border-slate-800 flex flex-col items-center bg-white dark:bg-slate-900 shrink-0">
-          <div class="flex items-center gap-1.5 mb-2.5">
-            <span class="text-xl font-bold tracking-tight select-none">
-              <span class="text-blue-600 font-extrabold">G</span><span class="text-red-500 font-extrabold">o</span><span class="text-yellow-500 font-extrabold">o</span><span class="text-blue-600 font-extrabold">g</span><span class="text-green-500 font-extrabold">l</span><span class="text-red-500 font-extrabold">e</span>
-            </span>
-          </div>
-          <h2 class="text-base font-black text-slate-800 dark:text-slate-100 leading-snug">Vincular Conta Google Drive</h2>
-          <p class="text-[10px] text-slate-400 dark:text-slate-505 font-semibold mt-1">Autorize o armazenamento seguro de passaportes no <span class="text-indigo-600 dark:text-indigo-400 font-black">PaxFlow</span></p>
-        </div>
-
-        <div class="border-b border-slate-100 dark:border-slate-800 flex text-xs font-black bg-slate-50 dark:bg-slate-950/40 shrink-0">
-          <button id="btn-popup-tab-sandbox" class="flex-1 py-3 text-center border-b-2 border-indigo-600 text-indigo-600 dark:text-indigo-400 bg-white dark:bg-slate-900 transition-all">
-            🧪 Sandbox (Simulação)
-          </button>
-          <button id="btn-popup-tab-production" class="flex-1 py-3 text-center border-b-2 border-transparent text-slate-450 dark:text-slate-500 hover:text-slate-650 dark:hover:text-slate-350 transition-all">
-            💼 Produção (Real)
-          </button>
-        </div>
-
-        <div class="p-5 flex-1 space-y-4 bg-white dark:bg-slate-900 overflow-y-auto max-h-[60vh]" id="oauth-step-container">
-          <!-- CONTEÚDO DA TAB: SANDBOX (SIMULADO) -->
-          <div id="oauth-step-sandbox" class="space-y-4">
-            <p class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Escolha uma conta para simular:</p>
-            
-            <button id="btn-oauth-acc-corp" class="w-full p-4 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-indigo-400 dark:hover:border-indigo-600 hover:bg-slate-50 dark:hover:bg-slate-850 flex items-center justify-between text-left transition group">
-              <div class="flex items-center gap-3">
-                <div class="w-9 h-9 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 font-bold rounded-full flex items-center justify-center text-sm">
-                  PF
-                </div>
-                <div>
-                  <span class="block text-sm font-extrabold text-slate-700 dark:text-slate-300">PaxFlow Agência de Viagens</span>
-                  <span class="block text-xs text-slate-400 dark:text-slate-500 font-medium group-hover:text-slate-500">paxflow.agencia@gmail.com (Corporativa)</span>
-                </div>
-              </div>
-              <span class="text-[10px] px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-450 border border-emerald-100 dark:border-emerald-900/30 font-black rounded uppercase">Recomendada</span>
-            </button>
-
-            <button id="btn-oauth-acc-pessoal" class="w-full p-4 rounded-xl border border-slate-100 dark:border-slate-800 hover:border-rose-300 dark:hover:border-rose-700 hover:bg-slate-50 dark:hover:bg-slate-850 flex items-center justify-between text-left transition group">
-              <div class="flex items-center gap-3">
-                <div class="w-9 h-9 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-bold rounded-full flex items-center justify-center text-sm">
-                  TC
-                </div>
-                <div>
-                  <span class="block text-sm font-bold text-slate-700 dark:text-slate-350">Thiago Costa (Pessoal)</span>
-                  <span class="block text-xs text-slate-400 dark:text-slate-500 font-medium">thiago.personal@gmail.com</span>
-                </div>
-              </div>
-              <span class="text-[10px] px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 font-bold rounded uppercase">Pessoal</span>
-            </button>
-            
-            <div class="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-end">
-              <button id="btn-oauth-cancel" class="text-xs font-bold text-slate-400 dark:text-slate-500 hover:text-slate-650 dark:hover:text-slate-300 transition py-2 px-3 uppercase">
-                Cancelar
-              </button>
-            </div>
-          </div>
-
-          <!-- CONTEÚDO DA TAB: PRODUÇÃO (REAL) -->
-          <div id="oauth-step-production" class="space-y-4 hidden">
-            <div class="bg-indigo-50/50 dark:bg-indigo-950/30 p-4 rounded-xl border border-indigo-100/40 dark:border-indigo-900/40 text-xs text-slate-650 dark:text-slate-400 leading-relaxed font-semibold space-y-2">
-              <p class="font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wide">💼 Configuração de Produção Resiliente:</p>
-              <p>Insira os parâmetros obtidos no Google Cloud para permitir que a integração funcione em qualquer ambiente, inclusive no **paxflow.pages.dev**!</p>
-            </div>
-            
-            <div class="space-y-2">
-              <div>
-                <label class="block text-[10px] font-black text-slate-450 dark:text-slate-405 uppercase tracking-wide mb-1">Google Client ID *</label>
-                <input id="input-oauth-real-client-id" type="text" placeholder="Cole o seu Client ID do Google Cloud aqui..." value="${(typeof process !== 'undefined' && process.env?.GOOGLE_CLIENT_ID) || import.meta.env.VITE_GOOGLE_CLIENT_ID || ''}" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-850 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100" />
-              </div>
-              
-              <div>
-                <label class="block text-[10px] font-black text-slate-450 dark:text-slate-405 uppercase tracking-wide mb-1">Google Client Secret *</label>
-                <input id="input-oauth-real-client-secret" type="password" placeholder="Cole o seu Client Secret aqui..." value="${(typeof process !== 'undefined' && process.env?.GOOGLE_CLIENT_SECRET) || import.meta.env.VITE_GOOGLE_CLIENT_SECRET || ''}" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-850 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100" />
-              </div>
-
-              <div>
-                <label class="block text-[10px] font-black text-slate-450 dark:text-slate-405 uppercase tracking-wide mb-1">Google Refresh Token Real *</label>
-                <input id="input-oauth-real-token" type="text" placeholder="Cole o Refresh Token gerado aqui..." class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-850 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100" />
-              </div>
-            </div>
-
-            <div class="flex items-center justify-end gap-3 pt-2.5 border-t border-slate-100 dark:border-slate-800">
-              <button id="btn-oauth-real-cancel" class="px-4 py-2.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-550 dark:text-slate-400 font-bold text-xs rounded-xl transition uppercase">
-                Cancelar
-              </button>
-              <button id="btn-oauth-real-save" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl transition shadow-lg shadow-emerald-500/20 uppercase tracking-wide">
-                Salvar e Conectar Real
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-
-    document.body.appendChild(overlay);
-
-    setTimeout(() => {
-      overlay.classList.add('opacity-100');
-      document.getElementById('oauth-card')?.classList.remove('scale-95');
-      document.getElementById('oauth-card')?.classList.add('scale-100');
-    }, 10);
-
-    // Eventos de troca de abas no modal
-    const btnTabSandbox = document.getElementById('btn-popup-tab-sandbox');
-    const btnTabProduction = document.getElementById('btn-popup-tab-production');
-    const stepSandbox = document.getElementById('oauth-step-sandbox');
-    const stepProduction = document.getElementById('oauth-step-production');
-
-    btnTabSandbox?.addEventListener('click', () => {
-      btnTabSandbox.className = 'flex-1 py-3 text-center border-b-2 border-indigo-650 text-indigo-650 dark:text-indigo-455 bg-white dark:bg-slate-900 transition-all font-black';
-      btnTabProduction!.className = 'flex-1 py-3 text-center border-b-2 border-transparent text-slate-450 dark:text-slate-500 hover:text-slate-650 dark:hover:text-slate-350 transition-all';
-      stepSandbox!.classList.remove('hidden');
-      stepProduction!.classList.add('hidden');
-    });
-
-    btnTabProduction?.addEventListener('click', () => {
-      btnTabProduction.className = 'flex-1 py-3 text-center border-b-2 border-indigo-650 text-indigo-650 dark:text-indigo-455 bg-white dark:bg-slate-900 transition-all font-black';
-      btnTabSandbox!.className = 'flex-1 py-3 text-center border-b-2 border-transparent text-slate-450 dark:text-slate-500 hover:text-slate-650 dark:hover:text-slate-350 transition-all';
-      stepProduction!.classList.remove('hidden');
-      stepSandbox!.classList.add('hidden');
-    });
-
-    // Eventos gerais do modal
-    document.getElementById('btn-oauth-cancel')?.addEventListener('click', () => this.fecharSimuladorGoogleOAuth2());
-    document.getElementById('btn-oauth-real-cancel')?.addEventListener('click', () => this.fecharSimuladorGoogleOAuth2());
-
-    document.getElementById('btn-oauth-acc-pessoal')?.addEventListener('click', async () => {
-      await showCustomAlert(
-        'Por favor, selecione apenas a conta corporativa da agência ' +
-        '(paxflow.agencia@gmail.com) para garantir que os arquivos sejam ' +
-        'centralizados no Drive oficial da empresa.',
-        'Acesso Negado'
-      );
-    });
-
-    document.getElementById('btn-oauth-acc-corp')?.addEventListener('click', () => {
-      this.mostrarOAuthConsentimento();
-    });
-
-    document.getElementById('btn-oauth-real-save')?.addEventListener('click', async () => {
-      const clientIdInput = document.getElementById('input-oauth-real-client-id') as HTMLInputElement;
-      const clientSecretInput = document.getElementById('input-oauth-real-client-secret') as HTMLInputElement;
-      const tokenInput = document.getElementById('input-oauth-real-token') as HTMLInputElement;
-      
-      if (clientIdInput && clientSecretInput && tokenInput) {
-        const cid = clientIdInput.value.trim();
-        const sec = clientSecretInput.value.trim();
-        const tok = tokenInput.value.trim();
-        
-        if (!cid || !sec || !tok) {
-          await showCustomAlert('Por favor, preencha todos os três campos obrigatórios da integração real.', 'Campos Obrigatórios');
-          return;
-        }
-        
-        const combinedToken = `${cid}|||${sec}|||${tok}`;
-        this.concluirOAuth2Real(combinedToken);
-      }
-    });
-  }
-
-  private mostrarOAuthConsentimento(): void {
-    const container = document.getElementById('oauth-step-container');
-    if (!container) return;
-
-    container.innerHTML = `
-      <div id="oauth-step-2" class="space-y-5 animate-fade-in">
-        <div class="bg-indigo-50/50 dark:bg-indigo-950/20 p-4 rounded-xl border border-indigo-100/40 dark:border-indigo-900/40 text-xs text-indigo-900 dark:text-indigo-400 font-semibold space-y-1">
-          <p>O PaxFlow deseja acessar a sua Conta do Google</p>
-          <p class="text-indigo-500 font-bold text-[10px]">paxflow.agencia@gmail.com</p>
-        </div>
-
-        <p class="text-xs text-slate-500 font-semibold leading-relaxed">
-          Para realizar o armazenamento seguro de passaportes e vistos, o PaxFlow necessita das seguintes permissões:
-        </p>
-
-        <div class="space-y-3.5 border-t border-b border-slate-100 dark:border-slate-800 py-4.5">
-          <div class="flex items-start gap-3">
-            <span class="text-base">📁</span>
-            <div>
-              <span class="block text-xs font-black text-slate-800 dark:text-slate-200">Ver, criar, editar e excluir arquivos do Google Drive</span>
-              <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-medium">Permite salvar e organizar passaportes dos passageiros em pastas automáticas.</span>
-            </div>
-          </div>
-          
-          <div class="flex items-start gap-3">
-            <span class="text-base">⚙️</span>
-            <div>
-              <span class="block text-xs font-black text-slate-800 dark:text-slate-200">Manter acesso contínuo aos dados (Offline Access)</span>
-              <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-medium">Garante que os consultores consigam fazer uploads mesmo sem você estar logado.</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="flex items-center justify-end gap-3 pt-2">
-          <button id="btn-oauth-deny" class="px-4 py-2.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-500 dark:text-slate-400 font-bold text-xs rounded-xl transition uppercase">
-            Negar
-          </button>
-          <button id="btn-oauth-allow" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs rounded-xl transition shadow-lg shadow-blue-500/20 uppercase tracking-wide">
-            Permitir e Conectar
-          </button>
-        </div>
-      </div>
-    `;
-
-    document.getElementById('btn-oauth-deny')?.addEventListener('click', () => {
-      this.fecharSimuladorGoogleOAuth2();
-    });
-
-    document.getElementById('btn-oauth-allow')?.addEventListener('click', async () => {
-      this.concluirOAuth2Fluxo();
-    });
-  }
-
-  private async concluirOAuth2Fluxo(): Promise<void> {
-    if (!this.settings) return;
-
-    const stepContainer = document.getElementById('oauth-step-container');
-    if (stepContainer) {
-      stepContainer.innerHTML = `
-        <div class="py-12 flex flex-col items-center justify-center space-y-4">
-          <div class="w-10 h-10 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-          <p class="text-xs text-slate-500 font-bold animate-pulse">Estabelecendo conexão segura de credenciais...</p>
-        </div>
-      `;
-    }
-
-    try {
-      const mockRefreshToken = `mock_oauth2_refresh_token_paxflow_agency_active_${Math.random().toString(36).substring(2, 10)}`;
-
-      const { error } = await supabase
-        .from('global_settings')
-        .update({ google_refresh_token: mockRefreshToken })
-        .eq('id', this.settings.id);
-
-      if (error) throw error;
-
-      this.showToast('Conta Google Drive corporativa vinculada!', 'success');
-      this.fecharSimuladorGoogleOAuth2();
-      await this.loadSettings();
-      this.render();
-      this.setupEventListeners();
-
-    } catch (err: any) {
-      console.error('Erro ao salvar google_refresh_token:', err);
-      this.showToast('Erro interno na vinculação.', 'error');
-      this.fecharSimuladorGoogleOAuth2();
-    }
-  }
-
-  private async concluirOAuth2Real(token: string): Promise<void> {
-    if (!this.settings) return;
-    if (!token || token.trim() === '') {
-      await showCustomAlert('Por favor, insira um token de atualização válido.', 'Token Inválido');
-      return;
-    }
-
-    const stepContainer = document.getElementById('oauth-step-container');
-    if (stepContainer) {
-      stepContainer.innerHTML = `
-        <div class="py-12 flex flex-col items-center justify-center space-y-4">
-          <div class="w-10 h-10 border-3 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
-          <p class="text-xs text-slate-500 font-bold animate-pulse">Validando e salvando credencial de produção...</p>
-        </div>
-      `;
-    }
-
-    try {
-      const { error } = await supabase
-        .from('global_settings')
-        .update({ google_refresh_token: token.trim() })
-        .eq('id', this.settings.id);
-
-      if (error) throw error;
-
-      this.showToast('Token Google Drive de produção vinculado!', 'success');
-      this.fecharSimuladorGoogleOAuth2();
-      await this.loadSettings();
-      this.render();
-      this.setupEventListeners();
-
-    } catch (err: any) {
-      console.error('Erro ao salvar google_refresh_token real:', err);
-      this.showToast('Erro ao salvar token de produção.', 'error');
-      this.fecharSimuladorGoogleOAuth2();
-    }
-  }
-
-  private fecharSimuladorGoogleOAuth2(): void {
-    const overlay = document.getElementById('oauth-simulator-overlay');
-    const card = document.getElementById('oauth-card');
-    if (overlay && card) {
-      card.classList.remove('scale-100');
-      card.classList.add('scale-95');
-      overlay.classList.remove('opacity-100');
-      overlay.classList.add('opacity-0');
-      setTimeout(() => overlay.remove(), 300);
-    }
-  }
-
-  /**
    * Associa os eventos da aba de Importações
    */
   private setupImportacoesEvents(): void {
@@ -1479,10 +1126,6 @@ export class ConfiguracoesPage {
   private render(): void {
     if (!this.settings) return;
 
-    const googleToken = this.settings.googleRefreshToken || '';
-    const drivesConectado = !!googleToken;
-    const isSandboxMode = drivesConectado && (googleToken.startsWith('mock_') || googleToken === '');
-
     this.container.innerHTML = `
       <div class="min-h-screen bg-slate-50/50 dark:bg-slate-950 flex flex-col font-sans transition-colors duration-200">
         
@@ -1615,6 +1258,14 @@ export class ConfiguracoesPage {
                   </div>
                 </div>
 
+                <div class="border-t border-slate-100 dark:border-slate-800 pt-5">
+                  <div>
+                    <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Limite de Upload (MB)</label>
+                    <input id="input-limite-upload" type="number" min="1" max="500" value="${this.settings.limiteUploadMb || 25}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-bold" />
+                    <p class="text-[10px] text-slate-450 dark:text-slate-500 mt-1.5 font-medium">Tamanho máximo permitido para anexos de passaportes e propostas (máx: 500MB).</p>
+                  </div>
+                </div>
+
                 <div class="flex justify-end pt-4 border-t border-slate-100 dark:border-slate-800 mt-6">
                   <button type="submit" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/10 transition uppercase">
                     Salvar Parâmetros
@@ -1623,85 +1274,45 @@ export class ConfiguracoesPage {
               </form>
             </div>
 
-            <!-- Coluna Direita: Google Drive -->
+            <!-- Coluna Direita: Supabase Storage -->
             <div class="md:col-span-4 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm flex flex-col gap-5">
               <h2 class="text-sm font-black text-slate-800 dark:text-slate-200 tracking-tight border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2">
-                <svg class="w-5 h-5 text-emerald-500 dark:text-emerald-450" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                <svg class="w-5 h-5 text-indigo-650 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
                 </svg>
-                Integração Google Drive
+                Armazenamento de Arquivos
               </h2>
 
               <p class="text-xs text-slate-450 dark:text-slate-500 font-medium leading-relaxed">
-                O PaxFlow realiza o upload de passaportes e vistos de forma centralizada em uma conta corporativa única no Google Drive.
+                O PaxFlow realiza o upload de passaportes e propostas de forma direta e segura no bucket <code class="font-mono text-indigo-500 bg-indigo-50/40 dark:bg-indigo-950 px-1 py-0.5 rounded">documentos-clientes</code> do Supabase Storage.
               </p>
 
               <div class="border border-slate-100 dark:border-slate-800 rounded-xl p-4 flex flex-col items-center justify-center text-center gap-2 bg-slate-50/50 dark:bg-slate-950/40 transition-colors">
-                ${!drivesConectado ? `
-                  <span class="text-3xl animate-fade-in">⚠️</span>
-                  <span class="px-2 py-0.5 bg-amber-50 dark:bg-amber-950/45 text-amber-700 dark:text-amber-450 border border-amber-100 dark:border-amber-900/40 font-black text-[9px] rounded uppercase tracking-wider">Sem Integração</span>
-                  <p class="text-[10px] text-slate-400 dark:text-slate-550 font-semibold mt-1">É necessário realizar a vinculação corporativa para ativar uploads.</p>
-                ` : isSandboxMode ? `
-                  <span class="text-3xl animate-fade-in">🧪</span>
-                  <span class="px-2 py-0.5 bg-amber-50 dark:bg-amber-950/45 text-amber-600 dark:text-amber-400 border border-amber-100 dark:border-amber-900/40 font-black text-[9px] rounded uppercase tracking-wider">Modo Simulação (Sandbox)</span>
-                  <p class="text-[10px] text-slate-500 dark:text-slate-450 font-bold mt-1">Simulação local de uploads ativa</p>
-                  <p class="text-[9px] text-slate-400 dark:text-slate-500 leading-relaxed mt-0.5">Os uploads gerarão links locais de demonstração sem enviar para o Google Drive real.</p>
+                ${this.storageError ? `
+                  <span class="text-3xl animate-pulse">❌</span>
+                  <span class="px-2 py-0.5 bg-rose-50 dark:bg-rose-950/45 text-rose-700 dark:text-rose-450 border border-rose-100 dark:border-rose-900/40 font-black text-[9px] rounded uppercase tracking-wider">Erro de Conexão</span>
+                  <p class="text-[10px] text-rose-600 dark:text-rose-400 font-bold mt-1 max-w-xs leading-normal">
+                    ${this.storageError}
+                  </p>
+                  <p class="text-[9px] text-slate-400 dark:text-slate-500 leading-relaxed mt-0.5">
+                    Certifique-se de que o bucket privado <strong>documentos-clientes</strong> foi criado no Supabase e as políticas RLS foram aplicadas.
+                  </p>
                 ` : `
                   <span class="text-3xl animate-fade-in">✅</span>
                   <span class="px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/45 text-emerald-700 dark:text-emerald-450 border border-emerald-100 dark:border-emerald-900/40 font-black text-[9px] rounded uppercase tracking-wider">Conectado (Produção)</span>
-                  <p class="text-[10px] text-slate-550 dark:text-slate-400 font-bold mt-1">Conexão real ativa</p>
-                  <p class="text-[9px] text-slate-400 dark:text-slate-500 leading-relaxed mt-0.5">Pronto para uploads em produção no Drive oficial.</p>
+                  <p class="text-[10px] text-slate-550 dark:text-slate-400 font-bold mt-1">Bucket Supabase Storage Ativo</p>
+                  <p class="text-[9px] text-slate-400 dark:text-slate-500 leading-relaxed mt-0.5">Pronto para uploads em produção no storage oficial.</p>
                 `}
               </div>
 
-              <!-- Configuração da Pasta Compartilhada -->
-              <div class="space-y-2 border border-slate-100 dark:border-slate-800 rounded-xl p-4 bg-slate-50/20 dark:bg-slate-950/20">
-                <label class="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">ID da Pasta Compartilhada (Opcional)</label>
-                <div class="flex gap-2">
-                  <input id="input-google-parent-folder" type="text" placeholder="Ex: 1a2b3c4d5e6f..." value="${this.settings.googleParentFolderId || ''}" class="flex-1 px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-mono" />
-                  <button id="btn-save-parent-folder" class="px-3 py-2 bg-indigo-650 hover:bg-indigo-750 text-white font-extrabold text-[10px] rounded-lg transition shadow-sm uppercase tracking-wide">
-                    Salvar
-                  </button>
-                </div>
-                <p class="text-[9px] text-slate-400 dark:text-slate-500 leading-normal font-medium">
-                  Se preenchido, novas pastas de clientes serão criadas dentro desta pasta central, herdando suas permissões e acessos.
-                </p>
-              </div>
-
               <div class="space-y-2.5">
-                <button id="btn-google-auth" class="w-full py-3 px-4 rounded-xl flex items-center justify-center gap-2.5 transition shadow-sm font-extrabold text-xs tracking-wider uppercase ${
-                  drivesConectado 
-                    ? 'border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-850' 
-                    : 'bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200/50 dark:border-indigo-900/50 text-indigo-700 dark:text-indigo-400 hover:bg-indigo-100/50 google-attention'
-                }">
-                  <span class="text-base select-none">
-                    <span class="text-blue-600 font-extrabold">G</span><span class="text-red-500 font-extrabold">o</span><span class="text-yellow-500 font-extrabold">o</span><span class="text-blue-600 font-extrabold">g</span><span class="text-green-500 font-extrabold">l</span><span class="text-red-500 font-extrabold">e</span>
-                  </span>
-                  ${drivesConectado ? 'Reconfigurar Integração' : 'Conectar Conta Corporativa'}
+                <button id="btn-test-drive-connection" class="w-full py-2.5 px-4 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700 text-slate-750 dark:text-slate-250 font-extrabold text-xs tracking-wider rounded-xl transition uppercase flex items-center justify-center gap-2">
+                  🧪 Testar Conexão do Storage
                 </button>
-
-                ${drivesConectado ? `
-                  <button id="btn-test-drive-connection" class="w-full py-2.5 px-4 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700 text-slate-750 dark:text-slate-250 font-extrabold text-xs tracking-wider rounded-xl transition uppercase flex items-center justify-center gap-2">
-                    🧪 Testar Conexão
-                  </button>
-
-                  <button id="btn-google-disconnect" class="w-full py-2.5 px-4 bg-rose-50/50 hover:bg-rose-50 dark:bg-rose-950/20 dark:hover:bg-rose-950/30 border border-rose-100 dark:border-rose-900/30 text-rose-600 dark:text-rose-455 font-extrabold text-xs tracking-wider rounded-xl transition uppercase flex items-center justify-center gap-2">
-                    🚫 Desconectar Conta
-                  </button>
-                ` : ''}
-              </div>
-
-              <!-- Informativo sobre Credenciais do Google Cloud -->
-              <div class="bg-slate-50/50 dark:bg-slate-950/40 border border-slate-150/60 dark:border-slate-800/80 rounded-xl p-4.5 space-y-3">
-                <span class="text-xs font-black text-slate-700 dark:text-slate-350 block uppercase tracking-wide border-b border-slate-200/50 dark:border-slate-800/60 pb-1.5">⚙️ Configurações Globais (.env)</span>
-                <p class="text-[10px] text-slate-500 dark:text-slate-450 leading-relaxed font-semibold">
-                  A API do Google utiliza segurança OAuth2. O e-mail e a senha corporativa da agência não funcionam se forem colocados no seu arquivo de ambiente. Certifique-se de configurar as chaves com o prefixo <code class="font-mono text-indigo-500 bg-indigo-50/40 dark:bg-indigo-950 px-1 py-0.5 rounded">VITE_GOOGLE_CLIENT_ID</code> e <code class="font-mono text-indigo-500 bg-indigo-50/40 dark:bg-indigo-950 px-1 py-0.5 rounded">VITE_GOOGLE_CLIENT_SECRET</code> no seu arquivo <code class="font-mono text-indigo-500 bg-indigo-50/40 dark:bg-indigo-950 px-1 py-0.5 rounded">.env</code> para que o Vite exponha as credenciais ao navegador.
-                </p>
-                <a href="https://console.cloud.google.com" target="_blank" class="text-[10px] text-indigo-600 dark:text-indigo-400 hover:underline font-extrabold block">Acessar Google Cloud Console &rarr;</a>
               </div>
               
               <p class="text-[9px] text-slate-400 dark:text-slate-500 font-medium leading-normal text-center">
-                Apenas contas autorizadas podem armazenar arquivos. Os consultores não têm acesso direto às credenciais da conta.
+                Os arquivos são armazenados de forma privada e acessados através de URLs assinadas temporárias e seguras de 15 minutos.
               </p>
             </div>
           </main>

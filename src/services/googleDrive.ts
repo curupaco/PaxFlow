@@ -1,16 +1,72 @@
 import { supabase } from './supabase';
 
-declare const process: {
-  env: {
-    GOOGLE_CLIENT_ID?: string;
-    GOOGLE_CLIENT_SECRET?: string;
-  }
-};
+/**
+ * Auxiliar para comprimir imagens antes do upload para o Supabase Storage.
+ * Redimensiona para no máximo 2000px na maior dimensão e reduz a qualidade JPEG para 75%.
+ */
+async function compressImageIfPossible(file: File): Promise<File> {
+  const isImage = ['image/jpeg', 'image/png', 'image/webp'].includes(file.type);
+  if (!isImage) return file;
+
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.src = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(img.src);
+      
+      const canvas = document.createElement('canvas');
+      let width = img.width;
+      let height = img.height;
+      
+      const maxDim = 2000;
+      if (width > maxDim || height > maxDim) {
+        if (width > height) {
+          height = Math.round((height * maxDim) / width);
+          width = maxDim;
+        } else {
+          width = Math.round((width * maxDim) / height);
+          height = maxDim;
+        }
+      }
+      
+      canvas.width = width;
+      canvas.height = height;
+      
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        resolve(file);
+        return;
+      }
+      
+      ctx.drawImage(img, 0, 0, width, height);
+      
+      canvas.toBlob(
+        (blob) => {
+          if (blob) {
+            const compressedFile = new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".jpg", {
+              type: 'image/jpeg',
+              lastModified: Date.now()
+            });
+            console.log(`[Storage Compression] Comprimido de ${(file.size / 1024).toFixed(1)}KB para ${(compressedFile.size / 1024).toFixed(1)}KB`);
+            resolve(compressedFile);
+          } else {
+            resolve(file);
+          }
+        },
+        'image/jpeg',
+        0.75
+      );
+    };
+    img.onerror = () => {
+      resolve(file);
+    };
+  });
+}
 
 /**
- * Envia um documento do cliente de forma segura para o Google Drive central da agência.
- * O front-end faz um POST para a Supabase Edge Function 'upload-to-drive', que usa o
- * refresh_token corporativo salvo no banco de dados para autenticar e organizar os arquivos.
+ * Envia um documento do cliente de forma segura para o Supabase Storage (bucket 'documentos-clientes').
+ * O caminho final no bucket será: `${clienteId}/${timestamp}_${nome_do_arquivo}`.
+ * A referência salva no banco terá o formato `supabase-storage://${filePath}`.
  */
 export async function uploadDocumentoCliente(
   clienteId: string,
@@ -20,97 +76,82 @@ export async function uploadDocumentoCliente(
   file: File
 ): Promise<{ success: boolean; googleDriveFolderUrl: string; error?: string; isMock?: boolean }> {
   try {
-    // 1. Busca as configurações globais no Supabase para verificar o token cadastrado
-    const { data: settings, error: settingsErr } = await supabase
-      .from('global_settings')
-      .select('google_refresh_token, google_parent_folder_id')
-      .maybeSingle();
-
-    if (settingsErr) {
-      console.error('Erro ao buscar global_settings no serviço de upload:', settingsErr);
+    if (!supabase || !supabase.storage) {
+      throw new Error('Cliente do Supabase ou serviço de Storage não inicializado no sistema.');
     }
 
-    const refreshToken = settings?.google_refresh_token;
-    const parentFolderId = settings?.google_parent_folder_id || '';
-    // O token é mock se for nulo, vazio ou começar com 'mock_'
-    const isMockMode = !refreshToken || refreshToken.trim() === '' || refreshToken.startsWith('mock_');
-
-    // Se NÃO estiver em modo mock (temos um token real configurado), enviamos para a Edge Function
-    if (!isMockMode) {
-      if (!supabase.functions) {
-        throw new Error('Supabase Functions não instanciadas localmente. Impossível realizar o upload seguro.');
+    // 1. Obter o limite de tamanho configurado no banco (global_settings)
+    let maxMb = 25;
+    try {
+      const { data: settings } = await supabase
+        .from('global_settings')
+        .select('limite_upload_mb')
+        .maybeSingle();
+      if (settings && typeof settings.limite_upload_mb === 'number') {
+        maxMb = settings.limite_upload_mb;
       }
+    } catch (dbErr) {
+      console.warn('[Storage] Erro ao carregar limite de upload do banco, usando padrão de 25MB:', dbErr);
+    }
 
-      // Preparação dos dados para a chamada HTTP à Edge Function
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('clienteId', clienteId);
-      formData.append('nome', nomeCliente);
-      formData.append('email', emailCliente);
-      formData.append('telefone', telefoneCliente);
-      if (parentFolderId) {
-        formData.append('parentFolderId', parentFolderId);
-      }
+    // 2. Tentar comprimir o arquivo caso seja uma imagem
+    let finalFile = file;
+    try {
+      finalFile = await compressImageIfPossible(file);
+    } catch (compressErr) {
+      console.warn('[Storage] Falha ao comprimir imagem, prosseguindo com arquivo original:', compressErr);
+    }
 
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
+    // 3. Validar se o arquivo final excede o limite configurado (em bytes)
+    const sizeInMb = finalFile.size / (1024 * 1024);
+    if (sizeInMb > maxMb) {
+      throw new Error(`O arquivo selecionado (${sizeInMb.toFixed(1)}MB) excede o limite máximo permitido de ${maxMb}MB.`);
+    }
 
-      console.log('Tentando upload seguro via Edge Function upload-to-drive...');
-      const { data, error } = await supabase.functions.invoke('upload-to-drive', {
-        body: formData,
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
+    // 4. Sanitizar o nome do arquivo e gerar o caminho único dentro do bucket
+    const sanitizedFileName = finalFile.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+    const filePath = `${clienteId}/${Date.now()}_${sanitizedFileName}`;
+
+    console.log(`[Storage] Iniciando upload real para o bucket documentos-clientes: ${filePath}`);
+
+    // 5. Executar o upload do arquivo para o Supabase Storage
+    const { data, error: uploadErr } = await supabase.storage
+      .from('documentos-clientes')
+      .upload(filePath, finalFile, {
+        cacheControl: '3600',
+        upsert: true
       });
 
-      if (error) {
-        if (error.status === 404 || (error.message && error.message.includes('Function not found'))) {
-          throw new Error('A Edge Function "upload-to-drive" não está implantada. Entre em contato com o suporte.');
-        }
-        throw new Error(error.message || 'Erro retornado pela Edge Function.');
-      }
-
-      if (data?.googleDriveFolderUrl) {
-        // Atualiza a URL na tabela 'clientes' no banco
-        await supabase
-          .from('clientes')
-          .update({ google_drive_folder_url: data.googleDriveFolderUrl })
-          .eq('id', clienteId);
-
-        return {
-          success: true,
-          googleDriveFolderUrl: data.googleDriveFolderUrl,
-          isMock: false
-        };
-      }
-
-      throw new Error('Retorno inválido da Edge Function.');
+    if (uploadErr) {
+      console.error('[Storage] Erro durante o upload:', uploadErr);
+      throw new Error(`Falha no armazenamento na nuvem: ${uploadErr.message}`);
     }
 
-    // 2. MOCK ROBUSTO / MODO SANDBOX (Ativo se google_refresh_token for mock ou ausente)
-    console.info('Executando upload no Modo Sandbox/Simulador do PaxFlow...');
-    
-    // Simula a latência de upload no servidor (1.5 segundos)
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    const storageUrl = `supabase-storage://${filePath}`;
 
-    const folderName = `${nomeCliente} - ${emailCliente} - ${telefoneCliente}`;
-    const sanitizedFolderName = encodeURIComponent(folderName);
-    const mockDriveUrl = `https://drive.google.com/drive/folders/mock-agency-folder-id-${sanitizedFolderName}`;
+    // 6. Atualizar a referência na tabela 'clientes' no banco
+    // Apenas se o ID do cliente for um UUID válido (para evitar erros com IDs temporários/orçamentos)
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (uuidRegex.test(clienteId)) {
+      const { error: dbError } = await supabase
+        .from('clientes')
+        .update({ google_drive_folder_url: storageUrl })
+        .eq('id', clienteId);
 
-    // Salva a URL resultante no campo google_drive_folder_url do cliente no Supabase
-    const { error: dbError } = await supabase
-      .from('clientes')
-      .update({ google_drive_folder_url: mockDriveUrl })
-      .eq('id', clienteId);
-
-    if (dbError) throw dbError;
+      if (dbError) {
+        console.error('[Storage] Erro ao salvar referência na tabela clientes:', dbError);
+        throw new Error(`Referência salva, mas falhou ao atualizar cadastro do cliente: ${dbError.message}`);
+      }
+    }
 
     return {
       success: true,
-      googleDriveFolderUrl: mockDriveUrl,
-      isMock: true
+      googleDriveFolderUrl: storageUrl,
+      isMock: false
     };
 
   } catch (err: any) {
-    console.error('Erro geral no serviço de upload do Google Drive:', err);
+    console.error('[Storage] Erro geral no serviço de upload:', err);
     return {
       success: false,
       googleDriveFolderUrl: '',
@@ -118,117 +159,3 @@ export async function uploadDocumentoCliente(
     };
   }
 }
-
-/**
- * Recupera um access token válido a partir do refresh token do Google cadastrado nas configurações globais.
- */
-async function obterAccessToken(): Promise<string> {
-  const { data: settings, error: settingsErr } = await supabase
-    .from('global_settings')
-    .select('google_refresh_token')
-    .maybeSingle();
-
-  if (settingsErr || !settings?.google_refresh_token) {
-    throw new Error('Chave Google Refresh Token não configurada nas configurações globais.');
-  }
-
-  const refreshToken = settings.google_refresh_token.trim();
-
-  // Se o token for mascarado para consultores comuns
-  if (refreshToken === 'connected') {
-    throw new Error('Por motivos de segurança, a visualização inline de documentos reais está reservada para administradores. Por favor, clique no botão "Abrir Original" para visualizar ou baixar este arquivo diretamente na sua conta do Google Drive corporativo.');
-  }
-
-  let clientId = (typeof process !== 'undefined' && process.env?.GOOGLE_CLIENT_ID) || import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
-  let clientSecret = (typeof process !== 'undefined' && process.env?.GOOGLE_CLIENT_SECRET) || import.meta.env.VITE_GOOGLE_CLIENT_SECRET || '';
-  let realRefreshToken = refreshToken;
-
-  if (realRefreshToken.includes('|||')) {
-    const parts = realRefreshToken.split('|||');
-    if (parts.length === 3) {
-      clientId = parts[0];
-      clientSecret = parts[1];
-      realRefreshToken = parts[2];
-    }
-  }
-
-  if (!clientId || !clientSecret) {
-    throw new Error('Credenciais de API do Google Cloud ausentes localmente no arquivo .env (GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET).');
-  }
-
-  const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      client_id: clientId,
-      client_secret: clientSecret,
-      refresh_token: realRefreshToken,
-      grant_type: 'refresh_token'
-    })
-  });
-
-  if (!tokenRes.ok) {
-    const errData = await tokenRes.json().catch(() => ({}));
-    throw new Error(`Erro ao obter access token do Google: ${errData.error_description || errData.error || tokenRes.statusText}`);
-  }
-
-  const tokenData = await tokenRes.json();
-  return tokenData.access_token;
-}
-
-/**
- * Baixa um arquivo do Google Drive como Blob.
- */
-export async function obterArquivoBlob(fileId: string): Promise<Blob> {
-  const accessToken = await obterAccessToken();
-  const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&supportsAllDrives=true`, {
-    headers: { Authorization: `Bearer ${accessToken}` }
-  });
-
-  if (!res.ok) {
-    throw new Error(`Erro ao baixar arquivo do Google Drive: ${res.statusText}`);
-  }
-
-  return await res.blob();
-}
-
-/**
- * Exporta um arquivo nativo do Google Docs como PDF Blob.
- */
-export async function exportarGoogleDocPdf(fileId: string): Promise<Blob> {
-  const accessToken = await obterAccessToken();
-  const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}/export?mimeType=application/pdf&supportsAllDrives=true`, {
-    headers: { Authorization: `Bearer ${accessToken}` }
-  });
-
-  if (!res.ok) {
-    throw new Error(`Erro ao exportar documento para PDF: ${res.statusText}`);
-  }
-
-  return await res.blob();
-}
-
-/**
- * Busca o ID, nome e tipo do primeiro arquivo contido em uma pasta do Google Drive.
- */
-export async function obterPrimeiroArquivoDaPasta(folderId: string): Promise<{ id: string; mimeType: string; name: string }> {
-  const accessToken = await obterAccessToken();
-  const query = `'${folderId}' in parents and trashed = false`;
-  const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&orderBy=createdTime%20desc&fields=files(id,mimeType,name)&supportsAllDrives=true&includeItemsFromAllDrives=true`;
-
-  const res = await fetch(url, {
-    headers: { Authorization: `Bearer ${accessToken}` }
-  });
-
-  if (!res.ok) {
-    throw new Error(`Erro ao listar arquivos da pasta do cliente: ${res.statusText}`);
-  }
-
-  const data = await res.json();
-  if (!data.files || data.files.length === 0) {
-    throw new Error('Nenhum documento encontrado na pasta do Google Drive deste cliente.');
-  }
-
-  return data.files[0];
-}
-
