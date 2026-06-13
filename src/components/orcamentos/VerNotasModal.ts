@@ -111,10 +111,19 @@ export class VerNotasModal {
             </div>
 
             <div>
-              <h4 class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2.5">Documentos Anexos</h4>
-              <div class="grid grid-cols-1 gap-2">
+              <div class="flex items-center justify-between mb-2.5">
+                <h4 class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Documentos Anexos</h4>
+                <div>
+                  <input type="file" id="input-orc-upload-doc" class="hidden" accept="application/pdf,image/*" />
+                  <button id="btn-orc-upload-doc" type="button" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-[10px] tracking-wider rounded-lg shadow-sm transition uppercase">
+                    Anexar Arquivo
+                  </button>
+                </div>
+              </div>
+              <div id="orc-files-container" class="grid grid-cols-1 gap-2">
                 ${filesHtml}
               </div>
+              <div id="orc-upload-status" class="mt-2 hidden"></div>
             </div>
 
             <!-- Container de Comentários e Anotações -->
@@ -202,6 +211,105 @@ export class VerNotasModal {
     const handleClose = () => options.closeModal();
     document.getElementById('btn-close-modal-x')?.addEventListener('click', handleClose);
     document.getElementById('btn-close-modal')?.addEventListener('click', handleClose);
+
+    // Eventos de Upload de Documentos para o Orçamento
+    const btnUploadTrigger = document.getElementById('btn-orc-upload-doc') as HTMLButtonElement;
+    const inputUploadDoc = document.getElementById('input-orc-upload-doc') as HTMLInputElement;
+    const uploadStatus = document.getElementById('orc-upload-status') as HTMLElement;
+    const filesContainer = document.getElementById('orc-files-container') as HTMLElement;
+
+    btnUploadTrigger?.addEventListener('click', () => inputUploadDoc.click());
+
+    inputUploadDoc?.addEventListener('change', async () => {
+      const file = inputUploadDoc.files?.[0];
+      if (!file) return;
+
+      btnUploadTrigger.disabled = true;
+      if (uploadStatus) {
+        uploadStatus.classList.remove('hidden');
+        uploadStatus.innerHTML = `
+          <div class="flex items-center gap-2 py-1.5 text-xs font-bold text-slate-500 animate-pulse">
+            <div class="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+            <span>Enviando arquivo (${file.name})...</span>
+          </div>
+        `;
+      }
+
+      try {
+        const { uploadDocumentoCliente } = await import('../../services/googleDrive');
+        const parts = orc.contato.split('/');
+        const email = parts.length > 1 ? parts[1].trim() : 'lead@orcamentos.com';
+        const telefone = parts.length > 0 ? parts[0].trim() : '(11) 90000-0000';
+
+        const result = await uploadDocumentoCliente(
+          orc.id,
+          orc.nomeCliente,
+          email,
+          telefone,
+          file
+        );
+
+        if (result.success && result.googleDriveFolderUrl) {
+          orc.documentosUrl = orc.documentosUrl || [];
+          orc.documentosUrl.push(result.googleDriveFolderUrl);
+
+          if (options.onUpdate) {
+            const success = await options.onUpdate(orc);
+            if (success) {
+              options.showToast('Arquivo anexado com sucesso!', 'success');
+              
+              // Atualizar a lista de arquivos renderizados
+              const updatedFilesHtml = orc.documentosUrl.map((url, idx) => `
+                <a href="${url}" target="_blank" data-proposal-file-url="${url}" data-proposal-file-index="${idx}" class="btn-view-proposal-file px-4 py-2.5 bg-indigo-50/50 hover:bg-indigo-100 dark:bg-indigo-950/20 dark:hover:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-xl border border-indigo-100/30 dark:border-indigo-900/30 text-xs font-black transition flex items-center justify-center gap-2 select-none uppercase tracking-wide">
+                  📄 Documento da Proposta #${idx + 1}
+                </a>
+              `).join('');
+              if (filesContainer) {
+                filesContainer.innerHTML = updatedFilesHtml;
+              }
+
+              // Re-vincular ouvintes dos botões de visualização
+              modalContent.querySelectorAll('.btn-view-proposal-file').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                  e.preventDefault();
+                  const url = btn.getAttribute('data-proposal-file-url');
+                  const indexStr = btn.getAttribute('data-proposal-file-index');
+                  if (!url) return;
+
+                  const idx = indexStr ? parseInt(indexStr) : 0;
+                  const { DocumentViewer } = await import('../../services/documentViewer');
+                  DocumentViewer.open(
+                    `Documento da Proposta #${idx + 1}.pdf`,
+                    url,
+                    'application/pdf',
+                    {
+                      nome_cliente: orc.nomeCliente,
+                      destino: orc.destino,
+                      valor_total: orc.valorProposta || 8500.00,
+                      createdAt: orc.createdAt
+                    }
+                  );
+                });
+              });
+            } else {
+              throw new Error('Falha ao atualizar orçamento com o novo arquivo.');
+            }
+          }
+        } else {
+          throw new Error(result.error || 'Erro no upload.');
+        }
+      } catch (err: any) {
+        console.error('Erro no upload de arquivo do orçamento:', err);
+        options.showToast(`Erro no upload: ${err.message}`, 'error');
+      } finally {
+        btnUploadTrigger.disabled = false;
+        if (uploadStatus) {
+          uploadStatus.classList.add('hidden');
+          uploadStatus.innerHTML = '';
+        }
+        inputUploadDoc.value = '';
+      }
+    });
 
     // Event listener para alterar temperatura
     const selectTemp = document.getElementById('select-detail-temperatura') as HTMLSelectElement;

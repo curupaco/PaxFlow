@@ -1380,6 +1380,34 @@ export class Dashboard {
               </div>
             </form>
 
+            <!-- Seção de Documentos do Cliente -->
+            <div class="mt-6 border-t border-slate-100 dark:border-slate-800/80 pt-4">
+              <div class="flex items-center justify-between mb-3">
+                <h4 class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-wide flex items-center gap-1.5">
+                  📁 Documentos do Passageiro
+                </h4>
+                <div>
+                  <input type="file" id="input-viagem-upload-doc" class="hidden" accept="application/pdf,image/*" />
+                  <button id="btn-viagem-upload-doc" type="button" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-[10px] tracking-wider rounded-lg shadow-sm transition uppercase">
+                    Anexar Arquivo
+                  </button>
+                </div>
+              </div>
+              <div id="viagem-doc-container">
+                ${v.cliente?.google_drive_folder_url || v.cliente?.googleDriveFolderUrl ? `
+                  <div class="flex items-center justify-between p-3.5 bg-indigo-50/50 hover:bg-indigo-100 dark:bg-indigo-950/20 dark:hover:bg-indigo-900/30 rounded-xl border border-indigo-150/30 dark:border-indigo-900/30 transition">
+                    <span class="text-xs font-bold text-slate-700 dark:text-slate-200">📄 Passaporte / Documento do Cliente</span>
+                    <button id="btn-viagem-view-doc" type="button" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-[10px] tracking-wider rounded-lg shadow-sm transition uppercase">
+                      Visualizar
+                    </button>
+                  </div>
+                ` : `
+                  <p class="text-xs text-slate-450 dark:text-slate-500 italic">Nenhum documento anexado para este passageiro.</p>
+                `}
+              </div>
+              <div id="viagem-upload-status" class="mt-2 hidden"></div>
+            </div>
+
             <!-- Cronograma Geral de Datas -->
             ${cronogramaHTML}
 
@@ -1507,6 +1535,113 @@ export class Dashboard {
     const handleClose = () => this.closeModal();
     document.getElementById('btn-close-edit-modal-x')?.addEventListener('click', handleClose);
     document.getElementById('btn-cancel-edit')?.addEventListener('click', handleClose);
+
+    // Documentos da Viagem / Passageiro
+    const btnViagemUpload = document.getElementById('btn-viagem-upload-doc') as HTMLButtonElement;
+    const inputViagemUpload = document.getElementById('input-viagem-upload-doc') as HTMLInputElement;
+    const viagemUploadStatus = document.getElementById('viagem-upload-status') as HTMLElement;
+    const viagemDocContainer = document.getElementById('viagem-doc-container') as HTMLElement;
+
+    btnViagemUpload?.addEventListener('click', () => inputViagemUpload.click());
+
+    inputViagemUpload?.addEventListener('change', async () => {
+      const file = inputViagemUpload.files?.[0];
+      if (!file) return;
+
+      btnViagemUpload.disabled = true;
+      if (viagemUploadStatus) {
+        viagemUploadStatus.classList.remove('hidden');
+        viagemUploadStatus.innerHTML = `
+          <div class="flex items-center gap-2 py-1.5 text-xs font-bold text-slate-500 animate-pulse">
+            <div class="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+            <span>Enviando arquivo (${file.name})...</span>
+          </div>
+        `;
+      }
+
+      try {
+        const { uploadDocumentoCliente } = await import('../services/googleDrive');
+        const clientEmail = v.cliente?.email || 'cliente@paxflow.com';
+        const clientTelefone = v.cliente?.telefone || '(11) 99999-9999';
+
+        const result = await uploadDocumentoCliente(
+          v.cliente_id,
+          v.cliente?.nome || 'Cliente',
+          clientEmail,
+          clientTelefone,
+          file
+        );
+
+        if (result.success && result.googleDriveFolderUrl) {
+          const { error } = await supabase
+            .from('clientes')
+            .update({ google_drive_folder_url: result.googleDriveFolderUrl })
+            .eq('id', v.cliente_id);
+
+          if (error) throw error;
+
+          this.showToast('Documento anexado ao cliente com sucesso!', 'success');
+
+          if (v.cliente) {
+            v.cliente.google_drive_folder_url = result.googleDriveFolderUrl;
+            v.cliente.googleDriveFolderUrl = result.googleDriveFolderUrl;
+          }
+
+          if (viagemDocContainer) {
+            viagemDocContainer.innerHTML = `
+              <div class="flex items-center justify-between p-3.5 bg-indigo-50/50 hover:bg-indigo-100 dark:bg-indigo-950/20 dark:hover:bg-indigo-900/30 rounded-xl border border-indigo-150/30 dark:border-indigo-900/30 transition">
+                <span class="text-xs font-bold text-slate-700 dark:text-slate-200">📄 Passaporte / Documento do Cliente</span>
+                <button id="btn-viagem-view-doc" type="button" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-[10px] tracking-wider rounded-lg shadow-sm transition uppercase">
+                  Visualizar
+                </button>
+              </div>
+            `;
+            
+            document.getElementById('btn-viagem-view-doc')?.addEventListener('click', async () => {
+              const { DocumentViewer } = await import('../services/documentViewer');
+              DocumentViewer.open(
+                `Passaporte - ${v.cliente?.nome || 'Cliente'}.pdf`,
+                result.googleDriveFolderUrl,
+                'application/pdf',
+                v.cliente
+              );
+            });
+          }
+
+          await this.loadViagens();
+          this.render();
+          this.setupDragAndDrop();
+        } else {
+          throw new Error(result.error || 'Erro no upload.');
+        }
+      } catch (err: any) {
+        console.error('Erro no upload de arquivo do cliente da viagem:', err);
+        this.showToast(`Erro no upload: ${err.message}`, 'error');
+      } finally {
+        btnViagemUpload.disabled = false;
+        if (viagemUploadStatus) {
+          viagemUploadStatus.classList.add('hidden');
+          viagemUploadStatus.innerHTML = '';
+        }
+        inputViagemUpload.value = '';
+      }
+    });
+
+    const bindViagemViewDoc = () => {
+      const docUrl = v.cliente?.google_drive_folder_url || v.cliente?.googleDriveFolderUrl;
+      if (docUrl) {
+        document.getElementById('btn-viagem-view-doc')?.addEventListener('click', async () => {
+          const { DocumentViewer } = await import('../services/documentViewer');
+          DocumentViewer.open(
+            `Passaporte - ${v.cliente?.nome || 'Cliente'}.pdf`,
+            docUrl,
+            'application/pdf',
+            v.cliente
+          );
+        });
+      }
+    };
+    bindViagemViewDoc();
 
     // Inicializar comentários da viagem
     const commentsContainer = document.getElementById('viagem-comments-container');
