@@ -41,7 +41,7 @@ O **PaxFlow** é uma plataforma SaaS de CRM e gestão operacional projetada espe
 | Perda de prazos de passaporte/visto | Alertas SLA automáticos com 180 dias de antecedência |
 | Reembolsos parados sem visibilidade | Central de reembolsos com cronômetro SLA em tempo real |
 | Orçamentos esquecidos no e-mail | Pipeline Kanban com lembretes agendados ("Me Lembre Depois") |
-| Documentos espalhados em drives pessoais | Upload seguro para Google Drive corporativo com pastas por cliente |
+| Documentos espalhados em drives pessoais | Upload seguro para o Supabase Storage com pastas por cliente |
 | Sem visibilidade da carga de trabalho | Kanban operacional com drag-and-drop e indicadores visuais |
 | Fluxo de cancelamento desorganizado | Modal de reembolso vinculado a produtos da viagem |
 
@@ -49,7 +49,7 @@ O **PaxFlow** é uma plataforma SaaS de CRM e gestão operacional projetada espe
 
 - **Redução de custos operacionais**: automatiza lembretes e SLAs que hoje são controlados manualmente em planilhas
 - **Aumento de receita**: orçamentos não caem no esquecimento — o pipeline garante follow-up contínuo
-- **Professionalismo na entrega**: pastas organizadas no Google Drive e documentos centralizados transmitem confiança ao cliente final
+- **Professionalismo na entrega**: pastas organizadas no Supabase Storage e documentos centralizados transmitem confiança ao cliente final
 
 ---
 
@@ -170,11 +170,10 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
   - Informações de vistos ativos.
 - **Visualizador de Documentos Inline PaxFlow [NEW]**:
   - **Experiência Incorporada (Lightbox)**: Um modal elegante com design glassmorphic (`backdrop-blur-md bg-slate-950/60`) que permite abrir PDFs e imagens do passaporte de forma 100% interna e integrada.
-  - **Exportação Inteligente**: Arquivos nativos do Google Docs e Sheets são convertidos automaticamente para PDF na API e carregados diretamente no `<iframe>` sem redirecionar para a interface web corporativa do Google.
-  - **Simulador Interativo de Passaporte em Sandbox**: Caso a agência opere no modo de simulador local offline (sem chaves ativas do Google Drive), o PaxFlow gera de forma inteiramente dinâmica um documento visual de passaporte personalizado com o avatar do cliente, nome completo real, CPF, número do passaporte, data de validade e alertas pulsantes de SLA reais do passageiro selecionado.
-  - **Gestão de Downloads e Memória**: A barra superior inclui ações rápidas para baixar o PDF localmente, abrir a URL do arquivo bruto original no Drive e desalocar recursos e URLs temporárias da memória (`revokeObjectURL`) ao fechar o popover.
-- **Upload drag-and-drop**: arraste PDFs, JPEGs ou PNGs para enviar ao Google Drive corporativo.
-- **Pasta automática no Drive**: cada cliente tem uma pasta nomeada "[Nome] - [Email] - [Telefone]".
+  - **Suporte Legado**: Documentos salvos no Google Drive legado possuem um atalho rápido "Abrir Original" para que o consultor possa acessá-los diretamente em sua conta do Google Drive corporativo.
+  - **Gestão de Downloads e Memória**: A barra superior inclui ações rápidas para baixar o PDF localmente, abrir a URL temporária do arquivo assinado seguro (Signed URL válida por 15 minutos) do Supabase Storage e desalocar recursos e URLs temporárias da memória (`revokeObjectURL`) ao fechar o popover.
+- **Upload drag-and-drop**: arraste PDFs, JPEGs ou PNGs para enviar ao Supabase Storage. As imagens são automaticamente comprimidas no navegador (Canvas API) antes do upload, economizando armazenamento.
+- **Segurança e Organização**: Cada cliente possui uma pasta dedicada identificada pelo seu ID único no bucket do Supabase Storage.
 - **Busca em Tempo Real Ampliada**:
   - O mecanismo de busca da barra lateral foi estendido para uma busca completa de alta precisão (client-side). O usuário pode filtrar instantaneamente a lista de clientes por qualquer dado cadastrado, incluindo **telefone, e-mail, documento, endereço residencial, visto ativo, passaporte e observações gerais**.
 - **Seleção lateral**: lista de clientes com indicador visual de SLA do passaporte (verde/amarelo/vermelho).
@@ -203,7 +202,7 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
   - Prazo padrão de reembolso (dias)
   - Taxa de cancelamento padrão
   - E-mail de suporte
-  - Integração Google Drive (token OAuth + sandbox)
+  - Limite máximo de upload configurável (MB)
 - **Aba Consultores**:
   - Lista completa com nome, e-mail, role (admin/consultor), status
   - Edição inline de role
@@ -276,7 +275,7 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 | SLA de passaporte | Nativo, com alertas visuais | Não possui | Manual |
 | Pipeline de orçamentos com lembretes | Integrado com Inbox | Requer configuração | Frágil |
 | Kanban de viagens com produtos | Por cliente/viagem | Genérico | Inexistente |
-| Upload Google Drive por cliente | Automático com pastas | Não integrado | Manual |
+| Upload e armazenamento por cliente | Automático via Supabase Storage | Não integrado | Manual |
 | Reembolsos com cronômetro | Tempo real | Não possui | Planilha separada |
 | Modo offline | Nativo (localStorage) | Raramente | Sempre offline |
 | Preço | Competitivo SaaS Brasil | USD, caro | Baixo custo, alto risco |
@@ -295,7 +294,7 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 | Backend/Database | Supabase (PostgreSQL) | Escalável, seguro, sem servidor para gerenciar |
 | Autenticação | Supabase Auth | Login seguro por e-mail/senha com recuperação |
 | Realtime | Supabase Realtime (WebSocket) | Colaboração em tempo real entre consultores |
-| Upload | Google Drive API (OAuth 2.0) | Documentos no Drive corporativo do cliente |
+| Armazenamento & Upload | Supabase Storage + Canvas API | Documentos seguros com compactação inteligente automática |
 | Drag-and-drop | SortableJS | UX intuitiva nos Kanbans |
 | Hospedagem | Qualquer CDN (Cloudflare Pages, Vercel, Netlify) | Deploy em minutos |
 
@@ -304,7 +303,7 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 - **Substitui Firebase** com código aberto e PostgreSQL real
 - **RLS (Row Level Security)**: cada consultor vê apenas seus dados
 - **Realtime nativo**: alterações refletem instantaneamente em todos os usuários
-- **Edge Functions**: para lógica server-side (como upload para Google Drive)
+- **Storage Buckets**: para armazenamento seguro de arquivos e imagens com suporte a links assinados seguros
 - **Custo previsível**: plano gratuito generoso; plano pago apenas quando escalar
 
 ---
@@ -315,7 +314,7 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 - **Autorização**: controle por role (admin/consultor) em toda a aplicação
 - **RLS (Row Level Security)**: políticas no PostgreSQL garantem que consultores acessem apenas registros permitidos
 - **Dados em trânsito**: todas as comunicações via HTTPS
-- **Google Drive**: integração OAuth 2.0 com refresh token — a agência mantém controle total dos documentos
+- **Armazenamento Seguro**: Supabase Storage com RLS restrito. Documentos e imagens do passageiro só podem ser acessados via links assinados (Signed URLs) expiráveis gerados sob demanda
 - **Modo offline**: dados sensíveis nunca saem do navegador sem criptografia; o fallback localStorage é temporário
 - **Senhas**: mínimo 6 caracteres, armazenadas com hash no Supabase Auth
 
@@ -327,13 +326,9 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 
 | Integração | Tipo | Descrição |
 |---|---|---|
-| Google Drive | Bidirecional | Upload de documentos, criação automática de pastas por cliente. Integração flexível com suporte a **Modo Real** (OAuth2 com refresh token) ou **Modo Sandbox** (simulador local resiliente). |
+| Supabase Storage | Unidirecional | Armazenamento de passaportes, comprovantes e propostas. Os arquivos de imagem são comprimidos no client-side para economia de cota e performance. |
 | Supabase Auth | Autenticação | Login, recuperação de senha, gerenciamento de consultores. |
 | Supabase Realtime | WebSocket | Sincronização ao vivo de orçamentos, viagens e Cockpit Kanban. |
-
-### Configuração Facilitada (Google OAuth Utility)
-
-O PaxFlow fornece um script utilitário automatizado (`src/services/obterTokenGoogle.js`) que inicia um servidor local de escuta na porta 3000 para interceptar a autenticação de login do Google Drive corporativo da agência e fornecer o `refresh_token` definitivo. Para detalhes completos de configuração no Google Cloud Console e obtenção de chaves, consulte o guia passo a passo em [google_drive_setup.md](google_drive_setup.md).
 
 ### Roteiro (futuro)
 
@@ -374,7 +369,6 @@ O PaxFlow fornece um script utilitário automatizado (`src/services/obterTokenGo
 - Navegador moderno (Chrome, Firefox, Edge, Safari — 2 últimas versões)
 - Conexão com internet
 - Conta no Supabase (plano gratuito é suficiente para até 50 consultores)
-- (Opcional) Conta Google Workspace para integração com Drive
 
 ---
 
@@ -392,7 +386,7 @@ O PaxFlow fornece um script utilitário automatizado (`src/services/obterTokenGo
 1. Criação do projeto Supabase (ou uso da infra PaxFlow)
 2. Execução do script de modelagem do banco de dados (utilizando as DDLs e políticas RLS fornecidas no arquivo [schema.sql](../supabase/schema.sql)), seguido pela migração [add_product_detail_fields.sql](../supabase/add_product_detail_fields.sql) para suporte ao detalhamento financeiro de produtos de viagem.
 3. Configuração de autenticação e criação dos consultores no Supabase Auth
-4. Configuração da integração com Google Drive (conforme o guia prático [google_drive_setup.md](google_drive_setup.md))
+4. Criação dos Buckets de Storage e respectivas políticas de RLS restritas no painel do Supabase
 5. Deploy do frontend (Cloudflare Pages ou similar)
 6. *(Opcional)* Limpeza resiliente de dados transacionais e de teste em lote utilizando o script [clean_db.sql](../supabase/clean_db.sql) para inicialização limpa da produção.
 
@@ -439,7 +433,7 @@ O sistema foi projetado para uso online com Supabase. No entanto, os módulos de
 
 ### Os dados dos meus clientes estão seguros?
 
-Sim. A autenticação é feita por Supabase Auth (bcrypt + JWT). As permissões são controladas por Row Level Security diretamente no PostgreSQL. Documentos são armazenados no Google Drive da própria agência, não em servidores de terceiros.
+Sim. A autenticação é feita por Supabase Auth (bcrypt + JWT). As permissões são controladas por Row Level Security diretamente no PostgreSQL. Documentos são armazenados de forma isolada e segura no Supabase Storage do próprio cliente, protegidos por RLS.
 
 ### Posso personalizar o PaxFlow?
 
