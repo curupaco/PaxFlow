@@ -827,9 +827,15 @@ export class Dashboard {
               </select>
             </div>
 
-            <div>
-              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Destino *</label>
-              <input id="input-viagem-destino" type="text" required placeholder="ex: Paris, Orlando, etc." class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm" />
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Destino *</label>
+                <input id="input-viagem-destino" type="text" required placeholder="ex: Paris, Orlando, etc." class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm" />
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Código Localizador (LOC)</label>
+                <input id="input-viagem-loc" type="text" placeholder="ex: F3R9W" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm uppercase" />
+              </div>
             </div>
 
             <div>
@@ -894,7 +900,7 @@ export class Dashboard {
 
         const clienteId = (document.getElementById('select-viagem-cliente') as HTMLSelectElement).value;
         const destino = (document.getElementById('input-viagem-destino') as HTMLInputElement).value;
-        const loc = ''; // Removido do formulário
+        const loc = (document.getElementById('input-viagem-loc') as HTMLInputElement).value.trim();
         const valorRaw = (document.getElementById('input-viagem-valor') as HTMLInputElement).value.trim();
         const vIdaRaw = (document.getElementById('input-viagem-ida') as HTMLInputElement).value.trim();
         const vVoltaRaw = (document.getElementById('input-viagem-volta') as HTMLInputElement).value.trim();
@@ -1316,9 +1322,15 @@ export class Dashboard {
                 </select>
               </div>
 
-              <div>
-                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Destino *</label>
-                <input id="edit-viagem-destino" type="text" required value="${v.destino}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm" />
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Destino *</label>
+                  <input id="edit-viagem-destino" type="text" required value="${v.destino}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm" />
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Código Localizador (LOC)</label>
+                  <input id="edit-viagem-loc" type="text" value="${v.codigo_localizador || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm uppercase" placeholder="ex: F3R9W" />
+                </div>
               </div>
 
               <div>
@@ -1692,7 +1704,7 @@ export class Dashboard {
       const clienteId = (document.getElementById('edit-viagem-cliente') as HTMLSelectElement).value;
       const consultorId = (document.getElementById('edit-viagem-consultor') as HTMLSelectElement).value;
       const destino = (document.getElementById('edit-viagem-destino') as HTMLInputElement).value;
-      const loc = ''; // Removido do formulário
+      const loc = (document.getElementById('edit-viagem-loc') as HTMLInputElement).value.trim();
       const valorRaw = (document.getElementById('edit-viagem-valor') as HTMLInputElement).value.trim();
       const dataIdaRaw = (document.getElementById('edit-viagem-ida') as HTMLInputElement).value.trim();
       const dataVoltaRaw = (document.getElementById('edit-viagem-volta') as HTMLInputElement).value.trim();
