@@ -1076,6 +1076,7 @@ export class ConfiguracoesPage {
    * Exibe mensagens flutuantes (Toasts)
    */
   private showToast(message: string, type: 'success' | 'error' = 'success'): void {
+    const translatedMessage = (window as any).traduzirErro ? (window as any).traduzirErro(message) : message;
     const toastId = 'paxflow-toast';
     let toast = document.getElementById(toastId);
     if (!toast) {
@@ -1089,7 +1090,7 @@ export class ConfiguracoesPage {
     toast.className = `fixed bottom-5 right-5 px-5 py-3.5 rounded-xl shadow-2xl text-white font-semibold text-sm z-50 transition-all duration-300 transform translate-y-0 opacity-100 flex items-center gap-2 ${
       isSuccess ? 'bg-emerald-600 shadow-emerald-600/20' : 'bg-rose-600 shadow-rose-600/20'
     }`;
-    toast.innerHTML = `${isSuccess ? '✅' : '❌'} ${message}`;
+    toast.innerHTML = `${isSuccess ? '✅' : '❌'} ${translatedMessage}`;
 
     setTimeout(() => {
       if (toast) {

@@ -1,5 +1,6 @@
 import { loginConsultor, supabase } from '../services/supabase';
 import { PerfilConsultor } from '../types';
+import { traduzirErro } from '../utils/errorTranslator';
 
 export interface LoginPageOptions {
   onLoginSuccess: (user: any, perfil: PerfilConsultor | null) => void;
@@ -215,7 +216,7 @@ export class LoginPage {
         btn.disabled = false;
         btn.textContent = 'Enviar E-mail de Recuperação';
         errorContainer.className = 'px-4 py-3 rounded-xl bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 text-xs font-bold border border-rose-100 dark:border-rose-900/50';
-        errorContainer.textContent = err.message || 'Erro ao enviar e-mail de recuperação.';
+        errorContainer.textContent = traduzirErro(err);
       }
     });
 
@@ -239,7 +240,7 @@ export class LoginPage {
         const { user, perfil, error } = await loginConsultor(email, password);
 
         if (error || !user) {
-          throw new Error(error?.message || 'E-mail ou senha inválidos.');
+          throw new Error(traduzirErro(error));
         }
 
         this.options.onLoginSuccess(user, perfil);
@@ -248,7 +249,7 @@ export class LoginPage {
         btn.disabled = false;
         btn.textContent = 'Acessar Painel';
         errorContainer.className = 'px-4 py-3 rounded-xl bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 text-xs font-bold border border-rose-100 dark:border-rose-900/50';
-        errorContainer.textContent = err.message || 'Erro inesperado no servidor.';
+        errorContainer.textContent = traduzirErro(err);
       }
     });
   }

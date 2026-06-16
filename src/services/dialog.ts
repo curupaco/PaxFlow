@@ -3,7 +3,10 @@
  * Replaces native browser alert() and confirm() with stunning custom modals.
  */
 
+import { traduzirErro } from '../utils/errorTranslator';
+
 export function showCustomAlert(message: string, title: string = 'Aviso'): Promise<void> {
+  const translatedMessage = traduzirErro(message);
   return new Promise((resolve) => {
     const overlay = document.createElement('div');
     overlay.id = 'paxflow-alert-overlay';
@@ -19,7 +22,7 @@ export function showCustomAlert(message: string, title: string = 'Aviso'): Promi
             ⚠️
           </div>
           <h3 class="text-base font-black text-slate-800 dark:text-slate-100 tracking-tight leading-snug">${title}</h3>
-          <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold leading-relaxed whitespace-pre-line">${message}</p>
+          <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold leading-relaxed whitespace-pre-line">${translatedMessage}</p>
         </div>
         
         <div class="px-6 pb-6 pt-2 flex justify-center">
