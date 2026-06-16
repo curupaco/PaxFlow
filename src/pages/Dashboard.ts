@@ -354,7 +354,57 @@ export class Dashboard {
         throw error;
       }
 
-      this.viagens = data || [];
+      let comments: any[] = [];
+      if (!this.isFallbackMode) {
+        try {
+          const { data: cData, error: cError } = await supabase
+            .from('comentarios')
+            .select('item_id, tipo_item, texto')
+            .in('tipo_item', ['viagem', 'produto']);
+          if (!cError && cData) {
+            comments = cData;
+          }
+        } catch (errComm) {
+          console.warn('Erro ao carregar comentários para busca:', errComm);
+        }
+      }
+
+      // Agrupa comentários por viagem relacionada
+      const tripCommentsMap = new Map<string, string[]>();
+      
+      // Mapeia IDs de produtos para seus respectivos IDs de viagem
+      const productToTripMap = new Map<string, string>();
+      (data || []).forEach((v: any) => {
+        if (v.produtos && Array.isArray(v.produtos)) {
+          v.produtos.forEach((p: any) => {
+            productToTripMap.set(p.id, v.id);
+          });
+        }
+      });
+
+      (comments || []).forEach((c: any) => {
+        let tripId: string | undefined;
+        if (c.tipo_item === 'viagem') {
+          tripId = c.item_id;
+        } else if (c.tipo_item === 'produto') {
+          tripId = productToTripMap.get(c.item_id);
+        }
+
+        if (tripId) {
+          if (!tripCommentsMap.has(tripId)) {
+            tripCommentsMap.set(tripId, []);
+          }
+          tripCommentsMap.get(tripId)!.push(c.texto);
+        }
+      });
+
+      this.viagens = (data || []).map((v: any) => {
+        return {
+          ...v,
+          comentarios_busca: tripCommentsMap.get(v.id) || []
+        };
+      });
+
       this.saveViagensToLocalStorage();
     } catch (err: any) {
       this.isFallbackMode = true;
@@ -1569,7 +1619,12 @@ export class Dashboard {
     `;
 
     // Fechar Modal
-    const handleClose = () => this.closeModal();
+    const handleClose = async () => {
+      this.closeModal();
+      await this.loadViagens();
+      this.render();
+      this.setupDragAndDrop();
+    };
     document.getElementById('btn-close-edit-modal-x')?.addEventListener('click', handleClose);
     document.getElementById('btn-cancel-edit')?.addEventListener('click', handleClose);
 
@@ -2750,6 +2805,18 @@ export class Dashboard {
       const loc = v.codigo_localizador?.toLowerCase() || '';
       const obs = v.observacoes?.toLowerCase() || '';
       const consultorNome = v.consultor_id === this.user.id ? 'você' : 'outro consultor';
+
+      // Busca em códigos de reserva dos produtos/serviços (LOCs internos)
+      const matchesProductLoc = v.produtos && Array.isArray(v.produtos) && v.produtos.some((p: any) => {
+        const prodLoc = (p.codigo_reserva || '').toLowerCase();
+        return prodLoc.includes(q);
+      });
+
+      // Busca nos comentários associados à viagem (comentários da viagem ou de seus produtos)
+      const matchesComments = v.comentarios_busca && Array.isArray(v.comentarios_busca) && v.comentarios_busca.some((text: string) => {
+        return (text || '').toLowerCase().includes(q);
+      });
+
       return (
         cliNome.includes(q) ||
         cliDoc.includes(q) ||
@@ -2758,7 +2825,9 @@ export class Dashboard {
         dest.includes(q) ||
         loc.includes(q) ||
         obs.includes(q) ||
-        consultorNome.includes(q)
+        consultorNome.includes(q) ||
+        matchesProductLoc ||
+        matchesComments
       );
     });
 

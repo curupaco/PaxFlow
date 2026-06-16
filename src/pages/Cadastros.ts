@@ -76,138 +76,142 @@ export class CadastrosPage {
    */
   private render(): void {
     this.container.innerHTML = `
-      <div class="p-6 space-y-6 max-h-screen overflow-y-auto custom-scrollbar animate-fade-in">
+      <div class="min-h-screen bg-slate-50/50 dark:bg-slate-950 flex flex-col font-sans transition-colors duration-200">
         
-        <!-- Topo da Página -->
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-250/30 dark:border-slate-800 pb-5">
-          <div>
-            <h1 class="text-2xl font-black text-slate-800 dark:text-white tracking-tight flex items-center gap-2">
-              <span class="p-2 bg-indigo-50 dark:bg-indigo-950/45 text-indigo-600 dark:text-indigo-400 rounded-xl">⚙️</span>
-              Central de Cadastros
-            </h1>
-            <p class="text-xs text-slate-400 dark:text-slate-500 font-semibold mt-1">Normalização de dados e configuração de campos dinâmicos do sistema</p>
+        <!-- Cabeçalho -->
+        <header class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 sticky top-0 z-30 px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 transition-colors duration-200">
+          <div class="flex items-center gap-3">
+            <img src="/logo.svg" alt="PaxFlow Logo" class="h-10 w-auto object-contain md:hidden" />
+            <div>
+              <h1 class="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight flex items-center gap-2">
+                <span>Central de Cadastros</span>
+              </h1>
+              <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Normalização de dados e configuração de campos dinâmicos do sistema</p>
+            </div>
           </div>
-        </div>
+        </header>
 
         <!-- Grade Principal -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
-          <!-- Coluna da Esquerda: Listagem de Tipos (2/3 de largura no LG) -->
-          <div class="lg:col-span-2 space-y-4">
-            <div class="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-850 rounded-2xl p-5 shadow-sm transition-colors">
-              <h2 class="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider mb-4">Tipos de Produtos e Serviços</h2>
-              
-              <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                  <thead>
-                    <tr class="border-b border-slate-100 dark:border-slate-800 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                      <th class="py-3 px-4">Ícone</th>
-                      <th class="py-3 px-4">Nome do Tipo</th>
-                      <th class="py-3 px-4">Campos Adicionais</th>
-                      <th class="py-3 px-4">Status</th>
-                      <th class="py-3 px-4 text-right">Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody id="lista-tipos-body">
-                    ${this.tiposProduto.length === 0 ? `
-                      <tr>
-                        <td colspan="5" class="py-8 text-center text-xs text-slate-400 dark:text-slate-500 font-semibold">
-                          Nenhum tipo cadastrado.
-                        </td>
+        <main class="flex-1 p-6 space-y-6 overflow-y-auto custom-scrollbar animate-fade-in">
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- Coluna da Esquerda: Listagem de Tipos (2/3 de largura no LG) -->
+            <div class="lg:col-span-2 space-y-4">
+              <div class="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-850 rounded-2xl p-5 shadow-sm transition-colors">
+                <h2 class="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider mb-4">Tipos de Produtos e Serviços</h2>
+                
+                <div class="overflow-x-auto">
+                  <table class="w-full text-left border-collapse">
+                    <thead>
+                      <tr class="border-b border-slate-100 dark:border-slate-800 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                        <th class="py-3 px-4">Ícone</th>
+                        <th class="py-3 px-4">Nome do Tipo</th>
+                        <th class="py-3 px-4">Campos Adicionais</th>
+                        <th class="py-3 px-4">Status</th>
+                        <th class="py-3 px-4 text-right">Ações</th>
                       </tr>
-                    ` : this.tiposProduto.map(t => {
-                      const qtdeCampos = t.campos_adicionais?.length || 0;
-                      return `
-                        <tr class="border-b border-slate-100/50 dark:border-slate-850/50 hover:bg-slate-50/50 dark:hover:bg-slate-800/20 text-xs font-semibold text-slate-700 dark:text-slate-250 transition-colors">
-                          <td class="py-3 px-4 text-base">${t.icone}</td>
-                          <td class="py-3 px-4">${t.nome}</td>
-                          <td class="py-3 px-4">
-                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${qtdeCampos > 0 ? 'bg-indigo-50 dark:bg-indigo-950/45 text-indigo-600 dark:text-indigo-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}">
-                              ${qtdeCampos} ${qtdeCampos === 1 ? 'campo' : 'campos'}
-                            </span>
-                          </td>
-                          <td class="py-3 px-4">
-                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${t.ativo ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-450' : 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-455'}">
-                              ${t.ativo ? 'Ativo' : 'Inativo'}
-                            </span>
-                          </td>
-                          <td class="py-3 px-4 text-right space-x-2">
-                            <button data-id="${t.id}" class="btn-editar-tipo p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-455 hover:text-indigo-600 dark:hover:text-indigo-400 transition" title="Editar Tipo">
-                              ✏️
-                            </button>
-                            ${t.nome !== 'MUDAR!' ? `
-                              <button data-id="${t.id}" class="btn-toggle-ativo-tipo p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-455 hover:text-rose-600 dark:hover:text-rose-455 transition" title="${t.ativo ? 'Desativar' : 'Ativar'}">
-                                🔌
-                              </button>
-                            ` : ''}
+                    </thead>
+                    <tbody id="lista-tipos-body">
+                      ${this.tiposProduto.length === 0 ? `
+                        <tr>
+                          <td colspan="5" class="py-8 text-center text-xs text-slate-400 dark:text-slate-550 font-semibold">
+                            Nenhum tipo cadastrado.
                           </td>
                         </tr>
-                      `;
-                    }).join('')}
-                  </tbody>
-                </table>
+                      ` : this.tiposProduto.map(t => {
+                        const qtdeCampos = t.campos_adicionais?.length || 0;
+                        return `
+                          <tr class="border-b border-slate-100/50 dark:border-slate-850/50 hover:bg-slate-50/50 dark:hover:bg-slate-800/20 text-xs font-semibold text-slate-700 dark:text-slate-250 transition-colors">
+                            <td class="py-3 px-4 text-base">${t.icone}</td>
+                            <td class="py-3 px-4">${t.nome}</td>
+                            <td class="py-3 px-4">
+                              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${qtdeCampos > 0 ? 'bg-indigo-50 dark:bg-indigo-950/45 text-indigo-600 dark:text-indigo-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}">
+                                ${qtdeCampos} ${qtdeCampos === 1 ? 'campo' : 'campos'}
+                              </span>
+                            </td>
+                            <td class="py-3 px-4">
+                              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${t.ativo ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-450' : 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-455'}">
+                                ${t.ativo ? 'Ativo' : 'Inativo'}
+                              </span>
+                            </td>
+                            <td class="py-3 px-4 text-right space-x-2">
+                              <button data-id="${t.id}" class="btn-editar-tipo p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-455 hover:text-indigo-600 dark:hover:text-indigo-400 transition" title="Editar Tipo">
+                                ✏️
+                              </button>
+                              ${t.nome !== 'MUDAR!' ? `
+                                <button data-id="${t.id}" class="btn-toggle-ativo-tipo p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-455 hover:text-rose-600 dark:hover:text-rose-455 transition" title="${t.ativo ? 'Desativar' : 'Ativar'}">
+                                  🔌
+                                </button>
+                              ` : ''}
+                            </td>
+                          </tr>
+                        `;
+                      }).join('')}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
-          </div>
 
-          <!-- Coluna da Direita: Formulário de Adicionar / Editar (1/3 de largura no LG) -->
-          <div class="space-y-4">
-            <div class="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-850 rounded-2xl p-5 shadow-sm transition-colors sticky top-6">
-              <h2 id="form-titulo" class="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider mb-4">
-                ${this.editandoTipoId ? '✏️ Editar Tipo' : '➕ Novo Tipo de Serviço'}
-              </h2>
+            <!-- Coluna da Direita: Formulário de Adicionar / Editar (1/3 de largura no LG) -->
+            <div class="space-y-4">
+              <div class="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-850 rounded-2xl p-5 shadow-sm transition-colors sticky top-6">
+                <h2 id="form-titulo" class="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider mb-4">
+                  ${this.editandoTipoId ? '✏️ Editar Tipo' : '➕ Novo Tipo de Serviço'}
+                </h2>
 
-              <form id="form-cadastro-tipo" class="space-y-4">
-                <div>
-                  <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-550 uppercase tracking-wider mb-1">Nome do Tipo *</label>
-                  <input id="input-tipo-nome" type="text" required placeholder="ex: Circuito, Chip de Viagem" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition" />
-                </div>
-
-                <div class="grid grid-cols-2 gap-4">
+                <form id="form-cadastro-tipo" class="space-y-4">
                   <div>
-                    <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-550 uppercase tracking-wider mb-1">Ícone / Emoji *</label>
-                    <input id="input-tipo-icone" type="text" required placeholder="ex: ✈️, 🚢" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs text-center transition" />
+                    <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-550 uppercase tracking-wider mb-1">Nome do Tipo *</label>
+                    <input id="input-tipo-nome" type="text" required placeholder="ex: Circuito, Chip de Viagem" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition" />
                   </div>
-                  <div class="flex items-center pt-5">
-                    <label class="inline-flex items-center cursor-pointer select-none">
-                      <input id="check-tipo-ativo" type="checkbox" checked class="sr-only peer" />
-                      <div class="w-9 h-5 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500 relative"></div>
-                      <span class="ml-2 text-xs font-bold text-slate-500 dark:text-slate-400">Ativo</span>
-                    </label>
-                  </div>
-                </div>
 
-                <!-- Subcampos / Campos Adicionais -->
-                <div class="border-t border-slate-100 dark:border-slate-800 pt-4">
-                  <div class="flex items-center justify-between mb-3">
-                    <h3 class="text-xs font-black text-slate-455 dark:text-slate-400 uppercase tracking-wider">Campos Adicionais</h3>
-                    <button id="btn-adicionar-campo-adicional" type="button" class="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/45 dark:hover:bg-indigo-900/60 text-indigo-600 dark:text-indigo-400 rounded-lg text-[10px] font-black tracking-wider transition uppercase">
-                      ➕ Campo
+                  <div class="grid grid-cols-2 gap-4">
+                    <div>
+                      <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-550 uppercase tracking-wider mb-1">Ícone / Emoji *</label>
+                      <input id="input-tipo-icone" type="text" required placeholder="ex: ✈️, 🚢" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs text-center transition" />
+                    </div>
+                    <div class="flex items-center pt-5">
+                      <label class="inline-flex items-center cursor-pointer select-none">
+                        <input id="check-tipo-ativo" type="checkbox" checked class="sr-only peer" />
+                        <div class="w-9 h-5 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500 relative"></div>
+                        <span class="ml-2 text-xs font-bold text-slate-500 dark:text-slate-400">Ativo</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <!-- Subcampos / Campos Adicionais -->
+                  <div class="border-t border-slate-100 dark:border-slate-800 pt-4">
+                    <div class="flex items-center justify-between mb-3">
+                      <h3 class="text-xs font-black text-slate-455 dark:text-slate-400 uppercase tracking-wider">Campos Adicionais</h3>
+                      <button id="btn-adicionar-campo-adicional" type="button" class="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/45 dark:hover:bg-indigo-900/60 text-indigo-600 dark:text-indigo-400 rounded-lg text-[10px] font-black tracking-wider transition uppercase">
+                        ➕ Campo
+                      </button>
+                    </div>
+                    
+                    <!-- Container de listagem de subcampos -->
+                    <div id="lista-campos-adicionais-container" class="space-y-3 max-h-[260px] overflow-y-auto pr-1 custom-scrollbar">
+                      <!-- Gerado dinamicamente -->
+                    </div>
+                  </div>
+
+                  <!-- Ações do Form -->
+                  <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800">
+                    ${this.editandoTipoId ? `
+                      <button id="btn-cancelar-edicao" type="button" class="px-3 py-2 bg-slate-50 dark:bg-slate-850 hover:bg-slate-100 text-slate-500 font-bold text-[10px] rounded-lg transition uppercase">
+                        Cancelar
+                      </button>
+                    ` : ''}
+                    <button id="btn-salvar-tipo" type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-[10px] rounded-lg transition shadow-md shadow-indigo-600/20 uppercase tracking-wider flex items-center justify-center">
+                      Salvar Tipo
                     </button>
                   </div>
-                  
-                  <!-- Container de listagem de subcampos -->
-                  <div id="lista-campos-adicionais-container" class="space-y-3 max-h-[260px] overflow-y-auto pr-1 custom-scrollbar">
-                    <!-- Gerado dinamicamente -->
-                  </div>
-                </div>
-
-                <!-- Ações do Form -->
-                <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800">
-                  ${this.editandoTipoId ? `
-                    <button id="btn-cancelar-edicao" type="button" class="px-3 py-2 bg-slate-50 dark:bg-slate-850 hover:bg-slate-100 text-slate-500 font-bold text-[10px] rounded-lg transition uppercase">
-                      Cancelar
-                    </button>
-                  ` : ''}
-                  <button id="btn-salvar-tipo" type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-[10px] rounded-lg transition shadow-md shadow-indigo-600/20 uppercase tracking-wider flex items-center justify-center">
-                    Salvar Tipo
-                  </button>
-                </div>
-              </form>
+                </form>
+              </div>
             </div>
-          </div>
 
-        </div>
+          </div>
+        </main>
 
       </div>
     `;
