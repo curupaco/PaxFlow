@@ -95,10 +95,29 @@ export interface Viagem {
 /**
  * Representa um produto específico dentro de uma viagem (ex: voo, hotel, seguro, passeio).
  */
+export interface CampoAdicional {
+  id: string;
+  label: string;
+  tipo: 'text' | 'number' | 'select';
+  opcoes?: string[];
+  obrigatorio: boolean;
+  alvo: 'fornecedor' | 'descricao' | 'dados_adicionais';
+}
+
+export interface TipoProduto {
+  id: string;
+  nome: string;
+  icone: string;
+  campos_adicionais: CampoAdicional[];
+  ativo: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface ProdutoViagem {
   id: string;
   viagemId: string; // ID da viagem à qual o produto pertence
-  tipo: 'voo' | 'hotel' | 'seguro' | 'passeio' | 'outro';
+  tipo: string;
   fornecedor: string; // Nome da companhia aérea, hotel, seguradora, etc.
   descricao: string; // Detalhes (ex: Voo GRU-MCO, Hotel XYZ Quarto Luxo)
   codigoReserva?: string; // Código de reserva ou bilhete individual
@@ -108,6 +127,8 @@ export interface ProdutoViagem {
   dataServico: string; // Data da prestação do serviço
   datasAdicionais?: { data: string; rotulo: string }[];
   datas_adicionais?: { data: string; rotulo: string }[];
+  dados_adicionais?: Record<string, any>;
+  dadosAdicionais?: Record<string, any>;
   createdAt?: string;
   updatedAt?: string;
 }

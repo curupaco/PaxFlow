@@ -93,6 +93,7 @@ export class Dashboard {
 
   private viagens: any[] = [];
   private consultores: PerfilConsultor[] = [];
+  private tiposProduto: any[] = [];
   private selectedConsultantId: string = 'todos';
   private sortables: Sortable[] = [];
   private buscaTermo: string = '';
@@ -123,6 +124,9 @@ export class Dashboard {
 
       // 3. Carregar configurações globais de SLA
       await this.loadGlobalSettings();
+
+      // Carregar tipos de produtos e serviços cadastrados no banco
+      await this.loadTiposProduto();
 
       // 4. Buscar viagens
       await this.loadViagens();
@@ -278,6 +282,57 @@ export class Dashboard {
   }
 
   /**
+   * Carrega os tipos de produtos cadastrados no banco
+   */
+  private async loadTiposProduto(): Promise<void> {
+    try {
+      const { data, error } = await supabase
+        .from('tipos_produto')
+        .select('*')
+        .order('nome', { ascending: true });
+
+      if (error) throw error;
+      this.tiposProduto = data || [];
+    } catch (err: any) {
+      console.warn('Erro ao carregar tipos de produto do banco:', err.message);
+      this.tiposProduto = [];
+    }
+  }
+
+  /**
+   * Obtém o ícone emoji correspondente a um determinado tipo de produto
+   */
+  private getIconForType(tipo: string): string {
+    const found = this.tiposProduto.find(t => t.nome === tipo);
+    if (found) return found.icone;
+
+    const fallbackMap: Record<string, string> = {
+      'Aéreo Facial': '✈️',
+      'Aéreo Operadora': '✈️',
+      'Carro': '🚗',
+      'Circuito': '🗺️',
+      'Cruzeiro': '🚢',
+      'Hotel': '🏨',
+      'Passeios': '🎟️',
+      'Seguro Viagem': '🛡️',
+      'Ingressos': '🎫',
+      'Transfer': '🚐',
+      'Trem': '🚂',
+      'Diversos': '📦',
+      'Casas': '🏡',
+      'Cias aéreas - Assento/bagagem': '🧳',
+      'Cias aéreas - Emissão Com Pontos': '🪙',
+      'MUDAR!': '⚠️',
+      'voo': '✈️',
+      'hotel': '🏨',
+      'seguro': '🛡️',
+      'passeio': '🎟️',
+      'outro': '📦'
+    };
+    return fallbackMap[tipo] || '📦';
+  }
+
+  /**
    * Busca as viagens e realiza o filtro baseado no cargo (Role) do consultor logado
    */
   private async loadViagens(): Promise<void> {
@@ -365,14 +420,7 @@ export class Dashboard {
       // 2. Verificar datas de cada produto/serviço
       if (viagem.produtos && Array.isArray(viagem.produtos)) {
         viagem.produtos.forEach((p: any) => {
-          const iconesMap: { [key: string]: string } = {
-            voo: '✈️',
-            hotel: '🏨',
-            seguro: '🛡️',
-            passeio: '🎟️',
-            outro: '📦'
-          };
-          const icon = iconesMap[p.tipo] || '📦';
+          const icon = this.getIconForType(p.tipo);
           const labelBase = `${icon} ${p.fornecedor}`;
 
           // Data principal do serviço
@@ -1095,14 +1143,7 @@ export class Dashboard {
     if (v.produtos && v.produtos.length > 0) {
       v.produtos.forEach((p: any) => {
         const prodTipoUpper = (p.tipo || 'outro').toUpperCase();
-        const iconesMap: { [key: string]: string } = {
-          voo: '✈️',
-          hotel: '🏨',
-          seguro: '🛡️',
-          passeio: '🎟️',
-          outro: '📦'
-        };
-        const icon = iconesMap[p.tipo] || '📦';
+        const icon = this.getIconForType(p.tipo);
 
         if (p.data_servico) {
           cronograma.push({
@@ -1446,17 +1487,18 @@ export class Dashboard {
                   <div>
                     <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-550 uppercase mb-0.5">Tipo *</label>
                     <select id="prod-tipo" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition duration-155">
-                      <option value="voo" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">Voo</option>
-                      <option value="hotel" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">Hotel</option>
-                      <option value="seguro" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">Seguro</option>
-                      <option value="passeio" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">Passeio</option>
-                      <option value="outro" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">Outro</option>
+                      <option value="" disabled selected class="bg-white dark:bg-slate-800 text-slate-400">Selecione o tipo...</option>
+                      ${this.tiposProduto.filter(t => t.ativo && t.nome !== 'MUDAR!').map(t => `
+                        <option value="${t.nome}" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">${t.nome}</option>
+                      `).join('')}
                     </select>
                   </div>
                   <div>
                     <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-550 uppercase mb-0.5">Fornecedor</label>
                     <input id="prod-fornecedor" type="text" placeholder="ex: LATAM, Hilton" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition duration-155" />
                   </div>
+                  
+                  <div id="container-campos-condicionais" class="hidden bg-slate-100/40 dark:bg-slate-900/30 p-2.5 rounded-lg border border-slate-200/40 dark:border-slate-800/30 col-span-2"></div>
                 </div>
 
                 <div>
@@ -1835,6 +1877,72 @@ export class Dashboard {
       }
     });
 
+    // Evento de alteração no tipo de produto para exibir campos condicionais
+    const prodTipoSelect = document.getElementById('prod-tipo') as HTMLSelectElement;
+    const condContainer = document.getElementById('container-campos-condicionais') as HTMLElement;
+    const prodFornecedorInput = document.getElementById('prod-fornecedor') as HTMLInputElement;
+
+    prodTipoSelect?.addEventListener('change', () => {
+      const selectedType = prodTipoSelect.value;
+      const tipoConfig = this.tiposProduto.find(t => t.nome === selectedType);
+
+      if (tipoConfig && Array.isArray(tipoConfig.campos_adicionais) && tipoConfig.campos_adicionais.length > 0) {
+        condContainer.classList.remove('hidden');
+
+        let fieldsHTML = '';
+        tipoConfig.campos_adicionais.forEach((campo: any) => {
+          const requiredAttr = campo.obrigatorio ? 'required' : '';
+          const label = `${campo.label}${campo.obrigatorio ? ' *' : ''}`;
+
+          if (campo.tipo === 'select') {
+            const options = Array.isArray(campo.opcoes) ? campo.opcoes : [];
+            fieldsHTML += `
+              <div class="space-y-1">
+                <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-550 uppercase mb-0.5">${label}</label>
+                <select id="prod-campo-${campo.id}" ${requiredAttr} class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition duration-155">
+                  <option value="" disabled selected>Selecione...</option>
+                  ${options.map((opt: string) => `<option value="${opt}">${opt}</option>`).join('')}
+                </select>
+              </div>
+            `;
+          } else if (campo.tipo === 'number') {
+            fieldsHTML += `
+              <div class="space-y-1">
+                <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-550 uppercase mb-0.5">${label}</label>
+                <input type="number" id="prod-campo-${campo.id}" ${requiredAttr} placeholder="${campo.placeholder || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition duration-155" />
+              </div>
+            `;
+          } else {
+            // text fallback
+            fieldsHTML += `
+              <div class="space-y-1">
+                <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-550 uppercase mb-0.5">${label}</label>
+                <input type="text" id="prod-campo-${campo.id}" ${requiredAttr} placeholder="${campo.placeholder || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition duration-155" />
+              </div>
+            `;
+          }
+        });
+
+        condContainer.innerHTML = `<div class="grid grid-cols-1 md:grid-cols-2 gap-3">${fieldsHTML}</div>`;
+
+        // Hook automatic description/provider updates on change
+        tipoConfig.campos_adicionais.forEach((campo: any) => {
+          const inputEl = document.getElementById(`prod-campo-${campo.id}`);
+          if (inputEl) {
+            inputEl.addEventListener('change', (ev: any) => {
+              const val = ev.target.value;
+              if (campo.alvo === 'fornecedor' && val && val !== 'Outra' && val !== 'Outro') {
+                prodFornecedorInput.value = val;
+              }
+            });
+          }
+        });
+      } else {
+        condContainer.classList.add('hidden');
+        condContainer.innerHTML = '';
+      }
+    });
+
     // Inicializa a validação do formulário de novos produtos
     setupFormValidation('form-novo-produto', [
       { id: 'prod-venda', type: 'currency' },
@@ -1890,8 +1998,34 @@ export class Dashboard {
       e.preventDefault();
 
       const tipo = (document.getElementById('prod-tipo') as HTMLSelectElement).value;
-      const fornecedor = (document.getElementById('prod-fornecedor') as HTMLInputElement).value.trim() || 'Não informado';
-      const descricao = (document.getElementById('prod-descricao') as HTMLInputElement).value.trim() || 'Sem descrição';
+      let fornecedor = (document.getElementById('prod-fornecedor') as HTMLInputElement).value.trim() || 'Não informado';
+      let descricao = (document.getElementById('prod-descricao') as HTMLInputElement).value.trim() || 'Sem descrição';
+
+      // Coleta e validação de campos dinâmicos adicionais
+      const tipoConfig = this.tiposProduto.find(t => t.nome === tipo);
+      const dadosAdicionais: Record<string, any> = {};
+
+      if (tipoConfig && Array.isArray(tipoConfig.campos_adicionais)) {
+        for (const campo of tipoConfig.campos_adicionais) {
+          const el = document.getElementById(`prod-campo-${campo.id}`) as HTMLInputElement | HTMLSelectElement | null;
+          if (el) {
+            const val = el.value.trim();
+            if (campo.obrigatorio && !val) {
+              this.showToast(`O campo "${campo.label}" é obrigatório.`, 'error');
+              return;
+            }
+            dadosAdicionais[campo.id] = val;
+
+            // Regra de negócios: automatizar fornecedor ou descrição dependendo do alvo do campo
+            if (campo.alvo === 'fornecedor' && val && val !== 'Outra' && val !== 'Outro') {
+              fornecedor = val;
+            } else if (campo.alvo === 'descricao' && val) {
+              descricao = `[${val}] ${descricao}`;
+            }
+          }
+        }
+      }
+
       const reserva = (document.getElementById('prod-reserva') as HTMLInputElement).value.trim();
       const vendaRaw = (document.getElementById('prod-venda') as HTMLInputElement).value.trim();
       const dataServicoRaw = (document.getElementById('prod-data') as HTMLInputElement).value.trim();
@@ -1958,7 +2092,8 @@ export class Dashboard {
         valor_venda: venda,
         status,
         data_servico: dataServico,
-        datas_adicionais: datasAdicionais
+        datas_adicionais: datasAdicionais,
+        dados_adicionais: dadosAdicionais
       };
 
       try {
@@ -2162,13 +2297,7 @@ export class Dashboard {
       const subProdutos = grupo.produtos;
 
       const innerCardsHTML = subProdutos.map(p => {
-        const iconesMap: { [key: string]: string } = {
-          voo: '✈️',
-          hotel: '🏨',
-          seguro: '🛡️',
-          passeio: '🎟️',
-          outro: '📦'
-        };
+        const tipoIcon = this.getIconForType(p.tipo);
 
         const commentsCount = commentsCountMap[p.id] || 0;
         const tarifa = Number(p.tarifa) || 0;
@@ -2180,7 +2309,7 @@ export class Dashboard {
         return `
           <div class="product-card-clickable flex items-center justify-between gap-3 p-3 bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-850 rounded-xl hover:bg-slate-100/50 dark:hover:bg-slate-800/80 transition cursor-pointer" data-product-id="${p.id}">
             <div class="flex items-start gap-2.5 overflow-hidden w-full">
-              <span class="text-lg p-1 bg-white dark:bg-slate-700 border border-slate-100 dark:border-slate-650 rounded-lg shadow-sm flex items-center justify-center">${iconesMap[p.tipo] || '📦'}</span>
+              <span class="text-lg p-1 bg-white dark:bg-slate-700 border border-slate-100 dark:border-slate-650 rounded-lg shadow-sm flex items-center justify-center">${tipoIcon}</span>
               <div class="overflow-hidden flex-1">
                 <span class="block text-xs font-black text-slate-700 dark:text-slate-200 truncate leading-tight">${p.fornecedor} &bull; ${p.descricao}</span>
                 <span class="block text-[10px] text-slate-400 dark:text-slate-555 font-bold leading-normal">
@@ -2394,15 +2523,7 @@ export class Dashboard {
     const modalContent = document.getElementById('modal-content-container');
     if (!modalContent) return;
 
-    const iconesMap: { [key: string]: string } = {
-      voo: '✈️',
-      hotel: '🏨',
-      seguro: '🛡️',
-      passeio: '🎟️',
-      outro: '📦'
-    };
-
-    const tipoIcon = iconesMap[p.tipo] || '📦';
+    const tipoIcon = this.getIconForType(p.tipo);
     const valorVenda = Number(p.valor_venda) || 0;
 
     modalContent.innerHTML = `

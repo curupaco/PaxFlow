@@ -1824,7 +1824,7 @@ export class OrcamentosPage {
         const isNovaViagem = radioNova ? radioNova.checked : true;
 
         // Default values for product since Section 3 (Sacola) was removed
-        const prodTipo = 'outro';
+        const prodTipo = 'Diversos';
         const prodFornecedor = 'PaxFlow';
         const prodDescricao = `Serviço do orçamento para ${orc.destino}`;
 

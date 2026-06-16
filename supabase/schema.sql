@@ -153,12 +153,25 @@ CREATE TABLE IF NOT EXISTS public.viagens (
 );
 
 -- ============================================================================
+-- 4.5 TABELA: tipos_produto (Tipos de produtos configurados dinamicamente)
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS public.tipos_produto (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    nome VARCHAR(100) UNIQUE NOT NULL,
+    icone VARCHAR(10) DEFAULT '📦' NOT NULL,
+    campos_adicionais JSONB DEFAULT '[]'::jsonb NOT NULL,
+    ativo BOOLEAN DEFAULT true NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+-- ============================================================================
 -- 5. TABELA: produtos_viagem (Itens específicos de cada viagem)
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS public.produtos_viagem (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     viagem_id UUID REFERENCES public.viagens(id) ON DELETE CASCADE NOT NULL,
-    tipo VARCHAR(20) CHECK (tipo IN ('voo', 'hotel', 'seguro', 'passeio', 'outro')) NOT NULL,
+    tipo VARCHAR(100) NOT NULL,
     fornecedor TEXT NOT NULL,
     descricao TEXT NOT NULL,
     codigo_reserva TEXT,
@@ -166,6 +179,7 @@ CREATE TABLE IF NOT EXISTS public.produtos_viagem (
     valor_venda NUMERIC DEFAULT 0.00 NOT NULL,
     status VARCHAR(20) CHECK (status IN ('reservado', 'emitido', 'cancelado', 'reembolsado')) DEFAULT 'reservado' NOT NULL,
     data_servico DATE NOT NULL,
+    dados_adicionais JSONB DEFAULT '{}'::jsonb NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
