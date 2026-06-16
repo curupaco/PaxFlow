@@ -493,8 +493,6 @@ export class ComercialDashboard {
               </div>
             ` : ''}
           </div>
-        </header>iv>
-          </div>
         </header>
 
         <!-- Corpo Principal de Conteúdo Analítico -->
