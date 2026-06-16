@@ -75,6 +75,10 @@ export class CadastrosPage {
    * Renderiza a página
    */
   private render(): void {
+    const tipoEmEdicao = this.editandoTipoId 
+      ? this.tiposProduto.find(t => t.id === this.editandoTipoId) 
+      : null;
+
     this.container.innerHTML = `
       <div class="min-h-screen bg-slate-50/50 dark:bg-slate-950 flex flex-col font-sans transition-colors duration-200">
         
@@ -163,17 +167,17 @@ export class CadastrosPage {
                 <form id="form-cadastro-tipo" class="space-y-4">
                   <div>
                     <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-550 uppercase tracking-wider mb-1">Nome do Tipo *</label>
-                    <input id="input-tipo-nome" type="text" required placeholder="ex: Circuito, Chip de Viagem" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition" />
+                    <input id="input-tipo-nome" type="text" required value="${tipoEmEdicao ? tipoEmEdicao.nome : ''}" ${tipoEmEdicao?.nome === 'MUDAR!' ? 'disabled' : ''} placeholder="ex: Circuito, Chip de Viagem" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition" />
                   </div>
 
                   <div class="grid grid-cols-2 gap-4">
                     <div>
                       <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-550 uppercase tracking-wider mb-1">Ícone / Emoji *</label>
-                      <input id="input-tipo-icone" type="text" required placeholder="ex: ✈️, 🚢" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs text-center transition" />
+                      <input id="input-tipo-icone" type="text" required value="${tipoEmEdicao ? tipoEmEdicao.icone : ''}" placeholder="ex: ✈️, 🚢" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs text-center transition" />
                     </div>
                     <div class="flex items-center pt-5">
                       <label class="inline-flex items-center cursor-pointer select-none">
-                        <input id="check-tipo-ativo" type="checkbox" checked class="sr-only peer" />
+                        <input id="check-tipo-ativo" type="checkbox" ${tipoEmEdicao ? (tipoEmEdicao.ativo ? 'checked' : '') : 'checked'} class="sr-only peer" />
                         <div class="w-9 h-5 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500 relative"></div>
                         <span class="ml-2 text-xs font-bold text-slate-500 dark:text-slate-400">Ativo</span>
                       </label>
@@ -404,7 +408,7 @@ export class CadastrosPage {
       });
     });
 
-    const btnToggle = this.container.querySelectorAll('.btn-toggle-status-tipo');
+    const btnToggle = this.container.querySelectorAll('.btn-toggle-ativo-tipo');
     btnToggle.forEach(btn => {
       btn.addEventListener('click', async () => {
         const id = btn.getAttribute('data-id');
@@ -421,24 +425,6 @@ export class CadastrosPage {
    */
   private prepararEdicao(tipo: TipoProduto): void {
     this.editandoTipoId = tipo.id;
-
-    // Atualiza elementos do DOM
-    const titulo = document.getElementById('form-titulo');
-    if (titulo) titulo.textContent = '✏️ Editar Tipo';
-
-    const inputNome = document.getElementById('input-tipo-nome') as HTMLInputElement;
-    if (inputNome) inputNome.value = tipo.nome;
-
-    // Bloqueia o nome do tipo "MUDAR!" por questões de segurança de dados
-    if (tipo.nome === 'MUDAR!' && inputNome) {
-      inputNome.disabled = true;
-    }
-
-    const inputIcone = document.getElementById('input-tipo-icone') as HTMLInputElement;
-    if (inputIcone) inputIcone.value = tipo.icone;
-
-    const checkAtivo = document.getElementById('check-tipo-ativo') as HTMLInputElement;
-    if (checkAtivo) checkAtivo.checked = tipo.ativo;
 
     // Copia os campos adicionais para edição
     this.camposAdicionaisEmEdicao = JSON.parse(JSON.stringify(tipo.campos_adicionais || []));
