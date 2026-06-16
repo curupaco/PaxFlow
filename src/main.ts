@@ -236,11 +236,11 @@ class App {
           </div>
 
           <!-- Links de Navegação -->
-          <nav class="flex-1 ${this.sidebarCollapsed ? 'px-2 py-4' : 'p-4'} space-y-2 flex flex-col justify-between">
-            <div class="space-y-1.5">
+          <nav class="flex-1 ${this.sidebarCollapsed ? 'px-2 py-3' : 'py-3 px-4'} space-y-1 flex flex-col justify-between overflow-y-auto custom-scrollbar">
+            <div class="space-y-1">
 
               <!-- Link: Dashboard Comercial -->
-              <button id="nav-analytics" class="w-full px-4 py-3 rounded-xl flex items-center justify-center ${this.sidebarCollapsed ? '' : 'md:justify-start'} gap-3 font-semibold text-xs text-left transition select-none group">
+              <button id="nav-analytics" class="w-full px-4 py-2 rounded-xl flex items-center justify-center ${this.sidebarCollapsed ? '' : 'md:justify-start'} gap-3 font-semibold text-xs text-left transition select-none group">
                 <svg width="20" height="20" class="w-5 h-5 text-slate-400 group-hover:text-slate-600 dark:text-slate-500 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2" />
                 </svg>
@@ -248,7 +248,7 @@ class App {
               </button>
               
               <!-- Link: Inbox de Alertas -->
-              <button id="nav-inbox" class="w-full px-4 py-3 rounded-xl flex items-center justify-center ${this.sidebarCollapsed ? '' : 'md:justify-start'} gap-3 font-semibold text-xs text-left transition select-none group relative">
+              <button id="nav-inbox" class="w-full px-4 py-2 rounded-xl flex items-center justify-center ${this.sidebarCollapsed ? '' : 'md:justify-start'} gap-3 font-semibold text-xs text-left transition select-none group relative">
                 <svg width="20" height="20" class="w-5 h-5 text-slate-400 group-hover:text-slate-600 dark:text-slate-555 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                   <rect width="20" height="16" x="2" y="4" rx="2" />
                   <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
@@ -258,7 +258,7 @@ class App {
               </button>
 
               <!-- Link: Kanban de Orçamentos -->
-              <button id="nav-orcamentos" class="w-full px-4 py-3 rounded-xl flex items-center justify-center ${this.sidebarCollapsed ? '' : 'md:justify-start'} gap-3 font-semibold text-xs text-left transition select-none group">
+              <button id="nav-orcamentos" class="w-full px-4 py-2 rounded-xl flex items-center justify-center ${this.sidebarCollapsed ? '' : 'md:justify-start'} gap-3 font-semibold text-xs text-left transition select-none group">
                 <svg width="20" height="20" class="w-5 h-5 text-slate-400 group-hover:text-slate-600 dark:text-slate-500 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                 </svg>
@@ -266,7 +266,7 @@ class App {
               </button>
 
               <!-- Link: Dashboard Kanban -->
-              <button id="nav-dashboard" class="w-full px-4 py-3 rounded-xl flex items-center justify-center ${this.sidebarCollapsed ? '' : 'md:justify-start'} gap-3 font-semibold text-xs text-left transition select-none group">
+              <button id="nav-dashboard" class="w-full px-4 py-2 rounded-xl flex items-center justify-center ${this.sidebarCollapsed ? '' : 'md:justify-start'} gap-3 font-semibold text-xs text-left transition select-none group">
                 <svg width="20" height="20" class="w-5 h-5 text-slate-400 group-hover:text-slate-600 dark:text-slate-500 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                 </svg>
@@ -274,7 +274,7 @@ class App {
               </button>
 
               <!-- Link: Clientes -->
-              <button id="nav-clientes" class="w-full px-4 py-3 rounded-xl flex items-center justify-center ${this.sidebarCollapsed ? '' : 'md:justify-start'} gap-3 font-semibold text-xs text-left transition select-none group">
+              <button id="nav-clientes" class="w-full px-4 py-2 rounded-xl flex items-center justify-center ${this.sidebarCollapsed ? '' : 'md:justify-start'} gap-3 font-semibold text-xs text-left transition select-none group">
                 <svg width="20" height="20" class="w-5 h-5 text-slate-400 group-hover:text-slate-600 dark:text-slate-500 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
@@ -282,7 +282,7 @@ class App {
               </button>
 
               <!-- Link: Reembolsos -->
-              <button id="nav-reembolsos" class="w-full px-4 py-3 rounded-xl flex items-center justify-center ${this.sidebarCollapsed ? '' : 'md:justify-start'} gap-3 font-semibold text-xs text-left transition select-none group">
+              <button id="nav-reembolsos" class="w-full px-4 py-2 rounded-xl flex items-center justify-center ${this.sidebarCollapsed ? '' : 'md:justify-start'} gap-3 font-semibold text-xs text-left transition select-none group">
                 <svg width="20" height="20" class="w-5 h-5 text-slate-400 group-hover:text-slate-650 dark:text-slate-500 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
@@ -291,7 +291,7 @@ class App {
 
               <!-- Link: Cadastros (Somente ADMIN) -->
               ${this.perfil?.role === 'admin' ? `
-                <button id="nav-cadastros" class="w-full px-4 py-3 rounded-xl flex items-center justify-center ${this.sidebarCollapsed ? '' : 'md:justify-start'} gap-3 font-semibold text-xs text-left transition select-none group">
+                <button id="nav-cadastros" class="w-full px-4 py-2 rounded-xl flex items-center justify-center ${this.sidebarCollapsed ? '' : 'md:justify-start'} gap-3 font-semibold text-xs text-left transition select-none group">
                   <svg width="20" height="20" class="w-5 h-5 text-slate-400 group-hover:text-slate-655 dark:text-slate-500 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                   </svg>
@@ -301,7 +301,7 @@ class App {
 
               <!-- Link: Configurações (Somente ADMIN) -->
               ${this.perfil?.role === 'admin' ? `
-                <button id="nav-configuracoes" class="w-full px-4 py-3 rounded-xl flex items-center justify-center ${this.sidebarCollapsed ? '' : 'md:justify-start'} gap-3 font-semibold text-xs text-left transition select-none group">
+                <button id="nav-configuracoes" class="w-full px-4 py-2 rounded-xl flex items-center justify-center ${this.sidebarCollapsed ? '' : 'md:justify-start'} gap-3 font-semibold text-xs text-left transition select-none group">
                   <svg width="20" height="20" class="w-5 h-5 text-slate-400 group-hover:text-slate-655 dark:text-slate-500 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                     <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -387,14 +387,14 @@ class App {
 
     if (footerContainer) {
       footerContainer.innerHTML = `
-        <div class="flex flex-col gap-2.5 border-t border-slate-100 dark:border-slate-800 pt-4 w-full">
-          <button id="sidebar-profile-trigger" class="w-full flex items-center justify-center ${this.sidebarCollapsed ? '' : 'md:justify-start md:px-2'} gap-3 hover:bg-slate-100 dark:hover:bg-slate-800/40 p-1.5 rounded-xl transition duration-200 focus:outline-none">
-            <div class="relative shrink-0 flex items-center justify-center w-11 h-11">
-              <svg class="absolute inset-0 w-11 h-11 transform -rotate-90 select-none pointer-events-none" viewBox="0 0 36 36">
+        <div class="flex flex-col gap-2 border-t border-slate-100 dark:border-slate-800 pt-3 w-full">
+          <button id="sidebar-profile-trigger" class="w-full flex items-center justify-center ${this.sidebarCollapsed ? '' : 'md:justify-start md:px-2'} gap-3 hover:bg-slate-100 dark:hover:bg-slate-800/40 p-1 rounded-xl transition duration-200 focus:outline-none">
+            <div class="relative shrink-0 flex items-center justify-center w-10 h-10">
+              <svg class="absolute inset-0 w-10 h-10 transform -rotate-90 select-none pointer-events-none" viewBox="0 0 36 36">
                 <path class="text-slate-200 dark:text-slate-800" stroke-width="2.5" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
                 <path class="text-indigo-600 dark:text-indigo-500 transition-all duration-500 ease-out" stroke-dasharray="${progress.percent}, 100" stroke-width="2.5" stroke-linecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
               </svg>
-              ${getAvatarSvg(this.perfil.avatar_url, this.perfil.nome || 'Consultor', 'w-8 h-8 relative z-10')}
+              ${getAvatarSvg(this.perfil.avatar_url, this.perfil.nome || 'Consultor', 'w-7.5 h-7.5 relative z-10')}
               <span class="absolute -bottom-1 -right-1 bg-indigo-600 dark:bg-indigo-500 text-white font-black text-[8px] px-1 py-0.5 rounded-full z-20 shadow-md ring-1 ring-white dark:ring-slate-900 leading-none flex items-center justify-center min-w-[14px] h-[14px]">
                 ${progress.nivel}
               </span>
@@ -406,9 +406,9 @@ class App {
             </div>
           </button>
           
-          <div class="flex items-center justify-around gap-1.5 ${this.sidebarCollapsed ? 'flex-col mt-1 px-0' : 'flex-row px-2'}">
+          <div class="flex items-center justify-around gap-1.5 ${this.sidebarCollapsed ? 'flex-col mt-0.5 px-0' : 'flex-row px-2'}">
             <!-- Theme Toggle -->
-            <button id="theme-toggle-btn" title="Alternar Tema" class="p-2 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/60 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-650 dark:text-slate-500 dark:hover:text-slate-200 rounded-xl transition border border-slate-200/20 dark:border-slate-700/20 flex items-center justify-center w-full">
+            <button id="theme-toggle-btn" title="Alternar Tema" class="p-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/60 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-655 dark:text-slate-500 dark:hover:text-slate-200 rounded-xl transition border border-slate-200/20 dark:border-slate-700/20 flex items-center justify-center w-full">
               <svg width="18" height="18" class="w-4.5 h-4.5 theme-icon-light" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
               </svg>
@@ -417,7 +417,7 @@ class App {
               </svg>
             </button>
             <!-- Logout -->
-            <button id="sidebar-logout-btn" title="Sair do Sistema" class="p-2 bg-slate-50 hover:bg-rose-50 dark:bg-slate-800/60 dark:hover:bg-rose-950/30 text-slate-400 hover:text-rose-500 dark:text-slate-500 dark:hover:text-rose-455 rounded-xl transition border border-slate-200/20 dark:border-slate-700/20 flex items-center justify-center w-full">
+            <button id="sidebar-logout-btn" title="Sair do Sistema" class="p-1.5 bg-slate-50 hover:bg-rose-50 dark:bg-slate-800/60 dark:hover:bg-rose-950/30 text-slate-400 hover:text-rose-500 dark:text-slate-500 dark:hover:text-rose-455 rounded-xl transition border border-slate-200/20 dark:border-slate-700/20 flex items-center justify-center w-full">
               <svg width="18" height="18" class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
               </svg>
@@ -648,9 +648,9 @@ class App {
       if (btn) {
         const alignmentClass = this.sidebarCollapsed ? 'justify-center' : 'md:justify-start';
         if (p === page) {
-          btn.className = `w-full px-4 py-3 rounded-xl flex items-center ${alignmentClass} gap-3 font-extrabold text-xs text-left transition select-none bg-indigo-600 text-white shadow-lg shadow-indigo-600/15 group`;
+          btn.className = `w-full px-4 py-2 rounded-xl flex items-center ${alignmentClass} gap-3 font-extrabold text-xs text-left transition select-none bg-indigo-600 text-white shadow-lg shadow-indigo-600/15 group`;
         } else {
-          btn.className = `w-full px-4 py-3 rounded-xl flex items-center ${alignmentClass} gap-3 font-semibold text-xs text-left transition select-none text-slate-500 hover:text-slate-800 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800/40 group`;
+          btn.className = `w-full px-4 py-2 rounded-xl flex items-center ${alignmentClass} gap-3 font-semibold text-xs text-left transition select-none text-slate-500 hover:text-slate-800 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800/40 group`;
         }
       }
     });

@@ -20,6 +20,8 @@
    - 3.7 [Quadro de Planejamento Interno (Todo Kanban)](#37-quadro-de-planejamento-interno---cockpit)
    - 3.8 [Navegação e UI Shell Premium (Global UI)](#38-navegação-e-ui-shell-premium)
    - 3.9 [Sistema de Gamificação e Perfis (Gamificacao)](#39-sistema-de-gamificação-e-perfis)
+   - 3.10 [Módulo de Cadastros (Cadastros)](#310-módulo-de-cadastros)
+   - 3.11 [Localização de Erros e Tradutor Global (I18n)](#311-localização-de-erros-e-tradutor-global)
 4. [Diferenciais Competitivos](#4-diferenciais-competitivos)
 5. [Arquitetura Tecnológica](#5-arquitetura-tecnológica)
 6. [Segurança e Conformidade](#6-segurança-e-conformidade)
@@ -271,6 +273,21 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
   - Integração direta com o bucket público `avatars` no Supabase Storage. O consultor pode subir sua própria foto a partir do modal de perfil.
   - **Compactação automática Canvas API:** Antes de enviar a imagem, o frontend a redimensiona para um quadrado perfeito de `200x200px` e a comprime para JPEG (qualidade 0.85), transformando arquivos pesados em blobs levíssimos de <50KB para economizar recursos e garantir carregamento instantâneo.
   - **Segurança (RLS):** Política de RLS restrita que permite uploads e escrita somente se a subpasta corresponder ao `UUID` do próprio usuário logado (`auth.uid()`).
+
+### 3.10 Módulo de Cadastros
+
+**Módulo exclusivo para administradores** (`src/pages/Cadastros.ts`) voltado ao cadastro e controle operacional de tipos de produtos e serviços.
+
+- **Definição de Tipos Customizados**: Possibilita criar registros dinâmicos de produtos (ex: "Passagem Aérea", "Cruzeiro", "Seguro Viagem", "Aluguel de Carro") determinando cores de exibição, ícones visuais estilizados e metadados.
+- **Campos Extras Dinâmicos**: Permite associar campos adicionais personalizados (como datas extras de agendamento, campos de texto ou numéricos específicos) a cada tipo de produto, que aparecem automaticamente na tela de detalhes da viagem quando esse produto é adicionado.
+- **Identidade de Cabeçalho Unificada**: O design e as transições do cabeçalho herdam o mesmo padrão premium das páginas operacionais, exibindo badges de identificação e descrições formatadas.
+
+### 3.11 Localização de Erros e Tradutor Global (I18n)
+
+**Sistema global de interceptação e mapeamento de mensagens** (`src/utils/errorTranslator.ts`) para consistência linguística e melhor usabilidade.
+
+- **Tradução Automática de Backend**: Traduz mensagens técnicas e de sistema em inglês provenientes do Supabase (Auth, RLS, banco de dados PostgreSQL, storage ou falhas de rede) para o Português do Brasil.
+- **Centralização via Window**: A função de tradução fica disponível de forma global no objeto `window` e é invocada automaticamente ao exibir Toasts de sucesso/erro e diálogos de alerta da plataforma.
 
 ---
 
