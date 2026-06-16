@@ -39,7 +39,7 @@ export class EmailReaderModal {
             <span class="px-2 py-0.5 rounded text-[8px] font-black text-white uppercase tracking-wider ${badgeClass}">
               ${badgeText}
             </span>
-            <span class="text-xs font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Leitor de Mensagem</span>
+            <span class="text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Leitor de Mensagem</span>
           </div>
 
           <div class="flex items-center gap-1.5">
@@ -81,13 +81,13 @@ export class EmailReaderModal {
               <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
                 <div>
                   <span class="block text-sm font-extrabold text-slate-800 dark:text-slate-250 truncate">${item.sender}</span>
-                  <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-semibold truncate">
+                  <span class="block text-[10px] text-slate-500 dark:text-slate-400 font-semibold truncate">
                     De: &lt;${item.type === 'direct_message' ? (item.sender === 'Você' ? 'voce' : item.sender.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '')) + '@paxflow.com.br' : 'alertas@paxflow.com.br'}&gt;
                   </span>
                 </div>
                 <div class="text-left sm:text-right">
-                  <span class="block text-[10px] font-bold text-slate-400 dark:text-slate-550">${item.dateStr}</span>
-                  <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-semibold">
+                  <span class="block text-[10px] font-bold text-slate-500 dark:text-slate-400">${item.dateStr}</span>
+                  <span class="block text-[10px] text-slate-500 dark:text-slate-400 font-semibold">
                     ${item.type === 'direct_message' && item.recipientsHtml ? item.recipientsHtml : 'Para: Você'}
                   </span>
                 </div>
@@ -104,7 +104,7 @@ export class EmailReaderModal {
               
               <p class="mb-4">${item.body}</p>
 
-              <p class="mt-6 border-t border-slate-100 dark:border-slate-800/80 pt-4 text-xs text-slate-400 dark:text-slate-505">
+              <p class="mt-6 border-t border-slate-100 dark:border-slate-800/80 pt-4 text-xs text-slate-400 dark:text-slate-500">
                 Atenciosamente,<br>
                 <strong>PaxFlow Cockpit Automático</strong><br>
                 Gestão Operacional e Fluxo de Passageiros
@@ -127,7 +127,7 @@ export class EmailReaderModal {
             </button>
           ` : ''}
 
-          <button id="modal-footer-close-btn" class="px-4 py-2 text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-650 dark:text-slate-300 rounded-xl transition border border-slate-200/40 dark:border-slate-700/40">
+          <button id="modal-footer-close-btn" class="px-4 py-2 text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl transition border border-slate-200/40 dark:border-slate-700/40">
             Fechar
           </button>
           

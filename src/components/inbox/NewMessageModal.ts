@@ -86,10 +86,10 @@ export class NewMessageModal {
           
           <!-- PARA FIELD -->
           <div class="space-y-1 relative">
-            <label class="block text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Para</label>
+            <label class="block text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">Para</label>
             <div id="para-tags-container" class="flex flex-wrap items-center gap-2 p-2 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-950/20 focus-within:border-indigo-500 transition min-h-[46px]">
               <!-- tags here -->
-              <input id="para-input" type="text" placeholder="${paraSelected.length === 0 ? 'Selecione destinatários...' : ''}" class="flex-grow bg-transparent border-none focus:ring-0 text-sm font-semibold text-slate-700 dark:text-slate-350 focus:outline-none min-w-[150px]">
+              <input id="para-input" type="text" placeholder="${paraSelected.length === 0 ? 'Selecione destinatários...' : ''}" class="flex-grow bg-transparent border-none focus:ring-0 text-sm font-semibold text-slate-700 dark:text-slate-300 focus:outline-none min-w-[150px]">
             </div>
             <!-- Dropdown -->
             <div id="para-dropdown" class="hidden absolute left-0 right-0 top-full mt-1 max-h-48 overflow-y-auto bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg z-50 py-1"></div>
@@ -97,10 +97,10 @@ export class NewMessageModal {
 
           <!-- CC FIELD -->
           <div class="space-y-1 relative">
-            <label class="block text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Cc (Cópia)</label>
+            <label class="block text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">Cc (Cópia)</label>
             <div id="cc-tags-container" class="flex flex-wrap items-center gap-2 p-2 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-950/20 focus-within:border-indigo-500 transition min-h-[46px]">
               <!-- tags here -->
-              <input id="cc-input" type="text" placeholder="${ccSelected.length === 0 ? 'Selecione cópias (opcional)...' : ''}" class="flex-grow bg-transparent border-none focus:ring-0 text-sm font-semibold text-slate-700 dark:text-slate-350 focus:outline-none min-w-[150px]">
+              <input id="cc-input" type="text" placeholder="${ccSelected.length === 0 ? 'Selecione cópias (opcional)...' : ''}" class="flex-grow bg-transparent border-none focus:ring-0 text-sm font-semibold text-slate-700 dark:text-slate-300 focus:outline-none min-w-[150px]">
             </div>
             <!-- Dropdown -->
             <div id="cc-dropdown" class="hidden absolute left-0 right-0 top-full mt-1 max-h-48 overflow-y-auto bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg z-50 py-1"></div>
@@ -108,13 +108,13 @@ export class NewMessageModal {
 
           <!-- SUBJECT FIELD -->
           <div class="space-y-1">
-            <label class="block text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Assunto</label>
+            <label class="block text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">Assunto</label>
             <input id="msg-subject-input" type="text" value="${subjectVal}" placeholder="Digite o assunto..." class="w-full px-4 py-2.5 text-sm font-semibold border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-950/20 focus:border-indigo-500 focus:outline-none text-slate-700 dark:text-slate-200">
           </div>
 
           <!-- BODY FIELD -->
           <div class="space-y-1">
-            <label class="block text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Mensagem</label>
+            <label class="block text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">Mensagem</label>
             <textarea id="msg-body-input" rows="8" placeholder="Digite o conteúdo da mensagem..." class="w-full px-4 py-3 text-sm font-semibold border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-950/20 focus:border-indigo-500 focus:outline-none text-slate-700 dark:text-slate-200 resize-none custom-scrollbar"></textarea>
           </div>
 
@@ -122,11 +122,11 @@ export class NewMessageModal {
 
         <!-- Modal Footer -->
         <div class="px-5 py-4 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-end gap-3 bg-slate-50/40 dark:bg-slate-900/40">
-          <button id="msg-cancel-btn" class="px-4 py-2 text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-650 dark:text-slate-300 rounded-xl transition border border-slate-200/40 dark:border-slate-700/40">
+          <button id="msg-cancel-btn" class="px-4 py-2 text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl transition border border-slate-200/40 dark:border-slate-700/40">
             Cancelar
           </button>
           
-          <button id="msg-send-btn" class="px-5 py-2 text-xs font-extrabold bg-indigo-650 hover:bg-indigo-750 text-white rounded-xl transition shadow-md shadow-indigo-650/10 flex items-center gap-1.5">
+          <button id="msg-send-btn" class="px-5 py-2 text-xs font-extrabold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition shadow-md shadow-indigo-600/10 flex items-center gap-1.5">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
             </svg>

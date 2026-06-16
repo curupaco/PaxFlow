@@ -1294,7 +1294,7 @@ export class Dashboard {
             return `
               <div class="p-4 bg-slate-50/50 dark:bg-slate-800/20 rounded-xl border border-slate-200/60 dark:border-slate-800/80 space-y-2">
                 <div class="flex items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-2">
-                  <span class="text-xs font-black text-indigo-650 dark:text-indigo-400">Solicitação de Reembolso</span>
+                  <span class="text-xs font-black text-indigo-600 dark:text-indigo-400">Solicitação de Reembolso</span>
                   <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${statusBadgeClass}">
                     ${statusLabel}
                   </span>
@@ -2385,7 +2385,7 @@ export class Dashboard {
               <div class="text-right">
                 <span class="block text-xs font-black text-indigo-600 dark:text-indigo-400">R$ ${Number(p.valor_venda || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
               </div>
-              <button data-comments-prod-id="${p.id}" data-comments-prod-name="${p.fornecedor} - ${p.descricao}" class="p-1.5 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-slate-300 dark:text-slate-550 hover:text-indigo-650 dark:hover:text-indigo-400 rounded-md transition text-xs font-bold flex items-center gap-1" title="Notas e Comentários">
+              <button data-comments-prod-id="${p.id}" data-comments-prod-name="${p.fornecedor} - ${p.descricao}" class="p-1.5 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-slate-300 dark:text-slate-555 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-md transition text-xs font-bold flex items-center gap-1" title="Notas e Comentários">
                 💬 <span class="text-[10px]">${commentsCount}</span>
               </button>
               <button data-delete-prod-id="${p.id}" class="p-1.5 hover:bg-rose-50 dark:hover:bg-rose-950/20 text-slate-300 dark:text-slate-550 hover:text-rose-600 dark:hover:text-rose-455 rounded-md transition text-xs font-bold" title="Remover Produto">

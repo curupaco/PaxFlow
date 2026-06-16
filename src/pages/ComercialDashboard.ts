@@ -815,7 +815,7 @@ export class ComercialDashboard {
             <span class="font-extrabold text-slate-700 dark:text-slate-300">${t1_leads} orçamentos &bull; R$ ${formatBRL(valorTotalFunnel)}</span>
           </div>
           <div class="w-full bg-slate-100 dark:bg-slate-850 h-7 rounded-xl overflow-hidden relative">
-            <div class="bg-gradient-to-r from-indigo-500 to-indigo-650 h-full rounded-xl funnel-bar-fill transition-all duration-300" style="width: ${width1}%"></div>
+            <div class="bg-gradient-to-r from-indigo-500 to-indigo-600 h-full rounded-xl funnel-bar-fill transition-all duration-300" style="width: ${width1}%"></div>
             <span class="absolute inset-0 flex items-center pl-3.5 text-[10px] font-black text-white select-none">100% dos Leads</span>
           </div>
         </div>
@@ -1004,7 +1004,7 @@ export class ComercialDashboard {
                   <td class="py-3.5 text-right text-slate-700 dark:text-slate-300">
                     R$ ${r.valProposto.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </td>
-                  <td class="py-3.5 text-right font-black text-indigo-650 dark:text-indigo-400">
+                  <td class="py-3.5 text-right font-black text-indigo-600 dark:text-indigo-400">
                     R$ ${r.valVendido.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </td>
                   <td class="py-3.5 text-right font-black text-rose-650 dark:text-rose-455">

@@ -98,7 +98,7 @@ export class VerNotasModal {
                 <span class="block">Passageiro: <strong class="text-slate-800 dark:text-slate-100">${orc.nomeCliente}</strong></span>
                 <span class="block">Destino: <strong class="text-slate-800 dark:text-slate-100">${orc.destino}</strong></span>
                 <span class="block">Data da Viagem: <strong class="text-slate-800 dark:text-slate-100">${options.formatarDataBr(orc.dataViagem)}</strong></span>
-                ${orc.valorProposta !== undefined && orc.valorProposta !== null ? `<span class="block">Valor da Proposta: <strong class="text-indigo-650 dark:text-indigo-400">R$ ${Number(orc.valorProposta).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong></span>` : ''}
+                ${orc.valorProposta !== undefined && orc.valorProposta !== null ? `<span class="block">Valor da Proposta: <strong class="text-indigo-600 dark:text-indigo-400">R$ ${Number(orc.valorProposta).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong></span>` : ''}
                 ${orc.status === 'CONCLUIDO' && orc.subStatus === 'ACEITO' && orc.valorViagem !== undefined && orc.valorViagem !== null ? `<span class="block">Valor da Viagem: <strong class="text-emerald-600 dark:text-emerald-450">R$ ${Number(orc.valorViagem).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong></span>` : ''}
               </div>
             </div>
@@ -176,7 +176,7 @@ export class VerNotasModal {
                   </a>
                 ` : ''}
                 ${email ? `
-                  <a href="${mailLink}" target="_blank" class="w-full px-3 py-2 bg-indigo-50/50 hover:bg-indigo-100 dark:bg-indigo-950/20 dark:hover:bg-indigo-900/30 text-indigo-650 dark:text-indigo-455 rounded-xl border border-indigo-100/30 dark:border-indigo-900/30 text-xs font-bold transition flex items-center gap-2 select-none">
+                  <a href="${mailLink}" target="_blank" class="w-full px-3 py-2 bg-indigo-50/50 hover:bg-indigo-100 dark:bg-indigo-950/20 dark:hover:bg-indigo-900/30 text-indigo-600 dark:text-indigo-455 rounded-xl border border-indigo-100/30 dark:border-indigo-900/30 text-xs font-bold transition flex items-center gap-2 select-none">
                     <span class="text-sm">✉️</span> <span class="truncate">${email}</span>
                   </a>
                 ` : ''}

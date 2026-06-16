@@ -82,7 +82,7 @@ export class MeuPerfilModal {
           <div class="bg-indigo-50/30 dark:bg-indigo-950/10 border border-indigo-100/50 dark:border-indigo-900/20 rounded-2xl p-4 space-y-2.5">
             <div class="flex justify-between items-center text-xs">
               <span class="font-extrabold text-slate-700 dark:text-slate-350 flex items-center gap-1.5">${progress.patenteEmoji} Patente: ${progress.patente}</span>
-              <span class="font-black text-indigo-650 dark:text-indigo-400">${progress.xpAtual} / ${progress.xpProximoNivel} XP</span>
+              <span class="font-black text-indigo-600 dark:text-indigo-400">${progress.xpAtual} / ${progress.xpProximoNivel} XP</span>
             </div>
             <div class="w-full bg-slate-200 dark:bg-slate-850 h-2.5 rounded-full overflow-hidden">
               <div class="bg-gradient-to-r from-indigo-500 to-purple-600 h-full rounded-full transition-all duration-500" style="width: ${progress.percent}%"></div>
@@ -121,7 +121,7 @@ export class MeuPerfilModal {
           </div>
 
           <div class="border-t border-slate-100 dark:border-slate-800 pt-4">
-            <h3 class="text-xs font-black text-indigo-650 dark:text-indigo-400 uppercase tracking-wider mb-2.5">Alterar Minha Senha</h3>
+            <h3 class="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-2.5">Alterar Minha Senha</h3>
             
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <div>

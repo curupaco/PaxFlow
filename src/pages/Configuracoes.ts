@@ -296,7 +296,7 @@ export class ConfiguracoesPage {
         
         btn.disabled = true;
         const originalText = btn.innerHTML;
-        btn.innerHTML = `<span class="w-4 h-4 border-2 border-indigo-650 border-t-transparent rounded-full animate-spin inline-block align-middle mr-1.5 font-black"></span> Testando...`;
+        btn.innerHTML = `<span class="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin inline-block align-middle mr-1.5 font-black"></span> Testando...`;
         
         try {
           const { data, error } = await supabase.storage.from('documentos-clientes').list('', { limit: 1 });
@@ -562,7 +562,7 @@ export class ConfiguracoesPage {
         return `
           <button type="button" data-avatar-id="${opt.id}" class="btn-edit-select-avatar w-12 h-12 p-0.5 rounded-xl border-2 transition duration-200 transform hover:scale-110 relative flex items-center justify-center ${
             isSelected 
-              ? 'border-indigo-650 bg-indigo-50/20 dark:bg-indigo-950/20 shadow-md ring-2 ring-indigo-500/20' 
+              ? 'border-indigo-600 bg-indigo-50/20 dark:bg-indigo-950/20 shadow-md ring-2 ring-indigo-500/20' 
               : 'border-transparent hover:border-slate-350 dark:hover:border-slate-750'
           }" title="${opt.nome}">
             ${opt.svg}
@@ -623,7 +623,7 @@ export class ConfiguracoesPage {
           </div>
 
           <div class="border-t border-slate-100 dark:border-slate-800 pt-4">
-            <h3 class="text-xs font-black text-indigo-650 dark:text-indigo-400 uppercase tracking-wider mb-1.5">Alterar Senha do Consultor</h3>
+            <h3 class="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-1.5">Alterar Senha do Consultor</h3>
             <p class="text-[10px] text-slate-400 dark:text-slate-500 mb-2 font-semibold italic">Nota de desenvolvimento: você pode alterar diretamente a senha do usuário preenchendo o campo abaixo.</p>
             <div>
               <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">Definir Nova Senha (Mínimo 6 dígitos)</label>
@@ -1228,7 +1228,7 @@ export class ConfiguracoesPage {
             <!-- Coluna Direita: Supabase Storage -->
             <div class="md:col-span-4 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm flex flex-col gap-5">
               <h2 class="text-sm font-black text-slate-800 dark:text-slate-200 tracking-tight border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2">
-                <svg class="w-5 h-5 text-indigo-650 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                <svg class="w-5 h-5 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
                 </svg>
                 Armazenamento de Arquivos
@@ -1587,12 +1587,12 @@ export class ConfiguracoesPage {
                           ${valorPropostaVal !== null ? `
                             <div class="flex justify-between">
                               <span>Valor Proposta:</span>
-                              <span class="font-black text-indigo-650 dark:text-indigo-400">R$ ${valorPropostaVal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                              <span class="font-black text-indigo-600 dark:text-indigo-400">R$ ${valorPropostaVal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                             </div>
                           ` : ''}
                           <div class="flex justify-between mt-1 pt-1 border-t border-slate-100 dark:border-slate-800/50">
                             <span>Consultor:</span>
-                            <span class="font-black text-indigo-650 dark:text-indigo-400">👤 ${consultantMatch?.nome.split(' ')[0] || 'Consultor'}</span>
+                            <span class="font-black text-indigo-600 dark:text-indigo-400">👤 ${consultantMatch?.nome.split(' ')[0] || 'Consultor'}</span>
                           </div>
                         </div>
 

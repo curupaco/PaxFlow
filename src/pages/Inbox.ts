@@ -288,7 +288,7 @@ export class InboxPage {
         <!-- Header Section -->
         <header class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 sticky top-0 z-30 px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 transition-colors duration-200">
           <div class="flex items-center gap-3.5">
-            <div class="p-2.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-650 dark:text-indigo-400 rounded-xl md:hidden">
+            <div class="p-2.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-xl md:hidden">
               <svg class="w-6 h-6 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                 <rect width="20" height="16" x="2" y="4" rx="2" />
                 <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
@@ -372,7 +372,7 @@ export class InboxPage {
             <div class="lg:col-span-1 space-y-4">
 
               <!-- Action compose button -->
-              <button id="btn-nova-mensagem" class="w-full py-3 px-4 bg-indigo-650 hover:bg-indigo-750 text-white text-xs font-black rounded-xl transition shadow-md shadow-indigo-650/10 flex items-center justify-center gap-2 mb-2 select-none">
+              <button id="btn-nova-mensagem" class="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black rounded-xl transition shadow-md shadow-indigo-600/10 flex items-center justify-center gap-2 mb-2 select-none">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
                 </svg>
@@ -467,11 +467,11 @@ export class InboxPage {
 
                 <!-- View Switcher Toggle Button Group -->
                 <div class="flex bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200/40 dark:border-slate-800/40 flex-shrink-0">
-                  <button id="view-list-btn" class="px-3.5 py-1.5 rounded-lg text-xs font-extrabold flex items-center gap-1.5 transition ${this.currentView === 'list' ? 'bg-white dark:bg-slate-800 text-indigo-650 dark:text-indigo-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-450 dark:hover:text-slate-200'}" title="Visualização em Lista">
+                  <button id="view-list-btn" class="px-3.5 py-1.5 rounded-lg text-xs font-extrabold flex items-center gap-1.5 transition ${this.currentView === 'list' ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-450 dark:hover:text-slate-200'}" title="Visualização em Lista">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
                     Lista
                   </button>
-                  <button id="view-calendar-btn" class="px-3.5 py-1.5 rounded-lg text-xs font-extrabold flex items-center gap-1.5 transition ${this.currentView === 'calendar' ? 'bg-white dark:bg-slate-800 text-indigo-650 dark:text-indigo-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-450 dark:hover:text-slate-200'}" title="Visualização em Calendário">
+                  <button id="view-calendar-btn" class="px-3.5 py-1.5 rounded-lg text-xs font-extrabold flex items-center gap-1.5 transition ${this.currentView === 'calendar' ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-450 dark:hover:text-slate-200'}" title="Visualização em Calendário">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
                     Calendário
                   </button>
@@ -502,7 +502,7 @@ export class InboxPage {
                       badgeClass = 'badge-gradient-rose';
                       badgeText = 'Reembolso SLA';
                     } else if (a.type === 'mention') {
-                      badgeClass = 'bg-gradient-to-tr from-purple-500 to-indigo-650 dark:from-purple-600 dark:to-indigo-500';
+                      badgeClass = 'bg-gradient-to-tr from-purple-500 to-indigo-600 dark:from-purple-600 dark:to-indigo-500';
                       badgeText = 'Menção @';
                     }
 
@@ -512,7 +512,7 @@ export class InboxPage {
                       <div class="inbox-card inbox-glass p-5 rounded-2xl border ${isUnread ? 'border-indigo-200 dark:border-indigo-900/60 bg-indigo-50/5 dark:bg-indigo-950/5' : 'border-white/60 dark:border-slate-900/60'} shadow-sm flex items-start gap-4 cursor-pointer relative" data-alert-id="${a.id}">
                         
                         <!-- Unread Indicator Dot -->
-                        ${isUnread ? `<span class="absolute top-5 left-2 w-2 h-2 rounded-full bg-indigo-650 dark:bg-indigo-400 animate-pulse"></span>` : ''}
+                        ${isUnread ? `<span class="absolute top-5 left-2 w-2 h-2 rounded-full bg-indigo-600 dark:bg-indigo-400 animate-pulse"></span>` : ''}
 
                         <!-- Avatar -->
                         <div class="w-10 h-10 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden flex items-center justify-center bg-white dark:bg-slate-900 flex-shrink-0 ${isUnread ? 'ring-2 ring-indigo-500/20' : ''}">
@@ -589,13 +589,13 @@ export class InboxPage {
           
           <!-- Mode Tabs -->
           <div class="flex bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200/40 dark:border-slate-800/40 w-full sm:w-auto">
-            <button id="cal-mode-month" class="flex-grow sm:flex-grow-0 px-4 py-1.5 rounded-lg text-xs font-extrabold transition ${this.calendarMode === 'month' ? 'bg-white dark:bg-slate-800 text-indigo-650 dark:text-indigo-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-450 dark:hover:text-slate-200'}">
+            <button id="cal-mode-month" class="flex-grow sm:flex-grow-0 px-4 py-1.5 rounded-lg text-xs font-extrabold transition ${this.calendarMode === 'month' ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-450 dark:hover:text-slate-200'}">
               Mês
             </button>
-            <button id="cal-mode-week" class="flex-grow sm:flex-grow-0 px-4 py-1.5 rounded-lg text-xs font-extrabold transition ${this.calendarMode === 'week' ? 'bg-white dark:bg-slate-800 text-indigo-650 dark:text-indigo-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-450 dark:hover:text-slate-200'}">
+            <button id="cal-mode-week" class="flex-grow sm:flex-grow-0 px-4 py-1.5 rounded-lg text-xs font-extrabold transition ${this.calendarMode === 'week' ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-450 dark:hover:text-slate-200'}">
               Semana
             </button>
-            <button id="cal-mode-agenda" class="flex-grow sm:flex-grow-0 px-4 py-1.5 rounded-lg text-xs font-extrabold transition ${this.calendarMode === 'agenda' ? 'bg-white dark:bg-slate-800 text-indigo-650 dark:text-indigo-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-450 dark:hover:text-slate-200'}">
+            <button id="cal-mode-agenda" class="flex-grow sm:flex-grow-0 px-4 py-1.5 rounded-lg text-xs font-extrabold transition ${this.calendarMode === 'agenda' ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-450 dark:hover:text-slate-200'}">
               Agenda
             </button>
           </div>
@@ -610,7 +610,7 @@ export class InboxPage {
             <button id="cal-nav-prev" class="p-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-slate-500 dark:text-slate-400 transition" title="Período Anterior">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
             </button>
-            <button id="cal-nav-today" class="px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-xs font-extrabold text-slate-650 dark:text-slate-300 transition border border-slate-200/40 dark:border-slate-750/40 bg-white dark:bg-slate-900 shadow-sm">
+            <button id="cal-nav-today" class="px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-xs font-extrabold text-slate-600 dark:text-slate-300 transition border border-slate-200/40 dark:border-slate-750/40 bg-white dark:bg-slate-900 shadow-sm">
               Hoje
             </button>
             <button id="cal-nav-next" class="p-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-slate-500 dark:text-slate-400 transition" title="Próximo Período">
@@ -628,16 +628,16 @@ export class InboxPage {
                 <h4 class="text-xs font-black text-slate-850 dark:text-slate-250 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800/80 pb-2 mb-3 text-left">Legenda de Cores</h4>
                 <div class="space-y-2.5 text-left">
                   <div class="flex items-center gap-2.5">
-                    <span class="w-3.5 h-3.5 rounded-md badge-gradient-indigo flex-shrink-0"></span>
-                    <span class="text-xs font-bold text-slate-650 dark:text-slate-350">Lembretes Manuais</span>
+                     <span class="w-3.5 h-3.5 rounded-md badge-gradient-indigo flex-shrink-0"></span>
+                    <span class="text-xs font-bold text-slate-600 dark:text-slate-400">Lembretes Manuais</span>
                   </div>
                   <div class="flex items-center gap-2.5">
-                    <span class="w-3.5 h-3.5 rounded-md badge-gradient-amber flex-shrink-0"></span>
-                    <span class="text-xs font-bold text-slate-650 dark:text-slate-350">Passaportes SLA</span>
+                     <span class="w-3.5 h-3.5 rounded-md badge-gradient-amber flex-shrink-0"></span>
+                    <span class="text-xs font-bold text-slate-600 dark:text-slate-400">Passaportes SLA</span>
                   </div>
                   <div class="flex items-center gap-2.5">
-                    <span class="w-3.5 h-3.5 rounded-md badge-gradient-rose flex-shrink-0"></span>
-                    <span class="text-xs font-bold text-slate-650 dark:text-slate-350">Reembolsos SLA</span>
+                     <span class="w-3.5 h-3.5 rounded-md badge-gradient-rose flex-shrink-0"></span>
+                    <span class="text-xs font-bold text-slate-600 dark:text-slate-400">Reembolsos SLA</span>
                   </div>
                 </div>
               </div>
@@ -827,14 +827,14 @@ export class InboxPage {
 
       html += `
         <div class="calendar-week-column" data-date="${dayDateStr}">
-          <div class="calendar-week-day-header ${isToday ? 'text-indigo-650 dark:text-indigo-400' : 'text-slate-500 dark:text-slate-450'}">
+          <div class="calendar-week-day-header ${isToday ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-500 dark:text-slate-450'}">
             <span class="block text-[10px] font-black uppercase tracking-wider">${weekdays[i]}</span>
             <span class="text-xl font-black ${isToday ? 'bg-indigo-600 text-white w-8 h-8 inline-flex items-center justify-center rounded-full shadow-sm mt-0.5' : 'text-slate-800 dark:text-slate-200'}">${currentDay.getDate()}</span>
           </div>
           <div class="flex-grow flex flex-col gap-2 overflow-y-auto custom-scrollbar pr-0.5">
             ${dayAlerts.length === 0 ? `
-              <div class="flex-grow flex flex-col items-center justify-center border border-dashed border-slate-250 dark:border-slate-800 rounded-xl p-3 text-center opacity-40">
-                <span class="text-[9px] font-black text-slate-350 dark:text-slate-650 uppercase tracking-widest">Sem Alertas</span>
+              <div class="flex-grow flex flex-col items-center justify-center border border-dashed border-slate-200 dark:border-slate-800 rounded-xl p-3 text-center opacity-40">
+                <span class="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Sem Alertas</span>
               </div>
             ` : dayAlerts.map(a => {
               let badgeClass = 'badge-gradient-indigo';
@@ -846,7 +846,7 @@ export class InboxPage {
                 badgeClass = 'badge-gradient-rose';
                 badgeText = 'Reembolso';
               } else if (a.type === 'mention') {
-                badgeClass = 'bg-gradient-to-tr from-purple-500 to-indigo-650';
+                badgeClass = 'bg-gradient-to-tr from-purple-500 to-indigo-600';
                 badgeText = 'Menção @';
               }
 
@@ -859,7 +859,7 @@ export class InboxPage {
                     <span class="px-1.5 py-0.5 rounded text-[8px] font-black text-white uppercase tracking-wider ${badgeClass}">
                       ${badgeText}
                     </span>
-                    ${a.periodText ? `<span class="text-[8px] font-black text-indigo-650 dark:text-indigo-400 uppercase tracking-widest bg-indigo-50 dark:bg-indigo-950/40 px-1.5 py-0.5 rounded">${a.periodText}</span>` : ''}
+                    ${a.periodText ? `<span class="text-[8px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest bg-indigo-50 dark:bg-indigo-950/40 px-1.5 py-0.5 rounded">${a.periodText}</span>` : ''}
                   </div>
                   
                   <div class="pl-2">
@@ -929,7 +929,7 @@ export class InboxPage {
           
           <h4 class="text-xs font-black text-slate-450 dark:text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
             <span>${formattedDate}</span>
-            ${isToday ? '<span class="px-2 py-0.5 bg-indigo-650 dark:bg-indigo-600 text-white rounded text-[8px] font-black tracking-widest scale-90 uppercase">Hoje</span>' : ''}
+            ${isToday ? '<span class="px-2 py-0.5 bg-indigo-600 dark:bg-indigo-600 text-white rounded text-[8px] font-black tracking-widest scale-90 uppercase">Hoje</span>' : ''}
           </h4>
           
           <div class="space-y-3">
@@ -943,7 +943,7 @@ export class InboxPage {
                 badgeClass = 'badge-gradient-rose';
                 badgeText = 'Reembolso SLA';
               } else if (a.type === 'mention') {
-                badgeClass = 'bg-gradient-to-tr from-purple-500 to-indigo-650';
+                badgeClass = 'bg-gradient-to-tr from-purple-500 to-indigo-600';
                 badgeText = 'Menção @';
               }
 
@@ -961,7 +961,7 @@ export class InboxPage {
                   <div class="flex-grow min-w-0 space-y-1 pl-1">
                     <div class="flex items-center justify-between gap-2">
                       <span class="block text-xs font-black text-slate-805 dark:text-slate-200 truncate">${a.sender}</span>
-                      ${a.periodText ? `<span class="text-[9px] font-extrabold text-indigo-650 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 px-2 py-0.5 rounded-md uppercase tracking-wider">${a.periodText}</span>` : ''}
+                      ${a.periodText ? `<span class="text-[9px] font-extrabold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 px-2 py-0.5 rounded-md uppercase tracking-wider">${a.periodText}</span>` : ''}
                     </div>
 
                     <h5 class="text-sm font-extrabold text-slate-800 dark:text-slate-100 flex items-center gap-2">
@@ -1300,7 +1300,7 @@ export class InboxPage {
     toast.className = 'fixed bottom-5 right-5 px-5 py-3.5 rounded-xl shadow-2xl text-white font-semibold text-sm z-50 transition-all duration-300 transform translate-y-10 opacity-0 flex items-center gap-2';
     
     if (type === 'success') {
-      toast.classList.add('bg-indigo-650', 'dark:bg-indigo-600');
+      toast.classList.add('bg-indigo-600', 'dark:bg-indigo-600');
       toast.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> ${translatedMessage}`;
     } else {
       toast.classList.add('bg-rose-500');

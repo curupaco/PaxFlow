@@ -288,7 +288,7 @@ export class InboxService {
             dateStr: dataFormatada,
             subject: `Você foi mencionado(a) por ${authorName}.`,
             body: `O consultor <strong>${authorName}</strong> mencionou você em um comentário no ${itemLabel}:<br><br>
-                   <div class="pl-3 border-l-4 border-indigo-500 italic text-slate-650 dark:text-slate-400 py-1.5 bg-slate-50 dark:bg-slate-800/40 rounded-r-lg my-3">
+                   <div class="pl-3 border-l-4 border-indigo-500 italic text-slate-600 dark:text-slate-400 py-1.5 bg-slate-50 dark:bg-slate-800/40 rounded-r-lg my-3">
                      "${not.comentario.texto}"
                    </div>
                    Clique no link abaixo para abrir e ver os detalhes:<br>

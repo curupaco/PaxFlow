@@ -110,16 +110,16 @@ export function showLevelUpModal(nivel: number, patente: string, emoji: string):
       <div class="absolute -bottom-10 -right-10 w-28 h-28 bg-purple-500/20 rounded-full blur-2xl animate-pulse"></div>
 
       <!-- Level badge emoji container -->
-      <div class="relative w-24 h-24 flex items-center justify-center bg-gradient-to-tr from-indigo-500 to-purple-650 rounded-full text-white shadow-xl shadow-indigo-500/30">
+      <div class="relative w-24 h-24 flex items-center justify-center bg-gradient-to-tr from-indigo-500 to-purple-600 rounded-full text-white shadow-xl shadow-indigo-500/30">
         <span class="text-4xl animate-bounce select-none">${emoji}</span>
-        <span class="absolute -bottom-2 bg-indigo-650 dark:bg-indigo-600 text-white font-black text-[10px] px-2.5 py-1 rounded-full ring-2 ring-white dark:ring-slate-900 shadow-sm leading-none flex items-center justify-center whitespace-nowrap">
+        <span class="absolute -bottom-2 bg-indigo-600 dark:bg-indigo-600 text-white font-black text-[10px] px-2.5 py-1 rounded-full ring-2 ring-white dark:ring-slate-900 shadow-sm leading-none flex items-center justify-center whitespace-nowrap">
           NÍVEL ${nivel}
         </span>
       </div>
 
       <!-- Content -->
       <div class="space-y-1.5 mt-2 z-10">
-        <h2 class="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-650 via-purple-600 to-indigo-500 dark:from-indigo-400 dark:via-purple-400 dark:to-indigo-300 tracking-tight leading-tight uppercase animate-pulse">SUBIU DE PATENTE!</h2>
+        <h2 class="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-500 dark:from-indigo-400 dark:via-purple-400 dark:to-indigo-300 tracking-tight leading-tight uppercase animate-pulse">SUBIU DE PATENTE!</h2>
         <p class="text-sm text-slate-650 dark:text-slate-350 font-semibold leading-relaxed">
           Você agora é um <span class="text-indigo-600 dark:text-indigo-400 font-extrabold">${patente}</span>.
         </p>

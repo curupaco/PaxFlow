@@ -765,7 +765,7 @@ export class OrcamentosPage {
           </div>
           ${o.valorProposta !== undefined && o.valorProposta !== null ? `
             <div class="flex justify-between items-center text-[10px] font-semibold text-slate-500 dark:text-slate-400 border-t border-slate-200/50 dark:border-slate-800/50 pt-1.5 mt-0.5">
-              <span class="text-indigo-650 dark:text-indigo-400 font-bold">Valor Proposta:</span>
+              <span class="text-indigo-600 dark:text-indigo-400 font-bold">Valor Proposta:</span>
               <span class="font-black text-indigo-600 dark:text-indigo-400">R$ ${Number(o.valorProposta).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
             </div>
           ` : ''}
@@ -1418,7 +1418,7 @@ export class OrcamentosPage {
 
             ${orc.documentosUrl && orc.documentosUrl.length > 0 ? `
               <div class="mt-4 bg-indigo-50/35 dark:bg-indigo-950/10 p-3.5 rounded-xl border border-indigo-100/30 dark:border-indigo-900/35">
-                <p class="text-[10px] font-black text-indigo-650 dark:text-indigo-400 uppercase tracking-wide mb-2 flex items-center gap-1 select-none">
+                <p class="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wide mb-2 flex items-center gap-1 select-none">
                   <span>📎</span> Documentos já salvos nesta proposta
                 </p>
                 <div class="grid grid-cols-1 gap-2">
@@ -2143,7 +2143,7 @@ export class OrcamentosPage {
         </div>
 
         <p class="text-xs text-slate-500 dark:text-slate-450 mb-4 font-semibold">
-          Defina uma data e um período para receber um alerta no seu inbox sobre o orçamento de <span class="font-extrabold text-indigo-650 dark:text-indigo-400">${orc.nomeCliente} - ${orc.destino}</span>.
+          Defina uma data e um período para receber um alerta no seu inbox sobre o orçamento de <span class="font-extrabold text-indigo-600 dark:text-indigo-400">${orc.nomeCliente} - ${orc.destino}</span>.
         </p>
 
         <form id="form-lembrar-depois" class="space-y-4">
@@ -2237,28 +2237,28 @@ export class OrcamentosPage {
         </div>
 
         <p class="text-xs text-slate-500 dark:text-slate-455 mb-4 font-semibold">
-          Selecione o motivo da desistência para o orçamento de <span class="font-extrabold text-indigo-650 dark:text-indigo-400">${orc.nomeCliente} - ${orc.destino}</span>:
+          Selecione o motivo da desistência para o orçamento de <span class="font-extrabold text-indigo-600 dark:text-indigo-400">${orc.nomeCliente} - ${orc.destino}</span>:
         </p>
 
         <form id="form-motivo-desistencia" class="space-y-4">
           <div class="space-y-2.5">
             <label class="flex items-center gap-2.5 p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-850/50 cursor-pointer transition">
-              <input type="radio" name="motivo" value="Comprou com a concorrência" required class="text-indigo-650 focus:ring-indigo-500 h-4 w-4" />
+              <input type="radio" name="motivo" value="Comprou com a concorrência" required class="text-indigo-600 focus:ring-indigo-500 h-4 w-4" />
               <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Comprou com a concorrência</span>
             </label>
 
             <label class="flex items-center gap-2.5 p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-850/50 cursor-pointer transition">
-              <input type="radio" name="motivo" value="Desistiu da compra" class="text-indigo-650 focus:ring-indigo-500 h-4 w-4" />
+              <input type="radio" name="motivo" value="Desistiu da compra" class="text-indigo-600 focus:ring-indigo-500 h-4 w-4" />
               <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Desistiu da compra</span>
             </label>
 
             <label class="flex items-center gap-2.5 p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-850/50 cursor-pointer transition">
-              <input type="radio" name="motivo" value="Parou de responder" class="text-indigo-650 focus:ring-indigo-500 h-4 w-4" />
+              <input type="radio" name="motivo" value="Parou de responder" class="text-indigo-600 focus:ring-indigo-500 h-4 w-4" />
               <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Parou de responder</span>
             </label>
 
             <label class="flex items-center gap-2.5 p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-850/50 cursor-pointer transition">
-              <input type="radio" name="motivo" value="Outro" id="radio-motivo-outro" class="text-indigo-650 focus:ring-indigo-500 h-4 w-4" />
+              <input type="radio" name="motivo" value="Outro" id="radio-motivo-outro" class="text-indigo-600 focus:ring-indigo-500 h-4 w-4" />
               <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Outro</span>
             </label>
           </div>

@@ -93,7 +93,7 @@ export class CommentsService {
               .join('|');
             const regex = new RegExp(`@(${namesRegexPart})(?=$|[\\s.,!?;:])`, 'gi');
             textoFormatado = textoFormatado.replace(regex, (match) => {
-              return `<span class="bg-indigo-50 dark:bg-indigo-950/40 text-indigo-650 dark:text-indigo-400 font-extrabold px-1 py-0.5 rounded text-[11px] border border-indigo-100/30 dark:border-indigo-900/30">${match}</span>`;
+              return `<span class="bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 font-extrabold px-1 py-0.5 rounded text-[11px] border border-indigo-100/30 dark:border-indigo-900/30">${match}</span>`;
             });
           }
 

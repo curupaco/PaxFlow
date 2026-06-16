@@ -635,7 +635,7 @@ class App {
       overlay.id = 'paxflow-loading-overlay';
       overlay.className = 'absolute inset-0 bg-white/40 dark:bg-slate-950/40 backdrop-blur-sm z-40 flex flex-col items-center justify-center space-y-3 pointer-events-none animate-fade-in';
       overlay.innerHTML = `
-        <div class="w-10 h-10 border-3 border-indigo-650 dark:border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+        <div class="w-10 h-10 border-3 border-indigo-600 dark:border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
         <span class="text-xs font-bold text-slate-650 dark:text-slate-300 animate-pulse uppercase tracking-wider">Carregando dados...</span>
       `;
       pageContentEl.appendChild(overlay);
