@@ -166,6 +166,20 @@ export class VerNotasModal {
               `}
             </div>
 
+            <!-- Origem do Lead -->
+            <div>
+              <span class="block text-[10px] font-black text-slate-400 dark:text-slate-555 uppercase tracking-wider mb-1.5">Origem do Lead</span>
+              <select id="select-detail-origem" class="w-full px-2.5 py-2 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-750 dark:text-slate-200 text-xs font-bold shadow-sm cursor-pointer">
+                <option value="" disabled ${!orc.origem ? 'selected' : ''}>Selecione a Origem...</option>
+                <option value="WhatsApp" ${orc.origem === 'WhatsApp' ? 'selected' : ''}>WhatsApp</option>
+                <option value="Instagram" ${orc.origem === 'Instagram' ? 'selected' : ''}>Instagram</option>
+                <option value="Indicação" ${orc.origem === 'Indicação' ? 'selected' : ''}>Indicação</option>
+                <option value="Google" ${orc.origem === 'Google' ? 'selected' : ''}>Google</option>
+                <option value="Site" ${orc.origem === 'Site' ? 'selected' : ''}>Site</option>
+                <option value="Outros" ${orc.origem === 'Outros' ? 'selected' : ''}>Outros</option>
+              </select>
+            </div>
+
             <!-- Contatos Clicáveis -->
             <div>
               <span class="block text-[10px] font-black text-slate-400 dark:text-slate-555 uppercase tracking-wider mb-1.5">Canais de Contato</span>
@@ -342,6 +356,22 @@ export class VerNotasModal {
           options.showToast('Consultor responsável atualizado!', 'success');
         } else {
           options.showToast('Erro ao reatribuir consultor.', 'error');
+        }
+      }
+    });
+
+    // Event listener para alterar origem do lead
+    const selectOrigem = document.getElementById('select-detail-origem') as HTMLSelectElement;
+    selectOrigem?.addEventListener('change', async () => {
+      const newVal = selectOrigem.value;
+      orc.origem = newVal;
+      
+      if (options.onUpdate) {
+        const success = await options.onUpdate(orc);
+        if (success) {
+          options.showToast('Origem do lead atualizada!', 'success');
+        } else {
+          options.showToast('Erro ao atualizar origem do lead.', 'error');
         }
       }
     });

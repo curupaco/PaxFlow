@@ -60,6 +60,7 @@ export interface Cliente {
   passaporteValidade?: string; // Data de validade (YYYY-MM-DD)
   vistosInformacoes?: string; // Detalhes sobre vistos ativos do cliente
   googleDriveFolderUrl?: string; // URL da pasta dedicada criada no Google Drive da agência
+  classificacoes?: string[];
   createdAt?: string;
   updatedAt?: string;
 }
@@ -83,6 +84,7 @@ export interface Viagem {
   status: 'planejamento' | 'confirmada' | 'em_andamento' | 'concluida' | 'cancelada' | 'pre_embarque' | 'pos_viagem' | 'reembolso_solicitado';
   codigoLocalizador?: string; // Código de reserva geral
   codigo_localizador?: string;
+  origem?: string;
   observacoes?: string;
   createdAt?: string;
   created_at?: string;
@@ -184,6 +186,7 @@ export interface Orcamento {
   notasNegociacao?: string;
   valorProposta?: number;
   valorViagem?: number;
+  origem?: string;
   documentosUrl?: string[];
   createdAt?: string;
   updatedAt?: string;
@@ -289,6 +292,7 @@ export interface ConvertToTripOptions {
   folderDriveUrl?: string;
   isNovaViagem: boolean;
   vValor: number;
+  origem?: string;
   // Se for nova viagem:
   vDestino?: string;
   vLoc?: string;

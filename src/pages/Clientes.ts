@@ -111,6 +111,7 @@ export class ClientesPage {
         passaporteValidade: d.passaporte_validade || d.passaporteValidade,
         vistosInformacoes: d.vistos_informacoes || d.vistosInformacoes,
         googleDriveFolderUrl: d.google_drive_folder_url || d.googleDriveFolderUrl,
+        classificacoes: d.classificacoes || [],
         createdAt: d.created_at,
         updatedAt: d.updated_at
       }));
@@ -621,6 +622,15 @@ export class ClientesPage {
                 <span>Cadastro e Documentação</span>
                 ${!isNew ? `&bull; <span class="text-indigo-600 dark:text-indigo-400 font-bold">${c.email}</span>` : ''}
               </p>
+              ${!isNew && c.classificacoes && c.classificacoes.length > 0 ? `
+                <div class="flex flex-wrap gap-1.5 mt-1.5">
+                  ${c.classificacoes.map(tag => `
+                    <span class="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-md font-black text-[9px] uppercase tracking-wider border border-slate-200/50 dark:border-slate-800 flex items-center gap-0.5">
+                      📢 ${tag}
+                    </span>
+                  `).join('')}
+                </div>
+              ` : ''}
             </div>
           </div>
 

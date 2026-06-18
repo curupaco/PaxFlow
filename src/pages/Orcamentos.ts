@@ -502,6 +502,27 @@ export class OrcamentosPage {
       });
     });
 
+    // Botão Copiar Telefone
+    this.container.querySelectorAll('[data-action="copiar-telefone"]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        const contato = (btn as HTMLElement).dataset.contato || '';
+        const parts = contato.split('/');
+        let phoneToCopy = parts[0]?.trim() || '';
+        if (!/\d/.test(phoneToCopy) && parts[1] && /\d/.test(parts[1])) {
+          phoneToCopy = parts[1].trim();
+        }
+        
+        navigator.clipboard.writeText(phoneToCopy).then(() => {
+          this.showToast(`Telefone "${phoneToCopy}" copiado!`, 'success');
+        }).catch(err => {
+          console.error('Erro ao copiar telefone:', err);
+          this.showToast('Não foi possível copiar o telefone.', 'error');
+        });
+      });
+    });
+
     // Click no Card inteiro (excluindo cliques em botões e ações do card) para abrir visualização/edição em qualquer coluna
     this.container.querySelectorAll('.card-orcamento').forEach(card => {
       card.addEventListener('click', (e) => {
@@ -737,7 +758,22 @@ export class OrcamentosPage {
         <div class="flex items-start justify-between gap-2.5">
           <div class="overflow-hidden flex-1">
             <h4 class="text-xs font-black text-slate-800 dark:text-slate-100 leading-snug truncate">${o.nomeCliente}</h4>
-            <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-semibold truncate mt-0.5">${o.contato}</span>
+            <div class="flex items-center gap-1.5 mt-0.5">
+              <span class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold truncate max-w-[150px]" title="${o.contato}">${o.contato}</span>
+              ${o.contato ? `
+                <button data-action="copiar-telefone" data-contato="${o.contato}" title="Copiar Telefone" class="p-0.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded transition flex items-center justify-center shrink-0">
+                  <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                  </svg>
+                </button>
+              ` : ''}
+            </div>
+            ${o.origem ? `
+              <span class="inline-flex items-center gap-0.5 mt-1 px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider bg-slate-100 text-slate-650 dark:bg-slate-850 dark:text-slate-400 border border-slate-200/50 dark:border-slate-800/50">
+                📢 ${o.origem}
+              </span>
+            ` : ''}
           </div>
           
           <div class="flex flex-col items-end gap-1 shrink-0">
@@ -763,7 +799,7 @@ export class OrcamentosPage {
             <span>Data Viagem:</span>
             <span class="font-extrabold text-slate-700 dark:text-slate-300">${this.formatarDataBr(o.dataViagem)}</span>
           </div>
-          ${o.valorProposta !== undefined && o.valorProposta !== null ? `
+          ${o.status !== 'CONCLUIDO' && o.valorProposta !== undefined && o.valorProposta !== null ? `
             <div class="flex justify-between items-center text-[10px] font-semibold text-slate-500 dark:text-slate-400 border-t border-slate-200/50 dark:border-slate-800/50 pt-1.5 mt-0.5">
               <span class="text-indigo-600 dark:text-indigo-400 font-bold">Valor Proposta:</span>
               <span class="font-black text-indigo-600 dark:text-indigo-400">R$ ${Number(o.valorProposta).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
@@ -983,11 +1019,24 @@ export class OrcamentosPage {
               </select>
             </div>
             <div>
-              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Consultor Responsável</label>
-              <select id="select-orc-consultor" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" ${this.perfil?.role !== 'admin' ? 'disabled' : ''}>
-                ${consultoresOptions.map(c => `<option value="${c.id}" ${c.id === this.user.id ? 'selected' : ''}>${c.nome}</option>`).join('')}
+              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Origem do Lead *</label>
+              <select id="select-orc-origem" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm">
+                <option value="" disabled selected>Selecione a Origem...</option>
+                <option value="WhatsApp">WhatsApp</option>
+                <option value="Instagram">Instagram</option>
+                <option value="Indicação">Indicação</option>
+                <option value="Google">Google</option>
+                <option value="Site">Site</option>
+                <option value="Outros">Outros</option>
               </select>
             </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Consultor Responsável</label>
+            <select id="select-orc-consultor" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" ${this.perfil?.role !== 'admin' ? 'disabled' : ''}>
+              ${consultoresOptions.map(c => `<option value="${c.id}" ${c.id === this.user.id ? 'selected' : ''}>${c.nome}</option>`).join('')}
+            </select>
           </div>
 
           <div>
@@ -1189,6 +1238,7 @@ export class OrcamentosPage {
       const destinoVal = (document.getElementById('input-orc-destino') as HTMLInputElement).value;
       const dataRaw = (document.getElementById('input-orc-data') as HTMLInputElement).value.trim();
       const tempVal = (document.getElementById('select-orc-temp') as HTMLSelectElement).value as 'Frio' | 'Normal' | 'Quente';
+      const origemVal = (document.getElementById('select-orc-origem') as HTMLSelectElement).value;
       const consultorVal = this.perfil?.role === 'admin'
         ? (document.getElementById('select-orc-consultor') as HTMLSelectElement).value
         : this.user.id;
@@ -1260,6 +1310,7 @@ export class OrcamentosPage {
                     email: emailVal || null,
                     telefone: telVal || null,
                     consultor_responsavel_id: consultorVal,
+                    classificacoes: origemVal ? [origemVal] : [],
                     observacoes: 'Criado automaticamente através do cadastro de Orçamento'
                   })
                   .select()
@@ -1287,6 +1338,7 @@ export class OrcamentosPage {
               email: emailVal,
               telefone: telVal,
               consultorResponsavelId: consultorVal,
+              classificacoes: origemVal ? [origemVal] : [],
               observacoes: 'Criado automaticamente (Offline)'
             };
             this.clientes.push(newLocalClient);
@@ -1346,6 +1398,7 @@ export class OrcamentosPage {
         dataViagem: dataVal,
         temperatura: tempVal,
         tags: tagsList,
+        origem: origemVal,
         status: 'SOLICITADO'
       };
 
@@ -1687,6 +1740,18 @@ export class OrcamentosPage {
                 <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Documento de Identificação *</label>
                 ${renderDocumentInputHTML('input-fechar-cli-doc', docVal, 'Digite o CPF ou CNPJ do cliente', true, !!(linkedClient && linkedClient.documento))}
               </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Origem do Lead *</label>
+                <select id="select-fechar-origem" required class="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm">
+                  <option value="" disabled ${!orc.origem ? 'selected' : ''}>Selecione a Origem...</option>
+                  <option value="WhatsApp" ${orc.origem === 'WhatsApp' ? 'selected' : ''}>WhatsApp</option>
+                  <option value="Instagram" ${orc.origem === 'Instagram' ? 'selected' : ''}>Instagram</option>
+                  <option value="Indicação" ${orc.origem === 'Indicação' ? 'selected' : ''}>Indicação</option>
+                  <option value="Google" ${orc.origem === 'Google' ? 'selected' : ''}>Google</option>
+                  <option value="Site" ${orc.origem === 'Site' ? 'selected' : ''}>Site</option>
+                  <option value="Outros" ${orc.origem === 'Outros' ? 'selected' : ''}>Outros</option>
+                </select>
+              </div>
             </div>
           </div>
 
@@ -1820,6 +1885,7 @@ export class OrcamentosPage {
         const cEmail = (document.getElementById('input-fechar-cli-email') as HTMLInputElement).value;
         const cTelefone = getFormattedPhoneToDb('input-fechar-cli-telefone');
         const cDoc = (document.getElementById('input-fechar-cli-doc') as HTMLInputElement).value;
+        const origem = (document.getElementById('select-fechar-origem') as HTMLSelectElement).value;
 
         const isNovaViagem = radioNova ? radioNova.checked : true;
 
@@ -1847,6 +1913,7 @@ export class OrcamentosPage {
             folderDriveUrl: folderDriveUrl || undefined,
             isNovaViagem,
             vValor,
+            origem,
             prodTipo,
             prodFornecedor,
             prodDescricao
@@ -1900,6 +1967,7 @@ export class OrcamentosPage {
           orc.clienteId = clienteId;
           orc.cliente_id = clienteId;
           orc.valorViagem = vValor;
+          orc.origem = origem;
           await this.persistOrcamento(orc);
         }
 

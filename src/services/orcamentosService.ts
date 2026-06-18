@@ -52,6 +52,7 @@ export class OrcamentosService {
       notasNegociacao: d.notas_negociacao,
       valorProposta: d.valor_proposta,
       valorViagem: d.valor_viagem,
+      origem: d.origem,
       documentosUrl: d.documentos_url || [],
       createdAt: d.created_at,
       updatedAt: d.updated_at
@@ -89,6 +90,7 @@ export class OrcamentosService {
       notas_negociacao: o.notasNegociacao || null,
       valor_proposta: o.valorProposta || null,
       valor_viagem: o.valorViagem || null,
+      origem: o.origem || null,
       documentos_url: o.documentosUrl || []
     };
 
@@ -247,6 +249,7 @@ export class OrcamentosService {
       folderDriveUrl,
       isNovaViagem,
       vValor,
+      origem,
       vDestino,
       vLoc,
       vIda,
@@ -277,6 +280,26 @@ export class OrcamentosService {
 
       if (existingCli && existingCli.length > 0) {
         clienteId = existingCli[0].id;
+        
+        let existingClassificacoes: string[] = [];
+        try {
+          const { data: cliData } = await supabase
+            .from('clientes')
+            .select('classificacoes')
+            .eq('id', clienteId)
+            .single();
+          if (cliData && cliData.classificacoes) {
+            existingClassificacoes = cliData.classificacoes;
+          }
+        } catch (errClass) {
+          console.warn('Erro ao carregar classificações atuais do cliente:', errClass);
+        }
+
+        const novasClassificacoes = [...existingClassificacoes];
+        if (origem && !novasClassificacoes.includes(origem)) {
+          novasClassificacoes.push(origem);
+        }
+
         // Se encontramos o cliente cadastrado, vamos atualizar suas informações (por exemplo, o CPF que foi digitado no fechamento)
         const { error: errUpdateCli } = await supabase
           .from('clientes')
@@ -285,7 +308,8 @@ export class OrcamentosService {
             email: cEmail || null,
             telefone: cTelefone || null,
             documento: cDoc || null,
-            google_drive_folder_url: folderDriveUrl || null
+            google_drive_folder_url: folderDriveUrl || null,
+            classificacoes: novasClassificacoes
           })
           .eq('id', clienteId);
 
@@ -302,6 +326,7 @@ export class OrcamentosService {
             documento: cDoc,
             consultor_responsavel_id: orc.consultorId,
             google_drive_folder_url: folderDriveUrl || null,
+            classificacoes: origem ? [origem] : [],
             observacoes: `Criado automaticamente através do Orçamento aprovado ID ${orc.id}`
           })
           .select()
@@ -312,6 +337,25 @@ export class OrcamentosService {
       }
     } else {
       // Se já possui uma ID válida do Supabase, vamos atualizar suas informações (como o CPF)
+      let existingClassificacoes: string[] = [];
+      try {
+        const { data: cliData } = await supabase
+          .from('clientes')
+          .select('classificacoes')
+          .eq('id', clienteId)
+          .single();
+        if (cliData && cliData.classificacoes) {
+          existingClassificacoes = cliData.classificacoes;
+        }
+      } catch (errClass) {
+        console.warn('Erro ao carregar classificações atuais do cliente:', errClass);
+      }
+
+      const novasClassificacoes = [...existingClassificacoes];
+      if (origem && !novasClassificacoes.includes(origem)) {
+        novasClassificacoes.push(origem);
+      }
+
       const { error: errUpdateCli } = await supabase
         .from('clientes')
         .update({
@@ -319,7 +363,8 @@ export class OrcamentosService {
           email: cEmail || null,
           telefone: cTelefone || null,
           documento: cDoc || null,
-          google_drive_folder_url: folderDriveUrl || null
+          google_drive_folder_url: folderDriveUrl || null,
+          classificacoes: novasClassificacoes
         })
         .eq('id', clienteId);
 
@@ -350,7 +395,8 @@ export class OrcamentosService {
           data_ida: vIda,
           data_volta: vVolta,
           status: vStatus || 'planejamento',
-          observacoes: vObs || null
+          observacoes: vObs || null,
+          origem: origem || null
         })
         .select()
         .single();
@@ -367,7 +413,10 @@ export class OrcamentosService {
       // Atualizar o valor_total da viagem
       const { error: errUpdate } = await supabase
         .from('viagens')
-        .update({ valor_total: novoTotal })
+        .update({ 
+          valor_total: novoTotal,
+          origem: origem || null
+        })
         .eq('id', viagemId);
 
       if (errUpdate) throw errUpdate;
@@ -380,7 +429,8 @@ export class OrcamentosService {
       subStatus: 'ACEITO',
       clienteId: clienteId,
       cliente_id: clienteId,
-      valorViagem: vValor
+      valorViagem: vValor,
+      origem: origem
     };
 
     await this.persistOrcamento(updatedOrcamento);
