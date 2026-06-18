@@ -2093,6 +2093,14 @@ export class OrcamentosPage {
           this.render();
         }
         return success;
+      },
+      onDelete: async (id) => {
+        const success = await this.deleteOrcamento(id);
+        if (success) {
+          await this.loadOrcamentos();
+          this.render();
+        }
+        return success;
       }
     });
   }

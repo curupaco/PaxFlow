@@ -436,6 +436,64 @@ export class Dashboard {
   }
 
   /**
+   * Deleta uma viagem e todas as suas dependências (apenas Admins)
+   */
+  private async deleteViagem(tripId: string): Promise<boolean> {
+    if (this.isFallbackMode) {
+      this.viagens = this.viagens.filter(v => v.id !== tripId);
+      this.saveViagensToLocalStorage();
+      return true;
+    }
+
+    try {
+      // 1. Deletar comentários vinculados
+      const { error: errComments } = await supabase
+        .from('comentarios')
+        .delete()
+        .eq('tipo_item', 'viagem')
+        .eq('item_id', tripId);
+      if (errComments) console.warn('Aviso ao excluir comentários:', errComments.message);
+
+      // 2. Deletar notificações vinculadas
+      const { error: errNotifs } = await supabase
+        .from('notificacoes')
+        .delete()
+        .eq('tipo_item', 'viagem')
+        .eq('parent_id', tripId);
+      if (errNotifs) console.warn('Aviso ao excluir notificações:', errNotifs.message);
+
+      // 3. Deletar reembolsos vinculados
+      const { error: errRefunds } = await supabase
+        .from('reembolsos')
+        .delete()
+        .eq('viagem_id', tripId);
+      if (errRefunds) console.warn('Aviso ao excluir reembolsos:', errRefunds.message);
+
+      // 4. Deletar produtos vinculados
+      const { error: errProducts } = await supabase
+        .from('produtos_viagem')
+        .delete()
+        .eq('viagem_id', tripId);
+      if (errProducts) console.warn('Aviso ao excluir produtos:', errProducts.message);
+
+      // 5. Deletar a viagem em si
+      const { error: errTrip } = await supabase
+        .from('viagens')
+        .delete()
+        .eq('id', tripId);
+
+      if (errTrip) throw errTrip;
+
+      this.viagens = this.viagens.filter(v => v.id !== tripId);
+      this.saveViagensToLocalStorage();
+      return true;
+    } catch (err: any) {
+      console.error('Erro ao deletar viagem:', err);
+      return false;
+    }
+  }
+
+  /**
    * Calcula o status do SLA para uma determinada viagem
    */
   private checkSLA(viagem: any): { alert: boolean; type: 'pre-embarque' | 'pos-viagem' | null; text: string } {
@@ -1460,9 +1518,18 @@ export class Dashboard {
                 <textarea id="edit-viagem-obs" rows="2.5" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 text-sm font-medium">${v.observacoes || ''}</textarea>
               </div>
 
-              <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800 mt-4">
-                <button id="btn-cancel-edit" type="button" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs tracking-wider rounded-xl transition uppercase">Cancelar</button>
-                <button type="submit" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/10 transition uppercase">Salvar Alterações</button>
+              <div class="flex items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-800 mt-4">
+                <div>
+                  ${this.perfil?.role === 'admin' ? `
+                    <button id="btn-excluir-viagem" type="button" class="px-5 py-2.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-900/20 text-rose-600 dark:text-rose-455 font-extrabold text-xs tracking-wider rounded-xl transition uppercase">
+                      Excluir Viagem
+                    </button>
+                  ` : ''}
+                </div>
+                <div class="flex items-center gap-3">
+                  <button id="btn-cancel-edit" type="button" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs tracking-wider rounded-xl transition uppercase">Cancelar</button>
+                  <button type="submit" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/10 transition uppercase">Salvar Alterações</button>
+                </div>
               </div>
             </form>
 
@@ -1931,6 +1998,32 @@ export class Dashboard {
       } catch (err: any) {
         console.error('Erro ao editar viagem:', err);
         this.showToast(`Erro ao editar viagem: ${err.message}`, 'error');
+      }
+    });
+
+    // Evento para excluir a viagem
+    const btnExcluirViagem = document.getElementById('btn-excluir-viagem');
+    btnExcluirViagem?.addEventListener('click', async () => {
+      const confirm = await showCustomConfirm(
+        'Tem certeza de que deseja excluir permanentemente esta viagem e todos os seus produtos e reembolsos associados? Esta ação não pode ser desfeita.',
+        'Excluir Viagem'
+      );
+      if (!confirm) return;
+
+      try {
+        const success = await this.deleteViagem(v.id);
+        if (success) {
+          this.showToast('Viagem excluída com sucesso!', 'success');
+          this.closeModal();
+          await this.loadViagens();
+          this.render();
+          this.setupDragAndDrop();
+        } else {
+          this.showToast('Erro ao excluir viagem.', 'error');
+        }
+      } catch (err: any) {
+        console.error('Erro ao excluir viagem:', err);
+        this.showToast(`Erro ao excluir viagem: ${err.message}`, 'error');
       }
     });
 

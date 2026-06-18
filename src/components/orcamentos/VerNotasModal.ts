@@ -1,6 +1,7 @@
 import { Orcamento, PerfilConsultor } from '../../types';
 import { getAvatarSvg } from '../../services/avatars';
 import { CommentsService } from '../../services/comments';
+import { showCustomConfirm } from '../../services/dialog';
 
 export interface VerNotasModalOptions {
   user: any;
@@ -11,6 +12,7 @@ export interface VerNotasModalOptions {
   closeModal: () => void;
   showToast: (message: string, type: 'success' | 'error') => void;
   onUpdate?: (updatedOrc: Orcamento) => Promise<boolean>;
+  onDelete?: (id: string) => Promise<boolean>;
 }
 
 export class VerNotasModal {
@@ -216,7 +218,14 @@ export class VerNotasModal {
         </div>
 
         <!-- Rodapé do Modal -->
-        <div class="flex items-center justify-end gap-3 pt-5 border-t border-slate-150 dark:border-slate-800 mt-4">
+        <div class="flex items-center justify-between gap-3 pt-5 border-t border-slate-150 dark:border-slate-800 mt-4">
+          <div>
+            ${(options.perfil?.role === 'admin' && options.onDelete) ? `
+              <button id="btn-excluir-orcamento" type="button" class="px-5 py-2.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-900/20 text-rose-600 dark:text-rose-455 font-extrabold text-xs tracking-wider rounded-xl transition uppercase">
+                Excluir Orçamento
+              </button>
+            ` : ''}
+          </div>
           <button id="btn-close-modal" type="button" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 font-bold text-xs tracking-wider rounded-xl transition uppercase">Fechar</button>
         </div>
       </div>
@@ -225,6 +234,26 @@ export class VerNotasModal {
     const handleClose = () => options.closeModal();
     document.getElementById('btn-close-modal-x')?.addEventListener('click', handleClose);
     document.getElementById('btn-close-modal')?.addEventListener('click', handleClose);
+
+    // Event listener para excluir orçamento
+    const btnExcluir = document.getElementById('btn-excluir-orcamento');
+    btnExcluir?.addEventListener('click', async () => {
+      const confirm = await showCustomConfirm(
+        'Tem certeza de que deseja excluir permanentemente este orçamento? Esta ação não pode ser desfeita.',
+        'Excluir Orçamento'
+      );
+      if (!confirm) return;
+
+      if (options.onDelete) {
+        const success = await options.onDelete(orc.id);
+        if (success) {
+          options.showToast('Orçamento excluído com sucesso!', 'success');
+          options.closeModal();
+        } else {
+          options.showToast('Erro ao excluir orçamento.', 'error');
+        }
+      }
+    });
 
     // Eventos de Upload de Documentos para o Orçamento
     const btnUploadTrigger = document.getElementById('btn-orc-upload-doc') as HTMLButtonElement;

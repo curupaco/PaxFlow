@@ -522,6 +522,14 @@ export class ClientesPage {
         );
       }
     });
+
+    // Botão de Exclusão de Cliente
+    const btnExcluirCliente = document.getElementById('btn-excluir-cliente');
+    btnExcluirCliente?.addEventListener('click', () => {
+      if (this.clienteSelecionado && this.clienteSelecionado.id) {
+        this.excluirCliente(this.clienteSelecionado.id);
+      }
+    });
   }
 
   /**
@@ -743,7 +751,14 @@ export class ClientesPage {
           </div>
 
           <!-- Ações Finais do Formulário -->
-          <div class="flex items-center justify-end gap-3 pt-5 border-t border-slate-100 dark:border-slate-800">
+          <div class="flex items-center justify-between gap-3 pt-5 border-t border-slate-100 dark:border-slate-800">
+            <div>
+              ${(!isNew && this.perfil?.role === 'admin') ? `
+                <button type="button" id="btn-excluir-cliente" class="px-5 py-3 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-900/20 text-rose-600 dark:text-rose-455 font-extrabold text-sm tracking-wider rounded-xl transition uppercase">
+                  Excluir Cliente
+                </button>
+              ` : ''}
+            </div>
             <button type="submit" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-sm tracking-wider rounded-xl shadow-lg shadow-indigo-600/10 transition uppercase">
               ${isNew ? 'Cadastrar Cliente' : 'Salvar Alterações'}
             </button>
@@ -808,6 +823,44 @@ export class ClientesPage {
         </div>
       </div>
     `;
+  }
+
+  /**
+   * Deleta um cliente se não houver vínculos impeditivos (apenas Admins)
+   */
+  private async excluirCliente(clientId: string): Promise<void> {
+    const confirm = await showCustomConfirm(
+      'Deseja realmente excluir permanentemente este cliente? Esta ação não pode ser desfeita e pode ser impedida se houver viagens vinculadas.',
+      'Excluir Cliente'
+    );
+    if (!confirm) return;
+
+    try {
+      const { error } = await supabase
+        .from('clientes')
+        .delete()
+        .eq('id', clientId);
+
+      if (error) {
+        // Se der erro de foreign key constraint
+        if (error.code === '23503') {
+          await showCustomConfirm(
+            'Não é possível excluir o cliente pois existem viagens ou orçamentos associados a ele. Remova os vínculos primeiro.',
+            'Erro de Exclusão'
+          );
+          return;
+        }
+        throw error;
+      }
+
+      this.showToast('Cliente excluído com sucesso!', 'success');
+      this.clienteSelecionado = null;
+      await this.loadClientes();
+      this.render();
+    } catch (err: any) {
+      console.error('Erro ao excluir cliente:', err);
+      this.showToast(`Erro ao excluir cliente: ${err.message || err}`, 'error');
+    }
   }
 
   /**

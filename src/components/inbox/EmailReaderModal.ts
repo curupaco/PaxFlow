@@ -1,12 +1,14 @@
-import { AlertItem } from '../../types';
+import { AlertItem, PerfilConsultor } from '../../types';
 import { getAvatarSvg } from '../../services/avatars';
-import { showCustomAlert } from '../../services/dialog';
+import { showCustomAlert, showCustomConfirm } from '../../services/dialog';
 import { InboxService } from '../../services/inboxService';
 
 export interface EmailReaderModalOptions {
   onArchive: (item: AlertItem) => Promise<void>;
   onClose: () => void;
   onReply?: (item: AlertItem) => void;
+  perfil: PerfilConsultor | null;
+  onDelete?: (item: AlertItem) => Promise<void>;
 }
 
 export class EmailReaderModal {
@@ -165,6 +167,13 @@ export class EmailReaderModal {
             </button>
           ` : ''}
 
+          <!-- Botão de Excluir (Apenas Admins) -->
+          ${(options.perfil?.role === 'admin' && options.onDelete) ? `
+            <button id="modal-delete-btn" class="px-4 py-2 text-xs font-extrabold bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-900/20 text-rose-600 dark:text-rose-455 rounded-xl transition flex items-center gap-1.5 ${item.type === 'direct_message' && !item.isSent && options.onReply ? '' : 'mr-auto'}">
+              🗑️ Excluir
+            </button>
+          ` : ''}
+
           <button id="modal-footer-close-btn" class="px-4 py-2 text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl transition border border-slate-200/40 dark:border-slate-700/40">
             Fechar
           </button>
@@ -249,6 +258,24 @@ export class EmailReaderModal {
 
     document.getElementById('modal-archive-btn')?.addEventListener('click', handleArchiveClick);
     document.getElementById('modal-footer-archive-btn')?.addEventListener('click', handleArchiveClick);
+
+    // Evento para excluir mensagem
+    document.getElementById('modal-delete-btn')?.addEventListener('click', async () => {
+      const confirm = await showCustomConfirm(
+        'Tem certeza de que deseja excluir permanentemente esta mensagem? Esta ação não pode ser desfeita.',
+        'Excluir Mensagem'
+      );
+      if (!confirm) return;
+
+      try {
+        if (options.onDelete) {
+          await options.onDelete(item);
+          closeModal(true); // Não dispara o onClose normal, a Inbox se atualiza sozinha
+        }
+      } catch (err: any) {
+        showCustomAlert(`Erro ao excluir mensagem:\n\n${err.message || err}`, 'Erro de Ação');
+      }
+    });
 
     // DEEP LINK INTERACTIVE TRIGGER CLICK
     modalOverlay.querySelectorAll('.inbox-deep-link').forEach(link => {

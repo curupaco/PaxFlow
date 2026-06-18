@@ -251,6 +251,21 @@ export class ReembolsosPage {
       });
     });
 
+    // Escuta cliques nos botões de excluir reembolso
+    const deleteBtns = document.querySelectorAll('[data-delete-reembolso-id]');
+    deleteBtns.forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        let target = e.target as HTMLElement;
+        if (!target.hasAttribute('data-delete-reembolso-id')) {
+          target = target.closest('[data-delete-reembolso-id]') as HTMLElement;
+        }
+        const reembolsoId = target?.getAttribute('data-delete-reembolso-id');
+        if (reembolsoId) {
+          await this.excluirReembolso(reembolsoId);
+        }
+      });
+    });
+
 
 
     // Campo de busca de reembolsos
@@ -267,6 +282,34 @@ export class ReembolsosPage {
         input.setSelectionRange(input.value.length, input.value.length);
       }
     });
+  }
+
+  /**
+   * Deleta um processo de reembolso permanentemente (apenas Admins)
+   */
+  private async excluirReembolso(id: string): Promise<void> {
+    const confirm = await showCustomConfirm(
+      'Deseja realmente excluir permanentemente este processo de reembolso? Esta ação não pode ser desfeita.',
+      'Excluir Reembolso'
+    );
+    if (!confirm) return;
+
+    try {
+      const { error } = await supabase
+        .from('reembolsos')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      this.showToast('Reembolso excluído com sucesso!', 'success');
+      await this.loadReembolsos();
+      this.render();
+      this.iniciarSlaTimer();
+    } catch (err: any) {
+      console.error('Erro ao excluir reembolso:', err);
+      this.showToast(`Erro ao excluir reembolso: ${err.message || err}`, 'error');
+    }
   }
 
   /**
@@ -525,14 +568,21 @@ export class ReembolsosPage {
  
                         <!-- Status / Ação -->
                         <td class="py-4.5 px-5 text-center">
-                          <select data-reembolso-id="${r.id}" class="select-status-reembolso px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">
-                            <option value="Aguardando Fornecedor" ${r.status === 'Aguardando Fornecedor' || r.status === 'solicitado' ? 'selected' : ''}>Aguardando Fornecedor</option>
-                            <option value="em_analise" ${r.status === 'em_analise' ? 'selected' : ''}>Em Análise</option>
-                            <option value="aprovado" ${r.status === 'aprovado' ? 'selected' : ''}>Aprovado</option>
-                            <option value="recusado" ${r.status === 'recusado' ? 'selected' : ''}>Recusado</option>
-                            <option value="pago" ${r.status === 'pago' ? 'selected' : ''}>💸 Concluído / Pago</option>
-                            <option value="cancelado" ${r.status === 'cancelado' ? 'selected' : ''}>Cancelado</option>
-                          </select>
+                          <div class="flex items-center justify-center gap-2">
+                            <select data-reembolso-id="${r.id}" class="select-status-reembolso px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">
+                              <option value="Aguardando Fornecedor" ${r.status === 'Aguardando Fornecedor' || r.status === 'solicitado' ? 'selected' : ''}>Aguardando Fornecedor</option>
+                              <option value="em_analise" ${r.status === 'em_analise' ? 'selected' : ''}>Em Análise</option>
+                              <option value="aprovado" ${r.status === 'aprovado' ? 'selected' : ''}>Aprovado</option>
+                              <option value="recusado" ${r.status === 'recusado' ? 'selected' : ''}>Recusado</option>
+                              <option value="pago" ${r.status === 'pago' ? 'selected' : ''}>💸 Concluído / Pago</option>
+                              <option value="cancelado" ${r.status === 'cancelado' ? 'selected' : ''}>Cancelado</option>
+                            </select>
+                            ${this.perfil?.role === 'admin' ? `
+                              <button data-delete-reembolso-id="${r.id}" class="p-2 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-900/30 text-rose-600 dark:text-rose-455 rounded-lg border border-rose-100/30 dark:border-rose-900/30 transition text-xs flex items-center justify-center shadow-sm" title="Excluir Reembolso">
+                                🗑️
+                              </button>
+                            ` : ''}
+                          </div>
                         </td>
                       </tr>
                     `;

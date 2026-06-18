@@ -1230,6 +1230,7 @@ export class InboxPage {
    */
   private openEmailReaderModal(item: AlertItem): void {
     EmailReaderModal.open(item, {
+      perfil: this.perfil,
       onArchive: async (clickedItem) => {
         if (clickedItem.type === 'manual') {
           const tableId = clickedItem.id.replace('manual-', '');
@@ -1257,6 +1258,44 @@ export class InboxPage {
         this.setupEventListeners();
 
         this.showToast(clickedItem.arquivado ? 'Mensagem restaurada!' : 'Mensagem arquivada!', 'success');
+      },
+      onDelete: async (clickedItem) => {
+        if (clickedItem.type === 'direct_message') {
+          if (clickedItem.threadId) {
+            const { error } = await supabase
+              .from('mensagens_diretas')
+              .delete()
+              .eq('thread_id', clickedItem.threadId);
+            if (error) throw error;
+          } else if (clickedItem.targetId) {
+            const { error } = await supabase
+              .from('mensagens_diretas')
+              .delete()
+              .eq('id', clickedItem.targetId);
+            if (error) throw error;
+          }
+        } else if (clickedItem.type === 'manual') {
+          const tableId = clickedItem.id.replace('manual-', '');
+          const { error } = await supabase
+            .from('lembretes')
+            .delete()
+            .eq('id', tableId);
+          if (error) throw error;
+        } else {
+          const tableId = clickedItem.id.replace('mention-', '').replace('sent-', '');
+          const { error } = await supabase
+            .from('notificacoes')
+            .delete()
+            .eq('id', tableId);
+          if (error) throw error;
+        }
+
+        // Reload data and redraw page
+        await this.loadAndBuildAlerts();
+        this.render();
+        this.setupEventListeners();
+
+        this.showToast('Mensagem excluída com sucesso!', 'success');
       },
       onClose: () => {
         // Redraw workspace immediately to remove read highlight and update glows
