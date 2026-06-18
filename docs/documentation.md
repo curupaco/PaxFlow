@@ -90,7 +90,7 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
   - Permite o envio de mensagens diretas no estilo e-mail (com destinatários "Para" e "Cc" múltiplos) entre consultores da agência.
   - **Autocomplete de Contatos**: Interface de seleção de destinatários utilizando tags/badges interativos com remoção instantânea.
   - **Pasta de Enviadas**: Uma gaveta dedicada para acompanhamento de todas as correspondências autoradas pelo consultor logado.
-  - **Ação de Resposta (Reply)**: Botão de resposta direta integrado ao leitor de e-mail, gerando preenchimento automático do remetente e do assunto.
+  - **Ação de Resposta (Reply) e Threading [NEW]**: Botão de resposta direta integrado ao leitor de e-mail. O PaxFlow agrupa automaticamente as mensagens diretas e suas respostas sob chaves relacionais (`parent_id` e `thread_id`) no banco de dados. Ao abrir qualquer e-mail/notificação que possua thread associada, o leitor exibe a linha do tempo completa do diálogo de forma cronológica em cartões individuais, facilitando o acompanhamento pela equipe e mantendo o contexto.
   - **Status e Contadores Reativos**: Contagem individual de alertas não lidos integrada reativamente com a Sidebar principal.
 - **Visualização em Calendário Interativo [NEW]**:
   - **Alternador de Visualização (Toggle Switch)**: Um seletor de alta fidelidade visual (Lista / Calendário) no topo do painel. Todos os filtros da barra lateral (Ativos/Arquivados/Todos e consultores) e busca continuam 100% integrados e reativos no modo calendário.
@@ -125,11 +125,12 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
   - Reestruturado em abas com layout ampliado de `max-w-2xl` para maior legibilidade.
   - **Dono e SLA no Topo**: A aba "Detalhes e Edição" possui agora um cabeçalho proeminente contendo a identificação do Consultor Responsável com seu avatar correspondente e um indicador pulsante de Alerta de SLA ativo (se aplicável), fornecendo visibilidade direta da urgência do card.
   - **Aba Dinâmica '💸 Histórico de Reembolsos'**: Fica visível apenas para cartões de viagem que possuam reembolsos associados no banco de dados. Exibe de forma organizada a listagem detalhada de cada solicitação vinculada: Produto afetado, Valor Solicitado, Valor Aprovado, Taxa de Retenção, Data de Solicitação e data de encerramento, Justificativa do Cancelamento e o Status do Reembolso com badges HSL temáticos.
-- **Produtos e Detalhamento de Valores (Novo Nível de Cadastro)**:
+- **Produtos, Detalhamento de Valores e Rentabilidade (Novo Nível de Cadastro)**:
   - Permite gerenciar itens de viagem (voo, hotel, seguro, passeio, outro) preenchendo fornecedor, descrição, data do serviço, valor de venda, status e o **Código de Reserva (LOC)**.
   - **Código de Reserva (LOC) Obrigatório**: O campo LOC do produto é obrigatório (máximo 20 caracteres, código único sem espaços, barras ou delimitadores textuais).
   - **Detalhamento de Valores**: Após salvar o produto na viagem, ao clicar no item listado na aba "Produtos e Serviços", abre-se um modal de detalhamento que permite fracionar o valor de venda nas categorias: **Tarifa (Valor Líquido)**, **Taxa** e **Comissão**.
   - **Validação de Alinhamento**: O sistema bloqueia a gravação caso a soma `Tarifa + Taxa + Comissão` divirja centavo por centavo do `Valor de Venda` do produto, orientando o usuário em tempo real sobre o saldo restante a preencher.
+  - **Rentabilidade da Viagem [NEW]**: No modal de gerenciamento (aba de detalhes), o PaxFlow calcula a rentabilidade financeira geral acumulada da viagem baseado na margem total dos produtos e serviços cadastrados (`Σ(Valor de Venda - Valor de Custo)`), exibida de forma destacada em um painel HSL elegante.
 - **Trava de Segurança na Transição de Status**:
   - Ao arrastar ou alterar o status de uma viagem no Kanban para qualquer status posterior a "Fechado" (Pós-Venda, Pré-Embarque, Pós-Viagem ou Reembolso Solicitado), o PaxFlow realiza duas validações em tempo de execução:
     1. O valor total da viagem deve ser completamente coberto pelos produtos cadastrados (o saldo financeiro deve ser zero).
@@ -152,7 +153,7 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 
 - **Busca em Tempo Real no Cabeçalho**: Pesquisa em tempo real (client-side) filtrando instantaneamente por nome do cliente, destino, contatos, temperatura, notas, tags e nome do consultor.
 - **Busca Autocomplete de Clientes Recorrentes**: O mecanismo de busca de clientes existentes ao cadastrar orçamentos foi aprimorado. A digitação no campo de nome, e-mail ou telefone filtra precisamente os clientes cadastrados contra as respectivas propriedades (incluindo tratamento de caracteres não-numéricos no telefone), eliminando retornos distorcidos e ligando o orçamento de forma segura ao cliente correto.
-- **Fechamento de Venda (Close Sale)**: Ao concluir e aceitar um orçamento, se o cliente associado não possuir dados de documento em sua ficha cadastral, o sistema exibe um modal que obriga o preenchimento do CPF/CNPJ. Esse campo possui máscara e validação matemática de integridade ativa, prevenindo a persistência de identificações incorretas.
+- **Fechamento de Venda (Close Sale)**: Ao concluir e aceitar um orçamento, se o cliente associado não possuir dados de documento em sua ficha cadastral, o sistema exibe um modal que obriga o preenchimento do CPF/CNPJ. Esse campo possui máscara e validação matemática de integridade ativa (suportando inclusive a nova regra de CNPJ Alfanumérico da Receita Federal), prevenindo a persistência de identificações incorretas. A data de nascimento do passageiro torna-se obrigatória para fins operacionais de emissão, enquanto a data de volta é opcional (permitindo viagens de ida simples).
 - **Modal de Detalhes Reformulado (`openVerNotasModal`)**:
   - Reestruturado para adotar um **layout de grid premium de duas colunas (visualizador amplo `max-w-2xl`)**:
     - **Coluna Esquerda (2/3 da largura)**: Exibe a listagem completa das Notas da Negociação e a seção dedicada a Documentos e Propostas Anexas.
