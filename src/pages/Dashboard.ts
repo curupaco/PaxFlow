@@ -1435,8 +1435,8 @@ export class Dashboard {
                   ${renderDateInputHTML('edit-viagem-ida', v.data_ida || '')}
                 </div>
                 <div>
-                  <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 leading-tight">Data Volta *</label>
-                  ${renderDateInputHTML('edit-viagem-volta', v.data_volta || '')}
+                  <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 leading-tight">Data Volta</label>
+                  ${renderDateInputHTML('edit-viagem-volta', v.data_volta || '', 'DD/MM/AAAA', false)}
                 </div>
                 <div>
                   <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 leading-tight">Data Finan.</label>
@@ -1505,7 +1505,7 @@ export class Dashboard {
           <div id="tab-produtos-content" class="space-y-5 tab-pane-transition ${activeTab === 'detalhes' ? 'hidden' : ''} lg:col-span-7 lg:!block lg:!mt-0">
             
             <!-- Painel Financeiro (Totalizadores e Saldo Pendente) -->
-            <div id="painel-financeiro-produtos" class="grid grid-cols-3 gap-3 p-3.5 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/50 dark:border-slate-800 mb-4">
+            <div id="painel-financeiro-produtos" class="grid grid-cols-4 gap-3 p-3.5 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/50 dark:border-slate-800 mb-4">
               <div>
                 <span class="block text-[10px] text-slate-400 dark:text-slate-550 font-bold uppercase tracking-wider leading-tight">Valor da Venda</span>
                 <strong id="fin-valor-venda" class="text-sm font-black text-slate-800 dark:text-slate-100">R$ 0,00</strong>
@@ -1517,6 +1517,10 @@ export class Dashboard {
               <div>
                 <span class="block text-[10px] text-slate-400 dark:text-slate-550 font-bold uppercase tracking-wider leading-tight">Saldo Pendente</span>
                 <strong id="fin-valor-pendente" class="text-sm font-black text-rose-600 dark:text-rose-455">R$ 0,00</strong>
+              </div>
+              <div>
+                <span class="block text-[10px] text-indigo-500 dark:text-indigo-400 font-bold uppercase tracking-wider leading-tight">Rentabilidade</span>
+                <strong id="fin-valor-rentabilidade" class="text-sm font-black text-indigo-600 dark:text-indigo-400">R$ 0,00</strong>
               </div>
             </div>
             
@@ -1789,7 +1793,7 @@ export class Dashboard {
     setupFormValidation('form-editar-viagem', [
       { id: 'edit-viagem-valor', type: 'currency' },
       { id: 'edit-viagem-ida', type: 'date' },
-      { id: 'edit-viagem-volta', type: 'date' },
+      { id: 'edit-viagem-volta', type: 'date', required: false },
       { id: 'edit-viagem-data-financeiro', type: 'date', required: false }
     ]);
 
@@ -1817,20 +1821,18 @@ export class Dashboard {
         this.showToast('Por favor, informe a Data de Ida no formato correto DD/MM/AAAA.', 'error');
         return;
       }
-      if (!dataVolta) {
-        this.showToast('Por favor, informe a Data de Volta no formato correto DD/MM/AAAA.', 'error');
-        return;
-      }
       if (dataFinanceiroRaw && !dataFinanceiro) {
         this.showToast('Por favor, informe a Data Financeiro no formato correto DD/MM/AAAA.', 'error');
         return;
       }
 
-      const idaDate = new Date(dataIda);
-      const voltaDate = new Date(dataVolta);
-      if (voltaDate.getTime() < idaDate.getTime()) {
-        this.showToast('A data de volta não pode ser anterior à data de ida.', 'error');
-        return;
+      if (dataIda && dataVolta) {
+        const idaDate = new Date(dataIda);
+        const voltaDate = new Date(dataVolta);
+        if (voltaDate.getTime() < idaDate.getTime()) {
+          this.showToast('A data de volta não pode ser anterior à data de ida.', 'error');
+          return;
+        }
       }
 
       const valor = parseDoubleBr(valorRaw);
@@ -2238,11 +2240,13 @@ export class Dashboard {
     const viagem = this.viagens.find(x => x.id === tripId);
     const valorTotalViagem = viagem ? (Number(viagem.valor_total) || 0) : 0;
     const totalProdutos = produtos.reduce((sum, p) => sum + (Number(p.valor_venda) || 0), 0);
+    const totalRentabilidade = produtos.reduce((sum, p) => sum + ((Number(p.valor_venda) || 0) - (Number(p.valor_custo) || 0)), 0);
     const saldoPendente = valorTotalViagem - totalProdutos;
 
     const finValorVenda = document.getElementById('fin-valor-venda');
     const finValorProdutos = document.getElementById('fin-valor-produtos');
     const finValorPendente = document.getElementById('fin-valor-pendente');
+    const finValorRentabilidade = document.getElementById('fin-valor-rentabilidade');
 
     if (finValorVenda) {
       finValorVenda.textContent = `R$ ${valorTotalViagem.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
@@ -2257,6 +2261,9 @@ export class Dashboard {
       } else {
         finValorPendente.className = 'text-sm font-black text-rose-600 dark:text-rose-455';
       }
+    }
+    if (finValorRentabilidade) {
+      finValorRentabilidade.textContent = `R$ ${totalRentabilidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
     }
 
     if (produtos.length === 0) {

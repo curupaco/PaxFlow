@@ -85,6 +85,7 @@ export interface Viagem {
   codigoLocalizador?: string; // Código de reserva geral
   codigo_localizador?: string;
   origem?: string;
+  rentabilidade?: number;
   observacoes?: string;
   createdAt?: string;
   created_at?: string;
@@ -289,6 +290,7 @@ export interface ConvertToTripOptions {
   cEmail: string;
   cTelefone: string;
   cDoc: string;
+  cDataNascimento?: string;
   folderDriveUrl?: string;
   isNovaViagem: boolean;
   vValor: number;

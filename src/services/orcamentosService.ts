@@ -246,6 +246,7 @@ export class OrcamentosService {
       cEmail,
       cTelefone,
       cDoc,
+      cDataNascimento,
       folderDriveUrl,
       isNovaViagem,
       vValor,
@@ -308,11 +309,12 @@ export class OrcamentosService {
             email: cEmail || null,
             telefone: cTelefone || null,
             documento: cDoc || null,
+            data_nascimento: cDataNascimento || null,
             google_drive_folder_url: folderDriveUrl || null,
             classificacoes: novasClassificacoes
           })
           .eq('id', clienteId);
-
+ 
         if (errUpdateCli) {
           console.warn('Aviso: Erro ao atualizar dados do cliente existente encontrado:', errUpdateCli.message);
         }
@@ -324,6 +326,7 @@ export class OrcamentosService {
             email: cEmail,
             telefone: cTelefone,
             documento: cDoc,
+            data_nascimento: cDataNascimento || null,
             consultor_responsavel_id: orc.consultorId,
             google_drive_folder_url: folderDriveUrl || null,
             classificacoes: origem ? [origem] : [],
@@ -363,6 +366,7 @@ export class OrcamentosService {
           email: cEmail || null,
           telefone: cTelefone || null,
           documento: cDoc || null,
+          data_nascimento: cDataNascimento || null,
           google_drive_folder_url: folderDriveUrl || null,
           classificacoes: novasClassificacoes
         })
@@ -379,9 +383,6 @@ export class OrcamentosService {
       // FLUXO: CRIAR NOVA VIAGEM
       if (!vIda) {
         throw new Error('Por favor, informe a Data de Ida no formato correto DD/MM/AAAA.');
-      }
-      if (!vVolta) {
-        throw new Error('Por favor, informe a Data de Volta no formato correto DD/MM/AAAA.');
       }
 
       const { data: newVia, error: errVia } = await supabase

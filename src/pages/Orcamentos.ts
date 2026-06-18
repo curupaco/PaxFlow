@@ -1741,6 +1741,10 @@ export class OrcamentosPage {
                 ${renderDocumentInputHTML('input-fechar-cli-doc', docVal, 'Digite o CPF ou CNPJ do cliente', true, !!(linkedClient && linkedClient.documento))}
               </div>
               <div>
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Data de Nascimento *</label>
+                ${renderDateInputHTML('input-fechar-cli-nascimento', linkedClient?.dataNascimento || linkedClient?.data_nascimento || '', 'DD/MM/AAAA', !(linkedClient && (linkedClient.dataNascimento || linkedClient.data_nascimento)), !!(linkedClient && (linkedClient.dataNascimento || linkedClient.data_nascimento)))}
+              </div>
+              <div>
                 <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Origem do Lead *</label>
                 <select id="select-fechar-origem" required class="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm">
                   <option value="" disabled ${!orc.origem ? 'selected' : ''}>Selecione a Origem...</option>
@@ -1800,8 +1804,8 @@ export class OrcamentosPage {
                 ${renderDateInputHTML('input-fechar-via-ida', orc.dataViagem || '')}
               </div>
               <div>
-                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Data de Volta (DD/MM/AAAA) *</label>
-                ${renderDateInputHTML('input-fechar-via-volta', '')}
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Data de Volta (DD/MM/AAAA)</label>
+                ${renderDateInputHTML('input-fechar-via-volta', '', 'DD/MM/AAAA', false)}
               </div>
               <div>
                 <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Valor da Venda (R$) *</label>
@@ -1836,14 +1840,12 @@ export class OrcamentosPage {
         containerViagemExistente?.classList.remove('hidden');
         document.getElementById('input-fechar-via-destino')?.removeAttribute('required');
         document.getElementById('input-fechar-via-ida')?.removeAttribute('required');
-        document.getElementById('input-fechar-via-volta')?.removeAttribute('required');
         document.getElementById('input-fechar-via-valor')?.removeAttribute('required');
       } else {
         secaoViagemNova?.classList.remove('hidden');
         containerViagemExistente?.classList.add('hidden');
         document.getElementById('input-fechar-via-destino')?.setAttribute('required', 'true');
         document.getElementById('input-fechar-via-ida')?.setAttribute('required', 'true');
-        document.getElementById('input-fechar-via-volta')?.setAttribute('required', 'true');
         document.getElementById('input-fechar-via-valor')?.setAttribute('required', 'true');
       }
       if (validator) {
@@ -1859,8 +1861,9 @@ export class OrcamentosPage {
       { id: 'input-fechar-cli-email', type: 'email', required: !(linkedClient && linkedClient.email) },
       { id: 'input-fechar-cli-telefone', type: 'phone', required: !(linkedClient && linkedClient.telefone) },
       { id: 'input-fechar-cli-doc', type: 'cpf_cnpj', required: !(linkedClient && linkedClient.documento) },
+      { id: 'input-fechar-cli-nascimento', type: 'date', required: !(linkedClient && (linkedClient.dataNascimento || linkedClient.data_nascimento)) },
       { id: 'input-fechar-via-ida', type: 'date', required: true },
-      { id: 'input-fechar-via-volta', type: 'date', required: true },
+      { id: 'input-fechar-via-volta', type: 'date', required: false },
       { id: 'input-fechar-via-valor', type: 'currency', required: true }
     ]);
 
@@ -1885,7 +1888,13 @@ export class OrcamentosPage {
         const cEmail = (document.getElementById('input-fechar-cli-email') as HTMLInputElement).value;
         const cTelefone = getFormattedPhoneToDb('input-fechar-cli-telefone');
         const cDoc = (document.getElementById('input-fechar-cli-doc') as HTMLInputElement).value;
+        const cNascRaw = (document.getElementById('input-fechar-cli-nascimento') as HTMLInputElement).value.trim();
+        const cDataNascimento = formatBrDateToIso(cNascRaw) || undefined;
         const origem = (document.getElementById('select-fechar-origem') as HTMLSelectElement).value;
+
+        if (!cDataNascimento) {
+          throw new Error('Por favor, informe a Data de Nascimento no formato correto DD/MM/AAAA.');
+        }
 
         const isNovaViagem = radioNova ? radioNova.checked : true;
 
@@ -1910,6 +1919,7 @@ export class OrcamentosPage {
             cEmail,
             cTelefone,
             cDoc,
+            cDataNascimento,
             folderDriveUrl: folderDriveUrl || undefined,
             isNovaViagem,
             vValor,
@@ -1928,15 +1938,14 @@ export class OrcamentosPage {
             const vObs = (document.getElementById('textarea-fechar-via-obs') as HTMLTextAreaElement).value;
 
             const vIda = formatBrDateToIso(vIdaRaw);
-            const vVolta = formatBrDateToIso(vVoltaRaw);
+            const vVolta = vVoltaRaw ? formatBrDateToIso(vVoltaRaw) : null;
 
-            if (!vIda) throw new Error('Por favor, info a Data de Ida no formato correto DD/MM/AAAA.');
-            if (!vVolta) throw new Error('Por favor, info a Data de Volta no formato correto DD/MM/AAAA.');
+            if (!vIda) throw new Error('Por favor, informe a Data de Ida no formato correto DD/MM/AAAA.');
 
             options.vDestino = vDestino;
             options.vLoc = vLoc;
             options.vIda = vIda;
-            options.vVolta = vVolta;
+            options.vVolta = vVolta || undefined;
             options.vStatus = vStatus;
             options.vObs = vObs;
           } else {

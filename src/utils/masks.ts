@@ -374,32 +374,46 @@ export function validateCpf(cpf: string): boolean {
  * Valida a integridade matemática de um CNPJ (14 dígitos)
  */
 export function validateCnpj(cnpj: string): boolean {
-  const clean = cnpj.replace(/\D/g, '');
+  const clean = cnpj.replace(/[^0-9A-Za-z]/g, '').toUpperCase();
   if (clean.length !== 14) return false;
-  if (/^(\d)\1{13}$/.test(clean)) return false;
+  
+  // As primeiras 12 posições podem ser alfanuméricas, as duas últimas devem ser estritamente numéricas
+  if (!/^[0-9A-Z]{12}[0-9]{2}$/.test(clean)) return false;
+  
+  // Se for tudo caracteres repetidos, é inválido
+  if (/^([0-9A-Z])\1{13}$/.test(clean)) return false;
 
-  let length = clean.length - 2;
-  let numbers = clean.substring(0, length);
-  const digits = clean.substring(length);
+  // Função auxiliar para obter o valor numérico de cada caractere
+  const getCharValue = (char: string): number => {
+    const code = char.charCodeAt(0);
+    // Se for número (ASCII 48 a 57), retorna de 0 a 9
+    // Se for letra (ASCII 65 a 90), retorna ASCII - 48
+    return code - 48;
+  };
+
+  // Validação do primeiro dígito verificador
+  let length = 12;
   let sum = 0;
-  let pos = length - 7;
-  for (let i = length; i >= 1; i--) {
-    sum += parseInt(numbers.charAt(length - i), 10) * pos--;
+  let pos = 5;
+  for (let i = 0; i < length; i++) {
+    sum += getCharValue(clean.charAt(i)) * pos;
+    pos--;
     if (pos < 2) pos = 9;
   }
   let result = sum % 11 < 2 ? 0 : 11 - (sum % 11);
-  if (result !== parseInt(digits.charAt(0), 10)) return false;
+  if (result !== parseInt(clean.charAt(12), 10)) return false;
 
-  length = length + 1;
-  numbers = clean.substring(0, length);
+  // Validação do segundo dígito verificador
+  length = 13;
   sum = 0;
-  pos = length - 7;
-  for (let i = length; i >= 1; i--) {
-    sum += parseInt(numbers.charAt(length - i), 10) * pos--;
+  pos = 6;
+  for (let i = 0; i < length; i++) {
+    sum += getCharValue(clean.charAt(i)) * pos;
+    pos--;
     if (pos < 2) pos = 9;
   }
   result = sum % 11 < 2 ? 0 : 11 - (sum % 11);
-  if (result !== parseInt(digits.charAt(1), 10)) return false;
+  if (result !== parseInt(clean.charAt(13), 10)) return false;
 
   return true;
 }
@@ -408,11 +422,14 @@ export function validateCnpj(cnpj: string): boolean {
  * Valida se a string informada é um CPF ou CNPJ válido
  */
 export function validateCpfCnpj(doc: string): ValidationResult {
-  const clean = doc.replace(/\D/g, '');
+  const clean = doc.replace(/[^0-9A-Za-z]/g, '').toUpperCase();
   if (!clean) {
     return { isValid: false, message: 'Documento é obrigatório.' };
   }
   if (clean.length <= 11) {
+    if (/[A-Z]/i.test(clean)) {
+      return { isValid: false, message: 'CPF inválido.' };
+    }
     const ok = validateCpf(clean);
     return {
       isValid: ok,
@@ -431,7 +448,7 @@ export function validateCpfCnpj(doc: string): ValidationResult {
  * Aplica máscara de CPF (até 11 dígitos) ou CNPJ (acima de 11 dígitos)
  */
 export function formatCpfCnpj(digits: string): string {
-  const clean = digits.replace(/\D/g, '');
+  const clean = digits.replace(/[^0-9A-Za-z]/g, '').toUpperCase();
   if (clean.length <= 11) {
     if (clean.length === 0) return '';
     if (clean.length <= 3) return clean;
@@ -756,7 +773,7 @@ export function setupFormValidation(
       inputEl.addEventListener('input', (e) => {
         const target = e.target as HTMLInputElement;
         const val = target.value;
-        const digits = val.replace(/\D/g, '');
+        const digits = val.replace(/[^0-9A-Za-z]/g, '');
         
         target.value = formatCpfCnpj(digits);
         validateField(config, false);
