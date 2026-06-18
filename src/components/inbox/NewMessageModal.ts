@@ -8,6 +8,8 @@ export interface NewMessageModalOptions {
     senderId: string;
     senderNome: string;
     assunto: string;
+    messageId?: string;
+    threadId?: string;
   };
 }
 
@@ -319,13 +321,28 @@ export class NewMessageModal {
           .insert({
             remetente_id: currentUser.id,
             assunto,
-            conteudo
+            conteudo,
+            parent_id: options.replyTo?.messageId || null,
+            thread_id: options.replyTo?.threadId || null
           })
           .select()
           .single();
 
         if (msgErr) throw msgErr;
         if (!msgData) throw new Error('Não foi possível registrar a mensagem.');
+
+        // If it's a new message (no parent threadId), set thread_id to its own ID
+        if (!options.replyTo || !options.replyTo.threadId) {
+          const { error: updateErr } = await supabase
+            .from('mensagens_diretas')
+            .update({ thread_id: msgData.id })
+            .eq('id', msgData.id);
+          if (updateErr) {
+            console.warn('Failed to set default thread_id:', updateErr);
+          } else {
+            msgData.thread_id = msgData.id;
+          }
+        }
 
         // Insert recipients
         const destInserts: any[] = [];

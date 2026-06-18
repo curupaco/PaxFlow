@@ -1268,7 +1268,9 @@ export class InboxPage {
           this.openNewMessageModal({
             senderId: replyItem.senderId,
             senderNome: replyItem.sender,
-            assunto: replyItem.title
+            assunto: replyItem.title,
+            messageId: replyItem.targetId,
+            threadId: replyItem.threadId
           });
         }
       }
@@ -1278,7 +1280,7 @@ export class InboxPage {
   /**
    * Opens the New Message modal dialog
    */
-  private openNewMessageModal(replyTo?: { senderId: string; senderNome: string; assunto: string }): void {
+  private openNewMessageModal(replyTo?: { senderId: string; senderNome: string; assunto: string; messageId?: string; threadId?: string }): void {
     NewMessageModal.open({
       replyTo,
       onSent: async () => {

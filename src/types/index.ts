@@ -226,6 +226,8 @@ export interface MensagemDireta {
   assunto: string;
   conteudo: string;
   created_at: string;
+  parent_id?: string;
+  thread_id?: string;
   remetente?: PerfilConsultor;
   mensagem_destinatarios?: MensagemDestinatario[];
 }
@@ -280,6 +282,8 @@ export interface AlertItem {
   recipientsHtml?: string; // HTML com lista de Para e Cc
   isSent?: boolean; // Se foi enviada pelo próprio usuário
   senderId?: string; // ID do remetente original
+  parentId?: string;
+  threadId?: string;
 }
 
 /**

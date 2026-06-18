@@ -255,7 +255,9 @@ export class InboxService {
               eventDate: not.created_at.split('T')[0],
               recipientsHtml,
               isSent: false,
-              senderId: not.mensagem.remetente_id
+              senderId: not.mensagem.remetente_id,
+              parentId: not.mensagem.parent_id,
+              threadId: not.mensagem.thread_id
             });
             return;
           }
@@ -356,7 +358,9 @@ export class InboxService {
             eventDate: msg.created_at.split('T')[0],
             recipientsHtml,
             isSent: true,
-            senderId: msg.remetente_id
+            senderId: msg.remetente_id,
+            parentId: msg.parent_id,
+            threadId: msg.thread_id
           });
         });
       }
@@ -366,5 +370,31 @@ export class InboxService {
     }
 
     return list;
+  }
+
+  /**
+   * Fetches all messages belonging to a specific conversation thread
+   */
+  static async getThreadMessages(threadId: string): Promise<any[]> {
+    try {
+      const { data, error } = await supabase
+        .from('mensagens_diretas')
+        .select(`
+          *,
+          remetente:profiles (*),
+          mensagem_destinatarios (
+            *,
+            destinatario:profiles (*)
+          )
+        `)
+        .eq('thread_id', threadId)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      return data || [];
+    } catch (err) {
+      console.error('Erro ao buscar thread de mensagens:', err);
+      return [];
+    }
   }
 }

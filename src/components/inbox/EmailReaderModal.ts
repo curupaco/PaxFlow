@@ -1,6 +1,7 @@
 import { AlertItem } from '../../types';
 import { getAvatarSvg } from '../../services/avatars';
 import { showCustomAlert } from '../../services/dialog';
+import { InboxService } from '../../services/inboxService';
 
 export interface EmailReaderModalOptions {
   onArchive: (item: AlertItem) => Promise<void>;
@@ -12,7 +13,7 @@ export class EmailReaderModal {
   /**
    * Opens the Corporate styled Email modal details
    */
-  static open(item: AlertItem, options: EmailReaderModalOptions): void {
+  static async open(item: AlertItem, options: EmailReaderModalOptions): Promise<void> {
     const modalOverlay = document.createElement('div');
     modalOverlay.id = 'email-reader-modal';
     modalOverlay.className = 'fixed inset-0 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn';
@@ -29,6 +30,13 @@ export class EmailReaderModal {
       badgeClass = 'bg-purple-600 text-white';
       badgeText = 'Mensagem Direta';
     }
+
+    // Load thread messages if it's a direct message
+    let threadMessages: any[] = [];
+    if (item.type === 'direct_message' && item.threadId) {
+      threadMessages = await InboxService.getThreadMessages(item.threadId);
+    }
+    const lastMessage = threadMessages.length > 0 ? threadMessages[threadMessages.length - 1] : null;
 
     modalOverlay.innerHTML = `
       <div class="bg-white dark:bg-slate-900 max-w-2xl w-full border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-2xl flex flex-col overflow-hidden transform scale-95 transition-all duration-300 relative">
@@ -96,19 +104,49 @@ export class EmailReaderModal {
           </div>
 
           <!-- Email body (Corporate Paper design) -->
-          <div class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed font-semibold bg-slate-50/40 dark:bg-slate-950/20 p-5 rounded-2xl border border-slate-200/30 dark:border-slate-850/40 shadow-inner">
-            ${item.type === 'direct_message' ? `
-              <p class="whitespace-pre-wrap">${item.body}</p>
+          <div class="space-y-6">
+            ${item.type === 'direct_message' && threadMessages.length > 0 ? `
+              <div class="space-y-4 max-h-[45vh] overflow-y-auto pr-1 custom-scrollbar">
+                ${threadMessages.map((msg, index) => {
+                  const msgDate = new Date(msg.created_at).toLocaleString('pt-BR');
+                  const msgSender = msg.remetente_id === item.consultorId && item.isSent ? 'Você' : (msg.remetente?.nome || 'Consultor');
+                  const msgAvatar = msg.remetente?.avatar_url || 'panda';
+                  const isLast = index === threadMessages.length - 1;
+                  
+                  return `
+                    <div class="p-4 rounded-2xl border ${
+                      isLast 
+                        ? 'border-indigo-100 dark:border-indigo-900/60 bg-indigo-50/10 dark:bg-indigo-950/10' 
+                        : 'border-slate-100 dark:border-slate-800/40 bg-slate-50/30 dark:bg-slate-950/10'
+                    } transition-colors duration-200">
+                      <div class="flex items-center gap-3 border-b border-slate-100 dark:border-slate-800/80 pb-2 mb-3">
+                        <div class="w-8 h-8 border border-slate-200 dark:border-slate-850 rounded-lg overflow-hidden flex items-center justify-center bg-white dark:bg-slate-900 flex-shrink-0">
+                          ${getAvatarSvg(msgAvatar, msgSender.charAt(0), 'w-full h-full')}
+                        </div>
+                        <div class="flex-grow min-w-0">
+                          <div class="flex items-center justify-between gap-1">
+                            <span class="block text-xs font-black text-slate-850 dark:text-slate-200 truncate">${msgSender}</span>
+                            <span class="text-[9px] font-bold text-slate-400 dark:text-slate-550 whitespace-nowrap">${msgDate}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="text-xs text-slate-700 dark:text-slate-355 leading-relaxed font-semibold whitespace-pre-wrap">${msg.conteudo}</div>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
             ` : `
-              <p class="mb-4">Prezado(a) Consultor(a),</p>
-              
-              <p class="mb-4">${item.body}</p>
+              <div class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed font-semibold bg-slate-50/40 dark:bg-slate-950/20 p-5 rounded-2xl border border-slate-200/30 dark:border-slate-850/40 shadow-inner">
+                <p class="mb-4">Prezado(a) Consultor(a),</p>
+                
+                <p class="mb-4">${item.body}</p>
 
-              <p class="mt-6 border-t border-slate-100 dark:border-slate-800/80 pt-4 text-xs text-slate-400 dark:text-slate-500">
-                Atenciosamente,<br>
-                <strong>PaxFlow Cockpit Automático</strong><br>
-                Gestão Operacional e Fluxo de Passageiros
-              </p>
+                <p class="mt-6 border-t border-slate-100 dark:border-slate-800/80 pt-4 text-xs text-slate-400 dark:text-slate-500">
+                  Atenciosamente,<br>
+                  <strong>PaxFlow Cockpit Automático</strong><br>
+                  Gestão Operacional e Fluxo de Passageiros
+                </p>
+              </div>
             `}
           </div>
 
@@ -185,7 +223,17 @@ export class EmailReaderModal {
     document.getElementById('modal-reply-btn')?.addEventListener('click', () => {
       closeModal(true);
       if (options.onReply) {
-        options.onReply(item);
+        if (lastMessage) {
+          options.onReply({
+            ...item,
+            targetId: lastMessage.id, // parent message id
+            senderId: lastMessage.remetente_id,
+            sender: lastMessage.remetente?.nome || item.sender,
+            title: lastMessage.assunto || item.title
+          });
+        } else {
+          options.onReply(item);
+        }
       }
     });
 
