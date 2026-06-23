@@ -11,12 +11,12 @@
 1. [Visão Geral e Proposta de Valor](#1-visão-geral-e-proposta-de-valor)
 2. [Público-Alvo](#2-público-alvo)
 3. [Módulos e Funcionalidades](#3-módulos-e-funcionalidades)
-   - 3.1 [Painel de Controle — Mission Control (Inbox)](#31-mission-control-inbox-de-alertas)
-   - 3.2 [Painel Operacional de Viagens (Lista)](#32-painel-operacional-de-viagens-lista)
-   - 3.3 [Pipeline de Orçamentos (Orcamentos)](#33-pipeline-de-orçamentos)
-   - 3.4 [Gestão e Ficha de Clientes (Clientes)](#34-gestão-e-ficha-de-clientes)
-   - 3.5 [Central de Reembolsos (Reembolsos)](#35-central-de-reembolsos)
-   - 3.6 [Painel Administrativo (Configuracoes)](#36-painel-administrativo)
+   - 3.1 [Inbox](#31-inbox)
+   - 3.2 [Viagens](#32-viagens)
+   - 3.3 [Orçamentos](#33-orçamentos)
+   - 3.4 [Clientes](#34-clientes)
+   - 3.5 [Reembolsos](#35-reembolsos)
+   - 3.6 [Configurações](#36-configurações)
    - 3.7 [Quadro de Planejamento Interno (Todo Kanban)](#37-quadro-de-planejamento-interno---cockpit)
    - 3.8 [Navegação e UI Shell Premium (Global UI)](#38-navegação-e-ui-shell-premium)
    - 3.9 [Sistema de Gamificação e Perfis (Gamificacao)](#39-sistema-de-gamificação-e-perfis)
@@ -78,7 +78,7 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 
 ## 3. Módulos e Funcionalidades
 
-### 3.1 Mission Control (Inbox de Alertas)
+### 3.1 Inbox
 
 **Central de comando operacional** que consolida todos os alertas críticos da agência em uma única caixa de entrada, estilo e-mail corporativo.
 
@@ -106,7 +106,7 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
   - **Legenda de Cores Tooltip**: Um círculo flutuante **"?"** no topo direito do cabeçalho que exibe instantaneamente, via hover com popover puramente em CSS Tailwind, a legenda de cores e mapeamento de tipos de eventos (Lembretes = Índigo, Passaportes = Âmbar, Reembolsos = Rose).
   - **Ação com Reuso de Modal**: Clicar em qualquer evento do calendário abre instantaneamente o leitor corporativo de e-mail existente, mantendo links funcionais e re-renderizando a tela sob arquivamento.
 
-### 3.2 Painel Operacional de Viagens (Lista)
+### 3.2 Viagens
 
 **Visualização em lista unificada** de alto desempenho para gerenciar o ciclo de vida operacional de cada viagem, do fechamento ao pós-viagem.
 
@@ -143,7 +143,7 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
     Qualquer desalinhamento impede a transição e exibe uma notificação pop-up informativa.
 - **Solicitação de reembolso**: ao arrastar para "Reembolso Solicitado", abre formulário automatizado que autocompleta valores com base no produto de viagem selecionado.
 
-### 3.3 Pipeline de Orçamentos
+### 3.3 Orçamentos
 
 **Kanban controlado** (sem drag-and-drop) para o fluxo de prospecção e vendas.
 
@@ -171,7 +171,7 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 - **"Me Lembre Depois"**: agenda lembretes operacionais com período (manhã/tarde/noite).
 - **Realtime & Offline**: alterações sincronizadas via WebSocket Supabase com fallback local no localStorage.
 
-### 3.4 Gestão e Ficha de Clientes
+### 3.4 Clientes
 
 **Ficha única de passageiro** com gestão documental completa.
 
@@ -192,7 +192,7 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
   - O mecanismo de busca da barra lateral foi estendido para uma busca completa de alta precisão (client-side). O usuário pode filtrar instantaneamente a lista de clientes por qualquer dado cadastrado, incluindo **telefone, e-mail, documento, endereço residencial, visto ativo, passaporte e observações gerais**.
 - **Seleção lateral**: lista de clientes com indicador visual de SLA do passaporte (verde/amarelo/vermelho).
 
-### 3.5 Central de Reembolsos
+### 3.5 Reembolsos
 
 **Painel dedicado** para acompanhamento de cancelamentos e reembolsos.
 
@@ -205,7 +205,7 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 - **Métricas no topo**: total de processos, aguardando fornecedor, concluídos, valor total pago.
 - **Filtro automático**: consultor comum vê apenas seus reembolsos; admin vê todos.
 
-### 3.6 Painel Administrativo
+### 3.6 Configurações
 
 **Restrito a administradores**. Controle total da configuração da agência.
 

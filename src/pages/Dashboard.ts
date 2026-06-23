@@ -1070,7 +1070,7 @@ export class Dashboard {
 
           if (error) throw error;
 
-          this.showToast('Viagem cadastrada com sucesso no Kanban!', 'success');
+          this.showToast('Viagem cadastrada com sucesso!', 'success');
           this.closeModal();
           await this.loadViagens();
           this.render();
@@ -3154,7 +3154,7 @@ export class Dashboard {
             <div>
               <h1 class="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight">${this.settings.agencyName}</h1>
               <p class="text-xs text-slate-500 dark:text-slate-400 font-medium flex items-center gap-1.5">
-                <span>Painel Operacional (Lista de Vendas)</span>
+                <span>Viagens (Painel Operacional)</span>
               </p>
             </div>
           </div>

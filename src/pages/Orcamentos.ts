@@ -596,7 +596,7 @@ export class OrcamentosPage {
             <img src="/logo.svg" alt="PaxFlow Logo" class="h-10 w-auto object-contain md:hidden" />
             <div>
               <h1 class="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight flex items-center gap-2">
-                <span>Orçamentos em Aberto</span>
+                <span>Orçamentos</span>
                 ${this.isFallbackMode ? `<span class="px-2 py-0.5 bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-[10px] font-black rounded-lg uppercase tracking-wider">Modo Offline</span>` : ''}
               </h1>
               <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Controle de captações, cotações e propostas</p>

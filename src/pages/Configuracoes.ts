@@ -1112,7 +1112,7 @@ export class ConfiguracoesPage {
           <div class="flex items-center gap-3">
             <img src="/logo.svg" alt="PaxFlow Logo" class="h-10 w-auto object-contain animate-fade-in md:hidden" />
             <div>
-              <h1 class="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight">Configurações Administrativas</h1>
+              <h1 class="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight">Configurações</h1>
               <p class="text-xs text-slate-500 dark:text-slate-400 font-medium flex items-center gap-1.5">
                 <span>Configurações Globais</span> &bull; 
                 <span class="text-indigo-600 dark:text-indigo-400 font-bold uppercase tracking-wider text-[10px]">Administrador</span>

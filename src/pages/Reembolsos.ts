@@ -426,7 +426,7 @@ export class ReembolsosPage {
           <div class="flex items-center gap-3">
             <img src="/logo.svg" alt="PaxFlow Logo" class="h-10 w-auto object-contain md:hidden" />
             <div>
-              <h1 class="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight">Central de Reembolsos</h1>
+              <h1 class="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight">Reembolsos</h1>
               <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Controle de Cancelamentos e SLAs em Tempo Real</p>
             </div>
           </div>

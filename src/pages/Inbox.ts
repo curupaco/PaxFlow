@@ -295,8 +295,8 @@ export class InboxPage {
               </svg>
             </div>
             <div>
-              <h1 class="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight">Mission Control</h1>
-              <p class="text-xs text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">Inbox de Alertas & Centro Operacional</p>
+              <h1 class="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight">Inbox</h1>
+              <p class="text-xs text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">Mensagens e Alertas</p>
             </div>
           </div>
 
