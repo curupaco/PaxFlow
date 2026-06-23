@@ -191,11 +191,14 @@ export const supabase = new Proxy(realSupabase, {
         };
       }
       if (prop === 'channel') {
-        return () => ({
-          on: () => ({ subscribe: () => ({ unsubscribe: () => {} }) }),
-          subscribe: () => ({ unsubscribe: () => {} }),
-          unsubscribe: () => {}
-        });
+        return () => {
+          const channelObj: any = {
+            on: () => channelObj,
+            subscribe: () => ({ unsubscribe: () => {} }),
+            unsubscribe: () => {}
+          };
+          return channelObj;
+        };
       }
     }
     return Reflect.get(target, prop, receiver);
