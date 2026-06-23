@@ -108,6 +108,16 @@ export class Dashboard {
   private storageListener: ((e: StorageEvent) => void) | null = null;
   private selectedProductId: string | null = null;
 
+  // Propriedades para filtros de data e controle de abas de status
+  private activeStatusTab: string = 'todos';
+  private dataFinStart: string = '';
+  private dataFinEnd: string = '';
+  private dataIdaStart: string = '';
+  private dataIdaEnd: string = '';
+  private dataVoltaStart: string = '';
+  private dataVoltaEnd: string = '';
+  private showFiltersPanel: boolean = false;
+
   constructor(container: HTMLElement) {
     this.container = container;
   }
@@ -581,167 +591,78 @@ export class Dashboard {
 
   /**
    * Configura o Drag & Drop em cada coluna utilizando SortableJS
+   * (Desativado na transição de Kanban para Tabela Operacional)
    */
   private setupDragAndDrop(): void {
-    // Destrói instâncias antigas se houver
-    this.sortables.forEach(s => s.destroy());
-    this.sortables = [];
+    // Deprecado
+  }
 
-    const colunas = ['fechado', 'pos_venda', 'pre_embarque', 'pos_viagem', 'reembolso_solicitado'];
+  /**
+   * Valida a transição de status de uma viagem operando sob as mesmas regras do antigo Kanban
+   */
+  private async validarTransicaoStatus(tripId: string, newStatus: string): Promise<boolean> {
+    if (newStatus === 'fechado') return true;
 
-    colunas.forEach(status => {
-      const colEl = document.getElementById(`col-${status}`);
-      if (!colEl) return;
+    const viagem = this.viagens.find(v => v.id === tripId);
+    if (!viagem) return false;
 
-      const sortable = new Sortable(colEl, {
-        group: 'kanban',
-        animation: 200,
-        ghostClass: 'kanban-ghost-class',
-        dragClass: 'kanban-drag-class',
-        fallbackTolerance: 3,
-        // Handler executado ao soltar o card
-        onEnd: async (evt) => {
-          const cardEl = evt.item;
-          const tripId = cardEl.dataset.tripId;
-          const newStatus = evt.to.dataset.status;
-          const oldStatus = evt.from.dataset.status;
+    // 1. Validação de data financeira
+    if (!viagem.data_financeiro) {
+      this.showToast('Não é possível alterar o status. A Data Financeiro é obrigatória para fases operacionais (como Pós-Venda). Por favor, defina a data abrindo os detalhes da viagem.', 'error');
+      return false;
+    }
 
-          if (!tripId || !newStatus || !oldStatus) return;
-
-          // Se nenhuma mudança de coluna ocorreu, avisa sobre reordenação visual
-          if (newStatus === oldStatus) {
-            this.showToast('Viagem reordenada na coluna!', 'success');
-            return;
-          }
-
-          // Validação de data financeira se mover para status diferente de 'fechado'
-          if (newStatus !== 'fechado') {
-            const viagem = this.viagens.find(v => v.id === tripId);
-            if (!viagem?.data_financeiro) {
-              this.showToast('Não é possível mover a viagem. A Data Financeiro é obrigatória para colunas operacionais (como Pós-Venda). Por favor, defina a data abrindo os detalhes do card.', 'error');
-              // Reverte a movimentação no Kanban
-              this.render();
-              this.setupDragAndDrop();
-              return;
-            }
-          }
-
-          // Validação de saldo pendente se tentar mover para status diferente de 'fechado'
-          if (newStatus !== 'fechado') {
-            let produtos: any[] = [];
-            if (!this.isFallbackMode) {
-              try {
-                const { data, error } = await supabase
-                  .from('produtos_viagem')
-                  .select('valor_venda, tarifa, taxa, comissao, fornecedor, descricao')
-                  .eq('viagem_id', tripId);
-                if (!error && data) {
-                  produtos = data;
-                }
-              } catch (errCheck) {
-                console.warn('Erro ao carregar produtos para validação no drag:', errCheck);
-              }
-            }
-            if (produtos.length === 0) {
-              const saved = localStorage.getItem(`paxflow-produtos-viagem-${tripId}`);
-              if (saved) {
-                try {
-                  produtos = JSON.parse(saved);
-                } catch (e) {
-                  produtos = [];
-                }
-              }
-            }
-
-            const totalProdutos = produtos.reduce((sum, p) => sum + (Number(p.valor_venda) || 0), 0);
-            const viagem = this.viagens.find(v => v.id === tripId);
-            const valorViagem = viagem ? (Number(viagem.valor_total) || 0) : 0;
-            const pendente = valorViagem - totalProdutos;
-
-            if (Math.abs(pendente) > 0.01) {
-              this.showToast(`Não é possível avançar a viagem. Existe um saldo financeiro pendente de R$ ${pendente.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}. Adicione produtos na aba "Produtos e Serviços" para zerar este saldo.`, 'error');
-              
-              // Reverte a movimentação no Kanban
-              this.render();
-              this.setupDragAndDrop();
-              return;
-            }
-
-            // Validação de detalhamento dos produtos
-            const produtoNaoDetalhado = produtos.find(p => {
-              const tarifa = Number(p.tarifa) || 0;
-              const taxa = Number(p.taxa) || 0;
-              const comissao = Number(p.comissao) || 0;
-              const totalDet = tarifa + taxa + comissao;
-              return Math.abs(Number(p.valor_venda || 0) - totalDet) > 0.01;
-            });
-
-            if (produtoNaoDetalhado) {
-              this.showToast(`Não é possível avançar a viagem. O produto "${produtoNaoDetalhado.fornecedor} - ${produtoNaoDetalhado.descricao}" não está com seus valores 100% detalhados (soma de Tarifa + Taxa + Comissão deve ser igual ao Valor de Venda do produto).`, 'error');
-              
-              // Reverte a movimentação no Kanban
-              this.render();
-              this.setupDragAndDrop();
-              return;
-            }
-          }
-
-          // Regra Especial: Se mover para "Reembolso Solicitado", abre o modal
-          if (newStatus === 'reembolso_solicitado') {
-            this.openRefundModal(tripId, oldStatus);
-          } else {
-            // 1. Atualização Otimista local
-            const viagem = this.viagens.find(v => v.id === tripId);
-            if (viagem) viagem.status = newStatus;
-            this.saveViagensToLocalStorage();
- 
-            // Renderização síncrona instantânea (sem piscar a tela com loading spinner)
-            this.render();
-            this.setupDragAndDrop();
- 
-            // 2. Atualização assíncrona no Supabase
-            try {
-              const { error } = await supabase
-                .from('viagens')
-                .update({ status: newStatus })
-                .eq('id', tripId);
- 
-              if (error) throw error;
- 
-              this.showToast('Status da viagem updated com sucesso!', 'success');
-              this.saveViagensToLocalStorage();
-            } catch (err: any) {
-              console.error('Erro ao atualizar status:', err);
-              this.showToast('Erro ao atualizar status da viagem.', 'error');
-              
-              // Se falhar, reverte o status da viagem na memória
-              if (viagem) viagem.status = oldStatus;
-              this.saveViagensToLocalStorage();
-              
-              // Re-renderiza para devolver o card para a coluna antiga
-              this.render();
-              this.setupDragAndDrop();
-            }
-          }
+    // 2. Buscar produtos da viagem
+    let produtos: any[] = [];
+    if (!this.isFallbackMode) {
+      try {
+        const { data, error } = await supabase
+          .from('produtos_viagem')
+          .select('valor_venda, tarifa, taxa, comissao, fornecedor, descricao')
+          .eq('viagem_id', tripId);
+        if (!error && data) {
+          produtos = data;
         }
-      });
+      } catch (errCheck) {
+        console.warn('Erro ao carregar produtos para validação:', errCheck);
+      }
+    }
+    if (produtos.length === 0) {
+      const saved = localStorage.getItem(`paxflow-produtos-viagem-${tripId}`);
+      if (saved) {
+        try {
+          produtos = JSON.parse(saved);
+        } catch (e) {
+          produtos = [];
+        }
+      }
+    }
 
-      this.sortables.push(sortable);
+    // 3. Validar saldo pendente (soma dos produtos deve bater com o total da viagem)
+    const totalProdutos = produtos.reduce((sum, p) => sum + (Number(p.valor_venda) || 0), 0);
+    const valorViagem = Number(viagem.valor_total) || 0;
+    const pendente = valorViagem - totalProdutos;
+
+    if (Math.abs(pendente) > 0.01) {
+      this.showToast(`Não é possível avançar a viagem. Existe um saldo financeiro pendente de R$ ${pendente.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}. Adicione produtos na aba "Produtos e Serviços" para zerar este saldo.`, 'error');
+      return false;
+    }
+
+    // 4. Validar se todos os produtos cadastrados estão detalhados (Tarifa + Taxa + Comissão)
+    const produtoNaoDetalhado = produtos.find(p => {
+      const tarifa = Number(p.tarifa) || 0;
+      const taxa = Number(p.taxa) || 0;
+      const comissao = Number(p.comissao) || 0;
+      const totalDet = tarifa + taxa + comissao;
+      return Math.abs(Number(p.valor_venda || 0) - totalDet) > 0.01;
     });
 
-    // Habilita reordenação das colunas (estágios) no Kanban!
-    const boardEl = document.getElementById('kanban-columns-container');
-    if (boardEl) {
-      const columnSortable = new Sortable(boardEl, {
-        animation: 200,
-        handle: '.column-header', // Permite arrastar segurando pelo cabeçalho da coluna
-        ghostClass: 'kanban-ghost-class',
-        onEnd: () => {
-          this.showToast('Ordem das colunas atualizada visualmente!', 'success');
-        }
-      });
-      this.sortables.push(columnSortable);
+    if (produtoNaoDetalhado) {
+      this.showToast(`Não é possível avançar a viagem. O produto "${produtoNaoDetalhado.fornecedor} - ${produtoNaoDetalhado.descricao}" não está com seus valores 100% detalhados (soma de Tarifa + Taxa + Comissão deve ser igual ao Valor de Venda do produto).`, 'error');
+      return false;
     }
+
+    return true;
   }
 
   /**
@@ -3120,82 +3041,120 @@ export class Dashboard {
    * Renderiza a interface do Dashboard principal
    */
   private render(): void {
-    // Separa as viagens por colunas baseadas no status aplicando a busca em tempo real
-    const colunasMap: { [key: string]: any[] } = {
-      fechado: [],
-      pos_venda: [],
-      pre_embarque: [],
-      pos_viagem: [],
-      reembolso_solicitado: []
+    // 1. Filtragem por consultor (apenas Admins podem escolher outros)
+    const totalPorConsultor = this.viagens.filter(v => {
+      if (this.perfil?.role === 'admin' && this.selectedConsultantId !== 'todos') {
+        return v.consultor_id === this.selectedConsultantId;
+      }
+      return true;
+    });
+
+    // 2. Contadores para cada aba de status (com base no consultor selecionado)
+    const counts = {
+      todos: totalPorConsultor.length,
+      fechado: totalPorConsultor.filter(v => v.status === 'fechado').length,
+      pos_venda: totalPorConsultor.filter(v => v.status === 'pos_venda').length,
+      pre_embarque: totalPorConsultor.filter(v => v.status === 'pre_embarque').length,
+      pos_viagem: totalPorConsultor.filter(v => v.status === 'pos_viagem').length,
+      reembolso_solicitado: totalPorConsultor.filter(v => v.status === 'reembolso_solicitado').length
     };
 
+    // 3. Aplicação completa de filtros: Busca textual + Aba ativa + Filtros de Data Avançados
     const filtrados = this.viagens.filter(v => {
+      // Filtro de Consultor
       if (this.perfil?.role === 'admin' && this.selectedConsultantId !== 'todos') {
         if (v.consultor_id !== this.selectedConsultantId) return false;
       }
 
-      if (!this.buscaTermo) return true;
-      const q = this.buscaTermo.toLowerCase().trim();
-      const cliNome = v.cliente?.nome?.toLowerCase() || '';
-      const cliDoc = v.cliente?.documento?.toLowerCase() || '';
-      const cliEmail = v.cliente?.email?.toLowerCase() || '';
-      const cliTelefone = v.cliente?.telefone?.toLowerCase() || '';
-      const dest = v.destino?.toLowerCase() || '';
-      const loc = v.codigo_localizador?.toLowerCase() || '';
-      const obs = v.observacoes?.toLowerCase() || '';
-      const consultorNome = v.consultor_id === this.user.id ? 'você' : 'outro consultor';
-
-      // Busca em códigos de reserva dos produtos/serviços (LOCs internos)
-      const matchesProductLoc = v.produtos && Array.isArray(v.produtos) && v.produtos.some((p: any) => {
-        const prodLoc = (p.codigo_reserva || '').toLowerCase();
-        return prodLoc.includes(q);
-      });
-
-      // Busca nos comentários associados à viagem (comentários da viagem ou de seus produtos)
-      const matchesComments = v.comentarios_busca && Array.isArray(v.comentarios_busca) && v.comentarios_busca.some((text: string) => {
-        return (text || '').toLowerCase().includes(q);
-      });
-
-      return (
-        cliNome.includes(q) ||
-        cliDoc.includes(q) ||
-        cliEmail.includes(q) ||
-        cliTelefone.includes(q) ||
-        dest.includes(q) ||
-        loc.includes(q) ||
-        obs.includes(q) ||
-        consultorNome.includes(q) ||
-        matchesProductLoc ||
-        matchesComments
-      );
-    });
-
-    filtrados.forEach(v => {
-      if (colunasMap[v.status] !== undefined) {
-        colunasMap[v.status].push(v);
-      } else {
-        // Fallback caso status não coincida
-        colunasMap.fechado.push(v);
+      // Filtro de Aba de Status ativa
+      if (this.activeStatusTab !== 'todos') {
+        if (v.status !== this.activeStatusTab) return false;
       }
+
+      // Busca Textual
+      if (this.buscaTermo) {
+        const q = this.buscaTermo.toLowerCase().trim();
+        const cliNome = v.cliente?.nome?.toLowerCase() || '';
+        const cliDoc = v.cliente?.documento?.toLowerCase() || '';
+        const cliEmail = v.cliente?.email?.toLowerCase() || '';
+        const cliTelefone = v.cliente?.telefone?.toLowerCase() || '';
+        const dest = v.destino?.toLowerCase() || '';
+        const loc = v.codigo_localizador?.toLowerCase() || '';
+        const obs = v.observacoes?.toLowerCase() || '';
+        const consultorNome = v.consultor_id === this.user.id ? 'você' : 'outro consultor';
+
+        const matchesProductLoc = v.produtos && Array.isArray(v.produtos) && v.produtos.some((p: any) => {
+          const prodLoc = (p.codigo_reserva || '').toLowerCase();
+          return prodLoc.includes(q);
+        });
+
+        const matchesComments = v.comentarios_busca && Array.isArray(v.comentarios_busca) && v.comentarios_busca.some((text: string) => {
+          return (text || '').toLowerCase().includes(q);
+        });
+
+        const matches = (
+          cliNome.includes(q) ||
+          cliDoc.includes(q) ||
+          cliEmail.includes(q) ||
+          cliTelefone.includes(q) ||
+          dest.includes(q) ||
+          loc.includes(q) ||
+          obs.includes(q) ||
+          consultorNome.includes(q) ||
+          matchesProductLoc ||
+          matchesComments
+        );
+
+        if (!matches) return false;
+      }
+
+      // Filtros de Data Avançados:
+      // Data Financeiro
+      if (this.dataFinStart) {
+        if (!v.data_financeiro || v.data_financeiro < this.dataFinStart) return false;
+      }
+      if (this.dataFinEnd) {
+        if (!v.data_financeiro || v.data_financeiro > this.dataFinEnd) return false;
+      }
+
+      // Data Embarque Ida
+      if (this.dataIdaStart) {
+        if (!v.data_ida || v.data_ida < this.dataIdaStart) return false;
+      }
+      if (this.dataIdaEnd) {
+        if (!v.data_ida || v.data_ida > this.dataIdaEnd) return false;
+      }
+
+      // Data Retorno Volta
+      if (this.dataVoltaStart) {
+        if (!v.data_volta || v.data_volta < this.dataVoltaStart) return false;
+      }
+      if (this.dataVoltaEnd) {
+        if (!v.data_volta || v.data_volta > this.dataVoltaEnd) return false;
+      }
+
+      return true;
     });
 
-    // Conta alertas de SLA ativos para exibir no cabeçalho
+    // 4. Contar alertas de SLA ativos no total do consultor ativo
     let totalSlaAlerts = 0;
-    this.viagens.forEach(v => {
-      if (this.checkSLA(v).alert) totalSlaAlerts++;
+    totalPorConsultor.forEach(v => {
+      const reembolsoConcluido = v.reembolsos && v.reembolsos.some((r: any) => r.status === 'pago');
+      if (!reembolsoConcluido && this.checkSLA(v).alert) totalSlaAlerts++;
     });
 
+    // 5. Renderizar o HTML base do painel operacional baseado em lista
     this.container.innerHTML = `
       <div class="min-h-screen bg-slate-50/50 dark:bg-slate-950 flex flex-col font-sans transition-colors duration-200">
         
-         <!-- CABEÇALHO DO OPERACIONAL -->
+        <!-- CABEÇALHO DO OPERACIONAL -->
         <header class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 sticky top-0 z-30 px-6 py-4 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 transition-colors duration-200">
           <div class="flex items-center gap-3">
             <img src="/logo.svg" alt="PaxFlow Logo" class="h-10 w-auto object-contain md:hidden" />
             <div>
               <h1 class="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight">${this.settings.agencyName}</h1>
               <p class="text-xs text-slate-500 dark:text-slate-400 font-medium flex items-center gap-1.5">
-                <span>Painel Operacional</span>
+                <span>Painel Operacional (Lista de Vendas)</span>
               </p>
             </div>
           </div>
@@ -3205,7 +3164,7 @@ export class Dashboard {
             <div class="flex items-center gap-2 bg-slate-100/60 dark:bg-slate-800/40 p-1.5 rounded-xl border border-slate-200/30 dark:bg-slate-700/30 shrink-0">
               <div class="px-3.5 py-1.5 text-center">
                 <span class="block text-xs text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">Viagens</span>
-                <span class="text-sm font-black text-slate-700 dark:text-slate-200">${this.viagens.length}</span>
+                <span class="text-sm font-black text-slate-700 dark:text-slate-200">${counts.todos}</span>
               </div>
               <div class="w-px h-6 bg-slate-200 dark:bg-slate-700"></div>
               <div class="px-3.5 py-1.5 text-center">
@@ -3223,6 +3182,13 @@ export class Dashboard {
               </div>
               <input id="input-busca-viagem" type="text" placeholder="Pesquisar viagens..." value="${this.buscaTermo}" class="w-full text-xs font-semibold pl-10 pr-4 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition" />
             </div>
+
+            <!-- Botão de Filtros de Data -->
+            <button id="btn-toggle-filtros" class="px-4 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs rounded-xl border border-slate-200/50 dark:border-slate-700/55 flex items-center justify-center gap-1.5 transition">
+              <span>📅</span>
+              <span>Filtros de Data</span>
+              <span class="text-[9px]">${this.showFiltersPanel ? '▲' : '▼'}</span>
+            </button>
 
             <!-- Botão Criar Card / Nova Viagem -->
             <button id="btn-nova-viagem" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-1.5 transition transform hover:-translate-y-0.5 uppercase shrink-0">
@@ -3245,43 +3211,269 @@ export class Dashboard {
           </div>
         </header>
 
-        <!-- QUADRO KANBAN OPERACIONAL -->
-        <main id="kanban-columns-container" class="flex-1 p-6 flex gap-6 items-start overflow-x-auto pb-4 custom-scrollbar">
+        <!-- PAINEL DE FILTROS AVANÇADOS COLLAPSIBLE -->
+        <div id="advanced-filters-panel" class="${this.showFiltersPanel ? 'block' : 'hidden'} bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800/80 px-6 py-4 transition-colors duration-200">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Data Financeiro -->
+            <div class="space-y-2">
+              <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider block">📅 Data Financeiro</span>
+              <div class="flex items-center gap-2">
+                <input id="filter-fin-start" type="date" value="${this.dataFinStart}" class="w-full text-xs font-semibold px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                <span class="text-xs text-slate-400">a</span>
+                <input id="filter-fin-end" type="date" value="${this.dataFinEnd}" class="w-full text-xs font-semibold px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+              </div>
+            </div>
+            <!-- Embarque Ida -->
+            <div class="space-y-2">
+              <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider block">✈️ Data de Embarque (Ida)</span>
+              <div class="flex items-center gap-2">
+                <input id="filter-ida-start" type="date" value="${this.dataIdaStart}" class="w-full text-xs font-semibold px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                <span class="text-xs text-slate-400">a</span>
+                <input id="filter-ida-end" type="date" value="${this.dataIdaEnd}" class="w-full text-xs font-semibold px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+              </div>
+            </div>
+            <!-- Embarque Volta -->
+            <div class="space-y-2">
+              <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider block">🚐 Data de Retorno (Volta)</span>
+              <div class="flex items-center gap-2">
+                <input id="filter-volta-start" type="date" value="${this.dataVoltaStart}" class="w-full text-xs font-semibold px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                <span class="text-xs text-slate-400">a</span>
+                <input id="filter-volta-end" type="date" value="${this.dataVoltaEnd}" class="w-full text-xs font-semibold px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+              </div>
+            </div>
+          </div>
+          <div class="flex justify-end gap-3 mt-4 border-t border-slate-100 dark:border-slate-800 pt-3">
+            <button id="btn-clear-date-filters" class="px-4 py-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-950 dark:hover:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-extrabold text-[10px] uppercase tracking-wider rounded-lg transition">Limpar Filtros</button>
+          </div>
+        </div>
+
+        <!-- ABAS DE STATUS / FASES DE VENDA -->
+        <div class="px-6 pt-4 bg-slate-50/50 dark:bg-slate-950">
+          <div class="flex flex-wrap gap-2 border-b border-slate-200 dark:border-slate-800 pb-px">
+            ${this.renderStatusTab('Todos', 'todos', counts.todos)}
+            ${this.renderStatusTab('Fechado', 'fechado', counts.fechado)}
+            ${this.renderStatusTab('Pós-Venda', 'pos_venda', counts.pos_venda)}
+            ${this.renderStatusTab('Pré-Embarque', 'pre_embarque', counts.pre_embarque)}
+            ${this.renderStatusTab('Pós-Viagem', 'pos_viagem', counts.pos_viagem)}
+            ${this.renderStatusTab('Reembolso Solicitado', 'reembolso_solicitado', counts.reembolso_solicitado)}
+          </div>
+        </div>
+
+        <!-- CONTEÚDO PRINCIPAL (LISTA / TABELA) -->
+        <main class="flex-1 p-6 flex flex-col min-h-0 bg-slate-50/50 dark:bg-slate-950">
           
-          <!-- Coluna: Fechado -->
-          ${this.renderColuna('Fechado', 'fechado', colunasMap.fechado)}
-
-          <!-- Coluna: Pós-Venda -->
-          ${this.renderColuna('Pós-Venda', 'pos_venda', colunasMap.pos_venda)}
-
-          <!-- Coluna: Pré-Embarque -->
-          ${this.renderColuna('Pré-Embarque', 'pre_embarque', colunasMap.pre_embarque)}
-
-          <!-- Coluna: Pós-Viagem -->
-          ${this.renderColuna('Pós-Viagem', 'pos_viagem', colunasMap.pos_viagem)}
-
-          <!-- Coluna: Reembolso Solicitado -->
-          ${this.renderColuna('Reembolso Solicitado', 'reembolso_solicitado', colunasMap.reembolso_solicitado)}
-
+          ${filtrados.length === 0 ? `
+            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-12 text-center shadow-xs flex flex-col items-center justify-center space-y-4">
+              <div class="text-slate-300 dark:text-slate-700 text-5xl">✈️</div>
+              <h3 class="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-wide">Nenhuma venda operacional localizada</h3>
+              <p class="text-xs text-slate-400 dark:text-slate-500 font-medium max-w-sm">Tente limpar os filtros de data, alterar o termo de busca ou selecionar outra aba de status.</p>
+            </div>
+          ` : `
+            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xs overflow-hidden">
+              <div class="overflow-x-auto custom-scrollbar">
+                <table class="w-full text-left border-collapse min-w-[1000px]">
+                  <thead>
+                    <tr class="bg-slate-50 dark:bg-slate-950/40 text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 border-b border-slate-200 dark:border-slate-800">
+                      <th class="px-5 py-4 w-[60px] text-center">SLA</th>
+                      <th class="px-5 py-4">Cliente / LOC</th>
+                      <th class="px-5 py-4">Destino / Produtos</th>
+                      <th class="px-5 py-4">Período (Ida / Volta)</th>
+                      <th class="px-5 py-4">Data Fin.</th>
+                      <th class="px-5 py-4">Financeiro</th>
+                      ${this.perfil?.role === 'admin' ? '<th class="px-5 py-4">Consultor</th>' : ''}
+                      <th class="px-5 py-4 w-[200px]">Fase / Status</th>
+                      <th class="px-5 py-4 w-[160px] text-center">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 text-xs font-semibold text-slate-600 dark:text-slate-300">
+                    ${filtrados.map(v => this.renderTableRow(v)).join('')}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          `}
         </main>
       </div>
     `;
 
-    // Evento de Logout
-    document.getElementById('btn-logout')?.addEventListener('click', async () => {
-      const confirmResult = await showCustomConfirm('Deseja realmente sair do sistema?', 'Encerrar Sessão');
-      if (confirmResult) {
-        await logoutConsultor();
-        window.location.reload();
-      }
-    });
+    // 6. Vincular ouvintes de eventos
+    this.setupUIEventListeners();
+  }
 
-    // Campo de busca de viagens
+  /**
+   * Renderiza uma aba de status individual com contador
+   */
+  private renderStatusTab(label: string, statusKey: string, count: number): string {
+    const isActive = this.activeStatusTab === statusKey;
+    const activeClass = isActive
+      ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400 font-black'
+      : 'border-transparent text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-400 font-bold hover:border-slate-300 dark:hover:border-slate-800';
+
+    return `
+      <button class="tab-status-btn px-4 py-3 border-b-2 text-xs transition duration-200 flex items-center gap-1.5 focus:outline-none ${activeClass}" data-status-key="${statusKey}">
+        <span>${label}</span>
+        <span class="px-1.5 py-0.5 rounded-full text-[9px] bg-slate-100 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 font-bold">${count}</span>
+      </button>
+    `;
+  }
+
+  /**
+   * Renderiza a linha de dados da tabela operacional
+   */
+  private renderTableRow(v: any): string {
+    const reembolsoConcluido = v.reembolsos && v.reembolsos.some((r: any) => r.status === 'pago');
+    const sla = reembolsoConcluido ? { alert: false, type: null, text: '' } : this.checkSLA(v);
+
+    let slaIcon = '🟢';
+    let rowBg = 'bg-white dark:bg-slate-900 hover:bg-slate-50/50 dark:hover:bg-slate-800/20';
+
+    if (reembolsoConcluido) {
+      slaIcon = '✅';
+      rowBg = 'bg-emerald-50/10 dark:bg-emerald-950/5 hover:bg-emerald-50/20 dark:hover:bg-emerald-950/10';
+    } else if (sla.alert) {
+      if (sla.type === 'pre-embarque') {
+        slaIcon = '⚠️';
+        rowBg = 'bg-rose-50/15 dark:bg-rose-950/5 hover:bg-rose-50/25 dark:hover:bg-rose-950/10';
+      } else if (sla.type === 'pos-viagem') {
+        slaIcon = '🚨';
+        rowBg = 'bg-amber-50/15 dark:bg-amber-950/5 hover:bg-amber-50/25 dark:hover:bg-amber-950/10';
+      }
+    }
+
+    const formatarData = (dStr: string) => {
+      if (!dStr) return '-';
+      const dataApenas = dStr.includes('T') ? dStr.split('T')[0] : dStr.split(' ')[0];
+      const parts = dataApenas.split('-');
+      if (parts.length !== 3) return dStr;
+      return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    };
+
+    // Calcular Rentabilidade (Venda - Custo)
+    let totalCusto = 0;
+    if (v.produtos && Array.isArray(v.produtos)) {
+      v.produtos.forEach((p: any) => {
+        const tarifa = Number(p.tarifa) || 0;
+        const taxa = Number(p.taxa) || 0;
+        totalCusto += (tarifa + taxa);
+      });
+    }
+    const valorVenda = Number(v.valor_total) || 0;
+    const rentabilidade = valorVenda - totalCusto;
+
+    return `
+      <tr class="${rowBg} transition-colors duration-200">
+        <!-- SLA -->
+        <td class="px-5 py-4 text-center select-none" title="${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : 'SLA Normal')}">
+          <span class="text-base">${slaIcon}</span>
+        </td>
+
+        <!-- Cliente / LOC -->
+        <td class="px-5 py-4 min-w-[200px]">
+          <div class="font-black text-slate-800 dark:text-slate-100">${v.cliente?.nome || 'Cliente Desconhecido'}</div>
+          <div class="flex items-center gap-1.5 mt-1">
+            <span class="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-extrabold text-[9px] rounded tracking-wider border border-slate-200/40 dark:border-slate-700/50 uppercase">
+              ${v.codigo_localizador || 'S/ LOC'}
+            </span>
+          </div>
+        </td>
+
+        <!-- Destino / Produtos -->
+        <td class="px-5 py-4">
+          <div class="font-extrabold text-slate-800 dark:text-slate-200 flex items-center gap-1">
+            ✈️ ${v.destino}
+          </div>
+          <!-- Ícones dos Produtos -->
+          ${v.produtos && v.produtos.length > 0 ? `
+            <div class="flex flex-wrap gap-1 mt-1.5">
+              ${(() => {
+                const counts: { [tipo: string]: number } = {};
+                v.produtos.forEach((p: any) => {
+                  const t = (p.tipo || 'outro').toLowerCase();
+                  counts[t] = (counts[t] || 0) + 1;
+                });
+                return Object.entries(counts).map(([tipo, count]) => {
+                  const icon = this.getIconForType(tipo);
+                  const suffix = count > 1 ? ` +${count - 1}` : '';
+                  return `
+                    <span class="inline-flex items-center px-1.5 py-0.5 rounded bg-slate-100/60 dark:bg-slate-800/60 border border-slate-200/30 dark:border-slate-700/30 text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider" title="${tipo}">
+                      <span>${icon}${suffix}</span>
+                    </span>
+                  `;
+                }).join('');
+              })()}
+            </div>
+          ` : ''}
+        </td>
+
+        <!-- Período -->
+        <td class="px-5 py-4 whitespace-nowrap">
+          <div class="text-slate-700 dark:text-slate-300 font-semibold flex items-center gap-1">
+            <span>📅</span>
+            <span>${formatarData(v.data_ida)}</span>
+            <span class="text-slate-400">a</span>
+            <span>${formatarData(v.data_volta)}</span>
+          </div>
+        </td>
+
+        <!-- Data Fin. -->
+        <td class="px-5 py-4 whitespace-nowrap text-slate-500 dark:text-slate-400 font-semibold">
+          ${v.data_financeiro ? formatarData(v.data_financeiro) : '-'}
+        </td>
+
+        <!-- Financeiro -->
+        <td class="px-5 py-4 whitespace-nowrap">
+          <div class="font-black text-indigo-600 dark:text-indigo-400">
+            R$ ${valorVenda.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+          </div>
+          <div class="text-[10px] text-emerald-600 dark:text-emerald-400 font-extrabold mt-0.5" title="Margem de Lucro (Venda - Custos de Fornecedor)">
+            Rent: R$ ${rentabilidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+          </div>
+        </td>
+
+        <!-- Consultor -->
+        ${this.perfil?.role === 'admin' ? `
+          <td class="px-5 py-4 whitespace-nowrap text-slate-500 dark:text-slate-400 font-extrabold">
+            ${v.consultor_id === this.user.id ? 'Você' : (this.consultores.find(c => c.id === v.consultor_id)?.nome || 'Outro Consultor')}
+          </td>
+        ` : ''}
+
+        <!-- Dropdown Fase/Status -->
+        <td class="px-5 py-4">
+          <select class="select-status-inline w-full px-2 py-1.5 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 font-semibold text-xs cursor-pointer" data-trip-id="${v.id}" data-old-value="${v.status}">
+            <option value="fechado" ${v.status === 'fechado' ? 'selected' : ''}>Fechado</option>
+            <option value="pos_venda" ${v.status === 'pos_venda' ? 'selected' : ''}>Pós-Venda</option>
+            <option value="pre_embarque" ${v.status === 'pre_embarque' ? 'selected' : ''}>Pré-Embarque</option>
+            <option value="pos_viagem" ${v.status === 'pos_viagem' ? 'selected' : ''}>Pós-Viagem</option>
+            <option value="reembolso_solicitado" ${v.status === 'reembolso_solicitado' ? 'selected' : ''}>Reembolso Solicitado</option>
+          </select>
+        </td>
+
+        <!-- Ações -->
+        <td class="px-5 py-4 text-center whitespace-nowrap">
+          <div class="flex items-center justify-center gap-2">
+            <button class="btn-action-view px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 font-black rounded-lg border border-indigo-100/30 dark:border-indigo-900/30 transition text-[10px] uppercase" data-trip-id="${v.id}">
+              🔍 Ver Detalhes
+            </button>
+            ${this.perfil?.role === 'admin' ? `
+              <button class="btn-action-delete p-1.5 hover:bg-rose-50 dark:hover:bg-rose-950/20 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-lg border border-transparent hover:border-rose-100/40 dark:hover:border-rose-900/40 transition" data-trip-id="${v.id}" title="Excluir Viagem">
+                🗑️
+              </button>
+            ` : ''}
+          </div>
+        </td>
+      </tr>
+    `;
+  }
+
+  /**
+   * Vincula todos os ouvintes de eventos da nova interface em lista do operacional
+   */
+  private setupUIEventListeners(): void {
+    // 1. Campo de busca de viagens
     const searchInput = document.getElementById('input-busca-viagem') as HTMLInputElement;
     searchInput?.addEventListener('input', (e) => {
       this.buscaTermo = (e.target as HTMLInputElement).value;
       this.render();
-      this.setupDragAndDrop();
 
       // Restaura o foco e coloca o cursor no final
       const input = document.getElementById('input-busca-viagem') as HTMLInputElement;
@@ -3291,224 +3483,144 @@ export class Dashboard {
       }
     });
 
-    // Evento de Criação de Nova Viagem
+    // 2. Botão de Toggle Filtros de Data
+    document.getElementById('btn-toggle-filtros')?.addEventListener('click', () => {
+      this.showFiltersPanel = !this.showFiltersPanel;
+      this.render();
+    });
+
+    // 3. Ouvintes para inputs de Filtro de Data
+    const bindDateFilter = (elementId: string, propertyName: string) => {
+      const el = document.getElementById(elementId) as HTMLInputElement;
+      el?.addEventListener('change', () => {
+        (this as any)[propertyName] = el.value;
+        this.render();
+      });
+    };
+
+    bindDateFilter('filter-fin-start', 'dataFinStart');
+    bindDateFilter('filter-fin-end', 'dataFinEnd');
+    bindDateFilter('filter-ida-start', 'dataIdaStart');
+    bindDateFilter('filter-ida-end', 'dataIdaEnd');
+    bindDateFilter('filter-volta-start', 'dataVoltaStart');
+    bindDateFilter('filter-volta-end', 'dataVoltaEnd');
+
+    // 4. Botão de Limpar Filtros de Data
+    document.getElementById('btn-clear-date-filters')?.addEventListener('click', () => {
+      this.dataFinStart = '';
+      this.dataFinEnd = '';
+      this.dataIdaStart = '';
+      this.dataIdaEnd = '';
+      this.dataVoltaStart = '';
+      this.dataVoltaEnd = '';
+      this.render();
+    });
+
+    // 5. Clique nas Abas de Status
+    this.container.querySelectorAll('.tab-status-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const statusKey = btn.getAttribute('data-status-key');
+        if (statusKey) {
+          this.activeStatusTab = statusKey;
+          this.render();
+        }
+      });
+    });
+
+    // 6. Evento de Criação de Nova Viagem
     document.getElementById('btn-nova-viagem')?.addEventListener('click', () => {
       this.openNovaViagemModal();
     });
 
-    // Evento de Filtro de Consultor (Admins)
+    // 7. Evento de Filtro de Consultor (Admins)
     const selectConsultor = document.getElementById('select-dashboard-consultor') as HTMLSelectElement;
     selectConsultor?.addEventListener('change', () => {
       this.selectedConsultantId = selectConsultor.value;
       this.render();
-      this.setupDragAndDrop();
     });
 
-    // Evento de cliques nos cards do Kanban para Abrir Detalhes/Edição/Produtos
-    this.container.querySelectorAll('[data-trip-id]').forEach(card => {
-      card.addEventListener('click', () => {
-        const tripId = card.getAttribute('data-trip-id');
+    // 8. Evento de clique nos botões "Ver Detalhes"
+    this.container.querySelectorAll('.btn-action-view').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tripId = btn.getAttribute('data-trip-id');
         if (tripId) {
           this.openEdicaoEProdutosModal(tripId);
         }
       });
     });
-  }
 
-  /**
-   * Renderiza a estrutura HTML de uma coluna do Kanban
-   */
-  private renderColuna(titulo: string, status: string, items: any[]): string {
-    const configMap: { [key: string]: { border: string; iconBg: string; iconText: string; badgeBg: string; badgeText: string; iconSvg: string } } = {
-      fechado: {
-        border: 'border-t-emerald-500',
-        iconBg: 'bg-emerald-50 dark:bg-emerald-950/40',
-        iconText: 'text-emerald-500 dark:text-emerald-400',
-        badgeBg: 'bg-emerald-100 dark:bg-emerald-950/80',
-        badgeText: 'text-emerald-600 dark:text-emerald-400',
-        iconSvg: `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`
-      },
-      pos_venda: {
-        border: 'border-t-indigo-500',
-        iconBg: 'bg-indigo-50 dark:bg-indigo-950/40',
-        iconText: 'text-indigo-500 dark:text-indigo-400',
-        badgeBg: 'bg-indigo-100 dark:bg-indigo-950/80',
-        badgeText: 'text-indigo-600 dark:text-indigo-400',
-        iconSvg: `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>`
-      },
-      pre_embarque: {
-        border: 'border-t-amber-500',
-        iconBg: 'bg-amber-50 dark:bg-amber-950/40',
-        iconText: 'text-amber-500 dark:text-amber-400',
-        badgeBg: 'bg-amber-100 dark:bg-amber-950/80',
-        badgeText: 'text-amber-600 dark:text-amber-400',
-        iconSvg: `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>`
-      },
-      pos_viagem: {
-        border: 'border-t-violet-500',
-        iconBg: 'bg-violet-50 dark:bg-violet-950/40',
-        iconText: 'text-violet-500 dark:text-violet-400',
-        badgeBg: 'bg-violet-100 dark:bg-violet-950/80',
-        badgeText: 'text-violet-600 dark:text-violet-400',
-        iconSvg: `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>`
-      },
-      reembolso_solicitado: {
-        border: 'border-t-rose-500',
-        iconBg: 'bg-rose-50 dark:bg-rose-950/40',
-        iconText: 'text-rose-500 dark:text-rose-400',
-        badgeBg: 'bg-rose-100 dark:bg-rose-950/80',
-        badgeText: 'text-rose-600 dark:text-rose-400',
-        iconSvg: `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`
-      }
-    };
-    const cfg = configMap[status] || configMap.fechado;
+    // 9. Evento de clique nos botões "Excluir"
+    this.container.querySelectorAll('.btn-action-delete').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const tripId = btn.getAttribute('data-trip-id');
+        if (!tripId) return;
 
-    return `
-      <div class="w-80 h-[calc(100vh-200px)] bg-slate-100/70 dark:bg-slate-900/40 border border-slate-200/50 dark:border-slate-800/80 border-t-4 ${cfg.border} rounded-2xl p-4 flex flex-col shrink-0 transition-colors duration-200">
-        <!-- Header da Coluna -->
-        <div class="column-header flex items-center justify-between pb-3 mb-4 border-b border-slate-200/60 dark:border-slate-800/60 select-none cursor-grab active:cursor-grabbing">
-          <div class="flex items-center gap-2">
-            <span class="p-1 ${cfg.iconBg} ${cfg.iconText} rounded-lg flex items-center justify-center shrink-0">
-              ${cfg.iconSvg}
-            </span>
-            <span class="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-wider">${titulo}</span>
-            <span class="px-2 py-0.5 ${cfg.badgeBg} ${cfg.badgeText} rounded-full text-[10px] font-black">${items.length}</span>
-          </div>
-        </div>
+        const confirmResult = await showCustomConfirm(
+          'A exclusão apagará permanentemente esta viagem, todos os seus produtos vinculados, comentários e solicitações de reembolso. Deseja realmente prosseguir?',
+          'Excluir Viagem',
+          { isDestructive: true, confirmText: 'Excluir', cancelText: 'Manter' }
+        );
 
-        <!-- Lista de Cards (Sortable area) -->
-        <div id="col-${status}" data-status="${status}" class="flex-1 overflow-y-auto space-y-3 custom-scrollbar min-h-[150px] pr-1">
-          ${items.length === 0 ? `
-            <div class="h-28 border border-dashed border-slate-200 dark:border-slate-800/85 rounded-xl flex items-center justify-center p-4 text-center">
-              <span class="text-xs text-slate-400 dark:text-slate-500 font-medium">Solte viagens aqui</span>
-            </div>
-          ` : items.map(v => this.renderCard(v)).join('')}
-        </div>
-      </div>
-    `;
-  }
+        if (confirmResult) {
+          const success = await this.deleteViagem(tripId);
+          if (success) {
+            this.showToast('Viagem excluída com sucesso!', 'success');
+            await this.loadViagens();
+            this.render();
+          } else {
+            this.showToast('Erro ao excluir viagem.', 'error');
+          }
+        }
+      });
+    });
 
-  /**
-   * Renderiza a estrutura HTML de um card de viagem individual
-   */
-  private renderCard(v: any): string {
-    // Verifica se há algum reembolso concluído (status === 'pago')
-    const reembolsoConcluido = v.reembolsos && v.reembolsos.some((r: any) => r.status === 'pago');
-    
-    const sla = reembolsoConcluido ? { alert: false, type: null, text: '' } : this.checkSLA(v);
-    
-    // Classes CSS dinâmicas baseadas nos alertas de SLA ou reembolso finalizado
-    let cardClasses = 'bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-800 shadow-sm hover:shadow-md dark:shadow-slate-950/30 transition-all cursor-grab active:cursor-grabbing relative overflow-hidden group card-viagem';
-    
-    if (reembolsoConcluido) {
-      cardClasses = 'bg-emerald-50/30 dark:bg-emerald-950/10 border border-emerald-500/80 dark:border-emerald-500/50 shadow-emerald-500/10 dark:shadow-emerald-950/20 p-4 rounded-xl shadow-sm hover:shadow-md transition-all cursor-grab active:cursor-grabbing relative overflow-hidden group card-viagem';
-    } else if (sla.alert) {
-      if (sla.type === 'pre-embarque') {
-        cardClasses += ' animate-sla-urgent';
-      } else if (sla.type === 'pos-viagem') {
-        cardClasses += ' animate-sla-warning';
-      }
-    }
+    // 10. Evento de alteração de status inline na tabela com as travas de transição
+    this.container.querySelectorAll('.select-status-inline').forEach(select => {
+      select.addEventListener('change', async (e) => {
+        const selectEl = e.target as HTMLSelectElement;
+        const tripId = selectEl.getAttribute('data-trip-id');
+        const oldStatus = selectEl.getAttribute('data-old-value');
+        const newStatus = selectEl.value;
 
-    // Formatações de datas robusta
-    const formatarData = (dStr: string) => {
-      if (!dStr) return '';
-      const dataApenas = dStr.includes('T') ? dStr.split('T')[0] : dStr.split(' ')[0];
-      const parts = dataApenas.split('-');
-      if (parts.length !== 3) return dStr;
-      return `${parts[2]}/${parts[1]}/${parts[0]}`;
-    };
+        if (!tripId || !oldStatus || newStatus === oldStatus) return;
 
-    return `
-      <div class="${cardClasses}" data-trip-id="${v.id}">
-        
-        <!-- Linha do Localizador & Preço -->
-        <div class="flex items-center justify-between gap-2 mb-2.5">
-          <span class="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-extrabold text-[10px] rounded tracking-wider border border-slate-200/55 dark:border-slate-700/55 uppercase">
-            ${v.codigo_localizador || 'S/ LOC'}
-          </span>
-          <span class="text-xs font-black text-indigo-600 dark:text-indigo-400">
-            R$ ${Number(v.valor_total || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-          </span>
-        </div>
+        // Se for reembolso solicitado, chama o modal específico
+        if (newStatus === 'reembolso_solicitado') {
+          await this.openRefundModal(tripId, oldStatus);
+          return;
+        }
 
-        <!-- Título do Destino -->
-        <h4 class="text-sm font-black text-slate-800 dark:text-slate-200 leading-snug group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition mb-1 flex items-center gap-1">
-          ✈️ ${v.destino}
-        </h4>
+        // Executa a validação das regras de negócio (data financeiro + saldo zerado + produtos detalhados)
+        const isTransitionValid = await this.validarTransicaoStatus(tripId, newStatus);
+        if (!isTransitionValid) {
+          selectEl.value = oldStatus; // Reverte o select
+          return;
+        }
 
-        <!-- Nome do Cliente/Passageiro -->
-        <p class="text-xs text-slate-500 dark:text-slate-400 font-extrabold mb-1.5 flex items-center gap-1.5">
-          <span class="text-slate-400 dark:text-slate-500">👤</span> ${v.cliente?.nome || 'Cliente Desconhecido'}
-        </p>
+        // 1. Atualização otimista local
+        const viagem = this.viagens.find(v => v.id === tripId);
+        if (viagem) viagem.status = newStatus;
+        this.saveViagensToLocalStorage();
+        this.render();
 
-        <!-- Ícones de Produtos Cadastrados -->
-        ${v.produtos && v.produtos.length > 0 ? `
-          <div class="flex flex-wrap gap-1.5 mb-3">
-            ${(() => {
-              const counts: { [tipo: string]: number } = {};
-              v.produtos.forEach((p: any) => {
-                const t = (p.tipo || 'outro').toLowerCase();
-                counts[t] = (counts[t] || 0) + 1;
-              });
-              return Object.entries(counts).map(([tipo, count]) => {
-                const icon = this.getIconForType(tipo);
-                const suffix = count > 1 ? ` +${count - 1}` : '';
-                return `
-                  <span class="inline-flex items-center px-1.5 py-0.5 rounded bg-slate-50 dark:bg-slate-800/80 border border-slate-200/50 dark:border-slate-700/50 text-[10px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-wider" title="${tipo}">
-                    <span>${icon}${suffix}</span>
-                  </span>
-                `;
-              }).join('');
-            })()}
-          </div>
-        ` : ''}
+        // 2. Atualização no banco de dados (Supabase)
+        try {
+          const { error } = await supabase
+            .from('viagens')
+            .update({ status: newStatus })
+            .eq('id', tripId);
 
-        <!-- Calendário/Datas -->
-        <div class="grid grid-cols-2 gap-2 text-[10px] text-slate-400 dark:text-slate-500 font-semibold border-t border-slate-100 dark:border-slate-800 pt-2 mb-2">
-          <div>
-            <span class="block text-slate-400 dark:text-slate-600 font-bold uppercase tracking-wider text-[8px]">Data Ida</span>
-            <span class="text-slate-600 dark:text-slate-400 font-bold">${formatarData(v.data_ida)}</span>
-          </div>
-          <div>
-            <span class="block text-slate-400 dark:text-slate-600 font-bold uppercase tracking-wider text-[8px]">Data Volta</span>
-            <span class="text-slate-600 dark:text-slate-400 font-bold">${formatarData(v.data_volta)}</span>
-          </div>
-        </div>
+          if (error) throw error;
 
-        ${v.data_financeiro ? `
-          <div class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold border-t border-slate-100 dark:border-slate-800 pt-1.5 mb-1.5 flex items-center justify-between">
-            <span class="text-slate-400 dark:text-slate-600 font-bold uppercase tracking-wider text-[8px]">Data Financeiro</span>
-            <span class="text-slate-600 dark:text-slate-400 font-bold">${formatarData(v.data_financeiro)}</span>
-          </div>
-        ` : ''}
-
-        <!-- Se for Admin, exibe o consultor responsável pela venda -->
-        ${this.perfil?.role === 'admin' ? `
-          <div class="border-t border-slate-50 dark:border-slate-800/40 pt-1.5 mt-1.5 flex items-center justify-between text-[9px] text-slate-400 dark:text-slate-500 font-medium">
-            <span>Consultor Resp:</span>
-            <span class="font-extrabold text-slate-600 dark:text-slate-400">
-              ${v.consultor_id === this.user.id ? 'Você' : (this.consultores.find(c => c.id === v.consultor_id)?.nome || 'Outro Consultor')}
-            </span>
-          </div>
-        ` : ''}
-
-        <!-- Alerta de SLA visual ou Status de Reembolso Concluído -->
-        ${reembolsoConcluido ? `
-          <div class="mt-2.5 px-2.5 py-1.5 rounded-lg text-[10px] font-black tracking-wide flex items-center justify-center gap-1 bg-emerald-100/85 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/50">
-            ✅ Reembolso Concluído!
-          </div>
-        ` : sla.alert ? `
-          <div class="mt-2.5 px-2.5 py-1.5 rounded-lg text-[10px] font-black tracking-wide flex items-center gap-1 animate-pulse ${
-            sla.type === 'pre-embarque' 
-              ? 'bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 border border-rose-100 dark:border-rose-900/55' 
-              : 'bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 border border-amber-100 dark:border-amber-900/55'
-          }">
-            ${sla.text}
-          </div>
-        ` : ''}
-
-      </div>
-    `;
+          this.showToast('Status da viagem atualizado com sucesso!', 'success');
+        } catch (err: any) {
+          console.error('Erro ao atualizar status inline:', err);
+          this.showToast('Erro ao atualizar status da viagem.', 'error');
+          if (viagem) viagem.status = oldStatus;
+          this.saveViagensToLocalStorage();
+          this.render();
+        }
+      });
+    });
   }
 }

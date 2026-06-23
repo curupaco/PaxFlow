@@ -12,7 +12,7 @@
 2. [Público-Alvo](#2-público-alvo)
 3. [Módulos e Funcionalidades](#3-módulos-e-funcionalidades)
    - 3.1 [Painel de Controle — Mission Control (Inbox)](#31-mission-control-inbox-de-alertas)
-   - 3.2 [Kanban Operacional de Viagens (Dashboard)](#32-kanban-operacional-de-viagens)
+   - 3.2 [Painel Operacional de Viagens (Lista)](#32-painel-operacional-de-viagens-lista)
    - 3.3 [Pipeline de Orçamentos (Orcamentos)](#33-pipeline-de-orçamentos)
    - 3.4 [Gestão e Ficha de Clientes (Clientes)](#34-gestão-e-ficha-de-clientes)
    - 3.5 [Central de Reembolsos (Reembolsos)](#35-central-de-reembolsos)
@@ -106,23 +106,25 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
   - **Legenda de Cores Tooltip**: Um círculo flutuante **"?"** no topo direito do cabeçalho que exibe instantaneamente, via hover com popover puramente em CSS Tailwind, a legenda de cores e mapeamento de tipos de eventos (Lembretes = Índigo, Passaportes = Âmbar, Reembolsos = Rose).
   - **Ação com Reuso de Modal**: Clicar em qualquer evento do calendário abre instantaneamente o leitor corporativo de e-mail existente, mantendo links funcionais e re-renderizando a tela sob arquivamento.
 
-### 3.2 Kanban Operacional de Viagens
+### 3.2 Painel Operacional de Viagens (Lista)
 
-**Quadro visual** para gerenciar o ciclo de vida completo de cada viagem, do fechamento ao pós-viagem.
+**Visualização em lista unificada** de alto desempenho para gerenciar o ciclo de vida operacional de cada viagem, do fechamento ao pós-viagem.
 
-**5 Colunas Padrão:**
+**5 Fases de Venda / Status:**
 
-| Coluna | Descrição | SLA |
+| Fase | Descrição | SLA |
 |---|---|---|
 | Fechado | Venda concluída, aguardando emissão | — |
 | Pós-Venda | Documentação, passaportes, vistos | — |
-| Pré-Embarque | Próximo ao voo | Borda laranja se < N dias |
-| Pós-Viagem | Cliente já viajou | Borda vermelha se sem contato > N dias |
-| Reembolso Solicitado | Cancelamento em andamento | — |
+| Pré-Embarque | Próximo ao embarque | Indicador de atenção ⚠️ se < N dias |
+| Pós-Viagem | Cliente já viajou | Alerta crítico 🚨 se sem contato pós-venda > N dias |
+| Reembolso Solicitado | Cancelamento ou devolução em andamento | — |
 
-- **Drag-and-drop livre** com SortableJS entre todas as colunas.
-- **SLAs visuais**: bordas pulsantes vermelhas (urgente) e laranjas (atenção) conforme prazos configuráveis.
-- **Busca em Tempo Real no Cabeçalho**: Um campo de pesquisa instantânea (client-side) que filtra o Kanban dinamicamente à medida que o usuário digita, cobrindo o Destino, Código Localizador (LOC), nome, e-mail, telefone ou documento do passageiro, observações operacionais e atribuição do consultor ("Você" ou "Outro Consultor").
+- **Filtros Avançados por Período**: Painel colapsável de filtros que permite segmentar viagens por intervalos de data financeira, data de embarque ida e data de retorno volta.
+- **Abas de Status Rápidas**: Seletores de fase no topo da lista com contadores consolidados de viagens de forma dinâmica.
+- **Fácil Atualização de Fases**: Dropdown inline para transição rápida de status para cada linha de viagem cadastrada.
+- **SLAs Visuais**: Indicadores icônicos na tabela (🟢 Normal, ⚠️ Pré-Embarque Próximo, 🚨 Pós-Viagem Pendente, ✅ Reembolso Finalizado) baseados nos prazos de alerta.
+- **Busca Global**: Pesquisa instantânea por Destino, Código Localizador (LOC), dados do Cliente (nome, e-mail, telefone, CPF/CNPJ), observações operacionais e equipe de consultores.
 - **Modal de criação de viagem**: vinculação com cliente, datas no formato DD/MM/AAAA, valor em R$.
 - **Modal de Edição & Gerenciamento Avançado**:
   - Reestruturado em abas com layout ampliado de `max-w-2xl` para maior legibilidade.
