@@ -180,7 +180,10 @@ export class LandingPage {
                       </div>
                     </div>
                   </div>
-                     <!-- PANEL 2: VIAGENS -->
+                </div>
+              </div>
+
+              <!-- PANEL 2: VIAGENS -->
               <div id="panel-viagens" class="space-y-4 tab-pane-transition hidden">
                 <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
                   <div class="overflow-x-auto custom-scrollbar">
