@@ -607,6 +607,18 @@ export class Dashboard {
             return;
           }
 
+          // Validação de data financeira se mover para status diferente de 'fechado'
+          if (newStatus !== 'fechado') {
+            const viagem = this.viagens.find(v => v.id === tripId);
+            if (!viagem?.data_financeiro) {
+              this.showToast('Não é possível mover a viagem. A Data Financeiro é obrigatória para colunas operacionais (como Pós-Venda). Por favor, defina a data abrindo os detalhes do card.', 'error');
+              // Reverte a movimentação no Kanban
+              this.render();
+              this.setupDragAndDrop();
+              return;
+            }
+          }
+
           // Validação de saldo pendente se tentar mover para status diferente de 'fechado'
           if (newStatus !== 'fechado') {
             let produtos: any[] = [];
@@ -1021,7 +1033,7 @@ export class Dashboard {
                 </select>
               </div>
               <div>
-                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Data Financeiro (DD/MM/AAAA) *</label>
+                <label id="label-input-viagem-data-financeiro" class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Data Financeiro (DD/MM/AAAA) *</label>
                 ${renderDateInputHTML('input-viagem-data-financeiro', '', 'DD/MM/AAAA', true)}
               </div>
             </div>
@@ -1046,6 +1058,26 @@ export class Dashboard {
         { id: 'input-viagem-data-financeiro', type: 'date', required: true }
       ]);
 
+      const selectStatus = document.getElementById('select-viagem-status') as HTMLSelectElement;
+      const inputFinNew = document.getElementById('input-viagem-data-financeiro') as HTMLInputElement;
+      const labelFinNew = document.getElementById('label-input-viagem-data-financeiro');
+
+      const updateNewFinRequired = () => {
+        if (!selectStatus || !inputFinNew) return;
+        const isRequired = selectStatus.value !== 'fechado';
+        if (isRequired) {
+          inputFinNew.setAttribute('required', '');
+          if (labelFinNew) labelFinNew.innerHTML = 'Data Financeiro (DD/MM/AAAA) *';
+        } else {
+          inputFinNew.removeAttribute('required');
+          if (labelFinNew) labelFinNew.innerHTML = 'Data Financeiro (DD/MM/AAAA)';
+        }
+        inputFinNew.dispatchEvent(new Event('input'));
+      };
+
+      selectStatus?.addEventListener('change', updateNewFinRequired);
+      updateNewFinRequired();
+
       const handleClose = () => this.closeModal();
       document.getElementById('btn-close-viagem-x')?.addEventListener('click', handleClose);
       document.getElementById('btn-cancel-viagem')?.addEventListener('click', handleClose);
@@ -1066,7 +1098,7 @@ export class Dashboard {
 
         const vIda = formatBrDateToIso(vIdaRaw);
         const vVolta = formatBrDateToIso(vVoltaRaw);
-        const vFin = formatBrDateToIso(vFinRaw);
+        const vFin = vFinRaw ? formatBrDateToIso(vFinRaw) : null;
         
         if (!vIda) {
           this.showToast('Por favor, informe a Data de Ida no formato correto DD/MM/AAAA.', 'error');
@@ -1076,7 +1108,7 @@ export class Dashboard {
           this.showToast('Por favor, informe a Data de Volta no formato correto DD/MM/AAAA.', 'error');
           return;
         }
-        if (!vFin) {
+        if (status !== 'fechado' && !vFin) {
           this.showToast('Por favor, informe a Data Financeiro no formato correto DD/MM/AAAA.', 'error');
           return;
         }
@@ -1497,8 +1529,8 @@ export class Dashboard {
                   ${renderDateInputHTML('edit-viagem-volta', v.data_volta || '', 'DD/MM/AAAA', false)}
                 </div>
                 <div>
-                  <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 leading-tight">Data Finan.</label>
-                  ${renderDateInputHTML('edit-viagem-data-financeiro', v.data_financeiro || '', 'DD/MM/AAAA', false)}
+                  <label id="label-edit-viagem-data-financeiro" class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 leading-tight">Data Finan. ${v.status !== 'fechado' ? '*' : ''}</label>
+                  ${renderDateInputHTML('edit-viagem-data-financeiro', v.data_financeiro || '', 'DD/MM/AAAA', v.status !== 'fechado')}
                 </div>
               </div>
 
@@ -1861,8 +1893,28 @@ export class Dashboard {
       { id: 'edit-viagem-valor', type: 'currency' },
       { id: 'edit-viagem-ida', type: 'date' },
       { id: 'edit-viagem-volta', type: 'date', required: false },
-      { id: 'edit-viagem-data-financeiro', type: 'date', required: false }
+      { id: 'edit-viagem-data-financeiro', type: 'date', required: true }
     ]);
+
+    const editStatus = document.getElementById('edit-viagem-status') as HTMLSelectElement;
+    const inputFinEdit = document.getElementById('edit-viagem-data-financeiro') as HTMLInputElement;
+    const labelFinEdit = document.getElementById('label-edit-viagem-data-financeiro');
+
+    const updateEditFinRequired = () => {
+      if (!editStatus || !inputFinEdit) return;
+      const isRequired = editStatus.value !== 'fechado';
+      if (isRequired) {
+        inputFinEdit.setAttribute('required', '');
+        if (labelFinEdit) labelFinEdit.innerHTML = 'Data Finan. *';
+      } else {
+        inputFinEdit.removeAttribute('required');
+        if (labelFinEdit) labelFinEdit.innerHTML = 'Data Finan.';
+      }
+      inputFinEdit.dispatchEvent(new Event('input'));
+    };
+
+    editStatus?.addEventListener('change', updateEditFinRequired);
+    updateEditFinRequired();
 
     // Submissão do Formulário de Edição da Viagem
     const formEditar = document.getElementById('form-editar-viagem') as HTMLFormElement;
@@ -1888,7 +1940,7 @@ export class Dashboard {
         this.showToast('Por favor, informe a Data de Ida no formato correto DD/MM/AAAA.', 'error');
         return;
       }
-      if (dataFinanceiroRaw && !dataFinanceiro) {
+      if (status !== 'fechado' && !dataFinanceiro) {
         this.showToast('Por favor, informe a Data Financeiro no formato correto DD/MM/AAAA.', 'error');
         return;
       }
