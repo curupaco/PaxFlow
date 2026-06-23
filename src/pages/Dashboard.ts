@@ -1179,9 +1179,6 @@ export class Dashboard {
     const selectedProduct = this.selectedProductId
       ? v.produtos?.find((p: any) => p.id === this.selectedProductId)
       : null;
-    const siblingProducts = selectedProduct
-      ? (v.produtos?.filter((p: any) => p.tipo === selectedProduct.tipo) || [])
-      : [];
 
     // Compilar cronograma geral de datas
     const cronograma: { data: string; rotulo: string; tipo: string; cor: string }[] = [];
@@ -1467,10 +1464,8 @@ export class Dashboard {
           <!-- COLUNA DO EDITOR LATERAL (Editor do Produto Selecionado) -->
           ${renderLateralEditorPaneHTML(
             selectedProduct,
-            siblingProducts,
             activeTab,
             this.tiposProduto,
-            this.selectedProductId,
             (tipo) => this.getIconForType(tipo)
           )}
 
@@ -2111,9 +2106,6 @@ export class Dashboard {
    * Configura e gerencia o editor lateral do produto selecionado
    */
   private setupProductEditor(selectedProduct: any, v: any): void {
-    const siblingProducts = v.produtos?.filter((p: any) => p.tipo === selectedProduct.tipo) || [];
-    if (siblingProducts.length === 0) return;
-
     // 1. Fechar editor lateral
     const closeEditor = () => {
       this.selectedProductId = null;
@@ -2122,318 +2114,317 @@ export class Dashboard {
     document.getElementById('btn-close-product-editor')?.addEventListener('click', closeEditor);
     document.getElementById('edit-btn-cancelar-lateral')?.addEventListener('click', closeEditor);
 
-    siblingProducts.forEach((prod: any) => {
-      const prodId = prod.id;
-      const formEditProd = document.getElementById(`form-editar-produto-lateral-${prodId}`) as HTMLFormElement;
-      if (!formEditProd) return;
+    const prod = selectedProduct;
+    const prodId = prod.id;
+    const formEditProd = document.getElementById(`form-editar-produto-lateral-${prodId}`) as HTMLFormElement;
+    if (!formEditProd) return;
 
-      // 2. Inicializar validação do formulário com setupFormValidation
-      setupFormValidation(`form-editar-produto-lateral-${prodId}`, [
-        { id: `edit-prod-venda-${prodId}`, type: 'currency' },
-        { id: `edit-prod-custo-${prodId}`, type: 'currency' },
-        { id: `edit-prod-tarifa-${prodId}`, type: 'currency', required: false },
-        { id: `edit-prod-taxa-${prodId}`, type: 'currency', required: false },
-        { id: `edit-prod-comissao-${prodId}`, type: 'currency', required: false },
-        { id: `edit-prod-data-${prodId}`, type: 'date' }
-      ]);
+    // 2. Inicializar validação do formulário com setupFormValidation
+    setupFormValidation(`form-editar-produto-lateral-${prodId}`, [
+      { id: `edit-prod-venda-${prodId}`, type: 'currency' },
+      { id: `edit-prod-custo-${prodId}`, type: 'currency' },
+      { id: `edit-prod-tarifa-${prodId}`, type: 'currency', required: false },
+      { id: `edit-prod-taxa-${prodId}`, type: 'currency', required: false },
+      { id: `edit-prod-comissao-${prodId}`, type: 'currency', required: false },
+      { id: `edit-prod-data-${prodId}`, type: 'date' }
+    ]);
 
-      // 3. Renderizar campos dinâmicos (dados_adicionais)
-      const editTipoSelect = document.getElementById(`edit-prod-tipo-${prodId}`) as HTMLSelectElement;
-      const editCondContainer = document.getElementById(`edit-container-campos-condicionais-${prodId}`) as HTMLElement;
-      const editFornecedorInput = document.getElementById(`edit-prod-fornecedor-${prodId}`) as HTMLInputElement;
+    // 3. Renderizar campos dinâmicos (dados_adicionais)
+    const editTipoSelect = document.getElementById(`edit-prod-tipo-${prodId}`) as HTMLSelectElement;
+    const editCondContainer = document.getElementById(`edit-container-campos-condicionais-${prodId}`) as HTMLElement;
+    const editFornecedorInput = document.getElementById(`edit-prod-fornecedor-${prodId}`) as HTMLInputElement;
 
-      const renderDynamicFields = (tipo: string, currentData: any) => {
-        const tipoConfig = this.tiposProduto.find(t => t.nome === tipo);
-        if (tipoConfig && Array.isArray(tipoConfig.campos_adicionais) && tipoConfig.campos_adicionais.length > 0) {
-          editCondContainer.classList.remove('hidden');
-          let fieldsHTML = '';
-          tipoConfig.campos_adicionais.forEach((campo: any) => {
-            const requiredAttr = campo.obrigatorio ? 'required' : '';
-            const label = `${campo.label}${campo.obrigatorio ? ' *' : ''}`;
-            const currentVal = currentData[campo.id] || '';
+    const renderDynamicFields = (tipo: string, currentData: any) => {
+      const tipoConfig = this.tiposProduto.find(t => t.nome === tipo);
+      if (tipoConfig && Array.isArray(tipoConfig.campos_adicionais) && tipoConfig.campos_adicionais.length > 0) {
+        editCondContainer.classList.remove('hidden');
+        let fieldsHTML = '';
+        tipoConfig.campos_adicionais.forEach((campo: any) => {
+          const requiredAttr = campo.obrigatorio ? 'required' : '';
+          const label = `${campo.label}${campo.obrigatorio ? ' *' : ''}`;
+          const currentVal = currentData[campo.id] || '';
 
-            if (campo.tipo === 'select') {
-              const options = Array.isArray(campo.opcoes) ? campo.opcoes : [];
-              fieldsHTML += `
-                <div class="space-y-1">
-                  <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">${label}</label>
-                  <select id="edit-prod-campo-${campo.id}-${prodId}" ${requiredAttr} class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition duration-155">
-                    <option value="" disabled ${!currentVal ? 'selected' : ''}>Selecione...</option>
-                    ${options.map((opt: string) => `<option value="${opt}" ${opt === currentVal ? 'selected' : ''}>${opt}</option>`).join('')}
-                  </select>
-                </div>
-              `;
-            } else if (campo.tipo === 'number') {
-              fieldsHTML += `
-                <div class="space-y-1">
-                  <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">${label}</label>
-                  <input type="number" id="edit-prod-campo-${campo.id}-${prodId}" ${requiredAttr} value="${currentVal}" placeholder="${campo.placeholder || ''}" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition duration-155" />
-                </div>
-              `;
-            } else {
-              fieldsHTML += `
-                <div class="space-y-1">
-                  <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">${label}</label>
-                  <input type="text" id="edit-prod-campo-${campo.id}-${prodId}" ${requiredAttr} value="${currentVal}" placeholder="${campo.placeholder || ''}" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition duration-155" />
-                </div>
-              `;
-            }
-          });
+          if (campo.tipo === 'select') {
+            const options = Array.isArray(campo.opcoes) ? campo.opcoes : [];
+            fieldsHTML += `
+              <div class="space-y-1">
+                <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">${label}</label>
+                <select id="edit-prod-campo-${campo.id}-${prodId}" ${requiredAttr} class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition duration-155">
+                  <option value="" disabled ${!currentVal ? 'selected' : ''}>Selecione...</option>
+                  ${options.map((opt: string) => `<option value="${opt}" ${opt === currentVal ? 'selected' : ''}>${opt}</option>`).join('')}
+                </select>
+              </div>
+            `;
+          } else if (campo.tipo === 'number') {
+            fieldsHTML += `
+              <div class="space-y-1">
+                <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">${label}</label>
+                <input type="number" id="edit-prod-campo-${campo.id}-${prodId}" ${requiredAttr} value="${currentVal}" placeholder="${campo.placeholder || ''}" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition duration-155" />
+              </div>
+            `;
+          } else {
+            fieldsHTML += `
+              <div class="space-y-1">
+                <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">${label}</label>
+                <input type="text" id="edit-prod-campo-${campo.id}-${prodId}" ${requiredAttr} value="${currentVal}" placeholder="${campo.placeholder || ''}" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition duration-155" />
+              </div>
+            `;
+          }
+        });
 
-          editCondContainer.innerHTML = `<div class="grid grid-cols-1 md:grid-cols-2 gap-3">${fieldsHTML}</div>`;
+        editCondContainer.innerHTML = `<div class="grid grid-cols-1 md:grid-cols-2 gap-3">${fieldsHTML}</div>`;
 
-          // Hook automatic description/provider updates on change
-          tipoConfig.campos_adicionais.forEach((campo: any) => {
-            const inputEl = document.getElementById(`edit-prod-campo-${campo.id}-${prodId}`);
-            if (inputEl) {
-              inputEl.addEventListener('change', (ev: any) => {
-                const val = ev.target.value;
-                if (campo.alvo === 'fornecedor' && val && val !== 'Outra' && val !== 'Outro') {
-                  editFornecedorInput.value = val;
-                }
-              });
-            }
-          });
-        } else {
-          editCondContainer.classList.add('hidden');
-          editCondContainer.innerHTML = '';
-        }
-      };
+        // Hook automatic description/provider updates on change
+        tipoConfig.campos_adicionais.forEach((campo: any) => {
+          const inputEl = document.getElementById(`edit-prod-campo-${campo.id}-${prodId}`);
+          if (inputEl) {
+            inputEl.addEventListener('change', (ev: any) => {
+              const val = ev.target.value;
+              if (campo.alvo === 'fornecedor' && val && val !== 'Outra' && val !== 'Outro') {
+                editFornecedorInput.value = val;
+              }
+            });
+          }
+        });
+      } else {
+        editCondContainer.classList.add('hidden');
+        editCondContainer.innerHTML = '';
+      }
+    };
 
-      // Render initially
-      renderDynamicFields(prod.tipo, prod.dados_adicionais || {});
+    // Render initially
+    renderDynamicFields(prod.tipo, prod.dados_adicionais || {});
 
-      // Listen to tipo change to update fields
-      editTipoSelect?.addEventListener('change', () => {
-        renderDynamicFields(editTipoSelect.value, {});
+    // Listen to tipo change to update fields
+    editTipoSelect?.addEventListener('change', () => {
+      renderDynamicFields(editTipoSelect.value, {});
+    });
+
+    // 4. Renderizar e gerenciar datas adicionais (aninhadas)
+    const editContainerDatas = document.getElementById(`edit-container-datas-adicionais-${prodId}`) as HTMLElement;
+    const addDateRow = (rotulo: string, dataIso: string) => {
+      const dataBr = dataIso ? dataIso.split('-').reverse().join('/') : '';
+      const rowId = `row-edit-data-adicional-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+      const newRow = document.createElement('div');
+      newRow.id = rowId;
+      newRow.className = 'grid grid-cols-[1fr_1fr_auto] gap-2 items-end bg-slate-100/50 dark:bg-slate-800/30 p-2 rounded-lg border border-slate-200/40 dark:border-slate-800/40';
+      newRow.innerHTML = `
+        <div>
+          <label class="block text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Rótulo</label>
+          <input type="text" placeholder="Rótulo" value="${rotulo}" required class="edit-prod-adicional-rotulo w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs" />
+        </div>
+        <div>
+          <label class="block text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Data</label>
+          <input type="text" placeholder="DD/MM/AAAA" value="${dataBr}" required class="edit-prod-adicional-data w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs" />
+        </div>
+        <button type="button" class="edit-btn-remove-data-adicional p-2 hover:bg-rose-50/80 dark:hover:bg-rose-950/20 text-slate-400 hover:text-rose-600 rounded-lg transition" title="Remover data">
+          🗑️
+        </button>
+      `;
+      editContainerDatas.appendChild(newRow);
+
+      const dataInput = newRow.querySelector('.edit-prod-adicional-data') as HTMLInputElement;
+      dataInput.addEventListener('input', (ev) => {
+        const target = ev.target as HTMLInputElement;
+        let val = target.value;
+        let digits = val.replace(/\D/g, '');
+        if (digits.length > 8) digits = digits.slice(0, 8);
+        target.value = formatDateBr(digits);
       });
 
-      // 4. Renderizar e gerenciar datas adicionais (aninhadas)
-      const editContainerDatas = document.getElementById(`edit-container-datas-adicionais-${prodId}`) as HTMLElement;
-      const addDateRow = (rotulo: string, dataIso: string) => {
-        const dataBr = dataIso ? dataIso.split('-').reverse().join('/') : '';
-        const rowId = `row-edit-data-adicional-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
-        const newRow = document.createElement('div');
-        newRow.id = rowId;
-        newRow.className = 'grid grid-cols-[1fr_1fr_auto] gap-2 items-end bg-slate-100/50 dark:bg-slate-800/30 p-2 rounded-lg border border-slate-200/40 dark:border-slate-800/40';
-        newRow.innerHTML = `
-          <div>
-            <label class="block text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Rótulo</label>
-            <input type="text" placeholder="Rótulo" value="${rotulo}" required class="edit-prod-adicional-rotulo w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs" />
-          </div>
-          <div>
-            <label class="block text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Data</label>
-            <input type="text" placeholder="DD/MM/AAAA" value="${dataBr}" required class="edit-prod-adicional-data w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs" />
-          </div>
-          <button type="button" class="edit-btn-remove-data-adicional p-2 hover:bg-rose-50/80 dark:hover:bg-rose-950/20 text-slate-400 hover:text-rose-600 rounded-lg transition" title="Remover data">
-            🗑️
-          </button>
-        `;
-        editContainerDatas.appendChild(newRow);
+      newRow.querySelector('.edit-btn-remove-data-adicional')?.addEventListener('click', () => {
+        newRow.remove();
+      });
+    };
 
-        const dataInput = newRow.querySelector('.edit-prod-adicional-data') as HTMLInputElement;
-        dataInput.addEventListener('input', (ev) => {
-          const target = ev.target as HTMLInputElement;
-          let val = target.value;
-          let digits = val.replace(/\D/g, '');
-          if (digits.length > 8) digits = digits.slice(0, 8);
-          target.value = formatDateBr(digits);
-        });
+    // Render initial additional dates
+    if (Array.isArray(prod.datas_adicionais)) {
+      prod.datas_adicionais.forEach((d: any) => {
+        addDateRow(d.rotulo, d.data);
+      });
+    }
 
-        newRow.querySelector('.edit-btn-remove-data-adicional')?.addEventListener('click', () => {
-          newRow.remove();
-        });
-      };
+    document.getElementById(`edit-btn-add-data-adicional-${prodId}`)?.addEventListener('click', () => {
+      addDateRow('', '');
+    });
 
-      // Render initial additional dates
-      if (Array.isArray(prod.datas_adicionais)) {
-        prod.datas_adicionais.forEach((d: any) => {
-          addDateRow(d.rotulo, d.data);
+    // 5. Totalizadores e recalculo financeiro local
+    const editVendaInput = document.getElementById(`edit-prod-venda-${prodId}`) as HTMLInputElement;
+    const editTarifaInput = document.getElementById(`edit-prod-tarifa-${prodId}`) as HTMLInputElement;
+    const editTaxaInput = document.getElementById(`edit-prod-taxa-${prodId}`) as HTMLInputElement;
+    const editComissaoInput = document.getElementById(`edit-prod-comissao-${prodId}`) as HTMLInputElement;
+    const totalDistEl = document.getElementById(`edit-det-total-distribuido-${prodId}`) as HTMLElement;
+    const saldoPendEl = document.getElementById(`edit-det-saldo-pendente-${prodId}`) as HTMLElement;
+
+    const recalcularValoresLocais = () => {
+      if (!editVendaInput || !editTarifaInput || !editTaxaInput || !editComissaoInput || !totalDistEl || !saldoPendEl) return;
+      const venda = parseDoubleBr(editVendaInput.value) || 0;
+      const tarifa = parseDoubleBr(editTarifaInput.value) || 0;
+      const taxa = parseDoubleBr(editTaxaInput.value) || 0;
+      const comissao = parseDoubleBr(editComissaoInput.value) || 0;
+
+      const totalDist = tarifa + taxa + comissao;
+      const saldoPend = venda - totalDist;
+
+      totalDistEl.textContent = `R$ ${totalDist.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+      saldoPendEl.textContent = `R$ ${saldoPend.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+
+      if (Math.abs(saldoPend) > 0.01) {
+        saldoPendEl.className = 'font-black text-rose-600 dark:text-rose-400';
+      } else {
+        saldoPendEl.className = 'font-black text-emerald-600 dark:text-emerald-400';
+      }
+    };
+
+    [editVendaInput, editTarifaInput, editTaxaInput, editComissaoInput].forEach(inp => {
+      inp?.addEventListener('input', recalcularValoresLocais);
+    });
+
+    // Executa inicialmente
+    recalcularValoresLocais();
+
+    // 6. Envio do Formulário de Edição do Produto
+    formEditProd.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const editTipo = editTipoSelect.value;
+      const editFornecedor = editFornecedorInput.value.trim() || 'Não informado';
+      const editDescricao = (document.getElementById(`edit-prod-descricao-${prodId}`) as HTMLInputElement).value.trim() || 'Sem descrição';
+      const editReserva = (document.getElementById(`edit-prod-reserva-${prodId}`) as HTMLInputElement).value.trim();
+      const editStatus = (document.getElementById(`edit-prod-status-${prodId}`) as HTMLSelectElement).value;
+      const editDataServicoRaw = (document.getElementById(`edit-prod-data-${prodId}`) as HTMLInputElement).value.trim();
+
+      if (!editReserva) {
+        this.showToast('Por favor, informe o Código (LOC) do serviço.', 'error');
+        return;
+      }
+      if (editReserva.length > 20) {
+        this.showToast('O Código (LOC) deve ter no máximo 20 caracteres.', 'error');
+        return;
+      }
+      if (/\s|[,;\/\\]/.test(editReserva)) {
+        this.showToast('Insira apenas um Código (LOC) por serviço (sem espaços ou caracteres de separação).', 'error');
+        return;
+      }
+
+      const editDataServico = formatBrDateToIso(editDataServicoRaw);
+      if (!editDataServico) {
+        this.showToast('Por favor, informe a Data do Serviço no formato correto DD/MM/AAAA.', 'error');
+        return;
+      }
+
+      const venda = parseDoubleBr(editVendaInput.value) || 0;
+      const custo = parseDoubleBr((document.getElementById(`edit-prod-custo-${prodId}`) as HTMLInputElement).value) || 0;
+      const tarifa = parseDoubleBr(editTarifaInput.value) || 0;
+      const taxa = parseDoubleBr(editTaxaInput.value) || 0;
+      const comissao = parseDoubleBr(editComissaoInput.value) || 0;
+
+      const totalDist = tarifa + taxa + comissao;
+      if (Math.abs(venda - totalDist) > 0.01) {
+        this.showToast(`O valor total distribuído (Tarifa + Taxa + Comissão = R$ ${totalDist.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}) deve ser igual ao Valor de Venda do produto (R$ ${venda.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}). O saldo pendente deve ser R$ 0,00.`, 'error');
+        return;
+      }
+
+      // Coleta campos dinâmicos
+      const tipoConfig = this.tiposProduto.find(t => t.nome === editTipo);
+      const editDadosAdicionais: Record<string, any> = {};
+      if (tipoConfig && Array.isArray(tipoConfig.campos_adicionais)) {
+        for (const campo of tipoConfig.campos_adicionais) {
+          const el = document.getElementById(`edit-prod-campo-${campo.id}-${prodId}`) as HTMLInputElement | HTMLSelectElement | null;
+          if (el) {
+            const val = el.value.trim();
+            if (campo.obrigatorio && !val) {
+              this.showToast(`O campo "${campo.label}" é obrigatório.`, 'error');
+              return;
+            }
+            editDadosAdicionais[campo.id] = val;
+          }
+        }
+      }
+
+      // Coleta datas adicionais
+      const editDatasAdicionais: { data: string; rotulo: string }[] = [];
+      const rotuloInputs = formEditProd.querySelectorAll('.edit-prod-adicional-rotulo') as NodeListOf<HTMLInputElement>;
+      const dataInputs = formEditProd.querySelectorAll('.edit-prod-adicional-data') as NodeListOf<HTMLInputElement>;
+      
+      let datesValid = true;
+      for (let i = 0; i < rotuloInputs.length; i++) {
+        const rotulo = rotuloInputs[i].value.trim();
+        const dataBr = dataInputs[i].value.trim();
+        if (!rotulo || !dataBr) {
+          this.showToast('Por favor, preencha todos os campos das datas adicionais.', 'error');
+          datesValid = false;
+          break;
+        }
+
+        const dataIso = formatBrDateToIso(dataBr);
+        if (!dataIso || !validateDate(dataBr).isValid) {
+          this.showToast(`A data "${dataBr}" para "${rotulo}" é inválida ou está em formato incorreto.`, 'error');
+          datesValid = false;
+          break;
+        }
+
+        editDatasAdicionais.push({
+          rotulo,
+          data: dataIso
         });
       }
 
-      document.getElementById(`edit-btn-add-data-adicional-${prodId}`)?.addEventListener('click', () => {
-        addDateRow('', '');
-      });
+      if (!datesValid) return;
 
-      // 5. Totalizadores e recalculo financeiro local
-      const editVendaInput = document.getElementById(`edit-prod-venda-${prodId}`) as HTMLInputElement;
-      const editTarifaInput = document.getElementById(`edit-prod-tarifa-${prodId}`) as HTMLInputElement;
-      const editTaxaInput = document.getElementById(`edit-prod-taxa-${prodId}`) as HTMLInputElement;
-      const editComissaoInput = document.getElementById(`edit-prod-comissao-${prodId}`) as HTMLInputElement;
-      const totalDistEl = document.getElementById(`edit-det-total-distribuido-${prodId}`) as HTMLElement;
-      const saldoPendEl = document.getElementById(`edit-det-saldo-pendente-${prodId}`) as HTMLElement;
-
-      const recalcularValoresLocais = () => {
-        if (!editVendaInput || !editTarifaInput || !editTaxaInput || !editComissaoInput || !totalDistEl || !saldoPendEl) return;
-        const venda = parseDoubleBr(editVendaInput.value) || 0;
-        const tarifa = parseDoubleBr(editTarifaInput.value) || 0;
-        const taxa = parseDoubleBr(editTaxaInput.value) || 0;
-        const comissao = parseDoubleBr(editComissaoInput.value) || 0;
-
-        const totalDist = tarifa + taxa + comissao;
-        const saldoPend = venda - totalDist;
-
-        totalDistEl.textContent = `R$ ${totalDist.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
-        saldoPendEl.textContent = `R$ ${saldoPend.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
-
-        if (Math.abs(saldoPend) > 0.01) {
-          saldoPendEl.className = 'font-black text-rose-600 dark:text-rose-400';
-        } else {
-          saldoPendEl.className = 'font-black text-emerald-600 dark:text-emerald-400';
-        }
+      const payload = {
+        tipo: editTipo,
+        fornecedor: editFornecedor,
+        descricao: editDescricao,
+        codigo_reserva: editReserva || null,
+        valor_custo: custo,
+        valor_venda: venda,
+        tarifa: tarifa,
+        taxa: taxa,
+        comissao: comissao,
+        status: editStatus,
+        data_servico: editDataServico,
+        datas_adicionais: editDatasAdicionais,
+        dados_adicionais: editDadosAdicionais,
+        updated_at: new Date().toISOString()
       };
 
-      [editVendaInput, editTarifaInput, editTaxaInput, editComissaoInput].forEach(inp => {
-        inp?.addEventListener('input', recalcularValoresLocais);
-      });
+      try {
+        if (!this.isFallbackMode) {
+          const { error } = await supabase
+            .from('produtos_viagem')
+            .update(payload)
+            .eq('id', prodId);
 
-      // Executa inicialmente
-      recalcularValoresLocais();
-
-      // 6. Envio do Formulário de Edição do Produto
-      formEditProd.addEventListener('submit', async (e) => {
-        e.preventDefault();
-
-        const editTipo = editTipoSelect.value;
-        const editFornecedor = editFornecedorInput.value.trim() || 'Não informado';
-        const editDescricao = (document.getElementById(`edit-prod-descricao-${prodId}`) as HTMLInputElement).value.trim() || 'Sem descrição';
-        const editReserva = (document.getElementById(`edit-prod-reserva-${prodId}`) as HTMLInputElement).value.trim();
-        const editStatus = (document.getElementById(`edit-prod-status-${prodId}`) as HTMLSelectElement).value;
-        const editDataServicoRaw = (document.getElementById(`edit-prod-data-${prodId}`) as HTMLInputElement).value.trim();
-
-        if (!editReserva) {
-          this.showToast('Por favor, informe o Código (LOC) do serviço.', 'error');
-          return;
-        }
-        if (editReserva.length > 20) {
-          this.showToast('O Código (LOC) deve ter no máximo 20 caracteres.', 'error');
-          return;
-        }
-        if (/\s|[,;\/\\]/.test(editReserva)) {
-          this.showToast('Insira apenas um Código (LOC) por serviço (sem espaços ou caracteres de separação).', 'error');
-          return;
-        }
-
-        const editDataServico = formatBrDateToIso(editDataServicoRaw);
-        if (!editDataServico) {
-          this.showToast('Por favor, informe a Data do Serviço no formato correto DD/MM/AAAA.', 'error');
-          return;
-        }
-
-        const venda = parseDoubleBr(editVendaInput.value) || 0;
-        const custo = parseDoubleBr((document.getElementById(`edit-prod-custo-${prodId}`) as HTMLInputElement).value) || 0;
-        const tarifa = parseDoubleBr(editTarifaInput.value) || 0;
-        const taxa = parseDoubleBr(editTaxaInput.value) || 0;
-        const comissao = parseDoubleBr(editComissaoInput.value) || 0;
-
-        const totalDist = tarifa + taxa + comissao;
-        if (Math.abs(venda - totalDist) > 0.01) {
-          this.showToast(`O valor total distribuído (Tarifa + Taxa + Comissão = R$ ${totalDist.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}) deve ser igual ao Valor de Venda do produto (R$ ${venda.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}). O saldo pendente deve ser R$ 0,00.`, 'error');
-          return;
-        }
-
-        // Coleta campos dinâmicos
-        const tipoConfig = this.tiposProduto.find(t => t.nome === editTipo);
-        const editDadosAdicionais: Record<string, any> = {};
-        if (tipoConfig && Array.isArray(tipoConfig.campos_adicionais)) {
-          for (const campo of tipoConfig.campos_adicionais) {
-            const el = document.getElementById(`edit-prod-campo-${campo.id}-${prodId}`) as HTMLInputElement | HTMLSelectElement | null;
-            if (el) {
-              const val = el.value.trim();
-              if (campo.obrigatorio && !val) {
-                this.showToast(`O campo "${campo.label}" é obrigatório.`, 'error');
-                return;
-              }
-              editDadosAdicionais[campo.id] = val;
+          if (error) throw error;
+        } else {
+          // Offline update
+          const saved = localStorage.getItem(`paxflow-produtos-viagem-${v.id}`);
+          if (saved) {
+            const list = JSON.parse(saved);
+            const idx = list.findIndex((x: any) => x.id === prodId);
+            if (idx !== -1) {
+              list[idx] = { ...list[idx], ...payload };
+              localStorage.setItem(`paxflow-produtos-viagem-${v.id}`, JSON.stringify(list));
             }
           }
         }
 
-        // Coleta datas adicionais
-        const editDatasAdicionais: { data: string; rotulo: string }[] = [];
-        const rotuloInputs = formEditProd.querySelectorAll('.edit-prod-adicional-rotulo') as NodeListOf<HTMLInputElement>;
-        const dataInputs = formEditProd.querySelectorAll('.edit-prod-adicional-data') as NodeListOf<HTMLInputElement>;
-        
-        let datesValid = true;
-        for (let i = 0; i < rotuloInputs.length; i++) {
-          const rotulo = rotuloInputs[i].value.trim();
-          const dataBr = dataInputs[i].value.trim();
-          if (!rotulo || !dataBr) {
-            this.showToast('Por favor, preencha todos os campos das datas adicionais.', 'error');
-            datesValid = false;
-            break;
-          }
+        this.showToast('Produto/Serviço atualizado com sucesso!', 'success');
 
-          const dataIso = formatBrDateToIso(dataBr);
-          if (!dataIso || !validateDate(dataBr).isValid) {
-            this.showToast(`A data "${dataBr}" para "${rotulo}" é inválida ou está em formato incorreto.`, 'error');
-            datesValid = false;
-            break;
-          }
+        // Manter o produto atualizado como o selecionado
+        this.selectedProductId = prodId;
 
-          editDatasAdicionais.push({
-            rotulo,
-            data: dataIso
-          });
-        }
+        // Recarregar viagens e reabrir modal
+        await this.loadViagens();
+        this.render();
+        this.setupDragAndDrop();
 
-        if (!datesValid) return;
-
-        const payload = {
-          tipo: editTipo,
-          fornecedor: editFornecedor,
-          descricao: editDescricao,
-          codigo_reserva: editReserva || null,
-          valor_custo: custo,
-          valor_venda: venda,
-          tarifa: tarifa,
-          taxa: taxa,
-          comissao: comissao,
-          status: editStatus,
-          data_servico: editDataServico,
-          datas_adicionais: editDatasAdicionais,
-          dados_adicionais: editDadosAdicionais,
-          updated_at: new Date().toISOString()
-        };
-
-        try {
-          if (!this.isFallbackMode) {
-            const { error } = await supabase
-              .from('produtos_viagem')
-              .update(payload)
-              .eq('id', prodId);
-
-            if (error) throw error;
-          } else {
-            // Offline update
-            const saved = localStorage.getItem(`paxflow-produtos-viagem-${v.id}`);
-            if (saved) {
-              const list = JSON.parse(saved);
-              const idx = list.findIndex((x: any) => x.id === prodId);
-              if (idx !== -1) {
-                list[idx] = { ...list[idx], ...payload };
-                localStorage.setItem(`paxflow-produtos-viagem-${v.id}`, JSON.stringify(list));
-              }
-            }
-          }
-
-          this.showToast('Produto/Serviço atualizado com sucesso!', 'success');
-
-          // Manter o produto atualizado como o selecionado
-          this.selectedProductId = prodId;
-
-          // Recarregar viagens e reabrir modal
-          await this.loadViagens();
-          this.render();
-          this.setupDragAndDrop();
-
-          await this.openEdicaoEProdutosModal(v.id, 'produtos');
-        } catch (err: any) {
-          console.error('Erro ao atualizar produto:', err);
-          this.showToast(`Erro ao atualizar produto: ${err.message}`, 'error');
-        }
-      });
+        await this.openEdicaoEProdutosModal(v.id, 'produtos');
+      } catch (err: any) {
+        console.error('Erro ao atualizar produto:', err);
+        this.showToast(`Erro ao atualizar produto: ${err.message}`, 'error');
+      }
     });
   }
 
@@ -2596,13 +2587,6 @@ export class Dashboard {
       }
     });
 
-    // Contagem de tipos de produtos para exibir o sufixo "+n" no modal
-    const typeCounts: { [tipo: string]: number } = {};
-    produtos.forEach((p: any) => {
-      const t = (p.tipo || '').trim().toLowerCase();
-      typeCounts[t] = (typeCounts[t] || 0) + 1;
-    });
-
     container.innerHTML = Object.values(produtosAgrupados).map(grupo => {
       const locKey = grupo.loc;
       const isGroupDetalhado = grupo.isGroupDetalhado;
@@ -2624,17 +2608,13 @@ export class Dashboard {
           ? 'border-indigo-500 dark:border-indigo-400 bg-indigo-50/10 dark:bg-indigo-950/10 ring-2 ring-indigo-500/20 shadow-md shadow-indigo-500/5'
           : 'border-slate-200/60 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 hover:bg-slate-100/50 dark:hover:bg-slate-800/80';
 
-        const tLower = (p.tipo || '').trim().toLowerCase();
-        const count = typeCounts[tLower] || 0;
-        const suffix = count > 1 ? ` +${count - 1}` : '';
-
         return `
           <div class="product-card-clickable flex items-center justify-between gap-3 p-3 ${selectedBorderClass} border rounded-xl transition cursor-pointer" data-product-id="${p.id}">
             <div class="flex items-start gap-2.5 overflow-hidden w-full">
               <span class="text-lg p-1 bg-white dark:bg-slate-700 border border-slate-100 dark:border-slate-700 rounded-lg shadow-sm flex items-center justify-center">${tipoIcon}</span>
               <div class="overflow-hidden flex-1 self-center text-left">
                 <span class="block text-xs font-black text-slate-700 dark:text-slate-200 truncate leading-tight">
-                  ${p.tipo}${suffix}
+                  ${p.tipo}
                 </span>
               </div>
             </div>

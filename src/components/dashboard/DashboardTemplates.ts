@@ -218,10 +218,8 @@ export function renderNovoProdutoFormHTML(tiposProduto: any[]): string {
  */
 export function renderLateralEditorPaneHTML(
   selectedProduct: any,
-  siblingProducts: any[],
   activeTab: string,
   tiposProduto: any[],
-  selectedProductId: string | null,
   getIconForType: (tipo: string) => string
 ): string {
   if (!selectedProduct) return '';
@@ -231,7 +229,7 @@ export function renderLateralEditorPaneHTML(
       <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 mb-2 sticky top-0 bg-white dark:bg-slate-900 z-10">
         <h4 class="text-xs font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5 uppercase tracking-wide">
           <span class="p-1 bg-indigo-50 dark:bg-indigo-950 text-indigo-500 rounded-lg text-xs flex items-center justify-center">${getIconForType(selectedProduct.tipo)}</span>
-          <span>Serviços Cadastrados: ${selectedProduct.tipo}</span>
+          <span>Editar Serviço: ${selectedProduct.tipo}</span>
         </h4>
         <button id="btn-close-product-editor" type="button" class="text-[10px] font-black text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded transition uppercase tracking-wider">
           Fechar
@@ -239,139 +237,130 @@ export function renderLateralEditorPaneHTML(
       </div>
 
       <div class="space-y-6 pb-4">
-        ${siblingProducts.map((prod: any, idx: number) => {
-          const isSelected = prod.id === selectedProductId;
-          const borderHighlight = isSelected
-            ? 'border-indigo-500 dark:border-indigo-400 ring-2 ring-indigo-500/20 shadow-md shadow-indigo-500/5 bg-indigo-50/5 dark:bg-indigo-950/5'
-            : 'border-slate-200/80 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-900/10';
+        <div class="p-4 rounded-2xl border border-indigo-500 dark:border-indigo-400 ring-2 ring-indigo-500/20 shadow-md shadow-indigo-500/5 bg-indigo-50/5 dark:bg-indigo-950/5 space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 pb-2 mb-1">
+            <span class="text-xs font-extrabold text-slate-700 dark:text-slate-200">
+              Detalhes do Serviço
+            </span>
+            <span class="px-2 py-0.5 rounded text-[9px] uppercase font-black tracking-wider ${
+              selectedProduct.status === 'emitido' 
+                ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400'
+                : selectedProduct.status === 'cancelado'
+                ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400'
+                : selectedProduct.status === 'reembolsado'
+                ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400'
+                : 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400'
+            }">${selectedProduct.status}</span>
+          </div>
 
-          return `
-            <div class="p-4 rounded-2xl border ${borderHighlight} space-y-4">
-              <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 pb-2 mb-1">
-                <span class="text-xs font-extrabold text-slate-700 dark:text-slate-200">
-                  Serviço #${idx + 1} ${isSelected ? '<span class="ml-1 text-[9px] bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 px-1.5 py-0.5 rounded font-black uppercase">Selecionado</span>' : ''}
-                </span>
-                <span class="px-2 py-0.5 rounded text-[9px] uppercase font-black tracking-wider ${
-                  prod.status === 'emitido' 
-                    ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400'
-                    : prod.status === 'cancelado'
-                    ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400'
-                    : prod.status === 'reembolsado'
-                    ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400'
-                    : 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400'
-                }">${prod.status}</span>
+          <form id="form-editar-produto-lateral-${selectedProduct.id}" class="space-y-4">
+            <div class="grid grid-cols-1 gap-4">
+              
+              <!-- Seção de Dados (Campos de Entrada) -->
+              <div class="space-y-3.5">
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Tipo *</label>
+                  <select id="edit-prod-tipo-${selectedProduct.id}" required class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition duration-155">
+                    ${tiposProduto.filter((t: any) => t.ativo && t.nome !== 'MUDAR!').map((t: any) => `
+                      <option value="${t.nome}" ${t.nome === selectedProduct.tipo ? 'selected' : ''}>${t.nome}</option>
+                    `).join('')}
+                  </select>
+                </div>
+
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Fornecedor *</label>
+                  <input id="edit-prod-fornecedor-${selectedProduct.id}" type="text" required value="${selectedProduct.fornecedor || ''}" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition duration-155" />
+                </div>
+
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Descrição</label>
+                  <input id="edit-prod-descricao-${selectedProduct.id}" type="text" value="${selectedProduct.descricao || ''}" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition duration-155" />
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                  <div>
+                    <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Código (LOC) *</label>
+                    <input id="edit-prod-reserva-${selectedProduct.id}" type="text" required maxlength="20" value="${selectedProduct.codigo_reserva || ''}" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs uppercase transition duration-155" />
+                  </div>
+                  <div>
+                    <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Status *</label>
+                    <select id="edit-prod-status-${selectedProduct.id}" required class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition duration-155">
+                      <option value="reservado" ${selectedProduct.status === 'reservado' ? 'selected' : ''}>Reservado</option>
+                      <option value="emitido" ${selectedProduct.status === 'emitido' ? 'selected' : ''}>Emitido</option>
+                      <option value="cancelado" ${selectedProduct.status === 'cancelado' ? 'selected' : ''}>Cancelado</option>
+                      <option value="reembolsado" ${selectedProduct.status === 'reembolsado' ? 'selected' : ''}>Reembolsado</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Data do Serviço *</label>
+                  ${renderDateInputHTML(`edit-prod-data-${selectedProduct.id}`, formatarDataLocal(selectedProduct.data_servico))}
+                </div>
+
+                <!-- Container para Campos Dinâmicos (dados_adicionais) -->
+                <div id="edit-container-campos-condicionais-${selectedProduct.id}" class="hidden bg-slate-100/40 dark:bg-slate-900/30 p-2.5 rounded-lg border border-slate-200/40 dark:border-slate-800/40 space-y-2"></div>
+
+                <!-- Datas Adicionais -->
+                <div class="border-t border-slate-100 dark:border-slate-800/80 pt-3">
+                  <span class="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-2 flex items-center gap-1">📅 Demais Serviços Aninhados</span>
+                  <div id="edit-container-datas-adicionais-${selectedProduct.id}" class="space-y-2"></div>
+                  <div class="flex justify-start">
+                    <button type="button" id="edit-btn-add-data-adicional-${selectedProduct.id}" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 font-black text-[9px] tracking-wider rounded-lg transition uppercase flex items-center gap-1 mt-1">
+                      ➕ Adicionar Outra Data
+                    </button>
+                  </div>
+                </div>
               </div>
 
-              <form id="form-editar-produto-lateral-${prod.id}" class="space-y-4">
-                <div class="grid grid-cols-1 gap-4">
-                  
-                  <!-- Seção de Dados (Campos de Entrada) -->
-                  <div class="space-y-3.5">
-                    <div>
-                      <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Tipo *</label>
-                      <select id="edit-prod-tipo-${prod.id}" required class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition duration-155">
-                        ${tiposProduto.filter((t: any) => t.ativo && t.nome !== 'MUDAR!').map((t: any) => `
-                          <option value="${t.nome}" ${t.nome === prod.tipo ? 'selected' : ''}>${t.nome}</option>
-                        `).join('')}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Fornecedor *</label>
-                      <input id="edit-prod-fornecedor-${prod.id}" type="text" required value="${prod.fornecedor || ''}" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition duration-155" />
-                    </div>
-
-                    <div>
-                      <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Descrição</label>
-                      <input id="edit-prod-descricao-${prod.id}" type="text" value="${prod.descricao || ''}" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition duration-155" />
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-2">
-                      <div>
-                        <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Código (LOC) *</label>
-                        <input id="edit-prod-reserva-${prod.id}" type="text" required maxlength="20" value="${prod.codigo_reserva || ''}" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs uppercase transition duration-155" />
-                      </div>
-                      <div>
-                        <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Status *</label>
-                        <select id="edit-prod-status-${prod.id}" required class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition duration-155">
-                          <option value="reservado" ${prod.status === 'reservado' ? 'selected' : ''}>Reservado</option>
-                          <option value="emitido" ${prod.status === 'emitido' ? 'selected' : ''}>Emitido</option>
-                          <option value="cancelado" ${prod.status === 'cancelado' ? 'selected' : ''}>Cancelado</option>
-                          <option value="reembolsado" ${prod.status === 'reembolsado' ? 'selected' : ''}>Reembolsado</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Data do Serviço *</label>
-                      ${renderDateInputHTML(`edit-prod-data-${prod.id}`, formatarDataLocal(prod.data_servico))}
-                    </div>
-
-                    <!-- Container para Campos Dinâmicos (dados_adicionais) -->
-                    <div id="edit-container-campos-condicionais-${prod.id}" class="hidden bg-slate-100/40 dark:bg-slate-900/30 p-2.5 rounded-lg border border-slate-200/40 dark:border-slate-800/30 space-y-2"></div>
-
-                    <!-- Datas Adicionais -->
-                    <div class="border-t border-slate-100 dark:border-slate-800/80 pt-3">
-                      <span class="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-2 flex items-center gap-1">📅 Demais Serviços Aninhados</span>
-                      <div id="edit-container-datas-adicionais-${prod.id}" class="space-y-2"></div>
-                      <div class="flex justify-start">
-                        <button type="button" id="edit-btn-add-data-adicional-${prod.id}" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 font-black text-[9px] tracking-wider rounded-lg transition uppercase flex items-center gap-1 mt-1">
-                          ➕ Adicionar Outra Data
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Seção Financeira (Valores e Rentabilidade) -->
-                  <div class="space-y-3.5 bg-slate-50/50 dark:bg-slate-900/40 p-3.5 rounded-xl border border-slate-100 dark:border-slate-800">
-                    <span class="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wide border-b border-slate-100 dark:border-slate-850 pb-2 mb-1">Valores do Serviço</span>
-                    
-                    <div>
-                      <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Venda (R$) *</label>
-                      ${renderCurrencyInputHTML(`edit-prod-venda-${prod.id}`, prod.valor_venda || 0)}
-                    </div>
-                    <div>
-                      <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Custo (R$) *</label>
-                      ${renderCurrencyInputHTML(`edit-prod-custo-${prod.id}`, prod.valor_custo || 0)}
-                    </div>
-                    <div>
-                      <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Tarifa (Valor Líquido)</label>
-                      ${renderCurrencyInputHTML(`edit-prod-tarifa-${prod.id}`, prod.tarifa || 0)}
-                    </div>
-                    <div>
-                      <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Taxa (Embarque/Serviço)</label>
-                      ${renderCurrencyInputHTML(`edit-prod-taxa-${prod.id}`, prod.taxa || 0)}
-                    </div>
-                    <div>
-                      <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Comissão da Agência</label>
-                      ${renderCurrencyInputHTML(`edit-prod-comissao-${prod.id}`, prod.comissao || 0)}
-                    </div>
-
-                    <!-- Totalizadores locais -->
-                    <div class="p-3 bg-white dark:bg-slate-900/80 border border-slate-200/60 dark:border-slate-800 rounded-xl space-y-2 mt-4 shadow-sm">
-                      <div class="flex justify-between items-center text-xs">
-                        <span class="font-bold text-slate-400 dark:text-slate-500 uppercase text-[9px] tracking-wider">Total Distribuído:</span>
-                        <strong id="edit-det-total-distribuido-${prod.id}" class="font-black text-slate-700 dark:text-slate-200">R$ 0,00</strong>
-                      </div>
-                      <div class="flex justify-between items-center text-xs">
-                        <span class="font-bold text-slate-400 dark:text-slate-500 uppercase text-[9px] tracking-wider">Saldo Pendente:</span>
-                        <strong id="edit-det-saldo-pendente-${prod.id}" class="font-black text-rose-600 dark:text-rose-400">R$ 0,00</strong>
-                      </div>
-                    </div>
-                  </div>
-
+              <!-- Seção Financeira (Valores e Rentabilidade) -->
+              <div class="space-y-3.5 bg-slate-50/50 dark:bg-slate-900/40 p-3.5 rounded-xl border border-slate-100 dark:border-slate-800">
+                <span class="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wide border-b border-slate-100 dark:border-slate-850 pb-2 mb-1">Valores do Serviço</span>
+                
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Venda (R$) *</label>
+                  ${renderCurrencyInputHTML(`edit-prod-venda-${selectedProduct.id}`, selectedProduct.valor_venda || 0)}
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Custo (R$) *</label>
+                  ${renderCurrencyInputHTML(`edit-prod-custo-${selectedProduct.id}`, selectedProduct.valor_custo || 0)}
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Tarifa (Valor Líquido)</label>
+                  ${renderCurrencyInputHTML(`edit-prod-tarifa-${selectedProduct.id}`, selectedProduct.tarifa || 0)}
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Taxa (Embarque/Serviço)</label>
+                  ${renderCurrencyInputHTML(`edit-prod-taxa-${selectedProduct.id}`, selectedProduct.taxa || 0)}
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Comissão da Agência</label>
+                  ${renderCurrencyInputHTML(`edit-prod-comissao-${selectedProduct.id}`, selectedProduct.comissao || 0)}
                 </div>
 
-                <!-- Botões de Ação -->
-                <div class="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
-                  <button type="submit" class="w-full px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-[10px] tracking-wider rounded-lg shadow-sm transition uppercase">
-                    Salvar Este Serviço
-                  </button>
+                <!-- Totalizadores locais -->
+                <div class="p-3 bg-white dark:bg-slate-900/80 border border-slate-200/60 dark:border-slate-800 rounded-xl space-y-2 mt-4 shadow-sm">
+                  <div class="flex justify-between items-center text-xs">
+                    <span class="font-bold text-slate-400 dark:text-slate-500 uppercase text-[9px] tracking-wider">Total Distribuído:</span>
+                    <strong id="edit-det-total-distribuido-${selectedProduct.id}" class="font-black text-slate-700 dark:text-slate-200">R$ 0,00</strong>
+                  </div>
+                  <div class="flex justify-between items-center text-xs">
+                    <span class="font-bold text-slate-400 dark:text-slate-500 uppercase text-[9px] tracking-wider">Saldo Pendente:</span>
+                    <strong id="edit-det-saldo-pendente-${selectedProduct.id}" class="font-black text-rose-600 dark:text-rose-400">R$ 0,00</strong>
+                  </div>
                 </div>
-              </form>
+              </div>
+
             </div>
-          `;
-        }).join('')}
+
+            <!-- Botões de Ação -->
+            <div class="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+              <button type="submit" class="w-full px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-[10px] tracking-wider rounded-lg shadow-sm transition uppercase">
+                Salvar Este Serviço
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
 
       <div class="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800 sticky bottom-0 bg-white dark:bg-slate-900 z-10 py-2">
