@@ -71,6 +71,27 @@ class App {
     this.applyInitialTheme();
     this.renderLoading();
 
+    // Detecção da rota /conheca para isolamento da Landing Page
+    const isConhecaRoute = 
+      window.location.pathname.includes('/conheca') || 
+      window.location.search.includes('conheca') || 
+      window.location.hash.includes('conheca');
+
+    if (isConhecaRoute && sessionStorage.getItem('paxflowSandbox') !== 'true') {
+      this.renderLandingPage();
+      return;
+    }
+
+    if (sessionStorage.getItem('paxflowSandbox') === 'true') {
+      (window as any).paxflowSandbox = true;
+      // Garante o comportamento 'reiniciou, perdeu': limpa as chaves temporárias para carregar o mock limpo
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('sandbox-')) {
+          localStorage.removeItem(key);
+        }
+      });
+    }
+
     try {
       const { user, perfil, error } = await getSessaoAtual();
 
@@ -87,6 +108,21 @@ class App {
       console.error('Erro ao inicializar app:', err);
       this.renderLogin();
     }
+  }
+
+  /**
+   * Renderiza a Landing Page comercial
+   */
+  private renderLandingPage(): void {
+    import('./pages/LandingPage').then(({ LandingPage }) => {
+      const page = new LandingPage(this.container);
+      page.init();
+
+      // Escuta transição para o Modo Sandbox
+      window.addEventListener('paxflow-navigate-to-demo', () => {
+        window.location.reload();
+      }, { once: true });
+    });
   }
 
   /**
@@ -183,7 +219,21 @@ class App {
    * Renderiza a estrutura da barra de navegação principal (Sidebar)
    */
   private renderAppShell(): void {
+    const isSandbox = (window as any).paxflowSandbox;
+    const bannerHtml = isSandbox ? `
+      <div class="bg-gradient-to-r from-amber-600 to-amber-700 text-white px-4 py-2.5 flex items-center justify-between text-xs font-black tracking-wide shadow-md z-50">
+        <div class="flex items-center gap-2">
+          <span>⚠️</span>
+          <span>Você está no <strong>Modo de Demonstração (Dados Fictícios)</strong>. As alterações são temporárias e serão perdidas ao atualizar ou sair.</span>
+        </div>
+        <button id="btn-sair-demo-banner" class="px-3 py-1 bg-white hover:bg-slate-100 text-slate-800 rounded-lg font-black transition uppercase text-[10px] shrink-0">
+          Sair da Demo
+        </button>
+      </div>
+    ` : '';
+
     this.container.innerHTML = `
+      ${bannerHtml}
       <div class="min-h-screen flex flex-col md:flex-row bg-slate-50/50 dark:bg-slate-950 transition-colors duration-200">
         
         <!-- Mobile Top Bar (Header) -->
@@ -331,6 +381,22 @@ class App {
     this.setupNavigationListeners();
     this.atualizarInboxBadge();
 
+    // Event listener para sair do modo Sandbox no banner
+    document.getElementById('btn-sair-demo-banner')?.addEventListener('click', async () => {
+      const { showCustomConfirm } = await import('./services/dialog');
+      const confirmResult = await showCustomConfirm('Deseja realmente sair da demonstração?', 'Encerrar Demonstração');
+      if (confirmResult) {
+        (window as any).paxflowSandbox = false;
+        sessionStorage.removeItem('paxflowSandbox');
+        Object.keys(localStorage).forEach(key => {
+          if (key.startsWith('sandbox-')) {
+            localStorage.removeItem(key);
+          }
+        });
+        window.location.href = '/conheca';
+      }
+    });
+
     // Event listener para colapsar barra lateral
     document.getElementById('sidebar-collapse-btn')?.addEventListener('click', () => {
       this.toggleSidebar();
@@ -432,6 +498,20 @@ class App {
       });
 
       document.getElementById('sidebar-logout-btn')?.addEventListener('click', async () => {
+        if ((window as any).paxflowSandbox) {
+          const confirmResult = await showCustomConfirm('Deseja realmente sair da demonstração?', 'Encerrar Demonstração');
+          if (confirmResult) {
+            (window as any).paxflowSandbox = false;
+            sessionStorage.removeItem('paxflowSandbox');
+            Object.keys(localStorage).forEach(key => {
+              if (key.startsWith('sandbox-')) {
+                localStorage.removeItem(key);
+              }
+            });
+            window.location.href = '/conheca';
+          }
+          return;
+        }
         const { logoutConsultor } = await import('./services/supabase');
         const confirmResult = await showCustomConfirm('Deseja realmente sair do sistema?', 'Encerrar Sessão');
         if (confirmResult) {

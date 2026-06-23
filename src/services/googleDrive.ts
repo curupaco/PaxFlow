@@ -75,6 +75,24 @@ export async function uploadDocumentoCliente(
   telefoneCliente: string,
   file: File
 ): Promise<{ success: boolean; googleDriveFolderUrl: string; error?: string; isMock?: boolean }> {
+  if (typeof window !== 'undefined' && (window as any).paxflowSandbox) {
+    try {
+      const { showCustomAlert } = await import('./dialog');
+      await showCustomAlert(
+        'Este é o modo de demonstração do PaxFlow. Para fins de segurança, uploads reais de arquivos estão bloqueados neste ambiente. ' +
+        'O sistema irá simular o upload com sucesso e disponibilizar um documento demonstrativo para visualização.',
+        'Upload Demonstrativo Ativo'
+      );
+    } catch (e) {
+      console.warn('Erro ao exibir alerta personalizado:', e);
+    }
+    return {
+      success: true,
+      googleDriveFolderUrl: '/documento_demo.pdf',
+      isMock: true
+    };
+  }
+
   try {
     if (!supabase || !supabase.storage) {
       throw new Error('Cliente do Supabase ou serviço de Storage não inicializado no sistema.');

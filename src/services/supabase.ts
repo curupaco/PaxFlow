@@ -22,8 +22,216 @@ if (!supabaseUrl || !supabaseAnonKey) {
   );
 }
 
-// Inicializa o cliente do Supabase
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+import {
+  MOCK_CONSULTORES,
+  MOCK_CLIENTES,
+  MOCK_VIAGENS,
+  MOCK_PRODUTOS,
+  MOCK_ORCAMENTOS,
+  MOCK_ALERTS
+} from '../utils/mockData';
+
+// Inicializa o cliente do Supabase real
+const realSupabase = createClient(supabaseUrl, supabaseAnonKey);
+
+const toCamel = (s: string) => s.replace(/([-_][a-z])/ig, ($1) => $1.toUpperCase().replace('-', '').replace('_', ''));
+
+const getMockDataForTable = (table: string): any[] => {
+  const localData = localStorage.getItem(`sandbox-paxflow-${table}`);
+  if (localData) {
+    try { return JSON.parse(localData); } catch (e) {}
+  }
+  let defaultData: any[] = [];
+  if (table === 'clientes') defaultData = MOCK_CLIENTES;
+  else if (table === 'viagens') defaultData = MOCK_VIAGENS;
+  else if (table === 'produtos_viagem') defaultData = MOCK_PRODUTOS;
+  else if (table === 'orcamentos') defaultData = MOCK_ORCAMENTOS;
+  else if (table === 'profiles') defaultData = MOCK_CONSULTORES;
+  else if (table === 'lembretes') defaultData = [];
+  else if (table === 'notificacoes') {
+    defaultData = MOCK_ALERTS.map((a, index) => ({
+      id: a.id.replace('mention-', '').replace('passport-', '').replace('refund-', ''),
+      user_id: 'sandbox-user-id',
+      tipo_item: a.type === 'passport' ? 'viagem' : 'mensagem',
+      item_id: a.targetId,
+      parent_id: a.targetId,
+      lida: a.arquivado,
+      arquivada: a.arquivado,
+      created_at: a.createdAt,
+      comentario: a.type === 'mention' ? { texto: a.body.substring(0, 100) } : null,
+      mensagem: a.type === 'direct_message' ? {
+        id: a.targetId,
+        assunto: a.title,
+        conteudo: a.body,
+        created_at: a.createdAt,
+        remetente_id: a.senderId,
+        remetente: MOCK_CONSULTORES.find(c => c.id === a.senderId) || MOCK_CONSULTORES[1]
+      } : null
+    }));
+  } else if (table === 'mensagens_diretas') {
+    defaultData = MOCK_ALERTS.filter(a => a.type === 'direct_message').map(a => ({
+      id: a.targetId,
+      remetente_id: a.senderId,
+      assunto: a.title,
+      conteudo: a.body,
+      created_at: a.createdAt,
+      remetente: MOCK_CONSULTORES.find(c => c.id === a.senderId) || MOCK_CONSULTORES[1]
+    }));
+  }
+  
+  localStorage.setItem(`sandbox-paxflow-${table}`, JSON.stringify(defaultData));
+  return defaultData;
+};
+
+const saveMockDataForTable = (table: string, data: any[]) => {
+  localStorage.setItem(`sandbox-paxflow-${table}`, JSON.stringify(data));
+};
+
+export const supabase = new Proxy(realSupabase, {
+  get(target, prop, receiver) {
+    if (typeof window !== 'undefined' && (window as any).paxflowSandbox) {
+      if (prop === 'auth') {
+        return {
+          signInWithPassword: () => Promise.resolve({ data: { user: { id: 'sandbox-user-id' } }, error: null }),
+          signOut: () => Promise.resolve({ error: null }),
+          getSession: () => Promise.resolve({ data: { session: { user: { id: 'sandbox-user-id' } } }, error: null }),
+          updateUser: () => Promise.resolve({ error: null })
+        };
+      }
+      if (prop === 'from') {
+        return (table: string) => {
+          const getData = () => getMockDataForTable(table);
+          const saveData = (data: any[]) => saveMockDataForTable(table, data);
+
+          const makeQueryBuilder = (currentData: any[]): any => {
+            const builder: any = {
+              select: (columns: string, options?: any) => {
+                return makeQueryBuilder(currentData);
+              },
+              eq: (column: string, value: any) => {
+                const filtered = currentData.filter(item => {
+                  const val = item[column] !== undefined ? item[column] : item[toCamel(column)];
+                  return String(val) === String(value);
+                });
+                return makeQueryBuilder(filtered);
+              },
+              neq: (column: string, value: any) => {
+                const filtered = currentData.filter(item => {
+                  const val = item[column] !== undefined ? item[column] : item[toCamel(column)];
+                  return String(val) !== String(value);
+                });
+                return makeQueryBuilder(filtered);
+              },
+              not: (column: string, operator: string, value: any) => {
+                return makeQueryBuilder(currentData);
+              },
+              or: (filterStr: string) => {
+                return makeQueryBuilder(currentData);
+              },
+              order: (column: string, options?: any) => {
+                return makeQueryBuilder(currentData);
+              },
+              range: (from: number, to: number) => {
+                return makeQueryBuilder(currentData.slice(from, to + 1));
+              },
+              single: () => {
+                return Promise.resolve({ data: currentData[0] || null, error: currentData[0] ? null : new Error('Not found') });
+              },
+              maybeSingle: () => {
+                return Promise.resolve({ data: currentData[0] || null, error: null });
+              },
+              insert: (payload: any) => {
+                const arrayPayload = Array.isArray(payload) ? payload : [payload];
+                const db = getData();
+                const newItems = arrayPayload.map(item => ({
+                  id: item.id || 'sandbox-id-' + Math.random().toString(36).substr(2, 9),
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString(),
+                  ...item
+                }));
+                saveData([...db, ...newItems]);
+                return Promise.resolve({ data: newItems, error: null });
+              },
+              update: (payload: any) => {
+                return {
+                  eq: (column: string, value: any) => {
+                    const db = getData();
+                    const updatedItems: any[] = [];
+                    const nextDb = db.map(item => {
+                      if (String(item[column]) === String(value)) {
+                        const updated = { ...item, ...payload, updated_at: new Date().toISOString() };
+                        updatedItems.push(updated);
+                        return updated;
+                      }
+                      return item;
+                    });
+                    saveData(nextDb);
+                    return Promise.resolve({ data: updatedItems, error: null });
+                  }
+                };
+              },
+              delete: () => {
+                return {
+                  eq: (column: string, value: any) => {
+                    const db = getData();
+                    const nextDb = db.filter(item => String(item[column]) !== String(value));
+                    saveData(nextDb);
+                    return Promise.resolve({ data: [], error: null });
+                  }
+                };
+              },
+              then: (resolve: any) => {
+                resolve({ data: currentData, error: null, count: currentData.length });
+              }
+            };
+            return builder;
+          };
+
+          return makeQueryBuilder(getData());
+        };
+      }
+      if (prop === 'channel') {
+        return () => ({
+          on: () => ({ subscribe: () => ({ unsubscribe: () => {} }) }),
+          subscribe: () => ({ unsubscribe: () => {} }),
+          unsubscribe: () => {}
+        });
+      }
+    }
+    return Reflect.get(target, prop, receiver);
+  }
+});
+
+// Sobrescrita do localStorage para isolamento total do Sandbox
+if (typeof window !== 'undefined') {
+  const originalGetItem = localStorage.getItem;
+  const originalSetItem = localStorage.setItem;
+  const originalRemoveItem = localStorage.removeItem;
+
+  localStorage.getItem = function (key: string) {
+    if ((window as any).paxflowSandbox) {
+      return originalGetItem.call(localStorage, 'sandbox-' + key);
+    }
+    return originalGetItem.call(localStorage, key);
+  };
+
+  localStorage.setItem = function (key: string, value: string) {
+    if ((window as any).paxflowSandbox) {
+      originalSetItem.call(localStorage, 'sandbox-' + key, value);
+      return;
+    }
+    originalSetItem.call(localStorage, key, value);
+  };
+
+  localStorage.removeItem = function (key: string) {
+    if ((window as any).paxflowSandbox) {
+      originalRemoveItem.call(localStorage, 'sandbox-' + key);
+      return;
+    }
+    originalRemoveItem.call(localStorage, key);
+  };
+}
+
 
 /**
  * Realiza o login de um consultor usando email e senha.
@@ -133,6 +341,22 @@ export async function getSessaoAtual(): Promise<{
   perfil: PerfilConsultor | null;
   error: any;
 }> {
+  if (typeof window !== 'undefined' && (window as any).paxflowSandbox) {
+    return {
+      user: { id: 'sandbox-user-id', email: 'consultor.fake@paxflowdemo.com' },
+      perfil: {
+        id: 'sandbox-user-id',
+        nome: 'Consultor Demonstrativo',
+        email: 'consultor.fake@paxflowdemo.com',
+        role: 'admin',
+        ativo: true,
+        xp: 1500,
+        nivel: 3,
+        avatar_url: 'lion'
+      },
+      error: null
+    };
+  }
   if (cachedSessionResult) {
     return cachedSessionResult;
   }
