@@ -4,62 +4,72 @@ Este arquivo define as regras estritas de desenvolvimento, padrões arquiteturai
 
 ---
 
-## 📅 1. Premissa Temporal Crítica (Ano Atual)
+## 📅 1. Contexto Temporal e Internacionalização (i18n)
 
 * **ANO ATUAL DE REFERÊNCIA**: **2026**.
-* **Cálculo de Datas**: Qualquer lógica, cálculo de SLA, contadores de tempo amigáveis ou geração de dados de demonstração (mock data) deve assumir o contexto temporal do ano de **2026**.
-* **Formato de Datas**: As datas exibidas na interface do usuário devem ser **sempre** formatadas no padrão brasileiro **`dd/mm/aaaa`**.
-* Evitar o uso do ano atual do sistema da máquina host caso seja diferente de 2026 para fins de consistência e simulação dos dados operacionais da agência.
+  * **CRÍTICO**: Qualquer lógica, cálculo de SLA, contadores de tempo ou dados simulados (mock data) deve assumir o ano de **2026**. Não utilize a data do sistema host.
+  * *Regra de Código*: Sempre que precisar da data atual para comparações, prazos ou regras de negócio, utilize uma constante global ou uma função utilitária dedicada (ex: `getReferencedNow()`) em vez de instanciar `new Date()` diretamente, evitando divergências temporais.
+* **Formato de Datas**: Sempre exiba no padrão brasileiro **`dd/mm/aaaa`**.
+* **Formato Monetário**: Sempre utilize o padrão brasileiro (`R$ 1.234,56`). 
+  * *Regra de Código*: Use preferencialmente `.toLocaleString('pt-BR', { minimumFractionDigits: 2 })` para exibições e inputs.
 
 ---
 
-## 🛠️ 2. Stack Tecnológica e Arquitetura
+## 🛠️ 2. Stack Tecnológica e Estrutura Arquitetural
 
-* **Front-end**: Vite + TypeScript (Single-Page Application / SPA).
-* **Renderização**: Componentização limpa utilizando injeção dinâmica de HTML via manipuladores de DOM vanilla no TypeScript.
-* **Estilização**: Uso extensivo de classes Tailwind CSS (via injeção/classes nativas) combinadas com regras de animação personalizadas injetadas diretamente nas tags `<style>` dos componentes para controle dinâmico.
+* **Front-end**: Vite + TypeScript puro (SPA). 
+  * ⚠️ **PROIBIDO**: Uso de frameworks como React, Vue, Angular ou arquivos `.tsx`. Use apenas `.ts`.
+* **Componentização**: Componentes baseados em classes ou funções TypeScript puras que injetam HTML dinamicamente via manipuladores de DOM vanilla (`document.createElement`).
+  * 🔒 **Segurança (Prevenção de XSS)**: É **ESTRITAMENTE PROIBIDO** utilizar `.innerHTML` para renderizar strings que contenham dados dinâmicos vindos do Supabase, de APIs ou de inputs de usuários. Utilize obrigatoriamente `.textContent` ou `.innerText`. O uso de `.innerHTML` é restrito a estruturas de marcação 100% estáticas e controladas internamente.
+* **Arquitetura de Pastas Esperada**:
+  * `/src/components/`: Componentes de UI isolados e reutilizáveis.
+  * `/src/services/`: Camada de comunicação com APIs externas e Supabase.
+  * `/src/utils/`: Funções puras, formatadores e auxiliares globais.
+  * `/src/views/`: Controladores de página ou telas completas da aplicação.
+* **Ciclo de Vida e Memória**: Todo componente que possua eventos globais ou conexões deve implementar um método `destroy()` para:
+  * Remover event listeners.
+  * Desconectar canais do Supabase Realtime.
+  * Destruir instâncias do `SortableJS`.
+* **Estilização**: Tailwind CSS utilitário. Classes dinâmicas injetadas via JS ou regras específicas em tags `<style>` locais criadas via código.
 * **Banco de Dados (Backend)**: Supabase JS Client (`src/services/supabase.ts`).
-  * Utilizar consultas robustas assíncronas.
-  * Respeitar as políticas de segurança RLS (Row Level Security).
-* **Google Drive Corporativo**: Integração com Edge Functions e fallbacks em `src/services/googleDrive.ts` para uploads seguros de documentos de clientes.
+  * Use consultas assíncronas (`async/await`) com tratamento de erro robusto (`try/catch`).
+  * Respeite as políticas de RLS.
+  * **Tipagem Estrita**: Sempre importe os tipos gerados pelo banco de dados (ex: `import type { Database } from '@/types/supabase'`). É proibido o uso de `any` ou a recriação manual de interfaces para tabelas existentes no schema.
 
 ---
 
 ## 🎨 3. Design System e Estética Premium
 
-* **Aparência Premium**: O design deve impressionar visualmente à primeira vista ("WOW effect").
-* **Temas**: Suporte nativo completo para Modo Claro (Light) e Escuro (Dark) com transições suaves.
-* **Cores**: Evitar colorações puras/genéricas (red, green, blue). Utilizar paletas HSL curadas, tons sóbrios (slate, zinc, indigo, emerald, rose, amber) e gradientes modernos.
-* **Efeitos Modernos**: Usar *Glassmorphism* (`backdrop-blur-md`, bordas semitransparentes finas de `border-slate-200/40` ou `dark:border-slate-800/60`).
-* **Interatividade**: Micro-interações táteis/visuais em elementos clicáveis (`transform hover:-translate-y-0.5 transition duration-200` e sombras dinâmicas).
-* **Scrollbars**: Scrollbars finas e elegantes personalizadas com classes utilitárias CSS.
-* **Formato Monetário**: Campos, exibições e inputs de valores monetários devem ser **sempre** representados no formato brasileiro, utilizando ponto para milhares e vírgula para decimais (ex: **`1.234,56`** ou `R$ 1.234,56`), utilizando preferencialmente `.toLocaleString('pt-BR', { minimumFractionDigits: 2 })`.
+* **Efeito "WOW"**: Interfaces limpas, profissionais e de alta fidelidade visual.
+* **Temas**: Suporte a Light/Dark Mode com transições suaves (`transition-colors duration-300`).
+* **Paleta de Cores**: PROIBIDO o uso de cores puras (`bg-red-500`, `text-blue-600`). Use Tailwind curado: `slate`, `zinc`, `indigo`, `emerald`, `rose`, `amber` e gradientes.
+* **Efeitos Modernos**: *Glassmorphism* usando `backdrop-blur-md` e bordas semitransparentes finas (`border-slate-200/40` ou `dark:border-slate-800/60`).
+* **Micro-interações**: Elementos clicáveis devem ter feedback tátil/visual (ex: `transform hover:-translate-y-0.5 transition duration-200`).
+* **Scrollbars**: Sempre customizadas, finas e discretas via utilitários CSS.
 
 ---
 
 ## 🔄 4. Regras de Fluxo e Engenharia de Software
 
-* **Kanbans Controlados**:
-  * O Kanban Operacional (`Dashboard.ts`) utiliza arraste livre via `SortableJS`.
-  * O Kanban de Orçamentos (`Orcamentos.ts`) possui **arraste travado (desabilitado)**. As transições de cards ocorrem estritamente via botões de ação e modais específicos de fluxo para manter o pipeline rígido.
-* **Segurança e Contingência (Fallback)**:
-  * Toda tela/serviço que dependa do Supabase deve implementar um **Modo Fallback local robusto** (via `localStorage`) para permitir testes imediatos offline caso as tabelas de banco de dados correspondentes ainda não estejam criadas ou haja falha de rede.
-* **Tempo Real (Realtime)**:
-  * Manter a sincronização reativa global habilitando canais do Supabase Realtime (`postgres_changes`) para re-renderizar estados automaticamente quando houver modificações externas no banco.
-  * Garantir a limpeza dos canais no método `destroy()` ao navegar para outras páginas.
-* 🛑 **Restrição de Controle de Versão (Git Push)**: O assistente de IA **nunca** deve propor ou executar comandos de `git push` para o GitHub ou qualquer repositório remoto. A responsabilidade e o direito de realizar pushes de código são **exclusivos do usuário**. O assistente de IA limita-se a criar commits locais se solicitado.
+* **Regras do Kanban**:
+  * **Kanban Operacional (`Dashboard.ts`)**: Arraste livre habilitado via `SortableJS`.
+  * **Kanban de Orçamentos (`Orcamentos.ts`)**: **Interface Estática**. O arraste está estritamente desativado. A movimentação e atualização de estado dos cards deve ser efetuada *exclusivamente* através de ações explícitas em botões e modais guiados (ex: chamando métodos como `openStatusModal(cardId)`). Nunca inicialize o `SortableJS` nesta view.
+* **Resiliência (Modo Fallback)**:
+  * Telas que consomem dados do Supabase **devem** ter um fallback offline/local baseado em `localStorage`. Se a tabela não existir ou a rede falhar, o sistema deve operar normalmente com dados simulados (mockados).
 
 ---
 
-## 🤝 5. Regras Básicas de Convivência e Testes
+## 🛑 5. Guardrails de Segurança e Restrições Ocorrenciais
 
-* 🛑 **Restrição de Testes no Navegador**: O assistente de IA **nunca** deve abrir o navegador para testar a aplicação. O assistente desenvolve, revisa e valida o código e a lógica estaticamente, cabendo ao usuário realizar os testes no navegador.
-* 🛑 **Restrição de Execução no Banco de Dados**: O assistente de IA **nunca** deve rodar scripts ou comandos diretamente no banco de dados. O assistente deve gerar o script SQL e fornecê-lo para que o usuário o execute no Supabase.
-* 🧼 **Código Limpo e Sem Gambiarras**: Priorizar sempre um código bem estruturado, limpo, de alto desempenho e devidamente comentado onde for necessário, sem soluções improvisadas ou paliativas.
-* 🪙 **Otimização de Consumo de Tokens**: Buscar sempre otimizar as interações, respostas e leituras de arquivos para diminuir o consumo de tokens quando possível.
-* ⚠️ **Ambiente em Produção (Confirmação de Riscos)**: Como o sistema está em produção, qualquer ação destrutiva ou com alta probabilidade de causar regressão deve ser explicitamente confirmada com o usuário antes de ser implementada.
-* 🇧🇷 **Idioma de Comunicação (Português do Brasil)**: Toda a comunicação, respostas, explicações, planos de ação e relatórios de progresso do assistente devem ser estritamente em **Português do Brasil**.
+* ❌ **PROIBIDO (Git Push)**: Nunca sugira ou execute comandos de `git push`. Limite-se a commits locais se solicitado. O push é exclusivo do usuário.
+* ❌ **PROIBIDO (Testes em Navegador)**: Nunca tente abrir o navegador para testar a aplicação. Valide o código estaticamente.
+* ❌ **PROIBIDO (Execução de SQL)**: Nunca execute comandos diretamente no banco de dados. Forneça os scripts SQL formatados em blocos de código para que o usuário os execute no painel do Supabase.
+* ❌ **PROIBIDO (Adição de Dependências)**: Não instale nem sugira novos pacotes via `npm install`. Resolva os problemas utilizando as APIs nativas do navegador (Intl, Date, Math). Caso uma biblioteca seja estritamente indispensável, solicite autorização prévia.
+* ⚠️ **Ambiente em Produção**: Modificações destrutivas, refatorações em massa ou alterações críticas de Schema do banco exigem confirmação explícita do usuário.
 
+---
 
+## 💬 6. Comunicação e Consumo de Tokens
 
-
+* **Idioma**: Comunicação, comentários de código, explicações e documentações estritamente em **Português do Brasil**.
+* **Eficiência e Modo Cirúrgico**: Seja direto e evite explicações prolixas. Ao propor correções ou alterações em arquivos existentes, exiba **apenas o bloco de código modificado e o seu contexto imediato**, em vez de reescrever o arquivo inteiro na resposta. Otimize o tamanho das respostas para economizar tokens de contexto.
