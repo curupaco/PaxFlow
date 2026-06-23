@@ -100,6 +100,7 @@ export class Dashboard {
   private isFallbackMode: boolean = false;
   private realtimeChannel: any = null;
   private storageListener: ((e: StorageEvent) => void) | null = null;
+  private selectedProductId: string | null = null;
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -1165,7 +1166,8 @@ export class Dashboard {
    */
   private async openEdicaoEProdutosModal(tripId: string, activeTab: 'detalhes' | 'produtos' = 'detalhes'): Promise<void> {
     try {
-      this.renderModalOverlay('max-w-6xl');
+      const modalWidthClass = this.selectedProductId ? 'max-w-[1380px]' : 'max-w-6xl';
+      this.renderModalOverlay(modalWidthClass);
       const modalContent = document.getElementById('modal-content-container');
       if (!modalContent) return;
 
@@ -1243,6 +1245,13 @@ export class Dashboard {
   private renderEdicaoEProdutosModalContent(v: any, clientes: any[], activeTab: 'detalhes' | 'produtos' = 'detalhes'): void {
     const modalContent = document.getElementById('modal-content-container');
     if (!modalContent) return;
+
+    if (this.selectedProductId && (!v.produtos || !v.produtos.some((p: any) => p.id === this.selectedProductId))) {
+      this.selectedProductId = null;
+    }
+    const selectedProduct = this.selectedProductId
+      ? v.produtos?.find((p: any) => p.id === this.selectedProductId)
+      : null;
 
     // Compilar cronograma geral de datas
     const cronograma: { data: string; rotulo: string; tipo: string; cor: string }[] = [];
@@ -1467,11 +1476,11 @@ export class Dashboard {
           ` : ''}
         </div>
 
-        <!-- Layout de duas colunas no Desktop / abas no Mobile -->
+        <!-- Layout de duas/três colunas no Desktop / abas no Mobile -->
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
           <!-- COLUNA DA ESQUERDA (Detalhes e Edição) -->
-          <div id="tab-detalhes-content" class="space-y-4 tab-pane-transition ${activeTab === 'produtos' ? 'hidden' : ''} lg:col-span-5 lg:!block">
+          <div id="tab-detalhes-content" class="space-y-4 tab-pane-transition ${activeTab === 'produtos' ? 'hidden' : ''} ${this.selectedProductId ? 'lg:col-span-4' : 'lg:col-span-5'} lg:!block">
             <!-- Detalhes do Dono e SLA no Topo -->
             <div class="flex flex-wrap items-center justify-between gap-3 p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/50 dark:border-slate-800">
               <div class="flex items-center gap-2">
@@ -1600,8 +1609,8 @@ export class Dashboard {
             <div id="viagem-comments-container" class="mt-6 border-t border-slate-100 dark:border-slate-800 pt-4"></div>
           </div>
 
-          <!-- COLUNA DA DIREITA (Produtos e Serviços) -->
-          <div id="tab-produtos-content" class="space-y-5 tab-pane-transition ${activeTab === 'detalhes' ? 'hidden' : ''} lg:col-span-7 lg:!block lg:!mt-0">
+          <!-- COLUNA DO MEIO (Produtos e Serviços) -->
+          <div id="tab-produtos-content" class="space-y-5 tab-pane-transition ${activeTab === 'detalhes' || (this.selectedProductId && activeTab === 'produtos') ? 'hidden' : ''} ${this.selectedProductId ? 'lg:col-span-4 lg:!block' : 'lg:col-span-7 lg:!block'} lg:!mt-0">
             
             <!-- Painel Financeiro (Totalizadores e Saldo Pendente) -->
             <div id="painel-financeiro-produtos" class="grid grid-cols-4 gap-3 p-3.5 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/50 dark:border-slate-800 mb-4">
@@ -1709,6 +1718,132 @@ export class Dashboard {
             ` : ''}
 
           </div>
+
+          <!-- COLUNA DO EDITOR LATERAL (Editor do Produto Selecionado) -->
+          ${selectedProduct ? `
+            <div id="selected-product-editor-pane" class="space-y-4 lg:col-span-4 border-t lg:border-t-0 lg:border-l border-slate-100 dark:border-slate-800 lg:pl-6 pt-4 lg:pt-0 ${activeTab === 'produtos' ? 'block' : 'hidden lg:block'}">
+              <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 mb-2">
+                <h4 class="text-xs font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5 uppercase tracking-wide">
+                  <span class="p-1 bg-indigo-50 dark:bg-indigo-950 text-indigo-500 rounded-lg text-xs flex items-center justify-center">${this.getIconForType(selectedProduct.tipo)}</span>
+                  <span>Detalhes do Serviço</span>
+                </h4>
+                <button id="btn-close-product-editor" type="button" class="text-[10px] font-black text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded transition uppercase tracking-wider">
+                  Fechar
+                </button>
+              </div>
+
+              <form id="form-editar-produto-lateral" class="space-y-4">
+                <div class="grid grid-cols-1 gap-4">
+                  
+                  <!-- Seção de Dados (Campos de Entrada) -->
+                  <div class="space-y-3.5">
+                    <div>
+                      <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Tipo *</label>
+                      <select id="edit-prod-tipo" required class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition duration-155">
+                        ${this.tiposProduto.filter(t => t.ativo && t.nome !== 'MUDAR!').map(t => `
+                          <option value="${t.nome}" ${t.nome === selectedProduct.tipo ? 'selected' : ''}>${t.nome}</option>
+                        `).join('')}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Fornecedor *</label>
+                      <input id="edit-prod-fornecedor" type="text" required value="${selectedProduct.fornecedor || ''}" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition duration-155" />
+                    </div>
+
+                    <div>
+                      <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Descrição</label>
+                      <input id="edit-prod-descricao" type="text" value="${selectedProduct.descricao || ''}" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition duration-155" />
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                      <div>
+                        <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Código (LOC) *</label>
+                        <input id="edit-prod-reserva" type="text" required maxlength="20" value="${selectedProduct.codigo_reserva || ''}" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs uppercase transition duration-155" />
+                      </div>
+                      <div>
+                        <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Status *</label>
+                        <select id="edit-prod-status" required class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition duration-155">
+                          <option value="reservado" ${selectedProduct.status === 'reservado' ? 'selected' : ''}>Reservado</option>
+                          <option value="emitido" ${selectedProduct.status === 'emitido' ? 'selected' : ''}>Emitido</option>
+                          <option value="cancelado" ${selectedProduct.status === 'cancelado' ? 'selected' : ''}>Cancelado</option>
+                          <option value="reembolsado" ${selectedProduct.status === 'reembolsado' ? 'selected' : ''}>Reembolsado</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Data do Serviço *</label>
+                      ${renderDateInputHTML('edit-prod-data', formatarDataLocal(selectedProduct.data_servico))}
+                    </div>
+
+                    <!-- Container para Campos Dinâmicos (dados_adicionais) -->
+                    <div id="edit-container-campos-condicionais" class="hidden bg-slate-100/40 dark:bg-slate-900/30 p-2.5 rounded-lg border border-slate-200/40 dark:border-slate-800/30 space-y-2"></div>
+
+                    <!-- Demais Serviços Aninhados (Datas Adicionais) -->
+                    <div class="border-t border-slate-100 dark:border-slate-800/80 pt-3">
+                      <span class="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-2 flex items-center gap-1">📅 Demais Serviços Aninhados</span>
+                      <div id="edit-container-datas-adicionais" class="space-y-2"></div>
+                      <div class="flex justify-start">
+                        <button type="button" id="edit-btn-add-data-adicional" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 font-black text-[9px] tracking-wider rounded-lg transition uppercase flex items-center gap-1 mt-1">
+                          ➕ Adicionar Outra Data
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Seção Financeira (Valores e Rentabilidade) -->
+                  <div class="space-y-3.5 bg-slate-50/50 dark:bg-slate-900/40 p-3.5 rounded-xl border border-slate-100 dark:border-slate-800">
+                    <span class="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wide border-b border-slate-100 dark:border-slate-850 pb-2 mb-1">Valores do Serviço</span>
+                    
+                    <div>
+                      <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Venda (R$) *</label>
+                      ${renderCurrencyInputHTML('edit-prod-venda', selectedProduct.valor_venda || 0)}
+                    </div>
+                    <div>
+                      <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Custo (R$) *</label>
+                      ${renderCurrencyInputHTML('edit-prod-custo', selectedProduct.valor_custo || 0)}
+                    </div>
+                    <div>
+                      <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Tarifa (Valor Líquido)</label>
+                      ${renderCurrencyInputHTML('edit-prod-tarifa', selectedProduct.tarifa || 0)}
+                    </div>
+                    <div>
+                      <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Taxa (Embarque/Serviço)</label>
+                      ${renderCurrencyInputHTML('edit-prod-taxa', selectedProduct.taxa || 0)}
+                    </div>
+                    <div>
+                      <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Comissão da Agência</label>
+                      ${renderCurrencyInputHTML('edit-prod-comissao', selectedProduct.comissao || 0)}
+                    </div>
+
+                    <!-- Totalizadores locais -->
+                    <div class="p-3 bg-white dark:bg-slate-900/80 border border-slate-200/60 dark:border-slate-800 rounded-xl space-y-2 mt-4 shadow-sm">
+                      <div class="flex justify-between items-center text-xs">
+                        <span class="font-bold text-slate-400 dark:text-slate-500 uppercase text-[9px] tracking-wider">Total Distribuído:</span>
+                        <strong id="edit-det-total-distribuido" class="font-black text-slate-700 dark:text-slate-200">R$ 0,00</strong>
+                      </div>
+                      <div class="flex justify-between items-center text-xs">
+                        <span class="font-bold text-slate-400 dark:text-slate-500 uppercase text-[9px] tracking-wider">Saldo Pendente:</span>
+                        <strong id="edit-det-saldo-pendente" class="font-black text-rose-600 dark:text-rose-400">R$ 0,00</strong>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+
+                <!-- Botões de Ação -->
+                <div class="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+                  <button id="edit-btn-cancelar-lateral" type="button" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs tracking-wider rounded-lg transition uppercase">
+                    Cancelar
+                  </button>
+                  <button type="submit" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-lg shadow-sm transition uppercase">
+                    Salvar Alterações
+                  </button>
+                </div>
+              </form>
+            </div>
+          ` : ''}
 
         </div>
 
@@ -2336,6 +2471,333 @@ export class Dashboard {
         this.showToast(`Erro ao adicionar produto: ${err.message}`, 'error');
       }
     });
+
+    // Inicializa o editor lateral se um produto estiver selecionado
+    if (selectedProduct) {
+      this.setupProductEditor(selectedProduct, v);
+    }
+  }
+
+  /**
+   * Configura e gerencia o editor lateral do produto selecionado
+   */
+  private setupProductEditor(selectedProduct: any, v: any): void {
+    const formEditProd = document.getElementById('form-editar-produto-lateral') as HTMLFormElement;
+    if (!formEditProd) return;
+
+    // 1. Fechar editor lateral
+    const closeEditor = () => {
+      this.selectedProductId = null;
+      this.openEdicaoEProdutosModal(v.id, 'produtos');
+    };
+    document.getElementById('btn-close-product-editor')?.addEventListener('click', closeEditor);
+    document.getElementById('edit-btn-cancelar-lateral')?.addEventListener('click', closeEditor);
+
+    // 2. Inicializar validação do formulário com setupFormValidation
+    setupFormValidation('form-editar-produto-lateral', [
+      { id: 'edit-prod-venda', type: 'currency' },
+      { id: 'edit-prod-custo', type: 'currency' },
+      { id: 'edit-prod-tarifa', type: 'currency', required: false },
+      { id: 'edit-prod-taxa', type: 'currency', required: false },
+      { id: 'edit-prod-comissao', type: 'currency', required: false },
+      { id: 'edit-prod-data', type: 'date' }
+    ]);
+
+    // 3. Renderizar campos dinâmicos (dados_adicionais)
+    const editTipoSelect = document.getElementById('edit-prod-tipo') as HTMLSelectElement;
+    const editCondContainer = document.getElementById('edit-container-campos-condicionais') as HTMLElement;
+    const editFornecedorInput = document.getElementById('edit-prod-fornecedor') as HTMLInputElement;
+
+    const renderDynamicFields = (tipo: string, currentData: any) => {
+      const tipoConfig = this.tiposProduto.find(t => t.nome === tipo);
+      if (tipoConfig && Array.isArray(tipoConfig.campos_adicionais) && tipoConfig.campos_adicionais.length > 0) {
+        editCondContainer.classList.remove('hidden');
+        let fieldsHTML = '';
+        tipoConfig.campos_adicionais.forEach((campo: any) => {
+          const requiredAttr = campo.obrigatorio ? 'required' : '';
+          const label = `${campo.label}${campo.obrigatorio ? ' *' : ''}`;
+          const currentVal = currentData[campo.id] || '';
+
+          if (campo.tipo === 'select') {
+            const options = Array.isArray(campo.opcoes) ? campo.opcoes : [];
+            fieldsHTML += `
+              <div class="space-y-1">
+                <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">${label}</label>
+                <select id="edit-prod-campo-${campo.id}" ${requiredAttr} class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition duration-155">
+                  <option value="" disabled ${!currentVal ? 'selected' : ''}>Selecione...</option>
+                  ${options.map((opt: string) => `<option value="${opt}" ${opt === currentVal ? 'selected' : ''}>${opt}</option>`).join('')}
+                </select>
+              </div>
+            `;
+          } else if (campo.tipo === 'number') {
+            fieldsHTML += `
+              <div class="space-y-1">
+                <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">${label}</label>
+                <input type="number" id="edit-prod-campo-${campo.id}" ${requiredAttr} value="${currentVal}" placeholder="${campo.placeholder || ''}" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition duration-155" />
+              </div>
+            `;
+          } else {
+            fieldsHTML += `
+              <div class="space-y-1">
+                <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">${label}</label>
+                <input type="text" id="edit-prod-campo-${campo.id}" ${requiredAttr} value="${currentVal}" placeholder="${campo.placeholder || ''}" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition duration-155" />
+              </div>
+            `;
+          }
+        });
+
+        editCondContainer.innerHTML = `<div class="grid grid-cols-1 md:grid-cols-2 gap-3">${fieldsHTML}</div>`;
+
+        // Hook automatic description/provider updates on change
+        tipoConfig.campos_adicionais.forEach((campo: any) => {
+          const inputEl = document.getElementById(`edit-prod-campo-${campo.id}`);
+          if (inputEl) {
+            inputEl.addEventListener('change', (ev: any) => {
+              const val = ev.target.value;
+              if (campo.alvo === 'fornecedor' && val && val !== 'Outra' && val !== 'Outro') {
+                editFornecedorInput.value = val;
+              }
+            });
+          }
+        });
+      } else {
+        editCondContainer.classList.add('hidden');
+        editCondContainer.innerHTML = '';
+      }
+    };
+
+    // Render initially
+    renderDynamicFields(selectedProduct.tipo, selectedProduct.dados_adicionais || {});
+
+    // Listen to tipo change to update fields
+    editTipoSelect?.addEventListener('change', () => {
+      renderDynamicFields(editTipoSelect.value, {});
+    });
+
+    // 4. Renderizar e gerenciar datas adicionais (aninhadas)
+    const editContainerDatas = document.getElementById('edit-container-datas-adicionais') as HTMLElement;
+    const addDateRow = (rotulo: string, dataIso: string) => {
+      const dataBr = dataIso ? dataIso.split('-').reverse().join('/') : '';
+      const rowId = `row-edit-data-adicional-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+      const newRow = document.createElement('div');
+      newRow.id = rowId;
+      newRow.className = 'grid grid-cols-[1fr_1fr_auto] gap-2 items-end bg-slate-100/50 dark:bg-slate-800/30 p-2 rounded-lg border border-slate-200/40 dark:border-slate-800/40';
+      newRow.innerHTML = `
+        <div>
+          <label class="block text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Rótulo</label>
+          <input type="text" placeholder="Rótulo" value="${rotulo}" required class="edit-prod-adicional-rotulo w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs" />
+        </div>
+        <div>
+          <label class="block text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Data</label>
+          <input type="text" placeholder="DD/MM/AAAA" value="${dataBr}" required class="edit-prod-adicional-data w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs" />
+        </div>
+        <button type="button" class="edit-btn-remove-data-adicional p-2 hover:bg-rose-50/80 dark:hover:bg-rose-950/20 text-slate-400 hover:text-rose-600 rounded-lg transition" title="Remover data">
+          🗑️
+        </button>
+      `;
+      editContainerDatas.appendChild(newRow);
+
+      const dataInput = newRow.querySelector('.edit-prod-adicional-data') as HTMLInputElement;
+      dataInput.addEventListener('input', (ev) => {
+        const target = ev.target as HTMLInputElement;
+        let val = target.value;
+        let digits = val.replace(/\D/g, '');
+        if (digits.length > 8) digits = digits.slice(0, 8);
+        target.value = formatDateBr(digits);
+      });
+
+      newRow.querySelector('.edit-btn-remove-data-adicional')?.addEventListener('click', () => {
+        newRow.remove();
+      });
+    };
+
+    // Render initial additional dates
+    if (Array.isArray(selectedProduct.datas_adicionais)) {
+      selectedProduct.datas_adicionais.forEach((d: any) => {
+        addDateRow(d.rotulo, d.data);
+      });
+    }
+
+    document.getElementById('edit-btn-add-data-adicional')?.addEventListener('click', () => {
+      addDateRow('', '');
+    });
+
+    // 5. Totalizadores e recalculo financeiro local
+    const editVendaInput = document.getElementById('edit-prod-venda') as HTMLInputElement;
+    const editTarifaInput = document.getElementById('edit-prod-tarifa') as HTMLInputElement;
+    const editTaxaInput = document.getElementById('edit-prod-taxa') as HTMLInputElement;
+    const editComissaoInput = document.getElementById('edit-prod-comissao') as HTMLInputElement;
+    const totalDistEl = document.getElementById('edit-det-total-distribuido') as HTMLElement;
+    const saldoPendEl = document.getElementById('edit-det-saldo-pendente') as HTMLElement;
+
+    const recalcularValoresLocais = () => {
+      if (!editVendaInput || !editTarifaInput || !editTaxaInput || !editComissaoInput || !totalDistEl || !saldoPendEl) return;
+      const venda = parseDoubleBr(editVendaInput.value) || 0;
+      const tarifa = parseDoubleBr(editTarifaInput.value) || 0;
+      const taxa = parseDoubleBr(editTaxaInput.value) || 0;
+      const comissao = parseDoubleBr(editComissaoInput.value) || 0;
+
+      const totalDist = tarifa + taxa + comissao;
+      const saldoPend = venda - totalDist;
+
+      totalDistEl.textContent = `R$ ${totalDist.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+      saldoPendEl.textContent = `R$ ${saldoPend.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+
+      if (Math.abs(saldoPend) > 0.01) {
+        saldoPendEl.className = 'font-black text-rose-600 dark:text-rose-400';
+      } else {
+        saldoPendEl.className = 'font-black text-emerald-600 dark:text-emerald-400';
+      }
+    };
+
+    [editVendaInput, editTarifaInput, editTaxaInput, editComissaoInput].forEach(inp => {
+      inp?.addEventListener('input', recalcularValoresLocais);
+    });
+
+    // Executa inicialmente
+    recalcularValoresLocais();
+
+    // 6. Envio do Formulário de Edição do Produto
+    formEditProd.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const editTipo = editTipoSelect.value;
+      const editFornecedor = editFornecedorInput.value.trim() || 'Não informado';
+      const editDescricao = (document.getElementById('edit-prod-descricao') as HTMLInputElement).value.trim() || 'Sem descrição';
+      const editReserva = (document.getElementById('edit-prod-reserva') as HTMLInputElement).value.trim();
+      const editStatus = (document.getElementById('edit-prod-status') as HTMLSelectElement).value;
+      const editDataServicoRaw = (document.getElementById('edit-prod-data') as HTMLInputElement).value.trim();
+
+      if (!editReserva) {
+        this.showToast('Por favor, informe o Código (LOC) do serviço.', 'error');
+        return;
+      }
+      if (editReserva.length > 20) {
+        this.showToast('O Código (LOC) deve ter no máximo 20 caracteres.', 'error');
+        return;
+      }
+      if (/\s|[,;\/\\]/.test(editReserva)) {
+        this.showToast('Insira apenas um Código (LOC) por serviço (sem espaços ou caracteres de separação).', 'error');
+        return;
+      }
+
+      const editDataServico = formatBrDateToIso(editDataServicoRaw);
+      if (!editDataServico) {
+        this.showToast('Por favor, informe a Data do Serviço no formato correto DD/MM/AAAA.', 'error');
+        return;
+      }
+
+      const venda = parseDoubleBr(editVendaInput.value) || 0;
+      const custo = parseDoubleBr((document.getElementById('edit-prod-custo') as HTMLInputElement).value) || 0;
+      const tarifa = parseDoubleBr(editTarifaInput.value) || 0;
+      const taxa = parseDoubleBr(editTaxaInput.value) || 0;
+      const comissao = parseDoubleBr(editComissaoInput.value) || 0;
+
+      const totalDist = tarifa + taxa + comissao;
+      if (Math.abs(venda - totalDist) > 0.01) {
+        this.showToast(`O valor total distribuído (Tarifa + Taxa + Comissão = R$ ${totalDist.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}) deve ser igual ao Valor de Venda do produto (R$ ${venda.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}). O saldo pendente deve ser R$ 0,00.`, 'error');
+        return;
+      }
+
+      // Coleta campos dinâmicos
+      const tipoConfig = this.tiposProduto.find(t => t.nome === editTipo);
+      const editDadosAdicionais: Record<string, any> = {};
+      if (tipoConfig && Array.isArray(tipoConfig.campos_adicionais)) {
+        for (const campo of tipoConfig.campos_adicionais) {
+          const el = document.getElementById(`edit-prod-campo-${campo.id}`) as HTMLInputElement | HTMLSelectElement | null;
+          if (el) {
+            const val = el.value.trim();
+            if (campo.obrigatorio && !val) {
+              this.showToast(`O campo "${campo.label}" é obrigatório.`, 'error');
+              return;
+            }
+            editDadosAdicionais[campo.id] = val;
+          }
+        }
+      }
+
+      // Coleta datas adicionais
+      const editDatasAdicionais: { data: string; rotulo: string }[] = [];
+      const rotuloInputs = formEditProd.querySelectorAll('.edit-prod-adicional-rotulo') as NodeListOf<HTMLInputElement>;
+      const dataInputs = formEditProd.querySelectorAll('.edit-prod-adicional-data') as NodeListOf<HTMLInputElement>;
+      
+      let datesValid = true;
+      for (let i = 0; i < rotuloInputs.length; i++) {
+        const rotulo = rotuloInputs[i].value.trim();
+        const dataBr = dataInputs[i].value.trim();
+        if (!rotulo || !dataBr) {
+          this.showToast('Por favor, preencha todos os campos das datas adicionais.', 'error');
+          datesValid = false;
+          break;
+        }
+
+        const dataIso = formatBrDateToIso(dataBr);
+        if (!dataIso || !validateDate(dataBr).isValid) {
+          this.showToast(`A data "${dataBr}" para "${rotulo}" é inválida ou está em formato incorreto.`, 'error');
+          datesValid = false;
+          break;
+        }
+
+        editDatasAdicionais.push({
+          rotulo,
+          data: dataIso
+        });
+      }
+
+      if (!datesValid) return;
+
+      const payload = {
+        tipo: editTipo,
+        fornecedor: editFornecedor,
+        descricao: editDescricao,
+        codigo_reserva: editReserva || null,
+        valor_custo: custo,
+        valor_venda: venda,
+        tarifa: tarifa,
+        taxa: taxa,
+        comissao: comissao,
+        status: editStatus,
+        data_servico: editDataServico,
+        datas_adicionais: editDatasAdicionais,
+        dados_adicionais: editDadosAdicionais,
+        updated_at: new Date().toISOString()
+      };
+
+      try {
+        if (!this.isFallbackMode) {
+          const { error } = await supabase
+            .from('produtos_viagem')
+            .update(payload)
+            .eq('id', selectedProduct.id);
+
+          if (error) throw error;
+        } else {
+          // Offline update
+          const saved = localStorage.getItem(`paxflow-produtos-viagem-${v.id}`);
+          if (saved) {
+            const list = JSON.parse(saved);
+            const idx = list.findIndex((x: any) => x.id === selectedProduct.id);
+            if (idx !== -1) {
+              list[idx] = { ...list[idx], ...payload };
+              localStorage.setItem(`paxflow-produtos-viagem-${v.id}`, JSON.stringify(list));
+            }
+          }
+        }
+
+        this.showToast('Produto/Serviço atualizado com sucesso!', 'success');
+        this.selectedProductId = null; // Limpa o produto selecionado após sucesso
+
+        // Recarregar viagens e reabrir modal
+        await this.loadViagens();
+        this.render();
+        this.setupDragAndDrop();
+
+        await this.openEdicaoEProdutosModal(v.id, 'produtos');
+      } catch (err: any) {
+        console.error('Erro ao atualizar produto:', err);
+        this.showToast(`Erro ao atualizar produto: ${err.message}`, 'error');
+      }
+    });
   }
 
   /**
@@ -2513,12 +2975,20 @@ export class Dashboard {
         const totalDet = tarifa + taxa + comissao;
         const isDetalhado = Math.abs(Number(p.valor_venda || 0) - totalDet) < 0.01;
 
+        const isSelected = p.id === this.selectedProductId;
+        const selectedBorderClass = isSelected
+          ? 'border-indigo-500 dark:border-indigo-400 bg-indigo-50/10 dark:bg-indigo-950/10 ring-2 ring-indigo-500/20 shadow-md shadow-indigo-500/5'
+          : 'border-slate-200/60 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 hover:bg-slate-100/50 dark:hover:bg-slate-800/80';
+
         return `
-          <div class="product-card-clickable flex items-center justify-between gap-3 p-3 bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-800 rounded-xl hover:bg-slate-100/50 dark:hover:bg-slate-800/80 transition cursor-pointer" data-product-id="${p.id}">
+          <div class="product-card-clickable flex items-center justify-between gap-3 p-3 ${selectedBorderClass} border rounded-xl transition cursor-pointer" data-product-id="${p.id}">
             <div class="flex items-start gap-2.5 overflow-hidden w-full">
               <span class="text-lg p-1 bg-white dark:bg-slate-700 border border-slate-100 dark:border-slate-700 rounded-lg shadow-sm flex items-center justify-center">${tipoIcon}</span>
               <div class="overflow-hidden flex-1">
-                <span class="block text-xs font-black text-slate-700 dark:text-slate-200 truncate leading-tight">${p.fornecedor} &bull; ${p.descricao}</span>
+                <span class="block text-xs font-black text-slate-700 dark:text-slate-200 truncate leading-tight">
+                  <span class="px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 rounded text-[9px] uppercase tracking-wider font-extrabold mr-1">${p.tipo}</span>
+                  ${p.fornecedor} &bull; ${p.descricao}
+                </span>
                 <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold leading-normal">
                   Data Principal: <span class="text-slate-600 dark:text-slate-400 font-semibold">${formatarData(p.data_servico)}</span>
                   ${p.datas_adicionais && p.datas_adicionais.length > 0 ? p.datas_adicionais.map((d: any) => `
@@ -2656,7 +3126,7 @@ export class Dashboard {
       });
     });
 
-    // Ouvintes de clique no card para detalhamento
+    // Ouvintes de clique no card para detalhamento (painel lateral)
     container.querySelectorAll('.product-card-clickable').forEach(card => {
       card.addEventListener('click', (e) => {
         const target = e.target as HTMLElement;
@@ -2664,7 +3134,8 @@ export class Dashboard {
         const prodId = card.getAttribute('data-product-id');
         const prod = produtos.find(x => x.id === prodId);
         if (prod) {
-          this.openProductDetailsModal(prod, tripId);
+          this.selectedProductId = prod.id;
+          this.openEdicaoEProdutosModal(tripId, 'produtos');
         }
       });
     });
@@ -3252,9 +3723,31 @@ export class Dashboard {
         </h4>
 
         <!-- Nome do Cliente/Passageiro -->
-        <p class="text-xs text-slate-500 dark:text-slate-400 font-extrabold mb-3 flex items-center gap-1.5">
+        <p class="text-xs text-slate-500 dark:text-slate-400 font-extrabold mb-1.5 flex items-center gap-1.5">
           <span class="text-slate-400 dark:text-slate-500">👤</span> ${v.cliente?.nome || 'Cliente Desconhecido'}
         </p>
+
+        <!-- Ícones de Produtos Cadastrados -->
+        ${v.produtos && v.produtos.length > 0 ? `
+          <div class="flex flex-wrap gap-1.5 mb-3">
+            ${(() => {
+              const counts: { [tipo: string]: number } = {};
+              v.produtos.forEach((p: any) => {
+                const t = (p.tipo || 'outro').toLowerCase();
+                counts[t] = (counts[t] || 0) + 1;
+              });
+              return Object.entries(counts).map(([tipo, count]) => {
+                const icon = this.getIconForType(tipo);
+                const suffix = count > 1 ? ` +${count - 1}` : '';
+                return `
+                  <span class="inline-flex items-center px-1.5 py-0.5 rounded bg-slate-50 dark:bg-slate-800/80 border border-slate-200/50 dark:border-slate-700/50 text-[10px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-wider" title="${tipo}">
+                    <span>${icon}${suffix}</span>
+                  </span>
+                `;
+              }).join('');
+            })()}
+          </div>
+        ` : ''}
 
         <!-- Calendário/Datas -->
         <div class="grid grid-cols-2 gap-2 text-[10px] text-slate-400 dark:text-slate-500 font-semibold border-t border-slate-100 dark:border-slate-800 pt-2 mb-2">
