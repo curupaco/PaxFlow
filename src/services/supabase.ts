@@ -286,14 +286,14 @@ if (typeof window !== 'undefined') {
   const originalRemoveItem = localStorage.removeItem;
 
   localStorage.getItem = function (key: string) {
-    if ((window as any).paxflowSandbox) {
+    if ((window as any).paxflowSandbox && !key.startsWith('sandbox-')) {
       return originalGetItem.call(localStorage, 'sandbox-' + key);
     }
     return originalGetItem.call(localStorage, key);
   };
 
   localStorage.setItem = function (key: string, value: string) {
-    if ((window as any).paxflowSandbox) {
+    if ((window as any).paxflowSandbox && !key.startsWith('sandbox-')) {
       originalSetItem.call(localStorage, 'sandbox-' + key, value);
       return;
     }
@@ -301,7 +301,7 @@ if (typeof window !== 'undefined') {
   };
 
   localStorage.removeItem = function (key: string) {
-    if ((window as any).paxflowSandbox) {
+    if ((window as any).paxflowSandbox && !key.startsWith('sandbox-')) {
       originalRemoveItem.call(localStorage, 'sandbox-' + key);
       return;
     }
