@@ -180,63 +180,116 @@ export class LandingPage {
                       </div>
                     </div>
                   </div>
-                </div>
-              </div>
-
-              <!-- PANEL 2: VIAGENS -->
+                     <!-- PANEL 2: VIAGENS -->
               <div id="panel-viagens" class="space-y-4 tab-pane-transition hidden">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <!-- Col 1 -->
-                  <div class="bg-slate-100/50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800/80 p-3 rounded-xl">
-                    <span class="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2">✈️ PÓS-VENDA (6)</span>
-                    <div class="space-y-2">
-                      <div class="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-[11px] shadow-sm">
-                        <div class="flex justify-between font-bold">
-                          <span class="text-slate-800 dark:text-white">Carlos Eduardo</span>
-                          <span class="text-[9px] text-indigo-600 dark:text-indigo-400">R$ 5.400</span>
-                        </div>
-                        <span class="block text-[9px] text-slate-450 mt-1">Destino: Buenos Aires • LOC: BA921</span>
-                        <div class="flex justify-between items-center mt-2 pt-1.5 border-t border-slate-100 dark:border-slate-800/60">
-                          <span class="text-[8px] font-extrabold text-indigo-600 dark:text-indigo-400">Check-in Liberado</span>
-                          <span class="text-[8px] text-slate-400 font-semibold">12/08/2026</span>
-                        </div>
-                      </div>
-                    </div>
+                <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
+                  <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left border-collapse min-w-[700px] text-[11px]">
+                      <thead>
+                        <tr class="bg-slate-50 dark:bg-slate-950/40 text-[9px] font-black uppercase text-slate-400 dark:text-slate-500 border-b border-slate-200 dark:border-slate-800">
+                          <th class="px-4 py-3 w-[50px] text-center">SLA</th>
+                          <th class="px-4 py-3">Cliente / LOC</th>
+                          <th class="px-4 py-3">Destino / Produtos</th>
+                          <th class="px-4 py-3">Período</th>
+                          <th class="px-4 py-3">Data Fin.</th>
+                          <th class="px-4 py-3">Financeiro</th>
+                          <th class="px-4 py-3 w-[140px]">Fase / Status</th>
+                          <th class="px-4 py-3 w-[120px] text-center">Ações</th>
+                        </tr>
+                      </thead>
+                      <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 text-slate-600 dark:text-slate-300 font-semibold">
+                        <!-- Linha 1: Carlos Eduardo (SLA Alerta) -->
+                        <tr class="bg-rose-50/10 dark:bg-rose-950/5 hover:bg-rose-50/20 dark:hover:bg-rose-950/10 transition-colors duration-200">
+                          <td class="px-4 py-3 text-center"><span class="text-sm">⚠️</span></td>
+                          <td class="px-4 py-3">
+                            <div class="font-black text-slate-800 dark:text-slate-150">Carlos Eduardo</div>
+                            <span class="inline-block mt-0.5 px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-extrabold text-[8px] rounded border border-slate-200/40 dark:border-slate-700/50 uppercase">BA921</span>
+                          </td>
+                          <td class="px-4 py-3">
+                            <div class="font-extrabold text-slate-800 dark:text-slate-200 flex items-center gap-1">✈️ Buenos Aires</div>
+                            <div class="flex gap-1 mt-1">
+                              <span class="px-1.5 py-0.5 rounded bg-slate-100/65 dark:bg-slate-800/65 border border-slate-200/30 dark:border-slate-700/30 text-[8px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">✈️</span>
+                            </div>
+                          </td>
+                          <td class="px-4 py-3 whitespace-nowrap">
+                            <span class="flex items-center gap-1">📅 12/08/2026 a 19/08/2026</span>
+                          </td>
+                          <td class="px-4 py-3 text-slate-500 dark:text-slate-400">15/05/2026</td>
+                          <td class="px-4 py-3">
+                            <div class="font-black text-indigo-600 dark:text-indigo-400">R$ 5.400,00</div>
+                            <div class="text-[9px] text-emerald-600 dark:text-emerald-400 font-extrabold mt-0.5">Rent: R$ 800,00</div>
+                          </td>
+                          <td class="px-4 py-3">
+                            <span class="inline-flex px-2 py-1 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[9px] font-black uppercase">Pré-Embarque</span>
+                          </td>
+                          <td class="px-4 py-3 text-center">
+                            <button class="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 font-black rounded-lg border border-indigo-100/30 dark:border-indigo-900/30 text-[9px] uppercase transition" disabled>🔍 Detalhes</button>
+                          </td>
+                        </tr>
+                        
+                        <!-- Linha 2: Mariana Costa (SLA Normal) -->
+                        <tr class="bg-white dark:bg-slate-900 hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors duration-200">
+                          <td class="px-4 py-3 text-center"><span class="text-sm">🟢</span></td>
+                          <td class="px-4 py-3">
+                            <div class="font-black text-slate-800 dark:text-slate-150">Mariana Costa</div>
+                            <span class="inline-block mt-0.5 px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-extrabold text-[8px] rounded border border-slate-200/40 dark:border-slate-700/50 uppercase">US441</span>
+                          </td>
+                          <td class="px-4 py-3">
+                            <div class="font-extrabold text-slate-800 dark:text-slate-200 flex items-center gap-1">✈️ Orlando</div>
+                            <div class="flex gap-1 mt-1">
+                              <span class="px-1.5 py-0.5 rounded bg-slate-100/65 dark:bg-slate-800/65 border border-slate-200/30 dark:border-slate-700/30 text-[8px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">🏨</span>
+                              <span class="px-1.5 py-0.5 rounded bg-slate-100/65 dark:bg-slate-800/65 border border-slate-200/30 dark:border-slate-700/30 text-[8px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">🎫</span>
+                            </div>
+                          </td>
+                          <td class="px-4 py-3 whitespace-nowrap">
+                            <span class="flex items-center gap-1">📅 15/07/2026 a 30/07/2026</span>
+                          </td>
+                          <td class="px-4 py-3 text-slate-500 dark:text-slate-400">20/04/2026</td>
+                          <td class="px-4 py-3">
+                            <div class="font-black text-indigo-600 dark:text-indigo-400">R$ 12.800,00</div>
+                            <div class="text-[9px] text-emerald-600 dark:text-emerald-400 font-extrabold mt-0.5">Rent: R$ 2.400,00</div>
+                          </td>
+                          <td class="px-4 py-3">
+                            <span class="inline-flex px-2 py-1 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[9px] font-black uppercase">Pós-Venda</span>
+                          </td>
+                          <td class="px-4 py-3 text-center">
+                            <button class="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 font-black rounded-lg border border-indigo-100/30 dark:border-indigo-900/30 text-[9px] uppercase transition" disabled>🔍 Detalhes</button>
+                          </td>
+                        </tr>
+
+                        <!-- Linha 3: Julia Ribeiro (SLA Excedido) -->
+                        <tr class="bg-amber-50/10 dark:bg-amber-950/5 hover:bg-amber-50/20 dark:hover:bg-amber-950/10 transition-colors duration-200">
+                          <td class="px-4 py-3 text-center"><span class="text-sm">🚨</span></td>
+                          <td class="px-4 py-3">
+                            <div class="font-black text-slate-800 dark:text-slate-150">Julia Ribeiro</div>
+                            <span class="inline-block mt-0.5 px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-extrabold text-[8px] rounded border border-slate-200/40 dark:border-slate-700/50 uppercase">BR552</span>
+                          </td>
+                          <td class="px-4 py-3">
+                            <div class="font-extrabold text-slate-800 dark:text-slate-200 flex items-center gap-1">✈️ Bariloche</div>
+                            <div class="flex gap-1 mt-1">
+                              <span class="px-1.5 py-0.5 rounded bg-slate-100/65 dark:bg-slate-800/65 border border-slate-200/30 dark:border-slate-700/30 text-[8px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">🏨</span>
+                            </div>
+                          </td>
+                          <td class="px-4 py-3 whitespace-nowrap">
+                            <span class="flex items-center gap-1">📅 22/06/2026 a 29/06/2026</span>
+                          </td>
+                          <td class="px-4 py-3 text-slate-500 dark:text-slate-400">10/03/2026</td>
+                          <td class="px-4 py-3">
+                            <div class="font-black text-indigo-600 dark:text-indigo-400">R$ 7.900,00</div>
+                            <div class="text-[9px] text-emerald-600 dark:text-emerald-400 font-extrabold mt-0.5">Rent: R$ 1.200,00</div>
+                          </td>
+                          <td class="px-4 py-3">
+                            <span class="inline-flex px-2 py-1 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-450 text-[9px] font-black uppercase">Pós-Viagem</span>
+                          </td>
+                          <td class="px-4 py-3 text-center">
+                            <button class="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 font-black rounded-lg border border-indigo-100/30 dark:border-indigo-900/30 text-[9px] uppercase transition" disabled>🔍 Detalhes</button>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
                   </div>
-                  <!-- Col 2 -->
-                  <div class="bg-slate-100/50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800/80 p-3 rounded-xl">
-                    <span class="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2">🚐 PRÉ-EMBARQUE (4)</span>
-                    <div class="space-y-2">
-                      <div class="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-[11px] shadow-sm">
-                        <div class="flex justify-between font-bold">
-                          <span class="text-slate-800 dark:text-white">Mariana Costa</span>
-                          <span class="text-[9px] text-indigo-600 dark:text-indigo-400">R$ 12.800</span>
-                        </div>
-                        <span class="block text-[9px] text-slate-450 mt-1">Destino: Orlando • LOC: US441</span>
-                        <div class="flex justify-between items-center mt-2 pt-1.5 border-t border-slate-100 dark:border-slate-800/60">
-                          <span class="text-[8px] font-extrabold text-amber-600 dark:text-amber-400">Validação de Visto</span>
-                          <span class="text-[8px] text-slate-400 font-semibold">15/07/2026</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <!-- Col 3 -->
-                  <div class="bg-slate-100/50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800/80 p-3 rounded-xl">
-                    <span class="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2">🌴 PÓS-VIAGEM (8)</span>
-                    <div class="space-y-2">
-                      <div class="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-[11px] shadow-sm">
-                        <div class="flex justify-between font-bold">
-                          <span class="text-slate-800 dark:text-white">Julia Ribeiro</span>
-                          <span class="text-[9px] text-indigo-600 dark:text-indigo-400">R$ 7.900</span>
-                        </div>
-                        <span class="block text-[9px] text-slate-450 mt-1">Destino: Bariloche • LOC: BR552</span>
-                        <div class="flex justify-between items-center mt-2 pt-1.5 border-t border-slate-100 dark:border-slate-800/60">
-                          <span class="text-[8px] font-extrabold text-emerald-600 dark:text-emerald-400">Pesquisa Enviada</span>
-                          <span class="text-[8px] text-slate-400 font-semibold">22/06/2026</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                </div>
+              </div>         </div>
                 </div>
               </div>
 
