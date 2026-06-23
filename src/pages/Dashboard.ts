@@ -117,6 +117,8 @@ export class Dashboard {
   private dataVoltaStart: string = '';
   private dataVoltaEnd: string = '';
   private showFiltersPanel: boolean = false;
+  private sortField: string = '';
+  private sortDirection: 'asc' | 'desc' = 'asc';
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -3115,6 +3117,58 @@ export class Dashboard {
       return true;
     });
 
+    // Ordenação do array filtrados se sortField estiver definido
+    if (this.sortField) {
+      filtrados.sort((a, b) => {
+        let valA: any = '';
+        let valB: any = '';
+
+        if (this.sortField === 'sla') {
+          const aReembolso = a.reembolsos && a.reembolsos.some((r: any) => r.status === 'pago');
+          const bReembolso = b.reembolsos && b.reembolsos.some((r: any) => r.status === 'pago');
+          const aSla = aReembolso ? { alert: false, type: null } : this.checkSLA(a);
+          const bSla = bReembolso ? { alert: false, type: null } : this.checkSLA(b);
+
+          const getSlaPriority = (sla: any, reembolsado: boolean) => {
+            if (reembolsado) return 0;
+            if (!sla.alert) return 1;
+            if (sla.type === 'pos-viagem') return 2;
+            if (sla.type === 'pre-embarque') return 3;
+            return 1;
+          };
+          valA = getSlaPriority(aSla, aReembolso);
+          valB = getSlaPriority(bSla, bReembolso);
+        } else if (this.sortField === 'cliente') {
+          valA = (a.cliente?.nome || '').toLowerCase();
+          valB = (b.cliente?.nome || '').toLowerCase();
+        } else if (this.sortField === 'destino') {
+          valA = (a.destino || '').toLowerCase();
+          valB = (b.destino || '').toLowerCase();
+        } else if (this.sortField === 'periodo') {
+          valA = a.data_ida || '';
+          valB = b.data_ida || '';
+        } else if (this.sortField === 'data_financeiro') {
+          valA = a.data_financeiro || '';
+          valB = b.data_financeiro || '';
+        } else if (this.sortField === 'financeiro') {
+          valA = Number(a.valor_total) || 0;
+          valB = Number(b.valor_total) || 0;
+        } else if (this.sortField === 'consultor') {
+          const nameA = a.consultor_id === this.user.id ? 'Você' : (this.consultores.find(c => c.id === a.consultor_id)?.nome || '');
+          const nameB = b.consultor_id === this.user.id ? 'Você' : (this.consultores.find(c => c.id === b.consultor_id)?.nome || '');
+          valA = nameA.toLowerCase();
+          valB = nameB.toLowerCase();
+        } else if (this.sortField === 'status') {
+          valA = (a.status || '').toLowerCase();
+          valB = (b.status || '').toLowerCase();
+        }
+
+        if (valA < valB) return this.sortDirection === 'asc' ? -1 : 1;
+        if (valA > valB) return this.sortDirection === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+
     // 4. Contar alertas de SLA ativos no total do consultor ativo
     let totalSlaAlerts = 0;
     totalPorConsultor.forEach(v => {
@@ -3249,19 +3303,19 @@ export class Dashboard {
             </div>
           ` : `
             <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xs overflow-hidden">
-              <div class="overflow-x-auto custom-scrollbar">
+              <div class="overflow-auto custom-scrollbar" style="max-height: calc(100vh - ${this.showFiltersPanel ? '390px' : '270px'});">
                 <table class="w-full text-left border-collapse min-w-[1000px]">
                   <thead>
-                    <tr class="bg-slate-50 dark:bg-slate-950/40 text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 border-b border-slate-200 dark:border-slate-800">
-                      <th class="px-5 py-4 w-[60px] text-center">SLA</th>
-                      <th class="px-5 py-4">Cliente / LOC</th>
-                      <th class="px-5 py-4">Destino / Produtos</th>
-                      <th class="px-5 py-4">Período (Ida / Volta)</th>
-                      <th class="px-5 py-4">Data Fin.</th>
-                      <th class="px-5 py-4">Financeiro</th>
-                      ${this.perfil?.role === 'admin' ? '<th class="px-5 py-4">Consultor</th>' : ''}
-                      <th class="px-5 py-4 w-[200px]">Fase / Status</th>
-                      <th class="px-5 py-4 w-[160px] text-center">Ações</th>
+                    <tr class="bg-slate-50 dark:bg-slate-900 text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10 shadow-xs">
+                      <th class="px-5 py-4 w-[80px] text-center">${this.renderSortHeader('SLA', 'sla')}</th>
+                      <th class="px-5 py-4">${this.renderSortHeader('Cliente / LOC', 'cliente')}</th>
+                      <th class="px-5 py-4">${this.renderSortHeader('Destino / Produtos', 'destino')}</th>
+                      <th class="px-5 py-4">${this.renderSortHeader('Período', 'periodo')}</th>
+                      <th class="px-5 py-4">${this.renderSortHeader('Data Fin.', 'data_financeiro')}</th>
+                      <th class="px-5 py-4">${this.renderSortHeader('Financeiro', 'financeiro')}</th>
+                      ${this.perfil?.role === 'admin' ? `<th class="px-5 py-4">${this.renderSortHeader('Consultor', 'consultor')}</th>` : ''}
+                      <th class="px-5 py-4 w-[200px]">${this.renderSortHeader('Fase / Status', 'status')}</th>
+                      <th class="px-5 py-4 w-[160px] text-center text-slate-400 dark:text-slate-500 tracking-wider text-[10px] font-black">Ações</th>
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 text-xs font-semibold text-slate-600 dark:text-slate-300">
@@ -3292,6 +3346,26 @@ export class Dashboard {
       <button class="tab-status-btn px-4 py-3 border-b-2 text-xs transition duration-200 flex items-center gap-1.5 focus:outline-none ${activeClass}" data-status-key="${statusKey}">
         <span>${label}</span>
         <span class="px-1.5 py-0.5 rounded-full text-[9px] bg-slate-100 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 font-bold">${count}</span>
+      </button>
+    `;
+  }
+
+  /**
+   * Renderiza o cabeçalho da coluna com botões e setas de ordenação
+   */
+  private renderSortHeader(label: string, field: string): string {
+    const isSorted = this.sortField === field;
+    const arrow = isSorted
+      ? (this.sortDirection === 'asc' ? '▲' : '▼')
+      : '⇅';
+    const activeClass = isSorted
+      ? 'text-indigo-600 dark:text-indigo-400 font-black'
+      : 'text-slate-300 dark:text-slate-600 group-hover:text-slate-400';
+
+    return `
+      <button class="btn-sort-column group inline-flex items-center gap-1.5 focus:outline-none uppercase tracking-wider text-[10px] font-black text-slate-400 dark:text-slate-500" data-sort-field="${field}">
+        <span>${label}</span>
+        <span class="${activeClass} text-[8px] transition-transform duration-200">${arrow}</span>
       </button>
     `;
   }
@@ -3594,6 +3668,24 @@ export class Dashboard {
           this.saveViagensToLocalStorage();
           this.render();
         }
+      });
+    });
+
+    // 11. Evento de clique para ordenação de colunas da tabela de vendas
+    this.container.querySelectorAll('.btn-sort-column').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const field = btn.getAttribute('data-sort-field');
+        if (!field) return;
+
+        if (this.sortField === field) {
+          // Se já está ordenando por esta coluna, inverte a direção
+          this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+          // Nova coluna de ordenação, padrão 'asc'
+          this.sortField = field;
+          this.sortDirection = 'asc';
+        }
+        this.render();
       });
     });
   }
