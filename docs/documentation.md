@@ -22,6 +22,9 @@
    - 3.9 [Sistema de Gamificação e Perfis (Gamificacao)](#39-sistema-de-gamificação-e-perfis)
    - 3.10 [Módulo de Cadastros (Cadastros)](#310-módulo-de-cadastros)
    - 3.11 [Localização de Erros e Tradutor Global (I18n)](#311-localização-de-erros-e-tradutor-global)
+   - 3.12 [Dashboard de Resultados (Analytics)](#312-dashboard-de-resultados-analytics)
+   - 3.13 [Sistema de Comentários, Notas e Menções (@)](#313-sistema-de-comentários-notas-e-menções)
+   - 3.14 [Exclusão Administrativa e Políticas de Delegação (RBAC)](#314-exclusão-administrativa-e-políticas-de-delegação-rbac)
 4. [Diferenciais Competitivos](#4-diferenciais-competitivos)
 5. [Arquitetura Tecnológica](#5-arquitetura-tecnológica)
 6. [Segurança e Conformidade](#6-segurança-e-conformidade)
@@ -289,6 +292,50 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 
 - **Tradução Automática de Backend**: Traduz mensagens técnicas e de sistema em inglês provenientes do Supabase (Auth, RLS, banco de dados PostgreSQL, storage ou falhas de rede) para o Português do Brasil.
 - **Centralização via Window**: A função de tradução fica disponível de forma global no objeto `window` e é invocada automaticamente ao exibir Toasts de sucesso/erro e diálogos de alerta da plataforma.
+
+### 3.12 Dashboard de Resultados (Analytics)
+
+**Painel consolidado de inteligência de negócios** (`src/pages/ComercialDashboard.ts`) focado em fornecer métricas financeiras, taxa de conversão e acompanhamento de equipe de forma visual e reativa.
+
+- **KPIs Financeiros de Caixa**:
+  - **Faturamento Realizado**: Soma total de vendas ganhas convertidas em viagens operacionais.
+  - **Pipeline Ativo**: Soma de propostas comerciais abertas e orçamentos em andamento.
+  - **Gap de Desistência**: Caixa potencial perdido em negociações não concluídas (desistências).
+  - **Conversão Comercial**: Porcentagem reativa de orçamentos aceitos em relação aos decididos.
+- **Gráficos Dinâmicos Reativos**:
+  - **Donut Chart (SVG Nativo)**: Visualiza a distribuição proporcional do caixa total entre realizado, pipeline e perdas.
+  - **Funil de Conversão**: Barra de progressão visual do fluxo de leads, da captação ao fechamento.
+- **Performance de Consultores (Admin)**:
+  - Tabela consolidada com dados de performance individual da equipe, exibindo o número de propostas, taxa de conversão individual, ticket médio e volume vendido.
+- **Sincronização em Tempo Real**:
+  - Atualização automática dos gráficos e métricas através de canais reativos (`postgres_changes` via Supabase Realtime) e ouvinte de sincronização local (`StorageEvent` do localStorage) com suporte offline.
+
+### 3.13 Sistema de Comentários, Notas e Menções
+
+**Mecanismo colaborativo integrado** (`src/services/comments.ts`) que permite a comunicação contextualizada entre consultores dentro de orçamentos, viagens e produtos.
+
+- **Notas de Negociação e Operação**:
+  - Inserção de anotações e feedback rústico com formatação e data/hora.
+  - CRUD de comentários onde o autor possui direito de remoção nativa.
+- **Autocomplete de Menções com `@`**:
+  - Dropdown dinâmico que filtra a lista de consultores ativos à medida que o usuário digita `@`.
+  - Inserção amigável do nome selecionado e destaque estilizado em badges HSL/Tailwind no texto.
+- **Triggers de Notificação de Menção**:
+  - Triggers integrados que processam o texto do comentário em busca de menções e geram registros na tabela `notificacoes` para os consultores citados, alimentando seus painéis de Inbox em tempo real.
+- **Modal de Notas de Produto Standalone**:
+  - Popup isolado que permite associar anotações técnicas e notas operacionais a produtos específicos dentro de uma viagem.
+
+### 3.14 Exclusão Administrativa e Políticas de Delegação (RBAC)
+
+**Módulo de governança e segurança de dados** com restrição estrita baseada em permissões de perfil corporativo.
+
+- **Role-Based Access Control (RBAC)**:
+  - Acesso restrito e exclusivo a usuários de perfil `admin` para ações destrutivas no sistema. Consultores sem privilégios têm os botões de exclusão ocultados ou desativados em toda a interface.
+- **Interface de Deleção Segura**:
+  - Exclusão com confirmações visuais utilizando popups de diálogo (`showCustomConfirm`) para evitar cliques acidentais.
+  - Cobertura em todos os componentes-chave: Clientes, Viagens (Vendas), Orçamentos, Reembolsos e Mensagens de Inbox.
+- **Integridade Referencial em Cascata**:
+  - O backend e as políticas SQL realizam a limpeza de registros filhos associados (ex: ao excluir uma Viagem, remove os produtos relacionados; ao excluir um Orçamento, trata logs e propostas vinculadas) garantindo estabilidade do banco de dados.
 
 ---
 

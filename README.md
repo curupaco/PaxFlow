@@ -22,6 +22,9 @@ Plataforma SaaS de gestão operacional e fluxo de passageiros no turismo: acompa
 
 ## Funcionalidades
 
+- **Dashboard de Resultados (Analytics) [NEW]** — Painel analítico de alta fidelidade visual para acompanhar faturamento realizado, pipeline ativo, gaps de desistência e taxa de conversão comercial. Conta com gráficos SVG reativos (Donut e Funil) e tabela de performance da equipe de vendas restrita a administradores.
+- **Sistema de Comentários, Notas e Menções (@) [NEW]** — Seção colaborativa integrada a Orçamentos, Viagens e Produtos. Permite que consultores insiram notas com autocomplete de menção `@` a outros membros da equipe, gerando notificações em tempo real no banco de dados e reações em seus respectivos Inboxes.
+- **Exclusão Administrativa com Controle de Acesso (RBAC) [NEW]** — Mecanismo de governança com validação baseada em cargo (Role-Based Access Control). Apenas administradores possuem acesso aos botões de exclusão de Clientes, Viagens (Vendas), Orçamentos, Reembolsos e Mensagens, acompanhados de confirmações de segurança e tratamento de dependências em cascata no banco de dados.
 - **Mission Control (Inbox)** — Central de alertas estilo e-mail com SLA de passaporte (180d), reembolsos atrasados e lembretes manuais. Inclui Visualização em Calendário unificada (visões de MÊS, SEMANA e AGENDA), sumarização via Regex e legenda tooltip. **Agora atualizado com pesquisa em tempo real de alta precisão, um sistema completo de Mensagens Diretas Internas (P2P) entre consultores (contendo autocomplete de contatos por tags no Para/Cc, pasta dedicada "Enviadas" e funcionalidade de resposta rápida integrada), e suporte a histórico de conversas estruturado (Threading) que agrupa e exibe todas as mensagens anteriores sob um mesmo tema.**
 - **Kanban de Viagens** — 5 colunas com drag-and-drop, SLAs visuais e gestão de produtos. **Atualizado com campo de busca em tempo real de alto desempenho, modal de gerenciamento ampliado com abas de Histórico de Reembolsos, aba de Produtos/Serviços, e painel financeiro com exibição da Rentabilidade acumulada baseada no lucro líquido dos produtos salvos. O código de reserva (LOC) do produto/serviço agora é obrigatório (máximo 20 caracteres, código único). Apresenta trava de transição de status: a movimentação a partir de 'Fechado' exige que o saldo de produtos esteja zerado e que cada produto esteja detalhado (soma de Tarifa + Taxa + Comissão igual ao Valor de Venda do produto).**
 - **Pipeline de Orçamentos** — 4 estágios com temperatura de lead, tags, notas e upload de documentos. **Atualizado com busca em tempo real e modal de visualização em duas colunas. A busca por clientes recorrentes no autocomplete do formulário foi corrigida para precisão absoluta. Ao fechar uma venda, caso o cliente não possua documento cadastrado, exige e valida o CPF/CNPJ com máscara e verificação oficial de dígitos verificadores (suportando a nova máscara CNPJ Alfanumérico da Receita Federal). A data de nascimento do passageiro agora é obrigatória na conversão, e a data de volta tornou-se opcional.**
@@ -35,7 +38,7 @@ Plataforma SaaS de gestão operacional e fluxo de passageiros no turismo: acompa
 - **Módulo de Cadastros (Gestão Dinâmica de Produtos) [NEW]** — Nova página restrita a administradores que gerencia os tipos de produtos/serviços disponíveis na agência, permitindo customizar cores, ícones e campos extras adicionais dinâmicos diretamente pelo painel administrativo.
 - **Localização de Erros e Tradução Global (I18n) [NEW]** — Utilitário centralizado `errorTranslator.ts` que intercepta e traduz erros técnicos em inglês (Supabase Auth, banco de dados PostgreSQL/RLS, uploads e erros de conexão de rede) para o Português do Brasil de forma amigável antes de exibi-los ao usuário.
 - **Cockpit de Tarefas** — Kanban interno standalone (todo.html) para planejamento da equipe.
-- **Navegação & UI Premium (Sidebar Colapsável, Perfil Centralizado & Lupa Vetorial)** — Shell de navegação avançado com barra lateral colapsável sob demanda (estado persistido via `localStorage` sob a chave `"paxflow-sidebar-collapsed"`). Centralização dos controles de identidade (avatar, nome, e-mail do consultor logado), alternador de tema claro/escuro e encerramento de sessão (logout) diretamente no rodapé da Sidebar, removendo elementos redundantes dos cabeçalhos das páginas. **Otimizado com layout vertical compacto e sistema de rolagem interna inteligente (`overflow-y-auto`) para se adaptar perfeitamente a viewports de menor resolução vertical ou níveis elevados de zoom sem quebrar o layout.** Campos de busca unificados com ícones vetoriais modernos (SVGs Heroicons) alinhados de forma absoluta e perfeitamente centrada.
+- **Navegação & UI Premium (Sidebar Colapsável, Perfil Centralizado & Lupa Vetorial)** — Shell de navegação avançado com barra lateral colapsável sob demanda (estado persistido via `localStorage` sob a chave `"paxflow-sidebar-collapsed"`). Centralização dos controles de identidade (avatar, nome, e-mail do consultor logado), alternador de tema claro/escuro e encerramento de sessão (logout) diretamente no rodapé da Sidebar, removendo elementos redundantes dos cabeçalhos das páginas. **Otimizado com layout vertical compacto e sistema de rolagem interna inteligente (`overflow-y-auto`) para se adaptar perfeitamente a viewports de menor resolution vertical ou níveis elevados de zoom sem quebrar o layout.** Campos de busca unificados com ícones vetoriais modernos (SVGs Heroicons) alinhados de forma absoluta e perfeitamente centrada.
 - **Utilitários de Banco de Dados** — Acompanha o script `supabase/clean_db.sql`, permitindo efetuar uma limpeza de dados transacionais e de teste em ambientes Supabase de maneira 100% resiliente e sem interferir na infraestrutura cadastrada.
 
 
@@ -91,29 +94,46 @@ VITE_SUPABASE_ANON_KEY=sua-chave-anon
 
 ```
 src/
-├── main.ts           # Shell da SPA (auth, navegação, tema)
+├── main.ts           # Shell da SPA (auth, navegação, tema, sidebar, router)
+├── index.css         # Estilos globais + Tailwind + Custom Animations
+├── todo.ts           # Kanban interno (standalone todo.html logic)
 ├── types/
 │   └── index.ts      # Interfaces TypeScript do domínio
+├── components/       # Componentes e Modais da UI modularizados
+│   ├── dashboard/
+│   │   └── DashboardTemplates.ts # Templates HTML/CSS do Kanban
+│   ├── inbox/
+│   │   ├── EmailReaderModal.ts   # Visualizador de e-mail e histórico/threading
+│   │   └── NewMessageModal.ts    # Formulário P2P e autocomplete de contatos
+│   ├── orcamentos/
+│   │   └── VerNotasModal.ts      # Modal de orçamento com duas colunas e anexo inline
+│   └── profile/
+│   │   └── MeuPerfilModal.ts     # Modal de perfil, XP, medalhas e upload de avatar
 ├── pages/
-│   ├── Inbox.ts      # Mission Control (alertas SLA + Calendário)
-│   ├── Dashboard.ts  # Kanban de viagens
-│   ├── Orcamentos.ts # Pipeline de orçamentos
-│   ├── Clientes.ts   # Gestão de clientes
-│   ├── Reembolsos.ts # Central de reembolsos
-│   └── Configuracoes.ts # Painel admin (Configurações + Importador CSV)
+│   ├── ComercialDashboard.ts # Dashboard de resultados (Analytics + Performance)
+│   ├── Inbox.ts      # Mission Control (alertas SLA + Calendário + P2P)
+│   ├── Dashboard.ts  # Kanban de viagens (operação + detalhamento de produtos)
+│   ├── Orcamentos.ts # Pipeline de orçamentos (negociação + conversão)
+│   ├── Clientes.ts   # Gestão de clientes (ficha + documentação inline)
+│   ├── Reembolsos.ts # Central de reembolsos (tabela SLA + busca em memória)
+│   ├── Cadastros.ts  # Gestão dinâmica de tipos de produtos (Admin)
+│   ├── Configuracoes.ts # Painel admin (Parâmetros, Consultores + Importador CSV)
+│   └── Login.ts      # Tela de login e recuperação de credenciais
 ├── services/
-│   ├── supabase.ts   # Cliente Supabase + auth + perfil
-│   ├── googleDrive.ts # Serviço de Upload e Compressão no Supabase Storage
-│   ├── csvImporter.ts # Parser e importador de CSV inteligente
-│   ├── dialog.ts     # Componentes de modal/dialog
-│   ├── avatars.ts    # Geração de avatares e compressão de imagem
-│   └── gamification.ts # Serviço de cálculo de nível, XP e medalhas
-├── utils/
-│   ├── masks.ts      # Utilitários de máscaras, validações e formulários (CPF/CNPJ, etc.)
-│   └── celebrations.ts # Comemoração de level up (confetes e som nativo)
-├── todo.ts           # Kanban interno (standalone)
-└── index.css         # Estilos globais + Tailwind
-
+│   ├── supabase.ts   # Cliente Supabase + Auth + Session helper
+│   ├── googleDrive.ts # Serviço legado de links do Drive
+│   ├── csvImporter.ts # Parser e mapeador de CSV inteligente
+│   ├── dialog.ts     # Componentes de modal/dialog customizados (Alerts/Confirm)
+│   ├── avatars.ts    # Compressão de imagem canvas e geração de avatares SVG
+│   ├── comments.ts   # Serviço colaborativo de comentários e menções (@)
+│   ├── documentViewer.ts # Lightbox inline para PDFs e imagens do storage
+│   ├── inboxService.ts   # Regras de negócio, contadores e alertas do Inbox
+│   ├── orcamentosService.ts # Serviços auxiliares para persistência de orçamentos
+│   └── gamification.ts # Serviço de XP, níveis e regras de medalhas
+└── utils/
+    ├── masks.ts      # Utilitários de máscaras, validações (CPF/CNPJ, etc.)
+    ├── errorTranslator.ts # Interceptador e tradutor amigável de erros (I18n)
+    └── celebrations.ts # Celebrações de level up (canvas-confetti + Web Audio API)
 ```
 
 ---
