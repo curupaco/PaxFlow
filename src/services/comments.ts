@@ -69,7 +69,7 @@ export class CommentsService {
     const consultoresAtivos = profiles.filter(p => p.ativo);
 
     const commentsListHtml = comments.length === 0
-      ? `<p class="text-center text-xs text-slate-450 dark:text-slate-500 font-medium py-4">Nenhum comentário inserido.</p>`
+      ? `<p class="text-center text-xs text-slate-400 dark:text-slate-500 font-medium py-4">Nenhum comentário inserido.</p>`
       : comments.map(c => {
           const autor = c.autor;
           const autorAvatar = autor ? getAvatarSvg(autor.avatar_url, autor.nome, 'w-6 h-6') : '👤';
@@ -98,17 +98,17 @@ export class CommentsService {
           }
 
           return `
-            <div class="flex items-start gap-2.5 p-2.5 bg-slate-50/50 dark:bg-slate-800/10 border border-slate-100 dark:border-slate-850 rounded-xl">
+            <div class="flex items-start gap-2.5 p-2.5 bg-slate-50/50 dark:bg-slate-800/10 border border-slate-100 dark:border-slate-800 rounded-xl">
               <div class="shrink-0 mt-0.5">${autorAvatar}</div>
               <div class="flex-1 min-w-0 bg-slate-50/10">
                 <div class="flex items-center justify-between gap-2 mb-1">
                   <span class="text-xs font-black text-slate-700 dark:text-slate-200 truncate leading-none">${autorNome}</span>
                   <span class="text-[9px] text-slate-400 dark:text-slate-500 font-bold">${formatarDataHora(c.created_at)}</span>
                 </div>
-                <p class="text-xs text-slate-650 dark:text-slate-350 font-semibold whitespace-pre-wrap leading-relaxed">${textoFormatado}</p>
+                <p class="text-xs text-slate-600 dark:text-slate-400 font-semibold whitespace-pre-wrap leading-relaxed">${textoFormatado}</p>
               </div>
               ${isOwner ? `
-                <button data-delete-comment-id="${c.id}" class="p-1 hover:bg-rose-50 dark:hover:bg-rose-950/20 text-slate-350 dark:text-slate-550 hover:text-rose-600 dark:hover:text-rose-450 rounded-md transition text-[10px]" title="Excluir comentário">
+                <button data-delete-comment-id="${c.id}" class="p-1 hover:bg-rose-50 dark:hover:bg-rose-950/20 text-slate-400 dark:text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 rounded-md transition text-[10px]" title="Excluir comentário">
                   🗑️
                 </button>
               ` : ''}
@@ -127,7 +127,7 @@ export class CommentsService {
 
         <!-- Área de Input -->
         <div class="relative mt-2 border-t border-slate-100 dark:border-slate-800/80 pt-3">
-          <textarea id="comment-textarea-${itemId}" rows="2" placeholder="Escreva uma nota... Use @ para mencionar alguém" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-750 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 text-xs font-medium resize-none custom-scrollbar"></textarea>
+          <textarea id="comment-textarea-${itemId}" rows="2" placeholder="Escreva uma nota... Use @ para mencionar alguém" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 text-xs font-medium resize-none custom-scrollbar"></textarea>
           
           <!-- Dropdown Autocomplete de Menções -->
           <div id="mentions-dropdown-${itemId}" class="hidden absolute z-50 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl max-h-40 overflow-y-auto p-1.5 min-w-[200px] text-xs font-semibold"></div>
@@ -327,7 +327,7 @@ export class CommentsService {
     onSelect: (p: PerfilConsultor) => void
   ): void {
     dropdown.innerHTML = list.map(p => `
-      <button type="button" class="w-full text-left px-2.5 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-850 rounded-lg flex items-center gap-2 transition duration-200 text-slate-700 dark:text-slate-200" data-mention-user-id="${p.id}">
+      <button type="button" class="w-full text-left px-2.5 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg flex items-center gap-2 transition duration-200 text-slate-700 dark:text-slate-200" data-mention-user-id="${p.id}">
         <span class="shrink-0">${getAvatarSvg(p.avatar_url, p.nome, 'w-4 h-4')}</span>
         <span class="truncate">${p.nome}</span>
       </button>
@@ -475,7 +475,7 @@ export class CommentsService {
               <h3 class="text-sm font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5">📦 Notas do Produto</h3>
               <p class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold truncate max-w-[300px]">${productName}</p>
             </div>
-            <button id="btn-close-product-comments-modal" class="text-slate-400 hover:text-rose-500 dark:text-slate-500 dark:hover:text-rose-450 font-bold transition">✕</button>
+            <button id="btn-close-product-comments-modal" class="text-slate-400 hover:text-rose-500 dark:text-slate-500 dark:hover:text-rose-400 font-bold transition">✕</button>
           </div>
           <div id="product-comments-content-container" class="p-5 overflow-y-auto flex-1 custom-scrollbar"></div>
         </div>

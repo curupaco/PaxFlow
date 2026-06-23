@@ -267,7 +267,7 @@ export function renderPhoneInputHTML(id: string, value: string, placeholder = '(
   ).join('');
 
   const readonlyAttr = readonly ? 'readonly' : '';
-  const disabledClass = readonly ? 'bg-slate-50 dark:bg-slate-900 cursor-not-allowed text-slate-550 dark:text-slate-405' : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100';
+  const disabledClass = readonly ? 'bg-slate-50 dark:bg-slate-900 cursor-not-allowed text-slate-500 dark:text-slate-400' : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100';
 
   return `
     <div id="${containerId}" class="phone-field-wrapper w-full relative">
@@ -290,7 +290,7 @@ export function renderCurrencyInputHTML(id: string, initialValue: number | strin
   const containerId = `${id}-container`;
   const errorId = `${id}-error`;
   const readonlyAttr = readonly ? 'readonly' : '';
-  const disabledClass = readonly ? 'bg-slate-50 dark:bg-slate-900 cursor-not-allowed text-slate-550 dark:text-slate-405' : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100';
+  const disabledClass = readonly ? 'bg-slate-50 dark:bg-slate-900 cursor-not-allowed text-slate-500 dark:text-slate-400' : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100';
 
   return `
     <div id="${containerId}" class="currency-field-wrapper w-full">
@@ -312,7 +312,7 @@ export function renderEmailInputHTML(id: string, initialValue: string, placehold
   const containerId = `${id}-container`;
   const errorId = `${id}-error`;
   const readonlyAttr = readonly ? 'readonly' : '';
-  const disabledClass = readonly ? 'bg-slate-50 dark:bg-slate-900 cursor-not-allowed text-slate-550 dark:text-slate-405' : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100';
+  const disabledClass = readonly ? 'bg-slate-50 dark:bg-slate-900 cursor-not-allowed text-slate-500 dark:text-slate-400' : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100';
 
   return `
     <div id="${containerId}" class="email-field-wrapper w-full relative">
@@ -333,7 +333,7 @@ export function renderDateInputHTML(id: string, initialValue: string, placeholde
   const containerId = `${id}-container`;
   const errorId = `${id}-error`;
   const readonlyAttr = readonly ? 'readonly' : '';
-  const disabledClass = readonly ? 'bg-slate-50 dark:bg-slate-900 cursor-not-allowed text-slate-550 dark:text-slate-405' : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100';
+  const disabledClass = readonly ? 'bg-slate-50 dark:bg-slate-900 cursor-not-allowed text-slate-500 dark:text-slate-400' : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100';
 
   return `
     <div id="${containerId}" class="date-field-wrapper w-full">
@@ -474,7 +474,7 @@ export function renderDocumentInputHTML(id: string, value: string, placeholder =
   const containerId = `${id}-container`;
   const errorId = `${id}-error`;
   const readonlyAttr = readonly ? 'readonly' : '';
-  const disabledClass = readonly ? 'bg-slate-50 dark:bg-slate-900 cursor-not-allowed text-slate-550 dark:text-slate-405' : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100';
+  const disabledClass = readonly ? 'bg-slate-50 dark:bg-slate-900 cursor-not-allowed text-slate-500 dark:text-slate-400' : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100';
 
   const clean = value ? value.replace(/\D/g, '') : '';
   const formatted = clean ? formatCpfCnpj(clean) : '';

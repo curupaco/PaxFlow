@@ -450,7 +450,7 @@ export class ReembolsosPage {
                 <span class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Aguardando Fornecedor</span>
                 <span class="text-2xl font-black text-amber-600 dark:text-amber-400">${aguardandoFornecedor}</span>
               </div>
-              <span class="p-3 bg-amber-50 dark:bg-amber-950/45 text-amber-500 dark:text-amber-450 rounded-xl text-lg font-bold">⏳</span>
+              <span class="p-3 bg-amber-50 dark:bg-amber-950/45 text-amber-500 dark:text-amber-400 rounded-xl text-lg font-bold">⏳</span>
             </div>
 
             <div class="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 p-5 rounded-2xl shadow-sm flex items-center justify-between">
@@ -458,7 +458,7 @@ export class ReembolsosPage {
                 <span class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Reembolsos Pagos (Concluídos)</span>
                 <span class="text-2xl font-black text-emerald-600 dark:text-emerald-400">${concluidos}</span>
               </div>
-              <span class="p-3 bg-emerald-50 dark:bg-emerald-950/45 text-emerald-500 dark:text-emerald-455 rounded-xl text-lg font-bold">✅</span>
+              <span class="p-3 bg-emerald-50 dark:bg-emerald-950/45 text-emerald-500 dark:text-emerald-400 rounded-xl text-lg font-bold">✅</span>
             </div>
 
             <div class="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 p-5 rounded-2xl shadow-sm flex items-center justify-between">
@@ -466,7 +466,7 @@ export class ReembolsosPage {
                 <span class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Valor Pago (Aprovado)</span>
                 <span class="text-xl font-black text-indigo-600 dark:text-indigo-400">R$ ${somaTotalReembolsado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
               </div>
-              <span class="p-3 bg-indigo-50 dark:bg-indigo-950/45 text-indigo-600 dark:text-indigo-455 rounded-xl text-lg font-bold">💰</span>
+              <span class="p-3 bg-indigo-50 dark:bg-indigo-950/45 text-indigo-600 dark:text-indigo-400 rounded-xl text-lg font-bold">💰</span>
             </div>
           </div>
 
@@ -492,7 +492,7 @@ export class ReembolsosPage {
             <div class="overflow-x-auto custom-scrollbar">
               <table class="w-full text-left border-collapse">
                 <thead>
-                  <tr class="bg-slate-50 dark:bg-slate-850 text-[10px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
+                  <tr class="bg-slate-50 dark:bg-slate-800 text-[10px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
                     <th class="py-4 px-5">Cliente</th>
                     <th class="py-4 px-5">Viagem / Localizador</th>
                     <th class="py-4 px-5">Produto Cancelado</th>
@@ -503,7 +503,7 @@ export class ReembolsosPage {
                     <th class="py-4 px-5 text-center">Status / Ação</th>
                   </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-sm text-slate-700 dark:text-slate-350 font-semibold bg-white/50 dark:bg-slate-900/30">
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-sm text-slate-700 dark:text-slate-400 font-semibold bg-white/50 dark:bg-slate-900/30">
                   ${filtrados.length === 0 ? `
                     <tr>
                       <td colspan="8" class="py-12 text-center text-slate-400 dark:text-slate-500 text-xs font-semibold">
@@ -525,7 +525,7 @@ export class ReembolsosPage {
                         <!-- Viagem / Localizador -->
                         <td class="py-4.5 px-5">
                           <span class="block text-slate-800 dark:text-slate-200 font-bold">✈️ ${r.viagem?.destino || 'Sem Destino'}</span>
-                          <span class="inline-block px-1.5 py-0.5 mt-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-extrabold text-[9px] rounded uppercase border border-slate-200/50 dark:border-slate-750">
+                          <span class="inline-block px-1.5 py-0.5 mt-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-extrabold text-[9px] rounded uppercase border border-slate-200/50 dark:border-slate-800">
                             LOC: ${r.viagem?.codigo_localizador || 'S/ LOC'}
                           </span>
                         </td>
@@ -556,7 +556,7 @@ export class ReembolsosPage {
                         <!-- SLA Cronômetro -->
                         <td class="py-4.5 px-5">
                           ${isPago ? `
-                            <span class="inline-block px-2.5 py-1 bg-emerald-50 dark:bg-emerald-950/45 text-emerald-700 dark:text-emerald-450 font-extrabold text-[10px] rounded-lg border border-emerald-100 dark:border-emerald-900/40 flex items-center gap-1 max-w-fit">
+                            <span class="inline-block px-2.5 py-1 bg-emerald-50 dark:bg-emerald-950/45 text-emerald-700 dark:text-emerald-400 font-extrabold text-[10px] rounded-lg border border-emerald-100 dark:border-emerald-900/40 flex items-center gap-1 max-w-fit">
                               ✅ Concluído em ${formatarData(r.data_resolucao)}
                             </span>
                           ` : `
@@ -578,7 +578,7 @@ export class ReembolsosPage {
                               <option value="cancelado" ${r.status === 'cancelado' ? 'selected' : ''}>Cancelado</option>
                             </select>
                             ${this.perfil?.role === 'admin' ? `
-                              <button data-delete-reembolso-id="${r.id}" class="p-2 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-900/30 text-rose-600 dark:text-rose-455 rounded-lg border border-rose-100/30 dark:border-rose-900/30 transition text-xs flex items-center justify-center shadow-sm" title="Excluir Reembolso">
+                              <button data-delete-reembolso-id="${r.id}" class="p-2 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-900/30 text-rose-600 dark:text-rose-400 rounded-lg border border-rose-100/30 dark:border-rose-900/30 transition text-xs flex items-center justify-center shadow-sm" title="Excluir Reembolso">
                                 🗑️
                               </button>
                             ` : ''}

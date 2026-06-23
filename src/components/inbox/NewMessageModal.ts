@@ -238,7 +238,7 @@ export class NewMessageModal {
         dropdown.innerHTML = `<div class="px-4 py-2 text-xs font-semibold text-slate-400 dark:text-slate-500">Nenhum consultor encontrado</div>`;
       } else {
         dropdown.innerHTML = filtered.map(p => `
-          <button class="dropdown-item w-full text-left px-4 py-2 text-xs font-bold text-slate-700 dark:text-slate-250 hover:bg-slate-50 dark:hover:bg-slate-800 transition flex items-center justify-between" data-id="${p.id}">
+          <button class="dropdown-item w-full text-left px-4 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition flex items-center justify-between" data-id="${p.id}">
             <span>${p.nome}</span>
             <span class="text-[10px] text-slate-400 dark:text-slate-500">${p.role === 'admin' ? 'Administrador' : 'Consultor'}</span>
           </button>

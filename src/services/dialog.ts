@@ -80,7 +80,7 @@ export function showCustomConfirm(
     // Custom aesthetics based on context
     const icon = isDestructive ? '🗑️' : '❓';
     const iconBgClass = isDestructive 
-      ? 'bg-rose-50 dark:bg-rose-950/30 text-rose-500 dark:text-rose-455 border border-rose-100/40 dark:border-rose-900/30' 
+      ? 'bg-rose-50 dark:bg-rose-950/30 text-rose-500 dark:text-rose-400 border border-rose-100/40 dark:border-rose-900/30' 
       : 'bg-indigo-50 dark:bg-indigo-950/30 text-indigo-500 dark:text-indigo-400 border border-indigo-100/40 dark:border-indigo-900/30';
     const activeBtnClass = isDestructive
       ? 'bg-rose-600 hover:bg-rose-700 shadow-rose-600/15 hover:shadow-rose-600/25'
@@ -104,7 +104,7 @@ export function showCustomConfirm(
         </div>
         
         <div class="px-6 pb-6 pt-2 flex gap-3">
-          <button id="paxflow-confirm-btn-cancel" class="flex-1 py-3 bg-slate-50 hover:bg-slate-100 dark:bg-slate-850 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white font-extrabold text-xs tracking-wider rounded-xl transition duration-200 uppercase focus:outline-none border border-slate-200/50 dark:border-slate-700/50">
+          <button id="paxflow-confirm-btn-cancel" class="flex-1 py-3 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white font-extrabold text-xs tracking-wider rounded-xl transition duration-200 uppercase focus:outline-none border border-slate-200/50 dark:border-slate-700/50">
             ${cancelText}
           </button>
           <button id="paxflow-confirm-btn-ok" class="flex-1 py-3 ${activeBtnClass} text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg transition duration-200 uppercase focus:outline-none">

@@ -101,7 +101,7 @@ export class CadastrosPage {
             
             <!-- Coluna da Esquerda: Listagem de Tipos (2/3 de largura no LG) -->
             <div class="lg:col-span-2 space-y-4">
-              <div class="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-850 rounded-2xl p-5 shadow-sm transition-colors">
+              <div class="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 rounded-2xl p-5 shadow-sm transition-colors">
                 <h2 class="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider mb-4">Tipos de Produtos e Serviços</h2>
                 
                 <div class="overflow-x-auto">
@@ -118,14 +118,14 @@ export class CadastrosPage {
                     <tbody id="lista-tipos-body">
                       ${this.tiposProduto.length === 0 ? `
                         <tr>
-                          <td colspan="5" class="py-8 text-center text-xs text-slate-400 dark:text-slate-550 font-semibold">
+                          <td colspan="5" class="py-8 text-center text-xs text-slate-400 dark:text-slate-500 font-semibold">
                             Nenhum tipo cadastrado.
                           </td>
                         </tr>
                       ` : this.tiposProduto.map(t => {
                         const qtdeCampos = t.campos_adicionais?.length || 0;
                         return `
-                          <tr class="border-b border-slate-100/50 dark:border-slate-850/50 hover:bg-slate-50/50 dark:hover:bg-slate-800/20 text-xs font-semibold text-slate-700 dark:text-slate-250 transition-colors">
+                          <tr class="border-b border-slate-100/50 dark:border-slate-800/50 hover:bg-slate-50/50 dark:hover:bg-slate-800/20 text-xs font-semibold text-slate-700 dark:text-slate-300 transition-colors">
                             <td class="py-3 px-4 text-base">${t.icone}</td>
                             <td class="py-3 px-4">${t.nome}</td>
                             <td class="py-3 px-4">
@@ -134,16 +134,16 @@ export class CadastrosPage {
                               </span>
                             </td>
                             <td class="py-3 px-4">
-                              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${t.ativo ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-450' : 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-455'}">
+                              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${t.ativo ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400' : 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400'}">
                                 ${t.ativo ? 'Ativo' : 'Inativo'}
                               </span>
                             </td>
                             <td class="py-3 px-4 text-right space-x-2">
-                              <button data-id="${t.id}" class="btn-editar-tipo p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-455 hover:text-indigo-600 dark:hover:text-indigo-400 transition" title="Editar Tipo">
+                              <button data-id="${t.id}" class="btn-editar-tipo p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition" title="Editar Tipo">
                                 ✏️
                               </button>
                               ${t.nome !== 'MUDAR!' ? `
-                                <button data-id="${t.id}" class="btn-toggle-ativo-tipo p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-455 hover:text-rose-600 dark:hover:text-rose-455 transition" title="${t.ativo ? 'Desativar' : 'Ativar'}">
+                                <button data-id="${t.id}" class="btn-toggle-ativo-tipo p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition" title="${t.ativo ? 'Desativar' : 'Ativar'}">
                                   🔌
                                 </button>
                               ` : ''}
@@ -159,20 +159,20 @@ export class CadastrosPage {
 
             <!-- Coluna da Direita: Formulário de Adicionar / Editar (1/3 de largura no LG) -->
             <div class="space-y-4">
-              <div class="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-850 rounded-2xl p-5 shadow-sm transition-colors sticky top-6">
+              <div class="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 rounded-2xl p-5 shadow-sm transition-colors sticky top-6">
                 <h2 id="form-titulo" class="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider mb-4">
                   ${this.editandoTipoId ? '✏️ Editar Tipo' : '➕ Novo Tipo de Serviço'}
                 </h2>
 
                 <form id="form-cadastro-tipo" class="space-y-4">
                   <div>
-                    <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-550 uppercase tracking-wider mb-1">Nome do Tipo *</label>
+                    <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Nome do Tipo *</label>
                     <input id="input-tipo-nome" type="text" required value="${tipoEmEdicao ? tipoEmEdicao.nome : ''}" ${tipoEmEdicao?.nome === 'MUDAR!' ? 'disabled' : ''} placeholder="ex: Circuito, Chip de Viagem" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition" />
                   </div>
 
                   <div class="grid grid-cols-2 gap-4">
                     <div>
-                      <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-550 uppercase tracking-wider mb-1">Ícone / Emoji *</label>
+                      <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Ícone / Emoji *</label>
                       <input id="input-tipo-icone" type="text" required value="${tipoEmEdicao ? tipoEmEdicao.icone : ''}" placeholder="ex: ✈️, 🚢" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs text-center transition" />
                     </div>
                     <div class="flex items-center pt-5">
@@ -187,7 +187,7 @@ export class CadastrosPage {
                   <!-- Subcampos / Campos Adicionais -->
                   <div class="border-t border-slate-100 dark:border-slate-800 pt-4">
                     <div class="flex items-center justify-between mb-3">
-                      <h3 class="text-xs font-black text-slate-455 dark:text-slate-400 uppercase tracking-wider">Campos Adicionais</h3>
+                      <h3 class="text-xs font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider">Campos Adicionais</h3>
                       <button id="btn-adicionar-campo-adicional" type="button" class="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/45 dark:hover:bg-indigo-900/60 text-indigo-600 dark:text-indigo-400 rounded-lg text-[10px] font-black tracking-wider transition uppercase">
                         ➕ Campo
                       </button>
@@ -202,7 +202,7 @@ export class CadastrosPage {
                   <!-- Ações do Form -->
                   <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800">
                     ${this.editandoTipoId ? `
-                      <button id="btn-cancelar-edicao" type="button" class="px-3 py-2 bg-slate-50 dark:bg-slate-850 hover:bg-slate-100 text-slate-500 font-bold text-[10px] rounded-lg transition uppercase">
+                      <button id="btn-cancelar-edicao" type="button" class="px-3 py-2 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 text-slate-500 font-bold text-[10px] rounded-lg transition uppercase">
                         Cancelar
                       </button>
                     ` : ''}
@@ -245,7 +245,7 @@ export class CadastrosPage {
         <div class="p-3 bg-slate-50/70 dark:bg-slate-900/50 border border-slate-200/50 dark:border-slate-800/80 rounded-xl space-y-2 relative animate-fade-in">
           
           <!-- Botão Remover no canto superior direito -->
-          <button type="button" data-idx="${idx}" class="btn-remover-campo absolute top-2 right-2 text-slate-400 hover:text-rose-500 dark:text-slate-500 dark:hover:text-rose-455 transition font-bold text-xs">
+          <button type="button" data-idx="${idx}" class="btn-remover-campo absolute top-2 right-2 text-slate-400 hover:text-rose-500 dark:text-slate-500 dark:hover:text-rose-400 transition font-bold text-xs">
             ✕
           </button>
 
@@ -255,7 +255,7 @@ export class CadastrosPage {
               <input type="text" data-idx="${idx}" data-field="id" required value="${campo.id || ''}" placeholder="ex: cia_aerea" class="input-campo-adicional w-full px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-[10px] transition" />
             </div>
             <div>
-              <label class="block text-[8px] font-bold text-slate-400 dark:text-slate-550 uppercase">Rótulo/Label *</label>
+              <label class="block text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase">Rótulo/Label *</label>
               <input type="text" data-idx="${idx}" data-field="label" required value="${campo.label || ''}" placeholder="ex: Cia Aérea" class="input-campo-adicional w-full px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-[10px] transition" />
             </div>
           </div>
@@ -270,7 +270,7 @@ export class CadastrosPage {
               </select>
             </div>
             <div>
-              <label class="block text-[8px] font-bold text-slate-400 dark:text-slate-550 uppercase">Destino *</label>
+              <label class="block text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase">Destino *</label>
               <select data-idx="${idx}" data-field="alvo" class="select-campo-adicional w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-[10px]">
                 <option value="dados_adicionais" ${campo.alvo === 'dados_adicionais' ? 'selected' : ''}>Metadados</option>
                 <option value="fornecedor" ${campo.alvo === 'fornecedor' ? 'selected' : ''}>Fornecedor</option>
@@ -288,7 +288,7 @@ export class CadastrosPage {
           <div class="flex items-center mt-1">
             <label class="inline-flex items-center cursor-pointer select-none">
               <input type="checkbox" data-idx="${idx}" data-field="obrigatorio" ${campo.obrigatorio ? 'checked' : ''} class="check-campo-adicional sr-only peer" />
-              <div class="w-7 h-4 bg-slate-200 dark:bg-slate-750 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-indigo-500 relative"></div>
+              <div class="w-7 h-4 bg-slate-200 dark:bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-indigo-500 relative"></div>
               <span class="ml-1.5 text-[9px] font-bold text-slate-500 dark:text-slate-400">Obrigatório</span>
             </label>
           </div>
@@ -600,7 +600,7 @@ export class CadastrosPage {
   private renderAuthError(msg: string): void {
     this.container.innerHTML = `
       <div class="min-h-screen bg-slate-50 flex items-center justify-center p-6">
-        <div class="max-w-md w-full bg-white border border-slate-150 p-8 rounded-2xl shadow-xl text-center">
+        <div class="max-w-md w-full bg-white border border-slate-200 p-8 rounded-2xl shadow-xl text-center">
           <div class="w-16 h-16 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center text-3xl mx-auto mb-4">🔒</div>
           <h2 class="text-xl font-bold text-slate-800 mb-2">Erro de Carregamento</h2>
           <p class="text-slate-500 text-sm mb-6">${msg}</p>

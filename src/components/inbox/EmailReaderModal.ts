@@ -84,13 +84,13 @@ export class EmailReaderModal {
 
           <!-- Email headers -->
           <div class="flex items-center gap-3.5 border-b border-slate-100 dark:border-slate-800/80 pb-5">
-            <div class="w-10 h-10 border border-slate-200 dark:border-slate-850 rounded-xl overflow-hidden flex items-center justify-center bg-white dark:bg-slate-900 flex-shrink-0">
+            <div class="w-10 h-10 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden flex items-center justify-center bg-white dark:bg-slate-900 flex-shrink-0">
               ${getAvatarSvg(item.senderAvatar, item.sender.charAt(0), 'w-full h-full')}
             </div>
             <div class="flex-grow min-w-0">
               <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
                 <div>
-                  <span class="block text-sm font-extrabold text-slate-800 dark:text-slate-250 truncate">${item.sender}</span>
+                  <span class="block text-sm font-extrabold text-slate-800 dark:text-slate-300 truncate">${item.sender}</span>
                   <span class="block text-[10px] text-slate-500 dark:text-slate-400 font-semibold truncate">
                     De: &lt;${item.type === 'direct_message' ? (item.sender === 'Você' ? 'voce' : item.sender.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '')) + '@paxflow.com.br' : 'alertas@paxflow.com.br'}&gt;
                   </span>
@@ -122,23 +122,23 @@ export class EmailReaderModal {
                         : 'border-slate-100 dark:border-slate-800/40 bg-slate-50/30 dark:bg-slate-950/10'
                     } transition-colors duration-200">
                       <div class="flex items-center gap-3 border-b border-slate-100 dark:border-slate-800/80 pb-2 mb-3">
-                        <div class="w-8 h-8 border border-slate-200 dark:border-slate-850 rounded-lg overflow-hidden flex items-center justify-center bg-white dark:bg-slate-900 flex-shrink-0">
+                        <div class="w-8 h-8 border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden flex items-center justify-center bg-white dark:bg-slate-900 flex-shrink-0">
                           ${getAvatarSvg(msgAvatar, msgSender.charAt(0), 'w-full h-full')}
                         </div>
                         <div class="flex-grow min-w-0">
                           <div class="flex items-center justify-between gap-1">
-                            <span class="block text-xs font-black text-slate-850 dark:text-slate-200 truncate">${msgSender}</span>
-                            <span class="text-[9px] font-bold text-slate-400 dark:text-slate-550 whitespace-nowrap">${msgDate}</span>
+                            <span class="block text-xs font-black text-slate-800 dark:text-slate-200 truncate">${msgSender}</span>
+                            <span class="text-[9px] font-bold text-slate-400 dark:text-slate-500 whitespace-nowrap">${msgDate}</span>
                           </div>
                         </div>
                       </div>
-                      <div class="text-xs text-slate-700 dark:text-slate-355 leading-relaxed font-semibold whitespace-pre-wrap">${msg.conteudo}</div>
+                      <div class="text-xs text-slate-700 dark:text-slate-400 leading-relaxed font-semibold whitespace-pre-wrap">${msg.conteudo}</div>
                     </div>
                   `;
                 }).join('')}
               </div>
             ` : `
-              <div class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed font-semibold bg-slate-50/40 dark:bg-slate-950/20 p-5 rounded-2xl border border-slate-200/30 dark:border-slate-850/40 shadow-inner">
+              <div class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed font-semibold bg-slate-50/40 dark:bg-slate-950/20 p-5 rounded-2xl border border-slate-200/30 dark:border-slate-800/40 shadow-inner">
                 <p class="mb-4">Prezado(a) Consultor(a),</p>
                 
                 <p class="mb-4">${item.body}</p>
@@ -169,7 +169,7 @@ export class EmailReaderModal {
 
           <!-- Botão de Excluir (Apenas Admins) -->
           ${(options.perfil?.role === 'admin' && options.onDelete) ? `
-            <button id="modal-delete-btn" class="px-4 py-2 text-xs font-extrabold bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-900/20 text-rose-600 dark:text-rose-455 rounded-xl transition flex items-center gap-1.5 ${item.type === 'direct_message' && !item.isSent && options.onReply ? '' : 'mr-auto'}">
+            <button id="modal-delete-btn" class="px-4 py-2 text-xs font-extrabold bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-900/20 text-rose-600 dark:text-rose-400 rounded-xl transition flex items-center gap-1.5 ${item.type === 'direct_message' && !item.isSent && options.onReply ? '' : 'mr-auto'}">
               🗑️ Excluir
             </button>
           ` : ''}

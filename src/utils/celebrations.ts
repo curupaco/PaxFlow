@@ -120,7 +120,7 @@ export function showLevelUpModal(nivel: number, patente: string, emoji: string):
       <!-- Content -->
       <div class="space-y-1.5 mt-2 z-10">
         <h2 class="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-500 dark:from-indigo-400 dark:via-purple-400 dark:to-indigo-300 tracking-tight leading-tight uppercase animate-pulse">SUBIU DE PATENTE!</h2>
-        <p class="text-sm text-slate-650 dark:text-slate-350 font-semibold leading-relaxed">
+        <p class="text-sm text-slate-600 dark:text-slate-400 font-semibold leading-relaxed">
           Você agora é um <span class="text-indigo-600 dark:text-indigo-400 font-extrabold">${patente}</span>.
         </p>
       </div>

@@ -461,7 +461,7 @@ export class ComercialDashboard {
             <div>
               <h1 class="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight flex items-center gap-2">
                 <span>Dashboard de Resultados</span>
-                ${this.isFallbackMode ? `<span class="px-2 py-0.5 bg-amber-500/20 text-amber-600 dark:text-amber-450 border border-amber-500/30 text-[10px] font-black rounded-lg uppercase tracking-wider">Modo Offline</span>` : ''}
+                ${this.isFallbackMode ? `<span class="px-2 py-0.5 bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-[10px] font-black rounded-lg uppercase tracking-wider">Modo Offline</span>` : ''}
               </h1>
               <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Sumarizador financeiro, gaps de propostas e taxa de conversão</p>
             </div>
@@ -472,8 +472,8 @@ export class ComercialDashboard {
             
             <!-- Seletor de Período -->
             <div class="flex items-center gap-1.5 shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2.5 py-1.5 rounded-xl shadow-sm">
-              <span class="text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-550 select-none">Período:</span>
-              <select id="select-dashboard-periodo" class="text-xs font-bold bg-transparent text-slate-700 dark:text-slate-350 focus:outline-none cursor-pointer">
+              <span class="text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-500 select-none">Período:</span>
+              <select id="select-dashboard-periodo" class="text-xs font-bold bg-transparent text-slate-700 dark:text-slate-400 focus:outline-none cursor-pointer">
                 <option value="mes_atual" ${this.selectedPeriod === 'mes_atual' ? 'selected' : ''}>Mês Atual</option>
                 <option value="30_dias" ${this.selectedPeriod === '30_dias' ? 'selected' : ''}>Últimos 30 dias</option>
                 <option value="90_dias" ${this.selectedPeriod === '90_dias' ? 'selected' : ''}>Últimos 90 dias</option>
@@ -485,8 +485,8 @@ export class ComercialDashboard {
             <!-- Seletor de Consultores (Apenas para Admins) -->
             ${isAdmin ? `
               <div class="flex items-center gap-1.5 shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2.5 py-1.5 rounded-xl shadow-sm">
-                <span class="text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-550 select-none">Equipe:</span>
-                <select id="select-dashboard-consultor" class="text-xs font-bold bg-transparent text-slate-700 dark:text-slate-350 focus:outline-none cursor-pointer max-w-[150px]">
+                <span class="text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-500 select-none">Equipe:</span>
+                <select id="select-dashboard-consultor" class="text-xs font-bold bg-transparent text-slate-700 dark:text-slate-400 focus:outline-none cursor-pointer max-w-[150px]">
                   <option value="todos" ${this.selectedConsultantId === 'todos' ? 'selected' : ''}>Todos os Consultores</option>
                   ${this.consultores.map(c => `<option value="${c.id}" ${this.selectedConsultantId === c.id ? 'selected' : ''}>${c.nome}</option>`).join('')}
                 </select>
@@ -563,7 +563,7 @@ export class ComercialDashboard {
             <span class="block text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight">
               R$ ${faturamentoRealizado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
-            <span class="block text-[10px] text-slate-450 dark:text-slate-500 font-semibold mt-1">
+            <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-semibold mt-1">
               Reflete vendas ganhas convertidas em viagens
             </span>
           </div>
@@ -579,7 +579,7 @@ export class ComercialDashboard {
             <span class="block text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight">
               R$ ${faturamentoPipeline.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
-            <span class="block text-[10px] text-slate-450 dark:text-slate-500 font-semibold mt-1">
+            <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-semibold mt-1">
               Valores em negociação e propostas abertas
             </span>
           </div>
@@ -595,7 +595,7 @@ export class ComercialDashboard {
             <span class="block text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight">
               R$ ${faturamentoGap.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
-            <span class="block text-[10px] text-slate-450 dark:text-slate-500 font-semibold mt-1">
+            <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-semibold mt-1">
               Fuga de caixa por cotações não fechadas
             </span>
           </div>
@@ -611,7 +611,7 @@ export class ComercialDashboard {
             <span class="block text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight">
               ${taxaConversao.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%
             </span>
-            <span class="block text-[10px] text-slate-450 dark:text-slate-500 font-semibold mt-1">
+            <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-semibold mt-1">
               ${orcamentosGanhos.length} fechamentos de ${orcamentosConcluidos.length} decididos
             </span>
           </div>
@@ -625,7 +625,7 @@ export class ComercialDashboard {
         <!-- COLUNA 1: GRÁFICO DE ROSCA (DONUT) -->
         <div class="dashboard-glass rounded-3xl p-6 flex flex-col justify-between select-none">
           <div>
-            <h3 class="text-sm font-black text-slate-850 dark:text-slate-100">Distribuição Comercial do Caixa</h3>
+            <h3 class="text-sm font-black text-slate-800 dark:text-slate-100">Distribuição Comercial do Caixa</h3>
             <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium">Comparativo entre faturamento real, potencial e o gap de perdas</p>
           </div>
           
@@ -633,7 +633,7 @@ export class ComercialDashboard {
             <!-- SVG Donut -->
             <div class="relative w-48 h-48 flex items-center justify-center shrink-0">
               ${volumeTotalFinanceiro > 0 ? this.renderDonutChart(pctRealizado, pctPipeline, pctGap) : `
-                <div class="w-full h-full border-4 border-dashed border-slate-200 dark:border-slate-850 rounded-full flex flex-col items-center justify-center text-center p-4">
+                <div class="w-full h-full border-4 border-dashed border-slate-200 dark:border-slate-800 rounded-full flex flex-col items-center justify-center text-center p-4">
                   <span class="text-xl">📊</span>
                   <span class="text-[10px] text-slate-400 font-bold mt-1 uppercase">Sem dados financeiros</span>
                 </div>
@@ -641,7 +641,7 @@ export class ComercialDashboard {
               
               <!-- Texto Central do Donut -->
               <div class="absolute flex flex-col items-center justify-center text-center">
-                <span class="text-[9px] uppercase font-bold text-slate-400 dark:text-slate-550 tracking-wider">Volume Total</span>
+                <span class="text-[9px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider">Volume Total</span>
                 <span class="text-sm font-black text-slate-800 dark:text-slate-100 mt-0.5">
                   R$ ${(volumeTotalFinanceiro > 1000000 ? (volumeTotalFinanceiro / 1000000).toFixed(2) + 'M' : volumeTotalFinanceiro.toLocaleString('pt-BR', { maximumFractionDigits: 0 }))}
                 </span>
@@ -654,7 +654,7 @@ export class ComercialDashboard {
               <div class="flex items-center gap-3">
                 <div class="w-3.5 h-3.5 rounded-lg bg-indigo-500 shrink-0"></div>
                 <div class="flex-1">
-                  <span class="block text-xs font-black text-slate-700 dark:text-slate-250 leading-none">Realizado</span>
+                  <span class="block text-xs font-black text-slate-700 dark:text-slate-300 leading-none">Realizado</span>
                   <span class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold mt-0.5 block">
                     R$ ${faturamentoRealizado.toLocaleString('pt-BR', { maximumFractionDigits: 0 })} (${pctRealizado.toFixed(1)}%)
                   </span>
@@ -664,7 +664,7 @@ export class ComercialDashboard {
               <div class="flex items-center gap-3">
                 <div class="w-3.5 h-3.5 rounded-lg bg-amber-500 shrink-0"></div>
                 <div class="flex-1">
-                  <span class="block text-xs font-black text-slate-700 dark:text-slate-250 leading-none">Pipeline Ativo</span>
+                  <span class="block text-xs font-black text-slate-700 dark:text-slate-300 leading-none">Pipeline Ativo</span>
                   <span class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold mt-0.5 block">
                     R$ ${faturamentoPipeline.toLocaleString('pt-BR', { maximumFractionDigits: 0 })} (${pctPipeline.toFixed(1)}%)
                   </span>
@@ -674,7 +674,7 @@ export class ComercialDashboard {
               <div class="flex items-center gap-3">
                 <div class="w-3.5 h-3.5 rounded-lg bg-rose-500 shrink-0"></div>
                 <div class="flex-1">
-                  <span class="block text-xs font-black text-slate-700 dark:text-slate-250 leading-none">Desistências</span>
+                  <span class="block text-xs font-black text-slate-700 dark:text-slate-300 leading-none">Desistências</span>
                   <span class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold mt-0.5 block">
                     R$ ${faturamentoGap.toLocaleString('pt-BR', { maximumFractionDigits: 0 })} (${pctGap.toFixed(1)}%)
                   </span>
@@ -687,7 +687,7 @@ export class ComercialDashboard {
         <!-- COLUNA 2: FUNIL DE VENDAS -->
         <div class="dashboard-glass rounded-3xl p-6 flex flex-col select-none justify-between">
           <div>
-            <h3 class="text-sm font-black text-slate-850 dark:text-slate-100">Funil de Conversão Comercial</h3>
+            <h3 class="text-sm font-black text-slate-800 dark:text-slate-100">Funil de Conversão Comercial</h3>
             <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium">Fluxo de volume e valor das captações de orçamentos</p>
           </div>
           
@@ -799,7 +799,7 @@ export class ComercialDashboard {
 
     if (total === 0) {
       return `
-        <div class="h-44 border-4 border-dashed border-slate-200 dark:border-slate-850 rounded-full flex flex-col items-center justify-center text-center p-6 max-w-sm mx-auto">
+        <div class="h-44 border-4 border-dashed border-slate-200 dark:border-slate-800 rounded-full flex flex-col items-center justify-center text-center p-6 max-w-sm mx-auto">
           <span class="text-2xl">📋</span>
           <span class="text-xs text-slate-400 font-bold mt-1.5 uppercase">Sem dados para montar o funil</span>
         </div>
@@ -810,11 +810,11 @@ export class ComercialDashboard {
       <div class="flex flex-col gap-4">
         <!-- Nível 1: Captação/Solicitado -->
         <div class="space-y-1.5">
-          <div class="flex justify-between items-center text-[10px] font-bold text-slate-450 dark:text-slate-500 uppercase tracking-wide">
+          <div class="flex justify-between items-center text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">
             <span>1. Captação (Total)</span>
             <span class="font-extrabold text-slate-700 dark:text-slate-300">${t1_leads} orçamentos &bull; R$ ${formatBRL(valorTotalFunnel)}</span>
           </div>
-          <div class="w-full bg-slate-100 dark:bg-slate-850 h-7 rounded-xl overflow-hidden relative">
+          <div class="w-full bg-slate-100 dark:bg-slate-800 h-7 rounded-xl overflow-hidden relative">
             <div class="bg-gradient-to-r from-indigo-500 to-indigo-600 h-full rounded-xl funnel-bar-fill transition-all duration-300" style="width: ${width1}%"></div>
             <span class="absolute inset-0 flex items-center pl-3.5 text-[10px] font-black text-white select-none">100% dos Leads</span>
           </div>
@@ -822,37 +822,37 @@ export class ComercialDashboard {
 
         <!-- Nível 2: Cotação/Em Andamento -->
         <div class="space-y-1.5">
-          <div class="flex justify-between items-center text-[10px] font-bold text-slate-450 dark:text-slate-500 uppercase tracking-wide">
+          <div class="flex justify-between items-center text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">
             <span>2. Cotações / Elaboração</span>
             <span class="font-extrabold text-slate-700 dark:text-slate-300">${t2_cotacao} orçamentos (${(t1_leads > 0 ? (t2_cotacao/t1_leads)*100 : 0).toFixed(0)}% avanço)</span>
           </div>
-          <div class="w-full bg-slate-100 dark:bg-slate-850 h-7 rounded-xl overflow-hidden relative">
-            <div class="bg-gradient-to-r from-violet-500 to-violet-650 h-full rounded-xl funnel-bar-fill transition-all duration-300" style="width: ${width2 > 0 ? Math.max(width2, 10) : 0}%"></div>
-            <span class="absolute inset-0 flex items-center pl-3.5 text-[10px] font-black ${w2 > 35 ? 'text-white' : 'text-slate-650 dark:text-slate-350'} select-none">${w2.toFixed(0)}% do volume</span>
+          <div class="w-full bg-slate-100 dark:bg-slate-800 h-7 rounded-xl overflow-hidden relative">
+            <div class="bg-gradient-to-r from-violet-500 to-violet-700 h-full rounded-xl funnel-bar-fill transition-all duration-300" style="width: ${width2 > 0 ? Math.max(width2, 10) : 0}%"></div>
+            <span class="absolute inset-0 flex items-center pl-3.5 text-[10px] font-black ${w2 > 35 ? 'text-white' : 'text-slate-600 dark:text-slate-400'} select-none">${w2.toFixed(0)}% do volume</span>
           </div>
         </div>
 
         <!-- Nível 3: Apresentado/Aguardando -->
         <div class="space-y-1.5">
-          <div class="flex justify-between items-center text-[10px] font-bold text-slate-455 dark:text-slate-500 uppercase tracking-wide">
+          <div class="flex justify-between items-center text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">
             <span>3. Proposta Enviada</span>
             <span class="font-extrabold text-slate-700 dark:text-slate-300">${t3_negociacao} orçamentos (${(t2_cotacao > 0 ? (t3_negociacao/t2_cotacao)*100 : 0).toFixed(0)}% avanço)</span>
           </div>
-          <div class="w-full bg-slate-100 dark:bg-slate-850 h-7 rounded-xl overflow-hidden relative">
-            <div class="bg-gradient-to-r from-purple-500 to-purple-650 h-full rounded-xl funnel-bar-fill transition-all duration-300" style="width: ${width3 > 0 ? Math.max(width3, 10) : 0}%"></div>
-            <span class="absolute inset-0 flex items-center pl-3.5 text-[10px] font-black ${w3 > 35 ? 'text-white' : 'text-slate-650 dark:text-slate-350'} select-none">${w3.toFixed(0)}% de cotações</span>
+          <div class="w-full bg-slate-100 dark:bg-slate-800 h-7 rounded-xl overflow-hidden relative">
+            <div class="bg-gradient-to-r from-purple-500 to-purple-700 h-full rounded-xl funnel-bar-fill transition-all duration-300" style="width: ${width3 > 0 ? Math.max(width3, 10) : 0}%"></div>
+            <span class="absolute inset-0 flex items-center pl-3.5 text-[10px] font-black ${w3 > 35 ? 'text-white' : 'text-slate-600 dark:text-slate-400'} select-none">${w3.toFixed(0)}% de cotações</span>
           </div>
         </div>
 
         <!-- Nível 4: Ganho -->
         <div class="space-y-1.5">
-          <div class="flex justify-between items-center text-[10px] font-bold text-slate-450 dark:text-slate-500 uppercase tracking-wide">
+          <div class="flex justify-between items-center text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">
             <span>4. Negócios Fechados</span>
             <span class="font-extrabold text-slate-700 dark:text-slate-300">${t4_ganho} fechamentos (${(t3_negociacao > 0 ? (t4_ganho/t3_negociacao)*100 : 0).toFixed(0)}% conversão final)</span>
           </div>
-          <div class="w-full bg-slate-100 dark:bg-slate-850 h-7 rounded-xl overflow-hidden relative">
-            <div class="bg-gradient-to-r from-emerald-500 to-emerald-650 h-full rounded-xl funnel-bar-fill transition-all duration-300" style="width: ${width4 > 0 ? Math.max(width4, 10) : 0}%"></div>
-            <span class="absolute inset-0 flex items-center pl-3.5 text-[10px] font-black ${w4 > 35 ? 'text-white' : 'text-slate-650 dark:text-slate-350'} select-none">${w4.toFixed(0)}% conversão</span>
+          <div class="w-full bg-slate-100 dark:bg-slate-800 h-7 rounded-xl overflow-hidden relative">
+            <div class="bg-gradient-to-r from-emerald-500 to-emerald-700 h-full rounded-xl funnel-bar-fill transition-all duration-300" style="width: ${width4 > 0 ? Math.max(width4, 10) : 0}%"></div>
+            <span class="absolute inset-0 flex items-center pl-3.5 text-[10px] font-black ${w4 > 35 ? 'text-white' : 'text-slate-600 dark:text-slate-400'} select-none">${w4.toFixed(0)}% conversão</span>
           </div>
         </div>
       </div>
@@ -950,7 +950,7 @@ export class ComercialDashboard {
       <!-- TABELA DE RENDIMENTO DA EQUIPE -->
       <section class="dashboard-glass rounded-3xl p-6 select-none overflow-x-auto">
         <div class="mb-4">
-          <h3 class="text-sm font-black text-slate-850 dark:text-slate-100 flex items-center gap-1.5">
+          <h3 class="text-sm font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
             👥 Rendimento e Performance da Equipe
           </h3>
           <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium">Quadro comparativo de conversão, faturamento e gap financeiro de desistências</p>
@@ -958,7 +958,7 @@ export class ComercialDashboard {
 
         <table class="w-full text-left border-collapse text-xs min-w-[700px]">
           <thead>
-            <tr class="border-b border-slate-200 dark:border-slate-850 text-[10px] text-slate-450 dark:text-slate-500 font-extrabold uppercase tracking-wider">
+            <tr class="border-b border-slate-200 dark:border-slate-800 text-[10px] text-slate-400 dark:text-slate-500 font-extrabold uppercase tracking-wider">
               <th class="py-3 pl-2">Consultor</th>
               <th class="py-3 text-center">Orçamentos</th>
               <th class="py-3 text-center">Conversão</th>
@@ -967,7 +967,7 @@ export class ComercialDashboard {
               <th class="py-3 text-right">Gap (Perdas)</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-slate-100 dark:divide-slate-850 font-semibold">
+          <tbody class="divide-y divide-slate-100 dark:divide-slate-800 font-semibold">
             ${rankingArray.map((r, index) => {
               const conversion = r.orcConcluidos > 0 ? (r.orcGanhos / r.orcConcluidos) * 100 : (r.orcGanhos > 0 ? 100 : 0);
               
@@ -983,7 +983,7 @@ export class ComercialDashboard {
                     ${placingIcon}
                     ${getAvatarSvg(r.avatarUrl, r.nome, 'w-8 h-8')}
                     <div>
-                      <span class="block font-black text-slate-750 dark:text-slate-200 leading-snug">${r.nome}</span>
+                      <span class="block font-black text-slate-700 dark:text-slate-200 leading-snug">${r.nome}</span>
                       <span class="block text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wide leading-none mt-0.5">${r.email}</span>
                     </div>
                   </td>
@@ -1007,7 +1007,7 @@ export class ComercialDashboard {
                   <td class="py-3.5 text-right font-black text-indigo-600 dark:text-indigo-400">
                     R$ ${r.valVendido.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </td>
-                  <td class="py-3.5 text-right font-black text-rose-650 dark:text-rose-455">
+                  <td class="py-3.5 text-right font-black text-rose-600 dark:text-rose-400">
                     R$ ${r.valGap.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </td>
                 </tr>

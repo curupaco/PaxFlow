@@ -49,3 +49,17 @@ Este arquivo define as regras estritas de desenvolvimento, padrões arquiteturai
   * Garantir a limpeza dos canais no método `destroy()` ao navegar para outras páginas.
 * 🛑 **Restrição de Controle de Versão (Git Push)**: O assistente de IA **nunca** deve propor ou executar comandos de `git push` para o GitHub ou qualquer repositório remoto. A responsabilidade e o direito de realizar pushes de código são **exclusivos do usuário**. O assistente de IA limita-se a criar commits locais se solicitado.
 
+---
+
+## 🤝 5. Regras Básicas de Convivência e Testes
+
+* 🛑 **Restrição de Testes no Navegador**: O assistente de IA **nunca** deve abrir o navegador para testar a aplicação. O assistente desenvolve, revisa e valida o código e a lógica estaticamente, cabendo ao usuário realizar os testes no navegador.
+* 🛑 **Restrição de Execução no Banco de Dados**: O assistente de IA **nunca** deve rodar scripts ou comandos diretamente no banco de dados. O assistente deve gerar o script SQL e fornecê-lo para que o usuário o execute no Supabase.
+* 🧼 **Código Limpo e Sem Gambiarras**: Priorizar sempre um código bem estruturado, limpo, de alto desempenho e devidamente comentado onde for necessário, sem soluções improvisadas ou paliativas.
+* 🪙 **Otimização de Consumo de Tokens**: Buscar sempre otimizar as interações, respostas e leituras de arquivos para diminuir o consumo de tokens quando possível.
+* ⚠️ **Ambiente em Produção (Confirmação de Riscos)**: Como o sistema está em produção, qualquer ação destrutiva ou com alta probabilidade de causar regressão deve ser explicitamente confirmada com o usuário antes de ser implementada.
+* 🇧🇷 **Idioma de Comunicação (Português do Brasil)**: Toda a comunicação, respostas, explicações, planos de ação e relatórios de progresso do assistente devem ser estritamente em **Português do Brasil**.
+
+
+
+

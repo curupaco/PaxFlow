@@ -189,20 +189,20 @@ class App {
         <!-- Mobile Top Bar (Header) -->
         <header class="md:hidden bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800/60 px-4 py-3 flex items-center justify-between sticky top-0 z-40 shadow-sm transition-colors duration-200">
           <div class="flex items-center gap-3">
-            <button id="mobile-menu-toggle-btn" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-650 dark:text-slate-300 transition focus:outline-none" title="Menu">
+            <button id="mobile-menu-toggle-btn" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition focus:outline-none" title="Menu">
               <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
             <div class="flex items-center gap-2">
               <img src="/logo.svg" alt="PaxFlow Logo" class="h-8 w-8 object-contain filter drop-shadow-sm shrink-0" />
-              <span class="text-sm font-black text-slate-850 dark:text-white tracking-tight">PaxFlow</span>
+              <span class="text-sm font-black text-slate-800 dark:text-white tracking-tight">PaxFlow</span>
             </div>
           </div>
           
           <div class="flex items-center gap-2.5">
             <!-- Theme Toggle on Mobile -->
-            <button id="theme-toggle-btn" title="Alternar Tema" class="p-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-650 dark:text-slate-400 dark:hover:text-slate-200 rounded-xl transition border border-slate-200/40 dark:border-slate-700/40 flex items-center justify-center">
+            <button id="theme-toggle-btn" title="Alternar Tema" class="p-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-200 rounded-xl transition border border-slate-200/40 dark:border-slate-700/40 flex items-center justify-center">
               <svg width="18" height="18" class="w-4.5 h-4.5 theme-icon-light" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
               </svg>
@@ -212,7 +212,7 @@ class App {
             </button>
 
             <!-- User Avatar on Mobile -->
-            <button id="mobile-profile-trigger" class="p-0.5 rounded-full border border-slate-200 dark:border-slate-750 transition focus:outline-none">
+            <button id="mobile-profile-trigger" class="p-0.5 rounded-full border border-slate-200 dark:border-slate-800 transition focus:outline-none">
               ${this.perfil ? getAvatarSvg(this.perfil.avatar_url, this.perfil.nome || 'Consultor', 'w-8 h-8') : ''}
             </button>
           </div>
@@ -228,7 +228,7 @@ class App {
           <div id="sidebar-header" class="border-b border-slate-100 dark:border-slate-800 flex items-center gap-2.5 relative transition-all duration-200 ${this.sidebarCollapsed ? 'p-5 justify-center' : 'p-6'}">
             <img src="/logo.svg" alt="PaxFlow Logo" class="h-10 w-10 object-contain filter drop-shadow-md shrink-0" />
             <span id="sidebar-logo-text" class="text-base font-black text-slate-800 dark:text-white tracking-tight ${this.sidebarCollapsed ? 'md:hidden' : ''}">PaxFlow</span>
-            <button id="sidebar-collapse-btn" class="absolute top-1/2 -translate-y-1/2 right-[-14px] p-1.5 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700 text-slate-455 hover:text-slate-650 dark:text-slate-400 dark:hover:text-slate-200 shadow-md hidden md:flex items-center justify-center transition z-30">
+            <button id="sidebar-collapse-btn" class="absolute top-1/2 -translate-y-1/2 right-[-14px] p-1.5 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-200 shadow-md hidden md:flex items-center justify-center transition z-30">
               <svg width="16" height="16" class="w-4 h-4 transform ${this.sidebarCollapsed ? 'rotate-180' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
               </svg>
@@ -249,7 +249,7 @@ class App {
               
               <!-- Link: Inbox de Alertas -->
               <button id="nav-inbox" class="w-full px-4 py-2 rounded-xl flex items-center justify-center ${this.sidebarCollapsed ? '' : 'md:justify-start'} gap-3 font-semibold text-xs text-left transition select-none group relative">
-                <svg width="20" height="20" class="w-5 h-5 text-slate-400 group-hover:text-slate-600 dark:text-slate-555 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                <svg width="20" height="20" class="w-5 h-5 text-slate-400 group-hover:text-slate-600 dark:text-slate-500 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                   <rect width="20" height="16" x="2" y="4" rx="2" />
                   <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
                 </svg>
@@ -283,7 +283,7 @@ class App {
 
               <!-- Link: Reembolsos -->
               <button id="nav-reembolsos" class="w-full px-4 py-2 rounded-xl flex items-center justify-center ${this.sidebarCollapsed ? '' : 'md:justify-start'} gap-3 font-semibold text-xs text-left transition select-none group">
-                <svg width="20" height="20" class="w-5 h-5 text-slate-400 group-hover:text-slate-650 dark:text-slate-500 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                <svg width="20" height="20" class="w-5 h-5 text-slate-400 group-hover:text-slate-600 dark:text-slate-500 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <span class="${this.sidebarCollapsed ? 'md:hidden' : ''}">Central de Reembolsos</span>
@@ -292,7 +292,7 @@ class App {
               <!-- Link: Cadastros (Somente ADMIN) -->
               ${this.perfil?.role === 'admin' ? `
                 <button id="nav-cadastros" class="w-full px-4 py-2 rounded-xl flex items-center justify-center ${this.sidebarCollapsed ? '' : 'md:justify-start'} gap-3 font-semibold text-xs text-left transition select-none group">
-                  <svg width="20" height="20" class="w-5 h-5 text-slate-400 group-hover:text-slate-655 dark:text-slate-500 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                  <svg width="20" height="20" class="w-5 h-5 text-slate-400 group-hover:text-slate-600 dark:text-slate-500 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                   </svg>
                   <span class="${this.sidebarCollapsed ? 'md:hidden' : ''}">Cadastros</span>
@@ -302,7 +302,7 @@ class App {
               <!-- Link: Configurações (Somente ADMIN) -->
               ${this.perfil?.role === 'admin' ? `
                 <button id="nav-configuracoes" class="w-full px-4 py-2 rounded-xl flex items-center justify-center ${this.sidebarCollapsed ? '' : 'md:justify-start'} gap-3 font-semibold text-xs text-left transition select-none group">
-                  <svg width="20" height="20" class="w-5 h-5 text-slate-400 group-hover:text-slate-655 dark:text-slate-500 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                  <svg width="20" height="20" class="w-5 h-5 text-slate-400 group-hover:text-slate-600 dark:text-slate-500 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                     <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
@@ -401,14 +401,14 @@ class App {
             </div>
             <div id="sidebar-profile-text" class="overflow-hidden flex-1 select-none text-left ${this.sidebarCollapsed ? 'md:hidden' : ''}">
               <span class="block text-[11px] font-extrabold text-slate-700 dark:text-white truncate">${this.perfil.nome || 'Consultor'}</span>
-              <span class="block text-[9px] text-slate-455 dark:text-slate-500 font-semibold truncate capitalize leading-tight">${this.perfil.role || 'consultor'}</span>
+              <span class="block text-[9px] text-slate-400 dark:text-slate-500 font-semibold truncate capitalize leading-tight">${this.perfil.role || 'consultor'}</span>
               <span class="block text-[9px] text-indigo-600 dark:text-indigo-400 font-black truncate mt-0.5 leading-none">${progress.patenteEmoji} ${progress.patente}</span>
             </div>
           </button>
           
           <div class="flex items-center justify-around gap-1.5 ${this.sidebarCollapsed ? 'flex-col mt-0.5 px-0' : 'flex-row px-2'}">
             <!-- Theme Toggle -->
-            <button id="theme-toggle-btn" title="Alternar Tema" class="p-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/60 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-655 dark:text-slate-500 dark:hover:text-slate-200 rounded-xl transition border border-slate-200/20 dark:border-slate-700/20 flex items-center justify-center w-full">
+            <button id="theme-toggle-btn" title="Alternar Tema" class="p-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/60 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-200 rounded-xl transition border border-slate-200/20 dark:border-slate-700/20 flex items-center justify-center w-full">
               <svg width="18" height="18" class="w-4.5 h-4.5 theme-icon-light" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
               </svg>
@@ -417,7 +417,7 @@ class App {
               </svg>
             </button>
             <!-- Logout -->
-            <button id="sidebar-logout-btn" title="Sair do Sistema" class="p-1.5 bg-slate-50 hover:bg-rose-50 dark:bg-slate-800/60 dark:hover:bg-rose-950/30 text-slate-400 hover:text-rose-500 dark:text-slate-500 dark:hover:text-rose-455 rounded-xl transition border border-slate-200/20 dark:border-slate-700/20 flex items-center justify-center w-full">
+            <button id="sidebar-logout-btn" title="Sair do Sistema" class="p-1.5 bg-slate-50 hover:bg-rose-50 dark:bg-slate-800/60 dark:hover:bg-rose-950/30 text-slate-400 hover:text-rose-500 dark:text-slate-500 dark:hover:text-rose-400 rounded-xl transition border border-slate-200/20 dark:border-slate-700/20 flex items-center justify-center w-full">
               <svg width="18" height="18" class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
               </svg>
@@ -636,7 +636,7 @@ class App {
       overlay.className = 'absolute inset-0 bg-white/40 dark:bg-slate-950/40 backdrop-blur-sm z-40 flex flex-col items-center justify-center space-y-3 pointer-events-none animate-fade-in';
       overlay.innerHTML = `
         <div class="w-10 h-10 border-3 border-indigo-600 dark:border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-        <span class="text-xs font-bold text-slate-650 dark:text-slate-300 animate-pulse uppercase tracking-wider">Carregando dados...</span>
+        <span class="text-xs font-bold text-slate-600 dark:text-slate-300 animate-pulse uppercase tracking-wider">Carregando dados...</span>
       `;
       pageContentEl.appendChild(overlay);
     }

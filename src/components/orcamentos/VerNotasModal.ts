@@ -31,7 +31,7 @@ export class VerNotasModal {
             📄 Documento da Proposta #${index + 1}
           </a>
         `).join('')
-      : '<p class="text-xs text-slate-400 dark:text-slate-505 font-semibold italic">Nenhum arquivo anexado nesta proposta.</p>';
+      : '<p class="text-xs text-slate-400 dark:text-slate-500 font-semibold italic">Nenhum arquivo anexado nesta proposta.</p>';
 
     // Preparação dos dados para a barra lateral
     const temperaturaClasses = {
@@ -42,7 +42,7 @@ export class VerNotasModal {
     const tempClass = temperaturaClasses[orc.temperatura] || temperaturaClasses.Normal;
 
     let statusText: string = orc.status;
-    let statusClass = 'bg-slate-150 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200/50';
+    let statusClass = 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200/50';
     if (orc.status === 'SOLICITADO') {
       statusClass = 'bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400 border border-blue-100/30';
       statusText = 'Solicitado';
@@ -54,7 +54,7 @@ export class VerNotasModal {
       statusText = 'Aguardando';
     } else if (orc.status === 'CONCLUIDO') {
       if (orc.subStatus === 'ACEITO') {
-        statusClass = 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-450 border border-emerald-100/30';
+        statusClass = 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400 border border-emerald-100/30';
         statusText = 'Concluído (Aceito) 🎉';
       } else {
         statusClass = 'bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-400 border border-rose-100/30';
@@ -73,8 +73,8 @@ export class VerNotasModal {
     const mailLink = email ? `mailto:${email}` : '';
 
     const tagsHtml = orc.tags && orc.tags.length > 0 
-      ? orc.tags.map(t => `<span class="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-505 dark:text-slate-400 rounded font-black text-[9px] uppercase tracking-wide border border-slate-200/20 dark:border-slate-700/20">${t}</span>`).join('')
-      : '<span class="text-xs text-slate-400 dark:text-slate-505 font-semibold italic">Nenhuma tag cadastrada.</span>';
+      ? orc.tags.map(t => `<span class="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded font-black text-[9px] uppercase tracking-wide border border-slate-200/20 dark:border-slate-700/20">${t}</span>`).join('')
+      : '<span class="text-xs text-slate-400 dark:text-slate-500 font-semibold italic">Nenhuma tag cadastrada.</span>';
 
     const dataCriacao = orc.createdAt ? new Date(orc.createdAt).toLocaleDateString('pt-BR') : 'Não informada';
     const tempoAguardando = orc.createdAt ? options.calcularTempoAmigavel(orc.createdAt) : '';
@@ -82,7 +82,7 @@ export class VerNotasModal {
     modalContent.innerHTML = `
       <div class="p-6 flex flex-col h-full max-h-[85vh]">
         <!-- Topo do Modal -->
-        <div class="flex items-center justify-between border-b border-slate-150 dark:border-slate-800 pb-3 mb-5">
+        <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3 mb-5">
           <h3 class="text-lg font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
             <span>📝 Detalhes do Orçamento</span>
           </h3>
@@ -96,18 +96,18 @@ export class VerNotasModal {
           <div class="md:col-span-2 space-y-5">
             <div>
               <h4 class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Cliente & Viagem</h4>
-              <div class="p-3.5 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-100 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-350 space-y-1.5">
+              <div class="p-3.5 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-100 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-400 space-y-1.5">
                 <span class="block">Passageiro: <strong class="text-slate-800 dark:text-slate-100">${orc.nomeCliente}</strong></span>
                 <span class="block">Destino: <strong class="text-slate-800 dark:text-slate-100">${orc.destino}</strong></span>
                 <span class="block">Data da Viagem: <strong class="text-slate-800 dark:text-slate-100">${options.formatarDataBr(orc.dataViagem)}</strong></span>
                 ${orc.valorProposta !== undefined && orc.valorProposta !== null ? `<span class="block">Valor da Proposta: <strong class="text-indigo-600 dark:text-indigo-400">R$ ${Number(orc.valorProposta).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong></span>` : ''}
-                ${orc.status === 'CONCLUIDO' && orc.subStatus === 'ACEITO' && orc.valorViagem !== undefined && orc.valorViagem !== null ? `<span class="block">Valor da Viagem: <strong class="text-emerald-600 dark:text-emerald-450">R$ ${Number(orc.valorViagem).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong></span>` : ''}
+                ${orc.status === 'CONCLUIDO' && orc.subStatus === 'ACEITO' && orc.valorViagem !== undefined && orc.valorViagem !== null ? `<span class="block">Valor da Viagem: <strong class="text-emerald-600 dark:text-emerald-400">R$ ${Number(orc.valorViagem).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong></span>` : ''}
               </div>
             </div>
 
             <div>
               <h4 class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Notas da Negociação</h4>
-              <div class="p-4 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-100 dark:border-slate-800 text-sm font-semibold text-slate-750 dark:text-slate-300 whitespace-pre-wrap leading-relaxed min-h-[120px]">
+              <div class="p-4 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-100 dark:border-slate-800 text-sm font-semibold text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed min-h-[120px]">
                 ${orc.notasNegociacao || 'Nenhuma nota registrada.'}
               </div>
             </div>
@@ -133,21 +133,21 @@ export class VerNotasModal {
           </div>
 
           <!-- Coluna 3 (Sidebar - Detalhes do Card) -->
-          <div class="bg-slate-550/5 dark:bg-slate-800/20 p-4 rounded-2xl border border-slate-150 dark:border-slate-800 space-y-4 h-fit">
+          <div class="bg-slate-600/5 dark:bg-slate-800/20 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-4 h-fit">
             
             <!-- Temperatura -->
             <div>
-              <span class="block text-[10px] font-black text-slate-400 dark:text-slate-505 uppercase tracking-wider mb-1.5">Temperatura</span>
+              <span class="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1.5">Temperatura</span>
               <select id="select-detail-temperatura" class="w-full px-2.5 py-1 border border-transparent rounded text-xs font-black uppercase tracking-wider ${tempClass} text-center cursor-pointer focus:outline-none focus:ring-1 focus:ring-indigo-500">
                 <option value="Frio" class="bg-white dark:bg-slate-900 text-sky-700 dark:text-sky-400" ${orc.temperatura === 'Frio' ? 'selected' : ''}>Frio</option>
                 <option value="Normal" class="bg-white dark:bg-slate-900 text-amber-700 dark:text-amber-400" ${orc.temperatura === 'Normal' ? 'selected' : ''}>Normal</option>
-                <option value="Quente" class="bg-white dark:bg-slate-900 text-rose-700 dark:text-rose-455" ${orc.temperatura === 'Quente' ? 'selected' : ''}>Quente</option>
+                <option value="Quente" class="bg-white dark:bg-slate-900 text-rose-700 dark:text-rose-400" ${orc.temperatura === 'Quente' ? 'selected' : ''}>Quente</option>
               </select>
             </div>
 
             <!-- Status do Lead -->
             <div>
-              <span class="block text-[10px] font-black text-slate-400 dark:text-slate-505 uppercase tracking-wider mb-1.5">Status da Negociação</span>
+              <span class="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1.5">Status da Negociação</span>
               <span class="px-2.5 py-1 rounded text-xs font-black uppercase tracking-wider ${statusClass} block text-center select-none">
                 ${statusText}
               </span>
@@ -155,7 +155,7 @@ export class VerNotasModal {
 
             <!-- Consultor Responsável -->
             <div>
-              <span class="block text-[10px] font-black text-slate-400 dark:text-slate-555 uppercase tracking-wider mb-1.5">Consultor Responsável</span>
+              <span class="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1.5">Consultor Responsável</span>
               ${options.perfil?.role === 'admin' ? `
                 <select id="select-detail-responsavel" class="w-full px-2.5 py-2 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-700 dark:text-slate-200 text-xs font-bold shadow-sm cursor-pointer">
                   ${options.consultores.map(c => `<option value="${c.id}" ${c.id === orc.consultorId ? 'selected' : ''}>${c.nome} (${c.role})</option>`).join('')}
@@ -170,8 +170,8 @@ export class VerNotasModal {
 
             <!-- Origem do Lead -->
             <div>
-              <span class="block text-[10px] font-black text-slate-400 dark:text-slate-555 uppercase tracking-wider mb-1.5">Origem do Lead</span>
-              <select id="select-detail-origem" class="w-full px-2.5 py-2 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-750 dark:text-slate-200 text-xs font-bold shadow-sm cursor-pointer">
+              <span class="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1.5">Origem do Lead</span>
+              <select id="select-detail-origem" class="w-full px-2.5 py-2 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-700 dark:text-slate-200 text-xs font-bold shadow-sm cursor-pointer">
                 <option value="" disabled ${!orc.origem ? 'selected' : ''}>Selecione a Origem...</option>
                 <option value="WhatsApp" ${orc.origem === 'WhatsApp' ? 'selected' : ''}>WhatsApp</option>
                 <option value="Instagram" ${orc.origem === 'Instagram' ? 'selected' : ''}>Instagram</option>
@@ -184,7 +184,7 @@ export class VerNotasModal {
 
             <!-- Contatos Clicáveis -->
             <div>
-              <span class="block text-[10px] font-black text-slate-400 dark:text-slate-555 uppercase tracking-wider mb-1.5">Canais de Contato</span>
+              <span class="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1.5">Canais de Contato</span>
               <div class="space-y-2">
                 ${phone ? `
                   <a href="${waLink}" target="_blank" class="w-full px-3 py-2 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/20 dark:hover:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-xl border border-emerald-100/30 dark:border-emerald-900/30 text-xs font-bold transition flex items-center gap-2 select-none">
@@ -192,7 +192,7 @@ export class VerNotasModal {
                   </a>
                 ` : ''}
                 ${email ? `
-                  <a href="${mailLink}" target="_blank" class="w-full px-3 py-2 bg-indigo-50/50 hover:bg-indigo-100 dark:bg-indigo-950/20 dark:hover:bg-indigo-900/30 text-indigo-600 dark:text-indigo-455 rounded-xl border border-indigo-100/30 dark:border-indigo-900/30 text-xs font-bold transition flex items-center gap-2 select-none">
+                  <a href="${mailLink}" target="_blank" class="w-full px-3 py-2 bg-indigo-50/50 hover:bg-indigo-100 dark:bg-indigo-950/20 dark:hover:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-xl border border-indigo-100/30 dark:border-indigo-900/30 text-xs font-bold transition flex items-center gap-2 select-none">
                     <span class="text-sm">✉️</span> <span class="truncate">${email}</span>
                   </a>
                 ` : ''}
@@ -202,14 +202,14 @@ export class VerNotasModal {
 
             <!-- Tags -->
             <div>
-              <span class="block text-[10px] font-black text-slate-400 dark:text-slate-555 uppercase tracking-wider mb-1.5">Tags</span>
+              <span class="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1.5">Tags</span>
               <div class="flex flex-wrap gap-1.5">
                 ${tagsHtml}
               </div>
             </div>
 
             <!-- Histórico de Datas -->
-            <div class="border-t border-slate-200/50 dark:border-slate-800 pt-3 text-[10px] text-slate-400 dark:text-slate-505 font-bold space-y-1">
+            <div class="border-t border-slate-200/50 dark:border-slate-800 pt-3 text-[10px] text-slate-400 dark:text-slate-500 font-bold space-y-1">
               <span class="block">Criado em: <strong class="text-slate-500 dark:text-slate-400 font-extrabold">${dataCriacao}</strong></span>
               ${tempoAguardando ? `<span class="block flex items-center gap-1">Aguardando: <strong class="text-indigo-600 dark:text-indigo-400 font-extrabold">${tempoAguardando}</strong></span>` : ''}
             </div>
@@ -218,15 +218,15 @@ export class VerNotasModal {
         </div>
 
         <!-- Rodapé do Modal -->
-        <div class="flex items-center justify-between gap-3 pt-5 border-t border-slate-150 dark:border-slate-800 mt-4">
+        <div class="flex items-center justify-between gap-3 pt-5 border-t border-slate-200 dark:border-slate-800 mt-4">
           <div>
             ${(options.perfil?.role === 'admin' && options.onDelete) ? `
-              <button id="btn-excluir-orcamento" type="button" class="px-5 py-2.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-900/20 text-rose-600 dark:text-rose-455 font-extrabold text-xs tracking-wider rounded-xl transition uppercase">
+              <button id="btn-excluir-orcamento" type="button" class="px-5 py-2.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-900/20 text-rose-600 dark:text-rose-400 font-extrabold text-xs tracking-wider rounded-xl transition uppercase">
                 Excluir Orçamento
               </button>
             ` : ''}
           </div>
-          <button id="btn-close-modal" type="button" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 font-bold text-xs tracking-wider rounded-xl transition uppercase">Fechar</button>
+          <button id="btn-close-modal" type="button" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs tracking-wider rounded-xl transition uppercase">Fechar</button>
         </div>
       </div>
     `;

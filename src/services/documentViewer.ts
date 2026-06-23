@@ -38,10 +38,10 @@ export class DocumentViewer {
         <!-- Barra Superior de Ações -->
         <header class="bg-slate-50 dark:bg-slate-900/60 px-5 py-4 border-b border-slate-100 dark:border-slate-800/80 flex items-center justify-between shrink-0">
           <div class="flex items-center gap-2.5 overflow-hidden pr-4">
-            <span class="text-xl p-1 bg-white dark:bg-slate-800 border border-slate-150 dark:border-slate-700/80 rounded-lg flex items-center justify-center shrink-0">📄</span>
+            <span class="text-xl p-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 rounded-lg flex items-center justify-center shrink-0">📄</span>
             <div class="overflow-hidden">
               <h3 class="text-sm font-black text-slate-800 dark:text-slate-100 truncate tracking-tight leading-tight">${fileName}</h3>
-              <p class="text-[10px] text-slate-400 dark:text-slate-505 font-bold uppercase tracking-wider mt-0.5">Visualizador de Documentos PaxFlow</p>
+              <p class="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-0.5">Visualizador de Documentos PaxFlow</p>
             </div>
           </div>
           
@@ -57,7 +57,7 @@ export class DocumentViewer {
             </a>
             
             <!-- Botão Fechar -->
-            <button id="paxflow-doc-close-btn" class="p-2 bg-slate-100 hover:bg-rose-50 dark:bg-slate-800 dark:hover:bg-rose-950/30 text-slate-450 hover:text-rose-550 dark:text-slate-400 dark:hover:text-rose-455 rounded-lg transition font-black leading-none text-sm">
+            <button id="paxflow-doc-close-btn" class="p-2 bg-slate-100 hover:bg-rose-50 dark:bg-slate-800 dark:hover:bg-rose-950/30 text-slate-400 hover:text-rose-500 dark:text-slate-400 dark:hover:text-rose-400 rounded-lg transition font-black leading-none text-sm">
               ✕
             </button>
           </div>
@@ -179,7 +179,7 @@ export class DocumentViewer {
           <div class="text-rose-500 text-4xl mb-3">⚠️</div>
           <h3 class="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight mb-2">Visualização Indisponível</h3>
           <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold mb-4 leading-normal">${friendlyErrorMessage}</p>
-          <div class="text-[10px] text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-950 p-2.5 rounded border border-slate-150 dark:border-slate-850 font-mono text-left truncate w-full">
+          <div class="text-[10px] text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-950 p-2.5 rounded border border-slate-200 dark:border-slate-800 font-mono text-left truncate w-full">
             Ref: ${fileId}
           </div>
         </div>

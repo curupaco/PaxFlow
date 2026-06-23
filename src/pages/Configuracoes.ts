@@ -466,7 +466,7 @@ export class ConfiguracoesPage {
           </div>
 
           <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
-            <button id="btn-nc-cancel" type="button" class="px-4 py-2.5 bg-slate-50 dark:bg-slate-850 hover:bg-slate-100 text-slate-500 hover:text-slate-700 font-bold text-xs rounded-xl transition uppercase">
+            <button id="btn-nc-cancel" type="button" class="px-4 py-2.5 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 text-slate-500 hover:text-slate-700 font-bold text-xs rounded-xl transition uppercase">
               Cancelar
             </button>
             <button id="btn-nc-submit" type="submit" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl transition shadow-lg shadow-indigo-600/20 uppercase tracking-wider flex items-center justify-center">
@@ -563,7 +563,7 @@ export class ConfiguracoesPage {
           <button type="button" data-avatar-id="${opt.id}" class="btn-edit-select-avatar w-12 h-12 p-0.5 rounded-xl border-2 transition duration-200 transform hover:scale-110 relative flex items-center justify-center ${
             isSelected 
               ? 'border-indigo-600 bg-indigo-50/20 dark:bg-indigo-950/20 shadow-md ring-2 ring-indigo-500/20' 
-              : 'border-transparent hover:border-slate-350 dark:hover:border-slate-750'
+              : 'border-transparent hover:border-slate-300 dark:hover:border-slate-800'
           }" title="${opt.nome}">
             ${opt.svg}
             ${isSelected ? `<div class="absolute -top-1 -right-1 bg-indigo-600 text-white w-3.5 h-3.5 rounded-full flex items-center justify-center text-[8px] font-bold shadow-sm">✓</div>` : ''}
@@ -601,7 +601,7 @@ export class ConfiguracoesPage {
 
           <div>
             <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">E-mail de Acesso</label>
-            <input id="input-ec-email" type="email" disabled autocomplete="username" value="${c.email || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-850/50 rounded-lg text-slate-400 dark:text-slate-500 font-bold text-sm cursor-not-allowed select-none" />
+            <input id="input-ec-email" type="email" disabled autocomplete="username" value="${c.email || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 rounded-lg text-slate-400 dark:text-slate-500 font-bold text-sm cursor-not-allowed select-none" />
           </div>
 
           <div class="grid grid-cols-2 gap-4">
@@ -632,7 +632,7 @@ export class ConfiguracoesPage {
           </div>
 
           <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
-            <button id="btn-ec-cancel" type="button" class="px-4 py-2.5 bg-slate-50 dark:bg-slate-850 hover:bg-slate-100 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white font-bold text-xs rounded-xl transition uppercase">
+            <button id="btn-ec-cancel" type="button" class="px-4 py-2.5 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white font-bold text-xs rounded-xl transition uppercase">
               Cancelar
             </button>
             <button id="btn-ec-submit" type="submit" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl transition shadow-lg shadow-indigo-600/20 uppercase tracking-wider flex items-center justify-center">
@@ -1190,13 +1190,13 @@ export class ConfiguracoesPage {
                     <div>
                       <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Dias Alerta Pré-Embarque *</label>
                       <input id="input-sla-pre" type="number" min="1" required value="${this.settings.slaPreEmbarqueDias}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-bold" />
-                      <p class="text-[10px] text-slate-450 dark:text-slate-500 mt-1.5 font-medium leading-relaxed">Dispara alerta visual vermelho no card se o embarque estiver a menos dias do que este limite.</p>
+                      <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1.5 font-medium leading-relaxed">Dispara alerta visual vermelho no card se o embarque estiver a menos dias do que este limite.</p>
                     </div>
 
                     <div>
                       <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Dias Alerta Pós-Viagem *</label>
                       <input id="input-sla-pos" type="number" min="1" required value="${this.settings.slaPosViagemDias}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-bold" />
-                      <p class="text-[10px] text-slate-450 dark:text-slate-500 mt-1.5 font-medium leading-relaxed">Dispara alerta visual laranja se a viagem já terminou e o pós-venda não foi fechado dentro deste limite.</p>
+                      <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1.5 font-medium leading-relaxed">Dispara alerta visual laranja se a viagem já terminou e o pós-venda não foi fechado dentro deste limite.</p>
                     </div>
                   </div>
                 </div>
@@ -1205,7 +1205,7 @@ export class ConfiguracoesPage {
                   <div>
                     <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Taxa de Cancelamento Retida (%)</label>
                     <input id="input-taxa" type="number" step="0.01" min="0" max="100" value="${this.settings.taxaCancelamentoPadrao}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-bold" />
-                    <p class="text-[10px] text-slate-450 dark:text-slate-500 mt-1.5 font-medium">Taxa retida padrão sugerida durante a solicitação de reembolsos.</p>
+                    <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1.5 font-medium">Taxa retida padrão sugerida durante a solicitação de reembolsos.</p>
                   </div>
                 </div>
 
@@ -1213,7 +1213,7 @@ export class ConfiguracoesPage {
                   <div>
                     <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Limite de Upload (MB)</label>
                     <input id="input-limite-upload" type="number" min="1" max="500" value="${this.settings.limiteUploadMb || 25}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-bold" />
-                    <p class="text-[10px] text-slate-450 dark:text-slate-500 mt-1.5 font-medium">Tamanho máximo permitido para anexos de passaportes e propostas (máx: 500MB).</p>
+                    <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1.5 font-medium">Tamanho máximo permitido para anexos de passaportes e propostas (máx: 500MB).</p>
                   </div>
                 </div>
 
@@ -1234,14 +1234,14 @@ export class ConfiguracoesPage {
                 Armazenamento de Arquivos
               </h2>
 
-              <p class="text-xs text-slate-450 dark:text-slate-500 font-medium leading-relaxed">
+              <p class="text-xs text-slate-400 dark:text-slate-500 font-medium leading-relaxed">
                 O PaxFlow realiza o upload de passaportes e propostas de forma direta e segura no bucket <code class="font-mono text-indigo-500 bg-indigo-50/40 dark:bg-indigo-950 px-1 py-0.5 rounded">documentos-clientes</code> do Supabase Storage.
               </p>
 
               <div class="border border-slate-100 dark:border-slate-800 rounded-xl p-4 flex flex-col items-center justify-center text-center gap-2 bg-slate-50/50 dark:bg-slate-950/40 transition-colors">
                 ${this.storageError ? `
                   <span class="text-3xl animate-pulse">❌</span>
-                  <span class="px-2 py-0.5 bg-rose-50 dark:bg-rose-950/45 text-rose-700 dark:text-rose-450 border border-rose-100 dark:border-rose-900/40 font-black text-[9px] rounded uppercase tracking-wider">Erro de Conexão</span>
+                  <span class="px-2 py-0.5 bg-rose-50 dark:bg-rose-950/45 text-rose-700 dark:text-rose-400 border border-rose-100 dark:border-rose-900/40 font-black text-[9px] rounded uppercase tracking-wider">Erro de Conexão</span>
                   <p class="text-[10px] text-rose-600 dark:text-rose-400 font-bold mt-1 max-w-xs leading-normal">
                     ${this.storageError}
                   </p>
@@ -1250,14 +1250,14 @@ export class ConfiguracoesPage {
                   </p>
                 ` : `
                   <span class="text-3xl animate-fade-in">✅</span>
-                  <span class="px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/45 text-emerald-700 dark:text-emerald-450 border border-emerald-100 dark:border-emerald-900/40 font-black text-[9px] rounded uppercase tracking-wider">Conectado (Produção)</span>
-                  <p class="text-[10px] text-slate-550 dark:text-slate-400 font-bold mt-1">Bucket Supabase Storage Ativo</p>
+                  <span class="px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/45 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/40 font-black text-[9px] rounded uppercase tracking-wider">Conectado (Produção)</span>
+                  <p class="text-[10px] text-slate-500 dark:text-slate-400 font-bold mt-1">Bucket Supabase Storage Ativo</p>
                   <p class="text-[9px] text-slate-400 dark:text-slate-500 leading-relaxed mt-0.5">Pronto para uploads em produção no storage oficial.</p>
                 `}
               </div>
 
               <div class="space-y-2.5">
-                <button id="btn-test-drive-connection" class="w-full py-2.5 px-4 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700 text-slate-750 dark:text-slate-250 font-extrabold text-xs tracking-wider rounded-xl transition uppercase flex items-center justify-center gap-2">
+                <button id="btn-test-drive-connection" class="w-full py-2.5 px-4 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-extrabold text-xs tracking-wider rounded-xl transition uppercase flex items-center justify-center gap-2">
                   🧪 Testar Conexão do Storage
                 </button>
               </div>
@@ -1289,7 +1289,7 @@ export class ConfiguracoesPage {
               <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
                   <thead>
-                    <tr class="bg-slate-550/5 dark:bg-slate-850/60 text-[10px] text-slate-450 dark:text-slate-505 font-black uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
+                    <tr class="bg-slate-600/5 dark:bg-slate-800/60 text-[10px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
                       <th class="py-4 px-5">Consultor</th>
                       <th class="py-4 px-5">E-mail</th>
                       <th class="py-4 px-5 text-center">Nível de Acesso</th>
@@ -1301,10 +1301,10 @@ export class ConfiguracoesPage {
                     ${this.consultores.map(c => {
                       const isSelf = c.id === this.user.id;
                       const statusBadge = c.ativo 
-                        ? `<span class="inline-flex px-2.5 py-0.5 bg-emerald-50 dark:bg-emerald-950/45 text-emerald-700 dark:text-emerald-450 border border-emerald-100 dark:border-emerald-900/40 text-[10px] font-bold rounded">Ativo</span>` 
-                        : `<span class="inline-flex px-2.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-250 dark:border-slate-750 text-[10px] font-bold rounded">Inativo</span>`;
+                        ? `<span class="inline-flex px-2.5 py-0.5 bg-emerald-50 dark:bg-emerald-950/45 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/40 text-[10px] font-bold rounded">Ativo</span>` 
+                        : `<span class="inline-flex px-2.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-300 dark:border-slate-800 text-[10px] font-bold rounded">Inativo</span>`;
                       const roleBadge = c.role === 'admin'
-                        ? `<span class="inline-flex px-2.5 py-0.5 bg-purple-50 dark:bg-purple-950/45 text-purple-700 dark:text-purple-450 border border-purple-100 dark:border-purple-900/40 text-[10px] font-bold rounded">ADMIN</span>`
+                        ? `<span class="inline-flex px-2.5 py-0.5 bg-purple-50 dark:bg-purple-950/45 text-purple-700 dark:text-purple-400 border border-purple-100 dark:border-purple-900/40 text-[10px] font-bold rounded">ADMIN</span>`
                         : `<span class="inline-flex px-2.5 py-0.5 bg-indigo-50 dark:bg-indigo-950/45 text-indigo-700 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/40 text-[10px] font-bold rounded">Consultor</span>`;
                       
                       return `
@@ -1314,12 +1314,12 @@ export class ConfiguracoesPage {
                             ${getAvatarSvg(c.avatar_url, c.nome || 'C', 'w-8 h-8')}
                             <div>
                               <span class="block text-slate-800 dark:text-slate-200 font-bold">${c.nome}</span>
-                              ${isSelf ? '<span class="inline-block text-[8px] bg-slate-100 dark:bg-slate-800 text-slate-450 px-1 py-0.5 rounded uppercase tracking-wider font-extrabold">Você</span>' : ''}
+                              ${isSelf ? '<span class="inline-block text-[8px] bg-slate-100 dark:bg-slate-800 text-slate-400 px-1 py-0.5 rounded uppercase tracking-wider font-extrabold">Você</span>' : ''}
                             </div>
                           </td>
                           
                           <!-- E-mail -->
-                          <td class="py-4 px-5 text-slate-500 dark:text-slate-450 font-medium">
+                          <td class="py-4 px-5 text-slate-500 dark:text-slate-400 font-medium">
                             ${c.email}
                           </td>
                           
@@ -1335,7 +1335,7 @@ export class ConfiguracoesPage {
                           
                           <!-- Ações -->
                           <td class="py-4 px-5 text-right space-x-1.5">
-                            <button data-id="${c.id}" class="btn-editar-user px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-800 dark:text-slate-200 border border-slate-250 dark:border-slate-700 rounded-lg text-xs font-bold transition uppercase">
+                            <button data-id="${c.id}" class="btn-editar-user px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-bold transition uppercase">
                               Editar ✏️
                             </button>
                             
@@ -1349,8 +1349,8 @@ export class ConfiguracoesPage {
                               
                               <button data-id="${c.id}" data-active="${c.ativo}" class="btn-toggle-status-user px-3 py-1.5 rounded-lg text-xs font-bold transition ${
                                 c.ativo 
-                                  ? 'bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 text-rose-600 dark:text-rose-455 hover:dark:bg-rose-950/30' 
-                                  : 'bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-450 hover:dark:bg-emerald-950/30'
+                                  ? 'bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 hover:dark:bg-rose-950/30' 
+                                  : 'bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 hover:dark:bg-emerald-950/30'
                               }">
                                 ${c.ativo ? 'Desativar' : 'Ativar'}
                               </button>
@@ -1373,14 +1373,14 @@ export class ConfiguracoesPage {
               <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-12 text-center shadow-xl flex flex-col items-center justify-center gap-4">
                 <div class="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
                 <h3 class="text-lg font-black tracking-tight text-slate-800 dark:text-slate-200">Importação em Lote Ativa</h3>
-                <p class="text-xs text-slate-450 dark:text-slate-500 font-semibold max-w-sm">Estamos processando as linhas do arquivo CSV e inserindo de forma performática no banco de dados. Isso pode levar alguns segundos...</p>
+                <p class="text-xs text-slate-400 dark:text-slate-500 font-semibold max-w-sm">Estamos processando as linhas do arquivo CSV e inserindo de forma performática no banco de dados. Isso pode levar alguns segundos...</p>
               </div>
             ` : this.parsedHeaders.length === 0 ? `
               <!-- Dropzone Inicial -->
               <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 shadow-sm flex flex-col gap-6">
                 <div>
                   <h2 class="text-lg font-black tracking-tight">Importação de Histórico de Chamados</h2>
-                  <p class="text-xs text-slate-400 dark:text-slate-505 font-semibold">Alimente sua base de Orçamentos do PaxFlow importando chamados do DIGISAC</p>
+                  <p class="text-xs text-slate-400 dark:text-slate-500 font-semibold">Alimente sua base de Orçamentos do PaxFlow importando chamados do DIGISAC</p>
                 </div>
 
                 <div id="csv-dropzone" class="border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-indigo-400 dark:hover:border-indigo-600 rounded-2xl p-12 text-center cursor-pointer transition bg-slate-50/50 dark:bg-slate-950/20 hover:bg-indigo-50/5 dark:hover:bg-indigo-950/5 flex flex-col items-center justify-center gap-3 group">
@@ -1388,8 +1388,8 @@ export class ConfiguracoesPage {
                     📥
                   </div>
                   <div>
-                    <span class="block text-sm font-extrabold text-slate-750 dark:text-slate-300">Arraste e solte o arquivo CSV aqui</span>
-                    <span class="block text-xs text-slate-400 dark:text-slate-505 font-medium mt-1">Delimitado por ponto e vírgula (;) ou vírgula (,)</span>
+                    <span class="block text-sm font-extrabold text-slate-700 dark:text-slate-300">Arraste e solte o arquivo CSV aqui</span>
+                    <span class="block text-xs text-slate-400 dark:text-slate-500 font-medium mt-1">Delimitado por ponto e vírgula (;) ou vírgula (,)</span>
                   </div>
                   <div class="mt-2">
                     <label class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl transition shadow-lg shadow-indigo-600/10 cursor-pointer uppercase">
@@ -1400,8 +1400,8 @@ export class ConfiguracoesPage {
                 </div>
 
                 <!-- Info Box -->
-                <div class="bg-indigo-50/30 dark:bg-indigo-950/15 border border-indigo-100/50 dark:border-indigo-900/20 rounded-2xl p-5 text-xs text-slate-550 dark:text-slate-400 font-semibold leading-relaxed space-y-2">
-                  <p class="font-black text-indigo-655 dark:text-indigo-400 uppercase tracking-wider text-[10px]">💡 Como funciona a importação:</p>
+                <div class="bg-indigo-50/30 dark:bg-indigo-950/15 border border-indigo-100/50 dark:border-indigo-900/20 rounded-2xl p-5 text-xs text-slate-500 dark:text-slate-400 font-semibold leading-relaxed space-y-2">
+                  <p class="font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider text-[10px]">💡 Como funciona a importação:</p>
                   <p>1. Você baixa o relatório de histórico de chamados no painel do DIGISAC em formato **CSV**.</p>
                   <p>2. Faz o upload do arquivo acima. O PaxFlow lerá os cabeçalhos das colunas automaticamente.</p>
                   <p>3. Você faz o mapeamento ("de-para") para definir qual coluna do CSV corresponde ao nome do cliente, telefone, etc.</p>
@@ -1432,7 +1432,7 @@ export class ConfiguracoesPage {
                       return `
                         <div>
                           <div class="flex justify-between items-center mb-1">
-                            <label class="block text-xs font-bold text-slate-500 dark:text-slate-405 uppercase tracking-wide">${field.label}</label>
+                            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">${field.label}</label>
                             <span class="text-[9px] text-slate-400 dark:text-slate-500 font-medium">${field.desc}</span>
                           </div>
                           <select id="select-map-${field.key}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs font-bold text-slate-800 dark:text-slate-100">
@@ -1455,13 +1455,13 @@ export class ConfiguracoesPage {
 
                   <div class="space-y-4">
                     <div>
-                      <label class="block text-xs font-bold text-slate-500 dark:text-slate-405 uppercase tracking-wide mb-1.5">Destino Padrão *</label>
+                      <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Destino Padrão *</label>
                       <input id="input-default-destino" type="text" required value="${this.defaultDestino}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs font-bold text-slate-800 dark:text-slate-100" />
                       <p class="text-[9px] text-slate-400 dark:text-slate-500 mt-1 font-medium">Os orçamentos criados terão este destino preenchido por padrão.</p>
                     </div>
 
                     <div>
-                      <label class="block text-xs font-bold text-slate-500 dark:text-slate-405 uppercase tracking-wide mb-1.5">Temperatura Padrão *</label>
+                      <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Temperatura Padrão *</label>
                       <select id="select-default-temp" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs font-bold text-slate-800 dark:text-slate-100">
                         <option value="Frio" ${this.defaultTemperatura === 'Frio' ? 'selected' : ''}>Frio ❄️</option>
                         <option value="Normal" ${this.defaultTemperatura === 'Normal' ? 'selected' : ''}>Normal ⚡</option>
@@ -1470,7 +1470,7 @@ export class ConfiguracoesPage {
                     </div>
 
                     <div>
-                      <label class="block text-xs font-bold text-slate-500 dark:text-slate-405 uppercase tracking-wide mb-1.5">Status Inicial *</label>
+                      <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Status Inicial *</label>
                       <select id="select-default-status" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs font-bold text-slate-800 dark:text-slate-100">
                         <option value="SOLICITADO" ${this.defaultStatus === 'SOLICITADO' ? 'selected' : ''}>Solicitado</option>
                         <option value="EM_ANDAMENTO" ${this.defaultStatus === 'EM_ANDAMENTO' ? 'selected' : ''}>Em Andamento</option>
@@ -1504,7 +1504,7 @@ export class ConfiguracoesPage {
                         const selectedConsultant = this.attendantMapping[att] || '';
                         return `
                           <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/15 transition">
-                            <td class="py-3.5 px-4 font-bold text-slate-800 dark:text-slate-250">
+                            <td class="py-3.5 px-4 font-bold text-slate-800 dark:text-slate-300">
                               ${att}
                             </td>
                             <td class="py-3.5 px-4 text-right">
@@ -1561,18 +1561,18 @@ export class ConfiguracoesPage {
                       <div class="bg-slate-50/50 dark:bg-slate-800/20 border border-slate-200/60 dark:border-slate-800/80 p-4 rounded-2xl flex flex-col gap-3">
                         <div class="flex items-start justify-between gap-1.5">
                           <div class="overflow-hidden">
-                            <span class="block text-[11px] font-black text-slate-850 dark:text-slate-200 truncate leading-tight">${nameVal}</span>
+                            <span class="block text-[11px] font-black text-slate-800 dark:text-slate-200 truncate leading-tight">${nameVal}</span>
                             <span class="block text-[9px] text-slate-400 dark:text-slate-400 font-semibold truncate mt-0.5">${contactVal}</span>
                           </div>
-                          <span class="px-2 py-0.5 bg-rose-50 text-rose-700 dark:bg-rose-950/20 dark:text-rose-455 border border-rose-100/30 dark:border-rose-900/30 text-[8px] font-black uppercase rounded tracking-wider shrink-0">
+                          <span class="px-2 py-0.5 bg-rose-50 text-rose-700 dark:bg-rose-950/20 dark:text-rose-400 border border-rose-100/30 dark:border-rose-900/30 text-[8px] font-black uppercase rounded tracking-wider shrink-0">
                             ${this.defaultTemperatura}
                           </span>
                         </div>
 
-                        <div class="flex flex-col gap-1 text-[9px] font-semibold text-slate-500 dark:text-slate-455 bg-white dark:bg-slate-900/30 p-2 rounded-xl border border-slate-100 dark:border-slate-800/50">
+                        <div class="flex flex-col gap-1 text-[9px] font-semibold text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900/30 p-2 rounded-xl border border-slate-100 dark:border-slate-800/50">
                           <div class="flex justify-between">
                             <span>Destino:</span>
-                            <span class="font-extrabold text-slate-700 dark:text-slate-350 truncate max-w-[110px]">${this.defaultDestino}</span>
+                            <span class="font-extrabold text-slate-700 dark:text-slate-400 truncate max-w-[110px]">${this.defaultDestino}</span>
                           </div>
                           <div class="flex justify-between">
                             <span>Status:</span>
@@ -1599,7 +1599,7 @@ export class ConfiguracoesPage {
                         ${tagsList.length > 0 ? `
                           <div class="flex flex-wrap gap-1">
                             ${tagsList.slice(0, 3).map(tag => `
-                              <span class="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-450 dark:text-slate-500 border border-slate-200/40 dark:border-slate-700/40 rounded text-[7px] font-extrabold">${tag}</span>
+                              <span class="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border border-slate-200/40 dark:border-slate-700/40 rounded text-[7px] font-extrabold">${tag}</span>
                             `).join('')}
                           </div>
                         ` : ''}

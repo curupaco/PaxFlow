@@ -45,13 +45,13 @@ export class LoginPage {
         <div class="max-w-md w-full bg-white dark:bg-slate-900 border border-slate-200/70 dark:border-slate-800/80 p-8 sm:p-10 rounded-[2rem] shadow-[0_24px_64px_-16px_rgba(79,70,229,0.08)] flex flex-col gap-7 relative overflow-hidden transition-all duration-300 z-10" id="login-card">
           
           <!-- Detalhe decorativo de gradiente no topo -->
-          <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-indigo-500 via-indigo-600 to-violet-650"></div>
+          <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-indigo-500 via-indigo-600 to-violet-700"></div>
 
           <!-- Cabeçalho de Identidade (Centralizado) -->
           <div class="text-center flex flex-col items-center select-none">
             <img src="/logo.svg" alt="PaxFlow Logo" class="h-16 w-16 object-contain mb-3 filter drop-shadow-[0_4px_12px_rgba(79,70,229,0.2)]" />
             <h2 class="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight" id="login-title">Entrar no PaxFlow</h2>
-            <p class="text-xs text-slate-450 dark:text-slate-500 font-semibold mt-1" id="login-subtitle">Digite suas credenciais para acessar o painel operacional restrito.</p>
+            <p class="text-xs text-slate-400 dark:text-slate-500 font-semibold mt-1" id="login-subtitle">Digite suas credenciais para acessar o painel operacional restrito.</p>
           </div>
 
           <div id="login-error-container" class="hidden px-4 py-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 text-xs font-bold border border-rose-100 dark:border-rose-900/40 animate-shake">
@@ -77,7 +77,7 @@ export class LoginPage {
                <div>
                  <div class="flex items-center justify-between mb-2 select-none">
                    <label class="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Senha de Acesso *</label>
-                   <button type="button" id="btn-esqueci-senha" class="text-[10px] font-extrabold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-350 transition hover:underline focus:outline-none uppercase tracking-wider">Esqueceu?</button>
+                   <button type="button" id="btn-esqueci-senha" class="text-[10px] font-extrabold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-400 transition hover:underline focus:outline-none uppercase tracking-wider">Esqueceu?</button>
                  </div>
                  <div class="relative">
                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
@@ -102,7 +102,7 @@ export class LoginPage {
           <!-- Formulário de Recuperação de Senha (Oculto por padrão) -->
           <div id="recovery-form-wrapper" class="hidden transition-all duration-300">
             <form id="form-recovery" class="space-y-5">
-               <p class="text-xs text-slate-500 dark:text-slate-450 font-semibold leading-relaxed mb-1.5">
+               <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold leading-relaxed mb-1.5">
                  Informe seu e-mail cadastrado. Enviaremos as instruções de recuperação e o link de redefinição para que você possa cadastrar uma nova senha.
                </p>
                <div>
@@ -120,7 +120,7 @@ export class LoginPage {
                <button type="submit" id="btn-recovery-submit" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/10 transition-all uppercase mt-2.5 flex items-center justify-center">
                  Enviar E-mail de Recuperação
                </button>
-               <button type="button" id="btn-back-to-login" class="w-full py-3 bg-slate-100 hover:bg-slate-200/70 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-600 dark:text-slate-350 font-extrabold text-xs rounded-xl transition uppercase tracking-wider flex items-center justify-center">
+               <button type="button" id="btn-back-to-login" class="w-full py-3 bg-slate-100 hover:bg-slate-200/70 dark:bg-slate-800 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 font-extrabold text-xs rounded-xl transition uppercase tracking-wider flex items-center justify-center">
                  Voltar ao Login
                </button>
             </form>

@@ -137,14 +137,11 @@ html.dark select::placeholder {
 html.dark .text-slate-500 {
   color: #cbd5e1 !important; /* slate-300 sob fundos escuros */
 }
-html.dark .text-slate-650 {
+html.dark .text-slate-600 {
   color: #e2e8f0 !important; /* slate-200 */
 }
 html.dark .text-slate-400 {
   color: #94a3b8 !important; /* slate-400 */
-}
-html.dark .text-slate-450 {
-  color: #a1a1aa !important; /* zinc-400 */
 }
 
 /* Animação de transição lateral de abas (modais) */

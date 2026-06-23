@@ -242,7 +242,7 @@ export class InboxPage {
     this.container.innerHTML = `
       <div class="min-h-screen bg-slate-50/50 dark:bg-slate-950 flex flex-col items-center justify-center space-y-4">
         <div class="w-12 h-12 rounded-full border-4 border-indigo-200 border-t-indigo-600 animate-spin"></div>
-        <p class="text-slate-550 dark:text-slate-400 font-semibold animate-pulse text-sm">Acessando Caixa de Entrada e analisando SLAs...</p>
+        <p class="text-slate-500 dark:text-slate-400 font-semibold animate-pulse text-sm">Acessando Caixa de Entrada e analisando SLAs...</p>
       </div>
     `;
   }
@@ -253,12 +253,12 @@ export class InboxPage {
   private renderAuthError(msg: string): void {
     this.container.innerHTML = `
       <div class="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-6">
-        <div class="max-w-md w-full bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800 p-8 rounded-2xl shadow-xl text-center">
-          <div class="w-16 h-16 bg-rose-50 dark:bg-rose-950/20 text-rose-550 dark:text-rose-450 rounded-full flex items-center justify-center mx-auto mb-4">
+        <div class="max-w-md w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-8 rounded-2xl shadow-xl text-center">
+          <div class="w-16 h-16 bg-rose-50 dark:bg-rose-950/20 text-rose-500 dark:text-rose-400 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
           </div>
           <h2 class="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2">Erro de Acesso</h2>
-          <p class="text-slate-550 dark:text-slate-450 text-sm mb-6">${msg}</p>
+          <p class="text-slate-500 dark:text-slate-400 text-sm mb-6">${msg}</p>
         </div>
       </div>
     `;
@@ -296,7 +296,7 @@ export class InboxPage {
             </div>
             <div>
               <h1 class="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight">Mission Control</h1>
-              <p class="text-xs text-slate-400 dark:text-slate-550 font-bold uppercase tracking-wider">Inbox de Alertas & Centro Operacional</p>
+              <p class="text-xs text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">Inbox de Alertas & Centro Operacional</p>
             </div>
           </div>
 
@@ -304,8 +304,8 @@ export class InboxPage {
             <!-- Seletor de Consultores (Apenas para Admins) -->
             ${this.perfil?.role === 'admin' ? `
               <div class="flex items-center gap-1.5 shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2.5 py-1.5 rounded-xl shadow-sm">
-                <span class="text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-550 select-none">Equipe:</span>
-                <select id="admin-consultant-select" class="text-xs font-bold bg-transparent text-slate-700 dark:text-slate-350 focus:outline-none cursor-pointer max-w-[150px]">
+                <span class="text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-500 select-none">Equipe:</span>
+                <select id="admin-consultant-select" class="text-xs font-bold bg-transparent text-slate-700 dark:text-slate-400 focus:outline-none cursor-pointer max-w-[150px]">
                   <option value="todos" ${this.selectedConsultantFilter === 'todos' ? 'selected' : ''}>Todos os Consultores</option>
                   ${this.consultants.map(c => `<option value="${c.id}" ${this.selectedConsultantFilter === c.id ? 'selected' : ''}>${c.nome}</option>`).join('')}
                 </select>
@@ -358,7 +358,7 @@ export class InboxPage {
                 <span class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Reembolsos SLA</span>
                 <span class="text-3xl font-black text-slate-800 dark:text-slate-100 tracking-tight">${totalRefund}</span>
               </div>
-              <div class="p-3 bg-rose-50 dark:bg-rose-950/30 text-rose-500 dark:text-rose-450 rounded-xl">
+              <div class="p-3 bg-rose-50 dark:bg-rose-950/30 text-rose-500 dark:text-rose-400 rounded-xl">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
               </div>
             </div>
@@ -381,7 +381,7 @@ export class InboxPage {
               
               <!-- Folders glass card -->
               <div class="inbox-glass p-4 rounded-2xl shadow-sm space-y-2">
-                <h3 class="px-2 text-[10px] font-black text-slate-400 dark:text-slate-550 uppercase tracking-widest mb-3">Pastas</h3>
+                <h3 class="px-2 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Pastas</h3>
                 
                 <button id="folder-ativos" class="w-full px-3 py-2.5 rounded-xl flex items-center justify-between text-xs font-bold transition select-none ${
                   this.activeTab === 'ativos' 
@@ -454,7 +454,7 @@ export class InboxPage {
               <div class="inbox-glass p-3 rounded-2xl shadow-sm flex flex-col sm:flex-row items-center gap-3">
                 <!-- Search -->
                 <div class="relative w-full flex-grow">
-                  <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-550">
+                  <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                   </span>
                   <input id="inbox-search-input" type="text" placeholder="Buscar mensagens, passageiros ou destinos..." value="${this.searchQuery}" class="w-full text-xs font-semibold pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-700 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 transition" />
@@ -467,11 +467,11 @@ export class InboxPage {
 
                 <!-- View Switcher Toggle Button Group -->
                 <div class="flex bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200/40 dark:border-slate-800/40 flex-shrink-0">
-                  <button id="view-list-btn" class="px-3.5 py-1.5 rounded-lg text-xs font-extrabold flex items-center gap-1.5 transition ${this.currentView === 'list' ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-450 dark:hover:text-slate-200'}" title="Visualização em Lista">
+                  <button id="view-list-btn" class="px-3.5 py-1.5 rounded-lg text-xs font-extrabold flex items-center gap-1.5 transition ${this.currentView === 'list' ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}" title="Visualização em Lista">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
                     Lista
                   </button>
-                  <button id="view-calendar-btn" class="px-3.5 py-1.5 rounded-lg text-xs font-extrabold flex items-center gap-1.5 transition ${this.currentView === 'calendar' ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-450 dark:hover:text-slate-200'}" title="Visualização em Calendário">
+                  <button id="view-calendar-btn" class="px-3.5 py-1.5 rounded-lg text-xs font-extrabold flex items-center gap-1.5 transition ${this.currentView === 'calendar' ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}" title="Visualização em Calendário">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
                     Calendário
                   </button>
@@ -483,14 +483,14 @@ export class InboxPage {
                 <div class="space-y-3 custom-scrollbar overflow-y-auto max-h-[calc(100vh-310px)] pr-1">
                   ${this.filteredAlerts.length === 0 ? `
                     <div class="inbox-glass p-12 text-center rounded-2xl border border-slate-200/40 dark:border-slate-800/40">
-                      <div class="w-12 h-12 bg-slate-100 dark:bg-slate-900 text-slate-400 dark:text-slate-550 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                      <div class="w-12 h-12 bg-slate-100 dark:bg-slate-900 text-slate-400 dark:text-slate-500 rounded-2xl flex items-center justify-center mx-auto mb-3">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                           <rect width="20" height="16" x="2" y="4" rx="2" />
                           <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
                         </svg>
                       </div>
-                      <h3 class="text-sm font-black text-slate-700 dark:text-slate-350 uppercase tracking-wide">Caixa Vazia</h3>
-                      <p class="text-xs text-slate-400 dark:text-slate-550 mt-1 font-medium">Nenhum alerta ou lembrete corresponde aos filtros atuais.</p>
+                      <h3 class="text-sm font-black text-slate-700 dark:text-slate-400 uppercase tracking-wide">Caixa Vazia</h3>
+                      <p class="text-xs text-slate-400 dark:text-slate-500 mt-1 font-medium">Nenhum alerta ou lembrete corresponde aos filtros atuais.</p>
                     </div>
                   ` : this.filteredAlerts.map(a => {
                     let badgeClass = 'badge-gradient-indigo';
@@ -523,7 +523,7 @@ export class InboxPage {
                         <div class="flex-grow min-w-0 space-y-1">
                           <div class="flex items-center justify-between gap-2">
                             <span class="block text-xs font-black text-slate-800 dark:text-slate-200 truncate">${a.sender}</span>
-                            <span class="text-[10px] font-bold text-slate-400 dark:text-slate-550 whitespace-nowrap">${a.dateStr}</span>
+                            <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 whitespace-nowrap">${a.dateStr}</span>
                           </div>
 
                           <h4 class="text-sm font-extrabold text-slate-800 dark:text-slate-100 flex items-center gap-2">
@@ -533,7 +533,7 @@ export class InboxPage {
                             <span class="truncate">${a.title}</span>
                           </h4>
 
-                          <p class="text-xs text-slate-505 dark:text-slate-450 line-clamp-2 leading-relaxed">
+                          <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
                             ${a.subject}
                           </p>
 
@@ -589,13 +589,13 @@ export class InboxPage {
           
           <!-- Mode Tabs -->
           <div class="flex bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200/40 dark:border-slate-800/40 w-full sm:w-auto">
-            <button id="cal-mode-month" class="flex-grow sm:flex-grow-0 px-4 py-1.5 rounded-lg text-xs font-extrabold transition ${this.calendarMode === 'month' ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-450 dark:hover:text-slate-200'}">
+            <button id="cal-mode-month" class="flex-grow sm:flex-grow-0 px-4 py-1.5 rounded-lg text-xs font-extrabold transition ${this.calendarMode === 'month' ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}">
               Mês
             </button>
-            <button id="cal-mode-week" class="flex-grow sm:flex-grow-0 px-4 py-1.5 rounded-lg text-xs font-extrabold transition ${this.calendarMode === 'week' ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-450 dark:hover:text-slate-200'}">
+            <button id="cal-mode-week" class="flex-grow sm:flex-grow-0 px-4 py-1.5 rounded-lg text-xs font-extrabold transition ${this.calendarMode === 'week' ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}">
               Semana
             </button>
-            <button id="cal-mode-agenda" class="flex-grow sm:flex-grow-0 px-4 py-1.5 rounded-lg text-xs font-extrabold transition ${this.calendarMode === 'agenda' ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-450 dark:hover:text-slate-200'}">
+            <button id="cal-mode-agenda" class="flex-grow sm:flex-grow-0 px-4 py-1.5 rounded-lg text-xs font-extrabold transition ${this.calendarMode === 'agenda' ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}">
               Agenda
             </button>
           </div>
@@ -610,7 +610,7 @@ export class InboxPage {
             <button id="cal-nav-prev" class="p-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-slate-500 dark:text-slate-400 transition" title="Período Anterior">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
             </button>
-            <button id="cal-nav-today" class="px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-xs font-extrabold text-slate-600 dark:text-slate-300 transition border border-slate-200/40 dark:border-slate-750/40 bg-white dark:bg-slate-900 shadow-sm">
+            <button id="cal-nav-today" class="px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-xs font-extrabold text-slate-600 dark:text-slate-300 transition border border-slate-200/40 dark:border-slate-800/40 bg-white dark:bg-slate-900 shadow-sm">
               Hoje
             </button>
             <button id="cal-nav-next" class="p-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-slate-500 dark:text-slate-400 transition" title="Próximo Período">
@@ -625,7 +625,7 @@ export class InboxPage {
               
               <!-- Popover Legend Tooltip -->
               <div class="absolute right-0 top-11 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-2xl w-56 opacity-0 scale-95 pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto transition-all duration-200 z-50">
-                <h4 class="text-xs font-black text-slate-850 dark:text-slate-250 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800/80 pb-2 mb-3 text-left">Legenda de Cores</h4>
+                <h4 class="text-xs font-black text-slate-800 dark:text-slate-300 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800/80 pb-2 mb-3 text-left">Legenda de Cores</h4>
                 <div class="space-y-2.5 text-left">
                   <div class="flex items-center gap-2.5">
                      <span class="w-3.5 h-3.5 rounded-md badge-gradient-indigo flex-shrink-0"></span>
@@ -827,7 +827,7 @@ export class InboxPage {
 
       html += `
         <div class="calendar-week-column" data-date="${dayDateStr}">
-          <div class="calendar-week-day-header ${isToday ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-500 dark:text-slate-450'}">
+          <div class="calendar-week-day-header ${isToday ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-500 dark:text-slate-400'}">
             <span class="block text-[10px] font-black uppercase tracking-wider">${weekdays[i]}</span>
             <span class="text-xl font-black ${isToday ? 'bg-indigo-600 text-white w-8 h-8 inline-flex items-center justify-center rounded-full shadow-sm mt-0.5' : 'text-slate-800 dark:text-slate-200'}">${currentDay.getDate()}</span>
           </div>
@@ -851,7 +851,7 @@ export class InboxPage {
               }
 
               return `
-                <div class="inbox-card inbox-glass p-3.5 rounded-xl border border-slate-200/50 dark:border-slate-850 bg-white/50 dark:bg-slate-900/50 cursor-pointer shadow-sm relative flex flex-col gap-1.5" data-alert-id="${a.id}">
+                <div class="inbox-card inbox-glass p-3.5 rounded-xl border border-slate-200/50 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 cursor-pointer shadow-sm relative flex flex-col gap-1.5" data-alert-id="${a.id}">
                   <!-- Accent color bar -->
                   <div class="absolute left-0 top-3.5 bottom-3.5 w-1 rounded-r ${a.type === 'manual' ? 'bg-indigo-500' : a.type === 'passport' ? 'bg-amber-500' : a.type === 'mention' ? 'bg-purple-500' : 'bg-rose-500'}"></div>
                   
@@ -863,8 +863,8 @@ export class InboxPage {
                   </div>
                   
                   <div class="pl-2">
-                    <h5 class="text-xs font-extrabold text-slate-850 dark:text-slate-200 line-clamp-1 leading-snug">${this.getEventSummary(a)}</h5>
-                    <p class="text-[10px] text-slate-500 dark:text-slate-450 line-clamp-2 leading-relaxed mt-0.5">${a.subject}</p>
+                    <h5 class="text-xs font-extrabold text-slate-800 dark:text-slate-200 line-clamp-1 leading-snug">${this.getEventSummary(a)}</h5>
+                    <p class="text-[10px] text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed mt-0.5">${a.subject}</p>
                   </div>
                 </div>
               `;
@@ -899,14 +899,14 @@ export class InboxPage {
     if (sortedDates.length === 0) {
       return `
         <div class="inbox-glass p-12 text-center rounded-2xl border border-slate-200/40 dark:border-slate-800/40">
-          <div class="w-12 h-12 bg-slate-100 dark:bg-slate-900 text-slate-400 dark:text-slate-550 rounded-2xl flex items-center justify-center mx-auto mb-3">
+          <div class="w-12 h-12 bg-slate-100 dark:bg-slate-900 text-slate-400 dark:text-slate-500 rounded-2xl flex items-center justify-center mx-auto mb-3">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
               <rect width="20" height="16" x="2" y="4" rx="2" />
               <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
             </svg>
           </div>
-          <h3 class="text-sm font-black text-slate-700 dark:text-slate-350 uppercase tracking-wide">Agenda Vazia</h3>
-          <p class="text-xs text-slate-450 dark:text-slate-500 mt-1 font-medium">Nenhum evento futuro ou lembrete para exibir.</p>
+          <h3 class="text-sm font-black text-slate-700 dark:text-slate-400 uppercase tracking-wide">Agenda Vazia</h3>
+          <p class="text-xs text-slate-400 dark:text-slate-500 mt-1 font-medium">Nenhum evento futuro ou lembrete para exibir.</p>
         </div>
       `;
     }
@@ -927,7 +927,7 @@ export class InboxPage {
         <div class="agenda-day-group ${isToday ? 'today' : ''}">
           <div class="agenda-day-dot"></div>
           
-          <h4 class="text-xs font-black text-slate-450 dark:text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+          <h4 class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
             <span>${formattedDate}</span>
             ${isToday ? '<span class="px-2 py-0.5 bg-indigo-600 dark:bg-indigo-600 text-white rounded text-[8px] font-black tracking-widest scale-90 uppercase">Hoje</span>' : ''}
           </h4>
@@ -960,7 +960,7 @@ export class InboxPage {
                   <!-- Alert Content details -->
                   <div class="flex-grow min-w-0 space-y-1 pl-1">
                     <div class="flex items-center justify-between gap-2">
-                      <span class="block text-xs font-black text-slate-805 dark:text-slate-200 truncate">${a.sender}</span>
+                      <span class="block text-xs font-black text-slate-800 dark:text-slate-200 truncate">${a.sender}</span>
                       ${a.periodText ? `<span class="text-[9px] font-extrabold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 px-2 py-0.5 rounded-md uppercase tracking-wider">${a.periodText}</span>` : ''}
                     </div>
 
@@ -971,7 +971,7 @@ export class InboxPage {
                       <span class="truncate">${a.title}</span>
                     </h5>
 
-                    <p class="text-xs text-slate-500 dark:text-slate-450 line-clamp-2 leading-relaxed">
+                    <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
                       ${a.subject}
                     </p>
                   </div>

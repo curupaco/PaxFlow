@@ -238,7 +238,7 @@ export class ClientesPage {
         <button data-cliente-id="${c.id}" class="w-full text-left p-4 rounded-xl border ${
           isSelected 
             ? 'border-indigo-200 dark:border-indigo-500/30 bg-indigo-50/40 dark:bg-indigo-950/20 text-indigo-900 dark:text-indigo-200 shadow-sm' 
-            : 'border-slate-100 dark:border-slate-800/80 hover:border-slate-200 dark:hover:border-slate-750 bg-white dark:bg-slate-900 hover:bg-slate-50/50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
+            : 'border-slate-100 dark:border-slate-800/80 hover:border-slate-200 dark:hover:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50/50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
         } transition flex items-center justify-between gap-3 ${borderSlaClass} group">
           <div class="overflow-hidden">
             <span class="block text-sm font-black truncate">${c.nome && c.nome !== 'NULL' ? c.nome : 'Cliente sem nome'}</span>
@@ -310,8 +310,8 @@ export class ClientesPage {
       const passValidadeInput = document.getElementById('input-pass-validade') as HTMLInputElement;
       if (passValidadeInput && passSla.status !== 'none' && passSla.status !== 'ok') {
         passValidadeInput.classList.add('passport-expired-alert');
-        if (passSla.status === 'expired') passValidadeInput.classList.add('text-rose-600', 'dark:text-rose-450');
-        if (passSla.status === 'warning') passValidadeInput.classList.add('text-amber-600', 'dark:text-amber-450');
+        if (passSla.status === 'expired') passValidadeInput.classList.add('text-rose-600', 'dark:text-rose-400');
+        if (passSla.status === 'warning') passValidadeInput.classList.add('text-amber-600', 'dark:text-amber-400');
       }
     }
 
@@ -608,8 +608,8 @@ export class ClientesPage {
     
     // Classes de input do passaporte se expirar ou expitado
     let passValidadeInputClass = 'w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold';
-    if (passSla.status === 'expired') passValidadeInputClass += ' passport-expired-alert text-rose-600 dark:text-rose-450';
-    if (passSla.status === 'warning') passValidadeInputClass += ' passport-expired-alert text-amber-600 dark:text-amber-450';
+    if (passSla.status === 'expired') passValidadeInputClass += ' passport-expired-alert text-rose-600 dark:text-rose-400';
+    if (passSla.status === 'warning') passValidadeInputClass += ' passport-expired-alert text-amber-600 dark:text-amber-400';
 
     const isNew = !c.id;
 
@@ -701,7 +701,7 @@ export class ClientesPage {
               <div class="mb-4 px-4 py-3 rounded-xl flex items-center gap-2 text-xs font-bold ${
                 passSla.status === 'expired' 
                   ? 'bg-rose-50 dark:bg-rose-950/45 text-rose-600 dark:text-rose-400 border border-rose-100 dark:border-rose-900/50' 
-                  : 'bg-amber-50 dark:bg-amber-950/45 text-amber-600 dark:text-amber-450 border border-amber-100 dark:border-amber-900/50 animate-pulse'
+                  : 'bg-amber-50 dark:bg-amber-950/45 text-amber-600 dark:text-amber-400 border border-amber-100 dark:border-amber-900/50 animate-pulse'
               }">
                 <span>${passSla.status === 'expired' ? '🚨' : '⚠️'}</span>
                 <p>${passSla.message}</p>
@@ -754,7 +754,7 @@ export class ClientesPage {
           <div class="flex items-center justify-between gap-3 pt-5 border-t border-slate-100 dark:border-slate-800">
             <div>
               ${(!isNew && this.perfil?.role === 'admin') ? `
-                <button type="button" id="btn-excluir-cliente" class="px-5 py-3 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-900/20 text-rose-600 dark:text-rose-455 font-extrabold text-sm tracking-wider rounded-xl transition uppercase">
+                <button type="button" id="btn-excluir-cliente" class="px-5 py-3 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-900/20 text-rose-600 dark:text-rose-400 font-extrabold text-sm tracking-wider rounded-xl transition uppercase">
                   Excluir Cliente
                 </button>
               ` : ''}

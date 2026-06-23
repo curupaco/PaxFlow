@@ -364,8 +364,8 @@ class TodoKanban {
 
         <div class="flex flex-wrap items-center gap-3">
           <!-- Gerenciar Colunas -->
-          <button id="btn-gerenciar-colunas" title="Configurar Colunas" class="p-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 rounded-xl transition border border-slate-200/60 dark:border-slate-750 flex items-center justify-center gap-1.5 font-bold text-xs">
-            <svg width="16" height="16" class="w-4 h-4 text-slate-500 dark:text-slate-450" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+          <button id="btn-gerenciar-colunas" title="Configurar Colunas" class="p-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl transition border border-slate-200/60 dark:border-slate-800 flex items-center justify-center gap-1.5 font-bold text-xs">
+            <svg width="16" height="16" class="w-4 h-4 text-slate-500 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
               <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
@@ -384,7 +384,7 @@ class TodoKanban {
           <div class="w-px h-8 bg-slate-200 dark:bg-slate-800"></div>
 
           <!-- Alternar Tema -->
-          <button id="todo-theme-toggle" title="Alternar Tema" class="p-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-755 text-slate-400 dark:text-slate-500 rounded-xl transition border border-slate-200/40 dark:border-slate-700/40 flex items-center justify-center">
+          <button id="todo-theme-toggle" title="Alternar Tema" class="p-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-800 text-slate-400 dark:text-slate-500 rounded-xl transition border border-slate-200/40 dark:border-slate-700/40 flex items-center justify-center">
             <svg width="20" height="20" class="w-5 h-5 dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
             </svg>
@@ -394,8 +394,8 @@ class TodoKanban {
           </button>
 
           <!-- Retornar ao CRM -->
-          <a href="/" class="p-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-755 text-slate-700 dark:text-slate-300 rounded-xl transition border border-slate-200/40 dark:border-slate-700/40 flex items-center justify-center gap-1.5 font-bold text-xs">
-            <svg width="16" height="16" class="w-4 h-4 text-slate-500 dark:text-slate-450" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+          <a href="/" class="p-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl transition border border-slate-200/40 dark:border-slate-700/40 flex items-center justify-center gap-1.5 font-bold text-xs">
+            <svg width="16" height="16" class="w-4 h-4 text-slate-500 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
             </svg>
             CRM principal
@@ -416,7 +416,7 @@ class TodoKanban {
 
         <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
           <span class="text-xs text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">Prioridade:</span>
-          <select id="select-todo-prioridade-filter" class="px-3 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-350 text-xs font-semibold rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500">
+          <select id="select-todo-prioridade-filter" class="px-3 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-400 text-xs font-semibold rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500">
             <option value="">Todas</option>
             <option value="low" ${this.priorityFilter === 'low' ? 'selected' : ''}>Baixa</option>
             <option value="medium" ${this.priorityFilter === 'medium' ? 'selected' : ''}>Média</option>
@@ -486,13 +486,13 @@ class TodoKanban {
             <div class="flex items-center gap-2 overflow-hidden">
               ${this.getColumnIconSvg(col.id)}
               <span class="text-xs font-black text-slate-700 dark:text-slate-200 truncate select-none leading-none">${this.cleanEmoji(col.title)}</span>
-              <span class="px-2 py-0.5 bg-slate-200 dark:bg-slate-850 text-slate-500 dark:text-slate-400 rounded-full text-[9px] font-extrabold select-none leading-none">${colCards.length}</span>
+              <span class="px-2 py-0.5 bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-full text-[9px] font-extrabold select-none leading-none">${colCards.length}</span>
             </div>
             
             <div class="flex items-center gap-1.5 shrink-0">
               <!-- Adicionar rápido -->
               <button data-add-card-in-col="${col.id}" title="Adicionar cartão nesta coluna" class="p-1 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg transition flex items-center justify-center">
-                <svg width="12" height="12" class="w-3 h-3 text-slate-550 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                <svg width="12" height="12" class="w-3 h-3 text-slate-500 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                 </svg>
               </button>
@@ -503,7 +503,7 @@ class TodoKanban {
           <div class="flex-1 flex flex-col gap-3 overflow-y-auto custom-scrollbar pr-1 select-none py-1" id="cards-container-${col.id}" data-col-target-id="${col.id}">
             ${colCards.map(c => this.renderCardHtml(c)).join('')}
             ${colCards.length === 0 ? `
-              <div class="flex-1 border-2 border-dashed border-slate-200 dark:border-slate-800/50 rounded-xl flex items-center justify-center p-6 text-center text-slate-350 dark:text-slate-600/80 text-[10px] font-bold uppercase tracking-wider select-none min-h-[80px]">
+              <div class="flex-1 border-2 border-dashed border-slate-200 dark:border-slate-800/50 rounded-xl flex items-center justify-center p-6 text-center text-slate-400 dark:text-slate-600/80 text-[10px] font-bold uppercase tracking-wider select-none min-h-[80px]">
                 Solte cartões aqui
               </div>
             ` : ''}
@@ -523,10 +523,10 @@ class TodoKanban {
   private renderCardHtml(c: TodoCard): string {
     // Calibração de cores por prioridade
     const badgeColors: { [key: string]: string } = {
-      low: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-450 border border-emerald-100/30 dark:border-emerald-900/10',
+      low: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400 border border-emerald-100/30 dark:border-emerald-900/10',
       medium: 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/20 dark:text-indigo-400 border border-indigo-100/30 dark:border-indigo-900/10',
-      high: 'bg-amber-50 text-amber-700 dark:bg-amber-950/20 dark:text-amber-450 border border-amber-100/30 dark:border-amber-900/10',
-      urgent: 'bg-rose-50 text-rose-700 dark:bg-rose-950/20 dark:text-rose-450 border border-rose-100/30 dark:border-rose-900/10'
+      high: 'bg-amber-50 text-amber-700 dark:bg-amber-950/20 dark:text-amber-400 border border-amber-100/30 dark:border-amber-900/10',
+      urgent: 'bg-rose-50 text-rose-700 dark:bg-rose-950/20 dark:text-rose-400 border border-rose-100/30 dark:border-rose-900/10'
     };
 
     const labelMap: { [key: string]: string } = {
@@ -550,7 +550,7 @@ class TodoKanban {
     const siglaOwner = (c.owner || 'A').substring(0, 2).toUpperCase();
 
     return `
-      <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/85 p-4 rounded-xl shadow-sm hover:shadow-md hover:border-slate-350 dark:hover:border-slate-700/80 transition transform hover:-translate-y-0.5 group relative flex flex-col gap-3 select-none cursor-grab active:cursor-grabbing animate-card-in" data-card-id="${c.id}">
+      <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/85 p-4 rounded-xl shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-slate-700/80 transition transform hover:-translate-y-0.5 group relative flex flex-col gap-3 select-none cursor-grab active:cursor-grabbing animate-card-in" data-card-id="${c.id}">
         
         <!-- Cabeçalho do Card: Título & Ações Rápidas -->
         <div class="flex items-start justify-between gap-2.5">
@@ -571,7 +571,7 @@ class TodoKanban {
                   <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                 </svg>
               </button>
-              <button data-delete-card-id="${c.id}" class="p-1 hover:bg-rose-50 dark:hover:bg-rose-950/20 text-slate-300 hover:text-rose-600 dark:hover:text-rose-455 rounded transition" title="Excluir Cartão">
+              <button data-delete-card-id="${c.id}" class="p-1 hover:bg-rose-50 dark:hover:bg-rose-950/20 text-slate-300 hover:text-rose-600 dark:hover:text-rose-400 rounded transition" title="Excluir Cartão">
                 <svg width="14" height="14" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
@@ -583,7 +583,7 @@ class TodoKanban {
         <!-- Tag / Categoria se houver -->
         ${c.label ? `
           <div class="flex items-center">
-            <span class="px-2.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-full font-black text-[9px] uppercase tracking-wide border border-slate-200/30 dark:border-slate-750/30">
+            <span class="px-2.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-full font-black text-[9px] uppercase tracking-wide border border-slate-200/30 dark:border-slate-800/30">
               <svg width="10" height="10" class="w-2.5 h-2.5 inline mr-1 text-slate-400 dark:text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581a1.125 1.125 0 001.59 0l4.318-4.318a1.125 1.125 0 000-1.59L9.568 3z" />
                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6z" />
@@ -603,8 +603,8 @@ class TodoKanban {
         <!-- Rodapé do Card -->
         <div class="border-t border-slate-100 dark:border-slate-800 pt-2.5 flex items-center justify-between gap-2 mt-1 select-none">
           <div class="flex flex-col gap-1 overflow-hidden">
-            <span class="block text-[8px] text-slate-350 dark:text-slate-600 font-bold uppercase tracking-wider leading-none">Prazo</span>
-            <span class="text-[9px] text-slate-500 dark:text-slate-455 font-bold leading-none">${formatarDataBr(c.date) || 'Sem prazo'}</span>
+            <span class="block text-[8px] text-slate-400 dark:text-slate-600 font-bold uppercase tracking-wider leading-none">Prazo</span>
+            <span class="text-[9px] text-slate-500 dark:text-slate-400 font-bold leading-none">${formatarDataBr(c.date) || 'Sem prazo'}</span>
           </div>
           
           <div class="flex items-center gap-2 shrink-0 select-none">
@@ -798,7 +798,7 @@ class TodoKanban {
         <div id="todo-card-modal-card" class="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-800 dark:text-slate-100 w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden transform scale-95 transition-all duration-300 p-6 flex flex-col gap-4">
           
           <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-            <h3 class="text-lg font-black text-slate-850 dark:text-slate-100 flex items-center gap-2">
+            <h3 class="text-lg font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
               ${isEditing
         ? `<svg width="18" height="18" class="w-4.5 h-4.5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                      <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -817,26 +817,26 @@ class TodoKanban {
             <!-- Título -->
             <div>
               <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Título do Cartão *</label>
-              <input id="todo-card-title" type="text" required placeholder="ex: Desenhar fluxo de logins" value="${card?.title || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-850 dark:text-slate-100 font-medium text-sm" />
+              <input id="todo-card-title" type="text" required placeholder="ex: Desenhar fluxo de logins" value="${card?.title || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm" />
             </div>
 
             <!-- Descrição -->
             <div>
               <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Descrição / Detalhamento</label>
-              <textarea id="todo-card-description" placeholder="Descreva as especificações ou o escopo desta prioridade..." rows="3" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-850 dark:text-slate-100 font-medium text-sm">${card?.description || ''}</textarea>
+              <textarea id="todo-card-description" placeholder="Descreva as especificações ou o escopo desta prioridade..." rows="3" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm">${card?.description || ''}</textarea>
             </div>
 
             <div class="grid grid-cols-2 gap-4">
               <!-- Prazo -->
               <div>
                 <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Prazo Limite</label>
-                <input id="todo-card-date" type="date" value="${card?.date || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-850 dark:text-slate-100 font-medium text-sm" />
+                <input id="todo-card-date" type="date" value="${card?.date || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm" />
               </div>
 
               <!-- Categoria / Tag -->
               <div>
                 <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Etiqueta / Tag</label>
-                <input id="todo-card-label" type="text" placeholder="ex: Feature, Mapeamento" value="${card?.label || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-850 dark:text-slate-100 font-medium text-sm" />
+                <input id="todo-card-label" type="text" placeholder="ex: Feature, Mapeamento" value="${card?.label || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm" />
               </div>
             </div>
 
@@ -844,7 +844,7 @@ class TodoKanban {
               <!-- Prioridade -->
               <div>
                 <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Nível de Prioridade</label>
-                <select id="todo-card-priority" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-850 dark:text-slate-100 font-medium text-sm">
+                <select id="todo-card-priority" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm">
                   <option value="low" ${card?.priority === 'low' ? 'selected' : ''}>Baixa</option>
                   <option value="medium" ${!card || card.priority === 'medium' ? 'selected' : ''}>Média</option>
                   <option value="high" ${card?.priority === 'high' ? 'selected' : ''}>Alta</option>
@@ -855,14 +855,14 @@ class TodoKanban {
               <!-- Dono -->
               <div>
                 <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Dono / Responsável *</label>
-                <input id="todo-card-owner" type="text" required placeholder="ex: Fernanda Ganem" value="${card?.owner || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-850 dark:text-slate-100 font-medium text-sm" />
+                <input id="todo-card-owner" type="text" required placeholder="ex: Fernanda Ganem" value="${card?.owner || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm" />
               </div>
             </div>
 
             <!-- Coluna destino -->
             <div>
               <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Coluna de Destino *</label>
-              <select id="todo-card-column" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-850 dark:text-slate-100 font-medium text-sm">
+              <select id="todo-card-column" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm">
                 ${this.columns.map(col => `
                   <option value="${col.id}" ${isEditing
           ? (card.columnId === col.id ? 'selected' : '')
@@ -874,7 +874,7 @@ class TodoKanban {
 
             <!-- Botões -->
             <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
-              <button id="btn-cancel-card-modal" type="button" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 font-bold text-xs tracking-wider rounded-xl transition uppercase">Cancelar</button>
+              <button id="btn-cancel-card-modal" type="button" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs tracking-wider rounded-xl transition uppercase">Cancelar</button>
               <button type="submit" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/10 transition uppercase">
                 ${isEditing ? 'Salvar Alterações' : 'Criar Cartão'}
               </button>
@@ -1009,7 +1009,7 @@ class TodoKanban {
               <div class="flex items-center gap-3 p-2.5 border border-slate-200/60 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950/50 hover:bg-slate-100/50 dark:hover:bg-slate-950/80 transition">
                 <span class="text-slate-500 dark:text-slate-400 font-extrabold text-xs select-none pl-1">#${idx + 1}</span>
                 <input type="text" data-col-edit-id="${col.id}" value="${this.cleanEmoji(col.title)}" class="flex-1 px-3 py-1.5 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-lg text-slate-800 dark:text-slate-100 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-indigo-500" />
-                <button data-delete-col-id="${col.id}" class="p-2 hover:bg-rose-50 dark:hover:bg-rose-955/20 text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-450 rounded-lg transition animate-card-in" title="Remover Coluna">
+                <button data-delete-col-id="${col.id}" class="p-2 hover:bg-rose-50 dark:hover:bg-rose-900/20 text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-lg transition animate-card-in" title="Remover Coluna">
                   <svg width="14" height="14" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                   </svg>

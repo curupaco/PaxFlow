@@ -749,7 +749,7 @@ export class Dashboard {
             <div class="text-amber-500 text-4xl mb-3">⚠️</div>
             <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100 mb-2">Nenhum produto cadastrado</h3>
             <p class="text-sm text-slate-500 dark:text-slate-400 mb-6 font-medium">Esta viagem não possui produtos/serviços vinculados para reembolso.</p>
-            <button id="btn-cancel-modal" class="px-5 py-2.5 bg-slate-100 dark:bg-slate-850 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-250 font-medium rounded-lg transition">
+            <button id="btn-cancel-modal" class="px-5 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium rounded-lg transition">
               Voltar
             </button>
           </div>
@@ -770,7 +770,7 @@ export class Dashboard {
               <span class="p-2 bg-rose-50 dark:bg-rose-950/40 text-rose-500 dark:text-rose-400 rounded-lg text-lg">💸</span>
               Solicitar Reembolso / Cancelamento
             </h3>
-            <button id="btn-close-x" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-350 transition text-lg">&times;</button>
+            <button id="btn-close-x" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-400 transition text-lg">&times;</button>
           </div>
           
           <form id="form-reembolso" class="space-y-5">
@@ -789,7 +789,7 @@ export class Dashboard {
             <div>
               <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Valor do Reembolso Solicitado (R$) *</label>
               ${renderCurrencyInputHTML('input-valor-reembolso', '')}
-              <p class="text-xs text-slate-400 dark:text-slate-505 mt-1.5 font-medium">Sugerido por padrão o valor integral de venda do produto.</p>
+              <p class="text-xs text-slate-400 dark:text-slate-500 mt-1.5 font-medium">Sugerido por padrão o valor integral de venda do produto.</p>
             </div>
 
             <div>
@@ -978,8 +978,8 @@ export class Dashboard {
             <div>
               <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Passageiro / Cliente *</label>
               <select id="select-viagem-cliente" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm">
-                <option value="" class="text-slate-450 dark:text-slate-500">Selecione o cliente...</option>
-                ${clientes.map(c => `<option value="${c.id}" class="bg-white dark:bg-slate-800 text-slate-850 dark:text-slate-150">${c.nome}</option>`).join('')}
+                <option value="" class="text-slate-400 dark:text-slate-500">Selecione o cliente...</option>
+                ${clientes.map(c => `<option value="${c.id}" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">${c.nome}</option>`).join('')}
               </select>
             </div>
 
@@ -1236,7 +1236,7 @@ export class Dashboard {
         data: v.data_volta,
         rotulo: '🛬 Desembarque / Fim da Viagem',
         tipo: 'viagem',
-        cor: 'bg-rose-50 dark:bg-rose-950/45 text-rose-700 dark:text-rose-455 border border-rose-100/35 dark:border-rose-900/40'
+        cor: 'bg-rose-50 dark:bg-rose-950/45 text-rose-700 dark:text-rose-400 border border-rose-100/35 dark:border-rose-900/40'
       });
     }
     if (v.data_financeiro) {
@@ -1244,7 +1244,7 @@ export class Dashboard {
         data: v.data_financeiro,
         rotulo: '💳 Prazo Limite Financeiro',
         tipo: 'financeiro',
-        cor: 'bg-amber-50 dark:bg-amber-950/45 text-amber-700 dark:text-amber-455 border border-amber-100/35 dark:border-amber-900/40'
+        cor: 'bg-amber-50 dark:bg-amber-950/45 text-amber-700 dark:text-amber-400 border border-amber-100/35 dark:border-amber-900/40'
       });
     }
 
@@ -1258,7 +1258,7 @@ export class Dashboard {
             data: p.data_servico,
             rotulo: `${icon} [${prodTipoUpper}] ${p.fornecedor} &bull; ${p.descricao} (Data Principal)`,
             tipo: 'produto',
-            cor: 'bg-indigo-50 dark:bg-indigo-950/35 text-indigo-700 dark:text-indigo-400 border border-indigo-150/30 dark:border-indigo-900/30'
+            cor: 'bg-indigo-50 dark:bg-indigo-950/35 text-indigo-700 dark:text-indigo-400 border border-indigo-200/30 dark:border-indigo-900/30'
           });
         }
 
@@ -1282,7 +1282,7 @@ export class Dashboard {
       cronogramaHTML = `
         <div class="mt-6 border-t border-slate-100 dark:border-slate-800/80 pt-4">
           <h4 class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-3 flex items-center gap-1.5">📅 Cronograma Geral de Datas</h4>
-          <div class="relative pl-4 border-l border-slate-200 dark:border-slate-850 space-y-3.5 my-2">
+          <div class="relative pl-4 border-l border-slate-200 dark:border-slate-800 space-y-3.5 my-2">
             ${cronograma.map(item => `
               <div class="relative flex items-start gap-3">
                 <!-- Bullet indicator -->
@@ -1305,7 +1305,7 @@ export class Dashboard {
       cronogramaHTML = `
         <div class="mt-6 border-t border-slate-100 dark:border-slate-800/80 pt-4">
           <h4 class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-2">📅 Cronograma Geral de Datas</h4>
-          <p class="text-xs text-slate-450 dark:text-slate-550 italic">Nenhuma data cadastrada nesta viagem.</p>
+          <p class="text-xs text-slate-400 dark:text-slate-500 italic">Nenhuma data cadastrada nesta viagem.</p>
         </div>
       `;
     }
@@ -1327,7 +1327,7 @@ export class Dashboard {
             let statusBadgeClass = 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300';
             let statusLabel = r.status;
             if (r.status === 'solicitado' || r.status === 'Aguardando Fornecedor') {
-              statusBadgeClass = 'bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-450 border border-amber-100/30';
+              statusBadgeClass = 'bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400 border border-amber-100/30';
               statusLabel = 'Aguardando Fornecedor';
             } else if (r.status === 'em_analise') {
               statusBadgeClass = 'bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400 border border-blue-100/30';
@@ -1336,13 +1336,13 @@ export class Dashboard {
               statusBadgeClass = 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/30 dark:text-indigo-400 border border-indigo-100/30';
               statusLabel = 'Aprovado';
             } else if (r.status === 'recusado') {
-              statusBadgeClass = 'bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-455 border border-rose-100/30';
+              statusBadgeClass = 'bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-400 border border-rose-100/30';
               statusLabel = 'Recusado';
             } else if (r.status === 'pago') {
-              statusBadgeClass = 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-450 border border-emerald-100/30';
+              statusBadgeClass = 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400 border border-emerald-100/30';
               statusLabel = '💸 Pago / Concluído';
             } else if (r.status === 'cancelado') {
-              statusBadgeClass = 'bg-slate-50 text-slate-450 dark:bg-slate-800 dark:text-slate-500 border border-slate-200/50';
+              statusBadgeClass = 'bg-slate-50 text-slate-400 dark:bg-slate-800 dark:text-slate-500 border border-slate-200/50';
               statusLabel = 'Cancelado';
             }
 
@@ -1358,7 +1358,7 @@ export class Dashboard {
                   </span>
                 </div>
                 
-                <div class="grid grid-cols-2 gap-2.5 text-xs text-slate-650 dark:text-slate-355">
+                <div class="grid grid-cols-2 gap-2.5 text-xs text-slate-600 dark:text-slate-400">
                   <div>
                     <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase">Produto Afetado:</span>
                     <strong class="font-extrabold text-slate-800 dark:text-slate-200">${r.produto ? `[${(r.produto.tipo || 'outro').toUpperCase()}] ${r.produto.fornecedor}` : 'Viagem Integral'}</strong>
@@ -1370,13 +1370,13 @@ export class Dashboard {
                   ${r.valor_aprovado ? `
                     <div>
                       <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase">Valor Aprovado:</span>
-                      <strong class="text-emerald-600 dark:text-emerald-450 font-black">R$ ${Number(r.valor_aprovado).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
+                      <strong class="text-emerald-600 dark:text-emerald-400 font-black">R$ ${Number(r.valor_aprovado).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
                     </div>
                   ` : ''}
                   ${r.taxa_retencao ? `
                     <div>
                       <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase">Taxa Retenção:</span>
-                      <strong class="text-rose-650 dark:text-rose-455 font-bold">R$ ${Number(r.taxa_retencao).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
+                      <strong class="text-rose-600 dark:text-rose-400 font-bold">R$ ${Number(r.taxa_retencao).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
                     </div>
                   ` : ''}
                   <div>
@@ -1386,7 +1386,7 @@ export class Dashboard {
                   ${dataResolucao ? `
                     <div>
                       <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase">Data Conclusão:</span>
-                      <span class="font-semibold text-emerald-600 dark:text-emerald-450">${dataResolucao}</span>
+                      <span class="font-semibold text-emerald-600 dark:text-emerald-400">${dataResolucao}</span>
                     </div>
                   ` : ''}
                 </div>
@@ -1398,7 +1398,7 @@ export class Dashboard {
 
                 ${r.observacoes_financeiras ? `
                   <div class="pt-1 text-[11px]">
-                    <span class="block text-[10px] text-slate-400 dark:text-slate-550 font-bold uppercase">Obs Financeiras:</span>
+                    <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase">Obs Financeiras:</span>
                     <p class="text-slate-600 dark:text-slate-400 font-medium mt-0.5">${r.observacoes_financeiras}</p>
                   </div>
                 ` : ''}
@@ -1417,7 +1417,7 @@ export class Dashboard {
             <h3 class="text-lg font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5">✈️ Gerenciar Viagem</h3>
             <p class="text-xs text-slate-400 dark:text-slate-500 font-semibold">Destino: <span class="font-bold text-slate-600 dark:text-slate-300">${v.destino}</span> &bull; Loc: <span class="font-bold text-slate-600 dark:text-slate-300">${v.codigo_localizador || 'Sem LOC'}</span></p>
           </div>
-          <button id="btn-close-edit-modal-x" class="text-slate-400 hover:text-rose-500 dark:text-slate-500 dark:hover:text-rose-455 font-bold transition">✕</button>
+          <button id="btn-close-edit-modal-x" class="text-slate-400 hover:text-rose-500 dark:text-slate-500 dark:hover:text-rose-400 font-bold transition">✕</button>
         </div>
 
         <!-- Seletor de Abas Premium (visível apenas no mobile) -->
@@ -1454,8 +1454,8 @@ export class Dashboard {
                   <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Alerta SLA:</span>
                   <span class="px-2.5 py-1 rounded-lg text-xs font-black tracking-wide animate-pulse border ${
                     sla.type === 'pre-embarque' 
-                      ? 'bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-455 border-rose-100 dark:border-rose-900/55' 
-                      : 'bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-455 border-amber-100 dark:border-amber-900/55'
+                      ? 'bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 border-rose-100 dark:border-rose-900/55' 
+                      : 'bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-900/55'
                   }">
                     ⚠️ ${sla.text}
                   </span>
@@ -1521,7 +1521,7 @@ export class Dashboard {
               <div class="flex items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-800 mt-4">
                 <div>
                   ${this.perfil?.role === 'admin' ? `
-                    <button id="btn-excluir-viagem" type="button" class="px-5 py-2.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-900/20 text-rose-600 dark:text-rose-455 font-extrabold text-xs tracking-wider rounded-xl transition uppercase">
+                    <button id="btn-excluir-viagem" type="button" class="px-5 py-2.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-900/20 text-rose-600 dark:text-rose-400 font-extrabold text-xs tracking-wider rounded-xl transition uppercase">
                       Excluir Viagem
                     </button>
                   ` : ''}
@@ -1548,14 +1548,14 @@ export class Dashboard {
               </div>
               <div id="viagem-doc-container">
                 ${v.cliente?.google_drive_folder_url || v.cliente?.googleDriveFolderUrl ? `
-                  <div class="flex items-center justify-between p-3.5 bg-indigo-50/50 hover:bg-indigo-100 dark:bg-indigo-950/20 dark:hover:bg-indigo-900/30 rounded-xl border border-indigo-150/30 dark:border-indigo-900/30 transition">
+                  <div class="flex items-center justify-between p-3.5 bg-indigo-50/50 hover:bg-indigo-100 dark:bg-indigo-950/20 dark:hover:bg-indigo-900/30 rounded-xl border border-indigo-200/30 dark:border-indigo-900/30 transition">
                     <span class="text-xs font-bold text-slate-700 dark:text-slate-200">📄 Passaporte / Documento do Cliente</span>
                     <button id="btn-viagem-view-doc" type="button" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-[10px] tracking-wider rounded-lg shadow-sm transition uppercase">
                       Visualizar
                     </button>
                   </div>
                 ` : `
-                  <p class="text-xs text-slate-450 dark:text-slate-500 italic">Nenhum documento anexado para este passageiro.</p>
+                  <p class="text-xs text-slate-400 dark:text-slate-500 italic">Nenhum documento anexado para este passageiro.</p>
                 `}
               </div>
               <div id="viagem-upload-status" class="mt-2 hidden"></div>
@@ -1574,16 +1574,16 @@ export class Dashboard {
             <!-- Painel Financeiro (Totalizadores e Saldo Pendente) -->
             <div id="painel-financeiro-produtos" class="grid grid-cols-4 gap-3 p-3.5 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/50 dark:border-slate-800 mb-4">
               <div>
-                <span class="block text-[10px] text-slate-400 dark:text-slate-550 font-bold uppercase tracking-wider leading-tight">Valor da Venda</span>
+                <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider leading-tight">Valor da Venda</span>
                 <strong id="fin-valor-venda" class="text-sm font-black text-slate-800 dark:text-slate-100">R$ 0,00</strong>
               </div>
               <div>
-                <span class="block text-[10px] text-slate-400 dark:text-slate-550 font-bold uppercase tracking-wider leading-tight">Total em Produtos</span>
+                <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider leading-tight">Total em Produtos</span>
                 <strong id="fin-valor-produtos" class="text-sm font-black text-slate-800 dark:text-slate-100 font-bold">R$ 0,00</strong>
               </div>
               <div>
-                <span class="block text-[10px] text-slate-400 dark:text-slate-550 font-bold uppercase tracking-wider leading-tight">Saldo Pendente</span>
-                <strong id="fin-valor-pendente" class="text-sm font-black text-rose-600 dark:text-rose-455">R$ 0,00</strong>
+                <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider leading-tight">Saldo Pendente</span>
+                <strong id="fin-valor-pendente" class="text-sm font-black text-rose-600 dark:text-rose-400">R$ 0,00</strong>
               </div>
               <div>
                 <span class="block text-[10px] text-indigo-500 dark:text-indigo-400 font-bold uppercase tracking-wider leading-tight">Rentabilidade</span>
@@ -1593,9 +1593,9 @@ export class Dashboard {
             
             <!-- Lista de Produtos Existentes -->
             <div>
-              <h4 class="text-xs font-black text-slate-400 dark:text-slate-550 uppercase tracking-wide mb-2.5">Produtos Cadastrados nesta Viagem</h4>
+              <h4 class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-2.5">Produtos Cadastrados nesta Viagem</h4>
               <div id="lista-produtos-viagem-container" class="space-y-2 max-h-[220px] lg:max-h-[350px] overflow-y-auto pr-1 custom-scrollbar">
-                <p class="text-center text-xs text-slate-400 dark:text-slate-550 font-medium py-4">Buscando produtos...</p>
+                <p class="text-center text-xs text-slate-400 dark:text-slate-500 font-medium py-4">Buscando produtos...</p>
               </div>
             </div>
 
@@ -1606,7 +1606,7 @@ export class Dashboard {
               <form id="form-novo-produto" class="space-y-3 bg-slate-50/50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800 p-3.5 rounded-xl">
                 <div class="grid grid-cols-2 gap-3">
                   <div>
-                    <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-550 uppercase mb-0.5">Tipo *</label>
+                    <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Tipo *</label>
                     <select id="prod-tipo" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition duration-155">
                       <option value="" disabled selected class="bg-white dark:bg-slate-800 text-slate-400">Selecione o tipo...</option>
                       ${this.tiposProduto.filter(t => t.ativo && t.nome !== 'MUDAR!').map(t => `
@@ -1615,7 +1615,7 @@ export class Dashboard {
                     </select>
                   </div>
                   <div>
-                    <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-550 uppercase mb-0.5">Fornecedor</label>
+                    <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Fornecedor</label>
                     <input id="prod-fornecedor" type="text" placeholder="ex: LATAM, Hilton" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition duration-155" />
                   </div>
                   
@@ -1623,29 +1623,29 @@ export class Dashboard {
                 </div>
 
                 <div>
-                  <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-550 uppercase mb-0.5">Descrição</label>
+                  <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Descrição</label>
                   <input id="prod-descricao" type="text" placeholder="ex: Voo GRU-JFK ou Quarto Deluxe" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition duration-155" />
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
                   <div>
-                    <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-550 uppercase mb-0.5">Código (LOC) *</label>
+                    <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Código (LOC) *</label>
                     <input id="prod-reserva" list="existing-locs-list" type="text" required maxlength="20" placeholder="ex: LOC12" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition duration-155 uppercase" />
                     <datalist id="existing-locs-list"></datalist>
                   </div>
                   <div>
-                    <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-555 uppercase mb-0.5">Venda (R$) *</label>
+                    <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Venda (R$) *</label>
                     ${renderCurrencyInputHTML('prod-venda', '')}
                   </div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
                   <div>
-                    <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-555 uppercase mb-0.5">Data do Serviço (DD/MM/AAAA) *</label>
+                    <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Data do Serviço (DD/MM/AAAA) *</label>
                     ${renderDateInputHTML('prod-data', '')}
                   </div>
                   <div>
-                    <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-550 uppercase mb-0.5">Status *</label>
+                    <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Status *</label>
                     <select id="prod-status" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition duration-155">
                       <option value="reservado" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">Reservado</option>
                       <option value="emitido" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100" selected>Emitido</option>
@@ -1656,7 +1656,7 @@ export class Dashboard {
                 <!-- Datas Adicionais -->
                 <div id="container-datas-adicionais" class="space-y-2.5 mt-2"></div>
                 <div class="flex justify-start">
-                  <button type="button" id="btn-add-data-adicional" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-350 font-black text-[9px] tracking-wider rounded-lg transition uppercase flex items-center gap-1">
+                  <button type="button" id="btn-add-data-adicional" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 font-black text-[9px] tracking-wider rounded-lg transition uppercase flex items-center gap-1">
                     ➕ Adicionar Outra Data
                   </button>
                 </div>
@@ -1671,7 +1671,7 @@ export class Dashboard {
 
             <!-- Histórico de Reembolsos (Desktop inline) -->
             ${v.reembolsos && v.reembolsos.length > 0 ? `
-              <div id="reembolsos-wrapper-desktop" class="hidden lg:block border-t border-slate-100 dark:border-slate-850 pt-4 mt-4">
+              <div id="reembolsos-wrapper-desktop" class="hidden lg:block border-t border-slate-100 dark:border-slate-800 pt-4 mt-4">
                 ${renderReembolsosHTML()}
               </div>
             ` : ''}
@@ -1752,7 +1752,7 @@ export class Dashboard {
 
           if (viagemDocContainer) {
             viagemDocContainer.innerHTML = `
-              <div class="flex items-center justify-between p-3.5 bg-indigo-50/50 hover:bg-indigo-100 dark:bg-indigo-950/20 dark:hover:bg-indigo-900/30 rounded-xl border border-indigo-150/30 dark:border-indigo-900/30 transition">
+              <div class="flex items-center justify-between p-3.5 bg-indigo-50/50 hover:bg-indigo-100 dark:bg-indigo-950/20 dark:hover:bg-indigo-900/30 rounded-xl border border-indigo-200/30 dark:border-indigo-900/30 transition">
                 <span class="text-xs font-bold text-slate-700 dark:text-slate-200">📄 Passaporte / Documento do Cliente</span>
                 <button id="btn-viagem-view-doc" type="button" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-[10px] tracking-wider rounded-lg shadow-sm transition uppercase">
                   Visualizar
@@ -2048,7 +2048,7 @@ export class Dashboard {
             const options = Array.isArray(campo.opcoes) ? campo.opcoes : [];
             fieldsHTML += `
               <div class="space-y-1">
-                <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-550 uppercase mb-0.5">${label}</label>
+                <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">${label}</label>
                 <select id="prod-campo-${campo.id}" ${requiredAttr} class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition duration-155">
                   <option value="" disabled selected>Selecione...</option>
                   ${options.map((opt: string) => `<option value="${opt}">${opt}</option>`).join('')}
@@ -2058,7 +2058,7 @@ export class Dashboard {
           } else if (campo.tipo === 'number') {
             fieldsHTML += `
               <div class="space-y-1">
-                <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-550 uppercase mb-0.5">${label}</label>
+                <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">${label}</label>
                 <input type="number" id="prod-campo-${campo.id}" ${requiredAttr} placeholder="${campo.placeholder || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition duration-155" />
               </div>
             `;
@@ -2066,7 +2066,7 @@ export class Dashboard {
             // text fallback
             fieldsHTML += `
               <div class="space-y-1">
-                <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-550 uppercase mb-0.5">${label}</label>
+                <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">${label}</label>
                 <input type="text" id="prod-campo-${campo.id}" ${requiredAttr} placeholder="${campo.placeholder || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition duration-155" />
               </div>
             `;
@@ -2111,11 +2111,11 @@ export class Dashboard {
       newRow.className = 'grid grid-cols-[1fr_1fr_auto] gap-2 items-end bg-slate-100/50 dark:bg-slate-800/30 p-2.5 rounded-lg border border-slate-200/40 dark:border-slate-800/40';
       newRow.innerHTML = `
         <div>
-          <label class="block text-[8px] font-bold text-slate-400 dark:text-slate-550 uppercase mb-0.5">Rótulo (ex: Check-out)</label>
+          <label class="block text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Rótulo (ex: Check-out)</label>
           <input type="text" placeholder="Rótulo" required class="prod-adicional-rotulo w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition duration-155" />
         </div>
         <div>
-          <label class="block text-[8px] font-bold text-slate-400 dark:text-slate-555 uppercase mb-0.5">Data (DD/MM/AAAA)</label>
+          <label class="block text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Data (DD/MM/AAAA)</label>
           <input type="text" placeholder="DD/MM/AAAA" required class="prod-adicional-data w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition duration-155" />
         </div>
         <button type="button" class="btn-remove-data-adicional p-2 hover:bg-rose-50/80 dark:hover:bg-rose-950/20 text-slate-400 hover:text-rose-600 rounded-lg transition" title="Remover data">
@@ -2350,9 +2350,9 @@ export class Dashboard {
     if (finValorPendente) {
       finValorPendente.textContent = `R$ ${saldoPendente.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
       if (Math.abs(saldoPendente) < 0.01) {
-        finValorPendente.className = 'text-sm font-black text-emerald-600 dark:text-emerald-450';
+        finValorPendente.className = 'text-sm font-black text-emerald-600 dark:text-emerald-400';
       } else {
-        finValorPendente.className = 'text-sm font-black text-rose-600 dark:text-rose-455';
+        finValorPendente.className = 'text-sm font-black text-rose-600 dark:text-rose-400';
       }
     }
     if (finValorRentabilidade) {
@@ -2462,18 +2462,18 @@ export class Dashboard {
         const isDetalhado = Math.abs(Number(p.valor_venda || 0) - totalDet) < 0.01;
 
         return `
-          <div class="product-card-clickable flex items-center justify-between gap-3 p-3 bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-850 rounded-xl hover:bg-slate-100/50 dark:hover:bg-slate-800/80 transition cursor-pointer" data-product-id="${p.id}">
+          <div class="product-card-clickable flex items-center justify-between gap-3 p-3 bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-800 rounded-xl hover:bg-slate-100/50 dark:hover:bg-slate-800/80 transition cursor-pointer" data-product-id="${p.id}">
             <div class="flex items-start gap-2.5 overflow-hidden w-full">
-              <span class="text-lg p-1 bg-white dark:bg-slate-700 border border-slate-100 dark:border-slate-650 rounded-lg shadow-sm flex items-center justify-center">${tipoIcon}</span>
+              <span class="text-lg p-1 bg-white dark:bg-slate-700 border border-slate-100 dark:border-slate-700 rounded-lg shadow-sm flex items-center justify-center">${tipoIcon}</span>
               <div class="overflow-hidden flex-1">
                 <span class="block text-xs font-black text-slate-700 dark:text-slate-200 truncate leading-tight">${p.fornecedor} &bull; ${p.descricao}</span>
-                <span class="block text-[10px] text-slate-400 dark:text-slate-555 font-bold leading-normal">
-                  Data Principal: <span class="text-slate-600 dark:text-slate-355 font-semibold">${formatarData(p.data_servico)}</span>
+                <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold leading-normal">
+                  Data Principal: <span class="text-slate-600 dark:text-slate-400 font-semibold">${formatarData(p.data_servico)}</span>
                   ${p.datas_adicionais && p.datas_adicionais.length > 0 ? p.datas_adicionais.map((d: any) => `
-                    <br/><span class="text-indigo-600 dark:text-indigo-400">${d.rotulo}:</span> <span class="text-slate-600 dark:text-slate-355 font-semibold">${formatarData(d.data)}</span>
+                    <br/><span class="text-indigo-600 dark:text-indigo-400">${d.rotulo}:</span> <span class="text-slate-600 dark:text-slate-400 font-semibold">${formatarData(d.data)}</span>
                   `).join('') : ''}
                 </span>
-                <span class="block text-[10px] leading-normal font-bold ${isDetalhado ? 'text-indigo-500 dark:text-indigo-400' : 'text-amber-500 dark:text-amber-450 animate-pulse'}">
+                <span class="block text-[10px] leading-normal font-bold ${isDetalhado ? 'text-indigo-500 dark:text-indigo-400' : 'text-amber-500 dark:text-amber-400 animate-pulse'}">
                   ${isDetalhado 
                     ? `Tarifa: R$ ${tarifa.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} &bull; Taxa: R$ ${taxa.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} &bull; Comis.: R$ ${comissao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` 
                     : '⚠️ Detalhamento pendente (clique para detalhar)'}
@@ -2485,10 +2485,10 @@ export class Dashboard {
               <div class="text-right">
                 <span class="block text-xs font-black text-indigo-600 dark:text-indigo-400">R$ ${Number(p.valor_venda || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
               </div>
-              <button data-comments-prod-id="${p.id}" data-comments-prod-name="${p.fornecedor} - ${p.descricao}" class="p-1.5 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-slate-300 dark:text-slate-555 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-md transition text-xs font-bold flex items-center gap-1" title="Notas e Comentários">
+              <button data-comments-prod-id="${p.id}" data-comments-prod-name="${p.fornecedor} - ${p.descricao}" class="p-1.5 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-slate-300 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-md transition text-xs font-bold flex items-center gap-1" title="Notas e Comentários">
                 💬 <span class="text-[10px]">${commentsCount}</span>
               </button>
-              <button data-delete-prod-id="${p.id}" class="p-1.5 hover:bg-rose-50 dark:hover:bg-rose-950/20 text-slate-300 dark:text-slate-550 hover:text-rose-600 dark:hover:text-rose-455 rounded-md transition text-xs font-bold" title="Remover Produto">
+              <button data-delete-prod-id="${p.id}" class="p-1.5 hover:bg-rose-50 dark:hover:bg-rose-950/20 text-slate-300 dark:text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 rounded-md transition text-xs font-bold" title="Remover Produto">
                 🗑️
               </button>
             </div>
@@ -2497,12 +2497,12 @@ export class Dashboard {
       }).join('');
 
       return `
-        <div class="loc-group border border-slate-200/80 dark:border-slate-850 rounded-xl overflow-hidden mb-2 shadow-sm">
+        <div class="loc-group border border-slate-200/80 dark:border-slate-800 rounded-xl overflow-hidden mb-2 shadow-sm">
           <!-- Header -->
           <div class="loc-header flex items-center justify-between p-2.5 bg-slate-100/50 dark:bg-slate-800/40 cursor-pointer hover:bg-slate-200/50 dark:hover:bg-slate-800/80 transition select-none" data-loc-key="${locKey}">
             <div class="flex items-center gap-2">
               <!-- Chevron / Arrow indicator -->
-              <span class="loc-chevron inline-block transition-transform duration-200 text-xs text-slate-400 dark:text-slate-550" style="transform: rotate(90deg);">▶</span>
+              <span class="loc-chevron inline-block transition-transform duration-200 text-xs text-slate-400 dark:text-slate-500" style="transform: rotate(90deg);">▶</span>
               
               <!-- LOC Badge -->
               <span class="px-2 py-0.5 text-[10px] font-black tracking-wider rounded bg-indigo-100 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 uppercase">${locKey}</span>
@@ -2517,7 +2517,7 @@ export class Dashboard {
           </div>
           
           <!-- Accordion Body (contains the product cards) -->
-          <div class="loc-body border-t border-slate-100 dark:border-slate-850/50 bg-slate-50/10 dark:bg-slate-900/5 p-2 pl-4 space-y-2 border-l-2 border-l-slate-200 dark:border-l-slate-700">
+          <div class="loc-body border-t border-slate-100 dark:border-slate-800/50 bg-slate-50/10 dark:bg-slate-900/5 p-2 pl-4 space-y-2 border-l-2 border-l-slate-200 dark:border-l-slate-700">
             ${innerCardsHTML}
           </div>
         </div>
@@ -2689,16 +2689,16 @@ export class Dashboard {
             <span class="p-1.5 bg-indigo-50 dark:bg-indigo-950/45 text-indigo-500 rounded-lg">${tipoIcon}</span>
             <span>Detalhamento de Valores</span>
           </h3>
-          <button id="btn-close-det-modal-x" class="text-slate-400 hover:text-rose-500 dark:text-slate-500 dark:hover:text-rose-450 font-bold transition">✕</button>
+          <button id="btn-close-det-modal-x" class="text-slate-400 hover:text-rose-500 dark:text-slate-500 dark:hover:text-rose-400 font-bold transition">✕</button>
         </div>
 
         <!-- Resumo do Produto -->
-        <div class="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/60 dark:border-slate-850 mb-5">
+        <div class="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/60 dark:border-slate-800 mb-5">
           <div class="flex justify-between items-start mb-1">
-            <span class="text-xs font-black text-slate-700 dark:text-slate-250 truncate">${p.fornecedor} &bull; ${p.descricao}</span>
+            <span class="text-xs font-black text-slate-700 dark:text-slate-300 truncate">${p.fornecedor} &bull; ${p.descricao}</span>
             <span class="text-xs font-black text-indigo-600 dark:text-indigo-400">Total: R$ ${valorVenda.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
           </div>
-          <span class="block text-[10px] text-slate-400 dark:text-slate-550 font-bold">
+          <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold">
             ${p.codigo_reserva ? `LOC: ${p.codigo_reserva} &bull; ` : ''} 
             Serviço: ${new Date(p.data_servico).toLocaleDateString('pt-BR')}
           </span>
@@ -2722,7 +2722,7 @@ export class Dashboard {
           <div class="flex justify-between items-center p-3 bg-slate-50/50 dark:bg-slate-800/20 border border-slate-200/50 dark:border-slate-800/70 rounded-xl mt-4">
             <div>
               <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">Saldo Pendente do Produto</span>
-              <strong id="det-saldo-pendente" class="text-base font-black text-rose-600 dark:text-rose-455">R$ 0,00</strong>
+              <strong id="det-saldo-pendente" class="text-base font-black text-rose-600 dark:text-rose-400">R$ 0,00</strong>
             </div>
             <div class="text-right">
               <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">Total Distribuído</span>
@@ -2780,9 +2780,9 @@ export class Dashboard {
       if (pendingValEl) {
         pendingValEl.textContent = `R$ ${pendente.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
         if (Math.abs(pendente) < 0.01) {
-          pendingValEl.className = 'text-base font-black text-emerald-600 dark:text-emerald-450';
+          pendingValEl.className = 'text-base font-black text-emerald-600 dark:text-emerald-400';
         } else {
-          pendingValEl.className = 'text-base font-black text-rose-600 dark:text-rose-455';
+          pendingValEl.className = 'text-base font-black text-rose-600 dark:text-rose-400';
         }
       }
     };
@@ -2966,19 +2966,19 @@ export class Dashboard {
             <!-- Stats Rápidos -->
             <div class="flex items-center gap-2 bg-slate-100/60 dark:bg-slate-800/40 p-1.5 rounded-xl border border-slate-200/30 dark:bg-slate-700/30 shrink-0">
               <div class="px-3.5 py-1.5 text-center">
-                <span class="block text-xs text-slate-400 dark:text-slate-550 font-bold uppercase tracking-wider">Viagens</span>
+                <span class="block text-xs text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">Viagens</span>
                 <span class="text-sm font-black text-slate-700 dark:text-slate-200">${this.viagens.length}</span>
               </div>
               <div class="w-px h-6 bg-slate-200 dark:bg-slate-700"></div>
               <div class="px-3.5 py-1.5 text-center">
-                <span class="block text-xs text-slate-400 dark:text-slate-550 font-bold uppercase tracking-wider">SLAs Ativos</span>
+                <span class="block text-xs text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">SLAs Ativos</span>
                 <span class="text-sm font-black ${totalSlaAlerts > 0 ? 'text-rose-600 animate-pulse' : 'text-slate-700 dark:text-slate-200'}">${totalSlaAlerts}</span>
               </div>
             </div>
 
             <!-- Campo de Busca de Viagens -->
             <div class="relative min-w-[200px] md:min-w-[280px] flex-1 sm:flex-initial">
-              <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-550">
+              <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
@@ -2997,8 +2997,8 @@ export class Dashboard {
             <!-- Seletor de Consultores (Apenas para Admins) -->
             ${this.perfil?.role === 'admin' ? `
               <div class="flex items-center gap-1.5 shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2.5 py-1.5 rounded-xl shadow-sm">
-                <span class="text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-550 select-none">Equipe:</span>
-                <select id="select-dashboard-consultor" class="text-xs font-bold bg-transparent text-slate-700 dark:text-slate-350 focus:outline-none cursor-pointer max-w-[150px]">
+                <span class="text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-500 select-none">Equipe:</span>
+                <select id="select-dashboard-consultor" class="text-xs font-bold bg-transparent text-slate-700 dark:text-slate-400 focus:outline-none cursor-pointer max-w-[150px]">
                   <option value="todos" ${this.selectedConsultantId === 'todos' ? 'selected' : ''}>Todos os Consultores</option>
                   ${this.consultores.map(c => `<option value="${c.id}" ${this.selectedConsultantId === c.id ? 'selected' : ''}>${c.nome}</option>`).join('')}
                 </select>
@@ -3087,7 +3087,7 @@ export class Dashboard {
         iconBg: 'bg-emerald-50 dark:bg-emerald-950/40',
         iconText: 'text-emerald-500 dark:text-emerald-400',
         badgeBg: 'bg-emerald-100 dark:bg-emerald-950/80',
-        badgeText: 'text-emerald-600 dark:text-emerald-455',
+        badgeText: 'text-emerald-600 dark:text-emerald-400',
         iconSvg: `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`
       },
       pos_venda: {
@@ -3095,7 +3095,7 @@ export class Dashboard {
         iconBg: 'bg-indigo-50 dark:bg-indigo-950/40',
         iconText: 'text-indigo-500 dark:text-indigo-400',
         badgeBg: 'bg-indigo-100 dark:bg-indigo-950/80',
-        badgeText: 'text-indigo-600 dark:text-indigo-455',
+        badgeText: 'text-indigo-600 dark:text-indigo-400',
         iconSvg: `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>`
       },
       pre_embarque: {
@@ -3103,7 +3103,7 @@ export class Dashboard {
         iconBg: 'bg-amber-50 dark:bg-amber-950/40',
         iconText: 'text-amber-500 dark:text-amber-400',
         badgeBg: 'bg-amber-100 dark:bg-amber-950/80',
-        badgeText: 'text-amber-600 dark:text-amber-455',
+        badgeText: 'text-amber-600 dark:text-amber-400',
         iconSvg: `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>`
       },
       pos_viagem: {
@@ -3111,7 +3111,7 @@ export class Dashboard {
         iconBg: 'bg-violet-50 dark:bg-violet-950/40',
         iconText: 'text-violet-500 dark:text-violet-400',
         badgeBg: 'bg-violet-100 dark:bg-violet-950/80',
-        badgeText: 'text-violet-600 dark:text-violet-455',
+        badgeText: 'text-violet-600 dark:text-violet-400',
         iconSvg: `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>`
       },
       reembolso_solicitado: {
@@ -3119,7 +3119,7 @@ export class Dashboard {
         iconBg: 'bg-rose-50 dark:bg-rose-950/40',
         iconText: 'text-rose-500 dark:text-rose-400',
         badgeBg: 'bg-rose-100 dark:bg-rose-950/80',
-        badgeText: 'text-rose-600 dark:text-rose-455',
+        badgeText: 'text-rose-600 dark:text-rose-400',
         iconSvg: `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`
       }
     };
@@ -3160,7 +3160,7 @@ export class Dashboard {
     const sla = reembolsoConcluido ? { alert: false, type: null, text: '' } : this.checkSLA(v);
     
     // Classes CSS dinâmicas baseadas nos alertas de SLA ou reembolso finalizado
-    let cardClasses = 'bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-750 shadow-sm hover:shadow-md dark:shadow-slate-950/30 transition-all cursor-grab active:cursor-grabbing relative overflow-hidden group card-viagem';
+    let cardClasses = 'bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-800 shadow-sm hover:shadow-md dark:shadow-slate-950/30 transition-all cursor-grab active:cursor-grabbing relative overflow-hidden group card-viagem';
     
     if (reembolsoConcluido) {
       cardClasses = 'bg-emerald-50/30 dark:bg-emerald-950/10 border border-emerald-500/80 dark:border-emerald-500/50 shadow-emerald-500/10 dark:shadow-emerald-950/20 p-4 rounded-xl shadow-sm hover:shadow-md transition-all cursor-grab active:cursor-grabbing relative overflow-hidden group card-viagem';
@@ -3207,19 +3207,19 @@ export class Dashboard {
         <!-- Calendário/Datas -->
         <div class="grid grid-cols-2 gap-2 text-[10px] text-slate-400 dark:text-slate-500 font-semibold border-t border-slate-100 dark:border-slate-800 pt-2 mb-2">
           <div>
-            <span class="block text-slate-350 dark:text-slate-600 font-bold uppercase tracking-wider text-[8px]">Data Ida</span>
-            <span class="text-slate-600 dark:text-slate-455 font-bold">${formatarData(v.data_ida)}</span>
+            <span class="block text-slate-400 dark:text-slate-600 font-bold uppercase tracking-wider text-[8px]">Data Ida</span>
+            <span class="text-slate-600 dark:text-slate-400 font-bold">${formatarData(v.data_ida)}</span>
           </div>
           <div>
-            <span class="block text-slate-355 dark:text-slate-600 font-bold uppercase tracking-wider text-[8px]">Data Volta</span>
-            <span class="text-slate-600 dark:text-slate-455 font-bold">${formatarData(v.data_volta)}</span>
+            <span class="block text-slate-400 dark:text-slate-600 font-bold uppercase tracking-wider text-[8px]">Data Volta</span>
+            <span class="text-slate-600 dark:text-slate-400 font-bold">${formatarData(v.data_volta)}</span>
           </div>
         </div>
 
         ${v.data_financeiro ? `
           <div class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold border-t border-slate-100 dark:border-slate-800 pt-1.5 mb-1.5 flex items-center justify-between">
-            <span class="text-slate-350 dark:text-slate-600 font-bold uppercase tracking-wider text-[8px]">Data Financeiro</span>
-            <span class="text-slate-600 dark:text-slate-455 font-bold">${formatarData(v.data_financeiro)}</span>
+            <span class="text-slate-400 dark:text-slate-600 font-bold uppercase tracking-wider text-[8px]">Data Financeiro</span>
+            <span class="text-slate-600 dark:text-slate-400 font-bold">${formatarData(v.data_financeiro)}</span>
           </div>
         ` : ''}
 

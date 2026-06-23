@@ -34,7 +34,7 @@ export class MeuPerfilModal {
           <button type="button" data-avatar-id="${perfil.avatar_url}" class="btn-select-avatar w-12 h-12 p-0.5 rounded-xl border-2 transition duration-200 transform hover:scale-110 relative flex items-center justify-center overflow-hidden ${
             isSelected 
               ? 'border-indigo-600 bg-indigo-50/20 dark:bg-indigo-950/20 shadow-md ring-2 ring-indigo-500/20' 
-              : 'border-transparent hover:border-slate-350 dark:hover:border-slate-750'
+              : 'border-transparent hover:border-slate-300 dark:hover:border-slate-800'
           }" title="Minha Foto Customizada">
             <img src="${perfil.avatar_url}" alt="Minha Foto" class="w-full h-full object-cover rounded-lg" />
             ${isSelected ? `<div class="absolute -top-1 -right-1 bg-indigo-600 text-white w-3.5 h-3.5 rounded-full flex items-center justify-center text-[8px] font-bold shadow-sm z-10">✓</div>` : ''}
@@ -48,7 +48,7 @@ export class MeuPerfilModal {
           <button type="button" data-avatar-id="${opt.id}" class="btn-select-avatar w-12 h-12 p-0.5 rounded-xl border-2 transition duration-200 transform hover:scale-110 relative flex items-center justify-center ${
             isSelected 
               ? 'border-indigo-600 bg-indigo-50/20 dark:bg-indigo-950/20 shadow-md ring-2 ring-indigo-500/20' 
-              : 'border-transparent hover:border-slate-350 dark:hover:border-slate-750'
+              : 'border-transparent hover:border-slate-300 dark:hover:border-slate-800'
           }" title="${opt.nome}">
             ${opt.svg}
             ${isSelected ? `<div class="absolute -top-1 -right-1 bg-indigo-600 text-white w-3.5 h-3.5 rounded-full flex items-center justify-center text-[8px] font-bold shadow-sm">✓</div>` : ''}
@@ -70,7 +70,7 @@ export class MeuPerfilModal {
             <div class="absolute inset-0 bg-black/50 flex items-center justify-center text-white text-[9px] font-black opacity-0 group-hover:opacity-100 transition-opacity rounded-xl">Enviar Foto</div>
           </div>
           <input type="file" id="input-profile-photo-file" accept="image/*" class="hidden" />
-          <button type="button" id="btn-upload-profile-photo" class="text-[9px] bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-500 dark:text-slate-400 font-extrabold px-3 py-1.5 rounded-lg border border-slate-200/50 dark:border-slate-700/50 transition">
+          <button type="button" id="btn-upload-profile-photo" class="text-[9px] bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 font-extrabold px-3 py-1.5 rounded-lg border border-slate-200/50 dark:border-slate-700/50 transition">
             📷 Enviar Foto Própria
           </button>
           <h2 class="text-lg font-black text-slate-800 dark:text-slate-100 tracking-tight leading-snug mt-1">Meu Perfil</h2>
@@ -81,13 +81,13 @@ export class MeuPerfilModal {
           <!-- Bloco de Gamificação (XP e Nível) -->
           <div class="bg-indigo-50/30 dark:bg-indigo-950/10 border border-indigo-100/50 dark:border-indigo-900/20 rounded-2xl p-4 space-y-2.5">
             <div class="flex justify-between items-center text-xs">
-              <span class="font-extrabold text-slate-700 dark:text-slate-350 flex items-center gap-1.5">${progress.patenteEmoji} Patente: ${progress.patente}</span>
+              <span class="font-extrabold text-slate-700 dark:text-slate-400 flex items-center gap-1.5">${progress.patenteEmoji} Patente: ${progress.patente}</span>
               <span class="font-black text-indigo-600 dark:text-indigo-400">${progress.xpAtual} / ${progress.xpProximoNivel} XP</span>
             </div>
-            <div class="w-full bg-slate-200 dark:bg-slate-850 h-2.5 rounded-full overflow-hidden">
+            <div class="w-full bg-slate-200 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
               <div class="bg-gradient-to-r from-indigo-500 to-purple-600 h-full rounded-full transition-all duration-500" style="width: ${progress.percent}%"></div>
             </div>
-            <div class="text-[10px] text-slate-455 dark:text-slate-500 font-semibold flex justify-between">
+            <div class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold flex justify-between">
               <span>Nível ${progress.nivel}</span>
               <span>Faltam ${progress.xpProximoNivel - progress.xpAtual} XP para o próximo nível</span>
             </div>
@@ -97,7 +97,7 @@ export class MeuPerfilModal {
           <div>
             <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2.5">Mural de Medalhas</label>
             <div class="grid grid-cols-7 gap-2.5" id="modal-badges-grid">
-              <div class="col-span-7 py-3 text-center text-slate-450 text-xs animate-pulse">Carregando medalhas...</div>
+              <div class="col-span-7 py-3 text-center text-slate-400 text-xs animate-pulse">Carregando medalhas...</div>
             </div>
           </div>
 
@@ -116,7 +116,7 @@ export class MeuPerfilModal {
 
           <div>
             <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">E-mail de Login</label>
-            <input id="input-mp-email" type="email" disabled autocomplete="username" value="${perfil.email || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-850/50 rounded-lg text-slate-400 dark:text-slate-500 font-bold text-sm cursor-not-allowed select-none" />
+            <input id="input-mp-email" type="email" disabled autocomplete="username" value="${perfil.email || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 rounded-lg text-slate-400 dark:text-slate-500 font-bold text-sm cursor-not-allowed select-none" />
             <p class="text-[9px] text-slate-400 dark:text-slate-500 mt-1 font-semibold">O e-mail é único para login e não pode ser reconfigurado.</p>
           </div>
 
@@ -136,7 +136,7 @@ export class MeuPerfilModal {
           </div>
 
           <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
-            <button id="btn-mp-cancel" type="button" class="px-4 py-2.5 bg-slate-50 dark:bg-slate-850 hover:bg-slate-100 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white font-bold text-xs rounded-xl transition uppercase">
+            <button id="btn-mp-cancel" type="button" class="px-4 py-2.5 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white font-bold text-xs rounded-xl transition uppercase">
               Cancelar
             </button>
             <button id="btn-mp-submit" type="submit" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl transition shadow-lg shadow-indigo-600/20 uppercase tracking-wider flex items-center justify-center">
@@ -158,7 +158,7 @@ export class MeuPerfilModal {
           const isUnlocked = unlockedSet.has(badge.key);
           if (isUnlocked) {
             return `
-              <div class="group relative flex flex-col items-center justify-center p-2 rounded-xl bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-150/40 dark:border-indigo-900/30 transition transform hover:scale-115 cursor-pointer shadow-sm">
+              <div class="group relative flex flex-col items-center justify-center p-2 rounded-xl bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-200/40 dark:border-indigo-900/30 transition transform hover:scale-115 cursor-pointer shadow-sm">
                 <span class="text-xl">${badge.emoji}</span>
                 <div class="absolute bottom-full mb-2 hidden group-hover:flex flex-col bg-slate-900 text-white text-[10px] p-2.5 rounded-xl w-48 shadow-2xl border border-slate-700/50 z-[100] text-center left-1/2 -translate-x-1/2 select-none pointer-events-none">
                   <span class="font-extrabold text-indigo-400 text-xs mb-0.5">${badge.nome}</span>
@@ -173,7 +173,7 @@ export class MeuPerfilModal {
                 <span class="text-xl">${badge.emoji}</span>
                 <div class="absolute bottom-full mb-2 hidden group-hover:flex flex-col bg-slate-900 text-white text-[10px] p-2.5 rounded-xl w-48 shadow-2xl border border-slate-700/50 z-[100] text-center left-1/2 -translate-x-1/2 select-none pointer-events-none">
                   <span class="font-extrabold text-slate-400 text-xs mb-0.5">${badge.nome}</span>
-                  <span class="text-slate-350 leading-relaxed">${badge.descricao}</span>
+                  <span class="text-slate-400 leading-relaxed">${badge.descricao}</span>
                   <span class="text-[8px] text-amber-500 font-bold uppercase mt-1">🔒 Bloqueada</span>
                 </div>
               </div>

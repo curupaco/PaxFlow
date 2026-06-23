@@ -597,7 +597,7 @@ export class OrcamentosPage {
             <div>
               <h1 class="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight flex items-center gap-2">
                 <span>Orçamentos em Aberto</span>
-                ${this.isFallbackMode ? `<span class="px-2 py-0.5 bg-amber-500/20 text-amber-600 dark:text-amber-450 border border-amber-500/30 text-[10px] font-black rounded-lg uppercase tracking-wider">Modo Offline</span>` : ''}
+                ${this.isFallbackMode ? `<span class="px-2 py-0.5 bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-[10px] font-black rounded-lg uppercase tracking-wider">Modo Offline</span>` : ''}
               </h1>
               <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Controle de captações, cotações e propostas</p>
             </div>
@@ -625,8 +625,8 @@ export class OrcamentosPage {
             <!-- Seletor de Consultores (Apenas para Admins) -->
             ${this.perfil?.role === 'admin' ? `
               <div class="flex items-center gap-1.5 shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2.5 py-1.5 rounded-xl shadow-sm">
-                <span class="text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-550 select-none">Equipe:</span>
-                <select id="select-orcamentos-consultor" class="text-xs font-bold bg-transparent text-slate-700 dark:text-slate-350 focus:outline-none cursor-pointer max-w-[150px]">
+                <span class="text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-500 select-none">Equipe:</span>
+                <select id="select-orcamentos-consultor" class="text-xs font-bold bg-transparent text-slate-700 dark:text-slate-400 focus:outline-none cursor-pointer max-w-[150px]">
                   <option value="todos" ${this.selectedConsultantId === 'todos' ? 'selected' : ''}>Todos os Consultores</option>
                   ${this.consultores.map(c => `<option value="${c.id}" ${this.selectedConsultantId === c.id ? 'selected' : ''}>${c.nome}</option>`).join('')}
                 </select>
@@ -648,7 +648,7 @@ export class OrcamentosPage {
                   </svg>
                 </span>
                 <span class="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-wider">Solicitado</span>
-                <span class="px-2 py-0.5 bg-indigo-100 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-455 rounded-full text-[10px] font-black">${solicitado.length}</span>
+                <span class="px-2 py-0.5 bg-indigo-100 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-400 rounded-full text-[10px] font-black">${solicitado.length}</span>
               </div>
             </div>
             <div class="flex flex-col gap-4 overflow-y-auto max-h-[700px] pr-1 custom-scrollbar">
@@ -668,7 +668,7 @@ export class OrcamentosPage {
                   </svg>
                 </span>
                 <span class="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-wider">Em Andamento</span>
-                <span class="px-2 py-0.5 bg-amber-100 dark:bg-indigo-950/80 text-amber-600 dark:text-amber-455 rounded-full text-[10px] font-black">${emAndamento.length}</span>
+                <span class="px-2 py-0.5 bg-amber-100 dark:bg-indigo-950/80 text-amber-600 dark:text-amber-400 rounded-full text-[10px] font-black">${emAndamento.length}</span>
               </div>
             </div>
             <div class="flex flex-col gap-4 overflow-y-auto max-h-[700px] pr-1 custom-scrollbar">
@@ -687,7 +687,7 @@ export class OrcamentosPage {
                   </svg>
                 </span>
                 <span class="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-wider">Aguardando</span>
-                <span class="px-2 py-0.5 bg-rose-100 dark:bg-indigo-950/80 text-rose-600 dark:text-rose-455 rounded-full text-[10px] font-black">${aguardando.length}</span>
+                <span class="px-2 py-0.5 bg-rose-100 dark:bg-indigo-950/80 text-rose-600 dark:text-rose-400 rounded-full text-[10px] font-black">${aguardando.length}</span>
               </div>
             </div>
             <div class="flex flex-col gap-4 overflow-y-auto max-h-[700px] pr-1 custom-scrollbar">
@@ -706,7 +706,7 @@ export class OrcamentosPage {
                   </svg>
                 </span>
                 <span class="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-wider">Concluído</span>
-                <span class="px-2 py-0.5 bg-emerald-100 dark:bg-indigo-950/80 text-emerald-600 dark:text-emerald-455 rounded-full text-[10px] font-black">${concluido.length}</span>
+                <span class="px-2 py-0.5 bg-emerald-100 dark:bg-indigo-950/80 text-emerald-600 dark:text-emerald-400 rounded-full text-[10px] font-black">${concluido.length}</span>
               </div>
               <select id="select-concluido-filtro" class="text-[9px] font-black uppercase bg-transparent text-slate-500 dark:text-slate-400 focus:outline-none cursor-pointer max-w-[100px] border border-slate-200 dark:border-slate-800 rounded px-1.5 py-0.5 bg-white dark:bg-slate-900">
                 <option value="todos" ${this.filterConcluido === 'todos' ? 'selected' : ''}>Todos</option>
@@ -770,7 +770,7 @@ export class OrcamentosPage {
               ` : ''}
             </div>
             ${o.origem ? `
-              <span class="inline-flex items-center gap-0.5 mt-1 px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider bg-slate-100 text-slate-650 dark:bg-slate-850 dark:text-slate-400 border border-slate-200/50 dark:border-slate-800/50">
+              <span class="inline-flex items-center gap-0.5 mt-1 px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-200/50 dark:border-slate-800/50">
                 📢 ${o.origem}
               </span>
             ` : ''}
@@ -807,7 +807,7 @@ export class OrcamentosPage {
           ` : ''}
           ${o.status === 'CONCLUIDO' && o.subStatus === 'ACEITO' && o.valorViagem !== undefined && o.valorViagem !== null ? `
             <div class="flex justify-between items-center text-[10px] font-semibold text-slate-500 dark:text-slate-400 border-t border-slate-200/50 dark:border-slate-800/50 pt-1.5 mt-0.5">
-              <span class="text-emerald-700 dark:text-emerald-450 font-bold">Valor da Viagem:</span>
+              <span class="text-emerald-700 dark:text-emerald-400 font-bold">Valor da Viagem:</span>
               <span class="font-black text-emerald-600 dark:text-emerald-400">R$ ${Number(o.valorViagem).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
             </div>
           ` : ''}
@@ -816,15 +816,15 @@ export class OrcamentosPage {
         <!-- Tags livres -->
         ${o.tags && o.tags.length > 0 ? `
           <div class="flex flex-wrap gap-1.5">
-            ${o.tags.map(t => `<span class="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-450 rounded font-black text-[9px] uppercase tracking-wide border border-slate-200/20 dark:border-slate-750/20">${t}</span>`).join('')}
+            ${o.tags.map(t => `<span class="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded font-black text-[9px] uppercase tracking-wide border border-slate-200/20 dark:border-slate-800/20">${t}</span>`).join('')}
           </div>
         ` : ''}
 
         <!-- Histórico e Contador na Coluna AGUARDANDO -->
         ${o.status === 'AGUARDANDO' ? `
-          <div class="border-t border-dashed border-slate-150 dark:border-slate-850 pt-2.5 flex items-center justify-between text-[10px] text-slate-400 dark:text-slate-500 font-bold">
+          <div class="border-t border-dashed border-slate-200 dark:border-slate-800 pt-2.5 flex items-center justify-between text-[10px] text-slate-400 dark:text-slate-500 font-bold">
             <span class="flex items-center gap-1">⏱️ ${tempoAguardando}</span>
-            <button data-action="ver-notas" data-id="${o.id}" class="text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-350 font-black transition uppercase text-[9px] tracking-wider flex items-center gap-0.5">
+            <button data-action="ver-notas" data-id="${o.id}" class="text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-400 font-black transition uppercase text-[9px] tracking-wider flex items-center gap-0.5">
               👁️ Ver Proposta
             </button>
           </div>
@@ -832,10 +832,10 @@ export class OrcamentosPage {
 
         <!-- Informações Finais na Coluna CONCLUÍDO -->
         ${o.status === 'CONCLUIDO' ? `
-          <div class="border-t border-dashed border-slate-150 dark:border-slate-850 pt-2.5 flex items-center justify-between">
+          <div class="border-t border-dashed border-slate-200 dark:border-slate-800 pt-2.5 flex items-center justify-between">
             ${o.subStatus === 'ACEITO' 
-              ? `<span class="px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-450 border border-emerald-100/30 text-[9px] font-black uppercase tracking-wider rounded">Viagem Fechada! 🎉</span>` 
-              : `<span class="px-2 py-0.5 bg-slate-50 dark:bg-slate-800 text-slate-450 dark:text-slate-500 border border-slate-200/20 text-[9px] font-black uppercase tracking-wider rounded">Desistência 🚫</span>`
+              ? `<span class="px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 border border-emerald-100/30 text-[9px] font-black uppercase tracking-wider rounded">Viagem Fechada! 🎉</span>` 
+              : `<span class="px-2 py-0.5 bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border border-slate-200/20 text-[9px] font-black uppercase tracking-wider rounded">Desistência 🚫</span>`
             }
             <button data-action="ver-notas" data-id="${o.id}" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 font-black transition uppercase text-[9px] tracking-wider">
               Ver Histórico
@@ -913,9 +913,9 @@ export class OrcamentosPage {
    */
   private renderEmptySlot(): string {
     return `
-      <div class="border-2 border-dashed border-slate-200 dark:border-slate-800/60 rounded-xl flex flex-col items-center justify-center p-8 text-center text-slate-350 dark:text-slate-600/80 text-[10px] font-bold uppercase tracking-wider select-none min-h-[140px] gap-1.5">
+      <div class="border-2 border-dashed border-slate-200 dark:border-slate-800/60 rounded-xl flex flex-col items-center justify-center p-8 text-center text-slate-400 dark:text-slate-600/80 text-[10px] font-bold uppercase tracking-wider select-none min-h-[140px] gap-1.5">
         <span>Sem orçamentos</span>
-        <span class="text-[9px] font-semibold text-slate-400 dark:text-slate-650 normal-case">Estágio vazio</span>
+        <span class="text-[9px] font-semibold text-slate-400 dark:text-slate-600 normal-case">Estágio vazio</span>
       </div>
     `;
   }
@@ -969,7 +969,7 @@ export class OrcamentosPage {
 
     modalContent.innerHTML = `
       <div class="p-6">
-        <div class="flex items-center justify-between border-b border-slate-150 dark:border-slate-800 pb-3 mb-5">
+        <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3 mb-5">
           <h3 class="text-lg font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
             <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" class="w-5 h-5 text-indigo-500 mr-1.5 shrink-0">
               <path stroke-linecap="round" stroke-linejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0a2 2 0 01-2 2H6a2 2 0 01-2-2m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
@@ -1048,7 +1048,7 @@ export class OrcamentosPage {
             <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">Ex: Casal, Nacional, Luxo, Disney</p>
           </div>
 
-          <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-150 dark:border-slate-800">
+          <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">
             <button id="btn-cancel-modal" type="button" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs tracking-wider rounded-xl transition uppercase">Cancelar</button>
             <button type="submit" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/10 transition uppercase">Criar Orçamento</button>
           </div>
@@ -1127,7 +1127,7 @@ export class OrcamentosPage {
         item.type = 'button';
         item.className = 'w-full text-left px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition flex flex-col gap-0.5 select-none focus:outline-none';
         item.innerHTML = `
-          <span class="text-sm font-bold text-slate-850 dark:text-slate-100">${c.nome}</span>
+          <span class="text-sm font-bold text-slate-800 dark:text-slate-100">${c.nome}</span>
           <span class="text-xs text-slate-500 dark:text-slate-400 font-medium">
             ${c.telefone ? `📞 ${c.telefone}` : ''} ${c.email ? ` | ✉️ ${c.email}` : ''}
           </span>
@@ -1430,7 +1430,7 @@ export class OrcamentosPage {
 
     modalContent.innerHTML = `
       <div class="p-6">
-        <div class="flex items-center justify-between border-b border-slate-150 dark:border-slate-800 pb-3 mb-5">
+        <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3 mb-5">
           <h3 class="text-lg font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
             <span>📤 Enviar Proposta de Orçamento</span>
           </h3>
@@ -1464,7 +1464,7 @@ export class OrcamentosPage {
                 <p class="text-xs text-slate-400 dark:text-slate-500 font-semibold">Clique para anexar arquivo (Máx. 15MB)</p>
               </div>
             </div>
-            <div id="selected-file-label" class="hidden text-xs text-emerald-600 dark:text-emerald-450 font-bold mt-2 flex items-center gap-1">
+            <div id="selected-file-label" class="hidden text-xs text-emerald-600 dark:text-emerald-400 font-bold mt-2 flex items-center gap-1">
               <span>✅</span> <span id="file-name-span"></span>
             </div>
             <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">Obrigatório caso o campo de notas acima esteja vazio.</p>
@@ -1488,7 +1488,7 @@ export class OrcamentosPage {
             ` : ''}
           </div>
 
-          <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-150 dark:border-slate-800">
+          <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">
             <button id="btn-cancel-modal" type="button" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs tracking-wider rounded-xl transition uppercase">Cancelar</button>
             <button type="submit" id="btn-submit-proposta" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/10 transition uppercase">Avançar Orçamento 🚀</button>
           </div>
@@ -1704,14 +1704,14 @@ export class OrcamentosPage {
 
     modalContent.innerHTML = `
       <div class="p-6 max-h-[85vh] overflow-y-auto custom-scrollbar">
-        <div class="flex items-center justify-between border-b border-slate-150 dark:border-slate-800 pb-3 mb-5">
+        <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3 mb-5">
           <h3 class="text-lg font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
             <span>🏆 Iniciar Negociação / Fechar Viagem</span>
           </h3>
           <button id="btn-close-modal-x" class="text-slate-400 hover:text-rose-500 font-bold transition text-lg">&times;</button>
         </div>
 
-        <div class="p-4 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-450 border border-emerald-100/30 rounded-xl text-xs font-bold mb-5 leading-normal flex items-start gap-2">
+        <div class="p-4 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 border border-emerald-100/30 rounded-xl text-xs font-bold mb-5 leading-normal flex items-start gap-2">
           <span class="text-base select-none">🎉</span>
           <p>
             Parabéns pela venda! Ao confirmar os dados abaixo, o PaxFlow criará **automaticamente** a ficha única do passageiro (se não houver) e vinculará a viagem ou adicionará os serviços/produtos à sacola da viagem selecionada.
@@ -1726,7 +1726,7 @@ export class OrcamentosPage {
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Nome Completo *</label>
-                <input id="input-fechar-cli-nome" type="text" required value="${linkedClient?.nome || orc.nomeCliente}" class="${linkedClient && linkedClient.nome ? 'w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 rounded-lg focus:outline-none text-slate-550 dark:text-slate-400 font-semibold text-sm cursor-not-allowed' : 'w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm'}" ${linkedClient && linkedClient.nome ? 'readonly' : ''} />
+                <input id="input-fechar-cli-nome" type="text" required value="${linkedClient?.nome || orc.nomeCliente}" class="${linkedClient && linkedClient.nome ? 'w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 rounded-lg focus:outline-none text-slate-500 dark:text-slate-400 font-semibold text-sm cursor-not-allowed' : 'w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm'}" ${linkedClient && linkedClient.nome ? 'readonly' : ''} />
               </div>
               <div>
                 <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">E-mail de Contato *</label>
@@ -1765,11 +1765,11 @@ export class OrcamentosPage {
               <h4 class="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-3.5 border-b border-indigo-50/50 dark:border-slate-800 pb-1">Destino do Orçamento</h4>
               <div class="flex flex-col gap-3">
                 <div class="flex items-center gap-3">
-                  <label class="flex items-center gap-2 text-sm text-slate-850 dark:text-slate-150 font-semibold cursor-pointer">
+                  <label class="flex items-center gap-2 text-sm text-slate-800 dark:text-slate-200 font-semibold cursor-pointer">
                     <input type="radio" id="radio-fluxo-nova" name="fluxo-viagem" value="nova" ${defaultFluxo === 'nova' ? 'checked' : ''} class="w-4 h-4 text-indigo-600 border-slate-300 focus:ring-indigo-500" />
                     <span>Criar Nova Viagem</span>
                   </label>
-                  <label class="flex items-center gap-2 text-sm text-slate-850 dark:text-slate-150 font-semibold cursor-pointer">
+                  <label class="flex items-center gap-2 text-sm text-slate-800 dark:text-slate-200 font-semibold cursor-pointer">
                     <input type="radio" id="radio-fluxo-existente" name="fluxo-viagem" value="existente" ${defaultFluxo === 'existente' ? 'checked' : ''} class="w-4 h-4 text-indigo-600 border-slate-300 focus:ring-indigo-500" />
                     <span>Adicionar à Viagem Existente</span>
                   </label>
@@ -1813,12 +1813,12 @@ export class OrcamentosPage {
               </div>
             </div>
             <div class="mt-4">
-              <label class="block text-xs font-bold text-slate-550 dark:text-slate-400 uppercase mb-1.5">Notas Operacionais</label>
+              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Notas Operacionais</label>
               <textarea id="textarea-fechar-via-obs" placeholder="Mais detalhes da viagem, observações importantes..." class="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm h-20 resize-none"></textarea>
             </div>
           </div>
 
-          <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-150 dark:border-slate-800">
+          <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">
             <button id="btn-cancel-modal" type="button" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs tracking-wider rounded-xl transition uppercase">Cancelar</button>
             <button type="submit" id="btn-submit-fechar" class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-emerald-600/10 transition uppercase">Emitir Viagem & Confirmar 🏆</button>
           </div>
@@ -2008,7 +2008,7 @@ export class OrcamentosPage {
 
     modalContent.innerHTML = `
       <div class="p-6">
-        <div class="flex items-center justify-between border-b border-slate-150 dark:border-slate-800 pb-3 mb-5">
+        <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3 mb-5">
           <h3 class="text-lg font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
             <span>👤 Reatribuir Consultor Responsável</span>
           </h3>
@@ -2029,7 +2029,7 @@ export class OrcamentosPage {
             </select>
           </div>
 
-          <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-150 dark:border-slate-800">
+          <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">
             <button id="btn-cancel-modal" type="button" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs tracking-wider rounded-xl transition uppercase">Cancelar</button>
             <button type="submit" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/10 transition uppercase">Confirmar Transferência</button>
           </div>
@@ -2115,7 +2115,7 @@ export class OrcamentosPage {
 
     portal.innerHTML = `
       <div id="modal-overlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center opacity-0 transition-opacity duration-200">
-        <div id="modal-content-container" class="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800 w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden transform scale-95 transition-all duration-200 flex flex-col">
+        <div id="modal-content-container" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden transform scale-95 transition-all duration-200 flex flex-col">
           <!-- Injetado dinamicamente -->
         </div>
       </div>
@@ -2220,14 +2220,14 @@ export class OrcamentosPage {
 
     modalContent.innerHTML = `
       <div class="p-6">
-        <div class="flex items-center justify-between border-b border-slate-150 dark:border-slate-800 pb-3 mb-5">
+        <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3 mb-5">
           <h3 class="text-lg font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
             <span>🔔 Agendar Lembrete "Me Lembre Depois"</span>
           </h3>
           <button id="btn-close-modal-x" class="text-slate-400 hover:text-rose-500 font-bold transition text-lg">&times;</button>
         </div>
 
-        <p class="text-xs text-slate-500 dark:text-slate-450 mb-4 font-semibold">
+        <p class="text-xs text-slate-500 dark:text-slate-400 mb-4 font-semibold">
           Defina uma data e um período para receber um alerta no seu inbox sobre o orçamento de <span class="font-extrabold text-indigo-600 dark:text-indigo-400">${orc.nomeCliente} - ${orc.destino}</span>.
         </p>
 
@@ -2246,8 +2246,8 @@ export class OrcamentosPage {
             </select>
           </div>
 
-          <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-150 dark:border-slate-800">
-            <button id="btn-cancel-modal" type="button" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 font-bold text-xs tracking-wider rounded-xl transition uppercase">Cancelar</button>
+          <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">
+            <button id="btn-cancel-modal" type="button" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs tracking-wider rounded-xl transition uppercase">Cancelar</button>
             <button type="submit" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/10 transition uppercase">Agendar Alerta</button>
           </div>
         </form>
@@ -2314,35 +2314,35 @@ export class OrcamentosPage {
 
     modalContent.innerHTML = `
       <div class="p-6">
-        <div class="flex items-center justify-between border-b border-slate-150 dark:border-slate-800 pb-3 mb-5">
+        <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3 mb-5">
           <h3 class="text-lg font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
             <span>🚫 Motivo da Desistência</span>
           </h3>
           <button id="btn-close-modal-x" class="text-slate-400 hover:text-rose-500 font-bold transition text-lg">&times;</button>
         </div>
 
-        <p class="text-xs text-slate-500 dark:text-slate-455 mb-4 font-semibold">
+        <p class="text-xs text-slate-500 dark:text-slate-400 mb-4 font-semibold">
           Selecione o motivo da desistência para o orçamento de <span class="font-extrabold text-indigo-600 dark:text-indigo-400">${orc.nomeCliente} - ${orc.destino}</span>:
         </p>
 
         <form id="form-motivo-desistencia" class="space-y-4">
           <div class="space-y-2.5">
-            <label class="flex items-center gap-2.5 p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-850/50 cursor-pointer transition">
+            <label class="flex items-center gap-2.5 p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition">
               <input type="radio" name="motivo" value="Comprou com a concorrência" required class="text-indigo-600 focus:ring-indigo-500 h-4 w-4" />
               <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Comprou com a concorrência</span>
             </label>
 
-            <label class="flex items-center gap-2.5 p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-850/50 cursor-pointer transition">
+            <label class="flex items-center gap-2.5 p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition">
               <input type="radio" name="motivo" value="Desistiu da compra" class="text-indigo-600 focus:ring-indigo-500 h-4 w-4" />
               <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Desistiu da compra</span>
             </label>
 
-            <label class="flex items-center gap-2.5 p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-850/50 cursor-pointer transition">
+            <label class="flex items-center gap-2.5 p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition">
               <input type="radio" name="motivo" value="Parou de responder" class="text-indigo-600 focus:ring-indigo-500 h-4 w-4" />
               <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Parou de responder</span>
             </label>
 
-            <label class="flex items-center gap-2.5 p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-850/50 cursor-pointer transition">
+            <label class="flex items-center gap-2.5 p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition">
               <input type="radio" name="motivo" value="Outro" id="radio-motivo-outro" class="text-indigo-600 focus:ring-indigo-500 h-4 w-4" />
               <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Outro</span>
             </label>
@@ -2354,8 +2354,8 @@ export class OrcamentosPage {
             <input id="input-motivo-customizado" type="text" placeholder="Digite o motivo da desistência..." class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
           </div>
 
-          <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-150 dark:border-slate-800">
-            <button id="btn-cancel-modal" type="button" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 font-bold text-xs tracking-wider rounded-xl transition uppercase">Cancelar</button>
+          <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">
+            <button id="btn-cancel-modal" type="button" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs tracking-wider rounded-xl transition uppercase">Cancelar</button>
             <button type="submit" class="px-6 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-rose-600/10 transition uppercase">Confirmar Desistência</button>
           </div>
         </form>
