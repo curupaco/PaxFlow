@@ -2385,8 +2385,7 @@ export class Dashboard {
         status: editStatus,
         data_servico: editDataServico,
         datas_adicionais: editDatasAdicionais,
-        dados_adicionais: editDadosAdicionais,
-        updated_at: new Date().toISOString()
+        dados_adicionais: editDadosAdicionais
       };
 
       try {
@@ -3434,11 +3433,6 @@ export class Dashboard {
             <button class="btn-action-view px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 font-black rounded-lg border border-indigo-100/30 dark:border-indigo-900/30 transition text-[10px] uppercase" data-trip-id="${v.id}">
               🔍 Ver Detalhes
             </button>
-            ${this.perfil?.role === 'admin' ? `
-              <button class="btn-action-delete p-1.5 hover:bg-rose-50 dark:hover:bg-rose-950/20 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-lg border border-transparent hover:border-rose-100/40 dark:hover:border-rose-900/40 transition" data-trip-id="${v.id}" title="Excluir Viagem">
-                🗑️
-              </button>
-            ` : ''}
           </div>
         </td>
       </tr>
