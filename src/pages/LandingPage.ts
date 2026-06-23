@@ -289,8 +289,6 @@ export class LandingPage {
                     </table>
                   </div>
                 </div>
-              </div>         </div>
-                </div>
               </div>
 
               <!-- PANEL 3: ORÇAMENTOS -->
