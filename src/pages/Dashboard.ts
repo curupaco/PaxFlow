@@ -304,33 +304,33 @@ export class Dashboard {
    * Obtém o ícone emoji correspondente a um determinado tipo de produto
    */
   private getIconForType(tipo: string): string {
-    const found = this.tiposProduto.find(t => t.nome === tipo);
+    const cleanTipo = (tipo || '').trim().toLowerCase();
+    const found = this.tiposProduto.find(t => (t.nome || '').trim().toLowerCase() === cleanTipo);
     if (found) return found.icone;
 
     const fallbackMap: Record<string, string> = {
-      'Aéreo Facial': '✈️',
-      'Aéreo Operadora': '✈️',
-      'Carro': '🚗',
-      'Circuito': '🗺️',
-      'Cruzeiro': '🚢',
-      'Hotel': '🏨',
-      'Passeios': '🎟️',
-      'Seguro Viagem': '🛡️',
-      'Ingressos': '🎫',
-      'Transfer': '🚐',
-      'Trem': '🚂',
-      'Diversos': '📦',
-      'Casas': '🏡',
-      'Cias aéreas - Assento/bagagem': '🧳',
-      'Cias aéreas - Emissão Com Pontos': '🪙',
-      'MUDAR!': '⚠️',
-      'voo': '✈️',
+      'aéreo facial': '✈️',
+      'aéreo operadora': '✈️',
+      'carro': '🚗',
+      'circuito': '🗺️',
+      'cruzeiro': '🚢',
       'hotel': '🏨',
+      'passeios': '🎟️',
+      'seguro viagem': '🛡️',
+      'ingressos': '🎫',
+      'transfer': '🚐',
+      'trem': '🚂',
+      'diversos': '📦',
+      'casas': '🏡',
+      'cias aéreas - assento/bagagem': '🧳',
+      'cias aéreas - emissão com pontos': '🪙',
+      'mudar!': '⚠️',
+      'voo': '✈️',
       'seguro': '🛡️',
       'passeio': '🎟️',
       'outro': '📦'
     };
-    return fallbackMap[tipo] || '📦';
+    return fallbackMap[cleanTipo] || '📦';
   }
 
   /**
@@ -2959,6 +2959,13 @@ export class Dashboard {
       }
     });
 
+    // Contagem de tipos de produtos para exibir o sufixo "+n" no modal
+    const typeCounts: { [tipo: string]: number } = {};
+    produtos.forEach((p: any) => {
+      const t = (p.tipo || '').trim().toLowerCase();
+      typeCounts[t] = (typeCounts[t] || 0) + 1;
+    });
+
     container.innerHTML = Object.values(produtosAgrupados).map(grupo => {
       const locKey = grupo.loc;
       const isGroupDetalhado = grupo.isGroupDetalhado;
@@ -2980,25 +2987,17 @@ export class Dashboard {
           ? 'border-indigo-500 dark:border-indigo-400 bg-indigo-50/10 dark:bg-indigo-950/10 ring-2 ring-indigo-500/20 shadow-md shadow-indigo-500/5'
           : 'border-slate-200/60 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 hover:bg-slate-100/50 dark:hover:bg-slate-800/80';
 
+        const tLower = (p.tipo || '').trim().toLowerCase();
+        const count = typeCounts[tLower] || 0;
+        const suffix = count > 1 ? ` +${count - 1}` : '';
+
         return `
           <div class="product-card-clickable flex items-center justify-between gap-3 p-3 ${selectedBorderClass} border rounded-xl transition cursor-pointer" data-product-id="${p.id}">
             <div class="flex items-start gap-2.5 overflow-hidden w-full">
               <span class="text-lg p-1 bg-white dark:bg-slate-700 border border-slate-100 dark:border-slate-700 rounded-lg shadow-sm flex items-center justify-center">${tipoIcon}</span>
-              <div class="overflow-hidden flex-1">
+              <div class="overflow-hidden flex-1 self-center text-left">
                 <span class="block text-xs font-black text-slate-700 dark:text-slate-200 truncate leading-tight">
-                  <span class="px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 rounded text-[9px] uppercase tracking-wider font-extrabold mr-1">${p.tipo}</span>
-                  ${p.fornecedor} &bull; ${p.descricao}
-                </span>
-                <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold leading-normal">
-                  Data Principal: <span class="text-slate-600 dark:text-slate-400 font-semibold">${formatarData(p.data_servico)}</span>
-                  ${p.datas_adicionais && p.datas_adicionais.length > 0 ? p.datas_adicionais.map((d: any) => `
-                    <br/><span class="text-indigo-600 dark:text-indigo-400">${d.rotulo}:</span> <span class="text-slate-600 dark:text-slate-400 font-semibold">${formatarData(d.data)}</span>
-                  `).join('') : ''}
-                </span>
-                <span class="block text-[10px] leading-normal font-bold ${isDetalhado ? 'text-indigo-500 dark:text-indigo-400' : 'text-amber-500 dark:text-amber-400 animate-pulse'}">
-                  ${isDetalhado 
-                    ? `Tarifa: R$ ${tarifa.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} &bull; Taxa: R$ ${taxa.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} &bull; Comis.: R$ ${comissao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` 
-                    : '⚠️ Detalhamento pendente (clique para detalhar)'}
+                  ${p.tipo}${suffix}
                 </span>
               </div>
             </div>
