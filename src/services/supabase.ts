@@ -21,6 +21,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
     'Certifique-se de defini-las para o correto funcionamento da conexão.'
   );
 }
+const realSupabase = createClient(supabaseUrl, supabaseAnonKey);
 
 import {
   MOCK_CONSULTORES,
@@ -28,18 +29,87 @@ import {
   MOCK_VIAGENS,
   MOCK_PRODUTOS,
   MOCK_ORCAMENTOS,
-  MOCK_ALERTS
+  MOCK_ALERTS,
+  MOCK_REEMBOLSOS,
+  MOCK_TIPOS_PRODUTO
 } from '../utils/mockData';
 
-// Inicializa o cliente do Supabase real
-const realSupabase = createClient(supabaseUrl, supabaseAnonKey);
-
 const toCamel = (s: string) => s.replace(/([-_][a-z])/ig, ($1) => $1.toUpperCase().replace('-', '').replace('_', ''));
+
+const normalizeMockItem = (item: any): any => {
+  if (!item || typeof item !== 'object') return item;
+  const newItem = { ...item };
+  
+  const mappings: Record<string, string> = {
+    // budgets
+    consultorId: 'consultor_id',
+    clienteId: 'cliente_id',
+    nomeCliente: 'nome_cliente',
+    dataViagem: 'data_viagem',
+    subStatus: 'sub_status',
+    notasNegociacao: 'notas_negociacao',
+    valorProposta: 'valor_proposta',
+    valorViagem: 'valor_viagem',
+    documentosUrl: 'documentos_url',
+    
+    // clients
+    dataNascimento: 'data_nascimento',
+    consultorResponsavelId: 'consultor_responsavel_id',
+    passaporteNumero: 'passaporte_numero',
+    passaporteValidade: 'passaporte_validade',
+    vistosInformacoes: 'vistos_informacoes',
+    googleDriveFolderUrl: 'google_drive_folder_url',
+    
+    // trips
+    dataIda: 'data_ida',
+    dataVolta: 'data_volta',
+    valorTotal: 'valor_total',
+    codigoLocalizador: 'codigo_localizador',
+    dataFinanceiro: 'data_financeiro',
+    
+    // products
+    viagemId: 'viagem_id',
+    codigoReserva: 'codigo_reserva',
+    valorCusto: 'valor_custo',
+    valorVenda: 'valor_venda',
+    dataServico: 'data_servico',
+    datasAdicionais: 'datas_adicionais',
+    dadosAdicionais: 'dados_adicionais',
+    
+    // refunds
+    viagemIdRefund: 'viagem_id',
+    produtoViagemId: 'produto_viagem_id',
+    consultorSolicitanteId: 'consultor_solicitante_id',
+    valorSolicitado: 'valor_solicitado',
+    valorAprovado: 'valor_aprovado',
+    taxaRetencao: 'taxa_retencao',
+    motivoCancelamento: 'motivo_cancelamento',
+    observacoesFinanceiras: 'observacoes_financeiras',
+    dataSolicitacao: 'data_solicitacao',
+    dataResolucao: 'data_resolucao',
+
+    // general
+    createdAt: 'created_at',
+    updatedAt: 'updated_at'
+  };
+
+  for (const [camel, snake] of Object.entries(mappings)) {
+    if (camel in item && !(snake in item)) {
+      newItem[snake] = item[camel];
+    }
+    if (snake in item && !(camel in item)) {
+      newItem[camel] = item[snake];
+    }
+  }
+  return newItem;
+};
 
 const getMockDataForTable = (table: string): any[] => {
   const localData = localStorage.getItem(`sandbox-paxflow-${table}`);
   if (localData) {
-    try { return JSON.parse(localData); } catch (e) {}
+    try { 
+      return JSON.parse(localData).map((item: any) => normalizeMockItem(item)); 
+    } catch (e) {}
   }
   let defaultData: any[] = [];
   if (table === 'clientes') defaultData = MOCK_CLIENTES;
@@ -47,6 +117,8 @@ const getMockDataForTable = (table: string): any[] => {
   else if (table === 'produtos_viagem') defaultData = MOCK_PRODUTOS;
   else if (table === 'orcamentos') defaultData = MOCK_ORCAMENTOS;
   else if (table === 'profiles') defaultData = MOCK_CONSULTORES;
+  else if (table === 'reembolsos') defaultData = MOCK_REEMBOLSOS;
+  else if (table === 'tipos_produto') defaultData = MOCK_TIPOS_PRODUTO;
   else if (table === 'lembretes') defaultData = [];
   else if (table === 'notificacoes') {
     defaultData = MOCK_ALERTS.map((a, index) => ({
@@ -79,12 +151,14 @@ const getMockDataForTable = (table: string): any[] => {
     }));
   }
   
-  localStorage.setItem(`sandbox-paxflow-${table}`, JSON.stringify(defaultData));
-  return defaultData;
+  const normalized = defaultData.map((item: any) => normalizeMockItem(item));
+  localStorage.setItem(`sandbox-paxflow-${table}`, JSON.stringify(normalized));
+  return normalized;
 };
 
 const saveMockDataForTable = (table: string, data: any[]) => {
-  localStorage.setItem(`sandbox-paxflow-${table}`, JSON.stringify(data));
+  const normalized = data.map((item: any) => normalizeMockItem(item));
+  localStorage.setItem(`sandbox-paxflow-${table}`, JSON.stringify(normalized));
 };
 
 export const supabase = new Proxy(realSupabase, {

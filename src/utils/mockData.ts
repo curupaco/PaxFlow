@@ -1,4 +1,4 @@
-import { Cliente, Viagem, ProdutoViagem, Orcamento, PerfilConsultor, AlertItem } from '../types';
+import { Cliente, Viagem, ProdutoViagem, Orcamento, PerfilConsultor, AlertItem, Reembolso, TipoProduto } from '../types';
 
 export const MOCK_CONSULTORES: PerfilConsultor[] = [
   {
@@ -49,7 +49,7 @@ export const MOCK_CLIENTES: Cliente[] = [
     nome: 'João da Silva Fictício',
     email: 'joao.fake@paxflowdemo.com',
     telefone: '(11) 98888-8881',
-    documento: '111.111.111-11',
+    documento: '453.647.280-05', // CPF válido matemático
     dataNascimento: '1980-05-15',
     endereco: 'Rua das Simulações, 123 - Centro',
     observacoes: 'Passageiro frequente do modo Sandbox.',
@@ -65,7 +65,7 @@ export const MOCK_CLIENTES: Cliente[] = [
     nome: 'Maria de Orlando Fake',
     email: 'maria.fake@paxflowdemo.com',
     telefone: '(11) 98888-8882',
-    documento: '22.222.222/0001-22',
+    documento: '34.789.120/0001-31', // CNPJ válido matemático
     dataNascimento: '1975-10-20',
     endereco: 'Av. das Cotações, 500 - Orlando',
     observacoes: 'Cliente corporativo com alta recorrência.',
@@ -81,7 +81,7 @@ export const MOCK_CLIENTES: Cliente[] = [
     nome: 'Carlos Simulado',
     email: 'carlos.fake@paxflowdemo.com',
     telefone: '(11) 98888-8883',
-    documento: '333.333.333-33',
+    documento: '864.293.750-56', // CPF válido matemático
     dataNascimento: '1992-12-01',
     endereco: 'Alameda Fictícia, 99',
     observacoes: 'Viagem de lua de mel simulada.',
@@ -106,15 +106,17 @@ export const MOCK_VIAGENS: Viagem[] = [
     dataIda: '2026-06-29',
     data_volta: '2026-07-15',
     dataVolta: '2026-07-15',
-    valor_total: 3500,
-    valorTotal: 3500,
+    valor_total: 15450,
+    valorTotal: 15450,
     status: 'pre_embarque',
     codigo_localizador: 'LOCFAK1',
     codigoLocalizador: 'LOCFAK1',
     origem: 'São Paulo (GRU)',
     data_financeiro: '2026-06-20',
     dataFinanceiro: '2026-06-20',
-    observacoes: 'Verificar se o bilhete do aéreo fake está emitido.'
+    observacoes: 'Verificar se o bilhete do aéreo fake está emitido.',
+    createdAt: new Date().toISOString(),
+    created_at: new Date().toISOString()
   },
   {
     id: 'sandbox-viagem-2',
@@ -127,15 +129,17 @@ export const MOCK_VIAGENS: Viagem[] = [
     dataIda: '2026-06-01',
     data_volta: '2026-06-15', // Retorno excedido (SLA pós-viagem)
     dataVolta: '2026-06-15',
-    valor_total: 8200,
-    valorTotal: 8200,
+    valor_total: 24300,
+    valorTotal: 24300,
     status: 'pos_viagem',
     codigo_localizador: 'LOCFAK2',
     codigoLocalizador: 'LOCFAK2',
     origem: 'Rio de Janeiro (GIG)',
     data_financeiro: '2026-05-25',
     dataFinanceiro: '2026-05-25',
-    observacoes: 'Viagem concluída. Necessário ligar para pós-venda.'
+    observacoes: 'Viagem concluída. Necessário ligar para pós-venda.',
+    createdAt: new Date().toISOString(),
+    created_at: new Date().toISOString()
   },
   {
     id: 'sandbox-viagem-3',
@@ -156,7 +160,9 @@ export const MOCK_VIAGENS: Viagem[] = [
     origem: 'Brasília (BSB)',
     data_financeiro: '2026-06-22',
     dataFinanceiro: '2026-06-22',
-    observacoes: 'Aguardando envio do contrato assinado pelo cliente.'
+    observacoes: 'Aguardando envio do contrato assinado pelo cliente.',
+    createdAt: new Date().toISOString(),
+    created_at: new Date().toISOString()
   }
 ];
 
@@ -164,7 +170,7 @@ export const MOCK_PRODUTOS: ProdutoViagem[] = [
   {
     id: 'sandbox-produto-1',
     viagemId: 'sandbox-viagem-1',
-    tipo: 'Aéreo Facial',
+    tipo: 'AÉREO OPERADORA',
     fornecedor: 'Air Fake',
     descricao: 'Voo GRU - TNE (Terra do Nunca) Ida e Volta',
     codigoReserva: 'LOCAIR1',
@@ -177,7 +183,7 @@ export const MOCK_PRODUTOS: ProdutoViagem[] = [
   {
     id: 'sandbox-produto-2',
     viagemId: 'sandbox-viagem-1',
-    tipo: 'Hotel',
+    tipo: 'HOTEL',
     fornecedor: 'Neverland Palace',
     descricao: 'Suíte Premium 16 noites com Café da Manhã',
     codigoReserva: 'LOCHOT1',
@@ -207,7 +213,7 @@ export const MOCK_ORCAMENTOS: Orcamento[] = [
     id: 'sandbox-orcamento-1',
     consultorId: 'sandbox-user-id',
     nomeCliente: 'Paula Cotação Fake',
-    contato: 'paula.fake@paxflowdemo.com',
+    contato: '(11) 97777-1111 / paula.fake@paxflowdemo.com',
     destino: 'Ilha da Fantasia',
     dataViagem: '2026-09-12',
     temperatura: 'Quente',
@@ -216,13 +222,14 @@ export const MOCK_ORCAMENTOS: Orcamento[] = [
     valorProposta: 6400,
     origem: 'Instagram',
     notasNegociacao: 'Cliente super interessada no pacote de 7 dias com tudo incluso.',
-    documentosUrl: ['/documento_demo.pdf']
+    documentosUrl: ['/documento_demo.pdf'],
+    createdAt: new Date().toISOString()
   },
   {
     id: 'sandbox-orcamento-2',
     consultorId: 'sandbox-user-id',
     nomeCliente: 'Lucas Interesse Fake',
-    contato: 'lucas.fake@paxflowdemo.com',
+    contato: '(21) 98888-2222 / lucas.fake@paxflowdemo.com',
     destino: 'Asgard (Mitologia)',
     dataViagem: '2026-11-20',
     temperatura: 'Frio',
@@ -231,7 +238,122 @@ export const MOCK_ORCAMENTOS: Orcamento[] = [
     valorProposta: 15000,
     origem: 'Indicação',
     notasNegociacao: 'Orçamento complexo com passeios temáticos de mitologia nórdica.',
-    documentosUrl: []
+    documentosUrl: [],
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'sandbox-orcamento-3',
+    consultorId: 'sandbox-user-id',
+    nomeCliente: 'Guilherme Negociação',
+    contato: '(31) 99999-3333 / guilherme@paxflowdemo.com',
+    destino: 'Machu Picchu, Peru',
+    dataViagem: '2026-10-05',
+    temperatura: 'Normal',
+    tags: ['Cultura', 'Trilha'],
+    status: 'AGUARDANDO',
+    valorProposta: 8900,
+    origem: 'Google',
+    notasNegociacao: 'Voo reservado. Aguardando feedback do cliente sobre o hotel em Cusco.',
+    documentosUrl: ['/documento_demo.pdf'],
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'sandbox-orcamento-4',
+    consultorId: 'sandbox-user-id',
+    nomeCliente: 'Natália Ganha',
+    contato: '(11) 98888-4444 / natalia@paxflowdemo.com',
+    destino: 'Paris, França',
+    dataViagem: '2026-12-25',
+    temperatura: 'Quente',
+    tags: ['Europa', 'Lua de Mel'],
+    status: 'CONCLUIDO',
+    subStatus: 'ACEITO',
+    valorProposta: 23700,
+    valorViagem: 23700,
+    origem: 'Instagram',
+    notasNegociacao: 'Venda fechada com sucesso! Upgrade de quarto incluso.',
+    documentosUrl: ['/documento_demo.pdf'],
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'sandbox-orcamento-5',
+    consultorId: 'sandbox-user-id',
+    nomeCliente: 'Roberto Desistente',
+    contato: '(21) 98888-5555',
+    destino: 'Buenos Aires, Argentina',
+    dataViagem: '2026-08-20',
+    temperatura: 'Frio',
+    tags: ['América do Sul', 'Show'],
+    status: 'CONCLUIDO',
+    subStatus: 'DESISTENCIA',
+    valorProposta: 4500,
+    origem: 'Google',
+    notasNegociacao: 'Desistiu devido a alteração de data das férias no trabalho.',
+    documentosUrl: [],
+    createdAt: new Date().toISOString()
+  }
+];
+
+export const MOCK_REEMBOLSOS: Reembolso[] = [
+  {
+    id: 'sandbox-reembolso-1',
+    viagemId: 'sandbox-viagem-1',
+    viagem_id: 'sandbox-viagem-1',
+    produtoViagemId: 'sandbox-produto-2',
+    produto_viagem_id: 'sandbox-produto-2',
+    consultorSolicitanteId: 'sandbox-user-id',
+    consultor_solicitante_id: 'sandbox-user-id',
+    valorSolicitado: 1000,
+    valor_solicitado: 1000,
+    valorAprovado: 900,
+    valor_aprovado: 900,
+    taxaRetencao: 100,
+    taxa_retencao: 100,
+    status: 'em_analise',
+    observacoesFinanceiras: 'Aguardando confirmação de cancelamento pela Neverland Palace.',
+    dataSolicitacao: '2026-06-20',
+    data_solicitacao: '2026-06-20',
+    createdAt: new Date().toISOString(),
+    created_at: new Date().toISOString()
+  }
+];
+
+export const MOCK_TIPOS_PRODUTO: TipoProduto[] = [
+  {
+    id: 'tipo-hotel',
+    nome: 'HOTEL',
+    icone: 'hotel',
+    ativo: true,
+    campos_adicionais: [
+      {
+        id: 'hotel-regime',
+        label: 'Regime de Alimentação',
+        tipo: 'select',
+        opcoes: ['Café da Manhã', 'Meia Pensão', 'Pensão Completa', 'All Inclusive'],
+        obrigatorio: true,
+        alvo: 'dados_adicionais'
+      }
+    ],
+    created_at: '2026-01-01T00:00:00Z',
+    updated_at: '2026-01-01T00:00:00Z'
+  },
+  {
+    id: 'tipo-aereo',
+    nome: 'AÉREO OPERADORA',
+    icone: 'flight',
+    ativo: true,
+    campos_adicionais: [
+      {
+        id: 'aereo-franquia',
+        label: 'Franquia de Bagagem',
+        tipo: 'select',
+        opcoes: ['Sem Bagagem', '1x 23kg Inclusa', '2x 23kg Inclusas'],
+        obrigatorio: true,
+        alvo: 'dados_adicionais'
+      }
+    ],
+    created_at: '2026-01-01T00:00:00Z',
+    updated_at: '2026-01-01T00:00:00Z'
   }
 ];
 
