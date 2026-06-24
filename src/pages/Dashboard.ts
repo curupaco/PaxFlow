@@ -2284,8 +2284,8 @@ export class Dashboard {
       const markup = parseDoubleBr(editMarkupInput.value) || 0;
       const rav = parseDoubleBr(editRavInput.value) || 0;
 
-      const totalDist = taxa + comissao + markup + rav;
-      const tarifa = venda - totalDist;
+      const tarifa = venda - (taxa + comissao + markup + rav);
+      const totalDist = tarifa + taxa + comissao + markup + rav;
       const saldoPend = venda - totalDist;
 
       editTarifaInput.value = formatCurrencyValue(tarifa);
@@ -2355,9 +2355,9 @@ export class Dashboard {
       const rav = parseDoubleBr(editRavInput.value) || 0;
       const tarifa = venda - (taxa + comissao + markup + rav);
 
-      const totalDist = taxa + comissao + markup + rav;
+      const totalDist = tarifa + taxa + comissao + markup + rav;
       if (Math.abs(venda - totalDist) > 0.01) {
-        this.showToast(`O valor total distribuído (Taxas + Comissão + Markup + RAV = R$ ${totalDist.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}) deve ser igual ao Valor de Venda do produto (R$ ${venda.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}). O saldo pendente (Tarifa) deve ser R$ 0,00.`, 'error');
+        this.showToast(`O valor total distribuído (Tarifa + Taxas + Comissão + Markup + RAV = R$ ${totalDist.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}) deve ser igual ao Valor de Venda do produto (R$ ${venda.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}). O saldo pendente deve ser R$ 0,00.`, 'error');
         return;
       }
 
