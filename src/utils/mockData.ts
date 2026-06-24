@@ -174,10 +174,15 @@ export const MOCK_PRODUTOS: ProdutoViagem[] = [
     fornecedor: 'Air Fake',
     descricao: 'Voo GRU - TNE (Terra do Nunca) Ida e Volta',
     codigoReserva: 'LOCAIR1',
-    valorCusto: 2000,
+    valorCusto: 0,
     valorVenda: 2500,
     status: 'emitido',
     dataServico: '2026-06-29',
+    tarifa: 2000,
+    taxa: 200,
+    comissao: 300,
+    markup: 0,
+    rav: 0,
     dados_adicionais: { tarifa: 2000, taxa: 200, comissao: 300 }
   },
   {
@@ -187,10 +192,15 @@ export const MOCK_PRODUTOS: ProdutoViagem[] = [
     fornecedor: 'Neverland Palace',
     descricao: 'Suíte Premium 16 noites com Café da Manhã',
     codigoReserva: 'LOCHOT1',
-    valorCusto: 800,
+    valorCusto: 0,
     valorVenda: 1000,
     status: 'reservado',
     dataServico: '2026-06-29',
+    tarifa: 800,
+    taxa: 100,
+    comissao: 100,
+    markup: 0,
+    rav: 0,
     dados_adicionais: { tarifa: 800, taxa: 100, comissao: 100 }
   },
   {
@@ -200,10 +210,15 @@ export const MOCK_PRODUTOS: ProdutoViagem[] = [
     fornecedor: 'Mundo Perdido Tours',
     descricao: 'Circuito de Aventura pelas Cidades de Ouro 14 dias',
     codigoReserva: 'LOCCIR1',
-    valorCusto: 7000,
+    valorCusto: 0,
     valorVenda: 8200,
     status: 'emitido',
     dataServico: '2026-06-01',
+    tarifa: 7000,
+    taxa: 500,
+    comissao: 700,
+    markup: 0,
+    rav: 0,
     dados_adicionais: { tarifa: 7000, taxa: 500, comissao: 700 }
   }
 ];

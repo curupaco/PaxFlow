@@ -132,6 +132,11 @@ export interface ProdutoViagem {
   datas_adicionais?: { data: string; rotulo: string }[];
   dados_adicionais?: Record<string, any>;
   dadosAdicionais?: Record<string, any>;
+  tarifa?: number;
+  taxa?: number;
+  comissao?: number;
+  markup?: number;
+  rav?: number;
   createdAt?: string;
   updatedAt?: string;
 }

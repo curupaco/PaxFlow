@@ -224,6 +224,8 @@ export function renderLateralEditorPaneHTML(
 ): string {
   if (!selectedProduct) return '';
 
+  const isVendaValid = (selectedProduct.valor_venda || 0) > 0;
+
   return `
     <div id="selected-product-editor-pane" class="space-y-4 lg:col-span-4 border-t lg:border-t-0 lg:border-l border-slate-100 dark:border-slate-800 lg:pl-6 pt-4 lg:pt-0 ${activeTab === 'produtos' ? 'block' : 'hidden lg:block'} max-h-[80vh] overflow-y-auto pr-1">
       <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 mb-2 sticky top-0 bg-white dark:bg-slate-900 z-10">
@@ -322,20 +324,24 @@ export function renderLateralEditorPaneHTML(
                   ${renderCurrencyInputHTML(`edit-prod-venda-${selectedProduct.id}`, selectedProduct.valor_venda || 0)}
                 </div>
                 <div>
-                  <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Custo (R$) *</label>
-                  ${renderCurrencyInputHTML(`edit-prod-custo-${selectedProduct.id}`, selectedProduct.valor_custo || 0)}
-                </div>
-                <div>
-                  <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Tarifa (Valor Líquido)</label>
-                  ${renderCurrencyInputHTML(`edit-prod-tarifa-${selectedProduct.id}`, selectedProduct.tarifa || 0)}
-                </div>
-                <div>
-                  <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Taxa (Embarque/Serviço)</label>
-                  ${renderCurrencyInputHTML(`edit-prod-taxa-${selectedProduct.id}`, selectedProduct.taxa || 0)}
+                  <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Taxas (Embarque/Serviço)</label>
+                  ${renderCurrencyInputHTML(`edit-prod-taxa-${selectedProduct.id}`, selectedProduct.taxa || 0, '0,00', true, !isVendaValid)}
                 </div>
                 <div>
                   <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Comissão da Agência</label>
-                  ${renderCurrencyInputHTML(`edit-prod-comissao-${selectedProduct.id}`, selectedProduct.comissao || 0)}
+                  ${renderCurrencyInputHTML(`edit-prod-comissao-${selectedProduct.id}`, selectedProduct.comissao || 0, '0,00', true, !isVendaValid)}
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Markup</label>
+                  ${renderCurrencyInputHTML(`edit-prod-markup-${selectedProduct.id}`, selectedProduct.markup || 0, '0,00', true, !isVendaValid)}
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">RAV</label>
+                  ${renderCurrencyInputHTML(`edit-prod-rav-${selectedProduct.id}`, selectedProduct.rav || 0, '0,00', true, !isVendaValid)}
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Tarifa (Informação)</label>
+                  ${renderCurrencyInputHTML(`edit-prod-tarifa-${selectedProduct.id}`, selectedProduct.tarifa || 0, '0,00', true, true)}
                 </div>
 
                 <!-- Totalizadores locais -->

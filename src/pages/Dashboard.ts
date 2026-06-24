@@ -2124,10 +2124,10 @@ export class Dashboard {
     // 2. Inicializar validação do formulário com setupFormValidation
     setupFormValidation(`form-editar-produto-lateral-${prodId}`, [
       { id: `edit-prod-venda-${prodId}`, type: 'currency' },
-      { id: `edit-prod-custo-${prodId}`, type: 'currency' },
-      { id: `edit-prod-tarifa-${prodId}`, type: 'currency', required: false },
       { id: `edit-prod-taxa-${prodId}`, type: 'currency', required: false },
       { id: `edit-prod-comissao-${prodId}`, type: 'currency', required: false },
+      { id: `edit-prod-markup-${prodId}`, type: 'currency', required: false },
+      { id: `edit-prod-rav-${prodId}`, type: 'currency', required: false },
       { id: `edit-prod-data-${prodId}`, type: 'date' }
     ]);
 
@@ -2252,22 +2252,43 @@ export class Dashboard {
 
     // 5. Totalizadores e recalculo financeiro local
     const editVendaInput = document.getElementById(`edit-prod-venda-${prodId}`) as HTMLInputElement;
-    const editTarifaInput = document.getElementById(`edit-prod-tarifa-${prodId}`) as HTMLInputElement;
     const editTaxaInput = document.getElementById(`edit-prod-taxa-${prodId}`) as HTMLInputElement;
     const editComissaoInput = document.getElementById(`edit-prod-comissao-${prodId}`) as HTMLInputElement;
+    const editMarkupInput = document.getElementById(`edit-prod-markup-${prodId}`) as HTMLInputElement;
+    const editRavInput = document.getElementById(`edit-prod-rav-${prodId}`) as HTMLInputElement;
+    const editTarifaInput = document.getElementById(`edit-prod-tarifa-${prodId}`) as HTMLInputElement;
     const totalDistEl = document.getElementById(`edit-det-total-distribuido-${prodId}`) as HTMLElement;
     const saldoPendEl = document.getElementById(`edit-det-saldo-pendente-${prodId}`) as HTMLElement;
 
+    const toggleFieldsState = (enabled: boolean) => {
+      const fields = [editTaxaInput, editComissaoInput, editMarkupInput, editRavInput];
+      fields.forEach(el => {
+        if (!el) return;
+        if (enabled) {
+          el.removeAttribute('readonly');
+          el.classList.remove('cursor-not-allowed', 'text-slate-500', 'dark:text-slate-400', 'bg-slate-50', 'dark:bg-slate-900');
+          el.classList.add('bg-transparent', 'text-slate-800', 'dark:text-slate-100');
+        } else {
+          el.setAttribute('readonly', 'readonly');
+          el.classList.remove('bg-transparent', 'text-slate-800', 'dark:text-slate-100');
+          el.classList.add('cursor-not-allowed', 'text-slate-500', 'dark:text-slate-400', 'bg-slate-50', 'dark:bg-slate-900');
+        }
+      });
+    };
+
     const recalcularValoresLocais = () => {
-      if (!editVendaInput || !editTarifaInput || !editTaxaInput || !editComissaoInput || !totalDistEl || !saldoPendEl) return;
+      if (!editVendaInput || !editTaxaInput || !editComissaoInput || !editMarkupInput || !editRavInput || !editTarifaInput || !totalDistEl || !saldoPendEl) return;
       const venda = parseDoubleBr(editVendaInput.value) || 0;
-      const tarifa = parseDoubleBr(editTarifaInput.value) || 0;
       const taxa = parseDoubleBr(editTaxaInput.value) || 0;
       const comissao = parseDoubleBr(editComissaoInput.value) || 0;
+      const markup = parseDoubleBr(editMarkupInput.value) || 0;
+      const rav = parseDoubleBr(editRavInput.value) || 0;
 
-      const totalDist = tarifa + taxa + comissao;
+      const totalDist = taxa + comissao + markup + rav;
+      const tarifa = venda - totalDist;
       const saldoPend = venda - totalDist;
 
+      editTarifaInput.value = formatCurrencyValue(tarifa);
       totalDistEl.textContent = `R$ ${totalDist.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
       saldoPendEl.textContent = `R$ ${saldoPend.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
 
@@ -2278,11 +2299,23 @@ export class Dashboard {
       }
     };
 
-    [editVendaInput, editTarifaInput, editTaxaInput, editComissaoInput].forEach(inp => {
+    if (editVendaInput) {
+      editVendaInput.addEventListener('input', () => {
+        const venda = parseDoubleBr(editVendaInput.value) || 0;
+        toggleFieldsState(venda > 0);
+        recalcularValoresLocais();
+      });
+    }
+
+    [editTaxaInput, editComissaoInput, editMarkupInput, editRavInput].forEach(inp => {
       inp?.addEventListener('input', recalcularValoresLocais);
     });
 
     // Executa inicialmente
+    if (editVendaInput) {
+      const initialVenda = parseDoubleBr(editVendaInput.value) || 0;
+      toggleFieldsState(initialVenda > 0);
+    }
     recalcularValoresLocais();
 
     // 6. Envio do Formulário de Edição do Produto
@@ -2316,14 +2349,15 @@ export class Dashboard {
       }
 
       const venda = parseDoubleBr(editVendaInput.value) || 0;
-      const custo = parseDoubleBr((document.getElementById(`edit-prod-custo-${prodId}`) as HTMLInputElement).value) || 0;
-      const tarifa = parseDoubleBr(editTarifaInput.value) || 0;
       const taxa = parseDoubleBr(editTaxaInput.value) || 0;
       const comissao = parseDoubleBr(editComissaoInput.value) || 0;
+      const markup = parseDoubleBr(editMarkupInput.value) || 0;
+      const rav = parseDoubleBr(editRavInput.value) || 0;
+      const tarifa = venda - (taxa + comissao + markup + rav);
 
-      const totalDist = tarifa + taxa + comissao;
+      const totalDist = taxa + comissao + markup + rav;
       if (Math.abs(venda - totalDist) > 0.01) {
-        this.showToast(`O valor total distribuído (Tarifa + Taxa + Comissão = R$ ${totalDist.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}) deve ser igual ao Valor de Venda do produto (R$ ${venda.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}). O saldo pendente deve ser R$ 0,00.`, 'error');
+        this.showToast(`O valor total distribuído (Taxas + Comissão + Markup + RAV = R$ ${totalDist.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}) deve ser igual ao Valor de Venda do produto (R$ ${venda.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}). O saldo pendente (Tarifa) deve ser R$ 0,00.`, 'error');
         return;
       }
 
@@ -2379,11 +2413,13 @@ export class Dashboard {
         fornecedor: editFornecedor,
         descricao: editDescricao,
         codigo_reserva: editReserva || null,
-        valor_custo: custo,
+        valor_custo: 0,
         valor_venda: venda,
         tarifa: tarifa,
         taxa: taxa,
         comissao: comissao,
+        markup: markup,
+        rav: rav,
         status: editStatus,
         data_servico: editDataServico,
         datas_adicionais: editDatasAdicionais,
@@ -2476,7 +2512,7 @@ export class Dashboard {
     const viagem = this.viagens.find(x => x.id === tripId);
     const valorTotalViagem = viagem ? (Number(viagem.valor_total) || 0) : 0;
     const totalProdutos = produtos.reduce((sum, p) => sum + (Number(p.valor_venda) || 0), 0);
-    const totalRentabilidade = produtos.reduce((sum, p) => sum + ((Number(p.valor_venda) || 0) - (Number(p.valor_custo) || 0)), 0);
+    const totalRentabilidade = produtos.reduce((sum, p) => sum + (Number(p.comissao) || 0) + (Number(p.markup) || 0) + ((Number(p.rav) || 0) * 0.88), 0);
     const saldoPendente = valorTotalViagem - totalProdutos;
 
     const finValorVenda = document.getElementById('fin-valor-venda');
@@ -3176,9 +3212,23 @@ export class Dashboard {
       if (!reembolsoConcluido && this.checkSLA(v).alert) totalSlaAlerts++;
     });
 
+    const isSandbox = (window as any).paxflowSandbox;
+    const desktopHeight = isSandbox ? 'calc(100vh - 36px)' : '100vh';
+    const mobileHeight = isSandbox ? 'calc(100vh - 93px)' : 'calc(100vh - 57px)';
+
     // 5. Renderizar o HTML base do painel operacional baseado em lista
     this.container.innerHTML = `
-      <div class="min-h-screen bg-slate-50/50 dark:bg-slate-950 flex flex-col font-sans transition-colors duration-200">
+      <style>
+        .dashboard-container {
+          height: ${mobileHeight};
+        }
+        @media (min-width: 768px) {
+          .dashboard-container {
+            height: ${desktopHeight};
+          }
+        }
+      </style>
+      <div class="dashboard-container bg-slate-50/50 dark:bg-slate-950 flex flex-col font-sans transition-colors duration-200 overflow-hidden">
         
         <!-- CABEÇALHO DO OPERACIONAL -->
         <header class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 sticky top-0 z-30 px-6 py-4 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 transition-colors duration-200">
@@ -3293,17 +3343,17 @@ export class Dashboard {
         </div>
 
         <!-- CONTEÚDO PRINCIPAL (LISTA / TABELA) -->
-        <main class="flex-1 p-6 flex flex-col min-h-0 bg-slate-50/50 dark:bg-slate-950">
+        <main class="flex-1 p-6 flex flex-col min-h-0 bg-slate-50/50 dark:bg-slate-950 overflow-hidden">
           
           ${filtrados.length === 0 ? `
-            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-12 text-center shadow-xs flex flex-col items-center justify-center space-y-4">
+            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-12 text-center shadow-xs flex flex-col items-center justify-center space-y-4 flex-1">
               <div class="text-slate-300 dark:text-slate-700 text-5xl">✈️</div>
               <h3 class="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-wide">Nenhuma venda operacional localizada</h3>
               <p class="text-xs text-slate-400 dark:text-slate-500 font-medium max-w-sm">Tente limpar os filtros de data, alterar o termo de busca ou selecionar outra aba de status.</p>
             </div>
           ` : `
-            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xs overflow-hidden">
-              <div class="overflow-auto custom-scrollbar" style="max-height: calc(100vh - ${this.showFiltersPanel ? '390px' : '270px'});">
+            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xs overflow-hidden flex-1 flex flex-col min-h-0">
+              <div class="overflow-auto flex-1 min-h-0 custom-scrollbar">
                 <table class="w-full text-left border-collapse min-w-[1000px]">
                   <thead>
                     <tr class="bg-slate-50 dark:bg-slate-900 text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10 shadow-xs">
@@ -3401,17 +3451,14 @@ export class Dashboard {
       return `${parts[2]}/${parts[1]}/${parts[0]}`;
     };
 
-    // Calcular Rentabilidade (Venda - Custo)
-    let totalCusto = 0;
+    // Calcular Rentabilidade (Comissão + Markup + RAV * 0.88)
+    let rentabilidade = 0;
     if (v.produtos && Array.isArray(v.produtos)) {
       v.produtos.forEach((p: any) => {
-        const tarifa = Number(p.tarifa) || 0;
-        const taxa = Number(p.taxa) || 0;
-        totalCusto += (tarifa + taxa);
+        rentabilidade += (Number(p.comissao) || 0) + (Number(p.markup) || 0) + ((Number(p.rav) || 0) * 0.88);
       });
     }
     const valorVenda = Number(v.valor_total) || 0;
-    const rentabilidade = valorVenda - totalCusto;
 
     return `
       <tr class="${rowBg} transition-colors duration-200">
