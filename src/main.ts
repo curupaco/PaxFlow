@@ -163,8 +163,15 @@ class App {
   /**
    * Exibe mensagens flutuantes (Toasts) globais do app
    */
-  private showToast(message: string, type: 'success' | 'error' = 'success'): void {
-    const translatedMessage = traduzirErro(message);
+  private showToast(message: string, type: 'success' | 'error' = 'success', err?: any): void {
+    let finalMessage = message;
+    if (err) {
+      const translated = traduzirErro(err);
+      if (translated && !message.includes(translated)) {
+        finalMessage = `${message} Detalhes: ${translated}`;
+      }
+    }
+    const translatedMessage = traduzirErro(finalMessage);
     const toastId = 'paxflow-toast';
     let toast = document.getElementById(toastId);
     if (!toast) {
@@ -180,11 +187,12 @@ class App {
     }`;
     toast.innerHTML = `${isSuccess ? '✅' : '❌'} ${translatedMessage}`;
 
+    const duration = isSuccess ? 3500 : 5500;
     setTimeout(() => {
       if (toast) {
         toast.className = 'fixed bottom-5 right-5 px-5 py-3.5 rounded-xl shadow-2xl text-white font-semibold text-sm z-50 transition-all duration-300 transform translate-y-10 opacity-0 flex items-center gap-2 pointer-events-none';
       }
-    }, 3500);
+    }, duration);
   }
 
   /**

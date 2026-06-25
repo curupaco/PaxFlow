@@ -824,7 +824,7 @@ export class Dashboard {
           this.init(); // Recarrega o quadro atualizado
         } catch (err: any) {
           console.error('Erro ao processar reembolso:', err);
-          this.showToast('Erro interno ao processar solicitação de reembolso.', 'error');
+          this.showToast('Erro interno ao processar solicitação de reembolso.', 'error', err);
         }
       });
 
@@ -1079,13 +1079,13 @@ export class Dashboard {
           this.setupDragAndDrop();
         } catch (err: any) {
           console.error('Erro ao cadastrar viagem:', err);
-          this.showToast(`Erro ao criar viagem: ${err.message}`, 'error');
+          this.showToast('Erro ao criar viagem.', 'error', err);
         }
       });
 
     } catch (err: any) {
       console.error('Erro ao abrir modal de nova viagem:', err);
-      this.showToast('Erro ao carregar modal de criação.', 'error');
+      this.showToast('Erro ao carregar modal de criação.', 'error', err);
       this.closeModal();
     }
   }
@@ -1166,7 +1166,7 @@ export class Dashboard {
 
     } catch (err: any) {
       console.error('Erro ao carregar detalhes da viagem:', err);
-      this.showToast('Erro ao carregar detalhes da viagem.', 'error');
+      this.showToast('Erro ao carregar detalhes da viagem.', 'error', err);
       this.closeModal();
     }
   }
@@ -1572,7 +1572,7 @@ export class Dashboard {
         }
       } catch (err: any) {
         console.error('Erro no upload de arquivo do cliente da viagem:', err);
-        this.showToast(`Erro no upload: ${err.message}`, 'error');
+        this.showToast('Erro no upload.', 'error', err);
       } finally {
         btnViagemUpload.disabled = false;
         if (viagemUploadStatus) {
@@ -1810,7 +1810,7 @@ export class Dashboard {
         this.setupDragAndDrop();
       } catch (err: any) {
         console.error('Erro ao editar viagem:', err);
-        this.showToast(`Erro ao editar viagem: ${err.message}`, 'error');
+        this.showToast('Erro ao editar viagem.', 'error', err);
       }
     });
 
@@ -1836,7 +1836,7 @@ export class Dashboard {
         }
       } catch (err: any) {
         console.error('Erro ao excluir viagem:', err);
-        this.showToast(`Erro ao excluir viagem: ${err.message}`, 'error');
+        this.showToast('Erro ao excluir viagem.', 'error', err);
       }
     });
 
@@ -2094,7 +2094,7 @@ export class Dashboard {
         await this.openEdicaoEProdutosModal(v.id, 'produtos');
       } catch (err: any) {
         console.error('Erro ao adicionar produto:', err);
-        this.showToast(`Erro ao adicionar produto: ${err.message}`, 'error');
+        this.showToast('Erro ao adicionar produto.', 'error', err);
       }
     });
 
@@ -2460,7 +2460,7 @@ export class Dashboard {
         await this.openEdicaoEProdutosModal(v.id, 'produtos');
       } catch (err: any) {
         console.error('Erro ao atualizar produto:', err);
-        this.showToast(`Erro ao atualizar produto: ${err.message}`, 'error');
+        this.showToast('Erro ao atualizar produto.', 'error', err);
       }
     });
   }
@@ -2773,7 +2773,7 @@ export class Dashboard {
             await this.loadAndRenderProdutosViagem(tripId);
           } catch (err: any) {
             console.error('Erro ao remover produto:', err);
-            this.showToast(`Erro ao remover produto: ${err.message}`, 'error');
+            this.showToast('Erro ao remover produto.', 'error', err);
           }
         }
       });
@@ -3023,7 +3023,7 @@ export class Dashboard {
         }, 150);
       } catch (err: any) {
         console.error('Erro ao salvar detalhamento do produto:', err);
-        this.showToast(`Erro ao salvar detalhamento do produto: ${err.message}`, 'error');
+        this.showToast('Erro ao salvar detalhamento do produto.', 'error', err);
       }
     });
   }
@@ -3031,8 +3031,16 @@ export class Dashboard {
   /**
    * Exibe mensagens flutuantes (Toasts)
    */
-  private showToast(message: string, type: 'success' | 'error' = 'success'): void {
-    const translatedMessage = (window as any).traduzirErro ? (window as any).traduzirErro(message) : message;
+  private showToast(message: string, type: 'success' | 'error' = 'success', err?: any): void {
+    let finalMessage = message;
+    if (err) {
+      const translator = (window as any).traduzirErro;
+      const translated = translator ? translator(err) : (err.message || err);
+      if (translated && !message.includes(translated)) {
+        finalMessage = `${message} Detalhes: ${translated}`;
+      }
+    }
+    const translatedMessage = (window as any).traduzirErro ? (window as any).traduzirErro(finalMessage) : finalMessage;
     const toastId = 'paxflow-toast';
     let toast = document.getElementById(toastId);
     if (!toast) {
@@ -3048,11 +3056,12 @@ export class Dashboard {
     }`;
     toast.innerHTML = `${isSuccess ? '✅' : '❌'} ${translatedMessage}`;
 
+    const duration = isSuccess ? 3500 : 5500;
     setTimeout(() => {
       if (toast) {
         toast.className = 'fixed bottom-5 right-5 px-5 py-3.5 rounded-xl shadow-2xl text-white font-semibold text-sm z-50 transition-all duration-300 transform translate-y-10 opacity-0 flex items-center gap-2';
       }
-    }, 3500);
+    }, duration);
   }
      /**
    * Renderiza a interface do Dashboard principal
@@ -3710,7 +3719,7 @@ export class Dashboard {
           this.showToast('Status da viagem atualizado com sucesso!', 'success');
         } catch (err: any) {
           console.error('Erro ao atualizar status inline:', err);
-          this.showToast('Erro ao atualizar status da viagem.', 'error');
+          this.showToast('Erro ao atualizar status da viagem.', 'error', err);
           if (viagem) viagem.status = oldStatus;
           this.saveViagensToLocalStorage();
           this.render();

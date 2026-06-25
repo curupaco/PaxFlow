@@ -1075,8 +1075,16 @@ export class ConfiguracoesPage {
   /**
    * Exibe mensagens flutuantes (Toasts)
    */
-  private showToast(message: string, type: 'success' | 'error' = 'success'): void {
-    const translatedMessage = (window as any).traduzirErro ? (window as any).traduzirErro(message) : message;
+  private showToast(message: string, type: 'success' | 'error' = 'success', err?: any): void {
+    let finalMessage = message;
+    if (err) {
+      const translator = (window as any).traduzirErro;
+      const translated = translator ? translator(err) : (err.message || err);
+      if (translated && !message.includes(translated)) {
+        finalMessage = `${message} Detalhes: ${translated}`;
+      }
+    }
+    const translatedMessage = (window as any).traduzirErro ? (window as any).traduzirErro(finalMessage) : finalMessage;
     const toastId = 'paxflow-toast';
     let toast = document.getElementById(toastId);
     if (!toast) {
@@ -1092,11 +1100,12 @@ export class ConfiguracoesPage {
     }`;
     toast.innerHTML = `${isSuccess ? '✅' : '❌'} ${translatedMessage}`;
 
+    const duration = isSuccess ? 3500 : 5500;
     setTimeout(() => {
       if (toast) {
-        toast.className = 'fixed bottom-5 right-5 px-5 py-3.5 rounded-xl shadow-2xl text-white font-semibold text-sm z-50 transition-all duration-300 transform translate-y-10 opacity-0 flex items-center gap-2';
+        toast.className = 'fixed bottom-5 right-5 px-5 py-3.5 rounded-xl shadow-2xl text-white font-semibold text-sm z-50 transition-all duration-300 transform translate-y-10 opacity-0 flex items-center gap-2 pointer-events-none';
       }
-    }, 3500);
+    }, duration);
   }
 
   /**

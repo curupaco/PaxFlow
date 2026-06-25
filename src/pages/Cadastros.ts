@@ -67,7 +67,7 @@ export class CadastrosPage {
       this.tiposProduto = data || [];
     } catch (err: any) {
       console.error('Erro ao carregar tipos de produtos:', err);
-      this.showToast('Erro ao carregar tipos de produtos do banco de dados.', 'error');
+      this.showToast('Erro ao carregar tipos de produtos do banco de dados.', 'error', err);
     }
   }
 
@@ -514,7 +514,7 @@ export class CadastrosPage {
 
     } catch (err: any) {
       console.error('Erro ao salvar tipo de produto:', err);
-      this.showToast(`Falha ao salvar tipo de produto: ${err.message}`, 'error');
+      this.showToast('Falha ao salvar tipo de produto.', 'error', err);
     }
   }
 
@@ -543,15 +543,23 @@ export class CadastrosPage {
       this.setupEventListeners();
     } catch (err: any) {
       console.error('Erro ao alternar status do tipo:', err);
-      this.showToast('Erro ao atualizar status do tipo.', 'error');
+      this.showToast('Erro ao atualizar status do tipo.', 'error', err);
     }
   }
 
   /**
    * Exibe mensagens flutuantes (Toasts)
    */
-  private showToast(message: string, type: 'success' | 'error' = 'success'): void {
-    const translatedMessage = (window as any).traduzirErro ? (window as any).traduzirErro(message) : message;
+  private showToast(message: string, type: 'success' | 'error' = 'success', err?: any): void {
+    let finalMessage = message;
+    if (err) {
+      const translator = (window as any).traduzirErro;
+      const translated = translator ? translator(err) : (err.message || err);
+      if (translated && !message.includes(translated)) {
+        finalMessage = `${message} Detalhes: ${translated}`;
+      }
+    }
+    const translatedMessage = (window as any).traduzirErro ? (window as any).traduzirErro(finalMessage) : finalMessage;
     const toastId = 'paxflow-toast';
     let toast = document.getElementById(toastId);
     if (!toast) {
@@ -567,11 +575,12 @@ export class CadastrosPage {
     }`;
     toast.innerHTML = `${isSuccess ? '✅' : '❌'} ${translatedMessage}`;
 
+    const duration = isSuccess ? 3500 : 5500;
     setTimeout(() => {
       if (toast) {
         toast.className = 'fixed bottom-5 right-5 px-5 py-3.5 rounded-xl shadow-2xl text-white font-semibold text-sm z-50 transition-all duration-300 transform translate-y-10 opacity-0 flex items-center gap-2 pointer-events-none';
       }
-    }, 3500);
+    }, duration);
   }
 
   private renderAcessoNegado(): void {

@@ -260,7 +260,7 @@ export class OrcamentosPage {
       return success;
     } catch (err: any) {
       console.error('Erro ao persistir orçamento no Supabase:', err);
-      this.showToast(`Erro ao salvar no banco. Salvando localmente no navegador!`, 'error');
+      this.showToast('Erro ao salvar no banco. Salvando localmente no navegador!', 'error', err);
       // Ativa fallback para salvar as alterações em andamento
       this.isFallbackMode = true;
       this.loadOrcamentosFromLocalStorage();
@@ -288,7 +288,7 @@ export class OrcamentosPage {
       return success;
     } catch (err: any) {
       console.error('Erro ao deletar orçamento:', err);
-      return false;
+      throw err;
     }
   }
 
@@ -489,7 +489,7 @@ export class OrcamentosPage {
           'Excluir Orçamento',
           { isDestructive: true, confirmText: 'Excluir Permanentemente', cancelText: 'Cancelar' }
         );
-        if (confirmResult) {
+        try {
           const success = await this.deleteOrcamento(id);
           if (success) {
             this.showToast('Orçamento excluído com sucesso!', 'success');
@@ -498,6 +498,8 @@ export class OrcamentosPage {
           } else {
             this.showToast('Erro ao deletar orçamento.', 'error');
           }
+        } catch (err: any) {
+          this.showToast('Erro ao deletar orçamento.', 'error', err);
         }
       });
     });
@@ -1606,7 +1608,7 @@ export class OrcamentosPage {
 
       } catch (err: any) {
         console.error('Erro na submissão da proposta:', err);
-        this.showToast(`Erro ao avançar proposta: ${err.message}`, 'error');
+        this.showToast('Erro ao avançar proposta.', 'error', err);
         submitBtn.disabled = false;
         submitBtn.textContent = 'Avançar Orçamento 🚀';
 
@@ -1987,7 +1989,7 @@ export class OrcamentosPage {
 
       } catch (err: any) {
         console.error('Erro ao fechar venda do orçamento:', err);
-        this.showToast(`Erro no fechamento: ${err.message}`, 'error');
+        this.showToast('Erro no fechamento.', 'error', err);
         btnSubmit.disabled = false;
         btnSubmit.textContent = 'Emitir Viagem & Confirmar 🏆';
       }
@@ -2155,8 +2157,16 @@ export class OrcamentosPage {
   /**
    * Exibe mensagens flutuantes (Toasts)
    */
-  private showToast(message: string, type: 'success' | 'error' = 'success'): void {
-    const translatedMessage = (window as any).traduzirErro ? (window as any).traduzirErro(message) : message;
+  private showToast(message: string, type: 'success' | 'error' = 'success', err?: any): void {
+    let finalMessage = message;
+    if (err) {
+      const translator = (window as any).traduzirErro;
+      const translated = translator ? translator(err) : (err.message || err);
+      if (translated && !message.includes(translated)) {
+        finalMessage = `${message} Detalhes: ${translated}`;
+      }
+    }
+    const translatedMessage = (window as any).traduzirErro ? (window as any).traduzirErro(finalMessage) : finalMessage;
     const toastId = 'paxflow-toast';
     let toast = document.getElementById(toastId);
     if (!toast) {
@@ -2172,11 +2182,12 @@ export class OrcamentosPage {
     }`;
     toast.innerHTML = `${isSuccess ? '✅' : '❌'} ${translatedMessage}`;
 
+    const duration = isSuccess ? 3500 : 5500;
     setTimeout(() => {
       if (toast) {
         toast.className = 'fixed bottom-5 right-5 px-5 py-3.5 rounded-xl shadow-2xl text-white font-semibold text-sm z-50 transition-all duration-300 transform translate-y-10 opacity-0 flex items-center gap-2 pointer-events-none';
       }
-    }, 3500);
+    }, duration);
   }
 
   /**

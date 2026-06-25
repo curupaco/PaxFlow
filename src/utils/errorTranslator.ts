@@ -113,6 +113,16 @@ export function traduzirErro(erro: any): string {
     return 'Erro interno no servidor do sistema.';
   }
 
+  // Se a mensagem original não for mapeada, tenta enriquecer com detalhes adicionais do Postgres se existirem
+  if (typeof erro === 'object' && erro) {
+    let extra = '';
+    if (erro.details) extra += ` ${erro.details}`;
+    if (erro.hint) extra += ` ${erro.hint}`;
+    if (extra) {
+      return `${mensagem}.${extra}`;
+    }
+  }
+
   // Se a mensagem original não for mapeada em inglês, retorna a original
   return mensagem;
 }

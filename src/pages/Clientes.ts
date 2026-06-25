@@ -462,7 +462,7 @@ export class ClientesPage {
         this.selecionarCliente(recemCriado);
       } catch (err: any) {
         console.error('Erro ao salvar cliente:', err);
-        this.showToast('Erro ao salvar ficha do cliente.', 'error');
+        this.showToast('Erro ao salvar ficha do cliente.', 'error', err);
       }
     });
 
@@ -566,7 +566,7 @@ export class ClientesPage {
 
     } catch (err: any) {
       console.error('Falha no upload do passaporte:', err);
-      this.showToast(`Erro no upload: ${err.message}`, 'error');
+      this.showToast('Erro no upload do passaporte.', 'error', err);
       this.renderUploadState(false);
     } finally {
       this.carregandoUpload = false;
@@ -859,15 +859,23 @@ export class ClientesPage {
       this.render();
     } catch (err: any) {
       console.error('Erro ao excluir cliente:', err);
-      this.showToast(`Erro ao excluir cliente: ${err.message || err}`, 'error');
+      this.showToast('Erro ao excluir cliente.', 'error', err);
     }
   }
 
   /**
    * Exibe mensagens flutuantes (Toasts)
    */
-  private showToast(message: string, type: 'success' | 'error' = 'success'): void {
-    const translatedMessage = (window as any).traduzirErro ? (window as any).traduzirErro(message) : message;
+  private showToast(message: string, type: 'success' | 'error' = 'success', err?: any): void {
+    let finalMessage = message;
+    if (err) {
+      const translator = (window as any).traduzirErro;
+      const translated = translator ? translator(err) : (err.message || err);
+      if (translated && !message.includes(translated)) {
+        finalMessage = `${message} Detalhes: ${translated}`;
+      }
+    }
+    const translatedMessage = (window as any).traduzirErro ? (window as any).traduzirErro(finalMessage) : finalMessage;
     const toastId = 'paxflow-toast';
     let toast = document.getElementById(toastId);
     if (!toast) {
@@ -883,11 +891,12 @@ export class ClientesPage {
     }`;
     toast.innerHTML = `${isSuccess ? '✅' : '❌'} ${translatedMessage}`;
 
+    const duration = isSuccess ? 3500 : 5500;
     setTimeout(() => {
       if (toast) {
         toast.className = 'fixed bottom-5 right-5 px-5 py-3.5 rounded-xl shadow-2xl text-white font-semibold text-sm z-50 transition-all duration-300 transform translate-y-10 opacity-0 flex items-center gap-2';
       }
-    }, 3500);
+    }, duration);
   }
 
   /**

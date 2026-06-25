@@ -1203,7 +1203,8 @@ export class InboxPage {
           this.showToast(alertItem.arquivado ? 'Mensagem restaurada!' : 'Mensagem arquivada com sucesso!', 'success');
 
         } catch (err: any) {
-          showCustomAlert(`Erro ao atualizar mensagem: ${err.message}`, 'Erro Operacional');
+          console.error('Erro ao atualizar mensagem:', err);
+          this.showToast('Erro ao atualizar mensagem.', 'error', err);
         }
       });
     });
@@ -1232,70 +1233,80 @@ export class InboxPage {
     EmailReaderModal.open(item, {
       perfil: this.perfil,
       onArchive: async (clickedItem) => {
-        if (clickedItem.type === 'manual') {
-          const tableId = clickedItem.id.replace('manual-', '');
-          const { error } = await supabase
-            .from('lembretes')
-            .update({ arquivado: !clickedItem.arquivado })
-            .eq('id', tableId);
+        try {
+          if (clickedItem.type === 'manual') {
+            const tableId = clickedItem.id.replace('manual-', '');
+            const { error } = await supabase
+              .from('lembretes')
+              .update({ arquivado: !clickedItem.arquivado })
+              .eq('id', tableId);
 
-          if (error) throw error;
-        } else if (clickedItem.type === 'mention' || clickedItem.type === 'direct_message') {
-          const tableId = clickedItem.id.replace('mention-', '');
-          const { error } = await supabase
-            .from('notificacoes')
-            .update({ arquivada: !clickedItem.arquivado })
-            .eq('id', tableId);
+            if (error) throw error;
+          } else if (clickedItem.type === 'mention' || clickedItem.type === 'direct_message') {
+            const tableId = clickedItem.id.replace('mention-', '');
+            const { error } = await supabase
+              .from('notificacoes')
+              .update({ arquivada: !clickedItem.arquivado })
+              .eq('id', tableId);
 
-          if (error) throw error;
-        } else {
-          this.toggleLocalAlertArchive(clickedItem.id, !clickedItem.arquivado);
+            if (error) throw error;
+          } else {
+            this.toggleLocalAlertArchive(clickedItem.id, !clickedItem.arquivado);
+          }
+
+          // Reload data and redraw page
+          await this.loadAndBuildAlerts();
+          this.render();
+          this.setupEventListeners();
+
+          this.showToast(clickedItem.arquivado ? 'Mensagem restaurada!' : 'Mensagem arquivada!', 'success');
+        } catch (err: any) {
+          console.error('Erro ao arquivar/restaurar mensagem:', err);
+          this.showToast('Erro ao atualizar status de arquivamento da mensagem.', 'error', err);
         }
-
-        // Reload data and redraw page
-        await this.loadAndBuildAlerts();
-        this.render();
-        this.setupEventListeners();
-
-        this.showToast(clickedItem.arquivado ? 'Mensagem restaurada!' : 'Mensagem arquivada!', 'success');
       },
       onDelete: async (clickedItem) => {
-        if (clickedItem.type === 'direct_message') {
-          if (clickedItem.threadId) {
+        try {
+          if (clickedItem.type === 'direct_message') {
+            if (clickedItem.threadId) {
+              const { error } = await supabase
+                .from('mensagens_diretas')
+                .delete()
+                .eq('thread_id', clickedItem.threadId);
+              if (error) throw error;
+            } else if (clickedItem.targetId) {
+              const { error } = await supabase
+                .from('mensagens_diretas')
+                .delete()
+                .eq('id', clickedItem.targetId);
+              if (error) throw error;
+            }
+          } else if (clickedItem.type === 'manual') {
+            const tableId = clickedItem.id.replace('manual-', '');
             const { error } = await supabase
-              .from('mensagens_diretas')
+              .from('lembretes')
               .delete()
-              .eq('thread_id', clickedItem.threadId);
+              .eq('id', tableId);
             if (error) throw error;
-          } else if (clickedItem.targetId) {
+          } else {
+            const tableId = clickedItem.id.replace('mention-', '').replace('sent-', '');
             const { error } = await supabase
-              .from('mensagens_diretas')
+              .from('notificacoes')
               .delete()
-              .eq('id', clickedItem.targetId);
+              .eq('id', tableId);
             if (error) throw error;
           }
-        } else if (clickedItem.type === 'manual') {
-          const tableId = clickedItem.id.replace('manual-', '');
-          const { error } = await supabase
-            .from('lembretes')
-            .delete()
-            .eq('id', tableId);
-          if (error) throw error;
-        } else {
-          const tableId = clickedItem.id.replace('mention-', '').replace('sent-', '');
-          const { error } = await supabase
-            .from('notificacoes')
-            .delete()
-            .eq('id', tableId);
-          if (error) throw error;
+
+          // Reload data and redraw page
+          await this.loadAndBuildAlerts();
+          this.render();
+          this.setupEventListeners();
+
+          this.showToast('Mensagem excluída com sucesso!', 'success');
+        } catch (err: any) {
+          console.error('Erro ao excluir mensagem:', err);
+          this.showToast('Erro ao excluir mensagem.', 'error', err);
         }
-
-        // Reload data and redraw page
-        await this.loadAndBuildAlerts();
-        this.render();
-        this.setupEventListeners();
-
-        this.showToast('Mensagem excluída com sucesso!', 'success');
       },
       onClose: () => {
         // Redraw workspace immediately to remove read highlight and update glows
@@ -1335,8 +1346,16 @@ export class InboxPage {
   /**
    * Premium Toast Notification system
    */
-  private showToast(message: string, type: 'success' | 'error' = 'success'): void {
-    const translatedMessage = (window as any).traduzirErro ? (window as any).traduzirErro(message) : message;
+  private showToast(message: string, type: 'success' | 'error' = 'success', err?: any): void {
+    let finalMessage = message;
+    if (err) {
+      const translator = (window as any).traduzirErro;
+      const translated = translator ? translator(err) : (err.message || err);
+      if (translated && !message.includes(translated)) {
+        finalMessage = `${message} Detalhes: ${translated}`;
+      }
+    }
+    const translatedMessage = (window as any).traduzirErro ? (window as any).traduzirErro(finalMessage) : finalMessage;
     const toast = document.createElement('div');
     toast.className = 'fixed bottom-5 right-5 px-5 py-3.5 rounded-xl shadow-2xl text-white font-semibold text-sm z-50 transition-all duration-300 transform translate-y-10 opacity-0 flex items-center gap-2';
     
@@ -1354,11 +1373,12 @@ export class InboxPage {
       toast.className = toast.className.replace('translate-y-10 opacity-0', 'translate-y-0 opacity-100');
     }, 10);
 
+    const duration = type === 'success' ? 3000 : 5500;
     setTimeout(() => {
       toast.className = toast.className.replace('translate-y-0 opacity-100', 'translate-y-10 opacity-0');
       setTimeout(() => {
         toast.remove();
       }, 300);
-    }, 3000);
+    }, duration);
   }
 }
