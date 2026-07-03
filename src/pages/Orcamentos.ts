@@ -2,6 +2,7 @@ import { supabase, getSessaoAtual } from '../services/supabase';
 import { uploadDocumentoCliente } from '../services/googleDrive';
 import { Orcamento, PerfilConsultor, ConvertToTripOptions } from '../types';
 import { OrcamentosService } from '../services/orcamentosService';
+import { DestinosAutocomplete } from '../components/DestinosAutocomplete';
 import { VerNotasModal } from '../components/orcamentos/VerNotasModal';
 import { getAvatarSvg, mesclarAvataresLocais } from '../services/avatars';
 import { showCustomConfirm, showCustomAlert } from '../services/dialog';
@@ -1058,8 +1059,20 @@ export class OrcamentosPage {
       </div>
     `;
 
+    let selectedDestinoId: string | null = null;
+    const inputDestino = document.getElementById('input-orc-destino') as HTMLInputElement;
+    let destAutocomplete: DestinosAutocomplete | null = null;
+    if (inputDestino) {
+      destAutocomplete = new DestinosAutocomplete(inputDestino, (destino) => {
+        selectedDestinoId = destino ? destino.id : null;
+      });
+    }
+
     // Fechamento de Modais
-    const closeModal = () => this.closeModal();
+    const closeModal = () => {
+      if (destAutocomplete) destAutocomplete.destroy();
+      this.closeModal();
+    };
     document.getElementById('btn-close-modal-x')?.addEventListener('click', closeModal);
     document.getElementById('btn-cancel-modal')?.addEventListener('click', closeModal);
 
@@ -1397,6 +1410,8 @@ export class OrcamentosPage {
         nomeCliente: nomeVal,
         contato: contatoVal,
         destino: destinoVal,
+        destino_id: selectedDestinoId || undefined,
+        destinoId: selectedDestinoId || undefined,
         dataViagem: dataVal,
         temperatura: tempVal,
         tags: tagsList,
@@ -1872,8 +1887,20 @@ export class OrcamentosPage {
     // Executa uma vez no início para ajustar os atributos required e a visibilidade
     updateFlowVisibility();
 
+    let selectedDestinoId: string | null = orc.destino_id || orc.destinoId || null;
+    const inputDestino = document.getElementById('input-fechar-via-destino') as HTMLInputElement;
+    let destAutocomplete: DestinosAutocomplete | null = null;
+    if (inputDestino) {
+      destAutocomplete = new DestinosAutocomplete(inputDestino, (destino) => {
+        selectedDestinoId = destino ? destino.id : null;
+      }, selectedDestinoId);
+    }
+
     // Fechamento de Modais
-    const closeModal = () => this.closeModal();
+    const closeModal = () => {
+      if (destAutocomplete) destAutocomplete.destroy();
+      this.closeModal();
+    };
     document.getElementById('btn-close-modal-x')?.addEventListener('click', closeModal);
     document.getElementById('btn-cancel-modal')?.addEventListener('click', closeModal);
 
@@ -1945,6 +1972,7 @@ export class OrcamentosPage {
             if (!vIda) throw new Error('Por favor, informe a Data de Ida no formato correto DD/MM/AAAA.');
 
             options.vDestino = vDestino;
+            options.vDestinoId = selectedDestinoId || undefined;
             options.vLoc = vLoc;
             options.vIda = vIda;
             options.vVolta = vVolta || undefined;

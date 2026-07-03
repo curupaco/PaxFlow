@@ -1,6 +1,7 @@
 import Sortable from 'sortablejs';
 import { supabase, getSessaoAtual, logoutConsultor } from '../services/supabase';
 import { Viagem, Cliente, ProdutoViagem, GlobalSettings, PerfilConsultor } from '../types';
+import { DestinosAutocomplete } from '../components/DestinosAutocomplete';
 import { getAvatarSvg, mesclarAvataresLocais } from '../services/avatars';
 import { showCustomConfirm } from '../services/dialog';
 import { CommentsService } from '../services/comments';
@@ -107,6 +108,7 @@ export class Dashboard {
   private realtimeChannel: any = null;
   private storageListener: ((e: StorageEvent) => void) | null = null;
   private selectedProductId: string | null = null;
+  private destAutocomplete: DestinosAutocomplete | null = null;
 
   // Propriedades para filtros de data e controle de abas de status
   private activeStatusTab: string = 'todos';
@@ -360,7 +362,7 @@ export class Dashboard {
       // Junção com a tabela de clientes e reembolsos para obter informações completas
       let query = supabase
         .from('viagens')
-        .select('*, cliente:clientes(*), reembolsos(*), produtos:produtos_viagem(*)');
+        .select('*, cliente:clientes(*), reembolsos(*), produtos:produtos_viagem(*), destino_ref:destinos(*)');
 
       // Regra de Exibição: Consultores normais só veem seus próprios cards; admins veem todos.
       if (this.perfil && this.perfil.role !== 'admin') {
@@ -420,6 +422,11 @@ export class Dashboard {
       this.viagens = (data || []).map((v: any) => {
         return {
           ...v,
+          destino: v.destino_ref ? `${v.destino_ref.nome}, ${v.destino_ref.pais}` : v.destino,
+          destino_id: v.destino_id,
+          destinoId: v.destino_id,
+          destino_ref: v.destino_ref,
+          destinoRef: v.destino_ref,
           comentarios_busca: tripCommentsMap.get(v.id) || []
         };
       });
@@ -988,6 +995,14 @@ export class Dashboard {
         { id: 'input-viagem-data-financeiro', type: 'date', required: true }
       ]);
 
+      let selectedDestinoId: string | null = null;
+      const inputDestino = document.getElementById('input-viagem-destino') as HTMLInputElement;
+      if (inputDestino) {
+        this.destAutocomplete = new DestinosAutocomplete(inputDestino, (destino) => {
+          selectedDestinoId = destino ? destino.id : null;
+        });
+      }
+
       const selectStatus = document.getElementById('select-viagem-status') as HTMLSelectElement;
       const inputFinNew = document.getElementById('input-viagem-data-financeiro') as HTMLInputElement;
       const labelFinNew = document.getElementById('label-input-viagem-data-financeiro');
@@ -1056,6 +1071,7 @@ export class Dashboard {
           cliente_id: clienteId,
           consultor_id: this.user.id,
           destino: destino,
+          destino_id: selectedDestinoId || null,
           codigo_localizador: loc || null,
           valor_total: valor,
           data_ida: vIda,
@@ -1112,10 +1128,13 @@ export class Dashboard {
         if (!this.isFallbackMode) {
           const { data, error } = await supabase
             .from('viagens')
-            .select('*, cliente:clientes(*), reembolsos(*, produto:produtos_viagem(*)), produtos:produtos_viagem(*)')
+            .select('*, cliente:clientes(*), reembolsos(*, produto:produtos_viagem(*)), produtos:produtos_viagem(*), destino_ref:destinos(*)')
             .eq('id',  tripId)
             .single();
           viagem = data;
+          if (viagem && viagem.destino_ref) {
+            viagem.destino = `${viagem.destino_ref.nome}, ${viagem.destino_ref.pais}`;
+          }
           errViagem = error;
         }
       } catch (e) {
@@ -1657,6 +1676,14 @@ export class Dashboard {
       { id: 'edit-viagem-data-financeiro', type: 'date', required: true }
     ]);
 
+    let selectedDestinoId: string | null = v.destino_id || v.destinoId || null;
+    const inputDestino = document.getElementById('edit-viagem-destino') as HTMLInputElement;
+    if (inputDestino) {
+      this.destAutocomplete = new DestinosAutocomplete(inputDestino, (destino) => {
+        selectedDestinoId = destino ? destino.id : null;
+      }, selectedDestinoId);
+    }
+
     const editStatus = document.getElementById('edit-viagem-status') as HTMLSelectElement;
     const inputFinEdit = document.getElementById('edit-viagem-data-financeiro') as HTMLInputElement;
     const labelFinEdit = document.getElementById('label-edit-viagem-data-financeiro');
@@ -1763,6 +1790,7 @@ export class Dashboard {
         cliente_id: clienteId,
         consultor_id: consultorId,
         destino: destino,
+        destino_id: selectedDestinoId || null,
         codigo_localizador: loc || null,
         valor_total: valor,
         data_ida: dataIda,
@@ -1791,6 +1819,8 @@ export class Dashboard {
             cliente: clientObj ? { id: clientObj.id, nome: clientObj.nome } : existing.cliente,
             consultor_id: consultorId,
             destino: destino,
+            destino_id: selectedDestinoId || null,
+            destinoId: selectedDestinoId || null,
             codigo_localizador: loc || null,
             valor_total: valor,
             data_ida: dataIda,
@@ -2835,6 +2865,10 @@ export class Dashboard {
    * Fecha o modal com transição suave
    */
   private closeModal(): void {
+    if (this.destAutocomplete) {
+      this.destAutocomplete.destroy();
+      this.destAutocomplete = null;
+    }
     const overlay = document.getElementById('modal-overlay');
     const container = document.getElementById('modal-container');
     if (overlay && container) {

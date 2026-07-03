@@ -93,6 +93,21 @@ export interface Viagem {
   updated_at?: string;
   data_financeiro?: string;
   dataFinanceiro?: string;
+  destino_id?: string;
+  destinoId?: string;
+  destino_ref?: Destino;
+  destinoRef?: Destino;
+}
+
+/**
+ * Representa um destino cadastrado no PaxFlow.
+ */
+export interface Destino {
+  id: string;
+  nome: string;
+  pais: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 /**
@@ -196,6 +211,10 @@ export interface Orcamento {
   documentosUrl?: string[];
   createdAt?: string;
   updatedAt?: string;
+  destino_id?: string;
+  destinoId?: string;
+  destino_ref?: Destino;
+  destinoRef?: Destino;
 }
 
 /**
@@ -306,6 +325,7 @@ export interface ConvertToTripOptions {
   origem?: string;
   // Se for nova viagem:
   vDestino?: string;
+  vDestinoId?: string;
   vLoc?: string;
   vIda?: string; // YYYY-MM-DD
   vVolta?: string; // YYYY-MM-DD

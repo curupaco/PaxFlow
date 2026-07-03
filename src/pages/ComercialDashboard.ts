@@ -160,7 +160,7 @@ export class ComercialDashboard {
 
     this.storageListener = (e: StorageEvent) => {
       const keyOrc = `paxflow-orcamentos-${this.user?.id || 'global'}`;
-      if (e.key === keyOrc) {
+      if (e.key === keyOrc || e.key === 'paxflow-viagens-local') {
         console.log('[ComercialDashboard] localStorage update detected. Reloading...');
         if (this.isFallbackMode) {
           this.loadDataFromLocalStorage();
@@ -273,7 +273,9 @@ export class ComercialDashboard {
         codigoLocalizador: d.codigo_localizador,
         observacoes: d.observacoes,
         createdAt: d.created_at,
-        updatedAt: d.updated_at
+        updatedAt: d.updated_at,
+        dataFinanceiro: d.data_financeiro,
+        data_financeiro: d.data_financeiro
       }));
         // Persist viagens to localStorage
         localStorage.setItem('paxflow-viagens-local', JSON.stringify(this.viagens));
@@ -341,7 +343,9 @@ export class ComercialDashboard {
           codigoLocalizador: d.codigo_localizador || d.codigoLocalizador,
           observacoes: d.observacoes,
           createdAt: d.created_at || d.createdAt,
-          updatedAt: d.updated_at || d.updatedAt
+          updatedAt: d.updated_at || d.updatedAt,
+          dataFinanceiro: d.data_financeiro || d.dataFinanceiro,
+          data_financeiro: d.data_financeiro || d.dataFinanceiro
         }));
         this.viagens = (this.perfil && this.perfil.role !== 'admin')
           ? mapped.filter((v: any) => v.consultorId === this.user.id)
@@ -397,7 +401,8 @@ export class ComercialDashboard {
     // 2. Filtragem por período temporal
     const filterByDate = (dateStr?: string): boolean => {
       if (!dateStr) return false;
-      const recordDate = new Date(dateStr);
+      // Se for apenas data YYYY-MM-DD, adiciona T00:00:00 para forçar parse no fuso horário local e evitar perdas de dia/mês
+      const recordDate = dateStr.includes('T') ? new Date(dateStr) : new Date(dateStr + 'T00:00:00');
       
       switch (this.selectedPeriod) {
         case 'mes_atual':
@@ -423,7 +428,7 @@ export class ComercialDashboard {
 
     return {
       filteredOrc: tempOrc.filter(o => filterByDate(o.createdAt)),
-      filteredVia: tempVia.filter(v => filterByDate(v.createdAt))
+      filteredVia: tempVia.filter(v => filterByDate(v.dataFinanceiro || v.createdAt))
     };
   }
 

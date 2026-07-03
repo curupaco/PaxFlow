@@ -25,7 +25,7 @@ export class OrcamentosService {
 
     let query = supabase
       .from('orcamentos')
-      .select('*')
+      .select('*, destino_ref:destinos(*)')
       .order('created_at', { ascending: false });
 
     // Consultor comum só vê seus próprios orçamentos
@@ -43,7 +43,11 @@ export class OrcamentosService {
       cliente_id: d.cliente_id,
       nomeCliente: d.nome_cliente,
       contato: d.contato,
-      destino: d.destino,
+      destino: d.destino_ref ? `${d.destino_ref.nome}, ${d.destino_ref.pais}` : d.destino,
+      destino_id: d.destino_id,
+      destinoId: d.destino_id,
+      destino_ref: d.destino_ref,
+      destinoRef: d.destino_ref,
       dataViagem: d.data_viagem,
       temperatura: d.temperatura,
       tags: d.tags || [],
@@ -82,6 +86,7 @@ export class OrcamentosService {
       nome_cliente: o.nomeCliente,
       contato: o.contato,
       destino: o.destino,
+      destino_id: o.destino_id || o.destinoId || null,
       data_viagem: o.dataViagem || null,
       temperatura: o.temperatura,
       tags: o.tags,
@@ -252,6 +257,7 @@ export class OrcamentosService {
       vValor,
       origem,
       vDestino,
+      vDestinoId,
       vLoc,
       vIda,
       vVolta,
@@ -391,6 +397,7 @@ export class OrcamentosService {
           cliente_id: clienteId,
           consultor_id: orc.consultorId,
           destino: vDestino || '',
+          destino_id: vDestinoId || orc.destino_id || orc.destinoId || null,
           codigo_localizador: vLoc || null,
           valor_total: vValor,
           data_ida: vIda,

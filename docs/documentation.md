@@ -283,10 +283,15 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 
 ### 3.10 Módulo de Cadastros
 
-**Módulo exclusivo para administradores** (`src/pages/Cadastros.ts`) voltado ao cadastro e controle operacional de tipos de produtos e serviços.
+**Módulo exclusivo para administradores** (`src/pages/Cadastros.ts`) voltado ao cadastro e controle operacional da agência.
 
 - **Definição de Tipos Customizados**: Possibilita criar registros dinâmicos de produtos (ex: "Passagem Aérea", "Cruzeiro", "Seguro Viagem", "Aluguel de Carro") determinando cores de exibição, ícones visuais estilizados e metadados.
-- **Campos Extras Dinâmicos**: Permite associar campos adicionais personalizados (como datas extras de agendamento, campos de texto ou numéricos específicos) a cada tipo de produto, que aparecem automaticamente na tela de detalhes da viagem quando esse produto é adicionado.
+- **Campos Extras Dinâmicos**: Permite associar campos adicionais personalizados a cada tipo de produto, que aparecem automaticamente na tela de detalhes da viagem quando esse produto é adicionado.
+- **Gestão Centralizada de Destinos [NEW]**: Aba administrativa dedicada a cadastrar e padronizar os destinos de viagem (cidade/país). 
+  - Restrito a administradores (RLS no Supabase).
+  - Listagem com paginação e busca rápida.
+  - Carga inicial automatizada de 188 destinos turísticos pré-higienizados.
+  - Resguardo de histórico legado: destinos antigos inconsistentes são rotulados com o prefixo `ARRUMAR | [original]` para higienização manual posterior pelos gestores.
 - **Identidade de Cabeçalho Unificada**: O design e as transições do cabeçalho herdam o mesmo padrão premium das páginas operacionais, exibindo badges de identificação e descrições formatadas.
 
 ### 3.11 Localização de Erros e Tradutor Global (I18n)
@@ -301,7 +306,7 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 **Painel consolidado de inteligência de negócios** (`src/pages/ComercialDashboard.ts`) focado em fornecer métricas financeiras, taxa de conversão e acompanhamento de equipe de forma visual e reativa.
 
 - **KPIs Financeiros de Caixa**:
-  - **Faturamento Realizado**: Soma total de vendas ganhas convertidas em viagens operacionais.
+  - **Faturamento Realizado [UPDATED]**: Agora calculado com precisão absoluta de faturamento real. O cálculo considera todas as vendas convertidas e as criadas diretamente na aba Viagens, com base no campo **Data Financeiro** do registro (caindo para a data de criação como fallback).
   - **Pipeline Ativo**: Soma de propostas comerciais abertas e orçamentos em andamento.
   - **Gap de Desistência**: Caixa potencial perdido em negociações não concluídas (desistências).
   - **Conversão Comercial**: Porcentagem reativa de orçamentos aceitos em relação aos decididos.
@@ -309,9 +314,10 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
   - **Donut Chart (SVG Nativo)**: Visualiza a distribuição proporcional do caixa total entre realizado, pipeline e perdas.
   - **Funil de Conversão**: Barra de progressão visual do fluxo de leads, da captação ao fechamento.
 - **Performance de Consultores (Admin)**:
-  - Tabela consolidada com dados de performance individual da equipe, exibindo o número de propostas, taxa de conversão individual, ticket médio e volume vendido.
-- **Sincronização em Tempo Real**:
-  - Atualização automática dos gráficos e métricas através de canais reativos (`postgres_changes` via Supabase Realtime) e ouvinte de sincronização local (`StorageEvent` do localStorage) com suporte offline.
+  - Tabela consolidada com dados de performance individual da equipe, exibindo o número de propostas, taxa de conversão individual, ticket médio e volume vendido (alinhado em tempo real com as vendas diretas).
+- **Precisão Temporal & Sincronização [UPDATED]**:
+  - **Tratamento de Timezone**: O motor de datas analisa strings date-only (`YYYY-MM-DD`) em fuso horário local (`T00:00:00`), eliminando distorções causadas pelo desvio UTC que anteriormente moviam vendas criadas no início do mês para o mês anterior.
+  - **Sincronização em Tempo Real Inter-Abas**: O ouvinte de sincronização local (`StorageEvent`) agora escuta a chave `paxflow-viagens-local`. Ao adicionar ou editar uma viagem na aba de Viagens, o Dashboard Comercial se atualiza instantaneamente no navegador (mesmo sem recarregamento manual).
 
 ### 3.13 Sistema de Comentários, Notas e Menções
 

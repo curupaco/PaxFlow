@@ -8,9 +8,17 @@ export class CadastrosPage {
   private perfil: any = null;
   private tiposProduto: TipoProduto[] = [];
   
-  // Estado para formulário de cadastro/edição
+  // Gestão de Abas
+  private activeTab: 'tipos' | 'destinos' = 'tipos';
+
+  // Estado para formulário de cadastro/edição de Tipos
   private editandoTipoId: string | null = null;
   private camposAdicionaisEmEdicao: CampoAdicional[] = [];
+
+  // Estado para Gestão de Destinos
+  private destinos: any[] = [];
+  private editandoDestinoId: string | null = null;
+  private buscaDestinoTermo: string = '';
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -37,7 +45,10 @@ export class CadastrosPage {
       }
 
       // 3. Buscar dados
-      await this.loadTiposProduto();
+      await Promise.all([
+        this.loadTiposProduto(),
+        this.loadDestinos()
+      ]);
 
       // 4. Renderizar
       this.render();
@@ -72,12 +83,42 @@ export class CadastrosPage {
   }
 
   /**
+   * Carrega os destinos do Supabase
+   */
+  private async loadDestinos(): Promise<void> {
+    try {
+      const { data, error } = await supabase
+        .from('destinos')
+        .select('*')
+        .order('nome', { ascending: true });
+
+      if (error) throw error;
+      this.destinos = data || [];
+    } catch (err: any) {
+      console.error('Erro ao carregar destinos:', err);
+      this.showToast('Erro ao carregar destinos do banco de dados.', 'error', err);
+    }
+  }
+
+  /**
    * Renderiza a página
    */
   private render(): void {
     const tipoEmEdicao = this.editandoTipoId 
       ? this.tiposProduto.find(t => t.id === this.editandoTipoId) 
       : null;
+
+    const destinoEmEdicao = this.editandoDestinoId
+      ? this.destinos.find(d => d.id === this.editandoDestinoId)
+      : null;
+
+    // Filtrar destinos pela busca local
+    const query = this.buscaDestinoTermo.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const filteredDestinos = this.destinos.filter(d => {
+      const nomeClean = d.nome.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const paisClean = d.pais.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      return nomeClean.includes(query) || paisClean.includes(query);
+    });
 
     this.container.innerHTML = `
       <div class="min-h-screen bg-slate-50/50 dark:bg-slate-950 flex flex-col font-sans transition-colors duration-200">
@@ -95,132 +136,238 @@ export class CadastrosPage {
           </div>
         </header>
 
+        <!-- Navegação de Abas Premium -->
+        <div class="px-6 bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800/80 flex gap-6 transition-colors duration-200">
+          <button id="tab-tipos-servicos" class="px-4 py-3.5 text-xs font-bold uppercase tracking-wider border-b-2 transition-all ${this.activeTab === 'tipos' ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}">
+            📦 Tipos de Serviços
+          </button>
+          <button id="tab-gestao-destinos" class="px-4 py-3.5 text-xs font-bold uppercase tracking-wider border-b-2 transition-all ${this.activeTab === 'destinos' ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}">
+            📍 Gestão de Destinos
+          </button>
+        </div>
+
         <!-- Grade Principal -->
         <main class="flex-1 p-6 space-y-6 overflow-y-auto custom-scrollbar animate-fade-in">
-          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
-            <!-- Coluna da Esquerda: Listagem de Tipos (2/3 de largura no LG) -->
-            <div class="lg:col-span-2 space-y-4">
-              <div class="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 rounded-2xl p-5 shadow-sm transition-colors">
-                <h2 class="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider mb-4">Tipos de Produtos e Serviços</h2>
-                
-                <div class="overflow-x-auto">
-                  <table class="w-full text-left border-collapse">
-                    <thead>
-                      <tr class="border-b border-slate-100 dark:border-slate-800 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                        <th class="py-3 px-4">Ícone</th>
-                        <th class="py-3 px-4">Nome do Tipo</th>
-                        <th class="py-3 px-4">Campos Adicionais</th>
-                        <th class="py-3 px-4">Status</th>
-                        <th class="py-3 px-4 text-right">Ações</th>
-                      </tr>
-                    </thead>
-                    <tbody id="lista-tipos-body">
-                      ${this.tiposProduto.length === 0 ? `
-                        <tr>
-                          <td colspan="5" class="py-8 text-center text-xs text-slate-400 dark:text-slate-500 font-semibold">
-                            Nenhum tipo cadastrado.
-                          </td>
+          
+          ${this.activeTab === 'tipos' ? `
+            <!-- ABA: TIPOS DE PRODUTOS E SERVIÇOS -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              
+              <!-- Coluna da Esquerda: Listagem de Tipos (2/3) -->
+              <div class="lg:col-span-2 space-y-4">
+                <div class="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 rounded-2xl p-5 shadow-sm transition-colors">
+                  <h2 class="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider mb-4">Tipos de Produtos e Serviços</h2>
+                  
+                  <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                      <thead>
+                        <tr class="border-b border-slate-100 dark:border-slate-800 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                          <th class="py-3 px-4">Ícone</th>
+                          <th class="py-3 px-4">Nome do Tipo</th>
+                          <th class="py-3 px-4">Campos Adicionais</th>
+                          <th class="py-3 px-4">Status</th>
+                          <th class="py-3 px-4 text-right">Ações</th>
                         </tr>
-                      ` : this.tiposProduto.map(t => {
-                        const qtdeCampos = t.campos_adicionais?.length || 0;
-                        return `
-                          <tr class="border-b border-slate-100/50 dark:border-slate-800/50 hover:bg-slate-50/50 dark:hover:bg-slate-800/20 text-xs font-semibold text-slate-700 dark:text-slate-300 transition-colors">
-                            <td class="py-3 px-4 text-base">${t.icone}</td>
-                            <td class="py-3 px-4">${t.nome}</td>
-                            <td class="py-3 px-4">
-                              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${qtdeCampos > 0 ? 'bg-indigo-50 dark:bg-indigo-950/45 text-indigo-600 dark:text-indigo-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}">
-                                ${qtdeCampos} ${qtdeCampos === 1 ? 'campo' : 'campos'}
-                              </span>
-                            </td>
-                            <td class="py-3 px-4">
-                              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${t.ativo ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400' : 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400'}">
-                                ${t.ativo ? 'Ativo' : 'Inativo'}
-                              </span>
-                            </td>
-                            <td class="py-3 px-4 text-right space-x-2">
-                              <button data-id="${t.id}" class="btn-editar-tipo p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition" title="Editar Tipo">
-                                ✏️
-                              </button>
-                              ${t.nome !== 'MUDAR!' ? `
-                                <button data-id="${t.id}" class="btn-toggle-ativo-tipo p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition" title="${t.ativo ? 'Desativar' : 'Ativar'}">
-                                  🔌
-                                </button>
-                              ` : ''}
+                      </thead>
+                      <tbody id="lista-tipos-body">
+                        ${this.tiposProduto.length === 0 ? `
+                          <tr>
+                            <td colspan="5" class="py-8 text-center text-xs text-slate-400 dark:text-slate-500 font-semibold">
+                              Nenhum tipo cadastrado.
                             </td>
                           </tr>
-                        `;
-                      }).join('')}
-                    </tbody>
-                  </table>
+                        ` : this.tiposProduto.map(t => {
+                          const qtdeCampos = t.campos_adicionais?.length || 0;
+                          return `
+                            <tr class="border-b border-slate-100/50 dark:border-slate-800/50 hover:bg-slate-50/50 dark:hover:bg-slate-800/20 text-xs font-semibold text-slate-700 dark:text-slate-300 transition-colors">
+                              <td class="py-3 px-4 text-base">${t.icone}</td>
+                              <td class="py-3 px-4">${t.nome}</td>
+                              <td class="py-3 px-4">
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${qtdeCampos > 0 ? 'bg-indigo-50 dark:bg-indigo-950/45 text-indigo-600 dark:text-indigo-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}">
+                                  ${qtdeCampos} ${qtdeCampos === 1 ? 'campo' : 'campos'}
+                                </span>
+                              </td>
+                              <td class="py-3 px-4">
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${t.ativo ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400' : 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400'}">
+                                  ${t.ativo ? 'Ativo' : 'Inativo'}
+                                </span>
+                              </td>
+                              <td class="py-3 px-4 text-right space-x-2">
+                                <button data-id="${t.id}" class="btn-editar-tipo p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition" title="Editar Tipo">
+                                  ✏️
+                                </button>
+                                ${t.nome !== 'MUDAR!' ? `
+                                  <button data-id="${t.id}" class="btn-toggle-ativo-tipo p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition" title="${t.ativo ? 'Desativar' : 'Ativar'}">
+                                    🔌
+                                  </button>
+                                ` : ''}
+                              </td>
+                            </tr>
+                          `;
+                        }).join('')}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <!-- Coluna da Direita: Formulário de Adicionar / Editar (1/3 de largura no LG) -->
-            <div class="space-y-4">
-              <div class="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 rounded-2xl p-5 shadow-sm transition-colors sticky top-6">
-                <h2 id="form-titulo" class="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider mb-4">
-                  ${this.editandoTipoId ? '✏️ Editar Tipo' : '➕ Novo Tipo de Serviço'}
-                </h2>
+              <!-- Coluna da Direita: Formulário de Adicionar / Editar (1/3) -->
+              <div class="space-y-4">
+                <div class="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 rounded-2xl p-5 shadow-sm transition-colors sticky top-6">
+                  <h2 id="form-titulo" class="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider mb-4">
+                    ${this.editandoTipoId ? '✏️ Editar Tipo' : '➕ Novo Tipo de Serviço'}
+                  </h2>
 
-                <form id="form-cadastro-tipo" class="space-y-4">
-                  <div>
-                    <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Nome do Tipo *</label>
-                    <input id="input-tipo-nome" type="text" required value="${tipoEmEdicao ? tipoEmEdicao.nome : ''}" ${tipoEmEdicao?.nome === 'MUDAR!' ? 'disabled' : ''} placeholder="ex: Circuito, Chip de Viagem" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition" />
-                  </div>
-
-                  <div class="grid grid-cols-2 gap-4">
+                  <form id="form-cadastro-tipo" class="space-y-4">
                     <div>
-                      <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Ícone / Emoji *</label>
-                      <input id="input-tipo-icone" type="text" required value="${tipoEmEdicao ? tipoEmEdicao.icone : ''}" placeholder="ex: ✈️, 🚢" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs text-center transition" />
+                      <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Nome do Tipo *</label>
+                      <input id="input-tipo-nome" type="text" required value="${tipoEmEdicao ? tipoEmEdicao.nome : ''}" ${tipoEmEdicao?.nome === 'MUDAR!' ? 'disabled' : ''} placeholder="ex: Circuito, Chip de Viagem" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition" />
                     </div>
-                    <div class="flex items-center pt-5">
-                      <label class="inline-flex items-center cursor-pointer select-none">
-                        <input id="check-tipo-ativo" type="checkbox" ${tipoEmEdicao ? (tipoEmEdicao.ativo ? 'checked' : '') : 'checked'} class="sr-only peer" />
-                        <div class="w-9 h-5 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500 relative"></div>
-                        <span class="ml-2 text-xs font-bold text-slate-500 dark:text-slate-400">Ativo</span>
-                      </label>
-                    </div>
-                  </div>
 
-                  <!-- Subcampos / Campos Adicionais -->
-                  <div class="border-t border-slate-100 dark:border-slate-800 pt-4">
-                    <div class="flex items-center justify-between mb-3">
-                      <h3 class="text-xs font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider">Campos Adicionais</h3>
-                      <button id="btn-adicionar-campo-adicional" type="button" class="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/45 dark:hover:bg-indigo-900/60 text-indigo-600 dark:text-indigo-400 rounded-lg text-[10px] font-black tracking-wider transition uppercase">
-                        ➕ Campo
+                    <div class="grid grid-cols-2 gap-4">
+                      <div>
+                        <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Ícone / Emoji *</label>
+                        <input id="input-tipo-icone" type="text" required value="${tipoEmEdicao ? tipoEmEdicao.icone : ''}" placeholder="ex: ✈️, 🚢" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs text-center transition" />
+                      </div>
+                      <div class="flex items-center pt-5">
+                        <label class="inline-flex items-center cursor-pointer select-none">
+                          <input id="check-tipo-ativo" type="checkbox" ${tipoEmEdicao ? (tipoEmEdicao.ativo ? 'checked' : '') : 'checked'} class="sr-only peer" />
+                          <div class="w-9 h-5 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500 relative"></div>
+                          <span class="ml-2 text-xs font-bold text-slate-500 dark:text-slate-400">Ativo</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    <!-- Subcampos / Campos Adicionais -->
+                    <div class="border-t border-slate-100 dark:border-slate-800 pt-4">
+                      <div class="flex items-center justify-between mb-3">
+                        <h3 class="text-xs font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider">Campos Adicionais</h3>
+                        <button id="btn-adicionar-campo-adicional" type="button" class="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/45 dark:hover:bg-indigo-900/60 text-indigo-600 dark:text-indigo-400 rounded-lg text-[10px] font-black tracking-wider transition uppercase">
+                          ➕ Campo
+                        </button>
+                      </div>
+                      
+                      <!-- Container de listagem de subcampos -->
+                      <div id="lista-campos-adicionais-container" class="space-y-3 max-h-[260px] overflow-y-auto pr-1 custom-scrollbar">
+                        <!-- Gerado dinamicamente -->
+                      </div>
+                    </div>
+
+                    <!-- Ações do Form -->
+                    <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800">
+                      ${this.editandoTipoId ? `
+                        <button id="btn-cancelar-edicao" type="button" class="px-3 py-2 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 text-slate-500 font-bold text-[10px] rounded-lg transition uppercase">
+                          Cancelar
+                        </button>
+                      ` : ''}
+                      <button id="btn-salvar-tipo" type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-[10px] rounded-lg transition shadow-md shadow-indigo-600/20 uppercase tracking-wider flex items-center justify-center">
+                        Salvar Tipo
                       </button>
                     </div>
-                    
-                    <!-- Container de listagem de subcampos -->
-                    <div id="lista-campos-adicionais-container" class="space-y-3 max-h-[260px] overflow-y-auto pr-1 custom-scrollbar">
-                      <!-- Gerado dinamicamente -->
-                    </div>
-                  </div>
-
-                  <!-- Ações do Form -->
-                  <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800">
-                    ${this.editandoTipoId ? `
-                      <button id="btn-cancelar-edicao" type="button" class="px-3 py-2 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 text-slate-500 font-bold text-[10px] rounded-lg transition uppercase">
-                        Cancelar
-                      </button>
-                    ` : ''}
-                    <button id="btn-salvar-tipo" type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-[10px] rounded-lg transition shadow-md shadow-indigo-600/20 uppercase tracking-wider flex items-center justify-center">
-                      Salvar Tipo
-                    </button>
-                  </div>
-                </form>
+                  </form>
+                </div>
               </div>
-            </div>
 
-          </div>
+            </div>
+          ` : `
+            <!-- ABA: GESTÃO DE DESTINOS -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              
+              <!-- Coluna da Esquerda: Listagem de Destinos (2/3) -->
+              <div class="lg:col-span-2 space-y-4">
+                <div class="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 rounded-2xl p-5 shadow-sm transition-colors">
+                  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+                    <h2 class="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider">Destinos Cadastrados</h2>
+                    <div class="relative w-full sm:w-64">
+                      <input id="input-busca-destino" type="text" placeholder="Pesquisar destino ou país..." value="${this.buscaDestinoTermo}" class="w-full pl-8 pr-3 py-1.5 border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" />
+                      <span class="absolute left-2.5 top-1.5 text-slate-400 text-xs">🔍</span>
+                    </div>
+                  </div>
+                  
+                  <div class="overflow-x-auto max-h-[500px] overflow-y-auto custom-scrollbar">
+                    <table class="w-full text-left border-collapse">
+                      <thead>
+                        <tr class="border-b border-slate-100 dark:border-slate-800 text-[10px] font-bold text-slate-400 uppercase tracking-wider sticky top-0 bg-white dark:bg-slate-900 z-10">
+                          <th class="py-3 px-4">Cidade / Destino</th>
+                          <th class="py-3 px-4">País</th>
+                          <th class="py-3 px-4 text-right">Ações</th>
+                        </tr>
+                      </thead>
+                      <tbody id="lista-destinos-body">
+                        ${filteredDestinos.length === 0 ? `
+                          <tr>
+                            <td colspan="3" class="py-8 text-center text-xs text-slate-400 dark:text-slate-500 font-semibold">
+                              Nenhum destino encontrado.
+                            </td>
+                          </tr>
+                        ` : filteredDestinos.map(d => {
+                          const isArrumar = d.nome.startsWith('ARRUMAR | ');
+                          const displayName = isArrumar ? d.nome.replace('ARRUMAR | ', '⚠️ Arrumar: ') : d.nome;
+                          const displayPais = isArrumar ? '<span class="text-rose-500 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 px-2 py-0.5 rounded-full text-[10px] font-black uppercase">Pendente</span>' : d.pais;
+                          return `
+                            <tr class="border-b border-slate-100/50 dark:border-slate-800/50 hover:bg-slate-50/50 dark:hover:bg-slate-800/20 text-xs font-semibold text-slate-700 dark:text-slate-300 transition-colors">
+                              <td class="py-3 px-4">${displayName}</td>
+                              <td class="py-3 px-4">${displayPais}</td>
+                              <td class="py-3 px-4 text-right space-x-2">
+                                <button data-id="${d.id}" class="btn-editar-destino p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition" title="Editar Destino">
+                                  ✏️
+                                </button>
+                                <button data-id="${d.id}" class="btn-excluir-destino p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition" title="Excluir Destino">
+                                  🗑️
+                                </button>
+                              </td>
+                            </tr>
+                          `;
+                        }).join('')}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Coluna da Direita: Formulário de Destino (1/3) -->
+              <div class="space-y-4">
+                <div class="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 rounded-2xl p-5 shadow-sm transition-colors sticky top-6">
+                  <h2 class="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider mb-4">
+                    ${this.editandoDestinoId ? '✏️ Editar Destino' : '➕ Novo Destino'}
+                  </h2>
+
+                  <form id="form-cadastro-destino" class="space-y-4">
+                    <div>
+                      <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Cidade / Nome do Destino *</label>
+                      <input id="input-destino-nome" type="text" required value="${destinoEmEdicao ? (destinoEmEdicao.nome.startsWith('ARRUMAR | ') ? destinoEmEdicao.nome.replace('ARRUMAR | ', '') : destinoEmEdicao.nome) : ''}" placeholder="ex: Buenos Aires, Maceió" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition" />
+                    </div>
+
+                    <div>
+                      <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">País *</label>
+                      <input id="input-destino-pais" type="text" required value="${destinoEmEdicao && destinoEmEdicao.pais !== 'ARRUMAR' ? destinoEmEdicao.pais : ''}" placeholder="ex: Argentina, Brasil" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition" />
+                    </div>
+
+                    <!-- Ações do Form -->
+                    <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800">
+                      ${this.editandoDestinoId ? `
+                        <button id="btn-cancelar-destino-edicao" type="button" class="px-3 py-2 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 text-slate-500 font-bold text-[10px] rounded-lg transition uppercase">
+                          Cancelar
+                        </button>
+                      ` : ''}
+                      <button id="btn-salvar-destino" type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-[10px] rounded-lg transition shadow-md shadow-indigo-600/20 uppercase tracking-wider flex items-center justify-center">
+                        Salvar Destino
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+
+            </div>
+          `}
         </main>
 
       </div>
     `;
 
-    this.renderCamposAdicionaisList();
+    if (this.activeTab === 'tipos') {
+      this.renderCamposAdicionaisList();
+    }
   }
 
   /**
@@ -372,52 +519,270 @@ export class CadastrosPage {
    * Associa os eventos gerais da tela
    */
   private setupEventListeners(): void {
-    // 1. Botão Adicionar Campo Adicional
-    document.getElementById('btn-adicionar-campo-adicional')?.addEventListener('click', () => {
-      this.camposAdicionaisEmEdicao.push({
-        id: 'campo_' + Date.now().toString().slice(-4),
-        label: '',
-        tipo: 'text',
-        obrigatorio: false,
-        alvo: 'dados_adicionais'
+    // 0. Alternar Abas (Tabs)
+    document.getElementById('tab-tipos-servicos')?.addEventListener('click', () => {
+      this.activeTab = 'tipos';
+      this.render();
+      this.setupEventListeners();
+    });
+
+    document.getElementById('tab-gestao-destinos')?.addEventListener('click', () => {
+      this.activeTab = 'destinos';
+      this.render();
+      this.setupEventListeners();
+    });
+
+    if (this.activeTab === 'tipos') {
+      // 1. Botão Adicionar Campo Adicional
+      document.getElementById('btn-adicionar-campo-adicional')?.addEventListener('click', () => {
+        this.camposAdicionaisEmEdicao.push({
+          id: 'campo_' + Date.now().toString().slice(-4),
+          label: '',
+          tipo: 'text',
+          obrigatorio: false,
+          alvo: 'dados_adicionais'
+        });
+        this.renderCamposAdicionaisList();
       });
-      this.renderCamposAdicionaisList();
+
+      // 2. Submissão do Formulário de Tipo
+      const form = document.getElementById('form-cadastro-tipo') as HTMLFormElement;
+      form?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        await this.salvarTipoProduto();
+      });
+
+      // 3. Botão Cancelar Edição
+      document.getElementById('btn-cancelar-edicao')?.addEventListener('click', () => {
+        this.resetForm();
+      });
+
+      // 4. Botões de Ação na Tabela (Editar e Toggle Status)
+      const btnEditar = this.container.querySelectorAll('.btn-editar-tipo');
+      btnEditar.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-id');
+          const tipo = this.tiposProduto.find(t => t.id === id);
+          if (tipo) {
+            this.prepararEdicao(tipo);
+          }
+        });
+      });
+
+      const btnToggle = this.container.querySelectorAll('.btn-toggle-ativo-tipo');
+      btnToggle.forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const id = btn.getAttribute('data-id');
+          const tipo = this.tiposProduto.find(t => t.id === id);
+          if (tipo) {
+            await this.toggleAtivoTipo(tipo);
+          }
+        });
+      });
+    } else {
+      // ABA: GESTÃO DE DESTINOS
+      // A. Input de Busca
+      const inputBusca = document.getElementById('input-busca-destino') as HTMLInputElement;
+      inputBusca?.addEventListener('input', () => {
+        this.buscaDestinoTermo = inputBusca.value;
+        this.renderDestinosTableBodyOnly();
+      });
+
+      // B. Submissão do Formulário de Destino
+      const formDestino = document.getElementById('form-cadastro-destino') as HTMLFormElement;
+      formDestino?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        await this.salvarDestino();
+      });
+
+      // C. Cancelar Edição de Destino
+      document.getElementById('btn-cancelar-destino-edicao')?.addEventListener('click', () => {
+        this.editandoDestinoId = null;
+        this.render();
+        this.setupEventListeners();
+      });
+
+      // D. Botões de Ação na Tabela (Editar e Excluir)
+      this.container.querySelectorAll('.btn-editar-destino').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-id');
+          if (id) {
+            this.editandoDestinoId = id;
+            this.render();
+            this.setupEventListeners();
+          }
+        });
+      });
+
+      this.container.querySelectorAll('.btn-excluir-destino').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const id = btn.getAttribute('data-id');
+          if (id) {
+            await this.excluirDestino(id);
+          }
+        });
+      });
+    }
+  }
+
+  /**
+   * Atualiza apenas o corpo da tabela de destinos para evitar re-renderizar todo o formulário
+   */
+  private renderDestinosTableBodyOnly(): void {
+    const tbody = document.getElementById('lista-destinos-body');
+    if (!tbody) return;
+
+    const query = this.buscaDestinoTermo.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const filtered = this.destinos.filter(d => {
+      const nomeClean = d.nome.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const paisClean = d.pais.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      return nomeClean.includes(query) || paisClean.includes(query);
     });
 
-    // 2. Submissão do Formulário de Tipo
-    const form = document.getElementById('form-cadastro-tipo') as HTMLFormElement;
-    form?.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      await this.salvarTipoProduto();
-    });
+    if (filtered.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="3" class="py-8 text-center text-xs text-slate-400 dark:text-slate-500 font-semibold">
+            Nenhum destino encontrado.
+          </td>
+        </tr>
+      `;
+      return;
+    }
 
-    // 3. Botão Cancelar Edição
-    document.getElementById('btn-cancelar-edicao')?.addEventListener('click', () => {
-      this.resetForm();
-    });
+    tbody.innerHTML = filtered.map(d => {
+      const isArrumar = d.nome.startsWith('ARRUMAR | ');
+      const displayName = isArrumar ? d.nome.replace('ARRUMAR | ', '⚠️ Arrumar: ') : d.nome;
+      const displayPais = isArrumar ? '<span class="text-rose-500 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 px-2 py-0.5 rounded-full text-[10px] font-black uppercase">Pendente</span>' : d.pais;
+      return `
+        <tr class="border-b border-slate-100/50 dark:border-slate-800/50 hover:bg-slate-50/50 dark:hover:bg-slate-800/20 text-xs font-semibold text-slate-700 dark:text-slate-300 transition-colors animate-fade-in">
+          <td class="py-3 px-4">${displayName}</td>
+          <td class="py-3 px-4">${displayPais}</td>
+          <td class="py-3 px-4 text-right space-x-2">
+            <button data-id="${d.id}" class="btn-editar-destino p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition" title="Editar Destino">
+              ✏️
+            </button>
+            <button data-id="${d.id}" class="btn-excluir-destino p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition" title="Excluir Destino">
+              🗑️
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join('');
 
-    // 4. Botões de Ação na Tabela (Editar e Toggle Status)
-    const btnEditar = this.container.querySelectorAll('.btn-editar-tipo');
-    btnEditar.forEach(btn => {
+    // Reassociar eventos aos botões
+    tbody.querySelectorAll('.btn-editar-destino').forEach(btn => {
       btn.addEventListener('click', () => {
         const id = btn.getAttribute('data-id');
-        const tipo = this.tiposProduto.find(t => t.id === id);
-        if (tipo) {
-          this.prepararEdicao(tipo);
+        if (id) {
+          this.editandoDestinoId = id;
+          this.render();
+          this.setupEventListeners();
         }
       });
     });
 
-    const btnToggle = this.container.querySelectorAll('.btn-toggle-ativo-tipo');
-    btnToggle.forEach(btn => {
+    tbody.querySelectorAll('.btn-excluir-destino').forEach(btn => {
       btn.addEventListener('click', async () => {
         const id = btn.getAttribute('data-id');
-        const tipo = this.tiposProduto.find(t => t.id === id);
-        if (tipo) {
-          await this.toggleAtivoTipo(tipo);
+        if (id) {
+          await this.excluirDestino(id);
         }
       });
     });
+  }
+
+  /**
+   * Salva ou atualiza o destino no Supabase
+   */
+  private async salvarDestino(): Promise<void> {
+    const nomeVal = (document.getElementById('input-destino-nome') as HTMLInputElement).value.trim();
+    const paisVal = (document.getElementById('input-destino-pais') as HTMLInputElement).value.trim();
+
+    if (!nomeVal || !paisVal) {
+      this.showToast('Por favor, preencha todos os campos obrigatórios.', 'error');
+      return;
+    }
+
+    // Verificar duplicidade antes de inserir/atualizar (case-insensitive)
+    const normalizedNome = nomeVal.toLowerCase();
+    const normalizedPais = paisVal.toLowerCase();
+
+    const duplicado = this.destinos.find(d => 
+      d.id !== this.editandoDestinoId && 
+      d.nome.toLowerCase() === normalizedNome && 
+      d.pais.toLowerCase() === normalizedPais
+    );
+
+    if (duplicado) {
+      this.showToast(`O destino "${nomeVal}, ${paisVal}" já está cadastrado.`, 'error');
+      return;
+    }
+
+    const payload = {
+      nome: nomeVal,
+      pais: paisVal,
+      updated_at: new Date().toISOString()
+    };
+
+    try {
+      if (this.editandoDestinoId) {
+        const { error } = await supabase
+          .from('destinos')
+          .update(payload)
+          .eq('id', this.editandoDestinoId);
+
+        if (error) throw error;
+        this.showToast('Destino atualizado com sucesso!', 'success');
+      } else {
+        const { error } = await supabase
+          .from('destinos')
+          .insert(payload);
+
+        if (error) throw error;
+        this.showToast('Destino cadastrado com sucesso!', 'success');
+      }
+
+      this.editandoDestinoId = null;
+      await this.loadDestinos();
+      this.render();
+      this.setupEventListeners();
+    } catch (err: any) {
+      console.error('Erro ao salvar destino:', err);
+      this.showToast('Falha ao salvar destino.', 'error', err);
+    }
+  }
+
+  /**
+   * Exclui um destino do banco de dados
+   */
+  private async excluirDestino(id: string): Promise<void> {
+    const destino = this.destinos.find(d => d.id === id);
+    if (!destino) return;
+
+    const confirm = await showCustomConfirm(
+      `Tem certeza que deseja excluir o destino "${destino.nome}, ${destino.pais}"? O histórico de viagens e orçamentos que utilizam este destino permanecerá, mas o vínculo de destino_id será removido.`,
+      'Excluir Destino'
+    );
+
+    if (!confirm) return;
+
+    try {
+      const { error } = await supabase
+        .from('destinos')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      this.showToast('Destino excluído com sucesso!', 'success');
+      await this.loadDestinos();
+      this.render();
+      this.setupEventListeners();
+    } catch (err: any) {
+      console.error('Erro ao excluir destino:', err);
+      this.showToast('Falha ao excluir destino do banco.', 'error', err);
+    }
   }
 
   /**
@@ -446,7 +811,7 @@ export class CadastrosPage {
   }
 
   /**
-   * Envia as alterações ou inserções para o Supabase
+   * Envia as alterações ou inserções para o Supabase (Tipos de Produto)
    */
   private async salvarTipoProduto(): Promise<void> {
     const nomeVal = (document.getElementById('input-tipo-nome') as HTMLInputElement).value.trim();
