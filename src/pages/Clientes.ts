@@ -11,7 +11,8 @@ import {
   renderDocumentInputHTML,
   setupFormValidation,
   getFormattedPhoneToDb,
-  formatBrDateToIso
+  formatBrDateToIso,
+  formatCpfCnpj
 } from '../utils/masks';
 import './Clientes.css';
 
@@ -346,6 +347,17 @@ export class ClientesPage {
         }
       }
 
+      // Verificação de duplicidade de CPF, E-mail e Telefone
+      const conflitoMsg = await this.verificarDuplicidade(emailVal, telefoneVal, documentoVal);
+      if (conflitoMsg) {
+        const prosseguir = await showCustomConfirm(
+          `${conflitoMsg}\n\nDeseja cadastrar/salvar este cliente assim mesmo?`,
+          'Duplicidade de Cadastro Detectada',
+          { confirmText: 'Salvar mesmo assim', cancelText: 'Revisar Cadastro' }
+        );
+        if (!prosseguir) return;
+      }
+
       const payload: any = {
         nome: nomeVal,
         email: emailVal,
@@ -530,6 +542,101 @@ export class ClientesPage {
         this.excluirCliente(this.clienteSelecionado.id);
       }
     });
+  }
+
+  /**
+   * Verifica se o e-mail, telefone ou documento fornecido já pertencem a outro cliente cadastrado.
+   */
+  private async verificarDuplicidade(emailVal: string, telefoneVal: string, documentoVal: string): Promise<string | null> {
+    const orConditions: string[] = [];
+
+    // 1. E-mail (exato/ilike)
+    const emailLimpo = emailVal.trim();
+    if (emailLimpo) {
+      orConditions.push(`email.ilike.${emailLimpo}`);
+    }
+
+    // 2. CPF / CNPJ (limpo ou formatado)
+    const cleanDoc = documentoVal.replace(/[^0-9A-Za-z]/g, '').toUpperCase();
+    if (cleanDoc) {
+      orConditions.push(`documento.eq.${cleanDoc}`);
+      const formattedDoc = formatCpfCnpj(cleanDoc);
+      if (formattedDoc !== cleanDoc) {
+        orConditions.push(`documento.eq.${formattedDoc}`);
+      }
+    }
+
+    // 3. Telefone (últimos 8 dígitos)
+    const phoneDigits = telefoneVal.replace(/\D/g, '');
+    if (phoneDigits.length >= 8) {
+      const last8 = phoneDigits.slice(-8);
+      orConditions.push(`telefone.ilike.%${last8}`);
+    }
+
+    if (orConditions.length === 0) {
+      return null;
+    }
+
+    try {
+      let query = supabase
+        .from('clientes')
+        .select('id, nome, email, telefone, documento, consultor_responsavel_id, profiles(nome)');
+
+      if (this.clienteSelecionado && this.clienteSelecionado.id) {
+        query = query.neq('id', this.clienteSelecionado.id);
+      }
+
+      query = query.or(orConditions.join(','));
+
+      const { data, error } = await query;
+      if (error) {
+        console.error('Erro ao verificar duplicidade de clientes:', error);
+        return null;
+      }
+
+      if (!data || data.length === 0) {
+        return null;
+      }
+
+      const duplicados: string[] = [];
+      for (const row of data) {
+        const colisoes: string[] = [];
+
+        // Comparação do E-mail
+        if (emailLimpo && row.email && row.email.trim().toLowerCase() === emailLimpo.toLowerCase()) {
+          colisoes.push(`E-mail (${row.email})`);
+        }
+
+        // Comparação do CPF/CNPJ
+        if (cleanDoc && row.documento) {
+          const dbDocClean = row.documento.replace(/[^0-9A-Za-z]/g, '').toUpperCase();
+          if (dbDocClean === cleanDoc) {
+            colisoes.push(`Documento (${row.documento})`);
+          }
+        }
+
+        // Comparação do Telefone
+        if (phoneDigits && row.telefone) {
+          const dbPhoneClean = row.telefone.replace(/\D/g, '');
+          if (dbPhoneClean && dbPhoneClean.endsWith(phoneDigits.slice(-8))) {
+            colisoes.push(`Telefone (${row.telefone})`);
+          }
+        }
+
+        if (colisoes.length > 0) {
+          const consultorNome = (row as any).profiles?.nome || 'Não definido';
+          duplicados.push(`- ${colisoes.join(', ')} já cadastrado(s) no cliente "${row.nome}" (Consultor: ${consultorNome})`);
+        }
+      }
+
+      if (duplicados.length > 0) {
+        return `Aviso: Encontramos duplicidade com registros existentes no sistema:\n\n${duplicados.join('\n')}`;
+      }
+    } catch (err) {
+      console.error('Erro na verificação de duplicidade:', err);
+    }
+
+    return null;
   }
 
   /**
