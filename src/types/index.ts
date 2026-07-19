@@ -329,6 +329,7 @@ export interface ConvertToTripOptions {
   vLoc?: string;
   vIda?: string; // YYYY-MM-DD
   vVolta?: string; // YYYY-MM-DD
+  vDataFinanceiro?: string; // YYYY-MM-DD
   vStatus?: string;
   vObs?: string;
   prodTipo: string;

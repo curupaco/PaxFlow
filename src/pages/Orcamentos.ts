@@ -1825,6 +1825,10 @@ export class OrcamentosPage {
                 ${renderDateInputHTML('input-fechar-via-volta', '', 'DD/MM/AAAA', false)}
               </div>
               <div>
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Data Financeiro (DD/MM/AAAA) *</label>
+                ${renderDateInputHTML('input-fechar-via-data-financeiro', '')}
+              </div>
+              <div>
                 <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Valor da Venda (R$) *</label>
                 ${renderCurrencyInputHTML('input-fechar-via-valor', orc.valorProposta || '')}
               </div>
@@ -1857,12 +1861,14 @@ export class OrcamentosPage {
         containerViagemExistente?.classList.remove('hidden');
         document.getElementById('input-fechar-via-destino')?.removeAttribute('required');
         document.getElementById('input-fechar-via-ida')?.removeAttribute('required');
+        document.getElementById('input-fechar-via-data-financeiro')?.removeAttribute('required');
         document.getElementById('input-fechar-via-valor')?.removeAttribute('required');
       } else {
         secaoViagemNova?.classList.remove('hidden');
         containerViagemExistente?.classList.add('hidden');
         document.getElementById('input-fechar-via-destino')?.setAttribute('required', 'true');
         document.getElementById('input-fechar-via-ida')?.setAttribute('required', 'true');
+        document.getElementById('input-fechar-via-data-financeiro')?.setAttribute('required', 'true');
         document.getElementById('input-fechar-via-valor')?.setAttribute('required', 'true');
       }
       if (validator) {
@@ -1881,6 +1887,7 @@ export class OrcamentosPage {
       { id: 'input-fechar-cli-nascimento', type: 'date', required: !(linkedClient && (linkedClient.dataNascimento || linkedClient.data_nascimento)) },
       { id: 'input-fechar-via-ida', type: 'date', required: true },
       { id: 'input-fechar-via-volta', type: 'date', required: false },
+      { id: 'input-fechar-via-data-financeiro', type: 'date', required: true },
       { id: 'input-fechar-via-valor', type: 'currency', required: true }
     ]);
 
@@ -1963,19 +1970,23 @@ export class OrcamentosPage {
             const vLoc = (document.getElementById('input-fechar-via-loc') as HTMLInputElement).value;
             const vIdaRaw = (document.getElementById('input-fechar-via-ida') as HTMLInputElement).value.trim();
             const vVoltaRaw = (document.getElementById('input-fechar-via-volta') as HTMLInputElement).value.trim();
+            const vFinRaw = (document.getElementById('input-fechar-via-data-financeiro') as HTMLInputElement).value.trim();
             const vStatus = 'fechado';
             const vObs = (document.getElementById('textarea-fechar-via-obs') as HTMLTextAreaElement).value;
 
             const vIda = formatBrDateToIso(vIdaRaw);
             const vVolta = vVoltaRaw ? formatBrDateToIso(vVoltaRaw) : null;
+            const vFin = formatBrDateToIso(vFinRaw);
 
             if (!vIda) throw new Error('Por favor, informe a Data de Ida no formato correto DD/MM/AAAA.');
+            if (!vFin) throw new Error('Por favor, informe a Data Financeiro no formato correto DD/MM/AAAA.');
 
             options.vDestino = vDestino;
             options.vDestinoId = selectedDestinoId || undefined;
             options.vLoc = vLoc;
             options.vIda = vIda;
             options.vVolta = vVolta || undefined;
+            options.vDataFinanceiro = vFin;
             options.vStatus = vStatus;
             options.vObs = vObs;
           } else {

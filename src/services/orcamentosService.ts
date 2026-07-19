@@ -263,6 +263,7 @@ export class OrcamentosService {
       vVolta,
       vStatus,
       vObs,
+      vDataFinanceiro,
       prodTipo,
       prodFornecedor,
       prodDescricao,
@@ -402,6 +403,7 @@ export class OrcamentosService {
           valor_total: vValor,
           data_ida: vIda,
           data_volta: vVolta,
+          data_financeiro: vDataFinanceiro || null,
           status: vStatus || 'planejamento',
           observacoes: vObs || null,
           origem: origem || null

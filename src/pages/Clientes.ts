@@ -327,10 +327,23 @@ export class ClientesPage {
       const documentoVal = (document.getElementById('input-documento') as HTMLInputElement).value;
       const dataNascVal = formatBrDateToIso((document.getElementById('input-data-nasc') as HTMLInputElement).value);
       const enderecoVal = (document.getElementById('input-endereco') as HTMLInputElement).value;
+      const origemLeadVal = (document.getElementById('select-origem-lead') as HTMLSelectElement).value;
       const passNumeroVal = (document.getElementById('input-pass-numero') as HTMLInputElement).value;
       const passValidadeVal = formatBrDateToIso((document.getElementById('input-pass-validade') as HTMLInputElement).value);
       const vistosVal = (document.getElementById('textarea-vistos') as HTMLTextAreaElement).value;
       const obsVal = (document.getElementById('textarea-observacoes') as HTMLTextAreaElement).value;
+
+      let classificacoesVal: string[] = [];
+      if (isEditing && this.clienteSelecionado) {
+        const existingClass = this.clienteSelecionado.classificacoes || [];
+        const standardOrigens = ['WhatsApp', 'Instagram', 'Indicação', 'Google', 'Site', 'Outros'];
+        classificacoesVal = existingClass.filter(tag => !standardOrigens.includes(tag));
+        if (origemLeadVal) {
+          classificacoesVal.push(origemLeadVal);
+        }
+      } else {
+        classificacoesVal = origemLeadVal ? [origemLeadVal] : [];
+      }
 
       // Validação de passaporte vencido no passado
       if (passValidadeVal) {
@@ -369,6 +382,7 @@ export class ClientesPage {
         passaporte_validade: passValidadeVal || null,
         vistos_informacoes: vistosVal || null,
         observacoes: obsVal || null,
+        classificacoes: classificacoesVal,
         consultor_responsavel_id: this.user.id
       };
 
@@ -447,6 +461,7 @@ export class ClientesPage {
               passaporteValidade: d.passaporte_validade || d.passaporteValidade,
               vistosInformacoes: d.vistos_informacoes || d.vistosInformacoes,
               googleDriveFolderUrl: d.google_drive_folder_url || d.googleDriveFolderUrl,
+              classificacoes: d.classificacoes || [],
               createdAt: d.created_at,
               updatedAt: d.updated_at
             };
@@ -795,6 +810,18 @@ export class ClientesPage {
               <div>
                 <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Endereço Residencial</label>
                 <input id="input-endereco" type="text" value="${c.endereco || ''}" placeholder="Rua, Número, Bairro, Cidade..." class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium" />
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Origem do Lead</label>
+                <select id="select-origem-lead" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium">
+                  <option value="" ${!c.classificacoes || c.classificacoes.length === 0 ? 'selected' : ''}>Selecione a Origem...</option>
+                  <option value="WhatsApp" ${c.classificacoes && c.classificacoes.includes('WhatsApp') ? 'selected' : ''}>WhatsApp</option>
+                  <option value="Instagram" ${c.classificacoes && c.classificacoes.includes('Instagram') ? 'selected' : ''}>Instagram</option>
+                  <option value="Indicação" ${c.classificacoes && c.classificacoes.includes('Indicação') ? 'selected' : ''}>Indicação</option>
+                  <option value="Google" ${c.classificacoes && c.classificacoes.includes('Google') ? 'selected' : ''}>Google</option>
+                  <option value="Site" ${c.classificacoes && c.classificacoes.includes('Site') ? 'selected' : ''}>Site</option>
+                  <option value="Outros" ${c.classificacoes && c.classificacoes.includes('Outros') ? 'selected' : ''}>Outros</option>
+                </select>
               </div>
             </div>
           </div>
