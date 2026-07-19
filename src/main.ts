@@ -1,13 +1,5 @@
 import './index.css';
 import { getSessaoAtual, supabase } from './services/supabase';
-import { InboxPage } from './pages/Inbox';
-import { Dashboard } from './pages/Dashboard';
-import { ComercialDashboard } from './pages/ComercialDashboard';
-import { OrcamentosPage } from './pages/Orcamentos';
-import { ClientesPage } from './pages/Clientes';
-import { ReembolsosPage } from './pages/Reembolsos';
-import { ConfiguracoesPage } from './pages/Configuracoes';
-import { CadastrosPage } from './pages/Cadastros';
 import { LoginPage } from './pages/Login';
 import { MeuPerfilModal } from './components/profile/MeuPerfilModal';
 import { PerfilConsultor } from './types';
@@ -15,6 +7,7 @@ import { getAvatarSvg } from './services/avatars';
 import { showCustomAlert, showCustomConfirm } from './services/dialog';
 import { obterProgressoNivel } from './services/gamification';
 import { traduzirErro } from './utils/errorTranslator';
+import { Router } from './router';
 
 (window as any).traduzirErro = traduzirErro;
 
@@ -22,8 +15,7 @@ class App {
   private container: HTMLElement;
   private user: any = null;
   private perfil: PerfilConsultor | null = null;
-  private currentActivePage: string = 'analytics';
-  private currentPageInstance: any = null;
+  private router!: Router;
   private theme: 'light' | 'dark' = 'light';
   private sidebarCollapsed: boolean = false;
   private mobileMenuOpen: boolean = false;
@@ -102,7 +94,8 @@ class App {
         this.perfil = perfil;
         this.renderAppShell();
         this.inicializarRealtimeProfile();
-        this.navigate(this.currentActivePage);
+        this.router = new Router(document.getElementById('page-content')!);
+        this.navigate('analytics');
       }
     } catch (err) {
       console.error('Erro ao inicializar app:', err);
@@ -216,6 +209,7 @@ class App {
         this.user = user;
         this.perfil = perfil;
         this.renderAppShell();
+        this.router = new Router(document.getElementById('page-content')!);
         this.navigate('inbox');
       },
       showToast: (message, type) => this.showToast(message, type)
@@ -703,33 +697,9 @@ class App {
    * Gerencia a navegação e o roteamento entre as diferentes páginas
    */
   private navigate(page: string, extraId?: string): void {
-    // 1. Limpa instâncias ou temporizadores ativos na página que está saindo
-    if (this.currentPageInstance && typeof this.currentPageInstance.destroy === 'function') {
-      this.currentPageInstance.destroy();
-    }
-    this.currentPageInstance = null;
+    this.router.navigate(page, extraId);
 
-    this.currentActivePage = page;
-    const pageContentEl = document.getElementById('page-content');
-    if (!pageContentEl) return;
-
-    // Garante que o container é relativo para posicionar o overlay absolutamente
-    pageContentEl.classList.add('relative');
-
-    // Injeta a animação de carregamento glassmorphic sem remover o conteúdo antigo da tela anterior
-    let overlay = document.getElementById('paxflow-loading-overlay');
-    if (!overlay) {
-      overlay = document.createElement('div');
-      overlay.id = 'paxflow-loading-overlay';
-      overlay.className = 'absolute inset-0 bg-white/40 dark:bg-slate-950/40 backdrop-blur-sm z-40 flex flex-col items-center justify-center space-y-3 pointer-events-none animate-fade-in';
-      overlay.innerHTML = `
-        <div class="w-10 h-10 border-3 border-indigo-600 dark:border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-        <span class="text-xs font-bold text-slate-600 dark:text-slate-300 animate-pulse uppercase tracking-wider">Carregando dados...</span>
-      `;
-      pageContentEl.appendChild(overlay);
-    }
-
-    // 2. Atualiza os estilos de botões ativos na Sidebar
+    // Atualiza os estilos de botões ativos na Sidebar
     const navButtons = ['analytics', 'inbox', 'orcamentos', 'dashboard', 'clientes', 'reembolsos', 'cadastros', 'configuracoes'];
     navButtons.forEach(p => {
       const btn = document.getElementById(`nav-${p}`);
@@ -743,39 +713,6 @@ class App {
       }
     });
 
-    // 3. Instancia e inicializa o componente da respectiva tela
-    switch (page) {
-      case 'analytics':
-        this.currentPageInstance = new ComercialDashboard(pageContentEl);
-        break;
-      case 'inbox':
-        this.currentPageInstance = new InboxPage(pageContentEl);
-        break;
-      case 'dashboard':
-        this.currentPageInstance = new Dashboard(pageContentEl);
-        break;
-      case 'orcamentos':
-        this.currentPageInstance = new OrcamentosPage(pageContentEl);
-        break;
-      case 'clientes':
-        this.currentPageInstance = new ClientesPage(pageContentEl);
-        break;
-      case 'reembolsos':
-        this.currentPageInstance = new ReembolsosPage(pageContentEl);
-        break;
-      case 'configuracoes':
-        this.currentPageInstance = new ConfiguracoesPage(pageContentEl);
-        break;
-      case 'cadastros':
-        this.currentPageInstance = new CadastrosPage(pageContentEl);
-        break;
-      default:
-        this.currentPageInstance = new InboxPage(pageContentEl);
-    }
-
-    if (this.currentPageInstance) {
-      this.currentPageInstance.init(extraId);
-    }
     this.atualizarSidebarProfileFooter();
     this.atualizarInboxBadge();
   }

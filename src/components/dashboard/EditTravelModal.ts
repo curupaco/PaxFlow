@@ -1,0 +1,1794 @@
+import { supabase } from '../../services/supabase';
+import { DestinosAutocomplete } from '../DestinosAutocomplete';
+import { CommentsService } from '../../services/comments';
+import { showCustomConfirm } from '../../services/dialog';
+import {
+  renderCurrencyInputHTML,
+  renderDateInputHTML,
+  setupFormValidation,
+  formatCurrencyValue,
+  formatBrDateToIso,
+  parseDoubleBr,
+  formatDateBr,
+  validateDate
+} from '../../utils/masks';
+import {
+  renderTimelineHTML,
+  renderReembolsosTabHTML,
+  renderNovoProdutoFormHTML,
+  renderLateralEditorPaneHTML
+} from './DashboardTemplates';
+
+export interface EditTravelModalOptions {
+  perfil: any;
+  consultores: any[];
+  tiposProduto: any[];
+  viagens: any[];
+  isFallbackMode: boolean;
+  user: any;
+  onUpdate: () => Promise<void>;
+  showToast: (message: string, type: 'success' | 'error', err?: any) => void;
+  checkSLA: (viagem: any) => { alert: boolean; type: string | null; text: string };
+}
+
+export class EditTravelModal {
+  private options: EditTravelModalOptions;
+  private tripId!: string;
+  private selectedProductId: string | null = null;
+  private destAutocomplete: DestinosAutocomplete | null = null;
+
+  constructor(options: EditTravelModalOptions) {
+    this.options = options;
+  }
+
+  /**
+   * Abre o modal buscando os dados atualizados da viagem
+   */
+  public async open(tripId: string, activeTab: 'detalhes' | 'produtos' = 'detalhes'): Promise<void> {
+    this.tripId = tripId;
+    try {
+      const modalWidthClass = this.selectedProductId ? 'max-w-[1380px]' : 'max-w-6xl';
+      this.renderModalOverlay(modalWidthClass);
+      
+      const modalContent = document.getElementById('modal-content-container');
+      if (!modalContent) return;
+
+      modalContent.innerHTML = `
+        <div class="p-6 text-center text-slate-500 text-sm font-semibold">
+          Carregando dados da viagem...
+        </div>
+      `;
+
+      let viagem: any = null;
+      let errViagem: any = null;
+      try {
+        if (!this.options.isFallbackMode) {
+          const { data, error } = await supabase
+            .from('viagens')
+            .select('*, cliente:clientes(*), reembolsos(*, produto:produtos_viagem(*)), produtos:produtos_viagem(*), destino_ref:destinos(*)')
+            .eq('id', tripId)
+            .single();
+          viagem = data;
+          if (viagem && viagem.destino_ref) {
+            viagem.destino = `${viagem.destino_ref.nome}, ${viagem.destino_ref.pais}`;
+          }
+          errViagem = error;
+        }
+      } catch (e) {
+        errViagem = e;
+      }
+
+      if (errViagem || !viagem) {
+        viagem = this.options.viagens.find(v => v.id === tripId);
+        if (!viagem) throw errViagem || new Error('Viagem não encontrada.');
+      }
+
+      if (viagem && !viagem.produtos) {
+        const cached = localStorage.getItem(`paxflow-produtos-viagem-${tripId}`);
+        if (cached) {
+          try { viagem.produtos = JSON.parse(cached); } catch (e) {}
+        }
+      }
+
+      // Busca o consultor de forma separada
+      if (viagem && viagem.consultor_id) {
+        const { data: consultorData, error: errConsultor } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', viagem.consultor_id)
+          .single();
+        if (!errConsultor && consultorData) {
+          viagem.consultor = consultorData;
+        } else {
+          viagem.consultor = null;
+        }
+      } else if (viagem) {
+        viagem.consultor = null;
+      }
+
+      // Busca lista de clientes
+      const { data: clientes, error: errClientes } = await supabase
+        .from('clientes')
+        .select('id, nome')
+        .order('nome', { ascending: true });
+
+      if (errClientes) throw errClientes;
+
+      // Renderiza a estrutura do Modal com as Abas
+      this.renderEdicaoEProdutosModalContent(viagem, clientes || [], activeTab);
+      
+      // Carrega e exibe os produtos da viagem
+      await this.loadAndRenderProdutosViagem(tripId);
+
+    } catch (err: any) {
+      console.error('Erro ao carregar detalhes da viagem:', err);
+      this.options.showToast('Erro ao carregar detalhes da viagem.', 'error', err);
+      this.closeModal();
+    }
+  }
+
+  private renderEdicaoEProdutosModalContent(v: any, clientes: any[], activeTab: 'detalhes' | 'produtos' = 'detalhes'): void {
+    const modalContent = document.getElementById('modal-content-container');
+    if (!modalContent) return;
+
+    if (this.selectedProductId && (!v.produtos || !v.produtos.some((p: any) => p.id === this.selectedProductId))) {
+      this.selectedProductId = null;
+    }
+    const selectedProduct = this.selectedProductId
+      ? v.produtos?.find((p: any) => p.id === this.selectedProductId)
+      : null;
+
+    // Compilar cronograma geral de datas
+    const cronograma: { data: string; rotulo: string; tipo: string; cor: string }[] = [];
+
+    const formatarDataLocal = (dStr: string) => {
+      if (!dStr) return '';
+      const dataApenas = dStr.includes('T') ? dStr.split('T')[0] : dStr.split(' ')[0];
+      const parts = dataApenas.split('-');
+      if (parts.length !== 3) return dStr;
+      return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    };
+
+    if (v.data_ida) {
+      cronograma.push({
+        data: v.data_ida,
+        rotulo: '🛫 Embarque / Início da Viagem',
+        tipo: 'viagem',
+        cor: 'bg-emerald-50 dark:bg-emerald-950/45 text-emerald-700 dark:text-emerald-400 border border-emerald-100/35 dark:border-emerald-900/40'
+      });
+    }
+    if (v.data_volta) {
+      cronograma.push({
+        data: v.data_volta,
+        rotulo: '🛬 Desembarque / Fim da Viagem',
+        tipo: 'viagem',
+        cor: 'bg-rose-50 dark:bg-rose-950/45 text-rose-700 dark:text-rose-400 border border-rose-100/35 dark:border-rose-900/40'
+      });
+    }
+    if (v.data_financeiro) {
+      cronograma.push({
+        data: v.data_financeiro,
+        rotulo: '💳 Prazo Limite Financeiro',
+        tipo: 'financeiro',
+        cor: 'bg-amber-50 dark:bg-amber-950/45 text-amber-700 dark:text-amber-400 border border-amber-100/35 dark:border-amber-900/40'
+      });
+    }
+
+    if (v.produtos && v.produtos.length > 0) {
+      v.produtos.forEach((p: any) => {
+        const prodTipoUpper = (p.tipo || 'outro').toUpperCase();
+        const icon = this.getIconForType(p.tipo);
+
+        if (p.data_servico) {
+          cronograma.push({
+            data: p.data_servico,
+            rotulo: `${icon} [${prodTipoUpper}] ${p.fornecedor} &bull; ${p.descricao} (Data Principal)`,
+            tipo: 'produto',
+            cor: 'bg-indigo-50 dark:bg-indigo-950/35 text-indigo-700 dark:text-indigo-400 border border-indigo-200/30 dark:border-indigo-900/30'
+          });
+        }
+
+        if (p.datas_adicionais && p.datas_adicionais.length > 0) {
+          p.datas_adicionais.forEach((d: any) => {
+            cronograma.push({
+              data: d.data,
+              rotulo: `${icon} [${prodTipoUpper}] ${p.fornecedor} &bull; ${p.descricao} (${d.rotulo})`,
+              tipo: 'produto-adicional',
+              cor: 'bg-slate-100/80 dark:bg-slate-800/40 text-slate-700 dark:text-slate-300 border border-slate-200/40 dark:border-slate-800/40'
+            });
+          });
+        }
+      });
+    }
+
+    cronograma.sort((a, b) => a.data.localeCompare(b.data));
+
+    const cronogramaHTML = renderTimelineHTML(cronograma);
+
+    // Prazos e SLAs
+    const reembolsoConcluido = v.reembolsos && v.reembolsos.some((r: any) => r.status === 'pago');
+    const sla = reembolsoConcluido ? { alert: false, type: null, text: '' } : this.options.checkSLA(v);
+    
+    const dono = v.consultor;
+    const consultorNome = dono ? dono.nome : 'Não atribuído';
+
+    const renderReembolsosHTML = (): string => renderReembolsosTabHTML(v.reembolsos);
+
+    modalContent.innerHTML = `
+      <div class="p-6">
+        <!-- Topo com Título e Fechar -->
+        <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 mb-4">
+          <div>
+            <h3 class="text-lg font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5">✈️ Gerenciar Viagem</h3>
+            <p class="text-xs text-slate-400 dark:text-slate-500 font-semibold">Destino: <span class="font-bold text-slate-600 dark:text-slate-300">${v.destino}</span> &bull; Loc: <span class="font-bold text-slate-600 dark:text-slate-300">${v.codigo_localizador || 'Sem LOC'}</span></p>
+          </div>
+          <button id="btn-close-edit-modal-x" class="text-slate-400 hover:text-rose-500 dark:text-slate-500 dark:hover:text-rose-400 font-bold transition">✕</button>
+        </div>
+
+        <!-- Seletor de Abas Premium (visível apenas no mobile) -->
+        <div class="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 mb-5 pb-px lg:hidden">
+          <button id="tab-detalhes-btn" class="border-b-2 ${activeTab === 'detalhes' ? 'border-indigo-600 dark:border-indigo-400 text-indigo-600 dark:text-indigo-400 font-black' : 'border-transparent text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200 font-semibold'} px-4 py-2 text-sm transition">
+            📝 Detalhes e Edição
+          </button>
+          <button id="tab-produtos-btn" class="border-b-2 ${activeTab === 'produtos' ? 'border-indigo-600 dark:border-indigo-400 text-indigo-600 dark:text-indigo-400 font-black' : 'border-transparent text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200 font-semibold'} px-4 py-2 text-sm transition">
+            🛍️ Produtos e Serviços
+          </button>
+          ${v.reembolsos && v.reembolsos.length > 0 ? `
+            <button id="tab-reembolsos-btn" class="border-b-2 border-transparent px-4 py-2 text-sm font-semibold text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200 transition">
+              💸 Histórico de Reembolsos
+            </button>
+          ` : ''}
+        </div>
+
+        <!-- Layout de duas/três colunas no Desktop / abas no Mobile -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+          <!-- COLUNA DA ESQUERDA (Detalhes e Edição) -->
+          <div id="tab-detalhes-content" class="space-y-4 tab-pane-transition ${activeTab === 'produtos' ? 'hidden' : ''} ${this.selectedProductId ? 'lg:col-span-4' : 'lg:col-span-5'} lg:!block">
+            <!-- Detalhes do Dono e SLA no Topo -->
+            <div class="flex flex-wrap items-center justify-between gap-3 p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/50 dark:border-slate-800">
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Responsável:</span>
+                <select id="edit-viagem-consultor" required class="px-2.5 py-1 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-700 dark:text-slate-200 text-xs font-bold shadow-sm cursor-pointer">
+                  ${this.options.consultores.map(c => `<option value="${c.id}" ${c.id === v.consultor_id ? 'selected' : ''}>${c.nome}</option>`).join('')}
+                </select>
+              </div>
+              
+              ${sla.alert ? `
+                <div class="flex items-center gap-2">
+                  <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Alerta SLA:</span>
+                  <span class="px-2.5 py-1 rounded-lg text-xs font-black tracking-wide animate-pulse border ${
+                    sla.type === 'pre-embarque' 
+                      ? 'bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 border-rose-100 dark:border-rose-900/55' 
+                      : 'bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-900/55'
+                  }">
+                    ⚠️ ${sla.text}
+                  </span>
+                </div>
+              ` : ''}
+            </div>
+
+            <form id="form-editar-viagem" class="space-y-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Passageiro / Cliente *</label>
+                <select id="edit-viagem-cliente" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm">
+                  ${clientes.map(c => `<option value="${c.id}" class="bg-white dark:bg-slate-800" ${c.id === v.cliente_id ? 'selected' : ''}>${c.nome}</option>`).join('')}
+                </select>
+              </div>
+
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Destino *</label>
+                  <input id="edit-viagem-destino" type="text" required value="${v.destino}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm" />
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Código Localizador (LOC)</label>
+                  <input id="edit-viagem-loc" type="text" value="${v.codigo_localizador || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm uppercase" placeholder="ex: F3R9W" />
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Valor Total (R$) *</label>
+                ${renderCurrencyInputHTML('edit-viagem-valor', v.valor_total || 0)}
+              </div>
+
+              <div class="grid grid-cols-3 gap-3">
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 leading-tight">Data Ida *</label>
+                  ${renderDateInputHTML('edit-viagem-ida', v.data_ida || '')}
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 leading-tight">Data Volta</label>
+                  ${renderDateInputHTML('edit-viagem-volta', v.data_volta || '', 'DD/MM/AAAA', false)}
+                </div>
+                <div>
+                  <label id="label-edit-viagem-data-financeiro" class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 leading-tight">Data Finan. ${v.status !== 'fechado' ? '*' : ''}</label>
+                  ${renderDateInputHTML('edit-viagem-data-financeiro', v.data_financeiro || '', 'DD/MM/AAAA', v.status !== 'fechado')}
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Status / Etapa *</label>
+                <select id="edit-viagem-status" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm">
+                  <option value="pos_venda" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100" ${v.status === 'pos_venda' ? 'selected' : ''}>Pós-Venda</option>
+                  <option value="fechado" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100" ${v.status === 'fechado' ? 'selected' : ''}>Fechado</option>
+                  <option value="pre_embarque" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100" ${v.status === 'pre_embarque' ? 'selected' : ''}>Pré-Embarque</option>
+                  <option value="pos_viagem" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100" ${v.status === 'pos_viagem' ? 'selected' : ''}>Pós-Viagem</option>
+                  <option value="reembolso_solicitado" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100" ${v.status === 'reembolso_solicitado' ? 'selected' : ''}>Reembolso Solicitado</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Observações Operacionais</label>
+                <textarea id="edit-viagem-obs" rows="2.5" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 text-sm font-medium">${v.observacoes || ''}</textarea>
+              </div>
+
+              <div class="flex items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-800 mt-4">
+                <div>
+                  ${this.options.perfil?.role === 'admin' ? `
+                    <button id="btn-excluir-viagem" type="button" class="px-5 py-2.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-900/20 text-rose-600 dark:text-rose-400 font-extrabold text-xs tracking-wider rounded-xl transition uppercase">
+                      Excluir Viagem
+                    </button>
+                  ` : ''}
+                </div>
+                <div class="flex items-center gap-3">
+                  <button id="btn-cancel-edit" type="button" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs tracking-wider rounded-xl transition uppercase">Cancelar</button>
+                  <button type="submit" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/10 transition uppercase">Salvar Alterações</button>
+                </div>
+              </div>
+            </form>
+
+            <!-- Seção de Documentos do Cliente -->
+            <div class="mt-6 border-t border-slate-100 dark:border-slate-800/80 pt-4">
+              <div class="flex items-center justify-between mb-3">
+                <h4 class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-wide flex items-center gap-1.5">
+                  📁 Documentos do Passageiro
+                </h4>
+                <div>
+                  <input type="file" id="input-viagem-upload-doc" class="hidden" accept="application/pdf,image/*" />
+                  <button id="btn-viagem-upload-doc" type="button" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-[10px] tracking-wider rounded-lg shadow-sm transition uppercase">
+                    Anexar Arquivo
+                  </button>
+                </div>
+              </div>
+              <div id="viagem-doc-container">
+                ${v.cliente?.google_drive_folder_url || v.cliente?.googleDriveFolderUrl ? `
+                  <div class="flex items-center justify-between p-3.5 bg-indigo-50/50 hover:bg-indigo-100 dark:bg-indigo-950/20 dark:hover:bg-indigo-900/30 rounded-xl border border-indigo-200/30 dark:border-indigo-900/30 transition">
+                    <span class="text-xs font-bold text-slate-700 dark:text-slate-200">📄 Passaporte / Documento do Cliente</span>
+                    <button id="btn-viagem-view-doc" type="button" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-[10px] tracking-wider rounded-lg shadow-sm transition uppercase">
+                      Visualizar
+                    </button>
+                  </div>
+                ` : `
+                  <p class="text-xs text-slate-400 dark:text-slate-500 italic">Nenhum documento anexado para este passageiro.</p>
+                `}
+              </div>
+              <div id="viagem-upload-status" class="mt-2 hidden"></div>
+            </div>
+
+            <!-- Cronograma Geral de Datas -->
+            ${cronogramaHTML}
+
+            <!-- Container de Comentários da Viagem -->
+            <div id="viagem-comments-container" class="mt-6 border-t border-slate-100 dark:border-slate-800 pt-4"></div>
+          </div>
+
+          <!-- COLUNA DO MEIO (Produtos e Serviços) -->
+          <div id="tab-produtos-content" class="space-y-5 tab-pane-transition ${activeTab === 'detalhes' || (this.selectedProductId && activeTab === 'produtos') ? 'hidden' : ''} ${this.selectedProductId ? 'lg:col-span-4 lg:!block' : 'lg:col-span-7 lg:!block'} lg:!mt-0">
+            
+            <!-- Painel Financeiro (Totalizadores e Saldo Pendente) -->
+            <div id="painel-financeiro-produtos" class="grid grid-cols-4 gap-3 p-3.5 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/50 dark:border-slate-800 mb-4">
+              <div>
+                <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider leading-tight">Valor da Venda</span>
+                <strong id="fin-valor-venda" class="text-sm font-black text-slate-800 dark:text-slate-100">R$ 0,00</strong>
+              </div>
+              <div>
+                <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider leading-tight">Total em Produtos</span>
+                <strong id="fin-valor-produtos" class="text-sm font-black text-slate-800 dark:text-slate-100 font-bold">R$ 0,00</strong>
+              </div>
+              <div>
+                <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider leading-tight">Saldo Pendente</span>
+                <strong id="fin-valor-pendente" class="text-sm font-black text-rose-600 dark:text-rose-400">R$ 0,00</strong>
+              </div>
+              <div>
+                <span class="block text-[10px] text-indigo-500 dark:text-indigo-400 font-bold uppercase tracking-wider leading-tight">Rentabilidade</span>
+                <strong id="fin-valor-rentabilidade" class="text-sm font-black text-indigo-600 dark:text-indigo-400">R$ 0,00</strong>
+              </div>
+            </div>
+            
+            <!-- Lista de Produtos Existentes -->
+            <div>
+              <h4 class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-2.5">Produtos Cadastrados nesta Viagem</h4>
+              <div id="lista-produtos-viagem-container" class="space-y-2 max-h-[220px] lg:max-h-[350px] overflow-y-auto pr-1 custom-scrollbar">
+                <p class="text-center text-xs text-slate-400 dark:text-slate-500 font-medium py-4">Buscando produtos...</p>
+              </div>
+            </div>
+
+            <!-- Formulário de Novo Produto (Inline) -->
+            <div class="border-t border-slate-100 dark:border-slate-800 pt-4">
+              ${renderNovoProdutoFormHTML(this.options.tiposProduto)}
+            </div>
+
+            <!-- Histórico de Reembolsos (Desktop inline) -->
+            ${v.reembolsos && v.reembolsos.length > 0 ? `
+              <div id="reembolsos-wrapper-desktop" class="hidden lg:block border-t border-slate-100 dark:border-slate-800 pt-4 mt-4">
+                ${renderReembolsosHTML()}
+              </div>
+            ` : ''}
+
+          </div>
+
+          <!-- COLUNA DO EDITOR LATERAL (Editor do Produto Selecionado) -->
+          ${renderLateralEditorPaneHTML(
+            selectedProduct,
+            activeTab,
+            this.options.tiposProduto,
+            (tipo) => this.getIconForType(tipo)
+          )}
+
+        </div>
+
+        <!-- ABA 3: HISTÓRICO DE REEMBOLSOS (Apenas Mobile) -->
+        ${v.reembolsos && v.reembolsos.length > 0 ? `
+          <div id="tab-reembolsos-content" class="space-y-4 tab-pane-transition hidden lg:hidden">
+            ${renderReembolsosHTML()}
+          </div>
+        ` : ''}
+
+      </div>
+    `;
+
+    // Fechar Modal
+    const handleClose = async () => {
+      this.closeModal();
+      await this.options.onUpdate();
+    };
+    document.getElementById('btn-close-edit-modal-x')?.addEventListener('click', handleClose);
+    document.getElementById('btn-cancel-edit')?.addEventListener('click', handleClose);
+
+    // Documentos da Viagem / Passageiro
+    const btnViagemUpload = document.getElementById('btn-viagem-upload-doc') as HTMLButtonElement;
+    const inputViagemUpload = document.getElementById('input-viagem-upload-doc') as HTMLInputElement;
+    const viagemUploadStatus = document.getElementById('viagem-upload-status') as HTMLElement;
+    const viagemDocContainer = document.getElementById('viagem-doc-container') as HTMLElement;
+
+    btnViagemUpload?.addEventListener('click', () => inputViagemUpload.click());
+
+    inputViagemUpload?.addEventListener('change', async () => {
+      const file = inputViagemUpload.files?.[0];
+      if (!file) return;
+
+      btnViagemUpload.disabled = true;
+      if (viagemUploadStatus) {
+        viagemUploadStatus.classList.remove('hidden');
+        viagemUploadStatus.innerHTML = `
+          <div class="flex items-center gap-2 py-1.5 text-xs font-bold text-slate-500 animate-pulse">
+            <div class="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+            <span>Enviando arquivo (${file.name})...</span>
+          </div>
+        `;
+      }
+
+      try {
+        const { uploadDocumentoCliente } = await import('../../services/googleDrive');
+        const clientEmail = v.cliente?.email || 'cliente@paxflow.com';
+        const clientTelefone = v.cliente?.telefone || '(11) 99999-9999';
+
+        const result = await uploadDocumentoCliente(
+          v.cliente_id,
+          v.cliente?.nome || 'Cliente',
+          clientEmail,
+          clientTelefone,
+          file
+        );
+
+        if (result.success && result.googleDriveFolderUrl) {
+          const { error } = await supabase
+            .from('clientes')
+            .update({ google_drive_folder_url: result.googleDriveFolderUrl })
+            .eq('id', v.cliente_id);
+
+          if (error) throw error;
+
+          this.options.showToast('Documento anexado ao cliente com sucesso!', 'success');
+
+          if (v.cliente) {
+            v.cliente.google_drive_folder_url = result.googleDriveFolderUrl;
+            v.cliente.googleDriveFolderUrl = result.googleDriveFolderUrl;
+          }
+
+          if (viagemDocContainer) {
+            viagemDocContainer.innerHTML = `
+              <div class="flex items-center justify-between p-3.5 bg-indigo-50/50 hover:bg-indigo-100 dark:bg-indigo-950/20 dark:hover:bg-indigo-900/30 rounded-xl border border-indigo-200/30 dark:border-indigo-900/30 transition">
+                <span class="text-xs font-bold text-slate-700 dark:text-slate-200">📄 Passaporte / Documento do Cliente</span>
+                <button id="btn-viagem-view-doc" type="button" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-[10px] tracking-wider rounded-lg shadow-sm transition uppercase">
+                  Visualizar
+                </button>
+              </div>
+            `;
+            
+            document.getElementById('btn-viagem-view-doc')?.addEventListener('click', async () => {
+              const { DocumentViewer } = await import('../../services/documentViewer');
+              DocumentViewer.open(
+                `Passaporte - ${v.cliente?.nome || 'Cliente'}.pdf`,
+                result.googleDriveFolderUrl,
+                'application/pdf',
+                v.cliente
+              );
+            });
+          }
+
+          await this.options.onUpdate();
+        } else {
+          throw new Error(result.error || 'Erro no upload.');
+        }
+      } catch (err: any) {
+        console.error('Erro ao fazer upload do passaporte:', err);
+        this.options.showToast('Erro no upload.', 'error', err);
+      } finally {
+        btnViagemUpload.disabled = false;
+        if (viagemUploadStatus) {
+          viagemUploadStatus.classList.add('hidden');
+          viagemUploadStatus.innerHTML = '';
+        }
+        inputViagemUpload.value = '';
+      }
+    });
+
+    const bindViagemViewDoc = () => {
+      const docUrl = v.cliente?.google_drive_folder_url || v.cliente?.googleDriveFolderUrl;
+      if (docUrl) {
+        document.getElementById('btn-viagem-view-doc')?.addEventListener('click', async () => {
+          const { DocumentViewer } = await import('../../services/documentViewer');
+          DocumentViewer.open(
+            `Passaporte - ${v.cliente?.nome || 'Cliente'}.pdf`,
+            docUrl,
+            'application/pdf',
+            v.cliente
+          );
+        });
+      }
+    };
+    bindViagemViewDoc();
+
+    // Inicializar comentários da viagem
+    const commentsContainer = document.getElementById('viagem-comments-container');
+    if (commentsContainer && this.options.user) {
+      CommentsService.renderCommentsSection(
+        commentsContainer,
+        'viagem',
+        v.id,
+        v.id,
+        this.options.user.id,
+        this.options.consultores
+      );
+    }
+
+    // Seletores de Abas Premium
+    const tabDetalhesBtn = document.getElementById('tab-detalhes-btn');
+    const tabProdutosBtn = document.getElementById('tab-produtos-btn');
+    const tabReembolsosBtn = document.getElementById('tab-reembolsos-btn');
+    
+    const tabDetalhesContent = document.getElementById('tab-detalhes-content');
+    const tabProdutosContent = document.getElementById('tab-produtos-content');
+    const tabReembolsosContent = document.getElementById('tab-reembolsos-content');
+
+    const resetTabs = () => {
+      tabDetalhesBtn?.setAttribute('class', 'border-b-2 border-transparent px-4 py-2 text-sm font-semibold text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200 transition');
+      tabProdutosBtn?.setAttribute('class', 'border-b-2 border-transparent px-4 py-2 text-sm font-semibold text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200 transition');
+      tabReembolsosBtn?.setAttribute('class', 'border-b-2 border-transparent px-4 py-2 text-sm font-semibold text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200 transition');
+      
+      tabDetalhesContent?.classList.add('hidden');
+      tabProdutosContent?.classList.add('hidden');
+      tabReembolsosContent?.classList.add('hidden');
+    };
+
+    tabDetalhesBtn?.addEventListener('click', () => {
+      resetTabs();
+      tabDetalhesBtn.className = 'border-b-2 border-indigo-600 dark:border-indigo-400 px-4 py-2 text-sm font-black text-indigo-600 dark:text-indigo-400 transition';
+      tabDetalhesContent?.classList.remove('hidden');
+    });
+
+    tabProdutosBtn?.addEventListener('click', () => {
+      resetTabs();
+      tabProdutosBtn.className = 'border-b-2 border-indigo-600 dark:border-indigo-400 px-4 py-2 text-sm font-black text-indigo-600 dark:text-indigo-400 transition';
+      tabProdutosContent?.classList.remove('hidden');
+    });
+
+    tabReembolsosBtn?.addEventListener('click', () => {
+      resetTabs();
+      tabReembolsosBtn.className = 'border-b-2 border-indigo-600 dark:border-indigo-400 px-4 py-2 text-sm font-black text-indigo-600 dark:text-indigo-400 transition';
+      tabReembolsosContent?.classList.remove('hidden');
+    });
+
+    // Inicializa a validação do formulário de edição de viagem
+    const editarViagemValidator = setupFormValidation('form-editar-viagem', [
+      { id: 'edit-viagem-valor', type: 'currency' },
+      { id: 'edit-viagem-ida', type: 'date' },
+      { id: 'edit-viagem-volta', type: 'date', required: false },
+      { id: 'edit-viagem-data-financeiro', type: 'date', required: true }
+    ]);
+
+    let selectedDestinoId: string | null = v.destino_id || v.destinoId || null;
+    const inputDestino = document.getElementById('edit-viagem-destino') as HTMLInputElement;
+    if (inputDestino) {
+      this.destAutocomplete = new DestinosAutocomplete(inputDestino, (destino) => {
+        selectedDestinoId = destino ? destino.id : null;
+      }, selectedDestinoId);
+    }
+
+    const editStatus = document.getElementById('edit-viagem-status') as HTMLSelectElement;
+    const inputFinEdit = document.getElementById('edit-viagem-data-financeiro') as HTMLInputElement;
+    const labelFinEdit = document.getElementById('label-edit-viagem-data-financeiro');
+
+    const updateEditFinRequired = () => {
+      if (!editStatus || !inputFinEdit) return;
+      const isRequired = editStatus.value !== 'fechado';
+      if (isRequired) {
+        inputFinEdit.setAttribute('required', '');
+        if (labelFinEdit) labelFinEdit.innerHTML = 'Data Finan. *';
+      } else {
+        inputFinEdit.removeAttribute('required');
+        if (labelFinEdit) labelFinEdit.innerHTML = 'Data Finan.';
+      }
+      inputFinEdit.dispatchEvent(new Event('input'));
+    };
+
+    editStatus?.addEventListener('change', updateEditFinRequired);
+    updateEditFinRequired();
+
+    // Submissão do Formulário de Edição da Viagem
+    const formEditar = document.getElementById('form-editar-viagem') as HTMLFormElement;
+    formEditar?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const clienteId = (document.getElementById('edit-viagem-cliente') as HTMLSelectElement).value;
+      const consultorId = (document.getElementById('edit-viagem-consultor') as HTMLSelectElement).value;
+      const destino = (document.getElementById('edit-viagem-destino') as HTMLInputElement).value;
+      const loc = (document.getElementById('edit-viagem-loc') as HTMLInputElement).value.trim();
+      const valorRaw = (document.getElementById('edit-viagem-valor') as HTMLInputElement).value.trim();
+      const dataIdaRaw = (document.getElementById('edit-viagem-ida') as HTMLInputElement).value.trim();
+      const dataVoltaRaw = (document.getElementById('edit-viagem-volta') as HTMLInputElement).value.trim();
+      const dataFinanceiroRaw = (document.getElementById('edit-viagem-data-financeiro') as HTMLInputElement).value.trim();
+      const status = (document.getElementById('edit-viagem-status') as HTMLSelectElement).value;
+      const obs = (document.getElementById('edit-viagem-obs') as HTMLTextAreaElement).value;
+
+      if (!editarViagemValidator.validateAll()) {
+        this.options.showToast('Preencha todos os campos obrigatórios com valores válidos.', 'error');
+        return;
+      }
+
+      const dataIdaResult = validateDate(dataIdaRaw);
+      if (!dataIdaResult.isValid) {
+        this.options.showToast(`Data de Ida inválida: ${dataIdaResult.message}`, 'error');
+        return;
+      }
+      if (dataVoltaRaw) {
+        const dataVoltaResult = validateDate(dataVoltaRaw);
+        if (!dataVoltaResult.isValid) {
+          this.options.showToast(`Data de Volta inválida: ${dataVoltaResult.message}`, 'error');
+          return;
+        }
+      }
+      if (status !== 'fechado') {
+        const dataFinResult = validateDate(dataFinanceiroRaw);
+        if (!dataFinResult.isValid) {
+          this.options.showToast(`Data Financeiro inválida: ${dataFinResult.message}`, 'error');
+          return;
+        }
+      }
+
+      const dataIda = formatBrDateToIso(dataIdaRaw)!;
+      const dataVolta = formatBrDateToIso(dataVoltaRaw);
+      const dataFinanceiro = dataFinanceiroRaw ? formatBrDateToIso(dataFinanceiroRaw) : null;
+
+      if (dataIda && dataVolta) {
+        const idaDate = new Date(dataIda);
+        const voltaDate = new Date(dataVolta);
+        if (voltaDate.getTime() < idaDate.getTime()) {
+          this.options.showToast('A data de volta não pode ser anterior à data de ida.', 'error');
+          return;
+        }
+      }
+
+      const valor = parseDoubleBr(valorRaw);
+
+      // Validação de saldo pendente
+      if (status !== v.status && status !== 'fechado') {
+        let produtos: any[] = [];
+        if (!this.options.isFallbackMode) {
+          try {
+            const { data, error } = await supabase
+              .from('produtos_viagem')
+              .select('valor_venda, tarifa, taxa, comissao, markup, rav, fornecedor, descricao')
+              .eq('viagem_id', v.id);
+            if (!error && data) {
+              produtos = data;
+            }
+          } catch (e) {}
+        }
+        if (produtos.length === 0) {
+          const saved = localStorage.getItem(`paxflow-produtos-viagem-${v.id}`);
+          if (saved) {
+            try { produtos = JSON.parse(saved); } catch (e) {}
+          }
+        }
+        const totalProdutos = produtos.reduce((sum, p) => sum + (Number(p.valor_venda) || 0), 0);
+        const pendente = valor - totalProdutos;
+        if (Math.abs(pendente) > 0.01) {
+          this.options.showToast(`Não é possível alterar o status para "${status.replace('_', ' ')}". Existe um saldo financeiro pendente de R$ ${pendente.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}. Adicione produtos na aba "Produtos e Serviços" para zerar este saldo.`, 'error');
+          return;
+        }
+
+        // Validação de detalhamento dos produtos
+        const produtoNaoDetalhado = produtos.find(p => {
+          const tarifa = Number(p.tarifa) || 0;
+          const taxa = Number(p.taxa) || 0;
+          const comissao = Number(p.comissao) || 0;
+          const markup = Number(p.markup) || 0;
+          const rav = Number(p.rav) || 0;
+          const totalDet = tarifa + taxa + comissao + markup + rav;
+          return Math.abs(Number(p.valor_venda || 0) - totalDet) > 0.01;
+        });
+
+        if (produtoNaoDetalhado) {
+          this.options.showToast(`Não é possível alterar o status para "${status.replace('_', ' ')}". O produto "${produtoNaoDetalhado.fornecedor} - ${produtoNaoDetalhado.descricao}" não está com seus valores 100% detalhados (soma de Tarifa + Taxa + Comissão deve ser igual ao Valor de Venda do produto).`, 'error');
+          return;
+        }
+      }
+
+      const payload = {
+        cliente_id: clienteId,
+        consultor_id: consultorId,
+        destino: destino,
+        destino_id: selectedDestinoId || null,
+        codigo_localizador: loc || null,
+        valor_total: valor,
+        data_ida: dataIda,
+        data_volta: dataVolta,
+        data_financeiro: dataFinanceiro,
+        status: status,
+        observacoes: obs || null
+      };
+
+      try {
+        const { error } = await supabase
+          .from('viagens')
+          .update(payload)
+          .eq('id', v.id);
+
+        if (error) throw error;
+
+        // Atualização local
+        const clientObj = clientes.find(c => c.id === clienteId);
+        const viagemIdx = this.options.viagens.findIndex(item => item.id === v.id);
+        if (viagemIdx !== -1) {
+          const existing = this.options.viagens[viagemIdx];
+          this.options.viagens[viagemIdx] = {
+            ...existing,
+            cliente_id: clienteId,
+            cliente: clientObj ? { id: clientObj.id, nome: clientObj.nome } : existing.cliente,
+            consultor_id: consultorId,
+            destino: destino,
+            destino_id: selectedDestinoId || null,
+            destinoId: selectedDestinoId || null,
+            codigo_localizador: loc || null,
+            valor_total: valor,
+            data_ida: dataIda,
+            data_volta: dataVolta,
+            data_financeiro: dataFinanceiro,
+            status: status,
+            observacoes: obs || null,
+            updated_at: new Date().toISOString()
+          };
+        }
+
+        this.options.showToast('Viagem atualizada com sucesso!', 'success');
+        this.closeModal();
+        await this.options.onUpdate();
+      } catch (err: any) {
+        console.error('Erro ao editar viagem:', err);
+        this.options.showToast('Erro ao editar viagem.', 'error', err);
+      }
+    });
+
+    // Evento para excluir a viagem
+    const btnExcluirViagem = document.getElementById('btn-excluir-viagem');
+    btnExcluirViagem?.addEventListener('click', async () => {
+      const confirm = await showCustomConfirm(
+        'Tem certeza de que deseja excluir permanentemente esta viagem e todos os seus produtos e reembolsos associados? Esta ação não pode ser desfeita.',
+        'Excluir Viagem'
+      );
+      if (!confirm) return;
+
+      try {
+        const { error } = await supabase
+          .from('viagens')
+          .delete()
+          .eq('id', v.id);
+
+        if (error) throw error;
+
+        this.options.showToast('Viagem excluída com sucesso!', 'success');
+        this.closeModal();
+        await this.options.onUpdate();
+      } catch (err: any) {
+        console.error('Erro ao excluir viagem:', err);
+        this.options.showToast('Erro ao excluir viagem.', 'error', err);
+      }
+    });
+
+    // Evento do formulário de novo produto para exibir campos condicionais
+    const prodTipoSelect = document.getElementById('prod-tipo') as HTMLSelectElement;
+    const condContainer = document.getElementById('container-campos-condicionais') as HTMLElement;
+    const prodFornecedorInput = document.getElementById('prod-fornecedor') as HTMLInputElement;
+
+    prodTipoSelect?.addEventListener('change', () => {
+      const selectedType = prodTipoSelect.value;
+      const tipoConfig = this.options.tiposProduto.find(t => t.nome === selectedType);
+
+      if (tipoConfig && Array.isArray(tipoConfig.campos_adicionais) && tipoConfig.campos_adicionais.length > 0) {
+        condContainer.classList.remove('hidden');
+
+        let fieldsHTML = '';
+        tipoConfig.campos_adicionais.forEach((campo: any) => {
+          const requiredAttr = campo.obrigatorio ? 'required' : '';
+          const label = `${campo.label}${campo.obrigatorio ? ' *' : ''}`;
+
+          if (campo.tipo === 'select') {
+            const options = Array.isArray(campo.opcoes) ? campo.opcoes : [];
+            fieldsHTML += `
+              <div class="space-y-1">
+                <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">${label}</label>
+                <select id="prod-campo-${campo.id}" ${requiredAttr} class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition duration-155">
+                  <option value="" disabled selected>Selecione...</option>
+                  ${options.map((opt: string) => `<option value="${opt}">${opt}</option>`).join('')}
+                </select>
+              </div>
+            `;
+          } else if (campo.tipo === 'number') {
+            fieldsHTML += `
+              <div class="space-y-1">
+                <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">${label}</label>
+                <input type="number" id="prod-campo-${campo.id}" ${requiredAttr} placeholder="${campo.placeholder || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition duration-155" />
+              </div>
+            `;
+          } else {
+            fieldsHTML += `
+              <div class="space-y-1">
+                <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">${label}</label>
+                <input type="text" id="prod-campo-${campo.id}" ${requiredAttr} placeholder="${campo.placeholder || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition duration-155" />
+              </div>
+            `;
+          }
+        });
+
+        condContainer.innerHTML = `<div class="grid grid-cols-1 md:grid-cols-2 gap-3">${fieldsHTML}</div>`;
+
+        tipoConfig.campos_adicionais.forEach((campo: any) => {
+          const inputEl = document.getElementById(`prod-campo-${campo.id}`);
+          if (inputEl) {
+            inputEl.addEventListener('change', (ev: any) => {
+              const val = ev.target.value;
+              if (campo.alvo === 'fornecedor' && val && val !== 'Outra' && val !== 'Outro') {
+                prodFornecedorInput.value = val;
+              }
+            });
+          }
+        });
+      } else {
+        condContainer.classList.add('hidden');
+        condContainer.innerHTML = '';
+      }
+    });
+
+    // Inicializa a validação do formulário de novos produtos
+    const novoProdutoValidator = setupFormValidation('form-novo-produto', [
+      { id: 'prod-venda', type: 'currency' },
+      { id: 'prod-data', type: 'date' }
+    ]);
+
+    // Datas adicionais dinâmicas
+    const btnAddData = document.getElementById('btn-add-data-adicional');
+    btnAddData?.addEventListener('click', () => {
+      const container = document.getElementById('container-datas-adicionais');
+      if (!container) return;
+
+      const rowId = `row-data-adicional-${Date.now()}`;
+      const newRow = document.createElement('div');
+      newRow.id = rowId;
+      newRow.className = 'grid grid-cols-[1fr_1fr_auto] gap-2 items-end bg-slate-100/50 dark:bg-slate-800/30 p-2.5 rounded-lg border border-slate-200/40 dark:border-slate-800/40';
+      newRow.innerHTML = `
+        <div>
+          <label class="block text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Rótulo (ex: Check-out)</label>
+          <input type="text" placeholder="Rótulo" required class="prod-adicional-rotulo w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition duration-155" />
+        </div>
+        <div>
+          <label class="block text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Data (DD/MM/AAAA)</label>
+          <input type="text" placeholder="DD/MM/AAAA" required class="prod-adicional-data w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition duration-155" />
+        </div>
+        <button type="button" class="btn-remove-data-adicional p-2 hover:bg-rose-50/80 dark:hover:bg-rose-950/20 text-slate-400 hover:text-rose-600 rounded-lg transition" title="Remover data">
+          🗑️
+        </button>
+      `;
+      container.appendChild(newRow);
+
+      const dataInput = newRow.querySelector('.prod-adicional-data') as HTMLInputElement;
+      dataInput.addEventListener('input', (ev) => {
+        const target = ev.target as HTMLInputElement;
+        let val = target.value;
+        let digits = val.replace(/\D/g, '');
+        if (digits.length > 8) digits = digits.slice(0, 8);
+        target.value = formatDateBr(digits);
+      });
+
+      newRow.querySelector('.btn-remove-data-adicional')?.addEventListener('click', () => {
+        newRow.remove();
+      });
+    });
+
+    // Submissão de Novo Produto
+    const formNovoProduto = document.getElementById('form-novo-produto') as HTMLFormElement;
+    formNovoProduto?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const tipo = (document.getElementById('prod-tipo') as HTMLSelectElement).value;
+      let fornecedor = (document.getElementById('prod-fornecedor') as HTMLInputElement).value.trim() || 'Não informado';
+      let descricao = (document.getElementById('prod-descricao') as HTMLInputElement).value.trim() || 'Sem descrição';
+
+      // Coleta campos dinâmicos
+      const tipoConfig = this.options.tiposProduto.find(t => t.nome === tipo);
+      const dadosAdicionais: Record<string, any> = {};
+
+      if (tipoConfig && Array.isArray(tipoConfig.campos_adicionais)) {
+        for (const campo of tipoConfig.campos_adicionais) {
+          const el = document.getElementById(`prod-campo-${campo.id}`) as HTMLInputElement | HTMLSelectElement | null;
+          if (el) {
+            const val = el.value.trim();
+            if (campo.obrigatorio && !val) {
+              this.options.showToast(`O campo "${campo.label}" é obrigatório.`, 'error');
+              return;
+            }
+            dadosAdicionais[campo.id] = val;
+
+            if (campo.alvo === 'fornecedor' && val && val !== 'Outra' && val !== 'Outro') {
+              fornecedor = val;
+            } else if (campo.alvo === 'descricao' && val) {
+              descricao = `[${val}] ${descricao}`;
+            }
+          }
+        }
+      }
+
+      const reserva = (document.getElementById('prod-reserva') as HTMLInputElement).value.trim();
+      const vendaRaw = (document.getElementById('prod-venda') as HTMLInputElement).value.trim();
+      const dataServicoRaw = (document.getElementById('prod-data') as HTMLInputElement).value.trim();
+      const status = (document.getElementById('prod-status') as HTMLSelectElement).value;
+
+      if (!reserva) {
+        this.options.showToast('Por favor, info o Código (LOC) do serviço.', 'error');
+        return;
+      }
+      if (reserva.length > 20) {
+        this.options.showToast('O Código (LOC) deve ter no máximo 20 caracteres.', 'error');
+        return;
+      }
+      if (/\s|[,;\/\\]/.test(reserva)) {
+        this.options.showToast('Insira apenas um Código (LOC) por serviço.', 'error');
+        return;
+      }
+
+      if (!novoProdutoValidator.validateAll()) {
+        this.options.showToast('Preencha todos os campos obrigatórios com valores válidos.', 'error');
+        return;
+      }
+
+      const dataServicoResult = validateDate(dataServicoRaw);
+      if (!dataServicoResult.isValid) {
+        this.options.showToast(`Data do Serviço inválida: ${dataServicoResult.message}`, 'error');
+        return;
+      }
+
+      const dataServico = formatBrDateToIso(dataServicoRaw)!;
+      const venda = parseDoubleBr(vendaRaw);
+
+      // Datas adicionais
+      const datasAdicionais: { data: string; rotulo: string }[] = [];
+      const rotuloInputs = formNovoProduto.querySelectorAll('.prod-adicional-rotulo') as NodeListOf<HTMLInputElement>;
+      const dataInputs = formNovoProduto.querySelectorAll('.prod-adicional-data') as NodeListOf<HTMLInputElement>;
+      
+      let datesValid = true;
+      for (let i = 0; i < rotuloInputs.length; i++) {
+        const rotulo = rotuloInputs[i].value.trim();
+        const dataBr = dataInputs[i].value.trim();
+        if (!rotulo || !dataBr) {
+          this.options.showToast('Preencha as datas adicionais.', 'error');
+          datesValid = false;
+          break;
+        }
+
+        const dataIso = formatBrDateToIso(dataBr);
+        if (!dataIso || !validateDate(dataBr).isValid) {
+          this.options.showToast(`A data "${dataBr}" para "${rotulo}" é inválida.`, 'error');
+          datesValid = false;
+          break;
+        }
+
+        datasAdicionais.push({ rotulo, data: dataIso });
+      }
+
+      if (!datesValid) return;
+
+      const payload = {
+        viagem_id: v.id,
+        tipo,
+        fornecedor,
+        descricao,
+        codigo_reserva: reserva || null,
+        valor_custo: 0,
+        valor_venda: venda,
+        status,
+        data_servico: dataServico,
+        datas_adicionais: datasAdicionais,
+        dados_adicionais: dadosAdicionais
+      };
+
+      try {
+        if (!this.options.isFallbackMode) {
+          const { error } = await supabase
+            .from('produtos_viagem')
+            .insert(payload);
+
+          if (error) throw error;
+        } else {
+          const saved = localStorage.getItem(`paxflow-produtos-viagem-${v.id}`);
+          const list = saved ? JSON.parse(saved) : [];
+          list.push({
+            ...payload,
+            id: 'prod-offline-' + Math.random().toString(36).substr(2, 9),
+            created_at: new Date().toISOString()
+          });
+          localStorage.setItem(`paxflow-produtos-viagem-${v.id}`, JSON.stringify(list));
+        }
+
+        this.options.showToast('Produto adicionado à viagem com sucesso!', 'success');
+        formNovoProduto.reset();
+
+        const containerDatas = document.getElementById('container-datas-adicionais');
+        if (containerDatas) containerDatas.innerHTML = '';
+
+        await this.options.onUpdate();
+        await this.open(v.id, 'produtos');
+      } catch (err: any) {
+        console.error('Erro ao adicionar produto:', err);
+        this.options.showToast('Erro ao adicionar produto.', 'error', err);
+      }
+    });
+
+    // Inicializa o editor lateral se houver um produto selecionado
+    if (selectedProduct) {
+      this.setupProductEditor(selectedProduct, v);
+    }
+  }
+
+  private setupProductEditor(selectedProduct: any, v: any): void {
+    const closeEditor = () => {
+      this.selectedProductId = null;
+      this.open(v.id, 'produtos');
+    };
+    document.getElementById('btn-close-product-editor')?.addEventListener('click', closeEditor);
+    document.getElementById('edit-btn-cancelar-lateral')?.addEventListener('click', closeEditor);
+
+    const prod = selectedProduct;
+    const prodId = prod.id;
+    const formEditProd = document.getElementById(`form-editar-produto-lateral-${prodId}`) as HTMLFormElement;
+    if (!formEditProd) return;
+
+    const editarProdutoValidator = setupFormValidation(`form-editar-produto-lateral-${prodId}`, [
+      { id: `edit-prod-venda-${prodId}`, type: 'currency' },
+      { id: `edit-prod-taxa-${prodId}`, type: 'currency', required: false },
+      { id: `edit-prod-comissao-${prodId}`, type: 'currency', required: false },
+      { id: `edit-prod-markup-${prodId}`, type: 'currency', required: false },
+      { id: `edit-prod-rav-${prodId}`, type: 'currency', required: false },
+      { id: `edit-prod-data-${prodId}`, type: 'date' }
+    ]);
+
+    const editTipoSelect = document.getElementById(`edit-prod-tipo-${prodId}`) as HTMLSelectElement;
+    const editCondContainer = document.getElementById(`edit-container-campos-condicionais-${prodId}`) as HTMLElement;
+    const editFornecedorInput = document.getElementById(`edit-prod-fornecedor-${prodId}`) as HTMLInputElement;
+
+    const renderDynamicFields = (tipo: string, currentData: any) => {
+      const tipoConfig = this.options.tiposProduto.find(t => t.nome === tipo);
+      if (tipoConfig && Array.isArray(tipoConfig.campos_adicionais) && tipoConfig.campos_adicionais.length > 0) {
+        editCondContainer.classList.remove('hidden');
+        let fieldsHTML = '';
+        tipoConfig.campos_adicionais.forEach((campo: any) => {
+          const requiredAttr = campo.obrigatorio ? 'required' : '';
+          const label = `${campo.label}${campo.obrigatorio ? ' *' : ''}`;
+          const currentVal = currentData[campo.id] || '';
+
+          if (campo.tipo === 'select') {
+            const options = Array.isArray(campo.opcoes) ? campo.opcoes : [];
+            fieldsHTML += `
+              <div class="space-y-1">
+                <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">${label}</label>
+                <select id="edit-prod-campo-${campo.id}-${prodId}" ${requiredAttr} class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition duration-155">
+                  <option value="" disabled ${!currentVal ? 'selected' : ''}>Selecione...</option>
+                  ${options.map((opt: string) => `<option value="${opt}" ${opt === currentVal ? 'selected' : ''}>${opt}</option>`).join('')}
+                </select>
+              </div>
+            `;
+          } else if (campo.tipo === 'number') {
+            fieldsHTML += `
+              <div class="space-y-1">
+                <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">${label}</label>
+                <input type="number" id="edit-prod-campo-${campo.id}-${prodId}" ${requiredAttr} value="${currentVal}" placeholder="${campo.placeholder || ''}" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition duration-155" />
+              </div>
+            `;
+          } else {
+            fieldsHTML += `
+              <div class="space-y-1">
+                <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">${label}</label>
+                <input type="text" id="edit-prod-campo-${campo.id}-${prodId}" ${requiredAttr} value="${currentVal}" placeholder="${campo.placeholder || ''}" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition duration-155" />
+              </div>
+            `;
+          }
+        });
+
+        editCondContainer.innerHTML = `<div class="grid grid-cols-1 md:grid-cols-2 gap-3">${fieldsHTML}</div>`;
+
+        tipoConfig.campos_adicionais.forEach((campo: any) => {
+          const inputEl = document.getElementById(`edit-prod-campo-${campo.id}-${prodId}`);
+          if (inputEl) {
+            inputEl.addEventListener('change', (ev: any) => {
+              const val = ev.target.value;
+              if (campo.alvo === 'fornecedor' && val && val !== 'Outra' && val !== 'Outro') {
+                editFornecedorInput.value = val;
+              }
+            });
+          }
+        });
+      } else {
+        editCondContainer.classList.add('hidden');
+        editCondContainer.innerHTML = '';
+      }
+    };
+
+    renderDynamicFields(prod.tipo, prod.dados_adicionais || {});
+
+    editTipoSelect?.addEventListener('change', () => {
+      renderDynamicFields(editTipoSelect.value, {});
+    });
+
+    // Datas adicionais
+    const editContainerDatas = document.getElementById(`edit-container-datas-adicionais-${prodId}`) as HTMLElement;
+    const addDateRow = (rotulo: string, dataIso: string) => {
+      const dataBr = dataIso ? dataIso.split('-').reverse().join('/') : '';
+      const rowId = `row-edit-data-adicional-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+      const newRow = document.createElement('div');
+      newRow.id = rowId;
+      newRow.className = 'grid grid-cols-[1fr_1fr_auto] gap-2 items-end bg-slate-100/50 dark:bg-slate-800/30 p-2 rounded-lg border border-slate-200/40 dark:border-slate-800/40';
+      newRow.innerHTML = `
+        <div>
+          <label class="block text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Rótulo</label>
+          <input type="text" placeholder="Rótulo" value="${rotulo}" required class="edit-prod-adicional-rotulo w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs" />
+        </div>
+        <div>
+          <label class="block text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Data</label>
+          <input type="text" placeholder="DD/MM/AAAA" value="${dataBr}" required class="edit-prod-adicional-data w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs" />
+        </div>
+        <button type="button" class="edit-btn-remove-data-adicional p-2 hover:bg-rose-50/80 dark:hover:bg-rose-950/20 text-slate-400 hover:text-rose-600 rounded-lg transition" title="Remover data">
+          🗑️
+        </button>
+      `;
+      editContainerDatas.appendChild(newRow);
+
+      const dataInput = newRow.querySelector('.edit-prod-adicional-data') as HTMLInputElement;
+      dataInput.addEventListener('input', (ev) => {
+        const target = ev.target as HTMLInputElement;
+        let val = target.value;
+        let digits = val.replace(/\D/g, '');
+        if (digits.length > 8) digits = digits.slice(0, 8);
+        target.value = formatDateBr(digits);
+      });
+
+      newRow.querySelector('.edit-btn-remove-data-adicional')?.addEventListener('click', () => {
+        newRow.remove();
+      });
+    };
+
+    if (Array.isArray(prod.datas_adicionais)) {
+      prod.datas_adicionais.forEach((d: any) => {
+        addDateRow(d.rotulo, d.data);
+      });
+    }
+
+    document.getElementById(`edit-btn-add-data-adicional-${prodId}`)?.addEventListener('click', () => {
+      addDateRow('', '');
+    });
+
+    const editVendaInput = document.getElementById(`edit-prod-venda-${prodId}`) as HTMLInputElement;
+    const editTaxaInput = document.getElementById(`edit-prod-taxa-${prodId}`) as HTMLInputElement;
+    const editComissaoInput = document.getElementById(`edit-prod-comissao-${prodId}`) as HTMLInputElement;
+    const editMarkupInput = document.getElementById(`edit-prod-markup-${prodId}`) as HTMLInputElement;
+    const editRavInput = document.getElementById(`edit-prod-rav-${prodId}`) as HTMLInputElement;
+    const editTarifaInput = document.getElementById(`edit-prod-tarifa-${prodId}`) as HTMLInputElement;
+    const totalDistEl = document.getElementById(`edit-det-total-distribuido-${prodId}`) as HTMLElement;
+    const saldoPendEl = document.getElementById(`edit-det-saldo-pendente-${prodId}`) as HTMLElement;
+
+    const toggleFieldsState = (enabled: boolean) => {
+      const fields = [editTaxaInput, editComissaoInput, editMarkupInput, editRavInput];
+      fields.forEach(el => {
+        if (!el) return;
+        if (enabled) {
+          el.removeAttribute('readonly');
+          el.classList.remove('cursor-not-allowed', 'text-slate-500', 'dark:text-slate-400', 'bg-slate-50', 'dark:bg-slate-900');
+          el.classList.add('bg-transparent', 'text-slate-800', 'dark:text-slate-100');
+        } else {
+          el.setAttribute('readonly', 'readonly');
+          el.classList.remove('bg-transparent', 'text-slate-800', 'dark:text-slate-100');
+          el.classList.add('cursor-not-allowed', 'text-slate-500', 'dark:text-slate-400', 'bg-slate-50', 'dark:bg-slate-900');
+        }
+      });
+    };
+
+    const recalcularValoresLocais = () => {
+      if (!editVendaInput || !editTaxaInput || !editComissaoInput || !editMarkupInput || !editRavInput || !editTarifaInput || !totalDistEl || !saldoPendEl) return;
+      const venda = parseDoubleBr(editVendaInput.value) || 0;
+      const taxa = parseDoubleBr(editTaxaInput.value) || 0;
+      const comissao = parseDoubleBr(editComissaoInput.value) || 0;
+      const markup = parseDoubleBr(editMarkupInput.value) || 0;
+      const rav = parseDoubleBr(editRavInput.value) || 0;
+
+      let tarifa = venda - (taxa + comissao + markup + rav);
+      if (Math.abs(tarifa) < 0.01) {
+        tarifa = 0;
+      }
+      const totalDist = tarifa + taxa + comissao + markup + rav;
+      let saldoPend = venda - totalDist;
+      if (Math.abs(saldoPend) < 0.01) {
+        saldoPend = 0;
+      }
+
+      editTarifaInput.value = formatCurrencyValue(tarifa);
+      totalDistEl.textContent = `R$ ${totalDist.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+      saldoPendEl.textContent = `R$ ${saldoPend.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+
+      if (Math.abs(saldoPend) > 0.01) {
+        saldoPendEl.className = 'font-black text-rose-600 dark:text-rose-400';
+      } else {
+        saldoPendEl.className = 'font-black text-emerald-600 dark:text-emerald-400';
+      }
+    };
+
+    if (editVendaInput) {
+      editVendaInput.addEventListener('input', () => {
+        const venda = parseDoubleBr(editVendaInput.value) || 0;
+        toggleFieldsState(venda > 0);
+        recalcularValoresLocais();
+      });
+    }
+
+    [editTaxaInput, editComissaoInput, editMarkupInput, editRavInput].forEach(inp => {
+      inp?.addEventListener('input', recalcularValoresLocais);
+    });
+
+    if (editVendaInput) {
+      const initialVenda = parseDoubleBr(editVendaInput.value) || 0;
+      toggleFieldsState(initialVenda > 0);
+    }
+    recalcularValoresLocais();
+
+    formEditProd.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const editTipo = editTipoSelect.value;
+      const editFornecedor = editFornecedorInput.value.trim() || 'Não informado';
+      const editDescricao = (document.getElementById(`edit-prod-descricao-${prodId}`) as HTMLInputElement).value.trim() || 'Sem descrição';
+      const editReserva = (document.getElementById(`edit-prod-reserva-${prodId}`) as HTMLInputElement).value.trim();
+      const editStatus = (document.getElementById(`edit-prod-status-${prodId}`) as HTMLSelectElement).value;
+      const editDataServicoRaw = (document.getElementById(`edit-prod-data-${prodId}`) as HTMLInputElement).value.trim();
+
+      if (!editReserva) {
+        this.options.showToast('Por favor, informe o Código (LOC) do serviço.', 'error');
+        return;
+      }
+      if (editReserva.length > 20) {
+        this.options.showToast('O Código (LOC) deve ter no máximo 20 caracteres.', 'error');
+        return;
+      }
+      if (/\s|[,;\/\\]/.test(editReserva)) {
+        this.options.showToast('Insira apenas um Código (LOC) por serviço.', 'error');
+        return;
+      }
+
+      if (!editarProdutoValidator.validateAll()) {
+        this.options.showToast('Preencha todos os campos obrigatórios com valores válidos.', 'error');
+        return;
+      }
+
+      const editDataServicoResult = validateDate(editDataServicoRaw);
+      if (!editDataServicoResult.isValid) {
+        this.options.showToast(`Data do Serviço inválida: ${editDataServicoResult.message}`, 'error');
+        return;
+      }
+
+      const editDataServico = formatBrDateToIso(editDataServicoRaw)!;
+
+      const venda = parseDoubleBr(editVendaInput.value) || 0;
+      const taxa = parseDoubleBr(editTaxaInput.value) || 0;
+      const comissao = parseDoubleBr(editComissaoInput.value) || 0;
+      const markup = parseDoubleBr(editMarkupInput.value) || 0;
+      const rav = parseDoubleBr(editRavInput.value) || 0;
+      const tarifa = venda - (taxa + comissao + markup + rav);
+
+      const totalDist = tarifa + taxa + comissao + markup + rav;
+      if (Math.abs(venda - totalDist) > 0.01) {
+        this.options.showToast(`O valor total distribuído deve ser igual ao Valor de Venda do produto.`, 'error');
+        return;
+      }
+
+      // Dynamic fields
+      const tipoConfig = this.options.tiposProduto.find(t => t.nome === editTipo);
+      const editDadosAdicionais: Record<string, any> = {};
+      if (tipoConfig && Array.isArray(tipoConfig.campos_adicionais)) {
+        for (const campo of tipoConfig.campos_adicionais) {
+          const el = document.getElementById(`edit-prod-campo-${campo.id}-${prodId}`) as HTMLInputElement | HTMLSelectElement | null;
+          if (el) {
+            const val = el.value.trim();
+            if (campo.obrigatorio && !val) {
+              this.options.showToast(`O campo "${campo.label}" é obrigatório.`, 'error');
+              return;
+            }
+            editDadosAdicionais[campo.id] = val;
+          }
+        }
+      }
+
+      // Additional dates
+      const editDatasAdicionais: { data: string; rotulo: string }[] = [];
+      const rotuloInputs = formEditProd.querySelectorAll('.edit-prod-adicional-rotulo') as NodeListOf<HTMLInputElement>;
+      const dataInputs = formEditProd.querySelectorAll('.edit-prod-adicional-data') as NodeListOf<HTMLInputElement>;
+      
+      let datesValid = true;
+      for (let i = 0; i < rotuloInputs.length; i++) {
+        const rotulo = rotuloInputs[i].value.trim();
+        const dataBr = dataInputs[i].value.trim();
+        if (!rotulo || !dataBr) {
+          this.options.showToast('Preencha as datas adicionais.', 'error');
+          datesValid = false;
+          break;
+        }
+
+        const dataIso = formatBrDateToIso(dataBr);
+        if (!dataIso || !validateDate(dataBr).isValid) {
+          this.options.showToast(`A data "${dataBr}" para "${rotulo}" é inválida.`, 'error');
+          datesValid = false;
+          break;
+        }
+
+        editDatasAdicionais.push({ rotulo, data: dataIso });
+      }
+
+      if (!datesValid) return;
+
+      const payload = {
+        tipo: editTipo,
+        fornecedor: editFornecedor,
+        descricao: editDescricao,
+        codigo_reserva: editReserva || null,
+        valor_custo: 0,
+        valor_venda: venda,
+        tarifa: tarifa,
+        taxa: taxa,
+        comissao: comissao,
+        markup: markup,
+        rav: rav,
+        status: editStatus,
+        data_servico: editDataServico,
+        datas_adicionais: editDatasAdicionais,
+        dados_adicionais: editDadosAdicionais
+      };
+
+      try {
+        if (!this.options.isFallbackMode) {
+          const { error } = await supabase
+            .from('produtos_viagem')
+            .update(payload)
+            .eq('id', prodId);
+
+          if (error) throw error;
+        } else {
+          const saved = localStorage.getItem(`paxflow-produtos-viagem-${v.id}`);
+          if (saved) {
+            const list = JSON.parse(saved);
+            const idx = list.findIndex((x: any) => x.id === prodId);
+            if (idx !== -1) {
+              list[idx] = { ...list[idx], ...payload };
+              localStorage.setItem(`paxflow-produtos-viagem-${v.id}`, JSON.stringify(list));
+            }
+          }
+        }
+
+        this.options.showToast('Produto atualizado com sucesso!', 'success');
+        this.selectedProductId = prodId;
+
+        await this.options.onUpdate();
+        await this.open(v.id, 'produtos');
+      } catch (err: any) {
+        console.error('Erro ao editar produto lateral:', err);
+        this.options.showToast('Erro ao editar produto.', 'error', err);
+      }
+    });
+  }
+
+  private async loadAndRenderProdutosViagem(tripId: string): Promise<void> {
+    const container = document.getElementById('lista-produtos-viagem-container');
+    if (!container) return;
+
+    let produtos: any[] = [];
+    let isError = false;
+
+    try {
+      const { data, error } = await supabase
+        .from('produtos_viagem')
+        .select('*')
+        .eq('viagem_id', tripId)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      produtos = data || [];
+      localStorage.setItem(`paxflow-produtos-viagem-${tripId}`, JSON.stringify(produtos));
+    } catch (err: any) {
+      console.error('Erro ao buscar produtos da viagem:', err);
+      isError = true;
+      const saved = localStorage.getItem(`paxflow-produtos-viagem-${tripId}`);
+      if (saved) {
+        try {
+          produtos = JSON.parse(saved);
+          isError = false;
+        } catch (e) {
+          produtos = [];
+        }
+      }
+    }
+
+    if (isError) {
+      container.innerHTML = `
+        <p class="text-center text-xs text-rose-500 font-bold py-4">
+          Falha ao buscar produtos.
+        </p>
+      `;
+      return;
+    }
+
+    const viagem = this.options.viagens.find(x => x.id === tripId);
+    const valorTotalViagem = viagem ? (Number(viagem.valor_total) || 0) : 0;
+    const totalProdutos = produtos.reduce((sum, p) => sum + (Number(p.valor_venda) || 0), 0);
+    const totalRentabilidade = produtos.reduce((sum, p) => sum + (Number(p.comissao) || 0) + (Number(p.markup) || 0) + ((Number(p.rav) || 0) * 0.88), 0);
+    let saldoPendente = valorTotalViagem - totalProdutos;
+    if (Math.abs(saldoPendente) < 0.01) {
+      saldoPendente = 0;
+    }
+
+    const finValorVenda = document.getElementById('fin-valor-venda');
+    const finValorProdutos = document.getElementById('fin-valor-produtos');
+    const finValorPendente = document.getElementById('fin-valor-pendente');
+    const finValorRentabilidade = document.getElementById('fin-valor-rentabilidade');
+
+    if (finValorVenda) {
+      finValorVenda.textContent = `R$ ${valorTotalViagem.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+    }
+    if (finValorProdutos) {
+      finValorProdutos.textContent = `R$ ${totalProdutos.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+    }
+    if (finValorPendente) {
+      finValorPendente.textContent = `R$ ${saldoPendente.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+      if (Math.abs(saldoPendente) < 0.01) {
+        finValorPendente.className = 'text-sm font-black text-emerald-600 dark:text-emerald-400';
+      } else {
+        finValorPendente.className = 'text-sm font-black text-rose-600 dark:text-rose-400';
+      }
+    }
+    if (finValorRentabilidade) {
+      finValorRentabilidade.textContent = `R$ ${totalRentabilidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+    }
+
+    if (produtos.length === 0) {
+      container.innerHTML = `
+        <p class="text-center text-xs text-slate-400 font-medium py-6">
+          Nenhum produto cadastrado para esta viagem.
+        </p>
+      `;
+      return;
+    }
+
+    let commentsCountMap: { [key: string]: number } = {};
+    produtos.forEach(p => { commentsCountMap[p.id] = 0; });
+    
+    if (!this.options.isFallbackMode) {
+      try {
+        const productIds = produtos.map(p => p.id);
+        const { data: commentsCountData } = await supabase
+          .from('comentarios')
+          .select('item_id')
+          .eq('tipo_item', 'produto')
+          .in('item_id', productIds);
+
+        if (commentsCountData) {
+          commentsCountData.forEach(c => {
+            commentsCountMap[c.item_id] = (commentsCountMap[c.item_id] || 0) + 1;
+          });
+        }
+      } catch (errComm) {
+        console.warn('Erro ao carregar contagem de comentários:', errComm);
+      }
+    }
+
+    const datalist = document.getElementById('existing-locs-list');
+    if (datalist) {
+      const uniqueLocs = Array.from(new Set(
+        produtos
+          .map(p => (p.codigo_reserva || '').trim().toUpperCase())
+          .filter(loc => loc.length > 0)
+      ));
+      datalist.innerHTML = uniqueLocs.map(loc => `<option value="${loc}"></option>`).join('');
+    }
+
+    const produtosAgrupados: {
+      [locKey: string]: {
+        loc: string;
+        produtos: any[];
+        valorVendaTotal: number;
+        isGroupDetalhado: boolean;
+      }
+    } = {};
+
+    produtos.forEach(p => {
+      const locKey = (p.codigo_reserva || 'SEM LOCALIZADOR').trim().toUpperCase();
+      if (!produtosAgrupados[locKey]) {
+        produtosAgrupados[locKey] = {
+          loc: locKey,
+          produtos: [],
+          valorVendaTotal: 0,
+          isGroupDetalhado: true
+        };
+      }
+
+      produtosAgrupados[locKey].produtos.push(p);
+      produtosAgrupados[locKey].valorVendaTotal += Number(p.valor_venda || 0);
+
+      const tarifa = Number(p.tarifa) || 0;
+      const taxa = Number(p.taxa) || 0;
+      const comissao = Number(p.comissao) || 0;
+      const markup = Number(p.markup) || 0;
+      const rav = Number(p.rav) || 0;
+      const totalDet = tarifa + taxa + comissao + markup + rav;
+      const isProdDetalhado = Math.abs(Number(p.valor_venda || 0) - totalDet) < 0.01;
+      
+      if (!isProdDetalhado) {
+        produtosAgrupados[locKey].isGroupDetalhado = false;
+      }
+    });
+
+    container.innerHTML = Object.values(produtosAgrupados).map(grupo => {
+      const locKey = grupo.loc;
+      const isGroupDetalhado = grupo.isGroupDetalhado;
+      const valorVendaTotal = grupo.valorVendaTotal;
+      const subProdutos = grupo.produtos;
+
+      const innerCardsHTML = subProdutos.map(p => {
+        const tipoIcon = this.getIconForType(p.tipo);
+        const commentsCount = commentsCountMap[p.id] || 0;
+        const isSelected = p.id === this.selectedProductId;
+        const selectedBorderClass = isSelected
+          ? 'border-indigo-500 dark:border-indigo-400 bg-indigo-50/10 dark:bg-indigo-950/10 ring-2 ring-indigo-500/20 shadow-md shadow-indigo-500/5'
+          : 'border-slate-200/60 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 hover:bg-slate-100/50 dark:hover:bg-slate-800/80';
+
+        return `
+          <div class="product-card-clickable flex items-center justify-between gap-3 p-3 ${selectedBorderClass} border rounded-xl transition cursor-pointer" data-product-id="${p.id}">
+            <div class="flex items-start gap-2.5 overflow-hidden w-full">
+              <span class="text-lg p-1 bg-white dark:bg-slate-700 border border-slate-100 dark:border-slate-700 rounded-lg shadow-sm flex items-center justify-center">${tipoIcon}</span>
+              <div class="overflow-hidden flex-1 self-center text-left">
+                <span class="block text-xs font-black text-slate-700 dark:text-slate-200 truncate leading-tight">
+                  ${p.tipo}
+                </span>
+              </div>
+            </div>
+            
+            <div class="flex items-center gap-3.5">
+              <div class="text-right">
+                <span class="block text-xs font-black text-indigo-600 dark:text-indigo-400">R$ ${Number(p.valor_venda || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+              </div>
+              <button data-comments-prod-id="${p.id}" data-comments-prod-name="${p.fornecedor} - ${p.descricao}" class="p-1.5 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-slate-300 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-md transition text-xs font-bold flex items-center gap-1" title="Notas e Comentários">
+                💬 <span class="text-[10px]">${commentsCount}</span>
+              </button>
+              <button data-delete-prod-id="${p.id}" class="p-1.5 hover:bg-rose-50 dark:hover:bg-rose-950/20 text-slate-300 dark:text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 rounded-md transition text-xs font-bold" title="Remover Produto">
+                🗑️
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      return `
+        <div class="loc-group border border-slate-200/80 dark:border-slate-800 rounded-xl overflow-hidden mb-2 shadow-sm">
+          <div class="loc-header flex items-center justify-between p-2.5 bg-slate-100/50 dark:bg-slate-800/40 cursor-pointer hover:bg-slate-200/50 dark:hover:bg-slate-800/80 transition select-none" data-loc-key="${locKey}">
+            <div class="flex items-center gap-2">
+              <span class="loc-chevron inline-block transition-transform duration-200 text-xs text-slate-400 dark:text-slate-500" style="transform: rotate(90deg);">▶</span>
+              <span class="px-2 py-0.5 text-[10px] font-black tracking-wider rounded bg-indigo-100 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 uppercase">${locKey}</span>
+              ${!isGroupDetalhado ? `<span class="px-1.5 py-0.5 text-[9px] font-black rounded bg-amber-500/10 text-amber-500 border border-amber-500/20 animate-pulse">⚠️ Detalhamento Pendente</span>` : ''}
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-black text-indigo-600 dark:text-indigo-400">R$ ${valorVendaTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+            </div>
+          </div>
+          
+          <div class="loc-body border-t border-slate-100 dark:border-slate-800/50 bg-slate-50/10 dark:bg-slate-900/5 p-2 pl-4 space-y-2 border-l-2 border-l-slate-200 dark:border-l-slate-700">
+            ${innerCardsHTML}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    // Acordeões LOC
+    container.querySelectorAll('.loc-header').forEach(header => {
+      header.addEventListener('click', () => {
+        const body = header.nextElementSibling as HTMLElement;
+        const chevron = header.querySelector('.loc-chevron') as HTMLElement;
+        if (body && chevron) {
+          const isHidden = body.classList.contains('hidden');
+          if (isHidden) {
+            body.classList.remove('hidden');
+            chevron.style.transform = 'rotate(90deg)';
+          } else {
+            body.classList.add('hidden');
+            chevron.style.transform = 'rotate(0deg)';
+          }
+        }
+      });
+    });
+
+    // Comentários produto
+    container.querySelectorAll('[data-comments-prod-id]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const prodId = btn.getAttribute('data-comments-prod-id');
+        const prodName = btn.getAttribute('data-comments-prod-name') || 'Produto';
+        if (!prodId) return;
+
+        CommentsService.openProductCommentsModal(
+          prodId,
+          this.tripId,
+          prodName,
+          this.options.user.id,
+          this.options.consultores,
+          () => {
+            this.loadAndRenderProdutosViagem(this.tripId);
+          }
+        );
+      });
+    });
+
+    // Excluir produto
+    container.querySelectorAll('[data-delete-prod-id]').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const prodId = btn.getAttribute('data-delete-prod-id');
+        if (!prodId) return;
+
+        const confirmResult = await showCustomConfirm(
+          'Deseja realmente remover este produto da viagem?',
+          'Remover Produto',
+          { isDestructive: true, confirmText: 'Remover', cancelText: 'Manter' }
+        );
+        if (confirmResult) {
+          try {
+            if (!this.options.isFallbackMode) {
+              const { error } = await supabase
+                .from('produtos_viagem')
+                .delete()
+                .eq('id', prodId);
+
+              if (error) throw error;
+            } else {
+              const saved = localStorage.getItem(`paxflow-produtos-viagem-${this.tripId}`);
+              if (saved) {
+                const list = JSON.parse(saved);
+                const updatedList = list.filter((p: any) => p.id !== prodId);
+                localStorage.setItem(`paxflow-produtos-viagem-${this.tripId}`, JSON.stringify(updatedList));
+              }
+            }
+
+            this.options.showToast('Produto removido com sucesso!', 'success');
+            await this.options.onUpdate();
+            await this.loadAndRenderProdutosViagem(this.tripId);
+          } catch (err: any) {
+            console.error('Erro ao remover produto:', err);
+            this.options.showToast('Erro ao remover produto.', 'error', err);
+          }
+        }
+      });
+    });
+
+    // Clicar para editar no painel lateral
+    container.querySelectorAll('.product-card-clickable').forEach(card => {
+      card.addEventListener('click', (e) => {
+        const target = e.target as HTMLElement;
+        if (target.closest('button')) return;
+        const prodId = card.getAttribute('data-product-id');
+        const prod = produtos.find(x => x.id === prodId);
+        if (prod) {
+          this.selectedProductId = prod.id;
+          this.open(this.tripId, 'produtos');
+        }
+      });
+    });
+  }
+
+  private getIconForType(tipo: string): string {
+    switch (tipo?.toLowerCase()) {
+      case 'hotel': return '🏨';
+      case 'aéreo':
+      case 'aereo': return '🛫';
+      case 'seguro': return '🛡️';
+      case 'ingresso': return '🎟️';
+      case 'transfer': return '🚗';
+      case 'cruzeiro': return '🚢';
+      case 'aluguel':
+      case 'carro': return '🚘';
+      case 'pacote': return '📦';
+      case 'circuito': return '🚌';
+      case 'trem': return '🚊';
+      case 'visto': return '🛂';
+      default: return '💼';
+    }
+  }
+
+  private renderModalOverlay(maxWidthClass: string = 'max-w-lg'): void {
+    let overlay = document.getElementById('modal-overlay');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'modal-overlay';
+      overlay.className = 'fixed inset-0 modal-overlay-blur z-50 flex items-center justify-center opacity-0 pointer-events-none';
+      overlay.innerHTML = `
+        <div class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 w-full max-w-lg rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-800 transform scale-95 transition-all duration-300 max-h-[90vh] overflow-y-auto custom-scrollbar" id="modal-container">
+          <div id="modal-content-container"></div>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+    }
+
+    const container = document.getElementById('modal-container');
+    if (container) {
+      container.className = container.className.replace(/\bmax-w-\S+/g, '');
+      container.classList.add(maxWidthClass);
+    }
+    
+    setTimeout(() => {
+      if (overlay) {
+        overlay.classList.remove('opacity-0', 'pointer-events-none');
+        overlay.classList.add('opacity-100', 'pointer-events-auto');
+      }
+      if (container) {
+        container.classList.remove('scale-95');
+        container.classList.add('scale-100');
+      }
+    }, 10);
+  }
+
+  private closeModal(): void {
+    if (this.destAutocomplete) {
+      this.destAutocomplete.destroy();
+      this.destAutocomplete = null;
+    }
+    const overlay = document.getElementById('modal-overlay');
+    const container = document.getElementById('modal-container');
+    if (overlay && container) {
+      container.classList.remove('scale-100');
+      container.classList.add('scale-95');
+      overlay.classList.remove('opacity-100', 'pointer-events-auto');
+      overlay.classList.add('opacity-0', 'pointer-events-none');
+    }
+  }
+}
