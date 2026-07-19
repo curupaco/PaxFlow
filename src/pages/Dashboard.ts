@@ -2351,9 +2351,15 @@ export class Dashboard {
       const markup = parseDoubleBr(editMarkupInput.value) || 0;
       const rav = parseDoubleBr(editRavInput.value) || 0;
 
-      const tarifa = venda - (taxa + comissao + markup + rav);
+      let tarifa = venda - (taxa + comissao + markup + rav);
+      if (Math.abs(tarifa) < 0.01) {
+        tarifa = 0;
+      }
       const totalDist = tarifa + taxa + comissao + markup + rav;
-      const saldoPend = venda - totalDist;
+      let saldoPend = venda - totalDist;
+      if (Math.abs(saldoPend) < 0.01) {
+        saldoPend = 0;
+      }
 
       editTarifaInput.value = formatCurrencyValue(tarifa);
       totalDistEl.textContent = `R$ ${totalDist.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
@@ -2587,7 +2593,10 @@ export class Dashboard {
     const valorTotalViagem = viagem ? (Number(viagem.valor_total) || 0) : 0;
     const totalProdutos = produtos.reduce((sum, p) => sum + (Number(p.valor_venda) || 0), 0);
     const totalRentabilidade = produtos.reduce((sum, p) => sum + (Number(p.comissao) || 0) + (Number(p.markup) || 0) + ((Number(p.rav) || 0) * 0.88), 0);
-    const saldoPendente = valorTotalViagem - totalProdutos;
+    let saldoPendente = valorTotalViagem - totalProdutos;
+    if (Math.abs(saldoPendente) < 0.01) {
+      saldoPendente = 0;
+    }
 
     const finValorVenda = document.getElementById('fin-valor-venda');
     const finValorProdutos = document.getElementById('fin-valor-produtos');
@@ -3029,7 +3038,10 @@ export class Dashboard {
       const comissao = parseDoubleBr(inputComissao.value);
 
       const totalDistributed = tarifa + taxa + comissao;
-      const pendente = valorVenda - totalDistributed;
+      let pendente = valorVenda - totalDistributed;
+      if (Math.abs(pendente) < 0.01) {
+        pendente = 0;
+      }
 
       if (totalDistEl) {
         totalDistEl.textContent = `R$ ${totalDistributed.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
