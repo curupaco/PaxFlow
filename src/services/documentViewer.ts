@@ -61,7 +61,7 @@ export class DocumentViewer {
               ✕
             </button>
           </div>
-        </header> defense
+        </header>
 
         <!-- Corpo com Visualização do Documento -->
         <main class="flex-grow bg-slate-100/50 dark:bg-slate-950/40 relative flex items-center justify-center p-6 overflow-hidden min-h-0">
