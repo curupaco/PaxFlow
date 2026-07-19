@@ -297,7 +297,7 @@ export class ClientesPage {
     const form = document.getElementById('form-cliente') as HTMLFormElement;
     
     // Inicializa a validação em tempo real para os campos de contato e datas
-    setupFormValidation('form-cliente', [
+    const validator = setupFormValidation('form-cliente', [
       { id: 'input-email', type: 'email' },
       { id: 'input-telefone', type: 'phone', required: false },
       { id: 'input-documento', type: 'cpf_cnpj', required: false },
@@ -318,6 +318,11 @@ export class ClientesPage {
 
     form?.addEventListener('submit', async (e) => {
       e.preventDefault();
+
+      if (!validator.validateAll()) {
+        this.showToast('Por favor, preencha todos os campos obrigatórios com valores válidos.', 'error');
+        return;
+      }
 
       const isEditing = !!(this.clienteSelecionado && this.clienteSelecionado.id);
       

@@ -990,7 +990,7 @@ export class Dashboard {
         </div>
       `;
 
-      setupFormValidation('form-nova-viagem', [
+      const novaViagemValidator = setupFormValidation('form-nova-viagem', [
         { id: 'input-viagem-valor', type: 'currency' },
         { id: 'input-viagem-ida', type: 'date' },
         { id: 'input-viagem-volta', type: 'date' },
@@ -1043,22 +1043,32 @@ export class Dashboard {
         const status = (document.getElementById('select-viagem-status') as HTMLSelectElement).value;
         const obs = (document.getElementById('textarea-viagem-obs') as HTMLTextAreaElement).value;
 
-        const vIda = formatBrDateToIso(vIdaRaw);
-        const vVolta = formatBrDateToIso(vVoltaRaw);
+        if (!novaViagemValidator.validateAll()) {
+          this.showToast('Preencha todos os campos obrigatórios com valores válidos.', 'error');
+          return;
+        }
+
+        const vIdaResult = validateDate(vIdaRaw);
+        if (!vIdaResult.isValid) {
+          this.showToast(`Data de Ida inválida: ${vIdaResult.message}`, 'error');
+          return;
+        }
+        const vVoltaResult = validateDate(vVoltaRaw);
+        if (!vVoltaResult.isValid) {
+          this.showToast(`Data de Volta inválida: ${vVoltaResult.message}`, 'error');
+          return;
+        }
+        if (status !== 'fechado') {
+          const vFinResult = validateDate(vFinRaw);
+          if (!vFinResult.isValid) {
+            this.showToast(`Data Financeiro inválida: ${vFinResult.message}`, 'error');
+            return;
+          }
+        }
+
+        const vIda = formatBrDateToIso(vIdaRaw)!;
+        const vVolta = formatBrDateToIso(vVoltaRaw)!;
         const vFin = vFinRaw ? formatBrDateToIso(vFinRaw) : null;
-        
-        if (!vIda) {
-          this.showToast('Por favor, informe a Data de Ida no formato correto DD/MM/AAAA.', 'error');
-          return;
-        }
-        if (!vVolta) {
-          this.showToast('Por favor, informe a Data de Volta no formato correto DD/MM/AAAA.', 'error');
-          return;
-        }
-        if (status !== 'fechado' && !vFin) {
-          this.showToast('Por favor, informe a Data Financeiro no formato correto DD/MM/AAAA.', 'error');
-          return;
-        }
 
         const idaDate = new Date(vIda);
         const voltaDate = new Date(vVolta);
@@ -1671,7 +1681,7 @@ export class Dashboard {
     });
 
     // Inicializa a validação do formulário de edição de viagem
-    setupFormValidation('form-editar-viagem', [
+    const editarViagemValidator = setupFormValidation('form-editar-viagem', [
       { id: 'edit-viagem-valor', type: 'currency' },
       { id: 'edit-viagem-ida', type: 'date' },
       { id: 'edit-viagem-volta', type: 'date', required: false },
@@ -1722,18 +1732,34 @@ export class Dashboard {
       const status = (document.getElementById('edit-viagem-status') as HTMLSelectElement).value;
       const obs = (document.getElementById('edit-viagem-obs') as HTMLTextAreaElement).value;
 
-      const dataIda = formatBrDateToIso(dataIdaRaw);
+      if (!editarViagemValidator.validateAll()) {
+        this.showToast('Preencha todos os campos obrigatórios com valores válidos.', 'error');
+        return;
+      }
+
+      const dataIdaResult = validateDate(dataIdaRaw);
+      if (!dataIdaResult.isValid) {
+        this.showToast(`Data de Ida inválida: ${dataIdaResult.message}`, 'error');
+        return;
+      }
+      if (dataVoltaRaw) {
+        const dataVoltaResult = validateDate(dataVoltaRaw);
+        if (!dataVoltaResult.isValid) {
+          this.showToast(`Data de Volta inválida: ${dataVoltaResult.message}`, 'error');
+          return;
+        }
+      }
+      if (status !== 'fechado') {
+        const dataFinResult = validateDate(dataFinanceiroRaw);
+        if (!dataFinResult.isValid) {
+          this.showToast(`Data Financeiro inválida: ${dataFinResult.message}`, 'error');
+          return;
+        }
+      }
+
+      const dataIda = formatBrDateToIso(dataIdaRaw)!;
       const dataVolta = formatBrDateToIso(dataVoltaRaw);
       const dataFinanceiro = dataFinanceiroRaw ? formatBrDateToIso(dataFinanceiroRaw) : null;
-
-      if (!dataIda) {
-        this.showToast('Por favor, informe a Data de Ida no formato correto DD/MM/AAAA.', 'error');
-        return;
-      }
-      if (status !== 'fechado' && !dataFinanceiro) {
-        this.showToast('Por favor, informe a Data Financeiro no formato correto DD/MM/AAAA.', 'error');
-        return;
-      }
 
       if (dataIda && dataVolta) {
         const idaDate = new Date(dataIda);
@@ -1941,7 +1967,7 @@ export class Dashboard {
     });
 
     // Inicializa a validação do formulário de novos produtos
-    setupFormValidation('form-novo-produto', [
+    const novoProdutoValidator = setupFormValidation('form-novo-produto', [
       { id: 'prod-venda', type: 'currency' },
       { id: 'prod-data', type: 'date' }
     ]);
@@ -2041,11 +2067,18 @@ export class Dashboard {
         return;
       }
 
-      const dataServico = formatBrDateToIso(dataServicoRaw);
-      if (!dataServico) {
-        this.showToast('Por favor, informe a Data do Serviço no formato correto DD/MM/AAAA.', 'error');
+      if (!novoProdutoValidator.validateAll()) {
+        this.showToast('Preencha todos os campos obrigatórios com valores válidos.', 'error');
         return;
       }
+
+      const dataServicoResult = validateDate(dataServicoRaw);
+      if (!dataServicoResult.isValid) {
+        this.showToast(`Data do Serviço inválida: ${dataServicoResult.message}`, 'error');
+        return;
+      }
+
+      const dataServico = formatBrDateToIso(dataServicoRaw)!;
 
       const venda = parseDoubleBr(vendaRaw);
 
@@ -2156,7 +2189,7 @@ export class Dashboard {
     if (!formEditProd) return;
 
     // 2. Inicializar validação do formulário com setupFormValidation
-    setupFormValidation(`form-editar-produto-lateral-${prodId}`, [
+    const editarProdutoValidator = setupFormValidation(`form-editar-produto-lateral-${prodId}`, [
       { id: `edit-prod-venda-${prodId}`, type: 'currency' },
       { id: `edit-prod-taxa-${prodId}`, type: 'currency', required: false },
       { id: `edit-prod-comissao-${prodId}`, type: 'currency', required: false },
@@ -2376,11 +2409,18 @@ export class Dashboard {
         return;
       }
 
-      const editDataServico = formatBrDateToIso(editDataServicoRaw);
-      if (!editDataServico) {
-        this.showToast('Por favor, informe a Data do Serviço no formato correto DD/MM/AAAA.', 'error');
+      if (!editarProdutoValidator.validateAll()) {
+        this.showToast('Preencha todos os campos obrigatórios com valores válidos.', 'error');
         return;
       }
+
+      const editDataServicoResult = validateDate(editDataServicoRaw);
+      if (!editDataServicoResult.isValid) {
+        this.showToast(`Data do Serviço inválida: ${editDataServicoResult.message}`, 'error');
+        return;
+      }
+
+      const editDataServico = formatBrDateToIso(editDataServicoRaw)!;
 
       const venda = parseDoubleBr(editVendaInput.value) || 0;
       const taxa = parseDoubleBr(editTaxaInput.value) || 0;
