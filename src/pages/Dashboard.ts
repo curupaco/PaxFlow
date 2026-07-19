@@ -627,7 +627,7 @@ export class Dashboard {
       try {
         const { data, error } = await supabase
           .from('produtos_viagem')
-          .select('valor_venda, tarifa, taxa, comissao, fornecedor, descricao')
+          .select('valor_venda, tarifa, taxa, comissao, markup, rav, fornecedor, descricao')
           .eq('viagem_id', tripId);
         if (!error && data) {
           produtos = data;
@@ -662,7 +662,9 @@ export class Dashboard {
       const tarifa = Number(p.tarifa) || 0;
       const taxa = Number(p.taxa) || 0;
       const comissao = Number(p.comissao) || 0;
-      const totalDet = tarifa + taxa + comissao;
+      const markup = Number(p.markup) || 0;
+      const rav = Number(p.rav) || 0;
+      const totalDet = tarifa + taxa + comissao + markup + rav;
       return Math.abs(Number(p.valor_venda || 0) - totalDet) > 0.01;
     });
 
@@ -1751,7 +1753,7 @@ export class Dashboard {
           try {
             const { data, error } = await supabase
               .from('produtos_viagem')
-              .select('valor_venda, tarifa, taxa, comissao, fornecedor, descricao')
+              .select('valor_venda, tarifa, taxa, comissao, markup, rav, fornecedor, descricao')
               .eq('viagem_id', v.id);
             if (!error && data) {
               produtos = data;
@@ -1776,7 +1778,9 @@ export class Dashboard {
           const tarifa = Number(p.tarifa) || 0;
           const taxa = Number(p.taxa) || 0;
           const comissao = Number(p.comissao) || 0;
-          const totalDet = tarifa + taxa + comissao;
+          const markup = Number(p.markup) || 0;
+          const rav = Number(p.rav) || 0;
+          const totalDet = tarifa + taxa + comissao + markup + rav;
           return Math.abs(Number(p.valor_venda || 0) - totalDet) > 0.01;
         });
 
@@ -2646,7 +2650,9 @@ export class Dashboard {
       const tarifa = Number(p.tarifa) || 0;
       const taxa = Number(p.taxa) || 0;
       const comissao = Number(p.comissao) || 0;
-      const totalDet = tarifa + taxa + comissao;
+      const markup = Number(p.markup) || 0;
+      const rav = Number(p.rav) || 0;
+      const totalDet = tarifa + taxa + comissao + markup + rav;
       const isProdDetalhado = Math.abs(Number(p.valor_venda || 0) - totalDet) < 0.01;
       
       if (!isProdDetalhado) {
@@ -2667,7 +2673,9 @@ export class Dashboard {
         const tarifa = Number(p.tarifa) || 0;
         const taxa = Number(p.taxa) || 0;
         const comissao = Number(p.comissao) || 0;
-        const totalDet = tarifa + taxa + comissao;
+        const markup = Number(p.markup) || 0;
+        const rav = Number(p.rav) || 0;
+        const totalDet = tarifa + taxa + comissao + markup + rav;
         const isDetalhado = Math.abs(Number(p.valor_venda || 0) - totalDet) < 0.01;
 
         const isSelected = p.id === this.selectedProductId;
