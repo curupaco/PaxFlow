@@ -9,7 +9,7 @@ export class CadastrosPage {
   private tiposProduto: TipoProduto[] = [];
   
   // Gestão de Abas
-  private activeTab: 'tipos' | 'destinos' = 'tipos';
+  private activeTab: 'tipos' | 'destinos' | 'formas' = 'tipos';
 
   // Estado para formulário de cadastro/edição de Tipos
   private editandoTipoId: string | null = null;
@@ -19,6 +19,12 @@ export class CadastrosPage {
   private destinos: any[] = [];
   private editandoDestinoId: string | null = null;
   private buscaDestinoTermo: string = '';
+
+  // Estado para Gestão de Formas de Recebimento
+  private formasRecebimento: any[] = [];
+  private editandoFormaId: string | null = null;
+  private selectedIconForma: string = '💵';
+  private iconesFormaDisponiveis: string[] = ['💵', '💳', '🏦', '📱', '💰', '🪙', '🧾', '🔌', '⚡', '🔐'];
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -47,7 +53,8 @@ export class CadastrosPage {
       // 3. Buscar dados
       await Promise.all([
         this.loadTiposProduto(),
-        this.loadDestinos()
+        this.loadDestinos(),
+        this.loadFormasRecebimento()
       ]);
 
       // 4. Renderizar
@@ -143,6 +150,9 @@ export class CadastrosPage {
           </button>
           <button id="tab-gestao-destinos" class="px-4 py-3.5 text-xs font-bold uppercase tracking-wider border-b-2 transition-all ${this.activeTab === 'destinos' ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}">
             📍 Gestão de Destinos
+          </button>
+          <button id="tab-formas-recebimento" class="px-4 py-3.5 text-xs font-bold uppercase tracking-wider border-b-2 transition-all ${this.activeTab === 'formas' ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}">
+            💰 Formas de Recebimento
           </button>
         </div>
 
@@ -269,7 +279,7 @@ export class CadastrosPage {
               </div>
 
             </div>
-          ` : `
+          ` : this.activeTab === 'destinos' ? `
             <!-- ABA: GESTÃO DE DESTINOS -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
               
@@ -324,25 +334,25 @@ export class CadastrosPage {
                   </div>
                 </div>
               </div>
-
+ 
               <!-- Coluna da Direita: Formulário de Destino (1/3) -->
               <div class="space-y-4">
                 <div class="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 rounded-2xl p-5 shadow-sm transition-colors sticky top-6">
                   <h2 class="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider mb-4">
                     ${this.editandoDestinoId ? '✏️ Editar Destino' : '➕ Novo Destino'}
                   </h2>
-
+ 
                   <form id="form-cadastro-destino" class="space-y-4">
                     <div>
                       <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Cidade / Nome do Destino *</label>
                       <input id="input-destino-nome" type="text" required value="${destinoEmEdicao ? (destinoEmEdicao.nome.startsWith('ARRUMAR | ') ? destinoEmEdicao.nome.replace('ARRUMAR | ', '') : destinoEmEdicao.nome) : ''}" placeholder="ex: Buenos Aires, Maceió" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition" />
                     </div>
-
+ 
                     <div>
                       <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">País *</label>
                       <input id="input-destino-pais" type="text" required value="${destinoEmEdicao && destinoEmEdicao.pais !== 'ARRUMAR' ? destinoEmEdicao.pais : ''}" placeholder="ex: Argentina, Brasil" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition" />
                     </div>
-
+ 
                     <!-- Ações do Form -->
                     <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800">
                       ${this.editandoDestinoId ? `
@@ -357,7 +367,103 @@ export class CadastrosPage {
                   </form>
                 </div>
               </div>
-
+ 
+            </div>
+          ` : `
+            <!-- ABA: FORMAS DE RECEBIMENTO -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              
+              <!-- Coluna da Esquerda: Listagem de Formas (2/3) -->
+              <div class="lg:col-span-2 space-y-4">
+                <div class="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 rounded-2xl p-5 shadow-sm transition-colors">
+                  <h2 class="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider mb-4">Formas de Recebimento Cadastradas</h2>
+                  
+                  <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                      <thead>
+                        <tr class="border-b border-slate-100 dark:border-slate-800 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                          <th class="py-3 px-4 w-20">Ícone</th>
+                          <th class="py-3 px-4">Tipo de Recebimento</th>
+                          <th class="py-3 px-4 w-32">Status</th>
+                          <th class="py-3 px-4 text-right w-40">Ações</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${this.formasRecebimento.length === 0 ? `
+                          <tr>
+                            <td colspan="4" class="py-8 text-center text-xs text-slate-400 dark:text-slate-500 font-semibold">
+                              Nenhuma forma de recebimento cadastrada.
+                            </td>
+                          </tr>
+                        ` : this.formasRecebimento.map(f => {
+                          return `
+                            <tr class="border-b border-slate-100/50 dark:border-slate-800/50 hover:bg-slate-50/50 dark:hover:bg-slate-800/20 text-xs font-semibold text-slate-700 dark:text-slate-300 transition-colors">
+                              <td class="py-3 px-4 text-base">${f.icone}</td>
+                              <td class="py-3 px-4">${f.nome}</td>
+                              <td class="py-3 px-4">
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${f.ativo ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400' : 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400'}">
+                                  ${f.ativo ? 'Ativo' : 'Inativo'}
+                                </span>
+                              </td>
+                              <td class="py-3 px-4 text-right space-x-2">
+                                <button data-id="${f.id}" class="btn-editar-forma p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition" title="Editar Forma de Recebimento">
+                                  ✏️
+                                </button>
+                                <button data-id="${f.id}" class="btn-toggle-ativo-forma p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition" title="${f.ativo ? 'Desativar' : 'Ativar'}">
+                                  ${f.ativo ? '🔴 Desativar' : '🟢 Ativar'}
+                                </button>
+                              </td>
+                            </tr>
+                          `;
+                        }).join('')}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Coluna da Direita: Formulário de Cadastro/Edição (1/3) -->
+              <div class="lg:col-span-1">
+                <div class="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 rounded-2xl p-5 shadow-sm transition-colors sticky top-24">
+                  <h2 class="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider mb-4">
+                    ${this.editandoFormaId ? 'Editar Forma' : 'Nova Forma de Recebimento'}
+                  </h2>
+                  
+                  <form id="form-cadastro-forma" class="space-y-4">
+                    <div>
+                      <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Tipo de Recebimento *</label>
+                      <input id="input-forma-nome" type="text" required value="${this.editandoFormaId ? (this.formasRecebimento.find(f => f.id === this.editandoFormaId)?.nome || '') : ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs" placeholder="ex: Pix, Dinheiro, etc." />
+                    </div>
+                    
+                    <div>
+                      <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">Ícone *</label>
+                      <div class="grid grid-cols-5 gap-2" id="grid-forma-icones">
+                        ${this.iconesFormaDisponiveis.map(ico => {
+                          const isSelected = this.selectedIconForma === ico;
+                          return `
+                            <button type="button" data-icon="${ico}" class="btn-select-icone-forma p-2.5 border text-base rounded-xl transition ${isSelected ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 ring-2 ring-indigo-500/20 font-bold' : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-850 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300'}" style="outline: none;">
+                              ${ico}
+                            </button>
+                          `;
+                        }).join('')}
+                      </div>
+                      <input type="hidden" id="input-forma-icone" value="${this.selectedIconForma}" />
+                    </div>
+                    
+                    <div class="flex gap-2 pt-2">
+                      <button type="submit" class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-[10px] tracking-wider rounded-lg shadow-sm transition uppercase">
+                        ${this.editandoFormaId ? 'Salvar Alterações' : 'Cadastrar'}
+                      </button>
+                      ${this.editandoFormaId ? `
+                        <button type="button" id="btn-cancelar-forma-edicao" class="py-2.5 px-4 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-extrabold text-[10px] tracking-wider rounded-lg transition uppercase">
+                          Cancelar
+                        </button>
+                      ` : ''}
+                    </div>
+                  </form>
+                </div>
+              </div>
+              
             </div>
           `}
         </main>
@@ -532,6 +638,12 @@ export class CadastrosPage {
       this.setupEventListeners();
     });
 
+    document.getElementById('tab-formas-recebimento')?.addEventListener('click', () => {
+      this.activeTab = 'formas';
+      this.render();
+      this.setupEventListeners();
+    });
+
     if (this.activeTab === 'tipos') {
       // 1. Botão Adicionar Campo Adicional
       document.getElementById('btn-adicionar-campo-adicional')?.addEventListener('click', () => {
@@ -579,7 +691,7 @@ export class CadastrosPage {
           }
         });
       });
-    } else {
+    } else if (this.activeTab === 'destinos') {
       // ABA: GESTÃO DE DESTINOS
       // A. Input de Busca
       const inputBusca = document.getElementById('input-busca-destino') as HTMLInputElement;
@@ -619,6 +731,55 @@ export class CadastrosPage {
           const id = btn.getAttribute('data-id');
           if (id) {
             await this.excluirDestino(id);
+          }
+        });
+      });
+    } else if (this.activeTab === 'formas') {
+      // 1. Seleção de ícones no grid
+      this.container.querySelectorAll('.btn-select-icone-forma').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const ico = btn.getAttribute('data-icon') || '💵';
+          this.selectedIconForma = ico;
+          const inputIcone = document.getElementById('input-forma-icone') as HTMLInputElement;
+          if (inputIcone) inputIcone.value = ico;
+          this.render();
+          this.setupEventListeners();
+        });
+      });
+
+      // 2. Submissão do formulário de forma
+      const formForma = document.getElementById('form-cadastro-forma') as HTMLFormElement;
+      formForma?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        await this.salvarFormaRecebimento();
+      });
+
+      // 3. Cancelar Edição de Forma
+      document.getElementById('btn-cancelar-forma-edicao')?.addEventListener('click', () => {
+        this.editandoFormaId = null;
+        this.selectedIconForma = '💵';
+        this.render();
+        this.setupEventListeners();
+      });
+
+      // 4. Botão Editar Forma
+      this.container.querySelectorAll('.btn-editar-forma').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-id');
+          const forma = this.formasRecebimento.find(f => f.id === id);
+          if (forma) {
+            this.prepararEdicaoForma(forma);
+          }
+        });
+      });
+
+      // 5. Botão Toggle Ativo (Tomara)
+      this.container.querySelectorAll('.btn-toggle-ativo-forma').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const id = btn.getAttribute('data-id');
+          const forma = this.formasRecebimento.find(f => f.id === id);
+          if (forma) {
+            await this.toggleAtivoForma(forma);
           }
         });
       });
@@ -783,6 +944,158 @@ export class CadastrosPage {
       console.error('Erro ao excluir destino:', err);
       this.showToast('Falha ao excluir destino do banco.', 'error', err);
     }
+  }
+
+  private async loadFormasRecebimento(): Promise<void> {
+    try {
+      const { data, error } = await supabase
+        .from('formas_recebimento')
+        .select('*')
+        .order('nome', { ascending: true });
+
+      if (error) {
+        console.warn('Erro ao carregar formas do Supabase, carregando local:', error);
+        this.loadFormasRecebimentoLocal();
+      } else {
+        this.formasRecebimento = data || [];
+        localStorage.setItem('paxflow-formas-recebimento', JSON.stringify(this.formasRecebimento));
+      }
+    } catch (err: any) {
+      console.warn('Erro ao buscar formas de recebimento, carregando local:', err);
+      this.loadFormasRecebimentoLocal();
+    }
+  }
+
+  private loadFormasRecebimentoLocal(): void {
+    const saved = localStorage.getItem('paxflow-formas-recebimento');
+    if (saved) {
+      try {
+        this.formasRecebimento = JSON.parse(saved);
+      } catch (e) {
+        this.formasRecebimento = [];
+      }
+    } else {
+      this.formasRecebimento = [
+        { id: 'forma-pix', nome: 'PIX', icone: '🏦', ativo: true },
+        { id: 'forma-credito', nome: 'Cartão de Crédito', icone: '💳', ativo: true },
+        { id: 'forma-dinheiro', nome: 'Dinheiro', icone: '💵', ativo: true },
+        { id: 'forma-boleto', nome: 'Boleto Bancário', icone: '🧾', ativo: true }
+      ];
+      localStorage.setItem('paxflow-formas-recebimento', JSON.stringify(this.formasRecebimento));
+    }
+  }
+
+  private async salvarFormaRecebimento(): Promise<void> {
+    const nomeVal = (document.getElementById('input-forma-nome') as HTMLInputElement).value.trim();
+    const iconeVal = (document.getElementById('input-forma-icone') as HTMLInputElement).value;
+
+    if (!nomeVal) {
+      this.showToast('Por favor, insira o Tipo de Recebimento.', 'error');
+      return;
+    }
+
+    const payload = {
+      nome: nomeVal,
+      icone: iconeVal,
+      ativo: true
+    };
+
+    try {
+      if (this.editandoFormaId) {
+        if (this.editandoFormaId.startsWith('forma_local_') || this.formasRecebimento.find(f => f.id === this.editandoFormaId)?.id.startsWith('forma_local_')) {
+          throw new Error('Edição local apenas');
+        }
+        const { error } = await supabase
+          .from('formas_recebimento')
+          .update(payload)
+          .eq('id', this.editandoFormaId);
+
+        if (error) throw error;
+        this.showToast('Forma de recebimento atualizada com sucesso!', 'success');
+      } else {
+        const { error } = await supabase
+          .from('formas_recebimento')
+          .insert(payload);
+
+        if (error) throw error;
+        this.showToast('Forma de recebimento cadastrada com sucesso!', 'success');
+      }
+
+      this.editandoFormaId = null;
+      this.selectedIconForma = '💵';
+      await this.loadFormasRecebimento();
+      this.render();
+      this.setupEventListeners();
+    } catch (err: any) {
+      console.warn('Salvando forma localmente devido a falha ou ID local:', err);
+      let localFormas = [...this.formasRecebimento];
+      if (this.editandoFormaId) {
+        localFormas = localFormas.map(f => {
+          if (f.id === this.editandoFormaId) {
+            return { ...f, nome: nomeVal, icone: iconeVal };
+          }
+          return f;
+        });
+        this.showToast('Forma de recebimento atualizada localmente!', 'success');
+      } else {
+        const novaForma = {
+          id: 'forma_local_' + Date.now().toString(),
+          nome: nomeVal,
+          icone: iconeVal,
+          ativo: true
+        };
+        localFormas.push(novaForma);
+        this.showToast('Forma de recebimento cadastrada localmente!', 'success');
+      }
+      this.formasRecebimento = localFormas;
+      localStorage.setItem('paxflow-formas-recebimento', JSON.stringify(localFormas));
+
+      this.editandoFormaId = null;
+      this.selectedIconForma = '💵';
+      this.render();
+      this.setupEventListeners();
+    }
+  }
+
+  private async toggleAtivoForma(forma: any): Promise<void> {
+    const novoStatus = !forma.ativo;
+    try {
+      if (forma.id.startsWith('forma_local_')) {
+        throw new Error('Forma local');
+      }
+      const { error } = await supabase
+        .from('formas_recebimento')
+        .update({ ativo: novoStatus })
+        .eq('id', forma.id);
+
+      if (error) throw error;
+      this.showToast(`Forma de recebimento ${novoStatus ? 'ativada' : 'desativada'} com sucesso!`, 'success');
+      
+      await this.loadFormasRecebimento();
+      this.render();
+      this.setupEventListeners();
+    } catch (err: any) {
+      console.warn('Erro ao atualizar no Supabase, alterando local:', err);
+      const localFormas = this.formasRecebimento.map(f => {
+        if (f.id === forma.id) {
+          return { ...f, ativo: novoStatus };
+        }
+        return f;
+      });
+      this.formasRecebimento = localFormas;
+      localStorage.setItem('paxflow-formas-recebimento', JSON.stringify(localFormas));
+      this.showToast(`Forma de recebimento ${novoStatus ? 'ativada' : 'desativada'} localmente!`, 'success');
+
+      this.render();
+      this.setupEventListeners();
+    }
+  }
+
+  private prepararEdicaoForma(forma: any): void {
+    this.editandoFormaId = forma.id;
+    this.selectedIconForma = forma.icone;
+    this.render();
+    this.setupEventListeners();
   }
 
   /**

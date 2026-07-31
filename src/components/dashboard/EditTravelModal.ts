@@ -1471,6 +1471,53 @@ export class EditTravelModal {
       return;
     }
 
+    let formasAtivas: any[] = [];
+    let locPagamentos: any[] = [];
+
+    if (!this.options.isFallbackMode) {
+      try {
+        const { data: dataFormas } = await supabase
+          .from('formas_recebimento')
+          .select('*')
+          .eq('ativo', true);
+        if (dataFormas) formasAtivas = dataFormas;
+
+        const { data: dataPags } = await supabase
+          .from('loc_pagamentos')
+          .select('*, formas_recebimento(*)')
+          .eq('viagem_id', tripId);
+        if (dataPags) locPagamentos = dataPags;
+      } catch (err) {
+        console.warn('Erro ao carregar pagamentos/formas do Supabase:', err);
+      }
+    }
+
+    if (formasAtivas.length === 0) {
+      const savedFormas = localStorage.getItem('paxflow-formas-recebimento');
+      if (savedFormas) {
+        try {
+          formasAtivas = JSON.parse(savedFormas).filter((f: any) => f.ativo);
+        } catch (e) {}
+      } else {
+        formasAtivas = [
+          { id: 'forma-pix', nome: 'PIX', icone: '🏦', ativo: true },
+          { id: 'forma-credito', nome: 'Cartão de Crédito', icone: '💳', ativo: true },
+          { id: 'forma-dinheiro', nome: 'Dinheiro', icone: '💵', ativo: true },
+          { id: 'forma-boleto', nome: 'Boleto Bancário', icone: '🧾', ativo: true }
+        ];
+      }
+    }
+
+    const localPagamentosSaved = localStorage.getItem(`paxflow-loc-pagamentos-${tripId}`);
+    if (localPagamentosSaved) {
+      try {
+        const parsed = JSON.parse(localPagamentosSaved);
+        if (locPagamentos.length === 0) {
+          locPagamentos = parsed;
+        }
+      } catch (e) {}
+    }
+
     const viagem = this.options.viagens.find(x => x.id === tripId);
     const valorTotalViagem = viagem ? (Number(viagem.valor_total) || 0) : 0;
     const totalProdutos = produtos.reduce((sum, p) => sum + (Number(p.valor_venda) || 0), 0);
@@ -1633,6 +1680,18 @@ export class EditTravelModal {
         ? 'text-emerald-600 dark:text-emerald-400'
         : 'text-rose-600 dark:text-rose-400';
 
+      const pagamentosGrupo = locPagamentos.filter(lp => (lp.codigo_localizador || '').trim().toUpperCase() === locKey.toUpperCase());
+      const totalPagoGrupo = pagamentosGrupo.reduce((sum, lp) => sum + (Number(lp.valor) || 0), 0);
+
+      let statusPagamentoBadge = '';
+      if (pagamentosGrupo.length === 0) {
+        statusPagamentoBadge = `<span class="px-1.5 py-0.5 text-[9px] font-black rounded bg-rose-500/10 text-rose-500 border border-rose-500/20">⚠️ Sem Pagamento</span>`;
+      } else if (Math.abs(totalPagoGrupo - valorVendaTotal) > 0.01) {
+        statusPagamentoBadge = `<span class="px-1.5 py-0.5 text-[9px] font-black rounded bg-amber-500/10 text-amber-500 border border-amber-500/20">⚠️ Incompleto (R$ ${totalPagoGrupo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} / R$ ${valorVendaTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })})</span>`;
+      } else {
+        statusPagamentoBadge = `<span class="px-1.5 py-0.5 text-[9px] font-black rounded bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">✅ Pago</span>`;
+      }
+
       return `
         <div class="loc-group border border-slate-200/80 dark:border-slate-800 rounded-xl overflow-hidden mb-2 shadow-sm">
           <div class="loc-header flex items-center justify-between p-2.5 bg-slate-100/50 dark:bg-slate-800/40 cursor-pointer hover:bg-slate-200/50 dark:hover:bg-slate-800/80 transition select-none" data-loc-key="${locKey}">
@@ -1640,6 +1699,10 @@ export class EditTravelModal {
               <span class="loc-chevron inline-block transition-transform duration-200 text-xs text-slate-400 dark:text-slate-500" style="transform: rotate(90deg);">▶</span>
               <span class="px-2 py-0.5 text-[10px] font-black tracking-wider rounded bg-indigo-100 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 uppercase">${locKey}</span>
               
+              <button class="btn-formas-pagamento-loc p-1 bg-white hover:bg-emerald-50 dark:bg-slate-800 dark:hover:bg-emerald-950/20 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 rounded-lg border border-slate-200 dark:border-slate-700 transition text-[9px] font-bold flex items-center justify-center gap-1 shadow-sm font-sans" data-loc="${locKey}" title="Definir Formas de Pagamento">
+                💰 Pagamento
+              </button>
+
               <span class="text-[10px] font-medium text-slate-400 dark:text-slate-500">
                 Venda: <span class="font-extrabold text-indigo-600 dark:text-indigo-400">R$ ${valorVendaTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
               </span>
@@ -1652,6 +1715,7 @@ export class EditTravelModal {
                 Rentabilidade: <span class="font-extrabold ${rentabilidadeColorClass}">R$ ${valorRentabilidadeTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
               </span>
               
+              ${statusPagamentoBadge}
               ${!isGroupDetalhado ? `<span class="px-1.5 py-0.5 text-[9px] font-black rounded bg-amber-500/10 text-amber-500 border border-amber-500/20 animate-pulse">⚠️ Detalhamento Pendente</span>` : ''}
             </div>
             <div class="flex items-center gap-2">
@@ -1679,6 +1743,17 @@ export class EditTravelModal {
             body.classList.add('hidden');
             chevron.style.transform = 'rotate(0deg)';
           }
+        }
+      });
+    });
+
+    // Formas de pagamento do LOC
+    container.querySelectorAll('.btn-formas-pagamento-loc').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const loc = btn.getAttribute('data-loc');
+        if (loc) {
+          this.abrirModalPagamentoLoc(loc, produtosAgrupados[loc]?.valorVendaTotal || 0, formasAtivas, locPagamentos);
         }
       });
     });
@@ -1809,6 +1884,293 @@ export class EditTravelModal {
         container.classList.add('scale-100');
       }
     }, 10);
+  }
+
+  private abrirModalPagamentoLoc(
+    locKey: string,
+    valorVendaTotal: number,
+    formasAtivas: any[],
+    locPagamentos: any[]
+  ): void {
+    // 1. Filtrar pagamentos temporários desse LOC
+    let tempPagamentos = locPagamentos
+      .filter(lp => (lp.codigo_localizador || '').trim().toUpperCase() === locKey.toUpperCase())
+      .map(lp => ({
+        id: lp.id || 'local_' + Math.random().toString(),
+        forma_recebimento_id: lp.forma_recebimento_id,
+        valor: Number(lp.valor) || 0,
+        formas_recebimento: lp.formas_recebimento || formasAtivas.find(f => f.id === lp.forma_recebimento_id)
+      }));
+
+    // 2. Criar overlay do modal
+    const overlayId = 'modal-pagamentos-loc-overlay';
+    let overlay = document.getElementById(overlayId);
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = overlayId;
+      overlay.className = 'fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4 animate-fade-in';
+      document.body.appendChild(overlay);
+    }
+
+    const recalcularBalanco = () => {
+      const totalPago = tempPagamentos.reduce((sum, p) => sum + p.valor, 0);
+      let pendente = valorVendaTotal - totalPago;
+      if (Math.abs(pendente) < 0.01) {
+        pendente = 0;
+      }
+      return pendente;
+    };
+
+    const renderList = () => {
+      const listContainer = document.getElementById('pag-loc-adicionados-list');
+      if (!listContainer) return;
+
+      if (tempPagamentos.length === 0) {
+        listContainer.innerHTML = `
+          <p class="text-center text-xs text-slate-400 dark:text-slate-500 font-semibold py-4 border border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
+            Nenhuma forma de recebimento adicionada para este LOC.
+          </p>
+        `;
+        return;
+      }
+
+      listContainer.innerHTML = tempPagamentos.map(tp => {
+        const nomeForma = tp.formas_recebimento?.nome || 'Forma Desconhecida';
+        const iconeForma = tp.formas_recebimento?.icone || '💰';
+        return `
+          <div class="flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 rounded-xl">
+            <div class="flex items-center gap-2">
+              <span class="text-base">${iconeForma}</span>
+              <span class="text-xs font-bold text-slate-700 dark:text-slate-300">${nomeForma}</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="text-xs font-black text-slate-800 dark:text-slate-100">R$ ${tp.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+              <button class="btn-remove-pag-loc text-slate-400 hover:text-rose-500 transition p-1" data-id="${tp.id}">🗑️</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Bind delete buttons
+      listContainer.querySelectorAll('.btn-remove-pag-loc').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-id');
+          tempPagamentos = tempPagamentos.filter(p => p.id !== id);
+          updateUI();
+        });
+      });
+    };
+
+    const updateUI = () => {
+      const pendente = recalcularBalanco();
+      const pendenteEl = document.getElementById('pag-loc-pendente-val');
+      if (pendenteEl) {
+        pendenteEl.textContent = `R$ ${pendente.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+        if (pendente > 0) {
+          pendenteEl.className = 'text-xs font-black text-rose-600 dark:text-rose-400';
+        } else {
+          pendenteEl.className = 'text-xs font-black text-emerald-600 dark:text-emerald-400';
+        }
+      }
+
+      // Habilita salvar somente se o saldo pendente for zero
+      const btnSalvar = document.getElementById('btn-pag-loc-salvar') as HTMLButtonElement;
+      if (btnSalvar) {
+        btnSalvar.disabled = Math.abs(pendente) > 0.01;
+      }
+
+      // Sugere o saldo pendente como valor padrão no input
+      const valorInput = document.getElementById('pag-loc-valor-input') as HTMLInputElement;
+      if (valorInput) {
+        valorInput.value = pendente.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      }
+
+      renderList();
+    };
+
+    overlay.innerHTML = `
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-md rounded-3xl p-6 shadow-2xl relative animate-scale-up text-slate-800 dark:text-slate-100">
+        <button id="btn-close-pagamentos-loc-modal" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-sm">✕</button>
+        
+        <h3 class="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-wide mb-1 flex items-center gap-1.5 font-sans">
+          💰 Forma de Recebimento do LOC
+        </h3>
+        <p class="text-xs text-slate-400 dark:text-slate-500 font-semibold mb-4 border-b border-slate-100 dark:border-slate-850 pb-2 font-sans">
+          LOC: <span class="text-indigo-600 dark:text-indigo-400 font-black">${locKey}</span>
+        </p>
+        
+        <!-- Detalhes do LOC -->
+        <div class="grid grid-cols-2 gap-4 bg-slate-50 dark:bg-slate-950 p-3.5 rounded-2xl border border-slate-200/40 dark:border-slate-850 mb-4 font-sans">
+          <div>
+            <span class="block text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider leading-tight">Valor Total do LOC</span>
+            <strong class="text-xs font-black text-slate-800 dark:text-slate-100">R$ ${valorVendaTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
+          </div>
+          <div>
+            <span class="block text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider leading-tight">Pendente</span>
+            <strong id="pag-loc-pendente-val" class="text-xs font-black text-rose-600 dark:text-rose-400">R$ 0,00</strong>
+          </div>
+        </div>
+        
+        <!-- Adicionar Novo Pagamento -->
+        <div class="space-y-3 mb-4 p-3 bg-slate-50/40 dark:bg-slate-900/40 rounded-2xl border border-slate-100 dark:border-slate-850 font-sans">
+          <span class="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wide">Vincular Recebimento</span>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-1">Forma *</label>
+              <select id="pag-loc-forma-select" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg text-xs font-semibold text-slate-800 dark:text-slate-100">
+                ${formasAtivas.map(f => `<option value="${f.id}">${f.icone} ${f.nome}</option>`).join('')}
+              </select>
+            </div>
+            <div>
+              <label class="block text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-1">Valor (R$) *</label>
+              <input id="pag-loc-valor-input" type="text" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg text-xs font-semibold text-slate-800 dark:text-slate-100" placeholder="0,00" />
+            </div>
+          </div>
+          <button id="btn-pag-loc-add" type="button" class="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-[10px] tracking-wider rounded-lg transition uppercase">
+            ➕ Adicionar Forma
+          </button>
+        </div>
+        
+        <!-- Lista de Pagamentos Adicionados -->
+        <div class="space-y-2 mb-6 font-sans">
+          <span class="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wide">Formas Selecionadas</span>
+          <div id="pag-loc-adicionados-list" class="space-y-2 max-h-[120px] overflow-y-auto pr-1">
+            <!-- JS render -->
+          </div>
+        </div>
+        
+        <!-- Ações -->
+        <div class="flex gap-3 border-t border-slate-100 dark:border-slate-850 pt-4 font-sans">
+          <button id="btn-pag-loc-salvar" type="button" disabled class="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-200 dark:disabled:bg-slate-800 disabled:text-slate-400 dark:disabled:text-slate-600 text-white font-extrabold text-[10px] tracking-wider rounded-lg shadow-sm transition uppercase">
+            Salvar
+          </button>
+          <button id="btn-pag-loc-cancelar" type="button" class="py-2.5 px-4 bg-slate-100 hover:bg-slate-250 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-extrabold text-[10px] tracking-wider rounded-lg transition uppercase">
+            Cancelar
+          </button>
+        </div>
+      </div>
+    `;
+
+    // Fechar modal handlers
+    const fecharModal = () => {
+      overlay.remove();
+    };
+
+    document.getElementById('btn-close-pagamentos-loc-modal')?.addEventListener('click', fecharModal);
+    document.getElementById('btn-pag-loc-cancelar')?.addEventListener('click', fecharModal);
+
+    // Máscara monetária pro input
+    const valInput = document.getElementById('pag-loc-valor-input') as HTMLInputElement;
+    valInput?.addEventListener('input', (e) => {
+      const target = e.target as HTMLInputElement;
+      let val = target.value;
+      let digits = val.replace(/\D/g, '');
+      if (digits.length > 12) {
+        digits = digits.slice(0, 12);
+      }
+      if (!digits) {
+        target.value = '0,00';
+        return;
+      }
+      const num = parseInt(digits, 10) / 100;
+      target.value = num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    });
+
+    // Evento para adicionar item
+    document.getElementById('btn-pag-loc-add')?.addEventListener('click', () => {
+      const select = document.getElementById('pag-loc-forma-select') as HTMLSelectElement;
+      const formaId = select.value;
+      const valorRaw = valInput.value;
+      const valor = parseDoubleBr(valorRaw) || 0;
+
+      if (valor <= 0) {
+        this.options.showToast('Por favor, informe um valor maior que zero.', 'error');
+        return;
+      }
+
+      const pendente = recalcularBalanco();
+      if (valor > pendente + 0.01) {
+        this.options.showToast(`O valor inserido (R$ ${valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}) excede o saldo pendente do LOC (R$ ${pendente.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}).`, 'error');
+        return;
+      }
+
+      const selectedFormaObj = formasAtivas.find(f => f.id === formaId);
+      tempPagamentos.push({
+        id: 'local_' + Date.now().toString(),
+        forma_recebimento_id: formaId,
+        valor: valor,
+        formas_recebimento: selectedFormaObj
+      });
+
+      updateUI();
+    });
+
+    // Evento para salvar
+    document.getElementById('btn-pag-loc-salvar')?.addEventListener('click', async () => {
+      const btnSalvar = document.getElementById('btn-pag-loc-salvar') as HTMLButtonElement;
+      btnSalvar.disabled = true;
+      btnSalvar.textContent = 'Salvando...';
+
+      try {
+        if (!this.options.isFallbackMode) {
+          // Deleta antigos
+          await supabase
+            .from('loc_pagamentos')
+            .delete()
+            .eq('viagem_id', this.tripId)
+            .eq('codigo_localizador', locKey);
+
+          // Insere novos
+          if (tempPagamentos.length > 0) {
+            const insertPayload = tempPagamentos.map(tp => ({
+              viagem_id: this.tripId,
+              codigo_localizador: locKey,
+              forma_recebimento_id: tp.forma_recebimento_id,
+              valor: tp.valor
+            }));
+            const { error } = await supabase
+              .from('loc_pagamentos')
+              .insert(insertPayload);
+
+            if (error) throw error;
+          }
+        }
+
+        // Salva localmente (fallback ou sincronização)
+        const localSavedKey = `paxflow-loc-pagamentos-${this.tripId}`;
+        const allSavedLocal = localStorage.getItem(localSavedKey);
+        let localList: any[] = [];
+        if (allSavedLocal) {
+          try { localList = JSON.parse(allSavedLocal); } catch (e) {}
+        }
+        // Remove os do LOC atual
+        localList = localList.filter(lp => (lp.codigo_localizador || '').trim().toUpperCase() !== locKey.toUpperCase());
+        // Adiciona os novos
+        tempPagamentos.forEach(tp => {
+          localList.push({
+            viagem_id: this.tripId,
+            codigo_localizador: locKey,
+            forma_recebimento_id: tp.forma_recebimento_id,
+            valor: tp.valor,
+            formas_recebimento: tp.formas_recebimento
+          });
+        });
+        localStorage.setItem(localSavedKey, JSON.stringify(localList));
+
+        this.options.showToast('Formas de pagamento salvas com sucesso!', 'success');
+        fecharModal();
+        // Recarrega a renderização dos produtos e grupos
+        await this.loadAndRenderProdutosViagem(this.tripId);
+      } catch (err: any) {
+        console.error('Erro ao salvar formas de pagamento do LOC:', err);
+        this.options.showToast('Erro ao salvar formas de pagamento.', 'error', err);
+        btnSalvar.disabled = false;
+        btnSalvar.textContent = 'Salvar';
+      }
+    });
+
+    // Inicializar UI
+    updateUI();
   }
 
   private closeModal(): void {
