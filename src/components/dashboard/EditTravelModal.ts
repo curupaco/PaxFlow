@@ -1214,6 +1214,7 @@ export class EditTravelModal {
     const editRavInput = document.getElementById(`edit-prod-rav-${prodId}`) as HTMLInputElement;
     const editTarifaInput = document.getElementById(`edit-prod-tarifa-${prodId}`) as HTMLInputElement;
     const totalDistEl = document.getElementById(`edit-det-total-distribuido-${prodId}`) as HTMLElement;
+    const rentabilidadeEl = document.getElementById(`edit-det-rentabilidade-${prodId}`) as HTMLElement;
     const saldoPendEl = document.getElementById(`edit-det-saldo-pendente-${prodId}`) as HTMLElement;
 
     const toggleFieldsState = (enabled: boolean) => {
@@ -1233,7 +1234,7 @@ export class EditTravelModal {
     };
 
     const recalcularValoresLocais = () => {
-      if (!editVendaInput || !editTaxaInput || !editComissaoInput || !editMarkupInput || !editRavInput || !editTarifaInput || !totalDistEl || !saldoPendEl) return;
+      if (!editVendaInput || !editTaxaInput || !editComissaoInput || !editMarkupInput || !editRavInput || !editTarifaInput || !totalDistEl || !saldoPendEl || !rentabilidadeEl) return;
       const venda = parseDoubleBr(editVendaInput.value) || 0;
       const taxa = parseDoubleBr(editTaxaInput.value) || 0;
       const comissao = parseDoubleBr(editComissaoInput.value) || 0;
@@ -1249,10 +1250,18 @@ export class EditTravelModal {
       if (Math.abs(saldoPend) < 0.01) {
         saldoPend = 0;
       }
+      const rentabilidade = comissao + markup + (rav * 0.88);
 
       editTarifaInput.value = formatCurrencyValue(tarifa);
       totalDistEl.textContent = `R$ ${totalDist.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+      rentabilidadeEl.textContent = `R$ ${rentabilidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
       saldoPendEl.textContent = `R$ ${saldoPend.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+
+      if (rentabilidade >= 0) {
+        rentabilidadeEl.className = 'font-black text-emerald-600 dark:text-emerald-400';
+      } else {
+        rentabilidadeEl.className = 'font-black text-rose-600 dark:text-rose-400';
+      }
 
       if (Math.abs(saldoPend) > 0.01) {
         saldoPendEl.className = 'font-black text-rose-600 dark:text-rose-400';
@@ -1540,6 +1549,8 @@ export class EditTravelModal {
         loc: string;
         produtos: any[];
         valorVendaTotal: number;
+        valorTaxasTotal: number;
+        valorRentabilidadeTotal: number;
         isGroupDetalhado: boolean;
       }
     } = {};
@@ -1551,6 +1562,8 @@ export class EditTravelModal {
           loc: locKey,
           produtos: [],
           valorVendaTotal: 0,
+          valorTaxasTotal: 0,
+          valorRentabilidadeTotal: 0,
           isGroupDetalhado: true
         };
       }
@@ -1566,6 +1579,9 @@ export class EditTravelModal {
       const totalDet = tarifa + taxa + comissao + markup + rav;
       const isProdDetalhado = Math.abs(Number(p.valor_venda || 0) - totalDet) < 0.01;
       
+      produtosAgrupados[locKey].valorTaxasTotal += taxa;
+      produtosAgrupados[locKey].valorRentabilidadeTotal += comissao + markup + (rav * 0.88);
+
       if (!isProdDetalhado) {
         produtosAgrupados[locKey].isGroupDetalhado = false;
       }
@@ -1575,6 +1591,8 @@ export class EditTravelModal {
       const locKey = grupo.loc;
       const isGroupDetalhado = grupo.isGroupDetalhado;
       const valorVendaTotal = grupo.valorVendaTotal;
+      const valorTaxasTotal = grupo.valorTaxasTotal;
+      const valorRentabilidadeTotal = grupo.valorRentabilidadeTotal;
       const subProdutos = grupo.produtos;
 
       const innerCardsHTML = subProdutos.map(p => {
@@ -1611,16 +1629,32 @@ export class EditTravelModal {
         `;
       }).join('');
 
+      const rentabilidadeColorClass = valorRentabilidadeTotal >= 0
+        ? 'text-emerald-600 dark:text-emerald-400'
+        : 'text-rose-600 dark:text-rose-400';
+
       return `
         <div class="loc-group border border-slate-200/80 dark:border-slate-800 rounded-xl overflow-hidden mb-2 shadow-sm">
           <div class="loc-header flex items-center justify-between p-2.5 bg-slate-100/50 dark:bg-slate-800/40 cursor-pointer hover:bg-slate-200/50 dark:hover:bg-slate-800/80 transition select-none" data-loc-key="${locKey}">
-            <div class="flex items-center gap-2">
+            <div class="flex items-center flex-wrap gap-2.5">
               <span class="loc-chevron inline-block transition-transform duration-200 text-xs text-slate-400 dark:text-slate-500" style="transform: rotate(90deg);">▶</span>
               <span class="px-2 py-0.5 text-[10px] font-black tracking-wider rounded bg-indigo-100 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 uppercase">${locKey}</span>
+              
+              <span class="text-[10px] font-medium text-slate-400 dark:text-slate-500">
+                Venda: <span class="font-extrabold text-indigo-600 dark:text-indigo-400">R$ ${valorVendaTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+              </span>
+              
+              <span class="text-[10px] font-medium text-slate-400 dark:text-slate-500">
+                Taxas: <span class="font-extrabold text-slate-700 dark:text-slate-200">R$ ${valorTaxasTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+              </span>
+              
+              <span class="text-[10px] font-medium text-slate-400 dark:text-slate-500">
+                Rentabilidade: <span class="font-extrabold ${rentabilidadeColorClass}">R$ ${valorRentabilidadeTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+              </span>
+              
               ${!isGroupDetalhado ? `<span class="px-1.5 py-0.5 text-[9px] font-black rounded bg-amber-500/10 text-amber-500 border border-amber-500/20 animate-pulse">⚠️ Detalhamento Pendente</span>` : ''}
             </div>
             <div class="flex items-center gap-2">
-              <span class="text-xs font-black text-indigo-600 dark:text-indigo-400">R$ ${valorVendaTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
             </div>
           </div>
           

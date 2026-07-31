@@ -351,6 +351,10 @@ export function renderLateralEditorPaneHTML(
                     <strong id="edit-det-total-distribuido-${selectedProduct.id}" class="font-black text-slate-700 dark:text-slate-200">R$ 0,00</strong>
                   </div>
                   <div class="flex justify-between items-center text-xs">
+                    <span class="font-bold text-slate-400 dark:text-slate-500 uppercase text-[9px] tracking-wider">Rentabilidade:</span>
+                    <strong id="edit-det-rentabilidade-${selectedProduct.id}" class="font-black text-slate-700 dark:text-slate-200">R$ 0,00</strong>
+                  </div>
+                  <div class="flex justify-between items-center text-xs">
                     <span class="font-bold text-slate-400 dark:text-slate-500 uppercase text-[9px] tracking-wider">Saldo Pendente:</span>
                     <strong id="edit-det-saldo-pendente-${selectedProduct.id}" class="font-black text-rose-600 dark:text-rose-400">R$ 0,00</strong>
                   </div>
