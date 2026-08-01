@@ -2,6 +2,8 @@ import { Orcamento, PerfilConsultor } from '../../types';
 import { getAvatarSvg } from '../../services/avatars';
 import { CommentsService } from '../../services/comments';
 import { showCustomConfirm } from '../../services/dialog';
+import { supabase } from '../../services/supabase';
+import { DestinosAutocomplete } from '../DestinosAutocomplete';
 
 export interface VerNotasModalOptions {
   user: any;
@@ -78,12 +80,13 @@ export class VerNotasModal {
 
     const dataCriacao = orc.createdAt ? new Date(orc.createdAt).toLocaleDateString('pt-BR') : 'Não informada';
     const tempoAguardando = orc.createdAt ? options.calcularTempoAmigavel(orc.createdAt) : '';
+    const isAdmin = options.perfil?.role === 'admin';
 
     modalContent.innerHTML = `
       <div class="p-6 flex flex-col h-full max-h-[85vh]">
         <!-- Topo do Modal -->
         <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3 mb-5">
-          <h3 class="text-lg font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+          <h3 class="text-lg font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5 font-sans">
             <span>📝 Detalhes do Orçamento</span>
           </h3>
           <button id="btn-close-modal-x" class="text-slate-400 hover:text-rose-500 font-bold transition text-lg">&times;</button>
@@ -95,10 +98,16 @@ export class VerNotasModal {
           <!-- Coluna 1 & 2 (Dados principais e notas) -->
           <div class="md:col-span-2 space-y-5">
             <div>
-              <h4 class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Cliente & Viagem</h4>
-              <div class="p-3.5 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-100 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-400 space-y-1.5">
+              <h4 class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2 font-sans">Cliente & Viagem</h4>
+              <div class="p-3.5 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-100 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-400 space-y-2">
                 <span class="block">Passageiro: <strong class="text-slate-800 dark:text-slate-100">${orc.nomeCliente}</strong></span>
-                <span class="block">Destino: <strong class="text-slate-800 dark:text-slate-100">${orc.destino}</strong></span>
+                <span class="block flex items-center gap-1.5 flex-wrap">
+                  <span>Destino:</span> 
+                  <div class="flex items-center gap-1.5 min-w-[200px] max-w-[260px]">
+                    <input id="edit-orc-destino-inline" type="text" value="${orc.destino || ''}" class="px-2 py-1 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 rounded-lg text-slate-800 dark:text-slate-100 font-extrabold text-[11px] focus:outline-none focus:ring-1 focus:ring-indigo-500 w-full font-sans" />
+                    <button id="btn-save-orc-destino-inline" class="px-2.5 py-1 bg-emerald-55 hover:bg-emerald-100 dark:bg-emerald-950/20 dark:hover:bg-emerald-900/30 text-emerald-600 dark:text-emerald-450 rounded-lg border border-emerald-200 dark:border-emerald-900/40 transition text-[9px] font-black uppercase font-sans">Salvar</button>
+                  </div>
+                </span>
                 <span class="block">Data da Viagem: <strong class="text-slate-800 dark:text-slate-100">${options.formatarDataBr(orc.dataViagem)}</strong></span>
                 ${orc.valorProposta !== undefined && orc.valorProposta !== null ? `<span class="block">Valor da Proposta: <strong class="text-indigo-600 dark:text-indigo-400">R$ ${Number(orc.valorProposta).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong></span>` : ''}
                 ${orc.status === 'CONCLUIDO' && orc.subStatus === 'ACEITO' && orc.valorViagem !== undefined && orc.valorViagem !== null ? `<span class="block">Valor da Viagem: <strong class="text-emerald-600 dark:text-emerald-400">R$ ${Number(orc.valorViagem).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong></span>` : ''}
@@ -428,6 +437,60 @@ export class VerNotasModal {
         );
       });
     });
+
+    // Event listener para alterar o Destino (Inline - Administrador)
+    const inputDestinoInline = document.getElementById('edit-orc-destino-inline') as HTMLInputElement;
+    const btnSaveDestinoInline = document.getElementById('btn-save-orc-destino-inline') as HTMLButtonElement;
+    let selectedDestinoIdInline = orc.destino_id || orc.destinoId || null;
+
+    if (inputDestinoInline && btnSaveDestinoInline) {
+      const destAutocompleteInline = new DestinosAutocomplete(inputDestinoInline, (destino) => {
+        selectedDestinoIdInline = destino ? destino.id : null;
+      }, selectedDestinoIdInline);
+
+      btnSaveDestinoInline.addEventListener('click', async () => {
+        const nextDestino = inputDestinoInline.value.trim();
+        if (!nextDestino) {
+          options.showToast('Por favor, insira um destino válido.', 'error');
+          return;
+        }
+
+        btnSaveDestinoInline.disabled = true;
+        btnSaveDestinoInline.textContent = '...';
+
+        try {
+          orc.destino = nextDestino;
+          orc.destino_id = selectedDestinoIdInline || undefined;
+          orc.destinoId = selectedDestinoIdInline || undefined;
+
+          // Se não estiver em fallback de sandbox, salva no banco
+          if (!(window as any).paxflowSandbox) {
+            const { error } = await supabase
+              .from('orcamentos')
+              .update({
+                destino: orc.destino,
+                destino_id: orc.destino_id || null
+              })
+              .eq('id', orc.id);
+
+            if (error) throw error;
+          }
+
+          // Atualiza na memória local/Kanban
+          if (options.onUpdate) {
+            await options.onUpdate(orc);
+          }
+
+          options.showToast('Destino atualizado com sucesso!', 'success');
+        } catch (err: any) {
+          console.error('Erro ao atualizar destino do orçamento:', err);
+          options.showToast('Erro ao atualizar o destino.', 'error');
+        } finally {
+          btnSaveDestinoInline.disabled = false;
+          btnSaveDestinoInline.textContent = 'Salvar';
+        }
+      });
+    }
 
     // Inicializar comentários do orçamento
     const commentsContainer = document.getElementById('orcamento-comments-container');
