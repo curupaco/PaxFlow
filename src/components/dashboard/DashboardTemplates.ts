@@ -220,20 +220,22 @@ export function renderLateralEditorPaneHTML(
   selectedProduct: any,
   activeTab: string,
   tiposProduto: any[],
-  getIconForType: (tipo: string) => string
+  getIconForType: (tipo: string) => string,
+  isLocConferido = false
 ): string {
   if (!selectedProduct) return '';
 
   const isVendaValid = (selectedProduct.valor_venda || 0) > 0;
+  const disabledAttr = isLocConferido ? 'disabled' : '';
 
   return `
     <div id="selected-product-editor-pane" class="space-y-4 lg:col-span-4 border-t lg:border-t-0 lg:border-l border-slate-100 dark:border-slate-800 lg:pl-6 pt-4 lg:pt-0 ${activeTab === 'produtos' ? 'block' : 'hidden lg:block'} max-h-[80vh] overflow-y-auto pr-1">
       <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 mb-2 sticky top-0 bg-white dark:bg-slate-900 z-10">
-        <h4 class="text-xs font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5 uppercase tracking-wide">
+        <h4 class="text-xs font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5 uppercase tracking-wide font-sans">
           <span class="p-1 bg-indigo-50 dark:bg-indigo-950 text-indigo-500 rounded-lg text-xs flex items-center justify-center">${getIconForType(selectedProduct.tipo)}</span>
           <span>Editar Serviço: ${selectedProduct.tipo}</span>
         </h4>
-        <button id="btn-close-product-editor" type="button" class="text-[10px] font-black text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded transition uppercase tracking-wider">
+        <button id="btn-close-product-editor" type="button" class="text-[10px] font-black text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded transition uppercase tracking-wider font-sans">
           Fechar
         </button>
       </div>
@@ -241,10 +243,10 @@ export function renderLateralEditorPaneHTML(
       <div class="space-y-6 pb-4">
         <div class="p-4 rounded-2xl border border-indigo-500 dark:border-indigo-400 ring-2 ring-indigo-500/20 shadow-md shadow-indigo-500/5 bg-indigo-50/5 dark:bg-indigo-950/5 space-y-4">
           <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 pb-2 mb-1">
-            <span class="text-xs font-extrabold text-slate-700 dark:text-slate-200">
+            <span class="text-xs font-extrabold text-slate-700 dark:text-slate-200 font-sans">
               Detalhes do Serviço
             </span>
-            <span class="px-2 py-0.5 rounded text-[9px] uppercase font-black tracking-wider ${
+            <span class="px-2 py-0.5 rounded text-[9px] uppercase font-black tracking-wider font-sans ${
               selectedProduct.status === 'emitido' 
                 ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400'
                 : selectedProduct.status === 'cancelado'
@@ -255,14 +257,14 @@ export function renderLateralEditorPaneHTML(
             }">${selectedProduct.status}</span>
           </div>
 
-          <form id="form-editar-produto-lateral-${selectedProduct.id}" class="space-y-4">
+          <form id="form-editar-produto-lateral-${selectedProduct.id}" class="space-y-4 font-sans">
             <div class="grid grid-cols-1 gap-4">
               
               <!-- Seção de Dados (Campos de Entrada) -->
               <div class="space-y-3.5">
                 <div>
                   <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Tipo *</label>
-                  <select id="edit-prod-tipo-${selectedProduct.id}" required class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition duration-155">
+                  <select id="edit-prod-tipo-${selectedProduct.id}" required ${disabledAttr} class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition duration-155">
                     ${tiposProduto.filter((t: any) => t.ativo && t.nome !== 'MUDAR!').map((t: any) => `
                       <option value="${t.nome}" ${t.nome === selectedProduct.tipo ? 'selected' : ''}>${t.nome}</option>
                     `).join('')}
@@ -271,22 +273,22 @@ export function renderLateralEditorPaneHTML(
 
                 <div>
                   <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Fornecedor *</label>
-                  <input id="edit-prod-fornecedor-${selectedProduct.id}" type="text" required value="${selectedProduct.fornecedor || ''}" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition duration-155" />
+                  <input id="edit-prod-fornecedor-${selectedProduct.id}" type="text" required ${disabledAttr} value="${selectedProduct.fornecedor || ''}" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition duration-155" />
                 </div>
 
                 <div>
                   <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Descrição</label>
-                  <input id="edit-prod-descricao-${selectedProduct.id}" type="text" value="${selectedProduct.descricao || ''}" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition duration-155" />
+                  <input id="edit-prod-descricao-${selectedProduct.id}" type="text" ${disabledAttr} value="${selectedProduct.descricao || ''}" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition duration-155" />
                 </div>
 
                 <div class="grid grid-cols-2 gap-2">
                   <div>
                     <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Código (LOC) *</label>
-                    <input id="edit-prod-reserva-${selectedProduct.id}" type="text" required maxlength="20" value="${selectedProduct.codigo_reserva || ''}" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs uppercase transition duration-155" />
+                    <input id="edit-prod-reserva-${selectedProduct.id}" type="text" required maxlength="20" ${disabledAttr} value="${selectedProduct.codigo_reserva || ''}" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs uppercase transition duration-155" />
                   </div>
                   <div>
                     <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Status *</label>
-                    <select id="edit-prod-status-${selectedProduct.id}" required class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition duration-155">
+                    <select id="edit-prod-status-${selectedProduct.id}" required ${disabledAttr} class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition duration-155">
                       <option value="reservado" ${selectedProduct.status === 'reservado' ? 'selected' : ''}>Reservado</option>
                       <option value="emitido" ${selectedProduct.status === 'emitido' ? 'selected' : ''}>Emitido</option>
                       <option value="cancelado" ${selectedProduct.status === 'cancelado' ? 'selected' : ''}>Cancelado</option>
@@ -297,7 +299,7 @@ export function renderLateralEditorPaneHTML(
 
                 <div>
                   <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Data do Serviço *</label>
-                  ${renderDateInputHTML(`edit-prod-data-${selectedProduct.id}`, formatarDataLocal(selectedProduct.data_servico))}
+                  ${renderDateInputHTML(`edit-prod-data-${selectedProduct.id}`, formatarDataLocal(selectedProduct.data_servico), 'DD/MM/AAAA', true, isLocConferido)}
                 </div>
 
                 <!-- Container para Campos Dinâmicos (dados_adicionais) -->
@@ -308,7 +310,7 @@ export function renderLateralEditorPaneHTML(
                   <span class="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-2 flex items-center gap-1">📅 Demais Serviços Aninhados</span>
                   <div id="edit-container-datas-adicionais-${selectedProduct.id}" class="space-y-2"></div>
                   <div class="flex justify-start">
-                    <button type="button" id="edit-btn-add-data-adicional-${selectedProduct.id}" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 font-black text-[9px] tracking-wider rounded-lg transition uppercase flex items-center gap-1 mt-1">
+                    <button type="button" id="edit-btn-add-data-adicional-${selectedProduct.id}" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 font-black text-[9px] tracking-wider rounded-lg transition uppercase flex items-center gap-1 mt-1 ${isLocConferido ? 'hidden' : ''}">
                       ➕ Adicionar Outra Data
                     </button>
                   </div>
@@ -321,23 +323,23 @@ export function renderLateralEditorPaneHTML(
                 
                 <div>
                   <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Venda (R$) *</label>
-                  ${renderCurrencyInputHTML(`edit-prod-venda-${selectedProduct.id}`, selectedProduct.valor_venda || 0)}
+                  ${renderCurrencyInputHTML(`edit-prod-venda-${selectedProduct.id}`, selectedProduct.valor_venda || 0, '0,00', true, isLocConferido)}
                 </div>
                 <div>
                   <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Taxas (Embarque/Serviço)</label>
-                  ${renderCurrencyInputHTML(`edit-prod-taxa-${selectedProduct.id}`, selectedProduct.taxa || 0, '0,00', true, !isVendaValid)}
+                  ${renderCurrencyInputHTML(`edit-prod-taxa-${selectedProduct.id}`, selectedProduct.taxa || 0, '0,00', true, isLocConferido || !isVendaValid)}
                 </div>
                 <div>
                   <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Comissão da Agência</label>
-                  ${renderCurrencyInputHTML(`edit-prod-comissao-${selectedProduct.id}`, selectedProduct.comissao || 0, '0,00', true, !isVendaValid)}
+                  ${renderCurrencyInputHTML(`edit-prod-comissao-${selectedProduct.id}`, selectedProduct.comissao || 0, '0,00', true, isLocConferido || !isVendaValid)}
                 </div>
                 <div>
                   <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Markup</label>
-                  ${renderCurrencyInputHTML(`edit-prod-markup-${selectedProduct.id}`, selectedProduct.markup || 0, '0,00', true, !isVendaValid)}
+                  ${renderCurrencyInputHTML(`edit-prod-markup-${selectedProduct.id}`, selectedProduct.markup || 0, '0,00', true, isLocConferido || !isVendaValid)}
                 </div>
                 <div>
                   <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">RAV</label>
-                  ${renderCurrencyInputHTML(`edit-prod-rav-${selectedProduct.id}`, selectedProduct.rav || 0, '0,00', true, !isVendaValid)}
+                  ${renderCurrencyInputHTML(`edit-prod-rav-${selectedProduct.id}`, selectedProduct.rav || 0, '0,00', true, isLocConferido || !isVendaValid)}
                 </div>
                 <div>
                   <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Tarifa (Informação)</label>
@@ -365,16 +367,22 @@ export function renderLateralEditorPaneHTML(
 
             <!-- Botões de Ação -->
             <div class="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
-              <button type="submit" class="w-full px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-[10px] tracking-wider rounded-lg shadow-sm transition uppercase">
-                Salvar Este Serviço
-              </button>
+              ${isLocConferido ? `
+                <div class="w-full text-center py-2 px-3 bg-amber-50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-400 border border-amber-200/40 dark:border-amber-900/40 rounded-lg text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5">
+                  ⚠️ Bloqueado pelo Financeiro
+                </div>
+              ` : `
+                <button type="submit" class="w-full px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-[10px] tracking-wider rounded-lg shadow-sm transition uppercase">
+                  Salvar Este Serviço
+                </button>
+              `}
             </div>
           </form>
         </div>
       </div>
 
       <div class="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800 sticky bottom-0 bg-white dark:bg-slate-900 z-10 py-2">
-        <button id="edit-btn-cancelar-lateral" type="button" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs tracking-wider rounded-lg transition uppercase">
+        <button id="edit-btn-cancelar-lateral" type="button" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs tracking-wider rounded-lg transition uppercase font-sans">
           Voltar
         </button>
       </div>

@@ -36,6 +36,7 @@ export class EditTravelModal {
   private tripId!: string;
   private selectedProductId: string | null = null;
   private destAutocomplete: DestinosAutocomplete | null = null;
+  private locConferenciasMap: { [locKey: string]: boolean } = {};
 
   constructor(options: EditTravelModalOptions) {
     this.options = options;
@@ -46,6 +47,36 @@ export class EditTravelModal {
    */
   public async open(tripId: string, activeTab: 'detalhes' | 'produtos' = 'detalhes'): Promise<void> {
     this.tripId = tripId;
+    
+    // Carrega conferências do LOC
+    this.locConferenciasMap = {};
+    if (!this.options.isFallbackMode) {
+      try {
+        const { data } = await supabase
+          .from('loc_conferencias')
+          .select('codigo_localizador, conferido')
+          .eq('viagem_id', tripId);
+        if (data) {
+          data.forEach((row: any) => {
+            this.locConferenciasMap[row.codigo_localizador.trim().toUpperCase()] = row.conferido;
+          });
+        }
+      } catch (err) {
+        console.warn('Erro ao carregar conferências do LOC:', err);
+      }
+    }
+    const localConferenciasSaved = localStorage.getItem(`paxflow-loc-conferencias-${tripId}`);
+    if (localConferenciasSaved) {
+      try {
+        const parsed = JSON.parse(localConferenciasSaved);
+        Object.keys(parsed).forEach(k => {
+          if (this.locConferenciasMap[k] === undefined) {
+            this.locConferenciasMap[k] = parsed[k];
+          }
+        });
+      } catch (e) {}
+    }
+
     try {
       const modalWidthClass = this.selectedProductId ? 'max-w-[1380px]' : 'max-w-6xl';
       this.renderModalOverlay(modalWidthClass);
@@ -214,15 +245,22 @@ export class EditTravelModal {
 
     const renderReembolsosHTML = (): string => renderReembolsosTabHTML(v.reembolsos);
 
+    const isSelectedProductLocConferido = selectedProduct 
+      ? !!this.locConferenciasMap[(selectedProduct.codigo_reserva || '').trim().toUpperCase()]
+      : false;
+
     modalContent.innerHTML = `
       <div class="p-6">
         <!-- Topo com Título e Fechar -->
         <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 mb-4">
           <div>
-            <h3 class="text-lg font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5">✈️ Gerenciar Viagem</h3>
+            <h3 class="text-lg font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5 font-sans">✈️ Gerenciar Viagem</h3>
             <p class="text-xs text-slate-400 dark:text-slate-500 font-semibold">Destino: <span class="font-bold text-slate-600 dark:text-slate-300">${v.destino}</span> &bull; Loc: <span class="font-bold text-slate-600 dark:text-slate-300">${v.codigo_localizador || 'Sem LOC'}</span></p>
           </div>
-          <button id="btn-close-edit-modal-x" class="text-slate-400 hover:text-rose-500 dark:text-slate-500 dark:hover:text-rose-400 font-bold transition">✕</button>
+          <div class="flex items-center gap-3">
+            <button id="btn-financeiro-global" class="hidden px-3 py-1.5 rounded-lg text-[10px] font-black tracking-wider transition uppercase shadow-sm border font-sans"></button>
+            <button id="btn-close-edit-modal-x" class="text-slate-400 hover:text-rose-500 dark:text-slate-500 dark:hover:text-rose-400 font-bold transition">✕</button>
+          </div>
         </div>
 
         <!-- Seletor de Abas Premium (visível apenas no mobile) -->
@@ -423,7 +461,8 @@ export class EditTravelModal {
             selectedProduct,
             activeTab,
             this.options.tiposProduto,
-            (tipo) => this.getIconForType(tipo)
+            (tipo) => this.getIconForType(tipo),
+            isSelectedProductLocConferido
           )}
 
         </div>
@@ -969,6 +1008,14 @@ export class EditTravelModal {
         this.options.showToast('Por favor, info o Código (LOC) do serviço.', 'error');
         return;
       }
+      
+      const newLoc = reserva.trim().toUpperCase();
+      const isLocConferido = !!this.locConferenciasMap[newLoc];
+      if (isLocConferido) {
+        this.options.showToast(`O LOC "${newLoc}" já está conferido pelo financeiro e encontra-se bloqueado.`, 'error');
+        return;
+      }
+
       if (reserva.length > 20) {
         this.options.showToast('O Código (LOC) deve ter no máximo 20 caracteres.', 'error');
         return;
@@ -1298,6 +1345,15 @@ export class EditTravelModal {
       const editStatus = (document.getElementById(`edit-prod-status-${prodId}`) as HTMLSelectElement).value;
       const editDataServicoRaw = (document.getElementById(`edit-prod-data-${prodId}`) as HTMLInputElement).value.trim();
 
+      const oldLoc = (prod.codigo_reserva || '').trim().toUpperCase();
+      const newLoc = editReserva.trim().toUpperCase();
+      const isOldLocConferido = !!this.locConferenciasMap[oldLoc];
+      const isNewLocConferido = !!this.locConferenciasMap[newLoc];
+      if (isOldLocConferido || isNewLocConferido) {
+        this.options.showToast('Este LOC está conferido pelo financeiro e encontra-se bloqueado para alterações.', 'error');
+        return;
+      }
+
       if (!editReserva) {
         this.options.showToast('Por favor, informe o Código (LOC) do serviço.', 'error');
         return;
@@ -1474,6 +1530,7 @@ export class EditTravelModal {
     let formasAtivas: any[] = [];
     let locPagamentos: any[] = [];
 
+    this.locConferenciasMap = {};
     if (!this.options.isFallbackMode) {
       try {
         const { data: dataFormas } = await supabase
@@ -1487,8 +1544,18 @@ export class EditTravelModal {
           .select('*, formas_recebimento(*)')
           .eq('viagem_id', tripId);
         if (dataPags) locPagamentos = dataPags;
+
+        const { data: dataConf } = await supabase
+          .from('loc_conferencias')
+          .select('codigo_localizador, conferido')
+          .eq('viagem_id', tripId);
+        if (dataConf) {
+          dataConf.forEach((row: any) => {
+            this.locConferenciasMap[row.codigo_localizador.trim().toUpperCase()] = row.conferido;
+          });
+        }
       } catch (err) {
-        console.warn('Erro ao carregar pagamentos/formas do Supabase:', err);
+        console.warn('Erro ao carregar pagamentos/formas/conferencias do Supabase:', err);
       }
     }
 
@@ -1515,6 +1582,18 @@ export class EditTravelModal {
         if (locPagamentos.length === 0) {
           locPagamentos = parsed;
         }
+      } catch (e) {}
+    }
+
+    const localConferenciasSaved = localStorage.getItem(`paxflow-loc-conferencias-${tripId}`);
+    if (localConferenciasSaved) {
+      try {
+        const parsed = JSON.parse(localConferenciasSaved);
+        Object.keys(parsed).forEach(k => {
+          if (this.locConferenciasMap[k] === undefined) {
+            this.locConferenciasMap[k] = parsed[k];
+          }
+        });
       } catch (e) {}
     }
 
@@ -1636,6 +1715,7 @@ export class EditTravelModal {
 
     container.innerHTML = Object.values(produtosAgrupados).map(grupo => {
       const locKey = grupo.loc;
+      const isConferido = !!this.locConferenciasMap[locKey.toUpperCase()];
       const isGroupDetalhado = grupo.isGroupDetalhado;
       const valorVendaTotal = grupo.valorVendaTotal;
       const valorTaxasTotal = grupo.valorTaxasTotal;
@@ -1668,7 +1748,7 @@ export class EditTravelModal {
               <button data-comments-prod-id="${p.id}" data-comments-prod-name="${p.fornecedor} - ${p.descricao}" class="p-1.5 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-slate-300 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-md transition text-xs font-bold flex items-center gap-1" title="Notas e Comentários">
                 💬 <span class="text-[10px]">${commentsCount}</span>
               </button>
-              <button data-delete-prod-id="${p.id}" class="p-1.5 hover:bg-rose-50 dark:hover:bg-rose-950/20 text-slate-300 dark:text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 rounded-md transition text-xs font-bold" title="Remover Produto">
+              <button data-delete-prod-id="${p.id}" class="p-1.5 hover:bg-rose-50 dark:hover:bg-rose-950/20 text-slate-300 dark:text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 rounded-md transition text-xs font-bold ${isConferido ? 'hidden' : ''}" title="Remover Produto">
                 🗑️
               </button>
             </div>
@@ -1692,6 +1772,8 @@ export class EditTravelModal {
         statusPagamentoBadge = `<span class="px-1.5 py-0.5 text-[9px] font-black rounded bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">✅ Pago</span>`;
       }
 
+      const isAdmin = this.options.perfil?.role === 'admin';
+
       return `
         <div class="loc-group border border-slate-200/80 dark:border-slate-800 rounded-xl overflow-hidden mb-2 shadow-sm">
           <div class="loc-header flex items-center justify-between p-2.5 bg-slate-100/50 dark:bg-slate-800/40 cursor-pointer hover:bg-slate-200/50 dark:hover:bg-slate-800/80 transition select-none" data-loc-key="${locKey}">
@@ -1699,7 +1781,17 @@ export class EditTravelModal {
               <span class="loc-chevron inline-block transition-transform duration-200 text-xs text-slate-400 dark:text-slate-500" style="transform: rotate(90deg);">▶</span>
               <span class="px-2 py-0.5 text-[10px] font-black tracking-wider rounded bg-indigo-100 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 uppercase">${locKey}</span>
               
-              <button class="btn-formas-pagamento-loc p-1 bg-white hover:bg-emerald-50 dark:bg-slate-800 dark:hover:bg-emerald-950/20 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 rounded-lg border border-slate-200 dark:border-slate-700 transition text-[9px] font-bold flex items-center justify-center gap-1 shadow-sm font-sans" data-loc="${locKey}" title="Definir Formas de Pagamento">
+              ${isAdmin ? `
+                <button class="btn-conferir-loc p-1 rounded-lg border text-[9px] font-bold flex items-center justify-center gap-1 shadow-sm transition font-sans ${isConferido ? 'text-emerald-600 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/40' : 'text-slate-400 bg-slate-50 dark:text-slate-500 dark:bg-slate-800 border-slate-200 dark:border-slate-700'}" data-loc="${locKey}">
+                  ${isConferido ? '✔️ Conferido' : '⚙️ Conferir'}
+                </button>
+              ` : (isConferido ? `
+                <span class="px-1.5 py-1 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-600 dark:text-emerald-400 dark:bg-emerald-950/20 dark:border-emerald-900/40 text-[9px] font-bold flex items-center gap-1 shadow-sm font-sans">
+                  ✔️ Conferido
+                </span>
+              ` : '')}
+
+              <button class="btn-formas-pagamento-loc p-1 bg-white hover:bg-emerald-50 dark:bg-slate-800 dark:hover:bg-emerald-950/20 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 rounded-lg border border-slate-200 dark:border-slate-700 transition text-[9px] font-bold flex items-center justify-center gap-1 shadow-sm font-sans ${isConferido ? 'opacity-55 cursor-not-allowed' : ''}" data-loc="${locKey}" title="${isConferido ? 'Bloqueado Financeiramente' : 'Definir Formas de Pagamento'}">
                 💰 Pagamento
               </button>
 
@@ -1753,10 +1845,136 @@ export class EditTravelModal {
         e.stopPropagation();
         const loc = btn.getAttribute('data-loc');
         if (loc) {
+          const isLocConferido = !!this.locConferenciasMap[loc.toUpperCase()];
+          if (isLocConferido) {
+            this.options.showToast('Este LOC está conferido pelo financeiro e encontra-se bloqueado para alterações.', 'error');
+            return;
+          }
           this.abrirModalPagamentoLoc(loc, produtosAgrupados[loc]?.valorVendaTotal || 0, formasAtivas, locPagamentos);
         }
       });
     });
+
+    // Botão individual de conferência do LOC (apenas admin pode clicar)
+    container.querySelectorAll('.btn-conferir-loc').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const loc = btn.getAttribute('data-loc');
+        if (!loc) return;
+        
+        const currentStatus = !!this.locConferenciasMap[loc.toUpperCase()];
+        const nextStatus = !currentStatus;
+
+        try {
+          if (!this.options.isFallbackMode) {
+            await supabase
+              .from('loc_conferencias')
+              .delete()
+              .eq('viagem_id', this.tripId)
+              .eq('codigo_localizador', loc);
+
+            if (nextStatus) {
+              const { error } = await supabase
+                .from('loc_conferencias')
+                .insert({
+                  viagem_id: this.tripId,
+                  codigo_localizador: loc,
+                  conferido: true
+                });
+              if (error) throw error;
+            }
+          }
+
+          // Atualiza localmente
+          const localKey = `paxflow-loc-conferencias-${this.tripId}`;
+          const savedLocal = localStorage.getItem(localKey);
+          let localMap: { [key: string]: boolean } = {};
+          if (savedLocal) {
+            try { localMap = JSON.parse(savedLocal); } catch (e) {}
+          }
+          if (nextStatus) {
+            localMap[loc.toUpperCase()] = true;
+          } else {
+            delete localMap[loc.toUpperCase()];
+          }
+          localStorage.setItem(localKey, JSON.stringify(localMap));
+
+          this.options.showToast(
+            nextStatus 
+              ? `LOC "${loc}" marcado como conferido!` 
+              : `Conferência do LOC "${loc}" removida!`, 
+            'success'
+          );
+          
+          await this.loadAndRenderProdutosViagem(this.tripId);
+          
+          if (this.selectedProductId) {
+            await this.open(this.tripId, 'produtos');
+          }
+        } catch (err: any) {
+          console.error('Erro ao atualizar status de conferência do LOC:', err);
+          this.options.showToast('Erro ao atualizar conferência do LOC.', 'error', err);
+        }
+      });
+    });
+
+    // Atualização dinâmica do botão de Financeiro Global no topo
+    const btnFinanceiroGlobal = document.getElementById('btn-financeiro-global') as HTMLButtonElement;
+    if (btnFinanceiroGlobal) {
+      const locKeys = Object.keys(produtosAgrupados);
+      if (locKeys.length === 0) {
+        btnFinanceiroGlobal.classList.add('hidden');
+      } else {
+        btnFinanceiroGlobal.classList.remove('hidden');
+        const checkedCount = locKeys.filter(k => !!this.locConferenciasMap[k]).length;
+        const totalCount = locKeys.length;
+        
+        // Remove classes de cor anteriores
+        btnFinanceiroGlobal.className = 'px-3 py-1.5 rounded-lg text-[10px] font-black tracking-wider transition uppercase shadow-sm border font-sans';
+        
+        if (checkedCount === 0) {
+          btnFinanceiroGlobal.classList.add('bg-slate-100', 'hover:bg-slate-200', 'text-slate-500', 'border-slate-200', 'dark:bg-slate-800', 'dark:hover:bg-slate-700', 'dark:text-slate-400', 'dark:border-slate-700');
+        } else if (checkedCount === totalCount) {
+          btnFinanceiroGlobal.classList.add('bg-emerald-600', 'hover:bg-emerald-700', 'text-white', 'border-emerald-700', 'dark:bg-emerald-500/20', 'dark:hover:bg-emerald-500/30', 'dark:text-emerald-400', 'dark:border-emerald-800');
+        } else {
+          btnFinanceiroGlobal.classList.add('bg-amber-100/50', 'hover:bg-amber-100', 'text-amber-700', 'border-amber-300', 'dark:bg-amber-950/20', 'dark:hover:bg-amber-950/40', 'dark:text-amber-400', 'dark:border-amber-900/50');
+        }
+        
+        btnFinanceiroGlobal.innerHTML = `💸 Financeiro (${checkedCount}/${totalCount})`;
+
+        // Clona botão para remover listeners antigos
+        const newBtn = btnFinanceiroGlobal.cloneNode(true) as HTMLButtonElement;
+        btnFinanceiroGlobal.parentNode?.replaceChild(newBtn, btnFinanceiroGlobal);
+
+        const isAdmin = this.options.perfil?.role === 'admin';
+        if (isAdmin) {
+          newBtn.addEventListener('click', async () => {
+            if (checkedCount === 0) {
+              const confirmResult = await showCustomConfirm(
+                `Deseja realmente marcar todos os ${totalCount} LOCs desta viagem como Conferido Financeiro? Isso irá bloquear as alterações de valores e produtos.`,
+                'Conferência Financeira Global',
+                { confirmText: 'Conferir Todos', cancelText: 'Cancelar' }
+              );
+              if (confirmResult) {
+                await this.conferirTodosLocs(locKeys, true);
+              }
+            } else if (checkedCount === totalCount) {
+              const confirmResult = await showCustomConfirm(
+                `Deseja realmente remover a conferência financeira de todos os ${totalCount} LOCs desta viagem? Isso irá desbloquear as edições.`,
+                'Remover Conferência Global',
+                { isDestructive: true, confirmText: 'Remover Todos', cancelText: 'Cancelar' }
+              );
+              if (confirmResult) {
+                await this.conferirTodosLocs(locKeys, false);
+              }
+            }
+          });
+        } else {
+          newBtn.style.cursor = 'default';
+          newBtn.classList.remove('hover:bg-slate-200', 'hover:bg-emerald-700', 'hover:bg-amber-100', 'dark:hover:bg-slate-700', 'dark:hover:bg-emerald-500/30', 'dark:hover:bg-amber-950/40');
+        }
+      }
+    }
 
     // Comentários produto
     container.querySelectorAll('[data-comments-prod-id]').forEach(btn => {
@@ -2171,6 +2389,57 @@ export class EditTravelModal {
 
     // Inicializar UI
     updateUI();
+  }
+
+  private async conferirTodosLocs(locKeys: string[], conferir: boolean): Promise<void> {
+    try {
+      if (!this.options.isFallbackMode) {
+        // Exclui os registros existentes primeiro para evitar conflitos de unique keys
+        await supabase
+          .from('loc_conferencias')
+          .delete()
+          .eq('viagem_id', this.tripId)
+          .in('codigo_localizador', locKeys);
+
+        if (conferir) {
+          const insertPayload = locKeys.map(k => ({
+            viagem_id: this.tripId,
+            codigo_localizador: k,
+            conferido: true
+          }));
+          const { error } = await supabase
+            .from('loc_conferencias')
+            .insert(insertPayload);
+          if (error) throw error;
+        }
+      }
+
+      // Sincroniza localmente
+      const localKey = `paxflow-loc-conferencias-${this.tripId}`;
+      const localMap: { [key: string]: boolean } = {};
+      if (conferir) {
+        locKeys.forEach(k => {
+          localMap[k.toUpperCase()] = true;
+        });
+      }
+      localStorage.setItem(localKey, JSON.stringify(localMap));
+
+      this.options.showToast(
+        conferir 
+          ? 'Todos os LOCs foram conferidos e bloqueados com sucesso!' 
+          : 'Todas as conferências dos LOCs foram removidas!', 
+        'success'
+      );
+      
+      await this.loadAndRenderProdutosViagem(this.tripId);
+      
+      if (this.selectedProductId) {
+        await this.open(this.tripId, 'produtos');
+      }
+    } catch (err: any) {
+      console.error('Erro na conferência global de LOCs:', err);
+      this.options.showToast('Erro ao realizar a operação global.', 'error', err);
+    }
   }
 
   private closeModal(): void {
