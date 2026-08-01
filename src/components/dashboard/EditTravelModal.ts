@@ -137,6 +137,13 @@ export class EditTravelModal {
         viagem.consultor = null;
       }
 
+      if (viagem) {
+        const localProcessoSaved = localStorage.getItem(`paxflow-processo-conferido-${tripId}`);
+        if (localProcessoSaved !== null) {
+          viagem.processo_conferido = localProcessoSaved === 'true';
+        }
+      }
+
       // Busca lista de clientes
       const { data: clientes, error: errClientes } = await supabase
         .from('clientes')
@@ -249,6 +256,9 @@ export class EditTravelModal {
       ? !!this.locConferenciasMap[(selectedProduct.codigo_reserva || '').trim().toUpperCase()]
       : false;
 
+    const viagemProcessoConferido = !!v.processo_conferido;
+    const isAdmin = this.options.perfil?.role === 'admin';
+
     modalContent.innerHTML = `
       <div class="p-6">
         <!-- Topo com Título e Fechar -->
@@ -258,6 +268,21 @@ export class EditTravelModal {
             <p class="text-xs text-slate-400 dark:text-slate-500 font-semibold">Destino: <span class="font-bold text-slate-600 dark:text-slate-300">${v.destino}</span> &bull; Loc: <span class="font-bold text-slate-600 dark:text-slate-300">${v.codigo_localizador || 'Sem LOC'}</span></p>
           </div>
           <div class="flex items-center gap-3">
+            <!-- Botão de Processo -->
+            ${isAdmin ? `
+              <button id="btn-processo-global" class="px-3 py-1.5 rounded-lg text-[10px] font-black tracking-wider transition uppercase shadow-sm border font-sans ${
+                viagemProcessoConferido 
+                  ? 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-700 dark:bg-emerald-500/20 dark:hover:bg-emerald-500/30 dark:text-emerald-400 dark:border-emerald-800' 
+                  : 'bg-slate-100 hover:bg-slate-200 text-slate-500 border-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-400 dark:border-slate-700'
+              }">
+                ${viagemProcessoConferido ? '✔️ Processo Conferido' : '⚙️ Conferir Processo'}
+              </button>
+            ` : (viagemProcessoConferido ? `
+              <span class="px-3 py-1.5 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-600 dark:text-emerald-400 dark:bg-emerald-950/20 dark:border-emerald-900/40 text-[10px] font-black flex items-center gap-1 shadow-sm font-sans">
+                ✔️ Processo Conferido
+              </span>
+            ` : '')}
+
             <button id="btn-financeiro-global" class="hidden px-3 py-1.5 rounded-lg text-[10px] font-black tracking-wider transition uppercase shadow-sm border font-sans"></button>
             <button id="btn-close-edit-modal-x" class="text-slate-400 hover:text-rose-500 dark:text-slate-500 dark:hover:text-rose-400 font-bold transition">✕</button>
           </div>
@@ -286,16 +311,16 @@ export class EditTravelModal {
             <!-- Detalhes do Dono e SLA no Topo -->
             <div class="flex flex-wrap items-center justify-between gap-3 p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/50 dark:border-slate-800">
               <div class="flex items-center gap-2">
-                <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Responsável:</span>
-                <select id="edit-viagem-consultor" required class="px-2.5 py-1 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-700 dark:text-slate-200 text-xs font-bold shadow-sm cursor-pointer">
+                <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider font-sans">Responsável:</span>
+                <select id="edit-viagem-consultor" required ${viagemProcessoConferido ? 'disabled' : ''} class="px-2.5 py-1 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-700 dark:text-slate-200 text-xs font-bold shadow-sm cursor-pointer font-sans">
                   ${this.options.consultores.map(c => `<option value="${c.id}" ${c.id === v.consultor_id ? 'selected' : ''}>${c.nome}</option>`).join('')}
                 </select>
               </div>
               
               ${sla.alert ? `
                 <div class="flex items-center gap-2">
-                  <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Alerta SLA:</span>
-                  <span class="px-2.5 py-1 rounded-lg text-xs font-black tracking-wide animate-pulse border ${
+                  <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider font-sans">Alerta SLA:</span>
+                  <span class="px-2.5 py-1 rounded-lg text-xs font-black tracking-wide animate-pulse border font-sans ${
                     sla.type === 'pre-embarque' 
                       ? 'bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 border-rose-100 dark:border-rose-900/55' 
                       : 'bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-900/55'
@@ -308,46 +333,46 @@ export class EditTravelModal {
 
             <form id="form-editar-viagem" class="space-y-4">
               <div>
-                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Passageiro / Cliente *</label>
-                <select id="edit-viagem-cliente" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm">
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 font-sans">Passageiro / Cliente *</label>
+                <select id="edit-viagem-cliente" required ${viagemProcessoConferido ? 'disabled' : ''} class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm font-sans">
                   ${clientes.map(c => `<option value="${c.id}" class="bg-white dark:bg-slate-800" ${c.id === v.cliente_id ? 'selected' : ''}>${c.nome}</option>`).join('')}
                 </select>
               </div>
 
               <div class="grid grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Destino *</label>
-                  <input id="edit-viagem-destino" type="text" required value="${v.destino}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm" />
+                  <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 font-sans">Destino *</label>
+                  <input id="edit-viagem-destino" type="text" required ${viagemProcessoConferido ? 'disabled' : ''} value="${v.destino}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm font-sans" />
                 </div>
                 <div>
-                  <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Código Localizador (LOC)</label>
-                  <input id="edit-viagem-loc" type="text" value="${v.codigo_localizador || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm uppercase" placeholder="ex: F3R9W" />
+                  <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 font-sans">Código Localizador (LOC)</label>
+                  <input id="edit-viagem-loc" type="text" ${viagemProcessoConferido ? 'disabled' : ''} value="${v.codigo_localizador || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm uppercase font-sans" placeholder="ex: F3R9W" />
                 </div>
               </div>
 
               <div>
-                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Valor Total (R$) *</label>
-                ${renderCurrencyInputHTML('edit-viagem-valor', v.valor_total || 0)}
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 font-sans">Valor Total (R$) *</label>
+                ${renderCurrencyInputHTML('edit-viagem-valor', v.valor_total || 0, '0,00', true, viagemProcessoConferido)}
               </div>
 
               <div class="grid grid-cols-3 gap-3">
                 <div>
-                  <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 leading-tight">Data Ida *</label>
-                  ${renderDateInputHTML('edit-viagem-ida', v.data_ida || '')}
+                  <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 leading-tight font-sans">Data Ida *</label>
+                  ${renderDateInputHTML('edit-viagem-ida', v.data_ida || '', 'DD/MM/AAAA', true, viagemProcessoConferido)}
                 </div>
                 <div>
-                  <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 leading-tight">Data Volta</label>
-                  ${renderDateInputHTML('edit-viagem-volta', v.data_volta || '', 'DD/MM/AAAA', false)}
+                  <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 leading-tight font-sans">Data Volta</label>
+                  ${renderDateInputHTML('edit-viagem-volta', v.data_volta || '', 'DD/MM/AAAA', false, viagemProcessoConferido)}
                 </div>
                 <div>
-                  <label id="label-edit-viagem-data-financeiro" class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 leading-tight">Data Finan. ${v.status !== 'fechado' ? '*' : ''}</label>
-                  ${renderDateInputHTML('edit-viagem-data-financeiro', v.data_financeiro || '', 'DD/MM/AAAA', v.status !== 'fechado')}
+                  <label id="label-edit-viagem-data-financeiro" class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 leading-tight font-sans">Data Finan. ${v.status !== 'fechado' ? '*' : ''}</label>
+                  ${renderDateInputHTML('edit-viagem-data-financeiro', v.data_financeiro || '', 'DD/MM/AAAA', v.status !== 'fechado', viagemProcessoConferido)}
                 </div>
               </div>
 
               <div>
-                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Status / Etapa *</label>
-                <select id="edit-viagem-status" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm">
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 font-sans">Status / Etapa *</label>
+                <select id="edit-viagem-status" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm font-sans">
                   <option value="pos_venda" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100" ${v.status === 'pos_venda' ? 'selected' : ''}>Pós-Venda</option>
                   <option value="fechado" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100" ${v.status === 'fechado' ? 'selected' : ''}>Fechado</option>
                   <option value="pre_embarque" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100" ${v.status === 'pre_embarque' ? 'selected' : ''}>Pré-Embarque</option>
@@ -357,21 +382,21 @@ export class EditTravelModal {
               </div>
 
               <div>
-                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Observações Operacionais</label>
-                <textarea id="edit-viagem-obs" rows="2.5" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 text-sm font-medium">${v.observacoes || ''}</textarea>
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 font-sans">Observações Operacionais</label>
+                <textarea id="edit-viagem-obs" rows="2.5" ${viagemProcessoConferido ? 'disabled' : ''} class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 text-sm font-medium font-sans">${v.observacoes || ''}</textarea>
               </div>
 
-              <div class="flex items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-800 mt-4">
+              <div class="flex items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-800 mt-4 font-sans">
                 <div>
-                  ${this.options.perfil?.role === 'admin' ? `
+                  ${this.options.perfil?.role === 'admin' && !viagemProcessoConferido ? `
                     <button id="btn-excluir-viagem" type="button" class="px-5 py-2.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-900/20 text-rose-600 dark:text-rose-400 font-extrabold text-xs tracking-wider rounded-xl transition uppercase">
                       Excluir Viagem
                     </button>
                   ` : ''}
                 </div>
                 <div class="flex items-center gap-3">
-                  <button id="btn-cancel-edit" type="button" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs tracking-wider rounded-xl transition uppercase">Cancelar</button>
-                  <button type="submit" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/10 transition uppercase">Salvar Alterações</button>
+                  <button id="btn-cancel-edit" type="button" ${viagemProcessoConferido ? 'disabled' : ''} class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs tracking-wider rounded-xl transition uppercase ${viagemProcessoConferido ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}">Cancelar</button>
+                  <button id="btn-salvar-viagem" type="submit" ${viagemProcessoConferido ? 'disabled' : ''} class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/10 transition uppercase ${viagemProcessoConferido ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}">Salvar Alterações</button>
                 </div>
               </div>
             </form>
@@ -484,6 +509,73 @@ export class EditTravelModal {
     };
     document.getElementById('btn-close-edit-modal-x')?.addEventListener('click', handleClose);
     document.getElementById('btn-cancel-edit')?.addEventListener('click', handleClose);
+
+    // Toggle Processo Global (topo)
+    const btnProcessoGlobal = document.getElementById('btn-processo-global');
+    if (btnProcessoGlobal && isAdmin) {
+      btnProcessoGlobal.addEventListener('click', async () => {
+        const nextStatus = !viagemProcessoConferido;
+        const confirmResult = await showCustomConfirm(
+          nextStatus 
+            ? 'Deseja realmente marcar esta viagem como Processo Conferido? Isso irá bloquear as alterações cadastrais (exceto status e documentos).'
+            : 'Deseja realmente remover a conferência de processo desta viagem?',
+          nextStatus ? 'Conferência de Processo' : 'Remover Conferência',
+          nextStatus ? { confirmText: 'Conferir', cancelText: 'Cancelar' } : { isDestructive: true, confirmText: 'Remover', cancelText: 'Cancelar' }
+        );
+
+        if (confirmResult) {
+          try {
+            if (!this.options.isFallbackMode) {
+              const { error } = await supabase
+                .from('viagens')
+                .update({ processo_conferido: nextStatus })
+                .eq('id', this.tripId);
+              if (error) throw error;
+            }
+            
+            // Salva localmente
+            localStorage.setItem(`paxflow-processo-conferido-${this.tripId}`, String(nextStatus));
+            
+            this.options.showToast(
+              nextStatus ? 'Viagem marcada como Processo Conferido!' : 'Conferência de processo da viagem removida!',
+              'success'
+            );
+            
+            // Re-abre o modal para atualizar
+            await this.open(this.tripId, activeTab);
+          } catch (err: any) {
+            console.error('Erro ao atualizar processo_conferido:', err);
+            this.options.showToast('Erro ao atualizar conferência de processo.', 'error', err);
+          }
+        }
+      });
+    }
+
+    // Monitora alteração no campo Status / Etapa para habilitar botões caso a viagem esteja bloqueada
+    const statusSelect = document.getElementById('edit-viagem-status') as HTMLSelectElement;
+    statusSelect?.addEventListener('change', () => {
+      const initialStatus = v.status || '';
+      const currentStatus = statusSelect.value;
+      
+      const btnSalvar = document.getElementById('btn-salvar-viagem') as HTMLButtonElement;
+      const btnCancelar = document.getElementById('btn-cancel-edit') as HTMLButtonElement;
+      
+      if (viagemProcessoConferido) {
+        if (currentStatus !== initialStatus) {
+          btnSalvar?.removeAttribute('disabled');
+          btnSalvar?.classList.remove('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
+          
+          btnCancelar?.removeAttribute('disabled');
+          btnCancelar?.classList.remove('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
+        } else {
+          btnSalvar?.setAttribute('disabled', 'true');
+          btnSalvar?.classList.add('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
+          
+          btnCancelar?.setAttribute('disabled', 'true');
+          btnCancelar?.classList.add('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
+        }
+      }
+    });
 
     // Documentos da Viagem / Passageiro
     const btnViagemUpload = document.getElementById('btn-viagem-upload-doc') as HTMLButtonElement;
