@@ -133,10 +133,20 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 - **Produtos, Detalhamento de Valores e Rentabilidade (Novo Nível de Cadastro)**:
   - Permite gerenciar itens de viagem (voo, hotel, seguro, passeio, outro) preenchendo fornecedor, descrição, data do serviço, valor de venda, status e o **Código de Reserva (LOC)**.
   - **Código de Reserva (LOC) Obrigatório**: O campo LOC do produto é obrigatório (máximo 20 caracteres, código único sem espaços, barras ou delimitadores textuais).
+  - **Quitação Financeira por LOC [NEW]**: Cada LOC exige a alocação de formas de recebimento. O usuário pode fracionar o total da venda em múltiplas formas de pagamento cadastradas. O salvamento só é permitido se a soma dos pagamentos corresponder exatamente ao valor total do LOC, ou se o usuário remover todos os pagamentos para resetar o LOC para "Sem Pagamento". O cabeçalho de cada LOC apresenta badges indicativos (`⚠️ Sem Pagamento`, `⚠️ Incompleto`, ou `✅ Pago`).
   - **Detalhamento de Valores**: Após salvar o produto na viagem, ao clicar no item listado na aba "Produtos e Serviços", abre-se um modal de detalhamento que permite fracionar o valor de venda nas categorias: **Tarifa (Valor Líquido)**, **Taxa** e **Comissão**.
   - **Validação de Alinhamento**: O sistema bloqueia a gravação caso a soma `Tarifa + Taxa + Comissão` divirja centavo por centavo do `Valor de Venda` do produto, orientando o usuário em tempo real sobre o saldo restante a preencher.
   - **Rentabilidade da Viagem [NEW]**: No modal de gerenciamento (aba de detalhes), o PaxFlow calcula a rentabilidade financeira geral acumulada da viagem baseado na margem total dos produtos e serviços cadastrados (`Σ(Valor de Venda - Valor de Custo)`), exibida de forma destacada em um painel HSL elegante.
   - **Exibição Unitária do Serviço no Editor Lateral**: Na terceira coluna (editor lateral), o formulário de edição exibe apenas o serviço selecionado no momento, eliminando a exibição em acordeão de múltiplos itens e tornando a interface mais limpa e focada.
+- **Processo de Conferência Financeira (por LOC) [NEW]**:
+  - Administradores dispõem de um botão de toggle (`⚙️ Conferir` / `✔️ Conferido`) no cabeçalho de cada LOC. Consultores visualizam apenas um badge estático `✔️ Conferido` quando ativo (oculto quando inativo).
+  - A conferência de um LOC bloqueia todas as suas edições, adições, exclusões e alteração de formas de pagamento associadas, mantendo o campo de **Notas e Comentários** ativo.
+  - Se houver pendências de quitação no LOC, a conferência é barrada com a mensagem `"LOC com recebimento pendente."`.
+  - Um botão de **Financeiro Global** no topo superior direito indica dinamicamente o status geral da viagem (Apagado, Médio, Aceso) e permite bulk-toggle por administradores se não houver pendências.
+- **Processo de Conferência de Processo (por Viagem) [NEW]**:
+  - Controlado por um botão de toggle (`⚙️ Conferir Processo` / `✔️ Processo Conferido`) no topo direito (exclusivo para administradores; consultores visualizam como badge estático se ativo).
+  - Bloqueia as edições dos campos cadastrais gerais da viagem (passageiro, destino, datas, valor, observações e botão excluir).
+  - **Exceções operacionais:** O status da etapa permanece editável (habilitando botões de cancelar/salvar ao alterar), o anexo e download de documentos permanecem funcionais, a área de comentários permanece ativa e os produtos/serviços pertencentes a LOCs não conferidos financeiramente permanecem editáveis.
 - **Trava de Segurança na Transição de Status**:
   - Ao arrastar ou alterar o status de uma viagem no Kanban para qualquer status posterior a "Fechado" (Pós-Venda, Pré-Embarque, Pós-Viagem ou Reembolso Solicitado), o PaxFlow realiza duas validações em tempo de execução:
     1. O valor total da viagem deve ser completamente coberto pelos produtos cadastrados (o saldo financeiro deve ser zero).
@@ -292,6 +302,10 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
   - Listagem com paginação e busca rápida.
   - Carga inicial automatizada de 188 destinos turísticos pré-higienizados.
   - Resguardo de histórico legado: destinos antigos inconsistentes são rotulados com o prefixo `ARRUMAR | [original]` para higienização manual posterior pelos gestores.
+- **Gestão de Formas de Recebimento [NEW]**: Terceira aba na central de cadastros.
+  - Cadastro dos tipos de recebimento acordados com os clientes (ex: "Cartão de Crédito", "Pix", "Boleto").
+  - Formulário contendo nome do tipo de recebimento, seleção intuitiva de emoji/ícone em grid, botão de ativação/desativação e edição direta.
+  - Sincronização e fallback local com `localStorage` em caso de falha de conexão.
 - **Identidade de Cabeçalho Unificada**: O design e as transições do cabeçalho herdam o mesmo padrão premium das páginas operacionais, exibindo badges de identificação e descrições formatadas.
 
 ### 3.11 Localização de Erros e Tradutor Global (I18n)

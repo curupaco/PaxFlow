@@ -513,6 +513,14 @@ export class LandingPage {
                   </li>
                   <li class="flex items-start gap-2.5">
                     <span class="text-emerald-500 shrink-0">✨</span>
+                    <span><strong>Conferência Financeira por LOC e de Processo por Viagem</strong> com travas de segurança rigorosas de pagamentos e auditoria cadastral.</span>
+                  </li>
+                  <li class="flex items-start gap-2.5">
+                    <span class="text-emerald-500 shrink-0">✨</span>
+                    <span><strong>Central de Cadastros</strong> de destinos, produtos e formas de recebimento integrados aos localizadores (LOC).</span>
+                  </li>
+                  <li class="flex items-start gap-2.5">
+                    <span class="text-emerald-500 shrink-0">✨</span>
                     <span><strong>Alertas automáticos de SLA</strong> de documentos no Inbox, garantindo controle antes do embarque.</span>
                   </li>
                   <li class="flex items-start gap-2.5">
