@@ -1865,6 +1865,17 @@ export class EditTravelModal {
         const currentStatus = !!this.locConferenciasMap[loc.toUpperCase()];
         const nextStatus = !currentStatus;
 
+        if (nextStatus) {
+          const pagamentosGrupo = locPagamentos.filter(lp => (lp.codigo_localizador || '').trim().toUpperCase() === loc.toUpperCase());
+          const totalPagoGrupo = pagamentosGrupo.reduce((sum, lp) => sum + (Number(lp.valor) || 0), 0);
+          const valorVendaTotal = produtosAgrupados[loc]?.valorVendaTotal || 0;
+
+          if (pagamentosGrupo.length === 0 || Math.abs(totalPagoGrupo - valorVendaTotal) > 0.01) {
+            this.options.showToast('LOC com recebimento pendente.', 'error');
+            return;
+          }
+        }
+
         try {
           if (!this.options.isFallbackMode) {
             await supabase
@@ -1950,6 +1961,18 @@ export class EditTravelModal {
         if (isAdmin) {
           newBtn.addEventListener('click', async () => {
             if (checkedCount === 0) {
+              const hasPendente = locKeys.some(k => {
+                const pagamentosGrupo = locPagamentos.filter(lp => (lp.codigo_localizador || '').trim().toUpperCase() === k.toUpperCase());
+                const totalPagoGrupo = pagamentosGrupo.reduce((sum, lp) => sum + (Number(lp.valor) || 0), 0);
+                const valorVendaTotal = produtosAgrupados[k]?.valorVendaTotal || 0;
+                return pagamentosGrupo.length === 0 || Math.abs(totalPagoGrupo - valorVendaTotal) > 0.01;
+              });
+
+              if (hasPendente) {
+                this.options.showToast('Não é possível conferir: existem LOCs com recebimento pendente.', 'error');
+                return;
+              }
+
               const confirmResult = await showCustomConfirm(
                 `Deseja realmente marcar todos os ${totalCount} LOCs desta viagem como Conferido Financeiro? Isso irá bloquear as alterações de valores e produtos.`,
                 'Conferência Financeira Global',
@@ -2191,10 +2214,10 @@ export class EditTravelModal {
         }
       }
 
-      // Habilita salvar somente se o saldo pendente for zero
+      // Habilita salvar se o saldo pendente for zero OU se a lista de pagamentos estiver vazia (para permitir remover todos)
       const btnSalvar = document.getElementById('btn-pag-loc-salvar') as HTMLButtonElement;
       if (btnSalvar) {
-        btnSalvar.disabled = Math.abs(pendente) > 0.01;
+        btnSalvar.disabled = Math.abs(pendente) > 0.01 && tempPagamentos.length > 0;
       }
 
       // Sugere o saldo pendente como valor padrão no input
