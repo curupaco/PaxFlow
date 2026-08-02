@@ -15,8 +15,10 @@ export interface NewMessageModalOptions {
 
 export class NewMessageModal {
   static async open(options: NewMessageModalOptions): Promise<void> {
-    // 1. Fetch active profiles to populate autocomplete
+    // 1. Fetch active profiles, orcamentos and voyages
     let profiles: PerfilConsultor[] = [];
+    let orcamentos: any[] = [];
+    let viagens: any[] = [];
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -26,8 +28,14 @@ export class NewMessageModal {
       
       if (error) throw error;
       profiles = data || [];
+
+      // Load active orcamentos and voyages for scheduling links
+      const { data: oData } = await supabase.from('orcamentos').select('*').neq('status', 'cancelado').order('nome_cliente', { ascending: true });
+      const { data: vData } = await supabase.from('viagens').select('*, cliente:clientes(*)').order('destino', { ascending: true });
+      orcamentos = oData || [];
+      viagens = vData || [];
     } catch (err) {
-      console.error('Erro ao carregar perfis para destinatários:', err);
+      console.error('Erro ao carregar perfis e dados de agendamento:', err);
       showCustomAlert('Não foi possível carregar a lista de consultores para envio.', 'Erro');
       return;
     }
@@ -118,6 +126,49 @@ export class NewMessageModal {
           <div class="space-y-1">
             <label class="block text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">Mensagem</label>
             <textarea id="msg-body-input" rows="8" placeholder="Digite o conteúdo da mensagem..." class="w-full px-4 py-3 text-sm font-semibold border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-950/20 focus:border-indigo-500 focus:outline-none text-slate-700 dark:text-slate-200 resize-none custom-scrollbar"></textarea>
+          </div>
+
+          <!-- SCHEDULING SECTION -->
+          <div class="border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 bg-slate-50/20 dark:bg-slate-900/10 space-y-4">
+            <div class="flex items-center gap-2">
+              <input id="chk-agendar-lembrete" type="checkbox" class="w-4 h-4 rounded border-slate-350 text-indigo-600 focus:ring-indigo-500" />
+              <label for="chk-agendar-lembrete" class="text-xs font-extrabold text-slate-700 dark:text-slate-250 cursor-pointer select-none">
+                📅 Agendar no Calendário (Criar Lembrete/Tarefa para os destinatários)
+              </label>
+            </div>
+
+            <!-- Colapsível de Agendamento -->
+            <div id="agendar-lembrete-fields" class="hidden grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+              <div class="space-y-1">
+                <label class="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Data do Agendamento *</label>
+                <input id="msg-lembrete-data" type="text" placeholder="DD/MM/YYYY" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs animate-fadeIn" />
+              </div>
+
+              <div class="space-y-1">
+                <label class="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Período *</label>
+                <select id="msg-lembrete-periodo" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs">
+                  <option value="manha">🌅 Manhã</option>
+                  <option value="tarde" selected>☀️ Tarde</option>
+                  <option value="noite">🌙 Noite</option>
+                </select>
+              </div>
+
+              <div class="space-y-1 sm:col-span-2">
+                <label class="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Vincular a Orçamento ou Viagem (Opcional)</label>
+                <select id="msg-lembrete-link" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs">
+                  <option value="">-- Sem vínculo --</option>
+                  <optgroup label="Orçamentos Ativos">
+                    ${orcamentos.map(o => `<option value="orcamento:${o.id}">${o.nome_cliente || o.nomeCliente} - ${o.destino} (Orçamento)</option>`).join('')}
+                  </optgroup>
+                  <optgroup label="Viagens / Vendas em Andamento">
+                    ${viagens.map(v => {
+                      const clientName = v.cliente?.nome || v.nome_cliente || 'Cliente';
+                      return `<option value="viagem:${v.id}">${clientName} - ${v.destino} (Viagem)</option>`;
+                    }).join('')}
+                  </optgroup>
+                </select>
+              </div>
+            </div>
           </div>
 
         </div>
@@ -284,6 +335,35 @@ export class NewMessageModal {
       }
     });
 
+    // Toggle scheduling fields display
+    const chkAgendar = modalOverlay.querySelector('#chk-agendar-lembrete') as HTMLInputElement;
+    const fieldsDiv = modalOverlay.querySelector('#agendar-lembrete-fields') as HTMLDivElement;
+    const dataInput = modalOverlay.querySelector('#msg-lembrete-data') as HTMLInputElement;
+    
+    chkAgendar?.addEventListener('change', () => {
+      if (chkAgendar.checked) {
+        fieldsDiv.classList.remove('hidden');
+        dataInput.required = true;
+      } else {
+        fieldsDiv.classList.add('hidden');
+        dataInput.required = false;
+        dataInput.value = '';
+      }
+    });
+
+    // Auto-mask for date field (DD/MM/YYYY)
+    dataInput?.addEventListener('input', () => {
+      let v = dataInput.value.replace(/\D/g, '');
+      if (v.length > 8) v = v.slice(0, 8);
+      if (v.length > 4) {
+        dataInput.value = `${v.slice(0, 2)}/${v.slice(2, 4)}/${v.slice(4)}`;
+      } else if (v.length > 2) {
+        dataInput.value = `${v.slice(0, 2)}/${v.slice(2)}`;
+      } else {
+        dataInput.value = v;
+      }
+    });
+
     // --- SEND ACTION ---
     sendBtn.addEventListener('click', async () => {
       // 1. Validations
@@ -300,6 +380,27 @@ export class NewMessageModal {
       if (!conteudo) {
         showCustomAlert('Por favor, escreva o conteúdo da mensagem.', 'Validação');
         return;
+      }
+
+      let dataLembrete = '';
+      let linkVal = '';
+      let periodo = 'tarde';
+      
+      if (chkAgendar?.checked) {
+        const dataRaw = dataInput.value.trim();
+        if (!dataRaw) {
+          showCustomAlert('Por favor, insira a data do agendamento.', 'Validação');
+          return;
+        }
+        const regexData = /^\d{2}\/\d{2}\/\d{4}$/;
+        if (!regexData.test(dataRaw)) {
+          showCustomAlert('Por favor, insira a data no formato DD/MM/YYYY (ex: 20/08/2026).', 'Formato de Data Inválido');
+          return;
+        }
+        const parts = dataRaw.split('/');
+        dataLembrete = `${parts[2]}-${parts[1]}-${parts[0]}`;
+        periodo = (modalOverlay.querySelector('#msg-lembrete-periodo') as HTMLSelectElement).value;
+        linkVal = (modalOverlay.querySelector('#msg-lembrete-link') as HTMLSelectElement).value;
       }
 
       // 2. Submit loading UI
@@ -376,6 +477,28 @@ export class NewMessageModal {
           .insert(notifInserts);
 
         if (notifErr) throw notifErr;
+
+        // 3.5. If scheduling is enabled, insert lembretes
+        if (chkAgendar?.checked && dataLembrete) {
+          const orcamentoId = linkVal.startsWith('orcamento:') ? linkVal.split(':')[1] : null;
+          const viagemId = linkVal.startsWith('viagem:') ? linkVal.split(':')[1] : null;
+
+          const lembreteInserts = paraSelected.map(p => ({
+            orcamento_id: orcamentoId,
+            viagem_id: viagemId,
+            consultor_id: p.id,
+            criador_id: currentUser.id,
+            data_lembrete: dataLembrete,
+            periodo: periodo,
+            arquivado: false
+          }));
+
+          const { error: lembreteErr } = await supabase
+            .from('lembretes')
+            .insert(lembreteInserts);
+
+          if (lembreteErr) throw lembreteErr;
+        }
 
         // 4. Success Flow
         closeModal();

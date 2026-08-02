@@ -57,40 +57,150 @@ export class InboxService {
         .select(`
           *,
           orcamento:orcamentos (*),
+          viagem:viagens (*),
           consultor:profiles (*)
         `)
         .order('created_at', { ascending: false });
 
       if (perfil && perfil.role !== 'admin') {
-        lembretesQuery = lembretesQuery.eq('consultor_id', user.id);
+        // Safe combination in real Supabase
+        lembretesQuery = lembretesQuery.or(`consultor_id.eq.${user.id},criador_id.eq.${user.id}`);
       }
 
       const { data: lembretesData, error: lembretesErr } = await lembretesQuery;
       if (lembretesErr) throw lembretesErr;
 
-      (lembretesData || []).forEach((lem: any) => {
-        if (!lem.orcamento) return; // Orçamento deleted
+      // Local defensive filtering for non-admin to ensure sandbox and real envs both behave identically
+      let filteredLembretes = lembretesData || [];
+      if (perfil && perfil.role !== 'admin') {
+        filteredLembretes = filteredLembretes.filter((lem: any) => 
+          String(lem.consultor_id) === String(user.id) || String(lem.criador_id) === String(user.id)
+        );
+      }
+
+      // Fetch lists for manual mock join resolution if needed (fallback for lenient local mock storage)
+      const needsManualJoin = filteredLembretes.length > 0 && filteredLembretes.some((lem: any) => 
+        (lem.orcamento_id && !lem.orcamento) || 
+        (lem.viagem_id && !lem.viagem) || 
+        (lem.consultor_id && !lem.consultor)
+      );
+
+      let orcamentosList: any[] = [];
+      let viagensList: any[] = [];
+      let profilesList: any[] = [];
+
+      if (needsManualJoin) {
+        const { data: oList } = await supabase.from('orcamentos').select('*');
+        const { data: vList } = await supabase.from('viagens').select('*, cliente:clientes(*)');
+        const { data: pList } = await supabase.from('profiles').select('*');
+        orcamentosList = oList || [];
+        viagensList = vList || [];
+        profilesList = pList || [];
+      } else {
+        // Still load profiles if needed to translate criador_id name
+        const { data: pList } = await supabase.from('profiles').select('*');
+        profilesList = pList || [];
+      }
+
+      (filteredLembretes || []).forEach((lem: any) => {
+        // Resolve relations manually if needed
+        if (!lem.orcamento && lem.orcamento_id) {
+          lem.orcamento = orcamentosList.find((o: any) => o.id === lem.orcamento_id);
+        }
+        if (!lem.viagem && lem.viagem_id) {
+          lem.viagem = viagensList.find((v: any) => v.id === lem.viagem_id);
+        }
+        if (!lem.consultor && lem.consultor_id) {
+          lem.consultor = profilesList.find((p: any) => p.id === lem.consultor_id);
+        }
+
+        // If neither orcamento nor viagem is resolved, skip
+        if (!lem.orcamento && !lem.viagem) return;
 
         const dataFormatada = new Date(lem.data_lembrete + 'T00:00:00').toLocaleDateString('pt-BR');
         const periodosMap: any = { manha: 'Manhã', tarde: 'Tarde', noite: 'Noite' };
         const periodoText = periodosMap[lem.periodo] || lem.periodo;
 
+        const isDelegated = lem.criador_id && String(lem.criador_id) !== String(lem.consultor_id);
+        const isCreatedByMe = isDelegated && String(lem.criador_id) === String(user.id);
+        const isReceivedByMe = isDelegated && String(lem.consultor_id) === String(user.id);
+
+        let typeText = 'Orçamento';
+        let detailLink = '';
+        let subject = '';
+        let body = '';
+        let targetId = '';
+
+        const criadorNome = lem.criador_id 
+          ? (profilesList.find((p: any) => p.id === lem.criador_id)?.nome || 'Outro Consultor')
+          : 'PaxFlow Reminders';
+
+        if (lem.orcamento) {
+          typeText = 'Orçamento';
+          targetId = lem.orcamento.id;
+          detailLink = `<a href="#" class="inbox-deep-link font-extrabold text-indigo-600 dark:text-indigo-400 hover:underline" data-orcamento-id="${lem.orcamento.id}">[${lem.orcamento.nome_cliente} - ${lem.orcamento.destino}]</a>`;
+          
+          if (isCreatedByMe) {
+            subject = `Você agendou um lembrete para ${lem.consultor?.nome || 'Consultor'} sobre o orçamento de [${lem.orcamento.nome_cliente} - ${lem.orcamento.destino}].`;
+            body = `Você agendou um lembrete para <strong>${lem.consultor?.nome || 'Consultor'}</strong> sobre o orçamento ${detailLink} para o período da <strong>${periodoText}</strong> em <strong>${dataFormatada}</strong>.<br><br>Este item está delegado a ele(a).`;
+          } else if (isReceivedByMe) {
+            subject = `${criadorNome} agendou um lembrete para você sobre o orçamento de [${lem.orcamento.nome_cliente} - ${lem.orcamento.destino}].`;
+            body = `O consultor <strong>${criadorNome}</strong> agendou um lembrete para você sobre o orçamento ${detailLink} para o período da <strong>${periodoText}</strong> em <strong>${dataFormatada}</strong>.<br><br>Por favor, clique no link acima para abrir e editar a negociação correspondente.`;
+          } else {
+            subject = `Você cadastrou um alerta sobre o orçamento de [${lem.orcamento.nome_cliente} - ${lem.orcamento.destino}].`;
+            body = `Você cadastrou um alerta sobre o orçamento ${detailLink} para o período da <strong>${periodoText}</strong> em <strong>${dataFormatada}</strong>.<br><br>Por favor, clique no link acima para abrir e editar a negociação correspondente.`;
+          }
+        } else if (lem.viagem) {
+          typeText = 'Viagem';
+          targetId = lem.viagem.id;
+          
+          // Try to fetch customer name from associated relation
+          let clientName = 'Viagem';
+          if (lem.viagem.cliente) {
+            clientName = lem.viagem.cliente.nome;
+          } else if (lem.viagem.nome_cliente) {
+            clientName = lem.viagem.nome_cliente;
+          } else {
+            // Find in fallback
+            const associatedClient = lem.viagem.cliente_id ? (orcamentosList.find(o => o.cliente_id === lem.viagem.cliente_id)?.nome_cliente) : null;
+            clientName = associatedClient || 'Cliente Viagem';
+          }
+
+          detailLink = `<a href="#" class="inbox-deep-link font-extrabold text-indigo-600 dark:text-indigo-400 hover:underline" data-viagem-id="${lem.viagem.id}">[${clientName} - ${lem.viagem.destino}]</a>`;
+
+          if (isCreatedByMe) {
+            subject = `Você agendou um lembrete para ${lem.consultor?.nome || 'Consultor'} sobre a viagem de [${clientName} - ${lem.viagem.destino}].`;
+            body = `Você agendou um lembrete para <strong>${lem.consultor?.nome || 'Consultor'}</strong> sobre a viagem ${detailLink} para o período da <strong>${periodoText}</strong> em <strong>${dataFormatada}</strong>.<br><br>Este item está delegado a ele(a).`;
+          } else if (isReceivedByMe) {
+            subject = `${criadorNome} agendou um lembrete para você sobre a viagem de [${clientName} - ${lem.viagem.destino}].`;
+            body = `O consultor <strong>${criadorNome}</strong> agendou um lembrete para você sobre a viagem ${detailLink} para o período da <strong>${periodoText}</strong> em <strong>${dataFormatada}</strong>.<br><br>Por favor, clique no link acima para abrir e gerenciar a viagem correspondente.`;
+          } else {
+            subject = `Você cadastrou um alerta sobre a viagem de [${clientName} - ${lem.viagem.destino}].`;
+            body = `Você cadastrou um alerta sobre a viagem ${detailLink} para o período da <strong>${periodoText}</strong> em <strong>${dataFormatada}</strong>.<br><br>Por favor, clique no link acima para abrir e gerenciar a viagem correspondente.`;
+          }
+        }
+
         list.push({
           id: `manual-${lem.id}`,
           type: 'manual',
-          title: 'Lembrete cadastrado - Orçamento',
+          title: `Lembrete cadastrado - ${typeText}`,
           sender: lem.consultor?.nome || 'PaxFlow Reminders',
           senderAvatar: lem.consultor?.avatar_url || 'panda',
           dateStr: dataFormatada,
           periodText: periodoText,
-          subject: `Você cadastrou um alerta sobre o orçamento de [${lem.orcamento.nome_cliente} - ${lem.orcamento.destino}].`,
-          body: `Você cadastrou um alerta sobre o orçamento <a href="#" class="inbox-deep-link font-extrabold text-indigo-600 dark:text-indigo-400 hover:underline" data-orcamento-id="${lem.orcamento.id}">[${lem.orcamento.nome_cliente} - ${lem.orcamento.destino}]</a> para o período da <strong>${periodoText}</strong> em <strong>${dataFormatada}</strong>.<br><br>Por favor, clique no link acima para abrir e editar a negociação correspondente.`,
-          targetId: lem.orcamento.id,
+          subject: subject,
+          body: body,
+          targetId: targetId,
           arquivado: lem.arquivado,
           consultorId: lem.consultor_id,
           consultorNome: lem.consultor?.nome || 'Consultor',
           createdAt: lem.created_at,
-          eventDate: lem.data_lembrete
+          eventDate: lem.data_lembrete,
+          
+          criadorId: lem.criador_id || lem.consultor_id,
+          isDelegated: isDelegated || false,
+          isCreatedByMe: isCreatedByMe || false,
+          isReceivedByMe: isReceivedByMe || false
         });
       });
 

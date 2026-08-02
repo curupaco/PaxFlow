@@ -809,8 +809,25 @@ export class InboxPage {
           <div class="flex-grow overflow-y-auto custom-scrollbar space-y-1 max-h-[85px] w-full">
             ${dayAlerts.map(a => {
               let colorClass = 'badge-gradient-indigo';
-              if (a.type === 'passport') colorClass = 'badge-gradient-amber';
-              if (a.type === 'refund') colorClass = 'badge-gradient-rose';
+              if (a.type === 'passport') {
+                colorClass = 'badge-gradient-amber';
+              } else if (a.type === 'refund') {
+                colorClass = 'badge-gradient-rose';
+              } else if (a.type === 'mention') {
+                colorClass = 'bg-gradient-to-tr from-purple-500 to-indigo-650';
+              } else if (a.type === 'manual') {
+                if (a.isCreatedByMe) {
+                  colorClass = 'bg-sky-600 text-white';
+                } else if (a.isReceivedByMe) {
+                  colorClass = 'bg-amber-500 text-white';
+                } else {
+                  colorClass = 'bg-emerald-600 text-white';
+                }
+              }
+
+              if (a.arquivado) {
+                colorClass += ' line-through opacity-50';
+              }
 
               const summary = this.getEventSummary(a);
               const displayTitle = a.type === 'manual' && a.periodText 
@@ -880,21 +897,45 @@ export class InboxPage {
             ` : dayAlerts.map(a => {
               let badgeClass = 'badge-gradient-indigo';
               let badgeText = 'Lembrete';
+              let accentClass = 'bg-indigo-500';
+              let cardClass = '';
+
               if (a.type === 'passport') {
                 badgeClass = 'badge-gradient-amber';
                 badgeText = 'Passaporte';
+                accentClass = 'bg-amber-500';
               } else if (a.type === 'refund') {
                 badgeClass = 'badge-gradient-rose';
                 badgeText = 'Reembolso';
+                accentClass = 'bg-rose-500';
               } else if (a.type === 'mention') {
                 badgeClass = 'bg-gradient-to-tr from-purple-500 to-indigo-600';
                 badgeText = 'Menção @';
+                accentClass = 'bg-purple-500';
+              } else if (a.type === 'manual') {
+                if (a.isCreatedByMe) {
+                  badgeClass = 'bg-sky-600 text-white';
+                  badgeText = 'Delegado';
+                  accentClass = 'bg-sky-500';
+                } else if (a.isReceivedByMe) {
+                  badgeClass = 'bg-amber-500 text-white';
+                  badgeText = 'Recebido';
+                  accentClass = 'bg-amber-500';
+                } else {
+                  badgeClass = 'bg-emerald-600 text-white';
+                  badgeText = 'Pessoal';
+                  accentClass = 'bg-emerald-500';
+                }
+              }
+
+              if (a.arquivado) {
+                cardClass += ' line-through opacity-50';
               }
 
               return `
-                <div class="inbox-card inbox-glass p-3.5 rounded-xl border border-slate-200/50 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 cursor-pointer shadow-sm relative flex flex-col gap-1.5" data-alert-id="${a.id}">
+                <div class="inbox-card inbox-glass p-3.5 rounded-xl border border-slate-200/50 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 cursor-pointer shadow-sm relative flex flex-col gap-1.5 ${cardClass}" data-alert-id="${a.id}">
                   <!-- Accent color bar -->
-                  <div class="absolute left-0 top-3.5 bottom-3.5 w-1 rounded-r ${a.type === 'manual' ? 'bg-indigo-500' : a.type === 'passport' ? 'bg-amber-500' : a.type === 'mention' ? 'bg-purple-500' : 'bg-rose-500'}"></div>
+                  <div class="absolute left-0 top-3.5 bottom-3.5 w-1 rounded-r ${accentClass}"></div>
                   
                   <div class="pl-2 flex items-center justify-between gap-1">
                     <span class="px-1.5 py-0.5 rounded text-[8px] font-black text-white uppercase tracking-wider ${badgeClass}">
@@ -977,21 +1018,45 @@ export class InboxPage {
             ${groups[dateStr].map(a => {
               let badgeClass = 'badge-gradient-indigo';
               let badgeText = 'Lembrete';
+              let accentClass = 'bg-indigo-500';
+              let cardClass = '';
+
               if (a.type === 'passport') {
                 badgeClass = 'badge-gradient-amber';
                 badgeText = 'Passaporte SLA';
+                accentClass = 'bg-amber-500';
               } else if (a.type === 'refund') {
                 badgeClass = 'badge-gradient-rose';
                 badgeText = 'Reembolso SLA';
+                accentClass = 'bg-rose-500';
               } else if (a.type === 'mention') {
                 badgeClass = 'bg-gradient-to-tr from-purple-500 to-indigo-600';
                 badgeText = 'Menção @';
+                accentClass = 'bg-purple-500';
+              } else if (a.type === 'manual') {
+                if (a.isCreatedByMe) {
+                  badgeClass = 'bg-sky-600 text-white';
+                  badgeText = 'Delegado';
+                  accentClass = 'bg-sky-500';
+                } else if (a.isReceivedByMe) {
+                  badgeClass = 'bg-amber-500 text-white';
+                  badgeText = 'Recebido';
+                  accentClass = 'bg-amber-500';
+                } else {
+                  badgeClass = 'bg-emerald-600 text-white';
+                  badgeText = 'Pessoal';
+                  accentClass = 'bg-emerald-500';
+                }
+              }
+
+              if (a.arquivado) {
+                cardClass += ' line-through opacity-50';
               }
 
               return `
-                <div class="inbox-card inbox-glass p-4 rounded-xl border border-white/60 dark:border-slate-900/60 shadow-sm flex items-start gap-4 cursor-pointer relative" data-alert-id="${a.id}">
+                <div class="inbox-card inbox-glass p-4 rounded-xl border border-white/60 dark:border-slate-900/60 shadow-sm flex items-start gap-4 cursor-pointer relative ${cardClass}" data-alert-id="${a.id}">
                   <!-- Colored indicator border on the left side of the agenda card -->
-                  <div class="absolute left-0 top-3.5 bottom-3.5 w-1 rounded-r ${a.type === 'manual' ? 'bg-indigo-500' : a.type === 'passport' ? 'bg-amber-500' : a.type === 'mention' ? 'bg-purple-500' : 'bg-rose-500'}"></div>
+                  <div class="absolute left-0 top-3.5 bottom-3.5 w-1 rounded-r ${accentClass}"></div>
                   
                   <!-- Avatar -->
                   <div class="w-9 h-9 border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden flex items-center justify-center bg-white dark:bg-slate-900 flex-shrink-0">

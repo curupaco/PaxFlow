@@ -222,12 +222,20 @@ export interface Orcamento {
  */
 export interface Lembrete {
   id: string;
-  orcamentoId: string;
+  orcamentoId?: string;
+  orcamento_id?: string;
+  viagemId?: string;
+  viagem_id?: string;
+  criadorId?: string;
+  criador_id?: string;
   consultorId: string;
+  consultor_id?: string;
   dataLembrete: string; // YYYY-MM-DD
+  data_lembrete?: string;
   periodo: 'manha' | 'tarde' | 'noite';
   arquivado: boolean;
   createdAt?: string;
+  created_at?: string;
 }
 
 /**
@@ -305,6 +313,10 @@ export interface AlertItem {
   eventDate: string; // Data alvo do evento (YYYY-MM-DD)
   recipientsHtml?: string; // HTML com lista de Para e Cc
   isSent?: boolean; // Se foi enviada pelo próprio usuário
+  criadorId?: string;
+  isDelegated?: boolean;
+  isCreatedByMe?: boolean;
+  isReceivedByMe?: boolean;
   senderId?: string; // ID do remetente original
   parentId?: string;
   threadId?: string;
