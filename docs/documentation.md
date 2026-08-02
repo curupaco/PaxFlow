@@ -22,8 +22,8 @@
    - 3.9 [Sistema de Gamificação e Perfis (Gamificacao)](#39-sistema-de-gamificação-e-perfis)
    - 3.10 [Módulo de Cadastros (Cadastros)](#310-módulo-de-cadastros)
    - 3.11 [Localização de Erros e Tradutor Global (I18n)](#311-localização-de-erros-e-tradutor-global)
-   - 3.12 [Dashboard de Resultados (Analytics)](#312-dashboard-de-resultados-analytics)
-   - 3.13 [Sistema de Comentários, Notas e Menções (@)](#313-sistema-de-comentários-notas-e-menções)
+   - 3.12 [Dashboard de Resultados (Analytics) e Relatórios Gerenciais](#312-dashboard-de-resultados-analytics-e-relatórios-gerenciais)
+   - 3.13 [Sistema de Comentários, Notas, Menções (@) e Agendamento Automático](#313-sistema-de-comentários-notas-menções-e-agendamento-automático)
    - 3.14 [Exclusão Administrativa e Políticas de Delegação (RBAC)](#314-exclusão-administrativa-e-políticas-de-delegação-rbac)
 4. [Diferenciais Competitivos](#4-diferenciais-competitivos)
 5. [Arquitetura Tecnológica](#5-arquitetura-tecnológica)
@@ -97,6 +97,12 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
   - **Status e Contadores Reativos**: Contagem individual de alertas não lidos integrada reativamente com a Sidebar principal.
 - **Visualização em Calendário Interativo [NEW]**:
   - **Alternador de Visualização (Toggle Switch)**: Um seletor de alta fidelidade visual (Lista / Calendário) no topo do painel. Todos os filtros da barra lateral (Ativos/Arquivados/Todos e consultores) e busca continuam 100% integrados e reativos no modo calendário.
+  - **Diferenciação por Cores (Sinalizadores de Atribuição)**:
+    - *Verde / Ícone de Check*: Lembretes próprios normais.
+    - *Âmbar / Laranja*: Lembretes delegados a você por outros consultores do time.
+    - *Azul / Slate*: Lembretes criados por você e atribuídos (delegados) a terceiros.
+  - **Rastreamento de Conclusão (Line-Through & Opacidade)**: Se um lembrete delegado por você for arquivado (concluído) pelo destinatário no Inbox dele, o evento aparecerá em seu calendário com estilo riscado (`line-through`) e opacidade reduzida a 50%, fornecendo controle gerencial instantâneo.
+  - **Agendamento via Nova Mensagem**: Checkbox integrado na criação de mensagens diretas que permite cadastrar lembretes/tarefas na agenda dos destinatários, com seleção de data, período (manhã/tarde/noite) e vínculo opcional a orçamentos ativos ou viagens em andamento.
   - **Três Visões Operacionais**:
     - **MÊS**: Grade proporcional de 35 a 42 dias com eventos exibidos como pílulas horizontais arredondadas (estilo Google Agenda).
     - **SEMANA**: Grade horizontal moderna de 7 colunas (Domingo a Sábado), empilhando cards de atividades de forma vertical com demarcação do período (Manhã, Tarde, Noite).
@@ -315,10 +321,19 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 - **Tradução Automática de Backend**: Traduz mensagens técnicas e de sistema em inglês provenientes do Supabase (Auth, RLS, banco de dados PostgreSQL, storage ou falhas de rede) para o Português do Brasil.
 - **Centralização via Window**: A função de tradução fica disponível de forma global no objeto `window` e é invocada automaticamente ao exibir Toasts de sucesso/erro e diálogos de alerta da plataforma.
 
-### 3.12 Dashboard de Resultados (Analytics)
+### 3.12 Dashboard de Resultados (Analytics) e Relatórios Gerenciais
 
-**Painel consolidado de inteligência de negócios** (`src/pages/ComercialDashboard.ts`) focado em fornecer métricas financeiras, taxa de conversão e acompanhamento de equipe de forma visual e reativa.
+**Painel consolidado de inteligência de negócios e auditoria de equipe** (`src/pages/ComercialDashboard.ts` e `src/pages/Relatorios.ts`) focado em fornecer métricas financeiras, taxa de conversão, auditoria de fornecedores e acompanhamento de equipe de forma visual, reativa e offline.
 
+- **Painel Geral de Relatórios (6 Abas de Auditoria)**:
+  - **1. Desempenho e Produtividade**: Rastreia orçamentos abertos, aceitos, taxa de conversão e tempo de fechamento médio. Exibe ranking de consultores em gráfico de barras SVG.
+  - **2. Prazos e SLAs**: Cronologia operacional de conformidade de SLA de documentos e reembolsos.
+  - **3. Faturamento e Lucratividade**: Exibe faturamento bruto, markup, comissões de produtos e lucro líquido real distribuídos por tipo de serviço (voo, hotel, etc.).
+  - **4. Fuga de Receita e Perdas**: Donut chart SVG dinâmico exibindo perdas percentuais classificadas por motivos de desistência (preço, concorrência, etc.).
+  - **5. Previsão de Fechamentos (Weighted Pipeline)**: Cálculo estatístico local que pondera o faturamento previsto do pipeline em aberto (solicitado = 15%, andamento = 45%, aguardando = 75%) e estima embarques iminentes.
+  - **6. Qualidade de Fornecedores e Incidentes**: Tabulação de reembolsos, volume vendido e score de risco por fornecedor.
+- **Segurança de Acesso (RLS local)**: Consultores comuns têm visão bloqueada a seu próprio ID (o filtro é desativado). Apenas administradores auditam o consolidado e selecionam qualquer consultor da agência.
+- **Exportação e PDF**: Geração de arquivo **CSV** Excel compatível e folha de estilos de impressão `@media print` que esconde barras de navegação e filtros, permitindo salvar relatórios como PDFs corporativos limpos.
 - **KPIs Financeiros de Caixa**:
   - **Faturamento Realizado [UPDATED]**: Agora calculado com precisão absoluta de faturamento real. O cálculo considera todas as vendas convertidas e as criadas diretamente na aba Viagens, com base no campo **Data Financeiro** do registro (caindo para a data de criação como fallback).
   - **Pipeline Ativo**: Soma de propostas comerciais abertas e orçamentos em andamento.
@@ -333,13 +348,16 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
   - **Tratamento de Timezone**: O motor de datas analisa strings date-only (`YYYY-MM-DD`) em fuso horário local (`T00:00:00`), eliminando distorções causadas pelo desvio UTC que anteriormente moviam vendas criadas no início do mês para o mês anterior.
   - **Sincronização em Tempo Real Inter-Abas**: O ouvinte de sincronização local (`StorageEvent`) agora escuta a chave `paxflow-viagens-local`. Ao adicionar ou editar uma viagem na aba de Viagens, o Dashboard Comercial se atualiza instantaneamente no navegador (mesmo sem recarregamento manual).
 
-### 3.13 Sistema de Comentários, Notas e Menções
+### 3.13 Sistema de Comentários, Notas, Menções (@) e Agendamento Automático
 
 **Mecanismo colaborativo integrado** (`src/services/comments.ts`) que permite a comunicação contextualizada entre consultores dentro de orçamentos, viagens e produtos.
 
 - **Notas de Negociação e Operação**:
   - Inserção de anotações e feedback rústico com formatação e data/hora.
   - CRUD de comentários onde o autor possui direito de remoção nativa.
+- **Agendamento Integrado (Visual e Texto)**:
+  - **Painel Visual**: Checkbox e gaveta colapsável de agendamento na caixa de comentários, permitindo selecionar Data, Período e Consultor responsável para registrar tarefas na agenda.
+  - **Comments Text Parser (Regex)**: Scanner de linguagem natural que varre os comentários em busca de menções a consultores (`@Amanda`) seguidos por data (`20/08/2026`) e período opcional (`noite`). Ao identificar o padrão, cria o lembrete no calendário automaticamente, eliminando burocracia.
 - **Autocomplete de Menções com `@`**:
   - Dropdown dinâmico que filtra a lista de consultores ativos à medida que o usuário digita `@`.
   - Inserção amigável do nome selecionado e destaque estilizado em badges HSL/Tailwind no texto.

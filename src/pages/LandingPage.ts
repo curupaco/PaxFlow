@@ -97,6 +97,9 @@ export class LandingPage {
               <button id="tab-btn-gamificacao" class="px-4 py-2 text-[11px] font-black tracking-wider uppercase rounded-xl transition duration-200 text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200">
                 🪐 Gamificação
               </button>
+              <button id="tab-btn-relatorios" class="px-4 py-2 text-[11px] font-black tracking-wider uppercase rounded-xl transition duration-200 text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200">
+                📈 Relatórios
+              </button>
             </div>
           </div>
 
@@ -458,6 +461,83 @@ export class LandingPage {
                 </div>
               </div>
 
+              <!-- PANEL 7: RELATORIOS -->
+              <div id="panel-relatorios" class="space-y-4 tab-pane-transition hidden">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <!-- Conversions and performance card -->
+                  <div class="bg-slate-100/60 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800/80 p-4 rounded-xl text-left space-y-2">
+                    <span class="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Conversão Comercial</span>
+                    <div class="flex items-baseline gap-2">
+                      <span class="text-lg font-black text-slate-800 dark:text-white">28,4%</span>
+                      <span class="text-[9px] text-emerald-500 font-extrabold">+4,8% este mês</span>
+                    </div>
+                    <div class="w-full bg-slate-200 dark:bg-slate-800 h-2 rounded-full overflow-hidden flex mt-2">
+                      <div class="bg-emerald-500 h-full" style="width: 28.4%"></div>
+                    </div>
+                  </div>
+
+                  <!-- Profitability and commissions card -->
+                  <div class="bg-slate-100/60 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800/80 p-4 rounded-xl text-left space-y-2">
+                    <span class="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Faturamento e Markup Realizado</span>
+                    <div class="flex items-baseline gap-2">
+                      <span class="text-lg font-black text-slate-800 dark:text-white">R$ 42.150,00</span>
+                      <span class="text-[9px] text-indigo-500 font-extrabold">Margem Operacional</span>
+                    </div>
+                    <span class="text-[9px] text-slate-400 block">Baseado em 186 serviços ativos</span>
+                  </div>
+
+                  <!-- Predictive pipeline -->
+                  <div class="bg-slate-100/60 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800/80 p-4 rounded-xl text-left space-y-2">
+                    <span class="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Previsão Comercial (Weighted Pipeline)</span>
+                    <div class="flex items-baseline gap-2">
+                      <span class="text-lg font-black text-slate-800 dark:text-white">R$ 115.800,00</span>
+                      <span class="text-[9px] text-amber-500 font-extrabold">Probabilidade Ponderada</span>
+                    </div>
+                    <span class="text-[9px] text-slate-400 block">Operações previstas para os próximos 30 dias</span>
+                  </div>
+                </div>
+
+                <div class="bg-slate-100/30 dark:bg-slate-950/40 border border-slate-200/60 dark:border-slate-800/60 rounded-xl p-4 text-left">
+                  <span class="text-[9px] font-black text-slate-450 dark:text-slate-500 uppercase tracking-wider block mb-2">Qualidade e Ocorrências por Fornecedor (Top 3)</span>
+                  <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left text-[10px] font-semibold">
+                      <thead>
+                        <tr class="border-b border-slate-200 dark:border-slate-800 text-slate-400">
+                          <th class="pb-1.5 font-bold">Fornecedor</th>
+                          <th class="pb-1.5 font-bold">Volume</th>
+                          <th class="pb-1.5 font-bold">Ocorrências de Reembolso</th>
+                          <th class="pb-1.5 font-bold">Índice de Incidente</th>
+                          <th class="pb-1.5 font-bold">Classificação de Risco</th>
+                        </tr>
+                      </thead>
+                      <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-350">
+                        <tr>
+                          <td class="py-2 font-bold">Decolar / Aluguel de Carros</td>
+                          <td class="py-2">R$ 48.000</td>
+                          <td class="py-2">0</td>
+                          <td class="py-2">0.0%</td>
+                          <td class="py-2"><span class="px-1.5 py-0.5 bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 text-[8px] font-black rounded-md">BAIXO</span></td>
+                        </tr>
+                        <tr>
+                          <td class="py-2 font-bold">Latam Airlines</td>
+                          <td class="py-2">R$ 152.000</td>
+                          <td class="py-2">2</td>
+                          <td class="py-2">1.3%</td>
+                          <td class="py-2"><span class="px-1.5 py-0.5 bg-indigo-500/10 text-indigo-600 border border-indigo-500/20 text-[8px] font-black rounded-md">MÉDIO</span></td>
+                        </tr>
+                        <tr>
+                          <td class="py-2 font-bold">Fornecedor Mock 2</td>
+                          <td class="py-2">R$ 18.000</td>
+                          <td class="py-2">1</td>
+                          <td class="py-2">5.5%</td>
+                          <td class="py-2"><span class="px-1.5 py-0.5 bg-rose-500/10 text-rose-600 border border-rose-500/20 text-[8px] font-black rounded-md">ELEVADO</span></td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
             </div>
 
           </div>
@@ -530,6 +610,14 @@ export class LandingPage {
                   <li class="flex items-start gap-2.5">
                     <span class="text-emerald-500 shrink-0">✨</span>
                     <span><strong>Módulo financeiro integrado</strong> exclusivo para reembolso de bilhetes aéreos e serviços.</span>
+                  </li>
+                  <li class="flex items-start gap-2.5">
+                    <span class="text-emerald-500 shrink-0">✨</span>
+                    <span><strong>Painel de Relatórios Gerenciais</strong> com análise de conversão, markups, lucratividade, motivos de perda e qualidade de fornecedores.</span>
+                  </li>
+                  <li class="flex items-start gap-2.5">
+                    <span class="text-emerald-500 shrink-0">✨</span>
+                    <span><strong>Agendamento e Delegação Colaborativa</strong> via Caixa de Entrada, visão do Calendário com cores e status de conclusão (line-through).</span>
                   </li>
                 </ul>
               </div>
@@ -670,14 +758,15 @@ export class LandingPage {
     document.getElementById('btn-conhecer-login')?.addEventListener('click', handleAcessarReal);
 
     // Lógica da Demo Interativa (Feature Tour)
-    const tabs = ['dashboard', 'viagens', 'orcamentos', 'inbox', 'reembolsos', 'gamificacao'];
+    const tabs = ['dashboard', 'viagens', 'orcamentos', 'inbox', 'reembolsos', 'gamificacao', 'relatorios'];
     const pathTexts: { [key: string]: string } = {
       dashboard: 'paxflow-comercial-dashboard.html',
       viagens: 'paxflow-controle-operacional-viagens.html',
       orcamentos: 'paxflow-crm-orcamentos-kanban.html',
       inbox: 'paxflow-inbox-p2p-threads.html',
       reembolsos: 'paxflow-gestao-de-reembolsos.html',
-      gamificacao: 'paxflow-gamificacao-de-consultores.html'
+      gamificacao: 'paxflow-gamificacao-de-consultores.html',
+      relatorios: 'paxflow-relatorios-estatisticos-e-predicoes.html'
     };
 
     tabs.forEach(tab => {
