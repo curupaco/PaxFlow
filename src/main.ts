@@ -341,6 +341,15 @@ class App {
                 <span class="${this.sidebarCollapsed ? 'md:hidden' : ''}">Reembolsos</span>
               </button>
 
+              <!-- Link: Relatórios -->
+              <button id="nav-relatorios" class="w-full px-4 py-2 rounded-xl flex items-center justify-center ${this.sidebarCollapsed ? '' : 'md:justify-start'} gap-3 font-semibold text-xs text-left transition select-none group">
+                <svg width="20" height="20" class="w-5 h-5 text-slate-400 group-hover:text-slate-600 dark:text-slate-500 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+                </svg>
+                <span class="${this.sidebarCollapsed ? 'md:hidden' : ''}">Relatórios</span>
+              </button>
+
               <!-- Link: Cadastros (Somente ADMIN) -->
               ${this.perfil?.role === 'admin' ? `
                 <button id="nav-cadastros" class="w-full px-4 py-2 rounded-xl flex items-center justify-center ${this.sidebarCollapsed ? '' : 'md:justify-start'} gap-3 font-semibold text-xs text-left transition select-none group">
@@ -682,7 +691,7 @@ class App {
    * Associa eventos aos botões de navegação lateral
    */
   private setupNavigationListeners(): void {
-    const pages = ['analytics', 'inbox', 'orcamentos', 'dashboard', 'clientes', 'reembolsos', 'cadastros', 'configuracoes'];
+    const pages = ['analytics', 'inbox', 'orcamentos', 'dashboard', 'clientes', 'reembolsos', 'relatorios', 'cadastros', 'configuracoes'];
 
     pages.forEach(page => {
       const btn = document.getElementById(`nav-${page}`);
@@ -700,7 +709,7 @@ class App {
     this.router.navigate(page, extraId);
 
     // Atualiza os estilos de botões ativos na Sidebar
-    const navButtons = ['analytics', 'inbox', 'orcamentos', 'dashboard', 'clientes', 'reembolsos', 'cadastros', 'configuracoes'];
+    const navButtons = ['analytics', 'inbox', 'orcamentos', 'dashboard', 'clientes', 'reembolsos', 'relatorios', 'cadastros', 'configuracoes'];
     navButtons.forEach(p => {
       const btn = document.getElementById(`nav-${p}`);
       if (btn) {

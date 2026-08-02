@@ -217,4 +217,37 @@ html.dark .text-slate-400 {
   }
 }
 
+/* ================= PRINT STYLES FOR PDF REPORTS ================= */
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+  #page-content, #page-content * {
+    visibility: visible !important;
+  }
+  #page-content {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    background: white !important;
+    color: black !important;
+  }
+  .no-print, 
+  aside, 
+  header, 
+  .global-filters-bar, 
+  .report-tabs-bar, 
+  #btn-export-csv, 
+  #btn-print-pdf {
+    display: none !important;
+  }
+  .print-full-width {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+}
+
 
