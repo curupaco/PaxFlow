@@ -289,11 +289,11 @@ export class RelatoriosPage {
             </p>
           </div>
           
-          <div class="flex items-center gap-2">
-            <button id="btn-export-csv" class="px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-850 text-slate-700 dark:text-slate-200 text-xs font-black rounded-xl transition flex items-center gap-1.5 shadow-sm">
+          <div class="flex items-center gap-2 w-full sm:w-auto flex-wrap sm:flex-nowrap">
+            <button id="btn-export-csv" class="w-full sm:w-auto px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-850 text-slate-700 dark:text-slate-200 text-xs font-black rounded-xl transition flex items-center justify-center gap-1.5 shadow-sm">
               📥 Exportar Excel (CSV)
             </button>
-            <button id="btn-print-pdf" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black rounded-xl transition flex items-center gap-1.5 shadow-md shadow-indigo-600/10">
+            <button id="btn-print-pdf" class="w-full sm:w-auto px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black rounded-xl transition flex items-center justify-center gap-1.5 shadow-md shadow-indigo-600/10">
               🖨️ Imprimir PDF
             </button>
           </div>
