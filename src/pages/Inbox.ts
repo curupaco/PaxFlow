@@ -369,7 +369,7 @@ export class InboxPage {
           <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
             
             <!-- Left Workspace sidebar (Filter Panel) -->
-            <div class="lg:col-span-1 space-y-4">
+            <div class="hidden lg:block lg:col-span-1 space-y-4">
 
               <!-- Action compose button -->
               <button id="btn-nova-mensagem" class="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black rounded-xl transition shadow-md shadow-indigo-600/10 flex items-center justify-center gap-2 mb-2 select-none">
@@ -449,6 +449,47 @@ export class InboxPage {
 
             <!-- Middle Workspace panel (Mail List Client / Calendar) -->
             <div class="lg:col-span-3 space-y-4">
+
+              <!-- Mobile Folders Bar (Visible only on mobile/tablet) -->
+              <div class="lg:hidden flex flex-col sm:flex-row gap-3">
+                <button id="btn-nova-mensagem-mobile" class="py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black rounded-xl transition shadow-md shadow-indigo-600/10 flex items-center justify-center gap-2 select-none uppercase shrink-0 w-full sm:w-auto">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+                  </svg>
+                  NOVA MENSAGEM
+                </button>
+                
+                <div class="flex gap-2 overflow-x-auto pb-1 custom-scrollbar w-full">
+                  <button id="mobile-folder-ativos" class="px-4 py-2.5 bg-white dark:bg-slate-900 border ${
+                    this.activeTab === 'ativos' 
+                      ? 'border-indigo-600/50 text-indigo-600 bg-indigo-600/5 dark:border-indigo-500/50 dark:text-indigo-400 dark:bg-indigo-500/10' 
+                      : 'border-slate-200/60 dark:border-slate-800 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800/40'
+                  } rounded-xl text-xs font-bold whitespace-nowrap transition flex items-center gap-1.5 focus:outline-none">
+                    📥 Entrada (${totalAtivos})
+                  </button>
+                  <button id="mobile-folder-enviadas" class="px-4 py-2.5 bg-white dark:bg-slate-900 border ${
+                    this.activeTab === 'enviadas' 
+                      ? 'border-indigo-600/50 text-indigo-600 bg-indigo-600/5 dark:border-indigo-500/50 dark:text-indigo-400 dark:bg-indigo-500/10' 
+                      : 'border-slate-200/60 dark:border-slate-800 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800/40'
+                  } rounded-xl text-xs font-bold whitespace-nowrap transition flex items-center gap-1.5 focus:outline-none">
+                    📤 Enviadas (${totalEnviadas})
+                  </button>
+                  <button id="mobile-folder-arquivados" class="px-4 py-2.5 bg-white dark:bg-slate-900 border ${
+                    this.activeTab === 'arquivados' 
+                      ? 'border-indigo-600/50 text-indigo-600 bg-indigo-600/5 dark:border-indigo-500/50 dark:text-indigo-400 dark:bg-indigo-500/10' 
+                      : 'border-slate-200/60 dark:border-slate-800 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800/40'
+                  } rounded-xl text-xs font-bold whitespace-nowrap transition flex items-center gap-1.5 focus:outline-none">
+                    🗄️ Arquivados (${baseAlertsForCounters.filter(a => a.arquivado && !a.isSent).length})
+                  </button>
+                  <button id="mobile-folder-todos" class="px-4 py-2.5 bg-white dark:bg-slate-900 border ${
+                    this.activeTab === 'todos' 
+                      ? 'border-indigo-600/50 text-indigo-600 bg-indigo-600/5 dark:border-indigo-500/50 dark:text-indigo-400 dark:bg-indigo-500/10' 
+                      : 'border-slate-200/60 dark:border-slate-800 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800/40'
+                  } rounded-xl text-xs font-bold whitespace-nowrap transition flex items-center gap-1.5 focus:outline-none">
+                    📋 Total (${baseAlertsForCounters.filter(a => !a.isSent).length})
+                  </button>
+                </div>
+              </div>
               
               <!-- Search and filter summary bar -->
               <div class="inbox-glass p-3 rounded-2xl shadow-sm flex flex-col sm:flex-row items-center gap-3">
@@ -1062,6 +1103,44 @@ export class InboxPage {
       this.applyFilters();
       this.render();
       this.setupEventListeners();
+    });
+
+    // Mobile folders click listeners
+    const mobileFolderAtivos = document.getElementById('mobile-folder-ativos');
+    mobileFolderAtivos?.addEventListener('click', () => {
+      this.activeTab = 'ativos';
+      this.applyFilters();
+      this.render();
+      this.setupEventListeners();
+    });
+
+    const mobileFolderEnviadas = document.getElementById('mobile-folder-enviadas');
+    mobileFolderEnviadas?.addEventListener('click', () => {
+      this.activeTab = 'enviadas';
+      this.applyFilters();
+      this.render();
+      this.setupEventListeners();
+    });
+
+    const mobileFolderArquivados = document.getElementById('mobile-folder-arquivados');
+    mobileFolderArquivados?.addEventListener('click', () => {
+      this.activeTab = 'arquivados';
+      this.applyFilters();
+      this.render();
+      this.setupEventListeners();
+    });
+
+    const mobileFolderTodos = document.getElementById('mobile-folder-todos');
+    mobileFolderTodos?.addEventListener('click', () => {
+      this.activeTab = 'todos';
+      this.applyFilters();
+      this.render();
+      this.setupEventListeners();
+    });
+
+    const btnNovaMensagemMobile = document.getElementById('btn-nova-mensagem-mobile');
+    btnNovaMensagemMobile?.addEventListener('click', () => {
+      this.openNewMessageModal();
     });
 
     // 2. Admin filter selector listener

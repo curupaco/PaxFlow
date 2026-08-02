@@ -1534,7 +1534,13 @@ export class Dashboard {
               <p class="text-xs text-slate-400 dark:text-slate-500 font-medium max-w-sm">Tente limpar os filtros de data, alterar o termo de busca ou selecionar outra aba de status.</p>
             </div>
           ` : `
-            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xs overflow-hidden flex-1 flex flex-col min-h-0">
+            <!-- Mobile View: Cards Layout (Visible only on mobile portrait) -->
+            <div class="block md:hidden overflow-y-auto flex-1 space-y-4 custom-scrollbar pr-1 pb-4">
+              ${filtrados.map(v => this.renderMobileCard(v)).join('')}
+            </div>
+
+            <!-- Desktop View: Table Layout (Hidden on mobile portrait) -->
+            <div class="hidden md:flex bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xs overflow-hidden flex-1 flex-col min-h-0">
               <div class="overflow-auto flex-1 min-h-0 custom-scrollbar">
                 <table class="w-full text-left border-collapse min-w-[1000px]">
                   <thead>
@@ -1739,6 +1745,142 @@ export class Dashboard {
           </div>
         </td>
       </tr>
+    `;
+  }
+
+  /**
+   * Renderiza um card individual de viagem para exibição em dispositivos móveis
+   */
+  private renderMobileCard(v: any): string {
+    const reembolsoConcluido = v.reembolsos && v.reembolsos.some((r: any) => r.status === 'pago');
+    const sla = reembolsoConcluido ? { alert: false, type: null, text: '' } : this.checkSLA(v);
+
+    let slaIcon = '🟢';
+    let cardBorder = 'border-l-emerald-500';
+    let cardBg = 'bg-white dark:bg-slate-900';
+
+    if (reembolsoConcluido) {
+      slaIcon = '✅';
+      cardBorder = 'border-l-emerald-500';
+      cardBg = 'bg-emerald-50/5 dark:bg-emerald-950/5';
+    } else if (sla.alert) {
+      if (sla.type === 'pre-embarque') {
+        slaIcon = '⚠️';
+        cardBorder = 'border-l-rose-500';
+        cardBg = 'bg-rose-50/5 dark:bg-rose-950/5';
+      } else if (sla.type === 'pos-viagem') {
+        slaIcon = '🚨';
+        cardBorder = 'border-l-amber-500';
+        cardBg = 'bg-amber-50/5 dark:bg-amber-950/5';
+      }
+    }
+
+    const formatarData = (dStr: string) => {
+      if (!dStr) return '-';
+      const dataApenas = dStr.includes('T') ? dStr.split('T')[0] : dStr.split(' ')[0];
+      const parts = dataApenas.split('-');
+      if (parts.length !== 3) return dStr;
+      return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    };
+
+    let rentabilidade = 0;
+    if (v.produtos && Array.isArray(v.produtos)) {
+      v.produtos.forEach((p: any) => {
+        rentabilidade += (Number(p.comissao) || 0) + (Number(p.markup) || 0) + ((Number(p.rav) || 0) * 0.88);
+      });
+    }
+    const valorVenda = Number(v.valor_total) || 0;
+
+    return `
+      <div class="${cardBg} border border-slate-200/60 dark:border-slate-800 border-l-4 ${cardBorder} rounded-2xl p-5 shadow-sm space-y-4">
+        <!-- Header: SLA + Cliente + LOC -->
+        <div class="flex items-start justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
+          <div class="space-y-1">
+            <div class="font-black text-sm text-slate-800 dark:text-slate-100">${v.cliente?.nome || 'Cliente Desconhecido'}</div>
+            <div class="flex flex-wrap items-center gap-1.5">
+              <span class="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-extrabold text-[9px] rounded tracking-wider border border-slate-200/40 dark:border-slate-700/50 uppercase">
+                LOC: ${v.codigo_localizador || 'S/ LOC'}
+              </span>
+              ${this.perfil?.role === 'admin' ? `
+                <span class="text-[9px] text-slate-400 font-bold bg-slate-100/50 dark:bg-slate-800/50 px-1.5 py-0.5 rounded border border-slate-200/20 dark:border-slate-700/20">
+                  👤 ${v.consultor_id === this.user.id ? 'Você' : (this.consultores.find(c => c.id === v.consultor_id)?.nome?.split(' ')[0] || 'Outro')}
+                </span>
+              ` : ''}
+            </div>
+          </div>
+          <div class="flex flex-col items-end shrink-0" title="${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : 'SLA Normal')}">
+            <span class="text-lg">${slaIcon}</span>
+            ${sla.alert ? `<span class="text-[8px] font-black text-rose-600 dark:text-rose-400 uppercase tracking-widest mt-0.5">SLA ATIVO</span>` : ''}
+          </div>
+        </div>
+
+        <!-- Body: Destino, Datas e Produtos -->
+        <div class="grid grid-cols-2 gap-3 text-xs">
+          <div class="space-y-1">
+            <span class="block text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Destino & Viagem</span>
+            <div class="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1">
+              ✈️ ${v.destino}
+            </div>
+            <!-- Ícones dos Produtos -->
+            ${v.produtos && v.produtos.length > 0 ? `
+              <div class="flex flex-wrap gap-1 mt-1">
+                ${(() => {
+                  const counts: { [tipo: string]: number } = {};
+                  v.produtos.forEach((p: any) => {
+                    const t = (p.tipo || 'outro').toLowerCase();
+                    counts[t] = (counts[t] || 0) + 1;
+                  });
+                  return Object.entries(counts).map(([tipo, count]) => {
+                    const icon = this.getIconForType(tipo);
+                    const suffix = count > 1 ? ` +${count - 1}` : '';
+                    return `
+                      <span class="inline-flex items-center px-1.5 py-0.5 rounded bg-slate-100/60 dark:bg-slate-800/60 border border-slate-200/30 dark:border-slate-700/30 text-[8px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider" title="${tipo}">
+                        <span>${icon}${suffix}</span>
+                      </span>
+                    `;
+                  }).join('');
+                })()}
+              </div>
+            ` : ''}
+          </div>
+          <div class="space-y-1">
+            <span class="block text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Período</span>
+            <div class="text-slate-700 dark:text-slate-300 font-semibold leading-tight">
+              <div>${formatarData(v.data_ida)}</div>
+              <div class="text-[10px] text-slate-400 font-medium">até</div>
+              <div>${formatarData(v.data_volta)}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Finance Info: Valor e Rentabilidade -->
+        <div class="flex items-center justify-between bg-slate-50 dark:bg-slate-900/40 p-3 rounded-xl border border-slate-100 dark:border-slate-800/60 text-xs">
+          <div>
+            <span class="block text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Valor Venda</span>
+            <span class="font-black text-indigo-600 dark:text-indigo-400 text-sm">R$ ${valorVenda.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+          </div>
+          <div class="text-right">
+            <span class="block text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Rentabilidade</span>
+            <span class="font-bold text-emerald-600 dark:text-emerald-400">R$ ${rentabilidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+          </div>
+        </div>
+
+        <!-- Footer Actions: Status Dropdown + Detalhes Button -->
+        <div class="flex items-center gap-3 pt-1 border-t border-slate-100 dark:border-slate-800/60">
+          <div class="flex-1">
+            <select class="select-status-inline w-full px-2.5 py-2 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-500 font-bold text-xs cursor-pointer" data-trip-id="${v.id}" data-old-value="${v.status}">
+              <option value="fechado" ${v.status === 'fechado' ? 'selected' : ''}>Fechado</option>
+              <option value="pos_venda" ${v.status === 'pos_venda' ? 'selected' : ''}>Pós-Venda</option>
+              <option value="pre_embarque" ${v.status === 'pre_embarque' ? 'selected' : ''}>Pré-Embarque</option>
+              <option value="pos_viagem" ${v.status === 'pos_viagem' ? 'selected' : ''}>Pós-Viagem</option>
+              <option value="reembolso_solicitado" ${v.status === 'reembolso_solicitado' ? 'selected' : ''}>Reembolso Solicitado</option>
+            </select>
+          </div>
+          <button class="btn-action-view px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold rounded-xl shadow-md shadow-indigo-600/10 transition text-xs uppercase" data-trip-id="${v.id}">
+            🔍 Detalhes
+          </button>
+        </div>
+      </div>
     `;
   }
 

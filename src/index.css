@@ -167,4 +167,54 @@ html.dark .text-slate-400 {
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
+/* Otimização de Modais no Mobile (Tela Cheia) */
+@media (max-width: 767px) {
+  /* Alvo nos overlays fixos para garantir preenchimento completo */
+  #modal-overlay,
+  .fixed.inset-0.bg-slate-900\/60,
+  .fixed.inset-0.bg-slate-900\/40,
+  .fixed.inset-0.bg-slate-950\/40,
+  .fixed.inset-0.z-50.flex.items-center.justify-center {
+    display: flex !important;
+    align-items: flex-end !important;
+    justify-content: center !important;
+    padding: 0 !important;
+  }
+
+  /* Alvo nos containers dos modais para virarem tela cheia */
+  #modal-content-container,
+  #modal-container,
+  #modal-container-product-comments,
+  #paxflow-doc-viewer-container,
+  #todo-card-modal-card,
+  #todo-cols-modal-card,
+  .bg-white.dark\:bg-slate-900.max-w-2xl.w-full,
+  .bg-white.dark\:bg-slate-900.max-w-lg.w-full,
+  .bg-white.dark\:bg-slate-900.max-w-md.w-full,
+  .bg-white.w-full.max-w-lg.rounded-3xl,
+  .bg-white.dark\:bg-slate-900.border.w-full.max-w-md,
+  .bg-white.dark\:bg-slate-900.border.border-slate-200.dark\:border-slate-800.w-full.max-w-lg.rounded-3xl.shadow-2xl.overflow-hidden.flex.flex-col {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 100% !important;
+    max-height: 100vh !important;
+    border-radius: 0px !important;
+    margin: 0 !important;
+    padding: 1.25rem !important;
+    overflow-y: auto !important;
+    transform: scale(1) !important;
+    border: none !important;
+  }
+
+  /* Garante tamanho de fonte mínimo de 16px para evitar zoom do Safari/Chrome no iOS ao focar inputs */
+  #modal-content-container select,
+  #modal-content-container input,
+  #modal-content-container textarea,
+  #modal-container select,
+  #modal-container input,
+  #modal-container textarea {
+    font-size: 16px !important;
+  }
+}
+
 

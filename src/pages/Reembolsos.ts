@@ -498,107 +498,113 @@ export class ReembolsosPage {
               </span>
             </div>
 
-            <div class="overflow-x-auto custom-scrollbar">
-              <table class="w-full text-left border-collapse">
-                <thead>
-                  <tr class="bg-slate-50 dark:bg-slate-800 text-[10px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
-                    <th class="py-4 px-5">Cliente</th>
-                    <th class="py-4 px-5">Viagem / Localizador</th>
-                    <th class="py-4 px-5">Produto Cancelado</th>
-                    <th class="py-4 px-5">Fornecedor</th>
-                    <th class="py-4 px-5">Valor</th>
-                    <th class="py-4 px-5">Solicitação</th>
-                    <th class="py-4 px-5">SLA Cronômetro</th>
-                    <th class="py-4 px-5 text-center">Status / Ação</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-sm text-slate-700 dark:text-slate-400 font-semibold bg-white/50 dark:bg-slate-900/30">
-                  ${filtrados.length === 0 ? `
-                    <tr>
-                      <td colspan="8" class="py-12 text-center text-slate-400 dark:text-slate-500 text-xs font-semibold">
-                        Nenhuma solicitação de reembolso correspondente encontrada.
-                      </td>
+            ${filtrados.length === 0 ? `
+              <div class="p-12 text-center text-slate-400 dark:text-slate-500 text-xs font-semibold">
+                Nenhuma solicitação de reembolso correspondente encontrada.
+              </div>
+            ` : `
+              <!-- Mobile View: Cards (Visible only on mobile portrait) -->
+              <div class="block md:hidden p-4 space-y-4 max-h-[600px] overflow-y-auto custom-scrollbar">
+                ${filtrados.map(r => this.renderMobileCard(r)).join('')}
+              </div>
+
+              <!-- Desktop View: Table (Hidden on mobile portrait) -->
+              <div class="hidden md:block overflow-x-auto custom-scrollbar">
+                <table class="w-full text-left border-collapse">
+                  <thead>
+                    <tr class="bg-slate-50 dark:bg-slate-800 text-[10px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
+                      <th class="py-4 px-5">Cliente</th>
+                      <th class="py-4 px-5">Viagem / Localizador</th>
+                      <th class="py-4 px-5">Produto Cancelado</th>
+                      <th class="py-4 px-5">Fornecedor</th>
+                      <th class="py-4 px-5">Valor</th>
+                      <th class="py-4 px-5">Solicitação</th>
+                      <th class="py-4 px-5">SLA Cronômetro</th>
+                      <th class="py-4 px-5 text-center">Status / Ação</th>
                     </tr>
-                  ` : filtrados.map(r => {
-                    const isPago = r.status === 'pago';
-                    const dataAberturaStr = r.created_at || r.created_at_time;
-                    
-                    return `
-                      <tr class="table-row-hover transition duration-150">
-                        <!-- Cliente -->
-                        <td class="py-4.5 px-5">
-                          <span class="block text-slate-800 dark:text-slate-200 font-bold">${r.viagem?.cliente?.nome || 'Cliente Desconhecido'}</span>
-                          <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-semibold">${r.viagem?.cliente?.email || 'Sem e-mail'}</span>
-                        </td>
-                        
-                        <!-- Viagem / Localizador -->
-                        <td class="py-4.5 px-5">
-                          <span class="block text-slate-800 dark:text-slate-200 font-bold">✈️ ${r.viagem?.destino || 'Sem Destino'}</span>
-                          <span class="inline-block px-1.5 py-0.5 mt-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-extrabold text-[9px] rounded uppercase border border-slate-200/50 dark:border-slate-800">
-                            LOC: ${r.viagem?.codigo_localizador || 'S/ LOC'}
-                          </span>
-                        </td>
- 
-                        <!-- Produto Cancelado -->
-                        <td class="py-4.5 px-5">
-                          <span class="block text-slate-700 dark:text-slate-300 font-bold">[${(r.produto?.tipo || 'outro').toUpperCase()}]</span>
-                          <span class="block text-[11px] text-slate-400 dark:text-slate-500 font-medium truncate max-w-[160px]">${r.produto?.descricao || 'Sem descrição'}</span>
-                        </td>
- 
-                        <!-- Fornecedor -->
-                        <td class="py-4.5 px-5">
-                          <span class="text-slate-600 dark:text-slate-400 font-bold">${r.produto?.fornecedor || 'Fornecedor n/d'}</span>
-                        </td>
- 
-                        <!-- Valor -->
-                        <td class="py-4.5 px-5">
-                          <span class="text-indigo-600 dark:text-indigo-400 font-black">
-                            R$ ${Number(r.valor_solicitado || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                          </span>
-                        </td>
- 
-                        <!-- Solicitação -->
-                        <td class="py-4.5 px-5 text-slate-500 dark:text-slate-400 font-bold text-xs">
-                          ${formatarData(r.data_solicitacao)}
-                        </td>
- 
-                        <!-- SLA Cronômetro -->
-                        <td class="py-4.5 px-5">
-                          ${isPago ? `
-                            <span class="inline-block px-2.5 py-1 bg-emerald-50 dark:bg-emerald-950/45 text-emerald-700 dark:text-emerald-400 font-extrabold text-[10px] rounded-lg border border-emerald-100 dark:border-emerald-900/40 flex items-center gap-1 max-w-fit">
-                              ✅ Concluído em ${formatarData(r.data_resolucao)}
+                  </thead>
+                  <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-sm text-slate-700 dark:text-slate-400 font-semibold bg-white/50 dark:bg-slate-900/30">
+                    ${filtrados.map(r => {
+                      const isPago = r.status === 'pago';
+                      const dataAberturaStr = r.created_at || r.created_at_time;
+                      
+                      return `
+                        <tr class="table-row-hover transition duration-150">
+                          <!-- Cliente -->
+                          <td class="py-4.5 px-5">
+                            <span class="block text-slate-800 dark:text-slate-200 font-bold">${r.viagem?.cliente?.nome || 'Cliente Desconhecido'}</span>
+                            <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-semibold">${r.viagem?.cliente?.email || 'Sem e-mail'}</span>
+                          </td>
+                          
+                          <!-- Viagem / Localizador -->
+                          <td class="py-4.5 px-5">
+                            <span class="block text-slate-800 dark:text-slate-200 font-bold">✈️ ${r.viagem?.destino || 'Sem Destino'}</span>
+                            <span class="inline-block px-1.5 py-0.5 mt-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-extrabold text-[9px] rounded uppercase border border-slate-200/50 dark:border-slate-800">
+                              LOC: ${r.viagem?.codigo_localizador || 'S/ LOC'}
                             </span>
-                          ` : `
-                            <span class="sla-active-timer text-xs font-black text-rose-600 dark:text-rose-400 bg-rose-50/70 dark:bg-rose-950/20 border border-rose-100/50 dark:border-rose-900/30 px-2.5 py-1 rounded-lg max-w-fit flex items-center" data-created-at="${dataAberturaStr}">
-                              Calculando...
+                          </td>
+   
+                          <!-- Produto Cancelado -->
+                          <td class="py-4.5 px-5">
+                            <span class="block text-slate-700 dark:text-slate-300 font-bold">[${(r.produto?.tipo || 'outro').toUpperCase()}]</span>
+                            <span class="block text-[11px] text-slate-400 dark:text-slate-500 font-medium truncate max-w-[160px]">${r.produto?.descricao || 'Sem descrição'}</span>
+                          </td>
+   
+                          <!-- Fornecedor -->
+                          <td class="py-4.5 px-5">
+                            <span class="text-slate-600 dark:text-slate-400 font-bold">${r.produto?.fornecedor || 'Fornecedor n/d'}</span>
+                          </td>
+   
+                          <!-- Valor -->
+                          <td class="py-4.5 px-5">
+                            <span class="text-indigo-600 dark:text-indigo-400 font-black">
+                              R$ ${Number(r.valor_solicitado || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                             </span>
-                          `}
-                        </td>
- 
-                        <!-- Status / Ação -->
-                        <td class="py-4.5 px-5 text-center">
-                          <div class="flex items-center justify-center gap-2">
-                            <select data-reembolso-id="${r.id}" class="select-status-reembolso px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">
-                              <option value="Aguardando Fornecedor" ${r.status === 'Aguardando Fornecedor' || r.status === 'solicitado' ? 'selected' : ''}>Aguardando Fornecedor</option>
-                              <option value="em_analise" ${r.status === 'em_analise' ? 'selected' : ''}>Em Análise</option>
-                              <option value="aprovado" ${r.status === 'aprovado' ? 'selected' : ''}>Aprovado</option>
-                              <option value="recusado" ${r.status === 'recusado' ? 'selected' : ''}>Recusado</option>
-                              <option value="pago" ${r.status === 'pago' ? 'selected' : ''}>💸 Concluído / Pago</option>
-                              <option value="cancelado" ${r.status === 'cancelado' ? 'selected' : ''}>Cancelado</option>
-                            </select>
-                            ${this.perfil?.role === 'admin' ? `
-                              <button data-delete-reembolso-id="${r.id}" class="p-2 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-900/30 text-rose-600 dark:text-rose-400 rounded-lg border border-rose-100/30 dark:border-rose-900/30 transition text-xs flex items-center justify-center shadow-sm" title="Excluir Reembolso">
-                                🗑️
-                              </button>
-                            ` : ''}
-                          </div>
-                        </td>
-                      </tr>
-                    `;
-                  }).join('')}
-                </tbody>
-              </table>
-            </div>
+                          </td>
+   
+                          <!-- Solicitação -->
+                          <td class="py-4.5 px-5 text-slate-500 dark:text-slate-400 font-bold text-xs">
+                            ${formatarData(r.data_solicitacao)}
+                          </td>
+   
+                          <!-- SLA Cronômetro -->
+                          <td class="py-4.5 px-5">
+                            ${isPago ? `
+                              <span class="inline-block px-2.5 py-1 bg-emerald-50 dark:bg-emerald-950/45 text-emerald-700 dark:text-emerald-400 font-extrabold text-[10px] rounded-lg border border-emerald-100 dark:border-emerald-900/40 flex items-center gap-1 max-w-fit">
+                                ✅ Concluído em ${formatarData(r.data_resolucao)}
+                              </span>
+                            ` : `
+                              <span class="sla-active-timer text-xs font-black text-rose-600 dark:text-rose-400 bg-rose-50/70 dark:bg-rose-950/20 border border-rose-100/50 dark:border-rose-900/30 px-2.5 py-1 rounded-lg max-w-fit flex items-center" data-created-at="${dataAberturaStr}">
+                                Calculando...
+                              </span>
+                            `}
+                          </td>
+   
+                          <!-- Status / Ação -->
+                          <td class="py-4.5 px-5 text-center">
+                            <div class="flex items-center justify-center gap-2">
+                              <select data-reembolso-id="${r.id}" class="select-status-reembolso px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 cursor-pointer">
+                                <option value="Aguardando Fornecedor" ${r.status === 'Aguardando Fornecedor' || r.status === 'solicitado' ? 'selected' : ''}>Aguardando Fornecedor</option>
+                                <option value="em_analise" ${r.status === 'em_analise' ? 'selected' : ''}>Em Análise</option>
+                                <option value="aprovado" ${r.status === 'aprovado' ? 'selected' : ''}>Aprovado</option>
+                                <option value="recusado" ${r.status === 'recusado' ? 'selected' : ''}>Recusado</option>
+                                <option value="pago" ${r.status === 'pago' ? 'selected' : ''}>💸 Concluído / Pago</option>
+                                <option value="cancelado" ${r.status === 'cancelado' ? 'selected' : ''}>Cancelado</option>
+                              </select>
+                              ${this.perfil?.role === 'admin' ? `
+                                <button data-delete-reembolso-id="${r.id}" class="p-2 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-900/30 text-rose-600 dark:text-rose-400 rounded-lg border border-rose-100/30 dark:border-rose-900/30 transition text-xs flex items-center justify-center shadow-sm" title="Excluir Reembolso">
+                                  🗑️
+                                </button>
+                              ` : ''}
+                            </div>
+                          </td>
+                        </tr>
+                      `;
+                    }).join('')}
+                  </tbody>
+                </table>
+              </div>
+            `}
           </div>
         </main>
       </div>
@@ -606,6 +612,113 @@ export class ReembolsosPage {
 
     // Re-associa ouvintes após renderização
     this.setupEventListeners();
+  }
+
+  /**
+   * Renderiza um card individual de reembolso para exibição em dispositivos móveis
+   */
+  private renderMobileCard(r: any): string {
+    const isPago = r.status === 'pago';
+    const dataAberturaStr = r.created_at || r.created_at_time;
+    const formatarData = (dStr: string) => {
+      if (!dStr) return '';
+      const dataApenas = dStr.includes('T') ? dStr.split('T')[0] : dStr.split(' ')[0];
+      const parts = dataApenas.split('-');
+      if (parts.length !== 3) return dStr;
+      return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    };
+
+    return `
+      <div class="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-4">
+        <!-- Header: Client Info -->
+        <div class="flex items-start justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+          <div class="space-y-1">
+            <span class="block text-slate-800 dark:text-slate-200 font-bold">${r.viagem?.cliente?.nome || 'Cliente Desconhecido'}</span>
+            <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-semibold">${r.viagem?.cliente?.email || 'Sem e-mail'}</span>
+          </div>
+          <div>
+            ${isPago ? `
+              <span class="inline-block px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/45 text-emerald-700 dark:text-emerald-400 font-extrabold text-[9px] rounded border border-emerald-100 dark:border-emerald-900/40 uppercase">
+                Pago
+              </span>
+            ` : `
+              <span class="inline-block px-2 py-0.5 bg-amber-50 dark:bg-amber-950/45 text-amber-700 dark:text-amber-400 font-extrabold text-[9px] rounded border border-amber-100 dark:border-amber-900/40 uppercase">
+                Pendente
+              </span>
+            `}
+          </div>
+        </div>
+
+        <!-- Body: Travel + Product details -->
+        <div class="grid grid-cols-2 gap-4 text-xs">
+          <div class="space-y-1">
+            <span class="block text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Viagem & LOC</span>
+            <span class="block text-slate-800 dark:text-slate-200 font-bold">✈️ ${r.viagem?.destino || 'Sem Destino'}</span>
+            <span class="inline-block px-1.5 py-0.5 mt-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-extrabold text-[9px] rounded uppercase border border-slate-200/50 dark:border-slate-800">
+              LOC: ${r.viagem?.codigo_localizador || 'S/ LOC'}
+            </span>
+          </div>
+          <div class="space-y-1">
+            <span class="block text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Produto Cancelado</span>
+            <span class="block text-slate-700 dark:text-slate-300 font-bold">[${(r.produto?.tipo || 'outro').toUpperCase()}]</span>
+            <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-medium truncate max-w-[130px]" title="${r.produto?.descricao || ''}">${r.produto?.descricao || 'Sem descrição'}</span>
+          </div>
+        </div>
+
+        <!-- Row: Provider & Value -->
+        <div class="grid grid-cols-2 gap-4 bg-slate-50 dark:bg-slate-900/40 p-3 rounded-xl border border-slate-100 dark:border-slate-800/60 text-xs">
+          <div>
+            <span class="block text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Fornecedor</span>
+            <span class="text-slate-700 dark:text-slate-300 font-bold">${r.produto?.fornecedor || 'Fornecedor n/d'}</span>
+          </div>
+          <div>
+            <span class="block text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Valor Solicitado</span>
+            <span class="text-indigo-600 dark:text-indigo-400 font-black text-sm">
+              R$ ${Number(r.valor_solicitado || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+            </span>
+          </div>
+        </div>
+
+        <!-- Row: Solicitation and SLA timer -->
+        <div class="flex items-center justify-between text-xs border-t border-slate-100 dark:border-slate-800/60 pt-3">
+          <div>
+            <span class="block text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Solicitação</span>
+            <span class="text-slate-500 dark:text-slate-400 font-semibold">${formatarData(r.data_solicitacao)}</span>
+          </div>
+          <div>
+            <span class="block text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider text-right mb-0.5">SLA Cronômetro</span>
+            ${isPago ? `
+              <span class="inline-block px-2.5 py-1 bg-emerald-50 dark:bg-emerald-950/45 text-emerald-700 dark:text-emerald-400 font-extrabold text-[9px] rounded-lg border border-emerald-100 dark:border-emerald-900/40">
+                ✅ Concluído em ${formatarData(r.data_resolucao)}
+              </span>
+            ` : `
+              <span class="sla-active-timer text-[10px] font-black text-rose-600 dark:text-rose-400 bg-rose-50/70 dark:bg-rose-950/20 border border-rose-100/50 dark:border-rose-900/30 px-2.5 py-0.5 rounded-lg flex items-center" data-created-at="${dataAberturaStr}">
+                Calculando...
+              </span>
+            `}
+          </div>
+        </div>
+
+        <!-- Action Section: Dropdown status + Delete -->
+        <div class="flex items-center gap-2 pt-1 border-t border-slate-100 dark:border-slate-800/60">
+          <div class="flex-1">
+            <select data-reembolso-id="${r.id}" class="select-status-reembolso w-full px-2.5 py-2 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 cursor-pointer">
+              <option value="Aguardando Fornecedor" ${r.status === 'Aguardando Fornecedor' || r.status === 'solicitado' ? 'selected' : ''}>Aguardando Fornecedor</option>
+              <option value="em_analise" ${r.status === 'em_analise' ? 'selected' : ''}>Em Análise</option>
+              <option value="aprovado" ${r.status === 'aprovado' ? 'selected' : ''}>Aprovado</option>
+              <option value="recusado" ${r.status === 'recusado' ? 'selected' : ''}>Recusado</option>
+              <option value="pago" ${r.status === 'pago' ? 'selected' : ''}>💸 Concluído / Pago</option>
+              <option value="cancelado" ${r.status === 'cancelado' ? 'selected' : ''}>Cancelado</option>
+            </select>
+          </div>
+          ${this.perfil?.role === 'admin' ? `
+            <button data-delete-reembolso-id="${r.id}" class="p-2 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-900/30 text-rose-600 dark:text-rose-400 rounded-xl border border-rose-100/30 dark:border-rose-900/30 transition text-xs flex items-center justify-center shadow-sm w-9 h-9 shrink-0" title="Excluir Reembolso">
+              🗑️
+            </button>
+          ` : ''}
+        </div>
+      </div>
+    `;
   }
 }
 export default ReembolsosPage;

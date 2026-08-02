@@ -35,6 +35,7 @@ export class OrcamentosPage {
   private buscaTermo: string = '';
   private selectedConsultantId: string = 'todos';
   private filterConcluido: 'todos' | 'fechada' | 'desistencia' = 'todos';
+  private activeColumnMobile: 'SOLICITADO' | 'EM_ANDAMENTO' | 'AGUARDANDO' | 'CONCLUIDO' = 'SOLICITADO';
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -371,6 +372,17 @@ export class OrcamentosPage {
       this.render();
     });
 
+    // Eventos de abas do Kanban mobile
+    this.container.querySelectorAll('.mobile-kanban-tab-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const col = (btn as HTMLElement).dataset.column as 'SOLICITADO' | 'EM_ANDAMENTO' | 'AGUARDANDO' | 'CONCLUIDO';
+        if (col) {
+          this.activeColumnMobile = col;
+          this.render();
+        }
+      });
+    });
+
 
   }
 
@@ -638,11 +650,45 @@ export class OrcamentosPage {
           </div>
         </header>
 
+        <!-- Mobile Kanban Tabs Selector (Visible only on mobile portrait) -->
+        <div class="block md:hidden px-6 pt-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 transition-colors duration-200">
+          <div class="flex gap-2 pb-px overflow-x-auto custom-scrollbar">
+            <button class="mobile-kanban-tab-btn flex-1 py-3 text-xs font-black tracking-wider uppercase border-b-2 text-center whitespace-nowrap transition-all focus:outline-none ${
+              this.activeColumnMobile === 'SOLICITADO'
+                ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400 font-black'
+                : 'border-transparent text-slate-400 dark:text-slate-500 font-bold hover:text-slate-600 dark:hover:text-slate-300'
+            }" data-column="SOLICITADO">
+              Solicitado (${solicitado.length})
+            </button>
+            <button class="mobile-kanban-tab-btn flex-1 py-3 text-xs font-black tracking-wider uppercase border-b-2 text-center whitespace-nowrap transition-all focus:outline-none ${
+              this.activeColumnMobile === 'EM_ANDAMENTO'
+                ? 'border-amber-500 text-amber-500 dark:border-amber-400 dark:text-amber-400 font-black'
+                : 'border-transparent text-slate-400 dark:text-slate-500 font-bold hover:text-slate-600 dark:hover:text-slate-300'
+            }" data-column="EM_ANDAMENTO">
+              Andamento (${emAndamento.length})
+            </button>
+            <button class="mobile-kanban-tab-btn flex-1 py-3 text-xs font-black tracking-wider uppercase border-b-2 text-center whitespace-nowrap transition-all focus:outline-none ${
+              this.activeColumnMobile === 'AGUARDANDO'
+                ? 'border-rose-500 text-rose-500 dark:border-rose-400 dark:text-rose-400 font-black'
+                : 'border-transparent text-slate-400 dark:text-slate-500 font-bold hover:text-slate-600 dark:hover:text-slate-300'
+            }" data-column="AGUARDANDO">
+              Aguardando (${aguardando.length})
+            </button>
+            <button class="mobile-kanban-tab-btn flex-1 py-3 text-xs font-black tracking-wider uppercase border-b-2 text-center whitespace-nowrap transition-all focus:outline-none ${
+              this.activeColumnMobile === 'CONCLUIDO'
+                ? 'border-emerald-500 text-emerald-500 dark:border-emerald-400 dark:text-emerald-400 font-black'
+                : 'border-transparent text-slate-400 dark:text-slate-500 font-bold hover:text-slate-600 dark:hover:text-slate-300'
+            }" data-column="CONCLUIDO">
+              Concluído (${concluido.length})
+            </button>
+          </div>
+        </div>
+
         <!-- Corpo Principal Kanban -->
-        <main class="flex-1 p-6 overflow-x-auto flex gap-6 items-start custom-scrollbar">
+        <main class="flex-1 p-6 overflow-x-auto flex md:flex flex-col md:flex-row gap-6 items-stretch md:items-start custom-scrollbar">
           
           <!-- Coluna 1: SOLICITADO -->
-          <div class="w-80 bg-slate-100/70 dark:bg-slate-900/40 border border-slate-200/50 dark:border-slate-800/80 border-t-4 border-t-indigo-500 rounded-2xl p-4 flex flex-col shrink-0 orcamentos-column">
+          <div class="w-full md:w-80 bg-slate-100/70 dark:bg-slate-900/40 border border-slate-200/50 dark:border-slate-800/80 border-t-4 border-t-indigo-500 rounded-2xl p-4 flex-col shrink-0 orcamentos-column ${this.activeColumnMobile === 'SOLICITADO' ? 'flex' : 'hidden md:flex'}">
             <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-200/60 dark:border-slate-800/60 select-none">
               <div class="flex items-center gap-2">
                 <span class="p-1 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-500 dark:text-indigo-400 rounded-lg flex items-center justify-center shrink-0">
@@ -661,7 +707,7 @@ export class OrcamentosPage {
           </div>
 
           <!-- Coluna 2: EM ANDAMENTO -->
-          <div class="w-80 bg-slate-100/70 dark:bg-slate-900/40 border border-slate-200/50 dark:border-slate-800/80 border-t-4 border-t-amber-500 rounded-2xl p-4 flex flex-col shrink-0 orcamentos-column">
+          <div class="w-full md:w-80 bg-slate-100/70 dark:bg-slate-900/40 border border-slate-200/50 dark:border-slate-800/80 border-t-4 border-t-amber-500 rounded-2xl p-4 flex-col shrink-0 orcamentos-column ${this.activeColumnMobile === 'EM_ANDAMENTO' ? 'flex' : 'hidden md:flex'}">
             <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-200/60 dark:border-slate-800/60 select-none">
               <div class="flex items-center gap-2">
                 <span class="p-1 bg-amber-50 dark:bg-amber-950/40 text-amber-500 dark:text-amber-400 rounded-lg flex items-center justify-center shrink-0">
@@ -681,7 +727,7 @@ export class OrcamentosPage {
           </div>
 
           <!-- Coluna 3: AGUARDANDO -->
-          <div class="w-80 bg-slate-100/70 dark:bg-slate-900/40 border border-slate-200/50 dark:border-slate-800/80 border-t-4 border-t-rose-500 rounded-2xl p-4 flex flex-col shrink-0 orcamentos-column">
+          <div class="w-full md:w-80 bg-slate-100/70 dark:bg-slate-900/40 border border-slate-200/50 dark:border-slate-800/80 border-t-4 border-t-rose-500 rounded-2xl p-4 flex-col shrink-0 orcamentos-column ${this.activeColumnMobile === 'AGUARDANDO' ? 'flex' : 'hidden md:flex'}">
             <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-200/60 dark:border-slate-800/60 select-none">
               <div class="flex items-center gap-2">
                 <span class="p-1 bg-rose-50 dark:bg-rose-950/40 text-rose-500 dark:text-rose-400 rounded-lg flex items-center justify-center shrink-0">
@@ -700,7 +746,7 @@ export class OrcamentosPage {
           </div>
 
           <!-- Coluna 4: CONCLUÍDO -->
-          <div class="w-80 bg-slate-100/70 dark:bg-slate-900/40 border border-slate-200/50 dark:border-slate-800/80 border-t-4 border-t-emerald-500 rounded-2xl p-4 flex flex-col shrink-0 orcamentos-column">
+          <div class="w-full md:w-80 bg-slate-100/70 dark:bg-slate-900/40 border border-slate-200/50 dark:border-slate-800/80 border-t-4 border-t-emerald-500 rounded-2xl p-4 flex-col shrink-0 orcamentos-column ${this.activeColumnMobile === 'CONCLUIDO' ? 'flex' : 'hidden md:flex'}">
             <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-200/60 dark:border-slate-800/60 select-none">
               <div class="flex items-center gap-2">
                 <span class="p-1 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-500 dark:text-emerald-400 rounded-lg flex items-center justify-center shrink-0">

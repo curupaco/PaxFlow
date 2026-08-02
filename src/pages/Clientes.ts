@@ -24,6 +24,7 @@ export class ClientesPage {
   private clienteSelecionado: Cliente | null = null;
   private carregandoUpload: boolean = false;
   private buscaTermo: string = '';
+  private mobileDetailOpen: boolean = false;
 
 
   // Variáveis para paginação infinita
@@ -261,9 +262,26 @@ export class ClientesPage {
   }
 
   /**
+   * Controla a visibilidade dos painéis no celular (Master-Detail)
+   */
+  private updateMobileViewVisibility(): void {
+    const listCol = document.getElementById('clientes-lista-col');
+    const detailCol = document.getElementById('ficha-cliente-container');
+    if (!listCol || !detailCol) return;
+
+    if (this.mobileDetailOpen) {
+      listCol.classList.add('hidden');
+      detailCol.classList.remove('hidden');
+    } else {
+      listCol.classList.remove('hidden');
+      detailCol.classList.add('hidden');
+    }
+  }
+
+  /**
    * Atualiza a ficha de detalhes do cliente selecionado (ou abre formulário limpo para cadastro)
    */
-  private selecionarCliente(cliente: Cliente | null): void {
+  private selecionarCliente(cliente: Cliente | null, openMobile: boolean = true): void {
     if (cliente === null) {
       // Cria um objeto de cliente vazio para novo cadastro
       this.clienteSelecionado = {
@@ -285,9 +303,16 @@ export class ClientesPage {
       this.clienteSelecionado = cliente;
     }
     
+    if (openMobile) {
+      this.mobileDetailOpen = true;
+    } else {
+      this.mobileDetailOpen = false;
+    }
+
     this.filtrarERenderizarLista(); // Atualiza seleção na lista lateral
     this.renderFichaDetalhada();
     this.setupFormEventListeners();
+    this.updateMobileViewVisibility();
   }
 
   /**
@@ -295,6 +320,13 @@ export class ClientesPage {
    */
   private setupFormEventListeners(): void {
     const form = document.getElementById('form-cliente') as HTMLFormElement;
+
+    // Botão Voltar no mobile
+    const btnVoltar = document.getElementById('btn-voltar-lista-mobile');
+    btnVoltar?.addEventListener('click', () => {
+      this.mobileDetailOpen = false;
+      this.updateMobileViewVisibility();
+    });
     
     // Inicializa a validação em tempo real para os campos de contato e datas
     const validator = setupFormValidation('form-cliente', [
@@ -743,6 +775,13 @@ export class ClientesPage {
     fichaEl.innerHTML = `
       <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-6 shadow-sm flex flex-col gap-6">
         
+        <!-- Botão Voltar (Apenas Mobile) -->
+        <div class="lg:hidden flex items-center mb-2">
+          <button id="btn-voltar-lista-mobile" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-350 text-xs font-black rounded-xl transition flex items-center gap-1.5 uppercase">
+            ← Voltar para Lista
+          </button>
+        </div>
+
         <!-- Topo da Ficha: Nome & Botão Google Drive -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-5">
           <div class="flex items-center gap-3">
@@ -1070,7 +1109,7 @@ export class ClientesPage {
         <main class="flex-1 p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           
           <!-- Coluna Esquerda: Lista de Clientes (Busca & Navegação) -->
-          <div class="lg:col-span-4 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-4 shadow-sm flex flex-col gap-4">
+          <div id="clientes-lista-col" class="lg:col-span-4 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-4 shadow-sm flex flex-col gap-4 lg:flex ${this.mobileDetailOpen ? 'hidden' : 'flex'}">
             
             <!-- Barra de Busca -->
             <div>
@@ -1096,7 +1135,7 @@ export class ClientesPage {
           </div>
 
           <!-- Coluna Direita: Ficha Única do Cliente (Formulários & Uploads) -->
-          <div class="lg:col-span-8" id="ficha-cliente-container">
+          <div class="lg:col-span-8 lg:block ${this.mobileDetailOpen ? 'block' : 'hidden'}" id="ficha-cliente-container">
             <!-- Injetado via JS -->
           </div>
 
@@ -1109,9 +1148,9 @@ export class ClientesPage {
 
     // Renderiza o detalhe do primeiro cliente por padrão, se houver
     if (this.clientes.length > 0) {
-      this.selecionarCliente(this.clientes[0]);
+      this.selecionarCliente(this.clientes[0], false);
     } else {
-      this.selecionarCliente(null);
+      this.selecionarCliente(null, false);
     }
   }
 }
