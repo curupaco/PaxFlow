@@ -2,6 +2,7 @@ import { supabase, getSessaoAtual } from '../services/supabase';
 import { PerfilConsultor } from '../types';
 import { InboxService } from '../services/inboxService';
 import { formatBrDateToIso } from '../utils/masks';
+import { obterProgressoNivel, BADGE_DEFINITIONS } from '../services/gamification';
 
 if (typeof document !== 'undefined') {
   const style = document.createElement('style');
@@ -49,7 +50,7 @@ export class RelatoriosPage {
   private container: HTMLElement;
   private user: any = null;
   private perfil: PerfilConsultor | null = null;
-  private activeTab: 'desempenho' | 'prazos' | 'faturamento' | 'perdas' | 'previsoes' | 'fornecedores' = 'desempenho';
+  private activeTab: 'desempenho' | 'prazos' | 'faturamento' | 'perdas' | 'previsoes' | 'fornecedores' | 'origens' | 'auditoria' | 'posvenda' | 'gamificacao' = 'desempenho';
   
   // Data stores
   private orcamentos: any[] = [];
@@ -57,6 +58,10 @@ export class RelatoriosPage {
   private reembolsos: any[] = [];
   private alertas: any[] = [];
   private consultores: any[] = [];
+  private locPagamentos: any[] = [];
+  private locConferencias: any[] = [];
+  private formasRecebimento: any[] = [];
+  private consultoresBadges: any[] = [];
   
   // Filter states
   private dataInicio: string = '';
@@ -154,6 +159,22 @@ export class RelatoriosPage {
 
       // 6. Load alerts using InboxService
       this.alertas = await InboxService.loadAndBuildAlerts(this.user, this.perfil, this.prazoReembolsoDias);
+
+      // 7. Load loc_pagamentos
+      const { data: pagsData } = await supabase.from('loc_pagamentos').select('*, formas_recebimento(*)');
+      this.locPagamentos = pagsData || [];
+
+      // 8. Load loc_conferencias
+      const { data: confData } = await supabase.from('loc_conferencias').select('*');
+      this.locConferencias = confData || [];
+
+      // 9. Load formas_recebimento
+      const { data: formasData } = await supabase.from('formas_recebimento').select('*');
+      this.formasRecebimento = formasData || [];
+
+      // 10. Load profiles_badges
+      const { data: badgesData } = await supabase.from('profiles_badges').select('*');
+      this.consultoresBadges = badgesData || [];
     } catch (err) {
       console.warn('Erro ao ler tabelas de relatórios. Ativando mocks.', err);
       this.loadMockData();
@@ -166,19 +187,19 @@ export class RelatoriosPage {
   private loadMockData(): void {
     // Generate mock profiles if empty
     this.consultores = [
-      { id: '1', nome: 'Amanda Silva', email: 'amanda@agencia.com', role: 'consultor' },
-      { id: '2', nome: 'Bruno Costa', email: 'bruno@agencia.com', role: 'consultor' },
-      { id: '3', nome: 'Carlos Souza', email: 'carlos@agencia.com', role: 'consultor' }
+      { id: '1', nome: 'Amanda Silva', email: 'amanda@agencia.com', role: 'consultor', nivel: 12, xp: 9800 },
+      { id: '2', nome: 'Bruno Costa', email: 'bruno@agencia.com', role: 'consultor', nivel: 4, xp: 1800 },
+      { id: '3', nome: 'Carlos Souza', email: 'carlos@agencia.com', role: 'consultor', nivel: 16, xp: 16500 }
     ];
 
     // Generate mock orcamentos
     this.orcamentos = [
-      { id: 'o1', consultor_id: '1', nome_cliente: 'Felipe Melo', destino: 'Orlando', created_at: '2026-05-10', updated_at: '2026-05-15', status: 'CONCLUIDO', sub_status: 'ACEITO', valor_proposta: 12000, valor_viagem: 12000, tags: [] },
-      { id: 'o2', consultor_id: '1', nome_cliente: 'Ana Beatriz', destino: 'Paris', created_at: '2026-06-01', updated_at: '2026-06-12', status: 'CONCLUIDO', sub_status: 'DESISTENCIA', valor_proposta: 18000, tags: ['Desistência: Preço Alto'] },
-      { id: 'o3', consultor_id: '2', nome_cliente: 'Roberto Lima', destino: 'Roma', created_at: '2026-06-10', updated_at: '2026-06-20', status: 'CONCLUIDO', sub_status: 'ACEITO', valor_proposta: 22000, valor_viagem: 21500, tags: [] },
-      { id: 'o4', consultor_id: '2', nome_cliente: 'Mariana Vaz', destino: 'Gramado', created_at: '2026-07-02', updated_at: '2026-07-05', status: 'CONCLUIDO', sub_status: 'DESISTENCIA', valor_proposta: 4500, tags: ['Desistência: Concorrência'] },
-      { id: 'o5', consultor_id: '3', nome_cliente: 'Julia Neto', destino: 'Cancun', created_at: '2026-07-15', updated_at: '2026-07-16', status: 'EM_ANDAMENTO', valor_proposta: 9800, tags: [] },
-      { id: 'o6', consultor_id: '1', nome_cliente: 'Renato Gaúcho', destino: 'Maldivas', created_at: '2026-07-20', updated_at: '2026-07-22', status: 'AGUARDANDO', valor_proposta: 45000, tags: [] }
+      { id: 'o1', consultor_id: '1', nome_cliente: 'Felipe Melo', destino: 'Orlando', created_at: '2026-05-10', updated_at: '2026-05-15', status: 'CONCLUIDO', sub_status: 'ACEITO', valor_proposta: 12000, valor_viagem: 12000, tags: [], origem: 'Instagram' },
+      { id: 'o2', consultor_id: '1', nome_cliente: 'Ana Beatriz', destino: 'Paris', created_at: '2026-06-01', updated_at: '2026-06-12', status: 'CONCLUIDO', sub_status: 'DESISTENCIA', valor_proposta: 18000, tags: ['Desistência: Preço Alto'], origem: 'Instagram' },
+      { id: 'o3', consultor_id: '2', nome_cliente: 'Roberto Lima', destino: 'Roma', created_at: '2026-06-10', updated_at: '2026-06-20', status: 'CONCLUIDO', sub_status: 'ACEITO', valor_proposta: 22000, valor_viagem: 21500, tags: [], origem: 'Indicação' },
+      { id: 'o4', consultor_id: '2', nome_cliente: 'Mariana Vaz', destino: 'Gramado', created_at: '2026-07-02', updated_at: '2026-07-05', status: 'CONCLUIDO', sub_status: 'DESISTENCIA', valor_proposta: 4500, tags: ['Desistência: Concorrência'], origem: 'Google' },
+      { id: 'o5', consultor_id: '3', nome_cliente: 'Julia Neto', destino: 'Cancun', created_at: '2026-07-15', updated_at: '2026-07-16', status: 'EM_ANDAMENTO', valor_proposta: 9800, tags: [], origem: 'WhatsApp' },
+      { id: 'o6', consultor_id: '1', nome_cliente: 'Renato Gaúcho', destino: 'Maldivas', created_at: '2026-07-20', updated_at: '2026-07-22', status: 'AGUARDANDO', valor_proposta: 45000, tags: [], origem: 'Google' }
     ];
 
     // Generate mock viagens & produtos
@@ -193,9 +214,11 @@ export class RelatoriosPage {
         status: 'confirmada',
         data_financeiro: '2026-06-15',
         dataFinanceiro: '2026-06-15',
+        origem: 'Instagram',
+        processo_conferido: true,
         produtos: [
-          { fornecedor: 'Latam', valorCusto: 3200, valorVenda: 4000, comissao: 200, markup: 600, rav: 0, tipo: 'Voo' },
-          { fornecedor: 'Disney Resort', valorCusto: 6000, valorVenda: 8000, comissao: 800, markup: 1200, rav: 0, tipo: 'Hotel' }
+          { fornecedor: 'Latam', valorCusto: 3200, valorVenda: 4000, comissao: 200, markup: 600, rav: 0, tipo: 'Voo', codigoReserva: 'LATAM99' },
+          { fornecedor: 'Disney Resort', valorCusto: 6000, valorVenda: 8000, comissao: 800, markup: 1200, rav: 0, tipo: 'Hotel', codigoReserva: 'DISNEY88' }
         ]
       },
       {
@@ -208,9 +231,11 @@ export class RelatoriosPage {
         status: 'confirmada',
         data_financeiro: '2026-06-22',
         dataFinanceiro: '2026-06-22',
+        origem: 'Indicação',
+        processo_conferido: false,
         produtos: [
-          { fornecedor: 'Alitalia', valorCusto: 7000, valorVenda: 8500, comissao: 300, markup: 1200, rav: 0, tipo: 'Voo' },
-          { fornecedor: 'Marriott Rome', valorCusto: 10000, valorVenda: 13000, comissao: 1500, markup: 1500, rav: 0, tipo: 'Hotel' }
+          { fornecedor: 'Alitalia', valorCusto: 7000, valorVenda: 8500, comissao: 300, markup: 1200, rav: 0, tipo: 'Voo', codigoReserva: 'AZ123' },
+          { fornecedor: 'Marriott Rome', valorCusto: 10000, valorVenda: 13000, comissao: 1500, markup: 1500, rav: 0, tipo: 'Hotel', codigoReserva: 'MARR44' }
         ]
       }
     ];
@@ -223,6 +248,41 @@ export class RelatoriosPage {
     // Generate mock alerts
     this.alertas = [
       { id: 'm1', type: 'passport', title: 'SLA Passaporte - Felipe Melo', consultorId: '1', eventDate: '2026-08-10', dateStr: '10/08/2026' }
+    ];
+
+    this.formasRecebimento = [
+      { id: 'f1', nome: 'Pix', icone: '⚡', ativo: true },
+      { id: 'f2', nome: 'Crédito', icone: '💳', ativo: true },
+      { id: 'f3', nome: 'Boleto', icone: '📄', ativo: true },
+      { id: 'f4', nome: 'Transferência', icone: '🏦', ativo: true }
+    ];
+
+    this.locPagamentos = [
+      { id: 'p1', viagem_id: 'v1', codigo_localizador: 'LATAM99', forma_recebimento_id: 'f1', valor: 4000, formas_recebimento: { nome: 'Pix', icone: '⚡' } },
+      { id: 'p2', viagem_id: 'v1', codigo_localizador: 'DISNEY88', forma_recebimento_id: 'f2', valor: 8000, formas_recebimento: { nome: 'Crédito', icone: '💳' } },
+      { id: 'p3', viagem_id: 'v2', codigo_localizador: 'AZ123', forma_recebimento_id: 'f1', valor: 8500, formas_recebimento: { nome: 'Pix', icone: '⚡' } },
+      { id: 'p4', viagem_id: 'v2', codigo_localizador: 'MARR44', forma_recebimento_id: 'f2', valor: 10000, formas_recebimento: { nome: 'Crédito', icone: '💳' } }
+    ];
+
+    this.locConferencias = [
+      { id: 'c1', viagem_id: 'v1', codigo_localizador: 'LATAM99', conferido: true },
+      { id: 'c2', viagem_id: 'v1', codigo_localizador: 'DISNEY88', conferido: true },
+      { id: 'c3', viagem_id: 'v2', codigo_localizador: 'AZ123', conferido: true },
+      { id: 'c4', viagem_id: 'v2', codigo_localizador: 'MARR44', conferido: false }
+    ];
+
+    this.consultoresBadges = [
+      { profile_id: '1', badge_key: 'SLA_CHAMP' },
+      { profile_id: '1', badge_key: 'DRIVE_MASTER' },
+      { profile_id: '1', badge_key: 'COMMUNICATOR' },
+      { profile_id: '2', badge_key: 'FAST_SALE' },
+      { profile_id: '2', badge_key: 'TEAM_PLAYER' },
+      { profile_id: '3', badge_key: 'SLA_CHAMP' },
+      { profile_id: '3', badge_key: 'DRIVE_MASTER' },
+      { profile_id: '3', badge_key: 'COMPLIANCE_HERO' },
+      { profile_id: '3', badge_key: 'VOUCHER_EXPERT' },
+      { profile_id: '3', badge_key: 'GLOBETROTTER' },
+      { profile_id: '3', badge_key: 'HOT_LEAD' }
     ];
   }
 
@@ -246,12 +306,15 @@ export class RelatoriosPage {
       return id === this.consultorIdFilter;
     };
 
+    const filteredViagens = this.viagens.filter(v => {
+      const date = v.data_financeiro || v.dataFinanceiro || v.data_ida || v.dataIda;
+      return inRange(date) && matchConsultant(v.consultor_id || v.consultorId);
+    });
+    const travelIds = new Set(filteredViagens.map(v => v.id));
+
     return {
       orcamentos: this.orcamentos.filter(o => inRange(o.created_at || o.createdAt) && matchConsultant(o.consultor_id || o.consultorId)),
-      viagens: this.viagens.filter(v => {
-        const date = v.data_financeiro || v.dataFinanceiro || v.data_ida || v.dataIda;
-        return inRange(date) && matchConsultant(v.consultor_id || v.consultorId);
-      }),
+      viagens: filteredViagens,
       reembolsos: this.reembolsos.filter(r => {
         const date = r.created_at || r.createdAt;
         const consultorId = r.viagem?.consultor_id || r.consultor_solicitante_id || r.consultorSolicitanteId;
@@ -260,7 +323,11 @@ export class RelatoriosPage {
       alertas: this.alertas.filter(a => {
         const date = a.createdAt || a.eventDate;
         return inRange(date) && matchConsultant(a.consultorId);
-      })
+      }),
+      locPagamentos: this.locPagamentos.filter(p => travelIds.has(p.viagem_id || p.viagemId)),
+      locConferencias: this.locConferencias.filter(c => travelIds.has(c.viagem_id || c.viagemId)),
+      formasRecebimento: this.formasRecebimento,
+      consultoresBadges: this.consultoresBadges
     };
   }
 
@@ -348,24 +415,36 @@ export class RelatoriosPage {
         <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start print-full-width">
           
           <!-- Navigation Sidebar inside panel (Tabs) -->
-          <div class="lg:col-span-1 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-4 shadow-sm flex flex-row lg:flex-col overflow-x-auto lg:overflow-x-visible gap-1.5 report-tabs-bar no-print flex-shrink-0">
-            <button data-tab="desempenho" class="w-full px-3 py-2.5 rounded-xl text-left text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'desempenho' ? 'report-tab-active' : 'text-slate-500'}">
+          <div class="lg:col-span-1 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-4 shadow-sm flex flex-row lg:flex-col overflow-x-auto lg:overflow-x-visible gap-1.5 report-tabs-bar no-print flex-shrink-0 flex-wrap">
+            <button data-tab="desempenho" class="px-3 py-2.5 rounded-xl text-left text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'desempenho' ? 'report-tab-active' : 'text-slate-500'} w-auto lg:w-full">
               🎯 Desempenho
             </button>
-            <button data-tab="prazos" class="w-full px-3 py-2.5 rounded-xl text-left text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'prazos' ? 'report-tab-active' : 'text-slate-500'}">
+            <button data-tab="prazos" class="px-3 py-2.5 rounded-xl text-left text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'prazos' ? 'report-tab-active' : 'text-slate-500'} w-auto lg:w-full">
               ⏰ Controle de SLAs
             </button>
-            <button data-tab="faturamento" class="w-full px-3 py-2.5 rounded-xl text-left text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'faturamento' ? 'report-tab-active' : 'text-slate-500'}">
+            <button data-tab="faturamento" class="px-3 py-2.5 rounded-xl text-left text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'faturamento' ? 'report-tab-active' : 'text-slate-500'} w-auto lg:w-full">
               💰 Faturamento
             </button>
-            <button data-tab="perdas" class="w-full px-3 py-2.5 rounded-xl text-left text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'perdas' ? 'report-tab-active' : 'text-slate-500'}">
+            <button data-tab="perdas" class="px-3 py-2.5 rounded-xl text-left text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'perdas' ? 'report-tab-active' : 'text-slate-500'} w-auto lg:w-full">
               📉 Desistências e Perdas
             </button>
-            <button data-tab="previsoes" class="w-full px-3 py-2.5 rounded-xl text-left text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'previsoes' ? 'report-tab-active' : 'text-slate-500'}">
+            <button data-tab="previsoes" class="px-3 py-2.5 rounded-xl text-left text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'previsoes' ? 'report-tab-active' : 'text-slate-500'} w-auto lg:w-full">
               🔮 Previsões Preditivas
             </button>
-            <button data-tab="fornecedores" class="w-full px-3 py-2.5 rounded-xl text-left text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'fornecedores' ? 'report-tab-active' : 'text-slate-500'}">
+            <button data-tab="fornecedores" class="px-3 py-2.5 rounded-xl text-left text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'fornecedores' ? 'report-tab-active' : 'text-slate-500'} w-auto lg:w-full">
               🏢 Qualidade / Fornecedores
+            </button>
+            <button data-tab="origens" class="px-3 py-2.5 rounded-xl text-left text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'origens' ? 'report-tab-active' : 'text-slate-500'} w-auto lg:w-full">
+              📢 Origem de Leads
+            </button>
+            <button data-tab="auditoria" class="px-3 py-2.5 rounded-xl text-left text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'auditoria' ? 'report-tab-active' : 'text-slate-500'} w-auto lg:w-full">
+              🪙 Recebimentos & Auditoria
+            </button>
+            <button data-tab="posvenda" class="px-3 py-2.5 rounded-xl text-left text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'posvenda' ? 'report-tab-active' : 'text-slate-500'} w-auto lg:w-full">
+              ✈️ Pós-Venda & SLAs
+            </button>
+            <button data-tab="gamificacao" class="px-3 py-2.5 rounded-xl text-left text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'gamificacao' ? 'report-tab-active' : 'text-slate-500'} w-auto lg:w-full">
+              🏆 Gamificação & Ranking
             </button>
           </div>
 
@@ -397,6 +476,14 @@ export class RelatoriosPage {
         return this.renderPrevisoes(data);
       case 'fornecedores':
         return this.renderFornecedores(data);
+      case 'origens':
+        return this.renderOrigens(data);
+      case 'auditoria':
+        return this.renderAuditoria(data);
+      case 'posvenda':
+        return this.renderPosVenda(data);
+      case 'gamificacao':
+        return this.renderGamificacao(data);
       default:
         return '';
     }
@@ -993,7 +1080,7 @@ export class RelatoriosPage {
     const totalReembolsos = data.reembolsos.length;
 
     // Compile supplier stats from viagens & reembolsos
-    const supplierStats: Record<string, { totalSold: number, salesCount: number, refundCount: number, retentionTax: number }> = {};
+    const supplierStats: Record<string, { totalSold: number, totalCusto: number, totalLucro: number, salesCount: number, refundCount: number, retentionTax: number }> = {};
     
     // Fill from viajes product suppliers
     data.viagens.forEach((v: any) => {
@@ -1001,10 +1088,18 @@ export class RelatoriosPage {
         v.produtos.forEach((p: any) => {
           const supplier = p.fornecedor || 'Desconhecido';
           if (!supplierStats[supplier]) {
-            supplierStats[supplier] = { totalSold: 0, salesCount: 0, refundCount: 0, retentionTax: 0 };
+            supplierStats[supplier] = { totalSold: 0, totalCusto: 0, totalLucro: 0, salesCount: 0, refundCount: 0, retentionTax: 0 };
           }
           if (p.status !== 'cancelado') {
-            supplierStats[supplier].totalSold += (p.valorVenda || 0);
+            const venda = (p.valorVenda || 0);
+            const custo = (p.valorCusto || p.valor_custo || 0);
+            const comissao = (p.comissao || 0);
+            const markup = (p.markup || 0);
+            const rav = (p.rav || 0);
+
+            supplierStats[supplier].totalSold += venda;
+            supplierStats[supplier].totalCusto += custo;
+            supplierStats[supplier].totalLucro += (comissao + markup + rav);
             supplierStats[supplier].salesCount++;
           }
         });
@@ -1015,7 +1110,7 @@ export class RelatoriosPage {
     data.reembolsos.forEach((r: any) => {
       const supplier = r.produto?.fornecedor || 'Desconhecido';
       if (!supplierStats[supplier]) {
-        supplierStats[supplier] = { totalSold: 0, salesCount: 0, refundCount: 0, retentionTax: 0 };
+        supplierStats[supplier] = { totalSold: 0, totalCusto: 0, totalLucro: 0, salesCount: 0, refundCount: 0, retentionTax: 0 };
       }
       supplierStats[supplier].refundCount++;
       supplierStats[supplier].retentionTax += (r.taxa_retencao || r.taxaRetencao || 0);
@@ -1023,6 +1118,7 @@ export class RelatoriosPage {
 
     const tableRows = Object.entries(supplierStats).map(([fornecedor, stats]) => {
       const refundRate = stats.salesCount > 0 ? Math.round((stats.refundCount / stats.salesCount) * 100) : 0;
+      const profitMargin = stats.totalSold > 0 ? Math.round((stats.totalLucro / stats.totalSold) * 100) : 0;
       
       // Determine risk score
       let riskClass = 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30';
@@ -1041,6 +1137,9 @@ export class RelatoriosPage {
           <td class="p-3 font-extrabold text-slate-800 dark:text-slate-100">${fornecedor}</td>
           <td class="p-3 text-center">${stats.salesCount}</td>
           <td class="p-3">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(stats.totalSold)}</td>
+          <td class="p-3">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(stats.totalCusto)}</td>
+          <td class="p-3 font-extrabold text-indigo-650">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(stats.totalLucro)}</td>
+          <td class="p-3 text-center font-extrabold text-indigo-600">${profitMargin}%</td>
           <td class="p-3 text-center">${stats.refundCount}</td>
           <td class="p-3 font-extrabold text-rose-500 text-center">${refundRate}%</td>
           <td class="p-3">
@@ -1084,9 +1183,12 @@ export class RelatoriosPage {
               <thead>
                 <tr class="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-widest font-black">
                   <th class="p-3">Parceiro / Consolidador</th>
-                  <th class="p-3 text-center">Produtos Vendidos</th>
-                  <th class="p-3">Faturamento Total</th>
-                  <th class="p-3 text-center">Qtd. Reembolsos</th>
+                  <th class="p-3 text-center">Vendas</th>
+                  <th class="p-3">Faturamento</th>
+                  <th class="p-3">Custo</th>
+                  <th class="p-3">Lucro Líquido</th>
+                  <th class="p-3 text-center">Margem (%)</th>
+                  <th class="p-3 text-center">Reembolsos</th>
                   <th class="p-3 text-center">Taxa Incidência</th>
                   <th class="p-3">Grau de Risco</th>
                 </tr>
@@ -1094,9 +1196,782 @@ export class RelatoriosPage {
               <tbody>
                 ${tableRows || `
                   <tr>
-                    <td colspan="6" class="p-6 text-center text-slate-400 font-extrabold">Nenhum parceiro ou fornecedor cadastrado nas viagens ativas.</td>
+                    <td colspan="9" class="p-6 text-center text-slate-400 font-extrabold">Nenhum parceiro ou fornecedor cadastrado nas viagens ativas.</td>
                   </tr>
                 `}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  // ==========================================
+  // VIEW: 7. ORIGEM DE LEADS
+  // ==========================================
+  private renderOrigens(data: any): string {
+    const orcados = data.orcamentos.length;
+    const fechadosAceitos = data.orcamentos.filter((o: any) => o.subStatus === 'ACEITO' || o.sub_status === 'ACEITO').length;
+    const fechadosRecusados = data.orcamentos.filter((o: any) => o.subStatus === 'DESISTENCIA' || o.sub_status === 'DESISTENCIA').length;
+    const finalizados = fechadosAceitos + fechadosRecusados;
+    const conversaoGlobal = finalizados > 0 ? Math.round((fechadosAceitos / finalizados) * 100) : 0;
+    
+    // Grouping by origin
+    const originStats: Record<string, { count: number, won: number, lost: number, revenue: number }> = {
+      'WhatsApp': { count: 0, won: 0, lost: 0, revenue: 0 },
+      'Instagram': { count: 0, won: 0, lost: 0, revenue: 0 },
+      'Indicação': { count: 0, won: 0, lost: 0, revenue: 0 },
+      'Google': { count: 0, won: 0, lost: 0, revenue: 0 },
+      'Site': { count: 0, won: 0, lost: 0, revenue: 0 },
+      'Outros': { count: 0, won: 0, lost: 0, revenue: 0 }
+    };
+
+    data.orcamentos.forEach((o: any) => {
+      const orig = o.origem || 'Outros';
+      const k = originStats[orig] ? orig : 'Outros';
+      originStats[k].count++;
+      if (o.subStatus === 'ACEITO' || o.sub_status === 'ACEITO') {
+        originStats[k].won++;
+        originStats[k].revenue += (o.valorViagem || o.valor_viagem || o.valorProposta || o.valor_proposta || 0);
+      } else if (o.subStatus === 'DESISTENCIA' || o.sub_status === 'DESISTENCIA') {
+        originStats[k].lost++;
+      }
+    });
+
+    // Best performing channel by revenue or conversion
+    let bestChannel = 'Nenhum';
+    let maxRevenue = -1;
+    Object.entries(originStats).forEach(([chan, stats]) => {
+      if (stats.revenue > maxRevenue && stats.won > 0) {
+        maxRevenue = stats.revenue;
+        bestChannel = chan;
+      }
+    });
+
+    // Build SVG bar chart data
+    const maxCount = Math.max(...Object.values(originStats).map(s => s.count)) || 1;
+    let barChartHtml = '';
+    const colors = ['#3b82f6', '#ec4899', '#10b981', '#f59e0b', '#6366f1', '#6b7280'];
+    Object.entries(originStats).forEach(([orig, stats], idx) => {
+      if (stats.count === 0) return;
+      const pct = Math.round((stats.count / maxCount) * 80) + 5;
+      const sharePct = Math.round((stats.count / (orcados || 1)) * 100);
+      const color = colors[idx % colors.length];
+      barChartHtml += `
+        <div class="space-y-1">
+          <div class="flex justify-between text-xs font-bold text-slate-600 dark:text-slate-400">
+            <span>${orig} (${stats.count} leads)</span>
+            <span>${sharePct}% do share</span>
+          </div>
+          <div class="w-full bg-slate-100 dark:bg-slate-800 h-5 rounded-lg overflow-hidden flex">
+            <div class="h-full rounded-lg transition-all duration-500" style="width: ${pct}%; background-color: ${color}"></div>
+          </div>
+        </div>
+      `;
+    });
+
+    if (!barChartHtml) {
+      barChartHtml = '<p class="text-xs text-slate-400 font-bold py-6 text-center">Nenhum lead catalogado no período.</p>';
+    }
+
+    const tableRows = Object.entries(originStats).map(([orig, stats]) => {
+      const totalFin = stats.won + stats.lost;
+      const conv = totalFin > 0 ? Math.round((stats.won / totalFin) * 100) : 0;
+      const avgTicket = stats.won > 0 ? Math.round(stats.revenue / stats.won) : 0;
+      return `
+        <tr class="border-b border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-350">
+          <td class="p-3 font-extrabold text-slate-800 dark:text-slate-100">${orig}</td>
+          <td class="p-3 text-center">${stats.count}</td>
+          <td class="p-3 text-center">${stats.won}</td>
+          <td class="p-3 font-extrabold text-center text-emerald-600">${conv}%</td>
+          <td class="p-3 font-extrabold text-slate-700 dark:text-slate-200">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(stats.revenue)}</td>
+          <td class="p-3">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(avgTicket)}</td>
+        </tr>
+      `;
+    }).join('');
+
+    return `
+      <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-3xl p-6 shadow-sm flex flex-col gap-6 print-full-width">
+        <h2 class="text-lg font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
+          <span>📢 Origem de Leads e Eficiência de Funil</span>
+        </h2>
+        
+        <!-- Metric Grid -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-850 text-center">
+            <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Total Leads</p>
+            <p class="text-lg font-black text-slate-700 dark:text-slate-200 mt-1">${orcados}</p>
+          </div>
+          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-850 text-center">
+            <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Conversão Média</p>
+            <p class="text-lg font-black text-indigo-650 dark:text-indigo-400 mt-1">${conversaoGlobal}%</p>
+          </div>
+          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-850 text-center col-span-2 md:col-span-1">
+            <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Canal Campeão (Faturamento)</p>
+            <p class="text-lg font-black text-emerald-600 mt-1 truncate">${bestChannel}</p>
+          </div>
+          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-850 text-center col-span-2 md:col-span-1">
+            <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Faturamento Leads (Won)</p>
+            <p class="text-lg font-black text-slate-700 dark:text-slate-200 mt-1">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(Object.values(originStats).reduce((s, o) => s + o.revenue, 0))}</p>
+          </div>
+        </div>
+
+        <!-- SVG Bar Chart -->
+        <div class="border border-slate-100 dark:border-slate-800 p-5 rounded-2xl gap-4 flex flex-col">
+          <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider">Volume de Leads por Canal de Entrada</h3>
+          <div class="space-y-4">
+            ${barChartHtml}
+          </div>
+        </div>
+
+        <!-- Table detailing data -->
+        <div class="space-y-3">
+          <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider">Performance por Origem de Leads</h3>
+          <div class="overflow-x-auto custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl">
+            <table class="w-full text-left border-collapse text-xs font-semibold">
+              <thead>
+                <tr class="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-widest font-black">
+                  <th class="p-3">Origem</th>
+                  <th class="p-3 text-center">Total Leads</th>
+                  <th class="p-3 text-center">Ganhos</th>
+                  <th class="p-3 text-center">Conversão</th>
+                  <th class="p-3">Faturamento Realizado</th>
+                  <th class="p-3">Tíquete Médio</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${tableRows}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  // ==========================================
+  // VIEW: 8. AUDITORIA OPERACIONAL E RECEBIMENTOS
+  // ==========================================
+  private renderAuditoria(data: any): string {
+    const viagensAtivas = data.viagens.filter((v: any) => v.status !== 'cancelada');
+    const faturamentoTotal = viagensAtivas.reduce((sum: number, v: any) => sum + (v.valor_total || v.valorTotal || 0), 0);
+
+    // Sum all payments in the period matching active viagens
+    let totalPago = 0;
+    const paymentsGrouped: Record<string, { valor: number, icone: string }> = {};
+
+    data.locPagamentos.forEach((p: any) => {
+      const v = viagensAtivas.find((item: any) => item.id === p.viagem_id || item.id === p.viagemId);
+      if (v) {
+        const val = p.valor || 0;
+        totalPago += val;
+        
+        const formaNome = p.formas_recebimento?.nome || 'Outros';
+        const formaIcone = p.formas_recebimento?.icone || '💰';
+        
+        if (!paymentsGrouped[formaNome]) {
+          paymentsGrouped[formaNome] = { valor: 0, icone: formaIcone };
+        }
+        paymentsGrouped[formaNome].valor += val;
+      }
+    });
+
+    const saldoPendente = Math.max(0, faturamentoTotal - totalPago);
+    const quitacaoPct = faturamentoTotal > 0 ? Math.round((totalPago / faturamentoTotal) * 100) : 100;
+
+    // Payments breakdown horizontal bars
+    let paymentBreakdownHtml = '';
+    const paymentEntries = Object.entries(paymentsGrouped);
+    const maxPayment = paymentEntries.length > 0 ? Math.max(...paymentEntries.map(e => e[1].valor)) : 1;
+    paymentEntries.forEach(([nome, info]) => {
+      const pct = Math.round((info.valor / (totalPago || 1)) * 100);
+      const widthPct = Math.round((info.valor / maxPayment) * 80) + 5;
+      paymentBreakdownHtml += `
+        <div class="space-y-1.5">
+          <div class="flex justify-between text-xs font-bold text-slate-650 dark:text-slate-400">
+            <span class="flex items-center gap-1.5"><span>${info.icone}</span> <span>${nome}</span></span>
+            <span>${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(info.valor)} (${pct}%)</span>
+          </div>
+          <div class="w-full bg-slate-100 dark:bg-slate-800 h-4 rounded-lg overflow-hidden flex">
+            <div class="bg-indigo-500 h-full rounded-lg transition-all duration-500" style="width: ${widthPct}%"></div>
+          </div>
+        </div>
+      `;
+    });
+
+    if (!paymentBreakdownHtml) {
+      paymentBreakdownHtml = '<p class="text-xs text-slate-400 font-bold py-6 text-center">Nenhum pagamento registrado no período.</p>';
+    }
+
+    // Warnings list
+    const pendencias: { cliente: string, destino: string, motivo: string, gravidade: 'alta' | 'media' }[] = [];
+
+    viagensAtivas.forEach((v: any) => {
+      const clienteNome = v.cliente?.nome || 'Cliente não informado';
+      const destino = v.destino || 'Destino não informado';
+      
+      // 1. Check if paid value matches total value
+      const vPayments = data.locPagamentos.filter((p: any) => p.viagem_id === v.id || p.viagemId === v.id);
+      const vPaidSum = vPayments.reduce((s: number, p: any) => s + (p.valor || 0), 0);
+      const vTotal = v.valor_total || v.valorTotal || 0;
+      if (vPaidSum < vTotal) {
+        pendencias.push({
+          cliente: clienteNome,
+          destino: destino,
+          motivo: `Recebimento Pendente: quitado R$ ${vPaidSum.toLocaleString('pt-BR')} de R$ ${vTotal.toLocaleString('pt-BR')} (Aberto: R$ ${(vTotal - vPaidSum).toLocaleString('pt-BR')})`,
+          gravidade: 'alta'
+        });
+      }
+
+      // 2. Check process clearance
+      if (!v.processo_conferido) {
+        pendencias.push({
+          cliente: clienteNome,
+          destino: destino,
+          motivo: 'Conferência de Processo da viagem pendente (dados cadastrais travados)',
+          gravidade: 'media'
+        });
+      }
+
+      // 3. Check LOCs financial clearance
+      if (v.produtos) {
+        v.produtos.forEach((p: any) => {
+          const loc = (p.codigoReserva || p.codigo_reserva || p.codigo_localizador || '').trim().toUpperCase();
+          if (loc) {
+            const conf = data.locConferencias.find((c: any) => (c.viagem_id === v.id || c.viagemId === v.id) && (c.codigo_localizador || '').trim().toUpperCase() === loc);
+            if (!conf || !conf.conferido) {
+              pendencias.push({
+                cliente: clienteNome,
+                destino: `${destino} (LOC ${loc})`,
+                motivo: `Conferência Financeira pendente para localizador ${loc} (${p.fornecedor})`,
+                gravidade: 'media'
+              });
+            }
+          }
+        });
+      }
+    });
+
+    const tableRows = pendencias.map(p => {
+      const badgeColor = p.gravidade === 'alta' 
+        ? 'bg-rose-50 text-rose-600 dark:bg-rose-950/30' 
+        : 'bg-amber-50 text-amber-600 dark:bg-amber-950/30';
+      return `
+        <tr class="border-b border-slate-100 dark:border-slate-800 text-slate-650 dark:text-slate-350">
+          <td class="p-3 font-extrabold text-slate-800 dark:text-slate-100">${p.cliente}</td>
+          <td class="p-3">${p.destino}</td>
+          <td class="p-3 font-semibold ${p.gravidade === 'alta' ? 'text-rose-500 font-bold' : ''}">${p.motivo}</td>
+          <td class="p-3 text-center">
+            <span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${badgeColor}">
+              ${p.gravidade === 'alta' ? 'Crítica' : 'Atenção'}
+            </span>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    return `
+      <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-3xl p-6 shadow-sm flex flex-col gap-6 print-full-width">
+        <h2 class="text-lg font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
+          <span>🪙 Auditoria Operacional e Fluxo de Recebimento</span>
+        </h2>
+        
+        <!-- Metric Grid -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-850 text-center">
+            <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Faturamento Comercial</p>
+            <p class="text-lg font-black text-slate-700 dark:text-slate-200 mt-1">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(faturamentoTotal)}</p>
+          </div>
+          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-850 text-center">
+            <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Total Recebido</p>
+            <p class="text-lg font-black text-emerald-600 mt-1">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(totalPago)}</p>
+          </div>
+          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-850 text-center">
+            <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Saldo Pendente</p>
+            <p class="text-lg font-black text-rose-600 mt-1">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(saldoPendente)}</p>
+          </div>
+          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-850 text-center">
+            <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Taxa de Quitação</p>
+            <p class="text-lg font-black text-indigo-650 mt-1">${quitacaoPct}%</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Payment breakdown -->
+          <div class="border border-slate-100 dark:border-slate-800 p-5 rounded-2xl gap-4 flex flex-col">
+            <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider">Entradas por Meio de Pagamento</h3>
+            <div class="space-y-4">
+              ${paymentBreakdownHtml}
+            </div>
+          </div>
+
+          <!-- Audit coverage stats -->
+          <div class="border border-slate-100 dark:border-slate-800 p-5 rounded-2xl flex flex-col justify-between">
+            <div>
+              <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider mb-4">Gargalos de Auditoria Gerencial</h3>
+              <ul class="space-y-2 text-xs font-bold text-slate-650 dark:text-slate-350">
+                <li class="flex justify-between py-1.5 border-b border-slate-50 dark:border-slate-850">
+                  <span>Conferência de Processo Pendente</span>
+                  <span class="text-rose-500 font-extrabold">${viagensAtivas.filter((v: any) => !v.processo_conferido).length} viagens</span>
+                </li>
+                <li class="flex justify-between py-1.5 border-b border-slate-50 dark:border-slate-850">
+                  <span>Conferência Financeira Pendente</span>
+                  <span class="text-rose-500 font-extrabold">
+                    ${viagensAtivas.reduce((acc: number, v: any) => {
+                      let pnd = 0;
+                      if (v.produtos) {
+                        v.produtos.forEach((p: any) => {
+                          const loc = (p.codigoReserva || p.codigo_reserva || '').trim().toUpperCase();
+                          if (loc) {
+                            const conf = data.locConferencias.find((c: any) => (c.viagem_id === v.id || c.viagemId === v.id) && (c.codigo_localizador || '').trim().toUpperCase() === loc);
+                            if (!conf || !conf.conferido) pnd++;
+                          }
+                        });
+                      }
+                      return acc + pnd;
+                    }, 0)} localizadores
+                  </span>
+                </li>
+                <li class="flex justify-between py-1.5">
+                  <span>Viagens com Saldo em Aberto</span>
+                  <span class="text-rose-500 font-extrabold">
+                    ${viagensAtivas.filter((v: any) => {
+                      const vPayments = data.locPagamentos.filter((p: any) => p.viagem_id === v.id || p.viagemId === v.id);
+                      const vPaidSum = vPayments.reduce((s: number, p: any) => s + (p.valor || 0), 0);
+                      return vPaidSum < (v.valor_total || v.valorTotal || 0);
+                    }).length} viagens
+                  </span>
+                </li>
+              </ul>
+            </div>
+            <div class="mt-4 p-3 bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100/50 dark:border-indigo-900/50 text-[10px] text-indigo-750 dark:text-indigo-400 font-semibold rounded-xl">
+              ⚠️ <strong>Regra de Negócio:</strong> Viagens marcadas como "Fechadas" exigem saldo zerado e bloqueiam edições cadastrais. Certifique-se de quitar o saldo e conferir localizadores antes do embarque.
+            </div>
+          </div>
+        </div>
+
+        <!-- Table detailing warnings -->
+        <div class="space-y-3">
+          <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider">Fila de Pendências de Conciliação e Auditoria</h3>
+          <div class="overflow-x-auto custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl">
+            <table class="w-full text-left border-collapse text-xs font-semibold">
+              <thead>
+                <tr class="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-widest font-black">
+                  <th class="p-3">Cliente</th>
+                  <th class="p-3">Destino</th>
+                  <th class="p-3">Pendência Identificada</th>
+                  <th class="p-3 text-center">Criticidade</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${tableRows || `
+                  <tr>
+                    <td colspan="4" class="p-6 text-center text-slate-400 font-extrabold">🎉 Excelente! Nenhuma pendência financeira ou de auditoria ativa.</td>
+                  </tr>
+                `}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  // ==========================================
+  // VIEW: 9. JORNADA DE POS-VENDA E SLAS
+  // ==========================================
+  private renderPosVenda(data: any): string {
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+
+    const limitePre = new Date();
+    limitePre.setDate(hoje.getDate() + 15);
+    limitePre.setHours(23, 59, 59, 999);
+
+    const limitePos = new Date();
+    limitePos.setDate(hoje.getDate() - 15);
+    limitePos.setHours(0, 0, 0, 0);
+
+    const preEmbarqueViagens: any[] = [];
+    const emViagemViagens: any[] = [];
+    const posViagemViagens: any[] = [];
+
+    // Document and post-sale alerts lists
+    const docAlerts: { cliente: string, destino: string, dataIda: string, motivo: string }[] = [];
+    const posVendaPendente: { cliente: string, destino: string, dataVolta: string, consultor: string }[] = [];
+
+    data.viagens.forEach((v: any) => {
+      if (v.status === 'cancelada') return;
+      const dataIdaStr = v.data_ida || v.dataIda;
+      const dataVoltaStr = v.data_volta || v.dataVolta;
+      if (!dataIdaStr) return;
+
+      const dIda = new Date(dataIdaStr + 'T00:00:00');
+      const dVolta = dataVoltaStr ? new Date(dataVoltaStr + 'T23:59:59') : null;
+
+      // Grouping by lifecycle
+      if (dIda >= hoje && dIda <= limitePre) {
+        preEmbarqueViagens.push(v);
+      } else if (dIda < hoje && dVolta && dVolta >= hoje) {
+        emViagemViagens.push(v);
+      } else if (dVolta && dVolta < hoje && dVolta >= limitePos) {
+        posViagemViagens.push(v);
+      }
+
+      // Check passport validation for voyages in next 90 days (pre-embarque safety checks)
+      const passValidadeStr = v.cliente?.passaporteValidade || v.cliente?.passaporte_validade;
+      const dataIdaParaDoc = new Date(dataIdaStr + 'T00:00:00');
+      if (dataIdaParaDoc >= hoje && (dataIdaParaDoc.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24) <= 90) {
+        if (passValidadeStr) {
+          const passVal = new Date(passValidadeStr + 'T00:00:00');
+          // Passport needs to be valid for at least 180 days from dataIda
+          const limitValid = new Date(dataIdaParaDoc);
+          limitValid.setDate(limitValid.getDate() + 180);
+          
+          if (passVal < limitValid) {
+            const diffDays = Math.round((passVal.getTime() - dataIdaParaDoc.getTime()) / (1000 * 60 * 60 * 24));
+            docAlerts.push({
+              cliente: v.cliente?.nome || 'Cliente não informado',
+              destino: v.destino,
+              dataIda: dataIdaStr,
+              motivo: `Passaporte expira em ${passValidadeStr.split('-').reverse().join('/')} (apenas ${diffDays} dias após embarque, exige-se 180 dias)`
+            });
+          }
+        } else {
+          // If destination is international (not Brazil), we require passport!
+          const pais = (v.destino_ref?.pais || '').trim().toLowerCase();
+          const isInternacional = pais && pais !== 'brasil' && pais !== 'brazil';
+          if (isInternacional) {
+            docAlerts.push({
+              cliente: v.cliente?.nome || 'Cliente não informado',
+              destino: v.destino,
+              dataIda: dataIdaStr,
+              motivo: 'Viagem internacional pendente de passaporte cadastrado!'
+            });
+          }
+        }
+      }
+
+      // Check post-sales contact status for returned travels
+      if (dVolta && dVolta < hoje && dVolta >= limitePos && v.status === 'pos_viagem') {
+        const cNome = this.consultores.find(c => c.id === (v.consultor_id || v.consultorId))?.nome || 'Não designado';
+        posVendaPendente.push({
+          cliente: v.cliente?.nome || 'Cliente não informado',
+          destino: v.destino,
+          dataVolta: dataVoltaStr,
+          consultor: cNome
+        });
+      }
+    });
+
+    const docAlertsHtml = docAlerts.map(a => `
+      <tr class="border-b border-slate-100 dark:border-slate-800 text-slate-650 dark:text-slate-350">
+        <td class="p-3 font-extrabold text-slate-800 dark:text-slate-100">${a.cliente}</td>
+        <td class="p-3">${a.destino}</td>
+        <td class="p-3">${a.dataIda.split('-').reverse().join('/')}</td>
+        <td class="p-3 font-bold text-rose-500">${a.motivo}</td>
+        <td class="p-3 text-center">
+          <span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-rose-50 text-rose-600 dark:bg-rose-950/30">
+            Alerta Crítico
+          </span>
+        </td>
+      </tr>
+    `).join('');
+
+    const posVendaHtml = posVendaPendente.map(p => `
+      <tr class="border-b border-slate-100 dark:border-slate-800 text-slate-650 dark:text-slate-350">
+        <td class="p-3 font-extrabold text-slate-800 dark:text-slate-100">${p.cliente}</td>
+        <td class="p-3">${p.destino}</td>
+        <td class="p-3">${p.dataVolta.split('-').reverse().join('/')}</td>
+        <td class="p-3 font-semibold">${p.consultor}</td>
+        <td class="p-3 text-center">
+          <span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-amber-50 text-amber-600 dark:bg-amber-950/30">
+            Pós-Venda Pendente
+          </span>
+        </td>
+      </tr>
+    `).join('');
+
+    return `
+      <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-3xl p-6 shadow-sm flex flex-col gap-6 print-full-width">
+        <h2 class="text-lg font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
+          <span>✈️ Controle de SLAs e Jornada de Pós-Venda</span>
+        </h2>
+        
+        <!-- Metric Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-850 text-center border-l-4 border-l-amber-500">
+            <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Pré-Embarque (Próximos 15 dias)</p>
+            <p class="text-lg font-black text-slate-700 dark:text-slate-200 mt-1">${preEmbarqueViagens.length} passageiros</p>
+          </div>
+          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-850 text-center border-l-4 border-l-indigo-500">
+            <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Em Viagem (Acompanhamento Ativo)</p>
+            <p class="text-lg font-black text-indigo-600 dark:text-indigo-400 mt-1">${emViagemViagens.length} passageiros</p>
+          </div>
+          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-850 text-center border-l-4 border-l-emerald-500">
+            <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Retornados (Últimos 15 dias)</p>
+            <p class="text-lg font-black text-slate-700 dark:text-slate-200 mt-1">${posViagemViagens.length} passageiros</p>
+          </div>
+        </div>
+
+        <!-- Section: Document Validation Alerts -->
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider">Validação de Documentos de Embarque Iminente (90 dias)</h3>
+            <span class="px-2 py-0.5 bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-450 rounded-lg text-[10px] font-black">${docAlerts.length} inconsistências</span>
+          </div>
+          <div class="overflow-x-auto custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl">
+            <table class="w-full text-left border-collapse text-xs font-semibold">
+              <thead>
+                <tr class="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-widest font-black">
+                  <th class="p-3">Cliente</th>
+                  <th class="p-3">Destino</th>
+                  <th class="p-3">Data Ida</th>
+                  <th class="p-3">Problema de SLA Documental</th>
+                  <th class="p-3 text-center">Risco</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${docAlertsHtml || `
+                  <tr>
+                    <td colspan="5" class="p-6 text-center text-slate-400 font-extrabold">🎉 Nenhum problema de SLA documental detectado para os próximos embarques.</td>
+                  </tr>
+                `}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Section: Post-sales SLA Alerts -->
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider">Fila de Contatos de Pós-Venda Pendentes (Retornos Recentes)</h3>
+            <span class="px-2 py-0.5 bg-amber-50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-450 rounded-lg text-[10px] font-black">${posVendaPendente.length} pendentes</span>
+          </div>
+          <div class="overflow-x-auto custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl">
+            <table class="w-full text-left border-collapse text-xs font-semibold">
+              <thead>
+                <tr class="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-widest font-black">
+                  <th class="p-3">Cliente</th>
+                  <th class="p-3">Destino</th>
+                  <th class="p-3">Data Retorno</th>
+                  <th class="p-3">Consultor Responsável</th>
+                  <th class="p-3 text-center">Status SLA</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${posVendaHtml || `
+                  <tr>
+                    <td colspan="5" class="p-6 text-center text-slate-400 font-extrabold">🎉 Todos os clientes retornados no período já receberam atendimento de pós-venda.</td>
+                  </tr>
+                `}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  // ==========================================
+  // VIEW: 10. RELATÓRIO DE GAMIFICAÇÃO
+  // ==========================================
+  private renderGamificacao(data: any): string {
+    const totalConsultores = this.consultores.length || 1;
+    
+    // Process each consultant's progress and badges
+    const ranking = this.consultores.map((c: any) => {
+      const xp = c.xp || 0;
+      const prog = obterProgressoNivel(xp);
+      const cBadges = (data.consultoresBadges || []).filter((b: any) => (b.profile_id || b.profileId) === c.id).map((b: any) => b.badge_key);
+      return {
+        ...c,
+        xp,
+        nivel: prog.nivel,
+        prog,
+        badges: cBadges,
+        badgesCount: cBadges.length
+      };
+    });
+
+    // Sort: Level desc, then XP desc
+    ranking.sort((a, b) => {
+      if (b.nivel !== a.nivel) return b.nivel - a.nivel;
+      return b.prog.xpAtual - a.prog.xpAtual;
+    });
+
+    // Compute metrics
+    const mediaXp = Math.round(ranking.reduce((sum, c) => sum + c.xp, 0) / ranking.length);
+    
+    let topDecoratedName = 'Nenhum';
+    let maxBadges = -1;
+    ranking.forEach(c => {
+      if (c.badgesCount > maxBadges) {
+        maxBadges = c.badgesCount;
+        topDecoratedName = c.nome;
+      }
+    });
+
+    // Count achievements per badge definition
+    const badgeUnlocks: Record<string, string[]> = {};
+    BADGE_DEFINITIONS.forEach(b => {
+      badgeUnlocks[b.key] = [];
+    });
+
+    ranking.forEach(c => {
+      c.badges.forEach((bKey: string) => {
+        if (badgeUnlocks[bKey]) {
+          badgeUnlocks[bKey].push(c.nome);
+        }
+      });
+    });
+
+    // Find rarest badge (unlocked by > 0 people, but with lowest count)
+    let rarestBadgeName = 'Nenhuma';
+    let rarestBadgeEmoji = '🏆';
+    let minUnlocks = Infinity;
+    
+    Object.entries(badgeUnlocks).forEach(([key, list]) => {
+      const count = list.length;
+      if (count > 0 && count < minUnlocks) {
+        minUnlocks = count;
+        const def = BADGE_DEFINITIONS.find(b => b.key === key);
+        if (def) {
+          rarestBadgeName = def.nome;
+          rarestBadgeEmoji = def.emoji;
+        }
+      }
+    });
+
+    if (minUnlocks === Infinity) {
+      rarestBadgeName = 'Nenhuma conquista';
+      rarestBadgeEmoji = '🔒';
+    }
+
+    // Leaderboard Rows
+    const leaderboardRows = ranking.map((c, index) => {
+      const pct = Math.round(c.prog.percent);
+      const isTop = index === 0;
+      const rankBadge = isTop ? '👑' : `#${index + 1}`;
+      const rankColor = isTop ? 'text-amber-500 font-black' : 'text-slate-400';
+      const formattedXp = c.xp.toLocaleString('pt-BR');
+      
+      return `
+        <tr class="border-b border-slate-100 dark:border-slate-800 text-slate-650 dark:text-slate-350">
+          <td class="p-3 text-center ${rankColor}">${rankBadge}</td>
+          <td class="p-3 flex items-center gap-3">
+            <span class="text-xl">${c.prog.patenteEmoji}</span>
+            <div>
+              <p class="font-extrabold text-slate-800 dark:text-slate-100">${c.nome}</p>
+              <p class="text-[10px] text-slate-450 dark:text-slate-500 font-semibold">${c.email}</p>
+            </div>
+          </td>
+          <td class="p-3 text-center font-extrabold text-indigo-600 dark:text-indigo-400">Nível ${c.nivel}</td>
+          <td class="p-3 font-semibold text-slate-600 dark:text-slate-400">${c.prog.patente}</td>
+          <td class="p-3 font-bold">${formattedXp} XP</td>
+          <td class="p-3 w-1/4">
+            <div class="space-y-1">
+              <div class="flex justify-between text-[10px] text-slate-400 font-bold">
+                <span>${c.prog.xpAtual} / ${c.prog.xpProximoNivel} XP</span>
+                <span>${pct}%</span>
+              </div>
+              <div class="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                <div class="bg-indigo-600 h-full rounded-full" style="width: ${pct}%"></div>
+              </div>
+            </div>
+          </td>
+          <td class="p-3 text-center font-black text-emerald-600">${c.badgesCount} conquistas</td>
+        </tr>
+      `;
+    }).join('');
+
+    // Badge Analytics Rows
+    const badgeRows = BADGE_DEFINITIONS.map(b => {
+      const list = badgeUnlocks[b.key] || [];
+      const count = list.length;
+      const rate = Math.round((count / totalConsultores) * 100);
+      const unlockedByText = count > 0 
+        ? list.map(name => `<span class="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-[10px] rounded-lg font-bold">${name}</span>`).join(' ')
+        : `<span class="text-slate-400 dark:text-slate-500 italic text-[11px]">Ninguém conquistou ainda</span>`;
+        
+      return `
+        <tr class="border-b border-slate-100 dark:border-slate-800 text-slate-650 dark:text-slate-350">
+          <td class="p-3 text-2xl text-center">${b.emoji}</td>
+          <td class="p-3">
+            <p class="font-extrabold text-slate-850 dark:text-slate-100">${b.nome}</p>
+            <p class="text-[10px] text-slate-450 dark:text-slate-500 font-semibold">${b.descricao}</p>
+          </td>
+          <td class="p-3 font-bold text-slate-600 dark:text-slate-400">${b.categoria}</td>
+          <td class="p-3 text-center font-extrabold text-indigo-650">${rate}% (${count} de ${totalConsultores})</td>
+          <td class="p-3">${unlockedByText}</td>
+        </tr>
+      `;
+    }).join('');
+
+    return `
+      <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-3xl p-6 shadow-sm flex flex-col gap-6 print-full-width">
+        <h2 class="text-lg font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
+          <span>🏆 Auditoria de Gamificação e Desempenho da Equipe</span>
+        </h2>
+        
+        <!-- Metric Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-850 text-center">
+            <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Média de XP da Equipe</p>
+            <p class="text-lg font-black text-indigo-650 dark:text-indigo-400 mt-1">${mediaXp.toLocaleString('pt-BR')} XP</p>
+          </div>
+          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-850 text-center">
+            <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Mais Condecorado(a)</p>
+            <p class="text-lg font-black text-emerald-650 mt-1 truncate">${topDecoratedName} (${maxBadges} medalhas)</p>
+          </div>
+          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-850 text-center">
+            <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Medalha Mais Rara Ativa</p>
+            <p class="text-lg font-black text-amber-600 mt-1 truncate flex items-center justify-center gap-1">
+              <span>${rarestBadgeEmoji}</span> <span>${rarestBadgeName}</span>
+            </p>
+          </div>
+        </div>
+
+        <!-- Section: Leaderboard -->
+        <div class="space-y-3">
+          <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider">Ranking Geral de Engajamento</h3>
+          <div class="overflow-x-auto custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl">
+            <table class="w-full text-left border-collapse text-xs font-semibold">
+              <thead>
+                <tr class="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-widest font-black">
+                  <th class="p-3 text-center w-12">Posição</th>
+                  <th class="p-3">Consultor</th>
+                  <th class="p-3 text-center">Nível</th>
+                  <th class="p-3">Patente</th>
+                  <th class="p-3">XP Total</th>
+                  <th class="p-3">Progresso do Nível</th>
+                  <th class="p-3 text-center">Conquistas</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${leaderboardRows}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Section: Badge Analytics -->
+        <div class="space-y-3">
+          <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider">Distribuição e Adoção de Medalhas (Badge Analytics)</h3>
+          <div class="overflow-x-auto custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl">
+            <table class="w-full text-left border-collapse text-xs font-semibold">
+              <thead>
+                <tr class="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-widest font-black">
+                  <th class="p-3 text-center w-12">Medalha</th>
+                  <th class="p-3">Nome / Detalhe</th>
+                  <th class="p-3">Categoria</th>
+                  <th class="p-3 text-center">Taxa de Adoção</th>
+                  <th class="p-3">Consultores Condecorados</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${badgeRows}
               </tbody>
             </table>
           </div>
@@ -1269,15 +2144,17 @@ export class RelatoriosPage {
       csvContent += `Em Andamento;${values.em_andamento};45%;${values.em_andamento * 0.45}\n`;
       csvContent += `Aguardando;${values.aguardando};75%;${values.aguardando * 0.75}\n`;
     } else if (this.activeTab === 'fornecedores') {
-      csvContent += 'Fornecedor;Total Vendido;Reembolsos;Taxa Incidencia\n';
-      const stats: Record<string, { sold: number, refCount: number, salesCount: number }> = {};
+      csvContent += 'Fornecedor;Total Vendido (R$);Custo Total (R$);Lucro Liquido (R$);Margem Média (%);Reembolsos;Taxa Incidencia\n';
+      const stats: Record<string, { sold: number, custo: number, lucro: number, refCount: number, salesCount: number }> = {};
       data.viagens.forEach((v: any) => {
         if (v.produtos) {
           v.produtos.forEach((p: any) => {
             const supplier = p.fornecedor || 'Desconhecido';
-            if (!stats[supplier]) stats[supplier] = { sold: 0, refCount: 0, salesCount: 0 };
+            if (!stats[supplier]) stats[supplier] = { sold: 0, custo: 0, lucro: 0, refCount: 0, salesCount: 0 };
             if (p.status !== 'cancelado') {
               stats[supplier].sold += (p.valorVenda || 0);
+              stats[supplier].custo += (p.valorCusto || p.valor_custo || 0);
+              stats[supplier].lucro += ((p.comissao || 0) + (p.markup || 0) + (p.rav || 0));
               stats[supplier].salesCount++;
             }
           });
@@ -1285,13 +2162,155 @@ export class RelatoriosPage {
       });
       data.reembolsos.forEach((r: any) => {
         const supplier = r.produto?.fornecedor || 'Desconhecido';
-        if (!stats[supplier]) stats[supplier] = { sold: 0, refCount: 0, salesCount: 0 };
+        if (!stats[supplier]) stats[supplier] = { sold: 0, custo: 0, lucro: 0, refCount: 0, salesCount: 0 };
         stats[supplier].refCount++;
       });
 
       Object.entries(stats).forEach(([supp, item]) => {
         const rate = item.salesCount > 0 ? Math.round((item.refCount / item.salesCount) * 100) : 0;
-        csvContent += `"${supp}";${item.sold};${item.refCount};"${rate}%"\n`;
+        const margin = item.sold > 0 ? Math.round((item.lucro / item.sold) * 100) : 0;
+        csvContent += `"${supp}";${item.sold};${item.custo};${item.lucro};"${margin}%";${item.refCount};"${rate}%"\n`;
+      });
+    } else if (this.activeTab === 'origens') {
+      csvContent += 'Origem;Leads Criados;Leads Concluidos Ganhos;Taxa Conversao;Receita Realizada (R$);Tiquete Medio (R$)\n';
+      const originStats: Record<string, { count: number, won: number, lost: number, revenue: number }> = {
+        'WhatsApp': { count: 0, won: 0, lost: 0, revenue: 0 },
+        'Instagram': { count: 0, won: 0, lost: 0, revenue: 0 },
+        'Indicação': { count: 0, won: 0, lost: 0, revenue: 0 },
+        'Google': { count: 0, won: 0, lost: 0, revenue: 0 },
+        'Site': { count: 0, won: 0, lost: 0, revenue: 0 },
+        'Outros': { count: 0, won: 0, lost: 0, revenue: 0 }
+      };
+      data.orcamentos.forEach((o: any) => {
+        const orig = o.origem || 'Outros';
+        const k = originStats[orig] ? orig : 'Outros';
+        originStats[k].count++;
+        if (o.subStatus === 'ACEITO' || o.sub_status === 'ACEITO') {
+          originStats[k].won++;
+          originStats[k].revenue += (o.valorViagem || o.valor_viagem || o.valorProposta || o.valor_proposta || 0);
+        } else if (o.subStatus === 'DESISTENCIA' || o.sub_status === 'DESISTENCIA') {
+          originStats[k].lost++;
+        }
+      });
+      Object.entries(originStats).forEach(([orig, stats]) => {
+        const totalFin = stats.won + stats.lost;
+        const conv = totalFin > 0 ? Math.round((stats.won / totalFin) * 100) : 0;
+        const avgTicket = stats.won > 0 ? Math.round(stats.revenue / stats.won) : 0;
+        csvContent += `"${orig}";${stats.count};${stats.won};"${conv}%";${stats.revenue};${avgTicket}\n`;
+      });
+    } else if (this.activeTab === 'auditoria') {
+      csvContent += 'Métrica / Pendência;Cliente / Detalhe;Destino / Localizador;Valor / Detalhamento\n';
+      
+      const viagensAtivas = data.viagens.filter((v: any) => v.status !== 'cancelada');
+      const faturamentoTotal = viagensAtivas.reduce((sum: number, v: any) => sum + (v.valor_total || v.valorTotal || 0), 0);
+      let totalPago = 0;
+      data.locPagamentos.forEach((p: any) => {
+        const v = viagensAtivas.find((item: any) => item.id === p.viagem_id || item.id === p.viagemId);
+        if (v) totalPago += (p.valor || 0);
+      });
+
+      csvContent += `"Faturamento Comercial";"Consolidado";"-";${faturamentoTotal}\n`;
+      csvContent += `"Total Recebido";"Consolidado";"-";${totalPago}\n`;
+      csvContent += `"Saldo Pendente";"Consolidado";"-";${Math.max(0, faturamentoTotal - totalPago)}\n`;
+
+      // Export warnings
+      viagensAtivas.forEach((v: any) => {
+        const clienteNome = v.cliente?.nome || 'Cliente não informado';
+        const destino = v.destino || 'Destino não informado';
+        const vPayments = data.locPagamentos.filter((p: any) => p.viagem_id === v.id || p.viagemId === v.id);
+        const vPaidSum = vPayments.reduce((s: number, p: any) => s + (p.valor || 0), 0);
+        const vTotal = v.valor_total || v.valorTotal || 0;
+        
+        if (vPaidSum < vTotal) {
+          csvContent += `"Pagamento Pendente";"${clienteNome}";"${destino}";"Pendente: R$ ${(vTotal - vPaidSum).toLocaleString('pt-BR')}"\n`;
+        }
+        if (!v.processo_conferido) {
+          csvContent += `"Processo Pendente";"${clienteNome}";"${destino}";"Auditoria de Processo pendente"\n`;
+        }
+        if (v.produtos) {
+          v.produtos.forEach((p: any) => {
+            const loc = (p.codigoReserva || p.codigo_reserva || '').trim().toUpperCase();
+            if (loc) {
+              const conf = data.locConferencias.find((c: any) => (c.viagem_id === v.id || c.viagemId === v.id) && (c.codigo_localizador || '').trim().toUpperCase() === loc);
+              if (!conf || !conf.conferido) {
+                csvContent += `"Conferência Financeira Pendente";"${clienteNome}";"${destino} (LOC ${loc})";"${p.fornecedor} - Venda: R$ ${p.valorVenda.toLocaleString('pt-BR')}"\n`;
+              }
+            }
+          });
+        }
+      });
+    } else if (this.activeTab === 'posvenda') {
+      csvContent += 'Categoria;Cliente;Destino;Data Evento;Detalhes\n';
+      
+      const hoje = new Date();
+      hoje.setHours(0, 0, 0, 0);
+      const limitePre = new Date();
+      limitePre.setDate(hoje.getDate() + 15);
+      const limitePos = new Date();
+      limitePos.setDate(hoje.getDate() - 15);
+
+      data.viagens.forEach((v: any) => {
+        if (v.status === 'cancelada') return;
+        const dataIdaStr = v.data_ida || v.dataIda;
+        const dataVoltaStr = v.data_volta || v.dataVolta;
+        if (!dataIdaStr) return;
+
+        const dIda = new Date(dataIdaStr + 'T00:00:00');
+        const dVolta = dataVoltaStr ? new Date(dataVoltaStr + 'T23:59:59') : null;
+        const clienteNome = v.cliente?.nome || 'Cliente não informado';
+
+        if (dIda >= hoje && dIda <= limitePre) {
+          csvContent += `"Pré-Embarque";"${clienteNome}";"${v.destino}";"${dataIdaStr}";"Embarque em breve"\n`;
+        } else if (dIda < hoje && dVolta && dVolta >= hoje) {
+          csvContent += `"Em Viagem";"${clienteNome}";"${v.destino}";"${dataIdaStr} a ${dataVoltaStr}";"Acompanhamento ativo"\n`;
+        } else if (dVolta && dVolta < hoje && dVolta >= limitePos) {
+          csvContent += `"Pós-Viagem";"${clienteNome}";"${v.destino}";"${dataVoltaStr}";"Retorno recente"\n`;
+        }
+
+        // Passport alerts
+        const passValidadeStr = v.cliente?.passaporteValidade || v.cliente?.passaporte_validade;
+        if (dIda >= hoje && (dIda.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24) <= 90) {
+          if (passValidadeStr) {
+            const passVal = new Date(passValidadeStr + 'T00:00:00');
+            const limitValid = new Date(dIda);
+            limitValid.setDate(limitValid.getDate() + 180);
+            if (passVal < limitValid) {
+              csvContent += `"Alerta Passaporte";"${clienteNome}";"${v.destino}";"${passValidadeStr}";"Expira em breve após embarque"\n`;
+            }
+          } else {
+            const pais = (v.destino_ref?.pais || '').trim().toLowerCase();
+            const isInternacional = pais && pais !== 'brasil' && pais !== 'brazil';
+            if (isInternacional) {
+              csvContent += `"Alerta Passaporte";"${clienteNome}";"${v.destino}";"-";"Viagem internacional sem passaporte cadastrado"\n`;
+            }
+          }
+        }
+
+        // Pending post-sale contact
+        if (dVolta && dVolta < hoje && dVolta >= limitePos && v.status === 'pos_viagem') {
+          csvContent += `"Pós-Venda Pendente";"${clienteNome}";"${v.destino}";"${dataVoltaStr}";"Retornou em pos_viagem"\n`;
+        }
+      });
+    } else if (this.activeTab === 'gamificacao') {
+      csvContent += 'Posição;Consultor;Nível;Patente;XP Total;Conquistas\n';
+      const ranking = this.consultores.map((c: any) => {
+        const xp = c.xp || 0;
+        const prog = obterProgressoNivel(xp);
+        const cBadges = (data.consultoresBadges || []).filter((b: any) => (b.profile_id || b.profileId) === c.id).map((b: any) => b.badge_key);
+        return {
+          ...c,
+          xp,
+          nivel: prog.nivel,
+          prog,
+          badgesCount: cBadges.length
+        };
+      });
+      ranking.sort((a, b) => {
+        if (b.nivel !== a.nivel) return b.nivel - a.nivel;
+        return b.prog.xpAtual - a.prog.xpAtual;
+      });
+      ranking.forEach((c, index) => {
+        csvContent += `${index + 1};"${c.nome}";${c.nivel};"${c.prog.patente}";${c.xp};${c.badgesCount}\n`;
       });
     }
 
