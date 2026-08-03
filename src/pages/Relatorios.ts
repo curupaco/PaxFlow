@@ -191,6 +191,8 @@ export class RelatoriosPage {
         data_volta: '2026-07-20',
         valor_total: 12000,
         status: 'confirmada',
+        data_financeiro: '2026-06-15',
+        dataFinanceiro: '2026-06-15',
         produtos: [
           { fornecedor: 'Latam', valorCusto: 3200, valorVenda: 4000, comissao: 200, markup: 600, rav: 0, tipo: 'Voo' },
           { fornecedor: 'Disney Resort', valorCusto: 6000, valorVenda: 8000, comissao: 800, markup: 1200, rav: 0, tipo: 'Hotel' }
@@ -204,6 +206,8 @@ export class RelatoriosPage {
         data_volta: '2026-08-25',
         valor_total: 21500,
         status: 'confirmada',
+        data_financeiro: '2026-06-22',
+        dataFinanceiro: '2026-06-22',
         produtos: [
           { fornecedor: 'Alitalia', valorCusto: 7000, valorVenda: 8500, comissao: 300, markup: 1200, rav: 0, tipo: 'Voo' },
           { fornecedor: 'Marriott Rome', valorCusto: 10000, valorVenda: 13000, comissao: 1500, markup: 1500, rav: 0, tipo: 'Hotel' }
@@ -244,7 +248,10 @@ export class RelatoriosPage {
 
     return {
       orcamentos: this.orcamentos.filter(o => inRange(o.created_at || o.createdAt) && matchConsultant(o.consultor_id || o.consultorId)),
-      viagens: this.viagens.filter(v => inRange(v.data_ida || v.dataIda) && matchConsultant(v.consultor_id || v.consultorId)),
+      viagens: this.viagens.filter(v => {
+        const date = v.data_financeiro || v.dataFinanceiro || v.data_ida || v.dataIda;
+        return inRange(date) && matchConsultant(v.consultor_id || v.consultorId);
+      }),
       reembolsos: this.reembolsos.filter(r => {
         const date = r.created_at || r.createdAt;
         const consultorId = r.viagem?.consultor_id || r.consultor_solicitante_id || r.consultorSolicitanteId;
@@ -496,17 +503,19 @@ export class RelatoriosPage {
               </tr>
             </thead>
             <tbody>
-              ${this.consultores.map(c => {
-                const subOrc = this.orcamentos.filter(o => (o.consultor_id || o.consultorId) === c.id);
-                const subVia = this.viagens.filter(v => (v.consultor_id || v.consultorId) === c.id);
-                
-                const cAceito = subOrc.filter(o => o.sub_status === 'ACEITO' || o.subStatus === 'ACEITO').length;
-                const cRecuso = subOrc.filter(o => o.sub_status === 'DESISTENCIA' || o.subStatus === 'DESISTENCIA').length;
-                const cConv = (cAceito + cRecuso) > 0 ? Math.round((cAceito / (cAceito + cRecuso)) * 100) : 0;
-                
-                const cSales = subVia.reduce((sum, v) => sum + (v.valor_total || v.valorTotal || 0), 0);
-                
-                return `
+              ${this.consultores
+                .filter(c => this.consultorIdFilter === 'todos' || c.id === this.consultorIdFilter)
+                .map(c => {
+                  const subOrc = data.orcamentos.filter((o: any) => (o.consultor_id || o.consultorId) === c.id);
+                  const subVia = data.viagens.filter((v: any) => (v.consultor_id || v.consultorId) === c.id);
+                  
+                  const cAceito = subOrc.filter((o: any) => o.sub_status === 'ACEITO' || o.subStatus === 'ACEITO').length;
+                  const cRecuso = subOrc.filter((o: any) => o.sub_status === 'DESISTENCIA' || o.subStatus === 'DESISTENCIA').length;
+                  const cConv = (cAceito + cRecuso) > 0 ? Math.round((cAceito / (cAceito + cRecuso)) * 100) : 0;
+                  
+                  const cSales = subVia.reduce((sum: number, v: any) => sum + (v.valor_total || v.valorTotal || 0), 0);
+                  
+                  return `
                   <tr class="border-b border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-350">
                     <td class="p-3 font-extrabold text-slate-800 dark:text-slate-100">${c.nome}</td>
                     <td class="p-3">${subOrc.length}</td>
@@ -853,8 +862,13 @@ export class RelatoriosPage {
   // VIEW: 5. PREVISÕES PREDITIVAS
   // ==========================================
   private renderPrevisoes(data: any): string {
+    const matchConsultant = (id: string) => {
+      if (this.consultorIdFilter === 'todos') return true;
+      return id === this.consultorIdFilter;
+    };
+
     // 1. Pipeline ativo
-    const pipelineOrc = this.orcamentos.filter((o: any) => o.status !== 'CONCLUIDO');
+    const pipelineOrc = this.orcamentos.filter((o: any) => o.status !== 'CONCLUIDO' && matchConsultant(o.consultor_id || o.consultorId));
     const valorPipelineBruto = pipelineOrc.reduce((acc, o) => acc + (o.valorProposta || o.valor_proposta || 0), 0);
 
     // Probabilidades por fase do funil
@@ -888,7 +902,7 @@ export class RelatoriosPage {
     const proximosEmbarques = this.viagens.filter((v: any) => {
       if (!v.data_ida && !v.dataIda) return false;
       const dataIda = new Date(v.data_ida || v.dataIda);
-      return dataIda >= hoje && dataIda <= limite30Dias && v.status !== 'cancelada';
+      return dataIda >= hoje && dataIda <= limite30Dias && v.status !== 'cancelada' && matchConsultant(v.consultor_id || v.consultorId);
     });
 
     const valorEmbarquesProximos = proximosEmbarques.reduce((acc, v) => acc + (v.valor_total || v.valorTotal || 0), 0);
@@ -975,7 +989,7 @@ export class RelatoriosPage {
     const supplierStats: Record<string, { totalSold: number, salesCount: number, refundCount: number, retentionTax: number }> = {};
     
     // Fill from viajes product suppliers
-    this.viagens.forEach((v: any) => {
+    data.viagens.forEach((v: any) => {
       if (v.produtos) {
         v.produtos.forEach((p: any) => {
           const supplier = p.fornecedor || 'Desconhecido';
@@ -991,7 +1005,7 @@ export class RelatoriosPage {
     });
 
     // Fill refund statistics
-    this.reembolsos.forEach((r: any) => {
+    data.reembolsos.forEach((r: any) => {
       const supplier = r.produto?.fornecedor || 'Desconhecido';
       if (!supplierStats[supplier]) {
         supplierStats[supplier] = { totalSold: 0, salesCount: 0, refundCount: 0, retentionTax: 0 };
@@ -1045,7 +1059,7 @@ export class RelatoriosPage {
           </div>
           <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-850 text-center">
             <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Taxa de Ocorrência Global</p>
-            <p class="text-lg font-black text-rose-600 mt-1">${this.viagens.length > 0 ? Math.round((totalReembolsos / this.viagens.length) * 100) : 0}%</p>
+            <p class="text-lg font-black text-rose-600 mt-1">${data.viagens.length > 0 ? Math.round((totalReembolsos / data.viagens.length) * 100) : 0}%</p>
           </div>
           <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-850 text-center col-span-2 md:col-span-1">
             <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Prejuízo por Taxas de Retenção</p>
@@ -1158,19 +1172,20 @@ export class RelatoriosPage {
 
     if (this.activeTab === 'desempenho') {
       csvContent += 'Consultor;Orcamentos Criados;Fechados Aceitos;Taxa Conversao;Total Vendido (R$)\n';
-      this.consultores.forEach(c => {
-        const subOrc = this.orcamentos.filter(o => (o.consultor_id || o.consultorId) === c.id);
-        const subVia = this.viagens.filter(v => (v.consultor_id || v.consultorId) === c.id);
-        const cAceito = subOrc.filter(o => o.sub_status === 'ACEITO' || o.subStatus === 'ACEITO').length;
-        const cRecuso = subOrc.filter(o => o.sub_status === 'DESISTENCIA' || o.subStatus === 'DESISTENCIA').length;
+      const filteredConsultores = this.consultores.filter(c => this.consultorIdFilter === 'todos' || c.id === this.consultorIdFilter);
+      filteredConsultores.forEach(c => {
+        const subOrc = data.orcamentos.filter((o: any) => (o.consultor_id || o.consultorId) === c.id);
+        const subVia = data.viagens.filter((v: any) => (v.consultor_id || v.consultorId) === c.id);
+        const cAceito = subOrc.filter((o: any) => o.sub_status === 'ACEITO' || o.subStatus === 'ACEITO').length;
+        const cRecuso = subOrc.filter((o: any) => o.sub_status === 'DESISTENCIA' || o.subStatus === 'DESISTENCIA').length;
         const cConv = (cAceito + cRecuso) > 0 ? Math.round((cAceito / (cAceito + cRecuso)) * 100) : 0;
-        const cSales = subVia.reduce((sum, v) => sum + (v.valor_total || v.valorTotal || 0), 0);
+        const cSales = subVia.reduce((sum: number, v: any) => sum + (v.valor_total || v.valorTotal || 0), 0);
         
         csvContent += `"${c.nome}";${subOrc.length};${cAceito};"${cConv}%";${cSales}\n`;
       });
     } else if (this.activeTab === 'prazos') {
       csvContent += 'Alerta;Consultor;Data Evento;Status\n';
-      data.alertas.forEach(a => {
+      data.alertas.forEach((a: any) => {
         csvContent += `"${a.title}";"${a.consultorNome}";"${a.dateStr}";"${a.arquivado ? 'Arquivado' : 'Ativo'}"\n`;
       });
     } else if (this.activeTab === 'faturamento') {
@@ -1200,7 +1215,11 @@ export class RelatoriosPage {
       });
     } else if (this.activeTab === 'previsoes') {
       csvContent += 'Fase;Valor Total;Probabilidade;Valor Ponderado\n';
-      const pipelineOrc = this.orcamentos.filter((o: any) => o.status !== 'CONCLUIDO');
+      const matchConsultant = (id: string) => {
+        if (this.consultorIdFilter === 'todos') return true;
+        return id === this.consultorIdFilter;
+      };
+      const pipelineOrc = this.orcamentos.filter((o: any) => o.status !== 'CONCLUIDO' && matchConsultant(o.consultor_id || o.consultorId));
       
       let values = { solicitado: 0, em_andamento: 0, aguardando: 0 };
       pipelineOrc.forEach((o: any) => {
@@ -1216,7 +1235,7 @@ export class RelatoriosPage {
     } else if (this.activeTab === 'fornecedores') {
       csvContent += 'Fornecedor;Total Vendido;Reembolsos;Taxa Incidencia\n';
       const stats: Record<string, { sold: number, refCount: number, salesCount: number }> = {};
-      this.viagens.forEach((v: any) => {
+      data.viagens.forEach((v: any) => {
         if (v.produtos) {
           v.produtos.forEach((p: any) => {
             const supplier = p.fornecedor || 'Desconhecido';
