@@ -1,7 +1,7 @@
 import { supabase, getSessaoAtual } from '../services/supabase';
 import { PerfilConsultor } from '../types';
 import { InboxService } from '../services/inboxService';
-import { formatBrDateToIso } from '../utils/masks';
+import { formatBrDateToIso, formatIsoDateToBr, renderDateInputHTML, formatDateBr } from '../utils/masks';
 
 if (typeof document !== 'undefined') {
   const style = document.createElement('style');
@@ -313,28 +313,33 @@ export class RelatoriosPage {
             <!-- Date range start -->
             <div class="space-y-1 flex-1">
               <label class="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Data Início</label>
-              <input id="filter-data-inicio" type="date" value="${this.dataInicio}" class="w-full text-xs font-bold px-3 py-2 border border-slate-200 dark:border-slate-750 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100" />
+              ${renderDateInputHTML('filter-data-inicio', this.dataInicio, 'DD/MM/AAAA', true)}
             </div>
 
             <!-- Date range end -->
             <div class="space-y-1 flex-1">
               <label class="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Data Fim</label>
-              <input id="filter-data-fim" type="date" value="${this.dataFim}" class="w-full text-xs font-bold px-3 py-2 border border-slate-200 dark:border-slate-750 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100" />
+              ${renderDateInputHTML('filter-data-fim', this.dataFim, 'DD/MM/AAAA', true)}
             </div>
 
             <!-- Team / Consultant filter -->
             <div class="space-y-1 flex-1">
               <label class="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Consultor / Equipe</label>
-              <select id="filter-consultores" class="w-full text-xs font-bold px-3 py-2 border border-slate-200 dark:border-slate-750 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100" ${this.perfil?.role !== 'admin' ? 'disabled' : ''}>
+              <select id="filter-consultores" class="w-full text-xs font-bold px-3.5 py-2.5 border border-slate-200 dark:border-slate-750 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition duration-155" ${this.perfil?.role !== 'admin' ? 'disabled' : ''}>
                 <option value="todos" ${this.consultorIdFilter === 'todos' ? 'selected' : ''}>Consolidado (Todos os Consultores)</option>
                 ${this.consultores.map(c => `<option value="${c.id}" ${this.consultorIdFilter === c.id ? 'selected' : ''}>${c.nome}</option>`).join('')}
               </select>
             </div>
           </div>
           
-          <button id="btn-limpar-filtros" class="px-4 py-2 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-850 text-slate-500 dark:text-slate-400 text-xs font-extrabold rounded-xl transition flex-shrink-0">
-            Limpar
-          </button>
+          <div class="flex items-center gap-2 flex-shrink-0">
+            <button id="btn-limpar-filtros" class="px-4 py-2.5 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-850 text-slate-500 dark:text-slate-400 text-xs font-black rounded-xl transition flex-shrink-0">
+              Limpar
+            </button>
+            <button id="btn-aplicar-filtros" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black rounded-xl transition shadow-md shadow-indigo-600/10 flex items-center justify-center gap-1.5 flex-shrink-0">
+              🔍 Aplicar
+            </button>
+          </div>
         </div>
 
         <!-- Dashboard Workspace Grid (Left Menu Tabs & Right View Panel) -->
@@ -1115,24 +1120,80 @@ export class RelatoriosPage {
       });
     });
 
-    // 2. Global filters change
+    // 2. Date input masks
     const inputInicio = document.getElementById('filter-data-inicio') as HTMLInputElement;
-    inputInicio?.addEventListener('change', () => {
-      this.dataInicio = inputInicio.value;
-      this.render();
-      this.setupEventListeners();
-    });
+    if (inputInicio) {
+      inputInicio.addEventListener('input', (e) => {
+        const target = e.target as HTMLInputElement;
+        let val = target.value;
+        let digits = val.replace(/\D/g, '');
+        if (digits.length > 8) {
+          digits = digits.slice(0, 8);
+        }
+        target.value = formatDateBr(digits);
+      });
+    }
 
     const inputFim = document.getElementById('filter-data-fim') as HTMLInputElement;
-    inputFim?.addEventListener('change', () => {
-      this.dataFim = inputFim.value;
-      this.render();
-      this.setupEventListeners();
-    });
+    if (inputFim) {
+      inputFim.addEventListener('input', (e) => {
+        const target = e.target as HTMLInputElement;
+        let val = target.value;
+        let digits = val.replace(/\D/g, '');
+        if (digits.length > 8) {
+          digits = digits.slice(0, 8);
+        }
+        target.value = formatDateBr(digits);
+      });
+    }
 
-    const selectConsultor = document.getElementById('filter-consultores') as HTMLSelectElement;
-    selectConsultor?.addEventListener('change', () => {
-      this.consultorIdFilter = selectConsultor.value;
+    // 3. Apply filters button
+    document.getElementById('btn-aplicar-filtros')?.addEventListener('click', () => {
+      const inputInicioEl = document.getElementById('filter-data-inicio') as HTMLInputElement;
+      const inputFimEl = document.getElementById('filter-data-fim') as HTMLInputElement;
+      const selectConsultorVal = (document.getElementById('filter-consultores') as HTMLInputElement)?.value;
+      
+      const errorInicioEl = document.getElementById('filter-data-inicio-error');
+      const errorFimEl = document.getElementById('filter-data-fim-error');
+      
+      let hasError = false;
+      
+      const isoInicio = formatBrDateToIso(inputInicioEl?.value || '');
+      if (!isoInicio) {
+        if (errorInicioEl) {
+          errorInicioEl.textContent = 'Data inválida (use DD/MM/AAAA)';
+          errorInicioEl.classList.remove('hidden');
+        }
+        inputInicioEl?.classList.add('border-rose-500', 'focus:ring-rose-500');
+        hasError = true;
+      } else {
+        if (errorInicioEl) {
+          errorInicioEl.classList.add('hidden');
+        }
+        inputInicioEl?.classList.remove('border-rose-500', 'focus:ring-rose-500');
+      }
+      
+      const isoFim = formatBrDateToIso(inputFimEl?.value || '');
+      if (!isoFim) {
+        if (errorFimEl) {
+          errorFimEl.textContent = 'Data inválida (use DD/MM/AAAA)';
+          errorFimEl.classList.remove('hidden');
+        }
+        inputFimEl?.classList.add('border-rose-500', 'focus:ring-rose-500');
+        hasError = true;
+      } else {
+        if (errorFimEl) {
+          errorFimEl.classList.add('hidden');
+        }
+        inputFimEl?.classList.remove('border-rose-500', 'focus:ring-rose-500');
+      }
+      
+      if (hasError) return;
+      
+      this.dataInicio = isoInicio!;
+      this.dataFim = isoFim!;
+      if (selectConsultorVal) this.consultorIdFilter = selectConsultorVal;
+      
       this.render();
       this.setupEventListeners();
     });
