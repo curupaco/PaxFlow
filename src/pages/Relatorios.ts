@@ -293,11 +293,11 @@ export class RelatoriosPage {
     const start = new Date(this.dataInicio + 'T00:00:00');
     const end = new Date(this.dataFim + 'T23:59:59');
 
-    // Helper to check date range
+    // Helper to check date range (timezone-safe alfanumeric comparison)
     const inRange = (dateStr: string) => {
       if (!dateStr) return false;
-      const d = new Date(dateStr);
-      return d >= start && d <= end;
+      const cleanDate = dateStr.substring(0, 10);
+      return cleanDate >= this.dataInicio && cleanDate <= this.dataFim;
     };
 
     // Helper to check consultant filter

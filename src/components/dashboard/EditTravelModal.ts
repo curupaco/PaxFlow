@@ -1534,7 +1534,7 @@ export class EditTravelModal {
         fornecedor: editFornecedor,
         descricao: editDescricao,
         codigo_reserva: editReserva || null,
-        valor_custo: 0,
+        valor_custo: tarifa + taxa,
         valor_venda: venda,
         tarifa: tarifa,
         taxa: taxa,
