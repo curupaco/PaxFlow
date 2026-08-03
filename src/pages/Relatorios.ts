@@ -1,7 +1,7 @@
 import { supabase, getSessaoAtual } from '../services/supabase';
 import { PerfilConsultor } from '../types';
 import { InboxService } from '../services/inboxService';
-import { formatBrDateToIso, formatIsoDateToBr, renderDateInputHTML, formatDateBr } from '../utils/masks';
+import { formatBrDateToIso } from '../utils/masks';
 
 if (typeof document !== 'undefined') {
   const style = document.createElement('style');
@@ -313,13 +313,15 @@ export class RelatoriosPage {
             <!-- Date range start -->
             <div class="space-y-1 flex-1">
               <label class="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Data Início</label>
-              ${renderDateInputHTML('filter-data-inicio', this.dataInicio, 'DD/MM/AAAA', true)}
+              <input id="filter-data-inicio" type="date" value="${this.dataInicio}" class="w-full text-xs font-bold px-3 py-2.5 border border-slate-200 dark:border-slate-750 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition duration-155" />
+              <p id="filter-data-inicio-error" class="hidden text-xs text-rose-500 font-bold mt-1.5"></p>
             </div>
 
             <!-- Date range end -->
             <div class="space-y-1 flex-1">
               <label class="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Data Fim</label>
-              ${renderDateInputHTML('filter-data-fim', this.dataFim, 'DD/MM/AAAA', true)}
+              <input id="filter-data-fim" type="date" value="${this.dataFim}" class="w-full text-xs font-bold px-3 py-2.5 border border-slate-200 dark:border-slate-750 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition duration-155" />
+              <p id="filter-data-fim-error" class="hidden text-xs text-rose-500 font-bold mt-1.5"></p>
             </div>
 
             <!-- Team / Consultant filter -->
@@ -1120,33 +1122,6 @@ export class RelatoriosPage {
       });
     });
 
-    // 2. Date input masks
-    const inputInicio = document.getElementById('filter-data-inicio') as HTMLInputElement;
-    if (inputInicio) {
-      inputInicio.addEventListener('input', (e) => {
-        const target = e.target as HTMLInputElement;
-        let val = target.value;
-        let digits = val.replace(/\D/g, '');
-        if (digits.length > 8) {
-          digits = digits.slice(0, 8);
-        }
-        target.value = formatDateBr(digits);
-      });
-    }
-
-    const inputFim = document.getElementById('filter-data-fim') as HTMLInputElement;
-    if (inputFim) {
-      inputFim.addEventListener('input', (e) => {
-        const target = e.target as HTMLInputElement;
-        let val = target.value;
-        let digits = val.replace(/\D/g, '');
-        if (digits.length > 8) {
-          digits = digits.slice(0, 8);
-        }
-        target.value = formatDateBr(digits);
-      });
-    }
-
     // 3. Apply filters button
     document.getElementById('btn-aplicar-filtros')?.addEventListener('click', () => {
       const inputInicioEl = document.getElementById('filter-data-inicio') as HTMLInputElement;
@@ -1158,10 +1133,10 @@ export class RelatoriosPage {
       
       let hasError = false;
       
-      const isoInicio = formatBrDateToIso(inputInicioEl?.value || '');
-      if (!isoInicio) {
+      const valInicio = inputInicioEl?.value || '';
+      if (!valInicio) {
         if (errorInicioEl) {
-          errorInicioEl.textContent = 'Data inválida (use DD/MM/AAAA)';
+          errorInicioEl.textContent = 'Selecione a data de início';
           errorInicioEl.classList.remove('hidden');
         }
         inputInicioEl?.classList.add('border-rose-500', 'focus:ring-rose-500');
@@ -1173,10 +1148,10 @@ export class RelatoriosPage {
         inputInicioEl?.classList.remove('border-rose-500', 'focus:ring-rose-500');
       }
       
-      const isoFim = formatBrDateToIso(inputFimEl?.value || '');
-      if (!isoFim) {
+      const valFim = inputFimEl?.value || '';
+      if (!valFim) {
         if (errorFimEl) {
-          errorFimEl.textContent = 'Data inválida (use DD/MM/AAAA)';
+          errorFimEl.textContent = 'Selecione a data de fim';
           errorFimEl.classList.remove('hidden');
         }
         inputFimEl?.classList.add('border-rose-500', 'focus:ring-rose-500');
@@ -1190,8 +1165,8 @@ export class RelatoriosPage {
       
       if (hasError) return;
       
-      this.dataInicio = isoInicio!;
-      this.dataFim = isoFim!;
+      this.dataInicio = valInicio;
+      this.dataFim = valFim;
       if (selectConsultorVal) this.consultorIdFilter = selectConsultorVal;
       
       this.render();
