@@ -114,9 +114,6 @@ export class InboxService {
           lem.consultor = profilesList.find((p: any) => p.id === lem.consultor_id);
         }
 
-        // If neither orcamento nor viagem is resolved, skip
-        if (!lem.orcamento && !lem.viagem) return;
-
         const dataFormatada = new Date(lem.data_lembrete + 'T00:00:00').toLocaleDateString('pt-BR');
         const periodosMap: any = { manha: 'Manhã', tarde: 'Tarde', noite: 'Noite' };
         const periodoText = periodosMap[lem.periodo] || lem.periodo;
@@ -177,6 +174,22 @@ export class InboxService {
           } else {
             subject = `Você cadastrou um alerta sobre a viagem de [${clientName} - ${lem.viagem.destino}].`;
             body = `Você cadastrou um alerta sobre a viagem ${detailLink} para o período da <strong>${periodoText}</strong> em <strong>${dataFormatada}</strong>.<br><br>Por favor, clique no link acima para abrir e gerenciar a viagem correspondente.`;
+          }
+        } else {
+          // General reminder (e.g. from direct message, or custom unlinked reminder)
+          typeText = 'Compromisso';
+          targetId = '';
+          detailLink = '';
+
+          if (isCreatedByMe) {
+            subject = `Você agendou um lembrete para ${lem.consultor?.nome || 'Consultor'} [Lembrete Geral].`;
+            body = `Você agendou um lembrete para <strong>${lem.consultor?.nome || 'Consultor'}</strong> para o período da <strong>${periodoText}</strong> em <strong>${dataFormatada}</strong>.<br><br>Este item está delegado a ele(a).`;
+          } else if (isReceivedByMe) {
+            subject = `${criadorNome} agendou um lembrete para você [Lembrete Geral].`;
+            body = `O consultor <strong>${criadorNome}</strong> agendou um lembrete para você para o período da <strong>${periodoText}</strong> em <strong>${dataFormatada}</strong>.`;
+          } else {
+            subject = `Você cadastrou um lembrete [Lembrete Geral].`;
+            body = `Você cadastrou um lembrete para o período da <strong>${periodoText}</strong> em <strong>${dataFormatada}</strong>.`;
           }
         }
 

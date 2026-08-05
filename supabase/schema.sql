@@ -396,21 +396,21 @@ ON public.orcamentos FOR DELETE TO authenticated
 USING ((SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin');
 
 -- Lembretes
-CREATE POLICY "Leitura de lembretes para o próprio consultor ou admin" 
+CREATE POLICY "Leitura de lembretes para o próprio consultor, criador ou admin" 
 ON public.lembretes FOR SELECT TO authenticated 
-USING (consultor_id = auth.uid() OR (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin');
+USING (consultor_id = auth.uid() OR criador_id = auth.uid() OR (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin');
 
-CREATE POLICY "Inserir lembretes para o próprio consultor ou admin" 
+CREATE POLICY "Inserir lembretes para o próprio consultor, criador ou admin" 
 ON public.lembretes FOR INSERT TO authenticated 
-WITH CHECK (auth.uid() = consultor_id OR (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin');
+WITH CHECK (auth.uid() = consultor_id OR auth.uid() = criador_id OR (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin');
 
-CREATE POLICY "Atualizar lembretes para o próprio consultor ou admin" 
+CREATE POLICY "Atualizar lembretes para o próprio consultor, criador ou admin" 
 ON public.lembretes FOR UPDATE TO authenticated 
-USING (auth.uid() = consultor_id OR (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin');
+USING (auth.uid() = consultor_id OR auth.uid() = criador_id OR (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin');
 
-CREATE POLICY "Excluir lembretes para o próprio consultor ou admin" 
+CREATE POLICY "Excluir lembretes para o próprio consultor, criador ou admin" 
 ON public.lembretes FOR DELETE TO authenticated 
-USING (auth.uid() = consultor_id OR (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin');
+USING (auth.uid() = consultor_id OR auth.uid() = criador_id OR (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin');
 
 -- Todo
 CREATE POLICY "Acesso total de colunas todo para autenticados" 
