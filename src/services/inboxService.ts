@@ -58,7 +58,7 @@ export class InboxService {
           *,
           orcamento:orcamentos (*),
           viagem:viagens (*),
-          consultor:profiles (*)
+          consultor:profiles!lembretes_consultor_id_fkey (*)
         `)
         .order('created_at', { ascending: false });
 
