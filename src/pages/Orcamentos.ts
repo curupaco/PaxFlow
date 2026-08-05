@@ -36,9 +36,35 @@ export class OrcamentosPage {
   private selectedConsultantId: string = 'todos';
   private filterConcluido: 'todos' | 'fechada' | 'desistencia' = 'todos';
   private activeColumnMobile: 'SOLICITADO' | 'EM_ANDAMENTO' | 'AGUARDANDO' | 'CONCLUIDO' = 'SOLICITADO';
+  private columnSorts: Record<'SOLICITADO' | 'EM_ANDAMENTO' | 'AGUARDANDO' | 'CONCLUIDO', {
+    field: 'temperatura' | 'nomeCliente' | 'valorProposta' | 'createdAt' | 'consultor' | 'origem';
+    order: 'asc' | 'desc';
+  }> = {
+    SOLICITADO: { field: 'createdAt', order: 'desc' },
+    EM_ANDAMENTO: { field: 'createdAt', order: 'desc' },
+    AGUARDANDO: { field: 'createdAt', order: 'desc' },
+    CONCLUIDO: { field: 'createdAt', order: 'desc' },
+  };
 
   constructor(container: HTMLElement) {
     this.container = container;
+  }
+
+  private loadColumnSorts(): void {
+    const key = `paxflow-orcamentos-sorts-${this.user?.id || 'global'}`;
+    const saved = localStorage.getItem(key);
+    if (saved) {
+      try {
+        this.columnSorts = JSON.parse(saved);
+      } catch (e) {
+        console.error('Erro ao carregar preferências de ordenação:', e);
+      }
+    }
+  }
+
+  private saveColumnSorts(): void {
+    const key = `paxflow-orcamentos-sorts-${this.user?.id || 'global'}`;
+    localStorage.setItem(key, JSON.stringify(this.columnSorts));
   }
 
   /**
@@ -54,6 +80,7 @@ export class OrcamentosPage {
       }
       this.user = user;
       this.perfil = perfil;
+      this.loadColumnSorts();
 
 
 
@@ -372,6 +399,33 @@ export class OrcamentosPage {
       this.render();
     });
 
+    // Eventos de Ordenação das Colunas
+    this.container.querySelectorAll('.select-sort-field').forEach(select => {
+      select.addEventListener('change', (e) => {
+        const el = e.target as HTMLSelectElement;
+        const col = el.dataset.column as 'SOLICITADO' | 'EM_ANDAMENTO' | 'AGUARDANDO' | 'CONCLUIDO';
+        const field = el.value as any;
+        if (col && field) {
+          this.columnSorts[col].field = field;
+          this.saveColumnSorts();
+          this.render();
+        }
+      });
+    });
+
+    this.container.querySelectorAll('.btn-sort-dir').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const el = e.currentTarget as HTMLButtonElement;
+        const col = el.dataset.column as 'SOLICITADO' | 'EM_ANDAMENTO' | 'AGUARDANDO' | 'CONCLUIDO';
+        if (col) {
+          const currentOrder = this.columnSorts[col].order;
+          this.columnSorts[col].order = currentOrder === 'asc' ? 'desc' : 'asc';
+          this.saveColumnSorts();
+          this.render();
+        }
+      });
+    });
+
     // Eventos de abas do Kanban mobile
     this.container.querySelectorAll('.mobile-kanban-tab-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
@@ -382,8 +436,6 @@ export class OrcamentosPage {
         }
       });
     });
-
-
   }
 
   /**
@@ -558,6 +610,73 @@ export class OrcamentosPage {
     });
   }
 
+  private sortColumn(list: Orcamento[], col: 'SOLICITADO' | 'EM_ANDAMENTO' | 'AGUARDANDO' | 'CONCLUIDO'): Orcamento[] {
+    const config = this.columnSorts[col];
+    if (!config) return list;
+
+    const { field, order } = config;
+
+    return [...list].sort((a, b) => {
+      let valA: any = '';
+      let valB: any = '';
+
+      if (field === 'temperatura') {
+        const tempMap = { Frio: 1, Normal: 2, Quente: 3 };
+        valA = tempMap[a.temperatura] || 0;
+        valB = tempMap[b.temperatura] || 0;
+      } else if (field === 'nomeCliente') {
+        valA = (a.nomeCliente || '').trim().toLowerCase();
+        valB = (b.nomeCliente || '').trim().toLowerCase();
+      } else if (field === 'valorProposta') {
+        if (col === 'CONCLUIDO') {
+          valA = a.valorViagem !== undefined && a.valorViagem !== null ? a.valorViagem : (a.valorProposta || 0);
+          valB = b.valorViagem !== undefined && b.valorViagem !== null ? b.valorViagem : (b.valorProposta || 0);
+        } else {
+          valA = a.valorProposta || 0;
+          valB = b.valorProposta || 0;
+        }
+      } else if (field === 'createdAt') {
+        valA = a.createdAt || '';
+        valB = b.createdAt || '';
+      } else if (field === 'consultor') {
+        const nameA = this.consultores.find(c => c.id === a.consultorId)?.nome || '';
+        const nameB = this.consultores.find(c => c.id === b.consultorId)?.nome || '';
+        valA = nameA.trim().toLowerCase();
+        valB = nameB.trim().toLowerCase();
+      } else if (field === 'origem') {
+        valA = (a.origem || '').trim().toLowerCase();
+        valB = (b.origem || '').trim().toLowerCase();
+      }
+
+      if (valA < valB) return order === 'asc' ? -1 : 1;
+      if (valA > valB) return order === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }
+
+  private renderSortControls(col: 'SOLICITADO' | 'EM_ANDAMENTO' | 'AGUARDANDO' | 'CONCLUIDO'): string {
+    const config = this.columnSorts[col];
+    return `
+      <!-- Controles de ordenação da coluna -->
+      <div class="flex items-center justify-between gap-1 mb-4 px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/40 text-[10px] select-none border border-slate-200/30 dark:border-slate-800/20 shrink-0">
+        <div class="flex items-center gap-1">
+          <span class="font-extrabold uppercase text-slate-400 dark:text-slate-500">Ordenar por:</span>
+          <select class="select-sort-field text-[10px] font-bold bg-transparent text-slate-600 dark:text-slate-350 focus:outline-none cursor-pointer" data-column="${col}">
+            <option value="createdAt" ${config.field === 'createdAt' ? 'selected' : ''}>📅 Data Criação</option>
+            <option value="nomeCliente" ${config.field === 'nomeCliente' ? 'selected' : ''}>👤 Passageiro</option>
+            <option value="temperatura" ${config.field === 'temperatura' ? 'selected' : ''}>🔥 Temperatura</option>
+            <option value="valorProposta" ${config.field === 'valorProposta' ? 'selected' : ''}>💰 ${col === 'CONCLUIDO' ? 'Valor Fechado' : 'Valor Proposta'}</option>
+            ${this.perfil?.role === 'admin' ? `<option value="consultor" ${config.field === 'consultor' ? 'selected' : ''}>💼 Consultor</option>` : ''}
+            <option value="origem" ${config.field === 'origem' ? 'selected' : ''}>📣 Origem Lead</option>
+          </select>
+        </div>
+        <button class="btn-sort-dir px-1.5 py-0.5 hover:bg-slate-200 dark:hover:bg-slate-700/60 rounded text-slate-500 dark:text-slate-400 hover:text-indigo-650 font-extrabold transition focus:outline-none flex items-center justify-center gap-0.5 shrink-0" data-column="${col}" title="Inverter Ordem">
+          <span>${config.order === 'asc' ? '⬆️ Cres' : '⬇️ Dec'}</span>
+        </button>
+      </div>
+    `;
+  }
+
   /**
    * Renderiza a estrutura da tela
    */
@@ -590,17 +709,18 @@ export class OrcamentosPage {
       );
     });
 
-    // Separação dos orçamentos filtrados por coluna
-    const solicitado = filtrados.filter(o => o.status === 'SOLICITADO');
-    const emAndamento = filtrados.filter(o => o.status === 'EM_ANDAMENTO');
-    const aguardando = filtrados.filter(o => o.status === 'AGUARDANDO');
+    // Separação dos orçamentos filtrados por coluna e ordenados individualmente
+    const solicitado = this.sortColumn(filtrados.filter(o => o.status === 'SOLICITADO'), 'SOLICITADO');
+    const emAndamento = this.sortColumn(filtrados.filter(o => o.status === 'EM_ANDAMENTO'), 'EM_ANDAMENTO');
+    const aguardando = this.sortColumn(filtrados.filter(o => o.status === 'AGUARDANDO'), 'AGUARDANDO');
     
-    let concluido = filtrados.filter(o => o.status === 'CONCLUIDO');
+    let concluidoRaw = filtrados.filter(o => o.status === 'CONCLUIDO');
     if (this.filterConcluido === 'fechada') {
-      concluido = concluido.filter(o => o.subStatus === 'ACEITO');
+      concluidoRaw = concluidoRaw.filter(o => o.subStatus === 'ACEITO');
     } else if (this.filterConcluido === 'desistencia') {
-      concluido = concluido.filter(o => o.subStatus !== 'ACEITO');
+      concluidoRaw = concluidoRaw.filter(o => o.subStatus !== 'ACEITO');
     }
+    const concluido = this.sortColumn(concluidoRaw, 'CONCLUIDO');
 
     this.container.innerHTML = `
       <div class="min-h-screen bg-slate-50/50 dark:bg-slate-950 flex flex-col font-sans transition-colors duration-200">
@@ -700,6 +820,7 @@ export class OrcamentosPage {
                 <span class="px-2 py-0.5 bg-indigo-100 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-400 rounded-full text-[10px] font-black">${solicitado.length}</span>
               </div>
             </div>
+            ${this.renderSortControls('SOLICITADO')}
             <div class="flex flex-col gap-4 overflow-y-auto max-h-[700px] pr-1 custom-scrollbar">
               ${solicitado.map(o => this.renderCardHtml(o)).join('')}
               ${solicitado.length === 0 ? this.renderEmptySlot() : ''}
@@ -720,6 +841,7 @@ export class OrcamentosPage {
                 <span class="px-2 py-0.5 bg-amber-100 dark:bg-indigo-950/80 text-amber-600 dark:text-amber-400 rounded-full text-[10px] font-black">${emAndamento.length}</span>
               </div>
             </div>
+            ${this.renderSortControls('EM_ANDAMENTO')}
             <div class="flex flex-col gap-4 overflow-y-auto max-h-[700px] pr-1 custom-scrollbar">
               ${emAndamento.map(o => this.renderCardHtml(o)).join('')}
               ${emAndamento.length === 0 ? this.renderEmptySlot() : ''}
@@ -739,6 +861,7 @@ export class OrcamentosPage {
                 <span class="px-2 py-0.5 bg-rose-100 dark:bg-indigo-950/80 text-rose-600 dark:text-rose-400 rounded-full text-[10px] font-black">${aguardando.length}</span>
               </div>
             </div>
+            ${this.renderSortControls('AGUARDANDO')}
             <div class="flex flex-col gap-4 overflow-y-auto max-h-[700px] pr-1 custom-scrollbar">
               ${aguardando.map(o => this.renderCardHtml(o)).join('')}
               ${aguardando.length === 0 ? this.renderEmptySlot() : ''}
@@ -763,6 +886,7 @@ export class OrcamentosPage {
                 <option value="desistencia" ${this.filterConcluido === 'desistencia' ? 'selected' : ''}>Desistências</option>
               </select>
             </div>
+            ${this.renderSortControls('CONCLUIDO')}
             <div class="flex flex-col gap-4 overflow-y-auto max-h-[700px] pr-1 custom-scrollbar">
               ${concluido.map(o => this.renderCardHtml(o)).join('')}
               ${concluido.length === 0 ? this.renderEmptySlot() : ''}
@@ -1076,6 +1200,7 @@ export class OrcamentosPage {
                 <option value="Indicação">Indicação</option>
                 <option value="Google">Google</option>
                 <option value="Site">Site</option>
+                <option value="Loja">Loja</option>
                 <option value="Outros">Outros</option>
               </select>
             </div>
@@ -1816,6 +1941,7 @@ export class OrcamentosPage {
                   <option value="Indicação" ${orc.origem === 'Indicação' ? 'selected' : ''}>Indicação</option>
                   <option value="Google" ${orc.origem === 'Google' ? 'selected' : ''}>Google</option>
                   <option value="Site" ${orc.origem === 'Site' ? 'selected' : ''}>Site</option>
+                  <option value="Loja" ${orc.origem === 'Loja' ? 'selected' : ''}>Loja</option>
                   <option value="Outros" ${orc.origem === 'Outros' ? 'selected' : ''}>Outros</option>
                 </select>
               </div>

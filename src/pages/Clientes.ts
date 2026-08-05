@@ -864,6 +864,7 @@ export class ClientesPage {
                   <option value="Indicação" ${c.classificacoes && c.classificacoes.includes('Indicação') ? 'selected' : ''}>Indicação</option>
                   <option value="Google" ${c.classificacoes && c.classificacoes.includes('Google') ? 'selected' : ''}>Google</option>
                   <option value="Site" ${c.classificacoes && c.classificacoes.includes('Site') ? 'selected' : ''}>Site</option>
+                  <option value="Loja" ${c.classificacoes && c.classificacoes.includes('Loja') ? 'selected' : ''}>Loja</option>
                   <option value="Outros" ${c.classificacoes && c.classificacoes.includes('Outros') ? 'selected' : ''}>Outros</option>
                 </select>
               </div>

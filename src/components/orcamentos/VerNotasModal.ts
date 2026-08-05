@@ -187,6 +187,7 @@ export class VerNotasModal {
                 <option value="Indicação" ${orc.origem === 'Indicação' ? 'selected' : ''}>Indicação</option>
                 <option value="Google" ${orc.origem === 'Google' ? 'selected' : ''}>Google</option>
                 <option value="Site" ${orc.origem === 'Site' ? 'selected' : ''}>Site</option>
+                <option value="Loja" ${orc.origem === 'Loja' ? 'selected' : ''}>Loja</option>
                 <option value="Outros" ${orc.origem === 'Outros' ? 'selected' : ''}>Outros</option>
               </select>
             </div>
