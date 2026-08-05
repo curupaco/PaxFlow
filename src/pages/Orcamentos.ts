@@ -36,6 +36,7 @@ export class OrcamentosPage {
   private selectedConsultantId: string = 'todos';
   private filterConcluido: 'todos' | 'fechada' | 'desistencia' = 'todos';
   private activeColumnMobile: 'SOLICITADO' | 'EM_ANDAMENTO' | 'AGUARDANDO' | 'CONCLUIDO' = 'SOLICITADO';
+  private showAllConcluded: boolean = false;
   private columnSorts: Record<'SOLICITADO' | 'EM_ANDAMENTO' | 'AGUARDANDO' | 'CONCLUIDO', {
     field: 'temperatura' | 'nomeCliente' | 'valorProposta' | 'createdAt' | 'consultor' | 'origem';
     order: 'asc' | 'desc';
@@ -67,6 +68,21 @@ export class OrcamentosPage {
     localStorage.setItem(key, JSON.stringify(this.columnSorts));
   }
 
+  private loadShowAllConcluded(): void {
+    const key = `paxflow-orcamentos-show-all-concluded-${this.user?.id || 'global'}`;
+    const saved = localStorage.getItem(key);
+    if (saved !== null) {
+      this.showAllConcluded = saved === 'true';
+    } else {
+      this.showAllConcluded = false; // padrão: esconder antigos, mostrar apenas mês corrente
+    }
+  }
+
+  private saveShowAllConcluded(): void {
+    const key = `paxflow-orcamentos-show-all-concluded-${this.user?.id || 'global'}`;
+    localStorage.setItem(key, String(this.showAllConcluded));
+  }
+
   /**
    * Inicializa a página de Orçamentos
    */
@@ -81,6 +97,7 @@ export class OrcamentosPage {
       this.user = user;
       this.perfil = perfil;
       this.loadColumnSorts();
+      this.loadShowAllConcluded();
 
 
 
@@ -385,6 +402,13 @@ export class OrcamentosPage {
     // Vincular botões dentro do Kanban
     this.setupColumnButtons();
 
+    // Evento de Alternar Exibição de Concluídos do Mês Corrente / Todos
+    document.getElementById('btn-toggle-concluidos-mes')?.addEventListener('click', () => {
+      this.showAllConcluded = !this.showAllConcluded;
+      this.saveShowAllConcluded();
+      this.render();
+    });
+
     // Evento de Filtro de Concluídos (Viagem Fechada / Desistência)
     const selectConcluido = document.getElementById('select-concluido-filtro') as HTMLSelectElement;
     selectConcluido?.addEventListener('change', () => {
@@ -677,6 +701,13 @@ export class OrcamentosPage {
     `;
   }
 
+  private isCurrentMonth(dataIso: string | undefined): boolean {
+    if (!dataIso) return false;
+    const date = new Date(dataIso);
+    const now = new Date();
+    return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth();
+  }
+
   /**
    * Renderiza a estrutura da tela
    */
@@ -719,6 +750,10 @@ export class OrcamentosPage {
       concluidoRaw = concluidoRaw.filter(o => o.subStatus === 'ACEITO');
     } else if (this.filterConcluido === 'desistencia') {
       concluidoRaw = concluidoRaw.filter(o => o.subStatus !== 'ACEITO');
+    }
+    // Filtrar para mostrar apenas mês corrente se showAllConcluded for false
+    if (!this.showAllConcluded) {
+      concluidoRaw = concluidoRaw.filter(o => this.isCurrentMonth(o.updatedAt || o.createdAt));
     }
     const concluido = this.sortColumn(concluidoRaw, 'CONCLUIDO');
 
@@ -880,11 +915,16 @@ export class OrcamentosPage {
                 <span class="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-wider">Concluído</span>
                 <span class="px-2 py-0.5 bg-emerald-100 dark:bg-indigo-950/80 text-emerald-600 dark:text-emerald-400 rounded-full text-[10px] font-black">${concluido.length}</span>
               </div>
-              <select id="select-concluido-filtro" class="text-[9px] font-black uppercase bg-transparent text-slate-500 dark:text-slate-400 focus:outline-none cursor-pointer max-w-[100px] border border-slate-200 dark:border-slate-800 rounded px-1.5 py-0.5 bg-white dark:bg-slate-900">
-                <option value="todos" ${this.filterConcluido === 'todos' ? 'selected' : ''}>Todos</option>
-                <option value="fechada" ${this.filterConcluido === 'fechada' ? 'selected' : ''}>Fechadas</option>
-                <option value="desistencia" ${this.filterConcluido === 'desistencia' ? 'selected' : ''}>Desistências</option>
-              </select>
+              <div class="flex items-center gap-1.5">
+                <button id="btn-toggle-concluidos-mes" class="p-1 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 hover:text-indigo-650 rounded-lg transition text-xs shrink-0 flex items-center justify-center focus:outline-none" title="${this.showAllConcluded ? 'Mostrar apenas mês corrente' : 'Mostrar todos históricos'}">
+                  ${this.showAllConcluded ? '👁️' : '🙈'}
+                </button>
+                <select id="select-concluido-filtro" class="text-[9px] font-black uppercase bg-transparent text-slate-500 dark:text-slate-400 focus:outline-none cursor-pointer max-w-[100px] border border-slate-200 dark:border-slate-800 rounded px-1.5 py-0.5 bg-white dark:bg-slate-900">
+                  <option value="todos" ${this.filterConcluido === 'todos' ? 'selected' : ''}>Todos</option>
+                  <option value="fechada" ${this.filterConcluido === 'fechada' ? 'selected' : ''}>Fechadas</option>
+                  <option value="desistencia" ${this.filterConcluido === 'desistencia' ? 'selected' : ''}>Desistências</option>
+                </select>
+              </div>
             </div>
             ${this.renderSortControls('CONCLUIDO')}
             <div class="flex flex-col gap-4 overflow-y-auto max-h-[700px] pr-1 custom-scrollbar">
