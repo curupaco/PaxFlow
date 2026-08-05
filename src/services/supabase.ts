@@ -264,6 +264,31 @@ export const supabase = new Proxy(realSupabase, {
           return makeQueryBuilder(getData());
         };
       }
+      if (prop === 'rpc') {
+        return (rpcName: string, params?: any) => {
+          console.log(`[Sandbox RPC] Calling RPC "${rpcName}" with params:`, params);
+          if (rpcName === 'admin_create_user') {
+            const newId = 'sandbox-user-id-' + Math.random().toString(36).substr(2, 9);
+            const mockProfiles = getMockDataForTable('profiles');
+            const newUser = {
+              id: newId,
+              nome: params.user_nome,
+              email: params.user_email,
+              role: params.user_role || 'consultor',
+              ativo: true,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+              avatar_url: 'panda'
+            };
+            saveMockDataForTable('profiles', [...mockProfiles, newUser]);
+            return Promise.resolve({ data: newId, error: null });
+          }
+          if (rpcName === 'admin_set_user_password') {
+            return Promise.resolve({ data: null, error: null });
+          }
+          return Promise.resolve({ data: null, error: null });
+        };
+      }
       if (prop === 'channel') {
         return () => {
           const channelObj: any = {

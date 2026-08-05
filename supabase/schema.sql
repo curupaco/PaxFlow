@@ -285,10 +285,10 @@ ON public.profiles FOR SELECT
 TO authenticated 
 USING (true);
 
-CREATE POLICY "Permitir update do próprio perfil" 
+CREATE POLICY "Permitir update do próprio perfil ou por administradores" 
 ON public.profiles FOR UPDATE 
 TO authenticated 
-USING (auth.uid() = id);
+USING (auth.uid() = id OR (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin');
 
 -- Políticas padrão para global_settings_table
 CREATE POLICY "Permitir leitura de configurações por consultores" 
@@ -463,8 +463,8 @@ CREATE OR REPLACE TRIGGER on_profile_role_update
 -- RPC administrativa para criação segura de novos usuários
 CREATE OR REPLACE FUNCTION public.admin_create_user(
   user_email TEXT,
-  user_password TEXT,
   user_nome TEXT,
+  user_password TEXT,
   user_role TEXT
 )
 RETURNS UUID AS $$
@@ -536,6 +536,25 @@ BEGIN
   WHERE id = new_user_id;
 
   RETURN new_user_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- RPC administrativa para alteração segura de senhas de outros usuários
+CREATE OR REPLACE FUNCTION public.admin_set_user_password(
+  new_password TEXT,
+  user_id UUID
+)
+RETURNS VOID AS $$
+BEGIN
+  -- Verificar se o executor é administrador
+  IF (SELECT role FROM public.profiles WHERE id = auth.uid()) IS DISTINCT FROM 'admin' THEN
+    RAISE EXCEPTION 'Acesso negado: apenas administradores podem alterar senhas.';
+  END IF;
+
+  UPDATE auth.users
+  SET encrypted_password = crypt(new_password, gen_salt('bf')),
+      updated_at = NOW()
+  WHERE id = user_id;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 

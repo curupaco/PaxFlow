@@ -1,8 +1,12 @@
 -- Remover políticas antigas
 DROP POLICY IF EXISTS "Leitura de lembretes para o próprio consultor ou admin" ON public.lembretes;
+DROP POLICY IF EXISTS "Leitura de lembretes para o próprio consultor, criador ou admin" ON public.lembretes;
 DROP POLICY IF EXISTS "Inserir lembretes para o próprio consultor ou admin" ON public.lembretes;
+DROP POLICY IF EXISTS "Inserir lembretes para o próprio consultor, criador ou admin" ON public.lembretes;
 DROP POLICY IF EXISTS "Atualizar lembretes para o próprio consultor ou admin" ON public.lembretes;
+DROP POLICY IF EXISTS "Atualizar lembretes para o próprio consultor, criador ou admin" ON public.lembretes;
 DROP POLICY IF EXISTS "Excluir lembretes para o próprio consultor ou admin" ON public.lembretes;
+DROP POLICY IF EXISTS "Excluir lembretes para o próprio consultor, criador ou admin" ON public.lembretes;
 
 -- Criar novas políticas atualizadas
 CREATE POLICY "Leitura de lembretes para o próprio consultor, criador ou admin" 
