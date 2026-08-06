@@ -415,35 +415,35 @@ export class RelatoriosPage {
         <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start print-full-width">
           
           <!-- Navigation Sidebar inside panel (Tabs) -->
-          <div class="lg:col-span-1 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-4 shadow-sm flex flex-row lg:flex-col overflow-x-auto lg:overflow-x-visible gap-1.5 report-tabs-bar no-print flex-shrink-0 flex-wrap">
-            <button data-tab="desempenho" class="px-3 py-2.5 rounded-xl text-left text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'desempenho' ? 'report-tab-active' : 'text-slate-500'} w-auto lg:w-full">
+          <div class="lg:col-span-1 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-4 shadow-sm flex flex-row lg:flex-col overflow-x-auto lg:overflow-x-visible gap-1.5 report-tabs-bar no-print flex-shrink-0">
+            <button data-tab="desempenho" class="shrink-0 whitespace-nowrap px-3 py-2.5 rounded-xl text-left text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'desempenho' ? 'report-tab-active' : 'text-slate-500'} w-auto lg:w-full">
               🎯 Desempenho
             </button>
-            <button data-tab="prazos" class="px-3 py-2.5 rounded-xl text-left text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'prazos' ? 'report-tab-active' : 'text-slate-500'} w-auto lg:w-full">
+            <button data-tab="prazos" class="shrink-0 whitespace-nowrap px-3 py-2.5 rounded-xl text-left text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'prazos' ? 'report-tab-active' : 'text-slate-500'} w-auto lg:w-full">
               ⏰ Controle de SLAs
             </button>
-            <button data-tab="faturamento" class="px-3 py-2.5 rounded-xl text-left text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'faturamento' ? 'report-tab-active' : 'text-slate-500'} w-auto lg:w-full">
+            <button data-tab="faturamento" class="shrink-0 whitespace-nowrap px-3 py-2.5 rounded-xl text-left text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'faturamento' ? 'report-tab-active' : 'text-slate-500'} w-auto lg:w-full">
               💰 Faturamento
             </button>
-            <button data-tab="perdas" class="px-3 py-2.5 rounded-xl text-left text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'perdas' ? 'report-tab-active' : 'text-slate-500'} w-auto lg:w-full">
+            <button data-tab="perdas" class="shrink-0 whitespace-nowrap px-3 py-2.5 rounded-xl text-left text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'perdas' ? 'report-tab-active' : 'text-slate-500'} w-auto lg:w-full">
               📉 Desistências e Perdas
             </button>
-            <button data-tab="previsoes" class="px-3 py-2.5 rounded-xl text-left text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'previsoes' ? 'report-tab-active' : 'text-slate-500'} w-auto lg:w-full">
+            <button data-tab="previsoes" class="shrink-0 whitespace-nowrap px-3 py-2.5 rounded-xl text-left text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'previsoes' ? 'report-tab-active' : 'text-slate-500'} w-auto lg:w-full">
               🔮 Previsões Preditivas
             </button>
-            <button data-tab="fornecedores" class="px-3 py-2.5 rounded-xl text-left text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'fornecedores' ? 'report-tab-active' : 'text-slate-500'} w-auto lg:w-full">
+            <button data-tab="fornecedores" class="shrink-0 whitespace-nowrap px-3 py-2.5 rounded-xl text-left text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'fornecedores' ? 'report-tab-active' : 'text-slate-500'} w-auto lg:w-full">
               🏢 Qualidade / Fornecedores
             </button>
-            <button data-tab="origens" class="px-3 py-2.5 rounded-xl text-left text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'origens' ? 'report-tab-active' : 'text-slate-500'} w-auto lg:w-full">
+            <button data-tab="origens" class="shrink-0 whitespace-nowrap px-3 py-2.5 rounded-xl text-left text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'origens' ? 'report-tab-active' : 'text-slate-500'} w-auto lg:w-full">
               📢 Origem de Leads
             </button>
-            <button data-tab="auditoria" class="px-3 py-2.5 rounded-xl text-left text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'auditoria' ? 'report-tab-active' : 'text-slate-500'} w-auto lg:w-full">
+            <button data-tab="auditoria" class="shrink-0 whitespace-nowrap px-3 py-2.5 rounded-xl text-left text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'auditoria' ? 'report-tab-active' : 'text-slate-500'} w-auto lg:w-full">
               🪙 Recebimentos & Auditoria
             </button>
-            <button data-tab="posvenda" class="px-3 py-2.5 rounded-xl text-left text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'posvenda' ? 'report-tab-active' : 'text-slate-500'} w-auto lg:w-full">
+            <button data-tab="posvenda" class="shrink-0 whitespace-nowrap px-3 py-2.5 rounded-xl text-left text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'posvenda' ? 'report-tab-active' : 'text-slate-500'} w-auto lg:w-full">
               ✈️ Pós-Venda & SLAs
             </button>
-            <button data-tab="gamificacao" class="px-3 py-2.5 rounded-xl text-left text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'gamificacao' ? 'report-tab-active' : 'text-slate-500'} w-auto lg:w-full">
+            <button data-tab="gamificacao" class="shrink-0 whitespace-nowrap px-3 py-2.5 rounded-xl text-left text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'gamificacao' ? 'report-tab-active' : 'text-slate-500'} w-auto lg:w-full">
               🏆 Gamificação & Ranking
             </button>
           </div>

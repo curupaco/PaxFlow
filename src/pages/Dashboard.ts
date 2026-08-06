@@ -1514,7 +1514,7 @@ export class Dashboard {
 
         <!-- ABAS DE STATUS / FASES DE VENDA -->
         <div class="px-6 pt-4 bg-slate-50/50 dark:bg-slate-950">
-          <div class="flex flex-wrap gap-2 border-b border-slate-200 dark:border-slate-800 pb-px">
+          <div class="flex gap-2 border-b border-slate-200 dark:border-slate-800 pb-px overflow-x-auto custom-scrollbar pb-1">
             ${this.renderStatusTab('Todos', 'todos', counts.todos)}
             ${this.renderStatusTab('Fechado', 'fechado', counts.fechado)}
             ${this.renderStatusTab('Pós-Venda', 'pos_venda', counts.pos_venda)}
@@ -1581,7 +1581,7 @@ export class Dashboard {
       : 'border-transparent text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-400 font-bold hover:border-slate-300 dark:hover:border-slate-800';
 
     return `
-      <button class="tab-status-btn px-4 py-3 border-b-2 text-xs transition duration-200 flex items-center gap-1.5 focus:outline-none ${activeClass}" data-status-key="${statusKey}">
+      <button class="tab-status-btn shrink-0 whitespace-nowrap px-4 py-3 border-b-2 text-xs transition duration-200 flex items-center gap-1.5 focus:outline-none ${activeClass}" data-status-key="${statusKey}">
         <span>${label}</span>
         <span class="px-1.5 py-0.5 rounded-full text-[9px] bg-slate-100 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 font-bold">${count}</span>
       </button>
