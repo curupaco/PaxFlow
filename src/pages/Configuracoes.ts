@@ -4,6 +4,7 @@ import { getAvatarSvg, AVATAR_OPTIONS, mesclarAvataresLocais, salvarAvatarLocal 
 import { renderEmailInputHTML, setupFormValidation } from '../utils/masks';
 import { showCustomAlert, showCustomConfirm } from '../services/dialog';
 import { parseCSV, batchInsertOrcamentos, formatBrDateToYmd, parseBrFloat } from '../services/csvImporter';
+import { BADGE_DEFINITIONS } from '../services/gamification';
 
 declare const process: any;
 
@@ -65,7 +66,8 @@ export class ConfiguracoesPage {
   private perfil: PerfilConsultor | null = null;
   private settings: GlobalSettings | null = null;
   private consultores: PerfilConsultor[] = [];
-  private activeTab: 'geral' | 'consultores' | 'importacoes' = 'geral';
+  private campaigns: any[] = [];
+  private activeTab: 'geral' | 'consultores' | 'importacoes' | 'campanhas' = 'geral';
 
   // Propriedades do estado de importação de CSV
   private parsedHeaders: string[] = [];
@@ -108,6 +110,7 @@ export class ConfiguracoesPage {
       // 3. Buscar configurações globais e consultores
       await this.loadSettings();
       await this.loadConsultores();
+      await this.loadCampaigns();
 
       // 4. Renderizar interface
       this.render();
@@ -223,9 +226,26 @@ export class ConfiguracoesPage {
   }
 
   /**
+   * Busca todas as campanhas cadastradas no sistema
+   */
+  private async loadCampaigns(): Promise<void> {
+    try {
+      const { data, error } = await supabase
+        .from('campaigns')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      this.campaigns = data || [];
+    } catch (err: any) {
+      console.error('Erro ao carregar campanhas:', err);
+    }
+  }
+
+  /**
    * Altera a aba ativa e re-renderiza o componente
    */
-  private switchTab(tab: 'geral' | 'consultores' | 'importacoes'): void {
+  private switchTab(tab: 'geral' | 'consultores' | 'importacoes' | 'campanhas'): void {
     this.activeTab = tab;
     this.render();
     this.setupEventListeners();
@@ -239,11 +259,14 @@ export class ConfiguracoesPage {
     document.getElementById('tab-geral-btn')?.addEventListener('click', () => this.switchTab('geral'));
     document.getElementById('tab-consultores-btn')?.addEventListener('click', () => this.switchTab('consultores'));
     document.getElementById('tab-importacoes-btn')?.addEventListener('click', () => this.switchTab('importacoes'));
-
-
+    document.getElementById('tab-campanhas-btn')?.addEventListener('click', () => this.switchTab('campanhas'));
 
     if (this.activeTab === 'importacoes') {
       this.setupImportacoesEvents();
+    }
+
+    if (this.activeTab === 'campanhas') {
+      this.setupCampanhasEvents();
     }
 
     if (this.activeTab === 'geral') {
@@ -783,6 +806,244 @@ export class ConfiguracoesPage {
   }
 
   /**
+   * Associa os eventos da aba de Campanhas
+   */
+  private setupCampanhasEvents(): void {
+    // Abrir modal de criação
+    document.getElementById('btn-nova-campanha')?.addEventListener('click', () => this.abrirModalNovaCampanha());
+
+    // Toggle status ativa/inativa
+    document.querySelectorAll('.btn-toggle-status-campanha').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const id = (e.currentTarget as HTMLElement).getAttribute('data-id');
+        const active = (e.currentTarget as HTMLElement).getAttribute('data-active') === 'true';
+        if (!id) return;
+        
+        try {
+          const { error } = await supabase
+            .from('campaigns')
+            .update({ ativa: !active })
+            .eq('id', id);
+
+          if (error) throw error;
+          
+          this.showToast(`Campanha ${!active ? 'ativada' : 'pausada'} com sucesso!`, 'success');
+          await this.loadCampaigns();
+          this.render();
+          this.setupEventListeners();
+        } catch (err: any) {
+          console.error(err);
+          this.showToast('Erro ao atualizar status da campanha.', 'error');
+        }
+      });
+    });
+
+    // Excluir campanha
+    document.querySelectorAll('.btn-excluir-campanha').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const id = (e.currentTarget as HTMLElement).getAttribute('data-id');
+        if (!id) return;
+        
+        const confirmResult = await showCustomConfirm('Deseja realmente excluir esta campanha permanentemente?', 'Excluir Campanha');
+        if (confirmResult) {
+          try {
+            const { error } = await supabase
+              .from('campaigns')
+              .delete()
+              .eq('id', id);
+
+            if (error) throw error;
+            
+            this.showToast('Campanha excluída com sucesso!', 'success');
+            await this.loadCampaigns();
+            this.render();
+            this.setupEventListeners();
+          } catch (err: any) {
+            console.error(err);
+            this.showToast('Erro ao excluir campanha.', 'error');
+          }
+        }
+      });
+    });
+  }
+
+  /**
+   * Abre o modal de criação de nova campanha
+   */
+  private abrirModalNovaCampanha(): void {
+    const overlay = document.createElement('div');
+    overlay.id = 'nova-campanha-overlay';
+    overlay.className = 'fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all duration-300 opacity-0';
+    
+    // Obter lista de medalhas do BADGE_DEFINITIONS
+    const badgeOptions = BADGE_DEFINITIONS.map(b => `
+      <option value="${b.key}">${b.emoji} ${b.nome} (${b.categoria})</option>
+    `).join('');
+
+    overlay.innerHTML = `
+      <div class="bg-white dark:bg-slate-900 w-full max-w-[500px] rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 transform scale-95 transition-all duration-300 flex flex-col max-h-[90vh] overflow-y-auto custom-scrollbar relative" id="nova-campanha-card">
+        
+        <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-600"></div>
+
+        <div class="p-6 border-b border-slate-100 dark:border-slate-800 text-center flex flex-col items-center">
+          <div class="w-12 h-12 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 font-bold rounded-2xl flex items-center justify-center text-xl border border-indigo-100 dark:border-indigo-900/40 mb-3">
+            🎯
+          </div>
+          <h2 class="text-lg font-black text-slate-800 dark:text-slate-100 tracking-tight leading-snug">Criar Nova Campanha</h2>
+          <p class="text-xs text-slate-400 dark:text-slate-500 font-semibold mt-1">Configure o período, o parâmetro do processo e a recompensa</p>
+        </div>
+
+        <form id="form-nova-campanha" class="p-6 space-y-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Título da Campanha *</label>
+            <input id="input-cam-titulo" type="text" required placeholder="Ex: Meta de Vendas de Agosto" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Descrição / Regras *</label>
+            <textarea id="input-cam-descricao" required rows="3" placeholder="Descreva os detalhes e regras da campanha..." class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm resize-none"></textarea>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Data de Início *</label>
+              <input id="input-cam-inicio" type="date" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Data de Fim *</label>
+              <input id="input-cam-fim" type="date" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Métrica da Meta *</label>
+              <select id="select-cam-tipo" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm">
+                <option value="venda_aceita" selected>Vendas Aceitas</option>
+                <option value="cliente_criado">Clientes Cadastrados</option>
+                <option value="xp_acumulado">XP Acumulado</option>
+                <option value="lembrete_criado">Lembretes Criados</option>
+                <option value="reembolso_pago">Reembolsos Pagos</option>
+                <option value="produto_detalhado">Produtos Detalhados</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Quantidade Meta *</label>
+              <input id="input-cam-quantidade" type="number" min="1" required value="5" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Medalha de Recompensa (Badge) *</label>
+            <select id="select-cam-badge" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm select-badge-campaign">
+              ${badgeOptions}
+            </select>
+          </div>
+
+          <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+            <button id="btn-cam-cancel" type="button" class="px-4 py-2.5 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 text-slate-500 hover:text-slate-700 font-bold text-xs rounded-xl transition uppercase">
+              Cancelar
+            </button>
+            <button id="btn-cam-submit" type="submit" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl transition shadow-lg shadow-indigo-600/20 uppercase tracking-wider flex items-center justify-center">
+              Criar Campanha
+            </button>
+          </div>
+        </form>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    setTimeout(() => {
+      overlay.classList.add('opacity-100');
+      document.getElementById('nova-campanha-card')?.classList.remove('scale-95');
+      document.getElementById('nova-campanha-card')?.classList.add('scale-100');
+    }, 10);
+
+    const fechar = () => {
+      overlay.classList.remove('opacity-100');
+      document.getElementById('nova-campanha-card')?.classList.remove('scale-100');
+      document.getElementById('nova-campanha-card')?.classList.add('scale-95');
+      setTimeout(() => overlay.remove(), 300);
+    };
+
+    document.getElementById('btn-cam-cancel')?.addEventListener('click', fechar);
+
+    const form = document.getElementById('form-nova-campanha') as HTMLFormElement;
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const submitBtn = document.getElementById('btn-cam-submit') as HTMLButtonElement;
+      const titulo = (document.getElementById('input-cam-titulo') as HTMLInputElement).value;
+      const descricao = (document.getElementById('input-cam-descricao') as HTMLInputElement).value;
+      const data_inicio = (document.getElementById('input-cam-inicio') as HTMLInputElement).value;
+      const data_fim = (document.getElementById('input-cam-fim') as HTMLInputElement).value;
+      const tipo_meta = (document.getElementById('select-cam-tipo') as HTMLSelectElement).value;
+      const meta_quantidade = Number((document.getElementById('input-cam-quantidade') as HTMLInputElement).value);
+      const badge_key = (document.getElementById('select-cam-badge') as HTMLSelectElement).value;
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Criando...';
+
+      try {
+        // 1. Inserir campanha no banco
+        const { data: camData, error: camError } = await supabase
+          .from('campaigns')
+          .insert({
+            titulo,
+            descricao,
+            data_inicio,
+            data_fim,
+            tipo_meta,
+            meta_quantidade,
+            badge_key,
+            ativa: true
+          })
+          .select()
+          .single();
+
+        if (camError) throw camError;
+
+        // 2. Criar notificações para todos os consultores (para que eles vejam no Inbox e no login)
+        const { data: perfis, error: pErr } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('ativo', true);
+
+        if (!pErr && perfis && perfis.length > 0) {
+          const notificationsPayload = perfis.map(p => ({
+            user_id: p.id,
+            tipo_item: 'campanha',
+            comentario_id: null,
+            mensagem_id: null,
+            item_id: camData.id,
+            parent_id: camData.id,
+            campaign_id: camData.id,
+            lida: false,
+            arquivada: false
+          }));
+
+          await supabase.from('notificacoes').insert(notificationsPayload);
+        }
+
+        this.showToast('Campanha criada com sucesso e equipe notificada!', 'success');
+        fechar();
+        await this.loadCampaigns();
+        this.render();
+        this.setupEventListeners();
+
+      } catch (err: any) {
+        console.error('Erro ao criar campanha:', err);
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Criar Campanha';
+        showCustomAlert(`Falha ao criar campanha: ${err.message}`, 'Erro');
+      }
+    });
+  }
+
+  /**
    * Associa os eventos da aba de Importações
    */
   private setupImportacoesEvents(): void {
@@ -1164,6 +1425,16 @@ export class ConfiguracoesPage {
               </svg>
               Importações
             </button>
+            <button id="tab-campanhas-btn" class="py-4 px-1 border-b-2 text-sm font-extrabold transition select-none flex items-center gap-2 ${
+              this.activeTab === 'campanhas' 
+                ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400' 
+                : 'border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
+            }">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+              </svg>
+              Campanhas
+            </button>
           </div>
         </div>
 
@@ -1373,7 +1644,7 @@ export class ConfiguracoesPage {
               </div>
             </div>
           </main>
-        ` : `
+        ` : this.activeTab === 'importacoes' ? `
           <!-- Renderização da Aba: Importações -->
           <main class="flex-1 p-6 max-w-4xl mx-auto w-full flex flex-col gap-6 animate-fade-in text-slate-800 dark:text-slate-100">
             
@@ -1628,6 +1899,106 @@ export class ConfiguracoesPage {
                 </button>
               </div>
             `}
+          </main>
+        ` : `
+          <!-- Renderização da Aba: Campanhas -->
+          <main class="flex-1 p-6 max-w-4xl mx-auto w-full flex flex-col gap-6 animate-fade-in text-slate-800 dark:text-slate-100">
+            <div class="flex items-center justify-between">
+              <div>
+                <h2 class="text-lg font-black text-slate-800 dark:text-slate-200 tracking-tight">Campanhas Internas</h2>
+                <p class="text-xs text-slate-400 dark:text-slate-500 font-medium">Criação, ativação e controle de metas por período</p>
+              </div>
+              <button id="btn-nova-campanha" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/20 flex items-center gap-1.5 transition transform hover:-translate-y-0.5 uppercase">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+                Nova Campanha
+              </button>
+            </div>
+
+            <!-- Tabela de Campanhas -->
+            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden transition-colors">
+              <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                  <thead>
+                    <tr class="bg-slate-600/5 dark:bg-slate-800/60 text-[10px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
+                      <th class="py-4 px-5">Título</th>
+                      <th class="py-4 px-5">Parâmetro de Meta</th>
+                      <th class="py-4 px-5 text-center">Período</th>
+                      <th class="py-4 px-5 text-center">Medalha</th>
+                      <th class="py-4 px-5 text-center">Status</th>
+                      <th class="py-4 px-5 text-right">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-sm text-slate-700 dark:text-slate-300 font-semibold bg-white/50 dark:bg-slate-900/30">
+                    ${this.campaigns.length === 0 ? `
+                      <tr>
+                        <td colspan="6" class="py-8 px-5 text-center text-slate-400 dark:text-slate-500 font-medium italic">
+                          Nenhuma campanha cadastrada até o momento.
+                        </td>
+                      </tr>
+                    ` : this.campaigns.map(cam => {
+                      const hoje = new Date().toISOString().split('T')[0];
+                      const isExpired = cam.data_fim < hoje;
+                      const statusBadge = cam.ativa && !isExpired
+                        ? `<span class="inline-flex px-2.5 py-0.5 bg-emerald-50 dark:bg-emerald-950/45 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/40 text-[10px] font-bold rounded">Ativa</span>`
+                        : isExpired
+                          ? `<span class="inline-flex px-2.5 py-0.5 bg-rose-50 dark:bg-rose-950/45 text-rose-700 dark:text-rose-400 border border-rose-100 dark:border-rose-900/40 text-[10px] font-bold rounded">Expirada</span>`
+                          : `<span class="inline-flex px-2.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-300 dark:border-slate-800 text-[10px] font-bold rounded">Inativa</span>`;
+                      
+                      const badgeObj = BADGE_DEFINITIONS.find(b => b.key === cam.badge_key);
+                      const badgeDisplay = badgeObj ? `${badgeObj.emoji} ${badgeObj.nome}` : 'Nenhuma';
+
+                      let metaLabel = '';
+                      if (cam.tipo_meta === 'xp_acumulado') metaLabel = `${cam.meta_quantidade} XP`;
+                      else if (cam.tipo_meta === 'cliente_criado') metaLabel = `${cam.meta_quantidade} Clientes`;
+                      else if (cam.tipo_meta === 'venda_aceita') metaLabel = `${cam.meta_quantidade} Vendas`;
+                      else if (cam.tipo_meta === 'lembrete_criado') metaLabel = `${cam.meta_quantidade} Lembretes`;
+                      else if (cam.tipo_meta === 'reembolso_pago') metaLabel = `${cam.meta_quantidade} Reembolsos`;
+                      else if (cam.tipo_meta === 'produto_detalhado') metaLabel = `${cam.meta_quantidade} Produtos`;
+
+                      const formatarData = (dStr: string) => {
+                        const parts = dStr.split('-');
+                        return `${parts[2]}/${parts[1]}/${parts[0]}`;
+                      };
+
+                      return `
+                        <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/10 transition-colors">
+                          <td class="py-4 px-5">
+                            <span class="block text-slate-800 dark:text-slate-200 font-bold">${cam.titulo}</span>
+                            <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-semibold max-w-[250px] truncate">${cam.descricao}</span>
+                          </td>
+                          <td class="py-4 px-5 text-slate-600 dark:text-slate-400 font-medium">
+                            ${metaLabel}
+                          </td>
+                          <td class="py-4 px-5 text-center text-slate-500 dark:text-slate-400 text-xs font-semibold">
+                            ${formatarData(cam.data_inicio)} até ${formatarData(cam.data_fim)}
+                          </td>
+                          <td class="py-4 px-5 text-center text-xs font-bold text-slate-700 dark:text-slate-300">
+                            ${badgeDisplay}
+                          </td>
+                          <td class="py-4 px-5 text-center">
+                            ${statusBadge}
+                          </td>
+                          <td class="py-4 px-5 text-right space-x-2">
+                            <button data-id="${cam.id}" data-active="${cam.ativa}" class="btn-toggle-status-campanha px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                              cam.ativa 
+                                ? 'bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 hover:dark:bg-rose-950/30' 
+                                : 'bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 hover:dark:bg-emerald-950/30'
+                            }">
+                              ${cam.ativa ? 'Pausar' : 'Ativar'}
+                            </button>
+                            <button data-id="${cam.id}" class="btn-excluir-campanha px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-50 hover:bg-rose-50 dark:bg-rose-950/30 text-slate-400 hover:text-rose-500 transition border border-slate-200/40 dark:border-slate-700/40 uppercase">
+                              Excluir
+                            </button>
+                          </td>
+                        </tr>
+                      `;
+                    }).join('')}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </main>
         `}
       </div>

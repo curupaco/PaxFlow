@@ -115,6 +115,146 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
     descricao: 'Cadastrar todos os passaportes, vistos e localizadores 30 dias antes do voo.',
     categoria: 'Qualidade de Dados',
     emoji: '🔒'
+  },
+  {
+    key: 'COMMISSION_KING',
+    nome: 'Rei da Comissão',
+    descricao: 'Faturar mais de R$ 5.000 em comissões em campanhas ativas.',
+    categoria: 'Financeiro',
+    emoji: '👑'
+  },
+  {
+    key: 'FIRST_CLASS',
+    nome: 'Primeira Classe',
+    descricao: 'Cadastrar uma venda/viagem com valor superior a R$ 20.000.',
+    categoria: 'Performance',
+    emoji: '⭐'
+  },
+  {
+    key: 'DISCOUNT_SHIELD',
+    nome: 'Negociador Implacável',
+    descricao: 'Converter orçamentos sem conceder descontos adicionais.',
+    categoria: 'Performance',
+    emoji: '🛡️'
+  },
+  {
+    key: 'SLA_LEGEND',
+    nome: 'Lenda do SLA',
+    descricao: 'Completar metas de processos 100% dentro do SLA.',
+    categoria: 'Operacional',
+    emoji: '⏳'
+  },
+  {
+    key: 'REVIEW_STAR',
+    nome: 'Estrela do Feedback',
+    descricao: 'Obter satisfação total dos clientes em atendimentos registrados.',
+    categoria: 'Qualidade de Dados',
+    emoji: '🌟'
+  },
+  {
+    key: 'CRUISE_CAPTAIN',
+    nome: 'Capitão dos Mares',
+    descricao: 'Detalhar perfeitamente 5 produtos do tipo Cruzeiro Marítimo.',
+    categoria: 'Operacional',
+    emoji: '🚢'
+  },
+  {
+    key: 'ROAD_TRIPPER',
+    nome: 'Pé na Estrada',
+    descricao: 'Detalhar perfeitamente 10 locações de veículos ou passagens de ônibus.',
+    categoria: 'Operacional',
+    emoji: '🚗'
+  },
+  {
+    key: 'INSURANCE_GUARDIAN',
+    nome: 'Protetor do Viajante',
+    descricao: 'Adicionar 15 produtos do tipo seguro viagem nas operações.',
+    categoria: 'Qualidade de Dados',
+    emoji: '🩹'
+  },
+  {
+    key: 'RESORT_LOVER',
+    nome: 'Amante de Resort',
+    descricao: 'Detalhar perfeitamente 5 produtos do tipo Resort All Inclusive.',
+    categoria: 'Operacional',
+    emoji: '🏖️'
+  },
+  {
+    key: 'BACKLOG_CLEANER',
+    nome: 'Destruidor de Pendências',
+    descricao: 'Arquivar ou concluir 50 tarefas no cockpit de planejamento.',
+    categoria: 'Organização',
+    emoji: '🧹'
+  },
+  {
+    key: 'EARLY_BIRD',
+    nome: 'Planejador Antecipado',
+    descricao: 'Cadastrar viagens com data de ida superior a 6 meses de antecedência.',
+    categoria: 'Organização',
+    emoji: '🌅'
+  },
+  {
+    key: 'LAST_MINUTE',
+    nome: 'Fechamento Relâmpago',
+    descricao: 'Concluir vendas e embarcar o passageiro na mesma semana.',
+    categoria: 'Performance',
+    emoji: '⏱️'
+  },
+  {
+    key: 'LOYALTY_MAKER',
+    nome: 'Fidelizador',
+    descricao: 'Cadastrar 3 viagens operacionais diferentes para o mesmo cliente.',
+    categoria: 'Qualidade de Dados',
+    emoji: '💎'
+  },
+  {
+    key: 'DIRECT_MASTER',
+    nome: 'Consultor Conectado',
+    descricao: 'Enviar 100 mensagens diretas internas (P2P) para colegas de equipe.',
+    categoria: 'Comunicação',
+    emoji: '📬'
+  },
+  {
+    key: 'MENTOR',
+    nome: 'Mentor da Agência',
+    descricao: 'Ser mencionado por outros membros da equipe 10 vezes em notas colaborativas.',
+    categoria: 'Colaboração',
+    emoji: '🎓'
+  },
+  {
+    key: 'WINTER_EXPLORER',
+    nome: 'Desbravador do Gelo',
+    descricao: 'Cadastrar 3 viagens para destinos de frio ou neve.',
+    categoria: 'Operacional',
+    emoji: '❄️'
+  },
+  {
+    key: 'BEACH_BUM',
+    nome: 'Rei da Praia',
+    descricao: 'Cadastrar 10 viagens para destinos tropicais ou litorâneos.',
+    categoria: 'Operacional',
+    emoji: '☀️'
+  },
+  {
+    key: 'XP_BOOSTER',
+    nome: 'Turbinado de XP',
+    descricao: 'Ganhar uma quantidade extraordinária de XP em uma campanha de aceleração.',
+    categoria: 'Performance',
+    emoji: '🚀'
+  },
+  {
+    key: 'PROCESS_MASTER',
+    nome: 'Mestre dos Processos',
+    descricao: 'Realizar a conferência financeira completa de 20 produtos de viagem.',
+    categoria: 'Financeiro',
+    emoji: '🧠'
+  },
+  {
+    key: 'TICKET_RESOLVER',
+    nome: 'Solucionador',
+    descricao: 'Atender e concluir 10 chamados importados de CSV/Digisac.',
+    categoria: 'Organização',
+    emoji: '🔧'
   }
 ];
 
@@ -242,4 +382,138 @@ export async function concederMedalha(userId: string, badgeKey: string): Promise
     console.error('Erro ao conceder medalha:', err);
     return false;
   }
+}
+
+export interface Campaign {
+  id: string;
+  titulo: string;
+  descricao: string;
+  data_inicio: string;
+  data_fim: string;
+  tipo_meta: 'xp_acumulado' | 'cliente_criado' | 'venda_aceita' | 'lembrete_criado' | 'reembolso_pago' | 'produto_detalhado';
+  meta_quantidade: number;
+  badge_key: string;
+  ativa: boolean;
+}
+
+export interface CampaignProgress {
+  campaign: Campaign;
+  progresso: number;
+  meta: number;
+  percent: number;
+  concluida: boolean;
+}
+
+export async function obterCampanhasAtivas(): Promise<Campaign[]> {
+  try {
+    const hoje = new Date().toISOString().split('T')[0];
+    const { data, error } = await supabase
+      .from('campaigns')
+      .select('*')
+      .eq('ativa', true)
+      .lte('data_inicio', hoje)
+      .gte('data_fim', hoje);
+    
+    if (error) throw error;
+    return data || [];
+  } catch (err) {
+    console.error('Erro ao buscar campanhas ativas:', err);
+    return [];
+  }
+}
+
+export async function obterProgressoCampanha(userId: string, campaign: Campaign): Promise<CampaignProgress> {
+  const startIso = `${campaign.data_inicio}T00:00:00.000Z`;
+  const endIso = `${campaign.data_fim}T23:59:59.999Z`;
+
+  let progresso = 0;
+
+  try {
+    if (campaign.tipo_meta === 'xp_acumulado') {
+      const { data, error } = await supabase
+        .from('profiles_xp_logs')
+        .select('xp_ganho')
+        .eq('profile_id', userId)
+        .gte('created_at', startIso)
+        .lte('created_at', endIso);
+      
+      if (!error && data) {
+        progresso = data.reduce((acc, row) => acc + (row.xp_ganho || 0), 0);
+      }
+    } else if (campaign.tipo_meta === 'cliente_criado') {
+      const { count, error } = await supabase
+        .from('clientes')
+        .select('*', { count: 'exact', head: true })
+        .eq('consultor_responsavel_id', userId)
+        .gte('created_at', startIso)
+        .lte('created_at', endIso);
+      
+      if (!error && count !== null) {
+        progresso = count;
+      }
+    } else if (campaign.tipo_meta === 'venda_aceita') {
+      const { count, error } = await supabase
+        .from('orcamentos')
+        .select('*', { count: 'exact', head: true })
+        .eq('consultor_id', userId)
+        .eq('status', 'CONCLUIDO')
+        .eq('sub_status', 'ACEITO')
+        .gte('updated_at', startIso)
+        .lte('updated_at', endIso);
+      
+      if (!error && count !== null) {
+        progresso = count;
+      }
+    } else if (campaign.tipo_meta === 'lembrete_criado') {
+      const { count, error } = await supabase
+        .from('lembretes')
+        .select('*', { count: 'exact', head: true })
+        .eq('consultor_id', userId)
+        .gte('created_at', startIso)
+        .lte('created_at', endIso);
+      
+      if (!error && count !== null) {
+        progresso = count;
+      }
+    } else if (campaign.tipo_meta === 'reembolso_pago') {
+      const { count, error } = await supabase
+        .from('reembolsos')
+        .select('*', { count: 'exact', head: true })
+        .eq('consultor_solicitante_id', userId)
+        .eq('status', 'pago')
+        .gte('updated_at', startIso)
+        .lte('updated_at', endIso);
+      
+      if (!error && count !== null) {
+        progresso = count;
+      }
+    } else if (campaign.tipo_meta === 'produto_detalhado') {
+      const { data: viagens, error: vErr } = await supabase
+        .from('viagens')
+        .select('id')
+        .eq('consultor_id', userId);
+      
+      if (!vErr && viagens && viagens.length > 0) {
+        const viagemIds = viagens.map(v => v.id);
+        const { count, error } = await supabase
+          .from('produtos_viagem')
+          .select('*', { count: 'exact', head: true })
+          .in('viagem_id', viagemIds)
+          .gte('created_at', startIso)
+          .lte('created_at', endIso);
+        
+        if (!error && count !== null) {
+          progresso = count;
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Erro ao calcular progresso de campanha:', err);
+  }
+
+  const meta = campaign.meta_quantidade;
+  const percent = Math.min(Math.max((progresso / meta) * 100, 0), 100);
+  const concluida = progresso >= meta;
+
+  return { campaign, progresso, meta, percent, concluida };
 }

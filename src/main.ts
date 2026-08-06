@@ -5,7 +5,8 @@ import { MeuPerfilModal } from './components/profile/MeuPerfilModal';
 import { PerfilConsultor } from './types';
 import { getAvatarSvg } from './services/avatars';
 import { showCustomAlert, showCustomConfirm } from './services/dialog';
-import { obterProgressoNivel } from './services/gamification';
+import { obterProgressoNivel, obterCampanhasAtivas, obterProgressoCampanha, concederMedalha, obterMedalhasUsuario, BADGE_DEFINITIONS } from './services/gamification';
+import { showBadgeCelebrationModal, showLevelUpModal } from './utils/celebrations';
 import { traduzirErro } from './utils/errorTranslator';
 import { Router } from './router';
 
@@ -96,6 +97,7 @@ class App {
         this.inicializarRealtimeProfile();
         this.router = new Router(document.getElementById('page-content')!);
         this.navigate('analytics');
+        this.checarNotificacoesCampanhaLogin();
       }
     } catch (err) {
       console.error('Erro ao inicializar app:', err);
@@ -483,6 +485,9 @@ class App {
             </div>
           </button>
           
+          <!-- Campanhas Ativas -->
+          <div id="sidebar-campaigns-container" class="w-full"></div>
+          
           <div class="flex items-center justify-around gap-1.5 ${this.sidebarCollapsed ? 'flex-col mt-0.5 px-0' : 'flex-row px-2'}">
             <!-- Theme Toggle -->
             <button id="theme-toggle-btn" title="Alternar Tema" class="p-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/60 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-200 rounded-xl transition border border-slate-200/20 dark:border-slate-700/20 flex items-center justify-center w-full">
@@ -530,6 +535,8 @@ class App {
           window.location.reload();
         }
       });
+      
+      this.renderSidebarCampaigns();
     }
 
     const mobileProfileContainer = document.getElementById('mobile-profile-trigger');
@@ -546,6 +553,173 @@ class App {
           </span>
         </div>
       `;
+    }
+  }
+
+  /**
+   * Renderiza a listagem de campanhas ativas no rodapé da Sidebar com lógica de conclusão reativa
+   */
+  private async renderSidebarCampaigns(): Promise<void> {
+    if (!this.user || !this.perfil) return;
+    const container = document.getElementById('sidebar-campaigns-container');
+    if (!container) return;
+
+    try {
+      const activeCampaigns = await obterCampanhasAtivas();
+      if (activeCampaigns.length === 0) {
+        container.innerHTML = '';
+        return;
+      }
+
+      // Buscar medalhas conquistadas
+      const medalhasConquistadas = await obterMedalhasUsuario(this.user.id);
+      const medalhasSet = new Set(medalhasConquistadas);
+
+      // Calcular o progresso
+      const progresses = await Promise.all(activeCampaigns.map(cam => obterProgressoCampanha(this.user.id, cam)));
+
+      // Validar conclusões de campanhas
+      for (const prog of progresses) {
+        if (prog.concluida && !medalhasSet.has(prog.campaign.badge_key)) {
+          // Conceder medalha
+          const concedeu = await concederMedalha(this.user.id, prog.campaign.badge_key);
+          if (concedeu) {
+            // Disparar popup e confetes
+            const badgeObj = BADGE_DEFINITIONS.find(b => b.key === prog.campaign.badge_key);
+            showBadgeCelebrationModal(
+              badgeObj ? badgeObj.nome : prog.campaign.badge_key,
+              badgeObj ? badgeObj.emoji : '🏆',
+              prog.campaign.titulo
+            );
+            medalhasSet.add(prog.campaign.badge_key);
+          }
+        }
+      }
+
+      // Filtrar campanhas: ocultar as que já foram concluídas ou expiraram
+      const hoje = new Date().toISOString().split('T')[0];
+      const activeProgresses = progresses.filter(p => !medalhasSet.has(p.campaign.badge_key) && p.campaign.data_fim >= hoje);
+
+      if (activeProgresses.length === 0) {
+        container.innerHTML = '';
+        return;
+      }
+
+      const isExpanded = localStorage.getItem('paxflow-campaigns-accordion-expanded') !== 'false';
+
+      container.innerHTML = `
+        <div class="border-t border-slate-100/50 dark:border-slate-800/50 pt-2.5 mt-1 text-left">
+          <button id="btn-campaigns-accordion" class="w-full flex items-center justify-between px-2 py-1.5 hover:bg-slate-100/60 dark:hover:bg-slate-800/30 rounded-lg text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition duration-150 focus:outline-none select-none">
+            <span class="text-[9px] font-extrabold uppercase tracking-wider flex items-center gap-1.5 font-sans">
+              🎯 Campanhas Ativas (${activeProgresses.length})
+            </span>
+            <svg id="arrow-campaigns-accordion" class="w-3.5 h-3.5 transition-transform duration-200 text-slate-400 ${isExpanded ? 'transform rotate-90' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+          
+          <div id="campaigns-accordion-content" class="mt-1.5 space-y-1.5 px-1.5 transition-all duration-300 overflow-hidden ${isExpanded ? 'max-h-[300px] opacity-100' : 'max-h-0 opacity-0'}">
+            ${activeProgresses.map(p => {
+              const badgeObj = BADGE_DEFINITIONS.find(b => b.key === p.campaign.badge_key);
+              const badgeEmoji = badgeObj ? badgeObj.emoji : '🏆';
+              
+              let metaUnit = 'ações';
+              if (p.campaign.tipo_meta === 'xp_acumulado') metaUnit = 'XP';
+              else if (p.campaign.tipo_meta === 'cliente_criado') metaUnit = 'cli';
+              else if (p.campaign.tipo_meta === 'venda_aceita') metaUnit = 'vds';
+              else if (p.campaign.tipo_meta === 'lembrete_criado') metaUnit = 'lembr';
+              else if (p.campaign.tipo_meta === 'reembolso_pago') metaUnit = 'reemb';
+              else if (p.campaign.tipo_meta === 'produto_detalhado') metaUnit = 'prod';
+
+              return `
+                <div class="flex flex-col gap-1 p-2 rounded-xl bg-slate-50/50 dark:bg-slate-800/10 border border-slate-200/40 dark:border-slate-800/50 hover:border-indigo-500/30 transition duration-200 group relative">
+                  <div class="flex items-center justify-between gap-1.5">
+                    <span class="text-[9px] font-black text-slate-700 dark:text-slate-300 truncate max-w-[125px] group-hover:text-indigo-600 dark:group-hover:text-indigo-400" title="${p.campaign.titulo}">
+                      ${p.campaign.titulo}
+                    </span>
+                    <span class="text-xs text-slate-400 dark:text-slate-500 font-bold shrink-0 leading-none" title="${badgeObj ? badgeObj.nome : ''}">
+                      ${badgeEmoji}
+                    </span>
+                  </div>
+                  
+                  <!-- Progress Bar -->
+                  <div class="flex items-center gap-2 mt-1">
+                    <div class="flex-1 h-1 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+                      <div class="h-full bg-gradient-to-r from-indigo-500 to-indigo-600 dark:from-indigo-400 dark:to-indigo-500 rounded-full transition-all duration-500" style="width: ${p.percent}%"></div>
+                    </div>
+                    <span class="text-[8px] text-indigo-600 dark:text-indigo-400 font-black shrink-0 whitespace-nowrap">
+                      ${p.progresso}/${p.meta} <span class="text-[7px] text-slate-400 dark:text-slate-500 font-bold">${metaUnit}</span>
+                    </span>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+
+      // Accordion click handler
+      document.getElementById('btn-campaigns-accordion')?.addEventListener('click', () => {
+        const content = document.getElementById('campaigns-accordion-content');
+        const arrow = document.getElementById('arrow-campaigns-accordion');
+        if (!content || !arrow) return;
+
+        const expanded = content.classList.contains('max-h-[300px]');
+        if (expanded) {
+          content.classList.remove('max-h-[300px]', 'opacity-100');
+          content.classList.add('max-h-0', 'opacity-0');
+          arrow.classList.remove('transform', 'rotate-90');
+          localStorage.setItem('paxflow-campaigns-accordion-expanded', 'false');
+        } else {
+          content.classList.remove('max-h-0', 'opacity-0');
+          content.classList.add('max-h-[300px]', 'opacity-100');
+          arrow.classList.add('transform', 'rotate-90');
+          localStorage.setItem('paxflow-campaigns-accordion-expanded', 'true');
+        }
+      });
+
+    } catch (err) {
+      console.error('Erro ao renderizar campanhas na Sidebar:', err);
+    }
+  }
+
+  /**
+   * Verifica se existem notificações de novas campanhas não lidas no login e exibe toast explicativo
+   */
+  private async checarNotificacoesCampanhaLogin(): Promise<void> {
+    if (!this.user) return;
+    try {
+      const { data, error } = await supabase
+        .from('notificacoes')
+        .select('*, campaign:campaigns(*)')
+        .eq('user_id', this.user.id)
+        .eq('tipo_item', 'campanha')
+        .eq('lida', false);
+
+      if (error) throw error;
+      if (data && data.length > 0) {
+        // Mostrar toast para cada uma delas (com um pequeno delay entre elas se houver mais de uma)
+        data.forEach((not: any, idx: number) => {
+          if (not.campaign) {
+            setTimeout(() => {
+              this.showToast(`🎯 Nova Campanha Ativa: "${not.campaign.titulo}"!`, 'success');
+            }, idx * 1000);
+          }
+        });
+
+        // Marcar todas como lidas
+        const notIds = data.map((n: any) => n.id);
+        await supabase
+          .from('notificacoes')
+          .update({ lida: true })
+          .in('id', notIds);
+
+        // Atualizar contador do inbox e da sidebar
+        this.atualizarInboxBadge();
+        this.renderSidebarCampaigns();
+      }
+    } catch (err) {
+      console.error('Erro ao checar notificações de campanha no login:', err);
     }
   }
 
@@ -589,10 +763,8 @@ class App {
 
           // Checagem de Level Up ou XP recebido
           if (newLevel > oldLevel) {
-            import('./utils/celebrations').then(({ showLevelUpModal }) => {
-              const prog = obterProgressoNivel(newXp);
-              showLevelUpModal(newLevel, prog.patente, prog.patenteEmoji);
-            });
+            const prog = obterProgressoNivel(newXp);
+            showLevelUpModal(newLevel, prog.patente, prog.patenteEmoji);
           } else if (newXp > oldXp) {
             this.showToast(`+${newXp - oldXp} XP recebido!`, 'success');
           }

@@ -545,6 +545,9 @@ export class InboxPage {
                     } else if (a.type === 'mention') {
                       badgeClass = 'bg-gradient-to-tr from-purple-500 to-indigo-600 dark:from-purple-600 dark:to-indigo-500';
                       badgeText = 'Menção @';
+                    } else if (a.type === 'campaign_notification') {
+                      badgeClass = 'bg-gradient-to-tr from-emerald-500 to-indigo-600 dark:from-emerald-600 dark:to-indigo-500';
+                      badgeText = 'Campanha 🎯';
                     }
 
                     const isUnread = !a.arquivado && !readList.includes(a.id);
@@ -815,6 +818,8 @@ export class InboxPage {
                 colorClass = 'badge-gradient-rose';
               } else if (a.type === 'mention') {
                 colorClass = 'bg-gradient-to-tr from-purple-500 to-indigo-650';
+              } else if (a.type === 'campaign_notification') {
+                colorClass = 'bg-gradient-to-tr from-emerald-500 to-indigo-650';
               } else if (a.type === 'manual') {
                 if (a.isCreatedByMe) {
                   colorClass = 'bg-sky-600 text-white';
@@ -912,6 +917,10 @@ export class InboxPage {
                 badgeClass = 'bg-gradient-to-tr from-purple-500 to-indigo-600';
                 badgeText = 'Menção @';
                 accentClass = 'bg-purple-500';
+              } else if (a.type === 'campaign_notification') {
+                badgeClass = 'bg-gradient-to-tr from-emerald-500 to-indigo-600';
+                badgeText = 'Campanha 🎯';
+                accentClass = 'bg-emerald-500';
               } else if (a.type === 'manual') {
                 if (a.isCreatedByMe) {
                   badgeClass = 'bg-sky-600 text-white';
@@ -1033,6 +1042,10 @@ export class InboxPage {
                 badgeClass = 'bg-gradient-to-tr from-purple-500 to-indigo-600';
                 badgeText = 'Menção @';
                 accentClass = 'bg-purple-500';
+              } else if (a.type === 'campaign_notification') {
+                badgeClass = 'bg-gradient-to-tr from-emerald-500 to-indigo-600';
+                badgeText = 'Campanha 🎯';
+                accentClass = 'bg-emerald-500';
               } else if (a.type === 'manual') {
                 if (a.isCreatedByMe) {
                   badgeClass = 'bg-sky-600 text-white';
@@ -1324,7 +1337,7 @@ export class InboxPage {
               .eq('id', tableId);
 
             if (error) throw error;
-          } else if (alertItem.type === 'mention') {
+          } else if (alertItem.type === 'mention' || alertItem.type === 'campaign_notification') {
             const tableId = alertId.replace('mention-', '');
             // Update row in Supabase
             const { error } = await supabase
@@ -1386,7 +1399,7 @@ export class InboxPage {
               .eq('id', tableId);
 
             if (error) throw error;
-          } else if (clickedItem.type === 'mention' || clickedItem.type === 'direct_message') {
+          } else if (clickedItem.type === 'mention' || clickedItem.type === 'direct_message' || clickedItem.type === 'campaign_notification') {
             const tableId = clickedItem.id.replace('mention-', '');
             const { error } = await supabase
               .from('notificacoes')

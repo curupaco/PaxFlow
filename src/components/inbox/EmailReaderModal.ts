@@ -31,6 +31,9 @@ export class EmailReaderModal {
     } else if (item.type === 'direct_message') {
       badgeClass = 'bg-purple-600 text-white';
       badgeText = 'Mensagem Direta';
+    } else if (item.type === 'campaign_notification') {
+      badgeClass = 'bg-emerald-600 text-white';
+      badgeText = 'Campanha 🎯';
     }
 
     // Load thread messages if it's a direct message

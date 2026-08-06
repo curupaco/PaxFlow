@@ -158,3 +158,67 @@ export function showLevelUpModal(nivel: number, patente: string, emoji: string):
 
   document.getElementById('btn-levelup-close')?.addEventListener('click', closeLevelUp);
 }
+
+/**
+ * Exibe o popup modal de celebração ao conquistar um badge/campanha
+ */
+export function showBadgeCelebrationModal(badgeName: string, badgeEmoji: string, campaignTitle: string): void {
+  const overlay = document.createElement('div');
+  overlay.id = 'badge-celebration-overlay';
+  overlay.className = 'fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[60] flex items-center justify-center p-4 transition-all duration-500 opacity-0';
+  
+  overlay.innerHTML = `
+    <div class="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl max-w-sm w-full rounded-3xl border border-slate-200/50 dark:border-slate-800/50 shadow-2xl p-6 text-center transform scale-90 transition-all duration-500 flex flex-col items-center gap-4 relative overflow-hidden" id="badge-celebration-card">
+      
+      <!-- Decorative background glow -->
+      <div class="absolute -top-10 -left-10 w-28 h-28 bg-indigo-500/20 rounded-full blur-2xl animate-pulse"></div>
+      <div class="absolute -bottom-10 -right-10 w-28 h-28 bg-purple-500/20 rounded-full blur-2xl animate-pulse"></div>
+
+      <!-- Badge container -->
+      <div class="relative w-24 h-24 flex items-center justify-center bg-gradient-to-tr from-indigo-500 to-purple-600 rounded-full text-white shadow-xl shadow-indigo-500/30">
+        <span class="text-4xl animate-bounce select-none">${badgeEmoji}</span>
+        <span class="absolute -bottom-2 bg-indigo-600 dark:bg-indigo-600 text-white font-black text-[9px] px-2.5 py-1 rounded-full ring-2 ring-white dark:ring-slate-900 shadow-sm leading-none flex items-center justify-center whitespace-nowrap font-sans">
+          MEDALHA CONQUISTADA
+        </span>
+      </div>
+
+      <!-- Content -->
+      <div class="space-y-1.5 mt-2 z-10">
+        <h2 class="text-base font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-500 dark:from-indigo-400 dark:via-purple-400 dark:to-indigo-300 tracking-tight leading-tight uppercase animate-pulse">CAMPANHA CONCLUÍDA!</h2>
+        <p class="text-sm text-slate-800 dark:text-slate-200 font-extrabold leading-relaxed">
+          ${campaignTitle}
+        </p>
+        <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold leading-relaxed mt-1">
+          Você desbloqueou a medalha <span class="text-indigo-600 dark:text-indigo-400 font-extrabold">${badgeName}</span>!
+        </p>
+      </div>
+
+      <button id="btn-badge-close" type="button" class="w-full mt-2 px-5 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-2xl transition shadow-lg shadow-indigo-600/20 uppercase tracking-wider z-10">
+        Sensacional!
+      </button>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  // Fade-in e som
+  setTimeout(() => {
+    overlay.classList.add('opacity-100');
+    const card = document.getElementById('badge-celebration-card');
+    card?.classList.remove('scale-90');
+    card?.classList.add('scale-100');
+    playChime();
+    triggerConfetti();
+  }, 50);
+
+  const closeOverlay = () => {
+    const card = document.getElementById('badge-celebration-card');
+    card?.classList.remove('scale-100');
+    card?.classList.add('scale-90');
+    overlay.classList.remove('opacity-100');
+    overlay.classList.add('opacity-0');
+    setTimeout(() => overlay.remove(), 400);
+  };
+
+  document.getElementById('btn-badge-close')?.addEventListener('click', closeOverlay);
+}

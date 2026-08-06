@@ -327,7 +327,8 @@ export class InboxService {
               *,
               destinatario:profiles (*)
             )
-          )
+          ),
+          campaign:campaigns (*)
         `)
         .eq('arquivada', false)
         .order('created_at', { ascending: false });
@@ -343,6 +344,40 @@ export class InboxService {
       } else {
         (notificacoesData || []).forEach((not: any) => {
           const dataFormatada = new Date(not.created_at).toLocaleDateString('pt-BR');
+
+          if (not.tipo_item === 'campanha') {
+            if (!not.campaign) return; // Campanha deleted
+
+            let metaLabel = '';
+            if (not.campaign.tipo_meta === 'xp_acumulado') metaLabel = `${not.campaign.meta_quantidade} XP`;
+            else if (not.campaign.tipo_meta === 'cliente_criado') metaLabel = `${not.campaign.meta_quantidade} Clientes`;
+            else if (not.campaign.tipo_meta === 'venda_aceita') metaLabel = `${not.campaign.meta_quantidade} Vendas`;
+            else if (not.campaign.tipo_meta === 'lembrete_criado') metaLabel = `${not.campaign.meta_quantidade} Lembretes`;
+            else if (not.campaign.tipo_meta === 'reembolso_pago') metaLabel = `${not.campaign.meta_quantidade} Reembolsos`;
+            else if (not.campaign.tipo_meta === 'produto_detalhado') metaLabel = `${not.campaign.meta_quantidade} Produtos`;
+
+            list.push({
+              id: `mention-${not.id}`,
+              type: 'campaign_notification',
+              title: `🎯 Nova Campanha: ${not.campaign.titulo}`,
+              sender: 'PaxFlow Gamificação',
+              senderAvatar: 'panda',
+              dateStr: dataFormatada,
+              subject: `Meta: ${metaLabel} no período`,
+              body: `A liderança lançou a campanha <strong>${not.campaign.titulo}</strong>!<br><br>
+                <strong>Regras/Descrição:</strong> ${not.campaign.descricao}<br>
+                <strong>Período:</strong> de ${new Date(not.campaign.data_inicio + 'T00:00:00').toLocaleDateString('pt-BR')} até ${new Date(not.campaign.data_fim + 'T00:00:00').toLocaleDateString('pt-BR')}<br>
+                <strong>Meta:</strong> ${metaLabel}<br><br>
+                Acompanhe o seu progresso diretamente no rodapé da barra lateral!`,
+              targetId: not.campaign.id,
+              arquivado: not.arquivada,
+              consultorId: not.user_id,
+              consultorNome: 'PaxFlow Gamificação',
+              createdAt: not.created_at,
+              eventDate: not.created_at.split('T')[0]
+            });
+            return;
+          }
 
           if (not.tipo_item === 'mensagem') {
             if (!not.mensagem) return; // Mensagem deleted
