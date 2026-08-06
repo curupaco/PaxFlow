@@ -514,6 +514,7 @@ BEGIN
   INSERT INTO auth.identities (
     id,
     user_id,
+    provider_id,
     identity_data,
     provider,
     last_sign_in_at,
@@ -522,6 +523,7 @@ BEGIN
   ) VALUES (
     gen_random_uuid(),
     new_user_id,
+    new_user_id::text,
     jsonb_build_object('sub', new_user_id::text, 'email', user_email),
     'email',
     NOW(),
