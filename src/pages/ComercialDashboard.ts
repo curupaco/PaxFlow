@@ -77,6 +77,7 @@ export class ComercialDashboard {
   private orcamentos: Orcamento[] = [];
   private viagens: Viagem[] = [];
   private consultores: PerfilConsultor[] = [];
+  private locPagamentos: any[] = [];
   
   // Estados de filtros
   private selectedPeriod: PeriodType = 'mes_atual';
@@ -279,9 +280,20 @@ export class ComercialDashboard {
       }));
         // Persist viagens to localStorage
         localStorage.setItem('paxflow-viagens-local', JSON.stringify(this.viagens));
-        // Persist viagens to localStorage
-        localStorage.setItem('paxflow-viagens-local', JSON.stringify(this.viagens));
 
+        // 3. Carregar Pagamentos e Formas de Recebimento
+        this.locPagamentos = [];
+        try {
+          const { data: dataPags } = await supabase
+            .from('loc_pagamentos')
+            .select('*, formas_recebimento(*)');
+          if (dataPags) {
+            this.locPagamentos = dataPags;
+            localStorage.setItem('paxflow-loc-pagamentos-dashboard', JSON.stringify(this.locPagamentos));
+          }
+        } catch (err) {
+          console.warn('Erro ao carregar pagamentos no dashboard:', err);
+        }
   
     } catch (err: any) {
       console.warn('Ativando fallback offline no Dashboard: obtendo do LocalStorage.', err.message);
@@ -379,6 +391,17 @@ export class ComercialDashboard {
           createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
         }
       ];
+    }
+
+    const savedPags = localStorage.getItem('paxflow-loc-pagamentos-dashboard');
+    if (savedPags) {
+      try {
+        this.locPagamentos = JSON.parse(savedPags);
+      } catch (e) {
+        this.locPagamentos = [];
+      }
+    } else {
+      this.locPagamentos = [];
     }
   }
 
@@ -521,10 +544,18 @@ export class ComercialDashboard {
     // 1. Aplica filtros
     const { filteredOrc, filteredVia } = this.filterRecords();
 
-    // 2. Executa cálculos
     // A. Realizado (Viagens confirmadas/concluídas/planejadas - tirando as canceladas)
     const viagensAtivas = filteredVia.filter(v => v.status !== 'cancelada');
-    const faturamentoRealizado = viagensAtivas.reduce((acc, v) => acc + (v.valorTotal || 0), 0);
+    
+    // Subtrair pagamentos de desconto/prejuízo
+    const activeViaIds = new Set(viagensAtivas.map(v => v.id));
+    const pagsSub = this.locPagamentos.filter(p => 
+      activeViaIds.has(p.viagem_id || p.viagemId) &&
+      p.formas_recebimento &&
+      ['DESCONTO', 'PREJUÍZO'].includes((p.formas_recebimento.nome || '').trim().toUpperCase())
+    );
+    const totalSub = pagsSub.reduce((acc, p) => acc + (Number(p.valor) || 0), 0);
+    const faturamentoRealizado = Math.max(0, viagensAtivas.reduce((acc, v) => acc + (v.valorTotal || 0), 0) - totalSub);
 
     // B. Pipeline Ativo (Orçamentos em andamento/cotação)
     const orcamentosAtivos = filteredOrc.filter(o => o.status === 'SOLICITADO' || o.status === 'EM_ANDAMENTO' || o.status === 'AGUARDANDO');
@@ -944,7 +975,14 @@ export class ComercialDashboard {
         };
         rankingMap.set(v.consultorId, metrics);
       }
-      metrics.valVendido += v.valorTotal || 0;
+      
+      const vPayments = this.locPagamentos.filter(p => 
+        (p.viagem_id === v.id || p.viagemId === v.id) &&
+        p.formas_recebimento &&
+        ['DESCONTO', 'PREJUÍZO'].includes((p.formas_recebimento.nome || '').trim().toUpperCase())
+      );
+      const vSub = vPayments.reduce((s, p) => s + (Number(p.valor) || 0), 0);
+      metrics.valVendido += Math.max(0, (v.valorTotal || 0) - vSub);
     });
 
     // Converter map para array e ordenar pelo maior Faturamento de Viagens Vendidas

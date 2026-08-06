@@ -1656,13 +1656,22 @@ export class EditTravelModal {
       if (savedFormas) {
         try {
           formasAtivas = JSON.parse(savedFormas).filter((f: any) => f.ativo);
+          const nomesFormas = formasAtivas.map(f => (f.nome || '').trim().toUpperCase());
+          if (!nomesFormas.includes('DESCONTO')) {
+            formasAtivas.push({ id: 'forma-desconto', nome: 'DESCONTO', icone: '🏷️', ativo: true });
+          }
+          if (!nomesFormas.includes('PREJUÍZO') && !nomesFormas.includes('PREJUIZO')) {
+            formasAtivas.push({ id: 'forma-prejuizo', nome: 'PREJUÍZO', icone: '📉', ativo: true });
+          }
         } catch (e) {}
       } else {
         formasAtivas = [
           { id: 'forma-pix', nome: 'PIX', icone: '🏦', ativo: true },
           { id: 'forma-credito', nome: 'Cartão de Crédito', icone: '💳', ativo: true },
           { id: 'forma-dinheiro', nome: 'Dinheiro', icone: '💵', ativo: true },
-          { id: 'forma-boleto', nome: 'Boleto Bancário', icone: '🧾', ativo: true }
+          { id: 'forma-boleto', nome: 'Boleto Bancário', icone: '🧾', ativo: true },
+          { id: 'forma-desconto', nome: 'DESCONTO', icone: '🏷️', ativo: true },
+          { id: 'forma-prejuizo', nome: 'PREJUÍZO', icone: '📉', ativo: true }
         ];
       }
     }

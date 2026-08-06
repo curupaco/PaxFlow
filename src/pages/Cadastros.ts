@@ -406,12 +406,18 @@ export class CadastrosPage {
                                 </span>
                               </td>
                               <td class="py-3 px-4 text-right space-x-2">
-                                <button data-id="${f.id}" class="btn-editar-forma p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition" title="Editar Forma de Recebimento">
-                                  ✏️
-                                </button>
-                                <button data-id="${f.id}" class="btn-toggle-ativo-forma p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition" title="${f.ativo ? 'Desativar' : 'Ativar'}">
-                                  ${f.ativo ? '🔴 Desativar' : '🟢 Ativar'}
-                                </button>
+                                ${['DESCONTO', 'PREJUÍZO'].includes((f.nome || '').trim().toUpperCase()) ? `
+                                  <span class="text-[10px] text-slate-400 dark:text-slate-500 font-bold italic select-none pr-4">
+                                    Fixo do Sistema
+                                  </span>
+                                ` : `
+                                  <button data-id="${f.id}" class="btn-editar-forma p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition" title="Editar Forma de Recebimento">
+                                    ✏️
+                                  </button>
+                                  <button data-id="${f.id}" class="btn-toggle-ativo-forma p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition" title="${f.ativo ? 'Desativar' : 'Ativar'}">
+                                    ${f.ativo ? '🔴 Desativar' : '🟢 Ativar'}
+                                  </button>
+                                `}
                               </td>
                             </tr>
                           `;
@@ -971,6 +977,20 @@ export class CadastrosPage {
     if (saved) {
       try {
         this.formasRecebimento = JSON.parse(saved);
+        // Garante que DESCONTO e PREJUÍZO estejam presentes no array do localStorage
+        const nomesFormas = this.formasRecebimento.map(f => (f.nome || '').trim().toUpperCase());
+        let alterou = false;
+        if (!nomesFormas.includes('DESCONTO')) {
+          this.formasRecebimento.push({ id: 'forma-desconto', nome: 'DESCONTO', icone: '🏷️', ativo: true });
+          alterou = true;
+        }
+        if (!nomesFormas.includes('PREJUÍZO') && !nomesFormas.includes('PREJUIZO')) {
+          this.formasRecebimento.push({ id: 'forma-prejuizo', nome: 'PREJUÍZO', icone: '📉', ativo: true });
+          alterou = true;
+        }
+        if (alterou) {
+          localStorage.setItem('paxflow-formas-recebimento', JSON.stringify(this.formasRecebimento));
+        }
       } catch (e) {
         this.formasRecebimento = [];
       }
@@ -979,7 +999,9 @@ export class CadastrosPage {
         { id: 'forma-pix', nome: 'PIX', icone: '🏦', ativo: true },
         { id: 'forma-credito', nome: 'Cartão de Crédito', icone: '💳', ativo: true },
         { id: 'forma-dinheiro', nome: 'Dinheiro', icone: '💵', ativo: true },
-        { id: 'forma-boleto', nome: 'Boleto Bancário', icone: '🧾', ativo: true }
+        { id: 'forma-boleto', nome: 'Boleto Bancário', icone: '🧾', ativo: true },
+        { id: 'forma-desconto', nome: 'DESCONTO', icone: '🏷️', ativo: true },
+        { id: 'forma-prejuizo', nome: 'PREJUÍZO', icone: '📉', ativo: true }
       ];
       localStorage.setItem('paxflow-formas-recebimento', JSON.stringify(this.formasRecebimento));
     }
@@ -1058,6 +1080,10 @@ export class CadastrosPage {
   }
 
   private async toggleAtivoForma(forma: any): Promise<void> {
+    if (['DESCONTO', 'PREJUÍZO'].includes((forma.nome || '').trim().toUpperCase())) {
+      this.showToast('Este método de recebimento é fixo do sistema e não pode ser desativado.', 'error');
+      return;
+    }
     const novoStatus = !forma.ativo;
     try {
       if (forma.id.startsWith('forma_local_')) {

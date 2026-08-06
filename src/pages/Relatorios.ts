@@ -494,7 +494,14 @@ export class RelatoriosPage {
   // ==========================================
   private renderDesempenho(data: any): string {
     // Volume de Vendas
-    const totalVendido = data.viagens.reduce((acc: number, v: any) => acc + (v.valor_total || v.valorTotal || 0), 0);
+    const activeViaIds = new Set(data.viagens.map((v: any) => v.id));
+    const pagsSub = data.locPagamentos.filter((p: any) => 
+      activeViaIds.has(p.viagem_id || p.viagemId) &&
+      p.formas_recebimento &&
+      ['DESCONTO', 'PREJUÍZO'].includes((p.formas_recebimento.nome || '').trim().toUpperCase())
+    );
+    const totalSub = pagsSub.reduce((acc: number, p: any) => acc + (Number(p.valor) || 0), 0);
+    const totalVendido = Math.max(0, data.viagens.reduce((acc: number, v: any) => acc + (v.valor_total || v.valorTotal || 0), 0) - totalSub);
     const orcados = data.orcamentos.length;
     
     // Conversão
@@ -523,7 +530,13 @@ export class RelatoriosPage {
     data.viagens.forEach((v: any) => {
       const cId = v.consultor_id || v.consultorId || 'unknown';
       const cNome = this.consultores.find(c => c.id === cId)?.nome || 'Outros';
-      consultantSales[cNome] = (consultantSales[cNome] || 0) + (v.valor_total || v.valorTotal || 0);
+      const vPayments = data.locPagamentos.filter((p: any) => 
+        (p.viagem_id === v.id || p.viagemId === v.id) &&
+        p.formas_recebimento &&
+        ['DESCONTO', 'PREJUÍZO'].includes((p.formas_recebimento.nome || '').trim().toUpperCase())
+      );
+      const vSub = vPayments.reduce((s: number, p: any) => s + (Number(p.valor) || 0), 0);
+      consultantSales[cNome] = (consultantSales[cNome] || 0) + Math.max(0, (v.valor_total || v.valorTotal || 0) - vSub);
     });
 
     const entries = Object.entries(consultantSales);
@@ -607,7 +620,15 @@ export class RelatoriosPage {
                   const cRecuso = subOrc.filter((o: any) => o.sub_status === 'DESISTENCIA' || o.subStatus === 'DESISTENCIA').length;
                   const cConv = (cAceito + cRecuso) > 0 ? Math.round((cAceito / (cAceito + cRecuso)) * 100) : 0;
                   
-                  const cSales = subVia.reduce((sum: number, v: any) => sum + (v.valor_total || v.valorTotal || 0), 0);
+                  const cSales = subVia.reduce((sum: number, v: any) => {
+                    const vPayments = data.locPagamentos.filter((p: any) => 
+                      (p.viagem_id === v.id || p.viagemId === v.id) &&
+                      p.formas_recebimento &&
+                      ['DESCONTO', 'PREJUÍZO'].includes((p.formas_recebimento.nome || '').trim().toUpperCase())
+                    );
+                    const vSub = vPayments.reduce((s: number, p: any) => s + (Number(p.valor) || 0), 0);
+                    return sum + Math.max(0, (v.valor_total || v.valorTotal || 0) - vSub);
+                  }, 0);
                   
                   return `
                   <tr class="border-b border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-350">
@@ -715,9 +736,18 @@ export class RelatoriosPage {
     let comissaoTotal = 0;
     let markupTotal = 0;
     let ravTotal = 0;
+    let totalSubtrair = 0;
 
     data.viagens.forEach((v: any) => {
       faturamentoBruto += (v.valor_total || v.valorTotal || 0);
+      
+      const vPayments = data.locPagamentos.filter((p: any) => 
+        (p.viagem_id === v.id || p.viagemId === v.id) &&
+        p.formas_recebimento &&
+        ['DESCONTO', 'PREJUÍZO'].includes((p.formas_recebimento.nome || '').trim().toUpperCase())
+      );
+      totalSubtrair += vPayments.reduce((s: number, p: any) => s + (Number(p.valor) || 0), 0);
+
       if (v.produtos) {
         v.produtos.forEach((p: any) => {
           if (p.status !== 'cancelado') {
@@ -730,8 +760,9 @@ export class RelatoriosPage {
       }
     });
 
-    const lucroBruto = (faturamentoBruto - custoTotal);
-    const lucroLiquidoReal = comissaoTotal + markupTotal + ravTotal;
+    faturamentoBruto = Math.max(0, faturamentoBruto - totalSubtrair);
+    const lucroBruto = Math.max(0, faturamentoBruto - custoTotal);
+    const lucroLiquidoReal = Math.max(0, comissaoTotal + markupTotal + ravTotal - totalSubtrair);
     const margemMedia = faturamentoBruto > 0 ? Math.round((lucroLiquidoReal / faturamentoBruto) * 100) : 0;
 
     // Grouping by product types
@@ -1355,7 +1386,16 @@ export class RelatoriosPage {
   // ==========================================
   private renderAuditoria(data: any): string {
     const viagensAtivas = data.viagens.filter((v: any) => v.status !== 'cancelada');
-    const faturamentoTotal = viagensAtivas.reduce((sum: number, v: any) => sum + (v.valor_total || v.valorTotal || 0), 0);
+    
+    // Subtrair pagamentos de desconto/prejuízo do faturamento comercial bruto
+    const activeViaIds = new Set(viagensAtivas.map((v: any) => v.id));
+    const pagsSub = data.locPagamentos.filter((p: any) => 
+      activeViaIds.has(p.viagem_id || p.viagemId) &&
+      p.formas_recebimento &&
+      ['DESCONTO', 'PREJUÍZO'].includes((p.formas_recebimento.nome || '').trim().toUpperCase())
+    );
+    const totalSub = pagsSub.reduce((acc: number, p: any) => acc + (Number(p.valor) || 0), 0);
+    const faturamentoTotal = Math.max(0, viagensAtivas.reduce((sum: number, v: any) => sum + (v.valor_total || v.valorTotal || 0), 0) - totalSub);
 
     // Sum all payments in the period matching active viagens
     let totalPago = 0;
@@ -1364,16 +1404,27 @@ export class RelatoriosPage {
     data.locPagamentos.forEach((p: any) => {
       const v = viagensAtivas.find((item: any) => item.id === p.viagem_id || item.id === p.viagemId);
       if (v) {
-        const val = p.valor || 0;
-        totalPago += val;
-        
+        const val = Number(p.valor) || 0;
         const formaNome = p.formas_recebimento?.nome || 'Outros';
         const formaIcone = p.formas_recebimento?.icone || '💰';
+        
+        const isSubtractive = ['DESCONTO', 'PREJUÍZO'].includes(formaNome.trim().toUpperCase());
+        
+        if (isSubtractive) {
+          totalPago -= val;
+        } else {
+          totalPago += val;
+        }
         
         if (!paymentsGrouped[formaNome]) {
           paymentsGrouped[formaNome] = { valor: 0, icone: formaIcone };
         }
-        paymentsGrouped[formaNome].valor += val;
+        
+        if (isSubtractive) {
+          paymentsGrouped[formaNome].valor -= val;
+        } else {
+          paymentsGrouped[formaNome].valor += val;
+        }
       }
     });
 
@@ -1383,10 +1434,16 @@ export class RelatoriosPage {
     // Payments breakdown horizontal bars
     let paymentBreakdownHtml = '';
     const paymentEntries = Object.entries(paymentsGrouped);
-    const maxPayment = paymentEntries.length > 0 ? Math.max(...paymentEntries.map(e => e[1].valor)) : 1;
+    const maxPayment = paymentEntries.length > 0 ? Math.max(...paymentEntries.map(e => Math.abs(e[1].valor))) : 1;
     paymentEntries.forEach(([nome, info]) => {
       const pct = Math.round((info.valor / (totalPago || 1)) * 100);
-      const widthPct = Math.round((info.valor / maxPayment) * 80) + 5;
+      const widthPct = Math.round((Math.abs(info.valor) / maxPayment) * 80) + 5;
+      
+      let barColorClass = 'bg-indigo-500';
+      if (['DESCONTO', 'PREJUÍZO'].includes(nome.trim().toUpperCase())) {
+        barColorClass = nome.trim().toUpperCase() === 'DESCONTO' ? 'bg-amber-500' : 'bg-rose-500';
+      }
+
       paymentBreakdownHtml += `
         <div class="space-y-1.5">
           <div class="flex justify-between text-xs font-bold text-slate-650 dark:text-slate-400">
@@ -1394,7 +1451,7 @@ export class RelatoriosPage {
             <span>${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(info.valor)} (${pct}%)</span>
           </div>
           <div class="w-full bg-slate-100 dark:bg-slate-800 h-4 rounded-lg overflow-hidden flex">
-            <div class="bg-indigo-500 h-full rounded-lg transition-all duration-500" style="width: ${widthPct}%"></div>
+            <div class="${barColorClass} h-full rounded-lg transition-all duration-500" style="width: ${widthPct}%"></div>
           </div>
         </div>
       `;
@@ -2090,7 +2147,15 @@ export class RelatoriosPage {
         const cAceito = subOrc.filter((o: any) => o.sub_status === 'ACEITO' || o.subStatus === 'ACEITO').length;
         const cRecuso = subOrc.filter((o: any) => o.sub_status === 'DESISTENCIA' || o.subStatus === 'DESISTENCIA').length;
         const cConv = (cAceito + cRecuso) > 0 ? Math.round((cAceito / (cAceito + cRecuso)) * 100) : 0;
-        const cSales = subVia.reduce((sum: number, v: any) => sum + (v.valor_total || v.valorTotal || 0), 0);
+        const cSales = subVia.reduce((sum: number, v: any) => {
+          const vPayments = data.locPagamentos.filter((p: any) => 
+            (p.viagem_id === v.id || p.viagemId === v.id) &&
+            p.formas_recebimento &&
+            ['DESCONTO', 'PREJUÍZO'].includes((p.formas_recebimento.nome || '').trim().toUpperCase())
+          );
+          const vSub = vPayments.reduce((s: number, p: any) => s + (Number(p.valor) || 0), 0);
+          return sum + Math.max(0, (v.valor_total || v.valorTotal || 0) - vSub);
+        }, 0);
         
         csvContent += `"${c.nome}";${subOrc.length};${cAceito};"${cConv}%";${cSales}\n`;
       });
@@ -2103,8 +2168,17 @@ export class RelatoriosPage {
       csvContent += 'Faturamento Bruto;Comissao Consolidada;Markup Coletado;Lucro Liquido\n';
       
       let faturamentoBruto = 0, comissaoTotal = 0, markupTotal = 0, ravTotal = 0;
+      let totalSub = 0;
       data.viagens.forEach((v: any) => {
         faturamentoBruto += (v.valor_total || v.valorTotal || 0);
+        
+        const vPayments = data.locPagamentos.filter((p: any) => 
+          (p.viagem_id === v.id || p.viagemId === v.id) &&
+          p.formas_recebimento &&
+          ['DESCONTO', 'PREJUÍZO'].includes((p.formas_recebimento.nome || '').trim().toUpperCase())
+        );
+        totalSub += vPayments.reduce((s: number, p: any) => s + (Number(p.valor) || 0), 0);
+
         if (v.produtos) {
           v.produtos.forEach((p: any) => {
             if (p.status !== 'cancelado') {
@@ -2115,7 +2189,9 @@ export class RelatoriosPage {
           });
         }
       });
-      csvContent += `${faturamentoBruto};${comissaoTotal};${markupTotal};${comissaoTotal + markupTotal + ravTotal}\n`;
+      const netFaturamento = Math.max(0, faturamentoBruto - totalSub);
+      const netLucro = Math.max(0, (comissaoTotal + markupTotal + ravTotal) - totalSub);
+      csvContent += `${netFaturamento};${comissaoTotal};${markupTotal};${netLucro}\n`;
     } else if (this.activeTab === 'perdas') {
       csvContent += 'Cliente;Destino;Valor Cotacao;Motivo Desistencia\n';
       const perdidos = data.orcamentos.filter((o: any) => o.subStatus === 'DESISTENCIA' || o.sub_status === 'DESISTENCIA');
@@ -2202,11 +2278,27 @@ export class RelatoriosPage {
       csvContent += 'Métrica / Pendência;Cliente / Detalhe;Destino / Localizador;Valor / Detalhamento\n';
       
       const viagensAtivas = data.viagens.filter((v: any) => v.status !== 'cancelada');
-      const faturamentoTotal = viagensAtivas.reduce((sum: number, v: any) => sum + (v.valor_total || v.valorTotal || 0), 0);
+      const activeViaIds = new Set(viagensAtivas.map((v: any) => v.id));
+      const pagsSub = data.locPagamentos.filter((p: any) => 
+        activeViaIds.has(p.viagem_id || p.viagemId) &&
+        p.formas_recebimento &&
+        ['DESCONTO', 'PREJUÍZO'].includes((p.formas_recebimento.nome || '').trim().toUpperCase())
+      );
+      const totalSub = pagsSub.reduce((acc: number, p: any) => acc + (Number(p.valor) || 0), 0);
+      const faturamentoTotal = Math.max(0, viagensAtivas.reduce((sum: number, v: any) => sum + (v.valor_total || v.valorTotal || 0), 0) - totalSub);
+
       let totalPago = 0;
       data.locPagamentos.forEach((p: any) => {
         const v = viagensAtivas.find((item: any) => item.id === p.viagem_id || item.id === p.viagemId);
-        if (v) totalPago += (p.valor || 0);
+        if (v) {
+          const val = Number(p.valor) || 0;
+          const formaNome = p.formas_recebimento?.nome || '';
+          if (['DESCONTO', 'PREJUÍZO'].includes(formaNome.trim().toUpperCase())) {
+            totalPago -= val;
+          } else {
+            totalPago += val;
+          }
+        }
       });
 
       csvContent += `"Faturamento Comercial";"Consolidado";"-";${faturamentoTotal}\n`;
