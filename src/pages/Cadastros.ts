@@ -144,14 +144,14 @@ export class CadastrosPage {
         </header>
 
         <!-- Navegação de Abas Premium -->
-        <div class="px-6 bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800/80 flex gap-6 transition-colors duration-200">
-          <button id="tab-tipos-servicos" class="px-4 py-3.5 text-xs font-bold uppercase tracking-wider border-b-2 transition-all ${this.activeTab === 'tipos' ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}">
+        <div class="px-6 bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800/80 flex gap-6 overflow-x-auto custom-scrollbar pb-1 transition-colors duration-200">
+          <button id="tab-tipos-servicos" class="shrink-0 px-4 py-3.5 text-xs font-bold uppercase tracking-wider border-b-2 transition-all ${this.activeTab === 'tipos' ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}">
             📦 Tipos de Serviços
           </button>
-          <button id="tab-gestao-destinos" class="px-4 py-3.5 text-xs font-bold uppercase tracking-wider border-b-2 transition-all ${this.activeTab === 'destinos' ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}">
+          <button id="tab-gestao-destinos" class="shrink-0 px-4 py-3.5 text-xs font-bold uppercase tracking-wider border-b-2 transition-all ${this.activeTab === 'destinos' ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}">
             📍 Gestão de Destinos
           </button>
-          <button id="tab-formas-recebimento" class="px-4 py-3.5 text-xs font-bold uppercase tracking-wider border-b-2 transition-all ${this.activeTab === 'formas' ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}">
+          <button id="tab-formas-recebimento" class="shrink-0 px-4 py-3.5 text-xs font-bold uppercase tracking-wider border-b-2 transition-all ${this.activeTab === 'formas' ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}">
             💰 Formas de Recebimento
           </button>
         </div>

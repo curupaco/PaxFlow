@@ -1393,8 +1393,8 @@ export class ConfiguracoesPage {
 
         <!-- Abas de Navegação -->
         <div class="px-6 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 transition-colors">
-          <div class="max-w-4xl mx-auto w-full flex gap-6">
-            <button id="tab-geral-btn" class="py-4 px-1 border-b-2 text-sm font-extrabold transition select-none flex items-center gap-2 ${
+          <div class="max-w-4xl mx-auto w-full flex gap-6 overflow-x-auto custom-scrollbar pb-1">
+            <button id="tab-geral-btn" class="shrink-0 py-4 px-1 border-b-2 text-sm font-extrabold transition select-none flex items-center gap-2 ${
               this.activeTab === 'geral' 
                 ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400' 
                 : 'border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
@@ -1405,7 +1405,7 @@ export class ConfiguracoesPage {
               </svg>
               Parâmetros Globais
             </button>
-            <button id="tab-consultores-btn" class="py-4 px-1 border-b-2 text-sm font-extrabold transition select-none flex items-center gap-2 ${
+            <button id="tab-consultores-btn" class="shrink-0 py-4 px-1 border-b-2 text-sm font-extrabold transition select-none flex items-center gap-2 ${
               this.activeTab === 'consultores' 
                 ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400' 
                 : 'border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
@@ -1415,7 +1415,7 @@ export class ConfiguracoesPage {
               </svg>
               Gestão de Consultores
             </button>
-            <button id="tab-importacoes-btn" class="py-4 px-1 border-b-2 text-sm font-extrabold transition select-none flex items-center gap-2 ${
+            <button id="tab-importacoes-btn" class="shrink-0 py-4 px-1 border-b-2 text-sm font-extrabold transition select-none flex items-center gap-2 ${
               this.activeTab === 'importacoes' 
                 ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400' 
                 : 'border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
@@ -1425,7 +1425,7 @@ export class ConfiguracoesPage {
               </svg>
               Importações
             </button>
-            <button id="tab-campanhas-btn" class="py-4 px-1 border-b-2 text-sm font-extrabold transition select-none flex items-center gap-2 ${
+            <button id="tab-campanhas-btn" class="shrink-0 py-4 px-1 border-b-2 text-sm font-extrabold transition select-none flex items-center gap-2 ${
               this.activeTab === 'campanhas' 
                 ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400' 
                 : 'border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'

@@ -2,7 +2,7 @@ import { PerfilConsultor } from '../../types';
 import { getAvatarSvg, AVATAR_OPTIONS, salvarAvatarLocal } from '../../services/avatars';
 import { supabase, atualizarSenhaAtual } from '../../services/supabase';
 import { showCustomAlert } from '../../services/dialog';
-import { obterProgressoNivel, BADGE_DEFINITIONS, obterMedalhasUsuario } from '../../services/gamification';
+import { obterProgressoNivel, BADGE_DEFINITIONS, obterMedalhasUsuario, obterCampanhasAtivas, obterProgressoCampanha } from '../../services/gamification';
 
 export interface MeuPerfilModalOptions {
   perfil: PerfilConsultor;
@@ -101,6 +101,14 @@ export class MeuPerfilModal {
             </div>
           </div>
 
+          <!-- Campanhas Ativas (Acompanhamento Mobile/Geral) -->
+          <div id="modal-campaigns-section" class="hidden border-t border-slate-100 dark:border-slate-800 pt-4">
+            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2.5">🎯 Campanhas Ativas</label>
+            <div class="space-y-2 max-h-[220px] overflow-y-auto custom-scrollbar pr-1" id="modal-campaigns-list">
+              <!-- Carregado de forma assíncrona -->
+            </div>
+          </div>
+
           <!-- Grade de avatares -->
           <div>
             <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">Selecione uma Carinha de Animal *</label>
@@ -183,6 +191,64 @@ export class MeuPerfilModal {
       }
     }).catch(err => {
       console.error('Erro ao carregar medalhas:', err);
+    });
+
+    // Carregar campanhas ativas de forma assíncrona para exibição no perfil
+    Promise.all([obterCampanhasAtivas(), obterMedalhasUsuario(perfil.id)]).then(async ([activeCampaigns, medalhasConquistadas]) => {
+      if (activeCampaigns.length === 0) return;
+
+      const medalhasSet = new Set(medalhasConquistadas);
+      const progresses = await Promise.all(activeCampaigns.map(cam => obterProgressoCampanha(perfil.id, cam)));
+      const hoje = new Date().toISOString().split('T')[0];
+      const activeProgresses = progresses.filter(p => !medalhasSet.has(p.campaign.badge_key) && p.campaign.data_fim >= hoje);
+
+      if (activeProgresses.length === 0) return;
+
+      const sectionEl = document.getElementById('modal-campaigns-section');
+      const listEl = document.getElementById('modal-campaigns-list');
+      if (sectionEl && listEl) {
+        sectionEl.classList.remove('hidden');
+        listEl.innerHTML = activeProgresses.map(p => {
+          const badgeObj = BADGE_DEFINITIONS.find(b => b.key === p.campaign.badge_key);
+          const badgeEmoji = badgeObj ? badgeObj.emoji : '🏆';
+          
+          let metaUnit = 'ações';
+          if (p.campaign.tipo_meta === 'xp_acumulado') metaUnit = 'XP';
+          else if (p.campaign.tipo_meta === 'cliente_criado') metaUnit = 'cli';
+          else if (p.campaign.tipo_meta === 'venda_aceita') metaUnit = 'vds';
+          else if (p.campaign.tipo_meta === 'lembrete_criado') metaUnit = 'lembr';
+          else if (p.campaign.tipo_meta === 'reembolso_pago') metaUnit = 'reemb';
+          else if (p.campaign.tipo_meta === 'produto_detalhado') metaUnit = 'prod';
+
+          return `
+            <div class="flex flex-col gap-1 p-2.5 rounded-xl bg-slate-50/50 dark:bg-slate-800/10 border border-slate-200/40 dark:border-slate-800/50 hover:border-indigo-500/30 transition duration-200">
+              <div class="flex items-center justify-between gap-1.5">
+                <span class="text-[10px] font-black text-slate-700 dark:text-slate-300 truncate max-w-[200px]" title="${p.campaign.titulo}">
+                  ${p.campaign.titulo}
+                </span>
+                <span class="text-xs text-slate-400 dark:text-slate-500 font-bold shrink-0" title="${badgeObj ? badgeObj.nome : ''}">
+                  ${badgeEmoji}
+                </span>
+              </div>
+              <p class="text-[9px] text-slate-400 dark:text-slate-500 font-semibold leading-normal">
+                ${p.campaign.descricao}
+              </p>
+              
+              <!-- Progress Bar -->
+              <div class="flex items-center gap-2 mt-1">
+                <div class="flex-1 h-1 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+                  <div class="h-full bg-gradient-to-r from-indigo-500 to-indigo-600 dark:from-indigo-400 dark:to-indigo-500 rounded-full transition-all duration-500" style="width: ${p.percent}%"></div>
+                </div>
+                <span class="text-[9px] text-indigo-600 dark:text-indigo-400 font-black shrink-0 whitespace-nowrap">
+                  ${p.progresso}/${p.meta} <span class="text-[8px] text-slate-400 dark:text-slate-500 font-bold">${metaUnit}</span>
+                </span>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+    }).catch(err => {
+      console.error('Erro ao carregar campanhas no perfil:', err);
     });
 
     // Fade-in
