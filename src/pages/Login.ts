@@ -28,14 +28,15 @@ export class LoginPage {
         <div class="absolute -bottom-40 -right-40 w-[500px] h-[500px] bg-purple-500/5 dark:bg-purple-500/10 rounded-full blur-[100px] animate-pulse" style="animation-delay: 3s;"></div>
 
         <!-- Botão de Alternância de Tema Flutuante -->
-        <div class="absolute top-4 right-4 z-50">
-          <button id="theme-toggle-btn" class="p-2.5 rounded-2xl bg-white/80 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white shadow-lg hover:shadow-xl backdrop-blur-md transition duration-200 flex items-center justify-center focus:outline-none" title="Alternar Tema">
+        <div class="absolute top-4 right-4 z-50 flex items-center gap-2.5 bg-white/80 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800/80 pl-3 pr-1.5 py-1.5 rounded-2xl shadow-lg backdrop-blur-md select-none transition-colors duration-200">
+          <span class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Alternar Tema</span>
+          <button id="theme-toggle-btn" class="p-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-850 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white transition duration-200 flex items-center justify-center focus:outline-none" title="Alternar Tema">
             <!-- Lua -->
-            <svg class="theme-icon-light w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <svg class="theme-icon-light w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
             </svg>
             <!-- Sol -->
-            <svg class="theme-icon-dark w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <svg class="theme-icon-dark w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m12.728 12.728l.707.707M12 8a4 4 0 100 8 4 4 0 000-8z" />
             </svg>
           </button>
@@ -89,12 +90,12 @@ export class LoginPage {
                     <input id="input-login-password" type="password" required autocomplete="current-password" placeholder="••••••••" class="w-full pl-10 pr-10 py-3 border border-slate-200/80 dark:border-slate-800 bg-slate-50/50 hover:bg-slate-50 focus:bg-white dark:bg-slate-950/30 dark:hover:bg-slate-950/50 dark:focus:bg-slate-950 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition" />
                     <button type="button" id="btn-toggle-password" class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors focus:outline-none" title="Mostrar/Ocultar Senha">
                       <!-- Icone Olho (Senha Oculta - Clique para Mostrar) -->
-                      <svg id="icon-eye-show" class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                      <svg id="icon-eye-show" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                         <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                       </svg>
                       <!-- Icone Olho Riscado (Senha Visível - Clique para Ocultar) -->
-                      <svg id="icon-eye-hide" class="w-4.5 h-4.5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                      <svg id="icon-eye-hide" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.822 7.822L21 21m-2.228-2.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
                       </svg>
                     </button>

@@ -25,6 +25,10 @@ html.dark body {
 }
 
 /* Scrollbars customizadas */
+.custom-scrollbar {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -44,6 +48,21 @@ html.dark .custom-scrollbar::-webkit-scrollbar-thumb {
 }
 html.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #475569;
+}
+
+/* Otimização de rolagem horizontal em dispositivos móveis */
+@media (max-width: 768px) {
+  .custom-scrollbar::-webkit-scrollbar {
+    display: none !important;
+    height: 0px !important;
+    width: 0px !important;
+  }
+  .custom-scrollbar {
+    scrollbar-width: none !important; /* Firefox */
+    -ms-overflow-style: none !important; /* IE/Edge */
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior-x: contain !important;
+  }
 }
 
 /* Efeito de arraste do SortableJS */
