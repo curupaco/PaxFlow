@@ -79,15 +79,26 @@ export class LoginPage {
                    <label class="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Senha de Acesso *</label>
                    <button type="button" id="btn-esqueci-senha" class="text-[10px] font-extrabold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-400 transition hover:underline focus:outline-none uppercase tracking-wider">Esqueceu?</button>
                  </div>
-                 <div class="relative">
-                   <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
-                     <!-- Icone Cadeado -->
-                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                       <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                     </svg>
-                   </div>
-                   <input id="input-login-password" type="password" required autocomplete="current-password" placeholder="••••••••" class="w-full pl-10 pr-4 py-3 border border-slate-200/80 dark:border-slate-800 bg-slate-50/50 hover:bg-slate-50 focus:bg-white dark:bg-slate-950/30 dark:hover:bg-slate-950/50 dark:focus:bg-slate-950 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition" />
-                 </div>
+                  <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
+                      <!-- Icone Cadeado -->
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                      </svg>
+                    </div>
+                    <input id="input-login-password" type="password" required autocomplete="current-password" placeholder="••••••••" class="w-full pl-10 pr-10 py-3 border border-slate-200/80 dark:border-slate-800 bg-slate-50/50 hover:bg-slate-50 focus:bg-white dark:bg-slate-950/30 dark:hover:bg-slate-950/50 dark:focus:bg-slate-950 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition" />
+                    <button type="button" id="btn-toggle-password" class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors focus:outline-none" title="Mostrar/Ocultar Senha">
+                      <!-- Icone Olho (Senha Oculta - Clique para Mostrar) -->
+                      <svg id="icon-eye-show" class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                      <!-- Icone Olho Riscado (Senha Visível - Clique para Ocultar) -->
+                      <svg id="icon-eye-hide" class="w-4.5 h-4.5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.822 7.822L21 21m-2.228-2.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+                      </svg>
+                    </button>
+                  </div>
                </div>
 
                <button type="submit" id="btn-login-submit" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/10 hover:shadow-indigo-600/20 transition-all uppercase mt-2.5 flex items-center justify-center gap-2">
@@ -141,6 +152,23 @@ export class LoginPage {
     const loginTitle = document.getElementById('login-title') as HTMLElement;
     const loginSubtitle = document.getElementById('login-subtitle') as HTMLElement;
     const errorContainer = document.getElementById('login-error-container') as HTMLElement;
+    const btnTogglePassword = document.getElementById('btn-toggle-password') as HTMLButtonElement;
+    const inputPassword = document.getElementById('input-login-password') as HTMLInputElement;
+    const iconEyeShow = document.getElementById('icon-eye-show') as HTMLElement;
+    const iconEyeHide = document.getElementById('icon-eye-hide') as HTMLElement;
+
+    // Alternar visibilidade da senha
+    btnTogglePassword?.addEventListener('click', () => {
+      if (inputPassword.type === 'password') {
+        inputPassword.type = 'text';
+        iconEyeShow.classList.add('hidden');
+        iconEyeHide.classList.remove('hidden');
+      } else {
+        inputPassword.type = 'password';
+        iconEyeHide.classList.add('hidden');
+        iconEyeShow.classList.remove('hidden');
+      }
+    });
 
     // Alternar para Esqueci minha senha
     document.getElementById('btn-esqueci-senha')?.addEventListener('click', () => {
@@ -150,6 +178,14 @@ export class LoginPage {
       loginSubtitle.textContent = 'Redefinição de acesso seguro';
       errorContainer.className = 'hidden';
       errorContainer.innerHTML = '';
+
+      // Reseta o estado da senha
+      if (inputPassword) {
+        inputPassword.value = '';
+        inputPassword.type = 'password';
+        iconEyeHide?.classList.add('hidden');
+        iconEyeShow?.classList.remove('hidden');
+      }
     });
 
     // Alternar de volta para Login
@@ -160,6 +196,14 @@ export class LoginPage {
       loginSubtitle.textContent = 'Painel Operacional';
       errorContainer.className = 'hidden';
       errorContainer.innerHTML = '';
+
+      // Reseta o estado da senha
+      if (inputPassword) {
+        inputPassword.value = '';
+        inputPassword.type = 'password';
+        iconEyeHide?.classList.add('hidden');
+        iconEyeShow?.classList.remove('hidden');
+      }
     });
 
     // Submit de Recuperação de Senha
