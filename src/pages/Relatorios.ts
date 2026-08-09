@@ -51,6 +51,14 @@ export class RelatoriosPage {
   private user: any = null;
   private perfil: PerfilConsultor | null = null;
   private activeTab: 'desempenho' | 'prazos' | 'faturamento' | 'perdas' | 'previsoes' | 'fornecedores' | 'origens' | 'auditoria' | 'posvenda' | 'gamificacao' = 'desempenho';
+
+  // Controle de estado para grupos colapsáveis da barra lateral
+  private collapsedGroups: { [key: string]: boolean } = {
+    comercial: false,
+    financeiro: false,
+    operacional: false,
+    equipe: false
+  };
   
   // Data stores
   private orcamentos: any[] = [];
@@ -415,37 +423,86 @@ export class RelatoriosPage {
         <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start print-full-width">
           
           <!-- Navigation Sidebar inside panel (Tabs) -->
-          <div class="lg:col-span-1 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-4 shadow-sm flex flex-row lg:flex-col overflow-x-auto lg:overflow-x-visible gap-1.5 report-tabs-bar no-print flex-shrink-0">
-            <button data-tab="desempenho" class="shrink-0 whitespace-nowrap px-3 py-2.5 rounded-xl text-left text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'desempenho' ? 'report-tab-active' : 'text-slate-500'} w-auto lg:w-full">
-              🎯 Desempenho
-            </button>
-            <button data-tab="prazos" class="shrink-0 whitespace-nowrap px-3 py-2.5 rounded-xl text-left text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'prazos' ? 'report-tab-active' : 'text-slate-500'} w-auto lg:w-full">
-              ⏰ Controle de SLAs
-            </button>
-            <button data-tab="faturamento" class="shrink-0 whitespace-nowrap px-3 py-2.5 rounded-xl text-left text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'faturamento' ? 'report-tab-active' : 'text-slate-500'} w-auto lg:w-full">
-              💰 Faturamento
-            </button>
-            <button data-tab="perdas" class="shrink-0 whitespace-nowrap px-3 py-2.5 rounded-xl text-left text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'perdas' ? 'report-tab-active' : 'text-slate-500'} w-auto lg:w-full">
-              📉 Desistências e Perdas
-            </button>
-            <button data-tab="previsoes" class="shrink-0 whitespace-nowrap px-3 py-2.5 rounded-xl text-left text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'previsoes' ? 'report-tab-active' : 'text-slate-500'} w-auto lg:w-full">
-              🔮 Previsões Preditivas
-            </button>
-            <button data-tab="fornecedores" class="shrink-0 whitespace-nowrap px-3 py-2.5 rounded-xl text-left text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'fornecedores' ? 'report-tab-active' : 'text-slate-500'} w-auto lg:w-full">
-              🏢 Qualidade / Fornecedores
-            </button>
-            <button data-tab="origens" class="shrink-0 whitespace-nowrap px-3 py-2.5 rounded-xl text-left text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'origens' ? 'report-tab-active' : 'text-slate-500'} w-auto lg:w-full">
-              📢 Origem de Leads
-            </button>
-            <button data-tab="auditoria" class="shrink-0 whitespace-nowrap px-3 py-2.5 rounded-xl text-left text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'auditoria' ? 'report-tab-active' : 'text-slate-500'} w-auto lg:w-full">
-              🪙 Recebimentos & Auditoria
-            </button>
-            <button data-tab="posvenda" class="shrink-0 whitespace-nowrap px-3 py-2.5 rounded-xl text-left text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'posvenda' ? 'report-tab-active' : 'text-slate-500'} w-auto lg:w-full">
-              ✈️ Pós-Venda & SLAs
-            </button>
-            <button data-tab="gamificacao" class="shrink-0 whitespace-nowrap px-3 py-2.5 rounded-xl text-left text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'gamificacao' ? 'report-tab-active' : 'text-slate-500'} w-auto lg:w-full">
-              🏆 Gamificação & Ranking
-            </button>
+          <div class="lg:col-span-1 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-4 shadow-sm flex flex-col gap-4 report-tabs-bar no-print flex-shrink-0">
+
+            <!-- Grupo 1: Gestão Comercial -->
+            <div class="space-y-1">
+              <button class="report-group-header w-full flex items-center justify-between px-2 py-2 text-[10px] font-black uppercase tracking-wider text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-350 focus:outline-none" data-group="comercial">
+                <span class="flex items-center gap-1.5">💼 Gestão Comercial</span>
+                <svg class="w-3.5 h-3.5 transition-transform duration-200 ${this.collapsedGroups.comercial ? '' : 'transform rotate-180'}" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                </svg>
+              </button>
+              <div class="space-y-1 pl-1 transition-all ${this.collapsedGroups.comercial ? 'hidden' : ''}">
+                <button data-tab="desempenho" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'desempenho' ? 'report-tab-active' : 'text-slate-500'}">
+                  🎯 Desempenho
+                </button>
+                <button data-tab="origens" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'origens' ? 'report-tab-active' : 'text-slate-500'}">
+                  📢 Origem de Leads
+                </button>
+                <button data-tab="previsoes" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'previsoes' ? 'report-tab-active' : 'text-slate-500'}">
+                  🔮 Previsões Preditivas
+                </button>
+              </div>
+            </div>
+
+            <!-- Grupo 2: Financeiro & Auditoria -->
+            <div class="space-y-1">
+              <button class="report-group-header w-full flex items-center justify-between px-2 py-2 text-[10px] font-black uppercase tracking-wider text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-350 focus:outline-none" data-group="financeiro">
+                <span class="flex items-center gap-1.5">🪙 Financeiro & Auditoria</span>
+                <svg class="w-3.5 h-3.5 transition-transform duration-200 ${this.collapsedGroups.financeiro ? '' : 'transform rotate-180'}" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                </svg>
+              </button>
+              <div class="space-y-1 pl-1 transition-all ${this.collapsedGroups.financeiro ? 'hidden' : ''}">
+                <button data-tab="faturamento" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'faturamento' ? 'report-tab-active' : 'text-slate-500'}">
+                  💰 Faturamento
+                </button>
+                <button data-tab="auditoria" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'auditoria' ? 'report-tab-active' : 'text-slate-500'}">
+                  🪙 Recebimentos & Auditoria
+                </button>
+                <button data-tab="perdas" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'perdas' ? 'report-tab-active' : 'text-slate-500'}">
+                  📉 Desistências & Perdas
+                </button>
+              </div>
+            </div>
+
+            <!-- Grupo 3: Operações & SLAs -->
+            <div class="space-y-1">
+              <button class="report-group-header w-full flex items-center justify-between px-2 py-2 text-[10px] font-black uppercase tracking-wider text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-350 focus:outline-none" data-group="operacional">
+                <span class="flex items-center gap-1.5">⚙️ Operações & SLAs</span>
+                <svg class="w-3.5 h-3.5 transition-transform duration-200 ${this.collapsedGroups.operacional ? '' : 'transform rotate-180'}" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                </svg>
+              </button>
+              <div class="space-y-1 pl-1 transition-all ${this.collapsedGroups.operacional ? 'hidden' : ''}">
+                <button data-tab="prazos" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'prazos' ? 'report-tab-active' : 'text-slate-500'}">
+                  ⏰ Controle de SLAs
+                </button>
+                <button data-tab="posvenda" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'posvenda' ? 'report-tab-active' : 'text-slate-500'}">
+                  ✈️ Pós-Venda & SLAs
+                </button>
+                <button data-tab="fornecedores" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'fornecedores' ? 'report-tab-active' : 'text-slate-500'}">
+                  🏢 Qualidade / Fornecedores
+                </button>
+              </div>
+            </div>
+
+            <!-- Grupo 4: Gestão de Equipe -->
+            <div class="space-y-1">
+              <button class="report-group-header w-full flex items-center justify-between px-2 py-2 text-[10px] font-black uppercase tracking-wider text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-350 focus:outline-none" data-group="equipe">
+                <span class="flex items-center gap-1.5">👥 Gestão de Equipe</span>
+                <svg class="w-3.5 h-3.5 transition-transform duration-200 ${this.collapsedGroups.equipe ? '' : 'transform rotate-180'}" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                </svg>
+              </button>
+              <div class="space-y-1 pl-1 transition-all ${this.collapsedGroups.equipe ? 'hidden' : ''}">
+                <button data-tab="gamificacao" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'gamificacao' ? 'report-tab-active' : 'text-slate-500'}">
+                  🏆 Gamificação & Ranking
+                </button>
+              </div>
+            </div>
+
           </div>
 
           <!-- Main View Pane (Detail content) -->
@@ -2041,8 +2098,22 @@ export class RelatoriosPage {
   // EVENT LISTENERS & EXPORTS
   // ==========================================
   private setupEventListeners(): void {
-    // 1. Tab switches
-    const tabButtons = this.container.querySelectorAll('.report-tabs-bar button');
+    // 1. Collapsible category headers
+    const groupHeaders = this.container.querySelectorAll('.report-group-header');
+    groupHeaders.forEach(header => {
+      header.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const group = header.getAttribute('data-group');
+        if (group && group in this.collapsedGroups) {
+          this.collapsedGroups[group] = !this.collapsedGroups[group];
+          this.render();
+          this.setupEventListeners();
+        }
+      });
+    });
+
+    // 2. Tab switches
+    const tabButtons = this.container.querySelectorAll('.report-tabs-bar button[data-tab]');
     tabButtons.forEach(btn => {
       btn.addEventListener('click', () => {
         const tab = btn.getAttribute('data-tab') as any;
