@@ -9,7 +9,7 @@ export const MOCK_CONSULTORES: PerfilConsultor[] = [
     ativo: true,
     avatar_url: 'lion',
     xp: 1500,
-    nivel: 3
+    nivel: 4
   },
   {
     id: 'sandbox-consultor-juliana',

@@ -34,9 +34,17 @@ ALTER TABLE public.profiles_badges ENABLE ROW LEVEL SECURITY;
 -- Excluir políticas existentes se houver, para evitar erros de duplicidade
 DROP POLICY IF EXISTS "Leitura de logs de XP permitida a todos autenticados" ON public.profiles_xp_logs;
 DROP POLICY IF EXISTS "Leitura de conquistas permitida a todos autenticados" ON public.profiles_badges;
+DROP POLICY IF EXISTS "Inserção de logs de XP permitida ao próprio usuário" ON public.profiles_xp_logs;
+DROP POLICY IF EXISTS "Inserção de medalhas permitida ao próprio usuário" ON public.profiles_badges;
 
 CREATE POLICY "Leitura de logs de XP permitida a todos autenticados" ON public.profiles_xp_logs FOR SELECT TO authenticated USING (true);
 CREATE POLICY "Leitura de conquistas permitida a todos autenticados" ON public.profiles_badges FOR SELECT TO authenticated USING (true);
+
+CREATE POLICY "Inserção de logs de XP permitida ao próprio usuário" ON public.profiles_xp_logs 
+    FOR INSERT TO authenticated WITH CHECK (auth.uid() = profile_id);
+
+CREATE POLICY "Inserção de medalhas permitida ao próprio usuário" ON public.profiles_badges 
+    FOR INSERT TO authenticated WITH CHECK (auth.uid() = profile_id);
 
 -- 4. Função e Trigger para atualizar o Nível do Consultor automaticamente ao somar XP
 CREATE OR REPLACE FUNCTION public.process_profile_xp_update()

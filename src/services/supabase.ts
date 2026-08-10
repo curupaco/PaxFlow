@@ -149,6 +149,16 @@ const getMockDataForTable = (table: string): any[] => {
       created_at: a.createdAt,
       remetente: MOCK_CONSULTORES.find(c => c.id === a.senderId) || MOCK_CONSULTORES[1]
     }));
+  } else if (table === 'profiles_xp_logs') {
+    defaultData = MOCK_CONSULTORES.map(c => ({
+      id: `initial-xp-${c.id}`,
+      profile_id: c.id,
+      acao_chave: 'carga_inicial_xp',
+      xp_ganho: c.xp || 0,
+      created_at: new Date().toISOString()
+    }));
+  } else if (table === 'profiles_badges') {
+    defaultData = [];
   }
   
   const normalized = defaultData.map((item: any) => normalizeMockItem(item));
@@ -160,6 +170,46 @@ const saveMockDataForTable = (table: string, data: any[]) => {
   const normalized = data.map((item: any) => normalizeMockItem(item));
   localStorage.setItem(`sandbox-paxflow-${table}`, JSON.stringify(normalized));
 };
+
+const realtimeCallbacks: {
+  channelName: string;
+  event: string;
+  schema: string;
+  table: string;
+  filter: string;
+  callback: (payload: any) => void;
+}[] = [];
+
+function triggerRealtimeCallbacks(event: string, table: string, record: any) {
+  for (const cb of realtimeCallbacks) {
+    if (cb.table === table && (cb.event === event || cb.event === '*')) {
+      let matches = true;
+      if (cb.filter) {
+        const parts = cb.filter.split('=');
+        if (parts.length === 2) {
+          const colName = parts[0];
+          const eqVal = parts[1].replace('eq.', '');
+          if (String(record[colName]) !== String(eqVal)) {
+            matches = false;
+          }
+        }
+      }
+      if (matches) {
+        try {
+          cb.callback({
+            event,
+            schema: cb.schema,
+            table,
+            new: record,
+            old: record
+          });
+        } catch (e) {
+          console.error('Erro no callback do realtime do sandbox:', e);
+        }
+      }
+    }
+  }
+}
 
 export const supabase = new Proxy(realSupabase, {
   get(target, prop, receiver) {
@@ -224,6 +274,40 @@ export const supabase = new Proxy(realSupabase, {
                   ...item
                 }));
                 saveData([...db, ...newItems]);
+
+                if (table === 'profiles_xp_logs') {
+                  const profilesDb = getMockDataForTable('profiles');
+                  for (const log of newItems) {
+                    const profileId = log.profile_id;
+                    const allLogs = [...db, ...newItems].filter(l => l.profile_id === profileId);
+                    const totalXp = allLogs.reduce((acc, l) => acc + (l.xp_ganho || 0), 0);
+                    
+                    let novoNivel = 1;
+                    if (totalXp < 250) novoNivel = 1;
+                    else if (totalXp < 750) novoNivel = 2;
+                    else if (totalXp < 1500) novoNivel = 3;
+                    else if (totalXp < 2500) novoNivel = 4;
+                    else novoNivel = 5 + Math.floor((totalXp - 2500) / 1000);
+
+                    const profileIdx = profilesDb.findIndex(p => p.id === profileId);
+                    if (profileIdx !== -1) {
+                      const updatedProfile = {
+                        ...profilesDb[profileIdx],
+                        xp: totalXp,
+                        nivel: novoNivel,
+                        updated_at: new Date().toISOString()
+                      };
+                      profilesDb[profileIdx] = updatedProfile;
+                      saveMockDataForTable('profiles', profilesDb);
+                      
+                      // Disparar atualização do Realtime reativamente
+                      setTimeout(() => {
+                        triggerRealtimeCallbacks('UPDATE', 'profiles', updatedProfile);
+                      }, 50);
+                    }
+                  }
+                }
+
                 return Promise.resolve({ data: newItems, error: null });
               },
               update: (payload: any) => {
@@ -290,11 +374,31 @@ export const supabase = new Proxy(realSupabase, {
         };
       }
       if (prop === 'channel') {
-        return () => {
+        return (channelName: string) => {
           const channelObj: any = {
-            on: () => channelObj,
-            subscribe: () => ({ unsubscribe: () => {} }),
-            unsubscribe: () => {}
+            on: (eventType: string, filterObj: any, callback: any) => {
+              realtimeCallbacks.push({
+                channelName,
+                event: filterObj.event || '*',
+                schema: filterObj.schema || 'public',
+                table: filterObj.table,
+                filter: filterObj.filter || '',
+                callback
+              });
+              return channelObj;
+            },
+            subscribe: () => {
+              return {
+                unsubscribe: () => {
+                  const idx = realtimeCallbacks.findIndex(c => c.channelName === channelName);
+                  if (idx !== -1) realtimeCallbacks.splice(idx, 1);
+                }
+              };
+            },
+            unsubscribe: () => {
+              const idx = realtimeCallbacks.findIndex(c => c.channelName === channelName);
+              if (idx !== -1) realtimeCallbacks.splice(idx, 1);
+            }
           };
           return channelObj;
         };
@@ -453,7 +557,7 @@ export async function getSessaoAtual(): Promise<{
         role: 'admin',
         ativo: true,
         xp: 1500,
-        nivel: 3,
+        nivel: 4,
         avatar_url: 'lion'
       },
       error: null
