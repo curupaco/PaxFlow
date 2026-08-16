@@ -67,7 +67,8 @@ export class ConfiguracoesPage {
   private settings: GlobalSettings | null = null;
   private consultores: PerfilConsultor[] = [];
   private campaigns: any[] = [];
-  private activeTab: 'geral' | 'consultores' | 'importacoes' | 'campanhas' = 'geral';
+  private templates: any[] = [];
+  private activeTab: 'geral' | 'consultores' | 'importacoes' | 'campanhas' | 'templates' = 'geral';
 
   // Propriedades do estado de importação de CSV
   private parsedHeaders: string[] = [];
@@ -111,6 +112,7 @@ export class ConfiguracoesPage {
       await this.loadSettings();
       await this.loadConsultores();
       await this.loadCampaigns();
+      await this.loadTemplates();
 
       // 4. Renderizar interface
       this.render();
@@ -155,7 +157,8 @@ export class ConfiguracoesPage {
           googleParentFolderId: data.google_parent_folder_id || data.googleParentFolderId,
           slaPreEmbarqueDias: data.sla_pre_embarque_dias !== undefined ? data.sla_pre_embarque_dias : 7,
           slaPosViagemDias: data.sla_pos_viagem_dias !== undefined ? data.sla_pos_viagem_dias : 3,
-          limiteUploadMb: data.limite_upload_mb !== undefined ? data.limite_upload_mb : 25
+          limiteUploadMb: data.limite_upload_mb !== undefined ? data.limite_upload_mb : 25,
+          enviarNpsAutomatico: data.enviar_nps_automatico !== undefined ? data.enviar_nps_automatico : false
         };
       } else {
         const initialPayload = {
@@ -166,7 +169,8 @@ export class ConfiguracoesPage {
           email_suporte: 'suporte@paxflow.com.br',
           sla_pre_embarque_dias: 7,
           sla_pos_viagem_dias: 3,
-          limite_upload_mb: 25
+          limite_upload_mb: 25,
+          enviar_nps_automatico: false
         };
 
         const { data: inserted, error: insertError } = await supabase
@@ -187,7 +191,8 @@ export class ConfiguracoesPage {
           googleParentFolderId: inserted.google_parent_folder_id,
           slaPreEmbarqueDias: inserted.sla_pre_embarque_dias,
           slaPosViagemDias: inserted.sla_pos_viagem_dias,
-          limiteUploadMb: inserted.limite_upload_mb
+          limiteUploadMb: inserted.limite_upload_mb,
+          enviarNpsAutomatico: inserted.enviar_nps_automatico
         };
       }
 
@@ -243,9 +248,26 @@ export class ConfiguracoesPage {
   }
 
   /**
+   * Busca os templates de mensagem cadastrados no sistema
+   */
+  private async loadTemplates(): Promise<void> {
+    try {
+      const { data, error } = await supabase
+        .from('templates_mensagem')
+        .select('*')
+        .order('titulo', { ascending: true });
+
+      if (error) throw error;
+      this.templates = data || [];
+    } catch (err: any) {
+      console.error('Erro ao carregar templates de mensagem:', err);
+    }
+  }
+
+  /**
    * Altera a aba ativa e re-renderiza o componente
    */
-  private switchTab(tab: 'geral' | 'consultores' | 'importacoes' | 'campanhas'): void {
+  private switchTab(tab: 'geral' | 'consultores' | 'importacoes' | 'campanhas' | 'templates'): void {
     this.activeTab = tab;
     this.render();
     this.setupEventListeners();
@@ -260,6 +282,7 @@ export class ConfiguracoesPage {
     document.getElementById('tab-consultores-btn')?.addEventListener('click', () => this.switchTab('consultores'));
     document.getElementById('tab-importacoes-btn')?.addEventListener('click', () => this.switchTab('importacoes'));
     document.getElementById('tab-campanhas-btn')?.addEventListener('click', () => this.switchTab('campanhas'));
+    document.getElementById('tab-templates-btn')?.addEventListener('click', () => this.switchTab('templates'));
 
     if (this.activeTab === 'importacoes') {
       this.setupImportacoesEvents();
@@ -267,6 +290,10 @@ export class ConfiguracoesPage {
 
     if (this.activeTab === 'campanhas') {
       this.setupCampanhasEvents();
+    }
+
+    if (this.activeTab === 'templates') {
+      this.setupTemplatesEvents();
     }
 
     if (this.activeTab === 'geral') {
@@ -867,6 +894,172 @@ export class ConfiguracoesPage {
     });
   }
 
+  private setupTemplatesEvents(): void {
+    // Abrir modal de criação
+    document.getElementById('btn-novo-template')?.addEventListener('click', () => this.abrirModalNovoTemplate());
+
+    // Editar template
+    document.querySelectorAll('.btn-editar-template').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = (e.currentTarget as HTMLElement).getAttribute('data-id');
+        if (id) this.abrirModalNovoTemplate(id);
+      });
+    });
+
+    // Excluir template
+    document.querySelectorAll('.btn-excluir-template').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const id = (e.currentTarget as HTMLElement).getAttribute('data-id');
+        if (!id) return;
+        
+        const confirmResult = await showCustomConfirm('Deseja realmente excluir este modelo de mensagem permanentemente?', 'Excluir Modelo');
+        if (confirmResult) {
+          try {
+            const { error } = await supabase
+              .from('templates_mensagem')
+              .delete()
+              .eq('id', id);
+
+            if (error) throw error;
+            
+            this.showToast('Modelo de mensagem excluído com sucesso!', 'success');
+            await this.loadTemplates();
+            this.render();
+            this.setupEventListeners();
+          } catch (err: any) {
+            console.error(err);
+            this.showToast('Erro ao excluir modelo de mensagem.', 'error');
+          }
+        }
+      });
+    });
+  }
+
+  private abrirModalNovoTemplate(templateId?: string): void {
+    const editando = this.templates.find(t => t.id === templateId);
+    
+    const overlay = document.createElement('div');
+    overlay.id = 'novo-template-overlay';
+    overlay.className = 'fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all duration-300 opacity-0';
+    
+    overlay.innerHTML = `
+      <div class="bg-white dark:bg-slate-900 w-full max-w-[500px] rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 transform scale-95 transition-all duration-300 flex flex-col max-h-[90vh] overflow-y-auto custom-scrollbar relative" id="novo-template-card">
+        
+        <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-600"></div>
+
+        <div class="p-6 border-b border-slate-100 dark:border-slate-800 text-center flex flex-col items-center">
+          <div class="w-12 h-12 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 font-bold rounded-2xl flex items-center justify-center text-xl border border-indigo-100 dark:border-indigo-900/40 mb-3">
+            💬
+          </div>
+          <h2 class="text-lg font-black text-slate-800 dark:text-slate-100 tracking-tight leading-snug">${editando ? 'Editar Modelo' : 'Criar Novo Modelo'}</h2>
+          <p class="text-xs text-slate-400 dark:text-slate-500 font-semibold mt-1">Configure o texto da mensagem e as variáveis de substituição</p>
+        </div>
+
+        <form id="form-novo-template" class="p-6 space-y-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Título do Modelo *</label>
+            <input id="input-tem-titulo" type="text" required value="${editando ? editando.titulo : ''}" placeholder="Ex: Boas-vindas Pós-Viagem" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Descrição / Finalidade *</label>
+            <input id="input-tem-descricao" type="text" required value="${editando ? editando.descricao : ''}" placeholder="Ex: Mensagem enviada após o retorno, com NPS." class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5 flex items-center justify-between">
+              <span>Conteúdo da Mensagem *</span>
+              <span class="text-[9px] text-slate-400 dark:text-slate-500 font-semibold lowercase">variáveis suportadas: {{cliente}}, {{destino}}, {{localizador}}, etc.</span>
+            </label>
+            <textarea id="input-tem-conteudo" required rows="6" placeholder="Olá, {{cliente}}! Como foi sua viagem para {{destino}}?..." class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs resize-none">${editando ? editando.conteudo : ''}</textarea>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Variáveis do Sistema Utilizadas (separadas por vírgula) *</label>
+            <input id="input-tem-variaveis" type="text" required value="${editando && editando.variaveis_suportadas ? editando.variaveis_suportadas.join(', ') : 'cliente, destino, consultor'}" placeholder="cliente, destino, localizador, consultor, link_itinerario, link_feedback" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+            <p class="text-[9px] text-slate-400 dark:text-slate-500 font-semibold mt-1">Insira exatamente as variáveis que você usou entre {{ }} no texto (ex: cliente, destino, consultor).</p>
+          </div>
+
+          <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+            <button id="btn-tem-cancel" type="button" class="px-4 py-2.5 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 text-slate-500 hover:text-slate-700 font-bold text-xs rounded-xl transition uppercase">
+              Cancelar
+            </button>
+            <button id="btn-tem-submit" type="submit" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl transition shadow-lg shadow-indigo-600/20 uppercase tracking-wider flex items-center justify-center">
+              ${editando ? 'Salvar Alterações' : 'Criar Modelo'}
+            </button>
+          </div>
+        </form>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    setTimeout(() => {
+      overlay.classList.add('opacity-100');
+      document.getElementById('novo-template-card')?.classList.remove('scale-95');
+      document.getElementById('novo-template-card')?.classList.add('scale-100');
+    }, 10);
+
+    const fechar = () => {
+      overlay.classList.remove('opacity-100');
+      document.getElementById('novo-template-card')?.classList.remove('scale-100');
+      document.getElementById('novo-template-card')?.classList.add('scale-95');
+      setTimeout(() => overlay.remove(), 300);
+    };
+
+    document.getElementById('btn-tem-cancel')?.addEventListener('click', fechar);
+
+    const form = document.getElementById('form-novo-template') as HTMLFormElement;
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const submitBtn = document.getElementById('btn-tem-submit') as HTMLButtonElement;
+      const titulo = (document.getElementById('input-tem-titulo') as HTMLInputElement).value;
+      const descricao = (document.getElementById('input-tem-descricao') as HTMLInputElement).value;
+      const conteudo = (document.getElementById('input-tem-conteudo') as HTMLTextAreaElement).value;
+      const variaveisRaw = (document.getElementById('input-tem-variaveis') as HTMLInputElement).value;
+      const variaveis = variaveisRaw.split(',').map(v => v.trim()).filter(v => v !== '');
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Gravando...';
+
+      try {
+        const payload = {
+          titulo,
+          descricao,
+          conteudo,
+          variaveis_suportadas: variaveis
+        };
+
+        let dbResult;
+        if (editando) {
+          dbResult = await supabase
+            .from('templates_mensagem')
+            .update(payload)
+            .eq('id', editando.id);
+        } else {
+          dbResult = await supabase
+            .from('templates_mensagem')
+            .insert(payload);
+        }
+
+        if (dbResult.error) throw dbResult.error;
+
+        this.showToast(editando ? 'Modelo atualizado com sucesso!' : 'Modelo criado com sucesso!', 'success');
+        fechar();
+        await this.loadTemplates();
+        this.render();
+        this.setupEventListeners();
+
+      } catch (err: any) {
+        console.error('Erro ao gravar modelo de mensagem:', err);
+        submitBtn.disabled = false;
+        submitBtn.textContent = editando ? 'Salvar Alterações' : 'Criar Modelo';
+        showCustomAlert(`Falha ao gravar modelo de mensagem: ${err.message}`, 'Erro');
+      }
+    });
+  }
+
   /**
    * Abre o modal de criação de nova campanha
    */
@@ -1425,7 +1618,7 @@ export class ConfiguracoesPage {
               </svg>
               Importações
             </button>
-            <button id="tab-campanhas-btn" class="shrink-0 py-4 px-1 border-b-2 text-sm font-extrabold transition select-none flex items-center gap-2 ${
+             <button id="tab-campanhas-btn" class="shrink-0 py-4 px-1 border-b-2 text-sm font-extrabold transition select-none flex items-center gap-2 ${
               this.activeTab === 'campanhas' 
                 ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400' 
                 : 'border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
@@ -1434,6 +1627,16 @@ export class ConfiguracoesPage {
                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
               </svg>
               Campanhas
+            </button>
+            <button id="tab-templates-btn" class="shrink-0 py-4 px-1 border-b-2 text-sm font-extrabold transition select-none flex items-center gap-2 ${
+              this.activeTab === 'templates' 
+                ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400' 
+                : 'border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
+            }">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
+              Modelos de Mensagem
             </button>
           </div>
         </div>
@@ -1494,6 +1697,21 @@ export class ConfiguracoesPage {
                     <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Limite de Upload (MB)</label>
                     <input id="input-limite-upload" type="number" min="1" max="500" value="${this.settings.limiteUploadMb || 25}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-bold" />
                     <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1.5 font-medium">Tamanho máximo permitido para anexos de passaportes e propostas (máx: 500MB).</p>
+                  </div>
+                </div>
+
+                <div class="border-t border-slate-100 dark:border-slate-800 pt-5 flex items-center justify-between gap-4">
+                  <div class="flex-1 min-w-0">
+                    <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
+                      Disparo Automático de NPS (Pós-Viagem)
+                      <span class="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 text-[8px] font-black uppercase rounded">Em Breve</span>
+                    </label>
+                    <p class="text-[10px] text-slate-400 dark:text-slate-500 font-medium leading-relaxed">Enviar e-mail/WhatsApp automaticamente solicitando feedback de satisfação quando a viagem for movida para Pós-Viagem.</p>
+                  </div>
+                  <div class="relative flex items-center shrink-0">
+                    <div class="w-11 h-6 bg-slate-200 dark:bg-slate-800 rounded-full relative transition-all duration-200 cursor-not-allowed opacity-50" title="Disparo automático por e-mail/WhatsApp (Em Breve)">
+                      <div class="absolute top-[2px] left-[2px] bg-white rounded-full h-5 w-5 transition-all"></div>
+                    </div>
                   </div>
                 </div>
 
@@ -1900,7 +2118,7 @@ export class ConfiguracoesPage {
               </div>
             `}
           </main>
-        ` : `
+        ` : this.activeTab === 'campanhas' ? `
           <!-- Renderização da Aba: Campanhas -->
           <main class="flex-1 p-6 max-w-4xl mx-auto w-full flex flex-col gap-6 animate-fade-in text-slate-800 dark:text-slate-100">
             <div class="flex items-center justify-between">
@@ -1989,6 +2207,72 @@ export class ConfiguracoesPage {
                               ${cam.ativa ? 'Pausar' : 'Ativar'}
                             </button>
                             <button data-id="${cam.id}" class="btn-excluir-campanha px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-50 hover:bg-rose-50 dark:bg-rose-950/30 text-slate-400 hover:text-rose-500 transition border border-slate-200/40 dark:border-slate-700/40 uppercase">
+                              Excluir
+                            </button>
+                          </td>
+                        </tr>
+                      `;
+                    }).join('')}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </main>
+        ` : `
+          <!-- Renderização da Aba: Modelos de Mensagem (Templates) -->
+          <main class="flex-1 p-6 max-w-4xl mx-auto w-full flex flex-col gap-6 animate-fade-in text-slate-800 dark:text-slate-100">
+            <div class="flex items-center justify-between">
+              <div>
+                <h2 class="text-lg font-black text-slate-800 dark:text-slate-200 tracking-tight">Modelos de Mensagem</h2>
+                <p class="text-xs text-slate-400 dark:text-slate-500 font-medium">Configure os textos de WhatsApp que serão enviados aos clientes</p>
+              </div>
+              <button id="btn-novo-template" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/20 flex items-center gap-1.5 transition transform hover:-translate-y-0.5 uppercase">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+                Novo Modelo
+              </button>
+            </div>
+
+            <!-- Tabela de Templates -->
+            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden transition-colors">
+              <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                  <thead>
+                    <tr class="bg-slate-600/5 dark:bg-slate-800/60 text-[10px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
+                      <th class="py-4 px-5">Título / Descrição</th>
+                      <th class="py-4 px-5">Variáveis Mapeadas</th>
+                      <th class="py-4 px-5 text-right">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-sm text-slate-700 dark:text-slate-300 font-semibold bg-white/50 dark:bg-slate-900/30">
+                    ${this.templates.length === 0 ? `
+                      <tr>
+                        <td colspan="3" class="py-8 px-5 text-center text-slate-400 dark:text-slate-500 font-medium italic">
+                          Nenhum modelo de mensagem cadastrado.
+                        </td>
+                      </tr>
+                    ` : this.templates.map(tem => {
+                      const tagsHTML = tem.variaveis_suportadas && tem.variaveis_suportadas.length > 0 
+                        ? tem.variaveis_suportadas.map((v: string) => `<span class="px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-100/30 dark:border-indigo-900/30 rounded text-[9px] font-bold font-mono">{{${v}}}</span>`).join(' ')
+                        : '<span class="text-slate-400 text-xs italic">Nenhuma</span>';
+
+                      return `
+                        <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/10 transition-colors">
+                          <td class="py-4 px-5">
+                            <span class="block text-slate-800 dark:text-slate-200 font-bold">${tem.titulo}</span>
+                            <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-semibold max-w-[400px] truncate">${tem.descricao}</span>
+                          </td>
+                          <td class="py-4 px-5 text-slate-600 dark:text-slate-400 font-medium">
+                            <div class="flex flex-wrap gap-1">
+                              ${tagsHTML}
+                            </div>
+                          </td>
+                          <td class="py-4 px-5 text-right space-x-2">
+                            <button data-id="${tem.id}" class="btn-editar-template px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-50 hover:bg-indigo-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 transition uppercase">
+                              Editar
+                            </button>
+                            <button data-id="${tem.id}" class="btn-excluir-template px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-50 hover:bg-rose-50 dark:bg-rose-950/30 text-slate-400 hover:text-rose-500 transition border border-slate-200/40 dark:border-slate-700/40 uppercase">
                               Excluir
                             </button>
                           </td>

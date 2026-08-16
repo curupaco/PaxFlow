@@ -4,6 +4,7 @@ import { Orcamento, PerfilConsultor, ConvertToTripOptions } from '../types';
 import { OrcamentosService } from '../services/orcamentosService';
 import { DestinosAutocomplete } from '../components/DestinosAutocomplete';
 import { VerNotasModal } from '../components/orcamentos/VerNotasModal';
+import { SendTemplateMessageModal } from '../components/dashboard/SendTemplateMessageModal';
 import { getAvatarSvg, mesclarAvataresLocais } from '../services/avatars';
 import { showCustomConfirm, showCustomAlert } from '../services/dialog';
 import { CommentsService } from '../services/comments';
@@ -614,6 +615,32 @@ export class OrcamentosPage {
       });
     });
 
+    // Botão de WhatsApp (Templates)
+    this.container.querySelectorAll('[data-action="whatsapp-template"]').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        const el = btn as HTMLElement;
+        const contato = el.dataset.contato || '';
+        const clienteNome = el.dataset.clienteNome || 'Cliente';
+        const parts = contato.split('/');
+        let phoneToSend = parts[0]?.trim() || '';
+        if (!/\d/.test(phoneToSend) && parts[1] && /\d/.test(parts[1])) {
+          phoneToSend = parts[1].trim();
+        }
+
+        // Tentar obter nome do consultor
+        const consultorNome = this.perfil?.nome || 'Consultor';
+
+        SendTemplateMessageModal.open({
+          clienteNome,
+          clienteTelefone: phoneToSend,
+          consultorNome,
+          showToast: (msg, type) => this.showToast(msg, type)
+        });
+      });
+    });
+
     // Click no Card inteiro (excluindo cliques em botões e ações do card) para abrir visualização/edição em qualquer coluna
     this.container.querySelectorAll('.card-orcamento').forEach(card => {
       card.addEventListener('click', (e) => {
@@ -979,6 +1006,9 @@ export class OrcamentosPage {
                     <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                     <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
                   </svg>
+                </button>
+                <button data-action="whatsapp-template" data-cliente-nome="${o.nomeCliente}" data-contato="${o.contato}" title="Enviar WhatsApp" class="p-0.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 rounded transition flex items-center justify-center shrink-0">
+                  <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.724-1.455L0 24zm6.59-4.846c1.6.95 3.197 1.451 4.777 1.451 5.51 0 9.997-4.493 10-10.008.002-2.673-1.037-5.186-2.93-7.079-1.892-1.893-4.401-2.934-7.078-2.934-5.518 0-10.007 4.493-10.01 10.01-.001 1.708.455 3.377 1.32 4.887L1.134 22.84l4.513-1.186zm11.23-7.925c-.297-.149-1.758-.868-2.03-.967-.273-.099-.471-.148-.669.149-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.568-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/></svg>
                 </button>
               ` : ''}
             </div>

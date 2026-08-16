@@ -39,6 +39,7 @@ export interface GlobalSettings {
   slaPreEmbarqueDias?: number; // Dias de SLA para alertas de embarque
   slaPosViagemDias?: number; // Dias de SLA para contatos de pós-venda
   limiteUploadMb?: number; // Limite de tamanho para upload de arquivos em MB
+  enviarNpsAutomatico?: boolean; // Habilita o envio automático de pesquisas de NPS
   createdAt?: string;
   updatedAt?: string;
 }

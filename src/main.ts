@@ -64,7 +64,7 @@ class App {
     this.applyInitialTheme();
     this.renderLoading();
 
-    // Detecção da rota /conheca para isolamento da Landing Page
+        // Detecção da rota /conheca para isolamento da Landing Page
     const isConhecaRoute = 
       window.location.pathname.includes('/conheca') || 
       window.location.search.includes('conheca') || 
@@ -73,6 +73,44 @@ class App {
     if (isConhecaRoute && sessionStorage.getItem('paxflowSandbox') !== 'true') {
       this.renderLandingPage();
       return;
+    }
+
+    // Detecção de rotas públicas (Itinerário e NPS/Feedback)
+    const isPublicItineraryRoute = window.location.hash.includes('itinerario');
+    const isPublicFeedbackRoute = window.location.hash.includes('feedback') || window.location.hash.includes('nps');
+
+    if (isPublicItineraryRoute || isPublicFeedbackRoute) {
+      try {
+        const { PublicViews } = await import('./pages/PublicViews');
+        const views = new PublicViews(this.container);
+        
+        const hash = window.location.hash;
+        const params = new URLSearchParams(hash.substring(hash.indexOf('?')));
+        const viagemId = params.get('id');
+
+        if (!viagemId) {
+          this.container.innerHTML = `
+            <div class="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-6 text-center">
+              <div class="bg-white dark:bg-slate-900 p-8 rounded-3xl max-w-md w-full border border-slate-200 dark:border-slate-800 shadow-xl">
+                <span class="text-3xl">⚠️</span>
+                <h3 class="text-md font-extrabold text-slate-800 dark:text-slate-200 mt-3">Código de viagem ausente na URL.</h3>
+              </div>
+            </div>
+          `;
+          return;
+        }
+
+        if (isPublicItineraryRoute) {
+          await views.initItinerario(viagemId);
+        } else {
+          await views.initNps(viagemId);
+        }
+        return;
+      } catch (err: any) {
+        console.error('Erro ao inicializar rota pública:', err);
+        this.container.innerHTML = `<div class="p-6 text-center text-rose-500">Erro ao carregar a página: ${err.message}</div>`;
+        return;
+      }
     }
 
     if (sessionStorage.getItem('paxflowSandbox') === 'true') {

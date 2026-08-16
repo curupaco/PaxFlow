@@ -64,7 +64,7 @@ export class MeuPerfilModal {
         
         <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-600"></div>
 
-        <div class="p-6 border-b border-slate-100 dark:border-slate-800 text-center flex flex-col items-center gap-2">
+        <div class="p-6 border-b border-slate-100 dark:border-slate-800 text-center flex flex-col items-center gap-2 shrink-0">
           <div id="modal-profile-avatar-preview" class="cursor-pointer group relative rounded-xl overflow-hidden shadow-md">
             ${getAvatarSvg(selectedAvatarId, perfil.nome || 'Consultor', 'w-16 h-16')}
             <div class="absolute inset-0 bg-black/50 flex items-center justify-center text-white text-[9px] font-black opacity-0 group-hover:opacity-100 transition-opacity rounded-xl">Enviar Foto</div>
@@ -77,75 +77,97 @@ export class MeuPerfilModal {
           <p class="text-xs text-slate-400 dark:text-slate-500 font-semibold">Consulte seus status e gerencie suas informações</p>
         </div>
 
-        <form id="form-meu-perfil" class="p-6 space-y-4">
-          <!-- Bloco de Gamificação (XP e Nível) -->
-          <div class="bg-indigo-50/30 dark:bg-indigo-950/10 border border-indigo-100/50 dark:border-indigo-900/20 rounded-2xl p-4 space-y-2.5">
-            <div class="flex justify-between items-center text-xs">
-              <span class="font-extrabold text-slate-700 dark:text-slate-400 flex items-center gap-1.5">${progress.patenteEmoji} Patente: ${progress.patente}</span>
-              <span class="font-black text-indigo-600 dark:text-indigo-400">${progress.xpAtual} / ${progress.xpProximoNivel} XP</span>
-            </div>
-            <div class="w-full bg-slate-200 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
-              <div class="bg-gradient-to-r from-indigo-500 to-purple-600 h-full rounded-full transition-all duration-500" style="width: ${progress.percent}%"></div>
-            </div>
-            <div class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold flex justify-between">
-              <span>Nível ${progress.nivel}</span>
-              <span>Faltam ${progress.xpProximoNivel - progress.xpAtual} XP para o próximo nível</span>
-            </div>
-          </div>
+        <!-- Barra de Abas -->
+        <div class="flex border-b border-slate-100 dark:border-slate-800 px-6 text-[10px] font-black uppercase tracking-wider bg-slate-50/50 dark:bg-slate-900/50 select-none shrink-0">
+          <button type="button" id="tab-mp-dados" class="flex-1 py-3 text-center border-b-2 border-indigo-600 text-indigo-600 dark:text-indigo-400 font-black">Dados</button>
+          <button type="button" id="tab-mp-medalhas" class="flex-1 py-3 text-center border-b-2 border-transparent text-slate-400 dark:text-slate-500 font-bold hover:text-slate-600 dark:hover:text-slate-300">Medalhas</button>
+          <button type="button" id="tab-mp-campanhas" class="flex-1 py-3 text-center border-b-2 border-transparent text-slate-400 dark:text-slate-500 font-bold hover:text-slate-600 dark:hover:text-slate-300">Campanhas</button>
+        </div>
 
-          <!-- Grade de Medalhas -->
-          <div>
-            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2.5">Mural de Medalhas</label>
-            <div class="grid grid-cols-7 gap-2.5" id="modal-badges-grid">
-              <div class="col-span-7 py-3 text-center text-slate-400 text-xs animate-pulse">Carregando medalhas...</div>
-            </div>
-          </div>
-
-          <!-- Campanhas Ativas (Acompanhamento Mobile/Geral) -->
-          <div id="modal-campaigns-section" class="hidden border-t border-slate-100 dark:border-slate-800 pt-4">
-            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2.5">🎯 Campanhas Ativas</label>
-            <div class="space-y-2 max-h-[220px] overflow-y-auto custom-scrollbar pr-1" id="modal-campaigns-list">
-              <!-- Carregado de forma assíncrona -->
-            </div>
-          </div>
-
-          <!-- Grade de avatares -->
-          <div>
-            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">Selecione uma Carinha de Animal *</label>
-            <div class="grid grid-cols-6 gap-2.5 justify-items-center" id="modal-avatar-selection-grid">
-              ${renderAvatarsHtml()}
-            </div>
-          </div>
-
-          <div>
-            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Nome Completo *</label>
-            <input id="input-mp-nome" type="text" required autocomplete="name" value="${perfil.nome || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition" />
-          </div>
-
-          <div>
-            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">E-mail de Login</label>
-            <input id="input-mp-email" type="email" disabled autocomplete="username" value="${perfil.email || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 rounded-lg text-slate-400 dark:text-slate-500 font-bold text-sm cursor-not-allowed select-none" />
-            <p class="text-[9px] text-slate-400 dark:text-slate-500 mt-1 font-semibold">O e-mail é único para login e não pode ser reconfigurado.</p>
-          </div>
-
-          <div class="border-t border-slate-100 dark:border-slate-800 pt-4">
-            <h3 class="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-2.5">Alterar Minha Senha</h3>
-            
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-              <div>
-                <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">Nova Senha</label>
-                <input id="input-mp-senha" type="password" minlength="6" autocomplete="new-password" placeholder="Mín. 6 dígitos" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs" />
+        <form id="form-meu-perfil" class="p-6 flex-1 flex flex-col justify-between">
+          <!-- Painel 1: Dados -->
+          <div id="panel-mp-dados" class="space-y-4">
+            <!-- Grade de avatares -->
+            <div>
+              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">Selecione uma Carinha de Animal *</label>
+              <div class="grid grid-cols-6 gap-2.5 justify-items-center" id="modal-avatar-selection-grid">
+                ${renderAvatarsHtml()}
               </div>
-              <div>
-                <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">Confirmar Senha</label>
-                <input id="input-mp-senha-confirm" type="password" minlength="6" autocomplete="new-password" placeholder="Confirme a senha" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs" />
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Nome Completo *</label>
+              <input id="input-mp-nome" type="text" required autocomplete="name" value="${perfil.nome || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition" />
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">E-mail de Login</label>
+              <input id="input-mp-email" type="email" disabled autocomplete="username" value="${perfil.email || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 rounded-lg text-slate-400 dark:text-slate-500 font-bold text-sm cursor-not-allowed select-none" />
+            </div>
+
+            <div class="border-t border-slate-100 dark:border-slate-800 pt-4">
+              <h3 class="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-2.5">Alterar Minha Senha</h3>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">Nova Senha</label>
+                  <input id="input-mp-senha" type="password" minlength="6" autocomplete="new-password" placeholder="Mín. 6 dígitos" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs" />
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">Confirmar Senha</label>
+                  <input id="input-mp-senha-confirm" type="password" minlength="6" autocomplete="new-password" placeholder="Confirme a senha" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs" />
+                </div>
               </div>
             </div>
           </div>
 
-          <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+          <!-- Painel 2: Medalhas -->
+          <div id="panel-mp-medalhas" class="hidden space-y-4">
+            <!-- Bloco de Gamificação (XP e Nível) -->
+            <div class="bg-indigo-50/30 dark:bg-indigo-950/10 border border-indigo-100/50 dark:border-indigo-900/20 rounded-2xl p-4 space-y-2.5">
+              <div class="flex justify-between items-center text-xs">
+                <span class="font-extrabold text-slate-700 dark:text-slate-400 flex items-center gap-1.5">${progress.patenteEmoji} Patente: ${progress.patente}</span>
+                <span class="font-black text-indigo-600 dark:text-indigo-400">${progress.xpAtual} / ${progress.xpProximoNivel} XP</span>
+              </div>
+              <div class="w-full bg-slate-200 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
+                <div class="bg-gradient-to-r from-indigo-500 to-purple-600 h-full rounded-full transition-all duration-500" style="width: ${progress.percent}%"></div>
+              </div>
+              <div class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold flex justify-between">
+                <span>Nível ${progress.nivel}</span>
+                <span>Faltam ${progress.xpProximoNivel - progress.xpAtual} XP para o próximo nível</span>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2.5">Mural de Medalhas</label>
+              <div class="grid grid-cols-7 gap-2.5" id="modal-badges-grid">
+                <div class="col-span-7 py-3 text-center text-slate-400 text-xs animate-pulse">Carregando medalhas...</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Painel 3: Campanhas e Metas -->
+          <div id="panel-mp-campanhas" class="hidden space-y-5">
+            <!-- Campanhas Ativas -->
+            <div>
+              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2.5">🎯 Campanhas Operacionais</label>
+              <div class="space-y-2 max-h-[160px] overflow-y-auto custom-scrollbar pr-1" id="modal-campaigns-list">
+                <div class="text-center text-slate-400 dark:text-slate-500 text-xs font-medium italic py-2">Sem campanhas ativas no momento.</div>
+              </div>
+            </div>
+
+            <!-- Ranking / Leaderboard -->
+            <div class="border-t border-slate-100 dark:border-slate-800 pt-4">
+              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2.5">🏆 Ranking de Consultores (XP)</label>
+              <div class="space-y-2 max-h-[200px] overflow-y-auto custom-scrollbar pr-1" id="modal-leaderboard-list">
+                <div class="text-center text-slate-400 dark:text-slate-500 text-xs font-medium italic py-2">Carregando ranking...</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Botoes de Acao -->
+          <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800 mt-6 shrink-0">
             <button id="btn-mp-cancel" type="button" class="px-4 py-2.5 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white font-bold text-xs rounded-xl transition uppercase">
-              Cancelar
+              Fechar
             </button>
             <button id="btn-mp-submit" type="submit" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl transition shadow-lg shadow-indigo-600/20 uppercase tracking-wider flex items-center justify-center">
               Salvar Alterações
@@ -156,6 +178,106 @@ export class MeuPerfilModal {
     `;
 
     document.body.appendChild(overlay);
+
+    // Seletores das abas e painéis
+    const tabDados = overlay.querySelector('#tab-mp-dados') as HTMLButtonElement;
+    const tabMedalhas = overlay.querySelector('#tab-mp-medalhas') as HTMLButtonElement;
+    const tabCampanhas = overlay.querySelector('#tab-mp-campanhas') as HTMLButtonElement;
+
+    const panelDados = overlay.querySelector('#panel-mp-dados') as HTMLElement;
+    const panelMedalhas = overlay.querySelector('#panel-mp-medalhas') as HTMLElement;
+    const panelCampanhas = overlay.querySelector('#panel-mp-campanhas') as HTMLElement;
+
+    const modalSubmitBtn = overlay.querySelector('#btn-mp-submit') as HTMLButtonElement;
+
+    const selectTab = (tab: 'dados' | 'medalhas' | 'campanhas') => {
+      const activeClass = 'flex-1 py-3 text-center border-b-2 border-indigo-600 text-indigo-600 dark:text-indigo-400 font-black';
+      const inactiveClass = 'flex-1 py-3 text-center border-b-2 border-transparent text-slate-400 dark:text-slate-500 font-bold hover:text-slate-600 dark:hover:text-slate-300';
+
+      tabDados.className = tab === 'dados' ? activeClass : inactiveClass;
+      tabMedalhas.className = tab === 'medalhas' ? activeClass : inactiveClass;
+      tabCampanhas.className = tab === 'campanhas' ? activeClass : inactiveClass;
+
+      panelDados.classList.toggle('hidden', tab !== 'dados');
+      panelMedalhas.classList.toggle('hidden', tab !== 'medalhas');
+      panelCampanhas.classList.toggle('hidden', tab !== 'campanhas');
+
+      // Oculta o botão Salvar se não for a aba Dados
+      modalSubmitBtn.classList.toggle('hidden', tab !== 'dados');
+    };
+
+    tabDados.addEventListener('click', () => selectTab('dados'));
+    tabMedalhas.addEventListener('click', () => selectTab('medalhas'));
+    tabCampanhas.addEventListener('click', () => {
+      selectTab('campanhas');
+      loadLeaderboard();
+    });
+
+    // Função assíncrona para carregar o ranking de consultores
+    const loadLeaderboard = async () => {
+      const leaderboardList = document.getElementById('modal-leaderboard-list');
+      if (!leaderboardList) return;
+
+      try {
+        const { data: profiles, error } = await supabase
+          .from('profiles')
+          .select('id, nome, email, avatar_url, xp, nivel')
+          .eq('ativo', true)
+          .order('xp', { ascending: false });
+
+        if (error) throw error;
+
+        if (!profiles || profiles.length === 0) {
+          leaderboardList.innerHTML = `<div class="text-center text-slate-400 dark:text-slate-500 text-xs font-medium italic py-2">Nenhum consultor ativo.</div>`;
+          return;
+        }
+
+        leaderboardList.innerHTML = profiles.map((p, idx) => {
+          let badgePos = '';
+          if (idx === 0) badgePos = '🥇';
+          else if (idx === 1) badgePos = '🥈';
+          else if (idx === 2) badgePos = '🥉';
+          else badgePos = `<span class="text-slate-400 font-black text-xs w-5 text-center">${idx + 1}</span>`;
+
+          const isCurrentUser = p.id === perfil.id;
+          const userBg = isCurrentUser 
+            ? 'bg-indigo-50/50 dark:bg-indigo-950/20 border-indigo-200 dark:border-indigo-900/50' 
+            : 'bg-slate-50/50 dark:bg-slate-800/10 border-slate-200/40 dark:border-slate-800/50';
+
+          const progressInfo = obterProgressoNivel(p.xp || 0);
+          const userAvatar = getAvatarSvg(p.avatar_url || '', p.nome, 'w-8 h-8 shrink-0 rounded-lg');
+
+          return `
+            <div class="flex items-center gap-3 p-2.5 rounded-xl border ${userBg} transition duration-200">
+              <div class="flex items-center justify-center shrink-0 w-6">
+                ${badgePos}
+              </div>
+              
+              ${userAvatar}
+
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-1.5 justify-between">
+                  <span class="text-[10px] font-black text-slate-700 dark:text-slate-300 truncate max-w-[150px] ${isCurrentUser ? 'text-indigo-600 dark:text-indigo-400 font-black' : ''}">
+                    ${p.nome} ${isCurrentUser ? '(Você)' : ''}
+                  </span>
+                  <span class="text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase shrink-0">
+                    Nível ${progressInfo.nivel}
+                  </span>
+                </div>
+                <div class="flex items-center justify-between text-[8px] text-slate-400 dark:text-slate-500 font-semibold mt-0.5">
+                  <span>${progressInfo.patenteEmoji} ${progressInfo.patente}</span>
+                  <span class="font-extrabold text-indigo-600 dark:text-indigo-400">${p.xp || 0} XP</span>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+      } catch (err) {
+        console.error('Erro ao carregar leaderboard:', err);
+        leaderboardList.innerHTML = `<div class="text-center text-rose-500 text-[10px] font-bold py-2">Falha ao carregar ranking.</div>`;
+      }
+    };
 
     // Carregar medalhas do usuário de forma assíncrona
     obterMedalhasUsuario(perfil.id).then(userBadges => {
@@ -195,58 +317,62 @@ export class MeuPerfilModal {
 
     // Carregar campanhas ativas de forma assíncrona para exibição no perfil
     Promise.all([obterCampanhasAtivas(), obterMedalhasUsuario(perfil.id)]).then(async ([activeCampaigns, medalhasConquistadas]) => {
-      if (activeCampaigns.length === 0) return;
+      const listEl = document.getElementById('modal-campaigns-list');
+      if (!listEl) return;
+
+      if (activeCampaigns.length === 0) {
+        listEl.innerHTML = `<div class="text-center text-slate-400 dark:text-slate-500 text-xs font-medium italic py-2">Sem campanhas ativas no momento.</div>`;
+        return;
+      }
 
       const medalhasSet = new Set(medalhasConquistadas);
       const progresses = await Promise.all(activeCampaigns.map(cam => obterProgressoCampanha(perfil.id, cam)));
       const hoje = new Date().toISOString().split('T')[0];
       const activeProgresses = progresses.filter(p => !medalhasSet.has(p.campaign.badge_key) && p.campaign.data_fim >= hoje);
 
-      if (activeProgresses.length === 0) return;
-
-      const sectionEl = document.getElementById('modal-campaigns-section');
-      const listEl = document.getElementById('modal-campaigns-list');
-      if (sectionEl && listEl) {
-        sectionEl.classList.remove('hidden');
-        listEl.innerHTML = activeProgresses.map(p => {
-          const badgeObj = BADGE_DEFINITIONS.find(b => b.key === p.campaign.badge_key);
-          const badgeEmoji = badgeObj ? badgeObj.emoji : '🏆';
-          
-          let metaUnit = 'ações';
-          if (p.campaign.tipo_meta === 'xp_acumulado') metaUnit = 'XP';
-          else if (p.campaign.tipo_meta === 'cliente_criado') metaUnit = 'cli';
-          else if (p.campaign.tipo_meta === 'venda_aceita') metaUnit = 'vds';
-          else if (p.campaign.tipo_meta === 'lembrete_criado') metaUnit = 'lembr';
-          else if (p.campaign.tipo_meta === 'reembolso_pago') metaUnit = 'reemb';
-          else if (p.campaign.tipo_meta === 'produto_detalhado') metaUnit = 'prod';
-
-          return `
-            <div class="flex flex-col gap-1 p-2.5 rounded-xl bg-slate-50/50 dark:bg-slate-800/10 border border-slate-200/40 dark:border-slate-800/50 hover:border-indigo-500/30 transition duration-200">
-              <div class="flex items-center justify-between gap-1.5">
-                <span class="text-[10px] font-black text-slate-700 dark:text-slate-300 truncate max-w-[200px]" title="${p.campaign.titulo}">
-                  ${p.campaign.titulo}
-                </span>
-                <span class="text-xs text-slate-400 dark:text-slate-500 font-bold shrink-0" title="${badgeObj ? badgeObj.nome : ''}">
-                  ${badgeEmoji}
-                </span>
-              </div>
-              <p class="text-[9px] text-slate-400 dark:text-slate-500 font-semibold leading-normal">
-                ${p.campaign.descricao}
-              </p>
-              
-              <!-- Progress Bar -->
-              <div class="flex items-center gap-2 mt-1">
-                <div class="flex-1 h-1 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
-                  <div class="h-full bg-gradient-to-r from-indigo-500 to-indigo-600 dark:from-indigo-400 dark:to-indigo-500 rounded-full transition-all duration-500" style="width: ${p.percent}%"></div>
-                </div>
-                <span class="text-[9px] text-indigo-600 dark:text-indigo-400 font-black shrink-0 whitespace-nowrap">
-                  ${p.progresso}/${p.meta} <span class="text-[8px] text-slate-400 dark:text-slate-500 font-bold">${metaUnit}</span>
-                </span>
-              </div>
-            </div>
-          `;
-        }).join('');
+      if (activeProgresses.length === 0) {
+        listEl.innerHTML = `<div class="text-center text-slate-400 dark:text-slate-500 text-xs font-medium italic py-2">Sem campanhas ativas no momento.</div>`;
+        return;
       }
+
+      listEl.innerHTML = activeProgresses.map(p => {
+        const badgeObj = BADGE_DEFINITIONS.find(b => b.key === p.campaign.badge_key);
+        const badgeEmoji = badgeObj ? badgeObj.emoji : '🏆';
+        
+        let metaUnit = 'ações';
+        if (p.campaign.tipo_meta === 'xp_acumulado') metaUnit = 'XP';
+        else if (p.campaign.tipo_meta === 'cliente_criado') metaUnit = 'cli';
+        else if (p.campaign.tipo_meta === 'venda_aceita') metaUnit = 'vds';
+        else if (p.campaign.tipo_meta === 'lembrete_criado') metaUnit = 'lembr';
+        else if (p.campaign.tipo_meta === 'reembolso_pago') metaUnit = 'reemb';
+        else if (p.campaign.tipo_meta === 'produto_detalhado') metaUnit = 'prod';
+
+        return `
+          <div class="flex flex-col gap-1 p-2.5 rounded-xl bg-slate-50/50 dark:bg-slate-800/10 border border-slate-200/40 dark:border-slate-800/50 hover:border-indigo-500/30 transition duration-200">
+            <div class="flex items-center justify-between gap-1.5">
+              <span class="text-[10px] font-black text-slate-700 dark:text-slate-300 truncate max-w-[200px]" title="${p.campaign.titulo}">
+                ${p.campaign.titulo}
+              </span>
+              <span class="text-xs text-slate-400 dark:text-slate-500 font-bold shrink-0" title="${badgeObj ? badgeObj.nome : ''}">
+                ${badgeEmoji}
+              </span>
+            </div>
+            <p class="text-[9px] text-slate-400 dark:text-slate-500 font-semibold leading-normal">
+              ${p.campaign.descricao}
+            </p>
+            
+            <!-- Progress Bar -->
+            <div class="flex items-center gap-2 mt-1">
+              <div class="flex-1 h-1 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+                <div class="h-full bg-gradient-to-r from-indigo-500 to-indigo-600 dark:from-indigo-400 dark:to-indigo-500 rounded-full transition-all duration-500" style="width: ${p.percent}%"></div>
+              </div>
+              <span class="text-[9px] text-indigo-600 dark:text-indigo-400 font-black shrink-0 whitespace-nowrap">
+                ${p.progresso}/${p.meta} <span class="text-[8px] text-slate-400 dark:text-slate-500 font-bold">${metaUnit}</span>
+              </span>
+            </div>
+          </div>
+        `;
+      }).join('');
     }).catch(err => {
       console.error('Erro ao carregar campanhas no perfil:', err);
     });

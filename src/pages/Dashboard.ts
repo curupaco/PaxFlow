@@ -2,6 +2,7 @@ import Sortable from 'sortablejs';
 import { supabase, getSessaoAtual, logoutConsultor } from '../services/supabase';
 import { Viagem, Cliente, ProdutoViagem, GlobalSettings, PerfilConsultor } from '../types';
 import { DestinosAutocomplete } from '../components/DestinosAutocomplete';
+import { SendTemplateMessageModal } from '../components/dashboard/SendTemplateMessageModal';
 import { getAvatarSvg, mesclarAvataresLocais } from '../services/avatars';
 import { showCustomConfirm } from '../services/dialog';
 import { CommentsService } from '../services/comments';
@@ -1742,6 +1743,14 @@ export class Dashboard {
             <button class="btn-action-view px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 font-black rounded-lg border border-indigo-100/30 dark:border-indigo-900/30 transition text-[10px] uppercase" data-trip-id="${v.id}">
               🔍 Ver Detalhes
             </button>
+            <button class="btn-action-whatsapp p-1.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/45 dark:hover:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400 rounded-lg border border-emerald-100/30 dark:border-emerald-900/30 transition flex items-center justify-center" data-trip-id="${v.id}" title="Enviar Mensagem de WhatsApp">
+              <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.724-1.455L0 24zm6.59-4.846c1.6.95 3.197 1.451 4.777 1.451 5.51 0 9.997-4.493 10-10.008.002-2.673-1.037-5.186-2.93-7.079-1.892-1.893-4.401-2.934-7.078-2.934-5.518 0-10.007 4.493-10.01 10.01-.001 1.708.455 3.377 1.32 4.887L1.134 22.84l4.513-1.186zm11.23-7.925c-.297-.149-1.758-.868-2.03-.967-.273-.099-.471-.148-.669.149-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.568-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/></svg>
+            </button>
+            ${v.status === 'pos_viagem' ? `
+              <button class="btn-action-copiar-nps p-1.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/45 dark:hover:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 rounded-lg border border-indigo-100/30 dark:border-indigo-900/30 transition flex items-center justify-center font-bold text-xs" data-trip-id="${v.id}" title="Copiar link da pesquisa de NPS">
+                📋
+              </button>
+            ` : ''}
           </div>
         </td>
       </tr>
@@ -1866,8 +1875,8 @@ export class Dashboard {
         </div>
 
         <!-- Footer Actions: Status Dropdown + Detalhes Button -->
-        <div class="flex items-center gap-3 pt-1 border-t border-slate-100 dark:border-slate-800/60">
-          <div class="flex-1">
+        <div class="flex items-center gap-2 pt-1 border-t border-slate-100 dark:border-slate-800/60 flex-wrap">
+          <div class="flex-1 min-w-[120px]">
             <select class="select-status-inline w-full px-2.5 py-2 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-500 font-bold text-xs cursor-pointer" data-trip-id="${v.id}" data-old-value="${v.status}">
               <option value="fechado" ${v.status === 'fechado' ? 'selected' : ''}>Fechado</option>
               <option value="pos_venda" ${v.status === 'pos_venda' ? 'selected' : ''}>Pós-Venda</option>
@@ -1876,9 +1885,19 @@ export class Dashboard {
               <option value="reembolso_solicitado" ${v.status === 'reembolso_solicitado' ? 'selected' : ''}>Reembolso Solicitado</option>
             </select>
           </div>
-          <button class="btn-action-view px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold rounded-xl shadow-md shadow-indigo-600/10 transition text-xs uppercase" data-trip-id="${v.id}">
-            🔍 Detalhes
-          </button>
+          <div class="flex items-center gap-1">
+            <button class="btn-action-view px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold rounded-xl shadow-md shadow-indigo-600/10 transition text-xs uppercase" data-trip-id="${v.id}">
+              🔍 Detalhes
+            </button>
+            <button class="btn-action-whatsapp p-2 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/45 dark:hover:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400 rounded-xl border border-emerald-100/30 dark:border-emerald-900/30 transition flex items-center justify-center" data-trip-id="${v.id}" title="Enviar Mensagem de WhatsApp">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.724-1.455L0 24zm6.59-4.846c1.6.95 3.197 1.451 4.777 1.451 5.51 0 9.997-4.493 10-10.008.002-2.673-1.037-5.186-2.93-7.079-1.892-1.893-4.401-2.934-7.078-2.934-5.518 0-10.007 4.493-10.01 10.01-.001 1.708.455 3.377 1.32 4.887L1.134 22.84l4.513-1.186zm11.23-7.925c-.297-.149-1.758-.868-2.03-.967-.273-.099-.471-.148-.669.149-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.568-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/></svg>
+            </button>
+            ${v.status === 'pos_viagem' ? `
+              <button class="btn-action-copiar-nps p-2 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/45 dark:hover:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 rounded-xl border border-indigo-100/30 dark:border-indigo-900/30 transition flex items-center justify-center font-bold text-xs" data-trip-id="${v.id}" title="Copiar link da pesquisa de NPS">
+                📋
+              </button>
+            ` : ''}
+          </div>
         </div>
       </div>
     `;
@@ -1965,6 +1984,47 @@ export class Dashboard {
         if (tripId) {
           this.openEdicaoEProdutosModal(tripId);
         }
+      });
+    });
+
+    // Evento de clique nos botões "WhatsApp"
+    this.container.querySelectorAll('.btn-action-whatsapp').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const tripId = btn.getAttribute('data-trip-id');
+        if (!tripId) return;
+
+        const v = this.viagens.find(trip => trip.id === tripId);
+        if (!v) return;
+
+        SendTemplateMessageModal.open({
+          clienteNome: v.cliente?.nome || '',
+          clienteTelefone: v.cliente?.telefone || '',
+          destino: v.destino,
+          localizador: v.codigo_localizador,
+          dataIda: v.data_ida,
+          viagemId: v.id,
+          consultorNome: this.consultores.find(c => c.id === v.consultor_id)?.nome || this.perfil?.nome || 'Consultor',
+          showToast: (msg, type) => this.showToast(msg, type)
+        });
+      });
+    });
+
+    // Evento de clique nos botões "Copiar NPS"
+    this.container.querySelectorAll('.btn-action-copiar-nps').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const tripId = btn.getAttribute('data-trip-id');
+        if (!tripId) return;
+
+        const origin = window.location.origin + window.location.pathname;
+        const linkFeedback = `${origin}#feedback?id=${tripId}`;
+        navigator.clipboard.writeText(linkFeedback).then(() => {
+          this.showToast('Link da Pesquisa NPS copiado!', 'success');
+        }).catch(err => {
+          console.error('Erro ao copiar link NPS:', err);
+          this.showToast('Erro ao copiar link NPS.', 'error');
+        });
       });
     });
 
