@@ -25,6 +25,10 @@
    - 3.12 [Dashboard de Resultados (Analytics) e Relatórios Gerenciais](#312-dashboard-de-resultados-analytics-e-relatórios-gerenciais)
    - 3.13 [Sistema de Comentários, Notas, Menções (@) e Agendamento Automático](#313-sistema-de-comentários-notas-menções-e-agendamento-automático)
    - 3.14 [Exclusão Administrativa e Políticas de Delegação (RBAC)](#314-exclusão-administrativa-e-políticas-de-delegação-rbac)
+   - 3.15 [Itinerário Digital Interativo Público](#315-itinerário-digital-interativo-público)
+   - 3.16 [Pesquisa NPS Pós-Viagem Pública](#316-pesquisa-nps-pós-viagem-pública)
+   - 3.17 [Hub de Modelos de Mensagens (WhatsApp)](#317-hub-de-modelos-de-mensagens-whatsapp)
+   - 3.18 [Campanhas de Vendas & Leaderboard](#318-campanhas-de-vendas--leaderboard)
 4. [Diferenciais Competitivos](#4-diferenciais-competitivos)
 5. [Arquitetura Tecnológica](#5-arquitetura-tecnológica)
 6. [Segurança e Conformidade](#6-segurança-e-conformidade)
@@ -377,6 +381,39 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
   - Cobertura em todos os componentes-chave: Clientes, Viagens (Vendas), Orçamentos, Reembolsos e Mensagens de Inbox.
 - **Integridade Referencial em Cascata**:
   - O backend e as políticas SQL realizam a limpeza de registros filhos associados (ex: ao excluir uma Viagem, remove os produtos relacionados; ao excluir um Orçamento, trata logs e propostas vinculadas) garantindo estabilidade do banco de dados.
+
+### 3.15 Itinerário Digital Interativo Público
+
+**Visualização externa e mobile-first** projetada para o cliente final da agência acompanhar o andamento operacional de sua viagem de forma anônima e descomplicada.
+
+- **Navegação Sem Autenticação**: O passageiro acessa sua visualização diretamente através de links seguros contendo o hash da rota e o identificador único da viagem (`#itinerario?id=UUID`), eliminando barreiras de login.
+- **Estrutura de Linha do Tempo (Cronograma)**: Exibe a lista completa de serviços contratados (vôos, hotéis, traslados) agrupados e ordenados por data em cartões elegantes e responsivos.
+- **Contagem Regressiva Interativa**: Um cronômetro reativo no topo do cabeçalho que calcula dias, horas e minutos restantes para o início da viagem.
+- **Segurança de Dados via RPC**: O carregamento é alimentado por uma procedure PostgreSQL (`obter_itinerario_publico`) com privilégios `SECURITY DEFINER`, que restringe a consulta pública apenas aos dados operacionais necessários (datas, localizadores, fornecedores e nomes dos passageiros), omitindo informações confidenciais (comissões, faturamento, markups e dados de outros clientes).
+
+### 3.16 Pesquisa NPS Pós-Viagem Pública
+
+**Mecanismo público de coleta de feedbacks de satisfação** (Net Promoter Score) integrado aos fluxos de automação pós-viagem da agência.
+
+- **Coleta Simplificada**: Acessível pelo link seguro de hash `#feedback?id=UUID`. O passageiro avalia o atendimento geral e a experiência de 0 a 10 com cliques rápidos e pode deixar comentários opcionais.
+- **Segurança e Privacidade**: Protegido por políticas RLS no banco de dados que admitem inserção pública e anônima mas bloqueiam qualquer consulta externa às avaliações de outros clientes.
+- **Armazenamento Centralizado**: As notas alimentam a tabela `feedbacks_nps`, permitindo futuras análises estatísticas automáticas.
+
+### 3.17 Hub de Modelos de Mensagens (WhatsApp)
+
+**Central de automação de correspondências de WhatsApp** permitindo que consultores enviem mensagens padronizadas em segundos com dados reativos.
+
+- **Configurações de Modelos (CRUD)**: Administradores gerenciam a base de templates (título, descrição, conteúdo e variáveis suportadas) diretamente na aba dedicada nas Configurações do app.
+- **Preview de Variáveis Reativo**: Modal de disparo que exibe em tempo real o texto final formatado ao substituir tags dinâmicas como `{{cliente}}`, `{{destino}}`, `{{localizador}}`, `{{link_itinerario}}` e `{{link_feedback}}` com base no contexto selecionado.
+- **Atalhos Rápidos na Interface**: Botões de WhatsApp incorporados diretamente na linha de viagens do Dashboard, nos perfis de clientes e nos cards do Kanban de Orçamentos, permitindo inicializar o contato instantaneamente.
+- **Gamificação Integrada**: O envio de uma mensagem utilizando o hub de templates recompensa o consultor ativo com **+10 XP** no sistema de patentes.
+
+### 3.18 Campanhas de Vendas & Leaderboard
+
+**Mecanismo de engajamento interno** projetado para motivar a equipe de consultores através de competição saudável por ranking de performance.
+
+- **Leaderboard Unificado**: Exibe o ranking em tempo real de todos os consultores cadastrados na agência ordenados de forma decrescente por XP acumulado.
+- **Aba de Campanhas & Metas**: Inserida no modal "Meu Perfil", permitindo que os consultores vejam sua posição atualizada frente aos colegas e acompanhem as campanhas de incentivo ativas.
 
 ---
 

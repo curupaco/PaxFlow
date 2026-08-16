@@ -100,6 +100,9 @@ export class LandingPage {
               <button id="tab-btn-relatorios" class="px-4 py-2 text-[11px] font-black tracking-wider uppercase rounded-xl transition duration-200 text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200">
                 📈 Relatórios
               </button>
+              <button id="tab-btn-publicas" class="px-4 py-2 text-[11px] font-black tracking-wider uppercase rounded-xl transition duration-200 text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200">
+                🌐 Itinerário & NPS
+              </button>
             </div>
           </div>
 
@@ -538,6 +541,40 @@ export class LandingPage {
                 </div>
               </div>
 
+              <!-- PANEL 8: PUBLICAS -->
+              <div id="panel-publicas" class="space-y-4 tab-pane-transition hidden">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <!-- Public Itinerary Card -->
+                  <div class="bg-slate-100/60 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800/80 p-4 rounded-xl text-left space-y-2">
+                    <span class="text-[9px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider block">🌐 Itinerário Digital do Cliente</span>
+                    <div class="flex items-baseline gap-2">
+                      <span class="text-sm font-black text-slate-800 dark:text-white">Layout Mobile-First Premium</span>
+                    </div>
+                    <p class="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                      Seu cliente acessa o cronograma completo da viagem, vôos, hotéis e vouchers organizados por dias de forma elegante e interativa (com contagem regressiva para a partida), sem precisar baixar aplicativos ou fazer login.
+                    </p>
+                  </div>
+
+                  <!-- Public NPS Card -->
+                  <div class="bg-slate-100/60 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800/80 p-4 rounded-xl text-left space-y-2">
+                    <span class="text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-wider block">⭐ Pesquisa NPS Pós-Viagem</span>
+                    <div class="flex items-baseline gap-2">
+                      <span class="text-sm font-black text-slate-800 dark:text-white">Coleta de Satisfação Rápida</span>
+                    </div>
+                    <p class="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                      Após o retorno da viagem, envie um link único onde o passageiro avalia sua experiência de 0 a 10 com comentários. Os resultados alimentam estatísticas em tempo real no painel administrativo.
+                    </p>
+                  </div>
+                </div>
+                
+                <div class="bg-slate-100/30 dark:bg-slate-950/40 border border-slate-200/60 dark:border-slate-800/60 rounded-xl p-4 text-left space-y-2">
+                  <span class="text-[9px] font-black text-slate-450 dark:text-slate-500 uppercase tracking-wider block">💬 Disparo de WhatsApp com Templates Reativos</span>
+                  <p class="text-[10px] text-slate-650 dark:text-slate-350 leading-relaxed">
+                    O consultor seleciona modelos predefinidos de mensagem (ex: confirmação de compra, vouchers, NPS) e o sistema preenche dinamicamente dados do cliente, localizador de reserva e links públicos do itinerário/pesquisa, abrindo o WhatsApp Web/App com a mensagem pronta com um clique.
+                  </p>
+                </div>
+              </div>
+
             </div>
 
           </div>
@@ -758,7 +795,7 @@ export class LandingPage {
     document.getElementById('btn-conhecer-login')?.addEventListener('click', handleAcessarReal);
 
     // Lógica da Demo Interativa (Feature Tour)
-    const tabs = ['dashboard', 'viagens', 'orcamentos', 'inbox', 'reembolsos', 'gamificacao', 'relatorios'];
+    const tabs = ['dashboard', 'viagens', 'orcamentos', 'inbox', 'reembolsos', 'gamificacao', 'relatorios', 'publicas'];
     const pathTexts: { [key: string]: string } = {
       dashboard: 'paxflow-comercial-dashboard.html',
       viagens: 'paxflow-controle-operacional-viagens.html',
@@ -766,7 +803,8 @@ export class LandingPage {
       inbox: 'paxflow-inbox-p2p-threads.html',
       reembolsos: 'paxflow-gestao-de-reembolsos.html',
       gamificacao: 'paxflow-gamificacao-de-consultores.html',
-      relatorios: 'paxflow-relatorios-estatisticos-e-predicoes.html'
+      relatorios: 'paxflow-relatorios-estatisticos-e-predicoes.html',
+      publicas: 'paxflow-itinerarios-publicos-nps.html'
     };
 
     tabs.forEach(tab => {
