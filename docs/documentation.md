@@ -29,6 +29,8 @@
    - 3.16 [Pesquisa NPS Pós-Viagem Pública](#316-pesquisa-nps-pós-viagem-pública)
    - 3.17 [Hub de Modelos de Mensagens (WhatsApp)](#317-hub-de-modelos-de-mensagens-whatsapp)
    - 3.18 [Campanhas de Vendas & Leaderboard](#318-campanhas-de-vendas--leaderboard)
+   - 3.19 [Códigos de Referência Internos Sequenciais (ORC, VIA, RBS, CLI)](#319-códigos-de-referência-internos-sequenciais)
+   - 3.20 [Validação Automatizada de Viagens e Conferência de Processos](#320-validação-automatizada-de-viagens-e-conferência-de-processos)
 4. [Diferenciais Competitivos](#4-diferenciais-competitivos)
 5. [Arquitetura Tecnológica](#5-arquitetura-tecnológica)
 6. [Segurança e Conformidade](#6-segurança-e-conformidade)
@@ -414,6 +416,28 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 
 - **Leaderboard Unificado**: Exibe o ranking em tempo real de todos os consultores cadastrados na agência ordenados de forma decrescente por XP acumulado.
 - **Aba de Campanhas & Metas**: Inserida no modal "Meu Perfil", permitindo que os consultores vejam sua posição atualizada frente aos colegas e acompanhem as campanhas de incentivo ativas.
+
+### 3.19 Códigos de Referência Internos Sequenciais (ORC, VIA, RBS, CLI)
+
+**Sistema unificado de codificação legível** para agilizar a identificação de itens chave na operação cotidiana, reduzindo a dependência de identificadores complexos (como UUIDs de banco de dados).
+
+- **Mapeamento de Prefixos**:
+  - `CLI-` para Clientes (ex: `CLI-0012`)
+  - `ORC-` para Orçamentos (ex: `ORC-0402`)
+  - `VIA-` para Viagens/Vendas (ex: `VIA-0118`)
+  - `RBS-` para Reembolsos (ex: `RBS-0091`)
+- **Geração e Integridade**: Os códigos são gerados de forma atômica no banco de dados (PostgreSQL) usando sequências dedicadas e colunas geradas (`lpad` para 4 dígitos), garantindo exclusividade absoluta e ordem cronológica impecável.
+- **Pesquisa Omnipresente**: Permite localizar instantaneamente registros digitando o número sequencial simples ou a referência inteira nas caixas de busca de Clientes, Orçamentos, Viagens e Reembolsos.
+- **Badges Visuais**: Exibidos em posições estratégicas na UI (tabelas, cabeçalhos de modais e cartões de Kanbans) para rápida visualização e citação direta.
+
+### 3.20 Validação Automatizada de Viagens e Conferência de Processos
+
+**Mecanismo de governança financeira e de workflow** projetado para certificar a completude das viagens operadas na agência.
+
+- **Conferência Financeira por LOC**: Exige que cada produto/serviço possua seu código de reserva (LOC) exclusivo. A conferência (exclusiva do perfil admin) audita a quitação por Formas de Recebimento cadastradas e trava modificações caso existam pendências de faturamento.
+- **Conferência de Processo**: Trava dados cadastrais sensíveis da viagem contra alterações indevidas (permitindo apenas a edição de status, controle de anexos e comentários colaborativos).
+- **Trava de Transição de Status**: A movimentação de viagens a partir do estágio 'Fechado' requer saldo líquido zerado e detalhamento completo de custos de fornecedor (Tarifa + Taxa + Comissão = Valor de Venda do produto).
+- **Filtros Rápidos no Dashboard**: Painel de visualização com filtros dedicados por status de conferência (Financieramente Conferido, Processo Conferido, Completo, Pendente).
 
 ---
 

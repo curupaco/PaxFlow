@@ -656,6 +656,10 @@ export class LandingPage {
                     <span class="text-emerald-500 shrink-0">✨</span>
                     <span><strong>Agendamento e Delegação Colaborativa</strong> via Caixa de Entrada, visão do Calendário com cores e status de conclusão (line-through).</span>
                   </li>
+                  <li class="flex items-start gap-2.5">
+                    <span class="text-emerald-500 shrink-0">✨</span>
+                    <span><strong>Códigos de Referência Sequenciais</strong> (ex: ORC-0001, VIA-0023, RBS-0009, CLI-0001) para referenciar e pesquisar registros em todas as telas.</span>
+                  </li>
                 </ul>
               </div>
 
