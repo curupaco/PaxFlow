@@ -2059,10 +2059,7 @@ export class OrcamentosPage {
                 <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Destino *</label>
                 <input id="input-fechar-via-destino" type="text" required value="${orc.destino}" class="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
               </div>
-              <div>
-                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Código Localizador (LOC)</label>
-                <input id="input-fechar-via-loc" type="text" placeholder="ex: F3R9W (opcional)" class="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm uppercase" />
-              </div>
+
               <div>
                 <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Data de Ida (DD/MM/AAAA) *</label>
                 ${renderDateInputHTML('input-fechar-via-ida', orc.dataViagem || '')}
@@ -2214,7 +2211,7 @@ export class OrcamentosPage {
 
           if (isNovaViagem) {
             const vDestino = (document.getElementById('input-fechar-via-destino') as HTMLInputElement).value;
-            const vLoc = (document.getElementById('input-fechar-via-loc') as HTMLInputElement).value;
+            const vLoc = '';
             const vIdaRaw = (document.getElementById('input-fechar-via-ida') as HTMLInputElement).value.trim();
             const vVoltaRaw = (document.getElementById('input-fechar-via-volta') as HTMLInputElement).value.trim();
             const vFinRaw = (document.getElementById('input-fechar-via-data-financeiro') as HTMLInputElement).value.trim();
