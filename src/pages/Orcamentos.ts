@@ -2055,7 +2055,7 @@ export class OrcamentosPage {
           <div id="secao-viagem-nova" class="${defaultFluxo === 'existente' ? 'hidden' : ''} border-t border-slate-100 dark:border-slate-800 pt-5">
             <h4 class="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-3.5 border-b border-indigo-50/50 dark:border-slate-800 pb-1">2. Dados Operacionais da Viagem</h4>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
+              <div class="md:col-span-2">
                 <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Destino *</label>
                 <input id="input-fechar-via-destino" type="text" required value="${orc.destino}" class="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
               </div>
