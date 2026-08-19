@@ -391,7 +391,7 @@ export class EditTravelModal {
                   <option value="pos_venda" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100" ${v.status === 'pos_venda' ? 'selected' : ''}>Pós-Venda</option>
                   <option value="fechado" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100" ${v.status === 'fechado' ? 'selected' : ''}>Fechado</option>
                   <option value="pre_embarque" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100" ${v.status === 'pre_embarque' ? 'selected' : ''}>Pré-Embarque</option>
-                  <option value="pos_viagem" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100" ${v.status === 'pos_viagem' ? 'selected' : ''}>Pós-Viagem</option>
+                  <option value="pos_viagem" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100" ${v.status === 'pre_embarque' ? 'disabled' : ''} ${v.status === 'pos_viagem' ? 'selected' : ''}>Pós-Viagem</option>
                   <option value="reembolso_solicitado" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100" ${v.status === 'reembolso_solicitado' ? 'selected' : ''}>Reembolso Solicitado</option>
                 </select>
               </div>
@@ -582,8 +582,11 @@ export class EditTravelModal {
               'success'
             );
             
+            // Tenta realizar a transição automática se as validações forem atendidas
+            const transicaoRealizada = await this.verificarEExecutarTransicaoAutomatica();
+
             // Re-abre o modal para atualizar
-            await this.open(this.tripId, activeTab);
+            await this.open(this.tripId, transicaoRealizada ? 'detalhes' : activeTab);
           } catch (err: any) {
             console.error('Erro ao atualizar processo_conferido:', err);
             this.options.showToast('Erro ao atualizar conferência de processo.', 'error', err);
@@ -824,6 +827,11 @@ export class EditTravelModal {
       const dataFinanceiroRaw = (document.getElementById('edit-viagem-data-financeiro') as HTMLInputElement).value.trim();
       const status = (document.getElementById('edit-viagem-status') as HTMLSelectElement).value;
       const obs = (document.getElementById('edit-viagem-obs') as HTMLTextAreaElement).value;
+
+      if (v.status === 'pre_embarque' && status === 'pos_viagem') {
+        this.options.showToast('Não é possível alterar o status manualmente de Pré-Embarque para Pós-Viagem. Essa alteração ocorre automaticamente quando as validações Financeira e de Processo estiverem concluídas.', 'error');
+        return;
+      }
 
       if (!editarViagemValidator.validateAll()) {
         this.options.showToast('Preencha todos os campos obrigatórios com valores válidos.', 'error');
@@ -2060,9 +2068,11 @@ export class EditTravelModal {
           );
           
           await this.loadAndRenderProdutosViagem(this.tripId);
+
+          const transicaoRealizada = await this.verificarEExecutarTransicaoAutomatica();
           
-          if (this.selectedProductId) {
-            await this.open(this.tripId, 'produtos');
+          if (this.selectedProductId || transicaoRealizada) {
+            await this.open(this.tripId, transicaoRealizada ? 'detalhes' : 'produtos');
           }
         } catch (err: any) {
           console.error('Erro ao atualizar status de conferência do LOC:', err);
@@ -2597,13 +2607,130 @@ export class EditTravelModal {
       );
       
       await this.loadAndRenderProdutosViagem(this.tripId);
+
+      const transicaoRealizada = await this.verificarEExecutarTransicaoAutomatica();
       
-      if (this.selectedProductId) {
-        await this.open(this.tripId, 'produtos');
+      if (this.selectedProductId || transicaoRealizada) {
+        await this.open(this.tripId, transicaoRealizada ? 'detalhes' : 'produtos');
       }
     } catch (err: any) {
       console.error('Erro na conferência global de LOCs:', err);
       this.options.showToast('Erro ao realizar a operação global.', 'error', err);
+    }
+  }
+
+  private async verificarEExecutarTransicaoAutomatica(): Promise<boolean> {
+    let viagem: any = null;
+    if (!this.options.isFallbackMode) {
+      try {
+        const { data } = await supabase
+          .from('viagens')
+          .select('*, produtos:produtos_viagem(*)')
+          .eq('id', this.tripId)
+          .single();
+        if (data) viagem = data;
+      } catch (e) {}
+    }
+
+    if (!viagem) {
+      // Fallback local
+      viagem = this.options.viagens.find(item => item.id === this.tripId);
+      if (viagem) {
+        const saved = localStorage.getItem(`paxflow-produtos-viagem-${this.tripId}`);
+        if (saved) {
+          try { viagem.produtos = JSON.parse(saved); } catch (e) {}
+        }
+      }
+    }
+
+    if (!viagem || viagem.status !== 'pre_embarque') return false;
+
+    // 1. Validação de Processo
+    const localProcesso = localStorage.getItem(`paxflow-processo-conferido-${viagem.id}`);
+    const processoValido = localProcesso !== null ? localProcesso === 'true' : !!viagem.processo_conferido;
+
+    if (!processoValido) return false;
+
+    // 2. Validação Financeira
+    const produtos = viagem.produtos || [];
+    if (produtos.length === 0) return false;
+
+    // 2.1. Saldo pendente zerado
+    const valorViagem = Number(viagem.valor_total) || 0;
+    const totalProdutos = produtos.reduce((sum: number, p: any) => sum + (Number(p.valor_venda) || 0), 0);
+    if (Math.abs(valorViagem - totalProdutos) > 0.01) return false;
+
+    // 2.2. Todos os produtos detalhados
+    const todosDetalhedos = produtos.every((p: any) => {
+      const tarifa = Number(p.tarifa) || 0;
+      const taxa = Number(p.taxa) || 0;
+      const comissao = Number(p.comissao) || 0;
+      const markup = Number(p.markup) || 0;
+      const rav = Number(p.rav) || 0;
+      const totalDet = tarifa + taxa + comissao + markup + rav;
+      return Math.abs(Number(p.valor_venda || 0) - totalDet) < 0.01;
+    });
+    if (!todosDetalhedos) return false;
+
+    // 2.3. Todos os LOCs conferidos
+    let locConfs: any[] = [];
+    if (!this.options.isFallbackMode) {
+      try {
+        const { data } = await supabase
+          .from('loc_conferencias')
+          .select('codigo_localizador, conferido')
+          .eq('viagem_id', viagem.id);
+        if (data) locConfs = data;
+      } catch (err) {}
+    }
+    const locConfsMap: { [key: string]: boolean } = {};
+    locConfs.forEach(row => {
+      locConfsMap[row.codigo_localizador.trim().toUpperCase()] = row.conferido;
+    });
+    const localKey = `paxflow-loc-conferencias-${viagem.id}`;
+    const localSaved = localStorage.getItem(localKey);
+    if (localSaved) {
+      try {
+        const parsed = JSON.parse(localSaved);
+        Object.keys(parsed).forEach(k => {
+          if (locConfsMap[k] === undefined) locConfsMap[k] = parsed[k];
+        });
+      } catch (e) {}
+    }
+
+    const locKeys = Array.from(new Set(produtos.map((p: any) => (p.codigo_reserva || 'SEM LOCALIZADOR').trim().toUpperCase())));
+    const todosLocsConferidos = locKeys.length > 0 && locKeys.every((k: any) => !!locConfsMap[k]);
+
+    if (!todosLocsConferidos) return false;
+
+    // Executa a transição automática
+    try {
+      if (!this.options.isFallbackMode) {
+        const { error } = await supabase
+          .from('viagens')
+          .update({ status: 'pos_viagem' })
+          .eq('id', viagem.id);
+        if (error) throw error;
+      }
+
+      // Sincroniza na memória local
+      const viagemIdx = this.options.viagens.findIndex(item => item.id === viagem.id);
+      if (viagemIdx !== -1) {
+        this.options.viagens[viagemIdx].status = 'pos_viagem';
+        this.options.viagens[viagemIdx].updated_at = new Date().toISOString();
+      }
+
+      this.options.showToast(
+        'Venda validada com sucesso! O status foi alterado automaticamente para Pós-Viagem.',
+        'success'
+      );
+
+      await this.options.onUpdate();
+      return true;
+    } catch (err) {
+      console.error('Erro na transição automática de status:', err);
+      this.options.showToast('Erro ao realizar a transição automática de status da venda.', 'error');
+      return false;
     }
   }
 

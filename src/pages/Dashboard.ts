@@ -103,6 +103,7 @@ export class Dashboard {
   private consultores: PerfilConsultor[] = [];
   private tiposProduto: any[] = [];
   private selectedConsultantId: string = 'todos';
+  private selectedConferenceFilter: 'todos' | 'nenhuma' | 'financeiro' | 'processo' | 'completo' = 'todos';
   private sortables: Sortable[] = [];
   private buscaTermo: string = '';
   private isFallbackMode: boolean = false;
@@ -376,6 +377,30 @@ export class Dashboard {
         throw error;
       }
 
+      let locConfs: any[] = [];
+      if (!this.isFallbackMode) {
+        try {
+          const { data: confData, error: confError } = await supabase
+            .from('loc_conferencias')
+            .select('viagem_id, codigo_localizador, conferido');
+          if (!confError && confData) {
+            locConfs = confData;
+          }
+        } catch (errConf) {
+          console.warn('Erro ao carregar loc_conferencias:', errConf);
+        }
+      }
+
+      const locConfsMap = new Map<string, { [locKey: string]: boolean }>();
+      locConfs.forEach((row: any) => {
+        const vId = row.viagem_id;
+        const locKey = (row.codigo_localizador || 'SEM LOCALIZADOR').trim().toUpperCase();
+        if (!locConfsMap.has(vId)) {
+          locConfsMap.set(vId, {});
+        }
+        locConfsMap.get(vId)![locKey] = row.conferido;
+      });
+
       let comments: any[] = [];
       if (!this.isFallbackMode) {
         try {
@@ -421,6 +446,30 @@ export class Dashboard {
       });
 
       this.viagens = (data || []).map((v: any) => {
+        const produtos = v.produtos || [];
+        const totalProdutos = produtos.reduce((sum: number, p: any) => sum + (Number(p.valor_venda) || 0), 0);
+        const valorViagem = Number(v.valor_total) || 0;
+        const saldoPendente = valorViagem - totalProdutos;
+        const isSaldoZerado = Math.abs(saldoPendente) <= 0.01;
+        const hasProdutos = produtos.length > 0;
+
+        const todosDetalhados = produtos.every((p: any) => {
+          const tarifa = Number(p.tarifa) || 0;
+          const taxa = Number(p.taxa) || 0;
+          const comissao = Number(p.comissao) || 0;
+          const markup = Number(p.markup) || 0;
+          const rav = Number(p.rav) || 0;
+          const totalDet = tarifa + taxa + comissao + markup + rav;
+          return Math.abs(Number(p.valor_venda || 0) - totalDet) < 0.01;
+        });
+
+        const locKeys = Array.from(new Set(produtos.map((p: any) => (p.codigo_reserva || 'SEM LOCALIZADOR').trim().toUpperCase())));
+        const confMap = locConfsMap.get(v.id) || {};
+        const todosLocsConferidos = locKeys.length > 0 && locKeys.every((k: any) => !!confMap[k]);
+
+        const financeiroOk = hasProdutos && isSaldoZerado && todosDetalhados && todosLocsConferidos;
+        const processoOk = !!v.processo_conferido;
+
         return {
           ...v,
           destino: v.destino_ref ? `${v.destino_ref.nome}, ${v.destino_ref.pais}` : v.destino,
@@ -428,7 +477,9 @@ export class Dashboard {
           destinoId: v.destino_id,
           destino_ref: v.destino_ref,
           destinoRef: v.destino_ref,
-          comentarios_busca: tripCommentsMap.get(v.id) || []
+          comentarios_busca: tripCommentsMap.get(v.id) || [],
+          isFinanceiroConferido: financeiroOk,
+          isProcessoConferido: processoOk
         };
       });
 
@@ -615,6 +666,11 @@ export class Dashboard {
 
     const viagem = this.viagens.find(v => v.id === tripId);
     if (!viagem) return false;
+
+    if (viagem.status === 'pre_embarque' && newStatus === 'pos_viagem') {
+      this.showToast('Não é possível alterar o status manualmente de Pré-Embarque para Pós-Viagem. Essa alteração ocorre automaticamente quando as validações Financeira e de Processo estiverem concluídas.', 'error');
+      return false;
+    }
 
     // 1. Validação de data financeira
     if (!viagem.data_financeiro) {
@@ -1271,6 +1327,22 @@ export class Dashboard {
         if (v.status !== this.activeStatusTab) return false;
       }
 
+      // Filtro de Conferência (Apenas para Admins)
+      if (this.perfil?.role === 'admin' && this.selectedConferenceFilter !== 'todos') {
+        const isFinOk = !!v.isFinanceiroConferido;
+        const isProcOk = !!v.isProcessoConferido;
+
+        if (this.selectedConferenceFilter === 'nenhuma') {
+          if (isFinOk || isProcOk) return false;
+        } else if (this.selectedConferenceFilter === 'financeiro') {
+          if (!isFinOk) return false;
+        } else if (this.selectedConferenceFilter === 'processo') {
+          if (!isProcOk) return false;
+        } else if (this.selectedConferenceFilter === 'completo') {
+          if (!isFinOk || !isProcOk) return false;
+        }
+      }
+
       // Busca Textual
       if (this.buscaTermo) {
         const q = this.buscaTermo.toLowerCase().trim();
@@ -1471,6 +1543,16 @@ export class Dashboard {
                 <select id="select-dashboard-consultor" class="text-xs font-bold bg-transparent text-slate-700 dark:text-slate-400 focus:outline-none cursor-pointer max-w-[150px]">
                   <option value="todos" ${this.selectedConsultantId === 'todos' ? 'selected' : ''}>Todos os Consultores</option>
                   ${this.consultores.map(c => `<option value="${c.id}" ${this.selectedConsultantId === c.id ? 'selected' : ''}>${c.nome}</option>`).join('')}
+                </select>
+              </div>
+              <div class="flex items-center gap-1.5 shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2.5 py-1.5 rounded-xl shadow-sm">
+                <span class="text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-500 select-none">Conferência:</span>
+                <select id="select-dashboard-conferencia" class="text-xs font-bold bg-transparent text-slate-700 dark:text-slate-400 focus:outline-none cursor-pointer max-w-[170px]">
+                  <option value="todos" ${this.selectedConferenceFilter === 'todos' ? 'selected' : ''}>Todas as Conferências</option>
+                  <option value="nenhuma" ${this.selectedConferenceFilter === 'nenhuma' ? 'selected' : ''}>Nenhuma Conferência</option>
+                  <option value="financeiro" ${this.selectedConferenceFilter === 'financeiro' ? 'selected' : ''}>Conferido Financeiro</option>
+                  <option value="processo" ${this.selectedConferenceFilter === 'processo' ? 'selected' : ''}>Conferido Processo</option>
+                  <option value="completo" ${this.selectedConferenceFilter === 'completo' ? 'selected' : ''}>Conferido Completamente</option>
                 </select>
               </div>
             ` : ''}
@@ -1732,7 +1814,7 @@ export class Dashboard {
             <option value="fechado" ${v.status === 'fechado' ? 'selected' : ''}>Fechado</option>
             <option value="pos_venda" ${v.status === 'pos_venda' ? 'selected' : ''}>Pós-Venda</option>
             <option value="pre_embarque" ${v.status === 'pre_embarque' ? 'selected' : ''}>Pré-Embarque</option>
-            <option value="pos_viagem" ${v.status === 'pos_viagem' ? 'selected' : ''}>Pós-Viagem</option>
+            <option value="pos_viagem" ${v.status === 'pre_embarque' ? 'disabled' : ''} ${v.status === 'pos_viagem' ? 'selected' : ''}>Pós-Viagem</option>
             <option value="reembolso_solicitado" ${v.status === 'reembolso_solicitado' ? 'selected' : ''}>Reembolso Solicitado</option>
           </select>
         </td>
@@ -1881,7 +1963,7 @@ export class Dashboard {
               <option value="fechado" ${v.status === 'fechado' ? 'selected' : ''}>Fechado</option>
               <option value="pos_venda" ${v.status === 'pos_venda' ? 'selected' : ''}>Pós-Venda</option>
               <option value="pre_embarque" ${v.status === 'pre_embarque' ? 'selected' : ''}>Pré-Embarque</option>
-              <option value="pos_viagem" ${v.status === 'pos_viagem' ? 'selected' : ''}>Pós-Viagem</option>
+              <option value="pos_viagem" ${v.status === 'pre_embarque' ? 'disabled' : ''} ${v.status === 'pos_viagem' ? 'selected' : ''}>Pós-Viagem</option>
               <option value="reembolso_solicitado" ${v.status === 'reembolso_solicitado' ? 'selected' : ''}>Reembolso Solicitado</option>
             </select>
           </div>
@@ -1974,6 +2056,12 @@ export class Dashboard {
     const selectConsultor = document.getElementById('select-dashboard-consultor') as HTMLSelectElement;
     selectConsultor?.addEventListener('change', () => {
       this.selectedConsultantId = selectConsultor.value;
+      this.render();
+    });
+
+    const selectConferencia = document.getElementById('select-dashboard-conferencia') as HTMLSelectElement;
+    selectConferencia?.addEventListener('change', () => {
+      this.selectedConferenceFilter = selectConferencia.value as any;
       this.render();
     });
 

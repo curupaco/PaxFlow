@@ -98,6 +98,9 @@ export interface Viagem {
   destinoId?: string;
   destino_ref?: Destino;
   destinoRef?: Destino;
+  processo_conferido?: boolean;
+  isFinanceiroConferido?: boolean;
+  isProcessoConferido?: boolean;
 }
 
 /**
