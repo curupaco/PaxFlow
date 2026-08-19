@@ -523,6 +523,92 @@ export class InboxService {
         });
       }
 
+      // --- PART 6: PRÉ-EMBARQUE & PÓS-VIAGEM NPS ALERTS ---
+      let viagensQuery = supabase
+        .from('viagens')
+        .select(`
+          *,
+          cliente:clientes (*)
+        `)
+        .not('status', 'eq', 'cancelada');
+
+      const { data: viagensData } = await viagensQuery;
+      const hoje = new Date();
+
+      (viagensData || []).forEach((v: any) => {
+        // Filter by consultant responsibility if not admin
+        if (perfil && perfil.role !== 'admin' && v.consultor_id !== user.id) {
+          return;
+        }
+
+        const clienteNome = v.cliente?.nome || 'Passageiro';
+        const destino = v.destino || 'Destino';
+
+        // 1. Alerta de Pré-Embarque (48h antes da ida)
+        if (v.data_ida) {
+          const dataIda = new Date(v.data_ida);
+          const diffMs = dataIda.getTime() - hoje.getTime();
+          const horasAteIda = diffMs / (1000 * 60 * 60);
+
+          // Se a viagem inicia em até 48 horas (e ainda não aconteceu)
+          if (horasAteIda > 0 && horasAteIda <= 48) {
+            const uniqueId = `pre-embarque-${v.id}`;
+            const isArchived = archivedList.includes(uniqueId);
+
+            list.push({
+              id: uniqueId,
+              type: 'pre-embarque',
+              title: '✈️ Alerta - Pré-Embarque de Cliente',
+              sender: 'PaxFlow Operações',
+              senderAvatar: 'panda',
+              dateStr: dataIda.toLocaleDateString('pt-BR'),
+              subject: `A viagem de ${clienteNome} para ${destino} inicia em breve!`,
+              body: `A viagem de <strong>${clienteNome}</strong> com destino a <strong>${destino}</strong> está agendada para iniciar em menos de 48 horas.<br><br>• <strong>Data de Ida:</strong> ${dataIda.toLocaleDateString('pt-BR')}<br>• <strong>Localizador (LOC):</strong> ${v.codigo_localizador || 'Não informado'}<br><br><strong>Ações recomendadas:</strong><br>1. Enviar os vouchers de vôos/hotéis.<br>2. Auxiliar o cliente com o check-in online das companhias aéreas.<br>3. Verificar se as vacinas e passaportes/vistos estão em mãos.`,
+              targetId: v.id,
+              arquivado: isArchived,
+              consultorId: v.consultor_id || '',
+              consultorNome: 'PaxFlow Automático',
+              createdAt: v.created_at || new Date().toISOString(),
+              eventDate: v.data_ida
+            });
+          }
+        }
+
+        // 2. Alerta de Pós-Viagem NPS (24h após a volta)
+        if (v.data_volta) {
+          const dataVolta = new Date(v.data_volta);
+          // Adiciona 24h após a data de volta (fim do dia de volta)
+          const dataDisparo = new Date(dataVolta);
+          dataDisparo.setDate(dataDisparo.getDate() + 1);
+
+          const diffMsDisparo = hoje.getTime() - dataDisparo.getTime();
+          const diasAposVolta = diffMsDisparo / (1000 * 60 * 60 * 24);
+
+          // Disparar se já se passaram 24h da volta e estamos dentro de 7 dias pós-volta
+          if (diasAposVolta >= 0 && diasAposVolta <= 7) {
+            const uniqueId = `pos-viagem-nps-${v.id}`;
+            const isArchived = archivedList.includes(uniqueId);
+
+            list.push({
+              id: uniqueId,
+              type: 'pos-viagem-nps',
+              title: '⭐ Alerta - NPS de Pós-Viagem',
+              sender: 'PaxFlow Relacionamento',
+              senderAvatar: 'lion',
+              dateStr: dataVolta.toLocaleDateString('pt-BR'),
+              subject: `Coletar NPS do cliente ${clienteNome} pós-retorno de ${destino}`,
+              body: `O passageiro <strong>${clienteNome}</strong> retornou de sua viagem para <strong>${destino}</strong>.<br><br>• <strong>Data de Retorno:</strong> ${dataVolta.toLocaleDateString('pt-BR')}<br><br>Esta é a hora de ouro para medir a satisfação do cliente! Envie a pesquisa NPS para entender como foi a experiência e fortalecer o relacionamento.`,
+              targetId: v.id,
+              arquivado: isArchived,
+              consultorId: v.consultor_id || '',
+              consultorNome: 'PaxFlow Automático',
+              createdAt: v.created_at || new Date().toISOString(),
+              eventDate: v.data_volta
+            });
+          }
+        }
+      });
+
     } catch (err) {
       console.error('Erro ao compilar alertas no serviço:', err);
     }

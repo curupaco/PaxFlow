@@ -2,6 +2,8 @@ import { AlertItem, PerfilConsultor } from '../../types';
 import { getAvatarSvg } from '../../services/avatars';
 import { showCustomAlert, showCustomConfirm } from '../../services/dialog';
 import { InboxService } from '../../services/inboxService';
+import { supabase } from '../../services/supabase';
+import { SendTemplateMessageModal } from '../dashboard/SendTemplateMessageModal';
 
 export interface EmailReaderModalOptions {
   onArchive: (item: AlertItem) => Promise<void>;
@@ -34,6 +36,12 @@ export class EmailReaderModal {
     } else if (item.type === 'campaign_notification') {
       badgeClass = 'bg-emerald-600 text-white';
       badgeText = 'Campanha 🎯';
+    } else if (item.type === 'pre-embarque') {
+      badgeClass = 'bg-gradient-to-tr from-sky-500 to-indigo-600 dark:from-sky-600 dark:to-indigo-500';
+      badgeText = 'Pré-Embarque ✈️';
+    } else if (item.type === 'pos-viagem-nps') {
+      badgeClass = 'bg-gradient-to-tr from-emerald-500 to-teal-600 dark:from-emerald-600 dark:to-teal-500';
+      badgeText = 'Pós-Viagem NPS ⭐';
     }
 
     // Load thread messages if it's a direct message
@@ -170,9 +178,21 @@ export class EmailReaderModal {
             </button>
           ` : ''}
 
+          <!-- Botões de Ação Rápida de Pré-Embarque e NPS -->
+          ${item.type === 'pre-embarque' ? `
+            <button id="modal-action-pre-embarque-btn" class="px-4 py-2 text-xs font-extrabold bg-sky-600 hover:bg-sky-700 text-white rounded-xl transition shadow-md shadow-sky-600/10 flex items-center gap-1.5 mr-auto" data-viagem-id="${item.targetId}">
+              ✈️ Disparar Pré-Embarque
+            </button>
+          ` : ''}
+          ${item.type === 'pos-viagem-nps' ? `
+            <button id="modal-action-nps-btn" class="px-4 py-2 text-xs font-extrabold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition shadow-md shadow-emerald-600/10 flex items-center gap-1.5 mr-auto" data-viagem-id="${item.targetId}">
+              ⭐ Enviar Pesquisa NPS
+            </button>
+          ` : ''}
+
           <!-- Botão de Excluir (Apenas Admins) -->
           ${(options.perfil?.role === 'admin' && options.onDelete) ? `
-            <button id="modal-delete-btn" class="px-4 py-2 text-xs font-extrabold bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-900/20 text-rose-600 dark:text-rose-400 rounded-xl transition flex items-center gap-1.5 ${item.type === 'direct_message' && !item.isSent && options.onReply ? '' : 'mr-auto'}">
+            <button id="modal-delete-btn" class="px-4 py-2 text-xs font-extrabold bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-900/20 text-rose-600 dark:text-rose-400 rounded-xl transition flex items-center gap-1.5 ${(item.type === 'direct_message' && !item.isSent && options.onReply) || item.type === 'pre-embarque' || item.type === 'pos-viagem-nps' ? '' : 'mr-auto'}">
               🗑️ Excluir
             </button>
           ` : ''}
@@ -277,6 +297,74 @@ export class EmailReaderModal {
         }
       } catch (err: any) {
         showCustomAlert(`Erro ao excluir mensagem:\n\n${err.message || err}`, 'Erro de Ação');
+      }
+    });
+
+    // Evento do botão de ação de pré-embarque
+    document.getElementById('modal-action-pre-embarque-btn')?.addEventListener('click', async () => {
+      const viagemId = item.targetId;
+      if (!viagemId) return;
+
+      try {
+        const { data: v, error } = await supabase
+          .from('viagens')
+          .select('*, cliente:clientes(*)')
+          .eq('id', viagemId)
+          .single();
+
+        if (error) throw error;
+        if (!v) return;
+
+        closeModal(true);
+
+        SendTemplateMessageModal.open({
+          clienteNome: v.cliente?.nome || '',
+          clienteTelefone: v.cliente?.telefone || '',
+          destino: v.destino,
+          localizador: v.codigo_localizador,
+          dataIda: v.data_ida,
+          viagemId: v.id,
+          consultorNome: options.perfil?.nome || 'Consultor',
+          showToast: (msg, type) => {
+            showCustomAlert(msg, type === 'success' ? 'Sucesso' : 'Erro');
+          }
+        });
+      } catch (err: any) {
+        showCustomAlert(`Erro ao abrir modal de WhatsApp:\n\n${err.message}`, 'Erro');
+      }
+    });
+
+    // Evento do botão de ação de NPS
+    document.getElementById('modal-action-nps-btn')?.addEventListener('click', async () => {
+      const viagemId = item.targetId;
+      if (!viagemId) return;
+
+      try {
+        const { data: v, error } = await supabase
+          .from('viagens')
+          .select('*, cliente:clientes(*)')
+          .eq('id', viagemId)
+          .single();
+
+        if (error) throw error;
+        if (!v) return;
+
+        closeModal(true);
+
+        SendTemplateMessageModal.open({
+          clienteNome: v.cliente?.nome || '',
+          clienteTelefone: v.cliente?.telefone || '',
+          destino: v.destino,
+          localizador: v.codigo_localizador,
+          dataIda: v.data_ida,
+          viagemId: v.id,
+          consultorNome: options.perfil?.nome || 'Consultor',
+          showToast: (msg, type) => {
+            showCustomAlert(msg, type === 'success' ? 'Sucesso' : 'Erro');
+          }
+        });
+      } catch (err: any) {
+        showCustomAlert(`Erro ao abrir modal de WhatsApp:\n\n${err.message}`, 'Erro');
       }
     });
 

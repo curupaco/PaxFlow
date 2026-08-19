@@ -40,6 +40,10 @@ export interface GlobalSettings {
   slaPosViagemDias?: number; // Dias de SLA para contatos de pós-venda
   limiteUploadMb?: number; // Limite de tamanho para upload de arquivos em MB
   enviarNpsAutomatico?: boolean; // Habilita o envio automático de pesquisas de NPS
+  agency_logo_url?: string;
+  agencyLogoUrl?: string;
+  agency_primary_color?: string;
+  agencyPrimaryColor?: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -104,6 +108,8 @@ export interface Viagem {
   codigoRef?: string;
   processo_conferido?: boolean;
   isFinanceiroConferido?: boolean;
+  orcamentoId?: string;
+  orcamento_id?: string;
   isProcessoConferido?: boolean;
 }
 
@@ -309,7 +315,7 @@ export interface Notificacao {
  */
 export interface AlertItem {
   id: string; // Chave combinada única
-  type: 'manual' | 'passport' | 'refund' | 'mention' | 'direct_message' | 'campaign_notification';
+  type: 'manual' | 'passport' | 'refund' | 'mention' | 'direct_message' | 'campaign_notification' | 'pre-embarque' | 'pos-viagem-nps';
   title: string;
   sender: string;
   senderAvatar: string;

@@ -38,6 +38,16 @@ export class PublicViews {
     this.renderLoading('Carregando seu itinerário...');
 
     try {
+      // Buscar configurações de marca da agência
+      const { data: settings } = await supabase
+        .from('global_settings')
+        .select('*')
+        .maybeSingle();
+
+      if (settings) {
+        this.applyBrandingStyle(settings);
+      }
+
       // Chama a função RPC de segurança do PostgreSQL
       const { data, error } = await supabase.rpc('obter_itinerario_publico', {
         viagem_uuid: viagemId
@@ -47,7 +57,7 @@ export class PublicViews {
         throw new Error(error?.message || 'Viagem não encontrada ou código inválido.');
       }
 
-      this.renderItinerario(data);
+      this.renderItinerario(data, settings);
     } catch (err: any) {
       console.error('Erro ao buscar itinerário público:', err);
       this.renderError('Não foi possível carregar seu itinerário de viagem.', err.message);
@@ -61,6 +71,16 @@ export class PublicViews {
     this.renderLoading('Carregando pesquisa...');
 
     try {
+      // Buscar configurações de marca da agência
+      const { data: settings } = await supabase
+        .from('global_settings')
+        .select('*')
+        .maybeSingle();
+
+      if (settings) {
+        this.applyBrandingStyle(settings);
+      }
+
       const { data, error } = await supabase.rpc('obter_itinerario_publico', {
         viagem_uuid: viagemId
       });
@@ -69,11 +89,53 @@ export class PublicViews {
         throw new Error(error?.message || 'Dados de viagem inválidos para esta pesquisa.');
       }
 
-      this.renderNpsForm(data, viagemId);
+      this.renderNpsForm(data, viagemId, settings);
     } catch (err: any) {
       console.error('Erro ao carregar formulário NPS:', err);
       this.renderError('Não foi possível carregar esta pesquisa de avaliação.', err.message);
     }
+  }
+
+  /**
+   * Applies the agency's primary color as dynamic style overrides
+   */
+  private applyBrandingStyle(settings: any): void {
+    if (!settings) return;
+    
+    const primaryColor = settings.agency_primary_color || settings.agencyPrimaryColor || '#4f46e5';
+    
+    let styleEl = document.getElementById('public-branding-style');
+    if (!styleEl) {
+      styleEl = document.createElement('style');
+      styleEl.id = 'public-branding-style';
+      document.head.appendChild(styleEl);
+    }
+    
+    styleEl.innerHTML = `
+      :root {
+        --public-primary: ${primaryColor};
+      }
+      .text-indigo-600 { color: ${primaryColor} !important; }
+      .bg-indigo-600 { background-color: ${primaryColor} !important; }
+      .bg-indigo-700 { background-color: ${primaryColor} !important; }
+      .bg-indigo-800 { background-color: ${primaryColor}e6 !important; }
+      .from-indigo-700 { --tw-gradient-from: ${primaryColor} !important; --tw-gradient-to: ${primaryColor}cc !important; }
+      .via-indigo-800 { --tw-gradient-via: ${primaryColor}d9 !important; }
+      .to-purple-800 { --tw-gradient-to: ${primaryColor}bf !important; }
+      .text-indigo-200\\/90 { color: #ffffffcc !important; }
+      .bg-indigo-900\\/40 { background-color: rgba(255, 255, 255, 0.1) !important; }
+      .border-indigo-500\\/20 { border-color: rgba(255, 255, 255, 0.2) !important; }
+      .focus\\:ring-indigo-500:focus { --tw-ring-color: ${primaryColor} !important; }
+      .border-indigo-600 { border-color: ${primaryColor} !important; }
+      .bg-indigo-600\\/20 { background-color: ${primaryColor}33 !important; }
+      .bg-indigo-600\\/10 { background-color: ${primaryColor}1a !important; }
+      .hover\\:bg-indigo-700:hover { filter: brightness(0.9); background-color: ${primaryColor} !important; }
+      .indigo-pill { background-color: ${primaryColor} !important; }
+      .timeline-badge { border-color: ${primaryColor}40 !important; color: ${primaryColor} !important; background-color: ${primaryColor}0a !important; }
+      .bg-indigo-50 { background-color: ${primaryColor}0f !important; }
+      .text-indigo-400 { color: ${primaryColor} !important; }
+      .border-indigo-150 { border-color: ${primaryColor}20 !important; }
+    `;
   }
 
   /**
@@ -111,7 +173,7 @@ export class PublicViews {
   /**
    * Renderiza a página do itinerário de viagem
    */
-  private renderItinerario(data: any): void {
+  private renderItinerario(data: any, settings?: any): void {
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
     const dataIda = new Date(data.data_ida);
@@ -238,9 +300,15 @@ export class PublicViews {
         <header class="relative bg-gradient-to-br from-indigo-700 via-indigo-800 to-purple-800 text-white py-10 px-6 overflow-hidden">
           <div class="absolute inset-0 bg-grid-white/[0.05] pointer-events-none"></div>
           <div class="max-w-md mx-auto w-full relative z-10 flex flex-col items-center text-center">
-            <span class="text-xs font-black uppercase tracking-widest text-indigo-200/90 bg-indigo-900/40 px-3 py-1 rounded-full border border-indigo-500/20 mb-4 select-none">
-              Itinerário de Viagem
-            </span>
+            ${settings?.agency_logo_url ? `
+              <div class="mb-4">
+                <img src="${settings.agency_logo_url}" class="max-h-12 max-w-[200px] object-contain rounded bg-white/10 p-1 backdrop-blur-sm" />
+              </div>
+            ` : `
+              <span class="text-xs font-black uppercase tracking-widest text-indigo-200/90 bg-indigo-900/40 px-3 py-1 rounded-full border border-indigo-500/20 mb-4 select-none">
+                ${settings?.agency_name || 'Itinerário de Viagem'}
+              </span>
+            `}
             <h1 class="text-3xl font-black tracking-tight">${data.destino}</h1>
             <p class="text-xs text-indigo-100/80 font-semibold mt-1">Período: ${formatarDataAmigavel(data.data_ida)} até ${formatarDataAmigavel(data.data_volta)}</p>
             ${data.codigo_localizador ? `
@@ -277,7 +345,7 @@ export class PublicViews {
   /**
    * Renderiza a página do formulário NPS público
    */
-  private renderNpsForm(data: any, viagemId: string): void {
+  private renderNpsForm(data: any, viagemId: string, settings?: any): void {
     const consultorNome = data.consultor_nome || 'seu consultor';
     
     this.container.innerHTML = `
@@ -287,7 +355,13 @@ export class PublicViews {
           <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-600"></div>
 
           <div class="text-center flex flex-col items-center mb-6 pt-3">
-            <span class="text-3xl">🌟</span>
+            ${settings?.agency_logo_url ? `
+              <div class="mb-4">
+                <img src="${settings.agency_logo_url}" class="max-h-12 max-w-[200px] object-contain rounded bg-white/5 p-1 border border-slate-200/30" />
+              </div>
+            ` : `
+              <span class="text-3xl">🌟</span>
+            `}
             <h1 class="text-lg font-black text-slate-800 dark:text-slate-100 tracking-tight leading-tight mt-3">Sua opinião vale muito!</h1>
             <p class="text-xs text-slate-400 dark:text-slate-500 font-semibold mt-1">Como foi sua viagem para <span class="text-indigo-600 dark:text-indigo-400 font-black">${data.destino}</span> com o atendimento de <span class="font-bold">${consultorNome}</span>?</p>
           </div>

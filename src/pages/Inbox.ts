@@ -548,6 +548,12 @@ export class InboxPage {
                     } else if (a.type === 'campaign_notification') {
                       badgeClass = 'bg-gradient-to-tr from-emerald-500 to-indigo-600 dark:from-emerald-600 dark:to-indigo-500';
                       badgeText = 'Campanha 🎯';
+                    } else if (a.type === 'pre-embarque') {
+                      badgeClass = 'bg-gradient-to-tr from-sky-500 to-indigo-600 dark:from-sky-600 dark:to-indigo-500';
+                      badgeText = 'Pré-Embarque ✈️';
+                    } else if (a.type === 'pos-viagem-nps') {
+                      badgeClass = 'bg-gradient-to-tr from-emerald-500 to-teal-600 dark:from-emerald-600 dark:to-teal-500';
+                      badgeText = 'Pós-Viagem NPS ⭐';
                     }
 
                     const isUnread = !a.arquivado && !readList.includes(a.id);

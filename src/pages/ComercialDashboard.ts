@@ -910,6 +910,8 @@ export class ComercialDashboard {
       valProposto: number;
       valVendido: number;
       valGap: number;
+      tempoMedioDias: number;
+      xp: number;
     }>();
 
     // Inicializa a lista de consultores para que mesmo sem dados eles apareçam na lista
@@ -923,7 +925,9 @@ export class ComercialDashboard {
         orcConcluidos: 0,
         valProposto: 0,
         valVendido: 0,
-        valGap: 0
+        valGap: 0,
+        tempoMedioDias: 0,
+        xp: c.xp || 0
       });
     });
 
@@ -940,20 +944,23 @@ export class ComercialDashboard {
           orcConcluidos: 0,
           valProposto: 0,
           valVendido: 0,
-          valGap: 0
+          valGap: 0,
+          tempoMedioDias: 0,
+          xp: 0
         };
         rankingMap.set(o.consultorId, metrics);
       }
       
-      metrics.orcCriados += 1;
-      metrics.valProposto += o.valorProposta || 0;
+      const m = metrics!;
+      m.orcCriados += 1;
+      m.valProposto += o.valorProposta || 0;
 
       if (o.status === 'CONCLUIDO') {
-        metrics.orcConcluidos += 1;
+        m.orcConcluidos += 1;
         if (o.subStatus === 'ACEITO') {
-          metrics.orcGanhos += 1;
+          m.orcGanhos += 1;
         } else if (o.subStatus === 'DESISTENCIA') {
-          metrics.valGap += o.valorProposta || 0;
+          m.valGap += o.valorProposta || 0;
         }
       }
     });
@@ -971,18 +978,46 @@ export class ComercialDashboard {
           orcConcluidos: 0,
           valProposto: 0,
           valVendido: 0,
-          valGap: 0
+          valGap: 0,
+          tempoMedioDias: 0,
+          xp: 0
         };
         rankingMap.set(v.consultorId, metrics);
       }
       
+      const m = metrics!;
       const vPayments = this.locPagamentos.filter(p => 
         (p.viagem_id === v.id || p.viagemId === v.id) &&
         p.formas_recebimento &&
         ['DESCONTO', 'PREJUÍZO'].includes((p.formas_recebimento.nome || '').trim().toUpperCase())
       );
       const vSub = vPayments.reduce((s, p) => s + (Number(p.valor) || 0), 0);
-      metrics.valVendido += Math.max(0, (v.valorTotal || 0) - vSub);
+      m.valVendido += Math.max(0, (v.valorTotal || 0) - vSub);
+    });
+
+    // Calcular tempo médio de fechamento para cada consultor
+    rankingMap.forEach((metrics, id) => {
+      let totalWonWithOrc = 0;
+      let totalDays = 0;
+
+      const consultorViagens = viagens.filter(v => (v.consultorId === id || v.consultor_id === id) && v.status !== 'cancelada');
+      consultorViagens.forEach(v => {
+        const oId = v.orcamentoId || v.orcamento_id;
+        if (oId) {
+          const correspondingOrc = orcamentos.find(o => o.id === oId);
+          if (correspondingOrc && correspondingOrc.createdAt && v.createdAt) {
+            const dateOrc = new Date(correspondingOrc.createdAt);
+            const dateVia = new Date(v.createdAt);
+            const diffMs = dateVia.getTime() - dateOrc.getTime();
+            if (diffMs > 0) {
+              totalDays += diffMs / (1000 * 60 * 60 * 24);
+              totalWonWithOrc += 1;
+            }
+          }
+        }
+      });
+
+      metrics.tempoMedioDias = totalWonWithOrc > 0 ? totalDays / totalWonWithOrc : 0;
     });
 
     // Converter map para array e ordenar pelo maior Faturamento de Viagens Vendidas
@@ -1005,6 +1040,7 @@ export class ComercialDashboard {
               <th class="py-3 pl-2">Consultor</th>
               <th class="py-3 text-center">Orçamentos</th>
               <th class="py-3 text-center">Conversão</th>
+              <th class="py-3 text-center">Tempo Médio</th>
               <th class="py-3 text-right">Valor Proposto</th>
               <th class="py-3 text-right">Faturamento Realizado</th>
               <th class="py-3 text-right">Gap (Perdas)</th>
@@ -1027,7 +1063,7 @@ export class ComercialDashboard {
                     ${getAvatarSvg(r.avatarUrl, r.nome, 'w-8 h-8')}
                     <div>
                       <span class="block font-black text-slate-700 dark:text-slate-200 leading-snug">${r.nome}</span>
-                      <span class="block text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wide leading-none mt-0.5">${r.email}</span>
+                      <span class="block text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wide leading-none mt-0.5">${r.email} &bull; ${r.xp} XP</span>
                     </div>
                   </td>
                   <td class="py-3.5 text-center text-slate-700 dark:text-slate-300">
@@ -1043,6 +1079,9 @@ export class ComercialDashboard {
                     }">
                       ${conversion.toFixed(1)}%
                     </span>
+                  </td>
+                  <td class="py-3.5 text-center text-slate-700 dark:text-slate-300 font-semibold">
+                    ${r.tempoMedioDias > 0 ? `${r.tempoMedioDias.toFixed(1)} dias` : '—'}
                   </td>
                   <td class="py-3.5 text-right text-slate-700 dark:text-slate-300">
                     R$ ${r.valProposto.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}

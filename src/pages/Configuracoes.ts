@@ -8,6 +8,47 @@ import { BADGE_DEFINITIONS } from '../services/gamification';
 
 declare const process: any;
 
+function compressLogo(file: File): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error('Canvas error'));
+          return;
+        }
+        
+        let width = img.width;
+        let height = img.height;
+        const maxDim = 400;
+        
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        ctx.drawImage(img, 0, 0, width, height);
+        canvas.toBlob((blob) => {
+          if (blob) resolve(blob);
+          else reject(new Error('Blob error'));
+        }, 'image/jpeg', 0.85);
+      };
+      img.src = e.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 const supabaseUrl = 
   (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_URL) || 
   (typeof process !== 'undefined' && process.env?.SUPABASE_URL) || 
@@ -158,7 +199,11 @@ export class ConfiguracoesPage {
           slaPreEmbarqueDias: data.sla_pre_embarque_dias !== undefined ? data.sla_pre_embarque_dias : 7,
           slaPosViagemDias: data.sla_pos_viagem_dias !== undefined ? data.sla_pos_viagem_dias : 3,
           limiteUploadMb: data.limite_upload_mb !== undefined ? data.limite_upload_mb : 25,
-          enviarNpsAutomatico: data.enviar_nps_automatico !== undefined ? data.enviar_nps_automatico : false
+          enviarNpsAutomatico: data.enviar_nps_automatico !== undefined ? data.enviar_nps_automatico : false,
+          agencyLogoUrl: data.agency_logo_url || data.agencyLogoUrl || '',
+          agency_logo_url: data.agency_logo_url || data.agencyLogoUrl || '',
+          agencyPrimaryColor: data.agency_primary_color || data.agencyPrimaryColor || '#4f46e5',
+          agency_primary_color: data.agency_primary_color || data.agencyPrimaryColor || '#4f46e5'
         };
       } else {
         const initialPayload = {
@@ -170,7 +215,9 @@ export class ConfiguracoesPage {
           sla_pre_embarque_dias: 7,
           sla_pos_viagem_dias: 3,
           limite_upload_mb: 25,
-          enviar_nps_automatico: false
+          enviar_nps_automatico: false,
+          agency_logo_url: '',
+          agency_primary_color: '#4f46e5'
         };
 
         const { data: inserted, error: insertError } = await supabase
@@ -192,7 +239,11 @@ export class ConfiguracoesPage {
           slaPreEmbarqueDias: inserted.sla_pre_embarque_dias,
           slaPosViagemDias: inserted.sla_pos_viagem_dias,
           limiteUploadMb: inserted.limite_upload_mb,
-          enviarNpsAutomatico: inserted.enviar_nps_automatico
+          enviarNpsAutomatico: inserted.enviar_nps_automatico,
+          agencyLogoUrl: inserted.agency_logo_url || '',
+          agency_logo_url: inserted.agency_logo_url || '',
+          agencyPrimaryColor: inserted.agency_primary_color || '#4f46e5',
+          agency_primary_color: inserted.agency_primary_color || '#4f46e5'
         };
       }
 
@@ -312,6 +363,8 @@ export class ConfiguracoesPage {
         const slaPosVal = Number((document.getElementById('input-sla-pos') as HTMLInputElement).value);
         const taxaVal = Number((document.getElementById('input-taxa') as HTMLInputElement).value);
         const limiteUploadVal = Number((document.getElementById('input-limite-upload') as HTMLInputElement).value);
+        const primaryColorVal = (document.getElementById('input-agency-primary-color') as HTMLInputElement).value;
+        const logoUrlVal = (document.getElementById('input-agency-logo-url') as HTMLInputElement).value;
 
         const payload = {
           agency_name: agencyNameVal,
@@ -319,7 +372,9 @@ export class ConfiguracoesPage {
           sla_pre_embarque_dias: slaPreVal,
           sla_pos_viagem_dias: slaPosVal,
           taxa_cancelamento_padrao: taxaVal,
-          limite_upload_mb: limiteUploadVal
+          limite_upload_mb: limiteUploadVal,
+          agency_primary_color: primaryColorVal,
+          agency_logo_url: logoUrlVal
         };
 
         try {
@@ -337,6 +392,61 @@ export class ConfiguracoesPage {
         } catch (err: any) {
           console.error('Erro ao salvar configurações globais:', err);
           this.showToast('Falha ao gravar configurações.', 'error');
+        }
+      });
+
+      // Listen color picker change
+      document.getElementById('input-agency-primary-color')?.addEventListener('input', (e) => {
+        const color = (e.target as HTMLInputElement).value;
+        const label = color.toUpperCase();
+        const span = document.querySelector('#input-agency-primary-color + span');
+        if (span) span.textContent = label;
+      });
+
+      // Logo upload listener
+      const logoInput = document.getElementById('input-agency-logo-file') as HTMLInputElement;
+      logoInput?.addEventListener('change', async () => {
+        const file = logoInput.files?.[0];
+        if (!file) return;
+
+        const loader = document.getElementById('logo-upload-spinner');
+        if (loader) loader.classList.remove('hidden');
+
+        try {
+          const blob = await compressLogo(file);
+          const ext = file.name.split('.').pop() || 'jpg';
+          const path = `logos/agency_${Date.now()}.${ext}`;
+
+          const { error: uploadError } = await supabase.storage
+            .from('avatars')
+            .upload(path, blob, {
+              contentType: `image/${ext === 'jpg' ? 'jpeg' : ext}`,
+              upsert: true
+            });
+
+          if (uploadError) throw uploadError;
+
+          const { data } = supabase.storage
+            .from('avatars')
+            .getPublicUrl(path);
+
+          const publicUrl = data.publicUrl;
+
+          const inputUrl = document.getElementById('input-agency-logo-url') as HTMLInputElement;
+          if (inputUrl) inputUrl.value = publicUrl;
+
+          const previewImg = document.getElementById('img-agency-logo-preview') as HTMLImageElement;
+          if (previewImg) {
+            previewImg.src = publicUrl;
+            previewImg.classList.remove('hidden');
+          }
+
+          this.showToast('Logotipo carregado!', 'success');
+        } catch (err: any) {
+          console.error('Erro no upload do logo:', err);
+          this.showToast('Erro ao carregar logotipo.', 'error');
+        } finally {
+          if (loader) loader.classList.add('hidden');
         }
       });
 
@@ -1711,6 +1821,40 @@ export class ConfiguracoesPage {
                   <div class="relative flex items-center shrink-0">
                     <div class="w-11 h-6 bg-slate-200 dark:bg-slate-800 rounded-full relative transition-all duration-200 cursor-not-allowed opacity-50" title="Disparo automático por e-mail/WhatsApp (Em Breve)">
                       <div class="absolute top-[2px] left-[2px] bg-white rounded-full h-5 w-5 transition-all"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Configurações de Branding White-Label -->
+                <div class="border-t border-slate-100 dark:border-slate-800 pt-5 space-y-4">
+                  <h3 class="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-2">Identidade Visual da Agência (White-Label)</h3>
+                  
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Cor Primária (Hexadecimal) *</label>
+                      <div class="flex items-center gap-2">
+                        <input id="input-agency-primary-color" type="color" value="${this.settings.agencyPrimaryColor || '#4f46e5'}" class="w-10 h-10 border border-slate-200 dark:border-slate-700 bg-transparent rounded-lg cursor-pointer" />
+                        <span class="text-xs font-mono font-bold text-slate-650">${this.settings.agencyPrimaryColor || '#4f46e5'}</span>
+                      </div>
+                      <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1.5 font-medium leading-relaxed">Cor usada nos botões, links e destaques das telas públicas (Itinerário e NPS).</p>
+                    </div>
+
+                    <div>
+                      <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Logotipo da Agência *</label>
+                      <input id="input-agency-logo-url" type="hidden" value="${this.settings.agencyLogoUrl || ''}" />
+                      <div class="flex items-center gap-3">
+                        <label class="px-4 py-2 text-xs font-extrabold bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-100/60 dark:hover:bg-indigo-900/60 text-indigo-650 dark:text-indigo-400 rounded-xl transition border border-indigo-200/40 dark:border-indigo-850 cursor-pointer flex items-center gap-1.5">
+                          📁 Selecionar Logo
+                          <input id="input-agency-logo-file" type="file" accept="image/*" class="hidden" />
+                        </label>
+                        <div id="logo-upload-spinner" class="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin hidden"></div>
+                      </div>
+                      <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1.5 font-medium leading-relaxed">Envie um arquivo PNG/JPG leve. Ele será exibido no topo do Itinerário e NPS.</p>
+                      
+                      <!-- Preview do Logotipo -->
+                      <div class="mt-3.5">
+                        <img id="img-agency-logo-preview" src="${this.settings.agencyLogoUrl || ''}" class="max-h-12 max-w-full rounded border border-slate-200 dark:border-slate-800 p-1 bg-white dark:bg-slate-950 ${this.settings.agencyLogoUrl ? '' : 'hidden'}" />
+                      </div>
                     </div>
                   </div>
                 </div>
