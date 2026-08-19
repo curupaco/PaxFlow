@@ -265,7 +265,10 @@ export class EditTravelModal {
         <!-- Topo com Título e Fechar -->
         <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 mb-4">
           <div>
-            <h3 class="text-lg font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5 font-sans">✈️ Gerenciar Viagem</h3>
+            <h3 class="text-lg font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5 font-sans">
+              ✈️ Gerenciar Viagem
+              ${(v.codigoRef || v.codigo_ref) ? `<span class="ml-1 text-xs font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded border border-slate-200/50 dark:border-slate-700/50">${v.codigoRef || v.codigo_ref}</span>` : ''}
+            </h3>
             <p class="text-xs text-slate-400 dark:text-slate-500 font-semibold">Destino: <span class="font-bold text-slate-600 dark:text-slate-300">${v.destino}</span> &bull; Loc: <span class="font-bold text-slate-600 dark:text-slate-300">${v.codigo_localizador || 'Sem LOC'}</span></p>
           </div>
           <div class="flex items-center gap-3">

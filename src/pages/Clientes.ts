@@ -94,7 +94,7 @@ export class ClientesPage {
 
       if (this.buscaTermo.trim()) {
         const q = `%${this.buscaTermo.trim()}%`;
-        query = query.or(`nome.ilike.${q},email.ilike.${q},documento.ilike.${q},telefone.ilike.${q}`);
+        query = query.or(`nome.ilike.${q},email.ilike.${q},documento.ilike.${q},telefone.ilike.${q},codigo_ref.ilike.${q}`);
       }
 
       const { data, error, count } = await query;
@@ -115,6 +115,8 @@ export class ClientesPage {
         vistosInformacoes: d.vistos_informacoes || d.vistosInformacoes,
         googleDriveFolderUrl: d.google_drive_folder_url || d.googleDriveFolderUrl,
         classificacoes: d.classificacoes || [],
+        codigo_ref: d.codigo_ref,
+        codigoRef: d.codigo_ref,
         createdAt: d.created_at,
         updatedAt: d.updated_at
       }));
@@ -244,7 +246,10 @@ export class ClientesPage {
             : 'border-slate-100 dark:border-slate-800/80 hover:border-slate-200 dark:hover:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50/50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
         } transition flex items-center justify-between gap-3 ${borderSlaClass} group">
           <div class="overflow-hidden">
-            <span class="block text-sm font-black truncate">${c.nome && c.nome !== 'NULL' ? c.nome : 'Cliente sem nome'}</span>
+            <span class="block text-sm font-black truncate">
+              ${c.codigoRef ? `<span class="text-[10px] font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded mr-1.5">${c.codigoRef}</span>` : ''}
+              ${c.nome && c.nome !== 'NULL' ? c.nome : 'Cliente sem nome'}
+            </span>
             <span class="block text-[11px] text-slate-400 dark:text-slate-500 font-semibold truncate group-hover:text-slate-500 dark:group-hover:text-slate-400 transition">${contatoExibido}</span>
           </div>
           <span class="text-xs">👤</span>
@@ -820,6 +825,7 @@ export class ClientesPage {
               </h2>
               <p class="text-xs text-slate-400 dark:text-slate-500 font-semibold flex items-center gap-1">
                 <span>Cadastro e Documentação</span>
+                ${c.codigoRef ? `&bull; <span class="font-mono text-indigo-650 dark:text-indigo-400 font-bold">${c.codigoRef}</span>` : ''}
                 ${!isNew ? `&bull; <span class="text-indigo-600 dark:text-indigo-400 font-bold">${c.email}</span>` : ''}
               </p>
               ${!isNew && c.classificacoes && c.classificacoes.length > 0 ? `

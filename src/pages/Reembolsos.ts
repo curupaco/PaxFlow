@@ -388,6 +388,8 @@ export class ReembolsosPage {
       const cliEmail = r.viagem?.cliente?.email?.toLowerCase() || '';
       const dest = r.viagem?.destino?.toLowerCase() || '';
       const loc = r.viagem?.codigo_localizador?.toLowerCase() || '';
+      const refReembolso = (r.codigo_ref || r.codigoRef || '').toLowerCase();
+      const refViagem = (r.viagem?.codigo_ref || r.viagem?.codigoRef || '').toLowerCase();
       const prodTipo = r.produto?.tipo?.toLowerCase() || '';
       const prodForn = r.produto?.fornecedor?.toLowerCase() || '';
       const prodDesc = r.produto?.descricao?.toLowerCase() || '';
@@ -402,6 +404,8 @@ export class ReembolsosPage {
         cliEmail.includes(q) ||
         dest.includes(q) ||
         loc.includes(q) ||
+        refReembolso.includes(q) ||
+        refViagem.includes(q) ||
         prodTipo.includes(q) ||
         prodForn.includes(q) ||
         prodDesc.includes(q) ||
@@ -532,16 +536,26 @@ export class ReembolsosPage {
                         <tr class="table-row-hover transition duration-150">
                           <!-- Cliente -->
                           <td class="py-4.5 px-5">
-                            <span class="block text-slate-800 dark:text-slate-200 font-bold">${r.viagem?.cliente?.nome || 'Cliente Desconhecido'}</span>
+                            <span class="block text-slate-800 dark:text-slate-200 font-bold">
+                              ${(r.codigo_ref || r.codigoRef) ? `<span class="mr-1 text-[10px] font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-1 py-0.5 rounded border border-slate-200/50 dark:border-slate-800">${r.codigo_ref || r.codigoRef}</span>` : ''}
+                              ${r.viagem?.cliente?.nome || 'Cliente Desconhecido'}
+                            </span>
                             <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-semibold">${r.viagem?.cliente?.email || 'Sem e-mail'}</span>
                           </td>
                           
                           <!-- Viagem / Localizador -->
                           <td class="py-4.5 px-5">
                             <span class="block text-slate-800 dark:text-slate-200 font-bold">✈️ ${r.viagem?.destino || 'Sem Destino'}</span>
-                            <span class="inline-block px-1.5 py-0.5 mt-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-extrabold text-[9px] rounded uppercase border border-slate-200/50 dark:border-slate-800">
-                              LOC: ${r.viagem?.codigo_localizador || 'S/ LOC'}
-                            </span>
+                            <div class="flex items-center gap-1.5 mt-0.5">
+                              ${(r.viagem?.codigo_ref || r.viagem?.codigoRef) ? `
+                                <span class="inline-block px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-650 dark:text-indigo-400 font-mono font-bold text-[9px] rounded uppercase border border-indigo-200/40 dark:border-indigo-850">
+                                  ${r.viagem?.codigo_ref || r.viagem?.codigoRef}
+                                </span>
+                              ` : ''}
+                              <span class="inline-block px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-extrabold text-[9px] rounded uppercase border border-slate-200/50 dark:border-slate-800">
+                                LOC: ${r.viagem?.codigo_localizador || 'S/ LOC'}
+                              </span>
+                            </div>
                           </td>
    
                           <!-- Produto Cancelado -->
@@ -633,7 +647,10 @@ export class ReembolsosPage {
         <!-- Header: Client Info -->
         <div class="flex items-start justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
           <div class="space-y-1">
-            <span class="block text-slate-800 dark:text-slate-200 font-bold">${r.viagem?.cliente?.nome || 'Cliente Desconhecido'}</span>
+            <span class="block text-slate-800 dark:text-slate-200 font-bold">
+              ${(r.codigo_ref || r.codigoRef) ? `<span class="mr-1 text-[10px] font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-1 py-0.5 rounded border border-slate-200/50 dark:border-slate-800">${r.codigo_ref || r.codigoRef}</span>` : ''}
+              ${r.viagem?.cliente?.nome || 'Cliente Desconhecido'}
+            </span>
             <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-semibold">${r.viagem?.cliente?.email || 'Sem e-mail'}</span>
           </div>
           <div>
@@ -654,9 +671,16 @@ export class ReembolsosPage {
           <div class="space-y-1">
             <span class="block text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Viagem & LOC</span>
             <span class="block text-slate-800 dark:text-slate-200 font-bold">✈️ ${r.viagem?.destino || 'Sem Destino'}</span>
-            <span class="inline-block px-1.5 py-0.5 mt-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-extrabold text-[9px] rounded uppercase border border-slate-200/50 dark:border-slate-800">
-              LOC: ${r.viagem?.codigo_localizador || 'S/ LOC'}
-            </span>
+            <div class="flex items-center gap-1.5 mt-0.5">
+              ${(r.viagem?.codigo_ref || r.viagem?.codigoRef) ? `
+                <span class="inline-block px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-650 dark:text-indigo-400 font-mono font-bold text-[9px] rounded uppercase border border-indigo-200/40 dark:border-indigo-850">
+                  ${r.viagem?.codigo_ref || r.viagem?.codigoRef}
+                </span>
+              ` : ''}
+              <span class="inline-block px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-extrabold text-[9px] rounded uppercase border border-slate-200/50 dark:border-slate-800">
+                LOC: ${r.viagem?.codigo_localizador || 'S/ LOC'}
+              </span>
+            </div>
           </div>
           <div class="space-y-1">
             <span class="block text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Produto Cancelado</span>

@@ -472,6 +472,7 @@ export class Dashboard {
 
         return {
           ...v,
+          codigoRef: v.codigo_ref,
           destino: v.destino_ref ? `${v.destino_ref.nome}, ${v.destino_ref.pais}` : v.destino,
           destino_id: v.destino_id,
           destinoId: v.destino_id,
@@ -1352,6 +1353,7 @@ export class Dashboard {
         const cliTelefone = v.cliente?.telefone?.toLowerCase() || '';
         const dest = v.destino?.toLowerCase() || '';
         const loc = v.codigo_localizador?.toLowerCase() || '';
+        const ref = (v.codigo_ref || v.codigoRef || '').toLowerCase();
         const obs = v.observacoes?.toLowerCase() || '';
         const consultorNome = v.consultor_id === this.user.id ? 'você' : 'outro consultor';
 
@@ -1371,6 +1373,7 @@ export class Dashboard {
           cliTelefone.includes(q) ||
           dest.includes(q) ||
           loc.includes(q) ||
+          ref.includes(q) ||
           obs.includes(q) ||
           consultorNome.includes(q) ||
           matchesProductLoc ||
@@ -1741,7 +1744,12 @@ export class Dashboard {
         <!-- Cliente / LOC -->
         <td class="px-5 py-4 min-w-[200px]">
           <div class="font-black text-slate-800 dark:text-slate-100">${v.cliente?.nome || 'Cliente Desconhecido'}</div>
-          <div class="flex items-center gap-1.5 mt-1">
+          <div class="flex flex-wrap items-center gap-1.5 mt-1">
+            ${v.codigoRef ? `
+              <span class="px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-655 dark:text-indigo-400 font-mono font-bold text-[9px] rounded tracking-wider border border-indigo-200/40 dark:border-indigo-850 uppercase">
+                ${v.codigoRef}
+              </span>
+            ` : ''}
             <span class="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-extrabold text-[9px] rounded tracking-wider border border-slate-200/40 dark:border-slate-700/50 uppercase">
               ${v.codigo_localizador || 'S/ LOC'}
             </span>
@@ -1889,6 +1897,11 @@ export class Dashboard {
           <div class="space-y-1">
             <div class="font-black text-sm text-slate-800 dark:text-slate-100">${v.cliente?.nome || 'Cliente Desconhecido'}</div>
             <div class="flex flex-wrap items-center gap-1.5">
+              ${v.codigoRef ? `
+                <span class="px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-655 dark:text-indigo-400 font-mono font-bold text-[9px] rounded tracking-wider border border-indigo-200/40 dark:border-indigo-850 uppercase">
+                  REF: ${v.codigoRef}
+                </span>
+              ` : ''}
               <span class="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-extrabold text-[9px] rounded tracking-wider border border-slate-200/40 dark:border-slate-700/50 uppercase">
                 LOC: ${v.codigo_localizador || 'S/ LOC'}
               </span>

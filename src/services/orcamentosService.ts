@@ -58,6 +58,8 @@ export class OrcamentosService {
       valorViagem: d.valor_viagem,
       origem: d.origem,
       documentosUrl: d.documentos_url || [],
+      codigo_ref: d.codigo_ref,
+      codigoRef: d.codigo_ref,
       createdAt: d.created_at,
       updatedAt: d.updated_at
     }));

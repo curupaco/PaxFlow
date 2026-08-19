@@ -755,9 +755,11 @@ export class OrcamentosPage {
       const contatoVal = (o.contato || '').toLowerCase();
       const temperaturaVal = (o.temperatura || '').toLowerCase();
       const notasVal = (o.notasNegociacao || '').toLowerCase();
+      const codigoRefVal = (o.codigoRef || '').toLowerCase();
 
       return (
         nomeClienteVal.includes(q) ||
+        codigoRefVal.includes(q) ||
         destinoVal.includes(q) ||
         contatoVal.includes(q) ||
         temperaturaVal.includes(q) ||
@@ -997,7 +999,10 @@ export class OrcamentosPage {
         <!-- Topo do Card: Nome e Detalhes -->
         <div class="flex items-start justify-between gap-2.5">
           <div class="overflow-hidden flex-1">
-            <h4 class="text-xs font-black text-slate-800 dark:text-slate-100 leading-snug truncate">${o.nomeCliente}</h4>
+            <h4 class="text-xs font-black text-slate-800 dark:text-slate-100 leading-snug truncate">
+              ${o.codigoRef ? `<span class="text-[9px] font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded mr-1.5">${o.codigoRef}</span>` : ''}
+              ${o.nomeCliente}
+            </h4>
             <div class="flex items-center gap-1.5 mt-0.5">
               <span class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold truncate max-w-[150px]" title="${o.contato}">${o.contato}</span>
               ${o.contato ? `

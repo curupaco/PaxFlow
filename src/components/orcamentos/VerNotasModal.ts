@@ -88,6 +88,7 @@ export class VerNotasModal {
         <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3 mb-5">
           <h3 class="text-lg font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5 font-sans">
             <span>📝 Detalhes do Orçamento</span>
+            ${orc.codigoRef ? `<span class="ml-1 text-xs font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded border border-slate-200/50 dark:border-slate-700/50">${orc.codigoRef}</span>` : ''}
           </h3>
           <button id="btn-close-modal-x" class="text-slate-400 hover:text-rose-500 font-bold transition text-lg">&times;</button>
         </div>

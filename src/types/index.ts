@@ -62,6 +62,8 @@ export interface Cliente {
   vistosInformacoes?: string; // Detalhes sobre vistos ativos do cliente
   googleDriveFolderUrl?: string; // URL da pasta dedicada criada no Google Drive da agência
   classificacoes?: string[];
+  codigo_ref?: string;
+  codigoRef?: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -98,6 +100,8 @@ export interface Viagem {
   destinoId?: string;
   destino_ref?: Destino;
   destinoRef?: Destino;
+  codigo_ref?: string;
+  codigoRef?: string;
   processo_conferido?: boolean;
   isFinanceiroConferido?: boolean;
   isProcessoConferido?: boolean;
@@ -188,6 +192,8 @@ export interface Reembolso {
   data_resolucao?: string;
   createdAt?: string;
   created_at?: string;
+  codigo_ref?: string;
+  codigoRef?: string;
   updatedAt?: string;
   updated_at?: string;
 }
@@ -217,6 +223,8 @@ export interface Orcamento {
   updatedAt?: string;
   destino_id?: string;
   destinoId?: string;
+  codigo_ref?: string;
+  codigoRef?: string;
   destino_ref?: Destino;
   destinoRef?: Destino;
 }
