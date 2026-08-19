@@ -660,6 +660,14 @@ export class LandingPage {
                     <span class="text-emerald-500 shrink-0">✨</span>
                     <span><strong>Códigos de Referência Sequenciais</strong> (ex: ORC-0001, VIA-0023, RBS-0009, CLI-0001) para referenciar e pesquisar registros em todas as telas.</span>
                   </li>
+                  <li class="flex items-start gap-2.5">
+                    <span class="text-emerald-500 shrink-0">✨</span>
+                    <span><strong>Identidade Visual White-Label</strong> com logotipo próprio e cores da agência no itinerário digital e NPS do passageiro.</span>
+                  </li>
+                  <li class="flex items-start gap-2.5">
+                    <span class="text-emerald-500 shrink-0">✨</span>
+                    <span><strong>Alertas de Embarque e NPS</strong> automáticos no Inbox com disparador integrado do WhatsApp para envio rápido de vouchers.</span>
+                  </li>
                 </ul>
               </div>
 

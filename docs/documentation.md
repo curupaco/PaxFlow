@@ -31,6 +31,9 @@
    - 3.18 [Campanhas de Vendas & Leaderboard](#318-campanhas-de-vendas--leaderboard)
    - 3.19 [Códigos de Referência Internos Sequenciais (ORC, VIA, RBS, CLI)](#319-códigos-de-referência-internos-sequenciais)
    - 3.20 [Validação Automatizada de Viagens e Conferência de Processos](#320-validação-automatizada-de-viagens-e-conferência-de-processos)
+   - 3.21 [Configurações de Identidade Visual (White-Label Branding)](#321-configurações-de-identidade-visual-white-label-branding)
+   - 3.22 [Alertas Automatizados de Pré-Embarque e Pós-Viagem NPS](#322-alertas-automatizados-de-pré-embarque-e-pós-viagem-nps)
+   - 3.23 [Métricas Avançadas de Performance e Rendimento de Equipe](#323-métricas-avançadas-de-performance-e-rendimento-de-equipe)
 4. [Diferenciais Competitivos](#4-diferenciais-competitivos)
 5. [Arquitetura Tecnológica](#5-arquitetura-tecnológica)
 6. [Segurança e Conformidade](#6-segurança-e-conformidade)
@@ -129,7 +132,7 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 | Fechado | Venda concluída, aguardando emissão | — |
 | Pós-Venda | Documentação, passaportes, vistos | — |
 | Pré-Embarque | Próximo ao embarque | Indicador de atenção ⚠️ se < N dias |
-| Pós-Viagem | Cliente já viajou | Alerta crítico 🚨 se sem contato pós-venda > N dias |
+| Pós-Viagem | Cliente já viajou | Alerta crítico 🚨 se sem contato pós-viagem > N dias |
 | Reembolso Solicitado | Cancelamento ou devolução em andamento | — |
 
 - **Filtros Avançados por Período**: Painel colapsável de filtros que permite segmentar viagens por intervalos de data financeira, data de embarque ida e data de retorno volta.
@@ -438,6 +441,31 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 - **Conferência de Processo**: Trava dados cadastrais sensíveis da viagem contra alterações indevidas (permitindo apenas a edição de status, controle de anexos e comentários colaborativos).
 - **Trava de Transição de Status**: A movimentação de viagens a partir do estágio 'Fechado' requer saldo líquido zerado e detalhamento completo de custos de fornecedor (Tarifa + Taxa + Comissão = Valor de Venda do produto).
 - **Filtros Rápidos no Dashboard**: Painel de visualização com filtros dedicados por status de conferência (Financieramente Conferido, Processo Conferido, Completo, Pendente).
+
+### 3.21 Configurações de Identidade Visual (White-Label Branding)
+
+**Ferramenta de personalização estética e de marca** que permite às agências parceiras remover o logotipo padrão do PaxFlow e estabelecer sua própria identidade corporativa nas interfaces públicas de atendimento.
+
+- **Definição de Cor Primária**: Seletor de cor hexadecimal dinâmico integrado às configurações. A cor escolhida altera automaticamente botões, badges, links e realces de estilo de todas as visualizações externas do passageiro.
+- **Upload de Logotipo com Redimensionamento**: Upload de imagem com compressão integrada no navegador via Canvas. Garante que os logotipos sejam ajustados e mantidos sob limites ideais de peso antes de serem persistidos no Supabase Storage.
+- **Páginas Públicas customizadas**: O Itinerário Digital e o formulário de Pesquisa NPS passam a exibir o logotipo oficial e a paleta de cores da agência, aumentando a credibilidade e a percepção de valor do cliente final.
+
+### 3.22 Alertas Automatizados de Pré-Embarque e Pós-Viagem NPS
+
+**Automações integradas à Caixa de Entrada (Inbox)** focadas em mitigar falhas de comunicação operacional e assegurar a coleta contínua de pesquisas de satisfação pós-venda.
+
+- **Alerta de Pré-Embarque (48h)**: Notifica automaticamente o consultor com 48 horas de antecedência ao embarque (`data_ida`) para garantir o envio correto de vouchers, passagens e orientações gerais de viagem.
+- **Alerta de Pós-Viagem NPS**: Notifica o consultor após o retorno do passageiro para conduzir a pesquisa de avaliação de satisfação (NPS).
+- **Integração Imediata via WhatsApp**: Cada card de alerta contém uma ação de um clique para **Enviar Mensagem**, que carrega o modelo do WhatsApp correspondente pré-preenchido e com o link personalizado da viagem.
+
+### 3.23 Métricas Avançadas de Performance e Rendimento de Equipe
+
+**Painel analítico detalhado** adicionado ao Dashboard Comercial para permitir que gestores e donos de agências tenham visibilidade completa sobre a eficiência da força de vendas.
+
+- **Taxa de Conversão**: Percentual de orçamentos criados que foram convertidos em viagens ganhas/fechadas.
+- **Tempo Médio de Fechamento**: Cálculo dinâmico do intervalo de dias que os consultores levam para fechar e ganhar uma proposta a partir do seu lançamento.
+- **Visualização de Gap financeiro**: Destaca o montante faturado versus as oportunidades financeiras perdidas por desistências de orçamentos.
+- **XP de Vendas no Ranking**: Ranking unificado que recompensa consultores mais ativos, incentivando a competição saudável por produtividade.
 
 ---
 
