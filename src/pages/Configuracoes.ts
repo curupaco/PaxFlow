@@ -390,6 +390,10 @@ export class ConfiguracoesPage {
       this.setupTemplatesEvents();
     }
 
+    if (this.activeTab === 'metas') {
+      this.setupMetasEvents();
+    }
+
     if (this.activeTab === 'geral') {
       const form = document.getElementById('form-configuracoes') as HTMLFormElement;
       setupFormValidation('form-configuracoes', [
