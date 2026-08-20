@@ -16,6 +16,7 @@ DROP FUNCTION IF EXISTS public.admin_create_user(TEXT, TEXT, TEXT);
 -- Correção 1: Na tabela auth.identities do Supabase, a coluna 'id' para provedor local (email) DEVE ser o proprio ID do usuario em formato UUID (new_user_id),
 -- e a coluna 'identity_data' deve conter obrigatoriamente os campos 'email_verified' e 'phone_verified'.
 -- Correção 2: O GoTrue do Supabase exige hashes de senha com 10 rounds (gen_salt('bf', 10)) para evitar erros internos no validador de login.
+-- Correção 3: Adicionado 'email_verified': true dentro de raw_user_meta_data em auth.users para alinhar com o validador do GoTrue.
 CREATE OR REPLACE FUNCTION public.admin_create_user(
   user_email TEXT,
   user_nome TEXT,
@@ -35,7 +36,7 @@ BEGIN
   new_user_id := gen_random_uuid();
   encrypted_pw := crypt(user_password, gen_salt('bf', 10));
 
-  -- Inserir na tabela de autenticação auth.users
+  -- Inserir na tabela de autenticação auth.users com email_verified no raw_user_meta_data
   INSERT INTO auth.users (
     id,
     instance_id,
@@ -56,7 +57,7 @@ BEGIN
     encrypted_pw,
     NOW(),
     '{"provider": "email", "providers": ["email"]}'::jsonb,
-    jsonb_build_object('nome', user_nome),
+    jsonb_build_object('nome', user_nome, 'email_verified', true),
     NOW(),
     NOW(),
     'authenticated',
