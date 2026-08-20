@@ -1647,7 +1647,6 @@ export class Dashboard {
                       <th class="px-5 py-4 w-[80px] text-center">${this.renderSortHeader('SLA', 'sla')}</th>
                       <th class="px-5 py-4">${this.renderSortHeader('Cliente / LOC', 'cliente')}</th>
                       <th class="px-5 py-4">${this.renderSortHeader('Destino / Produtos', 'destino')}</th>
-                      <th class="px-5 py-4">${this.renderSortHeader('Período', 'periodo')}</th>
                       <th class="px-5 py-4">${this.renderSortHeader('Data Fin.', 'data_financeiro')}</th>
                       <th class="px-5 py-4">${this.renderSortHeader('Financeiro', 'financeiro')}</th>
                       ${this.perfil?.role === 'admin' ? `<th class="px-5 py-4">${this.renderSortHeader('Consultor', 'consultor')}</th>` : ''}
@@ -1797,15 +1796,7 @@ export class Dashboard {
           ` : ''}
         </td>
 
-        <!-- Período -->
-        <td class="px-5 py-4 whitespace-nowrap">
-          <div class="text-slate-700 dark:text-slate-300 font-semibold flex items-center gap-1">
-            <span>📅</span>
-            <span>${formatarData(v.data_ida)}</span>
-            <span class="text-slate-400">a</span>
-            <span>${formatarData(v.data_volta)}</span>
-          </div>
-        </td>
+
 
         <!-- Data Fin. -->
         <td class="px-5 py-4 whitespace-nowrap text-slate-500 dark:text-slate-400 font-semibold">
