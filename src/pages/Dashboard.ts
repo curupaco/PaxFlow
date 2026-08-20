@@ -668,8 +668,8 @@ export class Dashboard {
     const viagem = this.viagens.find(v => v.id === tripId);
     if (!viagem) return false;
 
-    if (viagem.status === 'pre_embarque' && newStatus === 'pos_viagem') {
-      this.showToast('Não é possível alterar o status manualmente de Pré-Embarque para Pós-Viagem. Essa alteração ocorre automaticamente quando as validações Financeira e de Processo estiverem concluídas.', 'error');
+    if (viagem.status === 'fechado' && newStatus === 'pos_venda') {
+      this.showToast('Não é possível alterar o status manualmente de Fechado para Pós-Venda. Essa alteração ocorre automaticamente quando as validações Financeira e de Processo estiverem concluídas.', 'error');
       return false;
     }
 
@@ -1820,9 +1820,9 @@ export class Dashboard {
         <td class="px-5 py-4">
           <select class="select-status-inline w-full px-2 py-1.5 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 font-semibold text-xs cursor-pointer" data-trip-id="${v.id}" data-old-value="${v.status}">
             <option value="fechado" ${v.status === 'fechado' ? 'selected' : ''}>Fechado</option>
-            <option value="pos_venda" ${v.status === 'pos_venda' ? 'selected' : ''}>Pós-Venda</option>
+            <option value="pos_venda" ${v.status === 'fechado' ? 'disabled' : ''} ${v.status === 'pos_venda' ? 'selected' : ''}>Pós-Venda</option>
             <option value="pre_embarque" ${v.status === 'pre_embarque' ? 'selected' : ''}>Pré-Embarque</option>
-            <option value="pos_viagem" ${v.status === 'pre_embarque' ? 'disabled' : ''} ${v.status === 'pos_viagem' ? 'selected' : ''}>Pós-Viagem</option>
+            <option value="pos_viagem" ${v.status === 'pos_viagem' ? 'selected' : ''}>Pós-Viagem</option>
             <option value="reembolso_solicitado" ${v.status === 'reembolso_solicitado' ? 'selected' : ''}>Reembolso Solicitado</option>
           </select>
         </td>
@@ -1974,9 +1974,9 @@ export class Dashboard {
           <div class="flex-1 min-w-[120px]">
             <select class="select-status-inline w-full px-2.5 py-2 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-500 font-bold text-xs cursor-pointer" data-trip-id="${v.id}" data-old-value="${v.status}">
               <option value="fechado" ${v.status === 'fechado' ? 'selected' : ''}>Fechado</option>
-              <option value="pos_venda" ${v.status === 'pos_venda' ? 'selected' : ''}>Pós-Venda</option>
+              <option value="pos_venda" ${v.status === 'fechado' ? 'disabled' : ''} ${v.status === 'pos_venda' ? 'selected' : ''}>Pós-Venda</option>
               <option value="pre_embarque" ${v.status === 'pre_embarque' ? 'selected' : ''}>Pré-Embarque</option>
-              <option value="pos_viagem" ${v.status === 'pre_embarque' ? 'disabled' : ''} ${v.status === 'pos_viagem' ? 'selected' : ''}>Pós-Viagem</option>
+              <option value="pos_viagem" ${v.status === 'pos_viagem' ? 'selected' : ''}>Pós-Viagem</option>
               <option value="reembolso_solicitado" ${v.status === 'reembolso_solicitado' ? 'selected' : ''}>Reembolso Solicitado</option>
             </select>
           </div>

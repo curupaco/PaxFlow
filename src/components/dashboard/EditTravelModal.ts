@@ -391,10 +391,10 @@ export class EditTravelModal {
               <div>
                 <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 font-sans">Status / Etapa *</label>
                 <select id="edit-viagem-status" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm font-sans">
-                  <option value="pos_venda" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100" ${v.status === 'pos_venda' ? 'selected' : ''}>Pós-Venda</option>
+                  <option value="pos_venda" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100" ${v.status === 'fechado' ? 'disabled' : ''} ${v.status === 'pos_venda' ? 'selected' : ''}>Pós-Venda</option>
                   <option value="fechado" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100" ${v.status === 'fechado' ? 'selected' : ''}>Fechado</option>
                   <option value="pre_embarque" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100" ${v.status === 'pre_embarque' ? 'selected' : ''}>Pré-Embarque</option>
-                  <option value="pos_viagem" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100" ${v.status === 'pre_embarque' ? 'disabled' : ''} ${v.status === 'pos_viagem' ? 'selected' : ''}>Pós-Viagem</option>
+                  <option value="pos_viagem" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100" ${v.status === 'pos_viagem' ? 'selected' : ''}>Pós-Viagem</option>
                   <option value="reembolso_solicitado" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100" ${v.status === 'reembolso_solicitado' ? 'selected' : ''}>Reembolso Solicitado</option>
                 </select>
               </div>
@@ -831,8 +831,8 @@ export class EditTravelModal {
       const status = (document.getElementById('edit-viagem-status') as HTMLSelectElement).value;
       const obs = (document.getElementById('edit-viagem-obs') as HTMLTextAreaElement).value;
 
-      if (v.status === 'pre_embarque' && status === 'pos_viagem') {
-        this.options.showToast('Não é possível alterar o status manualmente de Pré-Embarque para Pós-Viagem. Essa alteração ocorre automaticamente quando as validações Financeira e de Processo estiverem concluídas.', 'error');
+      if (v.status === 'fechado' && status === 'pos_venda') {
+        this.options.showToast('Não é possível alterar o status manualmente de Fechado para Pós-Venda. Essa alteração ocorre automaticamente quando as validações Financeira e de Processo estiverem concluídas.', 'error');
         return;
       }
 
@@ -2646,7 +2646,7 @@ export class EditTravelModal {
       }
     }
 
-    if (!viagem || viagem.status !== 'pre_embarque') return false;
+    if (!viagem || viagem.status !== 'fechado') return false;
 
     // 1. Validação de Processo
     const localProcesso = localStorage.getItem(`paxflow-processo-conferido-${viagem.id}`);
@@ -2711,7 +2711,7 @@ export class EditTravelModal {
       if (!this.options.isFallbackMode) {
         const { error } = await supabase
           .from('viagens')
-          .update({ status: 'pos_viagem' })
+          .update({ status: 'pos_venda' })
           .eq('id', viagem.id);
         if (error) throw error;
       }
@@ -2719,12 +2719,12 @@ export class EditTravelModal {
       // Sincroniza na memória local
       const viagemIdx = this.options.viagens.findIndex(item => item.id === viagem.id);
       if (viagemIdx !== -1) {
-        this.options.viagens[viagemIdx].status = 'pos_viagem';
+        this.options.viagens[viagemIdx].status = 'pos_venda';
         this.options.viagens[viagemIdx].updated_at = new Date().toISOString();
       }
 
       this.options.showToast(
-        'Venda validada com sucesso! O status foi alterado automaticamente para Pós-Viagem.',
+        'Venda validada com sucesso! O status foi alterado automaticamente para Pós-Venda.',
         'success'
       );
 
