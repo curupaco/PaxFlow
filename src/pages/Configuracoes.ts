@@ -415,7 +415,8 @@ export class ConfiguracoesPage {
         try {
           const blob = await compressLogo(file);
           const ext = file.name.split('.').pop() || 'jpg';
-          const path = `logos/agency_${Date.now()}.${ext}`;
+          const userId = this.perfil?.id || 'public';
+          const path = `${userId}/logos/agency_${Date.now()}.${ext}`;
 
           const { error: uploadError } = await supabase.storage
             .from('avatars')
