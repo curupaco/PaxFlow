@@ -44,6 +44,12 @@ export interface GlobalSettings {
   agencyLogoUrl?: string;
   agency_primary_color?: string;
   agencyPrimaryColor?: string;
+  digisac_token?: string;
+  digisacToken?: string;
+  digisac_domain?: string;
+  digisacDomain?: string;
+  digisac_service_id?: string;
+  digisacServiceId?: string;
   createdAt?: string;
   updatedAt?: string;
 }

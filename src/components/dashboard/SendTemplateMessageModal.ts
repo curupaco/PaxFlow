@@ -13,19 +13,29 @@ export interface SendTemplateMessageModalOptions {
 
 export class SendTemplateMessageModal {
   static async open(options: SendTemplateMessageModalOptions): Promise<void> {
-    // 1. Carregar os templates de mensagem do banco
+    // 1. Carregar os templates de mensagem e as configurações globais do banco
     let templates: any[] = [];
+    let settings: any = null;
     try {
-      const { data, error } = await supabase
-        .from('templates_mensagem')
-        .select('*')
-        .order('titulo', { ascending: true });
+      const [templatesRes, settingsRes] = await Promise.all([
+        supabase
+          .from('templates_mensagem')
+          .select('*')
+          .order('titulo', { ascending: true }),
+        supabase
+          .from('global_settings')
+          .select('*')
+          .maybeSingle()
+      ]);
 
-      if (error) throw error;
-      templates = data || [];
+      if (templatesRes.error) throw templatesRes.error;
+      if (settingsRes.error) throw settingsRes.error;
+
+      templates = templatesRes.data || [];
+      settings = settingsRes.data;
     } catch (err: any) {
-      console.error('Erro ao carregar templates para disparo:', err);
-      options.showToast('Erro ao carregar modelos de mensagens.', 'error');
+      console.error('Erro ao carregar dados para disparo:', err);
+      options.showToast('Erro ao carregar modelos de mensagens e configurações.', 'error');
       return;
     }
 
@@ -72,6 +82,29 @@ export class SendTemplateMessageModal {
       return texto;
     };
 
+    const hasDigisac = settings?.digisac_token && settings?.digisac_domain && settings?.digisac_service_id;
+
+    const footerButtonsHtml = hasDigisac
+      ? `
+        <button id="btn-message-cancel" type="button" class="px-4 py-2.5 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 text-slate-500 hover:text-slate-700 font-bold text-xs rounded-xl transition uppercase">
+          Cancelar
+        </button>
+        <button id="btn-message-send-wa" type="button" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs rounded-xl transition uppercase">
+          Abrir Link WhatsApp 📱
+        </button>
+        <button id="btn-message-send-digisac" type="button" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl transition shadow-lg shadow-emerald-600/20 uppercase tracking-wider flex items-center justify-center gap-1.5">
+          Enviar via Digisac 💬
+        </button>
+      `
+      : `
+        <button id="btn-message-cancel" type="button" class="px-4 py-2.5 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 text-slate-500 hover:text-slate-700 font-bold text-xs rounded-xl transition uppercase">
+          Cancelar
+        </button>
+        <button id="btn-message-send" type="button" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl transition shadow-lg shadow-emerald-600/20 uppercase tracking-wider flex items-center justify-center gap-1.5">
+          Enviar via WhatsApp 🚀
+        </button>
+      `;
+
     overlay.innerHTML = `
       <div class="bg-white dark:bg-slate-900 w-full max-w-[500px] rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 transform scale-95 transition-all duration-300 flex flex-col max-h-[90vh] overflow-y-auto custom-scrollbar relative" id="send-template-message-card">
         
@@ -115,13 +148,8 @@ export class SendTemplateMessageModal {
           </div>
 
           <!-- Rodapé de Ações -->
-          <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
-            <button id="btn-message-cancel" type="button" class="px-4 py-2.5 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 text-slate-500 hover:text-slate-700 font-bold text-xs rounded-xl transition uppercase">
-              Cancelar
-            </button>
-            <button id="btn-message-send" type="button" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl transition shadow-lg shadow-emerald-600/20 uppercase tracking-wider flex items-center justify-center gap-1.5">
-              Enviar via WhatsApp 🚀
-            </button>
+          <div class="flex flex-wrap items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+            ${footerButtonsHtml}
           </div>
         </div>
       </div>
@@ -165,26 +193,10 @@ export class SendTemplateMessageModal {
     // Inicializa o preview
     atualizarVisualizacao();
 
-    // Ouvinte para envio do WhatsApp
-    document.getElementById('btn-message-send')?.addEventListener('click', async () => {
-      const template = templates.find(t => t.id === selectedTemplateId);
-      if (!template) return;
-
-      const finalPhone = limparTelefone(customPhone);
-      if (!finalPhone) {
-        alert('Por favor, informe um telefone de cliente válido.');
-        return;
-      }
-
-      const finalTexto = gerarPreviewTexto(template);
-      const textEscaped = encodeURIComponent(finalTexto);
-      const whatsappUrl = `https://api.whatsapp.com/send?phone=${finalPhone}&text=${textEscaped}`;
-
-      // Tenta conceder XP de comunicação para o consultor pela ação
+    const concederXp = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
-          // Lança o XP log
           const acaoChave = `whatsapp_disparo_${options.viagemId || 'cliente'}_${Date.now()}`;
           const { error } = await supabase
             .from('profiles_xp_logs')
@@ -195,18 +207,114 @@ export class SendTemplateMessageModal {
             });
           
           if (!error) {
-            // Emite evento global de atualização de progresso
             window.dispatchEvent(new CustomEvent('paxflow-inbox-updated'));
           }
         }
       } catch (err) {
         console.warn('Erro ao conceder XP por disparo de mensagem:', err);
       }
+    };
 
-      // Abre em nova guia
-      window.open(whatsappUrl, '_blank');
-      fechar();
-      options.showToast('Mensagem preparada e aberta no WhatsApp!', 'success');
-    });
+    if (hasDigisac) {
+      // Envio manual via WhatsApp Link
+      document.getElementById('btn-message-send-wa')?.addEventListener('click', async () => {
+        const template = templates.find(t => t.id === selectedTemplateId);
+        if (!template) return;
+
+        const finalPhone = limparTelefone(customPhone);
+        if (!finalPhone) {
+          alert('Por favor, informe um telefone de cliente válido.');
+          return;
+        }
+
+        const finalTexto = gerarPreviewTexto(template);
+        const textEscaped = encodeURIComponent(finalTexto);
+        const whatsappUrl = `https://api.whatsapp.com/send?phone=${finalPhone}&text=${textEscaped}`;
+
+        await concederXp();
+        window.open(whatsappUrl, '_blank');
+        fechar();
+        options.showToast('Mensagem preparada e aberta no WhatsApp!', 'success');
+      });
+
+      // Envio manual via Digisac API
+      document.getElementById('btn-message-send-digisac')?.addEventListener('click', async () => {
+        const template = templates.find(t => t.id === selectedTemplateId);
+        if (!template) return;
+
+        const finalPhone = limparTelefone(customPhone);
+        if (!finalPhone) {
+          alert('Por favor, informe um telefone de cliente válido.');
+          return;
+        }
+
+        const finalTexto = gerarPreviewTexto(template);
+        const btnSend = document.getElementById('btn-message-send-digisac') as HTMLButtonElement;
+        if (btnSend) {
+          btnSend.disabled = true;
+          btnSend.textContent = 'Enviando... ⏳';
+        }
+
+        try {
+          const cleanNumber = finalPhone.replace(/\D/g, '');
+          const url = `${settings.digisac_domain.replace(/\/$/, '')}/api/v1/messages`;
+          
+          const payload = {
+            text: finalTexto,
+            number: cleanNumber,
+            serviceId: settings.digisac_service_id,
+            origin: 'bot',
+            dontOpenTicket: true
+          };
+
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${settings.digisac_token}`
+            },
+            body: JSON.stringify(payload)
+          });
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(errorText || `Status HTTP: ${response.status}`);
+          }
+
+          await concederXp();
+          options.showToast('Mensagem disparada com sucesso via Digisac! 🚀', 'success');
+          fechar();
+        } catch (err: any) {
+          console.error('Erro ao enviar mensagem via Digisac API:', err);
+          options.showToast(`Erro ao disparar Digisac: ${err.message || 'Verifique as configurações.'}`, 'error');
+          if (btnSend) {
+            btnSend.disabled = false;
+            btnSend.textContent = 'Enviar via Digisac 💬';
+          }
+        }
+      });
+
+    } else {
+      // Envio padrão via link do WhatsApp
+      document.getElementById('btn-message-send')?.addEventListener('click', async () => {
+        const template = templates.find(t => t.id === selectedTemplateId);
+        if (!template) return;
+
+        const finalPhone = limparTelefone(customPhone);
+        if (!finalPhone) {
+          alert('Por favor, informe um telefone de cliente válido.');
+          return;
+        }
+
+        const finalTexto = gerarPreviewTexto(template);
+        const textEscaped = encodeURIComponent(finalTexto);
+        const whatsappUrl = `https://api.whatsapp.com/send?phone=${finalPhone}&text=${textEscaped}`;
+
+        await concederXp();
+        window.open(whatsappUrl, '_blank');
+        fechar();
+        options.showToast('Mensagem preparada e aberta no WhatsApp!', 'success');
+      });
+    }
   }
 }

@@ -203,7 +203,10 @@ export class ConfiguracoesPage {
           agencyLogoUrl: data.agency_logo_url || data.agencyLogoUrl || '',
           agency_logo_url: data.agency_logo_url || data.agencyLogoUrl || '',
           agencyPrimaryColor: data.agency_primary_color || data.agencyPrimaryColor || '#4f46e5',
-          agency_primary_color: data.agency_primary_color || data.agencyPrimaryColor || '#4f46e5'
+          agency_primary_color: data.agency_primary_color || data.agencyPrimaryColor || '#4f46e5',
+          digisacToken: data.digisac_token || '',
+          digisacDomain: data.digisac_domain || '',
+          digisacServiceId: data.digisac_service_id || ''
         };
       } else {
         const initialPayload = {
@@ -217,7 +220,10 @@ export class ConfiguracoesPage {
           limite_upload_mb: 25,
           enviar_nps_automatico: false,
           agency_logo_url: '',
-          agency_primary_color: '#4f46e5'
+          agency_primary_color: '#4f46e5',
+          digisac_token: '',
+          digisac_domain: '',
+          digisac_service_id: ''
         };
 
         const { data: inserted, error: insertError } = await supabase
@@ -243,7 +249,10 @@ export class ConfiguracoesPage {
           agencyLogoUrl: inserted.agency_logo_url || '',
           agency_logo_url: inserted.agency_logo_url || '',
           agencyPrimaryColor: inserted.agency_primary_color || '#4f46e5',
-          agency_primary_color: inserted.agency_primary_color || '#4f46e5'
+          agency_primary_color: inserted.agency_primary_color || '#4f46e5',
+          digisacToken: inserted.digisac_token || '',
+          digisacDomain: inserted.digisac_domain || '',
+          digisacServiceId: inserted.digisac_service_id || ''
         };
       }
 
@@ -365,6 +374,9 @@ export class ConfiguracoesPage {
         const limiteUploadVal = Number((document.getElementById('input-limite-upload') as HTMLInputElement).value);
         const primaryColorVal = (document.getElementById('input-agency-primary-color') as HTMLInputElement).value;
         const logoUrlVal = (document.getElementById('input-agency-logo-url') as HTMLInputElement).value;
+        const digisacTokenVal = (document.getElementById('input-digisac-token') as HTMLInputElement).value;
+        const digisacDomainVal = (document.getElementById('input-digisac-domain') as HTMLInputElement).value;
+        const digisacServiceIdVal = (document.getElementById('input-digisac-service-id') as HTMLInputElement).value;
 
         const payload = {
           agency_name: agencyNameVal,
@@ -374,7 +386,10 @@ export class ConfiguracoesPage {
           taxa_cancelamento_padrao: taxaVal,
           limite_upload_mb: limiteUploadVal,
           agency_primary_color: primaryColorVal,
-          agency_logo_url: logoUrlVal
+          agency_logo_url: logoUrlVal,
+          digisac_token: digisacTokenVal,
+          digisac_domain: digisacDomainVal,
+          digisac_service_id: digisacServiceIdVal
         };
 
         try {
@@ -1822,6 +1837,35 @@ export class ConfiguracoesPage {
                   <div class="relative flex items-center shrink-0">
                     <div class="w-11 h-6 bg-slate-200 dark:bg-slate-800 rounded-full relative transition-all duration-200 cursor-not-allowed opacity-50" title="Disparo automático por e-mail/WhatsApp (Em Breve)">
                       <div class="absolute top-[2px] left-[2px] bg-white rounded-full h-5 w-5 transition-all"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Integração Digisac (WhatsApp) -->
+                <div class="border-t border-slate-100 dark:border-slate-800 pt-5 space-y-4">
+                  <h3 class="text-xs font-black text-emerald-600 dark:text-emerald-450 uppercase tracking-wider mb-2 flex items-center gap-2">
+                    <span>💬</span> Integração Digisac (Envio de WhatsApp)
+                  </h3>
+                  
+                  <div>
+                    <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
+                      URL da Instância / Domínio
+                    </label>
+                    <input id="input-digisac-domain" type="url" placeholder="Ex: https://minhaagencia.digisac.chat" value="${this.settings.digisacDomain || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs" />
+                    <p class="text-[9px] text-slate-400 dark:text-slate-500 mt-1 font-medium">Domínio completo da sua conta do Digisac.</p>
+                  </div>
+
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">ID da Conexão (serviceId)</label>
+                      <input id="input-digisac-service-id" type="text" placeholder="Ex: 5ac6..." value="${this.settings.digisacServiceId || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs" />
+                      <p class="text-[9px] text-slate-400 dark:text-slate-500 mt-1 font-medium">O identificador da conexão do WhatsApp ativa no Digisac.</p>
+                    </div>
+
+                    <div>
+                      <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Token de Acesso Pessoal (API)</label>
+                      <input id="input-digisac-token" type="password" placeholder="••••••••••••••••" value="${this.settings.digisacToken || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs" />
+                      <p class="text-[9px] text-slate-400 dark:text-slate-500 mt-1 font-medium">Gerado em Menu > Conta > API > Tokens de acesso pessoal.</p>
                     </div>
                   </div>
                 </div>
