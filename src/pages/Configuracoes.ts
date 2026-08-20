@@ -466,6 +466,113 @@ export class ConfiguracoesPage {
         }
       });
 
+      document.getElementById('btn-testar-digisac')?.addEventListener('click', async () => {
+        const btn = document.getElementById('btn-testar-digisac') as HTMLButtonElement;
+        const statusEl = document.getElementById('digisac-status-badge');
+        const resultEl = document.getElementById('digisac-test-result');
+        
+        const domainInput = document.getElementById('input-digisac-domain') as HTMLInputElement;
+        const serviceIdInput = document.getElementById('input-digisac-service-id') as HTMLInputElement;
+        const tokenInput = document.getElementById('input-digisac-token') as HTMLInputElement;
+
+        if (!domainInput || !serviceIdInput || !tokenInput) return;
+
+        const domain = domainInput.value.trim();
+        const serviceId = serviceIdInput.value.trim();
+        const token = tokenInput.value.trim();
+
+        if (!domain || !serviceId || !token) {
+          this.showToast('Preencha os campos do Digisac antes de testar.', 'error');
+          return;
+        }
+
+        if (btn) {
+          btn.disabled = true;
+          btn.textContent = 'Testando...';
+        }
+        if (statusEl) {
+          statusEl.className = 'px-2 py-0.5 rounded-lg text-[9px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20';
+          statusEl.textContent = 'Verificando...';
+        }
+        if (resultEl) {
+          resultEl.className = 'text-[10px] font-semibold text-amber-500';
+          resultEl.textContent = 'Verificando status do canal no Digisac...';
+        }
+
+        try {
+          let cleanDomain = domain.replace(/\/$/, '');
+          if (cleanDomain.endsWith('/api/v1')) {
+            cleanDomain = cleanDomain.slice(0, -7);
+          } else if (cleanDomain.endsWith('/api/v1/')) {
+            cleanDomain = cleanDomain.slice(0, -8);
+          } else if (cleanDomain.endsWith('/api')) {
+            cleanDomain = cleanDomain.slice(0, -4);
+          }
+
+          const url = `${cleanDomain}/api/v1/services/${serviceId}`;
+          const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+
+          if (response.status === 200) {
+            const serviceData = await response.json();
+            const serviceName = serviceData.name || 'WhatsApp';
+            
+            if (statusEl) {
+              statusEl.className = 'px-2 py-0.5 rounded-lg text-[9px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20';
+              statusEl.textContent = 'Conectado';
+            }
+            if (resultEl) {
+              resultEl.className = 'text-[10px] font-semibold text-emerald-600 dark:text-emerald-450';
+              resultEl.textContent = `Sucesso! Canal: "${serviceName}"`;
+            }
+            this.showToast('Conexão estabelecida com o Digisac!', 'success');
+          } else if (response.status === 401 || response.status === 403) {
+            if (statusEl) {
+              statusEl.className = 'px-2 py-0.5 rounded-lg text-[9px] font-bold uppercase tracking-wider bg-rose-500/10 text-rose-600 dark:text-rose-455 border border-rose-500/20';
+              statusEl.textContent = 'Erro Auth';
+            }
+            if (resultEl) {
+              resultEl.className = 'text-[10px] font-semibold text-rose-555';
+              resultEl.textContent = 'Token de acesso inválido ou expirado.';
+            }
+            this.showToast('Erro: Token do Digisac inválido.', 'error');
+          } else if (response.status === 404) {
+            if (statusEl) {
+              statusEl.className = 'px-2 py-0.5 rounded-lg text-[9px] font-bold uppercase tracking-wider bg-rose-500/10 text-rose-600 dark:text-rose-455 border border-rose-500/20';
+              statusEl.textContent = 'ID Inválido';
+            }
+            if (resultEl) {
+              resultEl.className = 'text-[10px] font-semibold text-rose-555';
+              resultEl.textContent = 'ID de Conexão não encontrado.';
+            }
+            this.showToast('ID da Conexão não encontrado no Digisac.', 'error');
+          } else {
+            const errText = await response.text();
+            throw new Error(errText || `Erro HTTP ${response.status}`);
+          }
+        } catch (err: any) {
+          console.error('Erro de teste Digisac:', err);
+          if (statusEl) {
+            statusEl.className = 'px-2 py-0.5 rounded-lg text-[9px] font-bold uppercase tracking-wider bg-rose-500/10 text-rose-600 dark:text-rose-455 border border-rose-500/20';
+            statusEl.textContent = 'Erro Conexão';
+          }
+          if (resultEl) {
+            resultEl.className = 'text-[10px] font-semibold text-rose-555';
+            resultEl.textContent = `Falha de conexão: ${err.message || 'Verifique o domínio.'}`;
+          }
+          this.showToast('Não foi possível conectar ao servidor do Digisac.', 'error');
+        } finally {
+          if (btn) {
+            btn.disabled = false;
+            btn.textContent = '⚡ Testar Conexão';
+          }
+        }
+      });
+
       document.getElementById('btn-test-drive-connection')?.addEventListener('click', async () => {
         const btn = document.getElementById('btn-test-drive-connection') as HTMLButtonElement;
         if (!btn || !this.settings) return;
@@ -1822,11 +1929,7 @@ export class ConfiguracoesPage {
                   <div>
                     <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Limite de Upload (MB)</label>
                     <input id="input-limite-upload" type="number" min="1" max="500" value="${this.settings.limiteUploadMb || 25}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-bold" />
-                    <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1.5 font-medium">Tamanho máximo permitido para anexos de passaportes e propostas (máx: 500MB).</p>
-                  </div>
-                </div>
-
-                <div class="border-t border-slate-100 dark:border-slate-800 pt-5 flex items-center justify-between gap-4">
+                 <div class="border-t border-slate-100 dark:border-slate-800 pt-5 flex items-center justify-between gap-4">
                   <div class="flex-1 min-w-0">
                     <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
                       Disparo Automático de NPS (Pós-Viagem)
@@ -1843,9 +1946,14 @@ export class ConfiguracoesPage {
 
                 <!-- Integração Digisac (WhatsApp) -->
                 <div class="border-t border-slate-100 dark:border-slate-800 pt-5 space-y-4">
-                  <h3 class="text-xs font-black text-emerald-600 dark:text-emerald-450 uppercase tracking-wider mb-2 flex items-center gap-2">
-                    <span>💬</span> Integração Digisac (Envio de WhatsApp)
-                  </h3>
+                  <div class="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+                    <h3 class="text-xs font-black text-emerald-600 dark:text-emerald-455 uppercase tracking-wider flex items-center gap-2">
+                      <span>💬</span> Integração Digisac (Envio de WhatsApp)
+                    </h3>
+                    <div id="digisac-status-badge" class="px-2 py-0.5 rounded-lg text-[9px] font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
+                      Não Verificado
+                    </div>
+                  </div>
                   
                   <div>
                     <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
@@ -1868,9 +1976,14 @@ export class ConfiguracoesPage {
                       <p class="text-[9px] text-slate-400 dark:text-slate-500 mt-1 font-medium">Gerado em Menu > Conta > API > Tokens de acesso pessoal.</p>
                     </div>
                   </div>
-                </div>
 
-                <!-- Configurações de Branding White-Label -->
+                  <div class="flex items-center gap-2 pt-1">
+                    <button id="btn-testar-digisac" type="button" class="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 dark:bg-slate-800 dark:hover:bg-slate-750 text-indigo-600 dark:text-indigo-400 border border-indigo-100/50 dark:border-slate-700 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm">
+                      ⚡ Testar Conexão
+                    </button>
+                    <span id="digisac-test-result" class="text-[9px] font-bold text-slate-500 dark:text-slate-400"></span>
+                  </div>
+                </div>
                 <div class="border-t border-slate-100 dark:border-slate-800 pt-5 space-y-4">
                   <h3 class="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-2">Identidade Visual da Agência (White-Label)</h3>
                   
