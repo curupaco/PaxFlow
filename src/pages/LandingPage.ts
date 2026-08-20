@@ -15,11 +15,12 @@ export class LandingPage {
       <div class="landing-page-wrapper min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans selection:bg-indigo-500 selection:text-white flex flex-col relative overflow-hidden transition-colors duration-300">
         
         <!-- Stripe-like Colorful Ambient Background Blobs -->
-        <div class="absolute top-[-30%] left-[-20%] w-[100%] h-[70%] bg-gradient-to-tr from-sky-200/30 via-indigo-100/20 to-rose-100/10 dark:from-indigo-950/15 dark:via-slate-950/0 dark:to-transparent rounded-full blur-[140px] pointer-events-none z-0"></div>
-        <div class="absolute bottom-[-15%] right-[-15%] w-[80%] h-[60%] bg-gradient-to-bl from-emerald-100/20 via-teal-50/15 to-transparent dark:from-emerald-950/10 dark:via-slate-950/0 dark:to-transparent rounded-full blur-[140px] pointer-events-none z-0"></div>
+        <div class="absolute top-[-30%] left-[-20%] w-[100%] h-[70%] bg-gradient-to-tr from-sky-200/20 via-indigo-100/10 to-rose-100/10 dark:from-indigo-950/10 dark:via-slate-950/0 dark:to-transparent rounded-full blur-[140px] pointer-events-none z-0"></div>
+        <div class="absolute bottom-[-15%] right-[-15%] w-[80%] h-[60%] bg-gradient-to-bl from-emerald-100/10 via-teal-50/5 to-transparent dark:from-emerald-950/5 dark:via-slate-950/0 dark:to-transparent rounded-full blur-[140px] pointer-events-none z-0"></div>
+        <div class="absolute inset-0 grid-bg pointer-events-none z-0 opacity-70"></div>
 
         <!-- Top Navigation Bar -->
-        <header class="w-full bg-white/75 dark:bg-slate-950/45 backdrop-blur-xl border-b border-slate-200/55 dark:border-slate-900/50 sticky top-0 z-50 px-6 py-4 flex items-center justify-between transition-all duration-300">
+        <header class="w-full bg-white/70 dark:bg-slate-950/45 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-900/50 sticky top-0 z-50 px-6 py-4 flex items-center justify-between transition-all duration-300">
           <div class="flex items-center gap-3">
             <img src="/logo.svg" alt="PaxFlow Logo" class="h-8 w-8 object-contain shrink-0" />
             <span class="text-base font-extrabold text-slate-800 dark:text-white tracking-tight">PaxFlow</span>
@@ -41,11 +42,11 @@ export class LandingPage {
         </header>
 
         <!-- Hero Section -->
-        <main class="flex-1 flex flex-col items-center justify-center px-6 py-16 md:py-24 text-center max-w-5xl mx-auto relative z-10">
+        <main class="flex-1 flex flex-col items-center justify-center px-6 py-16 md:py-24 text-center max-w-6xl mx-auto relative z-10">
           
           <!-- Modern Label Badge -->
           <div class="inline-flex items-center gap-1.5 px-3.5 py-1 bg-indigo-50/80 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/60 text-indigo-650 dark:text-indigo-400 font-bold text-[10px] tracking-wide rounded-full mb-6 shadow-sm">
-            <span class="w-1.5 h-1.5 rounded-full bg-indigo-600 animate-pulse"></span>
+            <span class="w-1.5 h-1.5 rounded-full bg-indigo-650 animate-pulse"></span>
             Apresentação Comercial PaxFlow
           </div>
 
@@ -73,37 +74,67 @@ export class LandingPage {
           <!-- Section header for interactive tour -->
           <div class="w-full text-center mb-10">
             <h2 class="text-xl md:text-2xl font-extrabold text-slate-855 dark:text-slate-200 tracking-tight">
-              Explore a Plataforma
+              Explore o Fluxo Operacional
             </h2>
             <p class="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1">
-              Clique nos módulos abaixo para visualizar em tempo real como o PaxFlow organiza a operação
+              Descubra os recursos operacionais clicando nas abas interativas do produto
             </p>
           </div>
 
-          <!-- Horizontal Pills bar (Stripe/Pitch style) -->
+          <!-- Horizontal Pills bar (Stripe/Pitch style) with SVG Icons -->
           <div class="w-full mb-8">
-            <div class="flex flex-wrap justify-center gap-2 p-1.5 bg-white/70 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 rounded-2xl max-w-4xl mx-auto backdrop-blur-md shadow-sm">
-              <button id="tab-btn-dashboard" class="px-4 py-2 text-[10px] font-black tracking-wider uppercase rounded-xl transition duration-200 bg-indigo-600 text-white shadow-md">
-                📊 Dashboard
+            <div class="flex flex-wrap justify-center gap-2 p-1.5 bg-white/70 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 rounded-2xl max-w-5xl mx-auto backdrop-blur-md shadow-sm">
+              
+              <button id="tab-btn-dashboard" class="px-3.5 py-2 text-[10px] font-black tracking-wider uppercase rounded-xl transition duration-200 flex items-center gap-2 bg-indigo-600 text-white shadow-sm">
+                <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M11 3.055A9.003 9.003 0 1020.945 13H11V3.055z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+                </svg>
+                Dashboard
               </button>
-              <button id="tab-btn-viagens" class="px-4 py-2 text-[10px] font-black tracking-wider uppercase rounded-xl transition duration-200 text-slate-600 dark:text-slate-400 hover:text-slate-850 dark:hover:text-slate-200">
-                ✈️ Viagens
+              
+              <button id="tab-btn-viagens" class="px-3.5 py-2 text-[10px] font-black tracking-wider uppercase rounded-xl transition duration-200 flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-850 dark:hover:text-slate-200">
+                <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+                </svg>
+                Viagens
               </button>
-              <button id="tab-btn-orcamentos" class="px-4 py-2 text-[10px] font-black tracking-wider uppercase rounded-xl transition duration-200 text-slate-600 dark:text-slate-400 hover:text-slate-850 dark:hover:text-slate-200">
-                📋 Orçamentos
+              
+              <button id="tab-btn-orcamentos" class="px-3.5 py-2 text-[10px] font-black tracking-wider uppercase rounded-xl transition duration-200 flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-850 dark:hover:text-slate-200">
+                <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                </svg>
+                CRM / Orçamentos
               </button>
-              <button id="tab-btn-inbox" class="px-4 py-2 text-[10px] font-black tracking-wider uppercase rounded-xl transition duration-200 text-slate-600 dark:text-slate-400 hover:text-slate-850 dark:hover:text-slate-200">
-                💬 Inbox & SLAs
+              
+              <button id="tab-btn-inbox" class="px-3.5 py-2 text-[10px] font-black tracking-wider uppercase rounded-xl transition duration-200 flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-850 dark:hover:text-slate-200">
+                <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                Inbox & SLAs
               </button>
-              <button id="tab-btn-reembolsos" class="px-4 py-2 text-[10px] font-black tracking-wider uppercase rounded-xl transition duration-200 text-slate-600 dark:text-slate-400 hover:text-slate-850 dark:hover:text-slate-200">
-                💰 Reembolsos
+              
+              <button id="tab-btn-reembolsos" class="px-3.5 py-2 text-[10px] font-black tracking-wider uppercase rounded-xl transition duration-200 flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-850 dark:hover:text-slate-200">
+                <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Reembolsos
               </button>
-              <button id="tab-btn-relatorios" class="px-4 py-2 text-[10px] font-black tracking-wider uppercase rounded-xl transition duration-200 text-slate-600 dark:text-slate-400 hover:text-slate-850 dark:hover:text-slate-200">
-                📈 Relatórios
+              
+              <button id="tab-btn-relatorios" class="px-3.5 py-2 text-[10px] font-black tracking-wider uppercase rounded-xl transition duration-200 flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-850 dark:hover:text-slate-200">
+                <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M7 12l3-3 3 3 4-4M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                </svg>
+                Relatórios
               </button>
-              <button id="tab-btn-publicas" class="px-4 py-2 text-[10px] font-black tracking-wider uppercase rounded-xl transition duration-200 text-slate-600 dark:text-slate-400 hover:text-slate-850 dark:hover:text-slate-200">
-                🌐 Itinerários
+              
+              <button id="tab-btn-publicas" class="px-3.5 py-2 text-[10px] font-black tracking-wider uppercase rounded-xl transition duration-200 flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-850 dark:hover:text-slate-200">
+                <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.905 0-5.64-.5-7.843-1.418m15.686 0A8.957 8.957 0 0112 18a8.957 8.957 0 01-7.843-8.918" />
+                </svg>
+                Itinerários
               </button>
+
             </div>
           </div>
 
@@ -111,15 +142,15 @@ export class LandingPage {
           <div class="w-full bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl shadow-xl p-5 md:p-7 text-left relative overflow-hidden backdrop-blur-md flex flex-col justify-between min-h-[460px] transition-colors duration-300">
             
             <!-- Window top bar -->
-            <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4 mb-4">
+            <div class="flex items-center justify-between border-b border-slate-250/50 dark:border-slate-800 pb-4 mb-4">
               <div class="flex items-center gap-2">
                 <span class="w-2.5 h-2.5 bg-slate-200 dark:bg-slate-800 rounded-full"></span>
                 <span class="w-2.5 h-2.5 bg-slate-200 dark:bg-slate-800 rounded-full"></span>
                 <span class="w-2.5 h-2.5 bg-slate-200 dark:bg-slate-800 rounded-full"></span>
                 <span id="window-path-text" class="text-[10px] text-slate-400 dark:text-slate-500 font-bold ml-2 font-mono">paxflow-comercial-dashboard.html</span>
               </div>
-              <div class="flex gap-2">
-                <span class="px-2.5 py-0.5 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-bold text-[9px] rounded-lg">DEMO INTERATIVA</span>
+              <div class="flex gap-2 animate-pulse">
+                <span class="px-2.5 py-0.5 bg-indigo-500/10 text-indigo-650 dark:text-indigo-400 font-black text-[9px] rounded-lg">LIVE PREVIEW</span>
               </div>
             </div>
 
@@ -144,7 +175,7 @@ export class LandingPage {
                     </div>
                   </div>
                   <div class="bg-slate-50 dark:bg-slate-950/50 border border-slate-200/60 dark:border-slate-850 p-4.5 rounded-2xl shadow-sm">
-                    <span class="text-[9px] font-black text-slate-400 dark:text-slate-550 uppercase tracking-wider block">Ticket Médio</span>
+                    <span class="text-[9px] font-black text-slate-400 dark:text-slate-555 uppercase tracking-wider block">Ticket Médio</span>
                     <div class="flex items-baseline gap-2 mt-1">
                       <span class="text-xl font-black text-emerald-600 dark:text-emerald-450">R$ 6.200,00</span>
                       <span class="text-[9px] text-slate-550">Por Viagem</span>
@@ -209,7 +240,7 @@ export class LandingPage {
                         <tr class="bg-rose-50/5 dark:bg-rose-950/5 hover:bg-rose-50/15 dark:hover:bg-rose-950/10 transition-colors duration-200">
                           <td class="px-4 py-3 text-center"><span class="text-xs">⚠️</span></td>
                           <td class="px-4 py-3">
-                            <div class="font-extrabold text-slate-850 dark:text-slate-150">Carlos Eduardo</div>
+                            <div class="font-extrabold text-slate-855 dark:text-slate-150">Carlos Eduardo</div>
                             <span class="inline-block mt-0.5 px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-extrabold text-[8px] rounded border border-slate-200/40 dark:border-slate-700/50 uppercase">BA921</span>
                           </td>
                           <td class="px-4 py-3">
@@ -357,7 +388,7 @@ export class LandingPage {
                         <th class="pb-2 font-bold uppercase text-[8px]">Etapa</th>
                       </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-slate-600 dark:text-slate-350">
+                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-slate-600 dark:text-slate-355">
                       <tr>
                         <td class="py-2.5 font-bold text-slate-800 dark:text-slate-200">Felipe Melo</td>
                         <td class="py-2.5">Latam Airlines</td>
@@ -442,7 +473,7 @@ export class LandingPage {
           <div class="max-w-5xl mx-auto">
             <div class="text-center max-w-2xl mx-auto mb-10">
               <span class="px-2.5 py-0.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-455 border border-emerald-500/20 text-[9px] font-bold uppercase tracking-wider rounded-full">Exclusivo White-Label</span>
-              <h2 class="text-xl md:text-2xl font-extrabold text-slate-850 dark:text-white tracking-tight mt-3">
+              <h2 class="text-xl md:text-2xl font-extrabold text-slate-855 dark:text-white tracking-tight mt-3">
                 Sua Marca, Suas Cores
               </h2>
               <p class="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1">
@@ -592,7 +623,7 @@ export class LandingPage {
         </section>
 
         <!-- Stats Counters -->
-        <section class="w-full py-12 px-6 bg-white dark:bg-slate-950 border-t border-slate-200/40 dark:border-slate-900/40 relative z-10">
+        <section class="w-full py-12 px-6 bg-white dark:bg-slate-955 border-t border-slate-200/40 dark:border-slate-900/40 relative z-10">
           <div class="max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
             <div>
               <span class="block text-2xl font-black text-slate-855 dark:text-white">15.000+</span>
@@ -607,7 +638,7 @@ export class LandingPage {
               <span class="block text-[8px] font-bold uppercase text-slate-455 mt-1 tracking-wider">Menos Trabalho Manual</span>
             </div>
             <div>
-              <span class="block text-2xl font-black text-emerald-600 dark:text-emerald-450">24/7</span>
+              <span class="block text-2xl font-black text-emerald-600 dark:text-emerald-455">24/7</span>
               <span class="block text-[8px] font-bold uppercase text-slate-455 mt-1 tracking-wider">Alertas e SLAs de Voo</span>
             </div>
           </div>
@@ -727,7 +758,7 @@ export class LandingPage {
         tabs.forEach(t => {
           const b = document.getElementById(`tab-btn-${t}`);
           if (b) {
-            b.className = "px-4 py-2 text-[10px] font-black tracking-wider uppercase rounded-xl transition duration-200 text-slate-600 dark:text-slate-400 hover:text-slate-850 dark:hover:text-slate-200";
+            b.className = "px-3.5 py-2 text-[10px] font-black tracking-wider uppercase rounded-xl transition duration-200 flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-850 dark:hover:text-slate-200";
           }
           const panel = document.getElementById(`panel-${t}`);
           panel?.classList.add('hidden');
@@ -735,7 +766,7 @@ export class LandingPage {
 
         // Ativar aba clicada
         if (btn) {
-          btn.className = "px-4 py-2 text-[10px] font-black tracking-wider uppercase rounded-xl transition duration-200 bg-indigo-600 text-white shadow-md";
+          btn.className = "px-3.5 py-2 text-[10px] font-black tracking-wider uppercase rounded-xl transition duration-200 flex items-center gap-2 bg-indigo-600 text-white shadow-md";
         }
 
         const activePanel = document.getElementById(`panel-${tab}`);
