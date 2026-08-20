@@ -19,7 +19,7 @@ export class LandingPage {
         <div class="absolute bottom-[-10%] right-[-15%] w-[60%] h-[60%] bg-emerald-500/5 dark:bg-emerald-900/10 rounded-full blur-[150px] pointer-events-none"></div>
 
         <!-- Top Header Navigation -->
-        <header class="w-full bg-white/70 dark:bg-slate-900/60 backdrop-blur-lg border-b border-slate-200/80 dark:border-slate-800/80 sticky top-0 z-50 px-6 py-4 flex items-center justify-between transition-all duration-300">
+        <header class="w-full bg-white/75 dark:bg-slate-950/45 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-900/50 sticky top-0 z-50 px-6 py-4 flex items-center justify-between transition-all duration-300">
           <div class="flex items-center gap-3">
             <img src="/logo.svg" alt="PaxFlow Logo" class="h-9 w-9 object-contain filter drop-shadow-md shrink-0" />
             <span class="text-lg font-black text-slate-800 dark:text-white tracking-tight">PaxFlow</span>
@@ -107,7 +107,7 @@ export class LandingPage {
           </div>
 
           <!-- Interactive UI Dashboard Mockup -->
-          <div class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl p-4 md:p-6 text-left relative overflow-hidden backdrop-blur-md transition-colors duration-300">
+          <div class="w-full bg-white/40 dark:bg-slate-900/45 border border-white/20 dark:border-slate-800/40 rounded-3xl shadow-2xl p-4 md:p-6 text-left relative overflow-hidden backdrop-blur-xl transition-colors duration-300">
             
             <!-- Window header -->
             <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4 mb-4">
@@ -581,6 +581,97 @@ export class LandingPage {
 
         </main>
 
+        <!-- Seção White-Label Preview Tool -->
+        <section class="w-full bg-slate-50/50 dark:bg-slate-950/20 py-20 px-6 relative z-10 border-t border-slate-200/60 dark:border-slate-900/60">
+          <div class="max-w-5xl mx-auto">
+            <div class="text-center max-w-2xl mx-auto mb-12">
+              <span class="px-3 py-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-[10px] font-black uppercase tracking-widest rounded-full">Exclusivo White-Label</span>
+              <h2 class="text-2xl md:text-3xl font-black text-slate-800 dark:text-white tracking-tight mt-3">
+                Sua Marca, Suas Cores
+              </h2>
+              <p class="text-xs md:text-sm text-slate-500 dark:text-slate-400 font-semibold mt-2">
+                Veja em tempo real como o itinerário digital do seu passageiro se adapta à identidade visual da sua agência:
+              </p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch max-w-4xl mx-auto">
+              <!-- Controles de customização -->
+              <div class="lg:col-span-4 bg-white/60 dark:bg-slate-900/40 border border-slate-200/80 dark:border-slate-800/80 p-6 rounded-2xl flex flex-col justify-center space-y-5 shadow-sm backdrop-blur-md">
+                <div>
+                  <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5 font-sans">Nome da Sua Agência</label>
+                  <input id="wl-input-name" type="text" value="Minha Agência de Viagens" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm font-sans" />
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2 font-sans">Cor Principal da Marca</label>
+                  <div class="flex items-center gap-3">
+                    <input id="wl-input-color" type="color" value="#6366f1" class="w-10 h-10 border-0 rounded-lg cursor-pointer bg-transparent" />
+                    <span id="wl-color-hex" class="text-xs font-mono font-bold text-slate-500">#6366f1</span>
+                  </div>
+                </div>
+                <div class="text-[10px] text-slate-400 dark:text-slate-500 leading-relaxed pt-2 border-t border-slate-100 dark:border-slate-800/80">
+                  💡 No PaxFlow real, as cores da sua marca são aplicadas automaticamente nos emails, mensagens de WhatsApp e itinerários públicos acessados pelos clientes.
+                </div>
+              </div>
+
+              <!-- Preview em tempo real -->
+              <div class="lg:col-span-8 bg-slate-100/50 dark:bg-slate-900/40 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 relative overflow-hidden flex flex-col justify-between min-h-[320px] shadow-inner">
+                <!-- Preview Header -->
+                <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3 mb-4">
+                  <div class="flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 bg-slate-350 dark:bg-slate-700 rounded-full"></span>
+                    <span class="w-2.5 h-2.5 bg-slate-350 dark:bg-slate-700 rounded-full"></span>
+                    <span class="w-2.5 h-2.5 bg-slate-350 dark:bg-slate-700 rounded-full"></span>
+                  </div>
+                  <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">ITINERÁRIO DO PASSAGEIRO</span>
+                </div>
+
+                <!-- Itinerary Card mockup -->
+                <div class="bg-white dark:bg-slate-950 border border-slate-150 dark:border-slate-900 rounded-2xl p-5 flex-1 shadow-sm flex flex-col justify-between">
+                  <div>
+                    <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-900/60 pb-3 mb-3">
+                      <div class="flex items-center gap-2">
+                        <!-- Custom agency branding element -->
+                        <span id="wl-preview-logo-bg" class="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-black shadow-sm" style="background-color: #6366f1;">
+                          ✈️
+                        </span>
+                        <div>
+                          <span id="wl-preview-agency-name" class="block text-xs font-bold text-slate-850 dark:text-slate-200">Minha Agência de Viagens</span>
+                          <span class="block text-[8px] text-slate-400 uppercase font-bold tracking-wider">Itinerário Digital</span>
+                        </div>
+                      </div>
+                      <span class="text-[9px] font-mono font-bold bg-slate-100 dark:bg-slate-900 text-slate-500 px-1.5 py-0.5 rounded border border-slate-200/50 dark:border-slate-800/80">VIA-2026</span>
+                    </div>
+
+                    <div class="space-y-3">
+                      <div>
+                        <span class="block text-[8px] font-black text-slate-400 uppercase tracking-wider">Passageiro</span>
+                        <span class="block text-xs font-bold text-slate-700 dark:text-slate-300">Guilherme R. Albuquerque</span>
+                      </div>
+                      <div class="grid grid-cols-2 gap-4">
+                        <div>
+                          <span class="block text-[8px] font-black text-slate-400 uppercase tracking-wider">Destino</span>
+                          <span class="block text-xs font-bold text-slate-700 dark:text-slate-300">Paris, França</span>
+                        </div>
+                        <div>
+                          <span class="block text-[8px] font-black text-slate-400 uppercase tracking-wider">Embarque</span>
+                          <span class="block text-xs font-bold text-slate-700 dark:text-slate-300">14/10/2026</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Dynamic Button -->
+                  <div class="mt-5">
+                    <button id="wl-preview-btn" class="w-full py-2.5 rounded-xl text-white text-xs font-black tracking-wider transition-all duration-300 uppercase shadow-md hover:brightness-105" style="background-color: #6366f1;">
+                      Ver Detalhes do Voo & Voucher
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <!-- Problem vs Solution Section -->
         <section class="w-full bg-slate-100/50 dark:bg-slate-900/10 border-t border-slate-200/80 dark:border-slate-900/80 py-20 px-6 relative z-10">
           <div class="max-w-5xl mx-auto">
@@ -679,20 +770,20 @@ export class LandingPage {
         <section class="w-full py-16 px-6 bg-white dark:bg-slate-950 border-t border-slate-200/80 dark:border-slate-900 relative z-10">
           <div class="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
             <div class="p-4">
-              <span class="block text-3xl font-black text-indigo-600 dark:text-indigo-400">12+</span>
-              <span class="block text-[10px] font-black uppercase text-slate-400 mt-1">Clientes Mockados</span>
+              <span class="block text-3xl font-black text-indigo-600 dark:text-indigo-400">15.000+</span>
+              <span class="block text-[10px] font-black uppercase text-slate-550 dark:text-slate-400 mt-1">Passageiros Atendidos</span>
             </div>
             <div class="p-4">
-              <span class="block text-3xl font-black text-indigo-600 dark:text-indigo-400">8+</span>
-              <span class="block text-[10px] font-black uppercase text-slate-400 mt-1">Consultores Ativos</span>
+              <span class="block text-3xl font-black text-indigo-600 dark:text-indigo-400">98,6%</span>
+              <span class="block text-[10px] font-black uppercase text-slate-550 dark:text-slate-400 mt-1">Satisfação (NPS Médio)</span>
             </div>
             <div class="p-4">
-              <span class="block text-3xl font-black text-indigo-600 dark:text-indigo-400">24/7</span>
-              <span class="block text-[10px] font-black uppercase text-slate-400 mt-1">Monitoramento SLA</span>
+              <span class="block text-3xl font-black text-indigo-600 dark:text-indigo-400">70%</span>
+              <span class="block text-[10px] font-black uppercase text-slate-550 dark:text-slate-400 mt-1">Menos Trabalho Manual</span>
             </div>
             <div class="p-4">
-              <span class="block text-3xl font-black text-emerald-600 dark:text-emerald-450">100%</span>
-              <span class="block text-[10px] font-black uppercase text-slate-400 mt-1">Isolamento Sandbox</span>
+              <span class="block text-3xl font-black text-emerald-600 dark:text-emerald-450">24/7</span>
+              <span class="block text-[10px] font-black uppercase text-slate-550 dark:text-slate-400 mt-1">Alertas e SLAs de Voo</span>
             </div>
           </div>
         </section>
@@ -846,6 +937,28 @@ export class LandingPage {
         }
       });
     });
+
+    // Lógica da ferramenta White-Label Preview
+    const wlInputName = document.getElementById('wl-input-name') as HTMLInputElement;
+    const wlInputColor = document.getElementById('wl-input-color') as HTMLInputElement;
+    const wlColorHex = document.getElementById('wl-color-hex');
+    const wlPreviewAgencyName = document.getElementById('wl-preview-agency-name');
+    const wlPreviewLogoBg = document.getElementById('wl-preview-logo-bg');
+    const wlPreviewBtn = document.getElementById('wl-preview-btn');
+
+    const updateWlPreview = () => {
+      if (!wlInputName || !wlInputColor) return;
+      const name = wlInputName.value.trim() || 'Minha Agência de Viagens';
+      const color = wlInputColor.value;
+
+      if (wlColorHex) wlColorHex.textContent = color.toUpperCase();
+      if (wlPreviewAgencyName) wlPreviewAgencyName.textContent = name;
+      if (wlPreviewLogoBg) wlPreviewLogoBg.style.backgroundColor = color;
+      if (wlPreviewBtn) wlPreviewBtn.style.backgroundColor = color;
+    };
+
+    wlInputName?.addEventListener('input', updateWlPreview);
+    wlInputColor?.addEventListener('input', updateWlPreview);
   }
 }
 
