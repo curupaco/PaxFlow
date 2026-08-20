@@ -196,6 +196,15 @@ export function renderNovoProdutoFormHTML(tiposProduto: any[]): string {
         </div>
       </div>
 
+      <!-- Trechos Aéreos (exclusivo para AÉREO OPERADORA e AÉREO FACIAL) -->
+      <div id="container-trechos-aereo" class="hidden space-y-2.5 mt-2 bg-slate-100/40 dark:bg-slate-900/30 p-2.5 rounded-lg border border-slate-200/40 dark:border-slate-800/40">
+        <span class="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-1 flex items-center gap-1">✈️ Trechos Aéreos</span>
+        <div id="lista-trechos" class="space-y-2"></div>
+        <button type="button" id="btn-add-trecho" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 font-black text-[9px] tracking-wider rounded-lg transition uppercase flex items-center gap-1 mt-1">
+          ➕ Adicionar Trecho
+        </button>
+      </div>
+
       <!-- Datas Adicionais -->
       <div id="container-datas-adicionais" class="space-y-2.5 mt-2"></div>
       <div class="flex justify-start">
@@ -305,6 +314,17 @@ export function renderLateralEditorPaneHTML(
                 <!-- Container para Campos Dinâmicos (dados_adicionais) -->
                 <div id="edit-container-campos-condicionais-${selectedProduct.id}" class="hidden bg-slate-100/40 dark:bg-slate-900/30 p-2.5 rounded-lg border border-slate-200/40 dark:border-slate-800/40 space-y-2"></div>
 
+                <!-- Trechos Aéreos (exclusivo para AÉREO OPERADORA e AÉREO FACIAL) -->
+                ${(selectedProduct.tipo === 'AÉREO OPERADORA' || selectedProduct.tipo === 'AÉREO FACIAL') ? `
+                  <div id="edit-secao-trechos-${selectedProduct.id}" class="space-y-2.5 mt-2 bg-slate-100/40 dark:bg-slate-900/30 p-2.5 rounded-lg border border-slate-200/40 dark:border-slate-800/40">
+                    <span class="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-1 flex items-center gap-1">✈️ Trechos Aéreos</span>
+                    <div id="edit-container-trechos-${selectedProduct.id}" class="space-y-2"></div>
+                    <button type="button" id="edit-btn-add-trecho-${selectedProduct.id}" ${disabledAttr} class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 font-black text-[9px] tracking-wider rounded-lg transition uppercase flex items-center gap-1 mt-1">
+                      ➕ Adicionar Trecho
+                    </button>
+                  </div>
+                ` : ''}
+
                 <!-- Datas Adicionais -->
                 <div class="border-t border-slate-100 dark:border-slate-800/80 pt-3">
                   <span class="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-2 flex items-center gap-1">📅 Demais Serviços Aninhados</span>
@@ -384,6 +404,38 @@ export function renderLateralEditorPaneHTML(
       <div class="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800 sticky bottom-0 bg-white dark:bg-slate-900 z-10 py-2">
         <button id="edit-btn-cancelar-lateral" type="button" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs tracking-wider rounded-lg transition uppercase font-sans">
           Voltar
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+/**
+ * Renderiza o HTML para uma linha de trecho aéreo
+ */
+export function renderTrechoRowHTML(index: number, origem = '', destino = '', dataIda = '', dataVolta = '', disabled = false): string {
+  const disabledAttr = disabled ? 'disabled' : '';
+  return `
+    <div class="grid grid-cols-[1fr_1fr_1fr_1fr_auto] gap-2 items-end bg-slate-50 dark:bg-slate-900/60 p-2 rounded-lg border border-slate-150 dark:border-slate-800/80 trecho-item-row" data-index="${index}">
+      <div>
+        <label class="block text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Origem *</label>
+        <input type="text" placeholder="Origem" required ${disabledAttr} value="${origem}" class="trecho-origem w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-850 rounded text-xs font-bold uppercase transition" />
+      </div>
+      <div>
+        <label class="block text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Destino *</label>
+        <input type="text" placeholder="Destino" required ${disabledAttr} value="${destino}" class="trecho-destino w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-850 rounded text-xs font-bold uppercase transition" />
+      </div>
+      <div>
+        <label class="block text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Data Ida *</label>
+        <input type="text" placeholder="DD/MM/AAAA" required ${disabledAttr} value="${dataIda}" class="trecho-data-ida w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-850 rounded text-xs font-bold transition" />
+      </div>
+      <div>
+        <label class="block text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Data Volta</label>
+        <input type="text" placeholder="DD/MM/AAAA" ${disabledAttr} value="${dataVolta}" class="trecho-data-volta w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-850 rounded text-xs font-bold transition" />
+      </div>
+      <div>
+        <button type="button" class="btn-remove-trecho p-2 hover:bg-rose-50/80 dark:hover:bg-rose-950/20 text-slate-400 hover:text-rose-600 rounded-lg transition ${disabled ? 'hidden' : ''}" title="Remover trecho">
+          🗑️
         </button>
       </div>
     </div>

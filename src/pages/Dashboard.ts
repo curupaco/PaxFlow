@@ -619,6 +619,19 @@ export class Dashboard {
               checkDateUrgency(d.data, `${labelBase} (${d.rotulo})`);
             });
           }
+
+          // Trechos aéreos
+          if (p.dados_adicionais && Array.isArray(p.dados_adicionais.trechos)) {
+            p.dados_adicionais.trechos.forEach((t: any, idx: number) => {
+              const labelTrecho = `${icon} ${p.fornecedor} - Trecho ${idx + 1} (${t.origem} ➔ ${t.destino})`;
+              if (t.dataIda) {
+                checkDateUrgency(t.dataIda, `${labelTrecho} (Ida)`);
+              }
+              if (t.dataVolta) {
+                checkDateUrgency(t.dataVolta, `${labelTrecho} (Volta)`);
+              }
+            });
+          }
         });
       }
 

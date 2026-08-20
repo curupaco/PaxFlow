@@ -522,13 +522,13 @@ export class InboxService {
           });
         });
       }
-
       // --- PART 6: PRÉ-EMBARQUE & PÓS-VIAGEM NPS ALERTS ---
       let viagensQuery = supabase
         .from('viagens')
         .select(`
           *,
-          cliente:clientes (*)
+          cliente:clientes (*),
+          produtos:produtos_viagem(*)
         `)
         .not('status', 'eq', 'cancelada');
 
@@ -536,6 +536,14 @@ export class InboxService {
       const hoje = new Date();
 
       (viagensData || []).forEach((v: any) => {
+        // Fallback local para produtos em modo offline/sandbox
+        if (!v.produtos) {
+          const saved = localStorage.getItem(`paxflow-produtos-viagem-${v.id}`);
+          if (saved) {
+            try { v.produtos = JSON.parse(saved); } catch (e) {}
+          }
+        }
+
         // Filter by consultant responsibility if not admin
         if (perfil && perfil.role !== 'admin' && v.consultor_id !== user.id) {
           return;
@@ -572,7 +580,75 @@ export class InboxService {
               eventDate: v.data_ida
             });
           }
+          // 1.2. Alertas de Pré-Embarque para Trechos Aéreos
+        if (v.produtos && Array.isArray(v.produtos)) {
+          v.produtos.forEach((p: any) => {
+            if ((p.tipo === 'AÉREO OPERADORA' || p.tipo === 'AÉREO FACIAL') && p.dados_adicionais && Array.isArray(p.dados_adicionais.trechos)) {
+              p.dados_adicionais.trechos.forEach((t: any, idx: number) => {
+                const labelTrecho = `${p.fornecedor} - Trecho ${idx + 1} (${t.origem} ➔ ${t.destino})`;
+                
+                // Ida do Trecho
+                if (t.dataIda) {
+                  const dataIda = new Date(t.dataIda + 'T00:00:00');
+                  const diffMs = dataIda.getTime() - hoje.getTime();
+                  const horasAteIda = diffMs / (1000 * 60 * 60);
+
+                  if (horasAteIda > 0 && horasAteIda <= 48) {
+                    const uniqueId = `pre-embarque-trecho-ida-${v.id}-${p.id}-${idx}`;
+                    const isArchived = archivedList.includes(uniqueId);
+
+                    list.push({
+                      id: uniqueId,
+                      type: 'pre-embarque',
+                      title: '✈️ Alerta - Ida de Trecho Aéreo',
+                      sender: 'PaxFlow Operações',
+                      senderAvatar: 'panda',
+                      dateStr: dataIda.toLocaleDateString('pt-BR'),
+                      subject: `Embarque de ${clienteNome}: ${labelTrecho} em breve!`,
+                      body: `A ida do trecho aéreo <strong>${labelTrecho}</strong> do passageiro <strong>${clienteNome}</strong> está agendada para iniciar em menos de 48 horas.<br><br>• <strong>Data de Ida do Trecho:</strong> ${dataIda.toLocaleDateString('pt-BR')}<br>• <strong>Localizador (LOC):</strong> ${p.codigo_reserva || 'Não informado'}<br><br><strong>Ações recomendadas:</strong><br>1. Enviar os vouchers de voo correspondentes.<br>2. Auxiliar o cliente com o check-in online na companhia aérea.<br>3. Confirmar se a documentação necessária de embarque está em mãos.`,
+                      targetId: v.id,
+                      arquivado: isArchived,
+                      consultorId: v.consultor_id || '',
+                      consultorNome: 'PaxFlow Automático',
+                      createdAt: v.created_at || new Date().toISOString(),
+                      eventDate: t.dataIda
+                    });
+                  }
+                }
+
+                // Volta do Trecho (se houver)
+                if (t.dataVolta) {
+                  const dataVolta = new Date(t.dataVolta + 'T00:00:00');
+                  const diffMs = dataVolta.getTime() - hoje.getTime();
+                  const horasAteVolta = diffMs / (1000 * 60 * 60);
+
+                  if (horasAteVolta > 0 && horasAteVolta <= 48) {
+                    const uniqueId = `pre-embarque-trecho-volta-${v.id}-${p.id}-${idx}`;
+                    const isArchived = archivedList.includes(uniqueId);
+
+                    list.push({
+                      id: uniqueId,
+                      type: 'pre-embarque',
+                      title: '✈️ Alerta - Volta de Trecho Aéreo',
+                      sender: 'PaxFlow Operações',
+                      senderAvatar: 'panda',
+                      dateStr: dataVolta.toLocaleDateString('pt-BR'),
+                      subject: `Retorno de ${clienteNome}: ${labelTrecho} em breve!`,
+                      body: `O retorno do trecho aéreo <strong>${labelTrecho}</strong> do passageiro <strong>${clienteNome}</strong> está agendado para iniciar em menos de 48 horas.<br><br>• <strong>Data de Volta do Trecho:</strong> ${dataVolta.toLocaleDateString('pt-BR')}<br>• <strong>Localizador (LOC):</strong> ${p.codigo_reserva || 'Não informado'}<br><br><strong>Ações recomendadas:</strong><br>1. Enviar os vouchers de voo correspondentes.<br>2. Auxiliar o cliente com o check-in online na companhia aérea.<br>3. Confirmar se a documentação necessária de embarque está em mãos.`,
+                      targetId: v.id,
+                      arquivado: isArchived,
+                      consultorId: v.consultor_id || '',
+                      consultorNome: 'PaxFlow Automático',
+                      createdAt: v.created_at || new Date().toISOString(),
+                      eventDate: t.dataVolta
+                    });
+                  }
+                }
+              });
+            }
+          });
         }
+      }
 
         // 2. Alerta de Pós-Viagem NPS (24h após a volta)
         if (v.data_volta) {

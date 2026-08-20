@@ -17,7 +17,8 @@ import {
   renderTimelineHTML,
   renderReembolsosTabHTML,
   renderNovoProdutoFormHTML,
-  renderLateralEditorPaneHTML
+  renderLateralEditorPaneHTML,
+  renderTrechoRowHTML
 } from './DashboardTemplates';
 
 export interface EditTravelModalOptions {
@@ -224,6 +225,29 @@ export class EditTravelModal {
             rotulo: `${icon} [${prodTipoUpper}] ${p.fornecedor} &bull; ${p.descricao} (Data Principal)`,
             tipo: 'produto',
             cor: 'bg-indigo-50 dark:bg-indigo-950/35 text-indigo-700 dark:text-indigo-400 border border-indigo-200/30 dark:border-indigo-900/30'
+          });
+        }
+
+        // Trechos aéreos no cronograma
+        if (p.dados_adicionais && Array.isArray(p.dados_adicionais.trechos)) {
+          p.dados_adicionais.trechos.forEach((t: any, idx: number) => {
+            const labelTrecho = `${icon} [TRECHO ${idx + 1}] ${t.origem} ➔ ${t.destino}`;
+            if (t.dataIda) {
+              cronograma.push({
+                data: t.dataIda,
+                rotulo: `${labelTrecho} &bull; Ida do Trecho`,
+                tipo: 'produto-adicional',
+                cor: 'bg-indigo-50/75 dark:bg-indigo-950/20 text-indigo-700 dark:text-indigo-400 border border-indigo-100/30 dark:border-indigo-900/30'
+              });
+            }
+            if (t.dataVolta) {
+              cronograma.push({
+                data: t.dataVolta,
+                rotulo: `${labelTrecho} &bull; Volta do Trecho`,
+                tipo: 'produto-adicional',
+                cor: 'bg-indigo-50/75 dark:bg-indigo-950/20 text-indigo-700 dark:text-indigo-400 border border-indigo-100/30 dark:border-indigo-900/30'
+              });
+            }
           });
         }
 
@@ -1063,6 +1087,18 @@ export class EditTravelModal {
         condContainer.classList.add('hidden');
         condContainer.innerHTML = '';
       }
+
+      const containerTrechos = document.getElementById('container-trechos-aereo');
+      const listaTrechos = document.getElementById('lista-trechos');
+      if (selectedType === 'AÉREO OPERADORA' || selectedType === 'AÉREO FACIAL') {
+        containerTrechos?.classList.remove('hidden');
+        if (listaTrechos && listaTrechos.childElementCount === 0) {
+          this.addNewTrechoRow(listaTrechos, 0);
+        }
+      } else {
+        containerTrechos?.classList.add('hidden');
+        if (listaTrechos) listaTrechos.innerHTML = '';
+      }
     });
 
     // Inicializa a validação do formulário de novos produtos
@@ -1070,6 +1106,16 @@ export class EditTravelModal {
       { id: 'prod-venda', type: 'currency' },
       { id: 'prod-data', type: 'date' }
     ]);
+
+    // Trechos adicionais dinâmicos
+    const btnAddTrecho = document.getElementById('btn-add-trecho');
+    btnAddTrecho?.addEventListener('click', () => {
+      const listaTrechos = document.getElementById('lista-trechos');
+      if (listaTrechos) {
+        const nextIndex = listaTrechos.querySelectorAll('.trecho-item-row').length;
+        this.addNewTrechoRow(listaTrechos, nextIndex);
+      }
+    });
 
     // Datas adicionais dinâmicas
     const btnAddData = document.getElementById('btn-add-data-adicional');
@@ -1208,6 +1254,52 @@ export class EditTravelModal {
         datasAdicionais.push({ rotulo, data: dataIso });
       }
 
+      // Coleta trechos aéreos do novo produto se aplicável
+      if (tipo === 'AÉREO OPERADORA' || tipo === 'AÉREO FACIAL') {
+        const rows = formNovoProduto.querySelectorAll('.trecho-item-row');
+        const trechos: any[] = [];
+        let trechosValid = true;
+        for (const row of Array.from(rows)) {
+          const origem = (row.querySelector('.trecho-origem') as HTMLInputElement).value.trim();
+          const destino = (row.querySelector('.trecho-destino') as HTMLInputElement).value.trim();
+          const dataIdaRaw = (row.querySelector('.trecho-data-ida') as HTMLInputElement).value.trim();
+          const dataVoltaRaw = (row.querySelector('.trecho-data-volta') as HTMLInputElement).value.trim();
+
+          if (!origem || !destino || !dataIdaRaw) {
+            this.options.showToast('Preencha os campos obrigatórios dos trechos (Origem, Destino e Data Ida).', 'error');
+            trechosValid = false;
+            break;
+          }
+
+          const dataIdaIso = formatBrDateToIso(dataIdaRaw);
+          if (!dataIdaIso || !validateDate(dataIdaRaw).isValid) {
+            this.options.showToast(`A data de ida "${dataIdaRaw}" do trecho é inválida.`, 'error');
+            trechosValid = false;
+            break;
+          }
+
+          let dataVoltaIso: string | null = null;
+          if (dataVoltaRaw) {
+            dataVoltaIso = formatBrDateToIso(dataVoltaRaw);
+            if (!dataVoltaIso || !validateDate(dataVoltaRaw).isValid) {
+              this.options.showToast(`A data de volta "${dataVoltaRaw}" do trecho é inválida.`, 'error');
+              trechosValid = false;
+              break;
+            }
+          }
+
+          trechos.push({
+            origem,
+            destino,
+            dataIda: dataIdaIso,
+            dataVolta: dataVoltaIso || undefined
+          });
+        }
+
+        if (!trechosValid) return;
+        dadosAdicionais.trechos = trechos;
+      }
+
       if (!datesValid) return;
 
       const payload = {
@@ -1274,6 +1366,8 @@ export class EditTravelModal {
     const prodId = prod.id;
     const formEditProd = document.getElementById(`form-editar-produto-lateral-${prodId}`) as HTMLFormElement;
     if (!formEditProd) return;
+
+    const isLocConferido = !!this.locConferenciasMap[prod.codigo_reserva || ''];
 
     const editarProdutoValidator = setupFormValidation(`form-editar-produto-lateral-${prodId}`, [
       { id: `edit-prod-venda-${prodId}`, type: 'currency' },
@@ -1349,7 +1443,42 @@ export class EditTravelModal {
 
     editTipoSelect?.addEventListener('change', () => {
       renderDynamicFields(editTipoSelect.value, {});
+
+      const editSecaoTrechos = document.getElementById(`edit-secao-trechos-${prodId}`);
+      const editContainerTrechos = document.getElementById(`edit-container-trechos-${prodId}`);
+      if (editTipoSelect.value === 'AÉREO OPERADORA' || editTipoSelect.value === 'AÉREO FACIAL') {
+        editSecaoTrechos?.classList.remove('hidden');
+        if (editContainerTrechos && editContainerTrechos.childElementCount === 0) {
+          this.addNewTrechoRow(editContainerTrechos, 0, '', '', '', '', isLocConferido);
+        }
+      } else {
+        editSecaoTrechos?.classList.add('hidden');
+        if (editContainerTrechos) editContainerTrechos.innerHTML = '';
+      }
     });
+
+    // Trechos Aéreos
+    const editContainerTrechos = document.getElementById(`edit-container-trechos-${prodId}`) as HTMLElement;
+    if (editContainerTrechos) {
+      if (prod.dados_adicionais && Array.isArray(prod.dados_adicionais.trechos)) {
+        prod.dados_adicionais.trechos.forEach((t: any, idx: number) => {
+          this.addNewTrechoRow(
+            editContainerTrechos,
+            idx,
+            t.origem,
+            t.destino,
+            t.dataIda ? t.dataIda.split('-').reverse().join('/') : '',
+            t.dataVolta ? t.dataVolta.split('-').reverse().join('/') : '',
+            isLocConferido
+          );
+        });
+      }
+
+      document.getElementById(`edit-btn-add-trecho-${prodId}`)?.addEventListener('click', () => {
+        const nextIndex = editContainerTrechos.querySelectorAll('.trecho-item-row').length;
+        this.addNewTrechoRow(editContainerTrechos, nextIndex, '', '', '', '', isLocConferido);
+      });
+    }
 
     // Datas adicionais
     const editContainerDatas = document.getElementById(`edit-container-datas-adicionais-${prodId}`) as HTMLElement;
@@ -1577,6 +1706,52 @@ export class EditTravelModal {
         }
 
         editDatasAdicionais.push({ rotulo, data: dataIso });
+      }
+
+      // Coleta trechos aéreos do editor lateral se aplicável
+      if (editTipo === 'AÉREO OPERADORA' || editTipo === 'AÉREO FACIAL') {
+        const rows = formEditProd.querySelectorAll('.trecho-item-row');
+        const trechos: any[] = [];
+        let trechosValid = true;
+        for (const row of Array.from(rows)) {
+          const origem = (row.querySelector('.trecho-origem') as HTMLInputElement).value.trim();
+          const destino = (row.querySelector('.trecho-destino') as HTMLInputElement).value.trim();
+          const dataIdaRaw = (row.querySelector('.trecho-data-ida') as HTMLInputElement).value.trim();
+          const dataVoltaRaw = (row.querySelector('.trecho-data-volta') as HTMLInputElement).value.trim();
+
+          if (!origem || !destino || !dataIdaRaw) {
+            this.options.showToast('Preencha os campos obrigatórios dos trechos (Origem, Destino e Data Ida).', 'error');
+            trechosValid = false;
+            break;
+          }
+
+          const dataIdaIso = formatBrDateToIso(dataIdaRaw);
+          if (!dataIdaIso || !validateDate(dataIdaRaw).isValid) {
+            this.options.showToast(`A data de ida "${dataIdaRaw}" do trecho é inválida.`, 'error');
+            trechosValid = false;
+            break;
+          }
+
+          let dataVoltaIso: string | null = null;
+          if (dataVoltaRaw) {
+            dataVoltaIso = formatBrDateToIso(dataVoltaRaw);
+            if (!dataVoltaIso || !validateDate(dataVoltaRaw).isValid) {
+              this.options.showToast(`A data de volta "${dataVoltaRaw}" do trecho é inválida.`, 'error');
+              trechosValid = false;
+              break;
+            }
+          }
+
+          trechos.push({
+            origem,
+            destino,
+            dataIda: dataIdaIso,
+            dataVolta: dataVoltaIso || undefined
+          });
+        }
+
+        if (!trechosValid) return;
+        editDadosAdicionais.trechos = trechos;
       }
 
       if (!datesValid) return;
@@ -2735,6 +2910,40 @@ export class EditTravelModal {
       this.options.showToast('Erro ao realizar a transição automática de status da venda.', 'error');
       return false;
     }
+  }
+
+  private addNewTrechoRow(container: HTMLElement, index: number, origem = '', destino = '', dataIda = '', dataVolta = '', disabled = false): void {
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = renderTrechoRowHTML(index, origem, destino, dataIda, dataVolta, disabled);
+    const row = tempDiv.firstElementChild as HTMLElement;
+    container.appendChild(row);
+
+    // Adicionar escutadores para formatar datas
+    const inputIda = row.querySelector('.trecho-data-ida') as HTMLInputElement;
+    const inputVolta = row.querySelector('.trecho-data-volta') as HTMLInputElement;
+
+    const applyMask = (target: HTMLInputElement) => {
+      let val = target.value;
+      let digits = val.replace(/\D/g, '');
+      if (digits.length > 8) digits = digits.slice(0, 8);
+      target.value = formatDateBr(digits);
+    };
+
+    inputIda?.addEventListener('input', (e) => applyMask(e.target as HTMLInputElement));
+    inputVolta?.addEventListener('input', (e) => applyMask(e.target as HTMLInputElement));
+
+    // Botão de remover trecho
+    row.querySelector('.btn-remove-trecho')?.addEventListener('click', () => {
+      row.remove();
+      this.reindexTrechoRows(container);
+    });
+  }
+
+  private reindexTrechoRows(container: HTMLElement): void {
+    const rows = container.querySelectorAll('.trecho-item-row');
+    rows.forEach((row, idx) => {
+      row.setAttribute('data-index', String(idx));
+    });
   }
 
   private closeModal(): void {
