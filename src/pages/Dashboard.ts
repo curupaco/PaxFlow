@@ -600,7 +600,7 @@ export class Dashboard {
     };
 
     // Regra de SLA para "Pré-Embarque"
-    if (viagem.status === 'pre_embarque') {
+    if (viagem.status === 'pre_embarque' || viagem.status === 'fechado') {
       // 1. Verificar data principal da viagem
       checkDateUrgency(viagem.data_ida, 'Embarque');
 
@@ -1749,7 +1749,13 @@ export class Dashboard {
     return `
       <tr class="${rowBg} transition-colors duration-200">
         <!-- SLA -->
-        <td class="px-5 py-4 text-center select-none" title="${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : 'SLA Normal')}">
+        <td class="px-5 py-4 text-center select-none" title="Legenda do SLA:
+🟢 Normal (Tudo em dia)
+⚠️ Alerta (Pré-embarque próximo)
+🚨 Atrasado (Pós-viagem excedido)
+✅ Concluído (Reembolso pago)
+
+Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : 'SLA Normal')}">
           <span class="text-base">${slaIcon}</span>
         </td>
 
