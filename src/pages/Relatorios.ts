@@ -3,6 +3,8 @@ import { PerfilConsultor } from '../types';
 import { InboxService } from '../services/inboxService';
 import { formatBrDateToIso } from '../utils/masks';
 import { obterProgressoNivel, BADGE_DEFINITIONS } from '../services/gamification';
+import { EditTravelModal } from '../components/dashboard/EditTravelModal';
+import { CommentsService } from '../services/comments';
 
 if (typeof document !== 'undefined') {
   const style = document.createElement('style');
@@ -50,7 +52,7 @@ export class RelatoriosPage {
   private container: HTMLElement;
   private user: any = null;
   private perfil: PerfilConsultor | null = null;
-  private activeTab: 'desempenho' | 'prazos' | 'faturamento' | 'perdas' | 'previsoes' | 'fornecedores' | 'origens' | 'auditoria' | 'posvenda' | 'gamificacao' = 'desempenho';
+  private activeTab: 'desempenho' | 'prazos' | 'faturamento' | 'perdas' | 'previsoes' | 'fornecedores' | 'origens' | 'auditoria' | 'posvenda' | 'gamificacao' | 'embarques' = 'desempenho';
 
   // Controle de estado para grupos colapsáveis da barra lateral
   private collapsedGroups: { [key: string]: boolean } = {
@@ -68,6 +70,8 @@ export class RelatoriosPage {
   private consultores: any[] = [];
   private locPagamentos: any[] = [];
   private locConferencias: any[] = [];
+  private lembretes: any[] = [];
+  private tiposProduto: any[] = [];
   private formasRecebimento: any[] = [];
   private consultoresBadges: any[] = [];
   
@@ -183,6 +187,14 @@ export class RelatoriosPage {
       // 10. Load profiles_badges
       const { data: badgesData } = await supabase.from('profiles_badges').select('*');
       this.consultoresBadges = badgesData || [];
+
+      // 11. Load lembretes
+      const { data: lembretesData } = await supabase.from('lembretes').select('*').eq('arquivado', false);
+      this.lembretes = lembretesData || [];
+
+      // 12. Load tipos_produto
+      const { data: tiposData } = await supabase.from('tipos_produto').select('*').order('nome');
+      this.tiposProduto = tiposData || [];
     } catch (err) {
       console.warn('Erro ao ler tabelas de relatórios. Ativando mocks.', err);
       this.loadMockData();
@@ -193,6 +205,12 @@ export class RelatoriosPage {
    * Offline mock data fallback to ensure reports always look fully interactive
    */
   private loadMockData(): void {
+    this.lembretes = [];
+    this.tiposProduto = [
+      { id: '1', nome: 'AÉREO OPERADORA', campos_adicionais: [] },
+      { id: '2', nome: 'AÉREO FACIAL', campos_adicionais: [] }
+    ];
+
     // Generate mock profiles if empty
     this.consultores = [
       { id: '1', nome: 'Amanda Silva', email: 'amanda@agencia.com', role: 'consultor', nivel: 12, xp: 9800 },
@@ -482,6 +500,9 @@ export class RelatoriosPage {
                 <button data-tab="posvenda" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'posvenda' ? 'report-tab-active' : 'text-slate-500'}">
                   ✈️ Pós-Venda & SLAs
                 </button>
+                <button data-tab="embarques" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'embarques' ? 'report-tab-active' : 'text-slate-500'}">
+                  ✈️ Relatório de Embarque
+                </button>
                 <button data-tab="fornecedores" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'fornecedores' ? 'report-tab-active' : 'text-slate-500'}">
                   🏢 Qualidade / Fornecedores
                 </button>
@@ -539,6 +560,8 @@ export class RelatoriosPage {
         return this.renderAuditoria(data);
       case 'posvenda':
         return this.renderPosVenda(data);
+      case 'embarques':
+        return this.renderEmbarques(data);
       case 'gamificacao':
         return this.renderGamificacao(data);
       default:
@@ -1888,6 +1911,173 @@ export class RelatoriosPage {
     `;
   }
 
+  private renderEmbarques(data: any): string {
+    const start = this.dataInicio;
+    const end = this.dataFim;
+    const filterConsultorId = this.consultorIdFilter;
+
+    const list: any[] = [];
+
+    const formatarDataBr = (dStr: string): string => {
+      if (!dStr) return '';
+      const parts = dStr.split('-');
+      if (parts.length === 3) {
+        return `${parts[2]}/${parts[1]}/${parts[0]}`;
+      }
+      return dStr;
+    };
+
+    data.viagens.forEach((v: any) => {
+      if (filterConsultorId !== 'todos' && String(v.consultor_id) !== String(filterConsultorId)) {
+        return;
+      }
+
+      const clientName = v.cliente?.nome || 'Passageiro';
+      const consultorName = this.consultores.find(c => c.id === v.consultor_id)?.nome || 'Consultor';
+
+      // 1. Ida da Viagem Principal
+      if (v.data_ida && v.data_ida >= start && v.data_ida <= end) {
+        const hasAlert = this.lembretes.some((l: any) => l.viagem_id === v.id && l.data_lembrete === v.data_ida);
+        list.push({
+          data: v.data_ida,
+          cliente: clientName,
+          destino: v.destino,
+          tipo: '✈️ Ida da Viagem',
+          loc: v.codigo_localizador || 'S/ LOC',
+          consultor: consultorName,
+          hasAlert,
+          tripId: v.id,
+          productId: '',
+          tipoEmbarque: 'viagem-ida'
+        });
+      }
+
+      // 2. Volta da Viagem Principal
+      if (v.data_volta && v.data_volta >= start && v.data_volta <= end) {
+        const hasAlert = this.lembretes.some((l: any) => l.viagem_id === v.id && l.data_lembrete === v.data_volta);
+        list.push({
+          data: v.data_volta,
+          cliente: clientName,
+          destino: v.destino,
+          tipo: '✈️ Volta da Viagem',
+          loc: v.codigo_localizador || 'S/ LOC',
+          consultor: consultorName,
+          hasAlert,
+          tripId: v.id,
+          productId: '',
+          tipoEmbarque: 'viagem-volta'
+        });
+      }
+
+      // 3. Trechos Aéreos
+      if (v.produtos && Array.isArray(v.produtos)) {
+        v.produtos.forEach((p: any) => {
+          const pTipoUpper = (p.tipo || '').trim().toUpperCase();
+          if (pTipoUpper === 'AÉREO OPERADORA' || pTipoUpper === 'AÉREO FACIAL') {
+            if (p.dados_adicionais && Array.isArray(p.dados_adicionais.trechos)) {
+              p.dados_adicionais.trechos.forEach((t: any, idx: number) => {
+                const labelBase = `${t.origem} ➔ ${t.destino}`;
+
+                if (t.dataIda && t.dataIda >= start && t.dataIda <= end) {
+                  const hasAlert = this.lembretes.some((l: any) => l.viagem_id === v.id && l.data_lembrete === t.dataIda);
+                  list.push({
+                    data: t.dataIda,
+                    cliente: clientName,
+                    destino: labelBase,
+                    tipo: `✈️ Voo (Ida) - ${p.fornecedor}`,
+                    loc: p.codigo_reserva || 'S/ LOC',
+                    consultor: consultorName,
+                    hasAlert,
+                    tripId: v.id,
+                    productId: p.id,
+                    tipoEmbarque: 'segmento-ida'
+                  });
+                }
+
+                if (t.dataVolta && t.dataVolta >= start && t.dataVolta <= end) {
+                  const hasAlert = this.lembretes.some((l: any) => l.viagem_id === v.id && l.data_lembrete === t.dataVolta);
+                  list.push({
+                    data: t.dataVolta,
+                    cliente: clientName,
+                    destino: labelBase,
+                    tipo: `✈️ Voo (Volta) - ${p.fornecedor}`,
+                    loc: p.codigo_reserva || 'S/ LOC',
+                    consultor: consultorName,
+                    hasAlert,
+                    tripId: v.id,
+                    productId: p.id,
+                    tipoEmbarque: 'segmento-volta'
+                  });
+                }
+              });
+            }
+          }
+        });
+      }
+    });
+
+    list.sort((a, b) => a.data.localeCompare(b.data));
+
+    const rowsHtml = list.map((item, idx) => {
+      const alertBadge = item.hasAlert 
+        ? `<button class="btn-alerta-viagem px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 hover:bg-emerald-100 transition" data-trip-id="${item.tripId}" data-product-id="${item.productId}" data-type="${item.tipoEmbarque}">🔔 Sim (Ver)</button>`
+        : `<button class="btn-alerta-viagem px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-slate-100 text-slate-650 dark:bg-slate-800 dark:text-slate-450 hover:bg-indigo-50 hover:text-indigo-600 transition" data-trip-id="${item.tripId}" data-product-id="${item.productId}" data-type="${item.tipoEmbarque}">➕ Criar Alerta</button>`;
+
+      return `
+        <tr class="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50/40 dark:hover:bg-slate-850/20 text-slate-650 dark:text-slate-350 transition-colors">
+          <td class="p-3 font-extrabold text-slate-850 dark:text-slate-100">${formatarDataBr(item.data)}</td>
+          <td class="p-3 font-extrabold text-slate-800 dark:text-slate-100">${item.cliente}</td>
+          <td class="p-3">${item.tipo}</td>
+          <td class="p-3 font-bold text-indigo-600 dark:text-indigo-400">${item.destino}</td>
+          <td class="p-3 font-mono font-bold text-[10px] tracking-wider uppercase">${item.loc}</td>
+          <td class="p-3 font-semibold">${item.consultor}</td>
+          <td class="p-3 text-center">${alertBadge}</td>
+          <td class="p-3 text-center">
+            <button class="btn-detalhes-viagem px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/30 dark:hover:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 text-[10px] font-black rounded-lg transition uppercase tracking-wider flex items-center gap-1 mx-auto" data-trip-id="${item.tripId}">
+              🔍 Detalhes
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    return `
+      <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-3xl p-6 shadow-sm flex flex-col gap-6 print-full-width">
+        <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
+          <h2 class="text-lg font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
+            <span>✈️ Relatório de Embarque e Trechos de Voo</span>
+          </h2>
+          <span class="px-2.5 py-1 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-xl text-[10px] font-black uppercase tracking-wider">${list.length} embarques localizados</span>
+        </div>
+
+        <!-- Embarques Table -->
+        <div class="overflow-x-auto custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl">
+          <table class="w-full text-left border-collapse text-xs font-semibold">
+            <thead>
+              <tr class="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-widest font-black">
+                <th class="p-3">Data</th>
+                <th class="p-3">Passageiro</th>
+                <th class="p-3">Tipo</th>
+                <th class="p-3">Destino/Trecho</th>
+                <th class="p-3">Código (LOC)</th>
+                <th class="p-3">Consultor</th>
+                <th class="p-3 text-center">Alerta</th>
+                <th class="p-3 text-center">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rowsHtml || `
+                <tr>
+                  <td colspan="8" class="p-8 text-center text-slate-400 font-extrabold italic">🎉 Nenhum embarque ou trecho de voo programado para o período selecionado.</td>
+                </tr>
+              `}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  }
+
   // ==========================================
   // VIEW: 10. RELATÓRIO DE GAMIFICAÇÃO
   // ==========================================
@@ -2199,6 +2389,112 @@ export class RelatoriosPage {
     document.getElementById('btn-print-pdf')?.addEventListener('click', () => {
       window.print();
     });
+
+    // 6. Listeners para os botões do Relatório de Embarque
+    if (this.activeTab === 'embarques') {
+      // Detalhes da Viagem
+      document.querySelectorAll('.btn-detalhes-viagem').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          const tripId = btn.getAttribute('data-trip-id');
+          if (tripId) {
+            const modal = new EditTravelModal({
+              perfil: this.perfil,
+              consultores: this.consultores,
+              tiposProduto: this.tiposProduto,
+              viagens: this.viagens,
+              isFallbackMode: false,
+              user: this.user,
+              onUpdate: async () => {
+                await this.loadData();
+                this.render();
+                this.setupEventListeners();
+              },
+              showToast: (msg, type) => this.showToast(msg, type),
+              checkSLA: (v) => ({ alert: false, type: null, text: '' })
+            });
+            await modal.open(tripId, 'detalhes');
+          }
+        });
+      });
+
+      // Lembrete/Alerta da Viagem ou Produto
+      document.querySelectorAll('.btn-alerta-viagem').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          const tripId = btn.getAttribute('data-trip-id');
+          const productId = btn.getAttribute('data-product-id');
+          const type = btn.getAttribute('data-type');
+          if (tripId) {
+            if (productId) {
+              const viagem = this.viagens.find(v => v.id === tripId);
+              const product = viagem?.produtos?.find((p: any) => p.id === productId);
+              if (product) {
+                const prodName = `${product.fornecedor || 'Aéreo'} - ${product.descricao || 'Voo'}`;
+                CommentsService.openProductCommentsModal(
+                  productId,
+                  tripId,
+                  prodName,
+                  this.user.id,
+                  this.consultores,
+                  async () => {
+                    await this.loadData();
+                    this.render();
+                    this.setupEventListeners();
+                  }
+                );
+              } else {
+                this.showToast('Erro ao carregar dados do produto para anotações.', 'error');
+              }
+            } else {
+              const modal = new EditTravelModal({
+                perfil: this.perfil,
+                consultores: this.consultores,
+                tiposProduto: this.tiposProduto,
+                viagens: this.viagens,
+                isFallbackMode: false,
+                user: this.user,
+                onUpdate: async () => {
+                  await this.loadData();
+                  this.render();
+                  this.setupEventListeners();
+                },
+                showToast: (msg, type) => this.showToast(msg, type),
+                checkSLA: (v) => ({ alert: false, type: null, text: '' })
+              });
+              await modal.open(tripId, 'detalhes');
+            }
+          }
+        });
+      });
+    }
+  }
+
+  private showToast(message: string, type: 'success' | 'error' = 'success', err?: any): void {
+    let finalMessage = message;
+    if (err) {
+      const translator = (window as any).traduzirErro;
+      const translated = translator ? translator(err) : (err.message || err);
+      if (translated && !message.includes(translated)) {
+        finalMessage = `${message} Detalhes: ${translated}`;
+      }
+    }
+    const toastId = 'paxflow-toast';
+    let toast = document.getElementById(toastId);
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = toastId;
+      toast.className = 'fixed bottom-5 right-5 px-5 py-3.5 rounded-xl shadow-2xl text-white font-semibold text-sm z-50 transition-all duration-300 transform translate-y-10 opacity-0 flex items-center gap-2';
+      document.body.appendChild(toast);
+    }
+
+    const isSuccess = type === 'success';
+    toast.className = `fixed bottom-5 right-5 px-5 py-3.5 rounded-xl shadow-2xl text-white font-semibold text-sm z-50 transition-all duration-300 transform translate-y-0 opacity-100 flex items-center gap-2 ${
+      isSuccess ? 'bg-emerald-600 shadow-emerald-600/20' : 'bg-rose-600 shadow-rose-600/20'
+    }`;
+    toast.innerHTML = `${isSuccess ? '✅' : '❌'} <span>${finalMessage}</span>`;
+
+    setTimeout(() => {
+      toast!.className = 'fixed bottom-5 right-5 px-5 py-3.5 rounded-xl shadow-2xl text-white font-semibold text-sm z-50 transition-all duration-300 transform translate-y-10 opacity-0 flex items-center gap-2 pointer-events-none';
+    }, 4500);
   }
 
   /**
@@ -2453,6 +2749,85 @@ export class RelatoriosPage {
         if (dVolta && dVolta < hoje && dVolta >= limitePos && v.status === 'pos_viagem') {
           csvContent += `"Pós-Venda Pendente";"${clienteNome}";"${v.destino}";"${dataVoltaStr}";"Retornou em pos_viagem"\n`;
         }
+      });
+    } else if (this.activeTab === 'embarques') {
+      csvContent += 'Data de Embarque;Cliente/Passageiro;Destino/Trecho;Tipo;Código (LOC);Consultor;Tem Alerta\n';
+      const start = this.dataInicio;
+      const end = this.dataFim;
+      
+      const list: any[] = [];
+      data.viagens.forEach((v: any) => {
+        const clientName = v.cliente?.nome || 'Passageiro';
+        const consultorName = this.consultores.find(c => c.id === v.consultor_id)?.nome || 'Consultor';
+
+        if (v.data_ida && v.data_ida >= start && v.data_ida <= end) {
+          const hasAlert = this.lembretes.some((l: any) => l.viagem_id === v.id && l.data_lembrete === v.data_ida);
+          list.push({
+            data: v.data_ida,
+            cliente: clientName,
+            destino: v.destino,
+            tipo: 'Viagem (Ida)',
+            loc: v.codigo_localizador || 'S/ LOC',
+            consultor: consultorName,
+            hasAlert
+          });
+        }
+
+        if (v.data_volta && v.data_volta >= start && v.data_volta <= end) {
+          const hasAlert = this.lembretes.some((l: any) => l.viagem_id === v.id && l.data_lembrete === v.data_volta);
+          list.push({
+            data: v.data_volta,
+            cliente: clientName,
+            destino: v.destino,
+            tipo: 'Viagem (Volta)',
+            loc: v.codigo_localizador || 'S/ LOC',
+            consultor: consultorName,
+            hasAlert
+          });
+        }
+
+        if (v.produtos && Array.isArray(v.produtos)) {
+          v.produtos.forEach((p: any) => {
+            const pTipoUpper = (p.tipo || '').trim().toUpperCase();
+            if (pTipoUpper === 'AÉREO OPERADORA' || pTipoUpper === 'AÉREO FACIAL') {
+              if (p.dados_adicionais && Array.isArray(p.dados_adicionais.trechos)) {
+                p.dados_adicionais.trechos.forEach((t: any, idx: number) => {
+                  if (t.dataIda && t.dataIda >= start && t.dataIda <= end) {
+                    const hasAlert = this.lembretes.some((l: any) => l.viagem_id === v.id && l.data_lembrete === t.dataIda);
+                    list.push({
+                      data: t.dataIda,
+                      cliente: clientName,
+                      destino: `${t.origem} ➔ ${t.destino}`,
+                      tipo: `Voo (Ida) - ${p.fornecedor}`,
+                      loc: p.codigo_reserva || 'S/ LOC',
+                      consultor: consultorName,
+                      hasAlert
+                    });
+                  }
+                  if (t.dataVolta && t.dataVolta >= start && t.dataVolta <= end) {
+                    const hasAlert = this.lembretes.some((l: any) => l.viagem_id === v.id && l.data_lembrete === t.dataVolta);
+                    list.push({
+                      data: t.dataVolta,
+                      cliente: clientName,
+                      destino: `${t.origem} ➔ ${t.destino}`,
+                      tipo: `Voo (Volta) - ${p.fornecedor}`,
+                      loc: p.codigo_reserva || 'S/ LOC',
+                      consultor: consultorName,
+                      hasAlert
+                    });
+                  }
+                });
+              }
+            }
+          });
+        }
+      });
+
+      list.sort((a, b) => a.data.localeCompare(b.data));
+
+      list.forEach((item: any) => {
+        const dateFormatted = item.data.split('-').reverse().join('/');
+        csvContent += `"${dateFormatted}";"${item.cliente}";"${item.destino}";"${item.tipo}";"${item.loc}";"${item.consultor}";"${item.hasAlert ? 'Sim' : 'Não'}"\n`;
       });
     } else if (this.activeTab === 'gamificacao') {
       csvContent += 'Posição;Consultor;Nível;Patente;XP Total;Conquistas\n';
