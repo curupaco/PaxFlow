@@ -136,8 +136,8 @@ export class MetasService {
         throw errFaixas;
       }
     } catch (err) {
-      console.warn('Erro ao criar metas no banco, salvando localmente:', err);
-      return this.criarMetaLocal(periodo, faixas);
+      console.error('Erro ao criar metas no banco:', err);
+      throw err;
     }
   }
 
@@ -208,8 +208,8 @@ export class MetasService {
         }))
       };
     } catch (err) {
-      console.warn('Erro ao atualizar metas no banco, salvando localmente:', err);
-      return this.atualizarMetaLocal(id, periodo, faixas);
+      console.error('Erro ao atualizar metas no banco:', err);
+      throw err;
     }
   }
 
@@ -230,8 +230,8 @@ export class MetasService {
 
       if (error) throw error;
     } catch (err) {
-      console.warn('Erro ao deletar meta no banco, deletando localmente:', err);
-      this.excluirMetaLocal(id);
+      console.error('Erro ao deletar meta no banco:', err);
+      throw err;
     }
   }
 
