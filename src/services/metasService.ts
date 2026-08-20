@@ -103,8 +103,86 @@ export class MetasService {
 
       if (errP) throw errP;
 
+      try {
+        const dbFaixas = faixas.map(f => ({
+          periodo_id: insertedPeriodo.id,
+          nome: f.nome,
+          valor_minimo: f.valor_minimo,
+          bonus_xp: f.bonus_xp,
+          recompensa: f.recompensa,
+          cor: f.cor || '#6366f1'
+        }));
+
+        const { data: insertedFaixas, error: errF } = await supabase
+          .from('meta_faixas')
+          .insert(dbFaixas)
+          .select();
+
+        if (errF) throw errF;
+
+        return {
+          ...insertedPeriodo,
+          faixas: (insertedFaixas || []).map((f: any) => ({
+            ...f,
+            periodoId: f.periodo_id,
+            valorMinimo: f.valor_minimo,
+            bonusXp: f.bonus_xp,
+            corHex: f.cor
+          }))
+        };
+      } catch (errFaixas) {
+        // Se falhou ao inserir faixas, limpa o período para não deixar registro órfão
+        await supabase.from('meta_periodos').delete().eq('id', insertedPeriodo.id);
+        throw errFaixas;
+      }
+    } catch (err) {
+      console.warn('Erro ao criar metas no banco, salvando localmente:', err);
+      return this.criarMetaLocal(periodo, faixas);
+    }
+  }
+
+  /**
+   * Atualiza um período de meta e suas faixas associadas
+   */
+  public static async atualizarMetaPeriodo(
+    id: string,
+    periodo: Omit<MetaPeriodo, 'id' | 'created_at' | 'updated_at' | 'faixas'>,
+    faixas: Omit<MetaFaixa, 'id' | 'periodo_id' | 'created_at'>[]
+  ): Promise<MetaPeriodo> {
+    if (this.isSandbox()) {
+      return this.atualizarMetaLocal(id, periodo, faixas);
+    }
+
+    try {
+      const dbPeriodo = {
+        nome: periodo.nome,
+        data_inicio: periodo.data_inicio,
+        data_fim: periodo.data_fim,
+        tipo_calculo: periodo.tipo_calculo,
+        is_campanha: periodo.is_campanha,
+        updated_at: new Date().toISOString()
+      };
+
+      const { data: updatedPeriodo, error: errP } = await supabase
+        .from('meta_periodos')
+        .update(dbPeriodo)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (errP) throw errP;
+
+      // Deleta as faixas antigas
+      const { error: errDel } = await supabase
+        .from('meta_faixas')
+        .delete()
+        .eq('periodo_id', id);
+
+      if (errDel) throw errDel;
+
+      // Insere as novas faixas
       const dbFaixas = faixas.map(f => ({
-        periodo_id: insertedPeriodo.id,
+        periodo_id: id,
         nome: f.nome,
         valor_minimo: f.valor_minimo,
         bonus_xp: f.bonus_xp,
@@ -120,7 +198,7 @@ export class MetasService {
       if (errF) throw errF;
 
       return {
-        ...insertedPeriodo,
+        ...updatedPeriodo,
         faixas: (insertedFaixas || []).map((f: any) => ({
           ...f,
           periodoId: f.periodo_id,
@@ -130,8 +208,8 @@ export class MetasService {
         }))
       };
     } catch (err) {
-      console.warn('Erro ao criar metas no banco, salvando localmente:', err);
-      return this.criarMetaLocal(periodo, faixas);
+      console.warn('Erro ao atualizar metas no banco, salvando localmente:', err);
+      return this.atualizarMetaLocal(id, periodo, faixas);
     }
   }
 
@@ -262,5 +340,51 @@ export class MetasService {
     const list = this.obterMetasLocal();
     const filtered = list.filter(m => m.id !== id);
     localStorage.setItem('sandbox-meta-periodos', JSON.stringify(filtered));
+  }
+
+  private static atualizarMetaLocal(
+    id: string,
+    periodo: Omit<MetaPeriodo, 'id' | 'created_at' | 'updated_at' | 'faixas'>,
+    faixas: Omit<MetaFaixa, 'id' | 'periodo_id' | 'created_at'>[]
+  ): MetaPeriodo {
+    const list = this.obterMetasLocal();
+    const index = list.findIndex(m => m.id === id);
+    if (index === -1) {
+      throw new Error('Meta não encontrada localmente');
+    }
+
+    const mappedFaixas: MetaFaixa[] = faixas.map((f, i) => ({
+      id: `mock-faixa-${Date.now()}-${i}`,
+      periodo_id: id,
+      periodoId: id,
+      nome: f.nome,
+      valor_minimo: Number(f.valor_minimo) || 0,
+      valorMinimo: Number(f.valor_minimo) || 0,
+      bonus_xp: Number(f.bonus_xp) || 0,
+      bonusXp: Number(f.bonus_xp) || 0,
+      recompensa: f.recompensa,
+      cor: f.cor || '#6366f1',
+      corHex: f.cor || '#6366f1',
+      created_at: new Date().toISOString()
+    }));
+
+    const updatedPeriodo: MetaPeriodo = {
+      ...list[index],
+      nome: periodo.nome,
+      data_inicio: periodo.data_inicio,
+      dataInicio: periodo.data_inicio,
+      data_fim: periodo.data_fim,
+      dataFim: periodo.data_fim,
+      tipo_calculo: periodo.tipo_calculo,
+      tipoCalculo: periodo.tipo_calculo,
+      is_campanha: periodo.is_campanha,
+      isCampanha: periodo.is_campanha,
+      updated_at: new Date().toISOString(),
+      faixas: mappedFaixas
+    };
+
+    list[index] = updatedPeriodo;
+    localStorage.setItem('sandbox-meta-periodos', JSON.stringify(list));
+    return updatedPeriodo;
   }
 }

@@ -2785,7 +2785,7 @@ export class ConfiguracoesPage {
                             '<div class="text-xs text-slate-650 dark:text-slate-400 font-bold mb-0.5 flex items-center gap-1.5">' +
                             '<span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: ' + (f.cor || '#6366f1') + '"></span>' +
                             '• <span style="color: ' + (f.cor || '#6366f1') + '" class="font-black">' + f.nome + '</span>: >= R$ ' + f.valor_minimo.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) +
-                            (f.recompensa ? ' <span class="text-[10px] text-slate-400 dark:text-slate-550 font-normal italic">(' + formatRecompensa(f.recompensa) + ')</span>' : '') +
+                            (f.recompensa ? ' <span class="text-[10px] text-slate-400 dark:text-slate-400 font-normal italic">(' + formatRecompensa(f.recompensa) + ')</span>' : '') +
                             '</div>'
                           ).join('')
                         : '<span class="text-slate-400 text-xs italic">Nenhuma faixa cadastrada</span>';
@@ -2817,9 +2817,14 @@ export class ConfiguracoesPage {
                             '</div>' +
                           '</td>' +
                           '<td class="py-4 px-5 text-right">' +
-                            '<button data-id="' + meta.id + '" class="btn-excluir-meta px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-50 hover:bg-rose-50 dark:bg-rose-950/30 text-slate-400 hover:text-rose-500 transition border border-slate-200/40 dark:border-slate-700/40 uppercase">' +
-                              'Excluir' +
-                            '</button>' +
+                            '<div class="flex items-center justify-end gap-2">' +
+                              '<button data-id="' + meta.id + '" class="btn-editar-meta px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-50 hover:bg-indigo-55 dark:bg-indigo-950/30 text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition border border-slate-200/40 dark:border-slate-700/40 uppercase">' +
+                                'Editar' +
+                              '</button>' +
+                              '<button data-id="' + meta.id + '" class="btn-excluir-meta px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-50 hover:bg-rose-50 dark:bg-rose-950/30 text-slate-400 hover:text-rose-500 transition border border-slate-200/40 dark:border-slate-700/40 uppercase">' +
+                                'Excluir' +
+                              '</button>' +
+                            '</div>' +
                           '</td>' +
                         '</tr>';
                     }).join('')}
@@ -2864,6 +2869,15 @@ export class ConfiguracoesPage {
             this.showToast('Erro ao excluir meta.', 'error');
           }
         }
+      });
+    });
+
+    const editButtons = document.querySelectorAll('.btn-editar-meta');
+    editButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.getAttribute('data-id');
+        if (!id) return;
+        this.abrirModalEditarMeta(id);
       });
     });
 
@@ -2953,13 +2967,13 @@ export class ConfiguracoesPage {
             <div id="faixas-meta-container" class="space-y-3 max-h-[200px] overflow-y-auto pr-1 custom-scrollbar">
               <div class="faixa-item-row grid grid-cols-12 gap-2 items-center bg-slate-50/50 dark:bg-slate-800/30 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
                 <div class="col-span-3">
-                  <input type="text" placeholder="Nome (ex: Bronze)" required class="input-faixa-nome w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none text-xs font-semibold" />
+                  <input type="text" placeholder="Nome (ex: Bronze)" required class="input-faixa-nome w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none text-xs font-semibold text-slate-800 dark:text-slate-100" />
                 </div>
                 <div class="col-span-3">
-                  <input type="text" placeholder="Mínimo (ex: 28.000,00)" required class="input-faixa-valor w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none text-xs font-bold" />
+                  <input type="text" placeholder="Mínimo (ex: 28.000,00)" required class="input-faixa-valor w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none text-xs font-bold text-slate-800 dark:text-slate-100" />
                 </div>
                 <div class="col-span-3">
-                  <input type="text" placeholder="Recompensa (Opcional)" class="input-faixa-recompensa w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none text-xs font-semibold" />
+                  <input type="text" placeholder="Recompensa (Opcional)" class="input-faixa-recompensa w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none text-xs font-semibold text-slate-800 dark:text-slate-100" />
                 </div>
                 <div class="col-span-2 flex items-center justify-center gap-1.5">
                   <span class="text-[9px] font-bold text-slate-400">Cor:</span>
@@ -3018,13 +3032,13 @@ export class ConfiguracoesPage {
       newRow.className = 'faixa-item-row grid grid-cols-12 gap-2 items-center bg-slate-50/50 dark:bg-slate-800/30 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800';
       newRow.innerHTML = `
         <div class="col-span-3">
-          <input type="text" placeholder="Nome" required class="input-faixa-nome w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none text-xs font-semibold" />
+          <input type="text" placeholder="Nome" required class="input-faixa-nome w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none text-xs font-semibold text-slate-800 dark:text-slate-100" />
         </div>
         <div class="col-span-3">
-          <input type="text" placeholder="Mínimo (ex: 28.000,00)" required class="input-faixa-valor w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none text-xs font-bold" />
+          <input type="text" placeholder="Mínimo (ex: 28.000,00)" required class="input-faixa-valor w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none text-xs font-bold text-slate-800 dark:text-slate-100" />
         </div>
         <div class="col-span-3">
-          <input type="text" placeholder="Recompensa" class="input-faixa-recompensa w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none text-xs font-semibold" />
+          <input type="text" placeholder="Recompensa" class="input-faixa-recompensa w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none text-xs font-semibold text-slate-800 dark:text-slate-100" />
         </div>
         <div class="col-span-2 flex items-center justify-center gap-1.5">
           <span class="text-[9px] font-bold text-slate-400">Cor:</span>
@@ -3110,6 +3124,265 @@ export class ConfiguracoesPage {
     if (!overlay) return;
     document.getElementById('nova-meta-card')?.classList.remove('scale-100');
     document.getElementById('nova-meta-card')?.classList.add('scale-95');
+    overlay.classList.remove('opacity-100');
+    overlay.classList.add('opacity-0');
+    setTimeout(() => {
+      overlay.remove();
+    }, 300);
+  }
+
+  private abrirModalEditarMeta(metaId: string): void {
+    const meta = this.metas.find(m => m.id === metaId);
+    if (!meta) {
+      this.showToast('Meta não encontrada.', 'error');
+      return;
+    }
+
+    const aplicarMascaraMonetaria = (inputEl: HTMLInputElement) => {
+      inputEl.addEventListener('input', (e) => {
+        const target = e.target as HTMLInputElement;
+        let val = target.value;
+        let digits = val.replace(/\D/g, '');
+        if (digits.length > 12) {
+          digits = digits.slice(0, 12);
+        }
+        if (!digits) {
+          target.value = '0,00';
+          return;
+        }
+        const num = parseInt(digits, 10) / 100;
+        target.value = num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      });
+    };
+
+    const formatarDataInput = (dStr: string) => {
+      if (!dStr) return '';
+      return dStr.substring(0, 10);
+    };
+
+    const overlay = document.createElement('div');
+    overlay.id = 'editar-meta-overlay';
+    overlay.className = 'fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all duration-300 opacity-0';
+
+    const faixasHTML = (meta.faixas || []).map((f, i) => `
+      <div class="faixa-item-row grid grid-cols-12 gap-2 items-center bg-slate-50/50 dark:bg-slate-800/30 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
+        <div class="col-span-3">
+          <input type="text" placeholder="Nome" value="${f.nome}" required class="input-faixa-nome w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none text-xs font-semibold text-slate-800 dark:text-slate-100" />
+        </div>
+        <div class="col-span-3">
+          <input type="text" placeholder="Mínimo (ex: 28.000,00)" value="${f.valor_minimo.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}" required class="input-faixa-valor w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none text-xs font-bold text-slate-800 dark:text-slate-100" />
+        </div>
+        <div class="col-span-3">
+          <input type="text" placeholder="Recompensa" value="${f.recompensa || ''}" class="input-faixa-recompensa w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none text-xs font-semibold text-slate-800 dark:text-slate-100" />
+        </div>
+        <div class="col-span-2 flex items-center justify-center gap-1.5">
+          <span class="text-[9px] font-bold text-slate-400">Cor:</span>
+          <input type="color" value="${f.cor || '#6366f1'}" class="input-faixa-cor w-7 h-7 p-0 bg-transparent border-0 rounded cursor-pointer animate-fade-in" />
+        </div>
+        <div class="col-span-1 text-center">
+          <button type="button" class="btn-remover-faixa-meta text-rose-500 hover:text-rose-700 font-bold text-sm">❌</button>
+        </div>
+      </div>
+    `).join('');
+
+    overlay.innerHTML = `
+      <div class="bg-white dark:bg-slate-900 w-full max-w-[550px] rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 transform scale-95 transition-all duration-300 flex flex-col max-h-[90vh] overflow-y-auto custom-scrollbar" id="editar-meta-card">
+        
+        <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-500 via-teal-500 to-indigo-600"></div>
+
+        <div class="p-6 border-b border-slate-100 dark:border-slate-800 text-center flex flex-col items-center">
+          <div class="w-12 h-12 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-bold rounded-2xl flex items-center justify-center text-xl border border-emerald-100 dark:border-emerald-900/40 mb-3">
+            🏆
+          </div>
+          <h2 class="text-lg font-black text-slate-800 dark:text-slate-100 tracking-tight leading-snug">Editar Meta Financeira / Campanha</h2>
+          <p class="text-xs text-slate-400 dark:text-slate-550 font-semibold mt-1">Configure o período, o tipo de montante e as faixas de prêmios</p>
+        </div>
+
+        <form id="form-editar-meta" class="p-6 space-y-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Nome do Período ou Campanha *</label>
+            <input id="input-meta-nome" type="text" required value="${meta.nome}" placeholder="Ex: Metas de Agosto 2026, Campanha Ouro..." class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Data Início *</label>
+              <input id="input-meta-inicio" type="date" required value="${formatarDataInput(meta.data_inicio)}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Data Fim *</label>
+              <input id="input-meta-fim" type="date" required value="${formatarDataInput(meta.data_fim)}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Base de Cálculo *</label>
+              <select id="select-meta-calculo" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800 dark:text-slate-100 font-semibold text-sm">
+                <option value="bruto" ${meta.tipo_calculo === 'bruto' ? 'selected' : ''}>Faturamento Bruto</option>
+                <option value="lucro" ${meta.tipo_calculo === 'lucro' ? 'selected' : ''}>Lucro / Rentabilidade</option>
+              </select>
+            </div>
+            <div class="flex items-center pt-5">
+              <label class="inline-flex items-center cursor-pointer select-none">
+                <input id="check-meta-campanha" type="checkbox" ${meta.is_campanha ? 'checked' : ''} class="sr-only peer" />
+                <div class="w-9 h-5 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500 relative"></div>
+                <span class="ml-2 text-xs font-bold text-slate-500 dark:text-slate-400">É Campanha Retroativa</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Dynamic Faixas Section -->
+          <div class="border-t border-slate-100 dark:border-slate-800 pt-4">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">Faixas de Premiação / Metas</h3>
+              <button id="btn-adicionar-faixa-meta-edit" type="button" class="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/45 dark:hover:bg-emerald-900/60 text-emerald-600 dark:text-emerald-400 rounded-lg text-[10px] font-black tracking-wider transition uppercase">
+                ➕ Adicionar Faixa
+              </button>
+            </div>
+
+            <div id="faixas-meta-container-edit" class="space-y-3 max-h-[200px] overflow-y-auto pr-1 custom-scrollbar">
+              ${faixasHTML}
+            </div>
+          </div>
+
+          <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+            <button id="btn-meta-edit-cancel" type="button" class="px-4 py-2.5 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 text-slate-500 hover:text-slate-700 font-bold text-xs rounded-xl transition uppercase">
+              Cancelar
+            </button>
+            <button id="btn-meta-edit-submit" type="submit" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl transition shadow-lg shadow-emerald-600/20 uppercase tracking-wider flex items-center justify-center">
+              Salvar Alterações
+            </button>
+          </div>
+        </form>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    // Aplicar máscara nos campos de valores de faixas existentes
+    overlay.querySelectorAll('.input-faixa-valor').forEach((inputEl: any) => {
+      aplicarMascaraMonetaria(inputEl);
+    });
+
+    setTimeout(() => {
+      overlay.classList.add('opacity-100');
+      document.getElementById('editar-meta-card')?.classList.remove('scale-95');
+      document.getElementById('editar-meta-card')?.classList.add('scale-100');
+    }, 10);
+
+    document.getElementById('btn-meta-edit-cancel')?.addEventListener('click', () => {
+      this.fecharModalEditarMeta();
+    });
+
+    document.getElementById('faixas-meta-container-edit')?.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement;
+      if (target.classList.contains('btn-remover-faixa-meta')) {
+        const row = target.closest('.faixa-item-row');
+        if (row) row.remove();
+      }
+    });
+
+    document.getElementById('btn-adicionar-faixa-meta-edit')?.addEventListener('click', () => {
+      const container = document.getElementById('faixas-meta-container-edit');
+      if (!container) return;
+
+      const newRow = document.createElement('div');
+      newRow.className = 'faixa-item-row grid grid-cols-12 gap-2 items-center bg-slate-50/50 dark:bg-slate-800/30 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800';
+      newRow.innerHTML = `
+        <div class="col-span-3">
+          <input type="text" placeholder="Nome" required class="input-faixa-nome w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none text-xs font-semibold text-slate-800 dark:text-slate-100" />
+        </div>
+        <div class="col-span-3">
+          <input type="text" placeholder="Mínimo (ex: 28.000,00)" required class="input-faixa-valor w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none text-xs font-bold text-slate-800 dark:text-slate-100" />
+        </div>
+        <div class="col-span-3">
+          <input type="text" placeholder="Recompensa" class="input-faixa-recompensa w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none text-xs font-semibold text-slate-800 dark:text-slate-100" />
+        </div>
+        <div class="col-span-2 flex items-center justify-center gap-1.5">
+          <span class="text-[9px] font-bold text-slate-400">Cor:</span>
+          <input type="color" value="#6366f1" class="input-faixa-cor w-7 h-7 p-0 bg-transparent border-0 rounded cursor-pointer animate-fade-in" />
+        </div>
+        <div class="col-span-1 text-center">
+          <button type="button" class="btn-remover-faixa-meta text-rose-500 hover:text-rose-700 font-bold text-sm">❌</button>
+        </div>
+      `;
+      container.appendChild(newRow);
+      
+      const valInput = newRow.querySelector('.input-faixa-valor') as HTMLInputElement;
+      if (valInput) {
+        aplicarMascaraMonetaria(valInput);
+      }
+
+      container.scrollTop = container.scrollHeight;
+    });
+
+    const form = document.getElementById('form-editar-meta') as HTMLFormElement;
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const submitBtn = document.getElementById('btn-meta-edit-submit') as HTMLButtonElement;
+      const nome = (document.getElementById('input-meta-nome') as HTMLInputElement).value;
+      const dataInicio = (document.getElementById('input-meta-inicio') as HTMLInputElement).value;
+      const dataFim = (document.getElementById('input-meta-fim') as HTMLInputElement).value;
+      const tipoCalculo = (document.getElementById('select-meta-calculo') as HTMLSelectElement).value as 'bruto' | 'lucro';
+      const isCampanha = (document.getElementById('check-meta-campanha') as HTMLInputElement).checked;
+
+      const rows = overlay.querySelectorAll('.faixa-item-row');
+      const faixas: any[] = [];
+      rows.forEach(row => {
+        const fNome = (row.querySelector('.input-faixa-nome') as HTMLInputElement).value;
+        const fValorRaw = (row.querySelector('.input-faixa-valor') as HTMLInputElement).value;
+        const fValor = parseBrFloat(fValorRaw) || 0;
+        const fRecompensa = (row.querySelector('.input-faixa-recompensa') as HTMLInputElement).value || '';
+        const fCor = (row.querySelector('.input-faixa-cor') as HTMLInputElement).value || '#6366f1';
+        if (fNome && fValor > 0) {
+          faixas.push({
+            nome: fNome,
+            valor_minimo: fValor,
+            bonus_xp: Math.round(fValor * 0.1),
+            recompensa: fRecompensa,
+            cor: fCor
+          });
+        }
+      });
+
+      if (faixas.length === 0) {
+        this.showToast('Por favor, adicione pelo menos uma faixa de premiação válida.', 'error');
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Salvando...';
+
+      try {
+        await MetasService.atualizarMetaPeriodo(meta.id, {
+          nome,
+          data_inicio: dataInicio,
+          data_fim: dataFim,
+          tipo_calculo: tipoCalculo,
+          is_campanha: isCampanha
+        }, faixas);
+
+        this.showToast('Período de meta atualizado com sucesso!', 'success');
+        this.fecharModalEditarMeta();
+        await this.loadMetas();
+        this.render();
+        this.setupEventListeners();
+      } catch (err: any) {
+        console.error('Erro ao atualizar metas:', err);
+        this.showToast('Erro ao atualizar período de metas.', 'error');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Salvar Alterações';
+      }
+    });
+  }
+
+  private fecharModalEditarMeta(): void {
+    const overlay = document.getElementById('editar-meta-overlay');
+    if (!overlay) return;
+    document.getElementById('editar-meta-card')?.classList.remove('scale-100');
+    document.getElementById('editar-meta-card')?.classList.add('scale-95');
     overlay.classList.remove('opacity-100');
     overlay.classList.add('opacity-0');
     setTimeout(() => {

@@ -389,27 +389,31 @@ export function renderLateralEditorPaneHTML(
 export function renderTrechoRowHTML(index: number, origem = '', destino = '', dataIda = '', dataVolta = '', disabled = false): string {
   const disabledAttr = disabled ? 'disabled' : '';
   return `
-    <div class="grid grid-cols-[1fr_1fr_1fr_1fr_auto] gap-2 items-end bg-slate-50 dark:bg-slate-900/60 p-2 rounded-lg border border-slate-150 dark:border-slate-800/80 trecho-item-row" data-index="${index}">
-      <div>
-        <label class="block text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Origem *</label>
-        <input type="text" placeholder="Origem" required ${disabledAttr} value="${origem}" class="trecho-origem w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-850 rounded text-xs font-bold uppercase transition" />
+    <div class="bg-slate-50 dark:bg-slate-900/60 p-3 rounded-xl border border-slate-150 dark:border-slate-800/80 trecho-item-row space-y-2.5 relative" data-index="${index}">
+      <button type="button" class="btn-remove-trecho absolute top-2 right-2 p-1.5 hover:bg-rose-50/80 dark:hover:bg-rose-950/20 text-slate-400 hover:text-rose-600 rounded-lg transition ${disabled ? 'hidden' : ''}" title="Remover trecho">
+        🗑️
+      </button>
+      
+      <div class="grid grid-cols-2 gap-2.5 pr-6">
+        <div>
+          <label class="block text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Origem *</label>
+          <input type="text" placeholder="Origem" required ${disabledAttr} value="${origem}" class="trecho-origem w-full px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-850 rounded text-xs font-bold uppercase transition" />
+        </div>
+        <div>
+          <label class="block text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Destino *</label>
+          <input type="text" placeholder="Destino" required ${disabledAttr} value="${destino}" class="trecho-destino w-full px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-850 rounded text-xs font-bold uppercase transition" />
+        </div>
       </div>
-      <div>
-        <label class="block text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Destino *</label>
-        <input type="text" placeholder="Destino" required ${disabledAttr} value="${destino}" class="trecho-destino w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-850 rounded text-xs font-bold uppercase transition" />
-      </div>
-      <div>
-        <label class="block text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Data Ida *</label>
-        <input type="text" placeholder="DD/MM/AAAA" required ${disabledAttr} value="${dataIda}" class="trecho-data-ida w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-850 rounded text-xs font-bold transition" />
-      </div>
-      <div>
-        <label class="block text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Data Volta</label>
-        <input type="text" placeholder="DD/MM/AAAA" ${disabledAttr} value="${dataVolta}" class="trecho-data-volta w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-850 rounded text-xs font-bold transition" />
-      </div>
-      <div>
-        <button type="button" class="btn-remove-trecho p-2 hover:bg-rose-50/80 dark:hover:bg-rose-950/20 text-slate-400 hover:text-rose-600 rounded-lg transition ${disabled ? 'hidden' : ''}" title="Remover trecho">
-          🗑️
-        </button>
+
+      <div class="grid grid-cols-2 gap-2.5 pr-6">
+        <div>
+          <label class="block text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Data Ida *</label>
+          <input type="text" placeholder="DD/MM/AAAA" required ${disabledAttr} value="${dataIda}" class="trecho-data-ida w-full px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-850 rounded text-xs font-bold transition" />
+        </div>
+        <div>
+          <label class="block text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Data Volta</label>
+          <input type="text" placeholder="DD/MM/AAAA" ${disabledAttr} value="${dataVolta}" class="trecho-data-volta w-full px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-850 rounded text-xs font-bold transition" />
+        </div>
       </div>
     </div>
   `;

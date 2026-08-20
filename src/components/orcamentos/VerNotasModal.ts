@@ -17,6 +17,15 @@ export interface VerNotasModalOptions {
   onDelete?: (id: string) => Promise<boolean>;
 }
 
+function converterLinks(texto: string): string {
+  if (!texto) return '';
+  const urlRegex = /(https?:\/\/[^\s<]+[^#.,?;()\]\s<])/g;
+  return texto.replace(urlRegex, (url) => {
+    const label = url.length > 50 ? url.substring(0, 47) + '...' : url;
+    return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-indigo-650 hover:underline dark:text-indigo-400 break-all font-bold">🔗 ${label}</a>`;
+  });
+}
+
 export class VerNotasModal {
   static open(orc: Orcamento, options: VerNotasModalOptions): void {
     const portal = document.getElementById('orcamento-modal-portal');
@@ -118,7 +127,7 @@ export class VerNotasModal {
             <div>
               <h4 class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Notas da Negociação</h4>
               <div class="p-4 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-100 dark:border-slate-800 text-sm font-semibold text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed min-h-[120px]">
-                ${orc.notasNegociacao || 'Nenhuma nota registrada.'}
+                ${converterLinks(orc.notasNegociacao || 'Nenhuma nota registrada.')}
               </div>
             </div>
 

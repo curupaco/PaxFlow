@@ -3,6 +3,15 @@ import { getAvatarSvg } from './avatars';
 import { showCustomConfirm } from './dialog';
 import { Comentario, PerfilConsultor } from '../types';
 
+function converterLinks(texto: string): string {
+  if (!texto) return '';
+  const urlRegex = /(https?:\/\/[^\s<]+[^#.,?;()\]\s<])/g;
+  return texto.replace(urlRegex, (url) => {
+    const label = url.length > 50 ? url.substring(0, 47) + '...' : url;
+    return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-indigo-650 hover:underline dark:text-indigo-400 break-all font-bold">🔗 ${label}</a>`;
+  });
+}
+
 export class CommentsService {
   /**
    * Inicializa e renderiza a seção de comentários em um container
@@ -77,7 +86,7 @@ export class CommentsService {
           const isOwner = c.autor_id === currentUserId;
 
           // Destacar menções @nome no texto do comentário
-          let textoFormatado = c.texto;
+          let textoFormatado = converterLinks(c.texto);
           if (consultoresAtivos.length > 0) {
             const namesToCheck: string[] = [];
             for (const p of consultoresAtivos) {
@@ -105,7 +114,7 @@ export class CommentsService {
                   <span class="text-xs font-black text-slate-700 dark:text-slate-200 truncate leading-none">${autorNome}</span>
                   <span class="text-[9px] text-slate-400 dark:text-slate-500 font-bold">${formatarDataHora(c.created_at)}</span>
                 </div>
-                <p class="text-xs text-slate-600 dark:text-slate-400 font-semibold whitespace-pre-wrap leading-relaxed">${textoFormatado}</p>
+                <p class="text-xs text-slate-600 dark:text-slate-400 font-semibold whitespace-pre-wrap leading-relaxed break-words break-all">${textoFormatado}</p>
               </div>
               ${isOwner ? `
                 <button data-delete-comment-id="${c.id}" class="p-1 hover:bg-rose-50 dark:hover:bg-rose-950/20 text-slate-400 dark:text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 rounded-md transition text-[10px]" title="Excluir comentário">
