@@ -47,6 +47,8 @@ export class MetasService {
             bonus_xp: Number(f.bonus_xp) || 0,
             bonusXp: Number(f.bonus_xp) || 0,
             recompensa: f.recompensa,
+            cor: f.cor || '#6366f1',
+            corHex: f.cor || '#6366f1',
             created_at: f.created_at
           }));
 
@@ -106,7 +108,8 @@ export class MetasService {
         nome: f.nome,
         valor_minimo: f.valor_minimo,
         bonus_xp: f.bonus_xp,
-        recompensa: f.recompensa
+        recompensa: f.recompensa,
+        cor: f.cor || '#6366f1'
       }));
 
       const { data: insertedFaixas, error: errF } = await supabase
@@ -122,7 +125,8 @@ export class MetasService {
           ...f,
           periodoId: f.periodo_id,
           valorMinimo: f.valor_minimo,
-          bonusXp: f.bonus_xp
+          bonusXp: f.bonus_xp,
+          corHex: f.cor
         }))
       };
     } catch (err) {
@@ -181,9 +185,9 @@ export class MetasService {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         faixas: [
-          { id: 'mock-faixa-1', periodo_id: 'mock-periodo-1', periodoId: 'mock-periodo-1', nome: 'Bronze', valor_minimo: 5000, valorMinimo: 5000, bonus_xp: 500, bonusXp: 500, recompensa: 'Kit de Viagem Bronze', created_at: new Date().toISOString() },
-          { id: 'mock-faixa-2', periodo_id: 'mock-periodo-1', periodoId: 'mock-periodo-1', nome: 'Prata', valor_minimo: 12000, valorMinimo: 12000, bonus_xp: 1000, bonusXp: 1000, recompensa: 'Voucher R$ 200,00', created_at: new Date().toISOString() },
-          { id: 'mock-faixa-3', periodo_id: 'mock-periodo-1', periodoId: 'mock-periodo-1', nome: 'Ouro', valor_minimo: 25000, valorMinimo: 25000, bonus_xp: 2500, bonusXp: 2500, recompensa: 'Jantar de Gala no Fim do Ano', created_at: new Date().toISOString() }
+          { id: 'mock-faixa-1', periodo_id: 'mock-periodo-1', periodoId: 'mock-periodo-1', nome: 'Bronze', valor_minimo: 5000, valorMinimo: 5000, bonus_xp: 500, bonusXp: 500, recompensa: 'Kit de Viagem Bronze', cor: '#d97706', corHex: '#d97706', created_at: new Date().toISOString() },
+          { id: 'mock-faixa-2', periodo_id: 'mock-periodo-1', periodoId: 'mock-periodo-1', nome: 'Prata', valor_minimo: 12000, valorMinimo: 12000, bonus_xp: 1000, bonusXp: 1000, recompensa: 'Voucher R$ 200,00', cor: '#94a3b8', corHex: '#94a3b8', created_at: new Date().toISOString() },
+          { id: 'mock-faixa-3', periodo_id: 'mock-periodo-1', periodoId: 'mock-periodo-1', nome: 'Ouro', valor_minimo: 25000, valorMinimo: 25000, bonus_xp: 2500, bonusXp: 2500, recompensa: 'Jantar de Gala no Fim do Ano', cor: '#fbbf24', corHex: '#fbbf24', created_at: new Date().toISOString() }
         ]
       },
       {
@@ -200,9 +204,9 @@ export class MetasService {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         faixas: [
-          { id: 'mock-faixa-4', periodo_id: 'mock-periodo-2', periodoId: 'mock-periodo-2', nome: 'Vendedor Iniciante', valor_minimo: 30000, valorMinimo: 30000, bonus_xp: 1000, bonusXp: 1000, recompensa: 'Medalha do Gelo', created_at: new Date().toISOString() },
-          { id: 'mock-faixa-5', periodo_id: 'mock-periodo-2', periodoId: 'mock-periodo-2', nome: 'Mestre Comercial', valor_minimo: 80000, valorMinimo: 80000, bonus_xp: 3000, bonusXp: 3000, recompensa: 'Viagem de Fim de Semana a Gramado', created_at: new Date().toISOString() },
-          { id: 'mock-faixa-6', periodo_id: 'mock-periodo-2', periodoId: 'mock-periodo-2', nome: 'Lenda das Vendas', valor_minimo: 180000, valorMinimo: 180000, bonus_xp: 7500, bonusXp: 7500, recompensa: 'Resort 5 Estrelas em Maceió', created_at: new Date().toISOString() }
+          { id: 'mock-faixa-4', periodo_id: 'mock-periodo-2', periodoId: 'mock-periodo-2', nome: 'Vendedor Iniciante', valor_minimo: 30000, valorMinimo: 30000, bonus_xp: 1000, bonusXp: 1000, recompensa: 'Medalha do Gelo', cor: '#3b82f6', corHex: '#3b82f6', created_at: new Date().toISOString() },
+          { id: 'mock-faixa-5', periodo_id: 'mock-periodo-2', periodoId: 'mock-periodo-2', nome: 'Mestre Comercial', valor_minimo: 80000, valorMinimo: 80000, bonus_xp: 3000, bonusXp: 3000, recompensa: 'Viagem de Fim de Semana a Gramado', cor: '#10b981', corHex: '#10b981', created_at: new Date().toISOString() },
+          { id: 'mock-faixa-6', periodo_id: 'mock-periodo-2', periodoId: 'mock-periodo-2', nome: 'Lenda das Vendas', valor_minimo: 180000, valorMinimo: 180000, bonus_xp: 7500, bonusXp: 7500, recompensa: 'Resort 5 Estrelas em Maceió', cor: '#8b5cf6', corHex: '#8b5cf6', created_at: new Date().toISOString() }
         ]
       }
     ];
@@ -228,6 +232,8 @@ export class MetasService {
       bonus_xp: Number(f.bonus_xp) || 0,
       bonusXp: Number(f.bonus_xp) || 0,
       recompensa: f.recompensa,
+      cor: f.cor || '#6366f1',
+      corHex: f.cor || '#6366f1',
       created_at: new Date().toISOString()
     }));
 

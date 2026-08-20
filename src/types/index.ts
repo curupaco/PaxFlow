@@ -415,6 +415,8 @@ export interface MetaFaixa {
   bonus_xp: number;
   bonusXp?: number;
   recompensa?: string;
+  cor: string;
+  corHex?: string;
   created_at?: string;
 }
 

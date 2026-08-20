@@ -1212,6 +1212,60 @@ export class ComercialDashboard {
     }, 1000);
   }
 
+  private renderGoalPieChart(val: number, faixas: MetaFaixa[]): string {
+    if (!faixas || faixas.length === 0) return '';
+    const sorted = [...faixas].sort((a, b) => a.valor_minimo - b.valor_minimo);
+    const maxVal = sorted[sorted.length - 1].valor_minimo;
+    if (maxVal <= 0) return '';
+
+    let currentOffset = 25;
+    let svgCircles = '';
+    let prevVal = 0;
+
+    sorted.forEach(f => {
+      const wSize = f.valor_minimo - prevVal;
+      if (wSize <= 0) return;
+
+      const pSize = (wSize / maxVal) * 100;
+      const achieved = Math.max(0, Math.min(wSize, val - prevVal));
+      const paSize = (achieved / maxVal) * 100;
+      const ruSize = pSize - paSize;
+
+      const tierColor = f.cor || '#6366f1';
+
+      if (paSize > 0) {
+        svgCircles += `
+          <circle cx="21" cy="21" r="15.915" fill="transparent" 
+            stroke="${tierColor}" stroke-width="5" 
+            stroke-dasharray="${paSize} ${100 - paSize}" 
+            stroke-dashoffset="${currentOffset}"
+            class="donut-segment transition-all duration-500" />
+        `;
+        currentOffset -= paSize;
+      }
+
+      if (ruSize > 0) {
+        svgCircles += `
+          <circle cx="21" cy="21" r="15.915" fill="transparent" 
+            stroke="${tierColor}" stroke-width="4.5" 
+            stroke-dasharray="${ruSize} ${100 - ruSize}" 
+            stroke-dashoffset="${currentOffset}"
+            class="donut-segment opacity-20" />
+        `;
+        currentOffset -= ruSize;
+      }
+
+      prevVal = f.valor_minimo;
+    });
+
+    return `
+      <svg viewBox="0 0 42 42" class="w-full h-full transform -rotate-90">
+        <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#f1f5f9" class="dark:stroke-slate-850" stroke-width="4" />
+        ${svgCircles}
+      </svg>
+    `;
+  }
+
   private renderMetasSection(): string {
     if (this.metas.length === 0) {
       return '';
@@ -1314,8 +1368,8 @@ export class ComercialDashboard {
             ${sortedFaixas.map(f => {
               const reached = val >= f.valor_minimo;
               return `
-                <div class="flex items-center gap-1 text-[10px] font-bold ${reached ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500'}">
-                  <span>${reached ? '✅' : '🔒'}</span>
+                <div class="flex items-center gap-1.5 text-[10px] font-bold ${reached ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500'}">
+                  <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: ${f.cor || '#6366f1'}"></span>
                   <span>${f.nome} (R$ ${(f.valor_minimo / 1000).toFixed(0)}k)</span>
                 </div>
               `;
@@ -1340,12 +1394,36 @@ export class ComercialDashboard {
             </div>
             <div class="p-2.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-2xl text-lg">🏆</div>
           </div>
-          ${renderProgressBar(myVal)}
+          
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+            <!-- Pie Chart Column -->
+            <div class="md:col-span-4 flex items-center justify-center">
+              <div class="relative w-36 h-36">
+                ${this.renderGoalPieChart(myVal, currentMeta.faixas || [])}
+                <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+                  <span class="text-[9px] font-black uppercase text-slate-450 dark:text-slate-500 tracking-wider">Atingido</span>
+                  <span class="text-base font-black text-slate-800 dark:text-slate-100">
+                    ${(() => {
+                      const maxVal = sortedFaixas.length > 0 ? sortedFaixas[sortedFaixas.length - 1].valor_minimo : 1;
+                      return ((myVal / maxVal) * 100).toFixed(0);
+                    })()}%
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Progress Details Column -->
+            <div class="md:col-span-8">
+              ${renderProgressBar(myVal)}
+            </div>
+          </div>
         </div>
       `;
     } else if (isAdmin) {
+      const agencyTotal = this.consultores.reduce((sum, c) => sum + getConsultantMetricVal(c.id), 0);
       goalsHTML = `
         <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+          <!-- Coluna 1: Total da Agência (4 cols) -->
           <div class="md:col-span-4 dashboard-glass rounded-3xl p-6 flex flex-col justify-between border border-slate-200/50 dark:border-slate-800/40">
             <div>
               <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/60 pb-3 mb-4">
@@ -1353,29 +1431,42 @@ export class ComercialDashboard {
                 <span class="text-lg">🏢</span>
               </div>
               
-              <div class="space-y-4">
-                <div>
-                  <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block">Acumulado da Equipe</span>
-                  <span class="text-2xl font-black text-slate-850 dark:text-slate-100 mt-1 block">
-                    R$ ${this.consultores.reduce((sum, c) => sum + getConsultantMetricVal(c.id), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                  </span>
+              <div class="flex flex-col items-center justify-center py-2">
+                <div class="relative w-32 h-32 mb-4">
+                  ${this.renderGoalPieChart(agencyTotal, currentMeta.faixas || [])}
+                  <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+                    <span class="text-[9px] font-black uppercase text-slate-450 dark:text-slate-500 tracking-wider">Atingido</span>
+                    <span class="text-sm font-black text-slate-800 dark:text-slate-100">
+                      ${(() => {
+                        const maxVal = sortedFaixas.length > 0 ? sortedFaixas[sortedFaixas.length - 1].valor_minimo : 1;
+                        return ((agencyTotal / maxVal) * 100).toFixed(0);
+                      })()}%
+                    </span>
+                  </div>
                 </div>
-                <div class="text-[10px] text-slate-400 dark:text-slate-500 font-medium leading-relaxed">
-                  Soma total de vendas ativas de todos os consultores para o período selecionado de metas.
+
+                <div class="text-center w-full">
+                  <span class="text-[10px] font-black text-slate-400 dark:text-slate-550 uppercase tracking-widest block">Acumulado da Equipe</span>
+                  <span class="text-xl font-black text-slate-800 dark:text-slate-100 mt-1 block">
+                    R$ ${agencyTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </span>
                 </div>
               </div>
             </div>
           </div>
 
+          <!-- Coluna 2: Progresso dos Consultores (8 cols) -->
           <div class="md:col-span-8 dashboard-glass rounded-3xl p-6 border border-slate-200/50 dark:border-slate-800/40">
             <h3 class="text-xs font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800/60 pb-3 mb-4">Acompanhamento por Consultor</h3>
             <div class="space-y-6 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
               ${this.consultores.map(c => {
                 const val = getConsultantMetricVal(c.id);
                 let currentFaixaName = 'Nenhuma';
+                let currentFaixaColor = '#6366f1';
                 for (let i = 0; i < sortedFaixas.length; i++) {
                   if (val >= sortedFaixas[i].valor_minimo) {
                     currentFaixaName = sortedFaixas[i].nome;
+                    currentFaixaColor = sortedFaixas[i].cor || '#6366f1';
                   }
                 }
                 const maxVal = sortedFaixas.length > 0 ? sortedFaixas[sortedFaixas.length - 1].valor_minimo * 1.1 : 1;
@@ -1389,12 +1480,12 @@ export class ComercialDashboard {
                           ${getAvatarSvg(c.avatar_url || 'panda')}
                         </div>
                         <span class="font-extrabold text-slate-750 dark:text-slate-250">${c.nome}</span>
-                        <span class="px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-100/30 dark:border-indigo-900/30 rounded text-[9px] font-black uppercase tracking-wider">${currentFaixaName}</span>
+                        <span style="color: ${currentFaixaColor}; border-color: ${currentFaixaColor}30; background-color: ${currentFaixaColor}10" class="px-1.5 py-0.5 border rounded text-[9px] font-black uppercase tracking-wider">${currentFaixaName}</span>
                       </div>
                       <span class="font-extrabold text-slate-700 dark:text-slate-200">R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                     </div>
                     <div class="relative w-full h-2.5 bg-slate-100 dark:bg-slate-850 rounded-full overflow-hidden">
-                      <div class="h-full bg-gradient-to-r from-indigo-500 to-emerald-500 rounded-full transition-all duration-300" style="width: ${pct}%"></div>
+                      <div class="h-full rounded-full transition-all duration-300" style="width: ${pct}%; background-color: ${currentFaixaColor}"></div>
                     </div>
                   </div>
                 `;

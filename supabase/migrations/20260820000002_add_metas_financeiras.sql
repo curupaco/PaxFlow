@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS public.meta_faixas (
     valor_minimo NUMERIC(15, 2) NOT NULL,
     bonus_xp INTEGER DEFAULT 0 NOT NULL,
     recompensa TEXT,
+    cor TEXT DEFAULT '#6366f1' NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
 );
 

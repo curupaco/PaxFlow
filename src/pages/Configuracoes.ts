@@ -2764,14 +2764,18 @@ export class ConfiguracoesPage {
                       '</tr>'
                      : this.metas.map(meta => {
                       const formatarData = (dStr: string) => {
-                        const parts = dStr.split('-');
+                        if (!dStr) return '';
+                        const clean = dStr.substring(0, 10);
+                        const parts = clean.split('-');
+                        if (parts.length < 3) return dStr;
                         return parts[2] + '/' + parts[1] + '/' + parts[0];
                       };
 
                       const faixasHTML = meta.faixas && meta.faixas.length > 0 
                         ? meta.faixas.map(f => 
-                            '<div class="text-xs text-slate-650 dark:text-slate-400 font-bold mb-0.5">' +
-                            '• <span class="text-indigo-600 dark:text-indigo-400 font-black">' + f.nome + '</span>: >= R$ ' + f.valor_minimo.toLocaleString('pt-BR', { maximumFractionDigits: 0 }) +
+                            '<div class="text-xs text-slate-650 dark:text-slate-400 font-bold mb-0.5 flex items-center gap-1.5">' +
+                            '<span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: ' + (f.cor || '#6366f1') + '"></span>' +
+                            '• <span style="color: ' + (f.cor || '#6366f1') + '" class="font-black">' + f.nome + '</span>: >= R$ ' + f.valor_minimo.toLocaleString('pt-BR', { maximumFractionDigits: 0 }) +
                             (f.recompensa ? ' <span class="text-[10px] text-slate-400 dark:text-slate-550 font-normal italic">(' + f.recompensa + ')</span>' : '') +
                             '</div>'
                           ).join('')
@@ -2922,14 +2926,18 @@ export class ConfiguracoesPage {
 
             <div id="faixas-meta-container" class="space-y-3 max-h-[200px] overflow-y-auto pr-1 custom-scrollbar">
               <div class="faixa-item-row grid grid-cols-12 gap-2 items-center bg-slate-50/50 dark:bg-slate-800/30 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
-                <div class="col-span-4">
+                <div class="col-span-3">
                   <input type="text" placeholder="Nome (ex: Bronze)" required class="input-faixa-nome w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none text-xs font-semibold" />
                 </div>
-                <div class="col-span-4">
+                <div class="col-span-3">
                   <input type="number" placeholder="Mínimo (ex: 5000)" required class="input-faixa-valor w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none text-xs font-bold" />
                 </div>
                 <div class="col-span-3">
                   <input type="text" placeholder="Recompensa (Opcional)" class="input-faixa-recompensa w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none text-xs font-semibold" />
+                </div>
+                <div class="col-span-2 flex items-center justify-center gap-1.5">
+                  <span class="text-[9px] font-bold text-slate-400">Cor:</span>
+                  <input type="color" value="#6366f1" class="input-faixa-cor w-7 h-7 p-0 bg-transparent border-0 rounded cursor-pointer animate-fade-in" />
                 </div>
                 <div class="col-span-1 text-center">
                   <button type="button" class="btn-remover-faixa-meta text-rose-500 hover:text-rose-700 font-bold text-sm">❌</button>
@@ -2977,14 +2985,18 @@ export class ConfiguracoesPage {
       const newRow = document.createElement('div');
       newRow.className = 'faixa-item-row grid grid-cols-12 gap-2 items-center bg-slate-50/50 dark:bg-slate-800/30 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800';
       newRow.innerHTML = `
-        <div class="col-span-4">
+        <div class="col-span-3">
           <input type="text" placeholder="Nome" required class="input-faixa-nome w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none text-xs font-semibold" />
         </div>
-        <div class="col-span-4">
+        <div class="col-span-3">
           <input type="number" placeholder="Mínimo" required class="input-faixa-valor w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none text-xs font-bold" />
         </div>
         <div class="col-span-3">
           <input type="text" placeholder="Recompensa" class="input-faixa-recompensa w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none text-xs font-semibold" />
+        </div>
+        <div class="col-span-2 flex items-center justify-center gap-1.5">
+          <span class="text-[9px] font-bold text-slate-400">Cor:</span>
+          <input type="color" value="#6366f1" class="input-faixa-cor w-7 h-7 p-0 bg-transparent border-0 rounded cursor-pointer animate-fade-in" />
         </div>
         <div class="col-span-1 text-center">
           <button type="button" class="btn-remover-faixa-meta text-rose-500 hover:text-rose-700 font-bold text-sm">❌</button>
@@ -3011,12 +3023,14 @@ export class ConfiguracoesPage {
         const fNome = (row.querySelector('.input-faixa-nome') as HTMLInputElement).value;
         const fValor = Number((row.querySelector('.input-faixa-valor') as HTMLInputElement).value) || 0;
         const fRecompensa = (row.querySelector('.input-faixa-recompensa') as HTMLInputElement).value || '';
+        const fCor = (row.querySelector('.input-faixa-cor') as HTMLInputElement).value || '#6366f1';
         if (fNome && fValor > 0) {
           faixas.push({
             nome: fNome,
             valor_minimo: fValor,
             bonus_xp: Math.round(fValor * 0.1),
-            recompensa: fRecompensa
+            recompensa: fRecompensa,
+            cor: fCor
           });
         }
       });
