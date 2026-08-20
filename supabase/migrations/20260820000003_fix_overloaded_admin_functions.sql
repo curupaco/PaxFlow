@@ -1,10 +1,18 @@
--- 1. Remover assinaturas duplicadas ou obsoletas para evitar conflitos de overloading no Supabase/PostgREST
+-- 1. Corrigir a constraint de chave estrangeira do profiles para ON DELETE CASCADE
+ALTER TABLE public.profiles DROP CONSTRAINT IF EXISTS profiles_id_fkey;
+ALTER TABLE public.profiles 
+  ADD CONSTRAINT profiles_id_fkey 
+  FOREIGN KEY (id) 
+  REFERENCES auth.users(id) 
+  ON DELETE CASCADE;
+
+-- 2. Remover assinaturas duplicadas ou obsoletas para evitar conflitos de overloading no Supabase/PostgREST
 DROP FUNCTION IF EXISTS public.admin_set_user_password(UUID, TEXT);
 DROP FUNCTION IF EXISTS public.admin_set_user_password(TEXT, UUID);
 DROP FUNCTION IF EXISTS public.admin_create_user(TEXT, TEXT, TEXT, TEXT);
 DROP FUNCTION IF EXISTS public.admin_create_user(TEXT, TEXT, TEXT);
 
--- 2. Recriar a função admin_create_user com assinatura única e limpa (argumentos em ordem alfabética para o PostgREST)
+-- 3. Recriar a função admin_create_user com assinatura única e limpa (argumentos em ordem alfabética para o PostgREST)
 CREATE OR REPLACE FUNCTION public.admin_create_user(
   user_email TEXT,
   user_nome TEXT,
@@ -83,7 +91,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 3. Recriar a função admin_set_user_password com assinatura única e limpa (argumentos em ordem alfabética para o PostgREST)
+-- 4. Recriar a função admin_set_user_password com assinatura única e limpa (argumentos em ordem alfabética para o PostgREST)
 CREATE OR REPLACE FUNCTION public.admin_set_user_password(
   new_password TEXT,
   user_id UUID
