@@ -17,6 +17,7 @@ DROP FUNCTION IF EXISTS public.admin_create_user(TEXT, TEXT, TEXT);
 -- e a coluna 'identity_data' deve conter obrigatoriamente os campos 'email_verified' e 'phone_verified'.
 -- Correção 2: O GoTrue do Supabase exige hashes de senha com 10 rounds (gen_salt('bf', 10)) para evitar erros internos no validador de login.
 -- Correção 3: Adicionado 'email_verified': true dentro de raw_user_meta_data em auth.users para alinhar com o validador do GoTrue.
+-- Correção 4: Adicionado campos de token como string vazia ('') na tabela auth.users. O driver GoTrue em Go tenta ler esses campos e quebra com erro 500 caso estejam nulos (null).
 CREATE OR REPLACE FUNCTION public.admin_create_user(
   user_email TEXT,
   user_nome TEXT,
@@ -36,7 +37,7 @@ BEGIN
   new_user_id := gen_random_uuid();
   encrypted_pw := crypt(user_password, gen_salt('bf', 10));
 
-  -- Inserir na tabela de autenticação auth.users com email_verified no raw_user_meta_data
+  -- Inserir na tabela de autenticação auth.users com email_verified no raw_user_meta_data e tokens vazios
   INSERT INTO auth.users (
     id,
     instance_id,
@@ -49,7 +50,10 @@ BEGIN
     updated_at,
     role,
     aud,
-    confirmation_token
+    confirmation_token,
+    recovery_token,
+    email_change_token_new,
+    email_change
   ) VALUES (
     new_user_id,
     '00000000-0000-0000-0000-000000000000',
@@ -62,6 +66,9 @@ BEGIN
     NOW(),
     'authenticated',
     'authenticated',
+    '',
+    '',
+    '',
     ''
   );
 
