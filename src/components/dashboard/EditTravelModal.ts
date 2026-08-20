@@ -49,6 +49,18 @@ export class EditTravelModal {
    */
   public async open(tripId: string, activeTab: 'detalhes' | 'produtos' = 'detalhes'): Promise<void> {
     this.tripId = tripId;
+
+    // Destruir autocompletes ativos antes de reabrir/re-renderizar
+    if (this.destAutocomplete) {
+      this.destAutocomplete.destroy();
+      this.destAutocomplete = null;
+    }
+    const oldRows = document.querySelectorAll('.trecho-item-row');
+    oldRows.forEach((row: any) => {
+      if (row._autocompletes) {
+        row._autocompletes.forEach((ac: any) => ac.destroy());
+      }
+    });
     
     // Carrega conferências do LOC
     this.locConferenciasMap = {};
@@ -1098,14 +1110,21 @@ export class EditTravelModal {
         }
       } else {
         containerTrechos?.classList.add('hidden');
-        if (listaTrechos) listaTrechos.innerHTML = '';
+        if (listaTrechos) {
+          const rows = listaTrechos.querySelectorAll('.trecho-item-row');
+          rows.forEach((row: any) => {
+            if (row._autocompletes) {
+              row._autocompletes.forEach((ac: any) => ac.destroy());
+            }
+          });
+          listaTrechos.innerHTML = '';
+        }
       }
     });
 
     // Inicializa a validação do formulário de novos produtos
     const novoProdutoValidator = setupFormValidation('form-novo-produto', [
-      { id: 'prod-venda', type: 'currency' },
-      { id: 'prod-data', type: 'date' }
+      { id: 'prod-venda', type: 'currency' }
     ]);
 
     // Trechos adicionais dinâmicos
@@ -1192,8 +1211,10 @@ export class EditTravelModal {
 
       const reserva = (document.getElementById('prod-reserva') as HTMLInputElement).value.trim();
       const vendaRaw = (document.getElementById('prod-venda') as HTMLInputElement).value.trim();
-      const dataServicoRaw = (document.getElementById('prod-data') as HTMLInputElement).value.trim();
-      const status = (document.getElementById('prod-status') as HTMLSelectElement).value;
+      
+      // Data do serviço e status removidos da UI: usam valores padrão (data de ida da viagem e status emitido)
+      const dataServico = v.data_ida;
+      const status = 'emitido';
 
       if (!reserva) {
         this.options.showToast('Por favor, info o Código (LOC) do serviço.', 'error');
@@ -1221,13 +1242,6 @@ export class EditTravelModal {
         return;
       }
 
-      const dataServicoResult = validateDate(dataServicoRaw);
-      if (!dataServicoResult.isValid) {
-        this.options.showToast(`Data do Serviço inválida: ${dataServicoResult.message}`, 'error');
-        return;
-      }
-
-      const dataServico = formatBrDateToIso(dataServicoRaw)!;
       const venda = parseDoubleBr(vendaRaw);
 
       // Datas adicionais
@@ -1376,8 +1390,7 @@ export class EditTravelModal {
       { id: `edit-prod-taxa-${prodId}`, type: 'currency', required: false },
       { id: `edit-prod-comissao-${prodId}`, type: 'currency', required: false },
       { id: `edit-prod-markup-${prodId}`, type: 'currency', required: false },
-      { id: `edit-prod-rav-${prodId}`, type: 'currency', required: false },
-      { id: `edit-prod-data-${prodId}`, type: 'date' }
+      { id: `edit-prod-rav-${prodId}`, type: 'currency', required: false }
     ]);
 
     const editTipoSelect = document.getElementById(`edit-prod-tipo-${prodId}`) as HTMLSelectElement;
@@ -1456,7 +1469,15 @@ export class EditTravelModal {
         }
       } else {
         editSecaoTrechos?.classList.add('hidden');
-        if (editContainerTrechos) editContainerTrechos.innerHTML = '';
+        if (editContainerTrechos) {
+          const rows = editContainerTrechos.querySelectorAll('.trecho-item-row');
+          rows.forEach((row: any) => {
+            if (row._autocompletes) {
+              row._autocompletes.forEach((ac: any) => ac.destroy());
+            }
+          });
+          editContainerTrechos.innerHTML = '';
+        }
       }
     });
 
@@ -1618,8 +1639,10 @@ export class EditTravelModal {
       const editFornecedor = editFornecedorInput.value.trim() || 'Não informado';
       const editDescricao = (document.getElementById(`edit-prod-descricao-${prodId}`) as HTMLInputElement).value.trim() || 'Sem descrição';
       const editReserva = (document.getElementById(`edit-prod-reserva-${prodId}`) as HTMLInputElement).value.trim();
-      const editStatus = (document.getElementById(`edit-prod-status-${prodId}`) as HTMLSelectElement).value;
-      const editDataServicoRaw = (document.getElementById(`edit-prod-data-${prodId}`) as HTMLInputElement).value.trim();
+      
+      // Data do serviço e status removidos da UI: usam valores padrão (data de ida da viagem e status atual/emitido)
+      const editDataServico = v.data_ida;
+      const editStatus = prod.status || 'emitido';
 
       const oldLoc = (prod.codigo_reserva || '').trim().toUpperCase();
       const newLoc = editReserva.trim().toUpperCase();
@@ -1648,13 +1671,7 @@ export class EditTravelModal {
         return;
       }
 
-      const editDataServicoResult = validateDate(editDataServicoRaw);
-      if (!editDataServicoResult.isValid) {
-        this.options.showToast(`Data do Serviço inválida: ${editDataServicoResult.message}`, 'error');
-        return;
-      }
 
-      const editDataServico = formatBrDateToIso(editDataServicoRaw)!;
 
       const venda = parseDoubleBr(editVendaInput.value) || 0;
       const taxa = parseDoubleBr(editTaxaInput.value) || 0;
@@ -2936,8 +2953,26 @@ export class EditTravelModal {
     inputIda?.addEventListener('input', (e) => applyMask(e.target as HTMLInputElement));
     inputVolta?.addEventListener('input', (e) => applyMask(e.target as HTMLInputElement));
 
+    // Inicializar DestinosAutocomplete para Origem e Destino
+    const inputOrigem = row.querySelector('.trecho-origem') as HTMLInputElement;
+    const inputDest = row.querySelector('.trecho-destino') as HTMLInputElement;
+    let acOrigem: any = null;
+    let acDest: any = null;
+
+    if (inputOrigem && !disabled) {
+      acOrigem = new DestinosAutocomplete(inputOrigem, () => {});
+    }
+    if (inputDest && !disabled) {
+      acDest = new DestinosAutocomplete(inputDest, () => {});
+    }
+
+    (row as any)._autocompletes = [acOrigem, acDest].filter(Boolean);
+
     // Botão de remover trecho
     row.querySelector('.btn-remove-trecho')?.addEventListener('click', () => {
+      if ((row as any)._autocompletes) {
+        (row as any)._autocompletes.forEach((ac: any) => ac.destroy());
+      }
       row.remove();
       this.reindexTrechoRows(container);
     });
@@ -2955,6 +2990,14 @@ export class EditTravelModal {
       this.destAutocomplete.destroy();
       this.destAutocomplete = null;
     }
+    // Destruir autocompletes dos trechos
+    const rows = document.querySelectorAll('.trecho-item-row');
+    rows.forEach((row: any) => {
+      if (row._autocompletes) {
+        row._autocompletes.forEach((ac: any) => ac.destroy());
+      }
+    });
+
     const overlay = document.getElementById('modal-overlay');
     const container = document.getElementById('modal-container');
     if (overlay && container) {

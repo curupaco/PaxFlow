@@ -182,20 +182,6 @@ export function renderNovoProdutoFormHTML(tiposProduto: any[]): string {
         </div>
       </div>
 
-      <div class="grid grid-cols-2 gap-3">
-        <div>
-          <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Data do Serviço (DD/MM/AAAA) *</label>
-          ${renderDateInputHTML('prod-data', '')}
-        </div>
-        <div>
-          <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Status *</label>
-          <select id="prod-status" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition duration-155">
-            <option value="reservado" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">Reservado</option>
-            <option value="emitido" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100" selected>Emitido</option>
-          </select>
-        </div>
-      </div>
-
       <!-- Trechos Aéreos (exclusivo para AÉREO OPERADORA e AÉREO FACIAL) -->
       <div id="container-trechos-aereo" class="hidden space-y-2.5 mt-2 bg-slate-100/40 dark:bg-slate-900/30 p-2.5 rounded-lg border border-slate-200/40 dark:border-slate-800/40">
         <span class="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-1 flex items-center gap-1">✈️ Trechos Aéreos</span>
@@ -290,25 +276,9 @@ export function renderLateralEditorPaneHTML(
                   <input id="edit-prod-descricao-${selectedProduct.id}" type="text" ${disabledAttr} value="${selectedProduct.descricao || ''}" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition duration-155" />
                 </div>
 
-                <div class="grid grid-cols-2 gap-2">
-                  <div>
-                    <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Código (LOC) *</label>
-                    <input id="edit-prod-reserva-${selectedProduct.id}" type="text" required maxlength="20" ${disabledAttr} value="${selectedProduct.codigo_reserva || ''}" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs uppercase transition duration-155" />
-                  </div>
-                  <div>
-                    <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Status *</label>
-                    <select id="edit-prod-status-${selectedProduct.id}" required ${disabledAttr} class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition duration-155">
-                      <option value="reservado" ${selectedProduct.status === 'reservado' ? 'selected' : ''}>Reservado</option>
-                      <option value="emitido" ${selectedProduct.status === 'emitido' ? 'selected' : ''}>Emitido</option>
-                      <option value="cancelado" ${selectedProduct.status === 'cancelado' ? 'selected' : ''}>Cancelado</option>
-                      <option value="reembolsado" ${selectedProduct.status === 'reembolsado' ? 'selected' : ''}>Reembolsado</option>
-                    </select>
-                  </div>
-                </div>
-
                 <div>
-                  <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Data do Serviço *</label>
-                  ${renderDateInputHTML(`edit-prod-data-${selectedProduct.id}`, formatarDataLocal(selectedProduct.data_servico), 'DD/MM/AAAA', true, isLocConferido)}
+                  <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Código (LOC) *</label>
+                  <input id="edit-prod-reserva-${selectedProduct.id}" type="text" required maxlength="20" ${disabledAttr} value="${selectedProduct.codigo_reserva || ''}" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs uppercase transition duration-155" />
                 </div>
 
                 <!-- Container para Campos Dinâmicos (dados_adicionais) -->
