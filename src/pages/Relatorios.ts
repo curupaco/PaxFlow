@@ -1927,7 +1927,7 @@ export class RelatoriosPage {
       return dStr;
     };
 
-    data.viagens.forEach((v: any) => {
+    this.viagens.forEach((v: any) => {
       if (filterConsultorId !== 'todos' && String(v.consultor_id) !== String(filterConsultorId)) {
         return;
       }
@@ -2756,7 +2756,7 @@ export class RelatoriosPage {
       const end = this.dataFim;
       
       const list: any[] = [];
-      data.viagens.forEach((v: any) => {
+      this.viagens.forEach((v: any) => {
         const clientName = v.cliente?.nome || 'Passageiro';
         const consultorName = this.consultores.find(c => c.id === v.consultor_id)?.nome || 'Consultor';
 
