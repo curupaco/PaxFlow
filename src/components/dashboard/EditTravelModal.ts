@@ -393,15 +393,9 @@ export class EditTravelModal {
                 </select>
               </div>
 
-              <div class="grid grid-cols-2 gap-4">
-                <div>
-                  <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 font-sans">Destino *</label>
-                  <input id="edit-viagem-destino" type="text" required ${viagemProcessoConferido ? 'disabled' : ''} value="${v.destino}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm font-sans" />
-                </div>
-                <div>
-                  <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 font-sans">Código Localizador (LOC)</label>
-                  <input id="edit-viagem-loc" type="text" ${viagemProcessoConferido ? 'disabled' : ''} value="${v.codigo_localizador || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm uppercase font-sans" placeholder="ex: F3R9W" />
-                </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 font-sans">Destino *</label>
+                <input id="edit-viagem-destino" type="text" required ${viagemProcessoConferido ? 'disabled' : ''} value="${v.destino}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm font-sans" />
               </div>
 
               <div>
@@ -859,7 +853,7 @@ export class EditTravelModal {
       const clienteId = (document.getElementById('edit-viagem-cliente') as HTMLSelectElement).value;
       const consultorId = (document.getElementById('edit-viagem-consultor') as HTMLSelectElement).value;
       const destino = (document.getElementById('edit-viagem-destino') as HTMLInputElement).value;
-      const loc = (document.getElementById('edit-viagem-loc') as HTMLInputElement).value.trim();
+      const loc = v.codigo_localizador;
       const valorRaw = (document.getElementById('edit-viagem-valor') as HTMLInputElement).value.trim();
       const dataIdaRaw = (document.getElementById('edit-viagem-ida') as HTMLInputElement).value.trim();
       const dataVoltaRaw = (document.getElementById('edit-viagem-volta') as HTMLInputElement).value.trim();
@@ -2112,9 +2106,14 @@ export class EditTravelModal {
       const pagamentosGrupo = locPagamentos.filter(lp => (lp.codigo_localizador || '').trim().toUpperCase() === locKey.toUpperCase());
       const totalPagoGrupo = pagamentosGrupo.reduce((sum, lp) => sum + (Number(lp.valor) || 0), 0);
 
+      const hasNoPayment = pagamentosGrupo.length === 0;
+      const btnPagamentoClass = hasNoPayment
+        ? 'bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-950/30 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-900/40'
+        : 'bg-white hover:bg-emerald-50 dark:bg-slate-800 dark:hover:bg-emerald-950/20 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 border-slate-200 dark:border-slate-700';
+
       let statusPagamentoBadge = '';
       if (pagamentosGrupo.length === 0) {
-        statusPagamentoBadge = `<span class="px-1.5 py-0.5 text-[9px] font-black rounded bg-rose-500/10 text-rose-500 border border-rose-500/20">⚠️ Sem Pagamento</span>`;
+        statusPagamentoBadge = '';
       } else if (Math.abs(totalPagoGrupo - valorVendaTotal) > 0.01) {
         statusPagamentoBadge = `<span class="px-1.5 py-0.5 text-[9px] font-black rounded bg-amber-500/10 text-amber-500 border border-amber-500/20">⚠️ Incompleto (R$ ${totalPagoGrupo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} / R$ ${valorVendaTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })})</span>`;
       } else {
@@ -2140,8 +2139,8 @@ export class EditTravelModal {
                 </span>
               ` : '')}
 
-              <button class="btn-formas-pagamento-loc p-1 bg-white hover:bg-emerald-50 dark:bg-slate-800 dark:hover:bg-emerald-950/20 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 rounded-lg border border-slate-200 dark:border-slate-700 transition text-[9px] font-bold flex items-center justify-center gap-1 shadow-sm font-sans ${isConferido ? 'opacity-55 cursor-not-allowed' : ''}" data-loc="${locKey}" title="${isConferido ? 'Bloqueado Financeiramente' : 'Definir Formas de Pagamento'}">
-                💰 Pagamento
+              <button class="btn-formas-pagamento-loc p-1 ${btnPagamentoClass} rounded-lg border transition text-[9px] font-bold flex items-center justify-center gap-1 shadow-sm font-sans ${isConferido ? 'opacity-55 cursor-not-allowed' : ''}" data-loc="${locKey}" title="${isConferido ? 'Bloqueado Financeiramente' : 'Definir Formas de Pagamento'}">
+                ${hasNoPayment ? '⚠️ Pagamento' : '💰 Pagamento'}
               </button>
 
               <span class="text-[10px] font-medium text-slate-400 dark:text-slate-500">
