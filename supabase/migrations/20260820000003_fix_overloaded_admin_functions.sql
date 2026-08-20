@@ -13,6 +13,8 @@ DROP FUNCTION IF EXISTS public.admin_create_user(TEXT, TEXT, TEXT, TEXT);
 DROP FUNCTION IF EXISTS public.admin_create_user(TEXT, TEXT, TEXT);
 
 -- 3. Recriar a função admin_create_user com assinatura única e limpa (argumentos em ordem alfabética para o PostgREST)
+-- Correção: Na tabela auth.identities do Supabase, a coluna 'id' para provedor local (email) DEVE ser o proprio ID do usuario em formato UUID (new_user_id),
+-- e a coluna 'identity_data' deve conter obrigatoriamente os campos 'email_verified' e 'phone_verified' para o GoTrue nao falhar com erro 500 no login.
 CREATE OR REPLACE FUNCTION public.admin_create_user(
   user_email TEXT,
   user_nome TEXT,
@@ -61,7 +63,7 @@ BEGIN
     ''
   );
 
-  -- Inserir na tabela de identidades auth.identities
+  -- Inserir na tabela de identidades auth.identities usando new_user_id (UUID)
   INSERT INTO auth.identities (
     id,
     user_id,
@@ -72,10 +74,10 @@ BEGIN
     created_at,
     updated_at
   ) VALUES (
-    gen_random_uuid(),
+    new_user_id,
     new_user_id,
     new_user_id::text,
-    jsonb_build_object('sub', new_user_id::text, 'email', user_email),
+    jsonb_build_object('sub', new_user_id::text, 'email', user_email, 'email_verified', true, 'phone_verified', false),
     'email',
     NOW(),
     NOW(),
