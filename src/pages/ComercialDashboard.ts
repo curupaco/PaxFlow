@@ -3,6 +3,7 @@ import { Orcamento, Viagem, PerfilConsultor, MetaPeriodo, MetaFaixa } from '../t
 import { getAvatarSvg, mesclarAvataresLocais } from '../services/avatars';
 import { showCustomConfirm } from '../services/dialog';
 import { MetasService } from '../services/metasService';
+import { parseBrFloat } from '../services/csvImporter';
 
 // Injeta estilos específicos premium para o Dashboard de Relatórios
 if (typeof document !== 'undefined') {
@@ -1365,15 +1366,26 @@ export class ComercialDashboard {
           </div>
 
           <div class="flex flex-wrap gap-3 pt-1">
-            ${sortedFaixas.map(f => {
-              const reached = val >= f.valor_minimo;
-              return `
-                <div class="flex items-center gap-1.5 text-[10px] font-bold ${reached ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500'}">
-                  <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: ${f.cor || '#6366f1'}"></span>
-                  <span>${f.nome} (R$ ${(f.valor_minimo / 1000).toFixed(0)}k)</span>
-                </div>
-              `;
-            }).join('')}
+            ${(() => {
+              const formatRecompensa = (rec: string) => {
+                if (!rec) return '';
+                const parsed = parseBrFloat(rec);
+                if (parsed !== null && !isNaN(parsed)) {
+                  return 'R$ ' + parsed.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                }
+                return rec;
+              };
+
+              return sortedFaixas.map(f => {
+                const reached = val >= f.valor_minimo;
+                return `
+                  <div class="flex items-center gap-1.5 text-[10px] font-bold ${reached ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500'}">
+                    <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: ${f.cor || '#6366f1'}"></span>
+                    <span>${f.nome} (R$ ${f.valor_minimo.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}${f.recompensa ? ` - Prêmio: ${formatRecompensa(f.recompensa)}` : ''})</span>
+                  </div>
+                `;
+              }).join('');
+            })()}
           </div>
 
           <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-2 font-medium">

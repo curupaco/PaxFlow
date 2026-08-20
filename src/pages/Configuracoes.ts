@@ -2771,12 +2771,21 @@ export class ConfiguracoesPage {
                         return parts[2] + '/' + parts[1] + '/' + parts[0];
                       };
 
+                      const formatRecompensa = (rec: string) => {
+                        if (!rec) return '';
+                        const parsed = parseBrFloat(rec);
+                        if (parsed !== null && !isNaN(parsed)) {
+                          return 'R$ ' + parsed.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                        }
+                        return rec;
+                      };
+
                       const faixasHTML = meta.faixas && meta.faixas.length > 0 
                         ? meta.faixas.map(f => 
                             '<div class="text-xs text-slate-650 dark:text-slate-400 font-bold mb-0.5 flex items-center gap-1.5">' +
                             '<span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: ' + (f.cor || '#6366f1') + '"></span>' +
-                            '• <span style="color: ' + (f.cor || '#6366f1') + '" class="font-black">' + f.nome + '</span>: >= R$ ' + f.valor_minimo.toLocaleString('pt-BR', { maximumFractionDigits: 0 }) +
-                            (f.recompensa ? ' <span class="text-[10px] text-slate-400 dark:text-slate-550 font-normal italic">(' + f.recompensa + ')</span>' : '') +
+                            '• <span style="color: ' + (f.cor || '#6366f1') + '" class="font-black">' + f.nome + '</span>: >= R$ ' + f.valor_minimo.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) +
+                            (f.recompensa ? ' <span class="text-[10px] text-slate-400 dark:text-slate-550 font-normal italic">(' + formatRecompensa(f.recompensa) + ')</span>' : '') +
                             '</div>'
                           ).join('')
                         : '<span class="text-slate-400 text-xs italic">Nenhuma faixa cadastrada</span>';
@@ -2864,6 +2873,23 @@ export class ConfiguracoesPage {
   }
 
   private abrirModalNovaMeta(): void {
+    const aplicarMascaraMonetaria = (inputEl: HTMLInputElement) => {
+      inputEl.addEventListener('input', (e) => {
+        const target = e.target as HTMLInputElement;
+        let val = target.value;
+        let digits = val.replace(/\D/g, '');
+        if (digits.length > 12) {
+          digits = digits.slice(0, 12);
+        }
+        if (!digits) {
+          target.value = '0,00';
+          return;
+        }
+        const num = parseInt(digits, 10) / 100;
+        target.value = num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      });
+    };
+
     const overlay = document.createElement('div');
     overlay.id = 'nova-meta-overlay';
     overlay.className = 'fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all duration-300 opacity-0';
@@ -2930,7 +2956,7 @@ export class ConfiguracoesPage {
                   <input type="text" placeholder="Nome (ex: Bronze)" required class="input-faixa-nome w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none text-xs font-semibold" />
                 </div>
                 <div class="col-span-3">
-                  <input type="number" placeholder="Mínimo (ex: 5000)" required class="input-faixa-valor w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none text-xs font-bold" />
+                  <input type="text" placeholder="Mínimo (ex: 28.000,00)" required class="input-faixa-valor w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none text-xs font-bold" />
                 </div>
                 <div class="col-span-3">
                   <input type="text" placeholder="Recompensa (Opcional)" class="input-faixa-recompensa w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none text-xs font-semibold" />
@@ -2959,6 +2985,12 @@ export class ConfiguracoesPage {
     `;
 
     document.body.appendChild(overlay);
+
+    // Aplicar máscara no campo inicial
+    const initialInput = overlay.querySelector('.input-faixa-valor') as HTMLInputElement;
+    if (initialInput) {
+      aplicarMascaraMonetaria(initialInput);
+    }
 
     setTimeout(() => {
       overlay.classList.add('opacity-100');
@@ -2989,7 +3021,7 @@ export class ConfiguracoesPage {
           <input type="text" placeholder="Nome" required class="input-faixa-nome w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none text-xs font-semibold" />
         </div>
         <div class="col-span-3">
-          <input type="number" placeholder="Mínimo" required class="input-faixa-valor w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none text-xs font-bold" />
+          <input type="text" placeholder="Mínimo (ex: 28.000,00)" required class="input-faixa-valor w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none text-xs font-bold" />
         </div>
         <div class="col-span-3">
           <input type="text" placeholder="Recompensa" class="input-faixa-recompensa w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none text-xs font-semibold" />
@@ -3003,6 +3035,12 @@ export class ConfiguracoesPage {
         </div>
       `;
       container.appendChild(newRow);
+      
+      const valInput = newRow.querySelector('.input-faixa-valor') as HTMLInputElement;
+      if (valInput) {
+        aplicarMascaraMonetaria(valInput);
+      }
+
       container.scrollTop = container.scrollHeight;
     });
 
@@ -3021,7 +3059,8 @@ export class ConfiguracoesPage {
       const faixas: any[] = [];
       rows.forEach(row => {
         const fNome = (row.querySelector('.input-faixa-nome') as HTMLInputElement).value;
-        const fValor = Number((row.querySelector('.input-faixa-valor') as HTMLInputElement).value) || 0;
+        const fValorRaw = (row.querySelector('.input-faixa-valor') as HTMLInputElement).value;
+        const fValor = parseBrFloat(fValorRaw) || 0;
         const fRecompensa = (row.querySelector('.input-faixa-recompensa') as HTMLInputElement).value || '';
         const fCor = (row.querySelector('.input-faixa-cor') as HTMLInputElement).value || '#6366f1';
         if (fNome && fValor > 0) {
