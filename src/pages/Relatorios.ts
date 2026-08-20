@@ -2020,8 +2020,14 @@ export class RelatoriosPage {
 
     const rowsHtml = list.map((item, idx) => {
       const alertBadge = item.hasAlert 
-        ? `<button class="btn-alerta-viagem px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 hover:bg-emerald-100 transition" data-trip-id="${item.tripId}" data-product-id="${item.productId}" data-type="${item.tipoEmbarque}">🔔 Sim (Ver)</button>`
-        : `<button class="btn-alerta-viagem px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-slate-100 text-slate-650 dark:bg-slate-800 dark:text-slate-450 hover:bg-indigo-50 hover:text-indigo-600 transition" data-trip-id="${item.tripId}" data-product-id="${item.productId}" data-type="${item.tipoEmbarque}">➕ Criar Alerta</button>`;
+        ? `<div class="flex items-center justify-center gap-1.5">
+             <span class="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 text-[10px] font-black uppercase tracking-wider rounded-md">SIM</span>
+             <button class="btn-alerta-viagem text-[10px] font-extrabold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-350 underline focus:outline-none" data-trip-id="${item.tripId}" data-product-id="${item.productId}" data-type="${item.tipoEmbarque}">Ver</button>
+           </div>`
+        : `<div class="flex items-center justify-center gap-1.5">
+             <span class="px-2 py-0.5 bg-slate-150 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[10px] font-black uppercase tracking-wider rounded-md">NÃO</span>
+             <button class="btn-alerta-viagem text-[10px] font-extrabold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-350 underline focus:outline-none" data-trip-id="${item.tripId}" data-product-id="${item.productId}" data-type="${item.tipoEmbarque}">Criar</button>
+           </div>`;
 
       return `
         <tr class="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50/40 dark:hover:bg-slate-850/20 text-slate-650 dark:text-slate-350 transition-colors">
@@ -2429,9 +2435,11 @@ export class RelatoriosPage {
               const product = viagem?.produtos?.find((p: any) => p.id === productId);
               if (product) {
                 const prodName = `${product.fornecedor || 'Aéreo'} - ${product.descricao || 'Voo'}`;
-                CommentsService.openProductCommentsModal(
+                CommentsService.openCommentsModal(
+                  'produto',
                   productId,
                   tripId,
+                  '📦 Notas do Produto',
                   prodName,
                   this.user.id,
                   this.consultores,
@@ -2445,22 +2453,26 @@ export class RelatoriosPage {
                 this.showToast('Erro ao carregar dados do produto para anotações.', 'error');
               }
             } else {
-              const modal = new EditTravelModal({
-                perfil: this.perfil,
-                consultores: this.consultores,
-                tiposProduto: this.tiposProduto,
-                viagens: this.viagens,
-                isFallbackMode: false,
-                user: this.user,
-                onUpdate: async () => {
-                  await this.loadData();
-                  this.render();
-                  this.setupEventListeners();
-                },
-                showToast: (msg, type) => this.showToast(msg, type),
-                checkSLA: (v) => ({ alert: false, type: null, text: '' })
-              });
-              await modal.open(tripId, 'detalhes');
+              const viagem = this.viagens.find(v => v.id === tripId);
+              if (viagem) {
+                const tripLabel = `${viagem.cliente?.nome || 'Passageiro'} - ${viagem.destino}`;
+                CommentsService.openCommentsModal(
+                  'viagem',
+                  tripId,
+                  tripId,
+                  '✈️ Notas da Viagem',
+                  tripLabel,
+                  this.user.id,
+                  this.consultores,
+                  async () => {
+                    await this.loadData();
+                    this.render();
+                    this.setupEventListeners();
+                  }
+                );
+              } else {
+                this.showToast('Erro ao carregar dados da viagem para anotações.', 'error');
+              }
             }
           }
         });

@@ -618,6 +618,82 @@ export class CommentsService {
   }
 
   /**
+   * Abre um modal overlay secundário dedicado aos comentários de qualquer item (viagem, produto ou orçamento)
+   */
+  public static openCommentsModal(
+    tipoItem: 'orcamento' | 'viagem' | 'produto',
+    itemId: string,
+    parentId: string,
+    title: string,
+    subtitle: string,
+    currentUserId: string,
+    profiles: PerfilConsultor[],
+    onClose?: () => void
+  ): void {
+    const overlayId = 'modal-overlay-generic-comments';
+    let overlay = document.getElementById(overlayId);
+
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = overlayId;
+      overlay.className = 'fixed inset-0 bg-slate-950/80 backdrop-blur-xs z-[60] flex items-center justify-center p-4 transition-all duration-300 opacity-0 pointer-events-none';
+      overlay.innerHTML = `
+        <div class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 w-full max-w-lg rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-800 transform scale-95 transition-all duration-300 max-h-[80vh] overflow-hidden flex flex-col" id="modal-container-generic-comments">
+          <div class="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+            <div>
+              <h3 class="text-sm font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5" id="generic-comments-title">💬 Comentários</h3>
+              <p class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold truncate max-w-[300px]" id="generic-comments-subtitle">${subtitle}</p>
+            </div>
+            <button id="btn-close-generic-comments-modal" class="text-slate-400 hover:text-rose-500 dark:text-slate-500 dark:hover:text-rose-400 font-bold transition">✕</button>
+          </div>
+          <div id="generic-comments-content-container" class="p-5 overflow-y-auto flex-1 custom-scrollbar"></div>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+    } else {
+      const titleEl = overlay.querySelector('#generic-comments-title');
+      const subtitleEl = overlay.querySelector('#generic-comments-subtitle');
+      if (titleEl) titleEl.innerHTML = title;
+      if (subtitleEl) subtitleEl.textContent = subtitle;
+    }
+
+    const container = overlay.querySelector('#generic-comments-content-container') as HTMLDivElement;
+    const modalContainer = overlay.querySelector('#modal-container-generic-comments') as HTMLDivElement;
+
+    // Fecha o modal
+    const closeCommentsModal = () => {
+      modalContainer.classList.remove('scale-100');
+      modalContainer.classList.add('scale-95');
+      overlay!.classList.remove('opacity-100', 'pointer-events-auto');
+      overlay!.classList.add('opacity-0', 'pointer-events-none');
+      if (onClose) onClose();
+    };
+
+    // Remove existing event listener if any to avoid duplication
+    const closeBtn = overlay.querySelector('#btn-close-generic-comments-modal');
+    if (closeBtn) {
+      const newCloseBtn = closeBtn.cloneNode(true);
+      closeBtn.parentNode?.replaceChild(newCloseBtn, closeBtn);
+      newCloseBtn.addEventListener('click', closeCommentsModal);
+    }
+
+    // Animar abertura
+    setTimeout(() => {
+      if (overlay) {
+        overlay.classList.remove('opacity-0', 'pointer-events-none');
+        overlay.classList.add('opacity-100', 'pointer-events-auto');
+      }
+      if (modalContainer) {
+        modalContainer.classList.remove('scale-95');
+        modalContainer.classList.add('scale-100');
+      }
+    }, 10);
+
+    // Renderizar a seção de comentários
+    this.renderCommentsSection(container, tipoItem, itemId, parentId, currentUserId, profiles);
+  }
+
+  /**
    * Scans comment text for a mention (@Name) and a valid date (DD/MM/YYYY)
    * to automatically schedule a reminder in the calendar.
    */
