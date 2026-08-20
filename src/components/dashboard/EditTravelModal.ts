@@ -2107,9 +2107,18 @@ export class EditTravelModal {
       const totalPagoGrupo = pagamentosGrupo.reduce((sum, lp) => sum + (Number(lp.valor) || 0), 0);
 
       const hasNoPayment = pagamentosGrupo.length === 0;
-      const btnPagamentoClass = hasNoPayment
-        ? 'bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-950/30 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-900/40'
-        : 'bg-white hover:bg-emerald-50 dark:bg-slate-800 dark:hover:bg-emerald-950/20 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 border-slate-200 dark:border-slate-700';
+      const isPaid = pagamentosGrupo.length > 0 && Math.abs(totalPagoGrupo - valorVendaTotal) <= 0.01;
+
+      let btnPagamentoClass = 'bg-white hover:bg-emerald-50 dark:bg-slate-800 dark:hover:bg-emerald-950/20 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 border-slate-200 dark:border-slate-700';
+      let btnPagamentoContent = '💰 Pagamento';
+
+      if (hasNoPayment) {
+        btnPagamentoClass = 'bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-950/30 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-900/40';
+        btnPagamentoContent = '⚠️ Pagamento';
+      } else if (isPaid) {
+        btnPagamentoClass = 'bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900/40';
+        btnPagamentoContent = '✔️ Pago';
+      }
 
       let statusPagamentoBadge = '';
       if (pagamentosGrupo.length === 0) {
@@ -2117,7 +2126,7 @@ export class EditTravelModal {
       } else if (Math.abs(totalPagoGrupo - valorVendaTotal) > 0.01) {
         statusPagamentoBadge = `<span class="px-1.5 py-0.5 text-[9px] font-black rounded bg-amber-500/10 text-amber-500 border border-amber-500/20">⚠️ Incompleto (R$ ${totalPagoGrupo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} / R$ ${valorVendaTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })})</span>`;
       } else {
-        statusPagamentoBadge = `<span class="px-1.5 py-0.5 text-[9px] font-black rounded bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">✅ Pago</span>`;
+        statusPagamentoBadge = '';
       }
 
       const isAdmin = this.options.perfil?.role === 'admin';
@@ -2140,7 +2149,7 @@ export class EditTravelModal {
               ` : '')}
 
               <button class="btn-formas-pagamento-loc p-1 ${btnPagamentoClass} rounded-lg border transition text-[9px] font-bold flex items-center justify-center gap-1 shadow-sm font-sans ${isConferido ? 'opacity-55 cursor-not-allowed' : ''}" data-loc="${locKey}" title="${isConferido ? 'Bloqueado Financeiramente' : 'Definir Formas de Pagamento'}">
-                ${hasNoPayment ? '⚠️ Pagamento' : '💰 Pagamento'}
+                ${btnPagamentoContent}
               </button>
 
               <span class="text-[10px] font-medium text-slate-400 dark:text-slate-500">
