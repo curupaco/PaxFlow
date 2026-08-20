@@ -82,7 +82,7 @@ export class SendTemplateMessageModal {
       return texto;
     };
 
-    const hasDigisac = settings?.digisac_token && settings?.digisac_domain && settings?.digisac_service_id;
+    const hasDigisac = settings?.digisac_token && settings?.digisac_domain && settings?.digisac_service_id && settings?.digisac_enable_manual_send !== false;
 
     const footerButtonsHtml = hasDigisac
       ? `

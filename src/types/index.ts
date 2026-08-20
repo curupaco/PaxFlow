@@ -50,6 +50,18 @@ export interface GlobalSettings {
   digisacDomain?: string;
   digisac_service_id?: string;
   digisacServiceId?: string;
+  digisac_enable_manual_send?: boolean;
+  digisacEnableManualSend?: boolean;
+  digisac_enable_chat_history?: boolean;
+  digisacEnableChatHistory?: boolean;
+  digisac_enable_vouchers?: boolean;
+  digisacEnableVouchers?: boolean;
+  digisac_enable_routing?: boolean;
+  digisacEnableRouting?: boolean;
+  digisac_enable_bot_triggers?: boolean;
+  digisacEnableBotTriggers?: boolean;
+  digisac_enable_webhooks?: boolean;
+  digisacEnableWebhooks?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }

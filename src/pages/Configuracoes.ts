@@ -206,7 +206,19 @@ export class ConfiguracoesPage {
           agency_primary_color: data.agency_primary_color || data.agencyPrimaryColor || '#4f46e5',
           digisacToken: data.digisac_token || '',
           digisacDomain: data.digisac_domain || '',
-          digisacServiceId: data.digisac_service_id || ''
+          digisacServiceId: data.digisac_service_id || '',
+          digisac_enable_manual_send: data.digisac_enable_manual_send !== false,
+          digisacEnableManualSend: data.digisac_enable_manual_send !== false,
+          digisac_enable_chat_history: data.digisac_enable_chat_history !== false,
+          digisacEnableChatHistory: data.digisac_enable_chat_history !== false,
+          digisac_enable_vouchers: data.digisac_enable_vouchers !== false,
+          digisacEnableVouchers: data.digisac_enable_vouchers !== false,
+          digisac_enable_routing: data.digisac_enable_routing !== false,
+          digisacEnableRouting: data.digisac_enable_routing !== false,
+          digisac_enable_bot_triggers: data.digisac_enable_bot_triggers !== false,
+          digisacEnableBotTriggers: data.digisac_enable_bot_triggers !== false,
+          digisac_enable_webhooks: data.digisac_enable_webhooks !== false,
+          digisacEnableWebhooks: data.digisac_enable_webhooks !== false
         };
       } else {
         const initialPayload = {
@@ -223,7 +235,13 @@ export class ConfiguracoesPage {
           agency_primary_color: '#4f46e5',
           digisac_token: '',
           digisac_domain: '',
-          digisac_service_id: ''
+          digisac_service_id: '',
+          digisac_enable_manual_send: true,
+          digisac_enable_chat_history: true,
+          digisac_enable_vouchers: true,
+          digisac_enable_routing: true,
+          digisac_enable_bot_triggers: true,
+          digisac_enable_webhooks: true
         };
 
         const { data: inserted, error: insertError } = await supabase
@@ -252,7 +270,19 @@ export class ConfiguracoesPage {
           agency_primary_color: inserted.agency_primary_color || '#4f46e5',
           digisacToken: inserted.digisac_token || '',
           digisacDomain: inserted.digisac_domain || '',
-          digisacServiceId: inserted.digisac_service_id || ''
+          digisacServiceId: inserted.digisac_service_id || '',
+          digisac_enable_manual_send: inserted.digisac_enable_manual_send !== false,
+          digisacEnableManualSend: inserted.digisac_enable_manual_send !== false,
+          digisac_enable_chat_history: inserted.digisac_enable_chat_history !== false,
+          digisacEnableChatHistory: inserted.digisac_enable_chat_history !== false,
+          digisac_enable_vouchers: inserted.digisac_enable_vouchers !== false,
+          digisacEnableVouchers: inserted.digisac_enable_vouchers !== false,
+          digisac_enable_routing: inserted.digisac_enable_routing !== false,
+          digisacEnableRouting: inserted.digisac_enable_routing !== false,
+          digisac_enable_bot_triggers: inserted.digisac_enable_bot_triggers !== false,
+          digisacEnableBotTriggers: inserted.digisac_enable_bot_triggers !== false,
+          digisac_enable_webhooks: inserted.digisac_enable_webhooks !== false,
+          digisacEnableWebhooks: inserted.digisac_enable_webhooks !== false
         };
       }
 
@@ -377,6 +407,12 @@ export class ConfiguracoesPage {
         const digisacTokenVal = (document.getElementById('input-digisac-token') as HTMLInputElement).value;
         const digisacDomainVal = (document.getElementById('input-digisac-domain') as HTMLInputElement).value;
         const digisacServiceIdVal = (document.getElementById('input-digisac-service-id') as HTMLInputElement).value;
+        const digisacEnableManualSendVal = (document.getElementById('input-digisac-enable-manual-send') as HTMLInputElement).checked;
+        const digisacEnableChatHistoryVal = (document.getElementById('input-digisac-enable-chat-history') as HTMLInputElement).checked;
+        const digisacEnableVouchersVal = (document.getElementById('input-digisac-enable-vouchers') as HTMLInputElement).checked;
+        const digisacEnableRoutingVal = (document.getElementById('input-digisac-enable-routing') as HTMLInputElement).checked;
+        const digisacEnableBotTriggersVal = (document.getElementById('input-digisac-enable-bot-triggers') as HTMLInputElement).checked;
+        const digisacEnableWebhooksVal = (document.getElementById('input-digisac-enable-webhooks') as HTMLInputElement).checked;
 
         const payload = {
           agency_name: agencyNameVal,
@@ -389,7 +425,13 @@ export class ConfiguracoesPage {
           agency_logo_url: logoUrlVal,
           digisac_token: digisacTokenVal,
           digisac_domain: digisacDomainVal,
-          digisac_service_id: digisacServiceIdVal
+          digisac_service_id: digisacServiceIdVal,
+          digisac_enable_manual_send: digisacEnableManualSendVal,
+          digisac_enable_chat_history: digisacEnableChatHistoryVal,
+          digisac_enable_vouchers: digisacEnableVouchersVal,
+          digisac_enable_routing: digisacEnableRoutingVal,
+          digisac_enable_bot_triggers: digisacEnableBotTriggersVal,
+          digisac_enable_webhooks: digisacEnableWebhooksVal
         };
 
         try {
@@ -1977,11 +2019,91 @@ export class ConfiguracoesPage {
                     </div>
                   </div>
 
-                  <div class="flex items-center gap-2 pt-1">
+                  <div class="flex items-center gap-2 pt-1 pb-3">
                     <button id="btn-testar-digisac" type="button" class="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 dark:bg-slate-800 dark:hover:bg-slate-750 text-indigo-600 dark:text-indigo-400 border border-indigo-100/50 dark:border-slate-700 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm">
                       ⚡ Testar Conexão
                     </button>
                     <span id="digisac-test-result" class="text-[9px] font-bold text-slate-500 dark:text-slate-400"></span>
+                  </div>
+
+                  <!-- Funcionalidades Ativas (Toggles) -->
+                  <div class="border-t border-slate-100 dark:border-slate-800 pt-4">
+                    <h4 class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3">Recursos Habilitados (Digisac)</h4>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      
+                      <!-- Manual Send Toggle -->
+                      <div class="flex items-center justify-between p-3 bg-slate-50/50 dark:bg-slate-900/50 border border-slate-150 dark:border-slate-800/80 rounded-xl">
+                        <div class="flex flex-col gap-0.5 pr-2">
+                          <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Envio Manual de Mensagens</span>
+                          <span class="text-[10px] text-slate-400 dark:text-slate-500 leading-normal">Permite enviar modelos de mensagens manualmente nos chats.</span>
+                        </div>
+                        <label class="inline-flex items-center cursor-pointer select-none shrink-0 relative">
+                          <input id="input-digisac-enable-manual-send" type="checkbox" ${this.settings.digisac_enable_manual_send !== false ? 'checked' : ''} class="sr-only peer" />
+                          <div class="w-9 h-5 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500 relative"></div>
+                        </label>
+                      </div>
+
+                      <!-- Chat History Toggle -->
+                      <div class="flex items-center justify-between p-3 bg-slate-50/50 dark:bg-slate-900/50 border border-slate-150 dark:border-slate-800/80 rounded-xl">
+                        <div class="flex flex-col gap-0.5 pr-2">
+                          <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Sincronização de Histórico</span>
+                          <span class="text-[10px] text-slate-400 dark:text-slate-500 leading-normal">Mantém histórico de conversas atualizado no painel.</span>
+                        </div>
+                        <label class="inline-flex items-center cursor-pointer select-none shrink-0 relative">
+                          <input id="input-digisac-enable-chat-history" type="checkbox" ${this.settings.digisac_enable_chat_history !== false ? 'checked' : ''} class="sr-only peer" />
+                          <div class="w-9 h-5 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500 relative"></div>
+                        </label>
+                      </div>
+
+                      <!-- Vouchers Toggle -->
+                      <div class="flex items-center justify-between p-3 bg-slate-50/50 dark:bg-slate-900/50 border border-slate-150 dark:border-slate-800/80 rounded-xl">
+                        <div class="flex flex-col gap-0.5 pr-2">
+                          <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Envio de Vouchers</span>
+                          <span class="text-[10px] text-slate-400 dark:text-slate-500 leading-normal">Permite enviar vouchers e itinerários via WhatsApp.</span>
+                        </div>
+                        <label class="inline-flex items-center cursor-pointer select-none shrink-0 relative">
+                          <input id="input-digisac-enable-vouchers" type="checkbox" ${this.settings.digisac_enable_vouchers !== false ? 'checked' : ''} class="sr-only peer" />
+                          <div class="w-9 h-5 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500 relative"></div>
+                        </label>
+                      </div>
+
+                      <!-- Routing Toggle -->
+                      <div class="flex items-center justify-between p-3 bg-slate-50/50 dark:bg-slate-900/50 border border-slate-150 dark:border-slate-800/80 rounded-xl">
+                        <div class="flex flex-col gap-0.5 pr-2">
+                          <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Distribuição de Conversas (Fila)</span>
+                          <span class="text-[10px] text-slate-400 dark:text-slate-500 leading-normal">Roteamento inteligente de chats para consultores.</span>
+                        </div>
+                        <label class="inline-flex items-center cursor-pointer select-none shrink-0 relative">
+                          <input id="input-digisac-enable-routing" type="checkbox" ${this.settings.digisac_enable_routing !== false ? 'checked' : ''} class="sr-only peer" />
+                          <div class="w-9 h-5 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500 relative"></div>
+                        </label>
+                      </div>
+
+                      <!-- Bot Triggers Toggle -->
+                      <div class="flex items-center justify-between p-3 bg-slate-50/50 dark:bg-slate-900/50 border border-slate-150 dark:border-slate-800/80 rounded-xl">
+                        <div class="flex flex-col gap-0.5 pr-2">
+                          <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Gatilhos de Robôs (Bots)</span>
+                          <span class="text-[10px] text-slate-400 dark:text-slate-500 leading-normal">Acionamento automático de fluxos de chat do Digisac.</span>
+                        </div>
+                        <label class="inline-flex items-center cursor-pointer select-none shrink-0 relative">
+                          <input id="input-digisac-enable-bot-triggers" type="checkbox" ${this.settings.digisac_enable_bot_triggers !== false ? 'checked' : ''} class="sr-only peer" />
+                          <div class="w-9 h-5 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500 relative"></div>
+                        </label>
+                      </div>
+
+                      <!-- Webhooks Toggle -->
+                      <div class="flex items-center justify-between p-3 bg-slate-50/50 dark:bg-slate-900/50 border border-slate-150 dark:border-slate-800/80 rounded-xl">
+                        <div class="flex flex-col gap-0.5 pr-2">
+                          <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Webhooks de Eventos</span>
+                          <span class="text-[10px] text-slate-400 dark:text-slate-500 leading-normal">Envio de status de leitura/mensagens recebidas via webhook.</span>
+                        </div>
+                        <label class="inline-flex items-center cursor-pointer select-none shrink-0 relative">
+                          <input id="input-digisac-enable-webhooks" type="checkbox" ${this.settings.digisac_enable_webhooks !== false ? 'checked' : ''} class="sr-only peer" />
+                          <div class="w-9 h-5 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500 relative"></div>
+                        </label>
+                      </div>
+
+                    </div>
                   </div>
                 </div>
                 <div class="border-t border-slate-100 dark:border-slate-800 pt-5 space-y-4">
