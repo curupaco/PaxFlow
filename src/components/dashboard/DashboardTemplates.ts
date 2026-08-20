@@ -315,15 +315,18 @@ export function renderLateralEditorPaneHTML(
                 <div id="edit-container-campos-condicionais-${selectedProduct.id}" class="hidden bg-slate-100/40 dark:bg-slate-900/30 p-2.5 rounded-lg border border-slate-200/40 dark:border-slate-800/40 space-y-2"></div>
 
                 <!-- Trechos Aéreos (exclusivo para AÉREO OPERADORA e AÉREO FACIAL) -->
-                ${(selectedProduct.tipo === 'AÉREO OPERADORA' || selectedProduct.tipo === 'AÉREO FACIAL') ? `
-                  <div id="edit-secao-trechos-${selectedProduct.id}" class="space-y-2.5 mt-2 bg-slate-100/40 dark:bg-slate-900/30 p-2.5 rounded-lg border border-slate-200/40 dark:border-slate-800/40">
-                    <span class="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-1 flex items-center gap-1">✈️ Trechos Aéreos</span>
-                    <div id="edit-container-trechos-${selectedProduct.id}" class="space-y-2"></div>
-                    <button type="button" id="edit-btn-add-trecho-${selectedProduct.id}" ${disabledAttr} class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 font-black text-[9px] tracking-wider rounded-lg transition uppercase flex items-center gap-1 mt-1">
-                      ➕ Adicionar Trecho
-                    </button>
-                  </div>
-                ` : ''}
+                ${(() => {
+                  const tUpper = (selectedProduct.tipo || '').trim().toUpperCase();
+                  return (tUpper === 'AÉREO OPERADORA' || tUpper === 'AÉREO FACIAL') ? `
+                    <div id="edit-secao-trechos-${selectedProduct.id}" class="space-y-2.5 mt-2 bg-slate-100/40 dark:bg-slate-900/30 p-2.5 rounded-lg border border-slate-200/40 dark:border-slate-800/40">
+                      <span class="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-1 flex items-center gap-1">✈️ Trechos Aéreos</span>
+                      <div id="edit-container-trechos-${selectedProduct.id}" class="space-y-2"></div>
+                      <button type="button" id="edit-btn-add-trecho-${selectedProduct.id}" ${disabledAttr} class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 font-black text-[9px] tracking-wider rounded-lg transition uppercase flex items-center gap-1 mt-1">
+                        ➕ Adicionar Trecho
+                      </button>
+                    </div>
+                  ` : '';
+                })()}
 
                 <!-- Datas Adicionais -->
                 <div class="border-t border-slate-100 dark:border-slate-800/80 pt-3">

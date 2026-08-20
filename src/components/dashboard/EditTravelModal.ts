@@ -1090,7 +1090,8 @@ export class EditTravelModal {
 
       const containerTrechos = document.getElementById('container-trechos-aereo');
       const listaTrechos = document.getElementById('lista-trechos');
-      if (selectedType === 'AÉREO OPERADORA' || selectedType === 'AÉREO FACIAL') {
+      const selectedTypeUpper = (selectedType || '').trim().toUpperCase();
+      if (selectedTypeUpper === 'AÉREO OPERADORA' || selectedTypeUpper === 'AÉREO FACIAL') {
         containerTrechos?.classList.remove('hidden');
         if (listaTrechos && listaTrechos.childElementCount === 0) {
           this.addNewTrechoRow(listaTrechos, 0);
@@ -1255,7 +1256,8 @@ export class EditTravelModal {
       }
 
       // Coleta trechos aéreos do novo produto se aplicável
-      if (tipo === 'AÉREO OPERADORA' || tipo === 'AÉREO FACIAL') {
+      const tipoUpper = (tipo || '').trim().toUpperCase();
+      if (tipoUpper === 'AÉREO OPERADORA' || tipoUpper === 'AÉREO FACIAL') {
         const rows = formNovoProduto.querySelectorAll('.trecho-item-row');
         const trechos: any[] = [];
         let trechosValid = true;
@@ -1446,7 +1448,8 @@ export class EditTravelModal {
 
       const editSecaoTrechos = document.getElementById(`edit-secao-trechos-${prodId}`);
       const editContainerTrechos = document.getElementById(`edit-container-trechos-${prodId}`);
-      if (editTipoSelect.value === 'AÉREO OPERADORA' || editTipoSelect.value === 'AÉREO FACIAL') {
+      const editTipoUpper = (editTipoSelect.value || '').trim().toUpperCase();
+      if (editTipoUpper === 'AÉREO OPERADORA' || editTipoUpper === 'AÉREO FACIAL') {
         editSecaoTrechos?.classList.remove('hidden');
         if (editContainerTrechos && editContainerTrechos.childElementCount === 0) {
           this.addNewTrechoRow(editContainerTrechos, 0, '', '', '', '', isLocConferido);
@@ -1709,7 +1712,8 @@ export class EditTravelModal {
       }
 
       // Coleta trechos aéreos do editor lateral se aplicável
-      if (editTipo === 'AÉREO OPERADORA' || editTipo === 'AÉREO FACIAL') {
+      const editTipoUpper = (editTipo || '').trim().toUpperCase();
+      if (editTipoUpper === 'AÉREO OPERADORA' || editTipoUpper === 'AÉREO FACIAL') {
         const rows = formEditProd.querySelectorAll('.trecho-item-row');
         const trechos: any[] = [];
         let trechosValid = true;
