@@ -12,567 +12,461 @@ export class LandingPage {
 
   private render(): void {
     this.container.innerHTML = `
-      <div class="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans selection:bg-indigo-500 selection:text-white flex flex-col relative overflow-hidden transition-colors duration-300">
+      <div class="landing-page-wrapper min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans selection:bg-indigo-500 selection:text-white flex flex-col relative overflow-hidden transition-colors duration-300">
         
-        <!-- Background Decorative Gradients -->
-        <div class="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-indigo-500/10 dark:bg-indigo-900/20 rounded-full blur-[120px] pointer-events-none"></div>
-        <div class="absolute bottom-[-10%] right-[-15%] w-[60%] h-[60%] bg-emerald-500/5 dark:bg-emerald-900/10 rounded-full blur-[150px] pointer-events-none"></div>
+        <!-- Soft Ambient Light Background Glows -->
+        <div class="absolute top-[-15%] left-[-10%] w-[60%] h-[50%] bg-gradient-to-tr from-indigo-200/20 via-indigo-100/10 to-transparent dark:from-indigo-900/15 dark:via-indigo-900/5 dark:to-transparent rounded-full blur-[140px] pointer-events-none"></div>
+        <div class="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-gradient-to-bl from-emerald-100/15 via-emerald-50/5 to-transparent dark:from-emerald-900/10 dark:via-emerald-950/5 dark:to-transparent rounded-full blur-[140px] pointer-events-none"></div>
 
-        <!-- Top Header Navigation -->
-        <header class="w-full bg-white/75 dark:bg-slate-950/45 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-900/50 sticky top-0 z-50 px-6 py-4 flex items-center justify-between transition-all duration-300">
+        <!-- Top Navigation Bar -->
+        <header class="w-full bg-white/60 dark:bg-slate-950/40 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-900/50 sticky top-0 z-50 px-6 py-4 flex items-center justify-between transition-all duration-300">
           <div class="flex items-center gap-3">
-            <img src="/logo.svg" alt="PaxFlow Logo" class="h-9 w-9 object-contain filter drop-shadow-md shrink-0" />
-            <span class="text-lg font-black text-slate-800 dark:text-white tracking-tight">PaxFlow</span>
+            <img src="/logo.svg" alt="PaxFlow Logo" class="h-8 w-8 object-contain filter drop-shadow-sm shrink-0" />
+            <span class="text-base font-extrabold text-slate-800 dark:text-white tracking-tight">PaxFlow</span>
           </div>
-          <div class="flex items-center gap-4">
+          <div class="flex items-center gap-3.5">
             <!-- Theme Toggle Button -->
-            <button id="theme-toggle-btn" title="Alternar Tema" class="p-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 rounded-xl transition border border-slate-200/40 dark:border-slate-700/40 flex items-center justify-center">
-              <svg width="18" height="18" class="w-4.5 h-4.5 theme-icon-light" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <button id="theme-toggle-btn" title="Alternar Tema" class="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-850 text-slate-550 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 rounded-xl transition border border-slate-200/40 dark:border-slate-800/40 flex items-center justify-center">
+              <svg width="16" height="16" class="w-4 h-4 theme-icon-light" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
               </svg>
-              <svg width="18" height="18" class="w-4.5 h-4.5 theme-icon-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              <svg width="16" height="16" class="w-4 h-4 theme-icon-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.364l-.707-.707M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
             </button>
-            <button id="btn-acessar-login" class="px-5 py-2.5 bg-slate-800 dark:bg-slate-800 hover:bg-slate-700 dark:hover:bg-slate-750 text-white font-extrabold text-xs tracking-wider rounded-xl border border-slate-700 hover:border-slate-600 transition uppercase shadow-inner">
-              Acessar Plataforma
+            <button id="btn-acessar-login" class="px-4 py-2 bg-slate-900 dark:bg-slate-800 hover:bg-slate-850 dark:hover:bg-slate-750 text-white font-bold text-xs rounded-xl border border-slate-800 dark:border-slate-700 hover:border-slate-700 transition shadow-sm">
+              Acessar Sistema
             </button>
           </div>
         </header>
 
         <!-- Hero Section -->
-        <main class="flex-1 flex flex-col items-center justify-center px-6 py-16 md:py-24 text-center max-w-5xl mx-auto relative z-10">
+        <main class="flex-1 flex flex-col items-center justify-center px-6 py-16 md:py-20 text-center max-w-5xl mx-auto relative z-10">
           
-          <!-- Badge -->
-          <div class="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-500/10 dark:bg-indigo-500/10 border border-indigo-500/30 text-indigo-600 dark:text-indigo-400 font-black text-[10px] uppercase tracking-widest rounded-full mb-6">
-            <span>✨</span> Apresentação Comercial PaxFlow
+          <!-- Modern Label Badge -->
+          <div class="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-50/80 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/60 text-indigo-650 dark:text-indigo-400 font-bold text-[10px] tracking-wide rounded-full mb-6">
+            <span class="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></span>
+            Apresentação Operacional PaxFlow
           </div>
 
           <!-- Headline -->
-          <h1 class="text-4xl md:text-6xl font-black tracking-tight leading-[1.1] mb-6 text-slate-900 dark:text-white">
-            O Controle Operacional que Sua <br class="hidden md:block"/>
-            <span class="bg-gradient-to-r from-indigo-600 via-indigo-500 to-emerald-500 dark:from-indigo-400 dark:via-indigo-500 dark:to-emerald-400 bg-clip-text text-transparent">Agência de Viagens</span> Precisa
+          <h1 class="text-4xl md:text-5xl font-black tracking-tight leading-[1.1] mb-6 text-slate-850 dark:text-white">
+            A plataforma operacional definitiva <br class="hidden md:block"/>
+            para <span class="bg-gradient-to-r from-indigo-600 via-indigo-500 to-indigo-700 dark:from-indigo-400 dark:via-indigo-550 dark:to-indigo-300 bg-clip-text text-transparent">Agências de Viagem</span>.
           </h1>
 
           <!-- Subtitle -->
-          <p class="text-base md:text-xl text-slate-600 dark:text-slate-400 font-medium max-w-3xl mb-10 leading-relaxed">
-            Elimine planilhas paralelas. Gerencie pós-vendas, automatize alertas de SLA de passaportes, controle reembolsos de forma integrada e acompanhe a rentabilidade em tempo real.
+          <p class="text-sm md:text-base text-slate-550 dark:text-slate-400 font-medium max-w-2xl mb-10 leading-relaxed">
+            Centralize pós-vendas, automatize alertas de validade de passaportes (SLA), concilie reembolsos de bilhetes aéreos e monitore sua rentabilidade real em um painel simples e elegante.
           </p>
 
-          <!-- CTAs -->
-          <div class="flex flex-col sm:flex-row items-center gap-4 mb-16 w-full justify-center">
-            <button id="btn-iniciar-demo" class="w-full sm:w-auto px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-sm tracking-widest rounded-2xl shadow-xl shadow-indigo-600/25 transition-all transform hover:-translate-y-1 uppercase flex items-center justify-center gap-2">
-              <span>🚀</span> Experimentar PaxFlow (Modo Demo)
+          <!-- Action Buttons -->
+          <div class="flex flex-col sm:flex-row items-center gap-3.5 mb-16 w-full justify-center">
+            <button id="btn-iniciar-demo" class="w-full sm:w-auto px-7 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5 uppercase flex items-center justify-center gap-2">
+              Iniciar Demonstração (Sandbox)
             </button>
-            <button id="btn-conhecer-login" class="w-full sm:w-auto px-8 py-4 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-extrabold text-sm tracking-widest rounded-2xl border border-slate-200 dark:border-slate-850 transition-all transform hover:-translate-y-1 uppercase shadow-sm">
+            <button id="btn-conhecer-login" class="w-full sm:w-auto px-7 py-3.5 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-850 text-slate-650 dark:text-slate-350 hover:text-slate-800 dark:hover:text-white font-bold text-xs tracking-wider rounded-xl border border-slate-200 dark:border-slate-800 transition-all transform hover:-translate-y-0.5 uppercase shadow-sm">
               Entrar no Sistema Real
             </button>
           </div>
 
-          <!-- Feature Explorer / Interactive Tour Tabs -->
-          <div class="w-full mb-8">
-            <h2 class="text-xl md:text-2xl font-black text-slate-800 dark:text-slate-200 tracking-tight mb-4">
-              Explore a Plataforma por Dentro
+          <!-- Section title for interactive tour -->
+          <div class="w-full text-center mb-8">
+            <h2 class="text-lg md:text-xl font-extrabold text-slate-850 dark:text-slate-200 tracking-tight">
+              Explore o Fluxo de Trabalho
             </h2>
-            <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold mb-6">
-              Navegue pelas abas abaixo para ver como cada módulo simplifica seu fluxo de trabalho:
+            <p class="text-xs text-slate-550 dark:text-slate-400 font-medium mt-1">
+              Descubra como o PaxFlow organiza a operação comercial e de pós-venda da sua agência
             </p>
-            
-            <div class="flex flex-wrap justify-center gap-2 p-1.5 bg-slate-200/50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl max-w-3xl mx-auto backdrop-blur-md">
-              <button id="tab-btn-dashboard" class="px-4 py-2 text-[11px] font-black tracking-wider uppercase rounded-xl transition duration-200 bg-indigo-600 text-white shadow-md">
-                📊 Dashboard
-              </button>
-              <button id="tab-btn-viagens" class="px-4 py-2 text-[11px] font-black tracking-wider uppercase rounded-xl transition duration-200 text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200">
-                ✈️ Viagens
-              </button>
-              <button id="tab-btn-orcamentos" class="px-4 py-2 text-[11px] font-black tracking-wider uppercase rounded-xl transition duration-200 text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200">
-                📋 Orçamentos
-              </button>
-              <button id="tab-btn-inbox" class="px-4 py-2 text-[11px] font-black tracking-wider uppercase rounded-xl transition duration-200 text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200">
-                💬 Inbox & SLAs
-              </button>
-              <button id="tab-btn-reembolsos" class="px-4 py-2 text-[11px] font-black tracking-wider uppercase rounded-xl transition duration-200 text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200">
-                💰 Reembolsos
-              </button>
-              <button id="tab-btn-gamificacao" class="px-4 py-2 text-[11px] font-black tracking-wider uppercase rounded-xl transition duration-200 text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200">
-                🪐 Gamificação
-              </button>
-              <button id="tab-btn-relatorios" class="px-4 py-2 text-[11px] font-black tracking-wider uppercase rounded-xl transition duration-200 text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200">
-                📈 Relatórios
-              </button>
-              <button id="tab-btn-publicas" class="px-4 py-2 text-[11px] font-black tracking-wider uppercase rounded-xl transition duration-200 text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200">
-                🌐 Itinerário & NPS
-              </button>
-            </div>
           </div>
 
-          <!-- Interactive UI Dashboard Mockup -->
-          <div class="w-full bg-white/40 dark:bg-slate-900/45 border border-white/20 dark:border-slate-800/40 rounded-3xl shadow-2xl p-4 md:p-6 text-left relative overflow-hidden backdrop-blur-xl transition-colors duration-300">
+          <!-- Feature Explorer / Interactive Tour Tabs (Vertical Sidebar Design) -->
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 w-full items-stretch text-left">
             
-            <!-- Window header -->
-            <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4 mb-4">
-              <div class="flex items-center gap-2">
-                <span class="w-3 h-3 bg-rose-500 rounded-full"></span>
-                <span class="w-3 h-3 bg-amber-500 rounded-full"></span>
-                <span class="w-3 h-3 bg-emerald-500 rounded-full"></span>
-                <span id="window-path-text" class="text-[10px] text-slate-400 dark:text-slate-500 font-bold ml-2">paxflow-comercial-dashboard.html</span>
-              </div>
-              <div class="flex gap-2">
-                <span class="px-2 py-0.5 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-black text-[9px] rounded-lg">DEMO INTERATIVA</span>
-              </div>
+            <!-- Left Sidebar Buttons -->
+            <div class="lg:col-span-4 flex flex-col gap-2">
+              
+              <button id="tab-btn-dashboard" class="flex items-start gap-3.5 p-4 rounded-2xl text-left transition duration-200 border bg-indigo-50/50 dark:bg-slate-900/50 border-indigo-100/50 dark:border-indigo-950/40 text-slate-800 dark:text-slate-100 group shadow-sm">
+                <span class="p-2.5 bg-indigo-600 text-white rounded-xl text-xs font-bold shrink-0">📊</span>
+                <div>
+                  <span class="block text-xs font-black tracking-tight text-indigo-750 dark:text-indigo-400">Dashboard de Performance</span>
+                  <span class="block text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 leading-normal">Faturamento, taxas de conversão e ticket médio do time.</span>
+                </div>
+              </button>
+              
+              <button id="tab-btn-viagens" class="flex items-start gap-3.5 p-4 rounded-2xl text-left transition duration-200 border border-transparent hover:bg-slate-200/40 dark:hover:bg-slate-900/40 text-slate-650 dark:text-slate-400 group">
+                <span class="p-2.5 bg-slate-100 dark:bg-slate-850 text-slate-550 dark:text-slate-400 rounded-xl text-xs font-bold shrink-0">✈️</span>
+                <div>
+                  <span class="block text-xs font-bold tracking-tight text-slate-700 dark:text-slate-200 group-hover:text-indigo-650 transition-colors">Controle de Viagens</span>
+                  <span class="block text-[10px] text-slate-550 dark:text-slate-450 mt-0.5 leading-normal">Acompanhamento dos localizadores de reserva e cronogramas.</span>
+                </div>
+              </button>
+
+              <button id="tab-btn-orcamentos" class="flex items-start gap-3.5 p-4 rounded-2xl text-left transition duration-200 border border-transparent hover:bg-slate-200/40 dark:hover:bg-slate-900/40 text-slate-650 dark:text-slate-400 group">
+                <span class="p-2.5 bg-slate-100 dark:bg-slate-850 text-slate-550 dark:text-slate-400 rounded-xl text-xs font-bold shrink-0">📋</span>
+                <div>
+                  <span class="block text-xs font-bold tracking-tight text-slate-700 dark:text-slate-200 group-hover:text-indigo-650 transition-colors">Orçamentos & CRM</span>
+                  <span class="block text-[10px] text-slate-550 dark:text-slate-455 mt-0.5 leading-normal">Visualização em Kanban do funil de vendas e propostas.</span>
+                </div>
+              </button>
+
+              <button id="tab-btn-inbox" class="flex items-start gap-3.5 p-4 rounded-2xl text-left transition duration-200 border border-transparent hover:bg-slate-200/40 dark:hover:bg-slate-900/40 text-slate-650 dark:text-slate-400 group">
+                <span class="p-2.5 bg-slate-100 dark:bg-slate-850 text-slate-550 dark:text-slate-400 rounded-xl text-xs font-bold shrink-0">💬</span>
+                <div>
+                  <span class="block text-xs font-bold tracking-tight text-slate-700 dark:text-slate-200 group-hover:text-indigo-650 transition-colors">Inbox & SLAs</span>
+                  <span class="block text-[10px] text-slate-550 dark:text-slate-455 mt-0.5 leading-normal">Alertas automáticos de documentos prestes a expirar.</span>
+                </div>
+              </button>
+
+              <button id="tab-btn-reembolsos" class="flex items-start gap-3.5 p-4 rounded-2xl text-left transition duration-200 border border-transparent hover:bg-slate-200/40 dark:hover:bg-slate-900/40 text-slate-650 dark:text-slate-400 group">
+                <span class="p-2.5 bg-slate-100 dark:bg-slate-850 text-slate-550 dark:text-slate-400 rounded-xl text-xs font-bold shrink-0">💰</span>
+                <div>
+                  <span class="block text-xs font-bold tracking-tight text-slate-700 dark:text-slate-200 group-hover:text-indigo-650 transition-colors">Reembolsos Financeiros</span>
+                  <span class="block text-[10px] text-slate-550 dark:text-slate-455 mt-0.5 leading-normal">Controle de créditos aéreos e devoluções pendentes.</span>
+                </div>
+              </button>
+
+              <button id="tab-btn-relatorios" class="flex items-start gap-3.5 p-4 rounded-2xl text-left transition duration-200 border border-transparent hover:bg-slate-200/40 dark:hover:bg-slate-900/40 text-slate-655 dark:text-slate-400 group">
+                <span class="p-2.5 bg-slate-100 dark:bg-slate-850 text-slate-550 dark:text-slate-400 rounded-xl text-xs font-bold shrink-0">📈</span>
+                <div>
+                  <span class="block text-xs font-bold tracking-tight text-slate-700 dark:text-slate-200 group-hover:text-indigo-655 transition-colors">Relatórios e Insights</span>
+                  <span class="block text-[10px] text-slate-550 dark:text-slate-455 mt-0.5 leading-normal">Análise detalhada de markups, margens e performance.</span>
+                </div>
+              </button>
+
+              <button id="tab-btn-publicas" class="flex items-start gap-3.5 p-4 rounded-2xl text-left transition duration-200 border border-transparent hover:bg-slate-200/40 dark:hover:bg-slate-900/40 text-slate-650 dark:text-slate-400 group">
+                <span class="p-2.5 bg-slate-100 dark:bg-slate-850 text-slate-555 dark:text-slate-400 rounded-xl text-xs font-bold shrink-0">🌐</span>
+                <div>
+                  <span class="block text-xs font-bold tracking-tight text-slate-700 dark:text-slate-200 group-hover:text-indigo-650 transition-colors">Itinerários & NPS</span>
+                  <span class="block text-[10px] text-slate-550 dark:text-slate-455 mt-0.5 leading-normal">Páginas públicas personalizadas para os seus clientes.</span>
+                </div>
+              </button>
             </div>
 
-            <!-- Content Panels -->
-            <div id="mockup-panels-container">
+            <!-- Right Interactive UI Preview Container -->
+            <div class="lg:col-span-8 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl shadow-xl p-4 md:p-6 text-left relative overflow-hidden backdrop-blur-md flex flex-col justify-between min-h-[460px] transition-colors duration-300">
               
-              <!-- PANEL 1: DASHBOARD -->
-              <div id="panel-dashboard" class="space-y-4 tab-pane-transition">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div class="bg-slate-100/60 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800/80 p-4 rounded-xl">
-                    <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Faturamento Mensal</span>
-                    <div class="flex items-baseline gap-2 mt-1">
-                      <span class="text-xl font-black text-slate-800 dark:text-white">R$ 148.500,00</span>
-                      <span class="text-[10px] text-emerald-500 font-extrabold">+14.2%</span>
-                    </div>
-                  </div>
-                  <div class="bg-slate-100/60 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800/80 p-4 rounded-xl">
-                    <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Taxa de Conversão</span>
-                    <div class="flex items-baseline gap-2 mt-1">
-                      <span class="text-xl font-black text-indigo-600 dark:text-indigo-400">24,8%</span>
-                      <span class="text-[10px] text-slate-500 font-medium">Média de 2026</span>
-                    </div>
-                  </div>
-                  <div class="bg-slate-100/60 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800/80 p-4 rounded-xl">
-                    <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Ticket Médio</span>
-                    <div class="flex items-baseline gap-2 mt-1">
-                      <span class="text-xl font-black text-emerald-600 dark:text-emerald-400">R$ 6.200,00</span>
-                      <span class="text-[10px] text-slate-500">Por Viagem</span>
-                    </div>
-                  </div>
+              <!-- Window top bar -->
+              <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4 mb-4">
+                <div class="flex items-center gap-2">
+                  <span class="w-2.5 h-2.5 bg-slate-200 dark:bg-slate-800 rounded-full"></span>
+                  <span class="w-2.5 h-2.5 bg-slate-200 dark:bg-slate-800 rounded-full"></span>
+                  <span class="w-2.5 h-2.5 bg-slate-200 dark:bg-slate-800 rounded-full"></span>
+                  <span id="window-path-text" class="text-[10px] text-slate-400 dark:text-slate-550 font-bold ml-2 font-mono">paxflow-comercial-dashboard.html</span>
                 </div>
-
-                <div class="bg-slate-100/30 dark:bg-slate-950/40 border border-slate-200/60 dark:border-slate-800/60 rounded-xl p-4">
-                  <div class="flex items-center justify-between mb-4 border-b border-slate-200/60 dark:border-slate-800/80 pb-2">
-                    <span class="text-xs font-black text-slate-700 dark:text-slate-300">Funil Comercial Operativo</span>
-                    <span class="px-2 py-0.5 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[9px] font-black rounded-lg">Dados em Tempo Real</span>
-                  </div>
-                  
-                  <div class="space-y-2.5">
-                    <div>
-                      <div class="flex justify-between text-[10px] font-bold mb-1 text-slate-500 dark:text-slate-400">
-                        <span>Orçamentos Criados</span>
-                        <span>120</span>
-                      </div>
-                      <div class="w-full bg-slate-200 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
-                        <div class="bg-indigo-600 h-full w-[100%] rounded-full"></div>
-                      </div>
-                    </div>
-                    <div>
-                      <div class="flex justify-between text-[10px] font-bold mb-1 text-slate-500 dark:text-slate-400">
-                        <span>Propostas Enviadas</span>
-                        <span>75 (62%)</span>
-                      </div>
-                      <div class="w-full bg-slate-200 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
-                        <div class="bg-indigo-500 h-full w-[62%] rounded-full"></div>
-                      </div>
-                    </div>
-                    <div>
-                      <div class="flex justify-between text-[10px] font-bold mb-1 text-slate-500 dark:text-slate-400">
-                        <span>Negociações Fechadas</span>
-                        <span>24 (20%)</span>
-                      </div>
-                      <div class="w-full bg-slate-200 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
-                        <div class="bg-emerald-500 h-full w-[20%] rounded-full"></div>
-                      </div>
-                    </div>
-                  </div>
+                <div class="flex gap-2">
+                  <span class="px-2 py-0.5 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-extrabold text-[9px] rounded-lg">DEMO INTERATIVA</span>
                 </div>
               </div>
 
-              <!-- PANEL 2: VIAGENS -->
-              <div id="panel-viagens" class="space-y-4 tab-pane-transition hidden">
-                <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
-                  <div class="overflow-x-auto custom-scrollbar">
-                    <table class="w-full text-left border-collapse min-w-[700px] text-[11px]">
-                      <thead>
-                        <tr class="bg-slate-50 dark:bg-slate-950/40 text-[9px] font-black uppercase text-slate-400 dark:text-slate-500 border-b border-slate-200 dark:border-slate-800">
-                          <th class="px-4 py-3 w-[50px] text-center">SLA</th>
-                          <th class="px-4 py-3">Cliente / LOC</th>
-                          <th class="px-4 py-3">Destino / Produtos</th>
-                          <th class="px-4 py-3">Período</th>
-                          <th class="px-4 py-3">Data Fin.</th>
-                          <th class="px-4 py-3">Financeiro</th>
-                          <th class="px-4 py-3 w-[140px]">Fase / Status</th>
-                          <th class="px-4 py-3 w-[120px] text-center">Ações</th>
-                        </tr>
-                      </thead>
-                      <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 text-slate-600 dark:text-slate-300 font-semibold">
-                        <!-- Linha 1: Carlos Eduardo (SLA Alerta) -->
-                        <tr class="bg-rose-50/10 dark:bg-rose-950/5 hover:bg-rose-50/20 dark:hover:bg-rose-950/10 transition-colors duration-200">
-                          <td class="px-4 py-3 text-center"><span class="text-sm">⚠️</span></td>
-                          <td class="px-4 py-3">
-                            <div class="font-black text-slate-800 dark:text-slate-150">Carlos Eduardo</div>
-                            <span class="inline-block mt-0.5 px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-extrabold text-[8px] rounded border border-slate-200/40 dark:border-slate-700/50 uppercase">BA921</span>
-                          </td>
-                          <td class="px-4 py-3">
-                            <div class="font-extrabold text-slate-800 dark:text-slate-200 flex items-center gap-1">✈️ Buenos Aires</div>
-                            <div class="flex gap-1 mt-1">
-                              <span class="px-1.5 py-0.5 rounded bg-slate-100/65 dark:bg-slate-800/65 border border-slate-200/30 dark:border-slate-700/30 text-[8px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">✈️</span>
-                            </div>
-                          </td>
-                          <td class="px-4 py-3 whitespace-nowrap">
-                            <span class="flex items-center gap-1">📅 12/08/2026 a 19/08/2026</span>
-                          </td>
-                          <td class="px-4 py-3 text-slate-500 dark:text-slate-400">15/05/2026</td>
-                          <td class="px-4 py-3">
-                            <div class="font-black text-indigo-600 dark:text-indigo-400">R$ 5.400,00</div>
-                            <div class="text-[9px] text-emerald-600 dark:text-emerald-400 font-extrabold mt-0.5">Rent: R$ 800,00</div>
-                          </td>
-                          <td class="px-4 py-3">
-                            <span class="inline-flex px-2 py-1 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[9px] font-black uppercase">Pré-Embarque</span>
-                          </td>
-                          <td class="px-4 py-3 text-center">
-                            <button class="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 font-black rounded-lg border border-indigo-100/30 dark:border-indigo-900/30 text-[9px] uppercase transition" disabled>🔍 Detalhes</button>
-                          </td>
-                        </tr>
-                        
-                        <!-- Linha 2: Mariana Costa (SLA Normal) -->
-                        <tr class="bg-white dark:bg-slate-900 hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors duration-200">
-                          <td class="px-4 py-3 text-center"><span class="text-sm">🟢</span></td>
-                          <td class="px-4 py-3">
-                            <div class="font-black text-slate-800 dark:text-slate-150">Mariana Costa</div>
-                            <span class="inline-block mt-0.5 px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-extrabold text-[8px] rounded border border-slate-200/40 dark:border-slate-700/50 uppercase">US441</span>
-                          </td>
-                          <td class="px-4 py-3">
-                            <div class="font-extrabold text-slate-800 dark:text-slate-200 flex items-center gap-1">✈️ Orlando</div>
-                            <div class="flex gap-1 mt-1">
-                              <span class="px-1.5 py-0.5 rounded bg-slate-100/65 dark:bg-slate-800/65 border border-slate-200/30 dark:border-slate-700/30 text-[8px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">🏨</span>
-                              <span class="px-1.5 py-0.5 rounded bg-slate-100/65 dark:bg-slate-800/65 border border-slate-200/30 dark:border-slate-700/30 text-[8px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">🎫</span>
-                            </div>
-                          </td>
-                          <td class="px-4 py-3 whitespace-nowrap">
-                            <span class="flex items-center gap-1">📅 15/07/2026 a 30/07/2026</span>
-                          </td>
-                          <td class="px-4 py-3 text-slate-500 dark:text-slate-400">20/04/2026</td>
-                          <td class="px-4 py-3">
-                            <div class="font-black text-indigo-600 dark:text-indigo-400">R$ 12.800,00</div>
-                            <div class="text-[9px] text-emerald-600 dark:text-emerald-400 font-extrabold mt-0.5">Rent: R$ 2.400,00</div>
-                          </td>
-                          <td class="px-4 py-3">
-                            <span class="inline-flex px-2 py-1 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[9px] font-black uppercase">Pós-Venda</span>
-                          </td>
-                          <td class="px-4 py-3 text-center">
-                            <button class="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 font-black rounded-lg border border-indigo-100/30 dark:border-indigo-900/30 text-[9px] uppercase transition" disabled>🔍 Detalhes</button>
-                          </td>
-                        </tr>
-
-                        <!-- Linha 3: Julia Ribeiro (SLA Excedido) -->
-                        <tr class="bg-amber-50/10 dark:bg-amber-950/5 hover:bg-amber-50/20 dark:hover:bg-amber-950/10 transition-colors duration-200">
-                          <td class="px-4 py-3 text-center"><span class="text-sm">🚨</span></td>
-                          <td class="px-4 py-3">
-                            <div class="font-black text-slate-800 dark:text-slate-150">Julia Ribeiro</div>
-                            <span class="inline-block mt-0.5 px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-extrabold text-[8px] rounded border border-slate-200/40 dark:border-slate-700/50 uppercase">BR552</span>
-                          </td>
-                          <td class="px-4 py-3">
-                            <div class="font-extrabold text-slate-800 dark:text-slate-200 flex items-center gap-1">✈️ Bariloche</div>
-                            <div class="flex gap-1 mt-1">
-                              <span class="px-1.5 py-0.5 rounded bg-slate-100/65 dark:bg-slate-800/65 border border-slate-200/30 dark:border-slate-700/30 text-[8px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">🏨</span>
-                            </div>
-                          </td>
-                          <td class="px-4 py-3 whitespace-nowrap">
-                            <span class="flex items-center gap-1">📅 22/06/2026 a 29/06/2026</span>
-                          </td>
-                          <td class="px-4 py-3 text-slate-500 dark:text-slate-400">10/03/2026</td>
-                          <td class="px-4 py-3">
-                            <div class="font-black text-indigo-600 dark:text-indigo-400">R$ 7.900,00</div>
-                            <div class="text-[9px] text-emerald-600 dark:text-emerald-400 font-extrabold mt-0.5">Rent: R$ 1.200,00</div>
-                          </td>
-                          <td class="px-4 py-3">
-                            <span class="inline-flex px-2 py-1 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-450 text-[9px] font-black uppercase">Pós-Viagem</span>
-                          </td>
-                          <td class="px-4 py-3 text-center">
-                            <button class="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 font-black rounded-lg border border-indigo-100/30 dark:border-indigo-900/30 text-[9px] uppercase transition" disabled>🔍 Detalhes</button>
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-
-              <!-- PANEL 3: ORÇAMENTOS -->
-              <div id="panel-orcamentos" class="space-y-4 tab-pane-transition hidden">
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs">
-                  <!-- Novo -->
-                  <div class="bg-slate-100/40 dark:bg-slate-950/20 border border-slate-200/60 dark:border-slate-800/60 p-2.5 rounded-xl">
-                    <span class="block font-black text-slate-500 mb-2 uppercase text-[9px]">Novo (3)</span>
-                    <div class="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-sm">
-                      <span class="block font-bold text-slate-800 dark:text-white truncate">Lua de Mel Grécia</span>
-                      <span class="block text-[9px] text-slate-450 mt-0.5">Cliente: Ana Souza</span>
-                      <span class="block text-[10px] font-extrabold text-indigo-600 dark:text-indigo-400 mt-1">R$ 24.000,00</span>
-                    </div>
-                  </div>
-                  <!-- Em Análise -->
-                  <div class="bg-slate-100/40 dark:bg-slate-950/20 border border-slate-200/60 dark:border-slate-800/60 p-2.5 rounded-xl">
-                    <span class="block font-black text-slate-500 mb-2 uppercase text-[9px]">Em Análise (2)</span>
-                    <div class="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-sm">
-                      <span class="block font-bold text-slate-800 dark:text-white truncate">Corporativo SP</span>
-                      <span class="block text-[9px] text-slate-450 mt-0.5">Cliente: Roberto Silva</span>
-                      <span class="block text-[10px] font-extrabold text-indigo-600 dark:text-indigo-400 mt-1">R$ 4.500,00</span>
-                    </div>
-                  </div>
-                  <!-- Proposta -->
-                  <div class="bg-slate-100/40 dark:bg-slate-950/20 border border-slate-200/60 dark:border-slate-800/60 p-2.5 rounded-xl">
-                    <span class="block font-black text-slate-500 mb-2 uppercase text-[9px]">Proposta (4)</span>
-                    <div class="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-sm border-l-3 border-l-amber-500">
-                      <span class="block font-bold text-slate-800 dark:text-white truncate">Férias em Natal</span>
-                      <span class="block text-[9px] text-slate-450 mt-0.5">Cliente: Beatriz Oliveira</span>
-                      <span class="block text-[10px] font-extrabold text-indigo-600 dark:text-indigo-400 mt-1">R$ 8.900,00</span>
-                    </div>
-                  </div>
-                  <!-- Ganho -->
-                  <div class="bg-slate-100/40 dark:bg-slate-950/20 border border-slate-200/60 dark:border-slate-800/60 p-2.5 rounded-xl">
-                    <span class="block font-black text-slate-500 mb-2 uppercase text-[9px]">Ganho (9)</span>
-                    <div class="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-sm border-l-3 border-l-emerald-500">
-                      <span class="block font-bold text-slate-800 dark:text-white truncate">Mochilão Europa</span>
-                      <span class="block text-[9px] text-slate-450 mt-0.5">Cliente: Pedro Santos</span>
-                      <span class="block text-[10px] font-extrabold text-emerald-600 dark:text-emerald-400 mt-1">R$ 15.600,00</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- PANEL 4: INBOX & SLAS -->
-              <div id="panel-inbox" class="space-y-4 tab-pane-transition hidden">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <!-- Sidebar list -->
-                  <div class="md:col-span-1 space-y-2 border-r border-slate-200 dark:border-slate-800 pr-2">
-                    <span class="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">MENSAGENS & ALERTAS</span>
-                    <div class="p-2 bg-indigo-500/10 border border-indigo-500/20 rounded-lg text-[10px]">
-                      <div class="flex justify-between font-bold text-indigo-700 dark:text-indigo-400">
-                        <span>⚠️ SLA Passaporte</span>
-                        <span class="text-[8px] font-medium">Urgente</span>
+              <!-- Content Panels -->
+              <div id="mockup-panels-container" class="flex-1 flex flex-col justify-center">
+                
+                <!-- PANEL 1: DASHBOARD -->
+                <div id="panel-dashboard" class="space-y-4 tab-pane-transition">
+                  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-slate-50/80 dark:bg-slate-950/60 border border-slate-200/60 dark:border-slate-850 p-4 rounded-xl">
+                      <span class="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Faturamento Mensal</span>
+                      <div class="flex items-baseline gap-2 mt-1">
+                        <span class="text-lg font-black text-slate-850 dark:text-white">R$ 148.500,00</span>
+                        <span class="text-[9px] text-emerald-500 font-extrabold">+14.2%</span>
                       </div>
-                      <span class="block text-slate-600 dark:text-slate-400 truncate mt-0.5">Maria Clara (Expira em 45d)</span>
                     </div>
-                    <div class="p-2 bg-slate-100/50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-850 rounded-lg text-[10px]">
-                      <div class="flex justify-between font-bold text-slate-700 dark:text-slate-300">
-                        <span>💬 Confirmação Voo</span>
-                        <span class="text-[8px] text-slate-455">1h atrás</span>
+                    <div class="bg-slate-50/80 dark:bg-slate-950/60 border border-slate-200/60 dark:border-slate-850 p-4 rounded-xl">
+                      <span class="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Taxa de Conversão</span>
+                      <div class="flex items-baseline gap-2 mt-1">
+                        <span class="text-lg font-black text-indigo-600 dark:text-indigo-400">24,8%</span>
+                        <span class="text-[9px] text-slate-550 font-medium">Média de 2026</span>
                       </div>
-                      <span class="block text-slate-500 dark:text-slate-400 truncate mt-0.5">LOC ABC123 resolvido</span>
+                    </div>
+                    <div class="bg-slate-50/80 dark:bg-slate-950/60 border border-slate-200/60 dark:border-slate-850 p-4 rounded-xl">
+                      <span class="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Ticket Médio</span>
+                      <div class="flex items-baseline gap-2 mt-1">
+                        <span class="text-lg font-black text-emerald-600 dark:text-emerald-450">R$ 6.200,00</span>
+                        <span class="text-[9px] text-slate-550">Por Viagem</span>
+                      </div>
                     </div>
                   </div>
 
-                  <!-- Active Thread -->
-                  <div class="md:col-span-2 space-y-3 flex flex-col justify-between min-h-[160px]">
-                    <div class="space-y-2">
-                      <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-1.5">
-                        <span class="text-xs font-black text-slate-700 dark:text-slate-300">Thread: SLA Passaporte - Maria Clara</span>
-                        <span class="text-[9px] font-black text-rose-500">Expira em 23/10/2026</span>
-                      </div>
-                      <div class="space-y-2 max-h-[110px] overflow-y-auto pr-1 text-[10px]">
-                        <div class="p-2 bg-rose-500/10 border border-rose-500/20 rounded-lg">
-                          <span class="font-extrabold text-rose-600 dark:text-rose-400">🚨 Sistema:</span>
-                          <p class="text-slate-650 mt-0.5">Passaporte da passageira Maria Clara vence em 45 dias. Risco operacional para viagem em 15/12/2026.</p>
+                  <div class="bg-slate-50/50 dark:bg-slate-950/40 border border-slate-200/50 dark:border-slate-850 rounded-xl p-4">
+                    <div class="flex items-center justify-between mb-4 border-b border-slate-200/50 dark:border-slate-800 pb-2">
+                      <span class="text-xs font-bold text-slate-700 dark:text-slate-350">Funil Comercial Operativo</span>
+                      <span class="px-2 py-0.5 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[9px] font-bold rounded-lg">Dados em Tempo Real</span>
+                    </div>
+                    
+                    <div class="space-y-2.5">
+                      <div>
+                        <div class="flex justify-between text-[10px] font-bold mb-1 text-slate-500 dark:text-slate-450">
+                          <span>Orçamentos Criados</span>
+                          <span>120</span>
                         </div>
-                        <div class="p-2 bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-850 rounded-lg text-right ml-4">
-                          <span class="font-extrabold text-slate-700 dark:text-slate-300">Consultor João:</span>
-                          <p class="text-slate-650 mt-0.5">Já solicitei a renovação. A cliente vai enviar o comprovante amanhã.</p>
+                        <div class="w-full bg-slate-200/60 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                          <div class="bg-indigo-600 h-full w-[100%] rounded-full"></div>
+                        </div>
+                      </div>
+                      <div>
+                        <div class="flex justify-between text-[10px] font-bold mb-1 text-slate-500 dark:text-slate-455">
+                          <span>Propostas Enviadas</span>
+                          <span>75 (62%)</span>
+                        </div>
+                        <div class="w-full bg-slate-200/60 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                          <div class="bg-indigo-550 h-full w-[62%] rounded-full"></div>
+                        </div>
+                      </div>
+                      <div>
+                        <div class="flex justify-between text-[10px] font-bold mb-1 text-slate-500 dark:text-slate-455">
+                          <span>Negociações Fechadas</span>
+                          <span>24 (20%)</span>
+                        </div>
+                        <div class="w-full bg-slate-200/60 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                          <div class="bg-emerald-500 h-full w-[20%] rounded-full"></div>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              <!-- PANEL 5: REEMBOLSOS -->
-              <div id="panel-reembolsos" class="space-y-3 tab-pane-transition hidden">
-                <div class="flex justify-between items-center mb-1">
-                  <span class="text-xs font-black text-slate-700 dark:text-slate-300">Gestão de Reembolsos Pendentes</span>
-                  <span class="px-2 py-0.5 bg-emerald-500/15 text-emerald-600 dark:text-emerald-450 text-[9px] font-black rounded-lg">R$ 6.230,00 Pendente</span>
-                </div>
-                <div class="overflow-x-auto text-[10px]">
-                  <table class="w-full text-left border-collapse">
-                    <thead>
-                      <tr class="border-b border-slate-200 dark:border-slate-800 text-slate-400">
-                        <th class="pb-2 font-black">CLIENTE</th>
-                        <th class="pb-2 font-black">FORNECEDOR</th>
-                        <th class="pb-2 font-black">VALOR</th>
-                        <th class="pb-2 font-black">STATUS</th>
-                      </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-150 dark:divide-slate-850">
-                      <tr>
-                        <td class="py-2.5 font-bold text-slate-800 dark:text-slate-200">Felipe Melo</td>
-                        <td class="py-2.5 text-slate-500">Latam Airlines</td>
-                        <td class="py-2.5 font-bold">R$ 1.850,00</td>
-                        <td class="py-2.5"><span class="px-1.5 py-0.5 bg-rose-500/10 text-rose-550 border border-rose-500/20 text-[8px] font-black rounded-md">SOLICITADO</span></td>
-                      </tr>
-                      <tr>
-                        <td class="py-2.5 font-bold text-slate-800 dark:text-slate-200">Patrícia Lima</td>
-                        <td class="py-2.5 text-slate-500">Decolar</td>
-                        <td class="py-2.5 font-bold">R$ 3.400,00</td>
-                        <td class="py-2.5"><span class="px-1.5 py-0.5 bg-amber-500/10 text-amber-600 dark:text-amber-450 border border-amber-500/20 text-[8px] font-black rounded-md">EM ANÁLISE</span></td>
-                      </tr>
-                      <tr>
-                        <td class="py-2.5 font-bold text-slate-800 dark:text-slate-200">Lucas Rocha</td>
-                        <td class="py-2.5 text-slate-500">Azul Cia Aérea</td>
-                        <td class="py-2.5 font-bold">R$ 980,00</td>
-                        <td class="py-2.5"><span class="px-1.5 py-0.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-450 border border-emerald-500/20 text-[8px] font-black rounded-md">REEMBOLSADO</span></td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              <!-- PANEL 6: GAMIFICACAO -->
-              <div id="panel-gamificacao" class="space-y-4 tab-pane-transition hidden">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <!-- Progress circle -->
-                  <div class="md:col-span-1 flex flex-col items-center justify-center p-4 bg-slate-100/50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-xl">
-                    <div class="relative w-16 h-16 flex items-center justify-center">
-                      <svg class="absolute inset-0 w-16 h-16 transform -rotate-90" viewBox="0 0 36 36">
-                        <path class="text-slate-200 dark:text-slate-800" stroke-width="3" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                        <path class="text-indigo-600 dark:text-indigo-405" stroke-dasharray="78, 100" stroke-width="3" stroke-linecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                      </svg>
-                      <span class="text-xs font-black text-slate-800 dark:text-white">Nível 12</span>
+                <!-- PANEL 2: VIAGENS -->
+                <div id="panel-viagens" class="space-y-4 tab-pane-transition hidden">
+                  <div class="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-850 rounded-xl overflow-hidden shadow-sm">
+                    <div class="overflow-x-auto custom-scrollbar">
+                      <table class="w-full text-left border-collapse min-w-[600px] text-[10px]">
+                        <thead>
+                          <tr class="bg-slate-50/50 dark:bg-slate-950/40 text-[9px] font-bold uppercase text-slate-450 dark:text-slate-500 border-b border-slate-200/60 dark:border-slate-800">
+                            <th class="px-4 py-3 w-[50px] text-center">SLA</th>
+                            <th class="px-4 py-3">Cliente / LOC</th>
+                            <th class="px-4 py-3">Destino / Produtos</th>
+                            <th class="px-4 py-3">Período</th>
+                            <th class="px-4 py-3">Financeiro</th>
+                            <th class="px-4 py-3 w-[120px]">Fase / Status</th>
+                          </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 text-slate-650 dark:text-slate-350 font-medium">
+                          <tr class="bg-rose-50/5 dark:bg-rose-950/5 hover:bg-rose-50/15 dark:hover:bg-rose-950/10 transition-colors duration-200">
+                            <td class="px-4 py-3 text-center"><span class="text-xs">⚠️</span></td>
+                            <td class="px-4 py-3">
+                              <div class="font-extrabold text-slate-850 dark:text-slate-150">Carlos Eduardo</div>
+                              <span class="inline-block mt-0.5 px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-extrabold text-[8px] rounded border border-slate-200/40 dark:border-slate-700/50 uppercase">BA921</span>
+                            </td>
+                            <td class="px-4 py-3">
+                              <div class="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1">✈️ Buenos Aires</div>
+                              <div class="flex gap-1 mt-1">
+                                <span class="px-1.5 py-0.5 rounded bg-slate-100/60 dark:bg-slate-800/60 border border-slate-200/30 dark:border-slate-700/30 text-[8px] font-black text-slate-550 dark:text-slate-400">✈️</span>
+                              </div>
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap">12/08/2026 a 19/08/2026</td>
+                            <td class="px-4 py-3">
+                              <div class="font-bold text-indigo-600 dark:text-indigo-400">R$ 5.400,00</div>
+                              <div class="text-[8px] text-emerald-600 dark:text-emerald-455 font-bold mt-0.5">Rent: R$ 800,00</div>
+                            </td>
+                            <td class="px-4 py-3">
+                              <span class="inline-flex px-2 py-0.5 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[8px] font-bold uppercase">Pré-Embarque</span>
+                            </td>
+                          </tr>
+                          <tr class="bg-white dark:bg-slate-900 hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors duration-200">
+                            <td class="px-4 py-3 text-center"><span class="text-xs">🟢</span></td>
+                            <td class="px-4 py-3">
+                              <div class="font-extrabold text-slate-855 dark:text-slate-150">Mariana Costa</div>
+                              <span class="inline-block mt-0.5 px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-extrabold text-[8px] rounded border border-slate-200/40 dark:border-slate-700/50 uppercase">US441</span>
+                            </td>
+                            <td class="px-4 py-3">
+                              <div class="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1">✈️ Orlando</div>
+                              <div class="flex gap-1 mt-1">
+                                <span class="px-1.5 py-0.5 rounded bg-slate-100/60 dark:bg-slate-800/60 border border-slate-200/30 dark:border-slate-700/30 text-[8px] font-black text-slate-550 dark:text-slate-400">🏨</span>
+                                <span class="px-1.5 py-0.5 rounded bg-slate-100/60 dark:bg-slate-800/60 border border-slate-200/30 dark:border-slate-700/30 text-[8px] font-black text-slate-550 dark:text-slate-400">🎫</span>
+                              </div>
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap">15/07/2026 a 30/07/2026</td>
+                            <td class="px-4 py-3">
+                              <div class="font-bold text-indigo-600 dark:text-indigo-400">R$ 12.800,00</div>
+                              <div class="text-[8px] text-emerald-600 dark:text-emerald-455 font-bold mt-0.5">Rent: R$ 2.400,00</div>
+                            </td>
+                            <td class="px-4 py-3">
+                              <span class="inline-flex px-2 py-0.5 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[8px] font-bold uppercase">Pós-Venda</span>
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
                     </div>
-                    <span class="text-[9px] font-black text-indigo-600 dark:text-indigo-400 mt-2 block uppercase">Comandante</span>
                   </div>
+                </div>
 
-                  <!-- Achievements list -->
-                  <div class="md:col-span-2 space-y-2 text-[10px]">
-                    <span class="text-[9px] font-black text-slate-400 uppercase tracking-wider block">RECONHECIMENTOS RECENTES</span>
-                    <div class="flex items-center gap-2 p-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg">
-                      <span class="text-xs">🎯</span>
-                      <div class="flex-1">
-                        <span class="block font-bold">Meta Comercial Atingida</span>
-                        <span class="text-[8px] text-slate-400">Orçamento > R$ 15.000 fechado</span>
+                <!-- PANEL 3: ORÇAMENTOS -->
+                <div id="panel-orcamentos" class="space-y-4 tab-pane-transition hidden">
+                  <div class="grid grid-cols-1 md:grid-cols-4 gap-3.5 text-[10px]">
+                    <!-- Novo -->
+                    <div class="bg-slate-50/50 dark:bg-slate-950/20 border border-slate-200/60 dark:border-slate-850 p-3 rounded-xl">
+                      <span class="block font-extrabold text-slate-450 dark:text-slate-500 mb-2.5 uppercase text-[8px]">Novo (3)</span>
+                      <div class="p-2.5 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-lg shadow-sm">
+                        <span class="block font-bold text-slate-800 dark:text-slate-200 truncate">Grécia / Lua de Mel</span>
+                        <span class="block text-[8px] text-slate-450 mt-0.5">Ana Souza</span>
+                        <span class="block text-[9px] font-black text-indigo-650 dark:text-indigo-400 mt-1">R$ 24.000,00</span>
                       </div>
-                      <span class="text-[9px] font-black text-emerald-500">+150 XP</span>
                     </div>
-                    <div class="flex items-center gap-2 p-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg">
-                      <span class="text-xs">⚡</span>
-                      <div class="flex-1">
-                        <span class="block font-bold">Guardião de SLAs</span>
-                        <span class="text-[8px] text-slate-450">Alertas resolvidos em menos de 2h</span>
+                    <!-- Em Análise -->
+                    <div class="bg-slate-50/50 dark:bg-slate-950/20 border border-slate-200/60 dark:border-slate-850 p-3 rounded-xl">
+                      <span class="block font-extrabold text-slate-450 dark:text-slate-500 mb-2.5 uppercase text-[8px]">Em Análise (2)</span>
+                      <div class="p-2.5 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-lg shadow-sm">
+                        <span class="block font-bold text-slate-800 dark:text-slate-200 truncate">Férias em Família</span>
+                        <span class="block text-[8px] text-slate-455 mt-0.5">Pedro Santos</span>
+                        <span class="block text-[9px] font-black text-indigo-650 dark:text-indigo-400 mt-1">R$ 15.600,00</span>
                       </div>
-                      <span class="text-[9px] font-black text-emerald-500">+50 XP</span>
+                    </div>
+                    <!-- Proposta -->
+                    <div class="bg-slate-50/50 dark:bg-slate-950/20 border border-slate-200/60 dark:border-slate-855 p-3 rounded-xl">
+                      <span class="block font-extrabold text-slate-455 dark:text-slate-500 mb-2.5 uppercase text-[8px]">Proposta (4)</span>
+                      <div class="p-2.5 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-lg shadow-sm border-l-2 border-l-amber-500">
+                        <span class="block font-bold text-slate-800 dark:text-slate-200 truncate">Férias em Natal</span>
+                        <span class="block text-[8px] text-slate-455 mt-0.5">Beatriz Oliveira</span>
+                        <span class="block text-[9px] font-black text-indigo-650 dark:text-indigo-400 mt-1">R$ 8.900,00</span>
+                      </div>
+                    </div>
+                    <!-- Ganho -->
+                    <div class="bg-slate-50/50 dark:bg-slate-950/20 border border-slate-200/60 dark:border-slate-855 p-3 rounded-xl">
+                      <span class="block font-extrabold text-slate-455 dark:text-slate-500 mb-2.5 uppercase text-[8px]">Ganho (9)</span>
+                      <div class="p-2.5 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-lg shadow-sm border-l-2 border-l-emerald-500">
+                        <span class="block font-bold text-slate-800 dark:text-slate-200 truncate">Mochilão Europa</span>
+                        <span class="block text-[8px] text-slate-455 mt-0.5">Julio César</span>
+                        <span class="block text-[9px] font-black text-emerald-600 dark:text-emerald-450 mt-1">R$ 18.200,00</span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              <!-- PANEL 7: RELATORIOS -->
-              <div id="panel-relatorios" class="space-y-4 tab-pane-transition hidden">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <!-- Conversions and performance card -->
-                  <div class="bg-slate-100/60 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800/80 p-4 rounded-xl text-left space-y-2">
-                    <span class="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Conversão Comercial</span>
-                    <div class="flex items-baseline gap-2">
-                      <span class="text-lg font-black text-slate-800 dark:text-white">28,4%</span>
-                      <span class="text-[9px] text-emerald-500 font-extrabold">+4,8% este mês</span>
+                <!-- PANEL 4: INBOX & SLAS -->
+                <div id="panel-inbox" class="space-y-4 tab-pane-transition hidden text-[10px]">
+                  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <!-- Sidebar list -->
+                    <div class="md:col-span-1 space-y-2 border-r border-slate-200 dark:border-slate-850 pr-2">
+                      <span class="text-[8px] font-bold text-slate-400 uppercase tracking-wider block mb-1">ALERTAS RECENTES</span>
+                      <div class="p-2 bg-rose-500/5 dark:bg-rose-950/20 border border-rose-500/20 dark:border-rose-900/30 rounded-lg">
+                        <div class="flex justify-between font-extrabold text-rose-600 dark:text-rose-400">
+                          <span>⚠️ SLA Documentação</span>
+                          <span>Urgente</span>
+                        </div>
+                        <span class="block text-slate-500 dark:text-slate-400 truncate mt-0.5">Maria Clara (Passaporte < 45d)</span>
+                      </div>
+                      <div class="p-2 bg-slate-50/50 dark:bg-slate-950/40 border border-slate-250/60 dark:border-slate-855 rounded-lg">
+                        <div class="flex justify-between font-bold text-slate-655 dark:text-slate-350">
+                          <span>💬 Confirmação LOC</span>
+                          <span>1h atrás</span>
+                        </div>
+                        <span class="block text-slate-500 dark:text-slate-455 truncate mt-0.5">Voo GRU-CDG confirmado</span>
+                      </div>
                     </div>
-                    <div class="w-full bg-slate-200 dark:bg-slate-800 h-2 rounded-full overflow-hidden flex mt-2">
-                      <div class="bg-emerald-500 h-full" style="width: 28.4%"></div>
-                    </div>
-                  </div>
 
-                  <!-- Profitability and commissions card -->
-                  <div class="bg-slate-100/60 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800/80 p-4 rounded-xl text-left space-y-2">
-                    <span class="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Faturamento e Markup Realizado</span>
-                    <div class="flex items-baseline gap-2">
-                      <span class="text-lg font-black text-slate-800 dark:text-white">R$ 42.150,00</span>
-                      <span class="text-[9px] text-indigo-500 font-extrabold">Margem Operacional</span>
+                    <!-- Active Thread -->
+                    <div class="md:col-span-2 space-y-3 flex flex-col justify-between min-h-[160px]">
+                      <div class="space-y-2">
+                        <div class="flex items-center justify-between border-b border-slate-150 dark:border-slate-850 pb-2">
+                          <span class="font-extrabold text-slate-700 dark:text-slate-300">Thread: Alerta SLA - Maria Clara</span>
+                          <span class="text-[8px] font-bold text-rose-555">Viagem em 15/12/2026</span>
+                        </div>
+                        <div class="space-y-2 max-h-[120px] overflow-y-auto pr-1">
+                          <div class="p-2.5 bg-rose-500/10 border border-rose-500/20 dark:border-rose-900/30 rounded-xl">
+                            <span class="font-extrabold text-rose-600 dark:text-rose-400">🚨 Sistema:</span>
+                            <p class="text-slate-650 dark:text-slate-400 mt-0.5 leading-normal">Atenção! Passaporte da passageira vence em menos de 6 meses no dia da viagem.</p>
+                          </div>
+                          <div class="p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-850 rounded-xl text-right ml-4">
+                            <span class="font-extrabold text-slate-700 dark:text-slate-300">Consultor João:</span>
+                            <p class="text-slate-650 dark:text-slate-400 mt-0.5 leading-normal">Solicitação de renovação já está em andamento. O novo número será atualizado em breve.</p>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <span class="text-[9px] text-slate-400 block">Baseado em 186 serviços ativos</span>
-                  </div>
-
-                  <!-- Predictive pipeline -->
-                  <div class="bg-slate-100/60 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800/80 p-4 rounded-xl text-left space-y-2">
-                    <span class="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Previsão Comercial (Weighted Pipeline)</span>
-                    <div class="flex items-baseline gap-2">
-                      <span class="text-lg font-black text-slate-800 dark:text-white">R$ 115.800,00</span>
-                      <span class="text-[9px] text-amber-500 font-extrabold">Probabilidade Ponderada</span>
-                    </div>
-                    <span class="text-[9px] text-slate-400 block">Operações previstas para os próximos 30 dias</span>
                   </div>
                 </div>
 
-                <div class="bg-slate-100/30 dark:bg-slate-950/40 border border-slate-200/60 dark:border-slate-800/60 rounded-xl p-4 text-left">
-                  <span class="text-[9px] font-black text-slate-450 dark:text-slate-500 uppercase tracking-wider block mb-2">Qualidade e Ocorrências por Fornecedor (Top 3)</span>
-                  <div class="overflow-x-auto custom-scrollbar">
-                    <table class="w-full text-left text-[10px] font-semibold">
+                <!-- PANEL 5: REEMBOLSOS -->
+                <div id="panel-reembolsos" class="space-y-3 tab-pane-transition hidden text-[10px]">
+                  <div class="flex justify-between items-center mb-1">
+                    <span class="font-bold text-slate-700 dark:text-slate-300">Reembolsos e Créditos Pendentes</span>
+                    <span class="px-2 py-0.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-450 text-[8px] font-bold rounded-lg">R$ 6.230,00 Pendente</span>
+                  </div>
+                  <div class="overflow-x-auto text-[10px]">
+                    <table class="w-full text-left border-collapse">
                       <thead>
                         <tr class="border-b border-slate-200 dark:border-slate-800 text-slate-400">
-                          <th class="pb-1.5 font-bold">Fornecedor</th>
-                          <th class="pb-1.5 font-bold">Volume</th>
-                          <th class="pb-1.5 font-bold">Ocorrências de Reembolso</th>
-                          <th class="pb-1.5 font-bold">Índice de Incidente</th>
-                          <th class="pb-1.5 font-bold">Classificação de Risco</th>
+                          <th class="pb-2 font-bold uppercase text-[8px]">Passageiro</th>
+                          <th class="pb-2 font-bold uppercase text-[8px]">Fornecedor</th>
+                          <th class="pb-2 font-bold uppercase text-[8px]">Valor</th>
+                          <th class="pb-2 font-bold uppercase text-[8px]">Etapa</th>
                         </tr>
                       </thead>
-                      <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-350">
+                      <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-slate-600 dark:text-slate-350">
                         <tr>
-                          <td class="py-2 font-bold">Decolar / Aluguel de Carros</td>
-                          <td class="py-2">R$ 48.000</td>
-                          <td class="py-2">0</td>
-                          <td class="py-2">0.0%</td>
-                          <td class="py-2"><span class="px-1.5 py-0.5 bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 text-[8px] font-black rounded-md">BAIXO</span></td>
+                          <td class="py-2.5 font-bold text-slate-800 dark:text-slate-200">Felipe Melo</td>
+                          <td class="py-2.5">Latam Airlines</td>
+                          <td class="py-2.5 font-bold text-slate-800 dark:text-slate-200">R$ 1.850,00</td>
+                          <td class="py-2.5"><span class="px-1.5 py-0.5 bg-rose-500/10 text-rose-555 border border-rose-500/20 text-[8px] font-bold rounded-md uppercase">Solicitado</span></td>
                         </tr>
                         <tr>
-                          <td class="py-2 font-bold">Latam Airlines</td>
-                          <td class="py-2">R$ 152.000</td>
-                          <td class="py-2">2</td>
-                          <td class="py-2">1.3%</td>
-                          <td class="py-2"><span class="px-1.5 py-0.5 bg-indigo-500/10 text-indigo-600 border border-indigo-500/20 text-[8px] font-black rounded-md">MÉDIO</span></td>
-                        </tr>
-                        <tr>
-                          <td class="py-2 font-bold">Fornecedor Mock 2</td>
-                          <td class="py-2">R$ 18.000</td>
-                          <td class="py-2">1</td>
-                          <td class="py-2">5.5%</td>
-                          <td class="py-2"><span class="px-1.5 py-0.5 bg-rose-500/10 text-rose-600 border border-rose-500/20 text-[8px] font-black rounded-md">ELEVADO</span></td>
+                          <td class="py-2.5 font-bold text-slate-800 dark:text-slate-200">Patrícia Lima</td>
+                          <td class="py-2.5">Decolar</td>
+                          <td class="py-2.5 font-bold text-slate-800 dark:text-slate-200">R$ 3.400,00</td>
+                          <td class="py-2.5"><span class="px-1.5 py-0.5 bg-amber-500/10 text-amber-600 dark:text-amber-450 border border-amber-500/20 text-[8px] font-bold rounded-md uppercase">Em Análise</span></td>
                         </tr>
                       </tbody>
                     </table>
                   </div>
                 </div>
-              </div>
 
-              <!-- PANEL 8: PUBLICAS -->
-              <div id="panel-publicas" class="space-y-4 tab-pane-transition hidden">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <!-- Public Itinerary Card -->
-                  <div class="bg-slate-100/60 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800/80 p-4 rounded-xl text-left space-y-2">
-                    <span class="text-[9px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider block">🌐 Itinerário Digital do Cliente</span>
-                    <div class="flex items-baseline gap-2">
-                      <span class="text-sm font-black text-slate-800 dark:text-white">Layout Mobile-First Premium</span>
+                <!-- PANEL 6: RELATORIOS -->
+                <div id="panel-relatorios" class="space-y-4 tab-pane-transition hidden text-[10px]">
+                  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-slate-50/50 dark:bg-slate-950/60 border border-slate-200/60 dark:border-slate-850 p-4 rounded-xl text-left space-y-1">
+                      <span class="text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Conversão</span>
+                      <div class="flex items-baseline gap-1.5">
+                        <span class="text-base font-black text-slate-855 dark:text-white">28,4%</span>
+                        <span class="text-[8px] text-emerald-500 font-bold">+4.8% este mês</span>
+                      </div>
+                      <div class="w-full bg-slate-200/50 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden flex mt-2">
+                        <div class="bg-emerald-500 h-full" style="width: 28.4%"></div>
+                      </div>
                     </div>
-                    <p class="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                      Seu cliente acessa o cronograma completo da viagem, vôos, hotéis e vouchers organizados por dias de forma elegante e interativa (com contagem regressiva para a partida), sem precisar baixar aplicativos ou fazer login.
-                    </p>
-                  </div>
 
-                  <!-- Public NPS Card -->
-                  <div class="bg-slate-100/60 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800/80 p-4 rounded-xl text-left space-y-2">
-                    <span class="text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-wider block">⭐ Pesquisa NPS Pós-Viagem</span>
-                    <div class="flex items-baseline gap-2">
-                      <span class="text-sm font-black text-slate-800 dark:text-white">Coleta de Satisfação Rápida</span>
+                    <div class="bg-slate-50/50 dark:bg-slate-950/60 border border-slate-200/60 dark:border-slate-850 p-4 rounded-xl text-left space-y-1">
+                      <span class="text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Markup Médio</span>
+                      <div class="flex items-baseline gap-1.5">
+                        <span class="text-base font-black text-slate-855 dark:text-white">18,5%</span>
+                        <span class="text-[8px] text-indigo-500 font-bold">Meta de Markup</span>
+                      </div>
+                      <div class="w-full bg-slate-200/50 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden flex mt-2">
+                        <div class="bg-indigo-500 h-full" style="width: 74%"></div>
+                      </div>
                     </div>
-                    <p class="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                      Após o retorno da viagem, envie um link único onde o passageiro avalia sua experiência de 0 a 10 com comentários. Os resultados alimentam estatísticas em tempo real no painel administrativo.
-                    </p>
+
+                    <div class="bg-slate-50/50 dark:bg-slate-950/60 border border-slate-200/60 dark:border-slate-855 p-4 rounded-xl text-left space-y-1">
+                      <span class="text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Pipeline Ponderado</span>
+                      <div class="flex items-baseline gap-1.5">
+                        <span class="text-base font-black text-slate-855 dark:text-white">R$ 115.800,00</span>
+                      </div>
+                      <span class="text-[8px] text-slate-450 block mt-2">Próximos 30 dias de embarques</span>
+                    </div>
                   </div>
                 </div>
-                
-                <div class="bg-slate-100/30 dark:bg-slate-950/40 border border-slate-200/60 dark:border-slate-800/60 rounded-xl p-4 text-left space-y-2">
-                  <span class="text-[9px] font-black text-slate-450 dark:text-slate-500 uppercase tracking-wider block">💬 Disparo de WhatsApp com Templates Reativos</span>
-                  <p class="text-[10px] text-slate-650 dark:text-slate-350 leading-relaxed">
-                    O consultor seleciona modelos predefinidos de mensagem (ex: confirmação de compra, vouchers, NPS) e o sistema preenche dinamicamente dados do cliente, localizador de reserva e links públicos do itinerário/pesquisa, abrindo o WhatsApp Web/App com a mensagem pronta com um clique.
-                  </p>
+
+                <!-- PANEL 7: PUBLICAS -->
+                <div id="panel-publicas" class="space-y-4 tab-pane-transition hidden text-[10px]">
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Public Itinerary Card -->
+                    <div class="bg-slate-50/50 dark:bg-slate-950/60 border border-slate-200/60 dark:border-slate-850 p-4 rounded-xl text-left space-y-2">
+                      <span class="text-[8px] font-bold text-indigo-650 dark:text-indigo-400 uppercase tracking-wider block">🌐 Itinerário Digital</span>
+                      <p class="text-[10px] text-slate-555 dark:text-slate-400 leading-normal">
+                        O cliente acompanha voos, hotéis e vouchers de forma responsiva, organizada por dias com contagem regressiva, sem precisar baixar aplicativos.
+                      </p>
+                    </div>
+
+                    <!-- Public NPS Card -->
+                    <div class="bg-slate-50/50 dark:bg-slate-950/60 border border-slate-200/60 dark:border-slate-850 p-4 rounded-xl text-left space-y-2">
+                      <span class="text-[8px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider block">⭐ Pesquisa NPS</span>
+                      <p class="text-[10px] text-slate-555 dark:text-slate-400 leading-normal">
+                        Pesquisa rápida pós-viagem para avaliar o serviço do consultor, alimentando as estatísticas do painel administrativo automaticamente.
+                      </p>
+                    </div>
+                  </div>
                 </div>
+
               </div>
 
             </div>
@@ -582,87 +476,87 @@ export class LandingPage {
         </main>
 
         <!-- Seção White-Label Preview Tool -->
-        <section class="w-full bg-slate-50/50 dark:bg-slate-950/20 py-20 px-6 relative z-10 border-t border-slate-200/60 dark:border-slate-900/60">
+        <section class="w-full bg-slate-100/30 dark:bg-slate-950/10 py-16 px-6 relative z-10 border-t border-slate-200/40 dark:border-slate-900/40">
           <div class="max-w-5xl mx-auto">
-            <div class="text-center max-w-2xl mx-auto mb-12">
-              <span class="px-3 py-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-[10px] font-black uppercase tracking-widest rounded-full">Exclusivo White-Label</span>
-              <h2 class="text-2xl md:text-3xl font-black text-slate-800 dark:text-white tracking-tight mt-3">
+            <div class="text-center max-w-2xl mx-auto mb-10">
+              <span class="px-2.5 py-0.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-455 border border-emerald-500/20 text-[9px] font-bold uppercase tracking-wider rounded-full">Exclusivo White-Label</span>
+              <h2 class="text-xl md:text-2xl font-extrabold text-slate-850 dark:text-white tracking-tight mt-3">
                 Sua Marca, Suas Cores
               </h2>
-              <p class="text-xs md:text-sm text-slate-500 dark:text-slate-400 font-semibold mt-2">
+              <p class="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1">
                 Veja em tempo real como o itinerário digital do seu passageiro se adapta à identidade visual da sua agência:
               </p>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch max-w-4xl mx-auto">
-              <!-- Controles de customização -->
-              <div class="lg:col-span-4 bg-white/60 dark:bg-slate-900/40 border border-slate-200/80 dark:border-slate-800/80 p-6 rounded-2xl flex flex-col justify-center space-y-5 shadow-sm backdrop-blur-md">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch max-w-4xl mx-auto">
+              <!-- Customization settings -->
+              <div class="lg:col-span-4 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 p-5 rounded-2xl flex flex-col justify-center space-y-4 shadow-sm">
                 <div>
-                  <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5 font-sans">Nome da Sua Agência</label>
-                  <input id="wl-input-name" type="text" value="Minha Agência de Viagens" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm font-sans" />
+                  <label class="block text-[10px] font-bold text-slate-550 dark:text-slate-400 uppercase mb-1.5">Nome da Sua Agência</label>
+                  <input id="wl-input-name" type="text" value="Minha Agência de Viagens" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-150 font-semibold text-xs font-sans" />
                 </div>
                 <div>
-                  <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2 font-sans">Cor Principal da Marca</label>
+                  <label class="block text-[10px] font-bold text-slate-550 dark:text-slate-400 uppercase mb-1.5">Cor Principal da Marca</label>
                   <div class="flex items-center gap-3">
-                    <input id="wl-input-color" type="color" value="#6366f1" class="w-10 h-10 border-0 rounded-lg cursor-pointer bg-transparent" />
-                    <span id="wl-color-hex" class="text-xs font-mono font-bold text-slate-500">#6366f1</span>
+                    <input id="wl-input-color" type="color" value="#4f46e5" class="w-8 h-8 border-0 rounded-lg cursor-pointer bg-transparent" />
+                    <span id="wl-color-hex" class="text-[10px] font-mono font-bold text-slate-500">#4F46E5</span>
                   </div>
                 </div>
-                <div class="text-[10px] text-slate-400 dark:text-slate-500 leading-relaxed pt-2 border-t border-slate-100 dark:border-slate-800/80">
-                  💡 No PaxFlow real, as cores da sua marca são aplicadas automaticamente nos emails, mensagens de WhatsApp e itinerários públicos acessados pelos clientes.
+                <div class="text-[9px] text-slate-450 dark:text-slate-500 leading-normal pt-2.5 border-t border-slate-100 dark:border-slate-850">
+                  💡 No PaxFlow real, as cores e a marca da sua agência são aplicadas automaticamente em todos os itinerários digitais acessados pelos seus clientes.
                 </div>
               </div>
 
-              <!-- Preview em tempo real -->
-              <div class="lg:col-span-8 bg-slate-100/50 dark:bg-slate-900/40 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 relative overflow-hidden flex flex-col justify-between min-h-[320px] shadow-inner">
+              <!-- Live dynamic preview -->
+              <div class="lg:col-span-8 bg-slate-50 dark:bg-slate-950/20 border border-slate-200/60 dark:border-slate-800 rounded-3xl p-5 relative overflow-hidden flex flex-col justify-between min-h-[300px]">
                 <!-- Preview Header -->
-                <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3 mb-4">
-                  <div class="flex items-center gap-2">
-                    <span class="w-2.5 h-2.5 bg-slate-350 dark:bg-slate-700 rounded-full"></span>
-                    <span class="w-2.5 h-2.5 bg-slate-350 dark:bg-slate-700 rounded-full"></span>
-                    <span class="w-2.5 h-2.5 bg-slate-350 dark:bg-slate-700 rounded-full"></span>
+                <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-850 pb-2.5 mb-3.5">
+                  <div class="flex items-center gap-1.5">
+                    <span class="w-2 h-2 bg-slate-200 dark:bg-slate-800 rounded-full"></span>
+                    <span class="w-2 h-2 bg-slate-200 dark:bg-slate-800 rounded-full"></span>
+                    <span class="w-2 h-2 bg-slate-200 dark:bg-slate-800 rounded-full"></span>
                   </div>
-                  <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">ITINERÁRIO DO PASSAGEIRO</span>
+                  <span class="text-[8px] font-bold text-slate-400 uppercase tracking-widest">ITINERÁRIO DO CLIENTE</span>
                 </div>
 
                 <!-- Itinerary Card mockup -->
-                <div class="bg-white dark:bg-slate-950 border border-slate-150 dark:border-slate-900 rounded-2xl p-5 flex-1 shadow-sm flex flex-col justify-between">
+                <div class="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800 rounded-xl p-4.5 flex-1 shadow-sm flex flex-col justify-between">
                   <div>
-                    <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-900/60 pb-3 mb-3">
+                    <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5 mb-2.5">
                       <div class="flex items-center gap-2">
-                        <!-- Custom agency branding element -->
-                        <span id="wl-preview-logo-bg" class="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-black shadow-sm" style="background-color: #6366f1;">
+                        <!-- Custom logo bg -->
+                        <span id="wl-preview-logo-bg" class="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-black shadow-sm" style="background-color: #4f46e5;">
                           ✈️
                         </span>
                         <div>
-                          <span id="wl-preview-agency-name" class="block text-xs font-bold text-slate-850 dark:text-slate-200">Minha Agência de Viagens</span>
+                          <span id="wl-preview-agency-name" class="block text-xs font-bold text-slate-800 dark:text-slate-150">Minha Agência de Viagens</span>
                           <span class="block text-[8px] text-slate-400 uppercase font-bold tracking-wider">Itinerário Digital</span>
                         </div>
                       </div>
-                      <span class="text-[9px] font-mono font-bold bg-slate-100 dark:bg-slate-900 text-slate-500 px-1.5 py-0.5 rounded border border-slate-200/50 dark:border-slate-800/80">VIA-2026</span>
+                      <span class="text-[8px] font-mono font-bold bg-slate-50 dark:bg-slate-950 text-slate-450 px-1.5 py-0.5 rounded border border-slate-200/50 dark:border-slate-800">VIA-2026</span>
                     </div>
 
-                    <div class="space-y-3">
+                    <div class="space-y-2.5 text-[10px]">
                       <div>
-                        <span class="block text-[8px] font-black text-slate-400 uppercase tracking-wider">Passageiro</span>
-                        <span class="block text-xs font-bold text-slate-700 dark:text-slate-300">Guilherme R. Albuquerque</span>
+                        <span class="block text-[8px] font-bold text-slate-400 uppercase tracking-wider">Passageiro</span>
+                        <span class="block font-bold text-slate-700 dark:text-slate-300">Guilherme R. Albuquerque</span>
                       </div>
                       <div class="grid grid-cols-2 gap-4">
                         <div>
-                          <span class="block text-[8px] font-black text-slate-400 uppercase tracking-wider">Destino</span>
-                          <span class="block text-xs font-bold text-slate-700 dark:text-slate-300">Paris, França</span>
+                          <span class="block text-[8px] font-bold text-slate-400 uppercase tracking-wider">Destino</span>
+                          <span class="block font-bold text-slate-700 dark:text-slate-300">Paris, França</span>
                         </div>
                         <div>
-                          <span class="block text-[8px] font-black text-slate-400 uppercase tracking-wider">Embarque</span>
-                          <span class="block text-xs font-bold text-slate-700 dark:text-slate-300">14/10/2026</span>
+                          <span class="block text-[8px] font-bold text-slate-400 uppercase tracking-wider">Embarque</span>
+                          <span class="block font-bold text-slate-700 dark:text-slate-300">14/10/2026</span>
                         </div>
                       </div>
                     </div>
                   </div>
 
                   <!-- Dynamic Button -->
-                  <div class="mt-5">
-                    <button id="wl-preview-btn" class="w-full py-2.5 rounded-xl text-white text-xs font-black tracking-wider transition-all duration-300 uppercase shadow-md hover:brightness-105" style="background-color: #6366f1;">
+                  <div class="mt-4">
+                    <button id="wl-preview-btn" class="w-full py-2 rounded-xl text-white text-[10px] font-bold tracking-wider transition-all duration-300 uppercase shadow-sm hover:brightness-105" style="background-color: #4f46e5;">
                       Ver Detalhes do Voo & Voucher
                     </button>
                   </div>
@@ -673,91 +567,60 @@ export class LandingPage {
         </section>
 
         <!-- Problem vs Solution Section -->
-        <section class="w-full bg-slate-100/50 dark:bg-slate-900/10 border-t border-slate-200/80 dark:border-slate-900/80 py-20 px-6 relative z-10">
+        <section class="w-full bg-slate-50/50 dark:bg-slate-950/20 border-t border-slate-200/40 dark:border-slate-900/40 py-16 px-6 relative z-10">
           <div class="max-w-5xl mx-auto">
-            <h2 class="text-2xl md:text-3xl font-black text-slate-800 dark:text-white tracking-tight text-center mb-4">
+            <h2 class="text-xl md:text-2xl font-extrabold text-slate-855 dark:text-white tracking-tight text-center mb-10">
               Por que substituir as planilhas pelo PaxFlow?
             </h2>
-            <p class="text-sm text-slate-500 dark:text-slate-400 font-semibold text-center mb-12 max-w-xl mx-auto">
-              Desenvolvemos uma estrutura robusta para resolver os maiores problemas operacionais das agências.
-            </p>
             
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
               
               <!-- Column 1: The Pain -->
-              <div class="p-6 bg-white dark:bg-slate-900 border border-red-500/10 dark:border-red-500/5 rounded-2xl shadow-sm">
-                <div class="inline-flex items-center gap-2 px-3 py-1 bg-rose-500/10 text-rose-600 dark:text-rose-400 text-[10px] font-black rounded-lg uppercase tracking-wider mb-4">
-                  <span>❌</span> Como é hoje
+              <div class="p-5 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-sm">
+                <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-rose-500/5 text-rose-600 dark:text-rose-455 text-[9px] font-bold rounded-lg uppercase tracking-wider mb-4">
+                  ❌ Como é hoje (Desorganização)
                 </div>
-                <ul class="space-y-3.5 text-xs text-slate-600 dark:text-slate-400 font-medium">
-                  <li class="flex items-start gap-2.5">
+                <ul class="space-y-3 text-[10px] text-slate-550 dark:text-slate-400 font-medium">
+                  <li class="flex items-start gap-2">
                     <span class="text-rose-500 shrink-0">⚠️</span>
-                    <span>Planilhas de vendas bagunçadas e desatualizadas, que não calculam a margem líquida corretamente.</span>
+                    <span>Planilhas e dados dispersos, dificultando o cálculo de margens.</span>
                   </li>
-                  <li class="flex items-start gap-2.5">
+                  <li class="flex items-start gap-2">
                     <span class="text-rose-500 shrink-0">⚠️</span>
-                    <span>Risco constante de multas por esquecimento de passaportes vencendo ou prazos de vistos dos clientes.</span>
+                    <span>Risco de embarque bloqueado por passaportes e vistos expirados.</span>
                   </li>
-                  <li class="flex items-start gap-2.5">
+                  <li class="flex items-start gap-2">
                     <span class="text-rose-500 shrink-0">⚠️</span>
-                    <span>Histórico de mensagens perdido no WhatsApp dos consultores, sem visibilidade para a coordenação.</span>
+                    <span>Histórico de mensagens perdido no WhatsApp particular dos consultores.</span>
                   </li>
-                  <li class="flex items-start gap-2.5">
+                  <li class="flex items-start gap-2">
                     <span class="text-rose-500 shrink-0">⚠️</span>
-                    <span>Processos de reembolsos que levam meses para serem identificados e conciliados.</span>
+                    <span>Dificuldade em gerenciar e conciliar bilhetes de reembolsos.</span>
                   </li>
                 </ul>
               </div>
 
               <!-- Column 2: The Solution -->
-              <div class="p-6 bg-indigo-500/5 dark:bg-slate-900 border border-indigo-500/10 dark:border-slate-800/80 rounded-2xl shadow-sm">
-                <div class="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-450 text-[10px] font-black rounded-lg uppercase tracking-wider mb-4">
-                  <span>✅</span> Com o PaxFlow
+              <div class="p-5 bg-indigo-50/10 dark:bg-slate-900 border border-indigo-100/50 dark:border-slate-800 rounded-2xl shadow-sm">
+                <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-emerald-500/5 text-emerald-600 dark:text-emerald-455 text-[9px] font-bold rounded-lg uppercase tracking-wider mb-4">
+                  ✅ Com o PaxFlow (Produtividade)
                 </div>
-                <ul class="space-y-3.5 text-xs text-slate-700 dark:text-slate-350 font-medium">
-                  <li class="flex items-start gap-2.5">
+                <ul class="space-y-3 text-[10px] text-slate-650 dark:text-slate-350 font-medium">
+                  <li class="flex items-start gap-2">
                     <span class="text-emerald-500 shrink-0">✨</span>
-                    <span><strong>Dashboard unificado</strong> com controle total de faturamento, canais de venda e cálculo automático de rentabilidade.</span>
+                    <span><strong>Dashboard unificado</strong> com markup e faturamento atualizados.</span>
                   </li>
-                  <li class="flex items-start gap-2.5">
+                  <li class="flex items-start gap-2">
                     <span class="text-emerald-500 shrink-0">✨</span>
-                    <span><strong>Conferência Financeira por LOC e de Processo por Viagem</strong> com travas de segurança rigorosas de pagamentos e auditoria cadastral.</span>
+                    <span><strong>Alertas de SLA</strong> que notificam automaticamente sobre vencimentos.</span>
                   </li>
-                  <li class="flex items-start gap-2.5">
+                  <li class="flex items-start gap-2">
                     <span class="text-emerald-500 shrink-0">✨</span>
-                    <span><strong>Central de Cadastros</strong> de destinos, produtos e formas de recebimento integrados aos localizadores (LOC).</span>
+                    <span><strong>Fidelidade e pós-vendas</strong> integrados aos localizadores (LOC).</span>
                   </li>
-                  <li class="flex items-start gap-2.5">
+                  <li class="flex items-start gap-2">
                     <span class="text-emerald-500 shrink-0">✨</span>
-                    <span><strong>Alertas automáticos de SLA</strong> de documentos no Inbox, garantindo controle antes do embarque.</span>
-                  </li>
-                  <li class="flex items-start gap-2.5">
-                    <span class="text-emerald-500 shrink-0">✨</span>
-                    <span><strong>Central Inbox P2P</strong> com mensagens encadeadas diretamente no painel para auditoria.</span>
-                  </li>
-                  <li class="flex items-start gap-2.5">
-                    <span class="text-emerald-500 shrink-0">✨</span>
-                    <span><strong>Módulo financeiro integrado</strong> exclusivo para reembolso de bilhetes aéreos e serviços.</span>
-                  </li>
-                  <li class="flex items-start gap-2.5">
-                    <span class="text-emerald-500 shrink-0">✨</span>
-                    <span><strong>Painel de Relatórios Gerenciais</strong> com análise de conversão, markups, lucratividade, motivos de perda e qualidade de fornecedores.</span>
-                  </li>
-                  <li class="flex items-start gap-2.5">
-                    <span class="text-emerald-500 shrink-0">✨</span>
-                    <span><strong>Agendamento e Delegação Colaborativa</strong> via Caixa de Entrada, visão do Calendário com cores e status de conclusão (line-through).</span>
-                  </li>
-                  <li class="flex items-start gap-2.5">
-                    <span class="text-emerald-500 shrink-0">✨</span>
-                    <span><strong>Códigos de Referência Sequenciais</strong> (ex: ORC-0001, VIA-0023, RBS-0009, CLI-0001) para referenciar e pesquisar registros em todas as telas.</span>
-                  </li>
-                  <li class="flex items-start gap-2.5">
-                    <span class="text-emerald-500 shrink-0">✨</span>
-                    <span><strong>Identidade Visual White-Label</strong> com logotipo próprio e cores da agência no itinerário digital e NPS do passageiro.</span>
-                  </li>
-                  <li class="flex items-start gap-2.5">
-                    <span class="text-emerald-500 shrink-0">✨</span>
-                    <span><strong>Alertas de Embarque e NPS</strong> automáticos no Inbox com disparador integrado do WhatsApp para envio rápido de vouchers.</span>
+                    <span><strong>Central de reembolsos</strong> integrada para controle de créditos e fornecedores.</span>
                   </li>
                 </ul>
               </div>
@@ -767,88 +630,74 @@ export class LandingPage {
         </section>
 
         <!-- Stats Counters -->
-        <section class="w-full py-16 px-6 bg-white dark:bg-slate-950 border-t border-slate-200/80 dark:border-slate-900 relative z-10">
-          <div class="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-            <div class="p-4">
-              <span class="block text-3xl font-black text-indigo-600 dark:text-indigo-400">15.000+</span>
-              <span class="block text-[10px] font-black uppercase text-slate-550 dark:text-slate-400 mt-1">Passageiros Atendidos</span>
+        <section class="w-full py-12 px-6 bg-white dark:bg-slate-950 border-t border-slate-200/40 dark:border-slate-900/40 relative z-10">
+          <div class="max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+            <div>
+              <span class="block text-2xl font-black text-slate-855 dark:text-white">15.000+</span>
+              <span class="block text-[8px] font-bold uppercase text-slate-450 mt-1 tracking-wider">Passageiros Atendidos</span>
             </div>
-            <div class="p-4">
-              <span class="block text-3xl font-black text-indigo-600 dark:text-indigo-400">98,6%</span>
-              <span class="block text-[10px] font-black uppercase text-slate-550 dark:text-slate-400 mt-1">Satisfação (NPS Médio)</span>
+            <div>
+              <span class="block text-2xl font-black text-slate-855 dark:text-white">98,6%</span>
+              <span class="block text-[8px] font-bold uppercase text-slate-450 mt-1 tracking-wider">Satisfação (NPS Médio)</span>
             </div>
-            <div class="p-4">
-              <span class="block text-3xl font-black text-indigo-600 dark:text-indigo-400">70%</span>
-              <span class="block text-[10px] font-black uppercase text-slate-550 dark:text-slate-400 mt-1">Menos Trabalho Manual</span>
+            <div>
+              <span class="block text-2xl font-black text-indigo-600 dark:text-indigo-400">70%</span>
+              <span class="block text-[8px] font-bold uppercase text-slate-450 mt-1 tracking-wider">Menos Trabalho Manual</span>
             </div>
-            <div class="p-4">
-              <span class="block text-3xl font-black text-emerald-600 dark:text-emerald-450">24/7</span>
-              <span class="block text-[10px] font-black uppercase text-slate-550 dark:text-slate-400 mt-1">Alertas e SLAs de Voo</span>
+            <div>
+              <span class="block text-2xl font-black text-emerald-600 dark:text-emerald-450">24/7</span>
+              <span class="block text-[8px] font-bold uppercase text-slate-450 mt-1 tracking-wider">Alertas e SLAs de Voo</span>
             </div>
           </div>
         </section>
 
         <!-- FAQ Section -->
-        <section class="w-full bg-slate-100/50 dark:bg-slate-900/10 border-t border-slate-200/80 dark:border-slate-900/80 py-20 px-6 relative z-10">
+        <section class="w-full bg-slate-50/50 dark:bg-slate-950/20 border-t border-slate-200/40 dark:border-slate-900/40 py-16 px-6 relative z-10">
           <div class="max-w-3xl mx-auto">
-            <h2 class="text-2xl md:text-3xl font-black text-slate-800 dark:text-white tracking-tight text-center mb-12">
+            <h2 class="text-xl md:text-2xl font-extrabold text-slate-855 dark:text-white tracking-tight text-center mb-10">
               Perguntas Frequentes
             </h2>
             
-            <div class="space-y-4">
-              <details class="group bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 transition-all duration-300 [&_summary::-webkit-details-marker]:hidden" open>
+            <div class="space-y-3.5">
+              <details class="group bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 transition-all duration-300 [&_summary::-webkit-details-marker]:hidden" open>
                 <summary class="flex items-center justify-between cursor-pointer focus:outline-none">
-                  <h3 class="text-sm font-extrabold text-slate-800 dark:text-slate-200">O que é o Modo de Demonstração (Sandbox)?</h3>
-                  <span class="ml-1.5 shrink-0 rounded-full bg-slate-100 dark:bg-slate-800 p-1.5 text-slate-900 dark:text-white transition group-open:-rotate-180">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <h3 class="text-xs font-bold text-slate-800 dark:text-slate-200">O que é o Modo de Demonstração (Sandbox)?</h3>
+                  <span class="ml-1.5 shrink-0 rounded-full bg-slate-550/10 dark:bg-slate-800 p-1.5 text-slate-900 dark:text-white transition group-open:-rotate-180">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                     </svg>
                   </span>
                 </summary>
-                <p class="mt-4 text-xs leading-relaxed text-slate-650 dark:text-slate-400 font-medium">
+                <p class="mt-3 text-[10px] leading-relaxed text-slate-550 dark:text-slate-400 font-medium">
                   É um ambiente de simulação completo, pré-populado com dados fictícios (clientes, orçamentos, históricos de conversas, e dados de faturamento). Ele permite que você explore todas as funcionalidades operacionais da plataforma sem precisar configurar conexões reais.
                 </p>
               </details>
 
-              <details class="group bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 transition-all duration-300 [&_summary::-webkit-details-marker]:hidden">
+              <details class="group bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 transition-all duration-300 [&_summary::-webkit-details-marker]:hidden">
                 <summary class="flex items-center justify-between cursor-pointer focus:outline-none">
-                  <h3 class="text-sm font-extrabold text-slate-800 dark:text-slate-200">As alterações feitas no Modo Demo são salvas?</h3>
-                  <span class="ml-1.5 shrink-0 rounded-full bg-slate-100 dark:bg-slate-800 p-1.5 text-slate-900 dark:text-white transition group-open:-rotate-180">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <h3 class="text-xs font-bold text-slate-800 dark:text-slate-200">As alterações feitas no Modo Demo são salvas?</h3>
+                  <span class="ml-1.5 shrink-0 rounded-full bg-slate-550/10 dark:bg-slate-800 p-1.5 text-slate-900 dark:text-white transition group-open:-rotate-180">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                     </svg>
                   </span>
                 </summary>
-                <p class="mt-4 text-xs leading-relaxed text-slate-650 dark:text-slate-400 font-medium">
+                <p class="mt-3 text-[10px] leading-relaxed text-slate-550 dark:text-slate-400 font-medium">
                   As alterações são gravadas localmente no armazenamento do seu navegador (localStorage proxy). Respeitando o lema "reiniciou, perdeu", os dados são limpos e reiniciados a cada novo acesso à demonstração, garantindo um ambiente sempre limpo para testes.
                 </p>
               </details>
 
-              <details class="group bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 transition-all duration-300 [&_summary::-webkit-details-marker]:hidden">
+              <details class="group bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 transition-all duration-300 [&_summary::-webkit-details-marker]:hidden">
                 <summary class="flex items-center justify-between cursor-pointer focus:outline-none">
-                  <h3 class="text-sm font-extrabold text-slate-800 dark:text-slate-200">Como funciona o controle de passaportes e SLAs?</h3>
-                  <span class="ml-1.5 shrink-0 rounded-full bg-slate-100 dark:bg-slate-800 p-1.5 text-slate-900 dark:text-white transition group-open:-rotate-180">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <h3 class="text-xs font-bold text-slate-800 dark:text-slate-200">Como funciona o controle de passaportes e SLAs?</h3>
+                  <span class="ml-1.5 shrink-0 rounded-full bg-slate-550/10 dark:bg-slate-800 p-1.5 text-slate-900 dark:text-white transition group-open:-rotate-180">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                     </svg>
                   </span>
                 </summary>
-                <p class="mt-4 text-xs leading-relaxed text-slate-650 dark:text-slate-400 font-medium">
+                <p class="mt-3 text-[10px] leading-relaxed text-slate-550 dark:text-slate-400 font-medium">
                   O PaxFlow varre a validade dos passaportes de todos os passageiros vinculados a viagens ativas. Se algum documento possuir validade inferior a 6 meses do dia do embarque, o sistema emite um alerta automático no Inbox do consultor responsável para evitar multas ou cancelamentos no aeroporto.
-                </p>
-              </details>
-
-              <details class="group bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 transition-all duration-300 [&_summary::-webkit-details-marker]:hidden">
-                <summary class="flex items-center justify-between cursor-pointer focus:outline-none">
-                  <h3 class="text-sm font-extrabold text-slate-800 dark:text-slate-200">O sistema é multiusuário?</h3>
-                  <span class="ml-1.5 shrink-0 rounded-full bg-slate-100 dark:bg-slate-800 p-1.5 text-slate-900 dark:text-white transition group-open:-rotate-180">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </span>
-                </summary>
-                <p class="mt-4 text-xs leading-relaxed text-slate-650 dark:text-slate-400 font-medium">
-                  Sim. Na versão de produção, o PaxFlow suporta controle de acesso baseado em cargos (RBAC). Administradores possuem privilégios de exclusão e configurações avançadas, enquanto consultores gerenciam seus próprios orçamentos e conversas com clientes de forma segura.
                 </p>
               </details>
             </div>
@@ -857,7 +706,7 @@ export class LandingPage {
         </section>
 
         <!-- Footer -->
-        <footer class="w-full bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-900 py-8 px-6 text-center text-xs text-slate-500 font-semibold relative z-10">
+        <footer class="w-full bg-white dark:bg-slate-950 border-t border-slate-200/50 dark:border-slate-900/60 py-6 px-6 text-center text-[10px] text-slate-450 font-medium relative z-10">
           <p>© 2026 PaxFlow Systems. Todos os direitos reservados. Sandbox de dados fictícios para fins de apresentação comercial.</p>
         </footer>
 
@@ -897,15 +746,14 @@ export class LandingPage {
     document.getElementById('btn-acessar-login')?.addEventListener('click', handleAcessarReal);
     document.getElementById('btn-conhecer-login')?.addEventListener('click', handleAcessarReal);
 
-    // Lógica da Demo Interativa (Feature Tour)
-    const tabs = ['dashboard', 'viagens', 'orcamentos', 'inbox', 'reembolsos', 'gamificacao', 'relatorios', 'publicas'];
+    // Lógica da Demo Interativa (Feature Tour com Layout Vertical)
+    const tabs = ['dashboard', 'viagens', 'orcamentos', 'inbox', 'reembolsos', 'relatorios', 'publicas'];
     const pathTexts: { [key: string]: string } = {
       dashboard: 'paxflow-comercial-dashboard.html',
       viagens: 'paxflow-controle-operacional-viagens.html',
       orcamentos: 'paxflow-crm-orcamentos-kanban.html',
       inbox: 'paxflow-inbox-p2p-threads.html',
       reembolsos: 'paxflow-gestao-de-reembolsos.html',
-      gamificacao: 'paxflow-gamificacao-de-consultores.html',
       relatorios: 'paxflow-relatorios-estatisticos-e-predicoes.html',
       publicas: 'paxflow-itinerarios-publicos-nps.html'
     };
@@ -916,16 +764,33 @@ export class LandingPage {
         // Desativar todas as abas
         tabs.forEach(t => {
           const b = document.getElementById(`tab-btn-${t}`);
-          b?.classList.remove('bg-indigo-600', 'text-white', 'shadow-md');
-          b?.classList.add('text-slate-600', 'dark:text-slate-400', 'hover:text-slate-800', 'dark:hover:text-slate-200');
-
+          if (b) {
+            b.className = "flex items-start gap-3.5 p-4 rounded-2xl text-left transition duration-200 border border-transparent hover:bg-slate-200/40 dark:hover:bg-slate-900/40 text-slate-650 dark:text-slate-400 group";
+            const titleEl = b.querySelector('span.block.text-xs');
+            if (titleEl) {
+              titleEl.className = "block text-xs font-bold tracking-tight text-slate-700 dark:text-slate-200 group-hover:text-indigo-650 transition-colors";
+            }
+            const iconEl = b.querySelector('span.p-2\.5');
+            if (iconEl) {
+              iconEl.className = "p-2.5 bg-slate-100 dark:bg-slate-850 text-slate-550 dark:text-slate-400 rounded-xl text-xs font-bold shrink-0";
+            }
+          }
           const panel = document.getElementById(`panel-${t}`);
           panel?.classList.add('hidden');
         });
 
         // Ativar aba clicada
-        btn.classList.add('bg-indigo-600', 'text-white', 'shadow-md');
-        btn.classList.remove('text-slate-600', 'dark:text-slate-400', 'hover:text-slate-800', 'dark:hover:text-slate-200');
+        if (btn) {
+          btn.className = "flex items-start gap-3.5 p-4 rounded-2xl text-left transition duration-200 border bg-indigo-50/50 dark:bg-slate-900/50 border-indigo-100/50 dark:border-indigo-950/40 text-slate-800 dark:text-slate-100 group shadow-sm";
+          const titleEl = btn.querySelector('span.block.text-xs');
+          if (titleEl) {
+            titleEl.className = "block text-xs font-black tracking-tight text-indigo-700 dark:text-indigo-400";
+          }
+          const iconEl = btn.querySelector('span.p-2\.5');
+          if (iconEl) {
+            iconEl.className = "p-2.5 bg-indigo-600 text-white rounded-xl text-xs font-bold shrink-0";
+          }
+        }
 
         const activePanel = document.getElementById(`panel-${tab}`);
         activePanel?.classList.remove('hidden');
@@ -961,4 +826,3 @@ export class LandingPage {
     wlInputColor?.addEventListener('input', updateWlPreview);
   }
 }
-

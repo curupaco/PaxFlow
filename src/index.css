@@ -100,6 +100,24 @@ header h1, header h2, header h3,
   font-style: italic !important;
 }
 
+/* Override landing page typography to be contemporary and non-italic */
+.landing-page-wrapper,
+.landing-page-wrapper h1, 
+.landing-page-wrapper h2, 
+.landing-page-wrapper h3, 
+.landing-page-wrapper h4,
+.landing-page-wrapper h5,
+.landing-page-wrapper h6,
+.landing-page-wrapper span,
+.landing-page-wrapper p,
+.landing-page-wrapper button,
+.landing-page-wrapper input,
+.landing-page-wrapper select,
+.landing-page-wrapper summary {
+  font-family: 'Inter', sans-serif !important;
+  font-style: normal !important;
+}
+
 /* User names in header and sidebar must be Roboto Bold (not italic) */
 .text-right.hidden.sm\:block span:first-child,
 #sidebar-profile-trigger span:first-child,
