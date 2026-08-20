@@ -5,8 +5,14 @@ import { Comentario, PerfilConsultor } from '../types';
 
 function converterLinks(texto: string): string {
   if (!texto) return '';
+  const textoEscapado = texto
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
   const urlRegex = /(https?:\/\/[^\s<]+[^#.,?;()\]\s<])/g;
-  return texto.replace(urlRegex, (url) => {
+  return textoEscapado.replace(urlRegex, (url) => {
     const label = url.length > 50 ? url.substring(0, 47) + '...' : url;
     return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-indigo-650 hover:underline dark:text-indigo-400 break-all font-bold">🔗 ${label}</a>`;
   });
