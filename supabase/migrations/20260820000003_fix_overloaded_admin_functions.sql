@@ -13,8 +13,9 @@ DROP FUNCTION IF EXISTS public.admin_create_user(TEXT, TEXT, TEXT, TEXT);
 DROP FUNCTION IF EXISTS public.admin_create_user(TEXT, TEXT, TEXT);
 
 -- 3. Recriar a função admin_create_user com assinatura única e limpa (argumentos em ordem alfabética para o PostgREST)
--- Correção: Na tabela auth.identities do Supabase, a coluna 'id' para provedor local (email) DEVE ser o proprio ID do usuario em formato UUID (new_user_id),
--- e a coluna 'identity_data' deve conter obrigatoriamente os campos 'email_verified' e 'phone_verified' para o GoTrue nao falhar com erro 500 no login.
+-- Correção 1: Na tabela auth.identities do Supabase, a coluna 'id' para provedor local (email) DEVE ser o proprio ID do usuario em formato UUID (new_user_id),
+-- e a coluna 'identity_data' deve conter obrigatoriamente os campos 'email_verified' e 'phone_verified'.
+-- Correção 2: O GoTrue do Supabase exige hashes de senha com 10 rounds (gen_salt('bf', 10)) para evitar erros internos no validador de login.
 CREATE OR REPLACE FUNCTION public.admin_create_user(
   user_email TEXT,
   user_nome TEXT,
@@ -32,7 +33,7 @@ BEGIN
   END IF;
 
   new_user_id := gen_random_uuid();
-  encrypted_pw := crypt(user_password, gen_salt('bf'));
+  encrypted_pw := crypt(user_password, gen_salt('bf', 10));
 
   -- Inserir na tabela de autenticação auth.users
   INSERT INTO auth.users (
@@ -106,7 +107,7 @@ BEGIN
   END IF;
 
   UPDATE auth.users
-  SET encrypted_password = crypt(new_password, gen_salt('bf')),
+  SET encrypted_password = crypt(new_password, gen_salt('bf', 10)),
       updated_at = NOW()
   WHERE id = user_id;
 END;
