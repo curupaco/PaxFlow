@@ -257,7 +257,17 @@ export class SendTemplateMessageModal {
 
         try {
           const cleanNumber = finalPhone.replace(/\D/g, '');
-          const url = `${settings.digisac_domain.replace(/\/$/, '')}/api/v1/messages`;
+          
+          let cleanDomain = settings.digisac_domain.replace(/\/$/, '');
+          if (cleanDomain.endsWith('/api/v1')) {
+            cleanDomain = cleanDomain.slice(0, -7);
+          } else if (cleanDomain.endsWith('/api/v1/')) {
+            cleanDomain = cleanDomain.slice(0, -8);
+          } else if (cleanDomain.endsWith('/api')) {
+            cleanDomain = cleanDomain.slice(0, -4);
+          }
+          
+          const url = `${cleanDomain}/api/v1/messages`;
           
           const payload = {
             text: finalTexto,
