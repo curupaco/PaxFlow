@@ -1,7 +1,8 @@
 import { supabase, getSessaoAtual } from '../services/supabase';
-import { Orcamento, Viagem, PerfilConsultor } from '../types';
+import { Orcamento, Viagem, PerfilConsultor, MetaPeriodo, MetaFaixa } from '../types';
 import { getAvatarSvg, mesclarAvataresLocais } from '../services/avatars';
 import { showCustomConfirm } from '../services/dialog';
+import { MetasService } from '../services/metasService';
 
 // Injeta estilos específicos premium para o Dashboard de Relatórios
 if (typeof document !== 'undefined') {
@@ -78,15 +79,19 @@ export class ComercialDashboard {
   private viagens: Viagem[] = [];
   private consultores: PerfilConsultor[] = [];
   private locPagamentos: any[] = [];
+  private metas: MetaPeriodo[] = [];
   
   // Estados de filtros
   private selectedPeriod: PeriodType = 'mes_atual';
   private selectedConsultantId: string = 'todos'; // 'todos' ou ID específico (apenas para admins)
+  private selectedMetaId: string = 'todas';
   
   // Auxiliares de carregamento/offline
   private isFallbackMode: boolean = false;
   private realtimeChannel: any = null;
   private storageListener: ((e: StorageEvent) => void) | null = null;
+  private lastFetchedMetasTime: number = 0;
+  private countdownInterval: any = null;
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -109,6 +114,8 @@ export class ComercialDashboard {
       // 2. Carregar dados (consultores, orçamentos, viagens)
       await this.loadConsultores();
       await this.loadData();
+      await this.loadMetas();
+      this.startMetasTimer();
 
       // 3. Configurar atualizações em tempo real (Supabase Realtime e localStorage)
       this.setupRealtime();
@@ -186,6 +193,10 @@ export class ComercialDashboard {
       window.removeEventListener('storage', this.storageListener);
       this.storageListener = null;
     }
+    if (this.countdownInterval) {
+      clearInterval(this.countdownInterval);
+      this.countdownInterval = null;
+    }
   }
 
   /**
@@ -254,7 +265,7 @@ export class ComercialDashboard {
         localStorage.setItem(keyOrc, JSON.stringify(this.orcamentos));
 
       // 2. Carregar Viagens do banco
-      let queryVia = supabase.from('viagens').select('*');
+      let queryVia = supabase.from('viagens').select('*, produtos:produtos_viagem(*)');
       
       if (this.perfil && this.perfil.role !== 'admin') {
         queryVia = queryVia.eq('consultor_id', this.user.id);
@@ -276,7 +287,8 @@ export class ComercialDashboard {
         createdAt: d.created_at,
         updatedAt: d.updated_at,
         dataFinanceiro: d.data_financeiro,
-        data_financeiro: d.data_financeiro
+        data_financeiro: d.data_financeiro,
+        produtos: d.produtos || []
       }));
         // Persist viagens to localStorage
         localStorage.setItem('paxflow-viagens-local', JSON.stringify(this.viagens));
@@ -472,6 +484,23 @@ export class ComercialDashboard {
       this.selectedConsultantId = selectConsultor.value;
       this.renderMetricsSection();
     });
+
+    // Filtro de Metas (Período)
+    const selectMetaPeriodo = document.getElementById('select-dashboard-meta-periodo') as HTMLSelectElement;
+    selectMetaPeriodo?.addEventListener('change', () => {
+      this.selectedMetaId = selectMetaPeriodo.value;
+      this.renderMetricsSection();
+    });
+
+    // Refresh Metas
+    const btnRefreshMetas = document.getElementById('btn-refresh-metas');
+    btnRefreshMetas?.addEventListener('click', async () => {
+      const originalText = btnRefreshMetas.innerHTML;
+      btnRefreshMetas.innerHTML = '🔄 Recarregando...';
+      await this.loadMetas(true);
+      this.renderMetricsSection();
+      this.showToast('Metas atualizadas com sucesso!', 'success');
+    });
   }
 
   /**
@@ -586,6 +615,9 @@ export class ComercialDashboard {
 
     // 3. Montar HTML de Métricas
     metricsContainer.innerHTML = `
+      <!-- SEÇÃO METAS -->
+      ${this.renderMetasSection()}
+
       <!-- GRID DE CARDS KPI PREMIUM -->
       <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         
@@ -1134,4 +1166,295 @@ export class ComercialDashboard {
       window.location.reload();
     });
   }
+
+  private async loadMetas(force: boolean = false): Promise<void> {
+    const cacheLimit = 5 * 60 * 1000;
+    const timeSinceLastFetch = Date.now() - this.lastFetchedMetasTime;
+
+    if (!force && this.metas.length > 0 && timeSinceLastFetch < cacheLimit) {
+      return;
+    }
+
+    try {
+      this.metas = await MetasService.obterMetaPeriodos();
+      this.lastFetchedMetasTime = Date.now();
+      
+      if (this.metas.length > 0) {
+        if (this.selectedMetaId === 'todas' || !this.metas.some(m => m.id === this.selectedMetaId)) {
+          this.selectedMetaId = this.metas[0].id;
+        }
+      } else {
+        this.selectedMetaId = 'todas';
+      }
+    } catch (err) {
+      console.error('Erro ao carregar metas:', err);
+    }
+  }
+
+  private startMetasTimer(): void {
+    if (this.countdownInterval) return;
+    this.countdownInterval = setInterval(async () => {
+      const btnText = document.querySelector('#btn-refresh-metas span');
+      if (btnText) {
+        const diff = Date.now() - this.lastFetchedMetasTime;
+        const cacheLimit = 5 * 60 * 1000;
+        if (diff >= cacheLimit) {
+          btnText.textContent = 'Carregando...';
+          await this.loadMetas(true);
+          this.renderMetricsSection();
+        } else {
+          const remainingSecs = Math.max(0, Math.ceil((cacheLimit - diff) / 1000));
+          const mins = Math.floor(remainingSecs / 60);
+          const secs = remainingSecs % 60;
+          btnText.textContent = `Atualiza em ${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+      }
+    }, 1000);
+  }
+
+  private renderMetasSection(): string {
+    if (this.metas.length === 0) {
+      return '';
+    }
+
+    const currentMeta = this.metas.find(m => m.id === this.selectedMetaId) || this.metas[0];
+    if (!currentMeta) return '';
+
+    const start = new Date(currentMeta.data_inicio + 'T00:00:00');
+    const end = new Date(currentMeta.data_fim + 'T23:59:59');
+
+    const filterByPeriodDates = (v: Viagem): boolean => {
+      const dateStr = v.dataFinanceiro || v.createdAt;
+      if (!dateStr) return false;
+      const recordDate = dateStr.includes('T') ? new Date(dateStr) : new Date(dateStr + 'T00:00:00');
+      return recordDate >= start && recordDate <= end;
+    };
+
+    const getConsultantMetricVal = (consultantId: string): number => {
+      const consultantVoyages = this.viagens.filter(v => 
+        v.status !== 'cancelada' && 
+        v.consultorId === consultantId && 
+        filterByPeriodDates(v)
+      );
+
+      if (currentMeta.tipo_calculo === 'bruto') {
+        const activeViaIds = new Set(consultantVoyages.map(v => v.id));
+        const pagsSub = this.locPagamentos.filter(p => 
+          activeViaIds.has(p.viagem_id || p.viagemId) &&
+          p.formas_recebimento &&
+          ['DESCONTO', 'PREJUÍZO'].includes((p.formas_recebimento.nome || '').trim().toUpperCase())
+        );
+        const totalSub = pagsSub.reduce((acc, p) => acc + (Number(p.valor) || 0), 0);
+        return Math.max(0, consultantVoyages.reduce((acc, v) => acc + (v.valorTotal || 0), 0) - totalSub);
+      } else {
+        let profit = 0;
+        consultantVoyages.forEach(v => {
+          const prods = (v as any).produtos || [];
+          prods.forEach((p: any) => {
+            profit += (Number(p.comissao) || 0) + (Number(p.markup) || 0) + ((Number(p.rav) || 0) * 0.88);
+          });
+        });
+        return profit;
+      }
+    };
+
+    const isAdmin = this.perfil?.role === 'admin';
+    const isConsultant = this.perfil?.role === 'consultor';
+    
+    const nextUpdateText = Math.max(0, Math.ceil((5 * 60 * 1000 - (Date.now() - this.lastFetchedMetasTime)) / 1000));
+    const nextUpdateMins = Math.floor(nextUpdateText / 60);
+    const nextUpdateSecs = nextUpdateText % 60;
+
+    let goalsHTML = '';
+    const sortedFaixas = [...(currentMeta.faixas || [])].sort((a, b) => a.valor_minimo - b.valor_minimo);
+
+    const renderProgressBar = (val: number) => {
+      if (sortedFaixas.length === 0) return '';
+      
+      const maxVal = sortedFaixas[sortedFaixas.length - 1].valor_minimo * 1.1;
+      const pct = Math.min((val / maxVal) * 100, 100);
+
+      let currentFaixaName = 'Nenhuma';
+      let nextFaixaName = '';
+      let nextFaixaVal = 0;
+
+      for (let i = 0; i < sortedFaixas.length; i++) {
+        if (val >= sortedFaixas[i].valor_minimo) {
+          currentFaixaName = sortedFaixas[i].nome;
+        } else {
+          nextFaixaName = sortedFaixas[i].nome;
+          nextFaixaVal = sortedFaixas[i].valor_minimo;
+          break;
+        }
+      }
+
+      const diffVal = nextFaixaVal > 0 ? nextFaixaVal - val : 0;
+      const progressDesc = nextFaixaVal > 0 
+        ? `Faltam <span class="font-extrabold text-indigo-650 dark:text-indigo-400">R$ ${diffVal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span> para atingir a faixa <span class="font-extrabold uppercase text-indigo-500">${nextFaixaName}</span>`
+        : `🎉 Parabéns! Você atingiu a faixa máxima: <span class="font-black text-emerald-600 dark:text-emerald-450 uppercase">${currentFaixaName}</span>!`;
+
+      return `
+        <div class="space-y-2.5">
+          <div class="flex justify-between items-end text-xs font-semibold">
+            <span class="text-slate-400 dark:text-slate-500">Faixa Atual: <strong class="text-slate-700 dark:text-slate-200 uppercase">${currentFaixaName}</strong></span>
+            <span class="text-slate-750 dark:text-slate-200 font-extrabold">R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+          </div>
+
+          <div class="relative w-full h-3 bg-slate-100 dark:bg-slate-800/80 rounded-full overflow-hidden border border-slate-200/20">
+            <div class="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-emerald-500 transition-all duration-550 rounded-full" style="width: ${pct}%"></div>
+            ${sortedFaixas.map(f => {
+              const tickPct = (f.valor_minimo / maxVal) * 100;
+              return `
+                <div class="absolute top-0 bottom-0 w-0.5 bg-white/70 dark:bg-slate-900/80" style="left: ${tickPct}%" title="${f.nome}: R$ ${f.valor_minimo}"></div>
+              `;
+            }).join('')}
+          </div>
+
+          <div class="flex flex-wrap gap-3 pt-1">
+            ${sortedFaixas.map(f => {
+              const reached = val >= f.valor_minimo;
+              return `
+                <div class="flex items-center gap-1 text-[10px] font-bold ${reached ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500'}">
+                  <span>${reached ? '✅' : '🔒'}</span>
+                  <span>${f.nome} (R$ ${(f.valor_minimo / 1000).toFixed(0)}k)</span>
+                </div>
+              `;
+            }).join('')}
+          </div>
+
+          <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-2 font-medium">
+            ${progressDesc}
+          </div>
+        </div>
+      `;
+    };
+
+    if (isConsultant) {
+      const myVal = getConsultantMetricVal(this.user.id);
+      goalsHTML = `
+        <div class="dashboard-glass rounded-3xl p-6 relative overflow-hidden border border-slate-200/50 dark:border-slate-800/40">
+          <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/60 pb-3.5 mb-4">
+            <div>
+              <h3 class="text-sm font-black text-slate-800 dark:text-slate-100">Seu Progresso de Metas</h3>
+              <p class="text-[10px] text-slate-400 dark:text-slate-550 font-bold uppercase tracking-wider mt-0.5">${currentMeta.nome} &bull; Base: ${currentMeta.tipo_calculo === 'bruto' ? 'Faturamento Bruto' : 'Lucro Real'}</p>
+            </div>
+            <div class="p-2.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-2xl text-lg">🏆</div>
+          </div>
+          ${renderProgressBar(myVal)}
+        </div>
+      `;
+    } else if (isAdmin) {
+      goalsHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+          <div class="md:col-span-4 dashboard-glass rounded-3xl p-6 flex flex-col justify-between border border-slate-200/50 dark:border-slate-800/40">
+            <div>
+              <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/60 pb-3 mb-4">
+                <h3 class="text-xs font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider">Total Consolidado da Agência</h3>
+                <span class="text-lg">🏢</span>
+              </div>
+              
+              <div class="space-y-4">
+                <div>
+                  <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block">Acumulado da Equipe</span>
+                  <span class="text-2xl font-black text-slate-850 dark:text-slate-100 mt-1 block">
+                    R$ ${this.consultores.reduce((sum, c) => sum + getConsultantMetricVal(c.id), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </span>
+                </div>
+                <div class="text-[10px] text-slate-400 dark:text-slate-500 font-medium leading-relaxed">
+                  Soma total de vendas ativas de todos os consultores para o período selecionado de metas.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="md:col-span-8 dashboard-glass rounded-3xl p-6 border border-slate-200/50 dark:border-slate-800/40">
+            <h3 class="text-xs font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800/60 pb-3 mb-4">Acompanhamento por Consultor</h3>
+            <div class="space-y-6 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+              ${this.consultores.map(c => {
+                const val = getConsultantMetricVal(c.id);
+                let currentFaixaName = 'Nenhuma';
+                for (let i = 0; i < sortedFaixas.length; i++) {
+                  if (val >= sortedFaixas[i].valor_minimo) {
+                    currentFaixaName = sortedFaixas[i].nome;
+                  }
+                }
+                const maxVal = sortedFaixas.length > 0 ? sortedFaixas[sortedFaixas.length - 1].valor_minimo * 1.1 : 1;
+                const pct = Math.min((val / maxVal) * 100, 100);
+
+                return `
+                  <div class="space-y-1.5">
+                    <div class="flex justify-between items-center text-xs">
+                      <div class="flex items-center gap-2">
+                        <div class="w-6 h-6 rounded-full overflow-hidden shrink-0 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-850 flex items-center justify-center">
+                          ${getAvatarSvg(c.avatar_url || 'panda')}
+                        </div>
+                        <span class="font-extrabold text-slate-750 dark:text-slate-250">${c.nome}</span>
+                        <span class="px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-100/30 dark:border-indigo-900/30 rounded text-[9px] font-black uppercase tracking-wider">${currentFaixaName}</span>
+                      </div>
+                      <span class="font-extrabold text-slate-700 dark:text-slate-200">R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                    </div>
+                    <div class="relative w-full h-2.5 bg-slate-100 dark:bg-slate-850 rounded-full overflow-hidden">
+                      <div class="h-full bg-gradient-to-r from-indigo-500 to-emerald-500 rounded-full transition-all duration-300" style="width: ${pct}%"></div>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    return `
+      <!-- SEÇÃO METAS FINANCEIRAS REAL-TIME -->
+      <div class="space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <h2 class="text-sm font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2">
+            <span>🏆</span> Acompanhamento de Metas Comerciais
+          </h2>
+          
+          <div class="flex items-center gap-2">
+            <div class="flex items-center gap-1.5 shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2.5 py-1.5 rounded-xl shadow-sm">
+              <span class="text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-500 select-none">Campanha/Período:</span>
+              <select id="select-dashboard-meta-periodo" class="text-xs font-bold bg-transparent text-slate-700 dark:text-slate-400 focus:outline-none cursor-pointer">
+                ${this.metas.map(m => `
+                  <option value="${m.id}" ${this.selectedMetaId === m.id ? 'selected' : ''}>${m.nome}</option>
+                `).join('')}
+              </select>
+            </div>
+            
+            <button id="btn-refresh-metas" class="p-2 bg-white hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 rounded-xl transition shadow-sm text-xs font-black uppercase flex items-center gap-1" title="Atualizar agora">
+              🔄 <span class="text-[9px] text-slate-450 dark:text-slate-500 font-semibold tracking-tight normal-case">Atualiza em ${nextUpdateMins}:${nextUpdateSecs.toString().padStart(2, '0')}</span>
+            </button>
+          </div>
+        </div>
+        
+        ${goalsHTML}
+      </div>
+    `;
+  }
+
+  private showToast(message: string, type: 'success' | 'error' = 'success'): void {
+    const toastId = 'paxflow-toast';
+    let toast = document.getElementById(toastId);
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = toastId;
+      toast.className = 'fixed bottom-5 right-5 px-5 py-3.5 rounded-xl shadow-2xl text-white font-semibold text-sm z-50 transition-all duration-300 transform translate-y-10 opacity-0 flex items-center gap-2';
+      document.body.appendChild(toast);
+    }
+
+    const isSuccess = type === 'success';
+    toast.className = `fixed bottom-5 right-5 px-5 py-3.5 rounded-xl shadow-2xl text-white font-semibold text-sm z-50 transition-all duration-300 transform translate-y-0 opacity-100 flex items-center gap-2 ${
+      isSuccess ? 'bg-emerald-600 shadow-emerald-600/20' : 'bg-rose-600 shadow-rose-600/20'
+    }`;
+    toast.innerHTML = `${isSuccess ? '✅' : '❌'} ${message}`;
+
+    setTimeout(() => {
+      if (toast) {
+        toast.className = 'fixed bottom-5 right-5 px-5 py-3.5 rounded-xl shadow-2xl text-white font-semibold text-sm z-50 transition-all duration-300 transform translate-y-10 opacity-0 flex items-center gap-2 pointer-events-none';
+      }
+    }, 3500);
+  }
 }
+

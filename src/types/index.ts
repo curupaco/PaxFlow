@@ -389,5 +389,34 @@ export interface ConvertToTripOptions {
   existingTripDataIda?: string;
 }
 
+export interface MetaPeriodo {
+  id: string;
+  nome: string;
+  data_inicio: string;
+  dataInicio?: string;
+  data_fim: string;
+  dataFim?: string;
+  tipo_calculo: 'bruto' | 'lucro';
+  tipoCalculo?: 'bruto' | 'lucro';
+  is_campanha: boolean;
+  isCampanha?: boolean;
+  created_at?: string;
+  updated_at?: string;
+  faixas?: MetaFaixa[];
+}
+
+export interface MetaFaixa {
+  id: string;
+  periodo_id: string;
+  periodoId?: string;
+  nome: string;
+  valor_minimo: number;
+  valorMinimo?: number;
+  bonus_xp: number;
+  bonusXp?: number;
+  recompensa?: string;
+  created_at?: string;
+}
+
 
 

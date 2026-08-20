@@ -1,6 +1,7 @@
 import { supabase, getSessaoAtual, atualizarSenhaAtual } from '../services/supabase';
-import { PerfilConsultor, GlobalSettings } from '../types';
+import { PerfilConsultor, GlobalSettings, MetaPeriodo, MetaFaixa } from '../types';
 import { getAvatarSvg, AVATAR_OPTIONS, mesclarAvataresLocais, salvarAvatarLocal } from '../services/avatars';
+import { MetasService } from '../services/metasService';
 import { renderEmailInputHTML, setupFormValidation } from '../utils/masks';
 import { showCustomAlert, showCustomConfirm } from '../services/dialog';
 import { parseCSV, batchInsertOrcamentos, formatBrDateToYmd, parseBrFloat } from '../services/csvImporter';
@@ -109,7 +110,8 @@ export class ConfiguracoesPage {
   private consultores: PerfilConsultor[] = [];
   private campaigns: any[] = [];
   private templates: any[] = [];
-  private activeTab: 'geral' | 'consultores' | 'importacoes' | 'campanhas' | 'templates' = 'geral';
+  private metas: MetaPeriodo[] = [];
+  private activeTab: 'geral' | 'consultores' | 'importacoes' | 'campanhas' | 'templates' | 'metas' = 'geral';
 
   // Propriedades do estado de importação de CSV
   private parsedHeaders: string[] = [];
@@ -154,6 +156,7 @@ export class ConfiguracoesPage {
       await this.loadConsultores();
       await this.loadCampaigns();
       await this.loadTemplates();
+      await this.loadMetas();
 
       // 4. Renderizar interface
       this.render();
@@ -357,7 +360,7 @@ export class ConfiguracoesPage {
   /**
    * Altera a aba ativa e re-renderiza o componente
    */
-  private switchTab(tab: 'geral' | 'consultores' | 'importacoes' | 'campanhas' | 'templates'): void {
+  private switchTab(tab: 'geral' | 'consultores' | 'importacoes' | 'campanhas' | 'templates' | 'metas'): void {
     this.activeTab = tab;
     this.render();
     this.setupEventListeners();
@@ -373,6 +376,7 @@ export class ConfiguracoesPage {
     document.getElementById('tab-importacoes-btn')?.addEventListener('click', () => this.switchTab('importacoes'));
     document.getElementById('tab-campanhas-btn')?.addEventListener('click', () => this.switchTab('campanhas'));
     document.getElementById('tab-templates-btn')?.addEventListener('click', () => this.switchTab('templates'));
+    document.getElementById('tab-metas-btn')?.addEventListener('click', () => this.switchTab('metas'));
 
     if (this.activeTab === 'importacoes') {
       this.setupImportacoesEvents();
@@ -1903,6 +1907,16 @@ export class ConfiguracoesPage {
               </svg>
               Campanhas
             </button>
+            <button id="tab-metas-btn" class="shrink-0 py-4 px-1 border-b-2 text-sm font-extrabold transition select-none flex items-center gap-2 ${
+              this.activeTab === 'metas' 
+                ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400' 
+                : 'border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
+            }">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Metas Financeiras
+            </button>
             <button id="tab-templates-btn" class="shrink-0 py-4 px-1 border-b-2 text-sm font-extrabold transition select-none flex items-center gap-2 ${
               this.activeTab === 'templates' 
                 ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400' 
@@ -2642,7 +2656,7 @@ export class ConfiguracoesPage {
               </div>
             </div>
           </main>
-        ` : `
+        ` : this.activeTab === 'templates' ? `
           <!-- Renderização da Aba: Modelos de Mensagem (Templates) -->
           <main class="flex-1 p-6 max-w-4xl mx-auto w-full flex flex-col gap-6 animate-fade-in text-slate-800 dark:text-slate-100">
             <div class="flex items-center justify-between">
@@ -2708,9 +2722,342 @@ export class ConfiguracoesPage {
               </div>
             </div>
           </main>
-        `}
+        ` : this.activeTab === 'metas' ? `
+          <!-- Renderização da Aba: Metas Financeiras -->
+          <main class="flex-1 p-6 max-w-4xl mx-auto w-full flex flex-col gap-6 animate-fade-in text-slate-800 dark:text-slate-100">
+            <div class="flex items-center justify-between">
+              <div>
+                <h2 class="text-lg font-black text-slate-800 dark:text-slate-200 tracking-tight">Metas Financeiras & Campanhas</h2>
+                <p class="text-xs text-slate-400 dark:text-slate-500 font-medium">Cadastre períodos de metas financeiras (bruto/lucro) e faixas de prêmios por consultor</p>
+              </div>
+              <button id="btn-nova-meta" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-emerald-600/20 flex items-center gap-1.5 transition transform hover:-translate-y-0.5 uppercase">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+                Nova Meta
+              </button>
+            </div>
+
+            <!-- Tabela de Metas -->
+            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden transition-colors">
+              <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                  <thead>
+                    <tr class="bg-slate-600/5 dark:bg-slate-800/60 text-[10px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
+                      <th class="py-4 px-5">Nome / Tipo</th>
+                      <th class="py-4 px-5">Período</th>
+                      <th class="py-4 px-5">Cálculo</th>
+                      <th class="py-4 px-5">Faixas de Premiação</th>
+                      <th class="py-4 px-5 text-right">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-sm text-slate-700 dark:text-slate-300 font-semibold bg-white/50 dark:bg-slate-900/30">
+                    ${this.metas.length === 0 ? 
+                      '<tr>' +
+                        '<td colspan="5" class="py-8 px-5 text-center text-slate-400 dark:text-slate-500 font-medium italic">' +
+                          'Nenhum período de metas cadastrado.' +
+                        '</td>' +
+                      '</tr>'
+                     : this.metas.map(meta => {
+                      const formatarData = (dStr: string) => {
+                        const parts = dStr.split('-');
+                        return parts[2] + '/' + parts[1] + '/' + parts[0];
+                      };
+
+                      const faixasHTML = meta.faixas && meta.faixas.length > 0 
+                        ? meta.faixas.map(f => 
+                            '<div class="text-xs text-slate-650 dark:text-slate-400 font-bold mb-0.5">' +
+                            '• <span class="text-indigo-600 dark:text-indigo-400 font-black">' + f.nome + '</span>: >= R$ ' + f.valor_minimo.toLocaleString('pt-BR', { maximumFractionDigits: 0 }) +
+                            (f.recompensa ? ' <span class="text-[10px] text-slate-400 dark:text-slate-550 font-normal italic">(' + f.recompensa + ')</span>' : '') +
+                            '</div>'
+                          ).join('')
+                        : '<span class="text-slate-400 text-xs italic">Nenhuma faixa cadastrada</span>';
+
+                      const tipoCalculoBadge = meta.tipo_calculo === 'bruto'
+                        ? '<span class="inline-flex px-2 py-0.5 bg-blue-50 dark:bg-blue-950/45 text-blue-700 dark:text-blue-400 border border-blue-100 dark:border-blue-900/40 text-[9px] font-black uppercase rounded">Faturamento Bruto</span>'
+                        : '<span class="inline-flex px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/45 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/40 text-[9px] font-black uppercase rounded">Lucro Real</span>';
+
+                      const tipoPeriodoBadge = meta.is_campanha
+                        ? '<span class="inline-flex px-2 py-0.5 bg-purple-50 dark:bg-purple-950/45 text-purple-700 dark:text-purple-400 border border-purple-100 dark:border-purple-900/40 text-[9px] font-black uppercase rounded">Campanha</span>'
+                        : '<span class="inline-flex px-2 py-0.5 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 text-[9px] font-black uppercase rounded">Regular</span>';
+
+                      return '<tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/10 transition-colors">' +
+                          '<td class="py-4 px-5">' +
+                            '<span class="block text-slate-800 dark:text-slate-200 font-bold">' + meta.nome + '</span>' +
+                            '<div class="flex items-center gap-1.5 mt-1">' +
+                              tipoPeriodoBadge +
+                            '</div>' +
+                          '</td>' +
+                          '<td class="py-4 px-5 text-slate-600 dark:text-slate-400 font-semibold text-xs">' +
+                            formatarData(meta.data_inicio) + ' até ' + formatarData(meta.data_fim) +
+                          '</td>' +
+                          '<td class="py-4 px-5">' +
+                            tipoCalculoBadge +
+                          '</td>' +
+                          '<td class="py-4 px-5">' +
+                            '<div class="flex flex-col">' +
+                              faixasHTML +
+                            '</div>' +
+                          '</td>' +
+                          '<td class="py-4 px-5 text-right">' +
+                            '<button data-id="' + meta.id + '" class="btn-excluir-meta px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-50 hover:bg-rose-50 dark:bg-rose-950/30 text-slate-400 hover:text-rose-500 transition border border-slate-200/40 dark:border-slate-700/40 uppercase">' +
+                              'Excluir' +
+                            '</button>' +
+                          '</td>' +
+                        '</tr>';
+                    }).join('')}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </main>
+        ` : ''}
       </div>
     `;
+  }
+
+  private async loadMetas(): Promise<void> {
+    try {
+      this.metas = await MetasService.obterMetaPeriodos();
+    } catch (err: any) {
+      console.error('Erro ao carregar metas financeiras:', err);
+    }
+  }
+
+  private setupMetasEvents(): void {
+    const deleteButtons = document.querySelectorAll('.btn-excluir-meta');
+    deleteButtons.forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.getAttribute('data-id');
+        if (!id) return;
+
+        const confirm = await showCustomConfirm(
+          'Deseja realmente excluir este período de meta? Todas as faixas associadas serão excluídas definitivamente.',
+          'Confirmar Exclusão de Meta'
+        );
+
+        if (confirm) {
+          try {
+            await MetasService.excluirMetaPeriodo(id);
+            this.showToast('Período de meta excluído com sucesso!', 'success');
+            await this.loadMetas();
+            this.render();
+            this.setupEventListeners();
+          } catch (err: any) {
+            this.showToast('Erro ao excluir meta.', 'error');
+          }
+        }
+      });
+    });
+
+    document.getElementById('btn-nova-meta')?.addEventListener('click', () => {
+      this.abrirModalNovaMeta();
+    });
+  }
+
+  private abrirModalNovaMeta(): void {
+    const overlay = document.createElement('div');
+    overlay.id = 'nova-meta-overlay';
+    overlay.className = 'fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all duration-300 opacity-0';
+
+    overlay.innerHTML = `
+      <div class="bg-white dark:bg-slate-900 w-full max-w-[550px] rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 transform scale-95 transition-all duration-300 flex flex-col max-h-[90vh] overflow-y-auto custom-scrollbar" id="nova-meta-card">
+        
+        <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-500 via-teal-500 to-indigo-600"></div>
+
+        <div class="p-6 border-b border-slate-100 dark:border-slate-800 text-center flex flex-col items-center">
+          <div class="w-12 h-12 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-bold rounded-2xl flex items-center justify-center text-xl border border-emerald-100 dark:border-emerald-900/40 mb-3">
+            🏆
+          </div>
+          <h2 class="text-lg font-black text-slate-800 dark:text-slate-100 tracking-tight leading-snug">Criar Meta Financeira / Campanha</h2>
+          <p class="text-xs text-slate-400 dark:text-slate-500 font-semibold mt-1">Configure o período, o tipo de montante e as faixas de prêmios</p>
+        </div>
+
+        <form id="form-nova-meta" class="p-6 space-y-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Nome do Período ou Campanha *</label>
+            <input id="input-meta-nome" type="text" required placeholder="Ex: Metas de Agosto 2026, Campanha Ouro..." class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Data Início *</label>
+              <input id="input-meta-inicio" type="date" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Data Fim *</label>
+              <input id="input-meta-fim" type="date" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Base de Cálculo *</label>
+              <select id="select-meta-calculo" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800 dark:text-slate-100 font-semibold text-sm">
+                <option value="bruto">Faturamento Bruto</option>
+                <option value="lucro" selected>Lucro / Rentabilidade</option>
+              </select>
+            </div>
+            <div class="flex items-center pt-5">
+              <label class="inline-flex items-center cursor-pointer select-none">
+                <input id="check-meta-campanha" type="checkbox" class="sr-only peer" />
+                <div class="w-9 h-5 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500 relative"></div>
+                <span class="ml-2 text-xs font-bold text-slate-500 dark:text-slate-400">É Campanha Retroativa</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Dynamic Faixas Section -->
+          <div class="border-t border-slate-100 dark:border-slate-800 pt-4">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">Faixas de Premiação / Metas</h3>
+              <button id="btn-adicionar-faixa-meta" type="button" class="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/45 dark:hover:bg-emerald-900/60 text-emerald-600 dark:text-emerald-400 rounded-lg text-[10px] font-black tracking-wider transition uppercase">
+                ➕ Adicionar Faixa
+              </button>
+            </div>
+
+            <div id="faixas-meta-container" class="space-y-3 max-h-[200px] overflow-y-auto pr-1 custom-scrollbar">
+              <div class="faixa-item-row grid grid-cols-12 gap-2 items-center bg-slate-50/50 dark:bg-slate-800/30 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
+                <div class="col-span-4">
+                  <input type="text" placeholder="Nome (ex: Bronze)" required class="input-faixa-nome w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none text-xs font-semibold" />
+                </div>
+                <div class="col-span-4">
+                  <input type="number" placeholder="Mínimo (ex: 5000)" required class="input-faixa-valor w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none text-xs font-bold" />
+                </div>
+                <div class="col-span-3">
+                  <input type="text" placeholder="Recompensa (Opcional)" class="input-faixa-recompensa w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none text-xs font-semibold" />
+                </div>
+                <div class="col-span-1 text-center">
+                  <button type="button" class="btn-remover-faixa-meta text-rose-500 hover:text-rose-700 font-bold text-sm">❌</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+            <button id="btn-meta-cancel" type="button" class="px-4 py-2.5 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 text-slate-500 hover:text-slate-700 font-bold text-xs rounded-xl transition uppercase">
+              Cancelar
+            </button>
+            <button id="btn-meta-submit" type="submit" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl transition shadow-lg shadow-emerald-600/20 uppercase tracking-wider flex items-center justify-center">
+              Criar Meta / Campanha
+            </button>
+          </div>
+        </form>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    setTimeout(() => {
+      overlay.classList.add('opacity-100');
+      document.getElementById('nova-meta-card')?.classList.remove('scale-95');
+      document.getElementById('nova-meta-card')?.classList.add('scale-100');
+    }, 10);
+
+    document.getElementById('btn-meta-cancel')?.addEventListener('click', () => {
+      this.fecharModalNovaMeta();
+    });
+
+    document.getElementById('faixas-meta-container')?.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement;
+      if (target.classList.contains('btn-remover-faixa-meta')) {
+        const row = target.closest('.faixa-item-row');
+        if (row) row.remove();
+      }
+    });
+
+    document.getElementById('btn-adicionar-faixa-meta')?.addEventListener('click', () => {
+      const container = document.getElementById('faixas-meta-container');
+      if (!container) return;
+
+      const newRow = document.createElement('div');
+      newRow.className = 'faixa-item-row grid grid-cols-12 gap-2 items-center bg-slate-50/50 dark:bg-slate-800/30 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800';
+      newRow.innerHTML = `
+        <div class="col-span-4">
+          <input type="text" placeholder="Nome" required class="input-faixa-nome w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none text-xs font-semibold" />
+        </div>
+        <div class="col-span-4">
+          <input type="number" placeholder="Mínimo" required class="input-faixa-valor w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none text-xs font-bold" />
+        </div>
+        <div class="col-span-3">
+          <input type="text" placeholder="Recompensa" class="input-faixa-recompensa w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none text-xs font-semibold" />
+        </div>
+        <div class="col-span-1 text-center">
+          <button type="button" class="btn-remover-faixa-meta text-rose-500 hover:text-rose-700 font-bold text-sm">❌</button>
+        </div>
+      `;
+      container.appendChild(newRow);
+      container.scrollTop = container.scrollHeight;
+    });
+
+    const form = document.getElementById('form-nova-meta') as HTMLFormElement;
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const submitBtn = document.getElementById('btn-meta-submit') as HTMLButtonElement;
+      const nome = (document.getElementById('input-meta-nome') as HTMLInputElement).value;
+      const dataInicio = (document.getElementById('input-meta-inicio') as HTMLInputElement).value;
+      const dataFim = (document.getElementById('input-meta-fim') as HTMLInputElement).value;
+      const tipoCalculo = (document.getElementById('select-meta-calculo') as HTMLSelectElement).value as 'bruto' | 'lucro';
+      const isCampanha = (document.getElementById('check-meta-campanha') as HTMLInputElement).checked;
+
+      const rows = document.querySelectorAll('.faixa-item-row');
+      const faixas: any[] = [];
+      rows.forEach(row => {
+        const fNome = (row.querySelector('.input-faixa-nome') as HTMLInputElement).value;
+        const fValor = Number((row.querySelector('.input-faixa-valor') as HTMLInputElement).value) || 0;
+        const fRecompensa = (row.querySelector('.input-faixa-recompensa') as HTMLInputElement).value || '';
+        if (fNome && fValor > 0) {
+          faixas.push({
+            nome: fNome,
+            valor_minimo: fValor,
+            bonus_xp: Math.round(fValor * 0.1),
+            recompensa: fRecompensa
+          });
+        }
+      });
+
+      if (faixas.length === 0) {
+        this.showToast('Por favor, adicione pelo menos uma faixa de premiação válida.', 'error');
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Criando...';
+
+      try {
+        await MetasService.criarMetaPeriodo({
+          nome,
+          data_inicio: dataInicio,
+          data_fim: dataFim,
+          tipo_calculo: tipoCalculo,
+          is_campanha: isCampanha
+        }, faixas);
+
+        this.showToast('Período de meta criado com sucesso!', 'success');
+        this.fecharModalNovaMeta();
+        await this.loadMetas();
+        this.render();
+        this.setupEventListeners();
+      } catch (err: any) {
+        console.error('Erro ao criar metas:', err);
+        this.showToast('Erro ao criar período de metas.', 'error');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Criar Meta / Campanha';
+      }
+    });
+  }
+
+  private fecharModalNovaMeta(): void {
+    const overlay = document.getElementById('nova-meta-overlay');
+    if (!overlay) return;
+    document.getElementById('nova-meta-card')?.classList.remove('scale-100');
+    document.getElementById('nova-meta-card')?.classList.add('scale-95');
+    overlay.classList.remove('opacity-100');
+    overlay.classList.add('opacity-0');
+    setTimeout(() => {
+      overlay.remove();
+    }, 300);
   }
 }
 
