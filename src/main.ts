@@ -1,5 +1,5 @@
 import './index.css';
-import { getSessaoAtual, supabase } from './services/supabase';
+import { getSessaoAtual, supabase, logoutConsultor } from './services/supabase';
 import { LoginPage } from './pages/Login';
 import { MeuPerfilModal } from './components/profile/MeuPerfilModal';
 import { PerfilConsultor } from './types';
@@ -9,6 +9,7 @@ import { obterProgressoNivel, obterCampanhasAtivas, obterProgressoCampanha, conc
 import { showBadgeCelebrationModal, showLevelUpModal } from './utils/celebrations';
 import { traduzirErro } from './utils/errorTranslator';
 import { Router } from './router';
+import { LandingPage } from './pages/LandingPage';
 
 (window as any).traduzirErro = traduzirErro;
 
@@ -147,15 +148,13 @@ class App {
    * Renderiza a Landing Page comercial
    */
   private renderLandingPage(): void {
-    import('./pages/LandingPage').then(({ LandingPage }) => {
-      const page = new LandingPage(this.container);
-      page.init();
+    const page = new LandingPage(this.container);
+    page.init();
 
-      // Escuta transição para o Modo Sandbox
-      window.addEventListener('paxflow-navigate-to-demo', () => {
-        window.location.reload();
-      }, { once: true });
-    });
+    // Escuta transição para o Modo Sandbox
+    window.addEventListener('paxflow-navigate-to-demo', () => {
+      window.location.reload();
+    }, { once: true });
   }
 
   /**
@@ -434,7 +433,6 @@ class App {
 
     // Event listener para sair do modo Sandbox no banner
     document.getElementById('btn-sair-demo-banner')?.addEventListener('click', async () => {
-      const { showCustomConfirm } = await import('./services/dialog');
       const confirmResult = await showCustomConfirm('Deseja realmente sair da demonstração?', 'Encerrar Demonstração');
       if (confirmResult) {
         (window as any).paxflowSandbox = false;
@@ -566,7 +564,6 @@ class App {
           }
           return;
         }
-        const { logoutConsultor } = await import('./services/supabase');
         const confirmResult = await showCustomConfirm('Deseja realmente sair do sistema?', 'Encerrar Sessão');
         if (confirmResult) {
           await logoutConsultor();
