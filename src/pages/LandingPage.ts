@@ -607,6 +607,10 @@ export class LandingPage {
                   </li>
                   <li class="flex items-start gap-2">
                     <span class="text-emerald-500 shrink-0">✓</span>
+                    <span>Automações inteligentes de fluxo (transições automáticas de status para orçamentos, embarques e reembolsos).</span>
+                  </li>
+                  <li class="flex items-start gap-2">
+                    <span class="text-emerald-500 shrink-0">✓</span>
                     <span>Fichas de clientes e central de reembolsos unificadas.</span>
                   </li>
                   <li class="flex items-start gap-2">
@@ -632,7 +636,7 @@ export class LandingPage {
                   CRM especializado para orçamentos de pacotes
                 </h3>
                 <p class="text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
-                  Gerencie orçamentos em colunas de pipeline comercial (Novo, Em Análise, Proposta, Ganho). Preencha dados essenciais como data de nascimento do passageiro e data financeira obrigatoriamente no fechamento, assegurando a precisão dos repasses de markup e comissões da agência.
+                  Gerencie orçamentos em colunas de pipeline comercial (Novo, Em Análise, Proposta, Ganho). Preencha dados essenciais como data de nascimento do passageiro e data financeira obrigatoriamente no fechamento, assegurando a precisão dos repasses de markup e comissões da agência. O sistema conta com automações inteligentes que iniciam o atendimento ao adicionar notas, arquivam propostas inativas automaticamente após 30 dias, e atualizam o estágio de viagens e reembolsos de forma autônoma.
                 </p>
               </div>
               <div class="lg:col-span-7 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4.5 rounded-2xl shadow-md text-xs">
