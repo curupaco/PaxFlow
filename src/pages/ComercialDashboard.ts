@@ -486,7 +486,9 @@ export class ComercialDashboard {
       this.selectedConsultantId = selectConsultor.value;
       this.renderMetricsSection();
     });
+  }
 
+  private setupMetricsSectionListeners(): void {
     // Filtro de Metas (Período)
     const selectMetaPeriodo = document.getElementById('select-dashboard-meta-periodo') as HTMLSelectElement;
     selectMetaPeriodo?.addEventListener('change', () => {
@@ -1133,6 +1135,8 @@ export class ComercialDashboard {
         </table>
       </section>
     `;
+
+    this.setupMetricsSectionListeners();
   }
 
   /**
