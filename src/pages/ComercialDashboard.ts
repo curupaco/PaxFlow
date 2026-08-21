@@ -1471,37 +1471,39 @@ export class ComercialDashboard {
           <div class="md:col-span-8 dashboard-glass rounded-3xl p-6 border border-slate-200/50 dark:border-slate-800/40">
             <h3 class="text-xs font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800/60 pb-3 mb-4">Acompanhamento por Consultor</h3>
             <div class="space-y-6 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
-              ${this.consultores.map(c => {
-                const val = getConsultantMetricVal(c.id);
-                let currentFaixaName = 'Nenhuma';
-                let currentFaixaColor = '#6366f1';
-                for (let i = 0; i < sortedFaixas.length; i++) {
-                  if (val >= sortedFaixas[i].valor_minimo) {
-                    currentFaixaName = sortedFaixas[i].nome;
-                    currentFaixaColor = sortedFaixas[i].cor || '#6366f1';
+              ${this.consultores
+                .map(c => ({ consultant: c, val: getConsultantMetricVal(c.id) }))
+                .sort((a, b) => b.val - a.val)
+                .map(({ consultant: c, val }) => {
+                  let currentFaixaName = 'Nenhuma';
+                  let currentFaixaColor = '#6366f1';
+                  for (let i = 0; i < sortedFaixas.length; i++) {
+                    if (val >= sortedFaixas[i].valor_minimo) {
+                      currentFaixaName = sortedFaixas[i].nome;
+                      currentFaixaColor = sortedFaixas[i].cor || '#6366f1';
+                    }
                   }
-                }
-                const maxVal = sortedFaixas.length > 0 ? sortedFaixas[sortedFaixas.length - 1].valor_minimo * 1.1 : 1;
-                const pct = Math.min((val / maxVal) * 100, 100);
+                  const maxVal = sortedFaixas.length > 0 ? sortedFaixas[sortedFaixas.length - 1].valor_minimo * 1.1 : 1;
+                  const pct = Math.min((val / maxVal) * 100, 100);
 
-                return `
-                  <div class="space-y-1.5">
-                    <div class="flex justify-between items-center text-xs">
-                      <div class="flex items-center gap-2">
-                        <div class="w-6 h-6 rounded-full overflow-hidden shrink-0 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-850 flex items-center justify-center">
-                          ${getAvatarSvg(c.avatar_url || 'panda')}
+                  return `
+                    <div class="space-y-1.5">
+                      <div class="flex justify-between items-center text-xs">
+                        <div class="flex items-center gap-2">
+                          <div class="w-6 h-6 rounded-full overflow-hidden shrink-0 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-850 flex items-center justify-center">
+                            ${getAvatarSvg(c.avatar_url || 'panda')}
+                          </div>
+                          <span class="font-extrabold text-slate-750 dark:text-slate-250">${c.nome}</span>
+                          <span style="color: ${currentFaixaColor}; border-color: ${currentFaixaColor}30; background-color: ${currentFaixaColor}10" class="px-1.5 py-0.5 border rounded text-[9px] font-black uppercase tracking-wider">${currentFaixaName}</span>
                         </div>
-                        <span class="font-extrabold text-slate-750 dark:text-slate-250">${c.nome}</span>
-                        <span style="color: ${currentFaixaColor}; border-color: ${currentFaixaColor}30; background-color: ${currentFaixaColor}10" class="px-1.5 py-0.5 border rounded text-[9px] font-black uppercase tracking-wider">${currentFaixaName}</span>
+                        <span class="font-extrabold text-slate-700 dark:text-slate-200">R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                       </div>
-                      <span class="font-extrabold text-slate-700 dark:text-slate-200">R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                      <div class="relative w-full h-2.5 bg-slate-100 dark:bg-slate-850 rounded-full overflow-hidden">
+                        <div class="h-full rounded-full transition-all duration-300" style="width: ${pct}%; background-color: ${currentFaixaColor}"></div>
+                      </div>
                     </div>
-                    <div class="relative w-full h-2.5 bg-slate-100 dark:bg-slate-850 rounded-full overflow-hidden">
-                      <div class="h-full rounded-full transition-all duration-300" style="width: ${pct}%; background-color: ${currentFaixaColor}"></div>
-                    </div>
-                  </div>
-                `;
-              }).join('')}
+                  `;
+                }).join('')}
             </div>
           </div>
         </div>
