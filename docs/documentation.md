@@ -233,30 +233,26 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 
 ### 3.6 Configurações
 
-**Restrito a administradores**. Controle total da configuração da agência.
+**Restrito a administradores**. Controle total da configuração e parâmetros globais da agência, organizado em 4 abas principais:
 
-- **Aba Geral**:
-  - Nome da agência
-  - SLA de pré-embarque (dias)
-  - SLA de pós-viagem (dias)
-  - Prazo padrão de reembolso (dias)
-  - Taxa de cancelamento padrão
-  - E-mail de suporte
-  - Limite máximo de upload configurável (MB)
+- **Aba Parâmetros Globais**:
+  - Nome da agência, logotipo corporativo e cor primária (Branding)
+  - Taxa de cancelamento padrão e prazo padrão de reembolso
+  - E-mail de suporte e limite máximo de upload configurável (MB)
+  - Parâmetros e testes de integração com a API Digisac
 - **Aba Consultores**:
   - Lista completa com nome, e-mail, role (admin/consultor), status
-  - Edição inline de role
-  - Ativar/desativar conta
+  - Edição inline de role e alternador de ativar/desativar conta
   - Cadastro de novo consultor com criação de credencial no Supabase Auth
   - Modal de edição com troca de avatar e redefinição de senha
-- **Aba Importações [NEW]**:
-  - **Dropzone dashed interativa**: Área visual premium para carregar e arrastar arquivos de chamados/oportunidades (CSV).
-  - **Mecanismo de Parse Autocontido**: Parser desenvolvido em TypeScript puro com detecção automática do delimitador de colunas (vírgula `,` ou ponto-e-vírgula `;`) e tratamento avançado de aspas e quebras de linha nas células.
-  - **Mapeador Dinâmico De-Para**: Permite correlacionar visualmente colunas do CSV com as propriedades de Orçamento (Nome, Contato, Notas, Tags, Data da Viagem, Valor da Proposta, Atendente).
-  - **Processadores de Formato Resilientes**: Converte automaticamente dados financeiros brasileiros (ex: `R$ 1.500,00` em float `1500.00`) e datas brasileiras (ex: `31/12/2026` para `2026-12-31`).
-  - **Fuzzy Consultant Matching**: O PaxFlow analisa os nomes de atendentes únicos identificados no CSV e realiza um pré-mapeamento automático por aproximação nominal aos consultores ativos da plataforma (`profiles` table), fornecendo seletores individuais e definição de consultor fallback para registros em branco ou desconhecidos.
-  - **Preview em Tempo Real**: Carrossel contendo 3 cards de preview formatados idênticos ao Kanban, permitindo inspecionar e validar os dados antes do salvamento definitivo.
-  - **Salva em Lote (Batch Insert)**: Envio otimizado para o Supabase `orcamentos` com feedback em barra de progresso visual.
+- **Aba Importações**:
+  - Área de upload drag-and-drop para arquivos CSV de chamados/oportunidades
+  - Mapeador dinâmico De-Para de colunas e matching inteligente de atendentes
+  - Preview visual em carrossel e salvamento em lote (Batch Insert)
+- **Aba Automações & SLAs [NEW]**:
+  - Regras de inatividade e cancelamento automático de orçamentos (dias)
+  - SLAs operacionais de pré-embarque e pós-viagem
+  - Automação de disparo eletrônico de pesquisas NPS e prazos de reembolsos
 
 ### 3.7 Quadro de Planejamento Interno — Cockpit
 
@@ -308,7 +304,7 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 
 ### 3.10 Módulo de Cadastros
 
-**Módulo exclusivo para administradores** (`src/pages/Cadastros.ts`) voltado ao cadastro e controle operacional da agência.
+**Módulo exclusivo para administradores** (`src/pages/Cadastros.ts`) voltado ao cadastro e controle operacional da agência. Concentra as abas de **Tipos de Produtos**, **Destinos**, **Formas de Recebimento**, **Modelos de Mensagem** (seção 3.17) e **Campanhas & Metas** (seção 3.18).
 
 - **Definição de Tipos Customizados**: Possibilita criar registros dinâmicos de produtos (ex: "Passagem Aérea", "Cruzeiro", "Seguro Viagem", "Aluguel de Carro") determinando cores de exibição, ícones visuais estilizados e metadados.
 - **Campos Extras Dinâmicos**: Permite associar campos adicionais personalizados a cada tipo de produto, que aparecem automaticamente na tela de detalhes da viagem quando esse produto é adicionado.
@@ -404,18 +400,18 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 - **Segurança e Privacidade**: Protegido por políticas RLS no banco de dados que admitem inserção pública e anônima mas bloqueiam qualquer consulta externa às avaliações de outros clientes.
 - **Armazenamento Centralizado**: As notas alimentam a tabela `feedbacks_nps`, permitindo futuras análises estatísticas automáticas.
 
-### 3.17 Hub de Modelos de Mensagens (WhatsApp)
+### 3.17 Hub de Modelos de Mensagens (WhatsApp) — Módulo Cadastros
 
-**Central de automação de correspondências de WhatsApp** permitindo que consultores enviem mensagens padronizadas em segundos com dados reativos.
+**Central de automação de correspondências de WhatsApp**, acessível pela aba "Modelos de Mensagem" dentro do menu **Cadastros**, permitindo que consultores enviem mensagens padronizadas em segundos com dados reativos.
 
-- **Configurações de Modelos (CRUD)**: Administradores gerenciam a base de templates (título, descrição, conteúdo e variáveis suportadas) diretamente na aba dedicada nas Configurações do app.
+- **Gestão de Modelos (CRUD)**: Administradores gerenciam a base de templates (título, descrição, conteúdo e variáveis suportadas) diretamente na aba dedicada no módulo **Cadastros** do app.
 - **Preview de Variáveis Reativo**: Modal de disparo que exibe em tempo real o texto final formatado ao substituir tags dinâmicas como `{{cliente}}`, `{{destino}}`, `{{localizador}}`, `{{link_itinerario}}` e `{{link_feedback}}` com base no contexto selecionado.
 - **Atalhos Rápidos na Interface**: Botões de WhatsApp incorporados diretamente na linha de viagens do Dashboard, nos perfis de clientes e nos cards do Kanban de Orçamentos, permitindo inicializar o contato instantaneamente.
 - **Gamificação Integrada**: O envio de uma mensagem utilizando o hub de templates recompensa o consultor ativo com **+10 XP** no sistema de patentes.
 
-### 3.18 Campanhas de Vendas & Leaderboard
+### 3.18 Campanhas de Vendas & Leaderboard — Módulo Cadastros
 
-**Mecanismo de engajamento interno** projetado para motivar a equipe de consultores através de competição saudável por ranking de performance.
+**Mecanismo de engajamento interno**, acessível pela aba "Campanhas & Metas" dentro do menu **Cadastros**, projetado para motivar a equipe de consultores através de competição saudável por ranking de performance.
 
 - **Leaderboard Unificado**: Exibe o ranking em tempo real de todos os consultores cadastrados na agência ordenados de forma decrescente por XP acumulado.
 - **Aba de Campanhas & Metas**: Inserida no modal "Meu Perfil", permitindo que os consultores vejam sua posição atualizada frente aos colegas e acompanhem as campanhas de incentivo ativas.

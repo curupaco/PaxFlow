@@ -389,7 +389,7 @@ export class CadastrosPage {
               </div>
  
             </div>
-          ` : `
+          ` : this.activeTab === 'formas' ? `
             <!-- ABA: FORMAS DE RECEBIMENTO -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
               
@@ -2369,13 +2369,13 @@ export class CadastrosPage {
       const nome = (document.getElementById('input-meta-nome') as HTMLInputElement).value;
       const dataInicio = (document.getElementById('input-meta-inicio') as HTMLInputElement).value;
       const dataFim = (document.getElementById('input-meta-fim') as HTMLInputElement).value;
-      const tipoCalculo = (document.getElementById('select-meta-calculo') as HTMLSelectElement).value;
+      const tipoCalculo = (document.getElementById('select-meta-calculo') as HTMLSelectElement).value as 'bruto' | 'lucro';
       const isCampanha = (document.getElementById('input-meta-campanha') as HTMLInputElement).checked;
       const isMetaLoja = (document.getElementById('input-meta-loja') as HTMLInputElement).checked;
       const valorMetaLojaRaw = (document.getElementById('input-meta-valor-loja') as HTMLInputElement).value;
       const valorMetaLoja = isMetaLoja ? (parseBrFloat(valorMetaLojaRaw) || 0) : 0;
 
-      const faixas: MetaFaixa[] = [];
+      const faixas: any[] = [];
       const rows = document.querySelectorAll('.target-faixa-row');
       rows.forEach(row => {
         const fNome = (row.querySelector('.input-faixa-nome') as HTMLInputElement).value;
@@ -2526,7 +2526,7 @@ export class CadastrosPage {
               <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Cálculo baseado em *</label>
               <select id="select-meta-calculo" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800 dark:text-slate-100 font-semibold text-sm">
                 <option value="bruto" ${meta.tipo_calculo === 'bruto' ? 'selected' : ''}>Faturamento Bruto (Total das Vendas)</option>
-                <option value="liquido" ${meta.tipo_calculo === 'liquido' ? 'selected' : ''}>Markup / Lucro Estimado</option>
+                <option value="lucro" ${meta.tipo_calculo === 'lucro' ? 'selected' : ''}>Markup / Lucro Estimado</option>
               </select>
             </div>
 
@@ -2644,13 +2644,13 @@ export class CadastrosPage {
       const nome = (document.getElementById('input-meta-nome') as HTMLInputElement).value;
       const dataInicio = (document.getElementById('input-meta-inicio') as HTMLInputElement).value;
       const dataFim = (document.getElementById('input-meta-fim') as HTMLInputElement).value;
-      const tipoCalculo = (document.getElementById('select-meta-calculo') as HTMLSelectElement).value;
+      const tipoCalculo = (document.getElementById('select-meta-calculo') as HTMLSelectElement).value as 'bruto' | 'lucro';
       const isCampanha = (document.getElementById('input-meta-campanha') as HTMLInputElement).checked;
       const isMetaLoja = (document.getElementById('input-meta-loja') as HTMLInputElement).checked;
       const valorMetaLojaRaw = (document.getElementById('input-meta-valor-loja') as HTMLInputElement).value;
       const valorMetaLoja = isMetaLoja ? (parseBrFloat(valorMetaLojaRaw) || 0) : 0;
 
-      const faixas: MetaFaixa[] = [];
+      const faixas: any[] = [];
       const rows = document.querySelectorAll('.target-faixa-row');
       rows.forEach(row => {
         const fNome = (row.querySelector('.input-faixa-nome') as HTMLInputElement).value;

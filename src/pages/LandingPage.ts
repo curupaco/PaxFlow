@@ -615,6 +615,10 @@ export class LandingPage {
                   </li>
                   <li class="flex items-start gap-2">
                     <span class="text-emerald-500 shrink-0">✓</span>
+                    <span>Central de Cadastros unificada (Serviços, Destinos, Recebimentos, Campanhas, Metas e Modelos de Mensagem).</span>
+                  </li>
+                  <li class="flex items-start gap-2">
+                    <span class="text-emerald-500 shrink-0">✓</span>
                     <span>Hub de Mensagens com histórico Digisac split-screen e editor de variáveis visual.</span>
                   </li>
                   <li class="flex items-start gap-2">

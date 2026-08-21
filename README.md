@@ -34,8 +34,8 @@ Plataforma SaaS de gestão operacional e fluxo de passageiros no turismo: acompa
 - **Mural de Medalhas (Badges) [NEW]** — Grade interativa no perfil com 14 medalhas conquistáveis (SLA_CHAMP, DRIVE_MASTER, COMPLIANCE_HERO, etc.) exibidas em cores (conquistada) ou cinza com cadeado (bloqueada), acompanhadas de tooltips flutuantes em CSS contendo regras de desbloqueio.
 - **Animações e Efeitos de Celebração [NEW]** — Comemoração ao subir de nível ou fechar vendas com explosões visuais de confete (canvas-confetti via CDN) e áudios de chimes musicais sintetizados dinamicamente via Web Audio API, além de um modal glassmorphic 3D.
 - **Fotos de Perfil Personalizadas [NEW]** — Upload self-service de imagens do computador ou celular integrado ao Supabase Storage. As fotos são cortadas e comprimidas no navegador via Canvas para menos de 50KB antes de subir, economizando banda e armazenamento da agência.
-- **Painel Administrativo & Configurações** — Configuração de SLAs, gestão de consultores, limite máximo de upload configurável. Inclui aba "Importações" para importação em lote de chamados DIGISAC (CSV) com mapeamento inteligente de colunas, conversor monetário/temporal e fuzzy match de atendentes.
-- **Módulo de Cadastros (Gestão Dinâmica de Produtos, Destinos e Recebimentos) [NEW]** — Nova página restrita a administradores que gerencia os tipos de produtos/serviços disponíveis na agência (permitindo customizar cores, ícones e campos extras), a lista oficial de destinos nacionais e internacionais da agência (com autocomplete relacional e fallback legado) e as Formas de Recebimento de clientes (gerenciamento completo com definição de emoji/ícone, status de ativação/desativação e edição).
+- **Painel Administrativo & Configurações** — Gestão de parâmetros globais da agência, administração da equipe de consultores (perfis e roles), aba de importações em lote de chamados DIGISAC (CSV) e nova aba de "Automações & SLAs" para controle de prazos e transições de status.
+- **Módulo de Cadastros (Central Unificada: Serviços, Destinos, Recebimentos, Campanhas, Metas e Modelos) [NEW]** — Nova página restrita a administradores que consolida 6 abas estratégicas: Gestão de Tipos de Produtos/Serviços (cores, ícones e campos extras), Cadastro de Destinos Turísticos (com suporte a higienização), Formas de Recebimento, **Campanhas de Vendas**, **Metas Financeiras** e o **Hub de Modelos de Mensagem (WhatsApp / Templates)**.
 - **Localização de Erros e Tradução Global (I18n) [NEW]** — Utilitário centralizado `errorTranslator.ts` que intercepta e traduz erros técnicos em inglês (Supabase Auth, banco de dados PostgreSQL/RLS, uploads e erros de conexão de rede) para o Português do Brasil de forma amigável antes de exibi-los ao usuário.
 - **Cockpit de Tarefas** — Kanban interno standalone (todo.html) para planejamento da equipe.
 - **Navegação & UI Premium (Sidebar Colapsável, Perfil Centralizado & Lupa Vetorial)** — Shell de navegação avançado com barra lateral colapsável sob demanda (estado persistido via `localStorage` sob a chave `"paxflow-sidebar-collapsed"`). Centralização dos controles de identidade (avatar, nome, e-mail do consultor logado), alternador de tema claro/escuro e encerramento de sessão (logout) diretamente no rodapé da Sidebar, removendo elementos redundantes dos cabeçalhos das páginas. **Otimizado com layout vertical compacto e sistema de rolagem interna inteligente (`overflow-y-auto`) para se adaptar perfeitamente a viewports de menor resolution vertical ou níveis elevados de zoom sem quebrar o layout.** Campos de busca unificados com ícones vetoriais modernos (SVGs Heroicons) alinhados de forma absoluta e perfeitamente centrada.
@@ -127,9 +127,9 @@ src/
 │   ├── Orcamentos.ts # Pipeline de orçamentos (negociação + conversão)
 │   ├── Clientes.ts   # Gestão de clientes (ficha + documentação inline)
 │   ├── Reembolsos.ts # Central de reembolsos (tabela SLA + busca em memória)
-│   ├── Cadastros.ts  # Gestão dinâmica de tipos de produtos (Admin)
+│   ├── Cadastros.ts  # Central de Cadastros (Serviços, Destinos, Recebimentos, Campanhas, Metas, Templates)
 │   ├── Relatorios.ts # Painel de Relatórios Gerenciais (Desempenho, SLAs, Faturamento, Previsão, Fornecedores) [NEW]
-│   ├── Configuracoes.ts # Painel admin (Parâmetros, Consultores + Importador CSV)
+│   ├── Configuracoes.ts # Painel admin (Parâmetros Globais, Consultores, Importações, Automações)
 │   └── Login.ts      # Tela de login e recuperação de credenciais
 ├── services/
 │   ├── supabase.ts   # Cliente Supabase + Auth + Session helper

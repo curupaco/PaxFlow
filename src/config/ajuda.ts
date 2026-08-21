@@ -16,6 +16,7 @@ export const HELP_CATEGORIES: HelpCategory[] = [
   { id: 'onboarding', title: 'Como Começar (Onboarding)', icon: '🚀' },
   { id: 'processos', title: 'Fluxos de Trabalho & SLAs', icon: '🔄' },
   { id: 'geral', title: 'Conceitos Gerais & Gamificação', icon: '💡' },
+  { id: 'cadastros', title: 'Cadastros & Modelos', icon: '📋' },
   { id: 'dashboard', title: 'Dashboard & Metas', icon: '🏆' },
   { id: 'viagens', title: 'Gestão de Viagens', icon: '✈️' },
   { id: 'orcamentos', title: 'Orçamentos & CRM', icon: '📄' },
@@ -370,17 +371,24 @@ export const HELP_ITEMS: HelpItem[] = [
   },
   {
     id: 'editor-templates-drag-drop',
-    modulo: 'geral',
+    modulo: 'cadastros',
     label: 'Modelos de Mensagem: Editor de Variáveis Drag & Drop',
     description: 'Como configurar templates usando as pílulas de clicar e arrastar.',
     details: 'Ao cadastrar ou editar um modelo de mensagem na aba "Modelos de Mensagem", você pode utilizar variáveis dinâmicas que o sistema substitui na hora do envio. O editor fornece 11 pílulas de variáveis reativas (como {{cliente}}, {{destino}}, {{valor_total}}, etc.) localizadas acima do campo de texto.\n\nPara usá-las, você pode:\n1. **Clicar sobre a pílula**: Insere o texto da variável exatamente onde o seu cursor estiver no campo de texto.\n2. **Arrastar e soltar (Drag & Drop)**: Permite arrastar a pílula de variável com o mouse e soltá-la na posição desejada do conteúdo da mensagem.\n\n💡 O PaxFlow sincroniza o campo "Variáveis do Sistema Utilizadas" automaticamente para você na inserção, facilitando a gravação.'
   },
   {
     id: 'historico-conversas-digisac',
-    modulo: 'geral',
+    modulo: 'cadastros',
     label: 'Histórico de Conversas com o Cliente no Digisac',
     description: 'Como visualizar o andamento das conversas diretamente na janela de disparos.',
     details: 'Se a sua agência possui a integração do Digisac habilitada (com token, domínio e ID de serviço configurados), a tela de disparo de mensagens de templates exibe um painel lateral em tela dividida (Split-screen) com o histórico de mensagens.\n\n* **Carregamento Automático**: O sistema busca as últimas mensagens trocadas com o telefone do cliente no canal do Digisac na hora em que o modal de envio é aberto.\n* **Atualização Manual**: Você pode clicar em "Atualizar 🔄" no canto superior do histórico de conversas para carregar novas mensagens enviadas ou recebidas.\n* **Fallback Sandbox**: Se a API do Digisac estiver offline ou houver restrições locais de conexão de rede, a tela exibirá uma simulação das últimas mensagens (modo demonstração) de forma a garantir a estabilidade da interface.'
+  },
+  {
+    id: 'central-de-cadastros-modulo',
+    modulo: 'cadastros',
+    label: 'Estrutura da Central de Cadastros (6 Abas)',
+    description: 'Conheça o menu unificado de Cadastros para administradores.',
+    details: 'A Central de Cadastros reestruturada reúne todas as definições operacionais da agência em 6 abas:\n\n1. **Tipos de Serviços**: cadastro dinâmico de produtos, cores e campos extras.\n2. **Gestão de Destinos**: cadastro e higienização de cidades e países de viagens.\n3. **Formas de Recebimento**: gestão de opções de pagamento (Pix, Cartão, Dinheiro).\n4. **Campanhas**: criação e controle de campanhas internas de incentivo por período.\n5. **Metas Financeiras**: parametrização de metas (faturamento bruto ou lucro real) e faixas de premiação.\n6. **Modelos de Mensagem**: templates para WhatsApp com variáveis reativas e histórico Digisac.'
   }
 ];
 
