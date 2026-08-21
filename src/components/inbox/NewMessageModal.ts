@@ -132,7 +132,7 @@ export class NewMessageModal {
           <div class="border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 bg-slate-50/20 dark:bg-slate-900/10 space-y-4">
             <div class="flex items-center gap-2">
               <input id="chk-agendar-lembrete" type="checkbox" class="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
-              <label for="chk-agendar-lembrete" class="text-xs font-extrabold text-slate-700 dark:text-slate-250 cursor-pointer select-none">
+              <label for="chk-agendar-lembrete" class="text-xs font-extrabold text-slate-700 dark:text-slate-200 cursor-pointer select-none">
                 📅 Agendar no Calendário (Criar Lembrete/Tarefa para os destinatários)
               </label>
             </div>

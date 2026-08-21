@@ -1387,7 +1387,7 @@ export class ComercialDashboard {
         <div class="space-y-2.5">
           <div class="flex justify-between items-end text-xs font-semibold">
             <span class="text-slate-400 dark:text-slate-400">Faixa Atual: <strong class="text-slate-700 dark:text-slate-200 uppercase">${currentFaixaName}</strong></span>
-            <span class="text-slate-750 dark:text-slate-200 font-extrabold">R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+            <span class="text-slate-700 dark:text-slate-200 font-extrabold">R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
           </div>
 
           <div class="relative w-full h-3 bg-slate-100 dark:bg-slate-800/80 rounded-full overflow-hidden border border-slate-200/20">
@@ -1546,7 +1546,7 @@ export class ComercialDashboard {
                           <div class="w-6 h-6 rounded-full overflow-hidden shrink-0 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 flex items-center justify-center">
                             ${getAvatarSvg(c.avatar_url || 'panda')}
                           </div>
-                          <span class="font-extrabold text-slate-750 dark:text-slate-250">${c.nome}</span>
+                          <span class="font-extrabold text-slate-700 dark:text-slate-200">${c.nome}</span>
                           ${badgeHTML}
                         </div>
                         <span class="font-extrabold text-slate-700 dark:text-slate-200 flex items-center gap-1.5">

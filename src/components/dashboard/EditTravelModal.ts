@@ -2644,7 +2644,7 @@ export class EditTravelModal {
           <button id="btn-pag-loc-salvar" type="button" disabled class="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-200 dark:disabled:bg-slate-800 disabled:text-slate-400 dark:disabled:text-slate-600 text-white font-extrabold text-[10px] tracking-wider rounded-lg shadow-sm transition uppercase">
             Salvar
           </button>
-          <button id="btn-pag-loc-cancelar" type="button" class="py-2.5 px-4 bg-slate-100 hover:bg-slate-250 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-extrabold text-[10px] tracking-wider rounded-lg transition uppercase">
+          <button id="btn-pag-loc-cancelar" type="button" class="py-2.5 px-4 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-extrabold text-[10px] tracking-wider rounded-lg transition uppercase">
             Cancelar
           </button>
         </div>

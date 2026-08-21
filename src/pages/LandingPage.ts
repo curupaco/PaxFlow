@@ -35,7 +35,7 @@ export class LandingPage {
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.364l-.707-.707M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
             </button>
-            <button id="btn-acessar-login" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-750 text-white font-bold text-xs rounded-xl border border-slate-950 dark:border-slate-700 transition shadow-sm">
+            <button id="btn-acessar-login" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-white font-bold text-xs rounded-xl border border-slate-950 dark:border-slate-700 transition shadow-sm">
               Acessar Sistema
             </button>
           </div>
@@ -241,7 +241,7 @@ export class LandingPage {
                           <td class="px-4 py-3 text-center"><span class="text-xs">⚠️</span></td>
                           <td class="px-4 py-3">
                             <div class="font-extrabold text-slate-800 dark:text-slate-150">Carlos Eduardo</div>
-                            <span class="inline-block mt-0.5 px-1.5 py-0.5 bg-slate-200/50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-extrabold text-[8px] rounded border border-slate-300/40 dark:border-slate-750/50 uppercase">BA921</span>
+                            <span class="inline-block mt-0.5 px-1.5 py-0.5 bg-slate-200/50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-extrabold text-[8px] rounded border border-slate-300/40 dark:border-slate-700/50 uppercase">BA921</span>
                           </td>
                           <td class="px-4 py-3">
                             <div class="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1">✈️ Buenos Aires</div>
@@ -262,7 +262,7 @@ export class LandingPage {
                           <td class="px-4 py-3 text-center"><span class="text-xs">🟢</span></td>
                           <td class="px-4 py-3">
                             <div class="font-extrabold text-slate-800 dark:text-slate-150">Mariana Costa</div>
-                            <span class="inline-block mt-0.5 px-1.5 py-0.5 bg-slate-200/50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-extrabold text-[8px] rounded border border-slate-300/40 dark:border-slate-750/50 uppercase">US441</span>
+                            <span class="inline-block mt-0.5 px-1.5 py-0.5 bg-slate-200/50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-extrabold text-[8px] rounded border border-slate-300/40 dark:border-slate-700/50 uppercase">US441</span>
                           </td>
                           <td class="px-4 py-3">
                             <div class="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1">✈️ Orlando</div>
@@ -381,7 +381,7 @@ export class LandingPage {
                 <div class="overflow-x-auto text-[10px]">
                   <table class="w-full text-left border-collapse">
                     <thead>
-                      <tr class="border-b border-slate-250 dark:border-slate-800 text-slate-400">
+                      <tr class="border-b border-slate-200 dark:border-slate-800 text-slate-400">
                         <th class="pb-2 font-bold uppercase text-[8px]">Passageiro</th>
                         <th class="pb-2 font-bold uppercase text-[8px]">Fornecedor</th>
                         <th class="pb-2 font-bold uppercase text-[8px]">Valor</th>

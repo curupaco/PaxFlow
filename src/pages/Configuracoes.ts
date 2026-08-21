@@ -2038,7 +2038,7 @@ export class ConfiguracoesPage {
                   </div>
 
                   <div class="flex items-center gap-2 pt-1 pb-3">
-                    <button id="btn-testar-digisac" type="button" class="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 dark:bg-slate-800 dark:hover:bg-slate-750 text-indigo-600 dark:text-indigo-400 border border-indigo-100/50 dark:border-slate-700 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm">
+                    <button id="btn-testar-digisac" type="button" class="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-indigo-600 dark:text-indigo-400 border border-indigo-100/50 dark:border-slate-700 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm">
                       ⚡ Testar Conexão
                     </button>
                     <span id="digisac-test-result" class="text-[9px] font-bold text-slate-500 dark:text-slate-400"></span>
