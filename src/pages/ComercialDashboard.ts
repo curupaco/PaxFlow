@@ -486,24 +486,29 @@ export class ComercialDashboard {
       this.selectedConsultantId = selectConsultor.value;
       this.renderMetricsSection();
     });
-  }
 
-  private setupMetricsSectionListeners(): void {
-    // Filtro de Metas (Período)
-    const selectMetaPeriodo = document.getElementById('select-dashboard-meta-periodo') as HTMLSelectElement;
-    selectMetaPeriodo?.addEventListener('change', () => {
-      this.selectedMetaId = selectMetaPeriodo.value;
-      this.renderMetricsSection();
+    // Event delegation para elementos dinâmicos do metricsContainer (metas e refresh)
+    this.container.addEventListener('change', (e) => {
+      const target = e.target as HTMLElement;
+      if (target && target.id === 'select-dashboard-meta-periodo') {
+        const select = target as HTMLSelectElement;
+        this.selectedMetaId = select.value;
+        this.renderMetricsSection();
+      }
     });
 
-    // Refresh Metas
-    const btnRefreshMetas = document.getElementById('btn-refresh-metas');
-    btnRefreshMetas?.addEventListener('click', async () => {
-      const originalText = btnRefreshMetas.innerHTML;
-      btnRefreshMetas.innerHTML = '🔄 Recarregando...';
-      await this.loadMetas(true);
-      this.renderMetricsSection();
-      this.showToast('Metas atualizadas com sucesso!', 'success');
+    this.container.addEventListener('click', async (e) => {
+      const target = e.target as HTMLElement;
+      const btn = target.closest('#btn-refresh-metas') as HTMLButtonElement;
+      if (btn) {
+        const spanText = btn.querySelector('span');
+        if (spanText) spanText.textContent = 'Recarregando...';
+        else btn.innerHTML = '🔄 Recarregando...';
+        
+        await this.loadMetas(true);
+        this.renderMetricsSection();
+        this.showToast('Metas atualizadas com sucesso!', 'success');
+      }
     });
   }
 
@@ -1135,8 +1140,6 @@ export class ComercialDashboard {
         </table>
       </section>
     `;
-
-    this.setupMetricsSectionListeners();
   }
 
   /**
