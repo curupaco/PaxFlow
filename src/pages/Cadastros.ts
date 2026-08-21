@@ -1,6 +1,9 @@
 import { supabase, getSessaoAtual } from '../services/supabase';
-import { TipoProduto, CampoAdicional } from '../types';
-import { showCustomConfirm } from '../services/dialog';
+import { TipoProduto, CampoAdicional, MetaPeriodo, MetaFaixa } from '../types';
+import { showCustomAlert, showCustomConfirm } from '../services/dialog';
+import { MetasService } from '../services/metasService';
+import { BADGE_DEFINITIONS } from '../services/gamification';
+import { parseBrFloat } from '../services/csvImporter';
 
 export class CadastrosPage {
   private container: HTMLElement;
@@ -9,7 +12,7 @@ export class CadastrosPage {
   private tiposProduto: TipoProduto[] = [];
   
   // Gestão de Abas
-  private activeTab: 'tipos' | 'destinos' | 'formas' = 'tipos';
+  private activeTab: 'tipos' | 'destinos' | 'formas' | 'campanhas' | 'templates' | 'metas' = 'tipos';
 
   // Estado para formulário de cadastro/edição de Tipos
   private editandoTipoId: string | null = null;
@@ -25,6 +28,11 @@ export class CadastrosPage {
   private editandoFormaId: string | null = null;
   private selectedIconForma: string = '💵';
   private iconesFormaDisponiveis: string[] = ['💵', '💳', '🏦', '📱', '💰', '🪙', '🧾', '🔌', '⚡', '🔐'];
+
+  // Estados migrados para Campanhas, Metas e Templates
+  private campaigns: any[] = [];
+  private templates: any[] = [];
+  private metas: MetaPeriodo[] = [];
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -54,7 +62,10 @@ export class CadastrosPage {
       await Promise.all([
         this.loadTiposProduto(),
         this.loadDestinos(),
-        this.loadFormasRecebimento()
+        this.loadFormasRecebimento(),
+        this.loadCampaigns(),
+        this.loadTemplates(),
+        this.loadMetas()
       ]);
 
       // 4. Renderizar
@@ -153,6 +164,15 @@ export class CadastrosPage {
           </button>
           <button id="tab-formas-recebimento" class="shrink-0 px-4 py-3.5 text-xs font-bold uppercase tracking-wider border-b-2 transition-all ${this.activeTab === 'formas' ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}">
             💰 Formas de Recebimento
+          </button>
+          <button id="tab-campanhas-btn" class="shrink-0 px-4 py-3.5 text-xs font-bold uppercase tracking-wider border-b-2 transition-all ${this.activeTab === 'campanhas' ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}">
+            🎯 Campanhas
+          </button>
+          <button id="tab-metas-btn" class="shrink-0 px-4 py-3.5 text-xs font-bold uppercase tracking-wider border-b-2 transition-all ${this.activeTab === 'metas' ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}">
+            🏆 Metas Financeiras
+          </button>
+          <button id="tab-templates-btn" class="shrink-0 px-4 py-3.5 text-xs font-bold uppercase tracking-wider border-b-2 transition-all ${this.activeTab === 'templates' ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}">
+            💬 Modelos de Mensagem
           </button>
         </div>
 
@@ -471,7 +491,275 @@ export class CadastrosPage {
               </div>
               
             </div>
-          `}
+          ` : this.activeTab === 'campanhas' ? `
+            <!-- ABA: CAMPANHAS -->
+            <div class="max-w-4xl mx-auto w-full flex flex-col gap-6 text-slate-850 dark:text-slate-100">
+              <div class="flex items-center justify-between">
+                <div>
+                  <h2 class="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider">Campanhas Internas</h2>
+                  <p class="text-xs text-slate-400 dark:text-slate-400 font-medium">Criação, ativação e controle de metas por período</p>
+                </div>
+                <button id="btn-nova-campanha" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/20 flex items-center gap-1.5 transition transform hover:-translate-y-0.5 uppercase">
+                  Nova Campanha
+                </button>
+              </div>
+
+              <!-- Tabela de Campanhas -->
+              <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden transition-colors">
+                <div class="overflow-x-auto">
+                  <table class="w-full text-left border-collapse">
+                    <thead>
+                      <tr class="bg-slate-600/5 dark:bg-slate-800/60 text-[10px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
+                        <th class="py-4 px-5">Título</th>
+                        <th class="py-4 px-5">Parâmetro de Meta</th>
+                        <th class="py-4 px-5 text-center">Período</th>
+                        <th class="py-4 px-5 text-center">Medalha</th>
+                        <th class="py-4 px-5 text-center">Status</th>
+                        <th class="py-4 px-5 text-right">Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-sm text-slate-700 dark:text-slate-300 font-semibold bg-white/50 dark:bg-slate-900/30">
+                      ${this.campaigns.length === 0 ? `
+                        <tr>
+                          <td colspan="6" class="py-8 px-5 text-center text-slate-400 dark:text-slate-400 font-medium italic">
+                            Nenhuma campanha cadastrada até o momento.
+                          </td>
+                        </tr>
+                      ` : this.campaigns.map(cam => {
+                        const hoje = new Date().toISOString().split('T')[0];
+                        const isExpired = cam.data_fim < hoje;
+                        const statusBadge = cam.ativa && !isExpired
+                          ? `<span class="inline-flex px-2.5 py-0.5 bg-emerald-50 dark:bg-emerald-950/45 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/40 text-[10px] font-bold rounded">Ativa</span>`
+                          : isExpired
+                            ? `<span class="inline-flex px-2.5 py-0.5 bg-rose-50 dark:bg-rose-950/45 text-rose-700 dark:text-rose-400 border border-rose-100 dark:border-rose-900/40 text-[10px] font-bold rounded">Expirada</span>`
+                            : `<span class="inline-flex px-2.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-300 dark:border-slate-800 text-[10px] font-bold rounded">Inativa</span>`;
+                        
+                        const badgeObj = BADGE_DEFINITIONS.find(b => b.key === cam.badge_key);
+                        const badgeDisplay = badgeObj ? `${badgeObj.emoji} ${badgeObj.nome}` : 'Nenhuma';
+
+                        let metaLabel = '';
+                        if (cam.tipo_meta === 'xp_acumulado') metaLabel = `${cam.meta_quantidade} XP`;
+                        else if (cam.tipo_meta === 'cliente_criado') metaLabel = `${cam.meta_quantidade} Clientes`;
+                        else if (cam.tipo_meta === 'venda_aceita') metaLabel = `${cam.meta_quantidade} Vendas`;
+                        else if (cam.tipo_meta === 'lembrete_criado') metaLabel = `${cam.meta_quantidade} Lembretes`;
+                        else if (cam.tipo_meta === 'reembolso_pago') metaLabel = `${cam.meta_quantidade} Reembolsos`;
+                        else if (cam.tipo_meta === 'produto_detalhado') metaLabel = `${cam.meta_quantidade} Produtos`;
+
+                        const formatarData = (dStr: string) => {
+                          const parts = dStr.split('-');
+                          return `${parts[2]}/${parts[1]}/${parts[0]}`;
+                        };
+
+                        return `
+                          <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/10 transition-colors">
+                            <td class="py-4 px-5">
+                              <span class="block text-slate-800 dark:text-slate-200 font-bold">${cam.titulo}</span>
+                              <span class="block text-[10px] text-slate-400 dark:text-slate-400 font-semibold max-w-[250px] truncate">${cam.descricao}</span>
+                            </td>
+                            <td class="py-4 px-5 text-slate-600 dark:text-slate-400 font-medium">
+                              ${metaLabel}
+                            </td>
+                            <td class="py-4 px-5 text-center text-slate-500 dark:text-slate-400 text-xs font-semibold">
+                              ${formatarData(cam.data_inicio)} até ${formatarData(cam.data_fim)}
+                            </td>
+                            <td class="py-4 px-5 text-center text-xs font-bold text-slate-700 dark:text-slate-300">
+                              ${badgeDisplay}
+                            </td>
+                            <td class="py-4 px-5 text-center">
+                              ${statusBadge}
+                            </td>
+                            <td class="py-4 px-5 text-right space-x-2">
+                              <button data-id="${cam.id}" data-active="${cam.ativa}" class="btn-toggle-status-campanha px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                                cam.ativa 
+                                  ? 'bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 hover:dark:bg-rose-950/30' 
+                                  : 'bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 hover:dark:bg-emerald-950/30'
+                              }">
+                                ${cam.ativa ? 'Pausar' : 'Ativar'}
+                              </button>
+                              <button data-id="${cam.id}" class="btn-excluir-campanha px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-50 hover:bg-rose-50 dark:bg-rose-950/30 text-slate-400 hover:text-rose-500 transition border border-slate-200/40 dark:border-slate-700/40 uppercase">
+                                Excluir
+                              </button>
+                            </td>
+                          </tr>
+                        `;
+                      }).join('')}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          ` : this.activeTab === 'templates' ? `
+            <!-- ABA: MODELOS DE MENSAGENS -->
+            <div class="max-w-4xl mx-auto w-full flex flex-col gap-6 text-slate-850 dark:text-slate-100">
+              <div class="flex items-center justify-between">
+                <div>
+                  <h2 class="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider">Modelos de Mensagem</h2>
+                  <p class="text-xs text-slate-400 dark:text-slate-400 font-medium">Configure os textos de WhatsApp que serão enviados aos clientes</p>
+                </div>
+                <button id="btn-novo-template" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/20 flex items-center gap-1.5 transition transform hover:-translate-y-0.5 uppercase">
+                  Novo Modelo
+                </button>
+              </div>
+
+              <!-- Tabela de Templates -->
+              <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden transition-colors">
+                <div class="overflow-x-auto">
+                  <table class="w-full text-left border-collapse">
+                    <thead>
+                      <tr class="bg-slate-600/5 dark:bg-slate-800/60 text-[10px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
+                        <th class="py-4 px-5">Título / Descrição</th>
+                        <th class="py-4 px-5">Variáveis Mapeadas</th>
+                        <th class="py-4 px-5 text-right">Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-sm text-slate-700 dark:text-slate-300 font-semibold bg-white/50 dark:bg-slate-900/30">
+                      ${this.templates.length === 0 ? `
+                        <tr>
+                          <td colspan="3" class="py-8 px-5 text-center text-slate-400 dark:text-slate-400 font-medium italic">
+                            Nenhum modelo de mensagem cadastrado.
+                          </td>
+                        </tr>
+                      ` : this.templates.map(tem => {
+                        const tagsHTML = tem.variaveis_suportadas && tem.variaveis_suportadas.length > 0 
+                          ? tem.variaveis_suportadas.map((v: string) => `<span class="px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-100/30 dark:border-indigo-900/30 rounded text-[9px] font-bold font-mono">{{${v}}}</span>`).join(' ')
+                          : '<span class="text-slate-400 text-xs italic">Nenhuma</span>';
+
+                        return `
+                          <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/10 transition-colors">
+                            <td class="py-4 px-5">
+                              <span class="block text-slate-800 dark:text-slate-200 font-bold">${tem.titulo}</span>
+                              <span class="block text-[10px] text-slate-400 dark:text-slate-400 font-semibold max-w-[400px] truncate">${tem.descricao}</span>
+                            </td>
+                            <td class="py-4 px-5 text-slate-600 dark:text-slate-400 font-medium">
+                              <div class="flex flex-wrap gap-1">
+                                ${tagsHTML}
+                              </div>
+                            </td>
+                            <td class="py-4 px-5 text-right space-x-2">
+                              <button data-id="${tem.id}" class="btn-editar-template px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-50 hover:bg-indigo-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 transition uppercase">
+                                Editar
+                              </button>
+                              <button data-id="${tem.id}" class="btn-excluir-template px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-50 hover:bg-rose-50 dark:bg-rose-950/30 text-slate-400 hover:text-rose-500 transition border border-slate-200/40 dark:border-slate-700/40 uppercase">
+                                Excluir
+                              </button>
+                            </td>
+                          </tr>
+                        `;
+                      }).join('')}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          ` : this.activeTab === 'metas' ? `
+            <!-- ABA: METAS FINANCEIRAS -->
+            <div class="max-w-4xl mx-auto w-full flex flex-col gap-6 text-slate-850 dark:text-slate-100">
+              <div class="flex items-center justify-between">
+                <div>
+                  <h2 class="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider">Metas Financeiras & Campanhas</h2>
+                  <p class="text-xs text-slate-400 dark:text-slate-400 font-medium">Cadastre períodos de metas financeiras (bruto/lucro) e faixas de prêmios por consultor</p>
+                </div>
+                <button id="btn-nova-meta" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-emerald-600/20 flex items-center gap-1.5 transition transform hover:-translate-y-0.5 uppercase">
+                  Nova Meta
+                </button>
+              </div>
+
+              <!-- Tabela de Metas -->
+              <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden transition-colors">
+                <div class="overflow-x-auto">
+                  <table class="w-full text-left border-collapse">
+                    <thead>
+                      <tr class="bg-slate-600/5 dark:bg-slate-800/60 text-[10px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
+                        <th class="py-4 px-5">Nome / Tipo</th>
+                        <th class="py-4 px-5">Período</th>
+                        <th class="py-4 px-5">Cálculo</th>
+                        <th class="py-4 px-5">Faixas de Premiação</th>
+                        <th class="py-4 px-5 text-right">Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-sm text-slate-700 dark:text-slate-300 font-semibold bg-white/50 dark:bg-slate-900/30">
+                      ${this.metas.length === 0 ? 
+                        '<tr>' +
+                          '<td colspan="5" class="py-8 px-5 text-center text-slate-400 dark:text-slate-400 font-medium italic">' +
+                            'Nenhum período de metas cadastrado.' +
+                          '</td>' +
+                        '</tr>'
+                       : this.metas.map(meta => {
+                        const formatarData = (dStr: string) => {
+                          if (!dStr) return '';
+                          const clean = dStr.substring(0, 10);
+                          const parts = clean.split('-');
+                          if (parts.length < 3) return dStr;
+                          return parts[2] + '/' + parts[1] + '/' + parts[0];
+                        };
+
+                        const formatRecompensa = (rec: string) => {
+                          if (!rec) return '';
+                          const parsed = parseBrFloat(rec);
+                          if (parsed !== null && !isNaN(parsed)) {
+                            return 'R$ ' + parsed.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                          }
+                          return rec;
+                        };
+
+                        const faixasHTML = meta.is_meta_loja
+                          ? '<div class="text-xs text-emerald-600 dark:text-emerald-400 font-black">Meta Alvo: R$ ' + (meta.valor_meta || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '</div>'
+                          : (meta.faixas && meta.faixas.length > 0 
+                              ? meta.faixas.map(f => 
+                                  '<div class="text-xs text-slate-600 dark:text-slate-400 font-bold mb-0.5 flex items-center gap-1.5">' +
+                                  '<span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: ' + (f.cor || '#6366f1') + '"></span>' +
+                                  '• <span style="color: ' + (f.cor || '#6366f1') + '" class="font-black">' + f.nome + '</span>: >= R$ ' + f.valor_minimo.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) +
+                                  (f.recompensa ? ' <span class="text-[10px] text-slate-400 dark:text-slate-400 font-normal italic">(' + formatRecompensa(f.recompensa) + ')</span>' : '') +
+                                  '</div>'
+                                ).join('')
+                              : '<span class="text-slate-400 text-xs italic">Nenhuma faixa cadastrada</span>');
+
+                        const tipoCalculoBadge = meta.tipo_calculo === 'bruto'
+                          ? '<span class="inline-flex px-2 py-0.5 bg-blue-50 dark:bg-blue-950/45 text-blue-700 dark:text-blue-400 border border-blue-100 dark:border-blue-900/40 text-[9px] font-black uppercase rounded">Faturamento Bruto</span>'
+                          : '<span class="inline-flex px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/45 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/40 text-[9px] font-black uppercase rounded">Lucro Real</span>';
+
+                        const tipoPeriodoBadge = meta.is_meta_loja
+                          ? '<span class="inline-flex px-2 py-0.5 bg-teal-50 dark:bg-teal-950/45 text-teal-700 dark:text-teal-400 border border-teal-100 dark:border-teal-900/40 text-[9px] font-black uppercase rounded font-bold">Meta Loja</span>'
+                          : (meta.is_campanha
+                              ? '<span class="inline-flex px-2 py-0.5 bg-purple-50 dark:bg-purple-950/45 text-purple-700 dark:text-purple-400 border border-purple-100 dark:border-purple-900/40 text-[9px] font-black uppercase rounded">Campanha</span>'
+                              : '<span class="inline-flex px-2 py-0.5 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 text-[9px] font-black uppercase rounded">Regular</span>');
+
+                        return '<tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/10 transition-colors">' +
+                            '<td class="py-4 px-5">' +
+                              '<span class="block text-slate-800 dark:text-slate-200 font-bold">' + meta.nome + '</span>' +
+                              '<div class="flex items-center gap-1.5 mt-1">' +
+                                tipoPeriodoBadge +
+                              '</div>' +
+                            '</td>' +
+                            '<td class="py-4 px-5 text-slate-600 dark:text-slate-400 font-semibold text-xs">' +
+                              formatarData(meta.data_inicio) + ' até ' + formatarData(meta.data_fim) +
+                            '</td>' +
+                            '<td class="py-4 px-5">' +
+                              tipoCalculoBadge +
+                            '</td>' +
+                            '<td class="py-4 px-5">' +
+                              '<div class="flex flex-col">' +
+                                faixasHTML +
+                              '</div>' +
+                            '</td>' +
+                            '<td class="py-4 px-5 text-right">' +
+                              '<div class="flex items-center justify-end gap-2">' +
+                                '<button data-id="' + meta.id + '" class="btn-editar-meta px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-50 hover:bg-indigo-55 dark:bg-indigo-950/30 text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition border border-slate-200/40 dark:border-slate-700/40 uppercase">' +
+                                  'Editar' +
+                                '</button>' +
+                                '<button data-id="' + meta.id + '" class="btn-excluir-meta px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-50 hover:bg-rose-50 dark:bg-rose-950/30 text-slate-400 hover:text-rose-500 transition border border-slate-200/40 dark:border-slate-700/40 uppercase">' +
+                                  'Excluir' +
+                                '</button>' +
+                              '</div>' +
+                            '</td>' +
+                          '</tr>';
+                      }).join('')}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          ` : ''}
         </main>
 
       </div>
@@ -649,6 +937,36 @@ export class CadastrosPage {
       this.render();
       this.setupEventListeners();
     });
+
+    document.getElementById('tab-campanhas-btn')?.addEventListener('click', () => {
+      this.activeTab = 'campanhas';
+      this.render();
+      this.setupEventListeners();
+    });
+
+    document.getElementById('tab-templates-btn')?.addEventListener('click', () => {
+      this.activeTab = 'templates';
+      this.render();
+      this.setupEventListeners();
+    });
+
+    document.getElementById('tab-metas-btn')?.addEventListener('click', () => {
+      this.activeTab = 'metas';
+      this.render();
+      this.setupEventListeners();
+    });
+
+    if (this.activeTab === 'campanhas') {
+      this.setupCampanhasEvents();
+    }
+
+    if (this.activeTab === 'templates') {
+      this.setupTemplatesEvents();
+    }
+
+    if (this.activeTab === 'metas') {
+      this.setupMetasEvents();
+    }
 
     if (this.activeTab === 'tipos') {
       // 1. Botão Adicionar Campo Adicional
@@ -1320,5 +1638,1079 @@ export class CadastrosPage {
         </div>
       </div>
     `;
+  }
+
+  // --- MIGRATED METHODS FOR CAMPAIGNS, TEMPLATES AND GOALS ---
+
+  private async loadCampaigns(): Promise<void> {
+    try {
+      const { data, error } = await supabase
+        .from('campaigns')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      this.campaigns = data || [];
+    } catch (err: any) {
+      console.error('Erro ao carregar campanhas:', err);
+    }
+  }
+
+  private async loadTemplates(): Promise<void> {
+    try {
+      const { data, error } = await supabase
+        .from('templates_mensagem')
+        .select('*')
+        .order('titulo', { ascending: true });
+
+      if (error) throw error;
+      this.templates = data || [];
+    } catch (err: any) {
+      console.error('Erro ao carregar templates de mensagem:', err);
+      this.showToast('Erro ao carregar modelos de mensagens do banco.', 'error', err);
+    }
+  }
+
+  private async loadMetas(): Promise<void> {
+    try {
+      this.metas = await MetasService.obterMetaPeriodos();
+    } catch (err: any) {
+      console.error('Erro ao carregar metas financeiras:', err);
+    }
+  }
+
+  private setupCampanhasEvents(): void {
+    // Abrir modal de criação
+    document.getElementById('btn-nova-campanha')?.addEventListener('click', () => this.abrirModalNovaCampanha());
+
+    // Toggle status ativa/inativa
+    document.querySelectorAll('.btn-toggle-status-campanha').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const id = (e.currentTarget as HTMLElement).getAttribute('data-id');
+        const active = (e.currentTarget as HTMLElement).getAttribute('data-active') === 'true';
+        if (!id) return;
+        
+        try {
+          const { error } = await supabase
+            .from('campaigns')
+            .update({ ativa: !active })
+            .eq('id', id);
+
+          if (error) throw error;
+          
+          this.showToast(`Campanha ${!active ? 'ativada' : 'pausada'} com sucesso!`, 'success');
+          await this.loadCampaigns();
+          this.render();
+          this.setupEventListeners();
+        } catch (err: any) {
+          console.error(err);
+          this.showToast('Erro ao atualizar status da campanha.', 'error');
+        }
+      });
+    });
+
+    // Excluir campanha
+    document.querySelectorAll('.btn-excluir-campanha').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const id = (e.currentTarget as HTMLElement).getAttribute('data-id');
+        if (!id) return;
+        
+        const confirmResult = await showCustomConfirm('Deseja realmente excluir esta campanha permanentemente?', 'Excluir Campanha');
+        if (confirmResult) {
+          try {
+            const { error } = await supabase
+              .from('campaigns')
+              .delete()
+              .eq('id', id);
+
+            if (error) throw error;
+            
+            this.showToast('Campanha excluída com sucesso!', 'success');
+            await this.loadCampaigns();
+            this.render();
+            this.setupEventListeners();
+          } catch (err: any) {
+            console.error(err);
+            this.showToast('Erro ao excluir campanha.', 'error');
+          }
+        }
+      });
+    });
+  }
+
+  private setupTemplatesEvents(): void {
+    // Abrir modal de criação
+    document.getElementById('btn-novo-template')?.addEventListener('click', () => this.abrirModalNovoTemplate());
+
+    // Editar template
+    document.querySelectorAll('.btn-editar-template').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = (e.currentTarget as HTMLElement).getAttribute('data-id');
+        if (id) this.abrirModalNovoTemplate(id);
+      });
+    });
+
+    // Excluir template
+    document.querySelectorAll('.btn-excluir-template').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const id = (e.currentTarget as HTMLElement).getAttribute('data-id');
+        if (!id) return;
+        
+        const confirmResult = await showCustomConfirm('Deseja realmente excluir este modelo de mensagem permanentemente?', 'Excluir Modelo');
+        if (confirmResult) {
+          try {
+            const { error } = await supabase
+              .from('templates_mensagem')
+              .delete()
+              .eq('id', id);
+
+            if (error) throw error;
+            
+            this.showToast('Modelo de mensagem excluído com sucesso!', 'success');
+            await this.loadTemplates();
+            this.render();
+            this.setupEventListeners();
+          } catch (err: any) {
+            console.error(err);
+            this.showToast('Erro ao excluir modelo de mensagem.', 'error');
+          }
+        }
+      });
+    });
+  }
+
+  private setupMetasEvents(): void {
+    const deleteButtons = document.querySelectorAll('.btn-excluir-meta');
+    deleteButtons.forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.getAttribute('data-id');
+        if (!id) return;
+
+        const confirm = await showCustomConfirm(
+          'Deseja realmente excluir este período de meta? Todas as faixas associadas serão excluídas definitivamente.',
+          'Confirmar Exclusão de Meta'
+        );
+
+        if (confirm) {
+          try {
+            await MetasService.excluirMetaPeriodo(id);
+            this.showToast('Período de meta excluído com sucesso!', 'success');
+            await this.loadMetas();
+            this.render();
+            this.setupEventListeners();
+          } catch (err: any) {
+            this.showToast('Erro ao excluir meta.', 'error');
+          }
+        }
+      });
+    });
+
+    const editButtons = document.querySelectorAll('.btn-editar-meta');
+    editButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.getAttribute('data-id');
+        if (!id) return;
+        this.abrirModalEditarMeta(id);
+      });
+    });
+
+    document.getElementById('btn-nova-meta')?.addEventListener('click', () => {
+      this.abrirModalNovaMeta();
+    });
+  }
+
+  private abrirModalNovoTemplate(templateId?: string): void {
+    const editando = this.templates.find(t => t.id === templateId);
+    
+    const overlay = document.createElement('div');
+    overlay.id = 'novo-template-overlay';
+    overlay.className = 'fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all duration-300 opacity-0';
+    
+    overlay.innerHTML = `
+      <div class="bg-white dark:bg-slate-900 w-full max-w-[500px] rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 transform scale-95 transition-all duration-300 flex flex-col max-h-[90vh] overflow-y-auto custom-scrollbar relative" id="novo-template-card">
+        
+        <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-600"></div>
+
+        <div class="p-6 border-b border-slate-100 dark:border-slate-800 text-center flex flex-col items-center">
+          <div class="w-12 h-12 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 font-bold rounded-2xl flex items-center justify-center text-xl border border-indigo-100/40 mb-3">
+            💬
+          </div>
+          <h2 class="text-lg font-black text-slate-800 dark:text-slate-100 tracking-tight leading-snug">${editando ? 'Editar Modelo' : 'Criar Novo Modelo'}</h2>
+          <p class="text-xs text-slate-400 dark:text-slate-400 font-semibold mt-1">Configure o texto da mensagem e as variáveis de substituição</p>
+        </div>
+
+        <form id="form-novo-template" class="p-6 space-y-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Título do Modelo *</label>
+            <input id="input-tem-titulo" type="text" required value="${editando ? editando.titulo : ''}" placeholder="Ex: Boas-vindas Pós-Viagem" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Descrição / Finalidade *</label>
+            <input id="input-tem-descricao" type="text" required value="${editando ? editando.descricao : ''}" placeholder="Ex: Mensagem enviada após o retorno, com NPS." class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5 flex items-center justify-between">
+              <span>Conteúdo da Mensagem *</span>
+              <span class="text-[9px] text-slate-400 dark:text-slate-400 font-semibold lowercase">variáveis suportadas: {{cliente}}, {{destino}}, {{localizador}}, etc.</span>
+            </label>
+            <div class="flex flex-wrap gap-1.5 mb-2.5 select-none" id="container-variaveis-pills">
+              <span class="var-pill cursor-pointer px-2 py-1 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-650 dark:text-indigo-400 rounded-lg text-[9px] font-bold border border-indigo-100/50 dark:border-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900 transition flex items-center gap-1" draggable="true" data-var="{{cliente}}">📋 {{cliente}}</span>
+              <span class="var-pill cursor-pointer px-2 py-1 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-650 dark:text-indigo-400 rounded-lg text-[9px] font-bold border border-indigo-100/50 dark:border-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900 transition flex items-center gap-1" draggable="true" data-var="{{destino}}">✈️ {{destino}}</span>
+              <span class="var-pill cursor-pointer px-2 py-1 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-650 dark:text-indigo-400 rounded-lg text-[9px] font-bold border border-indigo-100/50 dark:border-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900 transition flex items-center gap-1" draggable="true" data-var="{{localizador}}">🔑 {{localizador}}</span>
+              <span class="var-pill cursor-pointer px-2 py-1 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-650 dark:text-indigo-400 rounded-lg text-[9px] font-bold border border-indigo-100/50 dark:border-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900 transition flex items-center gap-1" draggable="true" data-var="{{consultor}}">👤 {{consultor}}</span>
+              <span class="var-pill cursor-pointer px-2 py-1 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-650 dark:text-indigo-400 rounded-lg text-[9px] font-bold border border-indigo-100/50 dark:border-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900 transition flex items-center gap-1" draggable="true" data-var="{{link_itinerario}}">🔗 {{link_itinerario}}</span>
+              <span class="var-pill cursor-pointer px-2 py-1 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-650 dark:text-indigo-400 rounded-lg text-[9px] font-bold border border-indigo-100/50 dark:border-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900 transition flex items-center gap-1" draggable="true" data-var="{{link_feedback}}">⭐ {{link_feedback}}</span>
+              <span class="var-pill cursor-pointer px-2 py-1 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-650 dark:text-indigo-400 rounded-lg text-[9px] font-bold border border-indigo-100/50 dark:border-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900 transition flex items-center gap-1" draggable="true" data-var="{{data_ida}}">📅 {{data_ida}}</span>
+              <span class="var-pill cursor-pointer px-2 py-1 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-650 dark:text-indigo-400 rounded-lg text-[9px] font-bold border border-indigo-100/50 dark:border-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900 transition flex items-center gap-1" draggable="true" data-var="{{data_volta}}">📅 {{data_volta}}</span>
+              <span class="var-pill cursor-pointer px-2 py-1 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-650 dark:text-indigo-400 rounded-lg text-[9px] font-bold border border-indigo-100/50 dark:border-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900 transition flex items-center gap-1" draggable="true" data-var="{{valor_total}}">💰 {{valor_total}}</span>
+              <span class="var-pill cursor-pointer px-2 py-1 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-650 dark:text-indigo-400 rounded-lg text-[9px] font-bold border border-indigo-100/50 dark:border-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900 transition flex items-center gap-1" draggable="true" data-var="{{nome_agencia}}">🏢 {{nome_agencia}}</span>
+              <span class="var-pill cursor-pointer px-2 py-1 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-650 dark:text-indigo-400 rounded-lg text-[9px] font-bold border border-indigo-100/50 dark:border-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900 transition flex items-center gap-1" draggable="true" data-var="{{contato_consultor}}">📞 {{contato_consultor}}</span>
+            </div>
+            <textarea id="input-tem-conteudo" required rows="6" placeholder="Olá, {{cliente}}! Como foi sua viagem para {{destino}}?..." class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs resize-none">${editando ? editando.conteudo : ''}</textarea>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Variáveis do Sistema Utilizadas (separadas por vírgula) *</label>
+            <input id="input-tem-variaveis" type="text" required value="${editando && editando.variaveis_suportadas ? editando.variaveis_suportadas.join(', ') : 'cliente, destino, consultor'}" placeholder="cliente, destino, localizador, consultor, link_itinerario, link_feedback" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+            <p class="text-[9px] text-slate-400 dark:text-slate-400 font-semibold mt-1">Insira exatamente as variáveis que você usou entre {{ }} no texto (ex: cliente, destino, consultor).</p>
+          </div>
+
+          <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+            <button id="btn-tem-cancel" type="button" class="px-4 py-2.5 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 text-slate-500 hover:text-slate-700 font-bold text-xs rounded-xl transition uppercase">
+              Cancelar
+            </button>
+            <button id="btn-tem-submit" type="submit" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl transition shadow-lg shadow-indigo-600/20 uppercase tracking-wider flex items-center justify-center">
+              ${editando ? 'Salvar Alterações' : 'Criar Modelo'}
+            </button>
+          </div>
+        </form>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    // Configurar Drag & Drop e Clique nas variáveis
+    const textarea = overlay.querySelector('#input-tem-conteudo') as HTMLTextAreaElement;
+    const inputVariaveis = overlay.querySelector('#input-tem-variaveis') as HTMLInputElement;
+    const pills = overlay.querySelectorAll('.var-pill');
+
+    const sincronizarVariavelNoInput = (varName: string) => {
+      const cleanVarName = varName.replace(/[{}]/g, '').trim();
+      const currentVars = inputVariaveis.value.split(',').map(v => v.trim()).filter(v => v !== '');
+      if (!currentVars.includes(cleanVarName)) {
+        currentVars.push(cleanVarName);
+        inputVariaveis.value = currentVars.join(', ');
+      }
+    };
+
+    const inserirTextoNaPosicaoCursor = (textoParaInserir: string) => {
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const originalText = textarea.value;
+      textarea.value = originalText.substring(0, start) + textoParaInserir + originalText.substring(end);
+      textarea.focus();
+      textarea.selectionStart = textarea.selectionEnd = start + textoParaInserir.length;
+      sincronizarVariavelNoInput(textoParaInserir);
+    };
+
+    pills.forEach(pill => {
+      pill.addEventListener('click', () => {
+        const varName = (pill as HTMLElement).dataset.var || '';
+        inserirTextoNaPosicaoCursor(varName);
+      });
+
+      pill.addEventListener('dragstart', (e: any) => {
+        e.dataTransfer.setData('text/plain', (pill as HTMLElement).dataset.var || '');
+      });
+    });
+
+    textarea.addEventListener('dragover', (e) => {
+      e.preventDefault();
+    });
+
+    textarea.addEventListener('drop', (e: any) => {
+      e.preventDefault();
+      const varName = e.dataTransfer.getData('text/plain');
+      if (varName && varName.startsWith('{{')) {
+        inserirTextoNaPosicaoCursor(varName);
+      }
+    });
+
+    setTimeout(() => {
+      overlay.classList.add('opacity-100');
+      document.getElementById('novo-template-card')?.classList.remove('scale-95');
+      document.getElementById('novo-template-card')?.classList.add('scale-100');
+    }, 10);
+
+    const fechar = () => {
+      overlay.classList.remove('opacity-100');
+      document.getElementById('novo-template-card')?.classList.remove('scale-100');
+      document.getElementById('novo-template-card')?.classList.add('scale-95');
+      setTimeout(() => overlay.remove(), 300);
+    };
+
+    document.getElementById('btn-tem-cancel')?.addEventListener('click', fechar);
+
+    const form = document.getElementById('form-novo-template') as HTMLFormElement;
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const submitBtn = document.getElementById('btn-tem-submit') as HTMLButtonElement;
+      const titulo = (document.getElementById('input-tem-titulo') as HTMLInputElement).value;
+      const descricao = (document.getElementById('input-tem-descricao') as HTMLInputElement).value;
+      const conteudo = (document.getElementById('input-tem-conteudo') as HTMLTextAreaElement).value;
+      const variaveisRaw = (document.getElementById('input-tem-variaveis') as HTMLInputElement).value;
+      const variaveis = variaveisRaw.split(',').map(v => v.trim()).filter(v => v !== '');
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Gravando...';
+
+      try {
+        const payload = {
+          titulo,
+          descricao,
+          conteudo,
+          variaveis_suportadas: variaveis
+        };
+
+        let dbResult;
+        if (editando) {
+          dbResult = await supabase
+            .from('templates_mensagem')
+            .update(payload)
+            .eq('id', editando.id);
+        } else {
+          dbResult = await supabase
+            .from('templates_mensagem')
+            .insert(payload);
+        }
+
+        if (dbResult.error) throw dbResult.error;
+
+        this.showToast(editando ? 'Modelo atualizado com sucesso!' : 'Modelo criado com sucesso!', 'success');
+        fechar();
+        await this.loadTemplates();
+        this.render();
+        this.setupEventListeners();
+
+      } catch (err: any) {
+        console.error('Erro ao gravar modelo de mensagem:', err);
+        submitBtn.disabled = false;
+        submitBtn.textContent = editando ? 'Salvar Alterações' : 'Criar Modelo';
+        showCustomAlert('Erro ao gravar modelo de mensagem.', 'Erro');
+      }
+    });
+  }
+
+  private abrirModalNovaCampanha(): void {
+    const overlay = document.createElement('div');
+    overlay.id = 'nova-campanha-overlay';
+    overlay.className = 'fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all duration-300 opacity-0';
+    
+    // Obter lista de medalhas do BADGE_DEFINITIONS
+    const badgeOptions = BADGE_DEFINITIONS.map(b => `
+      <option value="${b.key}">${b.emoji} ${b.nome} (${b.categoria})</option>
+    `).join('');
+
+    overlay.innerHTML = `
+      <div class="bg-white dark:bg-slate-900 w-full max-w-[500px] rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 transform scale-95 transition-all duration-300 flex flex-col max-h-[90vh] overflow-y-auto custom-scrollbar relative" id="nova-campanha-card">
+        
+        <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-600"></div>
+
+        <div class="p-6 border-b border-slate-100 dark:border-slate-800 text-center flex flex-col items-center">
+          <div class="w-12 h-12 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 font-bold rounded-2xl flex items-center justify-center text-xl border border-indigo-100/40 mb-3">
+            🎯
+          </div>
+          <h2 class="text-lg font-black text-slate-800 dark:text-slate-100 tracking-tight leading-snug">Criar Nova Campanha</h2>
+          <p class="text-xs text-slate-400 dark:text-slate-400 font-semibold mt-1">Configure o período, o parâmetro do processo e a recompensa</p>
+        </div>
+
+        <form id="form-nova-campanha" class="p-6 space-y-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Título da Campanha *</label>
+            <input id="input-cam-titulo" type="text" required placeholder="Ex: Meta de Vendas de Agosto" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Descrição / Regras *</label>
+            <textarea id="input-cam-descricao" required rows="3" placeholder="Descreva os detalhes e regras da campanha..." class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm resize-none"></textarea>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Data de Início *</label>
+              <input id="input-cam-inicio" type="date" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Data de Fim *</label>
+              <input id="input-cam-fim" type="date" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Métrica da Meta *</label>
+              <select id="select-cam-tipo" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm">
+                <option value="venda_aceita" selected>Vendas Aceitas</option>
+                <option value="cliente_criado">Clientes Cadastrados</option>
+                <option value="xp_acumulado">XP Acumulado</option>
+                <option value="lembrete_criado">Lembretes Criados</option>
+                <option value="reembolso_pago">Reembolsos Pagos</option>
+                <option value="produto_detalhado">Produtos Detalhados</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Quantidade Meta *</label>
+              <input id="input-cam-quantidade" type="number" min="1" required value="5" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Medalha de Recompensa (Badge) *</label>
+            <select id="select-cam-badge" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm select-badge-campaign">
+              ${badgeOptions}
+            </select>
+          </div>
+
+          <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+            <button id="btn-cam-cancel" type="button" class="px-4 py-2.5 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 text-slate-500 hover:text-slate-700 font-bold text-xs rounded-xl transition uppercase">
+              Cancelar
+            </button>
+            <button id="btn-cam-submit" type="submit" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl transition shadow-lg shadow-indigo-600/20 uppercase tracking-wider flex items-center justify-center">
+              Criar Campanha
+            </button>
+          </div>
+        </form>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    setTimeout(() => {
+      overlay.classList.add('opacity-100');
+      document.getElementById('nova-campanha-card')?.classList.remove('scale-95');
+      document.getElementById('nova-campanha-card')?.classList.add('scale-100');
+    }, 10);
+
+    const fechar = () => {
+      overlay.classList.remove('opacity-100');
+      document.getElementById('nova-campanha-card')?.classList.remove('scale-100');
+      document.getElementById('nova-campanha-card')?.classList.add('scale-95');
+      setTimeout(() => overlay.remove(), 300);
+    };
+
+    document.getElementById('btn-cam-cancel')?.addEventListener('click', fechar);
+
+    const form = document.getElementById('form-nova-campanha') as HTMLFormElement;
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const submitBtn = document.getElementById('btn-cam-submit') as HTMLButtonElement;
+      const titulo = (document.getElementById('input-cam-titulo') as HTMLInputElement).value;
+      const descricao = (document.getElementById('input-cam-descricao') as HTMLInputElement).value;
+      const data_inicio = (document.getElementById('input-cam-inicio') as HTMLInputElement).value;
+      const data_fim = (document.getElementById('input-cam-fim') as HTMLInputElement).value;
+      const tipo_meta = (document.getElementById('select-cam-tipo') as HTMLSelectElement).value;
+      const meta_quantidade = Number((document.getElementById('input-cam-quantidade') as HTMLInputElement).value);
+      const badge_key = (document.getElementById('select-cam-badge') as HTMLSelectElement).value;
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Criando...';
+
+      try {
+        // 1. Inserir campanha no banco
+        const { data: camData, error: camError } = await supabase
+          .from('campaigns')
+          .insert({
+            titulo,
+            descricao,
+            data_inicio,
+            data_fim,
+            tipo_meta,
+            meta_quantidade,
+            badge_key,
+            ativa: true
+          })
+          .select()
+          .single();
+
+        if (camError) throw camError;
+
+        // 2. Criar notificações para todos os consultores (para que eles vejam no Inbox e no login)
+        const { data: perfis, error: pErr } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('ativo', true);
+
+        if (!pErr && perfis && perfis.length > 0) {
+          const notificationsPayload = perfis.map(p => ({
+            user_id: p.id,
+            tipo_item: 'campanha',
+            comentario_id: null,
+            mensagem_id: null,
+            item_id: camData.id,
+            parent_id: camData.id,
+            campaign_id: camData.id,
+            lida: false,
+            arquivada: false
+          }));
+
+          await supabase.from('notificacoes').insert(notificationsPayload);
+        }
+
+        this.showToast('Campanha criada com sucesso e equipe notificada!', 'success');
+        fechar();
+        await this.loadCampaigns();
+        this.render();
+        this.setupEventListeners();
+
+      } catch (err: any) {
+        console.error('Erro ao criar campanha:', err);
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Criar Campanha';
+        showCustomAlert(`Falha ao criar campanha: ${err.message}`, 'Erro');
+      }
+    });
+  }
+
+  private abrirModalNovaMeta(): void {
+    const aplicarMascaraMonetaria = (inputEl: HTMLInputElement) => {
+      inputEl.addEventListener('input', (e) => {
+        const target = e.target as HTMLInputElement;
+        let val = target.value;
+        let digits = val.replace(/\D/g, '');
+        if (digits.length > 12) {
+          digits = digits.slice(0, 12);
+        }
+        if (!digits) {
+          target.value = '0,00';
+          return;
+        }
+        const num = parseInt(digits, 10) / 100;
+        target.value = num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      });
+    };
+
+    const overlay = document.createElement('div');
+    overlay.id = 'nova-meta-overlay';
+    overlay.className = 'fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all duration-300 opacity-0';
+
+    overlay.innerHTML = `
+      <div class="bg-white dark:bg-slate-900 w-full max-w-[550px] rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 transform scale-95 transition-all duration-300 flex flex-col max-h-[90vh] overflow-y-auto custom-scrollbar" id="nova-meta-card">
+        
+        <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-500 via-teal-500 to-indigo-600"></div>
+
+        <div class="p-6 border-b border-slate-100 dark:border-slate-800 text-center flex flex-col items-center">
+          <div class="w-12 h-12 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-bold rounded-2xl flex items-center justify-center text-xl border border-emerald-100 mb-3">
+            📅
+          </div>
+          <h2 class="text-lg font-black text-slate-800 dark:text-slate-100 tracking-tight leading-snug">Criar Período de Metas</h2>
+          <p class="text-xs text-slate-400 dark:text-slate-400 font-semibold mt-1">Crie metas financeiras de faturamento e faixas de premiação</p>
+        </div>
+
+        <form id="form-nova-meta" class="p-6 space-y-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Nome do Período *</label>
+            <input id="input-meta-nome" type="text" required placeholder="Ex: Metas de Agosto 2026, Campanha Ouro..." class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Data de Início *</label>
+              <input id="input-meta-inicio" type="date" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Data de Fim *</label>
+              <input id="input-meta-fim" type="date" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Cálculo baseado em *</label>
+              <select id="select-meta-calculo" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800 dark:text-slate-100 font-semibold text-sm">
+                <option value="bruto" selected>Faturamento Bruto (Total das Vendas)</option>
+                <option value="liquido">Markup / Lucro Estimado</option>
+              </select>
+            </div>
+
+            <div class="flex items-center gap-6 pt-5">
+              <label class="flex items-center gap-2 cursor-pointer select-none">
+                <input id="input-meta-campanha" type="checkbox" class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 h-4.5 w-4.5" />
+                <span class="text-xs text-slate-600 dark:text-slate-400 font-bold uppercase">É Campanha</span>
+              </label>
+              <label class="flex items-center gap-2 cursor-pointer select-none">
+                <input id="input-meta-loja" type="checkbox" class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 h-4.5 w-4.5" />
+                <span class="text-xs text-slate-600 dark:text-slate-400 font-bold uppercase">Meta Global Loja</span>
+              </label>
+            </div>
+          </div>
+
+          <div id="wrapper-meta-loja" class="hidden">
+            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Valor da Meta Global da Loja (R$) *</label>
+            <input id="input-meta-valor-loja" type="text" value="0,00" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800 dark:text-slate-100 font-bold text-sm text-right" />
+          </div>
+
+          <!-- Seção de Faixas de Premiação -->
+          <div class="pt-3 border-t border-slate-100 dark:border-slate-800">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">Faixas de Premiação / Metas</h3>
+              <button id="btn-add-faixa" type="button" class="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-155 text-indigo-650 rounded-lg text-[10px] font-black uppercase tracking-wider transition">
+                + Adicionar Faixa
+              </button>
+            </div>
+            
+            <div class="space-y-2" id="container-faixas-premios">
+              <!-- Grid dinâmico de faixas -->
+              <div class="grid grid-cols-12 gap-2 items-center bg-slate-50 dark:bg-slate-950/40 p-3 rounded-xl border border-slate-150/40 dark:border-slate-800/40 target-faixa-row">
+                <div class="col-span-3">
+                  <input type="text" placeholder="Nome Faixa" required class="input-faixa-nome w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg text-xs font-semibold text-slate-800 dark:text-slate-100" value="Bronze" />
+                </div>
+                <div class="col-span-3">
+                  <input type="text" placeholder="Valor Mín. (R$)" required class="input-faixa-valor w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg text-xs font-bold text-slate-800 dark:text-slate-100 text-right" value="10.000,00" />
+                </div>
+                <div class="col-span-4">
+                  <input type="text" placeholder="Recompensa / Bônus" class="input-faixa-recompensa w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg text-xs font-medium text-slate-800 dark:text-slate-100" value="Recompensa Bronze" />
+                </div>
+                <div class="col-span-1.5 flex items-center justify-center">
+                  <input type="color" class="input-faixa-cor w-7 h-7 rounded border border-slate-250 cursor-pointer" value="#b45309" />
+                </div>
+                <div class="col-span-0.5 flex justify-end">
+                  <button type="button" class="btn-remove-faixa text-rose-500 hover:text-rose-700 font-bold text-xs p-1">❌</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+            <button id="btn-meta-cancel" type="button" class="px-4 py-2.5 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 text-slate-500 hover:text-slate-700 font-bold text-xs rounded-xl transition uppercase">
+              Cancelar
+            </button>
+            <button id="btn-meta-submit" type="submit" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl transition shadow-lg shadow-emerald-600/20 uppercase tracking-wider flex items-center justify-center">
+              Criar Meta / Campanha
+            </button>
+          </div>
+        </form>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    // Aplicar máscaras
+    aplicarMascaraMonetaria(overlay.querySelector('#input-meta-valor-loja') as HTMLInputElement);
+    aplicarMascaraMonetaria(overlay.querySelector('.input-faixa-valor') as HTMLInputElement);
+
+    setTimeout(() => {
+      overlay.classList.add('opacity-100');
+      document.getElementById('nova-meta-card')?.classList.remove('scale-95');
+      document.getElementById('nova-meta-card')?.classList.add('scale-100');
+    }, 10);
+
+    // Toggle meta loja
+    overlay.querySelector('#input-meta-loja')?.addEventListener('change', (e) => {
+      const active = (e.target as HTMLInputElement).checked;
+      const wrap = document.getElementById('wrapper-meta-loja');
+      if (active) {
+        wrap?.classList.remove('hidden');
+      } else {
+        wrap?.classList.add('hidden');
+      }
+    });
+
+    // Add Faixa click
+    document.getElementById('btn-add-faixa')?.addEventListener('click', () => {
+      const container = document.getElementById('container-faixas-premios');
+      if (!container) return;
+
+      const row = document.createElement('div');
+      row.className = 'grid grid-cols-12 gap-2 items-center bg-slate-50 dark:bg-slate-950/40 p-3 rounded-xl border border-slate-150/40 dark:border-slate-800/40 target-faixa-row';
+      row.innerHTML = `
+        <div class="col-span-3">
+          <input type="text" placeholder="Nome Faixa" required class="input-faixa-nome w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg text-xs font-semibold text-slate-800 dark:text-slate-100" />
+        </div>
+        <div class="col-span-3">
+          <input type="text" placeholder="Valor Mín. (R$)" required class="input-faixa-valor w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg text-xs font-bold text-slate-800 dark:text-slate-100 text-right" value="0,00" />
+        </div>
+        <div class="col-span-4">
+          <input type="text" placeholder="Recompensa / Bônus" class="input-faixa-recompensa w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg text-xs font-medium text-slate-800 dark:text-slate-100" />
+        </div>
+        <div class="col-span-1.5 flex items-center justify-center">
+          <input type="color" class="input-faixa-cor w-7 h-7 rounded border border-slate-250 cursor-pointer" value="#6366f1" />
+        </div>
+        <div class="col-span-0.5 flex justify-end">
+          <button type="button" class="btn-remove-faixa text-rose-500 hover:text-rose-700 font-bold text-xs p-1">❌</button>
+        </div>
+      `;
+      container.appendChild(row);
+      aplicarMascaraMonetaria(row.querySelector('.input-faixa-valor') as HTMLInputElement);
+
+      row.querySelector('.btn-remove-faixa')?.addEventListener('click', () => {
+        row.remove();
+      });
+    });
+
+    // Remove first row trigger
+    overlay.querySelector('.btn-remove-faixa')?.addEventListener('click', (e) => {
+      (e.target as HTMLElement).closest('.target-faixa-row')?.remove();
+    });
+
+    document.getElementById('btn-meta-cancel')?.addEventListener('click', () => this.fecharModalNovaMeta());
+
+    const form = document.getElementById('form-nova-meta') as HTMLFormElement;
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const submitBtn = document.getElementById('btn-meta-submit') as HTMLButtonElement;
+      const nome = (document.getElementById('input-meta-nome') as HTMLInputElement).value;
+      const dataInicio = (document.getElementById('input-meta-inicio') as HTMLInputElement).value;
+      const dataFim = (document.getElementById('input-meta-fim') as HTMLInputElement).value;
+      const tipoCalculo = (document.getElementById('select-meta-calculo') as HTMLSelectElement).value;
+      const isCampanha = (document.getElementById('input-meta-campanha') as HTMLInputElement).checked;
+      const isMetaLoja = (document.getElementById('input-meta-loja') as HTMLInputElement).checked;
+      const valorMetaLojaRaw = (document.getElementById('input-meta-valor-loja') as HTMLInputElement).value;
+      const valorMetaLoja = isMetaLoja ? (parseBrFloat(valorMetaLojaRaw) || 0) : 0;
+
+      const faixas: MetaFaixa[] = [];
+      const rows = document.querySelectorAll('.target-faixa-row');
+      rows.forEach(row => {
+        const fNome = (row.querySelector('.input-faixa-nome') as HTMLInputElement).value;
+        const fValorRaw = (row.querySelector('.input-faixa-valor') as HTMLInputElement).value;
+        const fValor = parseBrFloat(fValorRaw) || 0;
+        const fRecompensa = (row.querySelector('.input-faixa-recompensa') as HTMLInputElement).value || '';
+        const fCor = (row.querySelector('.input-faixa-cor') as HTMLInputElement).value || '#6366f1';
+        if (fNome && fValor > 0) {
+          faixas.push({
+            nome: fNome,
+            valor_minimo: fValor,
+            bonus_xp: Math.round(fValor * 0.1),
+            recompensa: fRecompensa,
+            cor: fCor
+          });
+        }
+      });
+
+      if (faixas.length === 0) {
+        this.showToast('Por favor, adicione pelo menos uma faixa de premiação válida.', 'error');
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Criando...';
+
+      try {
+        await MetasService.criarMetaPeriodo({
+          nome,
+          data_inicio: dataInicio,
+          data_fim: dataFim,
+          tipo_calculo: tipoCalculo,
+          is_campanha: isCampanha,
+          is_meta_loja: isMetaLoja,
+          valor_meta: valorMetaLoja
+        }, faixas);
+
+        this.showToast('Período de meta criado com sucesso!', 'success');
+        this.fecharModalNovaMeta();
+        await this.loadMetas();
+        this.render();
+        this.setupEventListeners();
+      } catch (err: any) {
+        console.error('Erro ao criar metas:', err);
+        this.showToast('Erro ao criar período de metas.', 'error');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Criar Meta / Campanha';
+      }
+    });
+  }
+
+  private fecharModalNovaMeta(): void {
+    const overlay = document.getElementById('nova-meta-overlay');
+    if (!overlay) return;
+    document.getElementById('nova-meta-card')?.classList.remove('scale-100');
+    document.getElementById('nova-meta-card')?.classList.add('scale-95');
+    overlay.classList.remove('opacity-100');
+    overlay.classList.add('opacity-0');
+    setTimeout(() => {
+      overlay.remove();
+    }, 300);
+  }
+
+  private abrirModalEditarMeta(metaId: string): void {
+    const meta = this.metas.find(m => m.id === metaId);
+    if (!meta) {
+      this.showToast('Meta não encontrada.', 'error');
+      return;
+    }
+
+    const aplicarMascaraMonetaria = (inputEl: HTMLInputElement) => {
+      inputEl.addEventListener('input', (e) => {
+        const target = e.target as HTMLInputElement;
+        let val = target.value;
+        let digits = val.replace(/\D/g, '');
+        if (digits.length > 12) {
+          digits = digits.slice(0, 12);
+        }
+        if (!digits) {
+          target.value = '0,00';
+          return;
+        }
+        const num = parseInt(digits, 10) / 100;
+        target.value = num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      });
+    };
+
+    const overlay = document.createElement('div');
+    overlay.id = 'editar-meta-overlay';
+    overlay.className = 'fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all duration-300 opacity-0';
+
+    const renderFaixasHTML = (meta.faixas || []).map(f => {
+      const formattedMin = f.valor_minimo.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+      return `
+        <div class="grid grid-cols-12 gap-2 items-center bg-slate-50 dark:bg-slate-950/40 p-3 rounded-xl border border-slate-150/40 dark:border-slate-800/40 target-faixa-row">
+          <div class="col-span-3">
+            <input type="text" placeholder="Nome Faixa" required class="input-faixa-nome w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg text-xs font-semibold text-slate-800 dark:text-slate-100" value="${f.nome}" />
+          </div>
+          <div class="col-span-3">
+            <input type="text" placeholder="Valor Mín. (R$)" required class="input-faixa-valor w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg text-xs font-bold text-slate-800 dark:text-slate-100 text-right" value="${formattedMin}" />
+          </div>
+          <div class="col-span-4">
+            <input type="text" placeholder="Recompensa / Bônus" class="input-faixa-recompensa w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg text-xs font-medium text-slate-800 dark:text-slate-100" value="${f.recompensa || ''}" />
+          </div>
+          <div class="col-span-1.5 flex items-center justify-center">
+            <input type="color" class="input-faixa-cor w-7 h-7 rounded border border-slate-250 cursor-pointer" value="${f.cor || '#6366f1'}" />
+          </div>
+          <div class="col-span-0.5 flex justify-end">
+            <button type="button" class="btn-remove-faixa text-rose-500 hover:text-rose-700 font-bold text-xs p-1">❌</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    overlay.innerHTML = `
+      <div class="bg-white dark:bg-slate-900 w-full max-w-[550px] rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 transform scale-95 transition-all duration-300 flex flex-col max-h-[90vh] overflow-y-auto custom-scrollbar" id="editar-meta-card">
+        
+        <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-500 via-teal-500 to-indigo-600"></div>
+
+        <div class="p-6 border-b border-slate-100 dark:border-slate-800 text-center flex flex-col items-center">
+          <div class="w-12 h-12 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 font-bold rounded-2xl flex items-center justify-center text-xl border border-indigo-100 mb-3">
+            ✏️
+          </div>
+          <h2 class="text-lg font-black text-slate-800 dark:text-slate-100 tracking-tight leading-snug">Editar Período de Metas</h2>
+          <p class="text-xs text-slate-400 dark:text-slate-400 font-semibold mt-1">Atualize as regras e faixas de premiação</p>
+        </div>
+
+        <form id="form-editar-meta" class="p-6 space-y-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Nome do Período *</label>
+            <input id="input-meta-nome" type="text" required value="${meta.nome}" placeholder="Ex: Metas de Agosto 2026, Campanha Ouro..." class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Data de Início *</label>
+              <input id="input-meta-inicio" type="date" required value="${meta.data_inicio}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Data de Fim *</label>
+              <input id="input-meta-fim" type="date" required value="${meta.data_fim}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Cálculo baseado em *</label>
+              <select id="select-meta-calculo" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800 dark:text-slate-100 font-semibold text-sm">
+                <option value="bruto" ${meta.tipo_calculo === 'bruto' ? 'selected' : ''}>Faturamento Bruto (Total das Vendas)</option>
+                <option value="liquido" ${meta.tipo_calculo === 'liquido' ? 'selected' : ''}>Markup / Lucro Estimado</option>
+              </select>
+            </div>
+
+            <div class="flex items-center gap-6 pt-5">
+              <label class="flex items-center gap-2 cursor-pointer select-none">
+                <input id="input-meta-campanha" type="checkbox" ${meta.is_campanha ? 'checked' : ''} class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 h-4.5 w-4.5" />
+                <span class="text-xs text-slate-600 dark:text-slate-400 font-bold uppercase">É Campanha</span>
+              </label>
+              <label class="flex items-center gap-2 cursor-pointer select-none">
+                <input id="input-meta-loja" type="checkbox" ${meta.is_meta_loja ? 'checked' : ''} class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 h-4.5 w-4.5" />
+                <span class="text-xs text-slate-600 dark:text-slate-400 font-bold uppercase">Meta Global Loja</span>
+              </label>
+            </div>
+          </div>
+
+          <div id="wrapper-meta-loja" class="${meta.is_meta_loja ? '' : 'hidden'}">
+            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Valor da Meta Global da Loja (R$) *</label>
+            <input id="input-meta-valor-loja" type="text" value="${(meta.valor_meta || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800 dark:text-slate-100 font-bold text-sm text-right" />
+          </div>
+
+          <!-- Seção de Faixas de Premiação -->
+          <div class="pt-3 border-t border-slate-100 dark:border-slate-800">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">Faixas de Premiação / Metas</h3>
+              <button id="btn-add-faixa" type="button" class="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-155 text-indigo-650 rounded-lg text-[10px] font-black uppercase tracking-wider transition">
+                + Adicionar Faixa
+              </button>
+            </div>
+            
+            <div class="space-y-2" id="container-faixas-premios">
+              ${renderFaixasHTML}
+            </div>
+          </div>
+
+          <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+            <button id="btn-meta-cancel" type="button" class="px-4 py-2.5 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 text-slate-500 hover:text-slate-700 font-bold text-xs rounded-xl transition uppercase">
+              Cancelar
+            </button>
+            <button id="btn-meta-submit" type="submit" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl transition shadow-lg shadow-emerald-600/20 uppercase tracking-wider flex items-center justify-center">
+              Salvar Alterações
+            </button>
+          </div>
+        </form>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    aplicarMascaraMonetaria(overlay.querySelector('#input-meta-valor-loja') as HTMLInputElement);
+    overlay.querySelectorAll('.input-faixa-valor').forEach(inp => aplicarMascaraMonetaria(inp as HTMLInputElement));
+
+    setTimeout(() => {
+      overlay.classList.add('opacity-100');
+      document.getElementById('editar-meta-card')?.classList.remove('scale-95');
+      document.getElementById('editar-meta-card')?.classList.add('scale-100');
+    }, 10);
+
+    // Toggle meta loja
+    overlay.querySelector('#input-meta-loja')?.addEventListener('change', (e) => {
+      const active = (e.target as HTMLInputElement).checked;
+      const wrap = document.getElementById('wrapper-meta-loja');
+      if (active) {
+        wrap?.classList.remove('hidden');
+      } else {
+        wrap?.classList.add('hidden');
+      }
+    });
+
+    // Add Faixa click
+    document.getElementById('btn-add-faixa')?.addEventListener('click', () => {
+      const container = document.getElementById('container-faixas-premios');
+      if (!container) return;
+
+      const row = document.createElement('div');
+      row.className = 'grid grid-cols-12 gap-2 items-center bg-slate-50 dark:bg-slate-950/40 p-3 rounded-xl border border-slate-150/40 dark:border-slate-800/40 target-faixa-row';
+      row.innerHTML = `
+        <div class="col-span-3">
+          <input type="text" placeholder="Nome Faixa" required class="input-faixa-nome w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg text-xs font-semibold text-slate-800 dark:text-slate-100" />
+        </div>
+        <div class="col-span-3">
+          <input type="text" placeholder="Valor Mín. (R$)" required class="input-faixa-valor w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg text-xs font-bold text-slate-800 dark:text-slate-100 text-right" value="0,00" />
+        </div>
+        <div class="col-span-4">
+          <input type="text" placeholder="Recompensa / Bônus" class="input-faixa-recompensa w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg text-xs font-medium text-slate-800 dark:text-slate-100" />
+        </div>
+        <div class="col-span-1.5 flex items-center justify-center">
+          <input type="color" class="input-faixa-cor w-7 h-7 rounded border border-slate-250 cursor-pointer" value="#6366f1" />
+        </div>
+        <div class="col-span-0.5 flex justify-end">
+          <button type="button" class="btn-remove-faixa text-rose-500 hover:text-rose-700 font-bold text-xs p-1">❌</button>
+        </div>
+      `;
+      container.appendChild(row);
+      aplicarMascaraMonetaria(row.querySelector('.input-faixa-valor') as HTMLInputElement);
+
+      row.querySelector('.btn-remove-faixa')?.addEventListener('click', () => {
+        row.remove();
+      });
+    });
+
+    // Remove row triggers
+    overlay.querySelectorAll('.btn-remove-faixa').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        (e.target as HTMLElement).closest('.target-faixa-row')?.remove();
+      });
+    });
+
+    document.getElementById('btn-meta-cancel')?.addEventListener('click', () => this.fecharModalEditarMeta());
+
+    const form = document.getElementById('form-editar-meta') as HTMLFormElement;
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const submitBtn = document.getElementById('btn-meta-submit') as HTMLButtonElement;
+      const nome = (document.getElementById('input-meta-nome') as HTMLInputElement).value;
+      const dataInicio = (document.getElementById('input-meta-inicio') as HTMLInputElement).value;
+      const dataFim = (document.getElementById('input-meta-fim') as HTMLInputElement).value;
+      const tipoCalculo = (document.getElementById('select-meta-calculo') as HTMLSelectElement).value;
+      const isCampanha = (document.getElementById('input-meta-campanha') as HTMLInputElement).checked;
+      const isMetaLoja = (document.getElementById('input-meta-loja') as HTMLInputElement).checked;
+      const valorMetaLojaRaw = (document.getElementById('input-meta-valor-loja') as HTMLInputElement).value;
+      const valorMetaLoja = isMetaLoja ? (parseBrFloat(valorMetaLojaRaw) || 0) : 0;
+
+      const faixas: MetaFaixa[] = [];
+      const rows = document.querySelectorAll('.target-faixa-row');
+      rows.forEach(row => {
+        const fNome = (row.querySelector('.input-faixa-nome') as HTMLInputElement).value;
+        const fValorRaw = (row.querySelector('.input-faixa-valor') as HTMLInputElement).value;
+        const fValor = parseBrFloat(fValorRaw) || 0;
+        const fRecompensa = (row.querySelector('.input-faixa-recompensa') as HTMLInputElement).value || '';
+        const fCor = (row.querySelector('.input-faixa-cor') as HTMLInputElement).value || '#6366f1';
+        if (fNome && fValor > 0) {
+          faixas.push({
+            nome: fNome,
+            valor_minimo: fValor,
+            bonus_xp: Math.round(fValor * 0.1),
+            recompensa: fRecompensa,
+            cor: fCor
+          });
+        }
+      });
+
+      if (faixas.length === 0) {
+        this.showToast('Por favor, adicione pelo menos uma faixa de premiação válida.', 'error');
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Salvando...';
+
+      try {
+        await MetasService.atualizarMetaPeriodo(meta.id, {
+          nome,
+          data_inicio: dataInicio,
+          data_fim: dataFim,
+          tipo_calculo: tipoCalculo,
+          is_campanha: isCampanha,
+          is_meta_loja: isMetaLoja,
+          valor_meta: valorMetaLoja
+        }, faixas);
+
+        this.showToast('Período de meta atualizado com sucesso!', 'success');
+        this.fecharModalEditarMeta();
+        await this.loadMetas();
+        this.render();
+        this.setupEventListeners();
+      } catch (err: any) {
+        console.error('Erro ao atualizar metas:', err);
+        this.showToast('Erro ao atualizar período de metas.', 'error');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Salvar Alterações';
+      }
+    });
+  }
+
+  private fecharModalEditarMeta(): void {
+    const overlay = document.getElementById('editar-meta-overlay');
+    if (!overlay) return;
+    document.getElementById('editar-meta-card')?.classList.remove('scale-100');
+    document.getElementById('editar-meta-card')?.classList.add('scale-95');
+    overlay.classList.remove('opacity-100');
+    overlay.classList.add('opacity-0');
+    setTimeout(() => {
+      overlay.remove();
+    }, 300);
   }
 }
