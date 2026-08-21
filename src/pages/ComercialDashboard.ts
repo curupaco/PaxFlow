@@ -4,6 +4,7 @@ import { getAvatarSvg, mesclarAvataresLocais } from '../services/avatars';
 import { showCustomConfirm } from '../services/dialog';
 import { MetasService } from '../services/metasService';
 import { parseBrFloat } from '../services/csvImporter';
+import { renderHelpIcon } from '../utils/helpHelper';
 
 // Injeta estilos específicos premium para o Dashboard de Relatórios
 if (typeof document !== 'undefined') {
@@ -1402,7 +1403,7 @@ export class ComercialDashboard {
           <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/60 pb-3.5 mb-4">
             <div>
               <h3 class="text-sm font-black text-slate-800 dark:text-slate-100">Seu Progresso de Metas</h3>
-              <p class="text-[10px] text-slate-400 dark:text-slate-550 font-bold uppercase tracking-wider mt-0.5">${currentMeta.nome} &bull; Base: ${currentMeta.tipo_calculo === 'bruto' ? 'Faturamento Bruto' : 'Lucro Real'}</p>
+              <p class="text-[10px] text-slate-400 dark:text-slate-550 font-bold uppercase tracking-wider mt-0.5">${currentMeta.nome} &bull; Base: ${currentMeta.tipo_calculo === 'bruto' ? 'Faturamento Bruto' : 'Lucro Real'} ${renderHelpIcon('tipo-calculo-meta')}</p>
             </div>
             <div class="p-2.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-2xl text-lg">🏆</div>
           </div>
@@ -1458,7 +1459,7 @@ export class ComercialDashboard {
                 </div>
 
                 <div class="text-center w-full">
-                  <span class="text-[10px] font-black text-slate-400 dark:text-slate-550 uppercase tracking-widest block">Acumulado da Equipe</span>
+                  <span class="text-[10px] font-black text-slate-400 dark:text-slate-550 uppercase tracking-widest block">Acumulado da Equipe ${renderHelpIcon('acumulado-equipe')}</span>
                   <span class="text-xl font-black text-slate-800 dark:text-slate-100 mt-1 block">
                     R$ ${agencyTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </span>

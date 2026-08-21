@@ -26,13 +26,25 @@ class App {
     this.container = container;
     this.sidebarCollapsed = localStorage.getItem('paxflow-sidebar-collapsed') === 'true';
     
-    // Delegação global de eventos para alternância de tema
-    document.addEventListener('click', (e) => {
+    // Delegação global de eventos (alternância de tema e atalhos de ajuda)
+    document.addEventListener('click', async (e) => {
       const target = e.target as HTMLElement;
-      const btn = target.closest('#theme-toggle-btn');
-      if (btn) {
+      
+      const themeBtn = target.closest('#theme-toggle-btn');
+      if (themeBtn) {
         e.preventDefault();
         this.toggleTheme();
+        return;
+      }
+
+      const helpShortcut = target.closest('.help-shortcut');
+      if (helpShortcut) {
+        e.preventDefault();
+        const helpId = helpShortcut.getAttribute('data-help-id');
+        if (helpId) {
+          const { HelpModal } = await import('./components/help/HelpModal');
+          HelpModal.open(helpId);
+        }
       }
     });
 
@@ -409,6 +421,14 @@ class App {
                   <span class="${this.sidebarCollapsed ? 'md:hidden' : ''}">Configurações</span>
                 </button>
               ` : ''}
+
+              <!-- Link: Central de Ajuda -->
+              <button id="nav-ajuda" class="w-full px-4 py-2 rounded-xl flex items-center justify-center ${this.sidebarCollapsed ? '' : 'md:justify-start'} gap-3 font-semibold text-xs text-left transition select-none group">
+                <svg width="20" height="20" class="w-5 h-5 text-slate-400 group-hover:text-slate-650 dark:text-slate-550 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span class="${this.sidebarCollapsed ? 'md:hidden' : ''}">Central de Ajuda</span>
+              </button>
 
             </div>
 
@@ -906,6 +926,12 @@ class App {
         this.navigate(page);
         this.toggleMobileMenu(false);
       });
+    });
+
+    document.getElementById('nav-ajuda')?.addEventListener('click', async () => {
+      const { HelpModal } = await import('./components/help/HelpModal');
+      HelpModal.open();
+      this.toggleMobileMenu(false);
     });
   }
 
