@@ -1260,6 +1260,19 @@ export class ConfiguracoesPage {
               <span>Conteúdo da Mensagem *</span>
               <span class="text-[9px] text-slate-400 dark:text-slate-400 font-semibold lowercase">variáveis suportadas: {{cliente}}, {{destino}}, {{localizador}}, etc.</span>
             </label>
+            <div class="flex flex-wrap gap-1.5 mb-2.5 select-none" id="container-variaveis-pills">
+              <span class="var-pill cursor-pointer px-2 py-1 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-650 dark:text-indigo-400 rounded-lg text-[9px] font-bold border border-indigo-100/50 dark:border-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900 transition flex items-center gap-1" draggable="true" data-var="{{cliente}}">📋 {{cliente}}</span>
+              <span class="var-pill cursor-pointer px-2 py-1 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-650 dark:text-indigo-400 rounded-lg text-[9px] font-bold border border-indigo-100/50 dark:border-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900 transition flex items-center gap-1" draggable="true" data-var="{{destino}}">✈️ {{destino}}</span>
+              <span class="var-pill cursor-pointer px-2 py-1 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-650 dark:text-indigo-400 rounded-lg text-[9px] font-bold border border-indigo-100/50 dark:border-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900 transition flex items-center gap-1" draggable="true" data-var="{{localizador}}">🔑 {{localizador}}</span>
+              <span class="var-pill cursor-pointer px-2 py-1 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-650 dark:text-indigo-400 rounded-lg text-[9px] font-bold border border-indigo-100/50 dark:border-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900 transition flex items-center gap-1" draggable="true" data-var="{{consultor}}">👤 {{consultor}}</span>
+              <span class="var-pill cursor-pointer px-2 py-1 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-650 dark:text-indigo-400 rounded-lg text-[9px] font-bold border border-indigo-100/50 dark:border-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900 transition flex items-center gap-1" draggable="true" data-var="{{link_itinerario}}">🔗 {{link_itinerario}}</span>
+              <span class="var-pill cursor-pointer px-2 py-1 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-650 dark:text-indigo-400 rounded-lg text-[9px] font-bold border border-indigo-100/50 dark:border-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900 transition flex items-center gap-1" draggable="true" data-var="{{link_feedback}}">⭐ {{link_feedback}}</span>
+              <span class="var-pill cursor-pointer px-2 py-1 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-650 dark:text-indigo-400 rounded-lg text-[9px] font-bold border border-indigo-100/50 dark:border-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900 transition flex items-center gap-1" draggable="true" data-var="{{data_ida}}">📅 {{data_ida}}</span>
+              <span class="var-pill cursor-pointer px-2 py-1 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-650 dark:text-indigo-400 rounded-lg text-[9px] font-bold border border-indigo-100/50 dark:border-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900 transition flex items-center gap-1" draggable="true" data-var="{{data_volta}}">📅 {{data_volta}}</span>
+              <span class="var-pill cursor-pointer px-2 py-1 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-650 dark:text-indigo-400 rounded-lg text-[9px] font-bold border border-indigo-100/50 dark:border-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900 transition flex items-center gap-1" draggable="true" data-var="{{valor_total}}">💰 {{valor_total}}</span>
+              <span class="var-pill cursor-pointer px-2 py-1 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-650 dark:text-indigo-400 rounded-lg text-[9px] font-bold border border-indigo-100/50 dark:border-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900 transition flex items-center gap-1" draggable="true" data-var="{{nome_agencia}}">🏢 {{nome_agencia}}</span>
+              <span class="var-pill cursor-pointer px-2 py-1 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-650 dark:text-indigo-400 rounded-lg text-[9px] font-bold border border-indigo-100/50 dark:border-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900 transition flex items-center gap-1" draggable="true" data-var="{{contato_consultor}}">📞 {{contato_consultor}}</span>
+            </div>
             <textarea id="input-tem-conteudo" required rows="6" placeholder="Olá, {{cliente}}! Como foi sua viagem para {{destino}}?..." class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs resize-none">${editando ? editando.conteudo : ''}</textarea>
           </div>
 
@@ -1282,6 +1295,53 @@ export class ConfiguracoesPage {
     `;
 
     document.body.appendChild(overlay);
+
+    // Configurar Drag & Drop e Clique nas variáveis
+    const textarea = overlay.querySelector('#input-tem-conteudo') as HTMLTextAreaElement;
+    const inputVariaveis = overlay.querySelector('#input-tem-variaveis') as HTMLInputElement;
+    const pills = overlay.querySelectorAll('.var-pill');
+
+    const sincronizarVariavelNoInput = (varName: string) => {
+      const cleanVarName = varName.replace(/[{}]/g, '').trim();
+      const currentVars = inputVariaveis.value.split(',').map(v => v.trim()).filter(v => v !== '');
+      if (!currentVars.includes(cleanVarName)) {
+        currentVars.push(cleanVarName);
+        inputVariaveis.value = currentVars.join(', ');
+      }
+    };
+
+    const inserirTextoNaPosicaoCursor = (textoParaInserir: string) => {
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const originalText = textarea.value;
+      textarea.value = originalText.substring(0, start) + textoParaInserir + originalText.substring(end);
+      textarea.focus();
+      textarea.selectionStart = textarea.selectionEnd = start + textoParaInserir.length;
+      sincronizarVariavelNoInput(textoParaInserir);
+    };
+
+    pills.forEach(pill => {
+      pill.addEventListener('click', () => {
+        const varName = (pill as HTMLElement).dataset.var || '';
+        inserirTextoNaPosicaoCursor(varName);
+      });
+
+      pill.addEventListener('dragstart', (e: any) => {
+        e.dataTransfer.setData('text/plain', (pill as HTMLElement).dataset.var || '');
+      });
+    });
+
+    textarea.addEventListener('dragover', (e) => {
+      e.preventDefault();
+    });
+
+    textarea.addEventListener('drop', (e: any) => {
+      e.preventDefault();
+      const varName = e.dataTransfer.getData('text/plain');
+      if (varName && varName.startsWith('{{')) {
+        inserirTextoNaPosicaoCursor(varName);
+      }
+    });
 
     setTimeout(() => {
       overlay.classList.add('opacity-100');

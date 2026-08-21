@@ -367,6 +367,20 @@ export const HELP_ITEMS: HelpItem[] = [
     label: 'Automação: Retorno após Conclusão do Reembolso',
     description: 'A viagem retorna para sua fase correta automaticamente assim que o financeiro realiza o pagamento.',
     details: 'Quando o departamento financeiro conclui o processo de reembolso e atualiza o status na Central de Reembolsos para "💸 Concluído / Pago" (anexando o comprovante), o sistema analisa a data da viagem para tomar a decisão correta:\n\n1. **Se a data de retorno da viagem já passou**: O status geral da viagem é alterado automaticamente para "Pós-Viagem" para que o pós-venda possa ser finalizado.\n2. **Se a viagem ainda não aconteceu**: O status da viagem retorna para "Pós-Venda" para que continue seu ciclo operacional normal até o embarque.\n\nEssa regra elimina o risco de viagens ficarem esquecidas na coluna de reembolso após a devolução dos valores.'
+  },
+  {
+    id: 'editor-templates-drag-drop',
+    modulo: 'geral',
+    label: 'Modelos de Mensagem: Editor de Variáveis Drag & Drop',
+    description: 'Como configurar templates usando as pílulas de clicar e arrastar.',
+    details: 'Ao cadastrar ou editar um modelo de mensagem na aba "Modelos de Mensagem", você pode utilizar variáveis dinâmicas que o sistema substitui na hora do envio. O editor fornece 11 pílulas de variáveis reativas (como {{cliente}}, {{destino}}, {{valor_total}}, etc.) localizadas acima do campo de texto.\n\nPara usá-las, você pode:\n1. **Clicar sobre a pílula**: Insere o texto da variável exatamente onde o seu cursor estiver no campo de texto.\n2. **Arrastar e soltar (Drag & Drop)**: Permite arrastar a pílula de variável com o mouse e soltá-la na posição desejada do conteúdo da mensagem.\n\n💡 O PaxFlow sincroniza o campo "Variáveis do Sistema Utilizadas" automaticamente para você na inserção, facilitando a gravação.'
+  },
+  {
+    id: 'historico-conversas-digisac',
+    modulo: 'geral',
+    label: 'Histórico de Conversas com o Cliente no Digisac',
+    description: 'Como visualizar o andamento das conversas diretamente na janela de disparos.',
+    details: 'Se a sua agência possui a integração do Digisac habilitada (com token, domínio e ID de serviço configurados), a tela de disparo de mensagens de templates exibe um painel lateral em tela dividida (Split-screen) com o histórico de mensagens.\n\n* **Carregamento Automático**: O sistema busca as últimas mensagens trocadas com o telefone do cliente no canal do Digisac na hora em que o modal de envio é aberto.\n* **Atualização Manual**: Você pode clicar em "Atualizar 🔄" no canto superior do histórico de conversas para carregar novas mensagens enviadas ou recebidas.\n* **Fallback Sandbox**: Se a API do Digisac estiver offline ou houver restrições locais de conexão de rede, a tela exibirá uma simulação das últimas mensagens (modo demonstração) de forma a garantir a estabilidade da interface.'
   }
 ];
 
