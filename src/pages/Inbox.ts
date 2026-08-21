@@ -296,7 +296,7 @@ export class InboxPage {
             </div>
             <div>
               <h1 class="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight">Inbox</h1>
-              <p class="text-xs text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">Mensagens e Alertas</p>
+              <p class="text-xs text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wider">Mensagens e Alertas</p>
             </div>
           </div>
 
@@ -304,7 +304,7 @@ export class InboxPage {
             <!-- Seletor de Consultores (Apenas para Admins) -->
             ${this.perfil?.role === 'admin' ? `
               <div class="flex items-center gap-1.5 shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2.5 py-1.5 rounded-xl shadow-sm">
-                <span class="text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-500 select-none">Equipe:</span>
+                <span class="text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-400 select-none">Equipe:</span>
                 <select id="admin-consultant-select" class="text-xs font-bold bg-transparent text-slate-700 dark:text-slate-400 focus:outline-none cursor-pointer max-w-[150px]">
                   <option value="todos" ${this.selectedConsultantFilter === 'todos' ? 'selected' : ''}>Todos os Consultores</option>
                   ${this.consultants.map(c => `<option value="${c.id}" ${this.selectedConsultantFilter === c.id ? 'selected' : ''}>${c.nome}</option>`).join('')}
@@ -322,7 +322,7 @@ export class InboxPage {
             
             <div class="inbox-glass p-5 rounded-2xl shadow-sm flex items-center justify-between border border-white/60 dark:border-slate-900/60">
               <div>
-                <span class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Alertas Ativos</span>
+                <span class="block text-xs font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-1">Alertas Ativos</span>
                 <span class="text-3xl font-black text-slate-800 dark:text-slate-100 tracking-tight">${totalAtivos}</span>
               </div>
               <div class="p-3 bg-indigo-50 dark:bg-indigo-950/30 text-indigo-500 dark:text-indigo-400 rounded-xl">
@@ -335,7 +335,7 @@ export class InboxPage {
 
             <div class="inbox-glass p-5 rounded-2xl shadow-sm flex items-center justify-between">
               <div>
-                <span class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Agendados "Depois"</span>
+                <span class="block text-xs font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-1">Agendados "Depois"</span>
                 <span class="text-3xl font-black text-slate-800 dark:text-slate-100 tracking-tight">${totalManual}</span>
               </div>
               <div class="p-3 bg-indigo-50 dark:bg-indigo-950/30 text-indigo-500 dark:text-indigo-400 rounded-xl">
@@ -345,7 +345,7 @@ export class InboxPage {
 
             <div class="inbox-glass p-5 rounded-2xl shadow-sm flex items-center justify-between">
               <div>
-                <span class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Passaportes SLA</span>
+                <span class="block text-xs font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-1">Passaportes SLA</span>
                 <span class="text-3xl font-black text-slate-800 dark:text-slate-100 tracking-tight">${totalPassport}</span>
               </div>
               <div class="p-3 bg-amber-50 dark:bg-amber-950/30 text-amber-500 dark:text-amber-400 rounded-xl">
@@ -355,7 +355,7 @@ export class InboxPage {
 
             <div class="inbox-glass p-5 rounded-2xl shadow-sm flex items-center justify-between">
               <div>
-                <span class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Reembolsos SLA</span>
+                <span class="block text-xs font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-1">Reembolsos SLA</span>
                 <span class="text-3xl font-black text-slate-800 dark:text-slate-100 tracking-tight">${totalRefund}</span>
               </div>
               <div class="p-3 bg-rose-50 dark:bg-rose-950/30 text-rose-500 dark:text-rose-400 rounded-xl">
@@ -381,7 +381,7 @@ export class InboxPage {
               
               <!-- Folders glass card -->
               <div class="inbox-glass p-4 rounded-2xl shadow-sm space-y-2">
-                <h3 class="px-2 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Pastas</h3>
+                <h3 class="px-2 text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest mb-3">Pastas</h3>
                 
                 <button id="folder-ativos" class="w-full px-3 py-2.5 rounded-xl flex items-center justify-between text-xs font-bold transition select-none ${
                   this.activeTab === 'ativos' 
@@ -495,7 +495,7 @@ export class InboxPage {
               <div class="inbox-glass p-3 rounded-2xl shadow-sm flex flex-col sm:flex-row items-center gap-3">
                 <!-- Search -->
                 <div class="relative w-full flex-grow">
-                  <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
+                  <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-400">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                   </span>
                   <input id="inbox-search-input" type="text" placeholder="Buscar mensagens, passageiros ou destinos..." value="${this.searchQuery}" class="w-full text-xs font-semibold pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-700 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 transition" />
@@ -524,14 +524,14 @@ export class InboxPage {
                 <div class="space-y-3 custom-scrollbar overflow-y-auto max-h-[calc(100vh-310px)] pr-1">
                   ${this.filteredAlerts.length === 0 ? `
                     <div class="inbox-glass p-12 text-center rounded-2xl border border-slate-200/40 dark:border-slate-800/40">
-                      <div class="w-12 h-12 bg-slate-100 dark:bg-slate-900 text-slate-400 dark:text-slate-500 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                      <div class="w-12 h-12 bg-slate-100 dark:bg-slate-900 text-slate-400 dark:text-slate-400 rounded-2xl flex items-center justify-center mx-auto mb-3">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                           <rect width="20" height="16" x="2" y="4" rx="2" />
                           <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
                         </svg>
                       </div>
                       <h3 class="text-sm font-black text-slate-700 dark:text-slate-400 uppercase tracking-wide">Caixa Vazia</h3>
-                      <p class="text-xs text-slate-400 dark:text-slate-500 mt-1 font-medium">Nenhum alerta ou lembrete corresponde aos filtros atuais.</p>
+                      <p class="text-xs text-slate-400 dark:text-slate-400 mt-1 font-medium">Nenhum alerta ou lembrete corresponde aos filtros atuais.</p>
                     </div>
                   ` : this.filteredAlerts.map(a => {
                     let badgeClass = 'badge-gradient-indigo';
@@ -573,7 +573,7 @@ export class InboxPage {
                         <div class="flex-grow min-w-0 space-y-1">
                           <div class="flex items-center justify-between gap-2">
                             <span class="block text-xs font-black text-slate-800 dark:text-slate-200 truncate">${a.sender}</span>
-                            <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 whitespace-nowrap">${a.dateStr}</span>
+                            <span class="text-[10px] font-bold text-slate-400 dark:text-slate-400 whitespace-nowrap">${a.dateStr}</span>
                           </div>
 
                           <h4 class="text-sm font-extrabold text-slate-800 dark:text-slate-100 flex items-center gap-2">
@@ -588,7 +588,7 @@ export class InboxPage {
                           </p>
 
                           ${this.perfil?.role === 'admin' ? `
-                            <div class="flex items-center gap-1.5 pt-1 text-[9px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                            <div class="flex items-center gap-1.5 pt-1 text-[9px] font-extrabold text-slate-400 dark:text-slate-400 uppercase tracking-wider">
                               <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
                               Consultor: ${a.consultorNome}
                             </div>
@@ -903,7 +903,7 @@ export class InboxPage {
           <div class="flex-grow flex flex-col gap-2 overflow-y-auto custom-scrollbar pr-0.5">
             ${dayAlerts.length === 0 ? `
               <div class="flex-grow flex flex-col items-center justify-center border border-dashed border-slate-200 dark:border-slate-800 rounded-xl p-3 text-center opacity-40">
-                <span class="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Sem Alertas</span>
+                <span class="text-[9px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest">Sem Alertas</span>
               </div>
             ` : dayAlerts.map(a => {
               let badgeClass = 'badge-gradient-indigo';
@@ -996,14 +996,14 @@ export class InboxPage {
     if (sortedDates.length === 0) {
       return `
         <div class="inbox-glass p-12 text-center rounded-2xl border border-slate-200/40 dark:border-slate-800/40">
-          <div class="w-12 h-12 bg-slate-100 dark:bg-slate-900 text-slate-400 dark:text-slate-500 rounded-2xl flex items-center justify-center mx-auto mb-3">
+          <div class="w-12 h-12 bg-slate-100 dark:bg-slate-900 text-slate-400 dark:text-slate-400 rounded-2xl flex items-center justify-center mx-auto mb-3">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
               <rect width="20" height="16" x="2" y="4" rx="2" />
               <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
             </svg>
           </div>
           <h3 class="text-sm font-black text-slate-700 dark:text-slate-400 uppercase tracking-wide">Agenda Vazia</h3>
-          <p class="text-xs text-slate-400 dark:text-slate-500 mt-1 font-medium">Nenhum evento futuro ou lembrete para exibir.</p>
+          <p class="text-xs text-slate-400 dark:text-slate-400 mt-1 font-medium">Nenhum evento futuro ou lembrete para exibir.</p>
         </div>
       `;
     }
@@ -1024,7 +1024,7 @@ export class InboxPage {
         <div class="agenda-day-group ${isToday ? 'today' : ''}">
           <div class="agenda-day-dot"></div>
           
-          <h4 class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+          <h4 class="text-xs font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
             <span>${formattedDate}</span>
             ${isToday ? '<span class="px-2 py-0.5 bg-indigo-600 dark:bg-indigo-600 text-white rounded text-[8px] font-black tracking-widest scale-90 uppercase">Hoje</span>' : ''}
           </h4>

@@ -452,7 +452,7 @@ export class ReembolsosPage {
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             <div class="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 p-5 rounded-2xl shadow-sm flex items-center justify-between">
               <div>
-                <span class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Total de Processos</span>
+                <span class="block text-xs font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider">Total de Processos</span>
                 <span class="text-2xl font-black text-slate-800 dark:text-slate-200">${totalReembolsos}</span>
               </div>
               <span class="p-3 bg-indigo-50 dark:bg-indigo-950/45 text-indigo-500 dark:text-indigo-400 rounded-xl text-lg font-bold">📋</span>
@@ -460,7 +460,7 @@ export class ReembolsosPage {
 
             <div class="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 p-5 rounded-2xl shadow-sm flex items-center justify-between">
               <div>
-                <span class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Aguardando Fornecedor</span>
+                <span class="block text-xs font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider">Aguardando Fornecedor</span>
                 <span class="text-2xl font-black text-amber-600 dark:text-amber-400">${aguardandoFornecedor}</span>
               </div>
               <span class="p-3 bg-amber-50 dark:bg-amber-950/45 text-amber-500 dark:text-amber-400 rounded-xl text-lg font-bold">⏳</span>
@@ -468,7 +468,7 @@ export class ReembolsosPage {
 
             <div class="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 p-5 rounded-2xl shadow-sm flex items-center justify-between">
               <div>
-                <span class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Reembolsos Pagos (Concluídos)</span>
+                <span class="block text-xs font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider">Reembolsos Pagos (Concluídos)</span>
                 <span class="text-2xl font-black text-emerald-600 dark:text-emerald-400">${concluidos}</span>
               </div>
               <span class="p-3 bg-emerald-50 dark:bg-emerald-950/45 text-emerald-500 dark:text-emerald-400 rounded-xl text-lg font-bold">✅</span>
@@ -476,7 +476,7 @@ export class ReembolsosPage {
 
             <div class="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 p-5 rounded-2xl shadow-sm flex items-center justify-between">
               <div>
-                <span class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Valor Pago (Aprovado)</span>
+                <span class="block text-xs font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider">Valor Pago (Aprovado)</span>
                 <span class="text-xl font-black text-indigo-600 dark:text-indigo-400">R$ ${somaTotalReembolsado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
               </div>
               <span class="p-3 bg-indigo-50 dark:bg-indigo-950/45 text-indigo-600 dark:text-indigo-400 rounded-xl text-lg font-bold">💰</span>
@@ -485,7 +485,7 @@ export class ReembolsosPage {
 
           <!-- Campo de Busca em Tempo Real -->
           <div class="relative max-w-md">
-            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
+            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-400">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
@@ -503,7 +503,7 @@ export class ReembolsosPage {
             </div>
 
             ${filtrados.length === 0 ? `
-              <div class="p-12 text-center text-slate-400 dark:text-slate-500 text-xs font-semibold">
+              <div class="p-12 text-center text-slate-400 dark:text-slate-400 text-xs font-semibold">
                 Nenhuma solicitação de reembolso correspondente encontrada.
               </div>
             ` : `
@@ -516,7 +516,7 @@ export class ReembolsosPage {
               <div class="hidden md:block overflow-x-auto custom-scrollbar">
                 <table class="w-full text-left border-collapse">
                   <thead>
-                    <tr class="bg-slate-50 dark:bg-slate-800 text-[10px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
+                    <tr class="bg-slate-50 dark:bg-slate-800 text-[10px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
                       <th class="py-4 px-5">Cliente</th>
                       <th class="py-4 px-5">Viagem / Localizador</th>
                       <th class="py-4 px-5">Produto Cancelado</th>
@@ -540,7 +540,7 @@ export class ReembolsosPage {
                               ${(r.codigo_ref || r.codigoRef) ? `<span class="mr-1 text-[10px] font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-1 py-0.5 rounded border border-slate-200/50 dark:border-slate-800">${r.codigo_ref || r.codigoRef}</span>` : ''}
                               ${r.viagem?.cliente?.nome || 'Cliente Desconhecido'}
                             </span>
-                            <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-semibold">${r.viagem?.cliente?.email || 'Sem e-mail'}</span>
+                            <span class="block text-[10px] text-slate-400 dark:text-slate-400 font-semibold">${r.viagem?.cliente?.email || 'Sem e-mail'}</span>
                           </td>
                           
                           <!-- Viagem / Localizador -->
@@ -561,7 +561,7 @@ export class ReembolsosPage {
                           <!-- Produto Cancelado -->
                           <td class="py-4.5 px-5">
                             <span class="block text-slate-700 dark:text-slate-300 font-bold">[${(r.produto?.tipo || 'outro').toUpperCase()}]</span>
-                            <span class="block text-[11px] text-slate-400 dark:text-slate-500 font-medium truncate max-w-[160px]">${r.produto?.descricao || 'Sem descrição'}</span>
+                            <span class="block text-[11px] text-slate-400 dark:text-slate-400 font-medium truncate max-w-[160px]">${r.produto?.descricao || 'Sem descrição'}</span>
                           </td>
    
                           <!-- Fornecedor -->
@@ -651,7 +651,7 @@ export class ReembolsosPage {
               ${(r.codigo_ref || r.codigoRef) ? `<span class="mr-1 text-[10px] font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-1 py-0.5 rounded border border-slate-200/50 dark:border-slate-800">${r.codigo_ref || r.codigoRef}</span>` : ''}
               ${r.viagem?.cliente?.nome || 'Cliente Desconhecido'}
             </span>
-            <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-semibold">${r.viagem?.cliente?.email || 'Sem e-mail'}</span>
+            <span class="block text-[10px] text-slate-400 dark:text-slate-400 font-semibold">${r.viagem?.cliente?.email || 'Sem e-mail'}</span>
           </div>
           <div>
             ${isPago ? `
@@ -669,7 +669,7 @@ export class ReembolsosPage {
         <!-- Body: Travel + Product details -->
         <div class="grid grid-cols-2 gap-4 text-xs">
           <div class="space-y-1">
-            <span class="block text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Viagem & LOC</span>
+            <span class="block text-[8px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider">Viagem & LOC</span>
             <span class="block text-slate-800 dark:text-slate-200 font-bold">✈️ ${r.viagem?.destino || 'Sem Destino'}</span>
             <div class="flex items-center gap-1.5 mt-0.5">
               ${(r.viagem?.codigo_ref || r.viagem?.codigoRef) ? `
@@ -683,20 +683,20 @@ export class ReembolsosPage {
             </div>
           </div>
           <div class="space-y-1">
-            <span class="block text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Produto Cancelado</span>
+            <span class="block text-[8px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider">Produto Cancelado</span>
             <span class="block text-slate-700 dark:text-slate-300 font-bold">[${(r.produto?.tipo || 'outro').toUpperCase()}]</span>
-            <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-medium truncate max-w-[130px]" title="${r.produto?.descricao || ''}">${r.produto?.descricao || 'Sem descrição'}</span>
+            <span class="block text-[10px] text-slate-400 dark:text-slate-400 font-medium truncate max-w-[130px]" title="${r.produto?.descricao || ''}">${r.produto?.descricao || 'Sem descrição'}</span>
           </div>
         </div>
 
         <!-- Row: Provider & Value -->
         <div class="grid grid-cols-2 gap-4 bg-slate-50 dark:bg-slate-900/40 p-3 rounded-xl border border-slate-100 dark:border-slate-800/60 text-xs">
           <div>
-            <span class="block text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Fornecedor</span>
+            <span class="block text-[8px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider">Fornecedor</span>
             <span class="text-slate-700 dark:text-slate-300 font-bold">${r.produto?.fornecedor || 'Fornecedor n/d'}</span>
           </div>
           <div>
-            <span class="block text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Valor Solicitado</span>
+            <span class="block text-[8px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider">Valor Solicitado</span>
             <span class="text-indigo-600 dark:text-indigo-400 font-black text-sm">
               R$ ${Number(r.valor_solicitado || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </span>
@@ -706,11 +706,11 @@ export class ReembolsosPage {
         <!-- Row: Solicitation and SLA timer -->
         <div class="flex items-center justify-between text-xs border-t border-slate-100 dark:border-slate-800/60 pt-3">
           <div>
-            <span class="block text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Solicitação</span>
+            <span class="block text-[8px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider">Solicitação</span>
             <span class="text-slate-500 dark:text-slate-400 font-semibold">${formatarData(r.data_solicitacao)}</span>
           </div>
           <div>
-            <span class="block text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider text-right mb-0.5">SLA Cronômetro</span>
+            <span class="block text-[8px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider text-right mb-0.5">SLA Cronômetro</span>
             ${isPago ? `
               <span class="inline-block px-2.5 py-1 bg-emerald-50 dark:bg-emerald-950/45 text-emerald-700 dark:text-emerald-400 font-extrabold text-[9px] rounded-lg border border-emerald-100 dark:border-emerald-900/40">
                 ✅ Concluído em ${formatarData(r.data_resolucao)}

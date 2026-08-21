@@ -799,7 +799,7 @@ export class Dashboard {
             <div>
               <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Selecione o Produto a Cancelar *</label>
               <select id="select-produto" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-rose-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 font-medium">
-                <option value="" disabled selected class="text-slate-400 dark:text-slate-500">Escolha um produto da viagem...</option>
+                <option value="" disabled selected class="text-slate-400 dark:text-slate-400">Escolha um produto da viagem...</option>
                 ${produtos.map(p => `
                   <option value="${p.id}" data-valor="${p.valor_venda}" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">
                     [${p.tipo.toUpperCase()}] ${p.fornecedor} - ${p.descricao} (Venda: R$ ${Number(p.valor_venda || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })})
@@ -811,7 +811,7 @@ export class Dashboard {
             <div>
               <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Valor do Reembolso Solicitado (R$) *</label>
               ${renderCurrencyInputHTML('input-valor-reembolso', '')}
-              <p class="text-xs text-slate-400 dark:text-slate-500 mt-1.5 font-medium">Sugerido por padrão o valor integral de venda do produto.</p>
+              <p class="text-xs text-slate-400 dark:text-slate-400 mt-1.5 font-medium">Sugerido por padrão o valor integral de venda do produto.</p>
             </div>
 
             <div>
@@ -1000,7 +1000,7 @@ export class Dashboard {
             <div>
               <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Passageiro / Cliente *</label>
               <select id="select-viagem-cliente" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm">
-                <option value="" class="text-slate-400 dark:text-slate-500">Selecione o cliente...</option>
+                <option value="" class="text-slate-400 dark:text-slate-400">Selecione o cliente...</option>
                 ${clientes.map(c => `<option value="${c.id}" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">${c.nome}</option>`).join('')}
               </select>
             </div>
@@ -1517,19 +1517,19 @@ export class Dashboard {
             <!-- Stats Rápidos -->
             <div class="flex items-center gap-2 bg-slate-100/60 dark:bg-slate-800/40 p-1.5 rounded-xl border border-slate-200/30 dark:bg-slate-700/30 shrink-0">
               <div class="px-3.5 py-1.5 text-center">
-                <span class="block text-xs text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">Viagens</span>
+                <span class="block text-xs text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wider">Viagens</span>
                 <span class="text-sm font-black text-slate-700 dark:text-slate-200">${counts.todos}</span>
               </div>
               <div class="w-px h-6 bg-slate-200 dark:bg-slate-700"></div>
               <div class="px-3.5 py-1.5 text-center">
-                <span class="block text-xs text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">SLAs Ativos</span>
+                <span class="block text-xs text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wider">SLAs Ativos</span>
                 <span class="text-sm font-black ${totalSlaAlerts > 0 ? 'text-rose-600 animate-pulse' : 'text-slate-700 dark:text-slate-200'}">${totalSlaAlerts}</span>
               </div>
             </div>
 
             <!-- Campo de Busca de Viagens -->
             <div class="relative min-w-[200px] md:min-w-[280px] flex-1 sm:flex-initial">
-              <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
+              <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-400">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
@@ -1555,14 +1555,14 @@ export class Dashboard {
             <!-- Seletor de Consultores (Apenas para Admins) -->
             ${this.perfil?.role === 'admin' ? `
               <div class="flex items-center gap-1.5 shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2.5 py-1.5 rounded-xl shadow-sm">
-                <span class="text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-500 select-none">Equipe:</span>
+                <span class="text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-400 select-none">Equipe:</span>
                 <select id="select-dashboard-consultor" class="text-xs font-bold bg-transparent text-slate-700 dark:text-slate-400 focus:outline-none cursor-pointer max-w-[150px]">
                   <option value="todos" ${this.selectedConsultantId === 'todos' ? 'selected' : ''}>Todos os Consultores</option>
                   ${this.consultores.map(c => `<option value="${c.id}" ${this.selectedConsultantId === c.id ? 'selected' : ''}>${c.nome}</option>`).join('')}
                 </select>
               </div>
               <div class="flex items-center gap-1.5 shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2.5 py-1.5 rounded-xl shadow-sm">
-                <span class="text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-500 select-none">Conferência:</span>
+                <span class="text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-400 select-none">Conferência:</span>
                 <select id="select-dashboard-conferencia" class="text-xs font-bold bg-transparent text-slate-700 dark:text-slate-400 focus:outline-none cursor-pointer max-w-[170px]">
                   <option value="todos" ${this.selectedConferenceFilter === 'todos' ? 'selected' : ''}>Todas as Conferências</option>
                   <option value="nenhuma" ${this.selectedConferenceFilter === 'nenhuma' ? 'selected' : ''}>Nenhuma Conferência</option>
@@ -1580,7 +1580,7 @@ export class Dashboard {
           <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <!-- Data Financeiro -->
             <div class="space-y-2">
-              <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider block">📅 Data Financeiro</span>
+              <span class="text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider block">📅 Data Financeiro</span>
               <div class="flex items-center gap-2">
                 <input id="filter-fin-start" type="date" value="${this.dataFinStart}" class="w-full text-xs font-semibold px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500" />
                 <span class="text-xs text-slate-400">a</span>
@@ -1589,7 +1589,7 @@ export class Dashboard {
             </div>
             <!-- Embarque Ida -->
             <div class="space-y-2">
-              <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider block">✈️ Data de Embarque (Ida)</span>
+              <span class="text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider block">✈️ Data de Embarque (Ida)</span>
               <div class="flex items-center gap-2">
                 <input id="filter-ida-start" type="date" value="${this.dataIdaStart}" class="w-full text-xs font-semibold px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500" />
                 <span class="text-xs text-slate-400">a</span>
@@ -1598,7 +1598,7 @@ export class Dashboard {
             </div>
             <!-- Embarque Volta -->
             <div class="space-y-2">
-              <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider block">🚐 Data de Retorno (Volta)</span>
+              <span class="text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider block">🚐 Data de Retorno (Volta)</span>
               <div class="flex items-center gap-2">
                 <input id="filter-volta-start" type="date" value="${this.dataVoltaStart}" class="w-full text-xs font-semibold px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500" />
                 <span class="text-xs text-slate-400">a</span>
@@ -1630,7 +1630,7 @@ export class Dashboard {
             <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-12 text-center shadow-xs flex flex-col items-center justify-center space-y-4 flex-1">
               <div class="text-slate-300 dark:text-slate-700 text-5xl">✈️</div>
               <h3 class="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-wide">Nenhuma venda operacional localizada</h3>
-              <p class="text-xs text-slate-400 dark:text-slate-500 font-medium max-w-sm">Tente limpar os filtros de data, alterar o termo de busca ou selecionar outra aba de status.</p>
+              <p class="text-xs text-slate-400 dark:text-slate-400 font-medium max-w-sm">Tente limpar os filtros de data, alterar o termo de busca ou selecionar outra aba de status.</p>
             </div>
           ` : `
             <!-- Mobile View: Cards Layout (Visible only on mobile portrait) -->
@@ -1643,7 +1643,7 @@ export class Dashboard {
               <div class="overflow-auto flex-1 min-h-0 custom-scrollbar">
                 <table class="w-full text-left border-collapse min-w-[1000px]">
                   <thead>
-                    <tr class="bg-slate-50 dark:bg-slate-900 text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10 shadow-xs">
+                    <tr class="bg-slate-50 dark:bg-slate-900 text-[10px] font-black uppercase text-slate-400 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10 shadow-xs">
                       <th class="px-5 py-4 w-[80px] text-center">${this.renderSortHeader('SLA', 'sla')}</th>
                       <th class="px-5 py-4">${this.renderSortHeader('Cliente / LOC', 'cliente')}</th>
                       <th class="px-5 py-4">${this.renderSortHeader('Destino / Produtos', 'destino')}</th>
@@ -1651,7 +1651,7 @@ export class Dashboard {
                       <th class="px-5 py-4">${this.renderSortHeader('Financeiro', 'financeiro')}</th>
                       ${this.perfil?.role === 'admin' ? `<th class="px-5 py-4">${this.renderSortHeader('Consultor', 'consultor')}</th>` : ''}
                       <th class="px-5 py-4 w-[200px]">${this.renderSortHeader('Fase / Status', 'status')}</th>
-                      <th class="px-5 py-4 w-[160px] text-center text-slate-400 dark:text-slate-500 tracking-wider text-[10px] font-black">Ações</th>
+                      <th class="px-5 py-4 w-[160px] text-center text-slate-400 dark:text-slate-400 tracking-wider text-[10px] font-black">Ações</th>
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 text-xs font-semibold text-slate-600 dark:text-slate-300">
@@ -1676,7 +1676,7 @@ export class Dashboard {
     const isActive = this.activeStatusTab === statusKey;
     const activeClass = isActive
       ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400 font-black'
-      : 'border-transparent text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-400 font-bold hover:border-slate-300 dark:hover:border-slate-800';
+      : 'border-transparent text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-400 font-bold hover:border-slate-300 dark:hover:border-slate-800';
 
     return `
       <button class="tab-status-btn shrink-0 whitespace-nowrap px-4 py-3 border-b-2 text-xs transition duration-200 flex items-center gap-1.5 focus:outline-none ${activeClass}" data-status-key="${statusKey}">
@@ -1696,10 +1696,10 @@ export class Dashboard {
       : '⇅';
     const activeClass = isSorted
       ? 'text-indigo-600 dark:text-indigo-400 font-black'
-      : 'text-slate-300 dark:text-slate-600 group-hover:text-slate-400';
+      : 'text-slate-300 dark:text-slate-400 group-hover:text-slate-400';
 
     return `
-      <button class="btn-sort-column group inline-flex items-center gap-1.5 focus:outline-none uppercase tracking-wider text-[10px] font-black text-slate-400 dark:text-slate-500" data-sort-field="${field}">
+      <button class="btn-sort-column group inline-flex items-center gap-1.5 focus:outline-none uppercase tracking-wider text-[10px] font-black text-slate-400 dark:text-slate-400" data-sort-field="${field}">
         <span>${label}</span>
         <span class="${activeClass} text-[8px] transition-transform duration-200">${arrow}</span>
       </button>
@@ -1931,7 +1931,7 @@ Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : '
         <!-- Body: Destino, Datas e Produtos -->
         <div class="grid grid-cols-2 gap-3 text-xs">
           <div class="space-y-1">
-            <span class="block text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Destino & Viagem</span>
+            <span class="block text-[9px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider">Destino & Viagem</span>
             <div class="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1">
               ✈️ ${v.destino}
             </div>
@@ -1958,7 +1958,7 @@ Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : '
             ` : ''}
           </div>
           <div class="space-y-1">
-            <span class="block text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Período</span>
+            <span class="block text-[9px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider">Período</span>
             <div class="text-slate-700 dark:text-slate-300 font-semibold leading-tight">
               <div>${formatarData(v.data_ida)}</div>
               <div class="text-[10px] text-slate-400 font-medium">até</div>
@@ -1970,11 +1970,11 @@ Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : '
         <!-- Finance Info: Valor e Rentabilidade -->
         <div class="flex items-center justify-between bg-slate-50 dark:bg-slate-900/40 p-3 rounded-xl border border-slate-100 dark:border-slate-800/60 text-xs">
           <div>
-            <span class="block text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Valor Venda</span>
+            <span class="block text-[8px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider">Valor Venda</span>
             <span class="font-black text-indigo-600 dark:text-indigo-400 text-sm">R$ ${valorVenda.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
           </div>
           <div class="text-right">
-            <span class="block text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Rentabilidade</span>
+            <span class="block text-[8px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider">Rentabilidade</span>
             <span class="font-bold text-emerald-600 dark:text-emerald-400">R$ ${rentabilidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
           </div>
         </div>

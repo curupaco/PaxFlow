@@ -161,7 +161,7 @@ export class PublicViews {
             ⚠️
           </div>
           <h2 class="text-xl font-black text-slate-800 dark:text-slate-100 tracking-tight leading-tight">${titulo}</h2>
-          <p class="text-xs text-slate-400 dark:text-slate-500 font-semibold mt-2">${detalhe}</p>
+          <p class="text-xs text-slate-400 dark:text-slate-400 font-semibold mt-2">${detalhe}</p>
           <a href="#" class="mt-6 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl transition shadow-lg shadow-indigo-600/20 uppercase">
             Acessar PaxFlow
           </a>
@@ -193,7 +193,7 @@ export class PublicViews {
           <span class="text-3xl shrink-0">⏳</span>
           <div>
             <h3 class="text-sm font-extrabold text-slate-800 dark:text-slate-200">Faltam ${diffDays} dias para o embarque!</h3>
-            <p class="text-[11px] text-slate-400 dark:text-slate-500 font-medium mt-0.5">Sua contagem regressiva para ${data.destino} começou.</p>
+            <p class="text-[11px] text-slate-400 dark:text-slate-400 font-medium mt-0.5">Sua contagem regressiva para ${data.destino} começou.</p>
           </div>
         </div>
       `;
@@ -204,7 +204,7 @@ export class PublicViews {
           <span class="text-3xl shrink-0">✈️</span>
           <div>
             <h3 class="text-sm font-extrabold text-emerald-600 dark:text-emerald-400">Você está em viagem!</h3>
-            <p class="text-[11px] text-slate-400 dark:text-slate-500 font-medium mt-0.5">Aproveite ao máximo a sua estadia em ${data.destino}.</p>
+            <p class="text-[11px] text-slate-400 dark:text-slate-400 font-medium mt-0.5">Aproveite ao máximo a sua estadia em ${data.destino}.</p>
           </div>
         </div>
       `;
@@ -242,17 +242,17 @@ export class PublicViews {
                 <span class="inline-flex px-2.5 py-0.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 text-[9px] font-black uppercase rounded-md tracking-wider border border-indigo-100/30 dark:border-indigo-900/30">
                   ${p.tipo}
                 </span>
-                <span class="text-[10px] text-slate-400 dark:text-slate-500 font-bold">
+                <span class="text-[10px] text-slate-400 dark:text-slate-400 font-bold">
                   📅 ${formatarDataAmigavel(p.data_servico)}
                 </span>
               </div>
               
               <h4 class="text-sm font-black text-slate-800 dark:text-slate-200 mt-2.5 tracking-tight">${p.fornecedor}</h4>
-              <p class="text-xs text-slate-400 dark:text-slate-500 font-semibold mt-1 leading-relaxed">${p.descricao}</p>
+              <p class="text-xs text-slate-400 dark:text-slate-400 font-semibold mt-1 leading-relaxed">${p.descricao}</p>
               
               ${p.codigo_reserva ? `
                 <div class="mt-3.5 pt-3.5 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
-                  <span class="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">Localizador/Reserva</span>
+                  <span class="text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wider">Localizador/Reserva</span>
                   <div class="flex items-center gap-1.5">
                     <span id="loc-code-${idx}" class="text-xs font-black text-slate-800 dark:text-slate-300 font-mono tracking-wider bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-md select-all">${p.codigo_reserva}</span>
                     <button onclick="navigator.clipboard.writeText('${p.codigo_reserva}'); alert('Código copiado!')" class="p-1 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition" title="Copiar localizador">
@@ -267,7 +267,7 @@ export class PublicViews {
       }).join('');
     } else {
       timelineHTML = `
-        <div class="public-glass p-8 text-center rounded-2xl border border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-500 font-medium italic">
+        <div class="public-glass p-8 text-center rounded-2xl border border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-400 font-medium italic">
           Nenhum detalhe ou voucher inserido até o momento.
         </div>
       `;
@@ -284,7 +284,7 @@ export class PublicViews {
         <div class="public-glass p-5 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 flex items-center gap-4 mt-8">
           ${avatarSVG}
           <div class="flex-1 min-w-0">
-            <span class="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider block">Seu Consultor de Viagens</span>
+            <span class="text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wider block">Seu Consultor de Viagens</span>
             <h4 class="text-sm font-black text-slate-800 dark:text-slate-200 truncate leading-snug">${data.consultor_nome}</h4>
           </div>
           <a href="https://api.whatsapp.com/send?phone=&text=Olá, ${data.consultor_nome}! Estou com uma dúvida sobre meu itinerário para ${data.destino}." target="_blank" class="w-10 h-10 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 rounded-2xl flex items-center justify-center border border-emerald-100 dark:border-emerald-900/30 transition shrink-0 shadow-sm" title="Falar no WhatsApp">
@@ -325,7 +325,7 @@ export class PublicViews {
           ${countdownHTML}
 
           <!-- Linha do Tempo de Serviços -->
-          <h2 class="text-xs font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-4 pl-1">Cronograma de Serviços</h2>
+          <h2 class="text-xs font-black uppercase tracking-wider text-slate-400 dark:text-slate-400 mb-4 pl-1">Cronograma de Serviços</h2>
           
           <div class="flex flex-col">
             ${timelineHTML}
@@ -334,7 +334,7 @@ export class PublicViews {
           <!-- Card do Consultor -->
           ${consultorHTML}
 
-          <div class="mt-8 text-center text-[10px] text-slate-400 dark:text-slate-600 font-bold select-none pb-8">
+          <div class="mt-8 text-center text-[10px] text-slate-400 dark:text-slate-400 font-bold select-none pb-8">
             Gerado automaticamente por Thiago Costa & PaxFlow © 2026.
           </div>
         </main>
@@ -363,7 +363,7 @@ export class PublicViews {
               <span class="text-3xl">🌟</span>
             `}
             <h1 class="text-lg font-black text-slate-800 dark:text-slate-100 tracking-tight leading-tight mt-3">Sua opinião vale muito!</h1>
-            <p class="text-xs text-slate-400 dark:text-slate-500 font-semibold mt-1">Como foi sua viagem para <span class="text-indigo-600 dark:text-indigo-400 font-black">${data.destino}</span> com o atendimento de <span class="font-bold">${consultorNome}</span>?</p>
+            <p class="text-xs text-slate-400 dark:text-slate-400 font-semibold mt-1">Como foi sua viagem para <span class="text-indigo-600 dark:text-indigo-400 font-black">${data.destino}</span> com o atendimento de <span class="font-bold">${consultorNome}</span>?</p>
           </div>
 
           <form id="form-public-nps" class="space-y-6">
@@ -398,7 +398,7 @@ export class PublicViews {
               <input type="hidden" id="input-nps-score" required />
               
               <!-- Legendas -->
-              <div class="flex items-center justify-between text-[9px] text-slate-400 dark:text-slate-500 font-black uppercase mt-2.5 px-1">
+              <div class="flex items-center justify-between text-[9px] text-slate-400 dark:text-slate-400 font-black uppercase mt-2.5 px-1">
                 <span>0 - Nunca recomendaria</span>
                 <span>10 - Recomendo com certeza</span>
               </div>
@@ -506,11 +506,11 @@ export class PublicViews {
             🙏
           </div>
           <h2 class="text-xl font-black text-slate-800 dark:text-slate-100 tracking-tight leading-tight">Muito obrigado pelo feedback!</h2>
-          <p class="text-xs text-slate-400 dark:text-slate-500 font-semibold mt-3 leading-relaxed">
+          <p class="text-xs text-slate-400 dark:text-slate-400 font-semibold mt-3 leading-relaxed">
             Sua opinião sobre a viagem para <span class="font-bold text-indigo-600 dark:text-indigo-400">${data.destino}</span> foi enviada e nos ajudará a aprimorar cada vez mais nossa consultoria de viagens.
           </p>
           
-          <div class="mt-8 text-center text-[10px] text-slate-400 dark:text-slate-600 font-bold select-none">
+          <div class="mt-8 text-center text-[10px] text-slate-400 dark:text-slate-400 font-bold select-none">
             PaxFlow © 2026.
           </div>
         </div>

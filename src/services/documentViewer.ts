@@ -41,7 +41,7 @@ export class DocumentViewer {
             <span class="text-xl p-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 rounded-lg flex items-center justify-center shrink-0">📄</span>
             <div class="overflow-hidden">
               <h3 class="text-sm font-black text-slate-800 dark:text-slate-100 truncate tracking-tight leading-tight">${fileName}</h3>
-              <p class="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-0.5">Visualizador de Documentos PaxFlow</p>
+              <p class="text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wider mt-0.5">Visualizador de Documentos PaxFlow</p>
             </div>
           </div>
           
@@ -179,7 +179,7 @@ export class DocumentViewer {
           <div class="text-rose-500 text-4xl mb-3">⚠️</div>
           <h3 class="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight mb-2">Visualização Indisponível</h3>
           <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold mb-4 leading-normal">${friendlyErrorMessage}</p>
-          <div class="text-[10px] text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-950 p-2.5 rounded border border-slate-200 dark:border-slate-800 font-mono text-left truncate w-full">
+          <div class="text-[10px] text-slate-400 dark:text-slate-400 bg-slate-50 dark:bg-slate-950 p-2.5 rounded border border-slate-200 dark:border-slate-800 font-mono text-left truncate w-full">
             Ref: ${fileId}
           </div>
         </div>

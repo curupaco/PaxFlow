@@ -135,7 +135,7 @@ export class DestinosAutocomplete {
       this.createDropdownContainer();
       if (this.dropdown) {
         this.dropdown.innerHTML = `
-          <div class="px-4 py-3 text-xs text-slate-400 dark:text-slate-500 font-semibold italic text-center">
+          <div class="px-4 py-3 text-xs text-slate-400 dark:text-slate-400 font-semibold italic text-center">
             Nenhum destino encontrado
           </div>
         `;

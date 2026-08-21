@@ -74,14 +74,14 @@ export class MeuPerfilModal {
             📷 Enviar Foto Própria
           </button>
           <h2 class="text-lg font-black text-slate-800 dark:text-slate-100 tracking-tight leading-snug mt-1">Meu Perfil</h2>
-          <p class="text-xs text-slate-400 dark:text-slate-500 font-semibold">Consulte seus status e gerencie suas informações</p>
+          <p class="text-xs text-slate-400 dark:text-slate-400 font-semibold">Consulte seus status e gerencie suas informações</p>
         </div>
 
         <!-- Barra de Abas -->
         <div class="flex border-b border-slate-100 dark:border-slate-800 px-6 text-[10px] font-black uppercase tracking-wider bg-slate-50/50 dark:bg-slate-900/50 select-none shrink-0">
           <button type="button" id="tab-mp-dados" class="flex-1 py-3 text-center border-b-2 border-indigo-600 text-indigo-600 dark:text-indigo-400 font-black">Dados</button>
-          <button type="button" id="tab-mp-medalhas" class="flex-1 py-3 text-center border-b-2 border-transparent text-slate-400 dark:text-slate-500 font-bold hover:text-slate-600 dark:hover:text-slate-300">Medalhas</button>
-          <button type="button" id="tab-mp-campanhas" class="flex-1 py-3 text-center border-b-2 border-transparent text-slate-400 dark:text-slate-500 font-bold hover:text-slate-600 dark:hover:text-slate-300">Campanhas</button>
+          <button type="button" id="tab-mp-medalhas" class="flex-1 py-3 text-center border-b-2 border-transparent text-slate-400 dark:text-slate-400 font-bold hover:text-slate-600 dark:hover:text-slate-300">Medalhas</button>
+          <button type="button" id="tab-mp-campanhas" class="flex-1 py-3 text-center border-b-2 border-transparent text-slate-400 dark:text-slate-400 font-bold hover:text-slate-600 dark:hover:text-slate-300">Campanhas</button>
         </div>
 
         <form id="form-meu-perfil" class="p-6 flex-1 flex flex-col justify-between">
@@ -102,7 +102,7 @@ export class MeuPerfilModal {
 
             <div>
               <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">E-mail de Login</label>
-              <input id="input-mp-email" type="email" disabled autocomplete="username" value="${perfil.email || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 rounded-lg text-slate-400 dark:text-slate-500 font-bold text-sm cursor-not-allowed select-none" />
+              <input id="input-mp-email" type="email" disabled autocomplete="username" value="${perfil.email || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 rounded-lg text-slate-400 dark:text-slate-400 font-bold text-sm cursor-not-allowed select-none" />
             </div>
 
             <div class="border-t border-slate-100 dark:border-slate-800 pt-4">
@@ -131,7 +131,7 @@ export class MeuPerfilModal {
               <div class="w-full bg-slate-200 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
                 <div class="bg-gradient-to-r from-indigo-500 to-purple-600 h-full rounded-full transition-all duration-500" style="width: ${progress.percent}%"></div>
               </div>
-              <div class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold flex justify-between">
+              <div class="text-[10px] text-slate-400 dark:text-slate-400 font-semibold flex justify-between">
                 <span>Nível ${progress.nivel}</span>
                 <span>Faltam ${progress.xpProximoNivel - progress.xpAtual} XP para o próximo nível</span>
               </div>
@@ -151,7 +151,7 @@ export class MeuPerfilModal {
             <div>
               <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2.5">🎯 Campanhas Operacionais</label>
               <div class="space-y-2 max-h-[160px] overflow-y-auto custom-scrollbar pr-1" id="modal-campaigns-list">
-                <div class="text-center text-slate-400 dark:text-slate-500 text-xs font-medium italic py-2">Sem campanhas ativas no momento.</div>
+                <div class="text-center text-slate-400 dark:text-slate-400 text-xs font-medium italic py-2">Sem campanhas ativas no momento.</div>
               </div>
             </div>
 
@@ -159,7 +159,7 @@ export class MeuPerfilModal {
             <div class="border-t border-slate-100 dark:border-slate-800 pt-4">
               <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2.5">🏆 Ranking de Consultores (XP)</label>
               <div class="space-y-2 max-h-[200px] overflow-y-auto custom-scrollbar pr-1" id="modal-leaderboard-list">
-                <div class="text-center text-slate-400 dark:text-slate-500 text-xs font-medium italic py-2">Carregando ranking...</div>
+                <div class="text-center text-slate-400 dark:text-slate-400 text-xs font-medium italic py-2">Carregando ranking...</div>
               </div>
             </div>
           </div>
@@ -192,7 +192,7 @@ export class MeuPerfilModal {
 
     const selectTab = (tab: 'dados' | 'medalhas' | 'campanhas') => {
       const activeClass = 'flex-1 py-3 text-center border-b-2 border-indigo-600 text-indigo-600 dark:text-indigo-400 font-black';
-      const inactiveClass = 'flex-1 py-3 text-center border-b-2 border-transparent text-slate-400 dark:text-slate-500 font-bold hover:text-slate-600 dark:hover:text-slate-300';
+      const inactiveClass = 'flex-1 py-3 text-center border-b-2 border-transparent text-slate-400 dark:text-slate-400 font-bold hover:text-slate-600 dark:hover:text-slate-300';
 
       tabDados.className = tab === 'dados' ? activeClass : inactiveClass;
       tabMedalhas.className = tab === 'medalhas' ? activeClass : inactiveClass;
@@ -228,7 +228,7 @@ export class MeuPerfilModal {
         if (error) throw error;
 
         if (!profiles || profiles.length === 0) {
-          leaderboardList.innerHTML = `<div class="text-center text-slate-400 dark:text-slate-500 text-xs font-medium italic py-2">Nenhum consultor ativo.</div>`;
+          leaderboardList.innerHTML = `<div class="text-center text-slate-400 dark:text-slate-400 text-xs font-medium italic py-2">Nenhum consultor ativo.</div>`;
           return;
         }
 
@@ -260,11 +260,11 @@ export class MeuPerfilModal {
                   <span class="text-[10px] font-black text-slate-700 dark:text-slate-300 truncate max-w-[150px] ${isCurrentUser ? 'text-indigo-600 dark:text-indigo-400 font-black' : ''}">
                     ${p.nome} ${isCurrentUser ? '(Você)' : ''}
                   </span>
-                  <span class="text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase shrink-0">
+                  <span class="text-[9px] text-slate-400 dark:text-slate-400 font-bold uppercase shrink-0">
                     Nível ${progressInfo.nivel}
                   </span>
                 </div>
-                <div class="flex items-center justify-between text-[8px] text-slate-400 dark:text-slate-500 font-semibold mt-0.5">
+                <div class="flex items-center justify-between text-[8px] text-slate-400 dark:text-slate-400 font-semibold mt-0.5">
                   <span>${progressInfo.patenteEmoji} ${progressInfo.patente}</span>
                   <span class="font-extrabold text-indigo-600 dark:text-indigo-400">${p.xp || 0} XP</span>
                 </div>
@@ -321,7 +321,7 @@ export class MeuPerfilModal {
       if (!listEl) return;
 
       if (activeCampaigns.length === 0) {
-        listEl.innerHTML = `<div class="text-center text-slate-400 dark:text-slate-500 text-xs font-medium italic py-2">Sem campanhas ativas no momento.</div>`;
+        listEl.innerHTML = `<div class="text-center text-slate-400 dark:text-slate-400 text-xs font-medium italic py-2">Sem campanhas ativas no momento.</div>`;
         return;
       }
 
@@ -331,7 +331,7 @@ export class MeuPerfilModal {
       const activeProgresses = progresses.filter(p => !medalhasSet.has(p.campaign.badge_key) && p.campaign.data_fim >= hoje);
 
       if (activeProgresses.length === 0) {
-        listEl.innerHTML = `<div class="text-center text-slate-400 dark:text-slate-500 text-xs font-medium italic py-2">Sem campanhas ativas no momento.</div>`;
+        listEl.innerHTML = `<div class="text-center text-slate-400 dark:text-slate-400 text-xs font-medium italic py-2">Sem campanhas ativas no momento.</div>`;
         return;
       }
 
@@ -353,11 +353,11 @@ export class MeuPerfilModal {
               <span class="text-[10px] font-black text-slate-700 dark:text-slate-300 truncate max-w-[200px]" title="${p.campaign.titulo}">
                 ${p.campaign.titulo}
               </span>
-              <span class="text-xs text-slate-400 dark:text-slate-500 font-bold shrink-0" title="${badgeObj ? badgeObj.nome : ''}">
+              <span class="text-xs text-slate-400 dark:text-slate-400 font-bold shrink-0" title="${badgeObj ? badgeObj.nome : ''}">
                 ${badgeEmoji}
               </span>
             </div>
-            <p class="text-[9px] text-slate-400 dark:text-slate-500 font-semibold leading-normal">
+            <p class="text-[9px] text-slate-400 dark:text-slate-400 font-semibold leading-normal">
               ${p.campaign.descricao}
             </p>
             
@@ -367,7 +367,7 @@ export class MeuPerfilModal {
                 <div class="h-full bg-gradient-to-r from-indigo-500 to-indigo-600 dark:from-indigo-400 dark:to-indigo-500 rounded-full transition-all duration-500" style="width: ${p.percent}%"></div>
               </div>
               <span class="text-[9px] text-indigo-600 dark:text-indigo-400 font-black shrink-0 whitespace-nowrap">
-                ${p.progresso}/${p.meta} <span class="text-[8px] text-slate-400 dark:text-slate-500 font-bold">${metaUnit}</span>
+                ${p.progresso}/${p.meta} <span class="text-[8px] text-slate-400 dark:text-slate-400 font-bold">${metaUnit}</span>
               </span>
             </div>
           </div>

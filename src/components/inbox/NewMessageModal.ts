@@ -131,7 +131,7 @@ export class NewMessageModal {
           <!-- SCHEDULING SECTION -->
           <div class="border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 bg-slate-50/20 dark:bg-slate-900/10 space-y-4">
             <div class="flex items-center gap-2">
-              <input id="chk-agendar-lembrete" type="checkbox" class="w-4 h-4 rounded border-slate-350 text-indigo-600 focus:ring-indigo-500" />
+              <input id="chk-agendar-lembrete" type="checkbox" class="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
               <label for="chk-agendar-lembrete" class="text-xs font-extrabold text-slate-700 dark:text-slate-250 cursor-pointer select-none">
                 📅 Agendar no Calendário (Criar Lembrete/Tarefa para os destinatários)
               </label>
@@ -140,13 +140,13 @@ export class NewMessageModal {
             <!-- Colapsível de Agendamento -->
             <div id="agendar-lembrete-fields" class="hidden grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
               <div class="space-y-1">
-                <label class="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Data do Agendamento *</label>
-                <input id="msg-lembrete-data" type="text" placeholder="DD/MM/YYYY" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs animate-fadeIn" />
+                <label class="block text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest">Data do Agendamento *</label>
+                <input id="msg-lembrete-data" type="text" placeholder="DD/MM/YYYY" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs animate-fadeIn" />
               </div>
 
               <div class="space-y-1">
-                <label class="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Período *</label>
-                <select id="msg-lembrete-periodo" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs">
+                <label class="block text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest">Período *</label>
+                <select id="msg-lembrete-periodo" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs">
                   <option value="manha">🌅 Manhã</option>
                   <option value="tarde" selected>☀️ Tarde</option>
                   <option value="noite">🌙 Noite</option>
@@ -154,8 +154,8 @@ export class NewMessageModal {
               </div>
 
               <div class="space-y-1 sm:col-span-2">
-                <label class="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Vincular a Orçamento ou Viagem (Opcional)</label>
-                <select id="msg-lembrete-link" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs">
+                <label class="block text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest">Vincular a Orçamento ou Viagem (Opcional)</label>
+                <select id="msg-lembrete-link" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs">
                   <option value="">-- Sem vínculo --</option>
                   <optgroup label="Orçamentos Ativos">
                     ${orcamentos.map(o => `<option value="orcamento:${o.id}">${o.nome_cliente || o.nomeCliente} - ${o.destino} (Orçamento)</option>`).join('')}
@@ -286,12 +286,12 @@ export class NewMessageModal {
       });
 
       if (filtered.length === 0) {
-        dropdown.innerHTML = `<div class="px-4 py-2 text-xs font-semibold text-slate-400 dark:text-slate-500">Nenhum consultor encontrado</div>`;
+        dropdown.innerHTML = `<div class="px-4 py-2 text-xs font-semibold text-slate-400 dark:text-slate-400">Nenhum consultor encontrado</div>`;
       } else {
         dropdown.innerHTML = filtered.map(p => `
           <button class="dropdown-item w-full text-left px-4 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition flex items-center justify-between" data-id="${p.id}">
             <span>${p.nome}</span>
-            <span class="text-[10px] text-slate-400 dark:text-slate-500">${p.role === 'admin' ? 'Administrador' : 'Consultor'}</span>
+            <span class="text-[10px] text-slate-400 dark:text-slate-400">${p.role === 'admin' ? 'Administrador' : 'Consultor'}</span>
           </button>
         `).join('');
 

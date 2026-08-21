@@ -384,13 +384,13 @@ export class RelatoriosPage {
             <h1 class="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight flex items-center gap-2">
               <span>📊 Painel de Relatórios Gerenciais</span>
             </h1>
-            <p class="text-xs text-slate-400 dark:text-slate-500 font-semibold mt-1">
+            <p class="text-xs text-slate-400 dark:text-slate-400 font-semibold mt-1">
               Validações e métricas de desempenho, SLAs, previsões comerciais e qualidade de parceiros.
             </p>
           </div>
           
           <div class="flex items-center gap-2 w-full sm:w-auto flex-wrap sm:flex-nowrap">
-            <button id="btn-export-csv" class="w-full sm:w-auto px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-850 text-slate-700 dark:text-slate-200 text-xs font-black rounded-xl transition flex items-center justify-center gap-1.5 shadow-sm">
+            <button id="btn-export-csv" class="w-full sm:w-auto px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-black rounded-xl transition flex items-center justify-center gap-1.5 shadow-sm">
               📥 Exportar Excel (CSV)
             </button>
             <button id="btn-print-pdf" class="w-full sm:w-auto px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black rounded-xl transition flex items-center justify-center gap-1.5 shadow-md shadow-indigo-600/10">
@@ -405,21 +405,21 @@ export class RelatoriosPage {
           <div class="grid grid-cols-1 sm:grid-cols-2 md:flex items-center gap-4 flex-grow w-full md:w-auto">
             <!-- Date range start -->
             <div class="space-y-1 flex-1">
-              <label class="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Data Início</label>
+              <label class="block text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest">Data Início</label>
               <input id="filter-data-inicio" type="date" value="${this.dataInicio}" class="w-full text-xs font-bold px-3 py-2.5 border border-slate-200 dark:border-slate-750 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition duration-155" />
               <p id="filter-data-inicio-error" class="hidden text-xs text-rose-500 font-bold mt-1.5"></p>
             </div>
 
             <!-- Date range end -->
             <div class="space-y-1 flex-1">
-              <label class="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Data Fim</label>
+              <label class="block text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest">Data Fim</label>
               <input id="filter-data-fim" type="date" value="${this.dataFim}" class="w-full text-xs font-bold px-3 py-2.5 border border-slate-200 dark:border-slate-750 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition duration-155" />
               <p id="filter-data-fim-error" class="hidden text-xs text-rose-500 font-bold mt-1.5"></p>
             </div>
 
             <!-- Team / Consultant filter -->
             <div class="space-y-1 flex-1">
-              <label class="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Consultor / Equipe</label>
+              <label class="block text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest">Consultor / Equipe</label>
               <select id="filter-consultores" class="w-full text-xs font-bold px-3.5 py-2.5 border border-slate-200 dark:border-slate-750 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition duration-155" ${this.perfil?.role !== 'admin' ? 'disabled' : ''}>
                 <option value="todos" ${this.consultorIdFilter === 'todos' ? 'selected' : ''}>Consolidado (Todos os Consultores)</option>
                 ${this.consultores.map(c => `<option value="${c.id}" ${this.consultorIdFilter === c.id ? 'selected' : ''}>${c.nome}</option>`).join('')}
@@ -428,7 +428,7 @@ export class RelatoriosPage {
           </div>
           
           <div class="flex items-center gap-2 flex-shrink-0">
-            <button id="btn-limpar-filtros" class="px-4 py-2.5 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-850 text-slate-500 dark:text-slate-400 text-xs font-black rounded-xl transition flex-shrink-0">
+            <button id="btn-limpar-filtros" class="px-4 py-2.5 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 text-xs font-black rounded-xl transition flex-shrink-0">
               Limpar
             </button>
             <button id="btn-aplicar-filtros" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black rounded-xl transition shadow-md shadow-indigo-600/10 flex items-center justify-center gap-1.5 flex-shrink-0">
@@ -445,20 +445,20 @@ export class RelatoriosPage {
 
             <!-- Grupo 1: Gestão Comercial -->
             <div class="space-y-1">
-              <button class="report-group-header w-full flex items-center justify-between px-2 py-2 text-[10px] font-black uppercase tracking-wider text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-350 focus:outline-none" data-group="comercial">
+              <button class="report-group-header w-full flex items-center justify-between px-2 py-2 text-[10px] font-black uppercase tracking-wider text-slate-400 hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-300 focus:outline-none" data-group="comercial">
                 <span class="flex items-center gap-1.5">💼 Gestão Comercial</span>
                 <svg class="w-3.5 h-3.5 transition-transform duration-200 ${this.collapsedGroups.comercial ? '' : 'transform rotate-180'}" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
                 </svg>
               </button>
               <div class="space-y-1 pl-1 transition-all ${this.collapsedGroups.comercial ? 'hidden' : ''}">
-                <button data-tab="desempenho" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'desempenho' ? 'report-tab-active' : 'text-slate-500'}">
+                <button data-tab="desempenho" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 ${this.activeTab === 'desempenho' ? 'report-tab-active' : 'text-slate-500'}">
                   🎯 Desempenho
                 </button>
-                <button data-tab="origens" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'origens' ? 'report-tab-active' : 'text-slate-500'}">
+                <button data-tab="origens" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 ${this.activeTab === 'origens' ? 'report-tab-active' : 'text-slate-500'}">
                   📢 Origem de Leads
                 </button>
-                <button data-tab="previsoes" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'previsoes' ? 'report-tab-active' : 'text-slate-500'}">
+                <button data-tab="previsoes" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 ${this.activeTab === 'previsoes' ? 'report-tab-active' : 'text-slate-500'}">
                   🔮 Previsões Preditivas
                 </button>
               </div>
@@ -466,20 +466,20 @@ export class RelatoriosPage {
 
             <!-- Grupo 2: Financeiro & Auditoria -->
             <div class="space-y-1">
-              <button class="report-group-header w-full flex items-center justify-between px-2 py-2 text-[10px] font-black uppercase tracking-wider text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-350 focus:outline-none" data-group="financeiro">
+              <button class="report-group-header w-full flex items-center justify-between px-2 py-2 text-[10px] font-black uppercase tracking-wider text-slate-400 hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-300 focus:outline-none" data-group="financeiro">
                 <span class="flex items-center gap-1.5">🪙 Financeiro & Auditoria</span>
                 <svg class="w-3.5 h-3.5 transition-transform duration-200 ${this.collapsedGroups.financeiro ? '' : 'transform rotate-180'}" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
                 </svg>
               </button>
               <div class="space-y-1 pl-1 transition-all ${this.collapsedGroups.financeiro ? 'hidden' : ''}">
-                <button data-tab="faturamento" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'faturamento' ? 'report-tab-active' : 'text-slate-500'}">
+                <button data-tab="faturamento" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 ${this.activeTab === 'faturamento' ? 'report-tab-active' : 'text-slate-500'}">
                   💰 Faturamento
                 </button>
-                <button data-tab="auditoria" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'auditoria' ? 'report-tab-active' : 'text-slate-500'}">
+                <button data-tab="auditoria" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 ${this.activeTab === 'auditoria' ? 'report-tab-active' : 'text-slate-500'}">
                   🪙 Recebimentos & Auditoria
                 </button>
-                <button data-tab="perdas" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'perdas' ? 'report-tab-active' : 'text-slate-500'}">
+                <button data-tab="perdas" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 ${this.activeTab === 'perdas' ? 'report-tab-active' : 'text-slate-500'}">
                   📉 Desistências & Perdas
                 </button>
               </div>
@@ -487,23 +487,23 @@ export class RelatoriosPage {
 
             <!-- Grupo 3: Operações & SLAs -->
             <div class="space-y-1">
-              <button class="report-group-header w-full flex items-center justify-between px-2 py-2 text-[10px] font-black uppercase tracking-wider text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-350 focus:outline-none" data-group="operacional">
+              <button class="report-group-header w-full flex items-center justify-between px-2 py-2 text-[10px] font-black uppercase tracking-wider text-slate-400 hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-300 focus:outline-none" data-group="operacional">
                 <span class="flex items-center gap-1.5">⚙️ Operações & SLAs</span>
                 <svg class="w-3.5 h-3.5 transition-transform duration-200 ${this.collapsedGroups.operacional ? '' : 'transform rotate-180'}" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
                 </svg>
               </button>
               <div class="space-y-1 pl-1 transition-all ${this.collapsedGroups.operacional ? 'hidden' : ''}">
-                <button data-tab="prazos" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'prazos' ? 'report-tab-active' : 'text-slate-500'}">
+                <button data-tab="prazos" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 ${this.activeTab === 'prazos' ? 'report-tab-active' : 'text-slate-500'}">
                   ⏰ Controle de SLAs
                 </button>
-                <button data-tab="posvenda" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'posvenda' ? 'report-tab-active' : 'text-slate-500'}">
+                <button data-tab="posvenda" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 ${this.activeTab === 'posvenda' ? 'report-tab-active' : 'text-slate-500'}">
                   ✈️ Pós-Venda & SLAs
                 </button>
-                <button data-tab="embarques" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'embarques' ? 'report-tab-active' : 'text-slate-500'}">
+                <button data-tab="embarques" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 ${this.activeTab === 'embarques' ? 'report-tab-active' : 'text-slate-500'}">
                   ✈️ Relatório de Embarque
                 </button>
-                <button data-tab="fornecedores" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'fornecedores' ? 'report-tab-active' : 'text-slate-500'}">
+                <button data-tab="fornecedores" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 ${this.activeTab === 'fornecedores' ? 'report-tab-active' : 'text-slate-500'}">
                   🏢 Qualidade / Fornecedores
                 </button>
               </div>
@@ -511,14 +511,14 @@ export class RelatoriosPage {
 
             <!-- Grupo 4: Gestão de Equipe -->
             <div class="space-y-1">
-              <button class="report-group-header w-full flex items-center justify-between px-2 py-2 text-[10px] font-black uppercase tracking-wider text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-350 focus:outline-none" data-group="equipe">
+              <button class="report-group-header w-full flex items-center justify-between px-2 py-2 text-[10px] font-black uppercase tracking-wider text-slate-400 hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-300 focus:outline-none" data-group="equipe">
                 <span class="flex items-center gap-1.5">👥 Gestão de Equipe</span>
                 <svg class="w-3.5 h-3.5 transition-transform duration-200 ${this.collapsedGroups.equipe ? '' : 'transform rotate-180'}" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
                 </svg>
               </button>
               <div class="space-y-1 pl-1 transition-all ${this.collapsedGroups.equipe ? 'hidden' : ''}">
-                <button data-tab="gamificacao" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50 ${this.activeTab === 'gamificacao' ? 'report-tab-active' : 'text-slate-500'}">
+                <button data-tab="gamificacao" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 ${this.activeTab === 'gamificacao' ? 'report-tab-active' : 'text-slate-500'}">
                   🏆 Gamificação & Ranking
                 </button>
               </div>
@@ -651,19 +651,19 @@ export class RelatoriosPage {
         
         <!-- Metric Grid -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-850 text-center">
+          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 text-center">
             <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Volume de Vendas</p>
             <p class="text-lg font-black text-indigo-600 dark:text-indigo-400 mt-1">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(totalVendido)}</p>
           </div>
-          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-850 text-center">
+          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 text-center">
             <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Cotações Criadas</p>
             <p class="text-lg font-black text-slate-700 dark:text-slate-200 mt-1">${orcados}</p>
           </div>
-          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-850 text-center">
+          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 text-center">
             <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Taxa de Conversão</p>
             <p class="text-lg font-black text-emerald-600 mt-1">${conversao}%</p>
           </div>
-          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-850 text-center">
+          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 text-center">
             <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Média de Fechamento</p>
             <p class="text-lg font-black text-slate-700 dark:text-slate-200 mt-1">${tempoMedio} dias</p>
           </div>
@@ -711,7 +711,7 @@ export class RelatoriosPage {
                   }, 0);
                   
                   return `
-                  <tr class="border-b border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-350">
+                  <tr class="border-b border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-300">
                     <td class="p-3 font-extrabold text-slate-800 dark:text-slate-100">${c.nome}</td>
                     <td class="p-3">${subOrc.length}</td>
                     <td class="p-3">${cAceito}</td>
@@ -742,7 +742,7 @@ export class RelatoriosPage {
 
     // Alertas por consultor
     const alertListHtml = data.alertas.slice(0, 10).map((a: any) => `
-      <tr class="border-b border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-350">
+      <tr class="border-b border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-300">
         <td class="p-3 font-extrabold text-slate-800 dark:text-slate-100">${a.title}</td>
         <td class="p-3">${a.consultorNome}</td>
         <td class="p-3">${a.dateStr}</td>
@@ -766,15 +766,15 @@ export class RelatoriosPage {
 
         <!-- Metric Grid -->
         <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-850 text-center">
+          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 text-center">
             <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Alertas Totais do Período</p>
             <p class="text-lg font-black text-indigo-600 mt-1">${totalAlertas}</p>
           </div>
-          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-850 text-center">
+          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 text-center">
             <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Prazos de SLA Estourados</p>
             <p class="text-lg font-black text-rose-600 mt-1">${vencidos}</p>
           </div>
-          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-850 text-center col-span-2 md:col-span-1">
+          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 text-center col-span-2 md:col-span-1">
             <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Segurança Operacional</p>
             <p class="text-lg font-black text-emerald-600 mt-1">${totalAlertas > 0 ? Math.round(((totalAlertas - vencidos) / totalAlertas) * 100) : 100}%</p>
           </div>
@@ -871,19 +871,19 @@ export class RelatoriosPage {
 
         <!-- Metric Grid -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-850 text-center">
+          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 text-center">
             <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Faturamento Bruto</p>
             <p class="text-lg font-black text-slate-800 dark:text-slate-200 mt-1">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(faturamentoBruto)}</p>
           </div>
-          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-850 text-center">
+          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 text-center">
             <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Comissão Realizada</p>
             <p class="text-lg font-black text-indigo-600 dark:text-indigo-400 mt-1">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(comissaoTotal)}</p>
           </div>
-          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-850 text-center">
+          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 text-center">
             <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Lucro Líquido</p>
             <p class="text-lg font-black text-emerald-600 mt-1">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(lucroLiquidoReal)}</p>
           </div>
-          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-850 text-center">
+          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 text-center">
             <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Margem de Lucro</p>
             <p class="text-lg font-black text-slate-700 dark:text-slate-200 mt-1">${margemMedia}%</p>
           </div>
@@ -907,7 +907,7 @@ export class RelatoriosPage {
                 ${Object.entries(productTypes).map(([tipo, vals]) => {
                   const mPct = vals.faturamento > 0 ? Math.round((vals.lucro / vals.faturamento) * 100) : 0;
                   return `
-                    <tr class="border-b border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-350">
+                    <tr class="border-b border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-300">
                       <td class="p-3 font-extrabold text-slate-800 dark:text-slate-100">${tipo}</td>
                       <td class="p-3">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(vals.faturamento)}</td>
                       <td class="p-3">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(vals.custo)}</td>
@@ -994,15 +994,15 @@ export class RelatoriosPage {
 
         <!-- Metric Grid -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-850 text-center col-span-2">
+          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 text-center col-span-2">
             <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Fuga de Receita Estimada</p>
             <p class="text-xl font-black text-rose-600 mt-1">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(totalPerdido)}</p>
           </div>
-          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-850 text-center">
+          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 text-center">
             <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Desistências</p>
             <p class="text-lg font-black text-slate-700 dark:text-slate-200 mt-1">${countPerdas}</p>
           </div>
-          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-850 text-center">
+          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 text-center">
             <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Taxas Retidas (Reembolsos)</p>
             <p class="text-lg font-black text-rose-600 mt-1">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(taxaRetencaoTotal)}</p>
           </div>
@@ -1043,7 +1043,7 @@ export class RelatoriosPage {
                   const tagMotivo = o.tags?.find((t: string) => t.startsWith('Desistência:'));
                   const reason = tagMotivo ? tagMotivo.replace('Desistência: ', '').replace('Desistência:', '').trim() : 'Não informado';
                   return `
-                    <tr class="border-b border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-350">
+                    <tr class="border-b border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-300">
                       <td class="p-3 font-extrabold text-slate-800 dark:text-slate-100">${o.nome_cliente || o.nomeCliente}</td>
                       <td class="p-3">${o.destino}</td>
                       <td class="p-3">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(o.valorProposta || o.valor_proposta || 0)}</td>
@@ -1126,15 +1126,15 @@ export class RelatoriosPage {
 
         <!-- Metric Grid -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-850 text-center">
+          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 text-center">
             <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Pipeline Ativo Total (Cotação)</p>
             <p class="text-lg font-black text-slate-800 dark:text-slate-200 mt-1">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(valorPipelineBruto)}</p>
           </div>
-          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-850 text-center border-l-4 border-l-indigo-500">
+          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 text-center border-l-4 border-l-indigo-500">
             <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Fechamento Previsto (Ponderado)</p>
             <p class="text-lg font-black text-indigo-600 dark:text-indigo-400 mt-1">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(valorPonderado)}</p>
           </div>
-          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-850 text-center">
+          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 text-center">
             <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Embarques Próximos (30 dias)</p>
             <p class="text-lg font-black text-emerald-600 mt-1">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(valorEmbarquesProximos)}</p>
           </div>
@@ -1155,21 +1155,21 @@ export class RelatoriosPage {
                 </tr>
               </thead>
               <tbody>
-                <tr class="border-b border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-350">
+                <tr class="border-b border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-300">
                   <td class="p-3 font-extrabold text-slate-800 dark:text-slate-100">1. Solicitado (Novo Lead)</td>
                   <td class="p-3 text-center">${counts.solicitado}</td>
                   <td class="p-3">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(values.solicitado)}</td>
                   <td class="p-3 text-center text-rose-500">15%</td>
                   <td class="p-3 font-extrabold text-indigo-600">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(values.solicitado * 0.15)}</td>
                 </tr>
-                <tr class="border-b border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-350">
+                <tr class="border-b border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-300">
                   <td class="p-3 font-extrabold text-slate-800 dark:text-slate-100">2. Em Andamento (Negociação)</td>
                   <td class="p-3 text-center">${counts.em_andamento}</td>
                   <td class="p-3">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(values.em_andamento)}</td>
                   <td class="p-3 text-center text-amber-500">45%</td>
                   <td class="p-3 font-extrabold text-indigo-600">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(values.em_andamento * 0.45)}</td>
                 </tr>
-                <tr class="border-b border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-350">
+                <tr class="border-b border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-300">
                   <td class="p-3 font-extrabold text-slate-800 dark:text-slate-100">3. Aguardando (Fechamento)</td>
                   <td class="p-3 text-center">${counts.aguardando}</td>
                   <td class="p-3">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(values.aguardando)}</td>
@@ -1244,7 +1244,7 @@ export class RelatoriosPage {
       }
 
       return `
-        <tr class="border-b border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-350">
+        <tr class="border-b border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-300">
           <td class="p-3 font-extrabold text-slate-800 dark:text-slate-100">${fornecedor}</td>
           <td class="p-3 text-center">${stats.salesCount}</td>
           <td class="p-3">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(stats.totalSold)}</td>
@@ -1270,15 +1270,15 @@ export class RelatoriosPage {
 
         <!-- Metric Grid -->
         <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-850 text-center">
+          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 text-center">
             <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Ocorrências de Reembolsos</p>
             <p class="text-lg font-black text-slate-700 dark:text-slate-200 mt-1">${totalReembolsos}</p>
           </div>
-          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-850 text-center">
+          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 text-center">
             <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Taxa de Ocorrência Global</p>
             <p class="text-lg font-black text-rose-600 mt-1">${data.viagens.length > 0 ? Math.round((totalReembolsos / data.viagens.length) * 100) : 0}%</p>
           </div>
-          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-850 text-center col-span-2 md:col-span-1">
+          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 text-center col-span-2 md:col-span-1">
             <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Prejuízo por Taxas de Retenção</p>
             <p class="text-lg font-black text-rose-600 mt-1">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(
               data.reembolsos.reduce((acc: number, r: any) => acc + (r.taxa_retencao || r.taxaRetencao || 0), 0)
@@ -1391,7 +1391,7 @@ export class RelatoriosPage {
       const conv = totalFin > 0 ? Math.round((stats.won / totalFin) * 100) : 0;
       const avgTicket = stats.won > 0 ? Math.round(stats.revenue / stats.won) : 0;
       return `
-        <tr class="border-b border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-350">
+        <tr class="border-b border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-300">
           <td class="p-3 font-extrabold text-slate-800 dark:text-slate-100">${orig}</td>
           <td class="p-3 text-center">${stats.count}</td>
           <td class="p-3 text-center">${stats.won}</td>
@@ -1410,19 +1410,19 @@ export class RelatoriosPage {
         
         <!-- Metric Grid -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-850 text-center">
+          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 text-center">
             <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Total Leads</p>
             <p class="text-lg font-black text-slate-700 dark:text-slate-200 mt-1">${orcados}</p>
           </div>
-          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-850 text-center">
+          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 text-center">
             <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Conversão Média</p>
             <p class="text-lg font-black text-indigo-650 dark:text-indigo-400 mt-1">${conversaoGlobal}%</p>
           </div>
-          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-850 text-center col-span-2 md:col-span-1">
+          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 text-center col-span-2 md:col-span-1">
             <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Canal Campeão (Faturamento)</p>
             <p class="text-lg font-black text-emerald-600 mt-1 truncate">${bestChannel}</p>
           </div>
-          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-850 text-center col-span-2 md:col-span-1">
+          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 text-center col-span-2 md:col-span-1">
             <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Faturamento Leads (Won)</p>
             <p class="text-lg font-black text-slate-700 dark:text-slate-200 mt-1">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(Object.values(originStats).reduce((s, o) => s + o.revenue, 0))}</p>
           </div>
@@ -1526,7 +1526,7 @@ export class RelatoriosPage {
 
       paymentBreakdownHtml += `
         <div class="space-y-1.5">
-          <div class="flex justify-between text-xs font-bold text-slate-650 dark:text-slate-400">
+          <div class="flex justify-between text-xs font-bold text-slate-600 dark:text-slate-400">
             <span class="flex items-center gap-1.5"><span>${info.icone}</span> <span>${nome}</span></span>
             <span>${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(info.valor)} (${pct}%)</span>
           </div>
@@ -1595,7 +1595,7 @@ export class RelatoriosPage {
         ? 'bg-rose-50 text-rose-600 dark:bg-rose-950/30' 
         : 'bg-amber-50 text-amber-600 dark:bg-amber-950/30';
       return `
-        <tr class="border-b border-slate-100 dark:border-slate-800 text-slate-650 dark:text-slate-350">
+        <tr class="border-b border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-300">
           <td class="p-3 font-extrabold text-slate-800 dark:text-slate-100">${p.cliente}</td>
           <td class="p-3">${p.destino}</td>
           <td class="p-3 font-semibold ${p.gravidade === 'alta' ? 'text-rose-500 font-bold' : ''}">${p.motivo}</td>
@@ -1616,19 +1616,19 @@ export class RelatoriosPage {
         
         <!-- Metric Grid -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-850 text-center">
+          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 text-center">
             <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Faturamento Comercial</p>
             <p class="text-lg font-black text-slate-700 dark:text-slate-200 mt-1">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(faturamentoTotal)}</p>
           </div>
-          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-850 text-center">
+          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 text-center">
             <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Total Recebido</p>
             <p class="text-lg font-black text-emerald-600 mt-1">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(totalPago)}</p>
           </div>
-          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-850 text-center">
+          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 text-center">
             <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Saldo Pendente</p>
             <p class="text-lg font-black text-rose-600 mt-1">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(saldoPendente)}</p>
           </div>
-          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-850 text-center">
+          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 text-center">
             <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Taxa de Quitação</p>
             <p class="text-lg font-black text-indigo-650 mt-1">${quitacaoPct}%</p>
           </div>
@@ -1647,12 +1647,12 @@ export class RelatoriosPage {
           <div class="border border-slate-100 dark:border-slate-800 p-5 rounded-2xl flex flex-col justify-between">
             <div>
               <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider mb-4">Gargalos de Auditoria Gerencial</h3>
-              <ul class="space-y-2 text-xs font-bold text-slate-650 dark:text-slate-350">
-                <li class="flex justify-between py-1.5 border-b border-slate-50 dark:border-slate-850">
+              <ul class="space-y-2 text-xs font-bold text-slate-600 dark:text-slate-300">
+                <li class="flex justify-between py-1.5 border-b border-slate-50 dark:border-slate-800">
                   <span>Conferência de Processo Pendente</span>
                   <span class="text-rose-500 font-extrabold">${viagensAtivas.filter((v: any) => !v.processo_conferido).length} viagens</span>
                 </li>
-                <li class="flex justify-between py-1.5 border-b border-slate-50 dark:border-slate-850">
+                <li class="flex justify-between py-1.5 border-b border-slate-50 dark:border-slate-800">
                   <span>Conferência Financeira Pendente</span>
                   <span class="text-rose-500 font-extrabold">
                     ${viagensAtivas.reduce((acc: number, v: any) => {
@@ -1803,7 +1803,7 @@ export class RelatoriosPage {
     });
 
     const docAlertsHtml = docAlerts.map(a => `
-      <tr class="border-b border-slate-100 dark:border-slate-800 text-slate-650 dark:text-slate-350">
+      <tr class="border-b border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-300">
         <td class="p-3 font-extrabold text-slate-800 dark:text-slate-100">${a.cliente}</td>
         <td class="p-3">${a.destino}</td>
         <td class="p-3">${a.dataIda.split('-').reverse().join('/')}</td>
@@ -1817,7 +1817,7 @@ export class RelatoriosPage {
     `).join('');
 
     const posVendaHtml = posVendaPendente.map(p => `
-      <tr class="border-b border-slate-100 dark:border-slate-800 text-slate-650 dark:text-slate-350">
+      <tr class="border-b border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-300">
         <td class="p-3 font-extrabold text-slate-800 dark:text-slate-100">${p.cliente}</td>
         <td class="p-3">${p.destino}</td>
         <td class="p-3">${p.dataVolta.split('-').reverse().join('/')}</td>
@@ -1838,15 +1838,15 @@ export class RelatoriosPage {
         
         <!-- Metric Grid -->
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-850 text-center border-l-4 border-l-amber-500">
+          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 text-center border-l-4 border-l-amber-500">
             <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Pré-Embarque (Próximos 15 dias)</p>
             <p class="text-lg font-black text-slate-700 dark:text-slate-200 mt-1">${preEmbarqueViagens.length} passageiros</p>
           </div>
-          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-850 text-center border-l-4 border-l-indigo-500">
+          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 text-center border-l-4 border-l-indigo-500">
             <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Em Viagem (Acompanhamento Ativo)</p>
             <p class="text-lg font-black text-indigo-600 dark:text-indigo-400 mt-1">${emViagemViagens.length} passageiros</p>
           </div>
-          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-850 text-center border-l-4 border-l-emerald-500">
+          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 text-center border-l-4 border-l-emerald-500">
             <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Retornados (Últimos 15 dias)</p>
             <p class="text-lg font-black text-slate-700 dark:text-slate-200 mt-1">${posViagemViagens.length} passageiros</p>
           </div>
@@ -2030,8 +2030,8 @@ export class RelatoriosPage {
            </div>`;
 
       return `
-        <tr class="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50/40 dark:hover:bg-slate-850/20 text-slate-650 dark:text-slate-350 transition-colors">
-          <td class="p-3 font-extrabold text-slate-850 dark:text-slate-100">${formatarDataBr(item.data)}</td>
+        <tr class="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50/40 dark:hover:bg-slate-800/20 text-slate-600 dark:text-slate-300 transition-colors">
+          <td class="p-3 font-extrabold text-slate-800 dark:text-slate-100">${formatarDataBr(item.data)}</td>
           <td class="p-3 font-extrabold text-slate-800 dark:text-slate-100">${item.cliente}</td>
           <td class="p-3">${item.tipo}</td>
           <td class="p-3 font-bold text-indigo-600 dark:text-indigo-400">${item.destino}</td>
@@ -2168,13 +2168,13 @@ export class RelatoriosPage {
       const formattedXp = c.xp.toLocaleString('pt-BR');
       
       return `
-        <tr class="border-b border-slate-100 dark:border-slate-800 text-slate-650 dark:text-slate-350">
+        <tr class="border-b border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-300">
           <td class="p-3 text-center ${rankColor}">${rankBadge}</td>
           <td class="p-3 flex items-center gap-3">
             <span class="text-xl">${c.prog.patenteEmoji}</span>
             <div>
               <p class="font-extrabold text-slate-800 dark:text-slate-100">${c.nome}</p>
-              <p class="text-[10px] text-slate-450 dark:text-slate-500 font-semibold">${c.email}</p>
+              <p class="text-[10px] text-slate-400 dark:text-slate-400 font-semibold">${c.email}</p>
             </div>
           </td>
           <td class="p-3 text-center font-extrabold text-indigo-600 dark:text-indigo-400">Nível ${c.nivel}</td>
@@ -2203,14 +2203,14 @@ export class RelatoriosPage {
       const rate = Math.round((count / totalConsultores) * 100);
       const unlockedByText = count > 0 
         ? list.map(name => `<span class="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-[10px] rounded-lg font-bold">${name}</span>`).join(' ')
-        : `<span class="text-slate-400 dark:text-slate-500 italic text-[11px]">Ninguém conquistou ainda</span>`;
+        : `<span class="text-slate-400 dark:text-slate-400 italic text-[11px]">Ninguém conquistou ainda</span>`;
         
       return `
-        <tr class="border-b border-slate-100 dark:border-slate-800 text-slate-650 dark:text-slate-350">
+        <tr class="border-b border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-300">
           <td class="p-3 text-2xl text-center">${b.emoji}</td>
           <td class="p-3">
-            <p class="font-extrabold text-slate-850 dark:text-slate-100">${b.nome}</p>
-            <p class="text-[10px] text-slate-450 dark:text-slate-500 font-semibold">${b.descricao}</p>
+            <p class="font-extrabold text-slate-800 dark:text-slate-100">${b.nome}</p>
+            <p class="text-[10px] text-slate-400 dark:text-slate-400 font-semibold">${b.descricao}</p>
           </td>
           <td class="p-3 font-bold text-slate-600 dark:text-slate-400">${b.categoria}</td>
           <td class="p-3 text-center font-extrabold text-indigo-650">${rate}% (${count} de ${totalConsultores})</td>
@@ -2227,15 +2227,15 @@ export class RelatoriosPage {
         
         <!-- Metric Grid -->
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-850 text-center">
+          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 text-center">
             <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Média de XP da Equipe</p>
             <p class="text-lg font-black text-indigo-650 dark:text-indigo-400 mt-1">${mediaXp.toLocaleString('pt-BR')} XP</p>
           </div>
-          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-850 text-center">
+          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 text-center">
             <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Mais Condecorado(a)</p>
             <p class="text-lg font-black text-emerald-650 mt-1 truncate">${topDecoratedName} (${maxBadges} medalhas)</p>
           </div>
-          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-850 text-center">
+          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 text-center">
             <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Medalha Mais Rara Ativa</p>
             <p class="text-lg font-black text-amber-600 mt-1 truncate flex items-center justify-center gap-1">
               <span>${rarestBadgeEmoji}</span> <span>${rarestBadgeName}</span>

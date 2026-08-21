@@ -295,7 +295,7 @@ export function renderCurrencyInputHTML(id: string, initialValue: number | strin
   return `
     <div id="${containerId}" class="currency-field-wrapper w-full">
       <div class="flex rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500 overflow-hidden w-full transition duration-150">
-        <div class="px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 text-sm font-black select-none">
+        <div class="px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-400 text-sm font-black select-none">
           R$
         </div>
         <input id="${id}" type="text" ${readonlyAttr} ${required ? 'required' : ''} value="${formatted}" placeholder="${placeholder}" class="w-full px-3.5 py-2.5 bg-transparent outline-none focus:outline-none text-slate-800 dark:text-slate-100 font-semibold text-sm ${disabledClass}" autocomplete="off" />

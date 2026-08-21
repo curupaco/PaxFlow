@@ -711,8 +711,8 @@ export class OrcamentosPage {
       <!-- Controles de ordenação da coluna -->
       <div class="flex items-center justify-between gap-1 mb-4 px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/40 text-[10px] select-none border border-slate-200/30 dark:border-slate-800/20 shrink-0">
         <div class="flex items-center gap-1">
-          <span class="font-extrabold uppercase text-slate-400 dark:text-slate-500">Ordenar por:</span>
-          <select class="select-sort-field text-[10px] font-bold bg-transparent text-slate-600 dark:text-slate-350 focus:outline-none cursor-pointer" data-column="${col}">
+          <span class="font-extrabold uppercase text-slate-400 dark:text-slate-400">Ordenar por:</span>
+          <select class="select-sort-field text-[10px] font-bold bg-transparent text-slate-600 dark:text-slate-300 focus:outline-none cursor-pointer" data-column="${col}">
             <option value="createdAt" ${config.field === 'createdAt' ? 'selected' : ''}>📅 Data Criação</option>
             <option value="nomeCliente" ${config.field === 'nomeCliente' ? 'selected' : ''}>👤 Passageiro</option>
             <option value="temperatura" ${config.field === 'temperatura' ? 'selected' : ''}>🔥 Temperatura</option>
@@ -805,7 +805,7 @@ export class OrcamentosPage {
           <div class="flex flex-wrap items-center gap-3 w-full lg:w-auto lg:justify-end">
             <!-- Campo de Busca de Orçamentos -->
             <div class="relative min-w-[200px] md:min-w-[280px] flex-1 sm:flex-initial">
-              <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
+              <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-400">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
@@ -824,7 +824,7 @@ export class OrcamentosPage {
             <!-- Seletor de Consultores (Apenas para Admins) -->
             ${this.perfil?.role === 'admin' ? `
               <div class="flex items-center gap-1.5 shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2.5 py-1.5 rounded-xl shadow-sm">
-                <span class="text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-500 select-none">Equipe:</span>
+                <span class="text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-400 select-none">Equipe:</span>
                 <select id="select-orcamentos-consultor" class="text-xs font-bold bg-transparent text-slate-700 dark:text-slate-400 focus:outline-none cursor-pointer max-w-[150px]">
                   <option value="todos" ${this.selectedConsultantId === 'todos' ? 'selected' : ''}>Todos os Consultores</option>
                   ${this.consultores.map(c => `<option value="${c.id}" ${this.selectedConsultantId === c.id ? 'selected' : ''}>${c.nome}</option>`).join('')}
@@ -840,28 +840,28 @@ export class OrcamentosPage {
             <button class="mobile-kanban-tab-btn flex-1 py-3 text-xs font-black tracking-wider uppercase border-b-2 text-center whitespace-nowrap transition-all focus:outline-none ${
               this.activeColumnMobile === 'SOLICITADO'
                 ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400 font-black'
-                : 'border-transparent text-slate-400 dark:text-slate-500 font-bold hover:text-slate-600 dark:hover:text-slate-300'
+                : 'border-transparent text-slate-400 dark:text-slate-400 font-bold hover:text-slate-600 dark:hover:text-slate-300'
             }" data-column="SOLICITADO">
               Solicitado (${solicitado.length})
             </button>
             <button class="mobile-kanban-tab-btn flex-1 py-3 text-xs font-black tracking-wider uppercase border-b-2 text-center whitespace-nowrap transition-all focus:outline-none ${
               this.activeColumnMobile === 'EM_ANDAMENTO'
                 ? 'border-amber-500 text-amber-500 dark:border-amber-400 dark:text-amber-400 font-black'
-                : 'border-transparent text-slate-400 dark:text-slate-500 font-bold hover:text-slate-600 dark:hover:text-slate-300'
+                : 'border-transparent text-slate-400 dark:text-slate-400 font-bold hover:text-slate-600 dark:hover:text-slate-300'
             }" data-column="EM_ANDAMENTO">
               Andamento (${emAndamento.length})
             </button>
             <button class="mobile-kanban-tab-btn flex-1 py-3 text-xs font-black tracking-wider uppercase border-b-2 text-center whitespace-nowrap transition-all focus:outline-none ${
               this.activeColumnMobile === 'AGUARDANDO'
                 ? 'border-rose-500 text-rose-500 dark:border-rose-400 dark:text-rose-400 font-black'
-                : 'border-transparent text-slate-400 dark:text-slate-500 font-bold hover:text-slate-600 dark:hover:text-slate-300'
+                : 'border-transparent text-slate-400 dark:text-slate-400 font-bold hover:text-slate-600 dark:hover:text-slate-300'
             }" data-column="AGUARDANDO">
               Aguardando (${aguardando.length})
             </button>
             <button class="mobile-kanban-tab-btn flex-1 py-3 text-xs font-black tracking-wider uppercase border-b-2 text-center whitespace-nowrap transition-all focus:outline-none ${
               this.activeColumnMobile === 'CONCLUIDO'
                 ? 'border-emerald-500 text-emerald-500 dark:border-emerald-400 dark:text-emerald-400 font-black'
-                : 'border-transparent text-slate-400 dark:text-slate-500 font-bold hover:text-slate-600 dark:hover:text-slate-300'
+                : 'border-transparent text-slate-400 dark:text-slate-400 font-bold hover:text-slate-600 dark:hover:text-slate-300'
             }" data-column="CONCLUIDO">
               Concluído (${concluido.length})
             </button>
@@ -1004,7 +1004,7 @@ export class OrcamentosPage {
               ${o.nomeCliente}
             </h4>
             <div class="flex items-center gap-1.5 mt-0.5">
-              <span class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold truncate max-w-[150px]" title="${o.contato}">${o.contato}</span>
+              <span class="text-[10px] text-slate-400 dark:text-slate-400 font-semibold truncate max-w-[150px]" title="${o.contato}">${o.contato}</span>
               ${o.contato ? `
                 <button data-action="copiar-telefone" data-contato="${o.contato}" title="Copiar Telefone" class="p-0.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded transition flex items-center justify-center shrink-0">
                   <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -1070,7 +1070,7 @@ export class OrcamentosPage {
 
         <!-- Histórico e Contador na Coluna AGUARDANDO -->
         ${o.status === 'AGUARDANDO' ? `
-          <div class="border-t border-dashed border-slate-200 dark:border-slate-800 pt-2.5 flex items-center justify-between text-[10px] text-slate-400 dark:text-slate-500 font-bold">
+          <div class="border-t border-dashed border-slate-200 dark:border-slate-800 pt-2.5 flex items-center justify-between text-[10px] text-slate-400 dark:text-slate-400 font-bold">
             <span class="flex items-center gap-1">⏱️ ${tempoAguardando}</span>
             <button data-action="ver-notas" data-id="${o.id}" class="text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-400 font-black transition uppercase text-[9px] tracking-wider flex items-center gap-0.5">
               👁️ Ver Proposta
@@ -1083,7 +1083,7 @@ export class OrcamentosPage {
           <div class="border-t border-dashed border-slate-200 dark:border-slate-800 pt-2.5 flex items-center justify-between">
             ${o.subStatus === 'ACEITO' 
               ? `<span class="px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 border border-emerald-100/30 text-[9px] font-black uppercase tracking-wider rounded">Viagem Fechada! 🎉</span>` 
-              : `<span class="px-2 py-0.5 bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border border-slate-200/20 text-[9px] font-black uppercase tracking-wider rounded">Desistência 🚫</span>`
+              : `<span class="px-2 py-0.5 bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-400 border border-slate-200/20 text-[9px] font-black uppercase tracking-wider rounded">Desistência 🚫</span>`
             }
             <button data-action="ver-notas" data-id="${o.id}" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 font-black transition uppercase text-[9px] tracking-wider">
               Ver Histórico
@@ -1107,7 +1107,7 @@ export class OrcamentosPage {
                 <path d="M19 12v5" />
               </svg>
             </button>
-            <button data-action="lembrar-depois" data-id="${o.id}" title="Me Lembre Depois" class="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 dark:text-slate-500 hover:text-indigo-600 rounded transition flex items-center justify-center shrink-0">
+            <button data-action="lembrar-depois" data-id="${o.id}" title="Me Lembre Depois" class="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 dark:text-slate-400 hover:text-indigo-600 rounded transition flex items-center justify-center shrink-0">
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
               </svg>
@@ -1161,9 +1161,9 @@ export class OrcamentosPage {
    */
   private renderEmptySlot(): string {
     return `
-      <div class="border-2 border-dashed border-slate-200 dark:border-slate-800/60 rounded-xl flex flex-col items-center justify-center p-8 text-center text-slate-400 dark:text-slate-600/80 text-[10px] font-bold uppercase tracking-wider select-none min-h-[140px] gap-1.5">
+      <div class="border-2 border-dashed border-slate-200 dark:border-slate-800/60 rounded-xl flex flex-col items-center justify-center p-8 text-center text-slate-400 dark:text-slate-400/80 text-[10px] font-bold uppercase tracking-wider select-none min-h-[140px] gap-1.5">
         <span>Sem orçamentos</span>
-        <span class="text-[9px] font-semibold text-slate-400 dark:text-slate-600 normal-case">Estágio vazio</span>
+        <span class="text-[9px] font-semibold text-slate-400 dark:text-slate-400 normal-case">Estágio vazio</span>
       </div>
     `;
   }
@@ -1294,7 +1294,7 @@ export class OrcamentosPage {
               <div id="tags-container-modal" class="flex flex-wrap gap-1.5"></div>
               <input id="input-orc-tag" type="text" placeholder="Adicionar tag..." class="flex-1 bg-transparent border-none outline-none focus:ring-0 text-slate-800 dark:text-slate-100 font-semibold text-sm min-w-[100px]" />
             </div>
-            <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">Ex: Casal, Nacional, Luxo, Disney</p>
+            <p class="text-[10px] text-slate-400 dark:text-slate-400 mt-1">Ex: Casal, Nacional, Luxo, Disney</p>
           </div>
 
           <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">
@@ -1700,7 +1700,7 @@ export class OrcamentosPage {
           <button id="btn-close-modal-x" class="text-slate-400 hover:text-rose-500 font-bold transition text-lg">&times;</button>
         </div>
 
-        <p class="text-xs text-slate-400 dark:text-slate-500 mb-4 font-semibold">
+        <p class="text-xs text-slate-400 dark:text-slate-400 mb-4 font-semibold">
           Para avançar o orçamento de <span class="font-extrabold text-indigo-600 dark:text-indigo-400">${orc.nomeCliente}</span> para o estágio de <strong>AGUARDANDO</strong>, é obrigatório registrar o resumo da proposta comercial ou fazer upload do documento corporativo (pelo menos um dos dois).
         </p>
 
@@ -1708,13 +1708,13 @@ export class OrcamentosPage {
           <div>
             <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Valor da Proposta Enviada (R$) *</label>
             ${renderCurrencyInputHTML('input-orc-valor-proposta', orc.valorProposta || '')}
-            <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">Informe o valor total da proposta que foi enviada ao cliente.</p>
+            <p class="text-[10px] text-slate-400 dark:text-slate-400 mt-1">Informe o valor total da proposta que foi enviada ao cliente.</p>
           </div>
 
           <div>
             <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Resumo / Notas da Negociação</label>
             <textarea id="textarea-orc-notas" placeholder="Insira o escopo da cotação, hotéis ofertados, voos, valores, tarifas e qualquer observação importante da negociação..." rows="4.5" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 text-sm font-semibold">${orc.notasNegociacao || ''}</textarea>
-            <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">Obrigatório caso não anexe o documento da proposta.</p>
+            <p class="text-[10px] text-slate-400 dark:text-slate-400 mt-1">Obrigatório caso não anexe o documento da proposta.</p>
           </div>
 
           <div>
@@ -1724,13 +1724,13 @@ export class OrcamentosPage {
               <div id="upload-proposta-visual" class="flex flex-col items-center justify-center space-y-2">
                 <span class="text-3xl filter group-hover:scale-110 transition duration-300">📄</span>
                 <p class="text-sm text-slate-700 dark:text-slate-300 font-extrabold">Selecionar arquivo de proposta</p>
-                <p class="text-xs text-slate-400 dark:text-slate-500 font-semibold">Clique para anexar arquivo (Máx. 15MB)</p>
+                <p class="text-xs text-slate-400 dark:text-slate-400 font-semibold">Clique para anexar arquivo (Máx. 15MB)</p>
               </div>
             </div>
             <div id="selected-file-label" class="hidden text-xs text-emerald-600 dark:text-emerald-400 font-bold mt-2 flex items-center gap-1">
               <span>✅</span> <span id="file-name-span"></span>
             </div>
-            <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">Obrigatório caso o campo de notas acima esteja vazio.</p>
+            <p class="text-[10px] text-slate-400 dark:text-slate-400 mt-1">Obrigatório caso o campo de notas acima esteja vazio.</p>
 
             ${orc.documentosUrl && orc.documentosUrl.length > 0 ? `
               <div class="mt-4 bg-indigo-50/35 dark:bg-indigo-950/10 p-3.5 rounded-xl border border-indigo-100/30 dark:border-indigo-900/35">
@@ -1878,7 +1878,7 @@ export class OrcamentosPage {
           visual.innerHTML = `
             <span class="text-3xl filter group-hover:scale-110 transition duration-300">📄</span>
             <p class="text-sm text-slate-700 dark:text-slate-300 font-extrabold">Selecionar arquivo de proposta</p>
-            <p class="text-xs text-slate-400 dark:text-slate-500 font-semibold">Clique para anexar arquivo (Máx. 15MB)</p>
+            <p class="text-xs text-slate-400 dark:text-slate-400 font-semibold">Clique para anexar arquivo (Máx. 15MB)</p>
           `;
         }
       }
@@ -2300,7 +2300,7 @@ export class OrcamentosPage {
           <button id="btn-close-modal-x" class="text-slate-400 hover:text-rose-500 font-bold transition text-lg">&times;</button>
         </div>
 
-        <p class="text-xs text-slate-400 dark:text-slate-500 mb-4 font-semibold">
+        <p class="text-xs text-slate-400 dark:text-slate-400 mb-4 font-semibold">
           Selecione o novo consultor para gerenciar o orçamento de <span class="font-extrabold text-indigo-600 dark:text-indigo-400">${orc.nomeCliente}</span>.
           ${this.perfil?.role !== 'admin' ? '<br><span class="text-rose-500">Atenção: Ao reatribuir, este card sairá imediatamente da sua tela.</span>' : ''}
         </p>

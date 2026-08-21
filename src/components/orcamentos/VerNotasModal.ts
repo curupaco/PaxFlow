@@ -48,7 +48,7 @@ export class VerNotasModal {
             📄 Documento da Proposta #${index + 1}
           </a>
         `).join('')
-      : '<p class="text-xs text-slate-400 dark:text-slate-500 font-semibold italic">Nenhum arquivo anexado nesta proposta.</p>';
+      : '<p class="text-xs text-slate-400 dark:text-slate-400 font-semibold italic">Nenhum arquivo anexado nesta proposta.</p>';
 
     // Preparação dos dados para a barra lateral
     const temperaturaClasses = {
@@ -91,7 +91,7 @@ export class VerNotasModal {
 
     const tagsHtml = orc.tags && orc.tags.length > 0 
       ? orc.tags.map(t => `<span class="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded font-black text-[9px] uppercase tracking-wide border border-slate-200/20 dark:border-slate-700/20">${t}</span>`).join('')
-      : '<span class="text-xs text-slate-400 dark:text-slate-500 font-semibold italic">Nenhuma tag cadastrada.</span>';
+      : '<span class="text-xs text-slate-400 dark:text-slate-400 font-semibold italic">Nenhuma tag cadastrada.</span>';
 
     const dataCriacao = orc.createdAt ? new Date(orc.createdAt).toLocaleDateString('pt-BR') : 'Não informada';
     const tempoAguardando = orc.createdAt ? options.calcularTempoAmigavel(orc.createdAt) : '';
@@ -114,7 +114,7 @@ export class VerNotasModal {
           <!-- Coluna 1 & 2 (Dados principais e notas) -->
           <div class="md:col-span-2 space-y-5">
             <div>
-              <h4 class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2 font-sans">Cliente & Viagem</h4>
+              <h4 class="text-xs font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-2 font-sans">Cliente & Viagem</h4>
               <div class="p-3.5 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-100 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-400 space-y-2">
                 <span class="block">Passageiro: <strong class="text-slate-800 dark:text-slate-100">${orc.nomeCliente}</strong></span>
                 <span class="block flex items-center gap-1.5 flex-wrap">
@@ -131,7 +131,7 @@ export class VerNotasModal {
             </div>
 
             <div>
-              <h4 class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Notas da Negociação</h4>
+              <h4 class="text-xs font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-2">Notas da Negociação</h4>
               <div class="p-4 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-100 dark:border-slate-800 text-sm font-semibold text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed min-h-[120px]">
                 ${converterLinks(orc.notasNegociacao || 'Nenhuma nota registrada.')}
               </div>
@@ -139,7 +139,7 @@ export class VerNotasModal {
 
             <div>
               <div class="flex items-center justify-between mb-2.5">
-                <h4 class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Documentos Anexos</h4>
+                <h4 class="text-xs font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider">Documentos Anexos</h4>
                 <div>
                   <input type="file" id="input-orc-upload-doc" class="hidden" accept="application/pdf,image/*" />
                   <button id="btn-orc-upload-doc" type="button" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-[10px] tracking-wider rounded-lg shadow-sm transition uppercase">
@@ -162,7 +162,7 @@ export class VerNotasModal {
             
             <!-- Temperatura -->
             <div>
-              <span class="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1.5">Temperatura</span>
+              <span class="block text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-1.5">Temperatura</span>
               <select id="select-detail-temperatura" class="w-full px-2.5 py-1 border border-transparent rounded text-xs font-black uppercase tracking-wider ${tempClass} text-center cursor-pointer focus:outline-none focus:ring-1 focus:ring-indigo-500">
                 <option value="Frio" class="bg-white dark:bg-slate-900 text-sky-700 dark:text-sky-400" ${orc.temperatura === 'Frio' ? 'selected' : ''}>Frio</option>
                 <option value="Normal" class="bg-white dark:bg-slate-900 text-amber-700 dark:text-amber-400" ${orc.temperatura === 'Normal' ? 'selected' : ''}>Normal</option>
@@ -172,7 +172,7 @@ export class VerNotasModal {
 
             <!-- Status do Lead -->
             <div>
-              <span class="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1.5">Status da Negociação</span>
+              <span class="block text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-1.5">Status da Negociação</span>
               <span class="px-2.5 py-1 rounded text-xs font-black uppercase tracking-wider ${statusClass} block text-center select-none">
                 ${statusText}
               </span>
@@ -180,7 +180,7 @@ export class VerNotasModal {
 
             <!-- Consultor Responsável -->
             <div>
-              <span class="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1.5">Consultor Responsável</span>
+              <span class="block text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-1.5">Consultor Responsável</span>
               ${options.perfil?.role === 'admin' ? `
                 <select id="select-detail-responsavel" class="w-full px-2.5 py-2 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-700 dark:text-slate-200 text-xs font-bold shadow-sm cursor-pointer">
                   ${options.consultores.map(c => `<option value="${c.id}" ${c.id === orc.consultorId ? 'selected' : ''}>${c.nome} (${c.role})</option>`).join('')}
@@ -195,7 +195,7 @@ export class VerNotasModal {
 
             <!-- Origem do Lead -->
             <div>
-              <span class="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1.5">Origem do Lead</span>
+              <span class="block text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-1.5">Origem do Lead</span>
               <select id="select-detail-origem" class="w-full px-2.5 py-2 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-700 dark:text-slate-200 text-xs font-bold shadow-sm cursor-pointer">
                 <option value="" disabled ${!orc.origem ? 'selected' : ''}>Selecione a Origem...</option>
                 <option value="WhatsApp" ${orc.origem === 'WhatsApp' ? 'selected' : ''}>WhatsApp</option>
@@ -210,7 +210,7 @@ export class VerNotasModal {
 
             <!-- Contatos Clicáveis -->
             <div>
-              <span class="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1.5">Canais de Contato</span>
+              <span class="block text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-1.5">Canais de Contato</span>
               <div class="space-y-2">
                 ${phone ? `
                   <a href="${waLink}" target="_blank" class="w-full px-3 py-2 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/20 dark:hover:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-xl border border-emerald-100/30 dark:border-emerald-900/30 text-xs font-bold transition flex items-center gap-2 select-none">
@@ -222,20 +222,20 @@ export class VerNotasModal {
                     <span class="text-sm">✉️</span> <span class="truncate">${email}</span>
                   </a>
                 ` : ''}
-                ${!phone && !email ? '<span class="text-xs text-slate-400 dark:text-slate-500 font-semibold italic">Nenhum contato</span>' : ''}
+                ${!phone && !email ? '<span class="text-xs text-slate-400 dark:text-slate-400 font-semibold italic">Nenhum contato</span>' : ''}
               </div>
             </div>
 
             <!-- Tags -->
             <div>
-              <span class="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1.5">Tags</span>
+              <span class="block text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-1.5">Tags</span>
               <div class="flex flex-wrap gap-1.5">
                 ${tagsHtml}
               </div>
             </div>
 
             <!-- Histórico de Datas -->
-            <div class="border-t border-slate-200/50 dark:border-slate-800 pt-3 text-[10px] text-slate-400 dark:text-slate-500 font-bold space-y-1">
+            <div class="border-t border-slate-200/50 dark:border-slate-800 pt-3 text-[10px] text-slate-400 dark:text-slate-400 font-bold space-y-1">
               <span class="block">Criado em: <strong class="text-slate-500 dark:text-slate-400 font-extrabold">${dataCriacao}</strong></span>
               ${tempoAguardando ? `<span class="block flex items-center gap-1">Aguardando: <strong class="text-indigo-600 dark:text-indigo-400 font-extrabold">${tempoAguardando}</strong></span>` : ''}
             </div>

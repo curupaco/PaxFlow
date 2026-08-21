@@ -30,7 +30,7 @@ export class LoginPage {
         <!-- Botão de Alternância de Tema Flutuante -->
         <div class="absolute top-4 right-4 z-50 flex items-center gap-2.5 bg-white/80 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800/80 pl-3 pr-1.5 py-1.5 rounded-2xl shadow-lg backdrop-blur-md select-none transition-colors duration-200">
           <span class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Alternar Tema</span>
-          <button id="theme-toggle-btn" class="p-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-850 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white transition duration-200 flex items-center justify-center focus:outline-none" title="Alternar Tema">
+          <button id="theme-toggle-btn" class="p-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white transition duration-200 flex items-center justify-center focus:outline-none" title="Alternar Tema">
             <!-- Lua -->
             <svg class="theme-icon-light w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
@@ -52,7 +52,7 @@ export class LoginPage {
           <div class="text-center flex flex-col items-center select-none">
             <img src="/logo.svg" alt="PaxFlow Logo" class="h-16 w-16 object-contain mb-3 filter drop-shadow-[0_4px_12px_rgba(79,70,229,0.2)]" />
             <h2 class="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight" id="login-title">Entrar no PaxFlow</h2>
-            <p class="text-xs text-slate-400 dark:text-slate-500 font-semibold mt-1" id="login-subtitle">Digite suas credenciais para acessar o painel operacional restrito.</p>
+            <p class="text-xs text-slate-400 dark:text-slate-400 font-semibold mt-1" id="login-subtitle">Digite suas credenciais para acessar o painel operacional restrito.</p>
           </div>
 
           <div id="login-error-container" class="hidden px-4 py-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 text-xs font-bold border border-rose-100 dark:border-rose-900/40 animate-shake">
@@ -65,7 +65,7 @@ export class LoginPage {
                <div>
                  <label class="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 select-none">E-mail do Consultor *</label>
                  <div class="relative">
-                   <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
+                   <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-400">
                      <!-- Icone Email -->
                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                        <path stroke-linecap="round" stroke-linejoin="round" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.206" />
@@ -81,14 +81,14 @@ export class LoginPage {
                    <button type="button" id="btn-esqueci-senha" class="text-[10px] font-extrabold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-400 transition hover:underline focus:outline-none uppercase tracking-wider">Esqueceu?</button>
                  </div>
                   <div class="relative">
-                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
+                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-400">
                       <!-- Icone Cadeado -->
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                       </svg>
                     </div>
                     <input id="input-login-password" type="password" required autocomplete="current-password" placeholder="••••••••" class="w-full pl-10 pr-10 py-3 border border-slate-200/80 dark:border-slate-800 bg-slate-50/50 hover:bg-slate-50 focus:bg-white dark:bg-slate-950/30 dark:hover:bg-slate-950/50 dark:focus:bg-slate-950 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition" />
-                    <button type="button" id="btn-toggle-password" class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors focus:outline-none" title="Mostrar/Ocultar Senha">
+                    <button type="button" id="btn-toggle-password" class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors focus:outline-none" title="Mostrar/Ocultar Senha">
                       <!-- Icone Olho (Senha Oculta - Clique para Mostrar) -->
                       <svg id="icon-eye-show" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -120,7 +120,7 @@ export class LoginPage {
                <div>
                  <label class="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 select-none">E-mail Cadastrado *</label>
                  <div class="relative">
-                   <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
+                   <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-400">
                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                        <path stroke-linecap="round" stroke-linejoin="round" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.206" />
                      </svg>
@@ -140,7 +140,7 @@ export class LoginPage {
 
           <!-- Rodapé do Card -->
           <div class="border-t border-slate-100 dark:border-slate-800/80 pt-5 text-center select-none">
-            <span class="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">PaxFlow &bull; Sistema Restrito e Criptografado</span>
+            <span class="text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wider">PaxFlow &bull; Sistema Restrito e Criptografado</span>
           </div>
 
         </div>
@@ -243,7 +243,7 @@ export class LoginPage {
             </div>
             <div>
               <h4 class="text-sm font-black text-slate-800 dark:text-slate-100">Instruções Enviadas!</h4>
-              <p class="text-xs text-slate-400 dark:text-slate-500 font-semibold mt-1">
+              <p class="text-xs text-slate-400 dark:text-slate-400 font-semibold mt-1">
                 Enviamos um e-mail de redefinição para <strong class="text-slate-700 dark:text-slate-300">${email}</strong> com o link seguro. Verifique também a pasta de spam.
               </p>
             </div>

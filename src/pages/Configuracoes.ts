@@ -769,7 +769,7 @@ export class ConfiguracoesPage {
             </svg>
           </div>
           <h2 class="text-lg font-black text-slate-800 dark:text-slate-100 tracking-tight leading-snug">Cadastrar Novo Consultor</h2>
-          <p class="text-xs text-slate-400 dark:text-slate-500 font-semibold mt-1">Defina o e-mail, nível de acesso e senha provisória</p>
+          <p class="text-xs text-slate-400 dark:text-slate-400 font-semibold mt-1">Defina o e-mail, nível de acesso e senha provisória</p>
         </div>
 
         <form id="form-novo-consultor" class="p-6 space-y-4">
@@ -915,7 +915,7 @@ export class ConfiguracoesPage {
             ${getAvatarSvg(selectedAvatarId, c.nome || 'Consultor', 'w-16 h-16')}
           </div>
           <h2 class="text-lg font-black text-slate-800 dark:text-slate-100 tracking-tight leading-snug">Editar Perfil do Consultor</h2>
-          <p class="text-xs text-slate-400 dark:text-slate-500 font-semibold mt-1">Atualize informações de cadastro e altere senhas diretamente</p>
+          <p class="text-xs text-slate-400 dark:text-slate-400 font-semibold mt-1">Atualize informações de cadastro e altere senhas diretamente</p>
         </div>
 
         <form id="form-editar-consultor" class="p-6 space-y-4">
@@ -934,7 +934,7 @@ export class ConfiguracoesPage {
 
           <div>
             <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">E-mail de Acesso</label>
-            <input id="input-ec-email" type="email" disabled autocomplete="username" value="${c.email || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 rounded-lg text-slate-400 dark:text-slate-500 font-bold text-sm cursor-not-allowed select-none" />
+            <input id="input-ec-email" type="email" disabled autocomplete="username" value="${c.email || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 rounded-lg text-slate-400 dark:text-slate-400 font-bold text-sm cursor-not-allowed select-none" />
           </div>
 
           <div class="grid grid-cols-2 gap-4">
@@ -957,7 +957,7 @@ export class ConfiguracoesPage {
 
           <div class="border-t border-slate-100 dark:border-slate-800 pt-4">
             <h3 class="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-1.5">Alterar Senha do Consultor</h3>
-            <p class="text-[10px] text-slate-400 dark:text-slate-500 mb-2 font-semibold italic">Nota de desenvolvimento: você pode alterar diretamente a senha do usuário preenchendo o campo abaixo.</p>
+            <p class="text-[10px] text-slate-400 dark:text-slate-400 mb-2 font-semibold italic">Nota de desenvolvimento: você pode alterar diretamente a senha do usuário preenchendo o campo abaixo.</p>
             <div>
               <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">Definir Nova Senha (Mínimo 6 dígitos)</label>
               <input id="input-ec-senha" type="password" minlength="6" autocomplete="new-password" placeholder="Insira a nova senha diretamente" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs" />
@@ -1235,7 +1235,7 @@ export class ConfiguracoesPage {
             💬
           </div>
           <h2 class="text-lg font-black text-slate-800 dark:text-slate-100 tracking-tight leading-snug">${editando ? 'Editar Modelo' : 'Criar Novo Modelo'}</h2>
-          <p class="text-xs text-slate-400 dark:text-slate-500 font-semibold mt-1">Configure o texto da mensagem e as variáveis de substituição</p>
+          <p class="text-xs text-slate-400 dark:text-slate-400 font-semibold mt-1">Configure o texto da mensagem e as variáveis de substituição</p>
         </div>
 
         <form id="form-novo-template" class="p-6 space-y-4">
@@ -1252,7 +1252,7 @@ export class ConfiguracoesPage {
           <div>
             <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5 flex items-center justify-between">
               <span>Conteúdo da Mensagem *</span>
-              <span class="text-[9px] text-slate-400 dark:text-slate-500 font-semibold lowercase">variáveis suportadas: {{cliente}}, {{destino}}, {{localizador}}, etc.</span>
+              <span class="text-[9px] text-slate-400 dark:text-slate-400 font-semibold lowercase">variáveis suportadas: {{cliente}}, {{destino}}, {{localizador}}, etc.</span>
             </label>
             <textarea id="input-tem-conteudo" required rows="6" placeholder="Olá, {{cliente}}! Como foi sua viagem para {{destino}}?..." class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs resize-none">${editando ? editando.conteudo : ''}</textarea>
           </div>
@@ -1260,7 +1260,7 @@ export class ConfiguracoesPage {
           <div>
             <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Variáveis do Sistema Utilizadas (separadas por vírgula) *</label>
             <input id="input-tem-variaveis" type="text" required value="${editando && editando.variaveis_suportadas ? editando.variaveis_suportadas.join(', ') : 'cliente, destino, consultor'}" placeholder="cliente, destino, localizador, consultor, link_itinerario, link_feedback" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
-            <p class="text-[9px] text-slate-400 dark:text-slate-500 font-semibold mt-1">Insira exatamente as variáveis que você usou entre {{ }} no texto (ex: cliente, destino, consultor).</p>
+            <p class="text-[9px] text-slate-400 dark:text-slate-400 font-semibold mt-1">Insira exatamente as variáveis que você usou entre {{ }} no texto (ex: cliente, destino, consultor).</p>
           </div>
 
           <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
@@ -1366,7 +1366,7 @@ export class ConfiguracoesPage {
             🎯
           </div>
           <h2 class="text-lg font-black text-slate-800 dark:text-slate-100 tracking-tight leading-snug">Criar Nova Campanha</h2>
-          <p class="text-xs text-slate-400 dark:text-slate-500 font-semibold mt-1">Configure o período, o parâmetro do processo e a recompensa</p>
+          <p class="text-xs text-slate-400 dark:text-slate-400 font-semibold mt-1">Configure o período, o parâmetro do processo e a recompensa</p>
         </div>
 
         <form id="form-nova-campanha" class="p-6 space-y-4">
@@ -1966,13 +1966,13 @@ export class ConfiguracoesPage {
                     <div>
                       <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Dias Alerta Pré-Embarque *</label>
                       <input id="input-sla-pre" type="number" min="1" required value="${this.settings.slaPreEmbarqueDias}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-bold" />
-                      <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1.5 font-medium leading-relaxed">Dispara alerta visual vermelho no card se o embarque estiver a menos dias do que este limite.</p>
+                      <p class="text-[10px] text-slate-400 dark:text-slate-400 mt-1.5 font-medium leading-relaxed">Dispara alerta visual vermelho no card se o embarque estiver a menos dias do que este limite.</p>
                     </div>
 
                     <div>
                       <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Dias Alerta Pós-Viagem *</label>
                       <input id="input-sla-pos" type="number" min="1" required value="${this.settings.slaPosViagemDias}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-bold" />
-                      <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1.5 font-medium leading-relaxed">Dispara alerta visual laranja se a viagem já terminou e o pós-venda não foi fechado dentro deste limite.</p>
+                      <p class="text-[10px] text-slate-400 dark:text-slate-400 mt-1.5 font-medium leading-relaxed">Dispara alerta visual laranja se a viagem já terminou e o pós-venda não foi fechado dentro deste limite.</p>
                     </div>
                   </div>
                 </div>
@@ -1981,7 +1981,7 @@ export class ConfiguracoesPage {
                   <div>
                     <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Taxa de Cancelamento Retida (%)</label>
                     <input id="input-taxa" type="number" step="0.01" min="0" max="100" value="${this.settings.taxaCancelamentoPadrao}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-bold" />
-                    <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1.5 font-medium">Taxa retida padrão sugerida durante a solicitação de reembolsos.</p>
+                    <p class="text-[10px] text-slate-400 dark:text-slate-400 mt-1.5 font-medium">Taxa retida padrão sugerida durante a solicitação de reembolsos.</p>
                   </div>
                 </div>
 
@@ -1993,9 +1993,9 @@ export class ConfiguracoesPage {
                   <div class="flex-1 min-w-0">
                     <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
                       Disparo Automático de NPS (Pós-Viagem)
-                      <span class="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 text-[8px] font-black uppercase rounded">Em Breve</span>
+                      <span class="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-400 text-[8px] font-black uppercase rounded">Em Breve</span>
                     </label>
-                    <p class="text-[10px] text-slate-400 dark:text-slate-500 font-medium leading-relaxed">Enviar e-mail/WhatsApp automaticamente solicitando feedback de satisfação quando a viagem for movida para Pós-Viagem.</p>
+                    <p class="text-[10px] text-slate-400 dark:text-slate-400 font-medium leading-relaxed">Enviar e-mail/WhatsApp automaticamente solicitando feedback de satisfação quando a viagem for movida para Pós-Viagem.</p>
                   </div>
                   <div class="relative flex items-center shrink-0">
                     <div class="w-11 h-6 bg-slate-200 dark:bg-slate-800 rounded-full relative transition-all duration-200 cursor-not-allowed opacity-50" title="Disparo automático por e-mail/WhatsApp (Em Breve)">
@@ -2020,20 +2020,20 @@ export class ConfiguracoesPage {
                       URL da Instância / Domínio
                     </label>
                     <input id="input-digisac-domain" type="url" placeholder="Ex: https://minhaagencia.digisac.chat" value="${this.settings.digisacDomain || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs" />
-                    <p class="text-[9px] text-slate-400 dark:text-slate-500 mt-1 font-medium">Domínio completo da sua conta do Digisac.</p>
+                    <p class="text-[9px] text-slate-400 dark:text-slate-400 mt-1 font-medium">Domínio completo da sua conta do Digisac.</p>
                   </div>
 
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">ID da Conexão (serviceId)</label>
                       <input id="input-digisac-service-id" type="text" placeholder="Ex: 5ac6..." value="${this.settings.digisacServiceId || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs" />
-                      <p class="text-[9px] text-slate-400 dark:text-slate-500 mt-1 font-medium">O identificador da conexão do WhatsApp ativa no Digisac.</p>
+                      <p class="text-[9px] text-slate-400 dark:text-slate-400 mt-1 font-medium">O identificador da conexão do WhatsApp ativa no Digisac.</p>
                     </div>
 
                     <div>
                       <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Token de Acesso Pessoal (API)</label>
                       <input id="input-digisac-token" type="password" placeholder="••••••••••••••••" value="${this.settings.digisacToken || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs" />
-                      <p class="text-[9px] text-slate-400 dark:text-slate-500 mt-1 font-medium">Gerado em Menu > Conta > API > Tokens de acesso pessoal.</p>
+                      <p class="text-[9px] text-slate-400 dark:text-slate-400 mt-1 font-medium">Gerado em Menu > Conta > API > Tokens de acesso pessoal.</p>
                     </div>
                   </div>
 
@@ -2046,14 +2046,14 @@ export class ConfiguracoesPage {
 
                   <!-- Funcionalidades Ativas (Toggles) -->
                   <div class="border-t border-slate-100 dark:border-slate-800 pt-4">
-                    <h4 class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3">Recursos Habilitados (Digisac)</h4>
+                    <h4 class="text-xs font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-3">Recursos Habilitados (Digisac)</h4>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       
                       <!-- Manual Send Toggle -->
                       <div class="flex items-center justify-between p-3 bg-slate-50/50 dark:bg-slate-900/50 border border-slate-150 dark:border-slate-800/80 rounded-xl">
                         <div class="flex flex-col gap-0.5 pr-2">
                           <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Envio Manual de Mensagens</span>
-                          <span class="text-[10px] text-slate-400 dark:text-slate-500 leading-normal">Permite enviar modelos de mensagens manualmente nos chats.</span>
+                          <span class="text-[10px] text-slate-400 dark:text-slate-400 leading-normal">Permite enviar modelos de mensagens manualmente nos chats.</span>
                         </div>
                         <label class="inline-flex items-center cursor-pointer select-none shrink-0 relative">
                           <input id="input-digisac-enable-manual-send" type="checkbox" ${this.settings.digisac_enable_manual_send !== false ? 'checked' : ''} class="sr-only peer" />
@@ -2065,7 +2065,7 @@ export class ConfiguracoesPage {
                       <div class="flex items-center justify-between p-3 bg-slate-50/50 dark:bg-slate-900/50 border border-slate-150 dark:border-slate-800/80 rounded-xl">
                         <div class="flex flex-col gap-0.5 pr-2">
                           <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Sincronização de Histórico</span>
-                          <span class="text-[10px] text-slate-400 dark:text-slate-500 leading-normal">Mantém histórico de conversas atualizado no painel.</span>
+                          <span class="text-[10px] text-slate-400 dark:text-slate-400 leading-normal">Mantém histórico de conversas atualizado no painel.</span>
                         </div>
                         <label class="inline-flex items-center cursor-pointer select-none shrink-0 relative">
                           <input id="input-digisac-enable-chat-history" type="checkbox" ${this.settings.digisac_enable_chat_history !== false ? 'checked' : ''} class="sr-only peer" />
@@ -2077,7 +2077,7 @@ export class ConfiguracoesPage {
                       <div class="flex items-center justify-between p-3 bg-slate-50/50 dark:bg-slate-900/50 border border-slate-150 dark:border-slate-800/80 rounded-xl">
                         <div class="flex flex-col gap-0.5 pr-2">
                           <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Envio de Vouchers</span>
-                          <span class="text-[10px] text-slate-400 dark:text-slate-500 leading-normal">Permite enviar vouchers e itinerários via WhatsApp.</span>
+                          <span class="text-[10px] text-slate-400 dark:text-slate-400 leading-normal">Permite enviar vouchers e itinerários via WhatsApp.</span>
                         </div>
                         <label class="inline-flex items-center cursor-pointer select-none shrink-0 relative">
                           <input id="input-digisac-enable-vouchers" type="checkbox" ${this.settings.digisac_enable_vouchers !== false ? 'checked' : ''} class="sr-only peer" />
@@ -2089,7 +2089,7 @@ export class ConfiguracoesPage {
                       <div class="flex items-center justify-between p-3 bg-slate-50/50 dark:bg-slate-900/50 border border-slate-150 dark:border-slate-800/80 rounded-xl">
                         <div class="flex flex-col gap-0.5 pr-2">
                           <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Distribuição de Conversas (Fila)</span>
-                          <span class="text-[10px] text-slate-400 dark:text-slate-500 leading-normal">Roteamento inteligente de chats para consultores.</span>
+                          <span class="text-[10px] text-slate-400 dark:text-slate-400 leading-normal">Roteamento inteligente de chats para consultores.</span>
                         </div>
                         <label class="inline-flex items-center cursor-pointer select-none shrink-0 relative">
                           <input id="input-digisac-enable-routing" type="checkbox" ${this.settings.digisac_enable_routing !== false ? 'checked' : ''} class="sr-only peer" />
@@ -2101,7 +2101,7 @@ export class ConfiguracoesPage {
                       <div class="flex items-center justify-between p-3 bg-slate-50/50 dark:bg-slate-900/50 border border-slate-150 dark:border-slate-800/80 rounded-xl">
                         <div class="flex flex-col gap-0.5 pr-2">
                           <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Gatilhos de Robôs (Bots)</span>
-                          <span class="text-[10px] text-slate-400 dark:text-slate-500 leading-normal">Acionamento automático de fluxos de chat do Digisac.</span>
+                          <span class="text-[10px] text-slate-400 dark:text-slate-400 leading-normal">Acionamento automático de fluxos de chat do Digisac.</span>
                         </div>
                         <label class="inline-flex items-center cursor-pointer select-none shrink-0 relative">
                           <input id="input-digisac-enable-bot-triggers" type="checkbox" ${this.settings.digisac_enable_bot_triggers !== false ? 'checked' : ''} class="sr-only peer" />
@@ -2113,7 +2113,7 @@ export class ConfiguracoesPage {
                       <div class="flex items-center justify-between p-3 bg-slate-50/50 dark:bg-slate-900/50 border border-slate-150 dark:border-slate-800/80 rounded-xl">
                         <div class="flex flex-col gap-0.5 pr-2">
                           <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Webhooks de Eventos</span>
-                          <span class="text-[10px] text-slate-400 dark:text-slate-500 leading-normal">Envio de status de leitura/mensagens recebidas via webhook.</span>
+                          <span class="text-[10px] text-slate-400 dark:text-slate-400 leading-normal">Envio de status de leitura/mensagens recebidas via webhook.</span>
                         </div>
                         <label class="inline-flex items-center cursor-pointer select-none shrink-0 relative">
                           <input id="input-digisac-enable-webhooks" type="checkbox" ${this.settings.digisac_enable_webhooks !== false ? 'checked' : ''} class="sr-only peer" />
@@ -2132,9 +2132,9 @@ export class ConfiguracoesPage {
                       <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Cor Primária (Hexadecimal) *</label>
                       <div class="flex items-center gap-2">
                         <input id="input-agency-primary-color" type="color" value="${this.settings.agencyPrimaryColor || '#4f46e5'}" class="w-10 h-10 border border-slate-200 dark:border-slate-700 bg-transparent rounded-lg cursor-pointer" />
-                        <span class="text-xs font-mono font-bold text-slate-650">${this.settings.agencyPrimaryColor || '#4f46e5'}</span>
+                        <span class="text-xs font-mono font-bold text-slate-600">${this.settings.agencyPrimaryColor || '#4f46e5'}</span>
                       </div>
-                      <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1.5 font-medium leading-relaxed">Cor usada nos botões, links e destaques das telas públicas (Itinerário e NPS).</p>
+                      <p class="text-[10px] text-slate-400 dark:text-slate-400 mt-1.5 font-medium leading-relaxed">Cor usada nos botões, links e destaques das telas públicas (Itinerário e NPS).</p>
                     </div>
 
                     <div>
@@ -2147,7 +2147,7 @@ export class ConfiguracoesPage {
                         </label>
                         <div id="logo-upload-spinner" class="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin hidden"></div>
                       </div>
-                      <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1.5 font-medium leading-relaxed">Envie um arquivo PNG/JPG leve. Ele será exibido no topo do Itinerário e NPS.</p>
+                      <p class="text-[10px] text-slate-400 dark:text-slate-400 mt-1.5 font-medium leading-relaxed">Envie um arquivo PNG/JPG leve. Ele será exibido no topo do Itinerário e NPS.</p>
                       
                       <!-- Preview do Logotipo -->
                       <div class="mt-3.5">
@@ -2174,7 +2174,7 @@ export class ConfiguracoesPage {
                 Armazenamento de Arquivos
               </h2>
 
-              <p class="text-xs text-slate-400 dark:text-slate-500 font-medium leading-relaxed">
+              <p class="text-xs text-slate-400 dark:text-slate-400 font-medium leading-relaxed">
                 O PaxFlow realiza o upload de passaportes e propostas de forma direta e segura no bucket <code class="font-mono text-indigo-500 bg-indigo-50/40 dark:bg-indigo-950 px-1 py-0.5 rounded">documentos-clientes</code> do Supabase Storage.
               </p>
 
@@ -2185,14 +2185,14 @@ export class ConfiguracoesPage {
                   <p class="text-[10px] text-rose-600 dark:text-rose-400 font-bold mt-1 max-w-xs leading-normal">
                     ${this.storageError}
                   </p>
-                  <p class="text-[9px] text-slate-400 dark:text-slate-500 leading-relaxed mt-0.5">
+                  <p class="text-[9px] text-slate-400 dark:text-slate-400 leading-relaxed mt-0.5">
                     Certifique-se de que o bucket privado <strong>documentos-clientes</strong> foi criado no Supabase e as políticas RLS foram aplicadas.
                   </p>
                 ` : `
                   <span class="text-3xl animate-fade-in">✅</span>
                   <span class="px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/45 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/40 font-black text-[9px] rounded uppercase tracking-wider">Conectado (Produção)</span>
                   <p class="text-[10px] text-slate-500 dark:text-slate-400 font-bold mt-1">Bucket Supabase Storage Ativo</p>
-                  <p class="text-[9px] text-slate-400 dark:text-slate-500 leading-relaxed mt-0.5">Pronto para uploads em produção no storage oficial.</p>
+                  <p class="text-[9px] text-slate-400 dark:text-slate-400 leading-relaxed mt-0.5">Pronto para uploads em produção no storage oficial.</p>
                 `}
               </div>
 
@@ -2202,7 +2202,7 @@ export class ConfiguracoesPage {
                 </button>
               </div>
               
-              <p class="text-[9px] text-slate-400 dark:text-slate-500 font-medium leading-normal text-center">
+              <p class="text-[9px] text-slate-400 dark:text-slate-400 font-medium leading-normal text-center">
                 Os arquivos são armazenados de forma privada e acessados através de URLs assinadas temporárias e seguras de 15 minutos.
               </p>
             </div>
@@ -2214,7 +2214,7 @@ export class ConfiguracoesPage {
             <div class="flex items-center justify-between">
               <div>
                 <h2 class="text-lg font-black text-slate-800 dark:text-slate-200 tracking-tight">Consultores da Agência</h2>
-                <p class="text-xs text-slate-400 dark:text-slate-500 font-medium">Controle de acessos, status e níveis de permissão</p>
+                <p class="text-xs text-slate-400 dark:text-slate-400 font-medium">Controle de acessos, status e níveis de permissão</p>
               </div>
               <button id="btn-novo-consultor" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/20 flex items-center gap-1.5 transition transform hover:-translate-y-0.5 uppercase">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
@@ -2229,7 +2229,7 @@ export class ConfiguracoesPage {
               <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
                   <thead>
-                    <tr class="bg-slate-600/5 dark:bg-slate-800/60 text-[10px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
+                    <tr class="bg-slate-600/5 dark:bg-slate-800/60 text-[10px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
                       <th class="py-4 px-5">Consultor</th>
                       <th class="py-4 px-5">E-mail</th>
                       <th class="py-4 px-5 text-center">Nível de Acesso</th>
@@ -2280,7 +2280,7 @@ export class ConfiguracoesPage {
                             </button>
                             
                             ${isSelf ? `
-                              <span class="text-xs text-slate-400 dark:text-slate-500 font-semibold italic ml-2">Você</span>
+                              <span class="text-xs text-slate-400 dark:text-slate-400 font-semibold italic ml-2">Você</span>
                             ` : `
                               <select data-id="${c.id}" class="select-role-user px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500">
                                 <option value="consultor" ${c.role === 'consultor' ? 'selected' : ''}>Tornar Consultor</option>
@@ -2313,14 +2313,14 @@ export class ConfiguracoesPage {
               <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-12 text-center shadow-xl flex flex-col items-center justify-center gap-4">
                 <div class="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
                 <h3 class="text-lg font-black tracking-tight text-slate-800 dark:text-slate-200">Importação em Lote Ativa</h3>
-                <p class="text-xs text-slate-400 dark:text-slate-500 font-semibold max-w-sm">Estamos processando as linhas do arquivo CSV e inserindo de forma performática no banco de dados. Isso pode levar alguns segundos...</p>
+                <p class="text-xs text-slate-400 dark:text-slate-400 font-semibold max-w-sm">Estamos processando as linhas do arquivo CSV e inserindo de forma performática no banco de dados. Isso pode levar alguns segundos...</p>
               </div>
             ` : this.parsedHeaders.length === 0 ? `
               <!-- Dropzone Inicial -->
               <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 shadow-sm flex flex-col gap-6">
                 <div>
                   <h2 class="text-lg font-black tracking-tight">Importação de Histórico de Chamados</h2>
-                  <p class="text-xs text-slate-400 dark:text-slate-500 font-semibold">Alimente sua base de Orçamentos do PaxFlow importando chamados do DIGISAC</p>
+                  <p class="text-xs text-slate-400 dark:text-slate-400 font-semibold">Alimente sua base de Orçamentos do PaxFlow importando chamados do DIGISAC</p>
                 </div>
 
                 <div id="csv-dropzone" class="border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-indigo-400 dark:hover:border-indigo-600 rounded-2xl p-12 text-center cursor-pointer transition bg-slate-50/50 dark:bg-slate-950/20 hover:bg-indigo-50/5 dark:hover:bg-indigo-950/5 flex flex-col items-center justify-center gap-3 group">
@@ -2329,7 +2329,7 @@ export class ConfiguracoesPage {
                   </div>
                   <div>
                     <span class="block text-sm font-extrabold text-slate-700 dark:text-slate-300">Arraste e solte o arquivo CSV aqui</span>
-                    <span class="block text-xs text-slate-400 dark:text-slate-500 font-medium mt-1">Delimitado por ponto e vírgula (;) ou vírgula (,)</span>
+                    <span class="block text-xs text-slate-400 dark:text-slate-400 font-medium mt-1">Delimitado por ponto e vírgula (;) ou vírgula (,)</span>
                   </div>
                   <div class="mt-2">
                     <label class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl transition shadow-lg shadow-indigo-600/10 cursor-pointer uppercase">
@@ -2373,7 +2373,7 @@ export class ConfiguracoesPage {
                         <div>
                           <div class="flex justify-between items-center mb-1">
                             <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">${field.label}</label>
-                            <span class="text-[9px] text-slate-400 dark:text-slate-500 font-medium">${field.desc}</span>
+                            <span class="text-[9px] text-slate-400 dark:text-slate-400 font-medium">${field.desc}</span>
                           </div>
                           <select id="select-map-${field.key}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs font-bold text-slate-800 dark:text-slate-100">
                             <option value="">-- Não Mapear (Ignorar) --</option>
@@ -2397,7 +2397,7 @@ export class ConfiguracoesPage {
                     <div>
                       <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Destino Padrão *</label>
                       <input id="input-default-destino" type="text" required value="${this.defaultDestino}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs font-bold text-slate-800 dark:text-slate-100" />
-                      <p class="text-[9px] text-slate-400 dark:text-slate-500 mt-1 font-medium">Os orçamentos criados terão este destino preenchido por padrão.</p>
+                      <p class="text-[9px] text-slate-400 dark:text-slate-400 mt-1 font-medium">Os orçamentos criados terão este destino preenchido por padrão.</p>
                     </div>
 
                     <div>
@@ -2428,7 +2428,7 @@ export class ConfiguracoesPage {
                   <h3 class="text-sm font-black tracking-tight border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2">
                     <span class="text-base">👤</span> Distribuição de Responsabilidade (Mapeamento de Consultores)
                   </h3>
-                  <p class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold mt-1.5">Associamos os atendentes únicos detectados no CSV aos consultores ativos do PaxFlow.</p>
+                  <p class="text-[10px] text-slate-400 dark:text-slate-400 font-semibold mt-1.5">Associamos os atendentes únicos detectados no CSV aos consultores ativos do PaxFlow.</p>
                 </div>
 
                 <div class="overflow-hidden border border-slate-100 dark:border-slate-800 rounded-2xl">
@@ -2469,7 +2469,7 @@ export class ConfiguracoesPage {
                   <h3 class="text-sm font-black tracking-tight border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2">
                     <span class="text-base">👁️</span> Pré-visualização Mapeada (Primeiros 3 Leads)
                   </h3>
-                  <p class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold mt-1.5">Veja uma simulação de como os orçamentos serão registrados antes de prosseguir.</p>
+                  <p class="text-[10px] text-slate-400 dark:text-slate-400 font-semibold mt-1.5">Veja uma simulação de como os orçamentos serão registrados antes de prosseguir.</p>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -2539,7 +2539,7 @@ export class ConfiguracoesPage {
                         ${tagsList.length > 0 ? `
                           <div class="flex flex-wrap gap-1">
                             ${tagsList.slice(0, 3).map(tag => `
-                              <span class="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border border-slate-200/40 dark:border-slate-700/40 rounded text-[7px] font-extrabold">${tag}</span>
+                              <span class="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-400 border border-slate-200/40 dark:border-slate-700/40 rounded text-[7px] font-extrabold">${tag}</span>
                             `).join('')}
                           </div>
                         ` : ''}
@@ -2566,7 +2566,7 @@ export class ConfiguracoesPage {
             <div class="flex items-center justify-between">
               <div>
                 <h2 class="text-lg font-black text-slate-800 dark:text-slate-200 tracking-tight">Campanhas Internas</h2>
-                <p class="text-xs text-slate-400 dark:text-slate-500 font-medium">Criação, ativação e controle de metas por período</p>
+                <p class="text-xs text-slate-400 dark:text-slate-400 font-medium">Criação, ativação e controle de metas por período</p>
               </div>
               <button id="btn-nova-campanha" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/20 flex items-center gap-1.5 transition transform hover:-translate-y-0.5 uppercase">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
@@ -2581,7 +2581,7 @@ export class ConfiguracoesPage {
               <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
                   <thead>
-                    <tr class="bg-slate-600/5 dark:bg-slate-800/60 text-[10px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
+                    <tr class="bg-slate-600/5 dark:bg-slate-800/60 text-[10px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
                       <th class="py-4 px-5">Título</th>
                       <th class="py-4 px-5">Parâmetro de Meta</th>
                       <th class="py-4 px-5 text-center">Período</th>
@@ -2593,7 +2593,7 @@ export class ConfiguracoesPage {
                   <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-sm text-slate-700 dark:text-slate-300 font-semibold bg-white/50 dark:bg-slate-900/30">
                     ${this.campaigns.length === 0 ? `
                       <tr>
-                        <td colspan="6" class="py-8 px-5 text-center text-slate-400 dark:text-slate-500 font-medium italic">
+                        <td colspan="6" class="py-8 px-5 text-center text-slate-400 dark:text-slate-400 font-medium italic">
                           Nenhuma campanha cadastrada até o momento.
                         </td>
                       </tr>
@@ -2626,7 +2626,7 @@ export class ConfiguracoesPage {
                         <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/10 transition-colors">
                           <td class="py-4 px-5">
                             <span class="block text-slate-800 dark:text-slate-200 font-bold">${cam.titulo}</span>
-                            <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-semibold max-w-[250px] truncate">${cam.descricao}</span>
+                            <span class="block text-[10px] text-slate-400 dark:text-slate-400 font-semibold max-w-[250px] truncate">${cam.descricao}</span>
                           </td>
                           <td class="py-4 px-5 text-slate-600 dark:text-slate-400 font-medium">
                             ${metaLabel}
@@ -2666,7 +2666,7 @@ export class ConfiguracoesPage {
             <div class="flex items-center justify-between">
               <div>
                 <h2 class="text-lg font-black text-slate-800 dark:text-slate-200 tracking-tight">Modelos de Mensagem</h2>
-                <p class="text-xs text-slate-400 dark:text-slate-500 font-medium">Configure os textos de WhatsApp que serão enviados aos clientes</p>
+                <p class="text-xs text-slate-400 dark:text-slate-400 font-medium">Configure os textos de WhatsApp que serão enviados aos clientes</p>
               </div>
               <button id="btn-novo-template" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/20 flex items-center gap-1.5 transition transform hover:-translate-y-0.5 uppercase">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
@@ -2681,7 +2681,7 @@ export class ConfiguracoesPage {
               <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
                   <thead>
-                    <tr class="bg-slate-600/5 dark:bg-slate-800/60 text-[10px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
+                    <tr class="bg-slate-600/5 dark:bg-slate-800/60 text-[10px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
                       <th class="py-4 px-5">Título / Descrição</th>
                       <th class="py-4 px-5">Variáveis Mapeadas</th>
                       <th class="py-4 px-5 text-right">Ações</th>
@@ -2690,7 +2690,7 @@ export class ConfiguracoesPage {
                   <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-sm text-slate-700 dark:text-slate-300 font-semibold bg-white/50 dark:bg-slate-900/30">
                     ${this.templates.length === 0 ? `
                       <tr>
-                        <td colspan="3" class="py-8 px-5 text-center text-slate-400 dark:text-slate-500 font-medium italic">
+                        <td colspan="3" class="py-8 px-5 text-center text-slate-400 dark:text-slate-400 font-medium italic">
                           Nenhum modelo de mensagem cadastrado.
                         </td>
                       </tr>
@@ -2703,7 +2703,7 @@ export class ConfiguracoesPage {
                         <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/10 transition-colors">
                           <td class="py-4 px-5">
                             <span class="block text-slate-800 dark:text-slate-200 font-bold">${tem.titulo}</span>
-                            <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-semibold max-w-[400px] truncate">${tem.descricao}</span>
+                            <span class="block text-[10px] text-slate-400 dark:text-slate-400 font-semibold max-w-[400px] truncate">${tem.descricao}</span>
                           </td>
                           <td class="py-4 px-5 text-slate-600 dark:text-slate-400 font-medium">
                             <div class="flex flex-wrap gap-1">
@@ -2732,7 +2732,7 @@ export class ConfiguracoesPage {
             <div class="flex items-center justify-between">
               <div>
                 <h2 class="text-lg font-black text-slate-800 dark:text-slate-200 tracking-tight">Metas Financeiras & Campanhas</h2>
-                <p class="text-xs text-slate-400 dark:text-slate-500 font-medium">Cadastre períodos de metas financeiras (bruto/lucro) e faixas de prêmios por consultor</p>
+                <p class="text-xs text-slate-400 dark:text-slate-400 font-medium">Cadastre períodos de metas financeiras (bruto/lucro) e faixas de prêmios por consultor</p>
               </div>
               <button id="btn-nova-meta" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-emerald-600/20 flex items-center gap-1.5 transition transform hover:-translate-y-0.5 uppercase">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
@@ -2747,7 +2747,7 @@ export class ConfiguracoesPage {
               <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
                   <thead>
-                    <tr class="bg-slate-600/5 dark:bg-slate-800/60 text-[10px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
+                    <tr class="bg-slate-600/5 dark:bg-slate-800/60 text-[10px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
                       <th class="py-4 px-5">Nome / Tipo</th>
                       <th class="py-4 px-5">Período</th>
                       <th class="py-4 px-5">Cálculo</th>
@@ -2758,7 +2758,7 @@ export class ConfiguracoesPage {
                   <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-sm text-slate-700 dark:text-slate-300 font-semibold bg-white/50 dark:bg-slate-900/30">
                     ${this.metas.length === 0 ? 
                       '<tr>' +
-                        '<td colspan="5" class="py-8 px-5 text-center text-slate-400 dark:text-slate-500 font-medium italic">' +
+                        '<td colspan="5" class="py-8 px-5 text-center text-slate-400 dark:text-slate-400 font-medium italic">' +
                           'Nenhum período de metas cadastrado.' +
                         '</td>' +
                       '</tr>'
@@ -2784,7 +2784,7 @@ export class ConfiguracoesPage {
                         ? '<div class="text-xs text-emerald-600 dark:text-emerald-400 font-black">Meta Alvo: R$ ' + (meta.valor_meta || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '</div>'
                         : (meta.faixas && meta.faixas.length > 0 
                             ? meta.faixas.map(f => 
-                                '<div class="text-xs text-slate-650 dark:text-slate-400 font-bold mb-0.5 flex items-center gap-1.5">' +
+                                '<div class="text-xs text-slate-600 dark:text-slate-400 font-bold mb-0.5 flex items-center gap-1.5">' +
                                 '<span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: ' + (f.cor || '#6366f1') + '"></span>' +
                                 '• <span style="color: ' + (f.cor || '#6366f1') + '" class="font-black">' + f.nome + '</span>: >= R$ ' + f.valor_minimo.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) +
                                 (f.recompensa ? ' <span class="text-[10px] text-slate-400 dark:text-slate-400 font-normal italic">(' + formatRecompensa(f.recompensa) + ')</span>' : '') +
@@ -2922,7 +2922,7 @@ export class ConfiguracoesPage {
             🏆
           </div>
           <h2 class="text-lg font-black text-slate-800 dark:text-slate-100 tracking-tight leading-snug">Criar Meta Financeira / Campanha</h2>
-          <p class="text-xs text-slate-400 dark:text-slate-500 font-semibold mt-1">Configure o período, o tipo de montante e as faixas de prêmios</p>
+          <p class="text-xs text-slate-400 dark:text-slate-400 font-semibold mt-1">Configure o período, o tipo de montante e as faixas de prêmios</p>
         </div>
 
         <form id="form-nova-meta" class="p-6 space-y-4">
@@ -3262,7 +3262,7 @@ export class ConfiguracoesPage {
             🏆
           </div>
           <h2 class="text-lg font-black text-slate-800 dark:text-slate-100 tracking-tight leading-snug">Editar Meta Financeira / Campanha</h2>
-          <p class="text-xs text-slate-400 dark:text-slate-550 font-semibold mt-1">Configure o período, o tipo de montante e as faixas de prêmios</p>
+          <p class="text-xs text-slate-400 dark:text-slate-400 font-semibold mt-1">Configure o período, o tipo de montante e as faixas de prêmios</p>
         </div>
 
         <form id="form-editar-meta" class="p-6 space-y-4">

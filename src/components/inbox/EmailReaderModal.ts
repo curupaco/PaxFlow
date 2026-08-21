@@ -139,7 +139,7 @@ export class EmailReaderModal {
                         <div class="flex-grow min-w-0">
                           <div class="flex items-center justify-between gap-1">
                             <span class="block text-xs font-black text-slate-800 dark:text-slate-200 truncate">${msgSender}</span>
-                            <span class="text-[9px] font-bold text-slate-400 dark:text-slate-500 whitespace-nowrap">${msgDate}</span>
+                            <span class="text-[9px] font-bold text-slate-400 dark:text-slate-400 whitespace-nowrap">${msgDate}</span>
                           </div>
                         </div>
                       </div>
@@ -154,7 +154,7 @@ export class EmailReaderModal {
                 
                 <p class="mb-4">${item.body}</p>
 
-                <p class="mt-6 border-t border-slate-100 dark:border-slate-800/80 pt-4 text-xs text-slate-400 dark:text-slate-500">
+                <p class="mt-6 border-t border-slate-100 dark:border-slate-800/80 pt-4 text-xs text-slate-400 dark:text-slate-400">
                   Atenciosamente,<br>
                   <strong>PaxFlow Cockpit Automático</strong><br>
                   Gestão Operacional e Fluxo de Passageiros

@@ -35,7 +35,7 @@ export class CommentsService {
     // Renderiza o esqueleto inicial de carregamento
     container.innerHTML = `
       <div class="space-y-3">
-        <h4 class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Comentários e Anotações</h4>
+        <h4 class="text-xs font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider">Comentários e Anotações</h4>
         <div class="py-4 text-center text-xs text-slate-400 font-semibold animate-pulse">Carregando comentários...</div>
       </div>
     `;
@@ -84,7 +84,7 @@ export class CommentsService {
     const consultoresAtivos = profiles.filter(p => p.ativo);
 
     const commentsListHtml = comments.length === 0
-      ? `<p class="text-center text-xs text-slate-400 dark:text-slate-500 font-medium py-4">Nenhum comentário inserido.</p>`
+      ? `<p class="text-center text-xs text-slate-400 dark:text-slate-400 font-medium py-4">Nenhum comentário inserido.</p>`
       : comments.map(c => {
           const autor = c.autor;
           const autorAvatar = autor ? getAvatarSvg(autor.avatar_url, autor.nome, 'w-6 h-6') : '👤';
@@ -118,12 +118,12 @@ export class CommentsService {
               <div class="flex-1 min-w-0 bg-slate-50/10">
                 <div class="flex items-center justify-between gap-2 mb-1">
                   <span class="text-xs font-black text-slate-700 dark:text-slate-200 truncate leading-none">${autorNome}</span>
-                  <span class="text-[9px] text-slate-400 dark:text-slate-500 font-bold">${formatarDataHora(c.created_at)}</span>
+                  <span class="text-[9px] text-slate-400 dark:text-slate-400 font-bold">${formatarDataHora(c.created_at)}</span>
                 </div>
                 <p class="text-xs text-slate-600 dark:text-slate-400 font-semibold whitespace-pre-wrap leading-relaxed break-words break-all">${textoFormatado}</p>
               </div>
               ${isOwner ? `
-                <button data-delete-comment-id="${c.id}" class="p-1 hover:bg-rose-50 dark:hover:bg-rose-950/20 text-slate-400 dark:text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 rounded-md transition text-[10px]" title="Excluir comentário">
+                <button data-delete-comment-id="${c.id}" class="p-1 hover:bg-rose-50 dark:hover:bg-rose-950/20 text-slate-400 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-md transition text-[10px]" title="Excluir comentário">
                   🗑️
                 </button>
               ` : ''}
@@ -133,7 +133,7 @@ export class CommentsService {
 
     container.innerHTML = `
       <div class="space-y-4">
-        <h4 class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">💬 Comentários e Anotações</h4>
+        <h4 class="text-xs font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-2">💬 Comentários e Anotações</h4>
         
         <!-- Lista de Comentários -->
         <div class="comments-scroll-area max-h-[220px] overflow-y-auto space-y-2 pr-1 custom-scrollbar">
@@ -161,20 +161,20 @@ export class CommentsService {
           <div id="sched-panel-${itemId}" class="hidden border border-slate-200 dark:border-slate-800 rounded-xl p-3 bg-slate-50/50 dark:bg-slate-900/10 mt-3 space-y-2.5">
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
               <div class="space-y-1">
-                <label class="block text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Data do Alerta</label>
-                <input id="sched-date-${itemId}" type="text" placeholder="DD/MM/YYYY" class="w-full px-2 py-1.5 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 text-xs font-semibold" />
+                <label class="block text-[8px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest">Data do Alerta</label>
+                <input id="sched-date-${itemId}" type="text" placeholder="DD/MM/YYYY" class="w-full px-2 py-1.5 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 text-xs font-semibold" />
               </div>
               <div class="space-y-1">
-                <label class="block text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Período</label>
-                <select id="sched-period-${itemId}" class="w-full px-2 py-1.5 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 text-xs font-semibold">
+                <label class="block text-[8px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest">Período</label>
+                <select id="sched-period-${itemId}" class="w-full px-2 py-1.5 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 text-xs font-semibold">
                   <option value="manha">🌅 Manhã</option>
                   <option value="tarde" selected>☀️ Tarde</option>
                   <option value="noite">🌙 Noite</option>
                 </select>
               </div>
               <div class="space-y-1">
-                <label class="block text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Para quem?</label>
-                <select id="sched-user-${itemId}" class="w-full px-2 py-1.5 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 text-xs font-semibold">
+                <label class="block text-[8px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest">Para quem?</label>
+                <select id="sched-user-${itemId}" class="w-full px-2 py-1.5 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 text-xs font-semibold">
                   ${consultoresAtivos.map(p => `<option value="${p.id}" ${p.id === currentUserId ? 'selected' : ''}>${p.nome}</option>`).join('')}
                 </select>
               </div>
@@ -586,9 +586,9 @@ export class CommentsService {
           <div class="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
             <div>
               <h3 class="text-sm font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5">📦 Notas do Produto</h3>
-              <p class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold truncate max-w-[300px]">${productName}</p>
+              <p class="text-[10px] text-slate-400 dark:text-slate-400 font-semibold truncate max-w-[300px]">${productName}</p>
             </div>
-            <button id="btn-close-product-comments-modal" class="text-slate-400 hover:text-rose-500 dark:text-slate-500 dark:hover:text-rose-400 font-bold transition">✕</button>
+            <button id="btn-close-product-comments-modal" class="text-slate-400 hover:text-rose-500 dark:text-slate-400 dark:hover:text-rose-400 font-bold transition">✕</button>
           </div>
           <div id="product-comments-content-container" class="p-5 overflow-y-auto flex-1 custom-scrollbar"></div>
         </div>
@@ -657,9 +657,9 @@ export class CommentsService {
           <div class="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
             <div>
               <h3 class="text-sm font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5" id="generic-comments-title">💬 Comentários</h3>
-              <p class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold truncate max-w-[300px]" id="generic-comments-subtitle">${subtitle}</p>
+              <p class="text-[10px] text-slate-400 dark:text-slate-400 font-semibold truncate max-w-[300px]" id="generic-comments-subtitle">${subtitle}</p>
             </div>
-            <button id="btn-close-generic-comments-modal" class="text-slate-400 hover:text-rose-500 dark:text-slate-500 dark:hover:text-rose-400 font-bold transition">✕</button>
+            <button id="btn-close-generic-comments-modal" class="text-slate-400 hover:text-rose-500 dark:text-slate-400 dark:hover:text-rose-400 font-bold transition">✕</button>
           </div>
           <div id="generic-comments-content-container" class="p-5 overflow-y-auto flex-1 custom-scrollbar"></div>
         </div>

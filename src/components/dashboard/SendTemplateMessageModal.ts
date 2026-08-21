@@ -115,7 +115,7 @@ export class SendTemplateMessageModal {
             💬
           </div>
           <h2 class="text-lg font-black text-slate-800 dark:text-slate-100 tracking-tight leading-snug">Disparar Mensagem de WhatsApp</h2>
-          <p class="text-xs text-slate-400 dark:text-slate-500 font-semibold mt-1">Selecione um modelo de mensagem para o cliente</p>
+          <p class="text-xs text-slate-400 dark:text-slate-400 font-semibold mt-1">Selecione um modelo de mensagem para o cliente</p>
         </div>
 
         <div class="p-6 space-y-4">
@@ -131,7 +131,7 @@ export class SendTemplateMessageModal {
           <div>
             <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Telefone do Cliente *</label>
             <input id="input-message-phone" type="text" required value="${options.clienteTelefone}" placeholder="Ex: (11) 99999-9999" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
-            <p class="text-[9px] text-slate-400 dark:text-slate-500 font-semibold mt-1">O telefone será limpo e formatado com o código DDI (55) ao enviar.</p>
+            <p class="text-[9px] text-slate-400 dark:text-slate-400 font-semibold mt-1">O telefone será limpo e formatado com o código DDI (55) ao enviar.</p>
           </div>
 
           <!-- Preview da Mensagem Estilo WhatsApp -->

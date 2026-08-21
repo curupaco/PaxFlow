@@ -182,7 +182,7 @@ export class CadastrosPage {
                       <tbody id="lista-tipos-body">
                         ${this.tiposProduto.length === 0 ? `
                           <tr>
-                            <td colspan="5" class="py-8 text-center text-xs text-slate-400 dark:text-slate-500 font-semibold">
+                            <td colspan="5" class="py-8 text-center text-xs text-slate-400 dark:text-slate-400 font-semibold">
                               Nenhum tipo cadastrado.
                             </td>
                           </tr>
@@ -230,13 +230,13 @@ export class CadastrosPage {
 
                   <form id="form-cadastro-tipo" class="space-y-4">
                     <div>
-                      <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Nome do Tipo *</label>
+                      <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-1">Nome do Tipo *</label>
                       <input id="input-tipo-nome" type="text" required value="${tipoEmEdicao ? tipoEmEdicao.nome : ''}" ${tipoEmEdicao?.nome === 'MUDAR!' ? 'disabled' : ''} placeholder="ex: Circuito, Chip de Viagem" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition" />
                     </div>
 
                     <div class="grid grid-cols-2 gap-4">
                       <div>
-                        <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Ícone / Emoji *</label>
+                        <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-1">Ícone / Emoji *</label>
                         <input id="input-tipo-icone" type="text" required value="${tipoEmEdicao ? tipoEmEdicao.icone : ''}" placeholder="ex: ✈️, 🚢" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs text-center transition" />
                       </div>
                       <div class="flex items-center pt-5">
@@ -306,7 +306,7 @@ export class CadastrosPage {
                       <tbody id="lista-destinos-body">
                         ${filteredDestinos.length === 0 ? `
                           <tr>
-                            <td colspan="3" class="py-8 text-center text-xs text-slate-400 dark:text-slate-500 font-semibold">
+                            <td colspan="3" class="py-8 text-center text-xs text-slate-400 dark:text-slate-400 font-semibold">
                               Nenhum destino encontrado.
                             </td>
                           </tr>
@@ -344,12 +344,12 @@ export class CadastrosPage {
  
                   <form id="form-cadastro-destino" class="space-y-4">
                     <div>
-                      <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Cidade / Nome do Destino *</label>
+                      <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-1">Cidade / Nome do Destino *</label>
                       <input id="input-destino-nome" type="text" required value="${destinoEmEdicao ? (destinoEmEdicao.nome.startsWith('ARRUMAR | ') ? destinoEmEdicao.nome.replace('ARRUMAR | ', '') : destinoEmEdicao.nome) : ''}" placeholder="ex: Buenos Aires, Maceió" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition" />
                     </div>
  
                     <div>
-                      <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">País *</label>
+                      <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-1">País *</label>
                       <input id="input-destino-pais" type="text" required value="${destinoEmEdicao && destinoEmEdicao.pais !== 'ARRUMAR' ? destinoEmEdicao.pais : ''}" placeholder="ex: Argentina, Brasil" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition" />
                     </div>
  
@@ -391,7 +391,7 @@ export class CadastrosPage {
                       <tbody>
                         ${this.formasRecebimento.length === 0 ? `
                           <tr>
-                            <td colspan="4" class="py-8 text-center text-xs text-slate-400 dark:text-slate-500 font-semibold">
+                            <td colspan="4" class="py-8 text-center text-xs text-slate-400 dark:text-slate-400 font-semibold">
                               Nenhuma forma de recebimento cadastrada.
                             </td>
                           </tr>
@@ -407,7 +407,7 @@ export class CadastrosPage {
                               </td>
                               <td class="py-3 px-4 text-right space-x-2">
                                 ${['DESCONTO', 'PREJUÍZO'].includes((f.nome || '').trim().toUpperCase()) ? `
-                                  <span class="text-[10px] text-slate-400 dark:text-slate-500 font-bold italic select-none pr-4">
+                                  <span class="text-[10px] text-slate-400 dark:text-slate-400 font-bold italic select-none pr-4">
                                     Fixo do Sistema
                                   </span>
                                 ` : `
@@ -447,7 +447,7 @@ export class CadastrosPage {
                         ${this.iconesFormaDisponiveis.map(ico => {
                           const isSelected = this.selectedIconForma === ico;
                           return `
-                            <button type="button" data-icon="${ico}" class="btn-select-icone-forma p-2.5 border text-base rounded-xl transition ${isSelected ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 ring-2 ring-indigo-500/20 font-bold' : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-850 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300'}" style="outline: none;">
+                            <button type="button" data-icon="${ico}" class="btn-select-icone-forma p-2.5 border text-base rounded-xl transition ${isSelected ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 ring-2 ring-indigo-500/20 font-bold' : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300'}" style="outline: none;">
                               ${ico}
                             </button>
                           `;
@@ -491,7 +491,7 @@ export class CadastrosPage {
 
     if (this.camposAdicionaisEmEdicao.length === 0) {
       container.innerHTML = `
-        <p class="text-center text-[10px] text-slate-400 dark:text-slate-500 font-semibold py-4 border border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
+        <p class="text-center text-[10px] text-slate-400 dark:text-slate-400 font-semibold py-4 border border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
           Nenhum campo dinâmico configurado.
         </p>
       `;
@@ -504,24 +504,24 @@ export class CadastrosPage {
         <div class="p-3 bg-slate-50/70 dark:bg-slate-900/50 border border-slate-200/50 dark:border-slate-800/80 rounded-xl space-y-2 relative animate-fade-in">
           
           <!-- Botão Remover no canto superior direito -->
-          <button type="button" data-idx="${idx}" class="btn-remover-campo absolute top-2 right-2 text-slate-400 hover:text-rose-500 dark:text-slate-500 dark:hover:text-rose-400 transition font-bold text-xs">
+          <button type="button" data-idx="${idx}" class="btn-remover-campo absolute top-2 right-2 text-slate-400 hover:text-rose-500 dark:text-slate-400 dark:hover:text-rose-400 transition font-bold text-xs">
             ✕
           </button>
 
           <div class="grid grid-cols-2 gap-2 pr-4">
             <div>
-              <label class="block text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase">Código/ID *</label>
+              <label class="block text-[8px] font-bold text-slate-400 dark:text-slate-400 uppercase">Código/ID *</label>
               <input type="text" data-idx="${idx}" data-field="id" required value="${campo.id || ''}" placeholder="ex: cia_aerea" class="input-campo-adicional w-full px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-[10px] transition" />
             </div>
             <div>
-              <label class="block text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase">Rótulo/Label *</label>
+              <label class="block text-[8px] font-bold text-slate-400 dark:text-slate-400 uppercase">Rótulo/Label *</label>
               <input type="text" data-idx="${idx}" data-field="label" required value="${campo.label || ''}" placeholder="ex: Cia Aérea" class="input-campo-adicional w-full px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-[10px] transition" />
             </div>
           </div>
 
           <div class="grid grid-cols-2 gap-2">
             <div>
-              <label class="block text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase">Tipo *</label>
+              <label class="block text-[8px] font-bold text-slate-400 dark:text-slate-400 uppercase">Tipo *</label>
               <select data-idx="${idx}" data-field="tipo" class="select-campo-adicional w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-[10px]">
                 <option value="text" ${campo.tipo === 'text' ? 'selected' : ''}>Texto</option>
                 <option value="number" ${campo.tipo === 'number' ? 'selected' : ''}>Número</option>
@@ -529,7 +529,7 @@ export class CadastrosPage {
               </select>
             </div>
             <div>
-              <label class="block text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase">Destino *</label>
+              <label class="block text-[8px] font-bold text-slate-400 dark:text-slate-400 uppercase">Destino *</label>
               <select data-idx="${idx}" data-field="alvo" class="select-campo-adicional w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-[10px]">
                 <option value="dados_adicionais" ${campo.alvo === 'dados_adicionais' ? 'selected' : ''}>Metadados</option>
                 <option value="fornecedor" ${campo.alvo === 'fornecedor' ? 'selected' : ''}>Fornecedor</option>
@@ -540,7 +540,7 @@ export class CadastrosPage {
 
           <!-- Campo de Opções (Visível apenas se tipo for Select) -->
           <div class="${isSelect ? '' : 'hidden'} select-opcoes-container">
-            <label class="block text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase">Opções (Separadas por vírgula) *</label>
+            <label class="block text-[8px] font-bold text-slate-400 dark:text-slate-400 uppercase">Opções (Separadas por vírgula) *</label>
             <input type="text" data-idx="${idx}" data-field="opcoes" placeholder="ex: MSC, Costa, Royal" value="${campo.opcoes ? campo.opcoes.join(', ') : ''}" class="input-campo-adicional w-full px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-[10px] transition" />
           </div>
 
@@ -809,7 +809,7 @@ export class CadastrosPage {
     if (filtered.length === 0) {
       tbody.innerHTML = `
         <tr>
-          <td colspan="3" class="py-8 text-center text-xs text-slate-400 dark:text-slate-500 font-semibold">
+          <td colspan="3" class="py-8 text-center text-xs text-slate-400 dark:text-slate-400 font-semibold">
             Nenhum destino encontrado.
           </td>
         </tr>

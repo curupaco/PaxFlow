@@ -305,7 +305,7 @@ export class EditTravelModal {
               ✈️ Gerenciar Viagem
               ${(v.codigoRef || v.codigo_ref) ? `<span class="ml-1 text-xs font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded border border-slate-200/50 dark:border-slate-700/50">${v.codigoRef || v.codigo_ref}</span>` : ''}
             </h3>
-            <p class="text-xs text-slate-400 dark:text-slate-500 font-semibold">Destino: <span class="font-bold text-slate-600 dark:text-slate-300">${v.destino}</span> &bull; Loc: <span class="font-bold text-slate-600 dark:text-slate-300">${v.codigo_localizador || 'Sem LOC'}</span></p>
+            <p class="text-xs text-slate-400 dark:text-slate-400 font-semibold">Destino: <span class="font-bold text-slate-600 dark:text-slate-300">${v.destino}</span> &bull; Loc: <span class="font-bold text-slate-600 dark:text-slate-300">${v.codigo_localizador || 'Sem LOC'}</span></p>
           </div>
           <div class="flex items-center gap-3">
             <!-- Botão de Processo -->
@@ -324,20 +324,20 @@ export class EditTravelModal {
             ` : '')}
 
             <button id="btn-financeiro-global" class="hidden px-3 py-1.5 rounded-lg text-[10px] font-black tracking-wider transition uppercase shadow-sm border font-sans"></button>
-            <button id="btn-close-edit-modal-x" class="text-slate-400 hover:text-rose-500 dark:text-slate-500 dark:hover:text-rose-400 font-bold transition">✕</button>
+            <button id="btn-close-edit-modal-x" class="text-slate-400 hover:text-rose-500 dark:text-slate-400 dark:hover:text-rose-400 font-bold transition">✕</button>
           </div>
         </div>
 
         <!-- Seletor de Abas Premium (visível apenas no mobile) -->
         <div class="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 mb-5 pb-px lg:hidden">
-          <button id="tab-detalhes-btn" class="border-b-2 ${activeTab === 'detalhes' ? 'border-indigo-600 dark:border-indigo-400 text-indigo-600 dark:text-indigo-400 font-black' : 'border-transparent text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200 font-semibold'} px-4 py-2 text-sm transition">
+          <button id="tab-detalhes-btn" class="border-b-2 ${activeTab === 'detalhes' ? 'border-indigo-600 dark:border-indigo-400 text-indigo-600 dark:text-indigo-400 font-black' : 'border-transparent text-slate-400 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 font-semibold'} px-4 py-2 text-sm transition">
             📝 Detalhes e Edição
           </button>
-          <button id="tab-produtos-btn" class="border-b-2 ${activeTab === 'produtos' ? 'border-indigo-600 dark:border-indigo-400 text-indigo-600 dark:text-indigo-400 font-black' : 'border-transparent text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200 font-semibold'} px-4 py-2 text-sm transition">
+          <button id="tab-produtos-btn" class="border-b-2 ${activeTab === 'produtos' ? 'border-indigo-600 dark:border-indigo-400 text-indigo-600 dark:text-indigo-400 font-black' : 'border-transparent text-slate-400 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 font-semibold'} px-4 py-2 text-sm transition">
             🛍️ Produtos e Serviços
           </button>
           ${v.reembolsos && v.reembolsos.length > 0 ? `
-            <button id="tab-reembolsos-btn" class="border-b-2 border-transparent px-4 py-2 text-sm font-semibold text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200 transition">
+            <button id="tab-reembolsos-btn" class="border-b-2 border-transparent px-4 py-2 text-sm font-semibold text-slate-400 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition">
               💸 Histórico de Reembolsos
             </button>
           ` : ''}
@@ -351,7 +351,7 @@ export class EditTravelModal {
             <!-- Detalhes do Dono e SLA no Topo -->
             <div class="flex flex-wrap items-center justify-between gap-3 p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/50 dark:border-slate-800">
               <div class="flex items-center gap-2">
-                <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider font-sans">Responsável:</span>
+                <span class="text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider font-sans">Responsável:</span>
                 <select id="edit-viagem-consultor" required ${viagemProcessoConferido ? 'disabled' : ''} class="px-2.5 py-1 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-700 dark:text-slate-200 text-xs font-bold shadow-sm cursor-pointer font-sans">
                   ${this.options.consultores.map(c => `<option value="${c.id}" ${c.id === v.consultor_id ? 'selected' : ''}>${c.nome}</option>`).join('')}
                 </select>
@@ -359,7 +359,7 @@ export class EditTravelModal {
               
               ${sla.alert ? `
                 <div class="flex items-center gap-2">
-                  <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider font-sans">Alerta SLA:</span>
+                  <span class="text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider font-sans">Alerta SLA:</span>
                   <span class="px-2.5 py-1 rounded-lg text-xs font-black tracking-wide animate-pulse border font-sans ${
                     sla.type === 'pre-embarque' 
                       ? 'bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 border-rose-100 dark:border-rose-900/55' 
@@ -373,7 +373,7 @@ export class EditTravelModal {
 
             <!-- Atalhos de Comunicação -->
             <div class="flex items-center gap-2 p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/50 dark:border-slate-800 mt-2 flex-wrap">
-              <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider font-sans">Comunicação:</span>
+              <span class="text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider font-sans">Comunicação:</span>
               <button id="btn-modal-whatsapp" type="button" class="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/40 rounded-lg text-xs font-bold transition">
                 <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.724-1.455L0 24zm6.59-4.846c1.6.95 3.197 1.451 4.777 1.451 5.51 0 9.997-4.493 10-10.008.002-2.673-1.037-5.186-2.93-7.079-1.892-1.893-4.401-2.934-7.078-2.934-5.518 0-10.007 4.493-10.01 10.01-.001 1.708.455 3.377 1.32 4.887L1.134 22.84l4.513-1.186zm11.23-7.925c-.297-.149-1.758-.868-2.03-.967-.273-.099-.471-.148-.669.149-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.568-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/></svg>
                 WhatsApp
@@ -452,7 +452,7 @@ export class EditTravelModal {
             <!-- Seção de Documentos do Cliente -->
             <div class="mt-6 border-t border-slate-100 dark:border-slate-800/80 pt-4">
               <div class="flex items-center justify-between mb-3">
-                <h4 class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-wide flex items-center gap-1.5">
+                <h4 class="text-xs font-black text-slate-400 dark:text-slate-400 uppercase tracking-wide flex items-center gap-1.5">
                   📁 Documentos do Passageiro
                 </h4>
                 <div>
@@ -471,7 +471,7 @@ export class EditTravelModal {
                     </button>
                   </div>
                 ` : `
-                  <p class="text-xs text-slate-400 dark:text-slate-500 italic">Nenhum documento anexado para este passageiro.</p>
+                  <p class="text-xs text-slate-400 dark:text-slate-400 italic">Nenhum documento anexado para este passageiro.</p>
                 `}
               </div>
               <div id="viagem-upload-status" class="mt-2 hidden"></div>
@@ -490,15 +490,15 @@ export class EditTravelModal {
             <!-- Painel Financeiro (Totalizadores e Saldo Pendente) -->
             <div id="painel-financeiro-produtos" class="grid grid-cols-4 gap-3 p-3.5 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/50 dark:border-slate-800 mb-4">
               <div>
-                <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider leading-tight">Valor da Venda</span>
+                <span class="block text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wider leading-tight">Valor da Venda</span>
                 <strong id="fin-valor-venda" class="text-sm font-black text-slate-800 dark:text-slate-100">R$ 0,00</strong>
               </div>
               <div>
-                <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider leading-tight">Total em Produtos</span>
+                <span class="block text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wider leading-tight">Total em Produtos</span>
                 <strong id="fin-valor-produtos" class="text-sm font-black text-slate-800 dark:text-slate-100 font-bold">R$ 0,00</strong>
               </div>
               <div>
-                <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider leading-tight">Saldo Pendente</span>
+                <span class="block text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wider leading-tight">Saldo Pendente</span>
                 <strong id="fin-valor-pendente" class="text-sm font-black text-rose-600 dark:text-rose-400">R$ 0,00</strong>
               </div>
               <div>
@@ -509,9 +509,9 @@ export class EditTravelModal {
             
             <!-- Lista de Produtos Existentes -->
             <div>
-              <h4 class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-2.5">Produtos Cadastrados nesta Viagem</h4>
+              <h4 class="text-xs font-black text-slate-400 dark:text-slate-400 uppercase tracking-wide mb-2.5">Produtos Cadastrados nesta Viagem</h4>
               <div id="lista-produtos-viagem-container" class="space-y-2 max-h-[220px] lg:max-h-[350px] overflow-y-auto pr-1 custom-scrollbar">
-                <p class="text-center text-xs text-slate-400 dark:text-slate-500 font-medium py-4">Buscando produtos...</p>
+                <p class="text-center text-xs text-slate-400 dark:text-slate-400 font-medium py-4">Buscando produtos...</p>
               </div>
             </div>
 
@@ -782,9 +782,9 @@ export class EditTravelModal {
     const tabReembolsosContent = document.getElementById('tab-reembolsos-content');
 
     const resetTabs = () => {
-      tabDetalhesBtn?.setAttribute('class', 'border-b-2 border-transparent px-4 py-2 text-sm font-semibold text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200 transition');
-      tabProdutosBtn?.setAttribute('class', 'border-b-2 border-transparent px-4 py-2 text-sm font-semibold text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200 transition');
-      tabReembolsosBtn?.setAttribute('class', 'border-b-2 border-transparent px-4 py-2 text-sm font-semibold text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200 transition');
+      tabDetalhesBtn?.setAttribute('class', 'border-b-2 border-transparent px-4 py-2 text-sm font-semibold text-slate-400 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition');
+      tabProdutosBtn?.setAttribute('class', 'border-b-2 border-transparent px-4 py-2 text-sm font-semibold text-slate-400 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition');
+      tabReembolsosBtn?.setAttribute('class', 'border-b-2 border-transparent px-4 py-2 text-sm font-semibold text-slate-400 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition');
       
       tabDetalhesContent?.classList.add('hidden');
       tabProdutosContent?.classList.add('hidden');
@@ -1052,7 +1052,7 @@ export class EditTravelModal {
             const options = Array.isArray(campo.opcoes) ? campo.opcoes : [];
             fieldsHTML += `
               <div class="space-y-1">
-                <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">${label}</label>
+                <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase mb-0.5">${label}</label>
                 <select id="prod-campo-${campo.id}" ${requiredAttr} class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition duration-155">
                   <option value="" disabled selected>Selecione...</option>
                   ${options.map((opt: string) => `<option value="${opt}">${opt}</option>`).join('')}
@@ -1062,14 +1062,14 @@ export class EditTravelModal {
           } else if (campo.tipo === 'number') {
             fieldsHTML += `
               <div class="space-y-1">
-                <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">${label}</label>
+                <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase mb-0.5">${label}</label>
                 <input type="number" id="prod-campo-${campo.id}" ${requiredAttr} placeholder="${campo.placeholder || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition duration-155" />
               </div>
             `;
           } else {
             fieldsHTML += `
               <div class="space-y-1">
-                <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">${label}</label>
+                <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase mb-0.5">${label}</label>
                 <input type="text" id="prod-campo-${campo.id}" ${requiredAttr} placeholder="${campo.placeholder || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition duration-155" />
               </div>
             `;
@@ -1143,11 +1143,11 @@ export class EditTravelModal {
       newRow.className = 'grid grid-cols-[1fr_1fr_auto] gap-2 items-end bg-slate-100/50 dark:bg-slate-800/30 p-2.5 rounded-lg border border-slate-200/40 dark:border-slate-800/40';
       newRow.innerHTML = `
         <div>
-          <label class="block text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Rótulo (ex: Check-out)</label>
+          <label class="block text-[8px] font-bold text-slate-400 dark:text-slate-400 uppercase mb-0.5">Rótulo (ex: Check-out)</label>
           <input type="text" placeholder="Rótulo" required class="prod-adicional-rotulo w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition duration-155" />
         </div>
         <div>
-          <label class="block text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Data (DD/MM/AAAA)</label>
+          <label class="block text-[8px] font-bold text-slate-400 dark:text-slate-400 uppercase mb-0.5">Data (DD/MM/AAAA)</label>
           <input type="text" placeholder="DD/MM/AAAA" required class="prod-adicional-data w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition duration-155" />
         </div>
         <button type="button" class="btn-remove-data-adicional p-2 hover:bg-rose-50/80 dark:hover:bg-rose-950/20 text-slate-400 hover:text-rose-600 rounded-lg transition" title="Remover data">
@@ -1405,7 +1405,7 @@ export class EditTravelModal {
             const options = Array.isArray(campo.opcoes) ? campo.opcoes : [];
             fieldsHTML += `
               <div class="space-y-1">
-                <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">${label}</label>
+                <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase mb-0.5">${label}</label>
                 <select id="edit-prod-campo-${campo.id}-${prodId}" ${requiredAttr} class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition duration-155">
                   <option value="" disabled ${!currentVal ? 'selected' : ''}>Selecione...</option>
                   ${options.map((opt: string) => `<option value="${opt}" ${opt === currentVal ? 'selected' : ''}>${opt}</option>`).join('')}
@@ -1415,14 +1415,14 @@ export class EditTravelModal {
           } else if (campo.tipo === 'number') {
             fieldsHTML += `
               <div class="space-y-1">
-                <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">${label}</label>
+                <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase mb-0.5">${label}</label>
                 <input type="number" id="edit-prod-campo-${campo.id}-${prodId}" ${requiredAttr} value="${currentVal}" placeholder="${campo.placeholder || ''}" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition duration-155" />
               </div>
             `;
           } else {
             fieldsHTML += `
               <div class="space-y-1">
-                <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">${label}</label>
+                <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase mb-0.5">${label}</label>
                 <input type="text" id="edit-prod-campo-${campo.id}-${prodId}" ${requiredAttr} value="${currentVal}" placeholder="${campo.placeholder || ''}" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition duration-155" />
               </div>
             `;
@@ -1508,11 +1508,11 @@ export class EditTravelModal {
       newRow.className = 'grid grid-cols-[1fr_1fr_auto] gap-2 items-end bg-slate-100/50 dark:bg-slate-800/30 p-2 rounded-lg border border-slate-200/40 dark:border-slate-800/40';
       newRow.innerHTML = `
         <div>
-          <label class="block text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Rótulo</label>
+          <label class="block text-[8px] font-bold text-slate-400 dark:text-slate-400 uppercase mb-0.5">Rótulo</label>
           <input type="text" placeholder="Rótulo" value="${rotulo}" required class="edit-prod-adicional-rotulo w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs" />
         </div>
         <div>
-          <label class="block text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-0.5">Data</label>
+          <label class="block text-[8px] font-bold text-slate-400 dark:text-slate-400 uppercase mb-0.5">Data</label>
           <input type="text" placeholder="DD/MM/AAAA" value="${dataBr}" required class="edit-prod-adicional-data w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs" />
         </div>
         <button type="button" class="edit-btn-remove-data-adicional p-2 hover:bg-rose-50/80 dark:hover:bg-rose-950/20 text-slate-400 hover:text-rose-600 rounded-lg transition" title="Remover data">
@@ -2088,10 +2088,10 @@ export class EditTravelModal {
               <div class="text-right">
                 <span class="block text-xs font-black text-indigo-600 dark:text-indigo-400">R$ ${Number(p.valor_venda || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
               </div>
-              <button data-comments-prod-id="${p.id}" data-comments-prod-name="${p.fornecedor} - ${p.descricao}" class="p-1.5 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-slate-300 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-md transition text-xs font-bold flex items-center gap-1" title="Notas e Comentários">
+              <button data-comments-prod-id="${p.id}" data-comments-prod-name="${p.fornecedor} - ${p.descricao}" class="p-1.5 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-slate-300 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-md transition text-xs font-bold flex items-center gap-1" title="Notas e Comentários">
                 💬 <span class="text-[10px]">${commentsCount}</span>
               </button>
-              <button data-delete-prod-id="${p.id}" class="p-1.5 hover:bg-rose-50 dark:hover:bg-rose-950/20 text-slate-300 dark:text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 rounded-md transition text-xs font-bold ${isConferido ? 'hidden' : ''}" title="Remover Produto">
+              <button data-delete-prod-id="${p.id}" class="p-1.5 hover:bg-rose-50 dark:hover:bg-rose-950/20 text-slate-300 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-md transition text-xs font-bold ${isConferido ? 'hidden' : ''}" title="Remover Produto">
                 🗑️
               </button>
             </div>
@@ -2135,11 +2135,11 @@ export class EditTravelModal {
         <div class="loc-group border border-slate-200/80 dark:border-slate-800 rounded-xl overflow-hidden mb-2 shadow-sm">
           <div class="loc-header flex items-center justify-between p-2.5 bg-slate-100/50 dark:bg-slate-800/40 cursor-pointer hover:bg-slate-200/50 dark:hover:bg-slate-800/80 transition select-none" data-loc-key="${locKey}">
             <div class="flex items-center flex-wrap gap-2.5">
-              <span class="loc-chevron inline-block transition-transform duration-200 text-xs text-slate-400 dark:text-slate-500" style="transform: rotate(90deg);">▶</span>
+              <span class="loc-chevron inline-block transition-transform duration-200 text-xs text-slate-400 dark:text-slate-400" style="transform: rotate(90deg);">▶</span>
               <span class="px-2 py-0.5 text-[10px] font-black tracking-wider rounded bg-indigo-100 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 uppercase">${locKey}</span>
               
               ${isAdmin ? `
-                <button class="btn-conferir-loc p-1 rounded-lg border text-[9px] font-bold flex items-center justify-center gap-1 shadow-sm transition font-sans ${isConferido ? 'text-emerald-600 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/40' : 'text-slate-400 bg-slate-50 dark:text-slate-500 dark:bg-slate-800 border-slate-200 dark:border-slate-700'}" data-loc="${locKey}">
+                <button class="btn-conferir-loc p-1 rounded-lg border text-[9px] font-bold flex items-center justify-center gap-1 shadow-sm transition font-sans ${isConferido ? 'text-emerald-600 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/40' : 'text-slate-400 bg-slate-50 dark:text-slate-400 dark:bg-slate-800 border-slate-200 dark:border-slate-700'}" data-loc="${locKey}">
                   ${isConferido ? '✔️ Conferido' : '⚙️ Conferir'}
                 </button>
               ` : (isConferido ? `
@@ -2152,15 +2152,15 @@ export class EditTravelModal {
                 ${btnPagamentoContent}
               </button>
 
-              <span class="text-[10px] font-medium text-slate-400 dark:text-slate-500">
+              <span class="text-[10px] font-medium text-slate-400 dark:text-slate-400">
                 Venda: <span class="font-extrabold text-indigo-600 dark:text-indigo-400">R$ ${valorVendaTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
               </span>
               
-              <span class="text-[10px] font-medium text-slate-400 dark:text-slate-500">
+              <span class="text-[10px] font-medium text-slate-400 dark:text-slate-400">
                 Taxas: <span class="font-extrabold text-slate-700 dark:text-slate-200">R$ ${valorTaxasTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
               </span>
               
-              <span class="text-[10px] font-medium text-slate-400 dark:text-slate-500">
+              <span class="text-[10px] font-medium text-slate-400 dark:text-slate-400">
                 Rentabilidade: <span class="font-extrabold ${rentabilidadeColorClass}">R$ ${valorRentabilidadeTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
               </span>
               
@@ -2527,7 +2527,7 @@ export class EditTravelModal {
 
       if (tempPagamentos.length === 0) {
         listContainer.innerHTML = `
-          <p class="text-center text-xs text-slate-400 dark:text-slate-500 font-semibold py-4 border border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
+          <p class="text-center text-xs text-slate-400 dark:text-slate-400 font-semibold py-4 border border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
             Nenhuma forma de recebimento adicionada para este LOC.
           </p>
         `;
@@ -2595,34 +2595,34 @@ export class EditTravelModal {
         <h3 class="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-wide mb-1 flex items-center gap-1.5 font-sans">
           💰 Forma de Recebimento do LOC
         </h3>
-        <p class="text-xs text-slate-400 dark:text-slate-500 font-semibold mb-4 border-b border-slate-100 dark:border-slate-850 pb-2 font-sans">
+        <p class="text-xs text-slate-400 dark:text-slate-400 font-semibold mb-4 border-b border-slate-100 dark:border-slate-800 pb-2 font-sans">
           LOC: <span class="text-indigo-600 dark:text-indigo-400 font-black">${locKey}</span>
         </p>
         
         <!-- Detalhes do LOC -->
-        <div class="grid grid-cols-2 gap-4 bg-slate-50 dark:bg-slate-950 p-3.5 rounded-2xl border border-slate-200/40 dark:border-slate-850 mb-4 font-sans">
+        <div class="grid grid-cols-2 gap-4 bg-slate-50 dark:bg-slate-950 p-3.5 rounded-2xl border border-slate-200/40 dark:border-slate-800 mb-4 font-sans">
           <div>
-            <span class="block text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider leading-tight">Valor Total do LOC</span>
+            <span class="block text-[9px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wider leading-tight">Valor Total do LOC</span>
             <strong class="text-xs font-black text-slate-800 dark:text-slate-100">R$ ${valorVendaTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
           </div>
           <div>
-            <span class="block text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider leading-tight">Pendente</span>
+            <span class="block text-[9px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wider leading-tight">Pendente</span>
             <strong id="pag-loc-pendente-val" class="text-xs font-black text-rose-600 dark:text-rose-400">R$ 0,00</strong>
           </div>
         </div>
         
         <!-- Adicionar Novo Pagamento -->
-        <div class="space-y-3 mb-4 p-3 bg-slate-50/40 dark:bg-slate-900/40 rounded-2xl border border-slate-100 dark:border-slate-850 font-sans">
-          <span class="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wide">Vincular Recebimento</span>
+        <div class="space-y-3 mb-4 p-3 bg-slate-50/40 dark:bg-slate-900/40 rounded-2xl border border-slate-100 dark:border-slate-800 font-sans">
+          <span class="block text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wide">Vincular Recebimento</span>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label class="block text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-1">Forma *</label>
+              <label class="block text-[9px] font-bold text-slate-400 dark:text-slate-400 uppercase mb-1">Forma *</label>
               <select id="pag-loc-forma-select" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg text-xs font-semibold text-slate-800 dark:text-slate-100">
                 ${formasAtivas.map(f => `<option value="${f.id}">${f.icone} ${f.nome}</option>`).join('')}
               </select>
             </div>
             <div>
-              <label class="block text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-1">Valor (R$) *</label>
+              <label class="block text-[9px] font-bold text-slate-400 dark:text-slate-400 uppercase mb-1">Valor (R$) *</label>
               <input id="pag-loc-valor-input" type="text" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg text-xs font-semibold text-slate-800 dark:text-slate-100" placeholder="0,00" />
             </div>
           </div>
@@ -2633,14 +2633,14 @@ export class EditTravelModal {
         
         <!-- Lista de Pagamentos Adicionados -->
         <div class="space-y-2 mb-6 font-sans">
-          <span class="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wide">Formas Selecionadas</span>
+          <span class="block text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wide">Formas Selecionadas</span>
           <div id="pag-loc-adicionados-list" class="space-y-2 max-h-[120px] overflow-y-auto pr-1">
             <!-- JS render -->
           </div>
         </div>
         
         <!-- Ações -->
-        <div class="flex gap-3 border-t border-slate-100 dark:border-slate-850 pt-4 font-sans">
+        <div class="flex gap-3 border-t border-slate-100 dark:border-slate-800 pt-4 font-sans">
           <button id="btn-pag-loc-salvar" type="button" disabled class="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-200 dark:disabled:bg-slate-800 disabled:text-slate-400 dark:disabled:text-slate-600 text-white font-extrabold text-[10px] tracking-wider rounded-lg shadow-sm transition uppercase">
             Salvar
           </button>

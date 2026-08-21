@@ -34,7 +34,7 @@ export class HelpModal {
             <h2 class="text-lg font-black text-slate-800 dark:text-slate-100 tracking-tight leading-snug flex items-center gap-2">
               <span>📖</span> Central de Ajuda & Glossário
             </h2>
-            <p class="text-xs text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-0.5">Entenda os campos, datas e métricas do sistema</p>
+            <p class="text-xs text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wider mt-0.5">Entenda os campos, datas e métricas do sistema</p>
           </div>
           
           <div class="flex items-center gap-2">
@@ -45,7 +45,7 @@ export class HelpModal {
                 placeholder="Buscar termo ou conceito..." 
                 class="w-full pl-9 pr-4 py-2 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition"
               />
-              <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 text-xs">🔍</span>
+              <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-400 text-xs">🔍</span>
             </div>
             
             <button 
@@ -163,7 +163,7 @@ export class HelpModal {
         <div class="flex flex-col items-center justify-center py-12 text-center">
           <span class="text-3xl mb-3">🔍</span>
           <p class="text-sm font-bold text-slate-500 dark:text-slate-400">Nenhum termo encontrado</p>
-          <p class="text-xs text-slate-450 dark:text-slate-555 mt-1">Tente buscar por termos mais genéricos.</p>
+          <p class="text-xs text-slate-400 dark:text-slate-400 mt-1">Tente buscar por termos mais genéricos.</p>
         </div>
       `;
       return;
@@ -180,11 +180,11 @@ export class HelpModal {
             <div class="space-y-1">
               <div class="flex items-center gap-2">
                 <h4 class="text-sm font-black text-slate-800 dark:text-slate-100 group-hover:text-indigo-650 dark:group-hover:text-indigo-400 transition-colors">${item.label}</h4>
-                ${category ? `<span class="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 rounded text-[9px] font-black uppercase tracking-wider">${category.icon} ${category.title}</span>` : ''}
+                ${category ? `<span class="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-400 rounded text-[9px] font-black uppercase tracking-wider">${category.icon} ${category.title}</span>` : ''}
               </div>
-              <p class="text-xs text-slate-650 dark:text-slate-350 font-semibold leading-relaxed">${item.description}</p>
+              <p class="text-xs text-slate-600 dark:text-slate-300 font-semibold leading-relaxed">${item.description}</p>
             </div>
-            <span class="expand-icon text-slate-450 transition-transform duration-300 text-xs shrink-0 select-none">▼</span>
+            <span class="expand-icon text-slate-400 transition-transform duration-300 text-xs shrink-0 select-none">▼</span>
           </div>
           
           <div class="details-section hidden mt-4 pt-3.5 border-t border-slate-100 dark:border-slate-800/60 text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed whitespace-pre-line">

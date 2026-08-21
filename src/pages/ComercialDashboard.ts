@@ -538,7 +538,7 @@ export class ComercialDashboard {
             
             <!-- Seletor de Período -->
             <div class="flex items-center gap-1.5 shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2.5 py-1.5 rounded-xl shadow-sm">
-              <span class="text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-500 select-none">Período:</span>
+              <span class="text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-400 select-none">Período:</span>
               <select id="select-dashboard-periodo" class="text-xs font-bold bg-transparent text-slate-700 dark:text-slate-400 focus:outline-none cursor-pointer">
                 <option value="mes_atual" ${this.selectedPeriod === 'mes_atual' ? 'selected' : ''}>Mês Atual</option>
                 <option value="30_dias" ${this.selectedPeriod === '30_dias' ? 'selected' : ''}>Últimos 30 dias</option>
@@ -551,7 +551,7 @@ export class ComercialDashboard {
             <!-- Seletor de Consultores (Apenas para Admins) -->
             ${isAdmin ? `
               <div class="flex items-center gap-1.5 shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2.5 py-1.5 rounded-xl shadow-sm">
-                <span class="text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-500 select-none">Equipe:</span>
+                <span class="text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-400 select-none">Equipe:</span>
                 <select id="select-dashboard-consultor" class="text-xs font-bold bg-transparent text-slate-700 dark:text-slate-400 focus:outline-none cursor-pointer max-w-[150px]">
                   <option value="todos" ${this.selectedConsultantId === 'todos' ? 'selected' : ''}>Todos os Consultores</option>
                   ${this.consultores.map(c => `<option value="${c.id}" ${this.selectedConsultantId === c.id ? 'selected' : ''}>${c.nome}</option>`).join('')}
@@ -633,14 +633,14 @@ export class ComercialDashboard {
         <!-- CARD: FATURAMENTO REALIZADO -->
         <div class="kpi-card dashboard-glass rounded-3xl p-6 relative overflow-hidden select-none border-l-4 border-l-indigo-500">
           <div class="flex items-center justify-between">
-            <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Faturamento Realizado</span>
+            <span class="text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest">Faturamento Realizado</span>
             <div class="p-2.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-2xl text-lg">💰</div>
           </div>
           <div class="mt-4">
             <span class="block text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight">
               R$ ${faturamentoRealizado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
-            <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-semibold mt-1">
+            <span class="block text-[10px] text-slate-400 dark:text-slate-400 font-semibold mt-1">
               Reflete vendas ganhas convertidas em viagens
             </span>
           </div>
@@ -649,14 +649,14 @@ export class ComercialDashboard {
         <!-- CARD: PIPELINE ATIVO -->
         <div class="kpi-card dashboard-glass rounded-3xl p-6 relative overflow-hidden select-none border-l-4 border-l-amber-500">
           <div class="flex items-center justify-between">
-            <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Pipeline Ativo</span>
+            <span class="text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest">Pipeline Ativo</span>
             <div class="p-2.5 bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 rounded-2xl text-lg">🔥</div>
           </div>
           <div class="mt-4">
             <span class="block text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight">
               R$ ${faturamentoPipeline.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
-            <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-semibold mt-1">
+            <span class="block text-[10px] text-slate-400 dark:text-slate-400 font-semibold mt-1">
               Valores em negociação e propostas abertas
             </span>
           </div>
@@ -665,14 +665,14 @@ export class ComercialDashboard {
         <!-- CARD: GAP DE DESISTÊNCIA -->
         <div class="kpi-card dashboard-glass rounded-3xl p-6 relative overflow-hidden select-none border-l-4 border-l-rose-500">
           <div class="flex items-center justify-between">
-            <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Gap de Desistência</span>
+            <span class="text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest">Gap de Desistência</span>
             <div class="p-2.5 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 rounded-2xl text-lg">⚠️</div>
           </div>
           <div class="mt-4">
             <span class="block text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight">
               R$ ${faturamentoGap.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
-            <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-semibold mt-1">
+            <span class="block text-[10px] text-slate-400 dark:text-slate-400 font-semibold mt-1">
               Fuga de caixa por cotações não fechadas
             </span>
           </div>
@@ -681,14 +681,14 @@ export class ComercialDashboard {
         <!-- CARD: TAXA DE CONVERSÃO -->
         <div class="kpi-card dashboard-glass rounded-3xl p-6 relative overflow-hidden select-none border-l-4 border-l-emerald-500">
           <div class="flex items-center justify-between">
-            <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Conversão Comercial</span>
+            <span class="text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest">Conversão Comercial</span>
             <div class="p-2.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-2xl text-lg">📈</div>
           </div>
           <div class="mt-4">
             <span class="block text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight">
               ${taxaConversao.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%
             </span>
-            <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-semibold mt-1">
+            <span class="block text-[10px] text-slate-400 dark:text-slate-400 font-semibold mt-1">
               ${orcamentosGanhos.length} fechamentos de ${orcamentosConcluidos.length} decididos
             </span>
           </div>
@@ -718,7 +718,7 @@ export class ComercialDashboard {
               
               <!-- Texto Central do Donut -->
               <div class="absolute flex flex-col items-center justify-center text-center">
-                <span class="text-[9px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider">Volume Total</span>
+                <span class="text-[9px] uppercase font-bold text-slate-400 dark:text-slate-400 tracking-wider">Volume Total</span>
                 <span class="text-sm font-black text-slate-800 dark:text-slate-100 mt-0.5">
                   R$ ${(volumeTotalFinanceiro > 1000000 ? (volumeTotalFinanceiro / 1000000).toFixed(2) + 'M' : volumeTotalFinanceiro.toLocaleString('pt-BR', { maximumFractionDigits: 0 }))}
                 </span>
@@ -732,7 +732,7 @@ export class ComercialDashboard {
                 <div class="w-3.5 h-3.5 rounded-lg bg-indigo-500 shrink-0"></div>
                 <div class="flex-1">
                   <span class="block text-xs font-black text-slate-700 dark:text-slate-300 leading-none">Realizado</span>
-                  <span class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold mt-0.5 block">
+                  <span class="text-[10px] text-slate-400 dark:text-slate-400 font-semibold mt-0.5 block">
                     R$ ${faturamentoRealizado.toLocaleString('pt-BR', { maximumFractionDigits: 0 })} (${pctRealizado.toFixed(1)}%)
                   </span>
                 </div>
@@ -742,7 +742,7 @@ export class ComercialDashboard {
                 <div class="w-3.5 h-3.5 rounded-lg bg-amber-500 shrink-0"></div>
                 <div class="flex-1">
                   <span class="block text-xs font-black text-slate-700 dark:text-slate-300 leading-none">Pipeline Ativo</span>
-                  <span class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold mt-0.5 block">
+                  <span class="text-[10px] text-slate-400 dark:text-slate-400 font-semibold mt-0.5 block">
                     R$ ${faturamentoPipeline.toLocaleString('pt-BR', { maximumFractionDigits: 0 })} (${pctPipeline.toFixed(1)}%)
                   </span>
                 </div>
@@ -752,7 +752,7 @@ export class ComercialDashboard {
                 <div class="w-3.5 h-3.5 rounded-lg bg-rose-500 shrink-0"></div>
                 <div class="flex-1">
                   <span class="block text-xs font-black text-slate-700 dark:text-slate-300 leading-none">Desistências</span>
-                  <span class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold mt-0.5 block">
+                  <span class="text-[10px] text-slate-400 dark:text-slate-400 font-semibold mt-0.5 block">
                     R$ ${faturamentoGap.toLocaleString('pt-BR', { maximumFractionDigits: 0 })} (${pctGap.toFixed(1)}%)
                   </span>
                 </div>
@@ -804,7 +804,7 @@ export class ComercialDashboard {
     return `
       <svg viewBox="0 0 42 42" class="w-full h-full transform -rotate-90">
         <!-- Background Track -->
-        <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#f1f5f9" class="dark:stroke-slate-850" stroke-width="4.5" />
+        <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#f1f5f9" class="dark:stroke-slate-800" stroke-width="4.5" />
         
         <!-- Segment 1: Realizado (Indigo) -->
         ${pctRealizado > 0 ? `
@@ -887,7 +887,7 @@ export class ComercialDashboard {
       <div class="flex flex-col gap-4">
         <!-- Nível 1: Captação/Solicitado -->
         <div class="space-y-1.5">
-          <div class="flex justify-between items-center text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">
+          <div class="flex justify-between items-center text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wide">
             <span>1. Captação (Total)</span>
             <span class="font-extrabold text-slate-700 dark:text-slate-300">${t1_leads} orçamentos &bull; R$ ${formatBRL(valorTotalFunnel)}</span>
           </div>
@@ -899,7 +899,7 @@ export class ComercialDashboard {
 
         <!-- Nível 2: Cotação/Em Andamento -->
         <div class="space-y-1.5">
-          <div class="flex justify-between items-center text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">
+          <div class="flex justify-between items-center text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wide">
             <span>2. Cotações / Elaboração</span>
             <span class="font-extrabold text-slate-700 dark:text-slate-300">${t2_cotacao} orçamentos (${(t1_leads > 0 ? (t2_cotacao/t1_leads)*100 : 0).toFixed(0)}% avanço)</span>
           </div>
@@ -911,7 +911,7 @@ export class ComercialDashboard {
 
         <!-- Nível 3: Apresentado/Aguardando -->
         <div class="space-y-1.5">
-          <div class="flex justify-between items-center text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">
+          <div class="flex justify-between items-center text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wide">
             <span>3. Proposta Enviada</span>
             <span class="font-extrabold text-slate-700 dark:text-slate-300">${t3_negociacao} orçamentos (${(t2_cotacao > 0 ? (t3_negociacao/t2_cotacao)*100 : 0).toFixed(0)}% avanço)</span>
           </div>
@@ -923,7 +923,7 @@ export class ComercialDashboard {
 
         <!-- Nível 4: Ganho -->
         <div class="space-y-1.5">
-          <div class="flex justify-between items-center text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">
+          <div class="flex justify-between items-center text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wide">
             <span>4. Negócios Fechados</span>
             <span class="font-extrabold text-slate-700 dark:text-slate-300">${t4_ganho} fechamentos (${(t3_negociacao > 0 ? (t4_ganho/t3_negociacao)*100 : 0).toFixed(0)}% conversão final)</span>
           </div>
@@ -1077,7 +1077,7 @@ export class ComercialDashboard {
 
         <table class="w-full text-left border-collapse text-xs min-w-[700px]">
           <thead>
-            <tr class="border-b border-slate-200 dark:border-slate-800 text-[10px] text-slate-400 dark:text-slate-500 font-extrabold uppercase tracking-wider">
+            <tr class="border-b border-slate-200 dark:border-slate-800 text-[10px] text-slate-400 dark:text-slate-400 font-extrabold uppercase tracking-wider">
               <th class="py-3 pl-2">Consultor</th>
               <th class="py-3 text-center">Orçamentos</th>
               <th class="py-3 text-center">Conversão</th>
@@ -1092,7 +1092,7 @@ export class ComercialDashboard {
               const conversion = r.orcConcluidos > 0 ? (r.orcGanhos / r.orcConcluidos) * 100 : (r.orcGanhos > 0 ? 100 : 0);
               
               // Estilização das medalhas ou ícones de colocação
-              let placingIcon = `<span class="text-slate-400 dark:text-slate-500 w-5 block text-center">${index + 1}</span>`;
+              let placingIcon = `<span class="text-slate-400 dark:text-slate-400 w-5 block text-center">${index + 1}</span>`;
               if (index === 0 && r.valVendido > 0) placingIcon = `<span class="text-lg w-5 block text-center animate-bounce" title="Top 1 Vendedor">🥇</span>`;
               else if (index === 1 && r.valVendido > 0) placingIcon = `<span class="text-lg w-5 block text-center" title="Top 2 Vendedor">🥈</span>`;
               else if (index === 2 && r.valVendido > 0) placingIcon = `<span class="text-lg w-5 block text-center" title="Top 3 Vendedor">🥉</span>`;
@@ -1104,7 +1104,7 @@ export class ComercialDashboard {
                     ${getAvatarSvg(r.avatarUrl, r.nome, 'w-8 h-8')}
                     <div>
                       <span class="block font-black text-slate-700 dark:text-slate-200 leading-snug">${r.nome}</span>
-                      <span class="block text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wide leading-none mt-0.5">${r.email} &bull; ${r.xp} XP</span>
+                      <span class="block text-[9px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wide leading-none mt-0.5">${r.email} &bull; ${r.xp} XP</span>
                     </div>
                   </td>
                   <td class="py-3.5 text-center text-slate-700 dark:text-slate-300">
@@ -1237,7 +1237,7 @@ export class ComercialDashboard {
 
       return `
         <svg viewBox="0 0 42 42" class="w-full h-full transform -rotate-90">
-          <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#f1f5f9" class="dark:stroke-slate-850" stroke-width="4.5" />
+          <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#f1f5f9" class="dark:stroke-slate-800" stroke-width="4.5" />
           ${pct > 0 ? `
             <circle cx="21" cy="21" r="15.915" fill="transparent" 
               stroke="#10b981" stroke-width="5" 
@@ -1296,7 +1296,7 @@ export class ComercialDashboard {
 
     return `
       <svg viewBox="0 0 42 42" class="w-full h-full transform -rotate-90">
-        <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#f1f5f9" class="dark:stroke-slate-850" stroke-width="4" />
+        <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#f1f5f9" class="dark:stroke-slate-800" stroke-width="4" />
         ${svgCircles}
       </svg>
     `;
@@ -1386,7 +1386,7 @@ export class ComercialDashboard {
       return `
         <div class="space-y-2.5">
           <div class="flex justify-between items-end text-xs font-semibold">
-            <span class="text-slate-400 dark:text-slate-500">Faixa Atual: <strong class="text-slate-700 dark:text-slate-200 uppercase">${currentFaixaName}</strong></span>
+            <span class="text-slate-400 dark:text-slate-400">Faixa Atual: <strong class="text-slate-700 dark:text-slate-200 uppercase">${currentFaixaName}</strong></span>
             <span class="text-slate-750 dark:text-slate-200 font-extrabold">R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
           </div>
 
@@ -1414,7 +1414,7 @@ export class ComercialDashboard {
               return sortedFaixas.map(f => {
                 const reached = val >= f.valor_minimo;
                 return `
-                  <div class="flex items-center gap-1.5 text-[10px] font-bold ${reached ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500'}">
+                  <div class="flex items-center gap-1.5 text-[10px] font-bold ${reached ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-400'}">
                     <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: ${f.cor || '#6366f1'}"></span>
                     <span>${f.nome} (R$ ${f.valor_minimo.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}${f.recompensa ? ` - Prêmio: ${formatRecompensa(f.recompensa)}` : ''})</span>
                   </div>
@@ -1437,7 +1437,7 @@ export class ComercialDashboard {
           <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/60 pb-3.5 mb-4">
             <div>
               <h3 class="text-sm font-black text-slate-800 dark:text-slate-100">Seu Progresso de Metas</h3>
-              <p class="text-[10px] text-slate-400 dark:text-slate-550 font-bold uppercase tracking-wider mt-0.5">${currentMeta.nome} &bull; Base: ${currentMeta.tipo_calculo === 'bruto' ? 'Faturamento Bruto' : 'Lucro Real'} ${renderHelpIcon('tipo-calculo-meta')}</p>
+              <p class="text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wider mt-0.5">${currentMeta.nome} &bull; Base: ${currentMeta.tipo_calculo === 'bruto' ? 'Faturamento Bruto' : 'Lucro Real'} ${renderHelpIcon('tipo-calculo-meta')}</p>
             </div>
             <div class="p-2.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-2xl text-lg">🏆</div>
           </div>
@@ -1448,7 +1448,7 @@ export class ComercialDashboard {
               <div class="relative w-36 h-36">
                 ${this.renderGoalPieChart(myVal, currentMeta.faixas || [])}
                 <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
-                  <span class="text-[9px] font-black uppercase text-slate-450 dark:text-slate-500 tracking-wider">Atingido</span>
+                  <span class="text-[9px] font-black uppercase text-slate-400 dark:text-slate-400 tracking-wider">Atingido</span>
                   <span class="text-base font-black text-slate-800 dark:text-slate-100">
                     ${(() => {
                       const maxVal = sortedFaixas.length > 0 ? sortedFaixas[sortedFaixas.length - 1].valor_minimo : 1;
@@ -1482,7 +1482,7 @@ export class ComercialDashboard {
                 <div class="relative w-32 h-32 mb-4">
                   ${this.renderGoalPieChart(agencyTotal, currentMeta.faixas || [], currentMeta.is_meta_loja, currentMeta.valor_meta)}
                   <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
-                    <span class="text-[9px] font-black uppercase text-slate-450 dark:text-slate-505 tracking-wider">Atingido</span>
+                    <span class="text-[9px] font-black uppercase text-slate-400 dark:text-slate-400 tracking-wider">Atingido</span>
                     <span class="text-sm font-black text-slate-800 dark:text-slate-100">
                       ${(() => {
                         const maxVal = currentMeta.is_meta_loja 
@@ -1495,12 +1495,12 @@ export class ComercialDashboard {
                 </div>
 
                 <div class="text-center w-full">
-                  <span class="text-[10px] font-black text-slate-400 dark:text-slate-550 uppercase tracking-widest block">Acumulado da Equipe ${renderHelpIcon('acumulado-equipe')}</span>
+                  <span class="text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest block">Acumulado da Equipe ${renderHelpIcon('acumulado-equipe')}</span>
                   <span class="text-xl font-black text-slate-800 dark:text-slate-100 mt-1 block">
                     R$ ${agencyTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </span>
                   ${currentMeta.is_meta_loja ? `
-                    <span class="text-[10px] text-slate-450 dark:text-slate-500 font-bold block mt-1.5">Alvo Loja: R$ ${(currentMeta.valor_meta || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                    <span class="text-[10px] text-slate-400 dark:text-slate-400 font-bold block mt-1.5">Alvo Loja: R$ ${(currentMeta.valor_meta || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                   ` : ''}
                 </div>
               </div>
@@ -1543,7 +1543,7 @@ export class ComercialDashboard {
                     <div class="space-y-1.5">
                       <div class="flex justify-between items-center text-xs">
                         <div class="flex items-center gap-2">
-                          <div class="w-6 h-6 rounded-full overflow-hidden shrink-0 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-850 flex items-center justify-center">
+                          <div class="w-6 h-6 rounded-full overflow-hidden shrink-0 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 flex items-center justify-center">
                             ${getAvatarSvg(c.avatar_url || 'panda')}
                           </div>
                           <span class="font-extrabold text-slate-750 dark:text-slate-250">${c.nome}</span>
@@ -1551,10 +1551,10 @@ export class ComercialDashboard {
                         </div>
                         <span class="font-extrabold text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
                           R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                          ${currentMeta.is_meta_loja ? `<span class="text-[10px] text-slate-450 dark:text-slate-550 font-bold">(${((val / maxVal) * 100).toFixed(0)}%)</span>` : ''}
+                          ${currentMeta.is_meta_loja ? `<span class="text-[10px] text-slate-400 dark:text-slate-400 font-bold">(${((val / maxVal) * 100).toFixed(0)}%)</span>` : ''}
                         </span>
                       </div>
-                      <div class="relative w-full h-2.5 bg-slate-100 dark:bg-slate-850 rounded-full overflow-hidden">
+                      <div class="relative w-full h-2.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                         <div class="h-full rounded-full transition-all duration-300" style="width: ${pct}%; background-color: ${currentFaixaColor}"></div>
                       </div>
                     </div>
@@ -1576,7 +1576,7 @@ export class ComercialDashboard {
           
           <div class="flex items-center gap-2">
             <div class="flex items-center gap-1.5 shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2.5 py-1.5 rounded-xl shadow-sm">
-              <span class="text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-500 select-none">Campanha/Período:</span>
+              <span class="text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-400 select-none">Campanha/Período:</span>
               <select id="select-dashboard-meta-periodo" class="text-xs font-bold bg-transparent text-slate-700 dark:text-slate-400 focus:outline-none cursor-pointer">
                 ${this.metas.map(m => `
                   <option value="${m.id}" ${this.selectedMetaId === m.id ? 'selected' : ''}>${m.nome}</option>
@@ -1585,7 +1585,7 @@ export class ComercialDashboard {
             </div>
             
             <button id="btn-refresh-metas" class="p-2 bg-white hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 rounded-xl transition shadow-sm text-xs font-black uppercase flex items-center gap-1" title="Atualizar agora">
-              🔄 <span class="text-[9px] text-slate-450 dark:text-slate-500 font-semibold tracking-tight normal-case">Atualiza em ${nextUpdateMins}:${nextUpdateSecs.toString().padStart(2, '0')}</span>
+              🔄 <span class="text-[9px] text-slate-400 dark:text-slate-400 font-semibold tracking-tight normal-case">Atualiza em ${nextUpdateMins}:${nextUpdateSecs.toString().padStart(2, '0')}</span>
             </button>
           </div>
         </div>

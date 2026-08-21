@@ -250,7 +250,7 @@ export class ClientesPage {
               ${c.codigoRef ? `<span class="text-[10px] font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded mr-1.5">${c.codigoRef}</span>` : ''}
               ${c.nome && c.nome !== 'NULL' ? c.nome : 'Cliente sem nome'}
             </span>
-            <span class="block text-[11px] text-slate-400 dark:text-slate-500 font-semibold truncate group-hover:text-slate-500 dark:group-hover:text-slate-400 transition">${contatoExibido}</span>
+            <span class="block text-[11px] text-slate-400 dark:text-slate-400 font-semibold truncate group-hover:text-slate-500 dark:group-hover:text-slate-400 transition">${contatoExibido}</span>
           </div>
           <span class="text-xs">👤</span>
         </button>
@@ -780,7 +780,7 @@ export class ClientesPage {
             👥
           </div>
           <h3 class="text-xl font-black text-slate-800 dark:text-slate-200 tracking-tight mb-2">Ficha de Gestão de Clientes</h3>
-          <p class="text-sm text-slate-400 dark:text-slate-500 max-w-sm mb-6 font-medium">Selecione um cliente na barra lateral para editar suas informações, validar passaportes ou anexar arquivos diretamente no Google Drive corporativo.</p>
+          <p class="text-sm text-slate-400 dark:text-slate-400 max-w-sm mb-6 font-medium">Selecione um cliente na barra lateral para editar suas informações, validar passaportes ou anexar arquivos diretamente no Google Drive corporativo.</p>
           <button id="btn-novo-cliente-vazio" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-lg shadow-indigo-600/10 transition">
             ➕ Cadastrar Novo Cliente
           </button>
@@ -808,7 +808,7 @@ export class ClientesPage {
         
         <!-- Botão Voltar (Apenas Mobile) -->
         <div class="lg:hidden flex items-center mb-2">
-          <button id="btn-voltar-lista-mobile" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-350 text-xs font-black rounded-xl transition flex items-center gap-1.5 uppercase">
+          <button id="btn-voltar-lista-mobile" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-black rounded-xl transition flex items-center gap-1.5 uppercase">
             ← Voltar para Lista
           </button>
         </div>
@@ -823,7 +823,7 @@ export class ClientesPage {
               <h2 class="text-xl font-black text-slate-800 dark:text-slate-200 leading-snug tracking-tight">
                 ${isNew ? 'Novo Cliente / Passageiro' : c.nome}
               </h2>
-              <p class="text-xs text-slate-400 dark:text-slate-500 font-semibold flex items-center gap-1">
+              <p class="text-xs text-slate-400 dark:text-slate-400 font-semibold flex items-center gap-1">
                 <span>Cadastro e Documentação</span>
                 ${c.codigoRef ? `&bull; <span class="font-mono text-indigo-650 dark:text-indigo-400 font-bold">${c.codigoRef}</span>` : ''}
                 ${!isNew ? `&bull; <span class="text-indigo-600 dark:text-indigo-400 font-bold">${c.email}</span>` : ''}
@@ -855,7 +855,7 @@ export class ClientesPage {
                   <span class="text-lg">📁</span> Pasta no Drive
                 </a>
               ` : `
-                <span class="px-4 py-2 bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 rounded-lg text-xs font-semibold border border-slate-200/40 dark:border-slate-700/40 text-center">
+                <span class="px-4 py-2 bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-400 rounded-lg text-xs font-semibold border border-slate-200/40 dark:border-slate-700/40 text-center">
                   Sem pasta ativa no Drive
                 </span>
               `}
@@ -945,7 +945,7 @@ export class ClientesPage {
           ${isNew ? '' : `
             <div class="border-t border-slate-100 dark:border-slate-800 pt-5">
               <h3 class="text-sm font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-3 border-b border-indigo-50/50 dark:border-slate-800 pb-1">3. Upload Seguro de Documentos (Google Drive Agência)</h3>
-              <p class="text-xs text-slate-400 dark:text-slate-500 mb-3.5 font-medium">Os arquivos anexados serão inseridos automaticamente em uma pasta estruturada do Google Drive central da agência, sem vinculação com contas pessoais.</p>
+              <p class="text-xs text-slate-400 dark:text-slate-400 mb-3.5 font-medium">Os arquivos anexados serão inseridos automaticamente em uma pasta estruturada do Google Drive central da agência, sem vinculação com contas pessoais.</p>
               
               <!-- Componente de Upload Drag & Drop -->
               <div class="relative">
@@ -954,7 +954,7 @@ export class ClientesPage {
                   <div id="upload-zone-visual" class="flex flex-col items-center justify-center space-y-2">
                     <span class="text-3xl filter group-hover:scale-110 transition duration-300">📤</span>
                     <p class="text-sm text-slate-700 dark:text-slate-300 font-extrabold">Arraste e solte arquivos aqui</p>
-                    <p class="text-xs text-slate-400 dark:text-slate-500 font-semibold">Ou clique para selecionar (PDF, JPEG, PNG - Máx. 10MB)</p>
+                    <p class="text-xs text-slate-400 dark:text-slate-400 font-semibold">Ou clique para selecionar (PDF, JPEG, PNG - Máx. 10MB)</p>
                   </div>
                 </div>
               </div>
@@ -1152,9 +1152,9 @@ export class ClientesPage {
             
             <!-- Barra de Busca -->
             <div>
-              <label class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-1.5">Pesquisar Cliente</label>
+              <label class="block text-xs font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wide mb-1.5">Pesquisar Cliente</label>
               <div class="relative">
-                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
+                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-400">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
@@ -1165,7 +1165,7 @@ export class ClientesPage {
 
             <!-- Listagem Container -->
             <div>
-              <label class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-2">Clientes Ativos</label>
+              <label class="block text-xs font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wide mb-2">Clientes Ativos</label>
               <div id="lista-clientes-container" class="max-h-[600px] overflow-y-auto space-y-2.5 pr-1 custom-scrollbar">
                 <!-- Injetado via JS -->
               </div>
