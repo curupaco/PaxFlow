@@ -325,5 +325,48 @@ export const HELP_ITEMS: HelpItem[] = [
     label: 'Configurações de Marca da Agência (White-Label)',
     description: 'Como personalizar as telas públicas com logotipo e cores da sua agência.',
     details: 'Administradores podem acessar a aba de Configurações para remover os logotipos do PaxFlow e definir a cor primária hexadecimal corporativa. Isso se aplica automaticamente às páginas de Itinerário Digital e Pesquisa NPS visualizadas pelo passageiro final.'
+  },
+  {
+    id: 'auto-status-em-andamento',
+    modulo: 'orcamentos',
+    label: 'Automação: Início do Atendimento (Orçamentos)',
+    description: 'O orçamento passa de "Solicitado" para "Em Andamento" de forma automática ao interagir com o lead.',
+    details: 'Quando um novo orçamento (Lead) entra no sistema, ele inicia no estágio "Solicitado". Assim que qualquer consultor abre a ficha deste orçamento e adiciona a primeira anotação, observação interna ou envia uma mensagem na linha do tempo, o PaxFlow entende que o atendimento foi iniciado e altera o status do orçamento automaticamente para "Em Andamento".\n\nIsso evita que o consultor precise clicar manualmente para atualizar o estágio, mantendo o funil comercial preciso e gerando métricas corretas de tempo de resposta do primeiro atendimento.'
+  },
+  {
+    id: 'auto-status-desistencia',
+    modulo: 'orcamentos',
+    label: 'Automação: Desistência por Inatividade (Orçamentos)',
+    description: 'Cancelamento automático de propostas antigas após o prazo de inatividade (ex: 30 dias).',
+    details: 'Para manter o funil de vendas limpo e focado em leads quentes, o sistema monitora orçamentos que estão estacionados no estágio "Aguardando" (geralmente após o envio da proposta comercial ao cliente).\n\nSe o orçamento não receber nenhuma nova interação (alteração de dados, preenchimento de campos ou nova anotação nos comentários) dentro do limite configurado na aba "Automações" (o padrão recomendado é de 30 dias), o PaxFlow arquivará o card como "Concluído" com o sub-status "Desistência" (Lead Perdido).\n\n💡 **Dica para o Consultor:** Se você ainda estiver negociando com o cliente e quiser evitar o arquivamento automático, basta adicionar um comentário de acompanhamento no orçamento (ex: "Aguardando retorno do cliente sobre o hotel"). Isso renovará o cronômetro de inatividade por mais 30 dias.'
+  },
+  {
+    id: 'auto-status-pre-embarque',
+    modulo: 'viagens',
+    label: 'Automação: Transição para Pré-Embarque (Viagens)',
+    description: 'Viagens em pós-venda mudam para "Pré-Embarque" automaticamente próximo à data de embarque.',
+    details: 'Quando a data do voo ou do primeiro serviço da viagem (data de ida) se aproxima, o sistema altera o status operacional da viagem para "Pré-Embarque" de forma autônoma.\n\nEsta transição ocorre exatamente X dias antes da viagem (limite definido por padrão como 7 dias nas Configurações de Automações). Ao entrar nesta fase, a viagem aciona alertas visuais de atenção na lista e destaca a necessidade de conferência final e entrega de vouchers/dicas de viagem para o cliente final.'
+  },
+  {
+    id: 'auto-status-pos-viagem',
+    modulo: 'viagens',
+    label: 'Automação: Conclusão e Pós-Viagem (Viagens)',
+    description: 'Viagens ativas mudam para "Pós-Viagem" automaticamente no dia seguinte ao retorno dos passageiros.',
+    details: 'Assim que a data de retorno (data de volta) da viagem é concluída (ou seja, quando o dia atual passa da data cadastrada no retorno), o sistema encerra a fase operacional física e move o status da viagem automaticamente para "Pós-Viagem".\n\nEsta mudança aciona a esteira de pós-venda, onde o consultor recebe a tarefa de coletar feedbacks e, se configurado, dispara a pesquisa eletrônica de NPS (Net Promoter Score) de satisfação para o e-mail/WhatsApp do cliente.'
+  },
+  {
+    id: 'auto-reembolso-solicitado',
+    modulo: 'reembolsos',
+    label: 'Automação: Vínculo de Solicitação de Reembolso',
+    description: 'A viagem é movida automaticamente para "Reembolso Solicitado" ao abrir um processo de estorno.',
+    details: 'Quando um cliente solicita o cancelamento parcial ou total de serviços de uma viagem contratada, o consultor cria um registro de reembolso. No exato instante em que essa ficha de reembolso é salva no sistema, o PaxFlow altera o status geral da viagem operacional para "Reembolso Solicitado".\n\nIsso sinaliza para os gestores e para o financeiro que existe um trâmite de crédito pendente de conciliação junto aos fornecedores (consolidadoras ou companhias aéreas) antes que a viagem possa ser definitivamente finalizada.'
+  },
+  {
+    id: 'auto-reembolso-concluido',
+    modulo: 'reembolsos',
+    label: 'Automação: Retorno após Conclusão do Reembolso',
+    description: 'A viagem retorna para sua fase correta automaticamente assim que o financeiro realiza o pagamento.',
+    details: 'Quando o departamento financeiro conclui o processo de reembolso e atualiza o status na Central de Reembolsos para "💸 Concluído / Pago" (anexando o comprovante), o sistema analisa a data da viagem para tomar a decisão correta:\n\n1. **Se a data de retorno da viagem já passou**: O status geral da viagem é alterado automaticamente para "Pós-Viagem" para que o pós-venda possa ser finalizado.\n2. **Se a viagem ainda não aconteceu**: O status da viagem retorna para "Pós-Venda" para que continue seu ciclo operacional normal até o embarque.\n\nEssa regra elimina o risco de viagens ficarem esquecidas na coluna de reembolso após a devolução dos valores.'
   }
 ];
+

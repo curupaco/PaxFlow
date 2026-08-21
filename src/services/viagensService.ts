@@ -52,7 +52,61 @@ export class ViagensService {
       .order('data_financeiro', { ascending: false });
 
     if (error) throw error;
-    return data || [];
+
+    const rawViagens = data || [];
+
+    // --- AUTOMATION: Transições automáticas de Viagens ---
+    try {
+      const hoje = new Date();
+      hoje.setHours(0, 0, 0, 0);
+
+      let slaPreDias = 7;
+      const { data: settingsData } = await supabase
+        .from('global_settings')
+        .select('sla_pre_embarque_dias')
+        .maybeSingle();
+      if (settingsData && settingsData.sla_pre_embarque_dias !== undefined) {
+        slaPreDias = Number(settingsData.sla_pre_embarque_dias);
+      }
+
+      for (const v of rawViagens) {
+        if (v.status === 'reembolso_solicitado' || v.status === 'cancelada') continue;
+
+        // Auto transition to pre_embarque
+        if ((v.status === 'fechado' || v.status === 'pos_venda') && v.data_ida) {
+          const targetDate = new Date(v.data_ida + 'T00:00:00');
+          targetDate.setHours(0, 0, 0, 0);
+          const diffTime = targetDate.getTime() - hoje.getTime();
+          const diasRestantes = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          
+          if (diasRestantes >= 0 && diasRestantes <= slaPreDias) {
+            await supabase
+              .from('viagens')
+              .update({ status: 'pre_embarque', updated_at: new Date().toISOString() })
+              .eq('id', v.id);
+            v.status = 'pre_embarque';
+          }
+        }
+
+        // Auto transition to pos_viagem
+        if ((v.status === 'fechado' || v.status === 'pos_venda' || v.status === 'pre_embarque') && v.data_volta) {
+          const targetDate = new Date(v.data_volta + 'T00:00:00');
+          targetDate.setHours(0, 0, 0, 0);
+          
+          if (targetDate < hoje) {
+            await supabase
+              .from('viagens')
+              .update({ status: 'pos_viagem', updated_at: new Date().toISOString() })
+              .eq('id', v.id);
+            v.status = 'pos_viagem';
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Erro nas automações de viagens:', err);
+    }
+
+    return rawViagens;
   }
 
   /**

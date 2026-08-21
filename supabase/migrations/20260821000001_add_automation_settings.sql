@@ -132,3 +132,74 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE TRIGGER on_global_settings_view_manage
   INSTEAD OF INSERT OR UPDATE ON public.global_settings
   FOR EACH ROW EXECUTE FUNCTION public.manage_global_settings_view();
+
+-- ============================================================================
+-- 4. AUTOMACÕES DE MUDANÇA DE ESTADO (TRIGGER DE COMENTÁRIOS E REEMBOLSOS)
+-- ============================================================================
+
+-- A. Atualizar orçamento SOLICITADO para EM_ANDAMENTO ao adicionar uma nota (comentário)
+CREATE OR REPLACE FUNCTION public.handle_comentario_inserted()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.tipo_item = 'orcamento' THEN
+    UPDATE public.orcamentos
+    SET status = 'EM_ANDAMENTO',
+        updated_at = NOW()
+    WHERE id = NEW.item_id AND status = 'SOLICITADO';
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS on_comentario_inserted ON public.comentarios;
+CREATE TRIGGER on_comentario_inserted
+  AFTER INSERT ON public.comentarios
+  FOR EACH ROW EXECUTE FUNCTION public.handle_comentario_inserted();
+
+-- B. Atualizar status da viagem para 'reembolso_solicitado' ao criar um reembolso
+CREATE OR REPLACE FUNCTION public.handle_reembolso_inserted()
+RETURNS TRIGGER AS $$
+BEGIN
+  UPDATE public.viagens
+  SET status = 'reembolso_solicitado',
+      updated_at = NOW()
+  WHERE id = NEW.viagem_id AND status != 'reembolso_solicitado';
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS on_reembolso_inserted ON public.reembolsos;
+CREATE TRIGGER on_reembolso_inserted
+  AFTER INSERT ON public.reembolsos
+  FOR EACH ROW EXECUTE FUNCTION public.handle_reembolso_inserted();
+
+-- C. Reverter status da viagem após o reembolso ser pago/concluído
+CREATE OR REPLACE FUNCTION public.handle_reembolso_updated()
+RETURNS TRIGGER AS $$
+DECLARE
+  v_data_volta DATE;
+BEGIN
+  IF NEW.status = 'pago' AND OLD.status != 'pago' THEN
+    SELECT data_volta INTO v_data_volta FROM public.viagens WHERE id = NEW.viagem_id;
+    
+    IF v_data_volta IS NOT NULL AND v_data_volta < CURRENT_DATE THEN
+      UPDATE public.viagens
+      SET status = 'pos_viagem',
+          updated_at = NOW()
+      WHERE id = NEW.viagem_id;
+    ELSE
+      UPDATE public.viagens
+      SET status = 'pos_venda',
+          updated_at = NOW()
+      WHERE id = NEW.viagem_id;
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS on_reembolso_updated ON public.reembolsos;
+CREATE TRIGGER on_reembolso_updated
+  AFTER UPDATE ON public.reembolsos
+  FOR EACH ROW EXECUTE FUNCTION public.handle_reembolso_updated();
+
