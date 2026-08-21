@@ -2780,23 +2780,27 @@ export class ConfiguracoesPage {
                         return rec;
                       };
 
-                      const faixasHTML = meta.faixas && meta.faixas.length > 0 
-                        ? meta.faixas.map(f => 
-                            '<div class="text-xs text-slate-650 dark:text-slate-400 font-bold mb-0.5 flex items-center gap-1.5">' +
-                            '<span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: ' + (f.cor || '#6366f1') + '"></span>' +
-                            '• <span style="color: ' + (f.cor || '#6366f1') + '" class="font-black">' + f.nome + '</span>: >= R$ ' + f.valor_minimo.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) +
-                            (f.recompensa ? ' <span class="text-[10px] text-slate-400 dark:text-slate-400 font-normal italic">(' + formatRecompensa(f.recompensa) + ')</span>' : '') +
-                            '</div>'
-                          ).join('')
-                        : '<span class="text-slate-400 text-xs italic">Nenhuma faixa cadastrada</span>';
+                      const faixasHTML = meta.is_meta_loja
+                        ? '<div class="text-xs text-emerald-600 dark:text-emerald-400 font-black">Meta Alvo: R$ ' + (meta.valor_meta || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '</div>'
+                        : (meta.faixas && meta.faixas.length > 0 
+                            ? meta.faixas.map(f => 
+                                '<div class="text-xs text-slate-650 dark:text-slate-400 font-bold mb-0.5 flex items-center gap-1.5">' +
+                                '<span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: ' + (f.cor || '#6366f1') + '"></span>' +
+                                '• <span style="color: ' + (f.cor || '#6366f1') + '" class="font-black">' + f.nome + '</span>: >= R$ ' + f.valor_minimo.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) +
+                                (f.recompensa ? ' <span class="text-[10px] text-slate-400 dark:text-slate-400 font-normal italic">(' + formatRecompensa(f.recompensa) + ')</span>' : '') +
+                                '</div>'
+                              ).join('')
+                            : '<span class="text-slate-400 text-xs italic">Nenhuma faixa cadastrada</span>');
 
                       const tipoCalculoBadge = meta.tipo_calculo === 'bruto'
                         ? '<span class="inline-flex px-2 py-0.5 bg-blue-50 dark:bg-blue-950/45 text-blue-700 dark:text-blue-400 border border-blue-100 dark:border-blue-900/40 text-[9px] font-black uppercase rounded">Faturamento Bruto</span>'
                         : '<span class="inline-flex px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/45 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/40 text-[9px] font-black uppercase rounded">Lucro Real</span>';
 
-                      const tipoPeriodoBadge = meta.is_campanha
-                        ? '<span class="inline-flex px-2 py-0.5 bg-purple-50 dark:bg-purple-950/45 text-purple-700 dark:text-purple-400 border border-purple-100 dark:border-purple-900/40 text-[9px] font-black uppercase rounded">Campanha</span>'
-                        : '<span class="inline-flex px-2 py-0.5 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 text-[9px] font-black uppercase rounded">Regular</span>';
+                      const tipoPeriodoBadge = meta.is_meta_loja
+                        ? '<span class="inline-flex px-2 py-0.5 bg-teal-50 dark:bg-teal-950/45 text-teal-700 dark:text-teal-400 border border-teal-100 dark:border-teal-900/40 text-[9px] font-black uppercase rounded font-bold">Meta Loja</span>'
+                        : (meta.is_campanha
+                            ? '<span class="inline-flex px-2 py-0.5 bg-purple-50 dark:bg-purple-950/45 text-purple-700 dark:text-purple-400 border border-purple-100 dark:border-purple-900/40 text-[9px] font-black uppercase rounded">Campanha</span>'
+                            : '<span class="inline-flex px-2 py-0.5 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 text-[9px] font-black uppercase rounded">Regular</span>');
 
                       return '<tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/10 transition-colors">' +
                           '<td class="py-4 px-5">' +
@@ -2946,7 +2950,17 @@ export class ConfiguracoesPage {
                 <option value="lucro" selected>Lucro / Rentabilidade</option>
               </select>
             </div>
-            <div class="flex items-center pt-5">
+            <div>
+              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Tipo de Meta *</label>
+              <select id="select-meta-tipo" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800 dark:text-slate-100 font-semibold text-sm">
+                <option value="campanha" selected>Meta Campanha (com Faixas)</option>
+                <option value="loja">Meta Loja (Alvo Único)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4" id="container-campanha-retroativa-row">
+            <div class="flex items-center pt-2">
               <label class="inline-flex items-center cursor-pointer select-none">
                 <input id="check-meta-campanha" type="checkbox" class="sr-only peer" />
                 <div class="w-9 h-5 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500 relative"></div>
@@ -2955,8 +2969,14 @@ export class ConfiguracoesPage {
             </div>
           </div>
 
+          <!-- Valor Alvo Meta Loja -->
+          <div id="container-meta-loja-valor" class="hidden">
+            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Valor Alvo da Meta Loja (R$) *</label>
+            <input id="input-meta-loja-valor" type="text" placeholder="Ex: 100.000,00" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800 dark:text-slate-100 font-bold text-sm" />
+          </div>
+
           <!-- Dynamic Faixas Section -->
-          <div class="border-t border-slate-100 dark:border-slate-800 pt-4">
+          <div id="container-faixas-premacao" class="border-t border-slate-100 dark:border-slate-800 pt-4">
             <div class="flex items-center justify-between mb-3">
               <h3 class="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">Faixas de Premiação / Metas</h3>
               <button id="btn-adicionar-faixa-meta" type="button" class="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/45 dark:hover:bg-emerald-900/60 text-emerald-600 dark:text-emerald-400 rounded-lg text-[10px] font-black tracking-wider transition uppercase">
@@ -2999,6 +3019,38 @@ export class ConfiguracoesPage {
     `;
 
     document.body.appendChild(overlay);
+
+    const selectTipo = overlay.querySelector('#select-meta-tipo') as HTMLSelectElement;
+    const containerValorLoja = overlay.querySelector('#container-meta-loja-valor') as HTMLElement;
+    const containerFaixas = overlay.querySelector('#container-faixas-premacao') as HTMLElement;
+    const containerCampanhaRow = overlay.querySelector('#container-campanha-retroativa-row') as HTMLElement;
+    const inputValorLoja = overlay.querySelector('#input-meta-loja-valor') as HTMLInputElement;
+
+    if (inputValorLoja) {
+      aplicarMascaraMonetaria(inputValorLoja);
+    }
+
+    selectTipo?.addEventListener('change', () => {
+      if (selectTipo.value === 'loja') {
+        containerValorLoja?.classList.remove('hidden');
+        containerFaixas?.classList.add('hidden');
+        containerCampanhaRow?.classList.add('hidden');
+        
+        overlay.querySelectorAll('.faixa-item-row input').forEach(input => {
+          (input as HTMLInputElement).required = false;
+        });
+        if (inputValorLoja) inputValorLoja.required = true;
+      } else {
+        containerValorLoja?.classList.add('hidden');
+        containerFaixas?.classList.remove('hidden');
+        containerCampanhaRow?.classList.remove('hidden');
+        
+        overlay.querySelectorAll('.faixa-item-row input:not(.input-faixa-recompensa)').forEach(input => {
+          (input as HTMLInputElement).required = true;
+        });
+        if (inputValorLoja) inputValorLoja.required = false;
+      }
+    });
 
     // Aplicar máscara no campo inicial
     const initialInput = overlay.querySelector('.input-faixa-valor') as HTMLInputElement;
@@ -3069,28 +3121,41 @@ export class ConfiguracoesPage {
       const tipoCalculo = (document.getElementById('select-meta-calculo') as HTMLSelectElement).value as 'bruto' | 'lucro';
       const isCampanha = (document.getElementById('check-meta-campanha') as HTMLInputElement).checked;
 
+      const isMetaLoja = selectTipo.value === 'loja';
+      let valorMetaLoja = 0;
+
       const rows = document.querySelectorAll('.faixa-item-row');
       const faixas: any[] = [];
-      rows.forEach(row => {
-        const fNome = (row.querySelector('.input-faixa-nome') as HTMLInputElement).value;
-        const fValorRaw = (row.querySelector('.input-faixa-valor') as HTMLInputElement).value;
-        const fValor = parseBrFloat(fValorRaw) || 0;
-        const fRecompensa = (row.querySelector('.input-faixa-recompensa') as HTMLInputElement).value || '';
-        const fCor = (row.querySelector('.input-faixa-cor') as HTMLInputElement).value || '#6366f1';
-        if (fNome && fValor > 0) {
-          faixas.push({
-            nome: fNome,
-            valor_minimo: fValor,
-            bonus_xp: Math.round(fValor * 0.1),
-            recompensa: fRecompensa,
-            cor: fCor
-          });
-        }
-      });
 
-      if (faixas.length === 0) {
-        this.showToast('Por favor, adicione pelo menos uma faixa de premiação válida.', 'error');
-        return;
+      if (isMetaLoja) {
+        const valorRaw = inputValorLoja.value;
+        valorMetaLoja = parseBrFloat(valorRaw) || 0;
+        if (valorMetaLoja <= 0) {
+          this.showToast('Por favor, informe um valor alvo válido para a Meta Loja.', 'error');
+          return;
+        }
+      } else {
+        rows.forEach(row => {
+          const fNome = (row.querySelector('.input-faixa-nome') as HTMLInputElement).value;
+          const fValorRaw = (row.querySelector('.input-faixa-valor') as HTMLInputElement).value;
+          const fValor = parseBrFloat(fValorRaw) || 0;
+          const fRecompensa = (row.querySelector('.input-faixa-recompensa') as HTMLInputElement).value || '';
+          const fCor = (row.querySelector('.input-faixa-cor') as HTMLInputElement).value || '#6366f1';
+          if (fNome && fValor > 0) {
+            faixas.push({
+              nome: fNome,
+              valor_minimo: fValor,
+              bonus_xp: Math.round(fValor * 0.1),
+              recompensa: fRecompensa,
+              cor: fCor
+            });
+          }
+        });
+
+        if (faixas.length === 0) {
+          this.showToast('Por favor, adicione pelo menos uma faixa de premiação válida.', 'error');
+          return;
+        }
       }
 
       submitBtn.disabled = true;
@@ -3102,7 +3167,9 @@ export class ConfiguracoesPage {
           data_inicio: dataInicio,
           data_fim: dataFim,
           tipo_calculo: tipoCalculo,
-          is_campanha: isCampanha
+          is_campanha: isCampanha,
+          is_meta_loja: isMetaLoja,
+          valor_meta: valorMetaLoja
         }, faixas);
 
         this.showToast('Período de meta criado com sucesso!', 'success');
@@ -3223,7 +3290,17 @@ export class ConfiguracoesPage {
                 <option value="lucro" ${meta.tipo_calculo === 'lucro' ? 'selected' : ''}>Lucro / Rentabilidade</option>
               </select>
             </div>
-            <div class="flex items-center pt-5">
+            <div>
+              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Tipo de Meta *</label>
+              <select id="select-meta-tipo-edit" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800 dark:text-slate-100 font-semibold text-sm">
+                <option value="campanha" ${!meta.is_meta_loja ? 'selected' : ''}>Meta Campanha (com Faixas)</option>
+                <option value="loja" ${meta.is_meta_loja ? 'selected' : ''}>Meta Loja (Alvo Único)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4 ${meta.is_meta_loja ? 'hidden' : ''}" id="container-campanha-retroativa-row-edit">
+            <div class="flex items-center pt-2">
               <label class="inline-flex items-center cursor-pointer select-none">
                 <input id="check-meta-campanha" type="checkbox" ${meta.is_campanha ? 'checked' : ''} class="sr-only peer" />
                 <div class="w-9 h-5 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500 relative"></div>
@@ -3232,8 +3309,14 @@ export class ConfiguracoesPage {
             </div>
           </div>
 
+          <!-- Valor Alvo Meta Loja -->
+          <div id="container-meta-loja-valor-edit" class="${meta.is_meta_loja ? '' : 'hidden'}">
+            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Valor Alvo da Meta Loja (R$) *</label>
+            <input id="input-meta-loja-valor-edit" type="text" placeholder="Ex: 100.000,00" value="${meta.valor_meta ? meta.valor_meta.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0,00'}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800 dark:text-slate-100 font-bold text-sm" />
+          </div>
+
           <!-- Dynamic Faixas Section -->
-          <div class="border-t border-slate-100 dark:border-slate-800 pt-4">
+          <div id="container-faixas-premacao-edit" class="border-t border-slate-100 dark:border-slate-800 pt-4 ${meta.is_meta_loja ? 'hidden' : ''}">
             <div class="flex items-center justify-between mb-3">
               <h3 class="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">Faixas de Premiação / Metas</h3>
               <button id="btn-adicionar-faixa-meta-edit" type="button" class="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/45 dark:hover:bg-emerald-900/60 text-emerald-600 dark:text-emerald-400 rounded-lg text-[10px] font-black tracking-wider transition uppercase">
@@ -3259,6 +3342,38 @@ export class ConfiguracoesPage {
     `;
 
     document.body.appendChild(overlay);
+
+    const selectTipoEdit = overlay.querySelector('#select-meta-tipo-edit') as HTMLSelectElement;
+    const containerValorLojaEdit = overlay.querySelector('#container-meta-loja-valor-edit') as HTMLElement;
+    const containerFaixasEdit = overlay.querySelector('#container-faixas-premacao-edit') as HTMLElement;
+    const containerCampanhaRowEdit = overlay.querySelector('#container-campanha-retroativa-row-edit') as HTMLElement;
+    const inputValorLojaEdit = overlay.querySelector('#input-meta-loja-valor-edit') as HTMLInputElement;
+
+    if (inputValorLojaEdit) {
+      aplicarMascaraMonetaria(inputValorLojaEdit);
+    }
+
+    selectTipoEdit?.addEventListener('change', () => {
+      if (selectTipoEdit.value === 'loja') {
+        containerValorLojaEdit?.classList.remove('hidden');
+        containerFaixasEdit?.classList.add('hidden');
+        containerCampanhaRowEdit?.classList.add('hidden');
+        
+        overlay.querySelectorAll('#faixas-meta-container-edit input').forEach(input => {
+          (input as HTMLInputElement).required = false;
+        });
+        if (inputValorLojaEdit) inputValorLojaEdit.required = true;
+      } else {
+        containerValorLojaEdit?.classList.add('hidden');
+        containerFaixasEdit?.classList.remove('hidden');
+        containerCampanhaRowEdit?.classList.remove('hidden');
+        
+        overlay.querySelectorAll('#faixas-meta-container-edit input:not(.input-faixa-recompensa)').forEach(input => {
+          (input as HTMLInputElement).required = true;
+        });
+        if (inputValorLojaEdit) inputValorLojaEdit.required = false;
+      }
+    });
 
     // Aplicar máscara nos campos de valores de faixas existentes
     overlay.querySelectorAll('.input-faixa-valor').forEach((inputEl: any) => {
@@ -3328,28 +3443,41 @@ export class ConfiguracoesPage {
       const tipoCalculo = (document.getElementById('select-meta-calculo') as HTMLSelectElement).value as 'bruto' | 'lucro';
       const isCampanha = (document.getElementById('check-meta-campanha') as HTMLInputElement).checked;
 
+      const isMetaLoja = selectTipoEdit.value === 'loja';
+      let valorMetaLoja = 0;
+
       const rows = overlay.querySelectorAll('.faixa-item-row');
       const faixas: any[] = [];
-      rows.forEach(row => {
-        const fNome = (row.querySelector('.input-faixa-nome') as HTMLInputElement).value;
-        const fValorRaw = (row.querySelector('.input-faixa-valor') as HTMLInputElement).value;
-        const fValor = parseBrFloat(fValorRaw) || 0;
-        const fRecompensa = (row.querySelector('.input-faixa-recompensa') as HTMLInputElement).value || '';
-        const fCor = (row.querySelector('.input-faixa-cor') as HTMLInputElement).value || '#6366f1';
-        if (fNome && fValor > 0) {
-          faixas.push({
-            nome: fNome,
-            valor_minimo: fValor,
-            bonus_xp: Math.round(fValor * 0.1),
-            recompensa: fRecompensa,
-            cor: fCor
-          });
-        }
-      });
 
-      if (faixas.length === 0) {
-        this.showToast('Por favor, adicione pelo menos uma faixa de premiação válida.', 'error');
-        return;
+      if (isMetaLoja) {
+        const valorRaw = inputValorLojaEdit.value;
+        valorMetaLoja = parseBrFloat(valorRaw) || 0;
+        if (valorMetaLoja <= 0) {
+          this.showToast('Por favor, informe um valor alvo válido para a Meta Loja.', 'error');
+          return;
+        }
+      } else {
+        rows.forEach(row => {
+          const fNome = (row.querySelector('.input-faixa-nome') as HTMLInputElement).value;
+          const fValorRaw = (row.querySelector('.input-faixa-valor') as HTMLInputElement).value;
+          const fValor = parseBrFloat(fValorRaw) || 0;
+          const fRecompensa = (row.querySelector('.input-faixa-recompensa') as HTMLInputElement).value || '';
+          const fCor = (row.querySelector('.input-faixa-cor') as HTMLInputElement).value || '#6366f1';
+          if (fNome && fValor > 0) {
+            faixas.push({
+              nome: fNome,
+              valor_minimo: fValor,
+              bonus_xp: Math.round(fValor * 0.1),
+              recompensa: fRecompensa,
+              cor: fCor
+            });
+          }
+        });
+
+        if (faixas.length === 0) {
+          this.showToast('Por favor, adicione pelo menos uma faixa de premiação válida.', 'error');
+          return;
+        }
       }
 
       submitBtn.disabled = true;
@@ -3361,7 +3489,9 @@ export class ConfiguracoesPage {
           data_inicio: dataInicio,
           data_fim: dataFim,
           tipo_calculo: tipoCalculo,
-          is_campanha: isCampanha
+          is_campanha: isCampanha,
+          is_meta_loja: isMetaLoja,
+          valor_meta: valorMetaLoja
         }, faixas);
 
         this.showToast('Período de meta atualizado com sucesso!', 'success');

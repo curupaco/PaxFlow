@@ -400,6 +400,10 @@ export interface MetaPeriodo {
   tipoCalculo?: 'bruto' | 'lucro';
   is_campanha: boolean;
   isCampanha?: boolean;
+  is_meta_loja?: boolean;
+  isMetaLoja?: boolean;
+  valor_meta?: number;
+  valorMeta?: number;
   created_at?: string;
   updated_at?: string;
   faixas?: MetaFaixa[];

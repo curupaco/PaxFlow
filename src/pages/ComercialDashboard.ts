@@ -1178,8 +1178,15 @@ export class ComercialDashboard {
     }
 
     try {
-      this.metas = await MetasService.obterMetaPeriodos();
+      const allMetas = await MetasService.obterMetaPeriodos();
       this.lastFetchedMetasTime = Date.now();
+      
+      const isAdmin = this.perfil?.role === 'admin';
+      if (!isAdmin) {
+        this.metas = allMetas.filter(m => !m.is_meta_loja);
+      } else {
+        this.metas = allMetas;
+      }
       
       if (this.metas.length > 0) {
         if (this.selectedMetaId === 'todas' || !this.metas.some(m => m.id === this.selectedMetaId)) {
@@ -1214,7 +1221,27 @@ export class ComercialDashboard {
     }, 1000);
   }
 
-  private renderGoalPieChart(val: number, faixas: MetaFaixa[]): string {
+  private renderGoalPieChart(val: number, faixas: MetaFaixa[], isMetaLoja?: boolean, valorMeta?: number): string {
+    if (isMetaLoja) {
+      const maxVal = valorMeta || 1;
+      if (maxVal <= 0) return '';
+      const pct = Math.min((val / maxVal) * 100, 100);
+      const remaining = 100 - pct;
+
+      return `
+        <svg viewBox="0 0 42 42" class="w-full h-full transform -rotate-90">
+          <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#f1f5f9" class="dark:stroke-slate-850" stroke-width="4.5" />
+          ${pct > 0 ? `
+            <circle cx="21" cy="21" r="15.915" fill="transparent" 
+              stroke="#10b981" stroke-width="5" 
+              stroke-dasharray="${pct} ${remaining}" 
+              stroke-dashoffset="25"
+              class="donut-segment transition-all duration-500" />
+          ` : ''}
+        </svg>
+      `;
+    }
+
     if (!faixas || faixas.length === 0) return '';
     const sorted = [...faixas].sort((a, b) => a.valor_minimo - b.valor_minimo);
     const maxVal = sorted[sorted.length - 1].valor_minimo;
@@ -1446,12 +1473,14 @@ export class ComercialDashboard {
               
               <div class="flex flex-col items-center justify-center py-2">
                 <div class="relative w-32 h-32 mb-4">
-                  ${this.renderGoalPieChart(agencyTotal, currentMeta.faixas || [])}
+                  ${this.renderGoalPieChart(agencyTotal, currentMeta.faixas || [], currentMeta.is_meta_loja, currentMeta.valor_meta)}
                   <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
-                    <span class="text-[9px] font-black uppercase text-slate-450 dark:text-slate-500 tracking-wider">Atingido</span>
+                    <span class="text-[9px] font-black uppercase text-slate-450 dark:text-slate-505 tracking-wider">Atingido</span>
                     <span class="text-sm font-black text-slate-800 dark:text-slate-100">
                       ${(() => {
-                        const maxVal = sortedFaixas.length > 0 ? sortedFaixas[sortedFaixas.length - 1].valor_minimo : 1;
+                        const maxVal = currentMeta.is_meta_loja 
+                          ? (currentMeta.valor_meta || 1) 
+                          : (sortedFaixas.length > 0 ? sortedFaixas[sortedFaixas.length - 1].valor_minimo : 1);
                         return ((agencyTotal / maxVal) * 100).toFixed(0);
                       })()}%
                     </span>
@@ -1463,6 +1492,9 @@ export class ComercialDashboard {
                   <span class="text-xl font-black text-slate-800 dark:text-slate-100 mt-1 block">
                     R$ ${agencyTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </span>
+                  ${currentMeta.is_meta_loja ? `
+                    <span class="text-[10px] text-slate-450 dark:text-slate-500 font-bold block mt-1.5">Alvo Loja: R$ ${(currentMeta.valor_meta || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                  ` : ''}
                 </div>
               </div>
             </div>
@@ -1478,14 +1510,27 @@ export class ComercialDashboard {
                 .map(({ consultant: c, val }) => {
                   let currentFaixaName = 'Nenhuma';
                   let currentFaixaColor = '#6366f1';
-                  for (let i = 0; i < sortedFaixas.length; i++) {
-                    if (val >= sortedFaixas[i].valor_minimo) {
-                      currentFaixaName = sortedFaixas[i].nome;
-                      currentFaixaColor = sortedFaixas[i].cor || '#6366f1';
+                  
+                  if (currentMeta.is_meta_loja) {
+                    currentFaixaName = 'Contribuição';
+                    currentFaixaColor = '#10b981';
+                  } else {
+                    for (let i = 0; i < sortedFaixas.length; i++) {
+                      if (val >= sortedFaixas[i].valor_minimo) {
+                        currentFaixaName = sortedFaixas[i].nome;
+                        currentFaixaColor = sortedFaixas[i].cor || '#6366f1';
+                      }
                     }
                   }
-                  const maxVal = sortedFaixas.length > 0 ? sortedFaixas[sortedFaixas.length - 1].valor_minimo * 1.1 : 1;
+
+                  const maxVal = currentMeta.is_meta_loja
+                    ? (currentMeta.valor_meta || 1)
+                    : (sortedFaixas.length > 0 ? sortedFaixas[sortedFaixas.length - 1].valor_minimo * 1.1 : 1);
                   const pct = Math.min((val / maxVal) * 100, 100);
+
+                  const badgeHTML = currentMeta.is_meta_loja
+                    ? ''
+                    : `<span style="color: ${currentFaixaColor}; border-color: ${currentFaixaColor}30; background-color: ${currentFaixaColor}10" class="px-1.5 py-0.5 border rounded text-[9px] font-black uppercase tracking-wider">${currentFaixaName}</span>`;
 
                   return `
                     <div class="space-y-1.5">
@@ -1495,9 +1540,12 @@ export class ComercialDashboard {
                             ${getAvatarSvg(c.avatar_url || 'panda')}
                           </div>
                           <span class="font-extrabold text-slate-750 dark:text-slate-250">${c.nome}</span>
-                          <span style="color: ${currentFaixaColor}; border-color: ${currentFaixaColor}30; background-color: ${currentFaixaColor}10" class="px-1.5 py-0.5 border rounded text-[9px] font-black uppercase tracking-wider">${currentFaixaName}</span>
+                          ${badgeHTML}
                         </div>
-                        <span class="font-extrabold text-slate-700 dark:text-slate-200">R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                        <span class="font-extrabold text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
+                          R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          ${currentMeta.is_meta_loja ? `<span class="text-[10px] text-slate-450 dark:text-slate-550 font-bold">(${((val / maxVal) * 100).toFixed(0)}%)</span>` : ''}
+                        </span>
                       </div>
                       <div class="relative w-full h-2.5 bg-slate-100 dark:bg-slate-850 rounded-full overflow-hidden">
                         <div class="h-full rounded-full transition-all duration-300" style="width: ${pct}%; background-color: ${currentFaixaColor}"></div>

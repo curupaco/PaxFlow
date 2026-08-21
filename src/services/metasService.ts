@@ -63,6 +63,10 @@ export class MetasService {
           tipoCalculo: p.tipo_calculo,
           is_campanha: p.is_campanha,
           isCampanha: p.is_campanha,
+          is_meta_loja: p.is_meta_loja,
+          isMetaLoja: p.is_meta_loja,
+          valor_meta: Number(p.valor_meta) || 0,
+          valorMeta: Number(p.valor_meta) || 0,
           created_at: p.created_at,
           updated_at: p.updated_at,
           faixas: faixasPeriodo
@@ -92,7 +96,9 @@ export class MetasService {
         data_inicio: periodo.data_inicio,
         data_fim: periodo.data_fim,
         tipo_calculo: periodo.tipo_calculo,
-        is_campanha: periodo.is_campanha
+        is_campanha: periodo.is_campanha,
+        is_meta_loja: periodo.is_meta_loja || false,
+        valor_meta: periodo.valor_meta || 0
       };
 
       const { data: insertedPeriodo, error: errP } = await supabase
@@ -104,6 +110,28 @@ export class MetasService {
       if (errP) throw errP;
 
       try {
+        if (periodo.is_meta_loja) {
+          return {
+            id: insertedPeriodo.id,
+            nome: insertedPeriodo.nome,
+            data_inicio: insertedPeriodo.data_inicio,
+            dataInicio: insertedPeriodo.data_inicio,
+            data_fim: insertedPeriodo.data_fim,
+            dataFim: insertedPeriodo.data_fim,
+            tipo_calculo: insertedPeriodo.tipo_calculo,
+            tipoCalculo: insertedPeriodo.tipo_calculo,
+            is_campanha: insertedPeriodo.is_campanha,
+            isCampanha: insertedPeriodo.is_campanha,
+            is_meta_loja: insertedPeriodo.is_meta_loja,
+            isMetaLoja: insertedPeriodo.is_meta_loja,
+            valor_meta: Number(insertedPeriodo.valor_meta) || 0,
+            valorMeta: Number(insertedPeriodo.valor_meta) || 0,
+            created_at: insertedPeriodo.created_at,
+            updated_at: insertedPeriodo.updated_at,
+            faixas: []
+          };
+        }
+
         const dbFaixas = faixas.map(f => ({
           periodo_id: insertedPeriodo.id,
           nome: f.nome,
@@ -121,7 +149,22 @@ export class MetasService {
         if (errF) throw errF;
 
         return {
-          ...insertedPeriodo,
+          id: insertedPeriodo.id,
+          nome: insertedPeriodo.nome,
+          data_inicio: insertedPeriodo.data_inicio,
+          dataInicio: insertedPeriodo.data_inicio,
+          data_fim: insertedPeriodo.data_fim,
+          dataFim: insertedPeriodo.data_fim,
+          tipo_calculo: insertedPeriodo.tipo_calculo,
+          tipoCalculo: insertedPeriodo.tipo_calculo,
+          is_campanha: insertedPeriodo.is_campanha,
+          isCampanha: insertedPeriodo.is_campanha,
+          is_meta_loja: insertedPeriodo.is_meta_loja,
+          isMetaLoja: insertedPeriodo.is_meta_loja,
+          valor_meta: Number(insertedPeriodo.valor_meta) || 0,
+          valorMeta: Number(insertedPeriodo.valor_meta) || 0,
+          created_at: insertedPeriodo.created_at,
+          updated_at: insertedPeriodo.updated_at,
           faixas: (insertedFaixas || []).map((f: any) => ({
             ...f,
             periodoId: f.periodo_id,
@@ -131,7 +174,6 @@ export class MetasService {
           }))
         };
       } catch (errFaixas) {
-        // Se falhou ao inserir faixas, limpa o período para não deixar registro órfão
         await supabase.from('meta_periodos').delete().eq('id', insertedPeriodo.id);
         throw errFaixas;
       }
@@ -160,6 +202,8 @@ export class MetasService {
         data_fim: periodo.data_fim,
         tipo_calculo: periodo.tipo_calculo,
         is_campanha: periodo.is_campanha,
+        is_meta_loja: periodo.is_meta_loja || false,
+        valor_meta: periodo.valor_meta || 0,
         updated_at: new Date().toISOString()
       };
 
@@ -180,6 +224,28 @@ export class MetasService {
 
       if (errDel) throw errDel;
 
+      if (periodo.is_meta_loja) {
+        return {
+          id: updatedPeriodo.id,
+          nome: updatedPeriodo.nome,
+          data_inicio: updatedPeriodo.data_inicio,
+          dataInicio: updatedPeriodo.data_inicio,
+          data_fim: updatedPeriodo.data_fim,
+          dataFim: updatedPeriodo.data_fim,
+          tipo_calculo: updatedPeriodo.tipo_calculo,
+          tipoCalculo: updatedPeriodo.tipo_calculo,
+          is_campanha: updatedPeriodo.is_campanha,
+          isCampanha: updatedPeriodo.is_campanha,
+          is_meta_loja: updatedPeriodo.is_meta_loja,
+          isMetaLoja: updatedPeriodo.is_meta_loja,
+          valor_meta: Number(updatedPeriodo.valor_meta) || 0,
+          valorMeta: Number(updatedPeriodo.valor_meta) || 0,
+          created_at: updatedPeriodo.created_at,
+          updated_at: updatedPeriodo.updated_at,
+          faixas: []
+        };
+      }
+
       // Insere as novas faixas
       const dbFaixas = faixas.map(f => ({
         periodo_id: id,
@@ -198,7 +264,22 @@ export class MetasService {
       if (errF) throw errF;
 
       return {
-        ...updatedPeriodo,
+        id: updatedPeriodo.id,
+        nome: updatedPeriodo.nome,
+        data_inicio: updatedPeriodo.data_inicio,
+        dataInicio: updatedPeriodo.data_inicio,
+        data_fim: updatedPeriodo.data_fim,
+        dataFim: updatedPeriodo.data_fim,
+        tipo_calculo: updatedPeriodo.tipo_calculo,
+        tipoCalculo: updatedPeriodo.tipo_calculo,
+        is_campanha: updatedPeriodo.is_campanha,
+        isCampanha: updatedPeriodo.is_campanha,
+        is_meta_loja: updatedPeriodo.is_meta_loja,
+        isMetaLoja: updatedPeriodo.is_meta_loja,
+        valor_meta: Number(updatedPeriodo.valor_meta) || 0,
+        valorMeta: Number(updatedPeriodo.valor_meta) || 0,
+        created_at: updatedPeriodo.created_at,
+        updated_at: updatedPeriodo.updated_at,
         faixas: (insertedFaixas || []).map((f: any) => ({
           ...f,
           periodoId: f.periodo_id,
@@ -326,9 +407,13 @@ export class MetasService {
       tipoCalculo: periodo.tipo_calculo,
       is_campanha: periodo.is_campanha,
       isCampanha: periodo.is_campanha,
+      is_meta_loja: periodo.is_meta_loja || false,
+      isMetaLoja: periodo.is_meta_loja || false,
+      valor_meta: periodo.valor_meta || 0,
+      valorMeta: periodo.valor_meta || 0,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
-      faixas: mappedFaixas
+      faixas: periodo.is_meta_loja ? [] : mappedFaixas
     };
 
     list.unshift(newPeriodo);
@@ -379,8 +464,12 @@ export class MetasService {
       tipoCalculo: periodo.tipo_calculo,
       is_campanha: periodo.is_campanha,
       isCampanha: periodo.is_campanha,
+      is_meta_loja: periodo.is_meta_loja || false,
+      isMetaLoja: periodo.is_meta_loja || false,
+      valor_meta: periodo.valor_meta || 0,
+      valorMeta: periodo.valor_meta || 0,
       updated_at: new Date().toISOString(),
-      faixas: mappedFaixas
+      faixas: periodo.is_meta_loja ? [] : mappedFaixas
     };
 
     list[index] = updatedPeriodo;
