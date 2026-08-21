@@ -111,7 +111,7 @@ export class ConfiguracoesPage {
   private campaigns: any[] = [];
   private templates: any[] = [];
   private metas: MetaPeriodo[] = [];
-  private activeTab: 'geral' | 'consultores' | 'importacoes' | 'campanhas' | 'templates' | 'metas' = 'geral';
+  private activeTab: 'geral' | 'consultores' | 'importacoes' | 'campanhas' | 'templates' | 'metas' | 'automacoes' = 'geral';
 
   // Propriedades do estado de importação de CSV
   private parsedHeaders: string[] = [];
@@ -221,7 +221,9 @@ export class ConfiguracoesPage {
           digisac_enable_bot_triggers: data.digisac_enable_bot_triggers !== false,
           digisacEnableBotTriggers: data.digisac_enable_bot_triggers !== false,
           digisac_enable_webhooks: data.digisac_enable_webhooks !== false,
-          digisacEnableWebhooks: data.digisac_enable_webhooks !== false
+          digisacEnableWebhooks: data.digisac_enable_webhooks !== false,
+          tempoDesistenciaOrcamentoDias: data.tempo_desistencia_orcamento_dias !== undefined ? data.tempo_desistencia_orcamento_dias : 30,
+          tempo_desistencia_orcamento_dias: data.tempo_desistencia_orcamento_dias !== undefined ? data.tempo_desistencia_orcamento_dias : 30
         };
       } else {
         const initialPayload = {
@@ -244,7 +246,8 @@ export class ConfiguracoesPage {
           digisac_enable_vouchers: true,
           digisac_enable_routing: true,
           digisac_enable_bot_triggers: true,
-          digisac_enable_webhooks: true
+          digisac_enable_webhooks: true,
+          tempo_desistencia_orcamento_dias: 30
         };
 
         const { data: inserted, error: insertError } = await supabase
@@ -285,7 +288,9 @@ export class ConfiguracoesPage {
           digisac_enable_bot_triggers: inserted.digisac_enable_bot_triggers !== false,
           digisacEnableBotTriggers: inserted.digisac_enable_bot_triggers !== false,
           digisac_enable_webhooks: inserted.digisac_enable_webhooks !== false,
-          digisacEnableWebhooks: inserted.digisac_enable_webhooks !== false
+          digisacEnableWebhooks: inserted.digisac_enable_webhooks !== false,
+          tempoDesistenciaOrcamentoDias: inserted.tempo_desistencia_orcamento_dias !== undefined ? inserted.tempo_desistencia_orcamento_dias : 30,
+          tempo_desistencia_orcamento_dias: inserted.tempo_desistencia_orcamento_dias !== undefined ? inserted.tempo_desistencia_orcamento_dias : 30
         };
       }
 
@@ -360,7 +365,7 @@ export class ConfiguracoesPage {
   /**
    * Altera a aba ativa e re-renderiza o componente
    */
-  private switchTab(tab: 'geral' | 'consultores' | 'importacoes' | 'campanhas' | 'templates' | 'metas'): void {
+  private switchTab(tab: 'geral' | 'consultores' | 'importacoes' | 'campanhas' | 'templates' | 'metas' | 'automacoes'): void {
     this.activeTab = tab;
     this.render();
     this.setupEventListeners();
@@ -377,6 +382,7 @@ export class ConfiguracoesPage {
     document.getElementById('tab-campanhas-btn')?.addEventListener('click', () => this.switchTab('campanhas'));
     document.getElementById('tab-templates-btn')?.addEventListener('click', () => this.switchTab('templates'));
     document.getElementById('tab-metas-btn')?.addEventListener('click', () => this.switchTab('metas'));
+    document.getElementById('tab-automacoes-btn')?.addEventListener('click', () => this.switchTab('automacoes'));
 
     if (this.activeTab === 'importacoes') {
       this.setupImportacoesEvents();
@@ -394,6 +400,10 @@ export class ConfiguracoesPage {
       this.setupMetasEvents();
     }
 
+    if (this.activeTab === 'automacoes') {
+      this.setupAutomacoesEvents();
+    }
+
     if (this.activeTab === 'geral') {
       const form = document.getElementById('form-configuracoes') as HTMLFormElement;
       setupFormValidation('form-configuracoes', [
@@ -406,8 +416,6 @@ export class ConfiguracoesPage {
 
         const agencyNameVal = (document.getElementById('input-agency-name') as HTMLInputElement).value;
         const emailSuporteVal = (document.getElementById('input-email-suporte') as HTMLInputElement).value;
-        const slaPreVal = Number((document.getElementById('input-sla-pre') as HTMLInputElement).value);
-        const slaPosVal = Number((document.getElementById('input-sla-pos') as HTMLInputElement).value);
         const taxaVal = Number((document.getElementById('input-taxa') as HTMLInputElement).value);
         const limiteUploadVal = Number((document.getElementById('input-limite-upload') as HTMLInputElement).value);
         const primaryColorVal = (document.getElementById('input-agency-primary-color') as HTMLInputElement).value;
@@ -425,8 +433,6 @@ export class ConfiguracoesPage {
         const payload = {
           agency_name: agencyNameVal,
           email_suporte: emailSuporteVal,
-          sla_pre_embarque_dias: slaPreVal,
-          sla_pos_viagem_dias: slaPosVal,
           taxa_cancelamento_padrao: taxaVal,
           limite_upload_mb: limiteUploadVal,
           agency_primary_color: primaryColorVal,
@@ -1931,6 +1937,16 @@ export class ConfiguracoesPage {
               </svg>
               Modelos de Mensagem
             </button>
+            <button id="tab-automacoes-btn" class="shrink-0 py-4 px-1 border-b-2 text-sm font-extrabold transition select-none flex items-center gap-2 ${
+              this.activeTab === 'automacoes' 
+                ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400' 
+                : 'border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
+            }">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              Automações
+            </button>
           </div>
         </div>
 
@@ -1959,24 +1975,6 @@ export class ConfiguracoesPage {
                   ${renderEmailInputHTML('input-email-suporte', this.settings.emailSuporte || '', 'email@agencia.com')}
                 </div>
 
-                <div class="border-t border-slate-100 dark:border-slate-800 pt-5 space-y-4">
-                  <h3 class="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-2">Parâmetros das Colunas do Kanban</h3>
-                  
-                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Dias Alerta Pré-Embarque *</label>
-                      <input id="input-sla-pre" type="number" min="1" required value="${this.settings.slaPreEmbarqueDias}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-bold" />
-                      <p class="text-[10px] text-slate-400 dark:text-slate-400 mt-1.5 font-medium leading-relaxed">Dispara alerta visual vermelho no card se o embarque estiver a menos dias do que este limite.</p>
-                    </div>
-
-                    <div>
-                      <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Dias Alerta Pós-Viagem *</label>
-                      <input id="input-sla-pos" type="number" min="1" required value="${this.settings.slaPosViagemDias}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-bold" />
-                      <p class="text-[10px] text-slate-400 dark:text-slate-400 mt-1.5 font-medium leading-relaxed">Dispara alerta visual laranja se a viagem já terminou e o pós-venda não foi fechado dentro deste limite.</p>
-                    </div>
-                  </div>
-                </div>
-
                 <div class="border-t border-slate-100 dark:border-slate-800 pt-5">
                   <div>
                     <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Taxa de Cancelamento Retida (%)</label>
@@ -1989,18 +1987,6 @@ export class ConfiguracoesPage {
                   <div>
                     <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Limite de Upload (MB)</label>
                     <input id="input-limite-upload" type="number" min="1" max="500" value="${this.settings.limiteUploadMb || 25}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-bold" />
-                 <div class="border-t border-slate-100 dark:border-slate-800 pt-5 flex items-center justify-between gap-4">
-                  <div class="flex-1 min-w-0">
-                    <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
-                      Disparo Automático de NPS (Pós-Viagem)
-                      <span class="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-400 text-[8px] font-black uppercase rounded">Em Breve</span>
-                    </label>
-                    <p class="text-[10px] text-slate-400 dark:text-slate-400 font-medium leading-relaxed">Enviar e-mail/WhatsApp automaticamente solicitando feedback de satisfação quando a viagem for movida para Pós-Viagem.</p>
-                  </div>
-                  <div class="relative flex items-center shrink-0">
-                    <div class="w-11 h-6 bg-slate-200 dark:bg-slate-800 rounded-full relative transition-all duration-200 cursor-not-allowed opacity-50" title="Disparo automático por e-mail/WhatsApp (Em Breve)">
-                      <div class="absolute top-[2px] left-[2px] bg-white rounded-full h-5 w-5 transition-all"></div>
-                    </div>
                   </div>
                 </div>
 
@@ -2837,6 +2823,99 @@ export class ConfiguracoesPage {
               </div>
             </div>
           </main>
+        ` : this.activeTab === 'automacoes' ? `
+          <!-- Renderização da Aba: Automações -->
+          <main class="flex-1 p-6 max-w-4xl mx-auto w-full grid grid-cols-1 md:grid-cols-12 gap-6 items-start animate-fade-in text-slate-800 dark:text-slate-100">
+            
+            <div class="md:col-span-8 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
+              <h2 class="text-base font-black text-slate-800 dark:text-slate-200 tracking-tight border-b border-slate-100 dark:border-slate-800 pb-3.5 mb-5 flex items-center gap-2.5">
+                <svg class="w-5 h-5 text-indigo-500 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                Configurações de Automações & SLAs
+              </h2>
+
+              <form id="form-automacoes" class="space-y-6">
+                
+                <!-- Orçamentos -->
+                <div>
+                  <h3 class="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-3">Fluxo de Orçamentos</h3>
+                  <div class="space-y-4">
+                    <div>
+                      <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Tempo limite de inatividade (Dias) *</label>
+                      <input id="input-tempo-desistencia" type="number" min="1" max="365" required value="${this.settings.tempoDesistenciaOrcamentoDias || 30}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-bold" />
+                      <p class="text-[10px] text-slate-400 dark:text-slate-400 mt-1.5 font-medium leading-relaxed">Orçamentos no estado "AGUARDANDO" sem interação por mais de X dias serão automaticamente alterados para "DESISTÊNCIA".</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Viagens (Kanban) -->
+                <div class="border-t border-slate-100 dark:border-slate-800 pt-5">
+                  <h3 class="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-3">Fluxo de Vendas & Viagens</h3>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Alerta Pré-Embarque (Dias antes) *</label>
+                      <input id="input-sla-pre" type="number" min="1" required value="${this.settings.slaPreEmbarqueDias}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-bold" />
+                      <p class="text-[10px] text-slate-400 dark:text-slate-400 mt-1.5 font-medium leading-relaxed">Sinaliza em vermelho o card de viagem que estiver a menos dias do embarque do que este limite.</p>
+                    </div>
+
+                    <div>
+                      <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Alerta Pós-Viagem (Dias depois) *</label>
+                      <input id="input-sla-pos" type="number" min="1" required value="${this.settings.slaPosViagemDias}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-bold" />
+                      <p class="text-[10px] text-slate-400 dark:text-slate-400 mt-1.5 font-medium leading-relaxed">Sinaliza em laranja a viagem concluída se a finalização operacional não ocorrer em até X dias.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- NPS e Pós-Venda -->
+                <div class="border-t border-slate-100 dark:border-slate-800 pt-5">
+                  <h3 class="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-3">Pesquisas de Satisfação (NPS)</h3>
+                  <div class="flex items-center justify-between gap-4">
+                    <div class="flex-1 min-w-0">
+                      <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1 flex items-center gap-1.5 font-bold">
+                        Disparo Automático de NPS
+                      </label>
+                      <p class="text-[10px] text-slate-400 dark:text-slate-400 font-medium leading-relaxed">Enviar e-mail/WhatsApp automaticamente solicitando feedback de satisfação após o término da viagem.</p>
+                    </div>
+                    <div class="relative flex items-center shrink-0">
+                      <input id="input-enviar-nps" type="checkbox" ${this.settings.enviarNpsAutomatico ? 'checked' : ''} class="w-5 h-5 text-indigo-600 focus:ring-indigo-500 border-slate-300 dark:border-slate-700 rounded cursor-pointer" />
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Reembolsos -->
+                <div class="border-t border-slate-100 dark:border-slate-800 pt-5">
+                  <h3 class="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-3">Fluxo de Reembolsos</h3>
+                  <div>
+                    <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Prazo padrão de reembolso (Dias) *</label>
+                    <input id="input-prazo-reembolso" type="number" min="1" max="180" required value="${this.settings.prazoReembolsoDias || 30}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-bold" />
+                    <p class="text-[10px] text-slate-400 dark:text-slate-400 mt-1.5 font-medium leading-relaxed">Prazo estimado em dias sugerido aos clientes para a finalização dos estornos.</p>
+                  </div>
+                </div>
+
+                <div class="border-t border-slate-100 dark:border-slate-800 pt-5 flex justify-end">
+                  <button type="submit" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-md transition">
+                    Salvar Automações
+                  </button>
+                </div>
+
+              </form>
+            </div>
+
+            <!-- Informações Laterais -->
+            <div class="md:col-span-4 space-y-6">
+              <div class="bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900 rounded-2xl p-5">
+                <h3 class="text-xs font-black text-indigo-800 dark:text-indigo-300 uppercase tracking-wider mb-2">💡 Sobre as Automações</h3>
+                <p class="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
+                  Estas regras operam de forma autônoma para garantir a atualização dos cartões de orçamentos e vendas sem sobrecarregar a equipe.
+                  <br/><br/>
+                  <strong>Mudanças de Estado Automáticas:</strong>
+                  Quando um prazo expira ou um gatilho é acionado, o status é atualizado imediatamente em tempo real para toda a agência.
+                </p>
+              </div>
+            </div>
+
+          </main>
         ` : ''}
       </div>
     `;
@@ -3518,6 +3597,46 @@ export class ConfiguracoesPage {
     setTimeout(() => {
       overlay.remove();
     }, 300);
+  }
+
+  private setupAutomacoesEvents(): void {
+    const form = document.getElementById('form-automacoes') as HTMLFormElement;
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      if (!this.settings) return;
+
+      const tempoDesistenciaVal = Number((document.getElementById('input-tempo-desistencia') as HTMLInputElement).value);
+      const slaPreVal = Number((document.getElementById('input-sla-pre') as HTMLInputElement).value);
+      const slaPosVal = Number((document.getElementById('input-sla-pos') as HTMLInputElement).value);
+      const enviarNpsVal = (document.getElementById('input-enviar-nps') as HTMLInputElement).checked;
+      const prazoReembolsoVal = Number((document.getElementById('input-prazo-reembolso') as HTMLInputElement).value);
+
+      const payload = {
+        tempo_desistencia_orcamento_dias: tempoDesistenciaVal,
+        sla_pre_embarque_dias: slaPreVal,
+        sla_pos_viagem_dias: slaPosVal,
+        enviar_nps_automatico: enviarNpsVal,
+        prazo_reembolso_dias: prazoReembolsoVal
+      };
+
+      try {
+        const { error } = await supabase
+          .from('global_settings')
+          .update(payload)
+          .eq('id', this.settings.id);
+
+        if (error) throw error;
+
+        this.showToast('Automações salvas com sucesso!', 'success');
+        await this.loadSettings();
+        this.render();
+        this.setupEventListeners();
+      } catch (err: any) {
+        console.error('Erro ao salvar automações:', err);
+        this.showToast('Falha ao salvar as configurações de automações.', 'error');
+      }
+    });
   }
 }
 

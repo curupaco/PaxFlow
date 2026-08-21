@@ -62,6 +62,8 @@ export interface GlobalSettings {
   digisacEnableBotTriggers?: boolean;
   digisac_enable_webhooks?: boolean;
   digisacEnableWebhooks?: boolean;
+  tempoDesistenciaOrcamentoDias?: number;
+  tempo_desistencia_orcamento_dias?: number;
   createdAt?: string;
   updatedAt?: string;
 }
