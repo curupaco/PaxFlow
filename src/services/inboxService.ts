@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { PerfilConsultor, AlertItem } from '../types';
+import { BADGE_DEFINITIONS } from './gamification';
 
 export class InboxService {
   /**
@@ -358,19 +359,54 @@ export class InboxService {
             else if (not.campaign.tipo_meta === 'reembolso_pago') metaLabel = `${not.campaign.meta_quantidade} Reembolsos`;
             else if (not.campaign.tipo_meta === 'produto_detalhado') metaLabel = `${not.campaign.meta_quantidade} Produtos`;
 
+            const badgeObj = BADGE_DEFINITIONS.find((b: any) => b.key === not.campaign.badge_key);
+            const badgeEmoji = badgeObj ? badgeObj.emoji : '🏆';
+            const badgeNome = badgeObj ? badgeObj.nome : 'Medalha Especial';
+
+            const dataInicioFmt = not.campaign.data_inicio ? not.campaign.data_inicio.split('-').reverse().join('/') : '';
+            const dataFimFmt = not.campaign.data_fim ? not.campaign.data_fim.split('-').reverse().join('/') : '';
+
             list.push({
               id: `mention-${not.id}`,
               type: 'campaign_notification',
-              title: `🎯 Nova Campanha: ${not.campaign.titulo}`,
+              title: `🎯 Campanha Ativa: ${not.campaign.titulo}`,
               sender: 'PaxFlow Gamificação',
               senderAvatar: 'panda',
               dateStr: dataFormatada,
-              subject: `Meta: ${metaLabel} no período`,
-              body: `A liderança lançou a campanha <strong>${not.campaign.titulo}</strong>!<br><br>
-                <strong>Regras/Descrição:</strong> ${not.campaign.descricao}<br>
-                <strong>Período:</strong> de ${new Date(not.campaign.data_inicio + 'T00:00:00').toLocaleDateString('pt-BR')} até ${new Date(not.campaign.data_fim + 'T00:00:00').toLocaleDateString('pt-BR')}<br>
-                <strong>Meta:</strong> ${metaLabel}<br><br>
-                Acompanhe o seu progresso diretamente no rodapé da barra lateral!`,
+              subject: `Meta: ${metaLabel}`,
+              body: `
+                <div class="space-y-4">
+                  <div class="p-4 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/50">
+                    <h3 class="text-sm font-black text-indigo-700 dark:text-indigo-300 mb-1 flex items-center gap-2">
+                      🎯 ${not.campaign.titulo}
+                    </h3>
+                    <p class="text-xs text-slate-700 dark:text-slate-300 font-semibold leading-relaxed">
+                      ${not.campaign.descricao || 'Sem descrição informada.'}
+                    </p>
+                  </div>
+
+                  <div class="grid grid-cols-2 gap-3 text-xs">
+                    <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-800">
+                      <span class="block text-[10px] uppercase tracking-wider font-extrabold text-slate-400">📅 Período de Vigência</span>
+                      <span class="font-bold text-slate-700 dark:text-slate-200">${dataInicioFmt} até ${dataFimFmt}</span>
+                    </div>
+                    <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-800">
+                      <span class="block text-[10px] uppercase tracking-wider font-extrabold text-slate-400">🏆 Recompensa (Badge)</span>
+                      <span class="font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-1 mt-0.5">
+                        <span>${badgeEmoji}</span>
+                        <span>${badgeNome}</span>
+                      </span>
+                    </div>
+                  </div>
+
+                  <div class="p-3.5 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/50 text-xs font-extrabold text-emerald-800 dark:text-emerald-300 flex items-center justify-between">
+                    <span>📊 Meta da Campanha:</span>
+                    <span class="text-sm font-black text-emerald-700 dark:text-emerald-400">${metaLabel}</span>
+                  </div>
+
+                  <p class="text-xs text-slate-400 font-medium">Acompanhe seu progresso dinâmico diretamente na barra lateral de Campanhas!</p>
+                </div>
+              `,
               targetId: not.campaign.id,
               arquivado: not.arquivada,
               consultorId: not.user_id,

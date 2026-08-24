@@ -690,8 +690,33 @@ class App {
 
               return `
                 <div class="flex flex-col gap-1 p-2 rounded-xl bg-slate-50/50 dark:bg-slate-800/10 border border-slate-200/40 dark:border-slate-800/50 hover:border-indigo-500/30 transition duration-200 group relative">
+                  <!-- Tooltip Card Flutuante no Hover -->
+                  <div class="absolute bottom-full left-0 mb-2 w-64 p-3 bg-slate-900/95 dark:bg-slate-950/95 text-slate-100 rounded-2xl shadow-2xl border border-slate-700/80 backdrop-blur-md opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200 z-50 transform group-hover:translate-y-0 translate-y-1">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-2">
+                      <span class="text-xs font-black text-indigo-400 flex items-center gap-1.5 truncate max-w-[190px]">
+                        🎯 ${p.campaign.titulo}
+                      </span>
+                      <span class="text-xs shrink-0" title="${badgeObj ? badgeObj.nome : ''}">${badgeEmoji}</span>
+                    </div>
+                    
+                    <p class="text-[11px] text-slate-300 font-medium leading-relaxed mb-2.5">
+                      ${p.campaign.descricao || 'Sem descrição cadastrada.'}
+                    </p>
+
+                    <div class="space-y-1 text-[10px] text-slate-400 font-bold border-t border-slate-800/80 pt-2 flex flex-col">
+                      <div class="flex justify-between">
+                        <span>📅 Vigência:</span>
+                        <span class="text-slate-200">${p.campaign.data_inicio.split('-').reverse().join('/')} até ${p.campaign.data_fim.split('-').reverse().join('/')}</span>
+                      </div>
+                      <div class="flex justify-between">
+                        <span>📊 Meta Atual:</span>
+                        <span class="text-indigo-400 font-black">${p.progresso} / ${p.meta} ${metaUnit} (${Math.round(p.percent)}%)</span>
+                      </div>
+                    </div>
+                  </div>
+
                   <div class="flex items-center justify-between gap-1.5">
-                    <span class="text-[9px] font-black text-slate-700 dark:text-slate-300 truncate max-w-[125px] group-hover:text-indigo-600 dark:group-hover:text-indigo-400" title="${p.campaign.titulo}">
+                    <span class="text-[9px] font-black text-slate-700 dark:text-slate-300 truncate max-w-[125px] group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
                       ${p.campaign.titulo}
                     </span>
                     <span class="text-xs text-slate-400 dark:text-slate-400 font-bold shrink-0 leading-none" title="${badgeObj ? badgeObj.nome : ''}">

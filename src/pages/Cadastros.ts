@@ -2329,9 +2329,29 @@ export class CadastrosPage {
             meta_quantidade,
             badge_key
           })
-          .eq('id', cam.id);
-
         if (error) throw error;
+
+        // Notificar a equipe sobre a atualização da campanha
+        const { data: perfis, error: pErr } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('ativo', true);
+
+        if (!pErr && perfis && perfis.length > 0) {
+          const notificationsPayload = perfis.map(p => ({
+            user_id: p.id,
+            tipo_item: 'campanha',
+            comentario_id: null,
+            mensagem_id: null,
+            item_id: cam.id,
+            parent_id: cam.id,
+            campaign_id: cam.id,
+            lida: false,
+            arquivada: false
+          }));
+
+          await supabase.from('notificacoes').insert(notificationsPayload);
+        }
 
         this.showToast('Campanha atualizada com sucesso!', 'success');
         fechar();

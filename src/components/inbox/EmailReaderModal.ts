@@ -152,7 +152,7 @@ export class EmailReaderModal {
               <div class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed font-semibold bg-slate-50/40 dark:bg-slate-950/20 p-5 rounded-2xl border border-slate-200/30 dark:border-slate-800/40 shadow-inner">
                 <p class="mb-4">Prezado(a) Consultor(a),</p>
                 
-                <p class="mb-4">${item.body}</p>
+                <div class="mb-4">${item.body}</div>
 
                 <p class="mt-6 border-t border-slate-100 dark:border-slate-800/80 pt-4 text-xs text-slate-400 dark:text-slate-400">
                   Atenciosamente,<br>
