@@ -571,6 +571,9 @@ export class CadastrosPage {
                               ${statusBadge}
                             </td>
                             <td class="py-4 px-5 text-right space-x-2">
+                              <button data-id="${cam.id}" class="btn-editar-campanha px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 hover:dark:bg-indigo-950/50 transition border border-indigo-200/40 dark:border-indigo-800/40 uppercase">
+                                Editar
+                              </button>
                               <button data-id="${cam.id}" data-active="${cam.ativa}" class="btn-toggle-status-campanha px-3 py-1.5 rounded-lg text-xs font-bold transition ${
                                 cam.ativa 
                                   ? 'bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 hover:dark:bg-rose-950/30' 
@@ -1685,6 +1688,18 @@ export class CadastrosPage {
     // Abrir modal de criação
     document.getElementById('btn-nova-campanha')?.addEventListener('click', () => this.abrirModalNovaCampanha());
 
+    // Editar campanha
+    document.querySelectorAll('.btn-editar-campanha').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = (e.currentTarget as HTMLElement).getAttribute('data-id');
+        if (!id) return;
+        const cam = this.campaigns.find((c: any) => c.id === id);
+        if (cam) {
+          this.abrirModalEditarCampanha(cam);
+        }
+      });
+    });
+
     // Toggle status ativa/inativa
     document.querySelectorAll('.btn-toggle-status-campanha').forEach(btn => {
       btn.addEventListener('click', async (e) => {
@@ -2177,6 +2192,158 @@ export class CadastrosPage {
         submitBtn.disabled = false;
         submitBtn.textContent = 'Criar Campanha';
         showCustomAlert(`Falha ao criar campanha: ${err.message}`, 'Erro');
+      }
+    });
+  }
+
+  /**
+   * Abre o Modal Interativo de Edição de Campanha
+   */
+  private abrirModalEditarCampanha(cam: any): void {
+    const overlay = document.createElement('div');
+    overlay.id = 'editar-campanha-overlay';
+    overlay.className = 'fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all duration-300 opacity-0';
+    
+    const badgeOptions = BADGE_DEFINITIONS.map(b => `
+      <option value="${b.key}" ${cam.badge_key === b.key ? 'selected' : ''}>${b.emoji} ${b.nome} (${b.categoria})</option>
+    `).join('');
+
+    overlay.innerHTML = `
+      <div class="bg-white dark:bg-slate-900 w-full max-w-[500px] rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 transform scale-95 transition-all duration-300 flex flex-col max-h-[90vh] overflow-y-auto custom-scrollbar relative" id="editar-campanha-card">
+        
+        <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-600"></div>
+
+        <div class="p-6 border-b border-slate-100 dark:border-slate-800 text-center flex flex-col items-center">
+          <div class="w-12 h-12 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 font-bold rounded-2xl flex items-center justify-center text-xl border border-indigo-100/40 mb-3">
+            ✏️
+          </div>
+          <h2 class="text-lg font-black text-slate-800 dark:text-slate-100 tracking-tight leading-snug">Editar Campanha</h2>
+          <p class="text-xs text-slate-400 dark:text-slate-400 font-semibold mt-1">Atualize os parâmetros e a meta da campanha em andamento</p>
+        </div>
+
+        <form id="form-editar-campanha" class="p-6 space-y-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Título da Campanha *</label>
+            <input id="input-edit-cam-titulo" type="text" required value="${cam.titulo || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Descrição / Regras *</label>
+            <textarea id="input-edit-cam-descricao" required rows="3" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm resize-none">${cam.descricao || ''}</textarea>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Data de Início *</label>
+              <input id="input-edit-cam-inicio" type="date" required value="${cam.data_inicio || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Data de Fim *</label>
+              <input id="input-edit-cam-fim" type="date" required value="${cam.data_fim || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Métrica da Meta *</label>
+              <select id="select-edit-cam-tipo" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm">
+                <option value="orcamento_criado" ${cam.tipo_meta === 'orcamento_criado' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">📥 Orçamentos Criados (Captação)</option>
+                <option value="orcamento_andamento" ${cam.tipo_meta === 'orcamento_andamento' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">🔄 Orçamentos em Andamento (Negociação)</option>
+                <option value="orcamento_fechado" ${cam.tipo_meta === 'orcamento_fechado' || cam.tipo_meta === 'venda_aceita' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">✅ Orçamentos Fechados (Vendas Concluídas)</option>
+                <option value="cliente_criado" ${cam.tipo_meta === 'cliente_criado' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">👤 Clientes Cadastrados</option>
+                <option value="xp_acumulado" ${cam.tipo_meta === 'xp_acumulado' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">⚡ XP Acumulado</option>
+                <option value="lembrete_criado" ${cam.tipo_meta === 'lembrete_criado' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">🔔 Lembretes Criados</option>
+                <option value="reembolso_pago" ${cam.tipo_meta === 'reembolso_pago' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">💸 Reembolsos Pagos</option>
+                <option value="produto_detalhado" ${cam.tipo_meta === 'produto_detalhado' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">📦 Produtos Detalhados</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Quantidade Meta *</label>
+              <input id="input-edit-cam-quantidade" type="number" min="1" required value="${cam.meta_quantidade || 1}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Medalha de Recompensa (Badge) *</label>
+            <select id="select-edit-cam-badge" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm select-badge-campaign">
+              ${badgeOptions}
+            </select>
+          </div>
+
+          <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+            <button id="btn-edit-cam-cancel" type="button" class="px-4 py-2.5 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 text-slate-500 hover:text-slate-700 font-bold text-xs rounded-xl transition uppercase">
+              Cancelar
+            </button>
+            <button id="btn-edit-cam-submit" type="submit" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl transition shadow-lg shadow-indigo-600/20 uppercase tracking-wider flex items-center justify-center">
+              Salvar Alterações
+            </button>
+          </div>
+        </form>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    setTimeout(() => {
+      overlay.classList.add('opacity-100');
+      document.getElementById('editar-campanha-card')?.classList.remove('scale-95');
+      document.getElementById('editar-campanha-card')?.classList.add('scale-100');
+    }, 10);
+
+    const fechar = () => {
+      overlay.classList.remove('opacity-100');
+      document.getElementById('editar-campanha-card')?.classList.remove('scale-100');
+      document.getElementById('editar-campanha-card')?.classList.add('scale-95');
+      setTimeout(() => overlay.remove(), 300);
+    };
+
+    document.getElementById('btn-edit-cam-cancel')?.addEventListener('click', fechar);
+
+    const form = document.getElementById('form-editar-campanha') as HTMLFormElement;
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const submitBtn = document.getElementById('btn-edit-cam-submit') as HTMLButtonElement;
+      const titulo = (document.getElementById('input-edit-cam-titulo') as HTMLInputElement).value;
+      const descricao = (document.getElementById('input-edit-cam-descricao') as HTMLInputElement).value;
+      const data_inicio = (document.getElementById('input-edit-cam-inicio') as HTMLInputElement).value;
+      const data_fim = (document.getElementById('input-edit-cam-fim') as HTMLInputElement).value;
+      const tipo_meta = (document.getElementById('select-edit-cam-tipo') as HTMLSelectElement).value;
+      const meta_quantidade = Number((document.getElementById('input-edit-cam-quantidade') as HTMLInputElement).value);
+      const badge_key = (document.getElementById('select-edit-cam-badge') as HTMLSelectElement).value;
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Salvando...';
+
+      try {
+        const { error } = await supabase
+          .from('campaigns')
+          .update({
+            titulo,
+            descricao,
+            data_inicio,
+            data_fim,
+            tipo_meta,
+            meta_quantidade,
+            badge_key
+          })
+          .eq('id', cam.id);
+
+        if (error) throw error;
+
+        this.showToast('Campanha atualizada com sucesso!', 'success');
+        fechar();
+        await this.loadCampaigns();
+        this.render();
+        this.setupEventListeners();
+
+      } catch (err: any) {
+        console.error('Erro ao atualizar campanha:', err);
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Salvar Alterações';
+        showCustomAlert(`Falha ao atualizar campanha: ${err.message}`, 'Erro');
       }
     });
   }
