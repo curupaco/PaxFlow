@@ -135,6 +135,8 @@ export class OrcamentosService {
       documentos_url: o.documentosUrl || []
     };
 
+    const isNew = !o.id || o.id.startsWith('orc-');
+
     let resError;
     if (o.id && !o.id.startsWith('orc-')) {
       const { error } = await supabase
@@ -176,10 +178,21 @@ export class OrcamentosService {
           retryError = error;
         }
         if (retryError) throw retryError;
-        return { success: true, dbVersionDegraded: true };
+      } else {
+        throw resError;
       }
-      throw resError;
     }
+
+    // Regras de Gamificação XP
+    if (o.consultorId) {
+      if (isNew) {
+        await registrarXp(o.consultorId, `orcamento_criado_${o.id || Date.now()}`, 25);
+      }
+      if (o.status === 'EM_ANDAMENTO' || o.status === 'AGUARDANDO') {
+        await registrarXp(o.consultorId, `orcamento_andamento_${o.id}`, 50);
+      }
+    }
+
     return { success: true, dbVersionDegraded: false };
   }
 

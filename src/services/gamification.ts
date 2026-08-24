@@ -390,7 +390,7 @@ export interface Campaign {
   descricao: string;
   data_inicio: string;
   data_fim: string;
-  tipo_meta: 'xp_acumulado' | 'cliente_criado' | 'venda_aceita' | 'lembrete_criado' | 'reembolso_pago' | 'produto_detalhado';
+  tipo_meta: 'xp_acumulado' | 'cliente_criado' | 'venda_aceita' | 'orcamento_criado' | 'orcamento_andamento' | 'orcamento_fechado' | 'lembrete_criado' | 'reembolso_pago' | 'produto_detalhado';
   meta_quantidade: number;
   badge_key: string;
   ativa: boolean;
@@ -451,13 +451,35 @@ export async function obterProgressoCampanha(userId: string, campaign: Campaign)
       if (!error && count !== null) {
         progresso = count;
       }
-    } else if (campaign.tipo_meta === 'venda_aceita') {
+    } else if (campaign.tipo_meta === 'orcamento_criado') {
+      const { count, error } = await supabase
+        .from('orcamentos')
+        .select('*', { count: 'exact', head: true })
+        .eq('consultor_id', userId)
+        .gte('created_at', startIso)
+        .lte('created_at', endIso);
+      
+      if (!error && count !== null) {
+        progresso = count;
+      }
+    } else if (campaign.tipo_meta === 'orcamento_andamento') {
+      const { count, error } = await supabase
+        .from('orcamentos')
+        .select('*', { count: 'exact', head: true })
+        .eq('consultor_id', userId)
+        .in('status', ['EM_ANDAMENTO', 'AGUARDANDO'])
+        .gte('updated_at', startIso)
+        .lte('updated_at', endIso);
+      
+      if (!error && count !== null) {
+        progresso = count;
+      }
+    } else if (campaign.tipo_meta === 'venda_aceita' || campaign.tipo_meta === 'orcamento_fechado') {
       const { count, error } = await supabase
         .from('orcamentos')
         .select('*', { count: 'exact', head: true })
         .eq('consultor_id', userId)
         .eq('status', 'CONCLUIDO')
-        .eq('sub_status', 'ACEITO')
         .gte('updated_at', startIso)
         .lte('updated_at', endIso);
       

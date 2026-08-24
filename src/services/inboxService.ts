@@ -351,7 +351,9 @@ export class InboxService {
             let metaLabel = '';
             if (not.campaign.tipo_meta === 'xp_acumulado') metaLabel = `${not.campaign.meta_quantidade} XP`;
             else if (not.campaign.tipo_meta === 'cliente_criado') metaLabel = `${not.campaign.meta_quantidade} Clientes`;
-            else if (not.campaign.tipo_meta === 'venda_aceita') metaLabel = `${not.campaign.meta_quantidade} Vendas`;
+            else if (not.campaign.tipo_meta === 'orcamento_criado') metaLabel = `${not.campaign.meta_quantidade} Orç. Criados`;
+            else if (not.campaign.tipo_meta === 'orcamento_andamento') metaLabel = `${not.campaign.meta_quantidade} Orç. em Andamento`;
+            else if (not.campaign.tipo_meta === 'venda_aceita' || not.campaign.tipo_meta === 'orcamento_fechado') metaLabel = `${not.campaign.meta_quantidade} Orç. Fechados`;
             else if (not.campaign.tipo_meta === 'lembrete_criado') metaLabel = `${not.campaign.meta_quantidade} Lembretes`;
             else if (not.campaign.tipo_meta === 'reembolso_pago') metaLabel = `${not.campaign.meta_quantidade} Reembolsos`;
             else if (not.campaign.tipo_meta === 'produto_detalhado') metaLabel = `${not.campaign.meta_quantidade} Produtos`;

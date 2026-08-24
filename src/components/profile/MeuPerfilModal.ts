@@ -342,7 +342,9 @@ export class MeuPerfilModal {
         let metaUnit = 'ações';
         if (p.campaign.tipo_meta === 'xp_acumulado') metaUnit = 'XP';
         else if (p.campaign.tipo_meta === 'cliente_criado') metaUnit = 'cli';
-        else if (p.campaign.tipo_meta === 'venda_aceita') metaUnit = 'vds';
+        else if (p.campaign.tipo_meta === 'orcamento_criado') metaUnit = 'orç';
+        else if (p.campaign.tipo_meta === 'orcamento_andamento') metaUnit = 'and';
+        else if (p.campaign.tipo_meta === 'venda_aceita' || p.campaign.tipo_meta === 'orcamento_fechado') metaUnit = 'fech';
         else if (p.campaign.tipo_meta === 'lembrete_criado') metaUnit = 'lembr';
         else if (p.campaign.tipo_meta === 'reembolso_pago') metaUnit = 'reemb';
         else if (p.campaign.tipo_meta === 'produto_detalhado') metaUnit = 'prod';

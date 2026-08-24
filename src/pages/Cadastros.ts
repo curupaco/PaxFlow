@@ -540,7 +540,9 @@ export class CadastrosPage {
                         let metaLabel = '';
                         if (cam.tipo_meta === 'xp_acumulado') metaLabel = `${cam.meta_quantidade} XP`;
                         else if (cam.tipo_meta === 'cliente_criado') metaLabel = `${cam.meta_quantidade} Clientes`;
-                        else if (cam.tipo_meta === 'venda_aceita') metaLabel = `${cam.meta_quantidade} Vendas`;
+                        else if (cam.tipo_meta === 'orcamento_criado') metaLabel = `${cam.meta_quantidade} Orç. Criados`;
+                        else if (cam.tipo_meta === 'orcamento_andamento') metaLabel = `${cam.meta_quantidade} Orç. em Andamento`;
+                        else if (cam.tipo_meta === 'venda_aceita' || cam.tipo_meta === 'orcamento_fechado') metaLabel = `${cam.meta_quantidade} Orç. Fechados`;
                         else if (cam.tipo_meta === 'lembrete_criado') metaLabel = `${cam.meta_quantidade} Lembretes`;
                         else if (cam.tipo_meta === 'reembolso_pago') metaLabel = `${cam.meta_quantidade} Reembolsos`;
                         else if (cam.tipo_meta === 'produto_detalhado') metaLabel = `${cam.meta_quantidade} Produtos`;
@@ -2054,12 +2056,14 @@ export class CadastrosPage {
             <div>
               <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Métrica da Meta *</label>
               <select id="select-cam-tipo" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm">
-                <option value="venda_aceita" selected class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Vendas Aceitas</option>
-                <option value="cliente_criado" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Clientes Cadastrados</option>
-                <option value="xp_acumulado" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">XP Acumulado</option>
-                <option value="lembrete_criado" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Lembretes Criados</option>
-                <option value="reembolso_pago" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Reembolsos Pagos</option>
-                <option value="produto_detalhado" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Produtos Detalhados</option>
+                <option value="orcamento_criado" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">📥 Orçamentos Criados (Captação)</option>
+                <option value="orcamento_andamento" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">🔄 Orçamentos em Andamento (Negociação)</option>
+                <option value="orcamento_fechado" selected class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">✅ Orçamentos Fechados (Vendas Concluídas)</option>
+                <option value="cliente_criado" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">👤 Clientes Cadastrados</option>
+                <option value="xp_acumulado" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">⚡ XP Acumulado</option>
+                <option value="lembrete_criado" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">🔔 Lembretes Criados</option>
+                <option value="reembolso_pago" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">💸 Reembolsos Pagos</option>
+                <option value="produto_detalhado" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">📦 Produtos Detalhados</option>
               </select>
             </div>
 
