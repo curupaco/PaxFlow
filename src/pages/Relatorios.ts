@@ -421,8 +421,8 @@ export class RelatoriosPage {
             <div class="space-y-1 flex-1">
               <label class="block text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest">Consultor / Equipe</label>
               <select id="filter-consultores" class="w-full text-xs font-bold px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition duration-155" ${this.perfil?.role !== 'admin' ? 'disabled' : ''}>
-                <option value="todos" ${this.consultorIdFilter === 'todos' ? 'selected' : ''}>Consolidado (Todos os Consultores)</option>
-                ${this.consultores.map(c => `<option value="${c.id}" ${this.consultorIdFilter === c.id ? 'selected' : ''}>${c.nome}</option>`).join('')}
+                <option value="todos" ${this.consultorIdFilter === 'todos' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Consolidado (Todos os Consultores)</option>
+                ${this.consultores.map(c => `<option value="${c.id}" ${this.consultorIdFilter === c.id ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">${c.nome}</option>`).join('')}
               </select>
             </div>
           </div>

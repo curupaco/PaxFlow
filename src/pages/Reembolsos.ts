@@ -598,12 +598,12 @@ export class ReembolsosPage {
                           <td class="py-4.5 px-5 text-center">
                             <div class="flex items-center justify-center gap-2">
                               <select data-reembolso-id="${r.id}" class="select-status-reembolso px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 cursor-pointer">
-                                <option value="Aguardando Fornecedor" ${r.status === 'Aguardando Fornecedor' || r.status === 'solicitado' ? 'selected' : ''}>Aguardando Fornecedor</option>
-                                <option value="em_analise" ${r.status === 'em_analise' ? 'selected' : ''}>Em Análise</option>
-                                <option value="aprovado" ${r.status === 'aprovado' ? 'selected' : ''}>Aprovado</option>
-                                <option value="recusado" ${r.status === 'recusado' ? 'selected' : ''}>Recusado</option>
-                                <option value="pago" ${r.status === 'pago' ? 'selected' : ''}>💸 Concluído / Pago</option>
-                                <option value="cancelado" ${r.status === 'cancelado' ? 'selected' : ''}>Cancelado</option>
+                                <option value="Aguardando Fornecedor" ${r.status === 'Aguardando Fornecedor' || r.status === 'solicitado' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Aguardando Fornecedor</option>
+                                <option value="em_analise" ${r.status === 'em_analise' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Em Análise</option>
+                                <option value="aprovado" ${r.status === 'aprovado' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Aprovado</option>
+                                <option value="recusado" ${r.status === 'recusado' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Recusado</option>
+                                <option value="pago" ${r.status === 'pago' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">💸 Concluído / Pago</option>
+                                <option value="cancelado" ${r.status === 'cancelado' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Cancelado</option>
                               </select>
                               ${this.perfil?.role === 'admin' ? `
                                 <button data-delete-reembolso-id="${r.id}" class="p-2 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-900/30 text-rose-600 dark:text-rose-400 rounded-lg border border-rose-100/30 dark:border-rose-900/30 transition text-xs flex items-center justify-center shadow-sm" title="Excluir Reembolso">
@@ -727,12 +727,12 @@ export class ReembolsosPage {
         <div class="flex items-center gap-2 pt-1 border-t border-slate-100 dark:border-slate-800/60">
           <div class="flex-1">
             <select data-reembolso-id="${r.id}" class="select-status-reembolso w-full px-2.5 py-2 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 cursor-pointer">
-              <option value="Aguardando Fornecedor" ${r.status === 'Aguardando Fornecedor' || r.status === 'solicitado' ? 'selected' : ''}>Aguardando Fornecedor</option>
-              <option value="em_analise" ${r.status === 'em_analise' ? 'selected' : ''}>Em Análise</option>
-              <option value="aprovado" ${r.status === 'aprovado' ? 'selected' : ''}>Aprovado</option>
-              <option value="recusado" ${r.status === 'recusado' ? 'selected' : ''}>Recusado</option>
-              <option value="pago" ${r.status === 'pago' ? 'selected' : ''}>💸 Concluído / Pago</option>
-              <option value="cancelado" ${r.status === 'cancelado' ? 'selected' : ''}>Cancelado</option>
+              <option value="Aguardando Fornecedor" ${r.status === 'Aguardando Fornecedor' || r.status === 'solicitado' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Aguardando Fornecedor</option>
+              <option value="em_analise" ${r.status === 'em_analise' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Em Análise</option>
+              <option value="aprovado" ${r.status === 'aprovado' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Aprovado</option>
+              <option value="recusado" ${r.status === 'recusado' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Recusado</option>
+              <option value="pago" ${r.status === 'pago' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">💸 Concluído / Pago</option>
+              <option value="cancelado" ${r.status === 'cancelado' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Cancelado</option>
             </select>
           </div>
           ${this.perfil?.role === 'admin' ? `

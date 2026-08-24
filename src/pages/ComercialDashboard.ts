@@ -540,11 +540,11 @@ export class ComercialDashboard {
             <div class="flex items-center gap-1.5 shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2.5 py-1.5 rounded-xl shadow-sm">
               <span class="text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-400 select-none">Período:</span>
               <select id="select-dashboard-periodo" class="text-xs font-bold bg-transparent text-slate-700 dark:text-slate-400 focus:outline-none cursor-pointer">
-                <option value="mes_atual" ${this.selectedPeriod === 'mes_atual' ? 'selected' : ''}>Mês Atual</option>
-                <option value="30_dias" ${this.selectedPeriod === '30_dias' ? 'selected' : ''}>Últimos 30 dias</option>
-                <option value="90_dias" ${this.selectedPeriod === '90_dias' ? 'selected' : ''}>Últimos 90 dias</option>
-                <option value="ano_atual" ${this.selectedPeriod === 'ano_atual' ? 'selected' : ''}>Ano Atual</option>
-                <option value="todo_periodo" ${this.selectedPeriod === 'todo_periodo' ? 'selected' : ''}>Todo o Período</option>
+                <option value="mes_atual" ${this.selectedPeriod === 'mes_atual' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Mês Atual</option>
+                <option value="30_dias" ${this.selectedPeriod === '30_dias' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Últimos 30 dias</option>
+                <option value="90_dias" ${this.selectedPeriod === '90_dias' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Últimos 90 dias</option>
+                <option value="ano_atual" ${this.selectedPeriod === 'ano_atual' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Ano Atual</option>
+                <option value="todo_periodo" ${this.selectedPeriod === 'todo_periodo' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Todo o Período</option>
               </select>
             </div>
 
@@ -553,8 +553,8 @@ export class ComercialDashboard {
               <div class="flex items-center gap-1.5 shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2.5 py-1.5 rounded-xl shadow-sm">
                 <span class="text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-400 select-none">Equipe:</span>
                 <select id="select-dashboard-consultor" class="text-xs font-bold bg-transparent text-slate-700 dark:text-slate-400 focus:outline-none cursor-pointer max-w-[150px]">
-                  <option value="todos" ${this.selectedConsultantId === 'todos' ? 'selected' : ''}>Todos os Consultores</option>
-                  ${this.consultores.map(c => `<option value="${c.id}" ${this.selectedConsultantId === c.id ? 'selected' : ''}>${c.nome}</option>`).join('')}
+                  <option value="todos" ${this.selectedConsultantId === 'todos' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Todos os Consultores</option>
+                  ${this.consultores.map(c => `<option value="${c.id}" ${this.selectedConsultantId === c.id ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">${c.nome}</option>`).join('')}
                 </select>
               </div>
             ` : ''}
@@ -1579,7 +1579,7 @@ export class ComercialDashboard {
               <span class="text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-400 select-none">Campanha/Período:</span>
               <select id="select-dashboard-meta-periodo" class="text-xs font-bold bg-transparent text-slate-700 dark:text-slate-400 focus:outline-none cursor-pointer">
                 ${this.metas.map(m => `
-                  <option value="${m.id}" ${this.selectedMetaId === m.id ? 'selected' : ''}>${m.nome}</option>
+                  <option value="${m.id}" ${this.selectedMetaId === m.id ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">${m.nome}</option>
                 `).join('')}
               </select>
             </div>

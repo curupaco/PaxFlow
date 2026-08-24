@@ -713,12 +713,12 @@ export class OrcamentosPage {
         <div class="flex items-center gap-1">
           <span class="font-extrabold uppercase text-slate-400 dark:text-slate-400">Ordenar por:</span>
           <select class="select-sort-field text-[10px] font-bold bg-transparent text-slate-600 dark:text-slate-300 focus:outline-none cursor-pointer" data-column="${col}">
-            <option value="createdAt" ${config.field === 'createdAt' ? 'selected' : ''}>📅 Data Criação</option>
-            <option value="nomeCliente" ${config.field === 'nomeCliente' ? 'selected' : ''}>👤 Passageiro</option>
-            <option value="temperatura" ${config.field === 'temperatura' ? 'selected' : ''}>🔥 Temperatura</option>
-            <option value="valorProposta" ${config.field === 'valorProposta' ? 'selected' : ''}>💰 ${col === 'CONCLUIDO' ? 'Valor Fechado' : 'Valor Proposta'}</option>
-            ${this.perfil?.role === 'admin' ? `<option value="consultor" ${config.field === 'consultor' ? 'selected' : ''}>💼 Consultor</option>` : ''}
-            <option value="origem" ${config.field === 'origem' ? 'selected' : ''}>📣 Origem Lead</option>
+            <option value="createdAt" ${config.field === 'createdAt' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">📅 Data Criação</option>
+            <option value="nomeCliente" ${config.field === 'nomeCliente' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">👤 Passageiro</option>
+            <option value="temperatura" ${config.field === 'temperatura' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">🔥 Temperatura</option>
+            <option value="valorProposta" ${config.field === 'valorProposta' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">💰 ${col === 'CONCLUIDO' ? 'Valor Fechado' : 'Valor Proposta'}</option>
+            ${this.perfil?.role === 'admin' ? `<option value="consultor" ${config.field === 'consultor' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">💼 Consultor</option>` : ''}
+            <option value="origem" ${config.field === 'origem' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">📣 Origem Lead</option>
           </select>
         </div>
         <button class="btn-sort-dir px-1.5 py-0.5 hover:bg-slate-200 dark:hover:bg-slate-700/60 rounded text-slate-500 dark:text-slate-400 hover:text-indigo-650 font-extrabold transition focus:outline-none flex items-center justify-center gap-0.5 shrink-0" data-column="${col}" title="Inverter Ordem">
@@ -826,8 +826,8 @@ export class OrcamentosPage {
               <div class="flex items-center gap-1.5 shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2.5 py-1.5 rounded-xl shadow-sm">
                 <span class="text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-400 select-none">Equipe:</span>
                 <select id="select-orcamentos-consultor" class="text-xs font-bold bg-transparent text-slate-700 dark:text-slate-400 focus:outline-none cursor-pointer max-w-[150px]">
-                  <option value="todos" ${this.selectedConsultantId === 'todos' ? 'selected' : ''}>Todos os Consultores</option>
-                  ${this.consultores.map(c => `<option value="${c.id}" ${this.selectedConsultantId === c.id ? 'selected' : ''}>${c.nome}</option>`).join('')}
+                  <option value="todos" ${this.selectedConsultantId === 'todos' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Todos os Consultores</option>
+                  ${this.consultores.map(c => `<option value="${c.id}" ${this.selectedConsultantId === c.id ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">${c.nome}</option>`).join('')}
                 </select>
               </div>
             ` : ''}
@@ -949,9 +949,9 @@ export class OrcamentosPage {
                   ${this.showAllConcluded ? '👁️' : '🙈'}
                 </button>
                 <select id="select-concluido-filtro" class="text-[9px] font-black uppercase bg-transparent text-slate-500 dark:text-slate-400 focus:outline-none cursor-pointer max-w-[100px] border border-slate-200 dark:border-slate-800 rounded px-1.5 py-0.5 bg-white dark:bg-slate-900">
-                  <option value="todos" ${this.filterConcluido === 'todos' ? 'selected' : ''}>Todos</option>
-                  <option value="fechada" ${this.filterConcluido === 'fechada' ? 'selected' : ''}>Fechadas</option>
-                  <option value="desistencia" ${this.filterConcluido === 'desistencia' ? 'selected' : ''}>Desistências</option>
+                  <option value="todos" ${this.filterConcluido === 'todos' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Todos</option>
+                  <option value="fechada" ${this.filterConcluido === 'fechada' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Fechadas</option>
+                  <option value="desistencia" ${this.filterConcluido === 'desistencia' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Desistências</option>
                 </select>
               </div>
             </div>
@@ -1261,22 +1261,22 @@ export class OrcamentosPage {
             <div>
               <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Temperatura do Lead *</label>
               <select id="select-orc-temp" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm">
-                <option value="Normal">Normal (50% de chance)</option>
-                <option value="Quente">Quente (Alta chance)</option>
-                <option value="Frio">Frio (Baixa chance)</option>
+                <option value="Normal" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Normal (50% de chance)</option>
+                <option value="Quente" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Quente (Alta chance)</option>
+                <option value="Frio" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Frio (Baixa chance)</option>
               </select>
             </div>
             <div>
               <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Origem do Lead *</label>
               <select id="select-orc-origem" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm">
-                <option value="" disabled selected>Selecione a Origem...</option>
-                <option value="WhatsApp">WhatsApp</option>
-                <option value="Instagram">Instagram</option>
-                <option value="Indicação">Indicação</option>
-                <option value="Google">Google</option>
-                <option value="Site">Site</option>
-                <option value="Loja">Loja</option>
-                <option value="Outros">Outros</option>
+                <option value="" disabled selected class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Selecione a Origem...</option>
+                <option value="WhatsApp" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">WhatsApp</option>
+                <option value="Instagram" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Instagram</option>
+                <option value="Indicação" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Indicação</option>
+                <option value="Google" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Google</option>
+                <option value="Site" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Site</option>
+                <option value="Loja" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Loja</option>
+                <option value="Outros" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Outros</option>
               </select>
             </div>
           </div>
@@ -1284,7 +1284,7 @@ export class OrcamentosPage {
           <div>
             <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Consultor Responsável</label>
             <select id="select-orc-consultor" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" ${this.perfil?.role !== 'admin' ? 'disabled' : ''}>
-              ${consultoresOptions.map(c => `<option value="${c.id}" ${c.id === this.user.id ? 'selected' : ''}>${c.nome}</option>`).join('')}
+              ${consultoresOptions.map(c => `<option value="${c.id}" ${c.id === this.user.id ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">${c.nome}</option>`).join('')}
             </select>
           </div>
 
@@ -2010,14 +2010,14 @@ export class OrcamentosPage {
               <div>
                 <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Origem do Lead *</label>
                 <select id="select-fechar-origem" required class="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm">
-                  <option value="" disabled ${!orc.origem ? 'selected' : ''}>Selecione a Origem...</option>
-                  <option value="WhatsApp" ${orc.origem === 'WhatsApp' ? 'selected' : ''}>WhatsApp</option>
-                  <option value="Instagram" ${orc.origem === 'Instagram' ? 'selected' : ''}>Instagram</option>
-                  <option value="Indicação" ${orc.origem === 'Indicação' ? 'selected' : ''}>Indicação</option>
-                  <option value="Google" ${orc.origem === 'Google' ? 'selected' : ''}>Google</option>
-                  <option value="Site" ${orc.origem === 'Site' ? 'selected' : ''}>Site</option>
-                  <option value="Loja" ${orc.origem === 'Loja' ? 'selected' : ''}>Loja</option>
-                  <option value="Outros" ${orc.origem === 'Outros' ? 'selected' : ''}>Outros</option>
+                  <option value="" disabled ${!orc.origem ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Selecione a Origem...</option>
+                  <option value="WhatsApp" ${orc.origem === 'WhatsApp' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">WhatsApp</option>
+                  <option value="Instagram" ${orc.origem === 'Instagram' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Instagram</option>
+                  <option value="Indicação" ${orc.origem === 'Indicação' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Indicação</option>
+                  <option value="Google" ${orc.origem === 'Google' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Google</option>
+                  <option value="Site" ${orc.origem === 'Site' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Site</option>
+                  <option value="Loja" ${orc.origem === 'Loja' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Loja</option>
+                  <option value="Outros" ${orc.origem === 'Outros' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Outros</option>
                 </select>
               </div>
             </div>
@@ -2042,7 +2042,7 @@ export class OrcamentosPage {
                 <div id="viagem-existente-container" class="${defaultFluxo === 'existente' ? '' : 'hidden'} mt-2">
                   <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Selecione a Viagem Existente *</label>
                   <select id="select-viagem-existente" class="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm">
-                    ${activeTrips.map(v => `<option value="${v.id}">${v.destino} (LOC: ${v.codigo_localizador || 'Sem LOC'}) - R$ ${Number(v.valor_total).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</option>`).join('')}
+                    ${activeTrips.map(v => `<option value="${v.id}" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">${v.destino} (LOC: ${v.codigo_localizador || 'Sem LOC'}) - R$ ${Number(v.valor_total).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</option>`).join('')}
                   </select>
                 </div>
               </div>
@@ -2309,8 +2309,8 @@ export class OrcamentosPage {
           <div>
             <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Novo Responsável *</label>
             <select id="select-novo-consultor" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm">
-              <option value="" disabled selected>Escolha um consultor ativo...</option>
-              ${this.consultores.map(c => `<option value="${c.id}" ${c.id === orc.consultorId ? 'disabled class="text-slate-400"' : ''}>${c.nome} (${c.role})</option>`).join('')}
+              <option value="" disabled selected class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Escolha um consultor ativo...</option>
+              ${this.consultores.map(c => `<option value="${c.id}" ${c.id === orc.consultorId ? 'disabled class="text-slate-400 bg-white dark:bg-slate-900"' : 'class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100"'}>${c.nome} (${c.role})</option>`).join('')}
             </select>
           </div>
 
@@ -2534,9 +2534,9 @@ export class OrcamentosPage {
           <div>
             <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Período *</label>
             <select id="select-lembrete-periodo" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm">
-              <option value="manha">🌅 Manhã</option>
-              <option value="tarde" selected>☀️ Tarde</option>
-              <option value="noite">🌙 Noite</option>
+              <option value="manha" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">🌅 Manhã</option>
+              <option value="tarde" selected class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">☀️ Tarde</option>
+              <option value="noite" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">🌙 Noite</option>
             </select>
           </div>
 

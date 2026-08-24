@@ -811,17 +811,17 @@ export class CadastrosPage {
             <div>
               <label class="block text-[8px] font-bold text-slate-400 dark:text-slate-400 uppercase">Tipo *</label>
               <select data-idx="${idx}" data-field="tipo" class="select-campo-adicional w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-[10px]">
-                <option value="text" ${campo.tipo === 'text' ? 'selected' : ''}>Texto</option>
-                <option value="number" ${campo.tipo === 'number' ? 'selected' : ''}>Número</option>
-                <option value="select" ${campo.tipo === 'select' ? 'selected' : ''}>Opções (Dropdown)</option>
+                <option value="text" ${campo.tipo === 'text' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Texto</option>
+                <option value="number" ${campo.tipo === 'number' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Número</option>
+                <option value="select" ${campo.tipo === 'select' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Opções (Dropdown)</option>
               </select>
             </div>
             <div>
               <label class="block text-[8px] font-bold text-slate-400 dark:text-slate-400 uppercase">Destino *</label>
               <select data-idx="${idx}" data-field="alvo" class="select-campo-adicional w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-[10px]">
-                <option value="dados_adicionais" ${campo.alvo === 'dados_adicionais' ? 'selected' : ''}>Metadados</option>
-                <option value="fornecedor" ${campo.alvo === 'fornecedor' ? 'selected' : ''}>Fornecedor</option>
-                <option value="descricao" ${campo.alvo === 'descricao' ? 'selected' : ''}>Descrição</option>
+                <option value="dados_adicionais" ${campo.alvo === 'dados_adicionais' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Metadados</option>
+                <option value="fornecedor" ${campo.alvo === 'fornecedor' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Fornecedor</option>
+                <option value="descricao" ${campo.alvo === 'descricao' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Descrição</option>
               </select>
             </div>
           </div>
@@ -2054,12 +2054,12 @@ export class CadastrosPage {
             <div>
               <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Métrica da Meta *</label>
               <select id="select-cam-tipo" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm">
-                <option value="venda_aceita" selected>Vendas Aceitas</option>
-                <option value="cliente_criado">Clientes Cadastrados</option>
-                <option value="xp_acumulado">XP Acumulado</option>
-                <option value="lembrete_criado">Lembretes Criados</option>
-                <option value="reembolso_pago">Reembolsos Pagos</option>
-                <option value="produto_detalhado">Produtos Detalhados</option>
+                <option value="venda_aceita" selected class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Vendas Aceitas</option>
+                <option value="cliente_criado" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Clientes Cadastrados</option>
+                <option value="xp_acumulado" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">XP Acumulado</option>
+                <option value="lembrete_criado" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Lembretes Criados</option>
+                <option value="reembolso_pago" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Reembolsos Pagos</option>
+                <option value="produto_detalhado" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Produtos Detalhados</option>
               </select>
             </div>
 
@@ -2234,8 +2234,8 @@ export class CadastrosPage {
             <div>
               <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Cálculo baseado em *</label>
               <select id="select-meta-calculo" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800 dark:text-slate-100 font-semibold text-sm">
-                <option value="bruto" selected>Faturamento Bruto (Total das Vendas)</option>
-                <option value="liquido">Markup / Lucro Estimado</option>
+                <option value="bruto" selected class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Faturamento Bruto (Total das Vendas)</option>
+                <option value="liquido" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Markup / Lucro Estimado</option>
               </select>
             </div>
 
@@ -2525,8 +2525,8 @@ export class CadastrosPage {
             <div>
               <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Cálculo baseado em *</label>
               <select id="select-meta-calculo" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800 dark:text-slate-100 font-semibold text-sm">
-                <option value="bruto" ${meta.tipo_calculo === 'bruto' ? 'selected' : ''}>Faturamento Bruto (Total das Vendas)</option>
-                <option value="lucro" ${meta.tipo_calculo === 'lucro' ? 'selected' : ''}>Markup / Lucro Estimado</option>
+                <option value="bruto" ${meta.tipo_calculo === 'bruto' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Faturamento Bruto (Total das Vendas)</option>
+                <option value="lucro" ${meta.tipo_calculo === 'lucro' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Markup / Lucro Estimado</option>
               </select>
             </div>
 

@@ -896,14 +896,14 @@ export class ClientesPage {
               <div>
                 <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Origem do Lead</label>
                 <select id="select-origem-lead" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium">
-                  <option value="" ${!c.classificacoes || c.classificacoes.length === 0 ? 'selected' : ''}>Selecione a Origem...</option>
-                  <option value="WhatsApp" ${c.classificacoes && c.classificacoes.includes('WhatsApp') ? 'selected' : ''}>WhatsApp</option>
-                  <option value="Instagram" ${c.classificacoes && c.classificacoes.includes('Instagram') ? 'selected' : ''}>Instagram</option>
-                  <option value="Indicação" ${c.classificacoes && c.classificacoes.includes('Indicação') ? 'selected' : ''}>Indicação</option>
-                  <option value="Google" ${c.classificacoes && c.classificacoes.includes('Google') ? 'selected' : ''}>Google</option>
-                  <option value="Site" ${c.classificacoes && c.classificacoes.includes('Site') ? 'selected' : ''}>Site</option>
-                  <option value="Loja" ${c.classificacoes && c.classificacoes.includes('Loja') ? 'selected' : ''}>Loja</option>
-                  <option value="Outros" ${c.classificacoes && c.classificacoes.includes('Outros') ? 'selected' : ''}>Outros</option>
+                  <option value="" ${!c.classificacoes || c.classificacoes.length === 0 ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Selecione a Origem...</option>
+                  <option value="WhatsApp" ${c.classificacoes && c.classificacoes.includes('WhatsApp') ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">WhatsApp</option>
+                  <option value="Instagram" ${c.classificacoes && c.classificacoes.includes('Instagram') ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Instagram</option>
+                  <option value="Indicação" ${c.classificacoes && c.classificacoes.includes('Indicação') ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Indicação</option>
+                  <option value="Google" ${c.classificacoes && c.classificacoes.includes('Google') ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Google</option>
+                  <option value="Site" ${c.classificacoes && c.classificacoes.includes('Site') ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Site</option>
+                  <option value="Loja" ${c.classificacoes && c.classificacoes.includes('Loja') ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Loja</option>
+                  <option value="Outros" ${c.classificacoes && c.classificacoes.includes('Outros') ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Outros</option>
                 </select>
               </div>
             </div>

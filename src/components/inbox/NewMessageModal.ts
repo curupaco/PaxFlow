@@ -147,23 +147,23 @@ export class NewMessageModal {
               <div class="space-y-1">
                 <label class="block text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest">Período *</label>
                 <select id="msg-lembrete-periodo" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs">
-                  <option value="manha">🌅 Manhã</option>
-                  <option value="tarde" selected>☀️ Tarde</option>
-                  <option value="noite">🌙 Noite</option>
+                  <option value="manha" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">🌅 Manhã</option>
+                  <option value="tarde" selected class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">☀️ Tarde</option>
+                  <option value="noite" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">🌙 Noite</option>
                 </select>
               </div>
 
               <div class="space-y-1 sm:col-span-2">
                 <label class="block text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest">Vincular a Orçamento ou Viagem (Opcional)</label>
                 <select id="msg-lembrete-link" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs">
-                  <option value="">-- Sem vínculo --</option>
-                  <optgroup label="Orçamentos Ativos">
-                    ${orcamentos.map(o => `<option value="orcamento:${o.id}">${o.nome_cliente || o.nomeCliente} - ${o.destino} (Orçamento)</option>`).join('')}
+                  <option value="" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">-- Sem vínculo --</option>
+                  <optgroup label="Orçamentos Ativos" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">
+                    ${orcamentos.map(o => `<option value="orcamento:${o.id}" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">${o.nome_cliente || o.nomeCliente} - ${o.destino} (Orçamento)</option>`).join('')}
                   </optgroup>
-                  <optgroup label="Viagens / Vendas em Andamento">
+                  <optgroup label="Viagens / Vendas em Andamento" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">
                     ${viagens.map(v => {
                       const clientName = v.cliente?.nome || v.nome_cliente || 'Cliente';
-                      return `<option value="viagem:${v.id}">${clientName} - ${v.destino} (Viagem)</option>`;
+                      return `<option value="viagem:${v.id}" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">${clientName} - ${v.destino} (Viagem)</option>`;
                     }).join('')}
                   </optgroup>
                 </select>

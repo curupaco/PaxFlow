@@ -165,6 +165,35 @@ header h1, header h2, header h3,
 
 /* ================= ACCESSIBILITY & MOTION SYSTEM ================= */
 
+/* Suporte nativo a color-scheme no browser para popups nativos (datepickers, scrollbars, etc.) */
+html {
+  color-scheme: light;
+}
+html.dark {
+  color-scheme: dark;
+}
+
+/* Correções globais de legibilidade e contraste para combo-boxes (<select> e <option>) */
+select option,
+optgroup {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+html.dark select option,
+html.dark optgroup {
+  background-color: #0f172a !important; /* slate-900 */
+  color: #f8fafc !important; /* slate-50 */
+}
+
+html.dark select:disabled,
+html.dark input:disabled,
+html.dark textarea:disabled {
+  background-color: #1e293b !important; /* slate-800 */
+  color: #94a3b8 !important; /* slate-400 */
+  opacity: 0.7;
+}
+
 /* Correções de acessibilidade de contraste no modo escuro */
 html.dark input::placeholder, 
 html.dark textarea::placeholder,

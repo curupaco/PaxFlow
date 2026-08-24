@@ -217,7 +217,9 @@ export class ConfiguracoesPage {
           digisac_enable_webhooks: data.digisac_enable_webhooks !== false,
           digisacEnableWebhooks: data.digisac_enable_webhooks !== false,
           tempoDesistenciaOrcamentoDias: data.tempo_desistencia_orcamento_dias !== undefined ? data.tempo_desistencia_orcamento_dias : 30,
-          tempo_desistencia_orcamento_dias: data.tempo_desistencia_orcamento_dias !== undefined ? data.tempo_desistencia_orcamento_dias : 30
+          tempo_desistencia_orcamento_dias: data.tempo_desistencia_orcamento_dias !== undefined ? data.tempo_desistencia_orcamento_dias : 30,
+          permitirConsultorCriarViagem: data.permitir_consultor_criar_viagem !== undefined ? data.permitir_consultor_criar_viagem : (data.permitirConsultorCriarViagem !== undefined ? data.permitirConsultorCriarViagem : false),
+          permitir_consultor_criar_viagem: data.permitir_consultor_criar_viagem !== undefined ? data.permitir_consultor_criar_viagem : (data.permitirConsultorCriarViagem !== undefined ? data.permitirConsultorCriarViagem : false)
         };
       } else {
         const initialPayload = {
@@ -241,7 +243,8 @@ export class ConfiguracoesPage {
           digisac_enable_routing: true,
           digisac_enable_bot_triggers: true,
           digisac_enable_webhooks: true,
-          tempo_desistencia_orcamento_dias: 30
+          tempo_desistencia_orcamento_dias: 30,
+          permitir_consultor_criar_viagem: false
         };
 
         const { data: inserted, error: insertError } = await supabase
@@ -284,7 +287,9 @@ export class ConfiguracoesPage {
           digisac_enable_webhooks: inserted.digisac_enable_webhooks !== false,
           digisacEnableWebhooks: inserted.digisac_enable_webhooks !== false,
           tempoDesistenciaOrcamentoDias: inserted.tempo_desistencia_orcamento_dias !== undefined ? inserted.tempo_desistencia_orcamento_dias : 30,
-          tempo_desistencia_orcamento_dias: inserted.tempo_desistencia_orcamento_dias !== undefined ? inserted.tempo_desistencia_orcamento_dias : 30
+          tempo_desistencia_orcamento_dias: inserted.tempo_desistencia_orcamento_dias !== undefined ? inserted.tempo_desistencia_orcamento_dias : 30,
+          permitirConsultorCriarViagem: inserted.permitir_consultor_criar_viagem !== undefined ? inserted.permitir_consultor_criar_viagem : false,
+          permitir_consultor_criar_viagem: inserted.permitir_consultor_criar_viagem !== undefined ? inserted.permitir_consultor_criar_viagem : false
         };
       }
 
@@ -655,6 +660,36 @@ export class ConfiguracoesPage {
           }
         });
       });
+
+      // Permissão do botão "Nova Viagem" para Consultores
+      document.getElementById('toggle-permitir-consultor-criar-viagem')?.addEventListener('change', async (e) => {
+        const checkbox = e.target as HTMLInputElement;
+        const newValue = checkbox.checked;
+        if (!this.settings) return;
+
+        this.settings.permitirConsultorCriarViagem = newValue;
+        this.settings.permitir_consultor_criar_viagem = newValue;
+
+        try {
+          const { error } = await supabase
+            .from('global_settings')
+            .update({ permitir_consultor_criar_viagem: newValue })
+            .eq('id', this.settings.id);
+
+          if (error) throw error;
+
+          this.showToast(
+            newValue
+              ? 'Criação direta de viagens PERMITIDA para consultores.'
+              : 'Criação direta de viagens BLOQUEADA para consultores (botão oculto).',
+            'success'
+          );
+        } catch (err: any) {
+          console.error('Erro ao atualizar permissão de criação de viagem:', err);
+          this.showToast('Erro ao atualizar permissão.', 'error');
+          checkbox.checked = !newValue;
+        }
+      });
     }
   }
 
@@ -738,8 +773,8 @@ export class ConfiguracoesPage {
             <div>
               <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Nível de Acesso *</label>
               <select id="select-nc-role" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm">
-                <option value="consultor" selected>Consultor</option>
-                <option value="admin">ADMIN</option>
+                <option value="consultor" selected class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Consultor</option>
+                <option value="admin" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">ADMIN</option>
               </select>
             </div>
 
@@ -892,16 +927,16 @@ export class ConfiguracoesPage {
             <div>
               <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Nível de Acesso *</label>
               <select id="select-ec-role" ${isSelf ? 'disabled' : ''} class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm">
-                <option value="consultor" ${c.role === 'consultor' ? 'selected' : ''}>Consultor</option>
-                <option value="admin" ${c.role === 'admin' ? 'selected' : ''}>ADMIN</option>
+                <option value="consultor" ${c.role === 'consultor' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Consultor</option>
+                <option value="admin" ${c.role === 'admin' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">ADMIN</option>
               </select>
             </div>
 
             <div>
               <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Status da Conta *</label>
               <select id="select-ec-ativo" ${isSelf ? 'disabled' : ''} class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm">
-                <option value="true" ${c.ativo ? 'selected' : ''}>Ativo</option>
-                <option value="false" ${!c.ativo ? 'selected' : ''}>Inativo</option>
+                <option value="true" ${c.ativo ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Ativo</option>
+                <option value="false" ${!c.ativo ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Inativo</option>
               </select>
             </div>
           </div>
@@ -1784,8 +1819,8 @@ export class ConfiguracoesPage {
                               <span class="text-xs text-slate-400 dark:text-slate-400 font-semibold italic ml-2">Você</span>
                             ` : `
                               <select data-id="${c.id}" class="select-role-user px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                                <option value="consultor" ${c.role === 'consultor' ? 'selected' : ''}>Tornar Consultor</option>
-                                <option value="admin" ${c.role === 'admin' ? 'selected' : ''}>Tornar ADMIN</option>
+                                <option value="consultor" ${c.role === 'consultor' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Tornar Consultor</option>
+                                <option value="admin" ${c.role === 'admin' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Tornar ADMIN</option>
                               </select>
                               
                               <button data-id="${c.id}" data-active="${c.ativo}" class="btn-toggle-status-user px-3 py-1.5 rounded-lg text-xs font-bold transition ${
@@ -1802,6 +1837,33 @@ export class ConfiguracoesPage {
                     }).join('')}
                   </tbody>
                 </table>
+              </div>
+            </div>
+
+            <!-- Card de Permissões e Restrições de Operação -->
+            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm flex flex-col gap-4">
+              <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                <div>
+                  <h3 class="text-sm font-black text-slate-800 dark:text-slate-200 tracking-tight flex items-center gap-2">
+                    🔒 Permissões e Restrições de Operação
+                  </h3>
+                  <p class="text-xs text-slate-400 dark:text-slate-400 font-medium">Controle as regras e ações permitidas para a equipe de consultores</p>
+                </div>
+              </div>
+
+              <div class="flex items-center justify-between p-4 bg-slate-50/50 dark:bg-slate-800/30 rounded-xl border border-slate-200/50 dark:border-slate-800">
+                <div class="space-y-0.5 pr-4">
+                  <label for="toggle-permitir-consultor-criar-viagem" class="text-xs font-bold text-slate-800 dark:text-slate-200 cursor-pointer">
+                    Permitir botão "Nova Viagem" para Consultores
+                  </label>
+                  <p class="text-[11px] text-slate-400 dark:text-slate-400 font-medium leading-relaxed">
+                    Quando desativado (padrão), o botão <strong>"Nova Viagem"</strong> no Dashboard fica oculto para consultores, forçando-os a seguir o fluxo completo via Orçamento. Admins continuam com acesso total.
+                  </p>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer shrink-0">
+                  <input type="checkbox" id="toggle-permitir-consultor-criar-viagem" ${this.settings?.permitirConsultorCriarViagem ? 'checked' : ''} class="sr-only peer" />
+                  <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-indigo-600"></div>
+                </label>
               </div>
             </div>
           </main>
@@ -1904,19 +1966,19 @@ export class ConfiguracoesPage {
                     <div>
                       <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Temperatura Padrão *</label>
                       <select id="select-default-temp" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs font-bold text-slate-800 dark:text-slate-100">
-                        <option value="Frio" ${this.defaultTemperatura === 'Frio' ? 'selected' : ''}>Frio ❄️</option>
-                        <option value="Normal" ${this.defaultTemperatura === 'Normal' ? 'selected' : ''}>Normal ⚡</option>
-                        <option value="Quente" ${this.defaultTemperatura === 'Quente' ? 'selected' : ''}>Quente 🔥</option>
+                        <option value="Frio" ${this.defaultTemperatura === 'Frio' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Frio ❄️</option>
+                        <option value="Normal" ${this.defaultTemperatura === 'Normal' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Normal ⚡</option>
+                        <option value="Quente" ${this.defaultTemperatura === 'Quente' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Quente 🔥</option>
                       </select>
                     </div>
 
                     <div>
                       <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Status Inicial *</label>
                       <select id="select-default-status" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs font-bold text-slate-800 dark:text-slate-100">
-                        <option value="SOLICITADO" ${this.defaultStatus === 'SOLICITADO' ? 'selected' : ''}>Solicitado</option>
-                        <option value="EM_ANDAMENTO" ${this.defaultStatus === 'EM_ANDAMENTO' ? 'selected' : ''}>Em Andamento</option>
-                        <option value="AGUARDANDO" ${this.defaultStatus === 'AGUARDANDO' ? 'selected' : ''}>Aguardando</option>
-                        <option value="CONCLUIDO" ${this.defaultStatus === 'CONCLUIDO' ? 'selected' : ''}>Concluído</option>
+                        <option value="SOLICITADO" ${this.defaultStatus === 'SOLICITADO' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Solicitado</option>
+                        <option value="EM_ANDAMENTO" ${this.defaultStatus === 'EM_ANDAMENTO' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Em Andamento</option>
+                        <option value="AGUARDANDO" ${this.defaultStatus === 'AGUARDANDO' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Aguardando</option>
+                        <option value="CONCLUIDO" ${this.defaultStatus === 'CONCLUIDO' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Concluído</option>
                       </select>
                     </div>
                   </div>
@@ -1950,9 +2012,9 @@ export class ConfiguracoesPage {
                             </td>
                             <td class="py-3.5 px-4 text-right">
                               <select id="select-atendente-mapping-${idx}" class="px-3 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-500 text-xs font-bold text-slate-800 dark:text-slate-100 max-w-[240px]">
-                                <option value="">-- Usar Consultor Padrão (${this.perfil?.nome.split(' ')[0] || 'Você'}) --</option>
+                                <option value="" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">-- Usar Consultor Padrão (${this.perfil?.nome.split(' ')[0] || 'Você'}) --</option>
                                 ${this.consultores.map(c => `
-                                  <option value="${c.id}" ${c.id === selectedConsultant ? 'selected' : ''}>${c.nome}</option>
+                                  <option value="${c.id}" ${c.id === selectedConsultant ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">${c.nome}</option>
                                 `).join('')}
                               </select>
                             </td>

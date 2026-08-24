@@ -417,11 +417,11 @@ class TodoKanban {
         <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
           <span class="text-xs text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wider">Prioridade:</span>
           <select id="select-todo-prioridade-filter" class="px-3 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-400 text-xs font-semibold rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500">
-            <option value="">Todas</option>
-            <option value="low" ${this.priorityFilter === 'low' ? 'selected' : ''}>Baixa</option>
-            <option value="medium" ${this.priorityFilter === 'medium' ? 'selected' : ''}>Média</option>
-            <option value="high" ${this.priorityFilter === 'high' ? 'selected' : ''}>Alta</option>
-            <option value="urgent" ${this.priorityFilter === 'urgent' ? 'selected' : ''}>Urgente</option>
+            <option value="" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Todas</option>
+            <option value="low" ${this.priorityFilter === 'low' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Baixa</option>
+            <option value="medium" ${this.priorityFilter === 'medium' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Média</option>
+            <option value="high" ${this.priorityFilter === 'high' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Alta</option>
+            <option value="urgent" ${this.priorityFilter === 'urgent' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Urgente</option>
           </select>
         </div>
       </div>
@@ -845,10 +845,10 @@ class TodoKanban {
               <div>
                 <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Nível de Prioridade</label>
                 <select id="todo-card-priority" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm">
-                  <option value="low" ${card?.priority === 'low' ? 'selected' : ''}>Baixa</option>
-                  <option value="medium" ${!card || card.priority === 'medium' ? 'selected' : ''}>Média</option>
-                  <option value="high" ${card?.priority === 'high' ? 'selected' : ''}>Alta</option>
-                  <option value="urgent" ${card?.priority === 'urgent' ? 'selected' : ''}>Urgente</option>
+                  <option value="low" ${card?.priority === 'low' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Baixa</option>
+                  <option value="medium" ${!card || card.priority === 'medium' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Média</option>
+                  <option value="high" ${card?.priority === 'high' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Alta</option>
+                  <option value="urgent" ${card?.priority === 'urgent' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Urgente</option>
                 </select>
               </div>
 
@@ -867,7 +867,7 @@ class TodoKanban {
                   <option value="${col.id}" ${isEditing
           ? (card.columnId === col.id ? 'selected' : '')
           : (defaultColId === col.id ? 'selected' : '')
-        }>${this.cleanEmoji(col.title)}</option>
+        } class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">${this.cleanEmoji(col.title)}</option>
                 `).join('')}
               </select>
             </div>

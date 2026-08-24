@@ -263,7 +263,7 @@ export function renderPhoneInputHTML(id: string, value: string, placeholder = '(
   const errorId = `${id}-error`;
   
   const optionsHtml = DDIS.map(c => 
-    `<option value="${c.code}" ${c.code === ddi ? 'selected' : ''}>${c.flag} ${c.code}</option>`
+    `<option value="${c.code}" ${c.code === ddi ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">${c.flag} ${c.code}</option>`
   ).join('');
 
   const readonlyAttr = readonly ? 'readonly' : '';

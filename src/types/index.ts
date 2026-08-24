@@ -64,6 +64,8 @@ export interface GlobalSettings {
   digisacEnableWebhooks?: boolean;
   tempoDesistenciaOrcamentoDias?: number;
   tempo_desistencia_orcamento_dias?: number;
+  permitir_consultor_criar_viagem?: boolean;
+  permitirConsultorCriarViagem?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }

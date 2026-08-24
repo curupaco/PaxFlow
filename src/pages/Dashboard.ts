@@ -263,12 +263,15 @@ export class Dashboard {
           slaPreEmbarqueDias: data.sla_pre_embarque_dias,
           slaPosViagemDias: data.sla_pos_viagem_dias
         };
-        // Mapeia colunas específicas se presentes no banco de dados
         if (data.sla_pre_embarque_dias !== undefined) {
           this.slaPreEmbarqueDias = Number(data.sla_pre_embarque_dias);
         }
         if (data.sla_pos_viagem_dias !== undefined) {
           this.slaPosViagemDias = Number(data.sla_pos_viagem_dias);
+        }
+        if (data.permitir_consultor_criar_viagem !== undefined) {
+          this.settings.permitir_consultor_criar_viagem = data.permitir_consultor_criar_viagem;
+          this.settings.permitirConsultorCriarViagem = data.permitir_consultor_criar_viagem;
         }
       }
     } catch (err) {
@@ -955,6 +958,12 @@ export class Dashboard {
    * Abre o Modal Interativo de Criação de Viagem / Card
    */
   private async openNovaViagemModal(): Promise<void> {
+    const canCreateTripDirectly = this.perfil?.role === 'admin' || !!this.settings?.permitirConsultorCriarViagem || !!this.settings?.permitir_consultor_criar_viagem;
+    if (!canCreateTripDirectly) {
+      this.showToast('Criação direta de viagens desativada para consultores. Utilize o fluxo de Orçamentos.', 'error');
+      return;
+    }
+
     try {
       this.renderModalOverlay('max-w-lg');
       const modalContent = document.getElementById('modal-content-container');
@@ -1000,8 +1009,8 @@ export class Dashboard {
             <div>
               <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Passageiro / Cliente *</label>
               <select id="select-viagem-cliente" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm">
-                <option value="" class="text-slate-400 dark:text-slate-400">Selecione o cliente...</option>
-                ${clientes.map(c => `<option value="${c.id}" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200">${c.nome}</option>`).join('')}
+                <option value="" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Selecione o cliente...</option>
+                ${clientes.map(c => `<option value="${c.id}" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">${c.nome}</option>`).join('')}
               </select>
             </div>
 
@@ -1036,10 +1045,10 @@ export class Dashboard {
               <div>
                 <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Status / Etapa Inicial *</label>
                 <select id="select-viagem-status" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm">
-                  <option value="pos_venda" class="bg-white dark:bg-slate-800">Pós-Venda</option>
-                  <option value="fechado" class="bg-white dark:bg-slate-800">Fechado</option>
-                  <option value="pre_embarque" class="bg-white dark:bg-slate-800">Pré-Embarque</option>
-                  <option value="pos_viagem" class="bg-white dark:bg-slate-800">Pós-Viagem</option>
+                  <option value="pos_venda" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Pós-Venda</option>
+                  <option value="fechado" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Fechado</option>
+                  <option value="pre_embarque" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Pré-Embarque</option>
+                  <option value="pos_viagem" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Pós-Viagem</option>
                 </select>
               </div>
               <div>
@@ -1545,30 +1554,32 @@ export class Dashboard {
             </button>
 
             <!-- Botão Criar Card / Nova Viagem -->
-            <button id="btn-nova-viagem" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-1.5 transition transform hover:-translate-y-0.5 uppercase shrink-0">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-              </svg>
-              <span>Nova Viagem</span>
-            </button>
+            ${(this.perfil?.role === 'admin' || !!this.settings?.permitirConsultorCriarViagem || !!this.settings?.permitir_consultor_criar_viagem) ? `
+              <button id="btn-nova-viagem" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-1.5 transition transform hover:-translate-y-0.5 uppercase shrink-0">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+                <span>Nova Viagem</span>
+              </button>
+            ` : ''}
 
             <!-- Seletor de Consultores (Apenas para Admins) -->
             ${this.perfil?.role === 'admin' ? `
               <div class="flex items-center gap-1.5 shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2.5 py-1.5 rounded-xl shadow-sm">
                 <span class="text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-400 select-none">Equipe:</span>
                 <select id="select-dashboard-consultor" class="text-xs font-bold bg-transparent text-slate-700 dark:text-slate-400 focus:outline-none cursor-pointer max-w-[150px]">
-                  <option value="todos" ${this.selectedConsultantId === 'todos' ? 'selected' : ''}>Todos os Consultores</option>
-                  ${this.consultores.map(c => `<option value="${c.id}" ${this.selectedConsultantId === c.id ? 'selected' : ''}>${c.nome}</option>`).join('')}
+                  <option value="todos" ${this.selectedConsultantId === 'todos' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Todos os Consultores</option>
+                  ${this.consultores.map(c => `<option value="${c.id}" ${this.selectedConsultantId === c.id ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">${c.nome}</option>`).join('')}
                 </select>
               </div>
               <div class="flex items-center gap-1.5 shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2.5 py-1.5 rounded-xl shadow-sm">
                 <span class="text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-400 select-none">Conferência:</span>
                 <select id="select-dashboard-conferencia" class="text-xs font-bold bg-transparent text-slate-700 dark:text-slate-400 focus:outline-none cursor-pointer max-w-[170px]">
-                  <option value="todos" ${this.selectedConferenceFilter === 'todos' ? 'selected' : ''}>Todas as Conferências</option>
-                  <option value="nenhuma" ${this.selectedConferenceFilter === 'nenhuma' ? 'selected' : ''}>Nenhuma Conferência</option>
-                  <option value="financeiro" ${this.selectedConferenceFilter === 'financeiro' ? 'selected' : ''}>Conferido Financeiro</option>
-                  <option value="processo" ${this.selectedConferenceFilter === 'processo' ? 'selected' : ''}>Conferido Processo</option>
-                  <option value="completo" ${this.selectedConferenceFilter === 'completo' ? 'selected' : ''}>Conferido Completamente</option>
+                  <option value="todos" ${this.selectedConferenceFilter === 'todos' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Todas as Conferências</option>
+                  <option value="nenhuma" ${this.selectedConferenceFilter === 'nenhuma' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Nenhuma Conferência</option>
+                  <option value="financeiro" ${this.selectedConferenceFilter === 'financeiro' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Conferido Financeiro</option>
+                  <option value="processo" ${this.selectedConferenceFilter === 'processo' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Conferido Processo</option>
+                  <option value="completo" ${this.selectedConferenceFilter === 'completo' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Conferido Completamente</option>
                 </select>
               </div>
             ` : ''}
@@ -1829,11 +1840,11 @@ Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : '
         <!-- Dropdown Fase/Status -->
         <td class="px-5 py-4">
           <select class="select-status-inline w-full px-2 py-1.5 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 font-semibold text-xs cursor-pointer" data-trip-id="${v.id}" data-old-value="${v.status}">
-            <option value="fechado" ${v.status === 'fechado' ? 'selected' : ''}>Fechado</option>
-            <option value="pos_venda" ${v.status === 'fechado' ? 'disabled' : ''} ${v.status === 'pos_venda' ? 'selected' : ''}>Pós-Venda</option>
-            <option value="pre_embarque" ${v.status === 'pre_embarque' ? 'selected' : ''}>Pré-Embarque</option>
-            <option value="pos_viagem" ${v.status === 'pos_viagem' ? 'selected' : ''}>Pós-Viagem</option>
-            <option value="reembolso_solicitado" ${v.status === 'reembolso_solicitado' ? 'selected' : ''}>Reembolso Solicitado</option>
+            <option value="fechado" ${v.status === 'fechado' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Fechado</option>
+            <option value="pos_venda" ${v.status === 'fechado' ? 'disabled' : ''} ${v.status === 'pos_venda' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Pós-Venda</option>
+            <option value="pre_embarque" ${v.status === 'pre_embarque' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Pré-Embarque</option>
+            <option value="pos_viagem" ${v.status === 'pos_viagem' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Pós-Viagem</option>
+            <option value="reembolso_solicitado" ${v.status === 'reembolso_solicitado' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Reembolso Solicitado</option>
           </select>
         </td>
 
@@ -1983,11 +1994,11 @@ Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : '
         <div class="flex items-center gap-2 pt-1 border-t border-slate-100 dark:border-slate-800/60 flex-wrap">
           <div class="flex-1 min-w-[120px]">
             <select class="select-status-inline w-full px-2.5 py-2 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-500 font-bold text-xs cursor-pointer" data-trip-id="${v.id}" data-old-value="${v.status}">
-              <option value="fechado" ${v.status === 'fechado' ? 'selected' : ''}>Fechado</option>
-              <option value="pos_venda" ${v.status === 'fechado' ? 'disabled' : ''} ${v.status === 'pos_venda' ? 'selected' : ''}>Pós-Venda</option>
-              <option value="pre_embarque" ${v.status === 'pre_embarque' ? 'selected' : ''}>Pré-Embarque</option>
-              <option value="pos_viagem" ${v.status === 'pos_viagem' ? 'selected' : ''}>Pós-Viagem</option>
-              <option value="reembolso_solicitado" ${v.status === 'reembolso_solicitado' ? 'selected' : ''}>Reembolso Solicitado</option>
+              <option value="fechado" ${v.status === 'fechado' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Fechado</option>
+              <option value="pos_venda" ${v.status === 'fechado' ? 'disabled' : ''} ${v.status === 'pos_venda' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Pós-Venda</option>
+              <option value="pre_embarque" ${v.status === 'pre_embarque' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Pré-Embarque</option>
+              <option value="pos_viagem" ${v.status === 'pos_viagem' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Pós-Viagem</option>
+              <option value="reembolso_solicitado" ${v.status === 'reembolso_solicitado' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Reembolso Solicitado</option>
             </select>
           </div>
           <div class="flex items-center gap-1">

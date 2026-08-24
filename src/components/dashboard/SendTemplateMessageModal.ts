@@ -167,7 +167,7 @@ export class SendTemplateMessageModal {
             <div>
               <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Escolha o Modelo de Mensagem *</label>
               <select id="select-message-template" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm">
-                ${templates.map(t => `<option value="${t.id}">${t.titulo}</option>`).join('')}
+                ${templates.map(t => `<option value="${t.id}" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">${t.titulo}</option>`).join('')}
               </select>
             </div>
 
