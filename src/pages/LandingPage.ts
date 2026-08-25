@@ -196,6 +196,12 @@ export class LandingPage {
               
               <!-- PANEL 1: DASHBOARD -->
               <div id="panel-dashboard" class="space-y-4 tab-pane-transition">
+                <!-- Informational banner -->
+                <div class="p-3 bg-indigo-50/60 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/50 rounded-xl text-[10px] text-slate-600 dark:text-slate-300 flex items-center gap-2">
+                  <span class="text-base">💡</span>
+                  <span><strong>Visão Comercial Unificada:</strong> O PaxFlow calcula automaticamente o faturamento bruto, a margem de comissão da agência, o ticket médio por cliente e a taxa de conversão da equipe comercial sem exigir planilhas manuais.</span>
+                </div>
+
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div class="bg-slate-50 dark:bg-slate-950/50 border border-slate-200/60 dark:border-slate-800 p-4.5 rounded-2xl shadow-sm">
                     <span class="text-[9px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider block">Faturamento Mensal</span>
@@ -260,6 +266,10 @@ export class LandingPage {
 
               <!-- PANEL 2: VIAGENS -->
               <div id="panel-viagens" class="space-y-4 tab-pane-transition hidden">
+                <div class="p-3 bg-sky-50/60 dark:bg-sky-950/30 border border-sky-100 dark:border-sky-900/50 rounded-xl text-[10px] text-slate-600 dark:text-slate-300 flex items-center gap-2">
+                  <span class="text-base">✈️</span>
+                  <span><strong>Operação de Pós-Venda:</strong> Acompanhe todas as viagens por localizador (LOC), período de viagem e rentabilidade. O ícone de SLA (⚠️) avisa preventivamente quando o passaporte do cliente necessita de atenção imediata.</span>
+                </div>
                 <div class="bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm">
                   <div class="overflow-x-auto custom-scrollbar">
                     <table class="w-full text-left border-collapse min-w-[600px] text-[10px]">
@@ -325,6 +335,10 @@ export class LandingPage {
 
               <!-- PANEL 3: ORÇAMENTOS -->
               <div id="panel-orcamentos" class="space-y-4 tab-pane-transition hidden">
+                <div class="p-3 bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/50 rounded-xl text-[10px] text-slate-600 dark:text-slate-300 flex items-center gap-2">
+                  <span class="text-base">🎯</span>
+                  <span><strong>CRM Comercial de Alta Performance:</strong> Arraste cards entre os estágios do funil. O sistema arquiva automaticamente propostas paradas há mais de 30 dias para evitar acúmulo de leads frios.</span>
+                </div>
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-3.5 text-[10px]">
                   <!-- Novo -->
                   <div class="bg-slate-50/70 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800 p-3 rounded-2xl">
@@ -367,6 +381,10 @@ export class LandingPage {
 
               <!-- PANEL 4: INBOX & SLAS -->
               <div id="panel-inbox" class="space-y-4 tab-pane-transition hidden text-[10px]">
+                <div class="p-3 bg-rose-50/60 dark:bg-rose-950/30 border border-rose-100 dark:border-rose-900/50 rounded-xl text-[10px] text-slate-600 dark:text-slate-300 flex items-center gap-2">
+                  <span class="text-base">🔔</span>
+                  <span><strong>Alertas e Comunicação WhatsApp:</strong> Receba notificações automáticas de SLA de passaporte (validade < 180 dias) e integre o atendimento Digisac diretamente na tela do sistema.</span>
+                </div>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <!-- Sidebar list -->
                   <div class="md:col-span-1 space-y-2 border-r border-slate-200 dark:border-slate-800 pr-3">
@@ -411,6 +429,10 @@ export class LandingPage {
 
               <!-- PANEL ESCALA -->
               <div id="panel-escala" class="space-y-4 tab-pane-transition hidden text-[10px]">
+                <div class="p-3 bg-violet-50/60 dark:bg-violet-950/30 border border-violet-100 dark:border-violet-900/50 rounded-xl text-[10px] text-slate-600 dark:text-slate-300 flex items-center gap-2">
+                  <span class="text-base">👥</span>
+                  <span><strong>Central Administrativa de Escala:</strong> Grade mensal de horários de trabalho, controle automático de saldos no Banco de Folgas, aprovação de trocas de turno e mural de treinamentos/eventos.</span>
+                </div>
                 <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-2">
                   <div>
                     <span class="font-extrabold text-slate-800 dark:text-slate-100 text-xs">Escala Mensal da Equipe — Agosto 2026</span>
@@ -432,6 +454,10 @@ export class LandingPage {
 
               <!-- PANEL 5: REEMBOLSOS -->
               <div id="panel-reembolsos" class="space-y-3 tab-pane-transition hidden text-[10px]">
+                <div class="p-3 bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/50 rounded-xl text-[10px] text-slate-600 dark:text-slate-300 flex items-center gap-2">
+                  <span class="text-base">💸</span>
+                  <span><strong>Conciliação de Estornos Aéreos:</strong> Acompanhe cada etapa dos reembolsos junto às cias aéreas e fornecedores. Anexe comprovantes e não deixe nenhum crédito da agência esquecido.</span>
+                </div>
                 <div class="flex justify-between items-center mb-1">
                   <span class="font-bold text-slate-700 dark:text-slate-300">Reembolsos e Créditos Pendentes</span>
                   <span class="px-2 py-0.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-455 text-[8px] font-bold rounded-lg border border-emerald-500/20">R$ 6.230,00 pendente</span>
@@ -466,6 +492,10 @@ export class LandingPage {
 
               <!-- PANEL 6: RELATORIOS -->
               <div id="panel-relatorios" class="space-y-4 tab-pane-transition hidden text-[10px]">
+                <div class="p-3 bg-indigo-50/60 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/50 rounded-xl text-[10px] text-slate-600 dark:text-slate-300 flex items-center gap-2">
+                  <span class="text-base">📊</span>
+                  <span><strong>Relatórios e Inteligência Financeira:</strong> Acompanhe markups médios por produto, taxa de fechamento global da equipe e projeções de receitas para os próximos 30, 60 e 90 dias.</span>
+                </div>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div class="bg-slate-50/50 dark:bg-slate-950/60 border border-slate-200/60 dark:border-slate-800 p-4 rounded-xl text-left space-y-1">
                     <span class="text-[8px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider block">Conversão Geral</span>
@@ -499,6 +529,10 @@ export class LandingPage {
 
               <!-- PANEL 7: PUBLICAS -->
               <div id="panel-publicas" class="space-y-4 tab-pane-transition hidden text-[10px]">
+                <div class="p-3 bg-purple-50/60 dark:bg-purple-950/30 border border-purple-100 dark:border-purple-900/50 rounded-xl text-[10px] text-slate-600 dark:text-slate-300 flex items-center gap-2">
+                  <span class="text-base">🌟</span>
+                  <span><strong>Itinerários Digitais VIP & Pesquisa NPS:</strong> Gere links públicos de viagem adaptados com as cores da sua agência. Seu cliente acessa vouchers, mapas e responde à avaliação NPS pós-viagem no celular.</span>
+                </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <!-- Public Itinerary Card -->
                   <div class="bg-slate-50/50 dark:bg-slate-950/60 border border-slate-200/60 dark:border-slate-800 p-4 rounded-2xl text-left space-y-2">
@@ -1321,7 +1355,7 @@ export class LandingPage {
     autoTabTimer = setInterval(() => {
       currentTabIndex = (currentTabIndex + 1) % tabs.length;
       switchTab(tabs[currentTabIndex]);
-    }, 4500);
+    }, 3000);
 
     // Lógica da ferramenta Customização Visual Preview
     const wlInputName = document.getElementById('wl-input-name') as HTMLInputElement;
