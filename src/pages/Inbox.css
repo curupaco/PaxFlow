@@ -255,3 +255,347 @@
   background: #818cf8;
   border-color: #1e1b4b;
 }
+
+/* ==========================================================================
+   Controle de Escala (Central Administrativa no Inbox) Styles
+   ========================================================================== */
+
+.escala-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.escala-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1.25rem;
+  background: linear-gradient(135deg, #0b1f4d 0%, #1d4387 100%);
+  color: white;
+  border-radius: 1.35rem;
+  padding: 1.5rem 1.75rem;
+  box-shadow: 0 12px 34px rgba(20, 35, 70, 0.12);
+}
+.escala-hero h1 {
+  margin: 0 0 0.35rem;
+  font-size: 1.6rem;
+  font-weight: 850;
+  letter-spacing: -0.02em;
+}
+.escala-hero p {
+  margin: 0;
+  color: #cbd8f3;
+  font-size: 0.9rem;
+}
+.escala-monthnav {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: 0.85rem;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+.escala-monthnav button {
+  background: transparent;
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.5rem;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-weight: 700;
+  transition: all 0.2s;
+}
+.escala-monthnav button:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+.escala-monthname {
+  min-width: 130px;
+  text-align: center;
+  font-weight: 800;
+  font-size: 0.95rem;
+}
+
+.escala-gridwrap {
+  background: white;
+  border: 1px solid #e5eaf1;
+  border-radius: 1.25rem;
+  box-shadow: 0 12px 34px rgba(20, 35, 70, 0.06);
+  overflow: hidden;
+}
+.dark .escala-gridwrap {
+  background: #0f172a;
+  border-color: #1e293b;
+}
+
+.escala-toolbar {
+  padding: 1rem 1.25rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  border-bottom: 1px solid #e5eaf1;
+  flex-wrap: wrap;
+}
+.dark .escala-toolbar {
+  border-bottom-color: #1e293b;
+}
+
+.escala-legend {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  font-size: 0.75rem;
+  color: #64748b;
+  font-weight: 700;
+}
+.dark .escala-legend {
+  color: #94a3b8;
+}
+.escala-legend span {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.escala-legend .dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.escala-table-scroll {
+  overflow-x: auto;
+  max-width: 100%;
+}
+.escala-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  min-width: 1200px;
+  width: 100%;
+}
+.escala-table th, .escala-table td {
+  height: 56px;
+  text-align: center;
+  border-right: 1px solid #edf0f4;
+  border-bottom: 1px solid #edf0f4;
+  padding: 4px;
+}
+.dark .escala-table th, .dark .escala-table td {
+  border-right-color: #1e293b;
+  border-bottom-color: #1e293b;
+}
+
+.escala-table th {
+  background: #fafbfd;
+  color: #667389;
+  font-size: 0.75rem;
+  position: sticky;
+  top: 0;
+  z-index: 3;
+}
+.dark .escala-table th {
+  background: #1e293b;
+  color: #94a3b8;
+}
+
+.escala-table .name-col {
+  position: sticky !important;
+  left: 0;
+  z-index: 4;
+  min-width: 170px;
+  text-align: left !important;
+  background: white !important;
+  padding-left: 14px !important;
+}
+.dark .escala-table .name-col {
+  background: #0f172a !important;
+}
+.escala-table .name-col strong {
+  font-size: 0.88rem;
+  color: #1e293b;
+  display: block;
+}
+.dark .escala-table .name-col strong {
+  color: #f1f5f9;
+}
+.escala-table .name-col small {
+  display: block;
+  color: #9aa5b6;
+  font-size: 0.68rem;
+  margin-top: 1px;
+}
+
+.escala-table .daynum {
+  display: block;
+  color: #1e293b;
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+.dark .escala-table .daynum {
+  color: #f1f5f9;
+}
+.escala-table .dow {
+  font-size: 0.65rem;
+  color: #9aa5b6;
+  font-weight: 700;
+}
+
+.escala-cell {
+  min-height: 38px;
+  height: 38px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 4px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+.escala-cell:hover {
+  outline: 2px solid rgba(37, 99, 235, 0.4);
+  transform: scale(1.03);
+}
+
+/* Turnos Presets Color Palette */
+.c10 { background: #dff5e8; color: #18734a; }
+.c12 { background: #dff2f7; color: #17677b; }
+.c14 { background: #fff0d8; color: #9a5b00; }
+.c15 { background: #ffe2e4; color: #b12b3a; }
+.folga { background: #fff1bd; color: #8a6500; }
+.ferias { background: #e7ebf0; color: #526073; }
+.event { background: #eee8ff; color: #6b4fc4; }
+.off { background: #f7f8fa; color: #a0a9b7; }
+
+.dark .c10 { background: rgba(24, 115, 74, 0.25); color: #6ee7b7; }
+.dark .c12 { background: rgba(23, 103, 123, 0.25); color: #67e8f9; }
+.dark .c14 { background: rgba(154, 91, 0, 0.25); color: #fde047; }
+.dark .c15 { background: rgba(177, 43, 58, 0.25); color: #fca5a5; }
+.dark .folga { background: rgba(138, 101, 0, 0.25); color: #fef08a; }
+.dark .ferias { background: rgba(82, 96, 115, 0.25); color: #cbd5e1; }
+.dark .event { background: rgba(107, 79, 196, 0.25); color: #c084fc; }
+.dark .off { background: rgba(30, 41, 59, 0.5); color: #64748b; }
+
+.escala-today-th {
+  box-shadow: inset 0 -3px 0 #2563eb;
+}
+
+.escala-bottom-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  margin-top: 0.5rem;
+}
+@media (max-width: 900px) {
+  .escala-bottom-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.escala-card {
+  background: white;
+  border: 1px solid #e5eaf1;
+  border-radius: 1.25rem;
+  box-shadow: 0 12px 34px rgba(20, 35, 70, 0.06);
+  overflow: hidden;
+}
+.dark .escala-card {
+  background: #0f172a;
+  border-color: #1e293b;
+}
+
+.escala-card-head {
+  padding: 1.1rem 1.25rem;
+  border-bottom: 1px solid #e5eaf1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.dark .escala-card-head {
+  border-bottom-color: #1e293b;
+}
+.escala-card-head h2 {
+  font-size: 1rem;
+  margin: 0;
+  font-weight: 800;
+  color: #0f172a;
+}
+.dark .escala-card-head h2 {
+  color: #f8fafc;
+}
+
+.escala-badge {
+  background: #eef3ff;
+  color: #2563eb;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+.dark .escala-badge {
+  background: rgba(37, 99, 235, 0.2);
+  color: #60a5fa;
+}
+
+.escala-row {
+  display: grid;
+  grid-template-columns: 110px 65px 1fr;
+  gap: 0.75rem;
+  padding: 0.85rem 1.25rem;
+  border-bottom: 1px solid #f0f2f6;
+  align-items: center;
+  font-size: 0.85rem;
+}
+.dark .escala-row {
+  border-bottom-color: #1e293b;
+}
+.escala-row:last-child {
+  border-bottom: 0;
+}
+
+.escala-balance {
+  background: #e7f7ed;
+  color: #15803d;
+  border-radius: 8px;
+  padding: 4px 8px;
+  text-align: center;
+  font-weight: 850;
+  font-size: 0.82rem;
+}
+.dark .escala-balance {
+  background: rgba(21, 128, 61, 0.25);
+  color: #4ade80;
+}
+
+.escala-eventrow {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 0.75rem;
+  padding: 0.85rem 1.25rem;
+  border-bottom: 1px solid #f0f2f6;
+  align-items: center;
+}
+.dark .escala-eventrow {
+  border-bottom-color: #1e293b;
+}
+.escala-eventrow:last-child {
+  border-bottom: 0;
+}
+
+.escala-event-date {
+  font-weight: 850;
+  color: #0b1f4d;
+  font-size: 0.9rem;
+}
+.dark .escala-event-date {
+  color: #93c5fd;
+}
+

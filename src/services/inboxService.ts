@@ -1,6 +1,7 @@
 import { supabase } from './supabase';
 import { PerfilConsultor, AlertItem } from '../types';
 import { BADGE_DEFINITIONS } from './gamification';
+import { EscalaService } from './escalaService';
 
 export class InboxService {
   /**
@@ -721,6 +722,75 @@ export class InboxService {
           }
         }
       });
+
+      // --- PART 7: SOLICITAÇÕES DE ESCALA (TROCAS E FOLGAS) ---
+      try {
+        const solicitacoesEscala = await EscalaService.loadSolicitacoes();
+        (solicitacoesEscala || []).forEach(sol => {
+          const isUserSolicitante = String(sol.solicitante_id) === String(user.id) || sol.solicitante_nome === perfil?.nome;
+          const isUserDestinatario = String(sol.destinatario_id) === String(user.id) || sol.destinatario_nome === perfil?.nome;
+          const isAdmin = perfil?.role === 'admin';
+
+          let shouldInclude = false;
+          let cardTitle = '';
+          let cardSubject = '';
+          let cardBody = '';
+
+          if (sol.status === 'pendente_colega' && isUserDestinatario) {
+            shouldInclude = true;
+            cardTitle = '🔄 Troca de Turno Solicitada por Colega';
+            cardSubject = `${sol.solicitante_nome} solicitou trocar o turno do dia ${sol.data_origem} com você!`;
+            cardBody = `
+              <strong>${sol.solicitante_nome}</strong> deseja trocar seu turno de <strong>${sol.data_origem}</strong> com o seu turno de <strong>${sol.data_destino || sol.data_origem}</strong>.<br><br>
+              • <strong>Motivo:</strong> ${sol.motivo || 'Não informado'}<br><br>
+              <em>Ao aceitar, a solicitação será enviada para aprovação final da gestão da agência.</em>
+            `;
+          } else if (sol.status === 'pendente_admin' && isAdmin) {
+            shouldInclude = true;
+            cardTitle = `📋 Aprovação de Escala: ${sol.tipo.toUpperCase()}`;
+            cardSubject = `Solicitação de ${sol.tipo === 'troca' ? 'Troca de Turno' : sol.tipo === 'folga' ? 'Folga' : 'Férias'} - ${sol.solicitante_nome}`;
+            cardBody = `
+              <strong>Solicitante:</strong> ${sol.solicitante_nome}<br>
+              ${sol.tipo === 'troca' ? `• <strong>Troca com:</strong> ${sol.destinatario_nome}<br>• <strong>Data Solicitante:</strong> ${sol.data_origem}<br>• <strong>Data Colega:</strong> ${sol.data_destino}` : `• <strong>Data Solicitada:</strong> ${sol.data_origem}`}<br>
+              • <strong>Motivo:</strong> ${sol.motivo || 'Sem observações'}<br><br>
+              <em>Acesse a aba 'Escala' ou responda esta solicitação para atualizar automaticamente a grade.</em>
+            `;
+          } else if ((sol.status === 'aprovado' || sol.status === 'recusado') && isUserSolicitante) {
+            shouldInclude = true;
+            cardTitle = `🔔 Resposta da Escala: ${sol.status === 'aprovado' ? '✅ Aprovada' : '❌ Recusada'}`;
+            cardSubject = `Sua solicitação de ${sol.tipo} para ${sol.data_origem} foi ${sol.status}.`;
+            cardBody = `
+              Sua solicitação enviada em ${new Date(sol.created_at).toLocaleDateString('pt-BR')} foi processada pela gestão.<br><br>
+              • <strong>Status:</strong> ${sol.status.toUpperCase()}<br>
+              • <strong>Observações da Gestão:</strong> ${sol.resposta_admin || 'Sem observações'}.
+            `;
+          }
+
+          if (shouldInclude) {
+            const uniqueId = `escala-sol-${sol.id}`;
+            const isArchived = archivedList.includes(uniqueId);
+
+            list.push({
+              id: uniqueId,
+              type: 'escala_solicitacao',
+              title: cardTitle,
+              sender: sol.solicitante_nome || 'Central de Escala',
+              senderAvatar: 'panda',
+              dateStr: new Date(sol.created_at).toLocaleDateString('pt-BR'),
+              subject: cardSubject,
+              body: cardBody,
+              targetId: sol.id,
+              arquivado: isArchived,
+              consultorId: sol.solicitante_id,
+              consultorNome: sol.solicitante_nome || 'Consultor',
+              createdAt: sol.created_at,
+              eventDate: sol.data_origem
+            });
+          }
+        });
+      } catch (errEscala) {
+        console.warn('Erro ao compilar solicitações de escala para o feed do Inbox:', errEscala);
+      }
 
     } catch (err) {
       console.error('Erro ao compilar alertas no serviço:', err);

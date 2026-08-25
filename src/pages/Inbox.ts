@@ -1,8 +1,9 @@
 import { supabase, getSessaoAtual, logoutConsultor } from '../services/supabase';
-import { PerfilConsultor, Lembrete, Orcamento, Cliente, AlertItem } from '../types';
+import { PerfilConsultor, Lembrete, Orcamento, Cliente, AlertItem, BancoFolgasItem, EventoEscalaItem, SolicitacaoEscala } from '../types';
 import { getAvatarSvg } from '../services/avatars';
 import { showCustomConfirm, showCustomAlert } from '../services/dialog';
 import { InboxService } from '../services/inboxService';
+import { EscalaService, TURNO_PRESETS } from '../services/escalaService';
 import { EmailReaderModal } from '../components/inbox/EmailReaderModal';
 import { NewMessageModal } from '../components/inbox/NewMessageModal';
 import './Inbox.css';
@@ -16,10 +17,18 @@ export class InboxPage {
   private filteredAlerts: AlertItem[] = [];
   
   // App state
-  private activeTab: 'ativos' | 'arquivados' | 'todos' | 'enviadas' = 'ativos';
+  private activeTab: 'ativos' | 'arquivados' | 'todos' | 'enviadas' | 'escala' = 'ativos';
   private selectedConsultantFilter: string = 'todos';
   private searchQuery: string = '';
   private consultants: PerfilConsultor[] = [];
+
+  // Escala specific state
+  private escalaAno: number = 2026;
+  private escalaMes: number = 8;
+  private escalaData: Record<string, string[]> = {};
+  private bancoFolgasData: BancoFolgasItem[] = [];
+  private eventosEscalaData: EventoEscalaItem[] = [];
+  private selectedLojaEquipeFilter: string = 'todas';
   
   // Calendar specific state
   private currentView: 'list' | 'calendar' = 'list';
@@ -59,13 +68,29 @@ export class InboxPage {
       // 4. Fetch all reminders and build unified alert list
       await this.loadAndBuildAlerts();
 
-      // 5. Render Page UI and attach action listeners
+      // 5. Load Escala data
+      await this.loadEscalaData();
+
+      // 6. Render Page UI and attach action listeners
       this.render();
       this.setupEventListeners();
 
     } catch (err: any) {
       console.error('Erro na inicialização da Caixa de Alertas:', err);
       this.renderAuthError(`Erro interno ao carregar Inbox: ${err.message}`);
+    }
+  }
+
+  /**
+   * Loads scale schedule data, leave bank balances, and events
+   */
+  private async loadEscalaData(): Promise<void> {
+    try {
+      this.escalaData = await EscalaService.loadEscalaMensal(this.escalaAno, this.escalaMes);
+      this.bancoFolgasData = await EscalaService.loadBancoFolgas();
+      this.eventosEscalaData = await EscalaService.loadEventosEscala();
+    } catch (err) {
+      console.error('Erro ao carregar dados da escala:', err);
     }
   }
 
@@ -443,6 +468,23 @@ export class InboxPage {
                   <span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">${baseAlertsForCounters.filter(a => !a.isSent).length}</span>
                 </button>
 
+                <button id="folder-escala" class="w-full px-3 py-2.5 rounded-xl flex items-center justify-between text-xs font-bold transition select-none ${
+                  this.activeTab === 'escala' 
+                    ? 'bg-indigo-600/10 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400' 
+                    : 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800/40'
+                }">
+                  <span class="flex items-center gap-2.5">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                      <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+                      <line x1="16" y1="2" x2="16" y2="6"/>
+                      <line x1="8" y1="2" x2="8" y2="6"/>
+                      <line x1="3" y1="10" x2="21" y2="10"/>
+                    </svg>
+                    Escala de Funcionários
+                  </span>
+                  <span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300">Nova</span>
+                </button>
+
               </div>
 
             </div>
@@ -488,138 +530,145 @@ export class InboxPage {
                   } rounded-xl text-xs font-bold whitespace-nowrap transition flex items-center gap-1.5 focus:outline-none">
                     📋 Total (${baseAlertsForCounters.filter(a => !a.isSent).length})
                   </button>
-                </div>
-              </div>
-              
-              <!-- Search and filter summary bar -->
-              <div class="inbox-glass p-3 rounded-2xl shadow-sm flex flex-col sm:flex-row items-center gap-3">
-                <!-- Search -->
-                <div class="relative w-full flex-grow">
-                  <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-400">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                  </span>
-                  <input id="inbox-search-input" type="text" placeholder="Buscar mensagens, passageiros ou destinos..." value="${this.searchQuery}" class="w-full text-xs font-semibold pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-700 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 transition" />
-                </div>
-                
-                <!-- Counter info -->
-                <div class="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 whitespace-nowrap bg-slate-100 dark:bg-slate-900 px-3.5 py-2.5 rounded-xl border border-slate-200/40 dark:border-slate-800/40">
-                  Mostrando ${this.filteredAlerts.length} de ${this.alerts.length} alertas
-                </div>
-
-                <!-- View Switcher Toggle Button Group -->
-                <div class="flex bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200/40 dark:border-slate-800/40 flex-shrink-0">
-                  <button id="view-list-btn" class="px-3.5 py-1.5 rounded-lg text-xs font-extrabold flex items-center gap-1.5 transition ${this.currentView === 'list' ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}" title="Visualização em Lista">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
-                    Lista
-                  </button>
-                  <button id="view-calendar-btn" class="px-3.5 py-1.5 rounded-lg text-xs font-extrabold flex items-center gap-1.5 transition ${this.currentView === 'calendar' ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}" title="Visualização em Calendário">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-                    Calendário
+                  <button id="mobile-folder-escala" class="px-4 py-2.5 bg-white dark:bg-slate-900 border ${
+                    this.activeTab === 'escala' 
+                      ? 'border-indigo-600/50 text-indigo-600 bg-indigo-600/5 dark:border-indigo-500/50 dark:text-indigo-400 dark:bg-indigo-500/10' 
+                      : 'border-slate-200/60 dark:border-slate-800 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800/40'
+                  } rounded-xl text-xs font-bold whitespace-nowrap transition flex items-center gap-1.5 focus:outline-none">
+                    📅 Escala
                   </button>
                 </div>
               </div>
 
-              ${this.currentView === 'list' ? `
-                <!-- Alerts Mail Stack -->
-                <div class="space-y-3 custom-scrollbar overflow-y-auto max-h-[calc(100vh-310px)] pr-1">
-                  ${this.filteredAlerts.length === 0 ? `
-                    <div class="inbox-glass p-12 text-center rounded-2xl border border-slate-200/40 dark:border-slate-800/40">
-                      <div class="w-12 h-12 bg-slate-100 dark:bg-slate-900 text-slate-400 dark:text-slate-400 rounded-2xl flex items-center justify-center mx-auto mb-3">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                          <rect width="20" height="16" x="2" y="4" rx="2" />
-                          <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
-                        </svg>
-                      </div>
-                      <h3 class="text-sm font-black text-slate-700 dark:text-slate-400 uppercase tracking-wide">Caixa Vazia</h3>
-                      <p class="text-xs text-slate-400 dark:text-slate-400 mt-1 font-medium">Nenhum alerta ou lembrete corresponde aos filtros atuais.</p>
-                    </div>
-                  ` : this.filteredAlerts.map(a => {
-                    let badgeClass = 'badge-gradient-indigo';
-                    let badgeText = 'Lembrete';
-                    if (a.type === 'passport') {
-                      badgeClass = 'badge-gradient-amber';
-                      badgeText = 'Passaporte SLA';
-                    } else if (a.type === 'refund') {
-                      badgeClass = 'badge-gradient-rose';
-                      badgeText = 'Reembolso SLA';
-                    } else if (a.type === 'mention') {
-                      badgeClass = 'bg-gradient-to-tr from-purple-500 to-indigo-600 dark:from-purple-600 dark:to-indigo-500';
-                      badgeText = 'Menção @';
-                    } else if (a.type === 'campaign_notification') {
-                      badgeClass = 'bg-gradient-to-tr from-emerald-500 to-indigo-600 dark:from-emerald-600 dark:to-indigo-500';
-                      badgeText = 'Campanha 🎯';
-                    } else if (a.type === 'pre-embarque') {
-                      badgeClass = 'bg-gradient-to-tr from-sky-500 to-indigo-600 dark:from-sky-600 dark:to-indigo-500';
-                      badgeText = 'Pré-Embarque ✈️';
-                    } else if (a.type === 'pos-viagem-nps') {
-                      badgeClass = 'bg-gradient-to-tr from-emerald-500 to-teal-600 dark:from-emerald-600 dark:to-teal-500';
-                      badgeText = 'Pós-Viagem NPS ⭐';
-                    }
+              ${this.activeTab === 'escala' ? `
+                ${this.renderEscalaView()}
+              ` : `
+                <!-- Search and filter summary bar -->
+                <div class="inbox-glass p-3 rounded-2xl shadow-sm flex flex-col sm:flex-row items-center gap-3">
+                  <!-- Search -->
+                  <div class="relative w-full flex-grow">
+                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-400">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    </span>
+                    <input id="inbox-search-input" type="text" placeholder="Buscar mensagens, passageiros ou destinos..." value="${this.searchQuery}" class="w-full text-xs font-semibold pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-700 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 transition" />
+                  </div>
+                  
+                  <!-- Counter info -->
+                  <div class="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 whitespace-nowrap bg-slate-100 dark:bg-slate-900 px-3.5 py-2.5 rounded-xl border border-slate-200/40 dark:border-slate-800/40">
+                    Mostrando ${this.filteredAlerts.length} de ${this.alerts.length} alertas
+                  </div>
 
-                    const isUnread = !a.arquivado && !readList.includes(a.id);
+                  <!-- View Switcher Toggle Button Group -->
+                  <div class="flex bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200/40 dark:border-slate-800/40 flex-shrink-0">
+                    <button id="view-list-btn" class="px-3.5 py-1.5 rounded-lg text-xs font-extrabold flex items-center gap-1.5 transition ${this.currentView === 'list' ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}" title="Visualização em Lista">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                      Lista
+                    </button>
+                    <button id="view-calendar-btn" class="px-3.5 py-1.5 rounded-lg text-xs font-extrabold flex items-center gap-1.5 transition ${this.currentView === 'calendar' ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}" title="Visualização em Calendário">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                      Calendário
+                    </button>
+                  </div>
+                </div>
 
-                    return `
-                      <div class="inbox-card inbox-glass p-5 rounded-2xl border ${isUnread ? 'border-indigo-200 dark:border-indigo-900/60 bg-indigo-50/5 dark:bg-indigo-950/5' : 'border-white/60 dark:border-slate-900/60'} shadow-sm flex items-start gap-4 cursor-pointer relative" data-alert-id="${a.id}">
-                        
-                        <!-- Unread Indicator Dot -->
-                        ${isUnread ? `<span class="absolute top-5 left-2 w-2 h-2 rounded-full bg-indigo-600 dark:bg-indigo-400 animate-pulse"></span>` : ''}
-
-                        <!-- Avatar -->
-                        <div class="w-10 h-10 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden flex items-center justify-center bg-white dark:bg-slate-900 flex-shrink-0 ${isUnread ? 'ring-2 ring-indigo-500/20' : ''}">
-                          ${getAvatarSvg(a.senderAvatar, a.sender.charAt(0), 'w-full h-full')}
+                ${this.currentView === 'list' ? `
+                  <!-- Alerts Mail Stack -->
+                  <div class="space-y-3 custom-scrollbar overflow-y-auto max-h-[calc(100vh-310px)] pr-1">
+                    ${this.filteredAlerts.length === 0 ? `
+                      <div class="inbox-glass p-12 text-center rounded-2xl border border-slate-200/40 dark:border-slate-800/40">
+                        <div class="w-12 h-12 bg-slate-100 dark:bg-slate-900 text-slate-400 dark:text-slate-400 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                            <rect width="20" height="16" x="2" y="4" rx="2" />
+                            <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                          </svg>
                         </div>
+                        <h3 class="text-sm font-black text-slate-700 dark:text-slate-400 uppercase tracking-wide">Caixa Vazia</h3>
+                        <p class="text-xs text-slate-400 dark:text-slate-400 mt-1 font-medium">Nenhum alerta ou lembrete corresponde aos filtros atuais.</p>
+                      </div>
+                    ` : this.filteredAlerts.map(a => {
+                      let badgeClass = 'badge-gradient-indigo';
+                      let badgeText = 'Lembrete';
+                      if (a.type === 'passport') {
+                        badgeClass = 'badge-gradient-amber';
+                        badgeText = 'Passaporte SLA';
+                      } else if (a.type === 'refund') {
+                        badgeClass = 'badge-gradient-rose';
+                        badgeText = 'Reembolso SLA';
+                      } else if (a.type === 'mention') {
+                        badgeClass = 'bg-gradient-to-tr from-purple-500 to-indigo-600 dark:from-purple-600 dark:to-indigo-500';
+                        badgeText = 'Menção @';
+                      } else if (a.type === 'campaign_notification') {
+                        badgeClass = 'bg-gradient-to-tr from-emerald-500 to-indigo-600 dark:from-emerald-600 dark:to-indigo-500';
+                        badgeText = 'Campanha 🎯';
+                      } else if (a.type === 'pre-embarque') {
+                        badgeClass = 'bg-gradient-to-tr from-sky-500 to-indigo-600 dark:from-sky-600 dark:to-indigo-500';
+                        badgeText = 'Pré-Embarque ✈️';
+                      } else if (a.type === 'pos-viagem-nps') {
+                        badgeClass = 'bg-gradient-to-tr from-emerald-500 to-teal-600 dark:from-emerald-600 dark:to-teal-500';
+                        badgeText = 'Pós-Viagem NPS ⭐';
+                      }
 
-                        <!-- Text info -->
-                        <div class="flex-grow min-w-0 space-y-1">
-                          <div class="flex items-center justify-between gap-2">
-                            <span class="block text-xs font-black text-slate-800 dark:text-slate-200 truncate">${a.sender}</span>
-                            <span class="text-[10px] font-bold text-slate-400 dark:text-slate-400 whitespace-nowrap">${a.dateStr}</span>
+                      const isUnread = !a.arquivado && !readList.includes(a.id);
+
+                      return `
+                        <div class="inbox-card inbox-glass p-5 rounded-2xl border ${isUnread ? 'border-indigo-200 dark:border-indigo-900/60 bg-indigo-50/5 dark:bg-indigo-950/5' : 'border-white/60 dark:border-slate-900/60'} shadow-sm flex items-start gap-4 cursor-pointer relative" data-alert-id="${a.id}">
+                          
+                          <!-- Unread Indicator Dot -->
+                          ${isUnread ? `<span class="absolute top-5 left-2 w-2 h-2 rounded-full bg-indigo-600 dark:bg-indigo-400 animate-pulse"></span>` : ''}
+
+                          <!-- Avatar -->
+                          <div class="w-10 h-10 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden flex items-center justify-center bg-white dark:bg-slate-900 flex-shrink-0 ${isUnread ? 'ring-2 ring-indigo-500/20' : ''}">
+                            ${getAvatarSvg(a.senderAvatar, a.sender.charAt(0), 'w-full h-full')}
                           </div>
 
-                          <h4 class="text-sm font-extrabold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                            <span class="px-2 py-0.5 rounded text-[8px] font-black text-white uppercase tracking-wider ${badgeClass}">
-                              ${badgeText}
-                            </span>
-                            <span class="truncate">${a.title}</span>
-                          </h4>
-
-                          <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
-                            ${a.subject}
-                          </p>
-
-                          ${this.perfil?.role === 'admin' ? `
-                            <div class="flex items-center gap-1.5 pt-1 text-[9px] font-extrabold text-slate-400 dark:text-slate-400 uppercase tracking-wider">
-                              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-                              Consultor: ${a.consultorNome}
+                          <!-- Text info -->
+                          <div class="flex-grow min-w-0 space-y-1">
+                            <div class="flex items-center justify-between gap-2">
+                              <span class="block text-xs font-black text-slate-800 dark:text-slate-200 truncate">${a.sender}</span>
+                              <span class="text-[10px] font-bold text-slate-400 dark:text-slate-400 whitespace-nowrap">${a.dateStr}</span>
                             </div>
-                          ` : ''}
+
+                            <h4 class="text-sm font-extrabold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                              <span class="px-2 py-0.5 rounded text-[8px] font-black text-white uppercase tracking-wider ${badgeClass}">
+                                ${badgeText}
+                              </span>
+                              <span class="truncate">${a.title}</span>
+                            </h4>
+
+                            <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
+                              ${a.subject}
+                            </p>
+
+                            ${this.perfil?.role === 'admin' ? `
+                              <div class="flex items-center gap-1.5 pt-1 text-[9px] font-extrabold text-slate-400 dark:text-slate-400 uppercase tracking-wider">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                                Consultor: ${a.consultorNome}
+                              </div>
+                            ` : ''}
+                          </div>
+
+                          <!-- Archive Quick Action -->
+                          <button class="btn-archive-quick p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800/60 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white transition flex-shrink-0 self-center" title="${a.arquivado ? 'Desarquivar' : 'Arquivar'}" data-alert-id="${a.id}">
+                            ${a.arquivado ? `
+                              <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10h10a8 8 0 0 1 8 8v2M3 10l6 6m-6-6l6-6"/></svg>
+                            ` : `
+                              <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                                <polyline points="21 8 21 21 3 21 3 8"></polyline>
+                                <rect x="1" y="3" width="22" height="5"></rect>
+                                <line x1="10" y1="12" x2="14" y2="12"></line>
+                              </svg>
+                            `}
+                          </button>
+
                         </div>
-
-                        <!-- Archive Quick Action -->
-                        <button class="btn-archive-quick p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800/60 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white transition flex-shrink-0 self-center" title="${a.arquivado ? 'Desarquivar' : 'Arquivar'}" data-alert-id="${a.id}">
-                          ${a.arquivado ? `
-                            <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10h10a8 8 0 0 1 8 8v2M3 10l6 6m-6-6l6-6"/></svg>
-                          ` : `
-                            <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                              <polyline points="21 8 21 21 3 21 3 8"></polyline>
-                              <rect x="1" y="3" width="22" height="5"></rect>
-                              <line x1="10" y1="12" x2="14" y2="12"></line>
-                            </svg>
-                          `}
-                        </button>
-
-                      </div>
-                    `;
-                  }).join('')}
-                </div>
-              ` : `
-                <!-- Calendar View Container -->
-                ${this.renderCalendarContainer()}
+                      `;
+                    }).join('')}
+                  </div>
+                ` : `
+                  <!-- Calendar View Container -->
+                  ${this.renderCalendarContainer()}
+                `}
               `}
-
-            </div>
-
-          </div>
 
         </main>
       </div>
@@ -1189,6 +1238,13 @@ export class InboxPage {
       this.setupEventListeners();
     });
 
+    const folderEscala = document.getElementById('folder-escala');
+    folderEscala?.addEventListener('click', () => {
+      this.activeTab = 'escala';
+      this.render();
+      this.setupEventListeners();
+    });
+
     // Mobile folders click listeners
     const mobileFolderAtivos = document.getElementById('mobile-folder-ativos');
     mobileFolderAtivos?.addEventListener('click', () => {
@@ -1221,6 +1277,18 @@ export class InboxPage {
       this.render();
       this.setupEventListeners();
     });
+
+    const mobileFolderEscala = document.getElementById('mobile-folder-escala');
+    mobileFolderEscala?.addEventListener('click', () => {
+      this.activeTab = 'escala';
+      this.render();
+      this.setupEventListeners();
+    });
+
+    if (this.activeTab === 'escala') {
+      this.setupEscalaEventListeners();
+      return;
+    }
 
     const btnNovaMensagemMobile = document.getElementById('btn-nova-mensagem-mobile');
     btnNovaMensagemMobile?.addEventListener('click', () => {
@@ -1505,6 +1573,555 @@ export class InboxPage {
     });
   }
 
+
+  /**
+   * Renders the Escala de Funcionários interface (Agatur style)
+   */
+  private renderEscalaView(): string {
+    const monthNames = [
+      'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+      'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+    ];
+    const monthNameStr = `${monthNames[this.escalaMes - 1]} ${this.escalaAno}`;
+    const weekdaysLetter = ["S", "D", "S", "T", "Q", "Q", "S", "S", "D", "S", "T", "Q", "Q", "S", "S", "D", "S", "T", "Q", "Q", "S", "S", "D", "S", "T", "Q", "Q", "S", "S", "D", "S"];
+
+    const activeEntries = Object.entries(this.escalaData);
+    const isAdmin = this.perfil?.role === 'admin';
+
+    let html = `
+      <div class="escala-container">
+        
+        <!-- Hero Header -->
+        <section class="escala-hero">
+          <div>
+            <h1>Escala da equipe</h1>
+            <p>A mesma lógica da sua escala atual, com uma apresentação mais moderna e fácil de consultar.</p>
+          </div>
+          <div class="flex items-center gap-3">
+            <div class="escala-monthnav">
+              <button id="btn-escala-prev-month">‹</button>
+              <div id="escalaMonthName" class="escala-monthname">${monthNameStr}</div>
+              <button id="btn-escala-next-month">›</button>
+            </div>
+            <button id="btn-escala-hoje" class="px-3 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-extrabold transition">Hoje</button>
+            ${isAdmin ? `
+              <button id="btn-escala-admin-edit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black transition flex items-center gap-1.5 shadow-lg shadow-indigo-900/40">
+                ⚙️ Editar Escala
+              </button>
+            ` : `
+              <button id="btn-escala-solicitar-troca" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black transition flex items-center gap-1.5 shadow-lg shadow-emerald-900/40">
+                🔄 Solicitar Troca / Folga
+              </button>
+            `}
+          </div>
+        </section>
+
+        <!-- Grid Table Wrapper -->
+        <section class="escala-gridwrap">
+          <div class="escala-toolbar">
+            <div>
+              <strong class="text-slate-800 dark:text-slate-100 text-sm">Escala mensal</strong>
+              <div class="muted text-slate-400 text-xs">Clique em um horário para consultar ou editar.</div>
+            </div>
+
+            <!-- Legend Dots -->
+            <div class="escala-legend">
+              <span><i class="dot c10"></i>10–17</span>
+              <span><i class="dot c12"></i>12–19</span>
+              <span><i class="dot c14"></i>14–21</span>
+              <span><i class="dot c15"></i>15–22</span>
+              <span><i class="dot folga"></i>Folga</span>
+              <span><i class="dot ferias"></i>Férias</span>
+              <span><i class="dot event"></i>Reunião</span>
+            </div>
+          </div>
+
+          <!-- Scrollable Table -->
+          <div class="escala-table-scroll custom-scrollbar" id="escalaTableScroll">
+            <table class="escala-table">
+              <thead>
+                <tr>
+                  <th class="name-col">Equipe</th>
+                  ${Array.from({ length: 31 }, (_, i) => {
+                    const dayNum = i + 1;
+                    const isToday = dayNum === new Date().getDate() && (new Date().getMonth() + 1) === this.escalaMes;
+                    return `
+                      <th class="${isToday ? 'escala-today-th' : ''}">
+                        <span class="daynum">${dayNum}</span>
+                        <span class="dow">${weekdaysLetter[i % 7]}</span>
+                      </th>
+                    `;
+                  }).join('')}
+                </tr>
+              </thead>
+              <tbody>
+                ${activeEntries.map(([name, vals]) => `
+                  <tr>
+                    <td class="name-col">
+                      <strong>${name}</strong>
+                      <small>Equipe Agatur</small>
+                    </td>
+                    ${vals.map((v, dayIdx) => {
+                      const cls = EscalaService.getTurnoCls(v);
+                      return `
+                        <td>
+                          <div class="escala-cell ${cls}" data-escala-consultor="${name}" data-escala-day="${dayIdx}">
+                            ${v || '—'}
+                          </div>
+                        </td>
+                      `;
+                    }).join('')}
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Bottom Cards: Banco de Folgas & Treinamentos/Eventos -->
+        <div class="escala-bottom-grid">
+          
+          <!-- Banco de Folgas Card -->
+          <section class="escala-card">
+            <div class="escala-card-head">
+              <h2>🚧 Banco de folgas</h2>
+              <div class="flex items-center gap-2">
+                <span class="escala-badge">Saldo atual</span>
+                ${isAdmin ? `
+                  <button id="btn-edit-banco-folgas" class="text-xs font-bold text-indigo-600 hover:text-indigo-800 dark:text-indigo-400">Editar</button>
+                ` : ''}
+              </div>
+            </div>
+            <div>
+              ${this.bancoFolgasData.map(b => `
+                <div class="escala-row">
+                  <strong class="text-slate-800 dark:text-slate-100">${b.consultor_nome}</strong>
+                  <span class="escala-balance">${b.saldo_dias}</span>
+                  <span class="text-xs text-slate-400 truncate" title="${b.detalhes_historico}">${b.detalhes_historico}</span>
+                </div>
+              `).join('')}
+            </div>
+          </section>
+
+          <!-- Treinamentos · Coffee · Eventos Card -->
+          <section class="escala-card">
+            <div class="escala-card-head">
+              <h2>📝 Treinamentos · Coffee · Eventos</h2>
+              <div class="flex items-center gap-2">
+                <span class="escala-badge">${monthNames[this.escalaMes - 1]}</span>
+                ${isAdmin ? `
+                  <button id="btn-add-evento-escala" class="text-xs font-bold text-indigo-600 hover:text-indigo-800 dark:text-indigo-400">+ Adicionar</button>
+                ` : ''}
+              </div>
+            </div>
+            <div>
+              ${this.eventosEscalaData.map(ev => `
+                <div class="escala-eventrow">
+                  <div class="escala-event-date">${ev.data}</div>
+                  <div>
+                    <strong class="text-slate-800 dark:text-slate-100 text-xs">${ev.consultor_nome}</strong>
+                    <div class="text-xs text-slate-400 font-medium">${ev.titulo}</div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </section>
+
+        </div>
+
+      </div>
+    `;
+
+    return html;
+  }
+
+  /**
+   * Sets up event listeners for the Escala View
+   */
+  private setupEscalaEventListeners(): void {
+    // Prev / Next Month
+    document.getElementById('btn-escala-prev-month')?.addEventListener('click', async () => {
+      if (this.escalaMes > 1) {
+        this.escalaMes--;
+      } else {
+        this.escalaMes = 12;
+        this.escalaAno--;
+      }
+      await this.loadEscalaData();
+      this.render();
+      this.setupEventListeners();
+    });
+
+    document.getElementById('btn-escala-next-month')?.addEventListener('click', async () => {
+      if (this.escalaMes < 12) {
+        this.escalaMes++;
+      } else {
+        this.escalaMes = 1;
+        this.escalaAno++;
+      }
+      await this.loadEscalaData();
+      this.render();
+      this.setupEventListeners();
+    });
+
+    // Hoje button scroll
+    document.getElementById('btn-escala-hoje')?.addEventListener('click', () => {
+      const scroll = document.getElementById('escalaTableScroll');
+      if (scroll) {
+        scroll.scrollTo({ left: 650, behavior: 'smooth' });
+      }
+    });
+
+    // Admin Edit Button
+    document.getElementById('btn-escala-admin-edit')?.addEventListener('click', () => {
+      this.openAdminCellEditModal('Eduardo', 24, this.escalaData['Eduardo']?.[24] || '');
+    });
+
+    // Consultor Solicitar Troca Button
+    document.getElementById('btn-escala-solicitar-troca')?.addEventListener('click', () => {
+      this.openSolicitarTrocaModal();
+    });
+
+    // Cell clicks
+    document.querySelectorAll('.escala-cell').forEach(cellEl => {
+      cellEl.addEventListener('click', () => {
+        const consultor = cellEl.getAttribute('data-escala-consultor') || '';
+        const dayIdx = parseInt(cellEl.getAttribute('data-escala-day') || '0', 10);
+        const valorAtual = this.escalaData[consultor]?.[dayIdx] || '';
+
+        if (this.perfil?.role === 'admin') {
+          this.openAdminCellEditModal(consultor, dayIdx, valorAtual);
+        } else {
+          this.openSolicitarTrocaModal(consultor, dayIdx);
+        }
+      });
+    });
+
+    // Edit Banco de Folgas
+    document.getElementById('btn-edit-banco-folgas')?.addEventListener('click', () => {
+      this.openBancoFolgasModal();
+    });
+
+    // Add Evento
+    document.getElementById('btn-add-evento-escala')?.addEventListener('click', () => {
+      this.openAddEventoModal();
+    });
+  }
+
+  /**
+   * Modal: Admin Edit Cell
+   */
+  private openAdminCellEditModal(consultor: string, dayIdx: number, valorAtual: string): void {
+    const dayNum = dayIdx + 1;
+    const dateStr = `${dayNum}/${String(this.escalaMes).padStart(2, '0')}/${this.escalaAno}`;
+
+    const modalHtml = `
+      <div id="escala-edit-modal-backdrop" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4">
+          <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3">
+            <div>
+              <h3 class="text-base font-black text-slate-800 dark:text-slate-100">${consultor} • ${dateStr}</h3>
+              <p class="text-xs text-slate-400 font-semibold">${valorAtual ? `Atual: ${valorAtual}` : 'Sem escala cadastrada'}</p>
+            </div>
+            <button id="modal-escala-close" class="text-slate-400 hover:text-slate-600 text-lg font-bold">✕</button>
+          </div>
+
+          <div class="space-y-3">
+            <label class="block text-xs font-bold text-slate-600 dark:text-slate-300">Horário / Situação Padrão</label>
+            <select id="modal-escala-select" class="w-full text-xs font-semibold p-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <option value="">— Vazio / Limpar —</option>
+              ${TURNO_PRESETS.map(p => `
+                <option value="${p.codigo}" ${valorAtual === p.codigo ? 'selected' : ''}>${p.codigo} (${p.label})</option>
+              `).join('')}
+            </select>
+
+            <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 pt-1">Ou Digite Texto Livre / Observação Customizada</label>
+            <input id="modal-escala-custom" type="text" placeholder="Ex: Reunião Matriz, Treinamento às 14h..." value="${TURNO_PRESETS.some(p => p.codigo === valorAtual) ? '' : valorAtual}" class="w-full text-xs font-semibold p-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          </div>
+
+          <div class="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
+            <button id="modal-escala-cancel" class="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition">Cancelar</button>
+            <button id="modal-escala-save" class="px-5 py-2 text-xs font-black text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition shadow-md shadow-indigo-600/20">Salvar Alteração</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const div = document.createElement('div');
+    div.innerHTML = modalHtml;
+    document.body.appendChild(div.firstElementChild!);
+
+    const backdrop = document.getElementById('escala-edit-modal-backdrop')!;
+    const closeBtn = document.getElementById('modal-escala-close')!;
+    const cancelBtn = document.getElementById('modal-escala-cancel')!;
+    const saveBtn = document.getElementById('modal-escala-save')!;
+
+    const close = () => backdrop.remove();
+
+    closeBtn.onclick = close;
+    cancelBtn.onclick = close;
+
+    saveBtn.onclick = async () => {
+      const selectVal = (document.getElementById('modal-escala-select') as HTMLSelectElement).value;
+      const customVal = (document.getElementById('modal-escala-custom') as HTMLInputElement).value.trim();
+      const finalVal = customVal || selectVal;
+
+      await EscalaService.salvarCelulaEscala(this.escalaAno, this.escalaMes, consultor, dayIdx, finalVal);
+      await this.loadEscalaData();
+      close();
+      this.showToast('Escala atualizada com sucesso!', 'success');
+      this.render();
+      this.setupEventListeners();
+    };
+  }
+
+  /**
+   * Modal: Consultor Request Swap / Off
+   */
+  private openSolicitarTrocaModal(targetConsultor?: string, targetDayIdx?: number): void {
+    const initialDay = targetDayIdx !== undefined ? targetDayIdx + 1 : new Date().getDate();
+    const dateStr = `${this.escalaAno}-${String(this.escalaMes).padStart(2, '0')}-${String(initialDay).padStart(2, '0')}`;
+
+    const otherConsultants = (this.consultants || []).filter(c => c.nome !== this.perfil?.nome);
+
+    const modalHtml = `
+      <div id="escala-solicitar-modal-backdrop" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4">
+          <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3">
+            <div>
+              <h3 class="text-base font-black text-slate-800 dark:text-slate-100">🔄 Solicitar Alteração de Escala</h3>
+              <p class="text-xs text-slate-400 font-semibold">Envie uma solicitação para a equipe ou gestão.</p>
+            </div>
+            <button id="modal-solicitar-close" class="text-slate-400 hover:text-slate-600 text-lg font-bold">✕</button>
+          </div>
+
+          <div class="space-y-3">
+            <div>
+              <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Tipo de Solicitação</label>
+              <select id="solicitar-tipo" class="w-full text-xs font-semibold p-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <option value="troca">Troca de Turno com Colega</option>
+                <option value="folga">Solicitação de Folga Semanal</option>
+                <option value="ferias">Solicitação de Férias</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Sua Data Alvo</label>
+              <input id="solicitar-data-origem" type="date" value="${dateStr}" class="w-full text-xs font-semibold p-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
+
+            <div id="block-colega">
+              <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Colega para Troca</label>
+              <select id="solicitar-destinatario" class="w-full text-xs font-semibold p-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                ${otherConsultants.length > 0 ? otherConsultants.map(c => `
+                  <option value="${c.id}" data-nome="${c.nome}" ${targetConsultor === c.nome ? 'selected' : ''}>${c.nome}</option>
+                `).join('') : `
+                  <option value="c-1" data-nome="Marinna">Marinna</option>
+                  <option value="c-2" data-nome="Maria">Maria</option>
+                  <option value="c-3" data-nome="Rafael">Rafael</option>
+                  <option value="c-4" data-nome="Guto">Guto</option>
+                `}
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Motivo / Justificativa</label>
+              <textarea id="solicitar-motivo" rows="2" placeholder="Ex: Preciso realizar um exame médico nesta data..." class="w-full text-xs font-semibold p-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+            </div>
+          </div>
+
+          <div class="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
+            <button id="modal-solicitar-cancel" class="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition">Cancelar</button>
+            <button id="modal-solicitar-submit" class="px-5 py-2 text-xs font-black text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition shadow-md shadow-emerald-600/20">Enviar Solicitação</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const div = document.createElement('div');
+    div.innerHTML = modalHtml;
+    document.body.appendChild(div.firstElementChild!);
+
+    const backdrop = document.getElementById('escala-solicitar-modal-backdrop')!;
+    const closeBtn = document.getElementById('modal-solicitar-close')!;
+    const cancelBtn = document.getElementById('modal-solicitar-cancel')!;
+    const submitBtn = document.getElementById('modal-solicitar-submit')!;
+    const tipoSelect = document.getElementById('solicitar-tipo') as HTMLSelectElement;
+    const blockColega = document.getElementById('block-colega')!;
+
+    tipoSelect.onchange = () => {
+      blockColega.style.display = tipoSelect.value === 'troca' ? 'block' : 'none';
+    };
+
+    const close = () => backdrop.remove();
+    closeBtn.onclick = close;
+    cancelBtn.onclick = close;
+
+    submitBtn.onclick = async () => {
+      const tipo = tipoSelect.value as 'troca' | 'folga' | 'ferias';
+      const dataOrigem = (document.getElementById('solicitar-data-origem') as HTMLInputElement).value;
+      const motivo = (document.getElementById('solicitar-motivo') as HTMLTextAreaElement).value.trim();
+
+      const destSelect = document.getElementById('solicitar-destinatario') as HTMLSelectElement;
+      const selectedOpt = destSelect?.options[destSelect.selectedIndex];
+      const destinatarioId = destSelect?.value || '';
+      const destinatarioNome = selectedOpt?.getAttribute('data-nome') || selectedOpt?.text || 'Colega';
+
+      const solicitanteNome = this.perfil?.nome || 'Consultor';
+
+      await EscalaService.criarSolicitacao({
+        tipo,
+        solicitante_id: this.user?.id || 'usr-1',
+        solicitante_nome: solicitanteNome,
+        destinatario_id: tipo === 'troca' ? destinatarioId : undefined,
+        destinatario_nome: tipo === 'troca' ? destinatarioNome : undefined,
+        data_origem: dataOrigem,
+        motivo,
+        status: tipo === 'troca' ? 'pendente_colega' : 'pendente_admin'
+      });
+
+      close();
+      this.showToast('Solicitação enviada com sucesso! Notificação gerada no Inbox.', 'success');
+      await this.loadAndBuildAlerts();
+      this.render();
+      this.setupEventListeners();
+    };
+  }
+
+  /**
+   * Modal: Add Event / Training
+   */
+  private openAddEventoModal(): void {
+    const modalHtml = `
+      <div id="escala-evento-modal-backdrop" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4">
+          <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3">
+            <h3 class="text-base font-black text-slate-800 dark:text-slate-100">📝 Adicionar Treinamento / Evento</h3>
+            <button id="modal-evento-close" class="text-slate-400 hover:text-slate-600 text-lg font-bold">✕</button>
+          </div>
+
+          <div class="space-y-3">
+            <div>
+              <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Data (Ex: 18/08)</label>
+              <input id="evento-data" type="text" placeholder="18/08" value="18/08" class="w-full text-xs font-semibold p-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Consultor / Responsável</label>
+              <input id="evento-consultor" type="text" placeholder="Ex: Eduardo ou Equipe" value="Eduardo" class="w-full text-xs font-semibold p-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Título do Evento</label>
+              <input id="evento-titulo" type="text" placeholder="Ex: SACFLOW às 14:30" class="w-full text-xs font-semibold p-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
+          </div>
+
+          <div class="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
+            <button id="modal-evento-cancel" class="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition">Cancelar</button>
+            <button id="modal-evento-save" class="px-5 py-2 text-xs font-black text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition shadow-md shadow-indigo-600/20">Salvar Evento</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const div = document.createElement('div');
+    div.innerHTML = modalHtml;
+    document.body.appendChild(div.firstElementChild!);
+
+    const backdrop = document.getElementById('escala-evento-modal-backdrop')!;
+    const closeBtn = document.getElementById('modal-evento-close')!;
+    const cancelBtn = document.getElementById('modal-evento-cancel')!;
+    const saveBtn = document.getElementById('modal-evento-save')!;
+
+    const close = () => backdrop.remove();
+    closeBtn.onclick = close;
+    cancelBtn.onclick = close;
+
+    saveBtn.onclick = async () => {
+      const data = (document.getElementById('evento-data') as HTMLInputElement).value;
+      const consultor_nome = (document.getElementById('evento-consultor') as HTMLInputElement).value;
+      const titulo = (document.getElementById('evento-titulo') as HTMLInputElement).value.trim();
+
+      if (!titulo) return;
+
+      await EscalaService.adicionarEvento({ data, consultor_nome, titulo });
+      await this.loadEscalaData();
+      close();
+      this.showToast('Evento cadastrado na agenda!', 'success');
+      this.render();
+      this.setupEventListeners();
+    };
+  }
+
+  /**
+   * Modal: Edit Leave Bank Balances
+   */
+  private openBancoFolgasModal(): void {
+    const modalHtml = `
+      <div id="escala-banco-modal-backdrop" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 max-w-lg w-full shadow-2xl space-y-4 max-h-[85vh] overflow-y-auto custom-scrollbar">
+          <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3">
+            <h3 class="text-base font-black text-slate-800 dark:text-slate-100">🚧 Editar Banco de Folgas</h3>
+            <button id="modal-banco-close" class="text-slate-400 hover:text-slate-600 text-lg font-bold">✕</button>
+          </div>
+
+          <div id="banco-folgas-inputs" class="space-y-4">
+            ${this.bancoFolgasData.map((b, idx) => `
+              <div class="p-3 border border-slate-200 dark:border-slate-800 rounded-xl space-y-2 bg-slate-50/50 dark:bg-slate-800/40">
+                <strong class="text-xs font-black text-slate-800 dark:text-slate-100">${b.consultor_nome}</strong>
+                <div class="grid grid-cols-3 gap-2">
+                  <div>
+                    <label class="block text-[10px] font-bold text-slate-400">Saldo (Dias)</label>
+                    <input type="text" value="${b.saldo_dias}" data-banco-idx="${idx}" data-field="saldo" class="w-full text-xs font-extrabold p-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100" />
+                  </div>
+                  <div class="col-span-2">
+                    <label class="block text-[10px] font-bold text-slate-400">Detalhes / Justificativas</label>
+                    <input type="text" value="${b.detalhes_historico}" data-banco-idx="${idx}" data-field="historico" class="w-full text-xs font-medium p-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100" />
+                  </div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+
+          <div class="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
+            <button id="modal-banco-cancel" class="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition">Cancelar</button>
+            <button id="modal-banco-save" class="px-5 py-2 text-xs font-black text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition shadow-md shadow-indigo-600/20">Salvar Saldos</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const div = document.createElement('div');
+    div.innerHTML = modalHtml;
+    document.body.appendChild(div.firstElementChild!);
+
+    const backdrop = document.getElementById('escala-banco-modal-backdrop')!;
+    const closeBtn = document.getElementById('modal-banco-close')!;
+    const cancelBtn = document.getElementById('modal-banco-cancel')!;
+    const saveBtn = document.getElementById('modal-banco-save')!;
+
+    const close = () => backdrop.remove();
+    closeBtn.onclick = close;
+    cancelBtn.onclick = close;
+
+    saveBtn.onclick = async () => {
+      const inputs = document.querySelectorAll('#banco-folgas-inputs input[data-banco-idx]');
+      inputs.forEach(inp => {
+        const idx = parseInt(inp.getAttribute('data-banco-idx') || '0', 10);
+        const field = inp.getAttribute('data-field');
+        const val = (inp as HTMLInputElement).value;
+        if (field === 'saldo') this.bancoFolgasData[idx].saldo_dias = val;
+        if (field === 'historico') this.bancoFolgasData[idx].detalhes_historico = val;
+      });
+
+      await EscalaService.salvarBancoFolgas(this.bancoFolgasData);
+      close();
+      this.showToast('Banco de folgas atualizado!', 'success');
+      this.render();
+      this.setupEventListeners();
+    };
+  }
 
   /**
    * Premium Toast Notification system

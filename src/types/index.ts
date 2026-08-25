@@ -337,7 +337,7 @@ export interface Notificacao {
  */
 export interface AlertItem {
   id: string; // Chave combinada única
-  type: 'manual' | 'passport' | 'refund' | 'mention' | 'direct_message' | 'campaign_notification' | 'pre-embarque' | 'pos-viagem-nps';
+  type: 'manual' | 'passport' | 'refund' | 'mention' | 'direct_message' | 'campaign_notification' | 'pre-embarque' | 'pos-viagem-nps' | 'escala_solicitacao' | 'escala_lembrete';
   title: string;
   sender: string;
   senderAvatar: string;
@@ -427,6 +427,78 @@ export interface MetaFaixa {
   corHex?: string;
   created_at?: string;
 }
+
+/**
+ * Representa um turno pré-configurado com legenda e cores.
+ */
+export interface TurnoConfig {
+  codigo: string; // Ex: '10-17', '12-19', '14-21', '15-22', 'Folga', 'Férias', 'Reunião', 'F'
+  label: string;  // Ex: '10:00 - 17:00'
+  corClass: string; // Ex: 'c10', 'c12', 'c14', 'c15', 'folga', 'ferias', 'event', 'off'
+  descricao?: string;
+}
+
+/**
+ * Representa o turno de um consultor em uma data específica.
+ */
+export interface EscalaDiaria {
+  id?: string;
+  consultor_id: string;
+  consultor_nome?: string;
+  equipe?: string;
+  data: string; // YYYY-MM-DD
+  turno_codigo: string; // ex: '10-17', 'Folga', 'Férias', etc.
+  observacao_custom?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+/**
+ * Representa uma solicitação de alteração de escala ou folga/férias.
+ */
+export interface SolicitacaoEscala {
+  id: string;
+  tipo: 'troca' | 'folga' | 'ferias';
+  solicitante_id: string;
+  solicitante_nome?: string;
+  destinatario_id?: string; // Preenchido no caso de troca entre consultores
+  destinatario_nome?: string;
+  data_origem: string; // YYYY-MM-DD
+  turno_origem?: string;
+  data_destino?: string; // YYYY-MM-DD (para trocas de data)
+  turno_destino?: string;
+  motivo?: string;
+  status: 'pendente_colega' | 'pendente_admin' | 'aprovado' | 'recusado';
+  resposta_admin?: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+/**
+ * Representa o saldo e histórico do Banco de Folgas de um consultor.
+ */
+export interface BancoFolgasItem {
+  id?: string;
+  consultor_id: string;
+  consultor_nome: string;
+  equipe?: string;
+  saldo_dias: string | number; // Ex: "1", "10", "2", "—"
+  detalhes_historico: string; // Ex: "Meta Jun", "8mar26 - Folga ref 22/03..."
+  updated_at?: string;
+}
+
+/**
+ * Representa um evento, treinamento ou reunião na escala.
+ */
+export interface EventoEscalaItem {
+  id?: string;
+  data: string; // YYYY-MM-DD ou DD/MM
+  consultor_nome: string; // Nome do consultor ou 'Equipe'
+  titulo: string; // Ex: "SACFLOW às 14:30"
+  descricao?: string;
+  created_at?: string;
+}
+
 
 
 

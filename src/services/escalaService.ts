@@ -1,0 +1,329 @@
+import { supabase } from './supabase';
+import { EscalaDiaria, SolicitacaoEscala, BancoFolgasItem, EventoEscalaItem, TurnoConfig } from '../types';
+
+export const TURNO_PRESETS: TurnoConfig[] = [
+  { codigo: '10-17', label: '10:00 - 17:00', corClass: 'c10' },
+  { codigo: '12-19', label: '12:00 - 19:00', corClass: 'c12' },
+  { codigo: '13-20', label: '13:00 - 20:00', corClass: 'c12' },
+  { codigo: '14-21', label: '14:00 - 21:00', corClass: 'c14' },
+  { codigo: '15-22', label: '15:00 - 22:00', corClass: 'c15' },
+  { codigo: '11-18', label: '11:00 - 18:00', corClass: 'c10' },
+  { codigo: 'Folga', label: 'Folga Semanal', corClass: 'folga' },
+  { codigo: 'Férias', label: 'Período de Férias', corClass: 'ferias' },
+  { codigo: 'Reunião', label: 'Reunião / Evento', corClass: 'event' },
+  { codigo: 'F', label: 'Falta / Feriado / Vazio', corClass: 'off' },
+];
+
+export class EscalaService {
+  private static LOCAL_STORAGE_ESCALA_KEY = 'paxflow_escala_diaria_v1';
+  private static LOCAL_STORAGE_SOLICITACOES_KEY = 'paxflow_escala_solicitacoes_v1';
+  private static LOCAL_STORAGE_BANCO_KEY = 'paxflow_escala_banco_folgas_v1';
+  private static LOCAL_STORAGE_EVENTOS_KEY = 'paxflow_escala_eventos_v1';
+
+  /**
+   * Helper to get CSS class for a given shift value
+   */
+  public static getTurnoCls(val: string): string {
+    if (!val || val === '-' || val === '—') return 'off';
+    const found = TURNO_PRESETS.find(p => p.codigo === val);
+    if (found) return found.corClass;
+    if (val.startsWith('10') || val.startsWith('11')) return 'c10';
+    if (val.startsWith('12') || val.startsWith('13')) return 'c12';
+    if (val.startsWith('14')) return 'c14';
+    if (val.startsWith('15')) return 'c15';
+    if (val.toLowerCase().includes('folga')) return 'folga';
+    if (val.toLowerCase().includes('féria')) return 'ferias';
+    if (val.toLowerCase().includes('reuniã')) return 'event';
+    return 'off';
+  }
+
+  /**
+   * Initial mock dataset matching Agatur interface for immediate rich demo
+   */
+  private static getInitialMockData() {
+    const mockEmployeesSchedule: Record<string, string[]> = {
+      "Marinna": ["10", "14", "10-17", "10-17", "10-17", "10-17", "Folga", "F", "F", "10-17", "10-17", "10-17", "10-17", "10-17", "10", "14", "10-17", "10-17", "10-17", "10-17", "Folga", "F", "F", "10-17", "10-17", "10-17", "10-17", "10-17", "10", "14", "10-17"],
+      "Guto": ["F", "F", "Folga", "10-17", "10-17", "13-20", "10-17", "10", "14", "10-17", "10-17", "10-17", "10-17", "12-19", "F", "F", "Folga", "15-22", "13-20", "13-20", "10-17", "10", "14", "13-20", "13-20", "13-20", "13-20", "Folga", "F", "F", "13-20"],
+      "Maria": ["F", "F", "10-17", "13-20", "13-20", "15-22", "13-20", "10", "14", "13-20", "13-20", "13-20", "13-20", "13-20", "F", "F", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Folga"],
+      "Rafael": ["10", "14", "15-22", "15-22", "15-22", "Folga", "15-22", "F", "F", "15-22", "15-22", "15-22", "15-22", "15-22", "10", "14", "15-22", "Folga", "15-22", "15-22", "15-22", "F", "F", "15-22", "15-22", "15-22", "15-22", "15-22", "10", "14", "15-22"],
+      "Eduardo": ["", "", "12-19", "-", "Reunião", "-", "11-18", "", "", "12-19", "-", "11-18", "-", "10-17", "", "", "13-20", "-", "10-17", "Reunião", "13-20", "", "", "12-19", "-", "12-19", "-", "12-19", "", "", "12-19"],
+      "Laura": ["", "", "12-19", "-", "Reunião", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "12", "15", "11-18", "-", "-", "11-18", "11-18", "", "", "-"],
+      "Fernanda": ["", "", "14-21", "14-21", "14-21", "-", "-", "", "", "Férias", "Férias", "Férias", "Férias", "Férias", "", "", "-", "12-19", "-", "Reunião", "-", "", "", "14-21", "-", "-", "14-21", "-", "", "", "14-21"]
+    };
+
+    const mockBancoFolgas: BancoFolgasItem[] = [
+      { consultor_id: "c-1", consultor_nome: "Marinna", equipe: "Equipe Agatur", saldo_dias: "1", detalhes_historico: "Meta Jun" },
+      { consultor_id: "c-2", consultor_nome: "Maria", equipe: "Equipe Agatur", saldo_dias: "10", detalhes_historico: "8mar26 – Folga ref 22/03 · Meta de Abril · Ref 05/04 · REF 03/05 · ref 17/05 · ref 14/06/26 · META JUNHO · REF 02/11/25" },
+      { consultor_id: "c-3", consultor_nome: "Rafael", equipe: "Equipe Agatur", saldo_dias: "2", detalhes_historico: "1 Folga Meta Março – Domingo Extra 28/06" },
+      { consultor_id: "c-4", consultor_nome: "Guto", equipe: "Equipe Agatur", saldo_dias: "—", detalhes_historico: "Sem saldo pendente" }
+    ];
+
+    const mockEventos: EventoEscalaItem[] = [
+      { id: 'ev-1', data: "17/08", consultor_nome: "Eduardo", titulo: "SACFLOW às 14:30" },
+      { id: 'ev-2', data: "18/08", consultor_nome: "Marinna", titulo: "SACFLOW às 14:30" },
+      { id: 'ev-3', data: "17/08", consultor_nome: "Rafael", titulo: "SACFLOW às 16:00" },
+      { id: 'ev-4', data: "20/08", consultor_nome: "Equipe", titulo: "Reunião Franqueados Matriz" }
+    ];
+
+    return { mockEmployeesSchedule, mockBancoFolgas, mockEventos };
+  }
+
+  /**
+   * Fetches full monthly schedule table
+   */
+  public static async loadEscalaMensal(ano: number, mes: number): Promise<Record<string, string[]>> {
+    try {
+      const { data, error } = await supabase
+        .from('escala_diaria')
+        .select('*')
+        .gte('data', `${ano}-${String(mes).padStart(2, '0')}-01`)
+        .lte('data', `${ano}-${String(mes).padStart(2, '0')}-31`);
+
+      if (!error && data && data.length > 0) {
+        const result: Record<string, string[]> = {};
+        data.forEach((row: any) => {
+          const name = row.consultor_nome || 'Consultor';
+          if (!result[name]) {
+            result[name] = new Array(31).fill('');
+          }
+          const dayNum = parseInt(row.data.split('-')[2], 10) - 1;
+          if (dayNum >= 0 && dayNum < 31) {
+            result[name][dayNum] = row.turno_codigo || row.observacao_custom || '';
+          }
+        });
+        return result;
+      }
+    } catch (e) {
+      console.warn('Fallback para armazenamento local de escala:', e);
+    }
+
+    try {
+      const stored = localStorage.getItem(this.LOCAL_STORAGE_ESCALA_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed[`${ano}-${mes}`]) {
+          return parsed[`${ano}-${mes}`];
+        }
+      }
+    } catch (e) {
+      console.error('Erro ao ler localStorage de escala:', e);
+    }
+
+    const initial = this.getInitialMockData();
+    return initial.mockEmployeesSchedule;
+  }
+
+  /**
+   * Save a single day cell edit for a consultant
+   */
+  public static async salvarCelulaEscala(
+    ano: number,
+    mes: number,
+    consultorNome: string,
+    diaIndex: number,
+    valor: string
+  ): Promise<boolean> {
+    const dataFormatted = `${ano}-${String(mes).padStart(2, '0')}-${String(diaIndex + 1).padStart(2, '0')}`;
+
+    try {
+      const { error } = await supabase
+        .from('escala_diaria')
+        .upsert({
+          consultor_nome: consultorNome,
+          data: dataFormatted,
+          turno_codigo: valor,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'consultor_nome,data' });
+
+      if (error) {
+        console.warn('Supabase upsert escala_diaria not configured yet:', error.message);
+      }
+    } catch (e) {
+      console.warn('Salvo no modo fallback local:', e);
+    }
+
+    try {
+      const key = `${ano}-${mes}`;
+      const stored = localStorage.getItem(this.LOCAL_STORAGE_ESCALA_KEY);
+      let dataMap: Record<string, Record<string, string[]>> = stored ? JSON.parse(stored) : {};
+      
+      if (!dataMap[key]) {
+        const initial = this.getInitialMockData();
+        dataMap[key] = initial.mockEmployeesSchedule;
+      }
+
+      if (!dataMap[key][consultorNome]) {
+        dataMap[key][consultorNome] = new Array(31).fill('');
+      }
+
+      dataMap[key][consultorNome][diaIndex] = valor;
+      localStorage.setItem(this.LOCAL_STORAGE_ESCALA_KEY, JSON.stringify(dataMap));
+      return true;
+    } catch (e) {
+      console.error('Erro ao salvar célula da escala:', e);
+      return false;
+    }
+  }
+
+  /**
+   * Fetch Leave Bank balances
+   */
+  public static async loadBancoFolgas(): Promise<BancoFolgasItem[]> {
+    try {
+      const { data, error } = await supabase.from('escala_banco_folgas').select('*');
+      if (!error && data && data.length > 0) {
+        return data as BancoFolgasItem[];
+      }
+    } catch (e) {
+      console.warn('Fallback local para banco de folgas:', e);
+    }
+
+    try {
+      const stored = localStorage.getItem(this.LOCAL_STORAGE_BANCO_KEY);
+      if (stored) {
+        return JSON.parse(stored);
+      }
+    } catch (e) {}
+
+    const initial = this.getInitialMockData();
+    return initial.mockBancoFolgas;
+  }
+
+  /**
+   * Save / Update Leave Bank item
+   */
+  public static async salvarBancoFolgas(items: BancoFolgasItem[]): Promise<boolean> {
+    try {
+      localStorage.setItem(this.LOCAL_STORAGE_BANCO_KEY, JSON.stringify(items));
+      await supabase.from('escala_banco_folgas').upsert(items);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /**
+   * Fetch Events
+   */
+  public static async loadEventosEscala(): Promise<EventoEscalaItem[]> {
+    try {
+      const { data, error } = await supabase.from('escala_eventos').select('*').order('data', { ascending: true });
+      if (!error && data && data.length > 0) {
+        return data as EventoEscalaItem[];
+      }
+    } catch (e) {}
+
+    try {
+      const stored = localStorage.getItem(this.LOCAL_STORAGE_EVENTOS_KEY);
+      if (stored) return JSON.parse(stored);
+    } catch (e) {}
+
+    const initial = this.getInitialMockData();
+    return initial.mockEventos;
+  }
+
+  /**
+   * Add a new Event
+   */
+  public static async adicionarEvento(evento: EventoEscalaItem): Promise<boolean> {
+    const list = await this.loadEventosEscala();
+    list.push({ ...evento, id: 'ev-' + Date.now() });
+    try {
+      localStorage.setItem(this.LOCAL_STORAGE_EVENTOS_KEY, JSON.stringify(list));
+      await supabase.from('escala_eventos').insert(evento);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /**
+   * Fetch all Shift Change / Off requests
+   */
+  public static async loadSolicitacoes(): Promise<SolicitacaoEscala[]> {
+    try {
+      const { data, error } = await supabase.from('escala_solicitacoes').select('*').order('created_at', { ascending: false });
+      if (!error && data && data.length > 0) {
+        return data as SolicitacaoEscala[];
+      }
+    } catch (e) {}
+
+    try {
+      const stored = localStorage.getItem(this.LOCAL_STORAGE_SOLICITACOES_KEY);
+      if (stored) return JSON.parse(stored);
+    } catch (e) {}
+
+    return [];
+  }
+
+  /**
+   * Create a new Shift Swap or Day Off Request
+   */
+  public static async criarSolicitacao(sol: Omit<SolicitacaoEscala, 'id' | 'created_at'>): Promise<SolicitacaoEscala> {
+    const newObj: SolicitacaoEscala = {
+      ...sol,
+      id: 'sol-' + Date.now(),
+      created_at: new Date().toISOString()
+    };
+
+    const list = await this.loadSolicitacoes();
+    list.unshift(newObj);
+    localStorage.setItem(this.LOCAL_STORAGE_SOLICITACOES_KEY, JSON.stringify(list));
+
+    try {
+      await supabase.from('escala_solicitacoes').insert(newObj);
+    } catch (e) {}
+
+    return newObj;
+  }
+
+  /**
+   * Update request status (e.g. Colleague Aceita/Recusa or Admin Aprova/Recusa)
+   */
+  public static async atualizarStatusSolicitacao(
+    solicitacaoId: string,
+    novoStatus: 'pendente_admin' | 'aprovado' | 'recusado',
+    respostaAdmin?: string
+  ): Promise<boolean> {
+    const list = await this.loadSolicitacoes();
+    const target = list.find(s => s.id === solicitacaoId);
+    if (!target) return false;
+
+    target.status = novoStatus;
+    if (respostaAdmin) target.resposta_admin = respostaAdmin;
+    target.updated_at = new Date().toISOString();
+
+    localStorage.setItem(this.LOCAL_STORAGE_SOLICITACOES_KEY, JSON.stringify(list));
+
+    if (novoStatus === 'aprovado') {
+      const ano = new Date(target.data_origem).getFullYear();
+      const mes = new Date(target.data_origem).getMonth() + 1;
+      const diaOrigemIdx = parseInt(target.data_origem.split('-')[2], 10) - 1;
+
+      if (target.tipo === 'troca' && target.destinatario_nome && target.data_destino) {
+        const diaDestinoIdx = parseInt(target.data_destino.split('-')[2], 10) - 1;
+        if (target.solicitante_nome && target.destinatario_nome) {
+          const currentMap = await this.loadEscalaMensal(ano, mes);
+          const t1 = currentMap[target.solicitante_nome]?.[diaOrigemIdx] || '10-17';
+          const t2 = currentMap[target.destinatario_nome]?.[diaDestinoIdx] || '10-17';
+
+          await this.salvarCelulaEscala(ano, mes, target.solicitante_nome, diaOrigemIdx, t2);
+          await this.salvarCelulaEscala(ano, mes, target.destinatario_nome, diaDestinoIdx, t1);
+        }
+      } else if (target.tipo === 'folga' && target.solicitante_nome) {
+        await this.salvarCelulaEscala(ano, mes, target.solicitante_nome, diaOrigemIdx, 'Folga');
+      } else if (target.tipo === 'ferias' && target.solicitante_nome) {
+        await this.salvarCelulaEscala(ano, mes, target.solicitante_nome, diaOrigemIdx, 'Férias');
+      }
+    }
+
+    try {
+      await supabase
+        .from('escala_solicitacoes')
+        .update({ status: novoStatus, resposta_admin: respostaAdmin })
+        .eq('id', solicitacaoId);
+    } catch (e) {}
+
+    return true;
+  }
+}
