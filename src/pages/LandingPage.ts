@@ -114,6 +114,16 @@ export class LandingPage {
                 Alertas & SLAs
               </button>
               
+              <button id="tab-btn-escala" class="px-3.5 py-2 text-[10px] font-black tracking-wider uppercase rounded-xl transition duration-250 flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200">
+                <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                  <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+                  <line x1="16" y1="2" x2="16" y2="6"/>
+                  <line x1="8" y1="2" x2="8" y2="6"/>
+                  <line x1="3" y1="10" x2="21" y2="10"/>
+                </svg>
+                Escala da Equipe
+              </button>
+              
               <button id="tab-btn-reembolsos" class="px-3.5 py-2 text-[10px] font-black tracking-wider uppercase rounded-xl transition duration-250 flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200">
                 <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -368,6 +378,27 @@ export class LandingPage {
                         </div>
                       </div>
                     </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- PANEL ESCALA -->
+              <div id="panel-escala" class="space-y-4 tab-pane-transition hidden text-[10px]">
+                <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-2">
+                  <div>
+                    <span class="font-extrabold text-slate-800 dark:text-slate-100 text-xs">Escala Mensal da Equipe — Agosto 2026</span>
+                    <span class="block text-[9px] text-slate-400">Controle de turnos, banco de folgas e eventos da agência</span>
+                  </div>
+                  <span class="px-2.5 py-1 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-extrabold text-[9px] rounded-lg">Central Administrativa</span>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div class="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl space-y-1.5">
+                    <span class="font-bold text-slate-700 dark:text-slate-300 block">Grade de Turnos (Visão Agatur)</span>
+                    <p class="text-[9px] text-slate-500 dark:text-slate-400">Tabela interativa com cores por horário (10-17, 12-19, 14-21, 15-22, Folga, Férias) e coluna fixa de equipe.</p>
+                  </div>
+                  <div class="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl space-y-1.5">
+                    <span class="font-bold text-slate-700 dark:text-slate-300 block">Trocas & Banco de Folgas</span>
+                    <p class="text-[9px] text-slate-500 dark:text-slate-400">Fluxo de aceite duplo entre consultores com aprovação da gestão no Inbox e controle de saldos.</p>
                   </div>
                 </div>
               </div>
@@ -831,12 +862,13 @@ export class LandingPage {
     document.getElementById('btn-conhecer-login')?.addEventListener('click', handleAcessarReal);
 
     // Lógica da Demo Interativa (Feature Tour com Layout Horizontal - Stripe Style)
-    const tabs = ['dashboard', 'viagens', 'orcamentos', 'inbox', 'reembolsos', 'relatorios', 'publicas'];
+    const tabs = ['dashboard', 'viagens', 'orcamentos', 'inbox', 'escala', 'reembolsos', 'relatorios', 'publicas'];
     const pathTexts: { [key: string]: string } = {
       dashboard: 'PaxFlow - Painel de Controle',
       viagens: 'PaxFlow - Operação de Viagens',
       orcamentos: 'PaxFlow - Funil de Orçamentos',
       inbox: 'PaxFlow - Central de Mensagens e Alertas',
+      escala: 'PaxFlow - Controle de Escala da Equipe',
       reembolsos: 'PaxFlow - Gestão de Reembolsos',
       relatorios: 'PaxFlow - Relatórios Gerenciais',
       publicas: 'PaxFlow - Itinerário Digital do Passageiro'

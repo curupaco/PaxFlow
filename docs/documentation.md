@@ -34,6 +34,7 @@
    - 3.21 [Configurações de Identidade Visual (White-Label Branding)](#321-configurações-de-identidade-visual-white-label-branding)
    - 3.22 [Alertas Automatizados de Pré-Embarque e Pós-Viagem NPS](#322-alertas-automatizados-de-pré-embarque-e-pós-viagem-nps)
    - 3.23 [Métricas Avançadas de Performance e Rendimento de Equipe](#323-métricas-avançadas-de-performance-e-rendimento-de-equipe)
+   - 3.24 [Central Administrativa de Escala de Funcionários](#324-central-administrativa-de-escala-de-funcionários)
 4. [Diferenciais Competitivos](#4-diferenciais-competitivos)
 5. [Arquitetura Tecnológica](#5-arquitetura-tecnológica)
 6. [Segurança e Conformidade](#6-segurança-e-conformidade)
@@ -462,6 +463,24 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 - **Tempo Médio de Fechamento**: Cálculo dinâmico do intervalo de dias que os consultores levam para fechar e ganhar uma proposta a partir do seu lançamento.
 - **Visualização de Gap financeiro**: Destaca o montante faturado versus as oportunidades financeiras perdidas por desistências de orçamentos.
 - **XP de Vendas no Ranking**: Ranking unificado que recompensa consultores mais ativos, incentivando a competição saudável por produtividade.
+
+### 3.24 Central Administrativa de Escala de Funcionários
+
+**Módulo completo de gestão de turnos e folgas da equipe de vendas** (`src/pages/Inbox.ts`, `src/services/escalaService.ts`) integrado como uma nova aba no Inbox do PaxFlow (inspiração Agatur).
+
+- **Grade Mensal Interativa com Sticky Column**:
+  - Exibe a lista de consultores da agência com nomes fixados à esquerda (`sticky column`), enquanto os dias 1 a 31 do mês rolam horizontalmente com destaque visual para o dia atual ("Hoje").
+  - Identificação de turnos por legendas de cores exclusivas: `10-17` (verde), `12-19` (azul claro), `14-21` (laranja), `15-22` (vermelho), `Folga` (amarelo), `Férias` (cinza), `Reunião` (roxo) e `F` (off).
+- **Controle de Acesso Diferenciado (RBAC)**:
+  - **Administradores**: Acesso total para alterar turnos de qualquer dia/funcionário (selecionando presets ou digitando texto/observação customizada), editar saldos do Banco de Folgas, adicionar treinamentos e aprovar/recusar solicitações de troca.
+  - **Consultores**: Visualização da escala inteira da equipe e botão dedicado para **Solicitar Troca de Turno** ou **Solicitar Folga/Férias**.
+- **Fluxo de Aceite Duplo e Aprovação no Inbox**:
+  - Solicitação de troca criada pelo Consultor A gera um card de notificação no Inbox do Consultor B.
+  - Após o aceite do colega, a solicitação é encaminhada ao Inbox do Administrador para aprovação final.
+  - Ao aprovar, o PaxFlow atualiza automaticamente as células dos turnos da escala no mês selecionado e notifica ambos.
+- **Banco de Folgas & Agenda de Treinamentos/Eventos**:
+  - Painel com saldos de folgas compensatórias por consultor e histórico de justificativas.
+  - Agenda de reuniões corporativas, coffees e treinamentos da franquia por data e responsável.
 
 ---
 

@@ -15,6 +15,7 @@ export interface HelpCategory {
 export const HELP_CATEGORIES: HelpCategory[] = [
   { id: 'onboarding', title: 'Como Começar (Onboarding)', icon: '🚀' },
   { id: 'processos', title: 'Fluxos de Trabalho & SLAs', icon: '🔄' },
+  { id: 'escala', title: 'Escala de Funcionários', icon: '📅' },
   { id: 'geral', title: 'Conceitos Gerais & Gamificação', icon: '💡' },
   { id: 'cadastros', title: 'Cadastros & Modelos', icon: '📋' },
   { id: 'dashboard', title: 'Dashboard & Metas', icon: '🏆' },
@@ -389,6 +390,28 @@ export const HELP_ITEMS: HelpItem[] = [
     label: 'Estrutura da Central de Cadastros (6 Abas)',
     description: 'Conheça o menu unificado de Cadastros para administradores.',
     details: 'A Central de Cadastros reestruturada reúne todas as definições operacionais da agência em 6 abas:\n\n1. **Tipos de Serviços**: cadastro dinâmico de produtos, cores e campos extras.\n2. **Gestão de Destinos**: cadastro e higienização de cidades e países de viagens.\n3. **Formas de Recebimento**: gestão de opções de pagamento (Pix, Cartão, Dinheiro).\n4. **Campanhas**: criação e controle de campanhas internas de incentivo por período.\n5. **Metas Financeiras**: parametrização de metas (faturamento bruto ou lucro real) e faixas de premiação.\n6. **Modelos de Mensagem**: templates para WhatsApp com variáveis reativas e histórico Digisac.'
+  },
+  // ==================== 10. Escala de Funcionários ====================
+  {
+    id: 'escala-visao-geral',
+    modulo: 'escala',
+    label: 'Central Administrativa: Escala Mensal da Equipe',
+    description: 'Como consultar, filtrar e acompanhar os turnos dos funcionários da agência.',
+    details: 'A aba "Escala de Funcionários" no Inbox reúne o planejamento de trabalho da equipe em uma grade dinâmica:\n\n- **Visualização Mensal**: Exibe os dias do mês (1 a 31) com badges coloridos por turno (10-17, 12-19, 14-21, 15-22, Folga, Férias, Reunião, F).\n- **Rolagem e Destaque**: A coluna de funcionários é fixada à esquerda enquanto você navega horizontalmente pelos dias. O dia atual recebe destaque automático ("Hoje").\n- **Edição da Gestão**: Administradores podem clicar em qualquer célula para alterar o turno selecionando opções predefinidas ou inserindo horários/observações customizadas.'
+  },
+  {
+    id: 'escala-solicitacoes-troca',
+    modulo: 'escala',
+    label: 'Solicitações de Troca de Turno e Folga Semanal',
+    description: 'Fluxo de aceite duplo e aprovação da gestão no Inbox.',
+    details: 'Consultores podem solicitar trocas de horário ou folga pelo sistema:\n\n1. **Troca de Turno (Consultores)**: O consultor A seleciona a data e o colega B com quem deseja trocar. O pedido gera um card no Inbox do colega B.\n2. **Aceite do Colega**: Ao aceitar no PaxFlow, a solicitação avança para o Inbox dos Administradores.\n3. **Aprovação Final da Gestão**: O Administrador aprova a troca com 1 clique, e o PaxFlow atualiza automaticamente os turnos da grade e notifica ambos.'
+  },
+  {
+    id: 'escala-banco-folgas-eventos',
+    modulo: 'escala',
+    label: 'Banco de Folgas e Agenda de Treinamentos/Eventos',
+    description: 'Controle de saldos de folgas compensatórias e compromissos da equipe.',
+    details: 'Na parte inferior da tela de Escala, o PaxFlow disponibiliza dois painéis integrados:\n\n- **Banco de Folgas**: Acompanhe o saldo numérico de dias acumulados de cada funcionário com o histórico de justificativas e metas atingidas.\n- **Treinamentos · Coffee · Eventos**: Registre reuniões, treinamentos corporativos e eventos de franqueados especificando a data e o consultor ou equipe responsável.'
   }
 ];
 
