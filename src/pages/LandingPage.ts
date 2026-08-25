@@ -517,7 +517,145 @@ export class LandingPage {
                   </div>
                 </div>
               </div>
+            </div>
 
+            <!-- All Modules at a Glance Grid (No Clicking Required - Na Cara!) -->
+            <div class="w-full mt-12 pt-10 border-t border-slate-200/60 dark:border-slate-800 text-left">
+              <div class="text-center max-w-2xl mx-auto mb-10 space-y-2">
+                <span class="px-3 py-1 bg-indigo-500/10 text-indigo-650 dark:text-indigo-400 text-[10px] font-black uppercase tracking-widest rounded-full border border-indigo-500/20">
+                  Visão Geral de Todos os Módulos
+                </span>
+                <h3 class="text-xl sm:text-2xl font-black text-slate-800 dark:text-white">
+                  Tudo o que a sua agência precisa em um único lugar
+                </h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                  Sem precisar clicar: confira o resumo visual das 6 principais telas do PaxFlow
+                </p>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                
+                <!-- Card 1: Dashboard Comercial -->
+                <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-3 flex flex-col justify-between hover:border-indigo-500/50 transition">
+                  <div class="space-y-2">
+                    <div class="flex items-center justify-between">
+                      <span class="p-2 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-xl">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.003 9.003 0 1020.945 13H11V3.055z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"/></svg>
+                      </span>
+                      <span class="text-[9px] font-black uppercase text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950 px-2 py-0.5 rounded">Módulo 01</span>
+                    </div>
+                    <h4 class="text-sm font-extrabold text-slate-800 dark:text-white">Painel Comercial & Faturamento</h4>
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
+                      Visão em tempo real de receitas, ticket médio por viagem, markups da agência e funil comercial consolidado.
+                    </p>
+                  </div>
+                  <div class="bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200/60 dark:border-slate-800 space-y-1">
+                    <span class="text-[8px] font-black text-slate-400 uppercase">Faturamento Mês</span>
+                    <strong class="block text-xs font-black text-slate-800 dark:text-white">R$ 148.500,00 <span class="text-[9px] text-emerald-500">+14%</span></strong>
+                  </div>
+                </div>
+
+                <!-- Card 2: Operação de Viagens -->
+                <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-3 flex flex-col justify-between hover:border-indigo-500/50 transition">
+                  <div class="space-y-2">
+                    <div class="flex items-center justify-between">
+                      <span class="p-2 bg-sky-500/10 text-sky-600 dark:text-sky-400 rounded-xl">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+                      </span>
+                      <span class="text-[9px] font-black uppercase text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-950 px-2 py-0.5 rounded">Módulo 02</span>
+                    </div>
+                    <h4 class="text-sm font-extrabold text-slate-800 dark:text-white">Operação de Viagens & Pós-Venda</h4>
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
+                      Gestão completa de localizadores (LOC), cartões de embarque, vouchers de hotéis e régua de contato pré e pós-viagem.
+                    </p>
+                  </div>
+                  <div class="bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200/60 dark:border-slate-800 space-y-1">
+                    <span class="text-[8px] font-black text-slate-400 uppercase">Status Operacional</span>
+                    <strong class="block text-xs font-black text-sky-600 dark:text-sky-400">18 Viagens Ativas • 0 Incidentes</strong>
+                  </div>
+                </div>
+
+                <!-- Card 3: CRM de Orçamentos -->
+                <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-3 flex flex-col justify-between hover:border-indigo-500/50 transition">
+                  <div class="space-y-2">
+                    <div class="flex items-center justify-between">
+                      <span class="p-2 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-xl">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                      </span>
+                      <span class="text-[9px] font-black uppercase text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950 px-2 py-0.5 rounded">Módulo 03</span>
+                    </div>
+                    <h4 class="text-sm font-extrabold text-slate-800 dark:text-white">CRM Comercial & Funil Kanban</h4>
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
+                      Funil de propostas especializado em pacotes com preenchimento obrigatório de campos turísticos no fechamento.
+                    </p>
+                  </div>
+                  <div class="bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200/60 dark:border-slate-800 space-y-1">
+                    <span class="text-[8px] font-black text-slate-400 uppercase">Taxa de Fechamento</span>
+                    <strong class="block text-xs font-black text-emerald-600 dark:text-emerald-400">28,4% de Conversão</strong>
+                  </div>
+                </div>
+
+                <!-- Card 4: Central de Escala -->
+                <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-3 flex flex-col justify-between hover:border-indigo-500/50 transition">
+                  <div class="space-y-2">
+                    <div class="flex items-center justify-between">
+                      <span class="p-2 bg-violet-500/10 text-violet-600 dark:text-violet-400 rounded-xl">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                      </span>
+                      <span class="text-[9px] font-black uppercase text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-950 px-2 py-0.5 rounded">Módulo 04</span>
+                    </div>
+                    <h4 class="text-sm font-extrabold text-slate-800 dark:text-white">Escala de Funcionários & Folgas</h4>
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
+                      Matriz mensal de turnos, solicitações de trocas de horário e controle de Banco de Folgas da equipe.
+                    </p>
+                  </div>
+                  <div class="bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200/60 dark:border-slate-800 space-y-1">
+                    <span class="text-[8px] font-black text-slate-400 uppercase">Controle de Horários</span>
+                    <strong class="block text-xs font-black text-violet-600 dark:text-violet-400">100% da Equipe Escala Ativa</strong>
+                  </div>
+                </div>
+
+                <!-- Card 5: Alertas Vistos & Digisac -->
+                <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-3 flex flex-col justify-between hover:border-indigo-500/50 transition">
+                  <div class="space-y-2">
+                    <div class="flex items-center justify-between">
+                      <span class="p-2 bg-rose-500/10 text-rose-600 dark:text-rose-400 rounded-xl">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                      </span>
+                      <span class="text-[9px] font-black uppercase text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950 px-2 py-0.5 rounded">Módulo 05</span>
+                    </div>
+                    <h4 class="text-sm font-extrabold text-slate-800 dark:text-white">Alertas de Vistos & Hub Digisac</h4>
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
+                      Notificações com 180 dias de antecedência para vistos/passaportes e integração nativa ao WhatsApp Digisac.
+                    </p>
+                  </div>
+                  <div class="bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200/60 dark:border-slate-800 space-y-1">
+                    <span class="text-[8px] font-black text-slate-400 uppercase">SLA Preventivo</span>
+                    <strong class="block text-xs font-black text-rose-600 dark:text-rose-400">Zero Embarques com Documento Vencido</strong>
+                  </div>
+                </div>
+
+                <!-- Card 6: Reembolsos Cias Aéreas -->
+                <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-3 flex flex-col justify-between hover:border-indigo-500/50 transition">
+                  <div class="space-y-2">
+                    <div class="flex items-center justify-between">
+                      <span class="p-2 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-xl">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                      </span>
+                      <span class="text-[9px] font-black uppercase text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950 px-2 py-0.5 rounded">Módulo 06</span>
+                    </div>
+                    <h4 class="text-sm font-extrabold text-slate-800 dark:text-white">Central de Reembolsos Aéreos</h4>
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
+                      Controle estornos, créditos e pendências com companhias aéreas sem esquecimento de valores.
+                    </p>
+                  </div>
+                  <div class="bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200/60 dark:border-slate-800 space-y-1">
+                    <span class="text-[8px] font-black text-slate-400 uppercase">Conciliação Financeira</span>
+                    <strong class="block text-xs font-black text-emerald-600 dark:text-emerald-400">100% de Créditos Recuperados</strong>
+                  </div>
+                </div>
+
+              </div>
             </div>
 
           </div>
@@ -1141,34 +1279,49 @@ export class LandingPage {
       publicas: 'PaxFlow - Itinerário Digital do Passageiro'
     };
 
-    tabs.forEach(tab => {
+    let currentTabIndex = 0;
+    let autoTabTimer: any = null;
+
+    const switchTab = (tabName: string) => {
+      tabs.forEach(t => {
+        const b = document.getElementById(`tab-btn-${t}`);
+        if (b) {
+          b.className = "px-3.5 py-2 text-[10px] font-black tracking-wider uppercase rounded-xl transition duration-250 flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200";
+        }
+        const panel = document.getElementById(`panel-${t}`);
+        panel?.classList.add('hidden');
+      });
+
+      const btn = document.getElementById(`tab-btn-${tabName}`);
+      if (btn) {
+        btn.className = "px-3.5 py-2 text-[10px] font-black tracking-wider uppercase rounded-xl transition duration-250 flex items-center gap-2 bg-indigo-600 text-white shadow-md";
+      }
+
+      const activePanel = document.getElementById(`panel-${tabName}`);
+      activePanel?.classList.remove('hidden');
+
+      const pathEl = document.getElementById('window-path-text');
+      if (pathEl) {
+        pathEl.textContent = pathTexts[tabName];
+      }
+    };
+
+    tabs.forEach((tab, index) => {
       const btn = document.getElementById(`tab-btn-${tab}`);
       btn?.addEventListener('click', () => {
-        // Desativar todas as abas
-        tabs.forEach(t => {
-          const b = document.getElementById(`tab-btn-${t}`);
-          if (b) {
-            b.className = "px-3.5 py-2 text-[10px] font-black tracking-wider uppercase rounded-xl transition duration-250 flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200";
-          }
-          const panel = document.getElementById(`panel-${t}`);
-          panel?.classList.add('hidden');
-        });
-
-        // Ativar aba clicada
-        if (btn) {
-          btn.className = "px-3.5 py-2 text-[10px] font-black tracking-wider uppercase rounded-xl transition duration-250 flex items-center gap-2 bg-indigo-600 text-white shadow-md";
+        if (autoTabTimer) {
+          clearInterval(autoTabTimer);
+          autoTabTimer = null;
         }
-
-        const activePanel = document.getElementById(`panel-${tab}`);
-        activePanel?.classList.remove('hidden');
-
-        // Atualizar o path text simulado na janela
-        const pathEl = document.getElementById('window-path-text');
-        if (pathEl) {
-          pathEl.textContent = pathTexts[tab];
-        }
+        currentTabIndex = index;
+        switchTab(tab);
       });
     });
+
+    autoTabTimer = setInterval(() => {
+      currentTabIndex = (currentTabIndex + 1) % tabs.length;
+      switchTab(tabs[currentTabIndex]);
+    }, 4500);
 
     // Lógica da ferramenta Customização Visual Preview
     const wlInputName = document.getElementById('wl-input-name') as HTMLInputElement;
