@@ -25,7 +25,7 @@ export class LandingPage {
             <img src="/logo.svg" alt="PaxFlow Logo" class="h-8 w-8 object-contain shrink-0" />
             <span class="text-base font-extrabold text-slate-800 dark:text-white tracking-tight">PaxFlow</span>
           </div>
-          <div class="flex items-center gap-3.5">
+          <div class="flex items-center gap-2 sm:gap-3">
             <!-- Theme Toggle Button -->
             <button id="theme-toggle-btn" title="Alternar Tema" class="p-2.5 bg-slate-100/80 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 rounded-xl transition border border-slate-200/40 dark:border-slate-800/40 flex items-center justify-center shadow-sm">
               <svg width="15" height="15" class="w-3.5 h-3.5 theme-icon-light" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
@@ -35,6 +35,12 @@ export class LandingPage {
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.364l-.707-.707M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
             </button>
+            
+            <button id="btn-header-whatsapp" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs rounded-xl transition shadow-sm flex items-center gap-1.5 shrink-0">
+              <svg class="w-3.5 h-3.5 shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.205 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/></svg>
+              <span class="hidden sm:inline">WhatsApp</span>
+            </button>
+
             <button id="btn-acessar-login" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-white font-bold text-xs rounded-xl border border-slate-950 dark:border-slate-700 transition shadow-sm">
               Acessar Sistema
             </button>
@@ -45,9 +51,9 @@ export class LandingPage {
         <main class="w-full max-w-6xl mx-auto px-6 pt-16 md:pt-24 pb-12 text-center relative z-10 flex flex-col items-center justify-center">
           
           <!-- Label Badge -->
-          <div class="inline-flex items-center gap-1.5 px-3.5 py-1 bg-indigo-50/80 dark:bg-indigo-950/30 border border-indigo-100/50 dark:border-indigo-900/60 text-indigo-650 dark:text-indigo-400 font-bold text-[10px] tracking-wide rounded-full mb-6 shadow-sm">
-            <span class="w-1.5 h-1.5 rounded-full bg-indigo-650 animate-pulse"></span>
-            Gestão Operacional de Viagens e Pós-Venda
+          <div class="inline-flex items-center gap-2 px-4 py-1.5 bg-indigo-50/80 dark:bg-indigo-950/40 border border-indigo-200/60 dark:border-indigo-800/60 text-indigo-700 dark:text-indigo-300 font-extrabold text-[11px] tracking-wide rounded-full mb-6 shadow-sm">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            O CRM & PÓS-VENDA 100% ESPECIALIZADO EM TURISMO
           </div>
 
           <!-- Headline -->
@@ -57,18 +63,39 @@ export class LandingPage {
           </h1>
 
           <!-- Subtitle -->
-          <p class="text-sm md:text-base text-slate-500 dark:text-slate-400 font-medium max-w-2xl mb-10 leading-relaxed">
-            Abandone as planilhas manuais e o controle em blocos de notas. Centralize pós-vendas, prazos de vistos e passaportes, conciliação de reembolsos aéreos e incentive seu time de consultores em uma única plataforma integrada.
+          <p class="text-sm md:text-base text-slate-500 dark:text-slate-400 font-medium max-w-2xl mb-8 leading-relaxed">
+            Abandone as planilhas manuais e a desorganização. Centralize pós-vendas, controle de passaportes e vistos, conciliação de reembolsos aéreos, escala de funcionários e itinerários em uma plataforma viva e intuitiva.
           </p>
 
           <!-- Action Buttons -->
-          <div class="flex flex-col sm:flex-row items-center gap-3.5 mb-16 w-full justify-center">
-            <button id="btn-iniciar-demo" class="w-full sm:w-auto px-7 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-md hover:shadow-lg hover:shadow-indigo-650/10 transition-all transform hover:-translate-y-0.5 uppercase flex items-center justify-center gap-2">
+          <div class="flex flex-col sm:flex-row items-center gap-3.5 mb-10 w-full justify-center">
+            <button id="btn-iniciar-demo" class="w-full sm:w-auto px-7 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/20 hover:shadow-xl transition-all transform hover:-translate-y-0.5 uppercase flex items-center justify-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
               Iniciar Demonstração (Sandbox)
             </button>
             <button id="btn-conhecer-login" class="w-full sm:w-auto px-7 py-3.5 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white font-bold text-xs tracking-wider rounded-xl border border-slate-200 dark:border-slate-800 transition-all transform hover:-translate-y-0.5 uppercase shadow-sm">
               Entrar no Sistema Real
             </button>
+          </div>
+
+          <!-- Stat Highlights Bar (Na Cara Impact) -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 w-full max-w-4xl mx-auto mb-16 p-4 bg-white/60 dark:bg-slate-900/40 rounded-2xl border border-slate-200/60 dark:border-slate-800/80 backdrop-blur-md shadow-sm">
+            <div class="p-2.5 text-center">
+              <span class="block text-xl font-black text-indigo-600 dark:text-indigo-400">100%</span>
+              <span class="text-[9px] font-extrabold text-slate-500 uppercase tracking-wide">Focado em Turismo</span>
+            </div>
+            <div class="p-2.5 text-center">
+              <span class="block text-xl font-black text-rose-600 dark:text-rose-400">180 dias</span>
+              <span class="text-[9px] font-extrabold text-slate-500 uppercase tracking-wide">Alerta Vistos & Passaporte</span>
+            </div>
+            <div class="p-2.5 text-center">
+              <span class="block text-xl font-black text-emerald-600 dark:text-emerald-400">Escala + Banco</span>
+              <span class="text-[9px] font-extrabold text-slate-500 uppercase tracking-wide">Gestão de Equipe</span>
+            </div>
+            <div class="p-2.5 text-center">
+              <span class="block text-xl font-black text-amber-500 dark:text-amber-400">WhatsApp SLA</span>
+              <span class="text-[9px] font-extrabold text-slate-500 uppercase tracking-wide">Hub Digisac Integrado</span>
+            </div>
           </div>
 
           <!-- Section header for interactive tour -->
@@ -1047,6 +1074,16 @@ export class LandingPage {
           <p>© 2026 PaxFlow. Todos os direitos reservados. Thiago Costa — Apresentação de Solução de CRM e Pós-Venda Turístico.</p>
         </footer>
 
+        <!-- Floating WhatsApp FAB Conversion Button -->
+        <a id="btn-floating-whatsapp" href="https://wa.me/5511966989160?text=Ol%C3%A1!%20Gostaria%20de%20saber%20mais%20sobre%20o%20PaxFlow%20para%20minha%20ag%C3%AAncia." target="_blank" class="fixed bottom-6 right-6 z-50 px-4 py-3 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-extrabold text-xs rounded-full shadow-2xl shadow-emerald-950/40 border border-emerald-400/40 transition-all flex items-center gap-2.5 group">
+          <span class="relative flex h-3 w-3">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-300"></span>
+          </span>
+          <svg class="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.205 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/></svg>
+          <span>Falar com Especialista</span>
+        </a>
+
       </div>
     `;
   }
@@ -1079,14 +1116,17 @@ export class LandingPage {
       window.location.pathname = '/';
     };
 
+    const handleWhatsApp = () => {
+      window.open('https://wa.me/5511966989160?text=Ol%C3%A1!%20Gostaria%20de%20saber%20mais%20sobre%20o%20PaxFlow%20para%20minha%20ag%C3%AAncia.', '_blank');
+    };
+
     document.getElementById('btn-iniciar-demo')?.addEventListener('click', handleStartDemo);
     document.getElementById('btn-acessar-login')?.addEventListener('click', handleAcessarReal);
     document.getElementById('btn-conhecer-login')?.addEventListener('click', handleAcessarReal);
     document.getElementById('btn-cta-demo-final')?.addEventListener('click', handleStartDemo);
     document.getElementById('btn-cta-login-final')?.addEventListener('click', handleAcessarReal);
-    document.getElementById('btn-cta-whatsapp-final')?.addEventListener('click', () => {
-      window.open('https://wa.me/5511966989160?text=Ol%C3%A1!%20Gostaria%20de%20saber%20mais%20sobre%20o%20PaxFlow%20para%20minha%20ag%C3%AAncia.', '_blank');
-    });
+    document.getElementById('btn-cta-whatsapp-final')?.addEventListener('click', handleWhatsApp);
+    document.getElementById('btn-header-whatsapp')?.addEventListener('click', handleWhatsApp);
 
     // Lógica da Demo Interativa (Feature Tour com Layout Horizontal - Stripe Style)
     const tabs = ['dashboard', 'viagens', 'orcamentos', 'inbox', 'escala', 'reembolsos', 'relatorios', 'publicas'];
