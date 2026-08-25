@@ -696,94 +696,187 @@ export class LandingPage {
 
         </main>
 
-        <!-- Dynamic Visual Customization (No white-label naming) -->
-        <section class="w-full bg-slate-150/40 dark:bg-slate-950/10 py-16 px-6 relative z-10 border-t border-slate-200/40 dark:border-slate-900/40">
-          <div class="max-w-5xl mx-auto">
-            <div class="text-center max-w-2xl mx-auto mb-10">
-              <span class="px-2.5 py-0.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-455 border border-emerald-500/20 text-[9px] font-bold uppercase tracking-wider rounded-full">Identidade Visual da Agência</span>
-              <h2 class="text-xl md:text-2xl font-extrabold text-slate-800 dark:text-white tracking-tight mt-3">
-                Sua Agência, Suas Cores
+        <!-- Brand Identity Showcase (Carrossel Automático 3s - Sem inputs) -->
+        <section class="w-full bg-slate-100/50 dark:bg-slate-950/20 py-20 px-6 relative z-10 border-t border-slate-200/50 dark:border-slate-900/50">
+          <div class="max-w-6xl mx-auto space-y-12">
+            
+            <div class="text-center max-w-3xl mx-auto space-y-3">
+              <span class="px-3 py-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-[10px] font-black uppercase tracking-widest rounded-full">
+                Identidade Visual da Sua Agência
+              </span>
+              <h2 class="text-2xl sm:text-4xl font-black text-slate-800 dark:text-white tracking-tight">
+                Sua Marca, Seu Logotipo e Suas Cores em Cada Ponto de Contato
               </h2>
-              <p class="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1">
-                Veja em tempo real como a área de visualização de viagens do seu passageiro se adapta à paleta de cores da sua própria agência:
+              <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
+                Toda a comunicação enviada ao seu passageiro carrega o logotipo oficial, o nome e a paleta de cores da sua própria agência — sem marcas de terceiros ou dados genéricos.
               </p>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch max-w-4xl mx-auto">
-              <!-- Customization settings -->
-              <div class="lg:col-span-4 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 p-5 rounded-2xl flex flex-col justify-center space-y-4 shadow-sm">
-                <div>
-                  <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Nome da Sua Agência</label>
-                  <input id="wl-input-name" type="text" value="Minha Agência de Viagens" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-150 font-semibold text-xs font-sans" />
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch max-w-5xl mx-auto">
+              <!-- Left Side: Brand Point Selector Menu -->
+              <div class="lg:col-span-4 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-5 rounded-3xl space-y-3 shadow-md flex flex-col justify-between">
+                <div class="space-y-2.5">
+                  <span class="text-[9px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider block mb-1">Canais com Sua Marca</span>
+
+                  <button id="brand-tab-itinerario" class="w-full p-3.5 rounded-2xl text-left transition-all duration-200 flex items-start gap-3 bg-indigo-600 text-white shadow-md">
+                    <span class="p-2 bg-white/20 rounded-xl text-xs">📱</span>
+                    <div>
+                      <strong class="block text-xs font-black">01. Itinerário Digital VIP</strong>
+                      <span class="text-[10px] opacity-90 font-medium leading-normal block mt-0.5">Página do cliente com logo, cores e timeline no celular.</span>
+                    </div>
+                  </button>
+
+                  <button id="brand-tab-voucher" class="w-full p-3.5 rounded-2xl text-left transition-all duration-200 flex items-start gap-3 bg-slate-50 dark:bg-slate-950/60 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-800">
+                    <span class="p-2 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-xl text-xs">📄</span>
+                    <div>
+                      <strong class="block text-xs font-extrabold">02. Vouchers PDF com Logomarca</strong>
+                      <span class="text-[10px] text-slate-500 dark:text-slate-400 font-medium leading-normal block mt-0.5">Documento impresso de reserva com cabeçalho oficial.</span>
+                    </div>
+                  </button>
+
+                  <button id="brand-tab-nps" class="w-full p-3.5 rounded-2xl text-left transition-all duration-200 flex items-start gap-3 bg-slate-50 dark:bg-slate-950/60 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-800">
+                    <span class="p-2 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-xl text-xs">⭐</span>
+                    <div>
+                      <strong class="block text-xs font-extrabold">03. Pesquisa NPS Customizada</strong>
+                      <span class="text-[10px] text-slate-500 dark:text-slate-400 font-medium leading-relaxed block mt-0.5">Avaliação pós-viagem com sua paleta de cores.</span>
+                    </div>
+                  </button>
+
+                  <button id="brand-tab-whatsapp" class="w-full p-3.5 rounded-2xl text-left transition-all duration-200 flex items-start gap-3 bg-slate-50 dark:bg-slate-950/60 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-800">
+                    <span class="p-2 bg-sky-500/10 text-sky-600 dark:text-sky-400 rounded-xl text-xs">💬</span>
+                    <div>
+                      <strong class="block text-xs font-extrabold">04. Notificações no WhatsApp</strong>
+                      <span class="text-[10px] text-slate-500 dark:text-slate-400 font-medium leading-relaxed block mt-0.5">Avisos automáticos de embarque com dados da agência.</span>
+                    </div>
+                  </button>
                 </div>
-                <div>
-                  <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Cor Principal da Agência</label>
-                  <div class="flex items-center gap-3">
-                    <input id="wl-input-color" type="color" value="#4f46e5" class="w-8 h-8 border-0 rounded-lg cursor-pointer bg-transparent" />
-                    <span id="wl-color-hex" class="text-[10px] font-mono font-bold text-slate-500">#4F46E5</span>
-                  </div>
-                </div>
-                <div class="text-[9px] text-slate-400 dark:text-slate-400 leading-normal pt-2.5 border-t border-slate-100 dark:border-slate-800">
-                  💡 No PaxFlow real, a logomarca da sua empresa e a sua paleta de cores são aplicadas automaticamente a todos os itinerários acessados pelos seus clientes.
+
+                <div class="text-[10px] text-slate-500 dark:text-slate-400 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2">
+                  <span class="text-base">💡</span>
+                  <span><strong>Configuração em 1 clique:</strong> Basta fazer upload da sua logomarca em <em>Configurações</em> e todos os 4 canais são atualizados instantaneamente.</span>
                 </div>
               </div>
 
-              <!-- Live dynamic preview -->
-              <div class="lg:col-span-8 bg-slate-50 dark:bg-slate-950/20 border border-slate-200/60 dark:border-slate-800 rounded-3xl p-5 relative overflow-hidden flex flex-col justify-between min-h-[300px]">
-                <!-- Preview Header -->
-                <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2.5 mb-3.5">
-                  <div class="flex items-center gap-1.5">
-                    <span class="w-2 h-2 bg-slate-200 dark:bg-slate-800 rounded-full"></span>
-                    <span class="w-2 h-2 bg-slate-200 dark:bg-slate-800 rounded-full"></span>
-                    <span class="w-2 h-2 bg-slate-200 dark:bg-slate-800 rounded-full"></span>
+              <!-- Right Side: Auto-Rotating Mockup Card (3s timer) -->
+              <div class="lg:col-span-8 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 shadow-md relative overflow-hidden flex flex-col justify-between min-h-[380px]">
+                
+                <!-- Header of Preview -->
+                <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3 mb-4">
+                  <div class="flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 bg-rose-500 rounded-full"></span>
+                    <span class="w-2.5 h-2.5 bg-amber-500 rounded-full"></span>
+                    <span class="w-2.5 h-2.5 bg-emerald-500 rounded-full"></span>
+                    <span id="brand-preview-title" class="text-[10px] font-black text-slate-600 dark:text-slate-300 ml-2 uppercase tracking-wide">
+                      01. Itinerário Digital no Celular
+                    </span>
                   </div>
-                  <span class="text-[8px] font-bold text-slate-400 uppercase tracking-widest">ITINERÁRIO DO PASSAGEIRO</span>
+                  <span class="px-2 py-0.5 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-extrabold text-[9px] rounded-md">
+                    ROTAÇÃO AUTOMÁTICA (3S)
+                  </span>
                 </div>
 
-                <!-- Itinerary Card mockup -->
-                <div class="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800 rounded-xl p-4.5 flex-1 shadow-sm flex flex-col justify-between">
-                  <div>
-                    <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5 mb-2.5">
-                      <div class="flex items-center gap-2">
-                        <!-- Custom logo bg -->
-                        <span id="wl-preview-logo-bg" class="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-black shadow-sm" style="background-color: #4f46e5;">
-                          ✈️
-                        </span>
+                <!-- Content Panels for Brand Touchpoints -->
+                <div id="brand-panels-container" class="flex-1 flex flex-col justify-center">
+
+                  <!-- PANEL 1: ITINERARIO DIGITAL -->
+                  <div id="brand-panel-itinerario" class="space-y-4 tab-pane-transition">
+                    <div class="bg-slate-50 dark:bg-slate-950 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3">
+                      <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+                        <div class="flex items-center gap-3">
+                          <div class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white text-base shadow-sm font-black">
+                            ✈️
+                          </div>
+                          <div>
+                            <strong class="block text-sm font-extrabold text-slate-800 dark:text-white">Agatur Agência de Viagens</strong>
+                            <span class="block text-[9px] text-slate-400 uppercase font-bold tracking-wider">Itinerário Digital do Cliente</span>
+                          </div>
+                        </div>
+                        <span class="text-[9px] font-mono font-bold bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 px-2 py-1 rounded-lg border border-indigo-200 dark:border-indigo-900">LOC: PAX-8840</span>
+                      </div>
+
+                      <div class="grid grid-cols-2 gap-4 text-xs">
                         <div>
-                          <span id="wl-preview-agency-name" class="block text-xs font-bold text-slate-800 dark:text-slate-155">Minha Agência de Viagens</span>
-                          <span class="block text-[8px] text-slate-400 uppercase font-bold tracking-wider">Itinerário Digital</span>
+                          <span class="block text-[9px] font-bold text-slate-400 uppercase">Passageiro VIP</span>
+                          <strong class="block text-slate-800 dark:text-slate-200">Guilherme R. Albuquerque</strong>
+                        </div>
+                        <div>
+                          <span class="block text-[9px] font-bold text-slate-400 uppercase">Destino & Data</span>
+                          <strong class="block text-slate-800 dark:text-slate-200">Paris, França • 14/10/2026</strong>
                         </div>
                       </div>
-                      <span class="text-[8px] font-mono font-bold bg-slate-50 dark:bg-slate-950 text-slate-400 px-1.5 py-0.5 rounded border border-slate-200/50 dark:border-slate-800">VIA-2026</span>
-                    </div>
 
-                    <div class="space-y-2.5 text-[10px]">
+                      <button class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-md transition">
+                        Ver Detalhes do Voo & Vouchers Protegidos
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- PANEL 2: VOUCHER PDF -->
+                  <div id="brand-panel-voucher" class="space-y-4 tab-pane-transition hidden">
+                    <div class="bg-slate-50 dark:bg-slate-950 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3">
+                      <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+                        <div class="flex items-center gap-3">
+                          <div class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white text-base shadow-sm font-black">
+                            📄
+                          </div>
+                          <div>
+                            <strong class="block text-sm font-extrabold text-slate-800 dark:text-white">Voucher Oficial de Confirmação</strong>
+                            <span class="block text-[9px] text-slate-400 uppercase font-bold tracking-wider">Documento PDF com Logotipo da Agência</span>
+                          </div>
+                        </div>
+                        <span class="text-[9px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-1 rounded-lg">RESERVA CONFIRMADA</span>
+                      </div>
+
+                      <div class="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 space-y-1 text-xs">
+                        <span class="text-[9px] font-bold text-slate-400 uppercase">Companhia Aérea & Voo</span>
+                        <strong class="block text-slate-800 dark:text-slate-200">Air France • Voo AF-443 (GRU ✈️ CDG)</strong>
+                        <span class="block text-[9px] text-slate-500">Cabine Executiva • Assento 4A • Bilhete: 057-24901928</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- PANEL 3: PESQUISA NPS -->
+                  <div id="brand-panel-nps" class="space-y-4 tab-pane-transition hidden">
+                    <div class="bg-slate-50 dark:bg-slate-950 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3 text-center">
+                      <div class="w-10 h-10 rounded-2xl bg-indigo-600 text-white flex items-center justify-center text-xl font-black mx-auto shadow-md">
+                        ⭐
+                      </div>
                       <div>
-                        <span class="block text-[8px] font-bold text-slate-400 uppercase tracking-wider">Passageiro</span>
-                        <span class="block font-bold text-slate-700 dark:text-slate-300">Guilherme R. Albuquerque</span>
+                        <strong class="block text-sm font-extrabold text-slate-800 dark:text-white">Como foi sua experiência com a Agatur?</strong>
+                        <span class="block text-[10px] text-slate-500 font-medium">Sua avaliação ajuda a premiar nosso consultor de viagens</span>
                       </div>
-                      <div class="grid grid-cols-2 gap-4">
-                        <div>
-                          <span class="block text-[8px] font-bold text-slate-400 uppercase tracking-wider">Destino</span>
-                          <span class="block font-bold text-slate-700 dark:text-slate-300">Paris, França</span>
-                        </div>
-                        <div>
-                          <span class="block text-[8px] font-bold text-slate-400 uppercase tracking-wider">Embarque</span>
-                          <span class="block font-bold text-slate-700 dark:text-slate-300">14/10/2026</span>
-                        </div>
+
+                      <div class="flex justify-center gap-1.5 pt-1">
+                        <span class="w-7 h-7 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-center text-xs font-black text-slate-400">8</span>
+                        <span class="w-7 h-7 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-center text-xs font-black text-slate-400">9</span>
+                        <span class="w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center text-xs font-black shadow-md">10</span>
                       </div>
                     </div>
                   </div>
 
-                  <!-- Dynamic Button -->
-                  <div class="mt-4">
-                    <button id="wl-preview-btn" class="w-full py-2 rounded-xl text-white text-[10px] font-bold tracking-wider transition-all duration-300 uppercase shadow-sm hover:brightness-105" style="background-color: #4f46e5;">
-                      Ver Detalhes do Voo & Voucher
-                    </button>
+                  <!-- PANEL 4: NOTIFICAÇÃO WHATSAPP -->
+                  <div id="brand-panel-whatsapp" class="space-y-4 tab-pane-transition hidden">
+                    <div class="bg-emerald-950/20 dark:bg-slate-950 p-4 rounded-2xl border border-emerald-500/30 space-y-2.5 text-left text-xs">
+                      <div class="flex items-center gap-2 border-b border-emerald-500/20 pb-2">
+                        <div class="w-7 h-7 rounded-full bg-emerald-600 text-white flex items-center justify-center font-black text-xs">
+                          💬
+                        </div>
+                        <div>
+                          <strong class="block text-slate-800 dark:text-slate-100 font-extrabold text-xs">Agatur Viagens (WhatsApp Oficial)</strong>
+                          <span class="block text-[8px] text-emerald-600 dark:text-emerald-400 font-bold uppercase">Mensagem Automática PaxFlow</span>
+                        </div>
+                      </div>
+
+                      <p class="text-slate-600 dark:text-slate-300 text-[11px] leading-relaxed">
+                        "Olá Guilherme! 👋 Sua viagem para Paris está se aproximando! Acesse o seu <strong>Itinerário Digital Oficial</strong> da Agatur no link: <span class="text-indigo-600 dark:text-indigo-400 underline font-bold">agatur.paxflow.com/itinerario/PAX-8840</span>"
+                      </p>
+                    </div>
                   </div>
+
                 </div>
               </div>
             </div>
+
           </div>
         </section>
 
@@ -1357,26 +1450,57 @@ export class LandingPage {
       switchTab(tabs[currentTabIndex]);
     }, 3000);
 
-    // Lógica da ferramenta Customização Visual Preview
-    const wlInputName = document.getElementById('wl-input-name') as HTMLInputElement;
-    const wlInputColor = document.getElementById('wl-input-color') as HTMLInputElement;
-    const wlColorHex = document.getElementById('wl-color-hex');
-    const wlPreviewAgencyName = document.getElementById('wl-preview-agency-name');
-    const wlPreviewLogoBg = document.getElementById('wl-preview-logo-bg');
-    const wlPreviewBtn = document.getElementById('wl-preview-btn');
-
-    const updateWlPreview = () => {
-      if (!wlInputName || !wlInputColor) return;
-      const name = wlInputName.value.trim() || 'Minha Agência de Viagens';
-      const color = wlInputColor.value;
-
-      if (wlColorHex) wlColorHex.textContent = color.toUpperCase();
-      if (wlPreviewAgencyName) wlPreviewAgencyName.textContent = name;
-      if (wlPreviewLogoBg) wlPreviewLogoBg.style.backgroundColor = color;
-      if (wlPreviewBtn) wlPreviewBtn.style.backgroundColor = color;
+    // Carrossel Automático (3s) para Identidade Visual da Marca
+    const brandTabs = ['itinerario', 'voucher', 'nps', 'whatsapp'];
+    const brandTitles: Record<string, string> = {
+      itinerario: '01. Itinerário Digital no Celular',
+      voucher: '02. Voucher Oficial em PDF com Logomarca',
+      nps: '03. Pesquisa NPS da Sua Marca',
+      whatsapp: '04. Notificações WhatsApp com Assinatura'
     };
 
-    wlInputName?.addEventListener('input', updateWlPreview);
-    wlInputColor?.addEventListener('input', updateWlPreview);
+    let brandTabIndex = 0;
+    let brandAutoTimer: any = null;
+
+    const switchBrandTab = (tabName: string) => {
+      brandTabs.forEach(t => {
+        const btn = document.getElementById(`brand-tab-${t}`);
+        if (btn) {
+          btn.className = "w-full p-3.5 rounded-2xl text-left transition-all duration-200 flex items-start gap-3 bg-slate-50 dark:bg-slate-950/60 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-800";
+        }
+        const panel = document.getElementById(`brand-panel-${t}`);
+        panel?.classList.add('hidden');
+      });
+
+      const activeBtn = document.getElementById(`brand-tab-${tabName}`);
+      if (activeBtn) {
+        activeBtn.className = "w-full p-3.5 rounded-2xl text-left transition-all duration-200 flex items-start gap-3 bg-indigo-600 text-white shadow-md";
+      }
+
+      const activePanel = document.getElementById(`brand-panel-${tabName}`);
+      activePanel?.classList.remove('hidden');
+
+      const titleEl = document.getElementById('brand-preview-title');
+      if (titleEl) {
+        titleEl.textContent = brandTitles[tabName];
+      }
+    };
+
+    brandTabs.forEach((tab, index) => {
+      const btn = document.getElementById(`brand-tab-${tab}`);
+      btn?.addEventListener('click', () => {
+        if (brandAutoTimer) {
+          clearInterval(brandAutoTimer);
+          brandAutoTimer = null;
+        }
+        brandTabIndex = index;
+        switchBrandTab(tab);
+      });
+    });
+
+    brandAutoTimer = setInterval(() => {
+      brandTabIndex = (brandTabIndex + 1) % brandTabs.length;
+      switchBrandTab(brandTabs[brandTabIndex]);
+    }, 3000);
   }
 }
