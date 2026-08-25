@@ -59,9 +59,9 @@ export class InboxPage {
       // 2. Fetch global settings for refund SLAs
       await this.loadGlobalSettings();
 
-      // 3. Fetch active consultants list if current user is admin
+      // 3. Fetch active consultants list
+      await this.loadConsultants();
       if (this.perfil?.role === 'admin') {
-        await this.loadConsultants();
         this.selectedConsultantFilter = this.perfil.id;
       }
 
@@ -86,38 +86,63 @@ export class InboxPage {
    */
   private async loadEscalaData(): Promise<void> {
     try {
-      this.escalaData = await EscalaService.loadEscalaMensal(this.escalaAno, this.escalaMes);
-      this.bancoFolgasData = await EscalaService.loadBancoFolgas();
+      const rawEscala = await EscalaService.loadEscalaMensal(this.escalaAno, this.escalaMes);
+      const rawBanco = await EscalaService.loadBancoFolgas();
       this.eventosEscalaData = await EscalaService.loadEventosEscala();
 
-      // Garantir que 100% dos consultores ativos (profiles + default) estejam na escala
-      const teamSet = new Set<string>();
-      ["Marinna", "Guto", "Maria", "Rafael", "Eduardo", "Laura", "Fernanda"].forEach(n => teamSet.add(n));
+      // Mapa para desduplicar consultores por chave normalizada (lowercase sem espaço)
+      const teamMap = new Map<string, { displayName: string; participates: boolean }>();
 
+      // 1. Integrantes padrão da demonstração
+      ["Marinna", "Guto", "Maria", "Rafael", "Eduardo", "Laura", "Fernanda"].forEach(n => {
+        const key = n.trim().toLowerCase();
+        teamMap.set(key, { displayName: n.trim(), participates: true });
+      });
+
+      // 2. Sobrescreve/combina com perfis reais do Supabase / Sistema
       if (this.consultants && this.consultants.length > 0) {
         this.consultants.forEach(c => {
-          if (c.nome) teamSet.add(c.nome);
+          if (c.nome) {
+            const key = c.nome.trim().toLowerCase();
+            const doesParticipate = c.participa_escala !== false && c.participaEscala !== false;
+            teamMap.set(key, { displayName: c.nome.trim(), participates: doesParticipate });
+          }
         });
       }
 
-      teamSet.forEach(name => {
-        if (!this.escalaData[name]) {
-          this.escalaData[name] = new Array(31).fill('');
+      // Reconstrói escalaData desduplicada apenas para quem participa_escala === true
+      const cleanEscalaData: Record<string, string[]> = {};
+      teamMap.forEach((info, key) => {
+        if (!info.participates) return; // Omitir se o funcionário não participa da escala
+
+        const existingKey = Object.keys(rawEscala).find(k => k.trim().toLowerCase() === key);
+        if (existingKey && rawEscala[existingKey]) {
+          cleanEscalaData[info.displayName] = rawEscala[existingKey];
+        } else {
+          cleanEscalaData[info.displayName] = new Array(31).fill('');
         }
       });
+      this.escalaData = cleanEscalaData;
 
-      teamSet.forEach(name => {
-        const exists = this.bancoFolgasData.some(b => b.consultor_nome === name);
-        if (!exists) {
-          this.bancoFolgasData.push({
-            consultor_id: `c-${name}`,
-            consultor_nome: name,
+      // Reconstrói bancoFolgasData desduplicada apenas para quem participa_escala === true
+      const cleanBancoData: BancoFolgasItem[] = [];
+      teamMap.forEach((info, key) => {
+        if (!info.participates) return; // Omitir se o funcionário não participa da escala
+
+        const existing = rawBanco.find(b => b.consultor_nome.trim().toLowerCase() === key);
+        if (existing) {
+          cleanBancoData.push({ ...existing, consultor_nome: info.displayName });
+        } else {
+          cleanBancoData.push({
+            consultor_id: `c-${info.displayName}`,
+            consultor_nome: info.displayName,
             equipe: 'Equipe Agatur',
             saldo_dias: '—',
             detalhes_historico: 'Sem saldo acumulado'
           });
         }
       });
+      this.bancoFolgasData = cleanBancoData;
 
     } catch (err) {
       console.error('Erro ao carregar dados da escala:', err);
@@ -1643,6 +1668,10 @@ export class InboxPage {
               <span>Solicitar Troca / Folga</span>
             </button>
             ${isAdmin ? `
+              <button id="btn-escala-gerenciar-membros" class="h-9 px-3 bg-slate-800/80 hover:bg-slate-700 active:scale-95 text-white rounded-xl text-xs font-extrabold transition-all flex items-center gap-1.5 shadow-md border border-slate-700/80 shrink-0" title="Gerenciar quem participa da escala">
+                <svg class="w-4 h-4 shrink-0 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                <span>Integrantes</span>
+              </button>
               <button id="btn-escala-admin-edit" class="h-9 px-3.5 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white rounded-xl text-xs font-extrabold transition-all flex items-center gap-1.5 shadow-md shadow-indigo-950/20 border border-indigo-400/30 shrink-0">
                 <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                 <span>Editar Escala</span>
@@ -1828,6 +1857,11 @@ export class InboxPage {
 
     // Auto-focus on HOJE immediately when the module opens
     setTimeout(() => scrollToToday('auto'), 60);
+
+    // Admin Gerenciar Integrantes Button
+    document.getElementById('btn-escala-gerenciar-membros')?.addEventListener('click', () => {
+      this.openGerenciarMembrosEscalaModal();
+    });
 
     // Admin Edit Button
     document.getElementById('btn-escala-admin-edit')?.addEventListener('click', () => {
@@ -2232,5 +2266,96 @@ export class InboxPage {
         toast.remove();
       }, 300);
     }, duration);
+  }
+
+  /**
+   * Opens modal for Admin to manage who participates in the schedule
+   */
+  private openGerenciarMembrosEscalaModal(): void {
+    const backdrop = document.createElement('div');
+    backdrop.id = 'escala-membros-modal-backdrop';
+    backdrop.className = 'fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in';
+
+    const membersListHtml = (this.consultants || []).map(c => {
+      const isChecked = c.participa_escala !== false && c.participaEscala !== false;
+      return `
+        <div class="flex items-center justify-between p-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-800/40">
+          <div>
+            <strong class="text-xs font-extrabold text-slate-800 dark:text-slate-100 block">${c.nome}</strong>
+            <span class="text-[10px] text-slate-400 block">${c.email} • ${c.role === 'admin' ? 'ADMIN' : 'Consultor'}</span>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" data-profile-id="${c.id}" ${isChecked ? 'checked' : ''} class="sr-only peer member-escala-toggle">
+            <div class="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:after:border-slate-600 peer-checked:bg-indigo-600"></div>
+          </label>
+        </div>
+      `;
+    }).join('');
+
+    backdrop.innerHTML = `
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4 max-h-[85vh] overflow-y-auto custom-scrollbar">
+        <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-3">
+          <h3 class="text-base font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
+            <span class="w-7 h-7 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 border border-indigo-500/20">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+            </span>
+            Integrantes da Escala
+          </h3>
+          <button id="modal-membros-close" class="text-slate-400 hover:text-slate-600 text-lg font-bold">✕</button>
+        </div>
+
+        <p class="text-xs text-slate-500 dark:text-slate-400">Marque quem participa da grade mensal. Funcionários desmarcados serão omitidos da tabela de escala e do Banco de Folgas.</p>
+
+        <div class="space-y-2">
+          ${membersListHtml || '<div class="text-xs text-slate-400 p-2">Nenhum membro cadastrado encontrado.</div>'}
+        </div>
+
+        <div class="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+          <button id="modal-membros-save" class="px-5 py-2 text-xs font-black text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition shadow-md shadow-indigo-600/20">Salvar Alterações</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(backdrop);
+
+    backdrop.querySelector('#modal-membros-close')?.addEventListener('click', () => backdrop.remove());
+
+    backdrop.querySelector('#modal-membros-save')?.addEventListener('click', async () => {
+      const saveBtn = backdrop.querySelector('#modal-membros-save') as HTMLButtonElement;
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Salvando...';
+
+      try {
+        const toggles = backdrop.querySelectorAll<HTMLInputElement>('.member-escala-toggle');
+        for (const toggle of Array.from(toggles)) {
+          const profileId = toggle.getAttribute('data-profile-id');
+          const isChecked = toggle.checked;
+          if (profileId) {
+            await supabase
+              .from('profiles')
+              .update({ participa_escala: isChecked })
+              .eq('id', profileId);
+
+            const found = (this.consultants || []).find(c => c.id === profileId);
+            if (found) {
+              found.participa_escala = isChecked;
+              found.participaEscala = isChecked;
+            }
+          }
+        }
+
+        this.showToast('Integrantes da escala atualizados!', 'success');
+        backdrop.remove();
+        await this.loadEscalaData();
+        this.render();
+        this.setupEventListeners();
+
+      } catch (err: any) {
+        console.error('Erro ao salvar integrantes da escala:', err);
+        this.showToast('Erro ao salvar integrantes.', 'error');
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Salvar Alterações';
+      }
+    });
   }
 }

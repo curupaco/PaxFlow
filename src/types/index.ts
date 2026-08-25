@@ -14,6 +14,8 @@ export interface PerfilConsultor {
   email: string;
   role: UserRole;
   ativo: boolean;
+  participa_escala?: boolean; // Controla se o funcionário participa e aparece na escala
+  participaEscala?: boolean; // Suporte camelCase
   avatar_url?: string; // ID do avatar selecionado (panda, lion, fox, etc.)
   avatarUrl?: string; // Suporte camelCase
   createdAt?: string;

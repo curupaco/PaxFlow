@@ -3,6 +3,9 @@
 -- Descrição: Tabelas para a Central Administrativa de Escala de Funcionários no Inbox
 -- ============================================================================
 
+-- 0. Adiciona a propriedade de participação na escala na tabela de perfis
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS participa_escala BOOLEAN DEFAULT true;
+
 -- 1. Tabela de Escala Diária dos Funcionários
 CREATE TABLE IF NOT EXISTS public.escala_diaria (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -67,11 +70,13 @@ ALTER TABLE public.escala_banco_folgas ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.escala_eventos ENABLE ROW LEVEL SECURITY;
 
 -- Políticas para escala_diaria
+DROP POLICY IF EXISTS "Permitir leitura pública autenticada de escala_diaria" ON public.escala_diaria;
 CREATE POLICY "Permitir leitura pública autenticada de escala_diaria"
     ON public.escala_diaria FOR SELECT
     TO authenticated
     USING (true);
 
+DROP POLICY IF EXISTS "Permitir gestão de escala_diaria por autenticados" ON public.escala_diaria;
 CREATE POLICY "Permitir gestão de escala_diaria por autenticados"
     ON public.escala_diaria FOR ALL
     TO authenticated
@@ -79,11 +84,13 @@ CREATE POLICY "Permitir gestão de escala_diaria por autenticados"
     WITH CHECK (true);
 
 -- Políticas para escala_solicitacoes
+DROP POLICY IF EXISTS "Permitir leitura pública autenticada de escala_solicitacoes" ON public.escala_solicitacoes;
 CREATE POLICY "Permitir leitura pública autenticada de escala_solicitacoes"
     ON public.escala_solicitacoes FOR SELECT
     TO authenticated
     USING (true);
 
+DROP POLICY IF EXISTS "Permitir gestão de escala_solicitacoes por autenticados" ON public.escala_solicitacoes;
 CREATE POLICY "Permitir gestão de escala_solicitacoes por autenticados"
     ON public.escala_solicitacoes FOR ALL
     TO authenticated
@@ -91,11 +98,13 @@ CREATE POLICY "Permitir gestão de escala_solicitacoes por autenticados"
     WITH CHECK (true);
 
 -- Políticas para escala_banco_folgas
+DROP POLICY IF EXISTS "Permitir leitura de banco_folgas" ON public.escala_banco_folgas;
 CREATE POLICY "Permitir leitura de banco_folgas"
     ON public.escala_banco_folgas FOR SELECT
     TO authenticated
     USING (true);
 
+DROP POLICY IF EXISTS "Permitir gestão de banco_folgas" ON public.escala_banco_folgas;
 CREATE POLICY "Permitir gestão de banco_folgas"
     ON public.escala_banco_folgas FOR ALL
     TO authenticated
@@ -103,11 +112,13 @@ CREATE POLICY "Permitir gestão de banco_folgas"
     WITH CHECK (true);
 
 -- Políticas para escala_eventos
+DROP POLICY IF EXISTS "Permitir leitura de escala_eventos" ON public.escala_eventos;
 CREATE POLICY "Permitir leitura de escala_eventos"
     ON public.escala_eventos FOR SELECT
     TO authenticated
     USING (true);
 
+DROP POLICY IF EXISTS "Permitir gestão de escala_eventos" ON public.escala_eventos;
 CREATE POLICY "Permitir gestão de escala_eventos"
     ON public.escala_eventos FOR ALL
     TO authenticated

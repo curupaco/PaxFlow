@@ -941,6 +941,14 @@ export class ConfiguracoesPage {
             </div>
           </div>
 
+          <div class="flex items-center justify-between p-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-800/40">
+            <div>
+              <label class="text-xs font-bold text-slate-700 dark:text-slate-200 block">📅 Participa da Escala de Funcionários</label>
+              <span class="text-[10px] text-slate-400 block">Exibe o consultor na grade mensal de turnos e no Banco de Folgas.</span>
+            </div>
+            <input type="checkbox" id="input-ec-participa-escala" ${c.participa_escala !== false ? 'checked' : ''} class="w-4 h-4 accent-indigo-600 rounded cursor-pointer" />
+          </div>
+
           <div class="border-t border-slate-100 dark:border-slate-800 pt-4">
             <h3 class="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-1.5">Alterar Senha do Consultor</h3>
             <p class="text-[10px] text-slate-400 dark:text-slate-400 mb-2 font-semibold italic">Nota de desenvolvimento: você pode alterar diretamente a senha do usuário preenchendo o campo abaixo.</p>
@@ -1020,6 +1028,7 @@ export class ConfiguracoesPage {
       const nomeVal = ecNomeInput.value.trim();
       const roleVal = (overlay.querySelector('#select-ec-role') as HTMLSelectElement).value as 'admin' | 'consultor';
       const ativoVal = (overlay.querySelector('#select-ec-ativo') as HTMLSelectElement).value === 'true';
+      const participaEscalaVal = (overlay.querySelector('#input-ec-participa-escala') as HTMLInputElement).checked;
       const senhaVal = (overlay.querySelector('#input-ec-senha') as HTMLInputElement).value;
 
       if (!nomeVal) return;
@@ -1034,13 +1043,14 @@ export class ConfiguracoesPage {
         salvarAvatarLocal(c.id, selectedAvatarId);
 
         if (!isOffline) {
-          // 1. Atualiza na tabela Profiles do Supabase (avatar_url é persistido no banco)
+          // 1. Atualiza na tabela Profiles do Supabase
           const { error: profileErr } = await supabase
             .from('profiles')
             .update({
               nome: nomeVal,
               role: roleVal,
               ativo: ativoVal,
+              participa_escala: participaEscalaVal,
               avatar_url: selectedAvatarId
             })
             .eq('id', c.id);
