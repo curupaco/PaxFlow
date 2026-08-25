@@ -663,103 +663,278 @@ export class LandingPage {
           </div>
         </section>
 
-        <!-- Deep technical and commercial detail sections for tourism (CRM, Gamification, Relatorios) -->
-        <section class="w-full bg-slate-100/30 dark:bg-slate-900/10 py-16 border-t border-slate-200/40 dark:border-slate-900/40 relative z-10">
-          <div class="max-w-5xl mx-auto px-6 space-y-20">
+        <!-- Complete Feature Guide & Tourism Differentials Section (Guia Completo) -->
+        <section class="w-full bg-slate-100/40 dark:bg-slate-900/20 py-20 px-6 border-t border-slate-200/50 dark:border-slate-900/50 relative z-10">
+          <div class="max-w-6xl mx-auto space-y-20">
             
-            <!-- PILLAR 1: CRM & KANBAN -->
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-              <div class="lg:col-span-5 space-y-4">
-                <span class="px-2.5 py-0.5 bg-indigo-500/10 text-indigo-650 dark:text-indigo-400 text-[9px] font-bold uppercase rounded-lg border border-indigo-500/20">Funil e Propostas</span>
-                <h3 class="text-xl md:text-2xl font-black text-slate-800 dark:text-white leading-tight">
-                  CRM especializado para orçamentos de pacotes
-                </h3>
-                <p class="text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
-                  Gerencie orçamentos em colunas de pipeline comercial (Novo, Em Análise, Proposta, Ganho). Preencha dados essenciais como data de nascimento do passageiro e data financeira obrigatoriamente no fechamento, assegurando a precisão dos repasses de markup e comissões da agência. O sistema conta com automações inteligentes que iniciam o atendimento ao adicionar notas, arquivam propostas inativas automaticamente após 30 dias, e atualizam o estágio de viagens e reembolsos de forma autônoma.
-                </p>
-              </div>
-              <div class="lg:col-span-7 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4.5 rounded-2xl shadow-md text-xs">
-                <span class="block text-[8px] font-black text-slate-400 uppercase mb-3">CRM de Viagens</span>
-                <div class="grid grid-cols-3 gap-3">
-                  <div class="bg-slate-50 dark:bg-slate-950 p-2.5 rounded-xl border border-slate-150 dark:border-slate-800">
-                    <span class="font-extrabold text-[8px] text-slate-400 block mb-2">PROPOSTA (2)</span>
-                    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-2 rounded-lg space-y-1 shadow-sm">
-                      <span class="font-bold block text-slate-800 dark:text-slate-200">Lua de Mel Grécia</span>
-                      <span class="text-[8px] text-indigo-600 dark:text-indigo-450 font-bold">R$ 24.000,00</span>
-                    </div>
-                  </div>
-                  <div class="bg-slate-50 dark:bg-slate-950 p-2.5 rounded-xl border border-slate-150 dark:border-slate-800 border-l-2 border-l-amber-500">
-                    <span class="font-extrabold text-[8px] text-amber-600 dark:text-amber-450 block mb-2">NEGOCIAÇÃO (1)</span>
-                    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-2 rounded-lg space-y-1 shadow-sm">
-                      <span class="font-bold block text-slate-800 dark:text-slate-200">Orlando Família</span>
-                      <span class="text-[8px] text-indigo-600 dark:text-indigo-450 font-bold">R$ 15.600,00</span>
-                    </div>
-                  </div>
-                  <div class="bg-slate-50 dark:bg-slate-950 p-2.5 rounded-xl border border-slate-150 dark:border-slate-800 border-l-2 border-l-emerald-500">
-                    <span class="font-extrabold text-[8px] text-emerald-600 dark:text-emerald-455 block mb-2">FECHADO (12)</span>
-                    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-2 rounded-lg space-y-1 shadow-sm">
-                      <span class="font-bold block text-slate-800 dark:text-slate-200">Paris Cultural</span>
-                      <span class="text-[8px] text-emerald-650 dark:text-emerald-450 font-bold">R$ 18.200,00</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+            <!-- Section Header -->
+            <div class="text-center max-w-3xl mx-auto space-y-3">
+              <span class="px-3 py-1 bg-indigo-500/10 text-indigo-650 dark:text-indigo-400 border border-indigo-500/20 text-[10px] font-black uppercase tracking-widest rounded-full">
+                Guia Completo de Recursos
+              </span>
+              <h2 class="text-2xl sm:text-4xl font-black text-slate-800 dark:text-white tracking-tight">
+                Tudo o que sua agência precisa para escalar com controle total
+              </h2>
+              <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
+                Conheça em detalhes cada um dos 6 pilares vitais do PaxFlow, desenvolvidos sob medida para resolver os gargalos de vendas, atendimento e pós-venda de turismo.
+              </p>
             </div>
 
-            <!-- PILLAR 2: SLA & INBOX (SLA alert documentation) -->
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-              <div class="lg:col-span-7 lg:order-2 space-y-4">
-                <span class="px-2.5 py-0.5 bg-rose-500/10 text-rose-600 dark:text-rose-455 text-[9px] font-bold uppercase rounded-lg border border-rose-500/20">Segurança de Voo</span>
-                <h3 class="text-xl md:text-2xl font-black text-slate-800 dark:text-white leading-tight">
-                  Validação automatizada de passaportes e vistos
+            <!-- PILLAR 1: OPERAÇÃO DE VIAGENS & SLAS PREVENTIVOS -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center bg-white dark:bg-slate-900 p-7 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-md">
+              <div class="lg:col-span-6 space-y-4">
+                <div class="inline-flex items-center gap-2 px-3 py-1 bg-rose-500/10 text-rose-600 dark:text-rose-400 text-[10px] font-black uppercase rounded-lg border border-rose-500/20">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                  Pilar 01 • Segurança & Pós-Venda
+                </div>
+                <h3 class="text-2xl font-black text-slate-800 dark:text-white leading-tight">
+                  Operação de Viagens e Alertas Preventivos de Passaportes & Vistos
                 </h3>
                 <p class="text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
-                  Evite constrangimentos e cancelamentos de última hora no aeroporto. O motor operacional do PaxFlow varre todas as datas e alerta o time com 180 dias de antecedência caso um passaporte ou visto expire antes ou durante a viagem do cliente.
+                  Esqueça a apreensão de descobertas de última hora sobre passaportes vencidos no portão de embarque. O PaxFlow monitora a validade dos documentos de todos os passageiros vinculados a viagens ativas. Se um documento tiver validade inferior ao exigido pelo país de destino, o sistema gera alertas automáticos com 180 dias de antecedência no Inbox do consultor responsável.
                 </p>
+                <ul class="space-y-2 text-xs text-slate-600 dark:text-slate-300 font-semibold pt-2">
+                  <li class="flex items-center gap-2">
+                    <span class="w-4 h-4 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-[10px] font-black">✓</span>
+                    <span>Itinerários digitais interativos com mapa de voos e vouchers protegidos.</span>
+                  </li>
+                  <li class="flex items-center gap-2">
+                    <span class="w-4 h-4 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-[10px] font-black">✓</span>
+                    <span>Página pública do passageiro adaptada à logo e cor da sua agência.</span>
+                  </li>
+                  <li class="flex items-center gap-2">
+                    <span class="w-4 h-4 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-[10px] font-black">✓</span>
+                    <span>Monitoramento de pré-embarque e pós-viagem com régua de contato automático.</span>
+                  </li>
+                </ul>
               </div>
-              <div class="lg:col-span-5 lg:order-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl shadow-md">
-                <div class="p-3.5 bg-rose-500/10 border border-rose-500/20 rounded-xl space-y-2 text-xs text-left">
-                  <div class="flex justify-between items-center text-rose-700 dark:text-rose-400 font-black">
-                    <span>⚠️ ALERTA DE VENCIMENTO</span>
-                    <span class="px-1.5 py-0.5 bg-rose-550 text-white text-[8px] font-bold uppercase rounded">Atenção</span>
+              <div class="lg:col-span-6 bg-slate-50 dark:bg-slate-950 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3.5">
+                <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3">
+                  <span class="text-xs font-black text-slate-700 dark:text-slate-200">Painel de Alertas de Vistos & Passaportes</span>
+                  <span class="px-2 py-0.5 bg-rose-500/10 text-rose-600 dark:text-rose-400 text-[9px] font-bold rounded">180 dias SLA</span>
+                </div>
+                <div class="p-4 bg-white dark:bg-slate-900 rounded-xl border border-rose-500/30 space-y-2 shadow-sm">
+                  <div class="flex items-center justify-between text-xs">
+                    <span class="font-extrabold text-rose-600 dark:text-rose-400">⚠️ Passaporte Vence Antes da Viagem</span>
+                    <span class="text-[9px] font-bold text-slate-400">Paris, França</span>
                   </div>
-                  <p class="text-slate-600 dark:text-slate-300 leading-relaxed text-[10px]">
-                    O passaporte de <strong>Guilherme Albuquerque</strong> vence em 14/11/2026. O embarque para a viagem cadastrada ocorre em 14/10/2026. Validade menor que o prazo exigido pelas autoridades.
+                  <p class="text-[11px] text-slate-600 dark:text-slate-300 font-medium">
+                    Passageiro <strong>Guilherme R. Albuquerque</strong> (LOC: <code>PAX-9821</code>) tem passaporte com vencimento em 14/11/2026. Data de retorno da viagem: 28/10/2026.
                   </p>
+                  <div class="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800 text-[10px]">
+                    <span class="text-indigo-600 dark:text-indigo-400 font-bold">Consultor: Marinna Morena</span>
+                    <span class="px-2 py-0.5 bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-300 font-extrabold rounded">Notificar Cliente</span>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <!-- PILLAR 3: GAMIFICATION -->
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-              <div class="lg:col-span-5 space-y-4">
-                <span class="px-2.5 py-0.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-450 text-[9px] font-bold uppercase rounded-lg border border-emerald-500/20">Produtividade</span>
-                <h3 class="text-xl md:text-2xl font-black text-slate-800 dark:text-white leading-tight">
-                  Gamificação e incentivo para consultores
+            <!-- PILLAR 2: CRM & KANBAN -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center bg-white dark:bg-slate-900 p-7 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-md">
+              <div class="lg:col-span-6 lg:order-2 space-y-4">
+                <div class="inline-flex items-center gap-2 px-3 py-1 bg-indigo-500/10 text-indigo-650 dark:text-indigo-400 text-[10px] font-black uppercase rounded-lg border border-indigo-500/20">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                  Pilar 02 • Pipeline Comercial
+                </div>
+                <h3 class="text-2xl font-black text-slate-800 dark:text-white leading-tight">
+                  CRM Especializado em Pacotes e Orçamentos Turísticos
                 </h3>
                 <p class="text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
-                  Aumente o engajamento do seu time comercial. O sistema distribui pontos de XP a cada fechamento e concede medalhas colecionáveis para marcos como quitação financeira correta, baixos índices de incidentes e campanhas de vendas ativas.
+                  Gerencie orçamentos em estágios claros de funil (Novo, Em Análise, Proposta, Ganho). Diferente de CRMs genéricos, o PaxFlow exige o preenchimento de campos essenciais do turismo no fechamento — como data de nascimento para taxas de embarque e data financeira para repasses de comissão.
                 </p>
+                <ul class="space-y-2 text-xs text-slate-600 dark:text-slate-300 font-semibold pt-2">
+                  <li class="flex items-center gap-2">
+                    <span class="w-4 h-4 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-[10px] font-black">✓</span>
+                    <span>Automação de atendimento: alteração de status ao adicionar notas de negociação.</span>
+                  </li>
+                  <li class="flex items-center gap-2">
+                    <span class="w-4 h-4 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-[10px] font-black">✓</span>
+                    <span>Arquivamento automático inteligente para propostas inativas por mais de 30 dias.</span>
+                  </li>
+                  <li class="flex items-center gap-2">
+                    <span class="w-4 h-4 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-[10px] font-black">✓</span>
+                    <span>Cálculo automático de markup da agência e relatórios de faturamento diário.</span>
+                  </li>
+                </ul>
               </div>
-              <div class="lg:col-span-7 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl shadow-md">
-                <span class="block text-[8px] font-black text-slate-400 uppercase text-left mb-4">Medalhas e Patentes de Consultor</span>
-                <div class="grid grid-cols-3 gap-4 text-center">
-                  <div class="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-150 dark:border-slate-800 rounded-xl flex flex-col items-center gap-1">
-                    <span class="text-2xl">🥇</span>
-                    <span class="font-extrabold text-[9px] text-slate-800 dark:text-slate-200">Guia de Elite</span>
-                    <span class="text-[8px] text-slate-400 uppercase">Patente Faturamento</span>
+              <div class="lg:col-span-6 lg:order-1 bg-slate-50 dark:bg-slate-950 p-6 rounded-2xl border border-slate-200 dark:border-slate-800">
+                <span class="block text-xs font-black text-slate-700 dark:text-slate-200 mb-4">Pipeline Kanban de Vendas</span>
+                <div class="grid grid-cols-2 gap-3">
+                  <div class="bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2 shadow-sm">
+                    <span class="px-2 py-0.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[9px] font-bold rounded">Em Análise (3)</span>
+                    <strong class="block text-xs text-slate-800 dark:text-white font-extrabold">Orlando em Família</strong>
+                    <span class="block text-[10px] text-indigo-600 dark:text-indigo-400 font-black">R$ 28.400,00</span>
                   </div>
-                  <div class="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-150 dark:border-slate-800 rounded-xl flex flex-col items-center gap-1">
-                    <span class="text-2xl">🛡️</span>
-                    <span class="font-extrabold text-[9px] text-slate-800 dark:text-slate-200">Conformidade</span>
-                    <span class="text-[8px] text-slate-400 uppercase">0 Erros de Faturamento</span>
-                  </div>
-                  <div class="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-150 dark:border-slate-800 rounded-xl flex flex-col items-center gap-1">
-                    <span class="text-2xl">⭐</span>
-                    <span class="font-extrabold text-[9px] text-slate-800 dark:text-slate-200">Campeão NPS</span>
-                    <span class="text-[8px] text-slate-400 uppercase">100% de Avaliações 10</span>
+                  <div class="bg-white dark:bg-slate-900 p-3 rounded-xl border border-emerald-500/30 space-y-2 shadow-sm">
+                    <span class="px-2 py-0.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[9px] font-bold rounded">Venda Fechada (14)</span>
+                    <strong class="block text-xs text-slate-800 dark:text-white font-extrabold">Lua de Mel nas Maldivas</strong>
+                    <span class="block text-[10px] text-emerald-600 dark:text-emerald-400 font-black">R$ 42.000,00</span>
                   </div>
                 </div>
+              </div>
+            </div>
+
+            <!-- PILLAR 3: ESCALA DE FUNCIONÁRIOS -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center bg-white dark:bg-slate-900 p-7 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-md">
+              <div class="lg:col-span-6 space-y-4">
+                <div class="inline-flex items-center gap-2 px-3 py-1 bg-violet-500/10 text-violet-600 dark:text-violet-400 text-[10px] font-black uppercase rounded-lg border border-violet-500/20">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                  Pilar 03 • Central Administrativa
+                </div>
+                <h3 class="text-2xl font-black text-slate-800 dark:text-white leading-tight">
+                  Controle de Escala de Funcionários e Banco de Folgas Acumuladas
+                </h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
+                  Gerencie o horário de trabalho de todos os consultores da sua agência em uma matriz mensal moderna. Controle bancadas de folga por metas, solicitações de trocas de turno com aprovação da diretoria e comunicados de treinamentos em um único painel.
+                </p>
+                <ul class="space-y-2 text-xs text-slate-600 dark:text-slate-300 font-semibold pt-2">
+                  <li class="flex items-center gap-2">
+                    <span class="w-4 h-4 rounded-full bg-violet-500/10 text-violet-600 dark:text-violet-400 flex items-center justify-center text-[10px] font-black">✓</span>
+                    <span>Turnos configuráveis (10-17, 12-19, 14-21, 15-22, Folga, Férias, Reunião).</span>
+                  </li>
+                  <li class="flex items-center gap-2">
+                    <span class="w-4 h-4 rounded-full bg-violet-500/10 text-violet-600 dark:text-violet-400 flex items-center justify-center text-[10px] font-black">✓</span>
+                    <span>Workflow completo para solicitações de folga e trocas entre colegas.</span>
+                  </li>
+                  <li class="flex items-center gap-2">
+                    <span class="w-4 h-4 rounded-full bg-violet-500/10 text-violet-600 dark:text-violet-400 flex items-center justify-center text-[10px] font-black">✓</span>
+                    <span>Desduplicação inteligente de perfis e chave de ativação por funcionário.</span>
+                  </li>
+                </ul>
+              </div>
+              <div class="lg:col-span-6 bg-slate-50 dark:bg-slate-950 p-6 rounded-2xl border border-slate-200 dark:border-slate-800">
+                <span class="block text-xs font-black text-slate-700 dark:text-slate-200 mb-3">Central Administrativa de Escala</span>
+                <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 space-y-2 shadow-sm text-xs">
+                  <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-2">
+                    <span class="font-extrabold text-slate-800 dark:text-slate-200">Marinna Morena</span>
+                    <span class="px-2 py-0.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-black rounded">Turno: 10:00 - 17:00</span>
+                  </div>
+                  <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-2">
+                    <span class="font-extrabold text-slate-800 dark:text-slate-200">Guto Bassaroto</span>
+                    <span class="px-2 py-0.5 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[10px] font-black rounded">Turno: 13:00 - 20:00</span>
+                  </div>
+                  <div class="flex justify-between items-center">
+                    <span class="font-extrabold text-slate-800 dark:text-slate-200">Maria Carvalho</span>
+                    <span class="px-2 py-0.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-black rounded">Folga Semanal</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- PILLAR 4: REEMBOLSOS AÉREOS -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center bg-white dark:bg-slate-900 p-7 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-md">
+              <div class="lg:col-span-6 lg:order-2 space-y-4">
+                <div class="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-black uppercase rounded-lg border border-emerald-500/20">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                  Pilar 04 • Gestão Financeira
+                </div>
+                <h3 class="text-2xl font-black text-slate-800 dark:text-white leading-tight">
+                  Conciliação de Reembolsos e Créditos de Companhias Aéreas
+                </h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
+                  Nunca mais perca prazos ou dinheiro de estornos de bilhetes aéreos e taxas de cancelamento. O PaxFlow acompanha todo o ciclo de vida dos reembolsos junto às cias aéreas, notificando quando o crédito é liberado ou quando o estorno estourou o prazo.
+                </p>
+                <ul class="space-y-2 text-xs text-slate-600 dark:text-slate-300 font-semibold pt-2">
+                  <li class="flex items-center gap-2">
+                    <span class="w-4 h-4 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-[10px] font-black">✓</span>
+                    <span>SLA visual de conclusão de reembolso por fornecedor/companhia.</span>
+                  </li>
+                  <li class="flex items-center gap-2">
+                    <span class="w-4 h-4 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-[10px] font-black">✓</span>
+                    <span>Anexo de comprovantes bancários e vouchers digitais para o cliente.</span>
+                  </li>
+                </ul>
+              </div>
+              <div class="lg:col-span-6 lg:order-1 bg-slate-50 dark:bg-slate-950 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3">
+                <span class="block text-xs font-black text-slate-700 dark:text-slate-200">Painel de Conciliação de Reembolsos</span>
+                <div class="p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2 shadow-sm text-xs">
+                  <div class="flex justify-between items-center">
+                    <strong class="text-slate-800 dark:text-slate-100 font-extrabold">Reembolso LATAM #8210</strong>
+                    <span class="px-2 py-0.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-black rounded text-[10px]">Concluído</span>
+                  </div>
+                  <p class="text-[11px] text-slate-500 dark:text-slate-400">Valor reembolsado: <strong class="text-slate-800 dark:text-slate-200">R$ 3.450,00</strong> • Estorno creditado na conta do passageiro.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- PILLAR 5 & 6: DIGISAC HUB & GAMIFICATION -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <!-- DIGISAC -->
+              <div class="bg-white dark:bg-slate-900 p-7 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-md space-y-4">
+                <div class="inline-flex items-center gap-2 px-3 py-1 bg-sky-500/10 text-sky-600 dark:text-sky-400 text-[10px] font-black uppercase rounded-lg border border-sky-500/20">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                  Pilar 05 • Integração Digisac
+                </div>
+                <h3 class="text-xl font-black text-slate-800 dark:text-white">
+                  Hub de Mensagens WhatsApp & Editor de Variáveis
+                </h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
+                  Conecte a API oficial do Digisac. Visualize histórico de conversas em formato split-screen no atendimento de clientes e utilize modelos de mensagem pré-formatados com variáveis automáticas de viagem (como <code>{nome_cliente}</code>, <code>{destino}</code>, <code>{data_embarque}</code>).
+                </p>
+              </div>
+
+              <!-- GAMIFICATION -->
+              <div class="bg-white dark:bg-slate-900 p-7 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-md space-y-4">
+                <div class="inline-flex items-center gap-2 px-3 py-1 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-black uppercase rounded-lg border border-amber-500/20">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
+                  Pilar 06 • Gamificação & Engajamento
+                </div>
+                <h3 class="text-xl font-black text-slate-800 dark:text-white">
+                  Metas Gamificadas, Ranking & Medalhas Colecionáveis
+                </h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
+                  Incentive a equipe de consultores a bater metas comerciais com um sistema vivo de conquistas. Ganhe pontos de XP por fechamentos, destrave níveis e ostente patentes no perfil a cada marco atingido na agência.
+                </p>
+              </div>
+            </div>
+
+            <!-- COMPARISON TABLE: PAXFLOW VS PLANILHAS/SISTEMAS GENÉRICOS -->
+            <div class="bg-slate-900 text-white rounded-3xl p-8 shadow-2xl border border-slate-800 space-y-8">
+              <div class="text-center max-w-2xl mx-auto space-y-2">
+                <span class="px-3 py-1 bg-indigo-500/20 text-indigo-300 text-[10px] font-black uppercase tracking-widest rounded-full border border-indigo-400/30">
+                  Quadro de Diferenciais
+                </span>
+                <h3 class="text-2xl font-black tracking-tight">PaxFlow vs Planilhas & CRMs Genéricos</h3>
+                <p class="text-xs text-slate-400 font-medium">Veja por que as agências de viagem mais eficientes trocam processos manuais pelo PaxFlow</p>
+              </div>
+
+              <div class="overflow-x-auto">
+                <table class="w-full text-xs text-left border-collapse min-w-[600px]">
+                  <thead>
+                    <tr class="border-b border-slate-800 text-slate-400 uppercase text-[10px] font-black">
+                      <th class="py-3 px-4">Recurso / Funcionalidade</th>
+                      <th class="py-3 px-4 text-rose-400">Planilhas / CRMs Genéricos</th>
+                      <th class="py-3 px-4 text-emerald-400">Plataforma PaxFlow</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-800/60 font-medium">
+                    <tr>
+                      <td class="py-3.5 px-4 font-bold text-slate-200">Alertas de Vencimento de Vistos e Passaportes</td>
+                      <td class="py-3.5 px-4 text-slate-500">❌ Manual / Risco de esquecimento</td>
+                      <td class="py-3.5 px-4 text-emerald-400 font-bold">✓ Automático com 180 dias de SLA</td>
+                    </tr>
+                    <tr>
+                      <td class="py-3.5 px-4 font-bold text-slate-200">Controle de Escala de Funcionários e Banco de Folgas</td>
+                      <td class="py-3.5 px-4 text-slate-500">❌ Planilhas Excel desconectadas</td>
+                      <td class="py-3.5 px-4 text-emerald-400 font-bold">✓ Central Integrada com aprovações</td>
+                    </tr>
+                    <tr>
+                      <td class="py-3.5 px-4 font-bold text-slate-200">Campos Obrigatórios de Turismo no Fechamento</td>
+                      <td class="py-3.5 px-4 text-slate-500">❌ Ausente em CRMs genéricos</td>
+                      <td class="py-3.5 px-4 text-emerald-400 font-bold">✓ Nascimento, Markup e Data Financeira</td>
+                    </tr>
+                    <tr>
+                      <td class="py-3.5 px-4 font-bold text-slate-200">Itinerário Digital com Logo e Cores da Agência</td>
+                      <td class="py-3.5 px-4 text-slate-500">❌ PDFs estáticos pesados</td>
+                      <td class="py-3.5 px-4 text-emerald-400 font-bold">✓ Página pública responsiva e dinâmica</td>
+                    </tr>
+                    <tr>
+                      <td class="py-3.5 px-4 font-bold text-slate-200">Conciliação de Reembolsos Aéreos</td>
+                      <td class="py-3.5 px-4 text-slate-500">❌ Anotações soltas no WhatsApp</td>
+                      <td class="py-3.5 px-4 text-emerald-400 font-bold">✓ Workflow com controle de prazos SLA</td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
 
@@ -767,56 +942,103 @@ export class LandingPage {
         </section>
 
         <!-- FAQ Section -->
-        <section class="w-full bg-slate-50/50 dark:bg-slate-950/20 border-t border-slate-200/40 dark:border-slate-900/40 py-16 px-6 relative z-10">
-          <div class="max-w-3xl mx-auto">
-            <h2 class="text-xl md:text-2xl font-extrabold text-slate-800 dark:text-white tracking-tight text-center mb-10">
-              Perguntas Frequentes
-            </h2>
+        <section class="w-full bg-white dark:bg-slate-950 border-t border-slate-200/50 dark:border-slate-900/50 py-20 px-6 relative z-10">
+          <div class="max-w-4xl mx-auto space-y-10">
+            <div class="text-center space-y-2">
+              <span class="px-3 py-1 bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 text-[10px] font-black uppercase tracking-widest rounded-full">Tire Suas Dúvidas</span>
+              <h2 class="text-2xl sm:text-3xl font-black text-slate-800 dark:text-white tracking-tight">
+                Perguntas Frequentes sobre o PaxFlow
+              </h2>
+            </div>
             
-            <div class="space-y-3.5">
-              <details class="group bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 transition-all duration-300 [&_summary::-webkit-details-marker]:hidden" open>
+            <div class="space-y-4">
+              <details class="group bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 transition-all duration-300 [&_summary::-webkit-details-marker]:hidden" open>
                 <summary class="flex items-center justify-between cursor-pointer focus:outline-none">
-                  <h3 class="text-xs font-bold text-slate-800 dark:text-slate-200">O que é o Modo de Demonstração (Sandbox)?</h3>
-                  <span class="ml-1.5 shrink-0 rounded-full bg-slate-500/10 dark:bg-slate-800 p-1.5 text-slate-900 dark:text-white transition group-open:-rotate-180">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <h3 class="text-sm font-extrabold text-slate-800 dark:text-slate-200">Como funciona o Modo de Demonstração (Sandbox)?</h3>
+                  <span class="ml-1.5 shrink-0 rounded-full bg-slate-200 dark:bg-slate-800 p-1.5 text-slate-900 dark:text-white transition group-open:-rotate-180">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                     </svg>
                   </span>
                 </summary>
-                <p class="mt-3 text-[10px] leading-relaxed text-slate-500 dark:text-slate-400 font-medium">
-                  É um ambiente de simulação completo, pré-populado com dados fictícios (clientes, orçamentos, históricos de conversas, e dados de faturamento). Ele permite que você explore todas as funcionalidades operacionais da plataforma sem precisar configurar conexões reais.
+                <p class="mt-3 text-xs leading-relaxed text-slate-600 dark:text-slate-400 font-medium">
+                  É um ambiente de simulação completo e interativo, pré-populado com dados fictícios de clientes, viagens, reembolsos e escalas. Ele permite que você teste todas as telas e recursos em tempo real, sem precisar fazer cadastro prévio ou inserir dados reais da sua agência.
                 </p>
               </details>
 
-              <details class="group bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 transition-all duration-300 [&_summary::-webkit-details-marker]:hidden">
+              <details class="group bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 transition-all duration-300 [&_summary::-webkit-details-marker]:hidden">
                 <summary class="flex items-center justify-between cursor-pointer focus:outline-none">
-                  <h3 class="text-xs font-bold text-slate-800 dark:text-slate-200">As alterações feitas no Modo Demo são salvas?</h3>
-                  <span class="ml-1.5 shrink-0 rounded-full bg-slate-500/10 dark:bg-slate-800 p-1.5 text-slate-900 dark:text-white transition group-open:-rotate-180">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <h3 class="text-sm font-extrabold text-slate-800 dark:text-slate-200">Posso controlar a escala de todos os funcionários da minha agência?</h3>
+                  <span class="ml-1.5 shrink-0 rounded-full bg-slate-200 dark:bg-slate-800 p-1.5 text-slate-900 dark:text-white transition group-open:-rotate-180">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                     </svg>
                   </span>
                 </summary>
-                <p class="mt-3 text-[10px] leading-relaxed text-slate-500 dark:text-slate-400 font-medium">
-                  As alterações são gravadas localmente no armazenamento do seu navegador (localStorage proxy). Respeitando o lema "reiniciou, perdeu", os dados são limpos e reiniciados a cada novo acesso à demonstração, garantindo um ambiente sempre limpo para testes.
+                <p class="mt-3 text-xs leading-relaxed text-slate-600 dark:text-slate-400 font-medium">
+                  Sim! O módulo de Central Administrativa permite que administradores atribuam turnos, controlem saldos no Banco de Folgas, aprovem solicitações de trocas e ativem ou desativem quais membros participam da escala através do botão dedicado "Integrantes".
                 </p>
               </details>
 
-              <details class="group bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 transition-all duration-300 [&_summary::-webkit-details-marker]:hidden">
+              <details class="group bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 transition-all duration-300 [&_summary::-webkit-details-marker]:hidden">
                 <summary class="flex items-center justify-between cursor-pointer focus:outline-none">
-                  <h3 class="text-xs font-bold text-slate-800 dark:text-slate-200">Como funciona o controle de passaportes e SLAs?</h3>
-                  <span class="ml-1.5 shrink-0 rounded-full bg-slate-500/10 dark:bg-slate-800 p-1.5 text-slate-900 dark:text-white transition group-open:-rotate-180">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <h3 class="text-sm font-extrabold text-slate-800 dark:text-slate-200">Como funciona o alerta inteligente de passaportes e vistos?</h3>
+                  <span class="ml-1.5 shrink-0 rounded-full bg-slate-200 dark:bg-slate-800 p-1.5 text-slate-900 dark:text-white transition group-open:-rotate-180">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                     </svg>
                   </span>
                 </summary>
-                <p class="mt-3 text-[10px] leading-relaxed text-slate-500 dark:text-slate-400 font-medium">
-                  O PaxFlow varre a validade dos passaportes de todos os passageiros vinculados a viagens ativas. Se algum documento possuir validade inferior a 6 meses do dia do embarque, o sistema emite um alerta automático no Inbox do consultor responsável para evitar multas ou cancelamentos no aeroporto.
+                <p class="mt-3 text-xs leading-relaxed text-slate-600 dark:text-slate-400 font-medium">
+                  O PaxFlow calcula automaticamente a diferença entre a data de validade dos documentos cadastrados e a data da viagem. Se a validade for inferior a 6 meses no momento do embarque, o sistema gera cartões de alerta prioritários no Inbox da agência.
+                </p>
+              </details>
+
+              <details class="group bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 transition-all duration-300 [&_summary::-webkit-details-marker]:hidden">
+                <summary class="flex items-center justify-between cursor-pointer focus:outline-none">
+                  <h3 class="text-sm font-extrabold text-slate-800 dark:text-slate-200">Como a página do cliente assume as cores da minha agência?</h3>
+                  <span class="ml-1.5 shrink-0 rounded-full bg-slate-200 dark:bg-slate-800 p-1.5 text-slate-900 dark:text-white transition group-open:-rotate-180">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </span>
+                </summary>
+                <p class="mt-3 text-xs leading-relaxed text-slate-600 dark:text-slate-400 font-medium">
+                  Em Configurações da Agência, você envia a sua logomarca e seleciona a cor primária da sua marca. Todos os itinerários públicos compartilhados com os passageiros passam a exibir o seu logotipo e a sua paleta visual automaticamente.
                 </p>
               </details>
             </div>
+          </div>
+        </section>
 
+        <!-- Final CTA High-Conversion Section -->
+        <section class="w-full bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 py-16 px-6 relative z-10 border-t border-slate-800 text-white text-center">
+          <div class="max-w-4xl mx-auto space-y-6">
+            <span class="px-3 py-1 bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-[10px] font-black uppercase tracking-widest rounded-full">
+              Leve sua agência para o próximo nível
+            </span>
+            <h2 class="text-3xl sm:text-5xl font-black tracking-tight leading-tight">
+              Pronto para revolucionar a operação da sua agência?
+            </h2>
+            <p class="text-xs sm:text-sm text-slate-300 font-medium max-w-2xl mx-auto leading-relaxed">
+              Assuma o controle total dos pós-vendas, reembolsos, SLAs de vistos e escalas da sua equipe. Escolha como deseja começar agora mesmo.
+            </p>
+
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+              <button id="btn-cta-demo-final" class="w-full sm:w-auto px-8 py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs tracking-wider rounded-2xl shadow-xl transition-all transform hover:-translate-y-0.5 uppercase flex items-center justify-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                Testar no Modo Sandbox
+              </button>
+
+              <button id="btn-cta-whatsapp-final" class="w-full sm:w-auto px-8 py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs tracking-wider rounded-2xl shadow-xl transition-all transform hover:-translate-y-0.5 uppercase flex items-center justify-center gap-2">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.205 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/></svg>
+                Falar com Consultor
+              </button>
+
+              <button id="btn-cta-login-final" class="w-full sm:w-auto px-8 py-4 bg-slate-800 hover:bg-slate-700 text-white font-extrabold text-xs tracking-wider rounded-2xl border border-slate-700 transition-all transform hover:-translate-y-0.5 uppercase">
+                Acessar Sistema Real
+              </button>
+            </div>
           </div>
         </section>
 
@@ -860,6 +1082,11 @@ export class LandingPage {
     document.getElementById('btn-iniciar-demo')?.addEventListener('click', handleStartDemo);
     document.getElementById('btn-acessar-login')?.addEventListener('click', handleAcessarReal);
     document.getElementById('btn-conhecer-login')?.addEventListener('click', handleAcessarReal);
+    document.getElementById('btn-cta-demo-final')?.addEventListener('click', handleStartDemo);
+    document.getElementById('btn-cta-login-final')?.addEventListener('click', handleAcessarReal);
+    document.getElementById('btn-cta-whatsapp-final')?.addEventListener('click', () => {
+      window.open('https://wa.me/5511999999999?text=Ol%C3%A1!%20Gostaria%20de%20saber%20mais%20sobre%20o%20PaxFlow%20para%20minha%20ag%C3%AAncia.', '_blank');
+    });
 
     // Lógica da Demo Interativa (Feature Tour com Layout Horizontal - Stripe Style)
     const tabs = ['dashboard', 'viagens', 'orcamentos', 'inbox', 'escala', 'reembolsos', 'relatorios', 'publicas'];
