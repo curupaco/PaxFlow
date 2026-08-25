@@ -52,7 +52,7 @@ export const MOCK_CLIENTES: Cliente[] = [
     documento: '453.647.280-05', // CPF válido matemático
     dataNascimento: '1980-05-15',
     endereco: 'Rua das Simulações, 123 - Centro',
-    observacoes: 'Passageiro frequente do modo Sandbox.',
+    observacoes: 'Passageiro frequente do modo demonstração.',
     consultorResponsavelId: 'sandbox-user-id',
     passaporteNumero: 'FP987654',
     passaporteValidade: '2026-08-10', // SLA urgente (< 180 dias do dia 23/06/2026)

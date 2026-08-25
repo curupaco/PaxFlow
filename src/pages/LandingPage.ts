@@ -71,7 +71,7 @@ export class LandingPage {
           <div class="flex flex-col sm:flex-row items-center gap-3.5 mb-10 w-full justify-center">
             <button id="btn-iniciar-demo" class="w-full sm:w-auto px-7 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/20 hover:shadow-xl transition-all transform hover:-translate-y-0.5 uppercase flex items-center justify-center gap-2">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-              Iniciar Demonstração (Sandbox)
+              Iniciar Modo Demonstração
             </button>
             <button id="btn-conhecer-login" class="w-full sm:w-auto px-7 py-3.5 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white font-bold text-xs tracking-wider rounded-xl border border-slate-200 dark:border-slate-800 transition-all transform hover:-translate-y-0.5 uppercase shadow-sm">
               Entrar no Sistema Real
@@ -1248,7 +1248,7 @@ export class LandingPage {
             <div class="space-y-4">
               <details class="group bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 transition-all duration-300 [&_summary::-webkit-details-marker]:hidden" open>
                 <summary class="flex items-center justify-between cursor-pointer focus:outline-none">
-                  <h3 class="text-sm font-extrabold text-slate-800 dark:text-slate-200">Como funciona o Modo de Demonstração (Sandbox)?</h3>
+                  <h3 class="text-sm font-extrabold text-slate-800 dark:text-slate-200">Como funciona o Modo Demonstração?</h3>
                   <span class="ml-1.5 shrink-0 rounded-full bg-slate-200 dark:bg-slate-800 p-1.5 text-slate-900 dark:text-white transition group-open:-rotate-180">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
@@ -1321,7 +1321,7 @@ export class LandingPage {
             <div class="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
               <button id="btn-cta-demo-final" class="w-full sm:w-auto px-8 py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs tracking-wider rounded-2xl shadow-xl transition-all transform hover:-translate-y-0.5 uppercase flex items-center justify-center gap-2">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                Testar no Modo Sandbox
+                Modo Demonstração
               </button>
 
               <button id="btn-cta-whatsapp-final" class="w-full sm:w-auto px-8 py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs tracking-wider rounded-2xl shadow-xl transition-all transform hover:-translate-y-0.5 uppercase flex items-center justify-center gap-2">
