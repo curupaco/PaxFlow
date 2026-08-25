@@ -1606,11 +1606,13 @@ export class InboxPage {
             <button id="btn-escala-hoje" class="px-3 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-extrabold transition">Hoje</button>
             ${isAdmin ? `
               <button id="btn-escala-admin-edit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black transition flex items-center gap-1.5 shadow-lg shadow-indigo-900/40">
-                ⚙️ Editar Escala
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                Editar Escala
               </button>
             ` : `
               <button id="btn-escala-solicitar-troca" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black transition flex items-center gap-1.5 shadow-lg shadow-emerald-900/40">
-                🔄 Solicitar Troca / Folga
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                Solicitar Troca / Folga
               </button>
             `}
           </div>
@@ -1899,8 +1901,13 @@ export class InboxPage {
         <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4">
           <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3">
             <div>
-              <h3 class="text-base font-black text-slate-800 dark:text-slate-100">🔄 Solicitar Alteração de Escala</h3>
-              <p class="text-xs text-slate-400 font-semibold">Envie uma solicitação para a equipe ou gestão.</p>
+              <h3 class="text-base font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                <span class="w-6 h-6 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 border border-indigo-500/20">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                </span>
+                Solicitar Alteração de Escala
+              </h3>
+              <p class="text-xs text-slate-400 font-semibold mt-0.5">Envie uma solicitação para a equipe ou gestão.</p>
             </div>
             <button id="modal-solicitar-close" class="text-slate-400 hover:text-slate-600 text-lg font-bold">✕</button>
           </div>

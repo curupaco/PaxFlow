@@ -738,7 +738,7 @@ export class InboxService {
 
           if (sol.status === 'pendente_colega' && isUserDestinatario) {
             shouldInclude = true;
-            cardTitle = '🔄 Troca de Turno Solicitada por Colega';
+            cardTitle = 'Troca de Turno Solicitada por Colega';
             cardSubject = `${sol.solicitante_nome} solicitou trocar o turno do dia ${sol.data_origem} com você!`;
             cardBody = `
               <strong>${sol.solicitante_nome}</strong> deseja trocar seu turno de <strong>${sol.data_origem}</strong> com o seu turno de <strong>${sol.data_destino || sol.data_origem}</strong>.<br><br>
@@ -747,7 +747,7 @@ export class InboxService {
             `;
           } else if (sol.status === 'pendente_admin' && isAdmin) {
             shouldInclude = true;
-            cardTitle = `📋 Aprovação de Escala: ${sol.tipo.toUpperCase()}`;
+            cardTitle = `Aprovação de Escala: ${sol.tipo.toUpperCase()}`;
             cardSubject = `Solicitação de ${sol.tipo === 'troca' ? 'Troca de Turno' : sol.tipo === 'folga' ? 'Folga' : 'Férias'} - ${sol.solicitante_nome}`;
             cardBody = `
               <strong>Solicitante:</strong> ${sol.solicitante_nome}<br>
@@ -757,7 +757,7 @@ export class InboxService {
             `;
           } else if ((sol.status === 'aprovado' || sol.status === 'recusado') && isUserSolicitante) {
             shouldInclude = true;
-            cardTitle = `🔔 Resposta da Escala: ${sol.status === 'aprovado' ? '✅ Aprovada' : '❌ Recusada'}`;
+            cardTitle = `Resposta da Escala: ${sol.status === 'aprovado' ? 'Aprovada' : 'Recusada'}`;
             cardSubject = `Sua solicitação de ${sol.tipo} para ${sol.data_origem} foi ${sol.status}.`;
             cardBody = `
               Sua solicitação enviada em ${new Date(sol.created_at).toLocaleDateString('pt-BR')} foi processada pela gestão.<br><br>
