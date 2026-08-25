@@ -331,7 +331,6 @@ export class InboxService {
           ),
           campaign:campaigns (*)
         `)
-        .eq('arquivada', false)
         .order('created_at', { ascending: false });
 
       if (perfil && perfil.role !== 'admin') {

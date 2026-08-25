@@ -1343,7 +1343,7 @@ export class InboxPage {
               .eq('id', tableId);
 
             if (error) throw error;
-          } else if (alertItem.type === 'mention' || alertItem.type === 'campaign_notification') {
+          } else if ((alertItem.type === 'mention' || alertItem.type === 'campaign_notification' || alertItem.type === 'direct_message') && alertId.startsWith('mention-')) {
             const tableId = alertId.replace('mention-', '');
             // Update row in Supabase
             const { error } = await supabase
@@ -1405,7 +1405,7 @@ export class InboxPage {
               .eq('id', tableId);
 
             if (error) throw error;
-          } else if (clickedItem.type === 'mention' || clickedItem.type === 'direct_message' || clickedItem.type === 'campaign_notification') {
+          } else if ((clickedItem.type === 'mention' || clickedItem.type === 'direct_message' || clickedItem.type === 'campaign_notification') && clickedItem.id.startsWith('mention-')) {
             const tableId = clickedItem.id.replace('mention-', '');
             const { error } = await supabase
               .from('notificacoes')
