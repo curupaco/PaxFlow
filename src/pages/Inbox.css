@@ -270,12 +270,15 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 1.25rem;
+  flex-wrap: wrap;
+  gap: 1rem;
   background: linear-gradient(135deg, #0b1f4d 0%, #1d4387 100%);
   color: white;
   border-radius: 1.35rem;
-  padding: 1.5rem 1.75rem;
+  padding: 1.25rem 1.5rem;
   box-shadow: 0 12px 34px rgba(20, 35, 70, 0.12);
+  box-sizing: border-box;
+  overflow: hidden;
 }
 .escala-hero h1 {
   margin: 0 0 0.35rem;

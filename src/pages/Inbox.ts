@@ -1593,33 +1593,31 @@ export class InboxPage {
         
         <!-- Hero Header -->
         <section class="escala-hero">
-          <div>
+          <div class="space-y-1 max-w-md">
             <h1>Escala da equipe</h1>
             <p>A mesma lógica da sua escala atual, com uma apresentação mais moderna e fácil de consultar.</p>
           </div>
-          <div class="flex items-center gap-3 flex-wrap lg:flex-nowrap justify-end">
+          <div class="flex items-center gap-2 flex-wrap justify-end">
             <!-- Month & Today Nav Bar -->
-            <div class="flex items-center bg-white/10 dark:bg-slate-900/40 border border-white/15 dark:border-slate-800 rounded-2xl p-1 backdrop-blur-md shrink-0">
-              <button id="btn-escala-prev-month" class="w-8 h-8 rounded-xl flex items-center justify-center hover:bg-white/20 text-white font-bold transition text-sm">‹</button>
-              <div id="escalaMonthName" class="px-3 text-xs font-black text-white min-w-[110px] text-center uppercase tracking-wide">${monthNameStr}</div>
-              <button id="btn-escala-next-month" class="w-8 h-8 rounded-xl flex items-center justify-center hover:bg-white/20 text-white font-bold transition text-sm">›</button>
-              <div class="h-4 w-px bg-white/20 mx-1"></div>
-              <button id="btn-escala-hoje" class="px-3 py-1.5 hover:bg-white/20 text-white rounded-xl text-xs font-extrabold transition">Hoje</button>
+            <div class="flex items-center bg-white/10 dark:bg-slate-900/40 border border-white/15 dark:border-slate-800 rounded-xl p-1 backdrop-blur-md shrink-0">
+              <button id="btn-escala-prev-month" class="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-white/20 text-white font-bold transition text-xs">‹</button>
+              <div id="escalaMonthName" class="px-2.5 text-[11px] font-black text-white min-w-[95px] text-center uppercase tracking-wide">${monthNameStr}</div>
+              <button id="btn-escala-next-month" class="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-white/20 text-white font-bold transition text-xs">›</button>
+              <div class="h-3.5 w-px bg-white/20 mx-1"></div>
+              <button id="btn-escala-hoje" class="px-2.5 py-1 hover:bg-white/20 text-white rounded-lg text-[11px] font-extrabold transition">Hoje</button>
             </div>
 
             <!-- Action Buttons Group -->
-            <div class="flex items-center gap-2">
-              <button id="btn-escala-solicitar-troca" class="h-10 px-4 bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white rounded-2xl text-xs font-extrabold transition-all flex items-center gap-2 shadow-lg shadow-emerald-950/20 border border-emerald-400/30 shrink-0">
-                <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                <span>Solicitar Troca / Folga</span>
+            <button id="btn-escala-solicitar-troca" class="h-9 px-3.5 bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white rounded-xl text-xs font-extrabold transition-all flex items-center gap-1.5 shadow-md shadow-emerald-950/20 border border-emerald-400/30 shrink-0">
+              <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+              <span>Solicitar Troca / Folga</span>
+            </button>
+            ${isAdmin ? `
+              <button id="btn-escala-admin-edit" class="h-9 px-3.5 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white rounded-xl text-xs font-extrabold transition-all flex items-center gap-1.5 shadow-md shadow-indigo-950/20 border border-indigo-400/30 shrink-0">
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                <span>Editar Escala</span>
               </button>
-              ${isAdmin ? `
-                <button id="btn-escala-admin-edit" class="h-10 px-4 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white rounded-2xl text-xs font-extrabold transition-all flex items-center gap-2 shadow-lg shadow-indigo-950/20 border border-indigo-400/30 shrink-0">
-                  <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                  <span>Editar Escala</span>
-                </button>
-              ` : ''}
-            </div>
+            ` : ''}
           </div>
         </section>
 
