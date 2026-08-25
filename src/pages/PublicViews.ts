@@ -335,7 +335,7 @@ export class PublicViews {
           ${consultorHTML}
 
           <div class="mt-8 text-center text-[10px] text-slate-400 dark:text-slate-400 font-bold select-none pb-8">
-            Gerado automaticamente por Thiago Costa & PaxFlow © 2026.
+            Gerado automaticamente por PaxFlow © 2026.
           </div>
         </main>
       </div>

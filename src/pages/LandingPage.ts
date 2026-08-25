@@ -1336,7 +1336,7 @@ export class LandingPage {
 
         <!-- Footer -->
         <footer class="w-full bg-white dark:bg-slate-950 border-t border-slate-200/50 dark:border-slate-900/60 py-6 px-6 text-center text-[10px] text-slate-400 font-medium relative z-10">
-          <p>© 2026 PaxFlow. Todos os direitos reservados. Thiago Costa — Apresentação de Solução de CRM e Pós-Venda Turístico.</p>
+          <p>© 2026 PaxFlow. Todos os direitos reservados. Sistema Especializado em CRM & Pós-Venda Turístico.</p>
         </footer>
 
         <!-- Floating WhatsApp FAB Conversion Button -->
