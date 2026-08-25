@@ -1085,7 +1085,7 @@ export class LandingPage {
     document.getElementById('btn-cta-demo-final')?.addEventListener('click', handleStartDemo);
     document.getElementById('btn-cta-login-final')?.addEventListener('click', handleAcessarReal);
     document.getElementById('btn-cta-whatsapp-final')?.addEventListener('click', () => {
-      window.open('https://wa.me/5511999999999?text=Ol%C3%A1!%20Gostaria%20de%20saber%20mais%20sobre%20o%20PaxFlow%20para%20minha%20ag%C3%AAncia.', '_blank');
+      window.open('https://wa.me/5511966989160?text=Ol%C3%A1!%20Gostaria%20de%20saber%20mais%20sobre%20o%20PaxFlow%20para%20minha%20ag%C3%AAncia.', '_blank');
     });
 
     // Lógica da Demo Interativa (Feature Tour com Layout Horizontal - Stripe Style)
