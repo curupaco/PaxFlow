@@ -1684,7 +1684,12 @@ export class InboxPage {
           <!-- Banco de Folgas Card -->
           <section class="escala-card">
             <div class="escala-card-head">
-              <h2>🚧 Banco de folgas</h2>
+              <h2 class="flex items-center gap-2 font-black text-slate-800 dark:text-slate-100 text-sm">
+                <span class="w-6 h-6 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/20">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </span>
+                Banco de folgas
+              </h2>
               <div class="flex items-center gap-2">
                 <span class="escala-badge">Saldo atual</span>
                 ${isAdmin ? `
@@ -1706,7 +1711,12 @@ export class InboxPage {
           <!-- Treinamentos · Coffee · Eventos Card -->
           <section class="escala-card">
             <div class="escala-card-head">
-              <h2>📝 Treinamentos · Coffee · Eventos</h2>
+              <h2 class="flex items-center gap-2 font-black text-slate-800 dark:text-slate-100 text-sm">
+                <span class="w-6 h-6 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 border border-indigo-500/20">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                </span>
+                Treinamentos · Coffee · Eventos
+              </h2>
               <div class="flex items-center gap-2">
                 <span class="escala-badge">${monthNames[this.escalaMes - 1]}</span>
                 ${isAdmin ? `
@@ -1996,7 +2006,12 @@ export class InboxPage {
       <div id="escala-evento-modal-backdrop" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
         <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4">
           <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3">
-            <h3 class="text-base font-black text-slate-800 dark:text-slate-100">📝 Adicionar Treinamento / Evento</h3>
+            <h3 class="text-base font-black text-slate-800 dark:text-slate-100 flex items-center gap-2.5">
+              <span class="w-7 h-7 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 border border-indigo-500/20">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+              </span>
+              Adicionar Treinamento / Evento
+            </h3>
             <button id="modal-evento-close" class="text-slate-400 hover:text-slate-600 text-lg font-bold">✕</button>
           </div>
 
@@ -2062,7 +2077,12 @@ export class InboxPage {
       <div id="escala-banco-modal-backdrop" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
         <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 max-w-lg w-full shadow-2xl space-y-4 max-h-[85vh] overflow-y-auto custom-scrollbar">
           <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3">
-            <h3 class="text-base font-black text-slate-800 dark:text-slate-100">🚧 Editar Banco de Folgas</h3>
+            <h3 class="text-base font-black text-slate-800 dark:text-slate-100 flex items-center gap-2.5">
+              <span class="w-7 h-7 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/20">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              </span>
+              Editar Banco de Folgas
+            </h3>
             <button id="modal-banco-close" class="text-slate-400 hover:text-slate-600 text-lg font-bold">✕</button>
           </div>
 
