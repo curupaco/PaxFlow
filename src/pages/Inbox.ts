@@ -90,16 +90,10 @@ export class InboxPage {
       const rawBanco = await EscalaService.loadBancoFolgas();
       this.eventosEscalaData = await EscalaService.loadEventosEscala();
 
-      // Mapa para desduplicar consultores por chave normalizada (lowercase sem espaço)
+      // Mapa para desduplicar consultores por chave normalizada
       const teamMap = new Map<string, { displayName: string; participates: boolean }>();
 
-      // 1. Integrantes padrão da demonstração
-      ["Marinna", "Guto", "Maria", "Rafael", "Eduardo", "Laura", "Fernanda"].forEach(n => {
-        const key = n.trim().toLowerCase();
-        teamMap.set(key, { displayName: n.trim(), participates: true });
-      });
-
-      // 2. Sobrescreve/combina com perfis reais do Supabase / Sistema
+      // 1. Se os consultores do sistema estiverem carregados, usa-os como fonte da verdade
       if (this.consultants && this.consultants.length > 0) {
         this.consultants.forEach(c => {
           if (c.nome) {
@@ -108,6 +102,12 @@ export class InboxPage {
             teamMap.set(key, { displayName: c.nome.trim(), participates: doesParticipate });
           }
         });
+      } else {
+        // Fallback apenas se não houver perfis carregados no momento
+        ["Marinna Morena", "Guto Bassaroto", "Maria Carvalho", "Rafael Sousa", "Eduardo Mariano", "Laura Montu", "Fernanda Ganem"].forEach(n => {
+          const key = n.trim().toLowerCase();
+          teamMap.set(key, { displayName: n.trim(), participates: true });
+        });
       }
 
       // Reconstrói escalaData desduplicada apenas para quem participa_escala === true
@@ -115,7 +115,15 @@ export class InboxPage {
       teamMap.forEach((info, key) => {
         if (!info.participates) return; // Omitir se o funcionário não participa da escala
 
-        const existingKey = Object.keys(rawEscala).find(k => k.trim().toLowerCase() === key);
+        const firstName = info.displayName.split(' ')[0].toLowerCase();
+        
+        // Busca chave exata pelo nome completo ou por primeiro nome (ex: 'Marinna' -> 'Marinna Morena')
+        const existingKey = Object.keys(rawEscala).find(k => {
+          const kLower = k.trim().toLowerCase();
+          const kFirstName = kLower.split(' ')[0];
+          return kLower === key || kFirstName === firstName;
+        });
+
         if (existingKey && rawEscala[existingKey]) {
           cleanEscalaData[info.displayName] = rawEscala[existingKey];
         } else {
@@ -127,9 +135,15 @@ export class InboxPage {
       // Reconstrói bancoFolgasData desduplicada apenas para quem participa_escala === true
       const cleanBancoData: BancoFolgasItem[] = [];
       teamMap.forEach((info, key) => {
-        if (!info.participates) return; // Omitir se o funcionário não participa da escala
+        if (!info.participates) return;
 
-        const existing = rawBanco.find(b => b.consultor_nome.trim().toLowerCase() === key);
+        const firstName = info.displayName.split(' ')[0].toLowerCase();
+        const existing = rawBanco.find(b => {
+          const bLower = b.consultor_nome.trim().toLowerCase();
+          const bFirstName = bLower.split(' ')[0];
+          return bLower === key || bFirstName === firstName;
+        });
+
         if (existing) {
           cleanBancoData.push({ ...existing, consultor_nome: info.displayName });
         } else {

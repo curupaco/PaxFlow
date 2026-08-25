@@ -42,26 +42,26 @@ export class EscalaService {
    */
   private static getInitialMockData() {
     const mockEmployeesSchedule: Record<string, string[]> = {
-      "Marinna": ["10", "14", "10-17", "10-17", "10-17", "10-17", "Folga", "F", "F", "10-17", "10-17", "10-17", "10-17", "10-17", "10", "14", "10-17", "10-17", "10-17", "10-17", "Folga", "F", "F", "10-17", "10-17", "10-17", "10-17", "10-17", "10", "14", "10-17"],
-      "Guto": ["F", "F", "Folga", "10-17", "10-17", "13-20", "10-17", "10", "14", "10-17", "10-17", "10-17", "10-17", "12-19", "F", "F", "Folga", "15-22", "13-20", "13-20", "10-17", "10", "14", "13-20", "13-20", "13-20", "13-20", "Folga", "F", "F", "13-20"],
-      "Maria": ["F", "F", "10-17", "13-20", "13-20", "15-22", "13-20", "10", "14", "13-20", "13-20", "13-20", "13-20", "13-20", "F", "F", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Folga"],
-      "Rafael": ["10", "14", "15-22", "15-22", "15-22", "Folga", "15-22", "F", "F", "15-22", "15-22", "15-22", "15-22", "15-22", "10", "14", "15-22", "Folga", "15-22", "15-22", "15-22", "F", "F", "15-22", "15-22", "15-22", "15-22", "15-22", "10", "14", "15-22"],
-      "Eduardo": ["", "", "12-19", "-", "Reunião", "-", "11-18", "", "", "12-19", "-", "11-18", "-", "10-17", "", "", "13-20", "-", "10-17", "Reunião", "13-20", "", "", "12-19", "-", "12-19", "-", "12-19", "", "", "12-19"],
-      "Laura": ["", "", "12-19", "-", "Reunião", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "12", "15", "11-18", "-", "-", "11-18", "11-18", "", "", "-"],
-      "Fernanda": ["", "", "14-21", "14-21", "14-21", "-", "-", "", "", "Férias", "Férias", "Férias", "Férias", "Férias", "", "", "-", "12-19", "-", "Reunião", "-", "", "", "14-21", "-", "-", "14-21", "-", "", "", "14-21"]
+      "Marinna Morena": ["10", "14", "10-17", "10-17", "10-17", "10-17", "Folga", "F", "F", "10-17", "10-17", "10-17", "10-17", "10-17", "10", "14", "10-17", "10-17", "10-17", "10-17", "Folga", "F", "F", "10-17", "10-17", "10-17", "10-17", "10-17", "10", "14", "10-17"],
+      "Guto Bassaroto": ["F", "F", "Folga", "10-17", "10-17", "13-20", "10-17", "10", "14", "10-17", "10-17", "10-17", "10-17", "12-19", "F", "F", "Folga", "15-22", "13-20", "13-20", "10-17", "10", "14", "13-20", "13-20", "13-20", "13-20", "Folga", "F", "F", "13-20"],
+      "Maria Carvalho": ["F", "F", "10-17", "13-20", "13-20", "15-22", "13-20", "10", "14", "13-20", "13-20", "13-20", "13-20", "13-20", "F", "F", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Folga"],
+      "Rafael Sousa": ["10", "14", "15-22", "15-22", "15-22", "Folga", "15-22", "F", "F", "15-22", "15-22", "15-22", "15-22", "15-22", "10", "14", "15-22", "Folga", "15-22", "15-22", "15-22", "F", "F", "15-22", "15-22", "15-22", "15-22", "15-22", "10", "14", "15-22"],
+      "Eduardo Mariano": ["", "", "12-19", "-", "Reunião", "-", "11-18", "", "", "12-19", "-", "11-18", "-", "10-17", "", "", "13-20", "-", "10-17", "Reunião", "13-20", "", "", "12-19", "-", "12-19", "-", "12-19", "", "", "12-19"],
+      "Laura Montu": ["", "", "12-19", "-", "Reunião", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "12", "15", "11-18", "-", "-", "11-18", "11-18", "", "", "-"],
+      "Fernanda Ganem": ["", "", "14-21", "14-21", "14-21", "-", "-", "", "", "Férias", "Férias", "Férias", "Férias", "Férias", "", "", "-", "12-19", "-", "Reunião", "-", "", "", "14-21", "-", "-", "14-21", "-", "", "", "14-21"]
     };
 
     const mockBancoFolgas: BancoFolgasItem[] = [
-      { consultor_id: "c-1", consultor_nome: "Marinna", equipe: "Equipe Agatur", saldo_dias: "1", detalhes_historico: "Meta Jun" },
-      { consultor_id: "c-2", consultor_nome: "Maria", equipe: "Equipe Agatur", saldo_dias: "10", detalhes_historico: "8mar26 – Folga ref 22/03 · Meta de Abril · Ref 05/04 · REF 03/05 · ref 17/05 · ref 14/06/26 · META JUNHO · REF 02/11/25" },
-      { consultor_id: "c-3", consultor_nome: "Rafael", equipe: "Equipe Agatur", saldo_dias: "2", detalhes_historico: "1 Folga Meta Março – Domingo Extra 28/06" },
-      { consultor_id: "c-4", consultor_nome: "Guto", equipe: "Equipe Agatur", saldo_dias: "—", detalhes_historico: "Sem saldo pendente" }
+      { consultor_id: "c-1", consultor_nome: "Marinna Morena", equipe: "Equipe Agatur", saldo_dias: "1", detalhes_historico: "Meta Jun" },
+      { consultor_id: "c-2", consultor_nome: "Maria Carvalho", equipe: "Equipe Agatur", saldo_dias: "10", detalhes_historico: "8mar26 – Folga ref 22/03 · Meta de Abril · Ref 05/04 · REF 03/05 · ref 17/05 · ref 14/06/26 · META JUNHO · REF 02/11/25" },
+      { consultor_id: "c-3", consultor_nome: "Rafael Sousa", equipe: "Equipe Agatur", saldo_dias: "2", detalhes_historico: "1 Folga Meta Março – Domingo Extra 28/06" },
+      { consultor_id: "c-4", consultor_nome: "Guto Bassaroto", equipe: "Equipe Agatur", saldo_dias: "—", detalhes_historico: "Sem saldo pendente" }
     ];
 
     const mockEventos: EventoEscalaItem[] = [
-      { id: 'ev-1', data: "17/08", consultor_nome: "Eduardo", titulo: "SACFLOW às 14:30" },
-      { id: 'ev-2', data: "18/08", consultor_nome: "Marinna", titulo: "SACFLOW às 14:30" },
-      { id: 'ev-3', data: "17/08", consultor_nome: "Rafael", titulo: "SACFLOW às 16:00" },
+      { id: 'ev-1', data: "17/08", consultor_nome: "Eduardo Mariano", titulo: "SACFLOW às 14:30" },
+      { id: 'ev-2', data: "18/08", consultor_nome: "Marinna Morena", titulo: "SACFLOW às 14:30" },
+      { id: 'ev-3', data: "17/08", consultor_nome: "Rafael Sousa", titulo: "SACFLOW às 16:00" },
       { id: 'ev-4', data: "20/08", consultor_nome: "Equipe", titulo: "Reunião Franqueados Matriz" }
     ];
 
