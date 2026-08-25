@@ -287,7 +287,7 @@ export class LandingPage {
                         <tr class="hover:bg-slate-100/30 dark:hover:bg-slate-800/10 transition-colors duration-200">
                           <td class="px-4 py-3 text-center"><span class="text-xs">⚠️</span></td>
                           <td class="px-4 py-3">
-                            <div class="font-extrabold text-slate-800 dark:text-slate-150">Carlos Eduardo</div>
+                            <div class="font-extrabold text-slate-800 dark:text-slate-150">Passageiro Demo 01</div>
                             <span class="inline-block mt-0.5 px-1.5 py-0.5 bg-slate-200/50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-extrabold text-[8px] rounded border border-slate-300/40 dark:border-slate-700/50 uppercase">BA921</span>
                           </td>
                           <td class="px-4 py-3">
@@ -308,7 +308,7 @@ export class LandingPage {
                         <tr class="hover:bg-slate-100/30 dark:hover:bg-slate-800/10 transition-colors duration-200">
                           <td class="px-4 py-3 text-center"><span class="text-xs">🟢</span></td>
                           <td class="px-4 py-3">
-                            <div class="font-extrabold text-slate-800 dark:text-slate-150">Mariana Costa</div>
+                            <div class="font-extrabold text-slate-800 dark:text-slate-150">Passageira Demo 02</div>
                             <span class="inline-block mt-0.5 px-1.5 py-0.5 bg-slate-200/50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-extrabold text-[8px] rounded border border-slate-300/40 dark:border-slate-700/50 uppercase">US441</span>
                           </td>
                           <td class="px-4 py-3">
@@ -345,7 +345,7 @@ export class LandingPage {
                     <span class="block font-extrabold text-slate-400 dark:text-slate-400 mb-2.5 uppercase text-[8px]">Novo (3)</span>
                     <div class="p-2.5 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-xl shadow-sm">
                       <span class="block font-bold text-slate-800 dark:text-slate-200 truncate">Grécia / Lua de Mel</span>
-                      <span class="block text-[8px] text-slate-400 mt-0.5">Ana Souza</span>
+                      <span class="block text-[8px] text-slate-400 mt-0.5">Cliente Exemplo 01</span>
                       <span class="block text-[9px] font-black text-indigo-650 dark:text-indigo-400 mt-1">R$ 24.000,00</span>
                     </div>
                   </div>
@@ -354,7 +354,7 @@ export class LandingPage {
                     <span class="block font-extrabold text-slate-400 dark:text-slate-400 mb-2.5 uppercase text-[8px]">Em Análise (2)</span>
                     <div class="p-2.5 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-xl shadow-sm">
                       <span class="block font-bold text-slate-800 dark:text-slate-200 truncate">Férias em Família</span>
-                      <span class="block text-[8px] text-slate-400 mt-0.5">Pedro Santos</span>
+                      <span class="block text-[8px] text-slate-400 mt-0.5">Cliente Exemplo 02</span>
                       <span class="block text-[9px] font-black text-indigo-650 dark:text-indigo-400 mt-1">R$ 15.600,00</span>
                     </div>
                   </div>
@@ -363,7 +363,7 @@ export class LandingPage {
                     <span class="block font-extrabold text-slate-400 dark:text-slate-400 mb-2.5 uppercase text-[8px]">Proposta (4)</span>
                     <div class="p-2.5 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-xl shadow-sm border-l-2 border-l-amber-500">
                       <span class="block font-bold text-slate-800 dark:text-slate-200 truncate">Férias em Natal</span>
-                      <span class="block text-[8px] text-slate-400 mt-0.5">Beatriz Oliveira</span>
+                      <span class="block text-[8px] text-slate-400 mt-0.5">Cliente Exemplo 03</span>
                       <span class="block text-[9px] font-black text-indigo-650 dark:text-indigo-400 mt-1">R$ 8.900,00</span>
                     </div>
                   </div>
@@ -372,7 +372,7 @@ export class LandingPage {
                     <span class="block font-extrabold text-slate-400 dark:text-slate-400 mb-2.5 uppercase text-[8px]">Ganho (9)</span>
                     <div class="p-2.5 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-xl shadow-sm border-l-2 border-l-emerald-500">
                       <span class="block font-bold text-slate-800 dark:text-slate-200 truncate">Mochilão Europa</span>
-                      <span class="block text-[8px] text-slate-400 mt-0.5">Julio César</span>
+                      <span class="block text-[8px] text-slate-400 mt-0.5">Cliente Exemplo 04</span>
                       <span class="block text-[9px] font-black text-emerald-600 dark:text-emerald-450 mt-1">R$ 18.200,00</span>
                     </div>
                   </div>
@@ -394,7 +394,7 @@ export class LandingPage {
                         <span>SLA Passaporte</span>
                         <span>Urgente</span>
                       </div>
-                      <span class="block text-slate-500 dark:text-slate-400 truncate mt-0.5">Maria Clara (Validade < 180d)</span>
+                      <span class="block text-slate-500 dark:text-slate-400 truncate mt-0.5">Passageira Demo 03 (Validade < 180d)</span>
                     </div>
                     <div class="p-2 bg-slate-50/50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-xl">
                       <div class="flex justify-between font-bold text-slate-600 dark:text-slate-300">
@@ -409,7 +409,7 @@ export class LandingPage {
                   <div class="md:col-span-2 space-y-3 flex flex-col justify-between min-h-[160px]">
                     <div class="space-y-2">
                       <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
-                        <span class="font-extrabold text-slate-700 dark:text-slate-300">Thread: Alerta SLA - Maria Clara</span>
+                        <span class="font-extrabold text-slate-700 dark:text-slate-300">Thread: Alerta SLA - Passageira Demo 03</span>
                         <span class="text-[8px] font-bold text-rose-555">Viagem em 15/12/2026</span>
                       </div>
                       <div class="space-y-2 max-h-[120px] overflow-y-auto pr-1">
@@ -418,7 +418,7 @@ export class LandingPage {
                           <p class="text-slate-600 dark:text-slate-400 mt-0.5 leading-normal">Atenção! Passaporte da passageira vence em menos de 6 meses no dia da viagem.</p>
                         </div>
                         <div class="p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-right ml-4">
-                          <span class="font-extrabold text-slate-700 dark:text-slate-300">Consultor João:</span>
+                          <span class="font-extrabold text-slate-700 dark:text-slate-300">Consultor Demo:</span>
                           <p class="text-slate-600 dark:text-slate-400 mt-0.5 leading-normal">Solicitação de renovação já está em andamento. O novo número será atualizado em breve.</p>
                         </div>
                       </div>
@@ -442,7 +442,7 @@ export class LandingPage {
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div class="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl space-y-1.5">
-                    <span class="font-bold text-slate-700 dark:text-slate-300 block">Grade de Turnos (Visão Agatur)</span>
+                    <span class="font-bold text-slate-700 dark:text-slate-300 block">Grade de Turnos (Visão da Agência)</span>
                     <p class="text-[9px] text-slate-500 dark:text-slate-400">Tabela interativa com cores por horário (10-17, 12-19, 14-21, 15-22, Folga, Férias) e coluna fixa de equipe.</p>
                   </div>
                   <div class="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl space-y-1.5">
@@ -474,13 +474,13 @@ export class LandingPage {
                     </thead>
                     <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-slate-600 dark:text-slate-300">
                       <tr>
-                        <td class="py-2.5 font-bold text-slate-800 dark:text-slate-200">Felipe Melo</td>
+                        <td class="py-2.5 font-bold text-slate-800 dark:text-slate-200">Passageiro Demo 04</td>
                         <td class="py-2.5">LATAM Airlines</td>
                         <td class="py-2.5 font-bold text-slate-800 dark:text-slate-200">R$ 1.850,00</td>
                         <td class="py-2.5"><span class="px-1.5 py-0.5 bg-rose-500/10 text-rose-555 border border-rose-500/20 text-[8px] font-bold rounded-md uppercase">Solicitado</span></td>
                       </tr>
                       <tr>
-                        <td class="py-2.5 font-bold text-slate-800 dark:text-slate-200">Patrícia Lima</td>
+                        <td class="py-2.5 font-bold text-slate-800 dark:text-slate-200">Passageira Demo 05</td>
                         <td class="py-2.5">Decolar</td>
                         <td class="py-2.5 font-bold text-slate-800 dark:text-slate-200">R$ 3.400,00</td>
                         <td class="py-2.5"><span class="px-1.5 py-0.5 bg-amber-500/10 text-amber-600 dark:text-amber-450 border border-amber-500/20 text-[8px] font-bold rounded-md uppercase">Em Análise</span></td>
@@ -787,7 +787,7 @@ export class LandingPage {
                             ✈️
                           </div>
                           <div>
-                            <strong class="block text-sm font-extrabold text-slate-800 dark:text-white">Agatur Agência de Viagens</strong>
+                            <strong class="block text-sm font-extrabold text-slate-800 dark:text-white">Sua Agência de Viagens</strong>
                             <span class="block text-[9px] text-slate-400 uppercase font-bold tracking-wider">Itinerário Digital do Cliente</span>
                           </div>
                         </div>
@@ -797,7 +797,7 @@ export class LandingPage {
                       <div class="grid grid-cols-2 gap-4 text-xs">
                         <div>
                           <span class="block text-[9px] font-bold text-slate-400 uppercase">Passageiro VIP</span>
-                          <strong class="block text-slate-800 dark:text-slate-200">Guilherme R. Albuquerque</strong>
+                          <strong class="block text-slate-800 dark:text-slate-200">Passageiro Fictício (Exemplo)</strong>
                         </div>
                         <div>
                           <span class="block text-[9px] font-bold text-slate-400 uppercase">Destino & Data</span>
@@ -821,7 +821,7 @@ export class LandingPage {
                           </div>
                           <div>
                             <strong class="block text-sm font-extrabold text-slate-800 dark:text-white">Voucher Oficial de Confirmação</strong>
-                            <span class="block text-[9px] text-slate-400 uppercase font-bold tracking-wider">Documento PDF com Logotipo da Agência</span>
+                            <span class="block text-[9px] text-slate-400 uppercase font-bold tracking-wider">Documento PDF com Logotipo da Sua Agência</span>
                           </div>
                         </div>
                         <span class="text-[9px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-1 rounded-lg">RESERVA CONFIRMADA</span>
@@ -842,7 +842,7 @@ export class LandingPage {
                         ⭐
                       </div>
                       <div>
-                        <strong class="block text-sm font-extrabold text-slate-800 dark:text-white">Como foi sua experiência com a Agatur?</strong>
+                        <strong class="block text-sm font-extrabold text-slate-800 dark:text-white">Como foi sua experiência com a Sua Agência?</strong>
                         <span class="block text-[10px] text-slate-500 font-medium">Sua avaliação ajuda a premiar nosso consultor de viagens</span>
                       </div>
 
@@ -862,13 +862,13 @@ export class LandingPage {
                           💬
                         </div>
                         <div>
-                          <strong class="block text-slate-800 dark:text-slate-100 font-extrabold text-xs">Agatur Viagens (WhatsApp Oficial)</strong>
+                          <strong class="block text-slate-800 dark:text-slate-100 font-extrabold text-xs">Sua Agência de Viagens (WhatsApp Oficial)</strong>
                           <span class="block text-[8px] text-emerald-600 dark:text-emerald-400 font-bold uppercase">Mensagem Automática PaxFlow</span>
                         </div>
                       </div>
 
                       <p class="text-slate-600 dark:text-slate-300 text-[11px] leading-relaxed">
-                        "Olá Guilherme! 👋 Sua viagem para Paris está se aproximando! Acesse o seu <strong>Itinerário Digital Oficial</strong> da Agatur no link: <span class="text-indigo-600 dark:text-indigo-400 underline font-bold">agatur.paxflow.com/itinerario/PAX-8840</span>"
+                        "Olá! 👋 Sua viagem para Paris está se aproximando! Acesse o seu <strong>Itinerário Digital Oficial</strong> da Sua Agência no link: <span class="text-indigo-600 dark:text-indigo-400 underline font-bold">suaagencia.paxflow.com/itinerario/PAX-8840</span>"
                       </p>
                     </div>
                   </div>
@@ -1011,10 +1011,10 @@ export class LandingPage {
                     <span class="text-[9px] font-bold text-slate-400">Paris, França</span>
                   </div>
                   <p class="text-[11px] text-slate-600 dark:text-slate-300 font-medium">
-                    Passageiro <strong>Guilherme R. Albuquerque</strong> (LOC: <code>PAX-9821</code>) tem passaporte com vencimento em 14/11/2026. Data de retorno da viagem: 28/10/2026.
+                    Passageiro <strong>Passageiro Fictício (Exemplo)</strong> (LOC: <code>PAX-9821</code>) tem passaporte com vencimento em 14/11/2026. Data de retorno da viagem: 28/10/2026.
                   </p>
                   <div class="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800 text-[10px]">
-                    <span class="text-indigo-600 dark:text-indigo-400 font-bold">Consultor: Marinna Morena</span>
+                    <span class="text-indigo-600 dark:text-indigo-400 font-bold">Consultor: Consultor Demo A</span>
                     <span class="px-2 py-0.5 bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-300 font-extrabold rounded">Notificar Cliente</span>
                   </div>
                 </div>
@@ -1098,15 +1098,15 @@ export class LandingPage {
                 <span class="block text-xs font-black text-slate-700 dark:text-slate-200 mb-3">Central Administrativa de Escala</span>
                 <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 space-y-2 shadow-sm text-xs">
                   <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-2">
-                    <span class="font-extrabold text-slate-800 dark:text-slate-200">Marinna Morena</span>
+                    <span class="font-extrabold text-slate-800 dark:text-slate-200">Consultora Demo A</span>
                     <span class="px-2 py-0.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-black rounded">Turno: 10:00 - 17:00</span>
                   </div>
                   <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-2">
-                    <span class="font-extrabold text-slate-800 dark:text-slate-200">Guto Bassaroto</span>
+                    <span class="font-extrabold text-slate-800 dark:text-slate-200">Consultor Demo B</span>
                     <span class="px-2 py-0.5 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[10px] font-black rounded">Turno: 13:00 - 20:00</span>
                   </div>
                   <div class="flex justify-between items-center">
-                    <span class="font-extrabold text-slate-800 dark:text-slate-200">Maria Carvalho</span>
+                    <span class="font-extrabold text-slate-800 dark:text-slate-200">Consultora Demo C</span>
                     <span class="px-2 py-0.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-black rounded">Folga Semanal</span>
                   </div>
                 </div>
