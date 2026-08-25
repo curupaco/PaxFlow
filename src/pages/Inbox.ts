@@ -89,6 +89,36 @@ export class InboxPage {
       this.escalaData = await EscalaService.loadEscalaMensal(this.escalaAno, this.escalaMes);
       this.bancoFolgasData = await EscalaService.loadBancoFolgas();
       this.eventosEscalaData = await EscalaService.loadEventosEscala();
+
+      // Garantir que 100% dos consultores ativos (profiles + default) estejam na escala
+      const teamSet = new Set<string>();
+      ["Marinna", "Guto", "Maria", "Rafael", "Eduardo", "Laura", "Fernanda"].forEach(n => teamSet.add(n));
+
+      if (this.consultants && this.consultants.length > 0) {
+        this.consultants.forEach(c => {
+          if (c.nome) teamSet.add(c.nome);
+        });
+      }
+
+      teamSet.forEach(name => {
+        if (!this.escalaData[name]) {
+          this.escalaData[name] = new Array(31).fill('');
+        }
+      });
+
+      teamSet.forEach(name => {
+        const exists = this.bancoFolgasData.some(b => b.consultor_nome === name);
+        if (!exists) {
+          this.bancoFolgasData.push({
+            consultor_id: `c-${name}`,
+            consultor_nome: name,
+            equipe: 'Equipe Agatur',
+            saldo_dias: '—',
+            detalhes_historico: 'Sem saldo acumulado'
+          });
+        }
+      });
+
     } catch (err) {
       console.error('Erro ao carregar dados da escala:', err);
     }

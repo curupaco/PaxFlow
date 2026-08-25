@@ -379,19 +379,29 @@
 .escala-table {
   border-collapse: separate;
   border-spacing: 0;
-  min-width: 1200px;
+  table-layout: fixed;
   width: 100%;
 }
 .escala-table th, .escala-table td {
-  height: 56px;
+  height: 48px;
+  max-height: 48px;
   text-align: center;
   border-right: 1px solid #edf0f4;
   border-bottom: 1px solid #edf0f4;
-  padding: 4px;
+  padding: 3px;
+  box-sizing: border-box;
+  vertical-align: middle;
 }
 .dark .escala-table th, .dark .escala-table td {
   border-right-color: #1e293b;
   border-bottom-color: #1e293b;
+}
+
+.escala-table th:not(.name-col),
+.escala-table td:not(.name-col) {
+  width: 50px !important;
+  min-width: 50px !important;
+  max-width: 50px !important;
 }
 
 .escala-table th {
@@ -411,18 +421,24 @@
   position: sticky !important;
   left: 0;
   z-index: 4;
-  min-width: 170px;
+  width: 170px !important;
+  min-width: 170px !important;
+  max-width: 170px !important;
   text-align: left !important;
   background: white !important;
   padding-left: 14px !important;
+  box-sizing: border-box;
 }
 .dark .escala-table .name-col {
   background: #0f172a !important;
 }
 .escala-table .name-col strong {
-  font-size: 0.88rem;
+  font-size: 0.85rem;
   color: #1e293b;
   display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .dark .escala-table .name-col strong {
   color: #f1f5f9;
@@ -430,14 +446,14 @@
 .escala-table .name-col small {
   display: block;
   color: #9aa5b6;
-  font-size: 0.68rem;
+  font-size: 0.65rem;
   margin-top: 1px;
 }
 
 .escala-table .daynum {
   display: block;
   color: #1e293b;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   font-weight: 800;
 }
 .dark .escala-table .daynum {
@@ -452,16 +468,22 @@
 .escala-cell {
   min-height: 38px;
   height: 38px;
-  border-radius: 9px;
+  max-height: 38px;
+  width: 100%;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 2px 4px;
-  font-size: 0.75rem;
+  padding: 2px;
+  font-size: 0.72rem;
   font-weight: 800;
   cursor: pointer;
   transition: all 0.15s ease;
   user-select: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  box-sizing: border-box;
 }
 .escala-cell:hover {
   outline: 2px solid rgba(37, 99, 235, 0.4);
