@@ -213,15 +213,22 @@ export class EditTravelModal {
       }
 
       // Busca lista de clientes
-      const { data: clientes, error: errClientes } = await supabase
+      const { data: clientesData } = await supabase
         .from('clientes')
         .select('id, nome')
         .order('nome', { ascending: true });
 
-      if (errClientes) throw errClientes;
+      const listaClientes: any[] = clientesData ? [...clientesData] : [];
+      if (viagem && viagem.cliente_id) {
+        const jaExiste = listaClientes.some(c => c.id === viagem.cliente_id);
+        if (!jaExiste) {
+          const nomeCliente = viagem.cliente?.nome || viagem.cliente_nome || 'Cliente (Atendimento Balcão)';
+          listaClientes.unshift({ id: viagem.cliente_id, nome: nomeCliente });
+        }
+      }
 
       // Renderiza a estrutura do Modal com as Abas
-      this.renderEdicaoEProdutosModalContent(viagem, clientes || [], activeTab);
+      this.renderEdicaoEProdutosModalContent(viagem, listaClientes, activeTab);
       
       // Carrega e exibe os produtos da viagem
       await this.loadAndRenderProdutosViagem(tripId);
