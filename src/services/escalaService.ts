@@ -299,6 +299,41 @@ export class EscalaService {
   }
 
   /**
+   * Delete an Event / Training
+   */
+  public static async deletarEvento(eventoId: string): Promise<boolean> {
+    const list = await this.loadEventosEscala();
+    const updated = list.filter(e => e.id !== eventoId);
+    try {
+      localStorage.setItem(this.LOCAL_STORAGE_EVENTOS_KEY, JSON.stringify(updated));
+      await supabase.from('escala_eventos').delete().eq('id', eventoId);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /**
+   * Auto-fill an entire month schedule for a consultant in batch
+   */
+  public static async preencherMesEmLote(
+    ano: number,
+    mes: number,
+    consultorNome: string,
+    turnoPadrao: string,
+    diasFolgaSemanais: number[]
+  ): Promise<boolean> {
+    const daysInMonth = new Date(ano, mes, 0).getDate();
+    for (let dayIdx = 0; dayIdx < daysInMonth; dayIdx++) {
+      const dateObj = new Date(ano, mes - 1, dayIdx + 1);
+      const dow = dateObj.getDay();
+      const valor = diasFolgaSemanais.includes(dow) ? 'Folga' : turnoPadrao;
+      await this.salvarCelulaEscala(ano, mes, consultorNome, dayIdx, valor);
+    }
+    return true;
+  }
+
+  /**
    * Fetch all Shift Change / Off requests
    */
   public static async loadSolicitacoes(): Promise<SolicitacaoEscala[]> {
@@ -379,6 +414,23 @@ export class EscalaService {
         }
       } else if (target.tipo === 'folga' && target.solicitante_nome) {
         await this.salvarCelulaEscala(ano, mes, target.solicitante_nome, diaOrigemIdx, 'Folga');
+        // Abatimento automático de 1 dia no Banco de Folgas
+        try {
+          const banco = await this.loadBancoFolgas();
+          const member = banco.find(b => 
+            b.consultor_nome.trim().toLowerCase() === target.solicitante_nome?.trim().toLowerCase()
+          );
+          if (member && member.saldo_dias && String(member.saldo_dias) !== '—') {
+            const currentBalance = parseInt(String(member.saldo_dias), 10);
+            if (!isNaN(currentBalance) && currentBalance > 0) {
+              member.saldo_dias = String(currentBalance - 1);
+              member.detalhes_historico = `${member.detalhes_historico || ''} · Folga ref ${diaOrigem}/${mes}`.trim();
+              await this.salvarBancoFolgas(banco);
+            }
+          }
+        } catch (e) {
+          console.warn('Erro ao abater saldo do banco de folgas:', e);
+        }
       } else if (target.tipo === 'ferias' && target.solicitante_nome) {
         await this.salvarCelulaEscala(ano, mes, target.solicitante_nome, diaOrigemIdx, 'Férias');
       }
