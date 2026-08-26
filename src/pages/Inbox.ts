@@ -62,7 +62,7 @@ export class InboxPage {
       // 3. Fetch active consultants list
       await this.loadConsultants();
       if (this.perfil?.role === 'admin') {
-        this.selectedConsultantFilter = this.perfil.id;
+        this.selectedConsultantFilter = 'todos';
       }
 
       // 4. Fetch all reminders and build unified alert list
@@ -2346,7 +2346,7 @@ export class InboxPage {
         destinatario_id: tipo === 'troca' ? destinatarioId : undefined,
         destinatario_nome: tipo === 'troca' ? destinatarioNome : undefined,
         data_origem: dataOrigem,
-        data_destino: tipo === 'troca' ? dataDestino : undefined,
+        data_destino: dataDestino || dataOrigem,
         motivo,
         status: tipo === 'troca' ? 'pendente_colega' : 'pendente_admin'
       });

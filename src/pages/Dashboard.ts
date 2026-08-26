@@ -123,9 +123,44 @@ export class Dashboard {
   private showFiltersPanel: boolean = false;
   private sortField: string = '';
   private sortDirection: 'asc' | 'desc' = 'asc';
+  private viewModeMonth: 'current' | 'all' = (localStorage.getItem('paxflow-view-mode-month') as any) || 'current';
 
   constructor(container: HTMLElement) {
     this.container = container;
+  }
+
+  private getFormattedCurrentMonthLabel(): string {
+    const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+    const now = new Date();
+    return `${months[now.getMonth()]}/${now.getFullYear()}`;
+  }
+
+  private isCurrentMonthTrip(v: any): boolean {
+    const now = new Date();
+    const curYear = now.getFullYear();
+    const curMonth = now.getMonth() + 1;
+
+    const rawDate = v.data_financeiro || v.data_ida || v.created_at;
+    if (!rawDate) return true;
+
+    let year = 0;
+    let month = 0;
+
+    if (typeof rawDate === 'string') {
+      const dataStr = rawDate.includes('T') ? rawDate.split('T')[0] : rawDate.split(' ')[0];
+      const parts = dataStr.split('-');
+      if (parts.length === 3) {
+        year = parseInt(parts[0], 10);
+        month = parseInt(parts[1], 10);
+      }
+    } else if (rawDate instanceof Date) {
+      year = rawDate.getFullYear();
+      month = rawDate.getMonth() + 1;
+    }
+
+    if (isNaN(year) || isNaN(month) || year === 0 || month === 0) return true;
+
+    return year === curYear && month === curMonth;
   }
 
   /**
@@ -369,11 +404,7 @@ export class Dashboard {
         .from('viagens')
         .select('*, cliente:clientes(*), reembolsos(*), produtos:produtos_viagem(*), destino_ref:destinos(*)');
 
-      // Regra de Exibição: Consultores normais só veem seus próprios cards; admins veem todos.
-      if (this.perfil && this.perfil.role !== 'admin') {
-        query = query.eq('consultor_id', this.user.id);
-      }
-
+      // Carrega viagens para busca global (Modo Co-Piloto) e visualização operacional
       const { data, error } = await query;
 
       if (error) {
@@ -1320,8 +1351,14 @@ export class Dashboard {
    * Renderiza a interface do Dashboard principal
    */
   private render(): void {
-    // 1. Filtragem por consultor (apenas Admins podem escolher outros)
+    // 1. Filtragem por consultor e Mês Corrente
     const totalPorConsultor = this.viagens.filter(v => {
+      if (!this.buscaTermo) {
+        if (this.perfil?.role !== 'admin') {
+          if (v.consultor_id !== this.user?.id && v.consultor_responsavel_id !== this.user?.id) return false;
+        }
+        if (this.viewModeMonth === 'current' && !this.isCurrentMonthTrip(v)) return false;
+      }
       if (this.perfil?.role === 'admin' && this.selectedConsultantId !== 'todos') {
         return v.consultor_id === this.selectedConsultantId;
       }
@@ -1338,10 +1375,15 @@ export class Dashboard {
       reembolso_solicitado: totalPorConsultor.filter(v => v.status === 'reembolso_solicitado').length
     };
 
-    // 3. Aplicação completa de filtros: Busca textual + Aba ativa + Filtros de Data Avançados
+    // 3. Aplicação completa de filtros: Busca textual + Mês Corrente + Aba ativa + Filtros de Data Avançados
     const filtrados = this.viagens.filter(v => {
-      // Filtro de Consultor
-      if (this.perfil?.role === 'admin' && this.selectedConsultantId !== 'todos') {
+      // Filtro de Consultor e Mês Corrente (se não estiver buscando por texto no Co-Piloto)
+      if (!this.buscaTermo) {
+        if (this.perfil?.role !== 'admin') {
+          if (v.consultor_id !== this.user?.id && v.consultor_responsavel_id !== this.user?.id) return false;
+        }
+        if (this.viewModeMonth === 'current' && !this.isCurrentMonthTrip(v)) return false;
+      } else if (this.perfil?.role === 'admin' && this.selectedConsultantId !== 'todos') {
         if (v.consultor_id !== this.selectedConsultantId) return false;
       }
 
@@ -1533,6 +1575,16 @@ export class Dashboard {
           </div>
           
           <div class="flex flex-wrap items-center gap-3 w-full lg:w-auto lg:justify-end">
+            <!-- Pill Switch Segmentado: Mês Corrente vs Ver Tudo -->
+            <div class="inline-flex p-1 bg-slate-100 dark:bg-slate-800/80 rounded-xl border border-slate-200/60 dark:border-slate-700/60 shrink-0 select-none">
+              <button id="btn-view-month-current" class="px-3 py-1.5 rounded-lg text-xs font-black transition ${this.viewModeMonth === 'current' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'}">
+                📅 Mês Corrente (${this.getFormattedCurrentMonthLabel()})
+              </button>
+              <button id="btn-view-month-all" class="px-3 py-1.5 rounded-lg text-xs font-black transition ${this.viewModeMonth === 'all' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'}">
+                🌐 Ver Tudo
+              </button>
+            </div>
+
             <!-- Stats Rápidos -->
             <div class="flex items-center gap-2 bg-slate-100/60 dark:bg-slate-800/40 p-1.5 rounded-xl border border-slate-200/30 dark:bg-slate-700/30 shrink-0">
               <div class="px-3.5 py-1.5 text-center">
@@ -2033,6 +2085,19 @@ Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : '
    * Vincula todos os ouvintes de eventos da nova interface em lista do operacional
    */
   private setupUIEventListeners(): void {
+    // 0. Pill Switch: Mês Corrente vs Ver Tudo
+    document.getElementById('btn-view-month-current')?.addEventListener('click', () => {
+      this.viewModeMonth = 'current';
+      localStorage.setItem('paxflow-view-mode-month', 'current');
+      this.render();
+    });
+
+    document.getElementById('btn-view-month-all')?.addEventListener('click', () => {
+      this.viewModeMonth = 'all';
+      localStorage.setItem('paxflow-view-mode-month', 'all');
+      this.render();
+    });
+
     // 1. Campo de busca de viagens
     const searchInput = document.getElementById('input-busca-viagem') as HTMLInputElement;
     searchInput?.addEventListener('input', (e) => {

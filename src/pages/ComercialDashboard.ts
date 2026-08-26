@@ -236,11 +236,6 @@ export class ComercialDashboard {
     try {
       // 1. Carregar Orçamentos do banco
       let queryOrc = supabase.from('orcamentos').select('*');
-      
-      // Consultor comum só vê seus próprios dados
-      if (this.perfil && this.perfil.role !== 'admin') {
-        queryOrc = queryOrc.eq('consultor_id', this.user.id);
-      }
       const { data: dataOrc, error: errOrc } = await queryOrc;
       if (errOrc) throw errOrc;
 
