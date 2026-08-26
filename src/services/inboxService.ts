@@ -723,7 +723,7 @@ export class InboxService {
         }
       });
 
-      // --- PART 7: SOLICITAÇÕES DE ESCALA (TROCAS E FOLGAS) ---
+      // --- PART 7: SOLICITAÇÕES DE ESCALA (TROCAS, FOLGAS E FÉRIAS) ---
       try {
         const solicitacoesEscala = await EscalaService.loadSolicitacoes();
         (solicitacoesEscala || []).forEach(sol => {
@@ -732,62 +732,106 @@ export class InboxService {
           const isAdmin = perfil?.role === 'admin';
 
           let shouldInclude = false;
+          let isSentItem = false;
           let cardTitle = '';
           let cardSubject = '';
           let cardBody = '';
+          let cardSender = sol.solicitante_nome || 'Central de Escala';
 
-          if (sol.status === 'pendente_colega' && isUserDestinatario) {
-            shouldInclude = true;
-            cardTitle = 'Troca de Turno Solicitada por Colega';
-            cardSubject = `${sol.solicitante_nome} solicitou trocar o turno do dia ${sol.data_origem} com você!`;
-            cardBody = `
-              <strong>${sol.solicitante_nome}</strong> deseja trocar seu turno de <strong>${sol.data_origem}</strong> com o seu turno de <strong>${sol.data_destino || sol.data_origem}</strong>.<br><br>
-              • <strong>Motivo:</strong> ${sol.motivo || 'Não informado'}<br><br>
-              <em>Ao aceitar, a solicitação será enviada para aprovação final da gestão da agência.</em>
-            `;
-          } else if (sol.status === 'pendente_admin' && isAdmin) {
-            shouldInclude = true;
-            cardTitle = `Aprovação de Escala: ${sol.tipo.toUpperCase()}`;
-            cardSubject = `Solicitação de ${sol.tipo === 'troca' ? 'Troca de Turno' : sol.tipo === 'folga' ? 'Folga Semanal' : 'Férias'} - ${sol.solicitante_nome}`;
-            cardBody = `
-              <div class="space-y-2">
-                <p><strong>Solicitante:</strong> ${sol.solicitante_nome}</p>
-                <p>${sol.tipo === 'troca' ? `• <strong>Troca com:</strong> ${sol.destinatario_nome}<br>• <strong>Data Solicitante:</strong> ${sol.data_origem}<br>• <strong>Data Colega:</strong> ${sol.data_destino}` : `• <strong>Data Solicitada:</strong> ${sol.data_origem}`}</p>
-                <p>• <strong>Motivo:</strong> ${sol.motivo || 'Sem observações'}</p>
+          const rangeStr = sol.data_destino && sol.data_destino !== sol.data_origem
+            ? `${sol.data_origem} a ${sol.data_destino}`
+            : sol.data_origem;
+
+          // 1. Troca pendente de aceite pelo colega destinatário
+          if (sol.status === 'pendente_colega') {
+            if (isUserDestinatario) {
+              shouldInclude = true;
+              cardTitle = 'Troca de Turno Solicitada por Colega';
+              cardSubject = `${sol.solicitante_nome} solicitou trocar o turno de ${sol.data_origem} com você!`;
+              cardBody = `
+                <strong>${sol.solicitante_nome}</strong> deseja trocar seu turno de <strong>${sol.data_origem}</strong> com o seu turno de <strong>${sol.data_destino || sol.data_origem}</strong>.<br><br>
+                • <strong>Motivo:</strong> ${sol.motivo || 'Não informado'}<br><br>
                 <div class="pt-2">
                   <button class="btn-ver-na-escala inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-extrabold transition shadow-md shadow-indigo-950/20" data-sol-id="${sol.id}">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                    <span>Ver na Escala</span>
+                    <span>Analisar na Escala</span>
                   </button>
                 </div>
-              </div>
-            `;
-          } else if ((sol.status === 'aprovado' || sol.status === 'recusado') && isUserSolicitante) {
-            shouldInclude = true;
-            cardTitle = `Resposta da Escala: ${sol.status === 'aprovado' ? 'Aprovada' : 'Recusada'}`;
-            cardSubject = `Sua solicitação de ${sol.tipo} para ${sol.data_origem} foi ${sol.status}.`;
-            cardBody = `
-              Sua solicitação enviada em ${new Date(sol.created_at).toLocaleDateString('pt-BR')} foi processada pela gestão.<br><br>
-              • <strong>Status:</strong> ${sol.status.toUpperCase()}<br>
-              • <strong>Observações da Gestão:</strong> ${sol.resposta_admin || 'Sem observações'}.
-            `;
+              `;
+            } else if (isUserSolicitante) {
+              shouldInclude = true;
+              isSentItem = true;
+              cardTitle = 'Troca de Turno Enviada para Colega';
+              cardSubject = `Solicitação enviada para ${sol.destinatario_nome}. Aguardando aceite do colega.`;
+              cardBody = `Você solicitou troca de turno de ${rangeStr} com ${sol.destinatario_nome}.`;
+            }
+          } 
+          // 2. Solicitação pendente de aprovação pela gestão (folga, férias ou troca aceita)
+          else if (sol.status === 'pendente_admin') {
+            if (isAdmin) {
+              shouldInclude = true;
+              cardTitle = `Aprovação de Escala: ${sol.tipo.toUpperCase()}`;
+              cardSubject = `Solicitação de ${sol.tipo === 'troca' ? 'Troca de Turno' : sol.tipo === 'folga' ? 'Folga Semanal' : 'Férias'} - ${sol.solicitante_nome}`;
+              cardBody = `
+                <div class="space-y-2">
+                  <p><strong>Solicitante:</strong> ${sol.solicitante_nome}</p>
+                  <p>${sol.tipo === 'troca' ? `• <strong>Troca com:</strong> ${sol.destinatario_nome}<br>• <strong>Data Solicitante:</strong> ${sol.data_origem}<br>• <strong>Data Colega:</strong> ${sol.data_destino}` : `• <strong>Período Solicitado:</strong> ${rangeStr}`}</p>
+                  <p>• <strong>Motivo:</strong> ${sol.motivo || 'Sem observações'}</p>
+                  <div class="pt-2">
+                    <button class="btn-ver-na-escala inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-extrabold transition shadow-md shadow-indigo-950/20" data-sol-id="${sol.id}">
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                      <span>Ver na Escala</span>
+                    </button>
+                  </div>
+                </div>
+              `;
+            } else if (isUserSolicitante) {
+              shouldInclude = true;
+              isSentItem = true;
+              cardTitle = `Solicitação de ${sol.tipo.toUpperCase()} Enviada`;
+              cardSubject = `Sua solicitação para ${rangeStr} foi enviada para análise da gestão da agência.`;
+              cardBody = `Sua solicitação de ${sol.tipo} enviada em ${new Date(sol.created_at).toLocaleDateString('pt-BR')} está sob análise dos administradores.`;
+            }
+          } 
+          // 3. Resposta final da gestão (Aprovada ou Recusada)
+          else if (sol.status === 'aprovado' || sol.status === 'recusado') {
+            if (isUserSolicitante) {
+              shouldInclude = true;
+              cardTitle = `Resposta da Escala: ${sol.status === 'aprovado' ? 'APROVADA' : 'RECUSADA'}`;
+              cardSender = 'Gestão da Agência';
+              cardSubject = `Sua solicitação de ${sol.tipo.toUpperCase()} (${rangeStr}) foi ${sol.status === 'aprovado' ? 'APROVADA' : 'RECUSADA'} pela gestão.`;
+              cardBody = `
+                <div class="space-y-2">
+                  <p>Sua solicitação de <strong>${sol.tipo === 'troca' ? 'Troca de Turno' : sol.tipo === 'folga' ? 'Folga Semanal' : 'Férias'}</strong> referente a <strong>${rangeStr}</strong> foi processada pela gestão.</p>
+                  <p>• <strong>Status Final:</strong> <span class="${sol.status === 'aprovado' ? 'text-emerald-600 font-extrabold' : 'text-rose-600 font-extrabold'}">${sol.status.toUpperCase()}</span></p>
+                  <p>• <strong>Observações da Gestão:</strong> ${sol.resposta_admin || 'Sem observações adicionais.'}</p>
+                </div>
+              `;
+            } else if (isAdmin) {
+              shouldInclude = true;
+              isSentItem = true;
+              cardTitle = `Decisão de Escala: ${sol.tipo.toUpperCase()} (${sol.status.toUpperCase()})`;
+              cardSubject = `Decisão enviada para ${sol.solicitante_nome} (${rangeStr}).`;
+              cardBody = `Você definiu a solicitação de ${sol.solicitante_nome} como ${sol.status.toUpperCase()}. Observação: ${sol.resposta_admin || 'Sem observação'}.`;
+            }
           }
 
           if (shouldInclude) {
-            const uniqueId = `escala-sol-${sol.id}`;
+            const uniqueId = `escala-sol-${sol.id}-${isSentItem ? 'sent' : 'inbox'}`;
             const isArchived = archivedList.includes(uniqueId);
 
             list.push({
               id: uniqueId,
               type: 'escala_solicitacao',
               title: cardTitle,
-              sender: sol.solicitante_nome || 'Central de Escala',
+              sender: cardSender,
               senderAvatar: 'panda',
               dateStr: new Date(sol.created_at).toLocaleDateString('pt-BR'),
               subject: cardSubject,
               body: cardBody,
               targetId: sol.id,
               arquivado: isArchived,
+              isSent: isSentItem,
               consultorId: sol.solicitante_id,
               consultorNome: sol.solicitante_nome || 'Consultor',
               createdAt: sol.created_at,

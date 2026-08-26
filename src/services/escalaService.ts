@@ -413,7 +413,14 @@ export class EscalaService {
           await this.salvarCelulaEscala(ano, mes, target.destinatario_nome, diaDestinoIdx, t1);
         }
       } else if (target.tipo === 'folga' && target.solicitante_nome) {
-        await this.salvarCelulaEscala(ano, mes, target.solicitante_nome, diaOrigemIdx, 'Folga');
+        let diaFimIdx = diaOrigemIdx;
+        if (target.data_destino) {
+          const [_, __, diaDest] = target.data_destino.split('-').map(Number);
+          if (!isNaN(diaDest) && diaDest >= diaOrigem) diaFimIdx = diaDest - 1;
+        }
+        for (let d = diaOrigemIdx; d <= diaFimIdx; d++) {
+          await this.salvarCelulaEscala(ano, mes, target.solicitante_nome, d, 'Folga');
+        }
         // Abatimento automático de 1 dia no Banco de Folgas
         try {
           const banco = await this.loadBancoFolgas();
@@ -432,7 +439,14 @@ export class EscalaService {
           console.warn('Erro ao abater saldo do banco de folgas:', e);
         }
       } else if (target.tipo === 'ferias' && target.solicitante_nome) {
-        await this.salvarCelulaEscala(ano, mes, target.solicitante_nome, diaOrigemIdx, 'Férias');
+        let diaFimIdx = diaOrigemIdx;
+        if (target.data_destino) {
+          const [_, __, diaDest] = target.data_destino.split('-').map(Number);
+          if (!isNaN(diaDest) && diaDest >= diaOrigem) diaFimIdx = diaDest - 1;
+        }
+        for (let d = diaOrigemIdx; d <= diaFimIdx; d++) {
+          await this.salvarCelulaEscala(ano, mes, target.solicitante_nome, d, 'Férias');
+        }
       }
     }
 
