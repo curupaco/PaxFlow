@@ -2232,7 +2232,7 @@ Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : '
               .from('viagens')
               .select('*, cliente:clientes(*), reembolsos(*), produtos:produtos_viagem(*), destino_ref:destinos(*)')
               .eq('id', tripId)
-              .single();
+              .maybeSingle();
             if (data) {
               trip = data;
               this.viagens.push(trip);

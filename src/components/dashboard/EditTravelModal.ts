@@ -112,7 +112,7 @@ export class EditTravelModal {
             .from('viagens')
             .select('*, cliente:clientes(*), reembolsos(*, produto:produtos_viagem(*)), produtos:produtos_viagem(*), destino_ref:destinos(*)')
             .eq('id', tripId)
-            .single();
+            .maybeSingle();
           viagem = data;
           if (viagem && viagem.destino_ref) {
             viagem.destino = `${viagem.destino_ref.nome}, ${viagem.destino_ref.pais}`;
@@ -123,9 +123,48 @@ export class EditTravelModal {
         errViagem = e;
       }
 
-      if (errViagem || !viagem) {
-        viagem = this.options.viagens.find(v => v.id === tripId);
-        if (!viagem) throw errViagem || new Error('Viagem não encontrada.');
+      if (!viagem) {
+        viagem = (this.options.viagens || []).find(v => v.id === tripId);
+      }
+
+      if (!viagem) {
+        const saved = localStorage.getItem('paxflow-viagens-local');
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved);
+            viagem = (parsed || []).find((v: any) => v.id === tripId);
+          } catch (e) {}
+        }
+      }
+
+      if (!viagem) {
+        try {
+          const { BalcaoService } = await import('../../services/balcaoService');
+          const resultados = await BalcaoService.buscarMulticriterio(tripId);
+          for (const res of resultados) {
+            const foundV = res.viagens.find(v => v.id === tripId);
+            if (foundV) {
+              viagem = {
+                id: foundV.id,
+                destino: foundV.destino,
+                status: foundV.status,
+                consultor_id: foundV.consultorId,
+                consultor_nome: foundV.consultorNome,
+                cliente: res.cliente,
+                cliente_id: res.cliente.id,
+                data_ida: new Date().toISOString().split('T')[0],
+                data_volta: new Date().toISOString().split('T')[0],
+                valor_total: 0,
+                produtos: []
+              };
+              break;
+            }
+          }
+        } catch (e) {}
+      }
+
+      if (!viagem) {
+        throw errViagem || new Error('Não foi possível carregar os detalhes desta viagem.');
       }
 
       if (viagem && !viagem.produtos) {
@@ -141,7 +180,7 @@ export class EditTravelModal {
           .from('profiles')
           .select('*')
           .eq('id', viagem.consultor_id)
-          .single();
+          .maybeSingle();
         if (!errConsultor && consultorData) {
           viagem.consultor = consultorData;
         } else {
