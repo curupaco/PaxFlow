@@ -1835,8 +1835,18 @@ export class InboxPage {
                   return `
                     <tr>
                       <td class="name-col">
-                        <strong>${name}</strong>
-                        <small class="text-slate-400">Equipe Agatur</small>
+                        <div class="flex items-center justify-between gap-1">
+                          <div class="truncate">
+                            <strong>${name}</strong>
+                            <small class="text-slate-400 block">Equipe Agatur</small>
+                          </div>
+                          ${isAdmin ? `
+                            <div class="flex flex-col items-center gap-0.5 shrink-0 opacity-80 hover:opacity-100 transition select-none">
+                              <button class="btn-escala-move-up p-1 text-[9px] font-black leading-none bg-slate-100 hover:bg-indigo-600 hover:text-white dark:bg-slate-800 dark:hover:bg-indigo-500 rounded text-slate-500 dark:text-slate-400 transition" data-name="${name}" title="Mover para cima">▲</button>
+                              <button class="btn-escala-move-down p-1 text-[9px] font-black leading-none bg-slate-100 hover:bg-indigo-600 hover:text-white dark:bg-slate-800 dark:hover:bg-indigo-500 rounded text-slate-500 dark:text-slate-400 transition" data-name="${name}" title="Mover para baixo">▼</button>
+                            </div>
+                          ` : ''}
+                        </div>
                         <div class="flex items-center gap-1 mt-1 font-mono text-[9px]">
                           <span class="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-extrabold" title="Dias Trabalhados">${totalTrab}d Trab</span>
                           <span class="px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 font-extrabold" title="Folgas / Descontos">${totalFolga}d Folga</span>
@@ -2066,6 +2076,49 @@ export class InboxPage {
         if (evId && confirm('Deseja realmente excluir este treinamento/evento?')) {
           await EscalaService.deletarEvento(evId);
           this.showToast('Evento excluído com sucesso.', 'success');
+          await this.loadEscalaData();
+          this.render();
+          this.setupEventListeners();
+        }
+      });
+    });
+
+    // Mover Consultor para Cima / Baixo na Escala
+    this.container.querySelectorAll('.btn-escala-move-up').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const name = btn.getAttribute('data-name');
+        if (!name) return;
+
+        const currentOrder = Object.keys(this.escalaData);
+        const idx = currentOrder.indexOf(name);
+        if (idx > 0) {
+          const temp = currentOrder[idx - 1];
+          currentOrder[idx - 1] = currentOrder[idx];
+          currentOrder[idx] = temp;
+
+          await EscalaService.salvarOrdemConsultores(currentOrder);
+          await this.loadEscalaData();
+          this.render();
+          this.setupEventListeners();
+        }
+      });
+    });
+
+    this.container.querySelectorAll('.btn-escala-move-down').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const name = btn.getAttribute('data-name');
+        if (!name) return;
+
+        const currentOrder = Object.keys(this.escalaData);
+        const idx = currentOrder.indexOf(name);
+        if (idx !== -1 && idx < currentOrder.length - 1) {
+          const temp = currentOrder[idx + 1];
+          currentOrder[idx + 1] = currentOrder[idx];
+          currentOrder[idx] = temp;
+
+          await EscalaService.salvarOrdemConsultores(currentOrder);
           await this.loadEscalaData();
           this.render();
           this.setupEventListeners();

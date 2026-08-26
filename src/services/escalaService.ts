@@ -171,7 +171,50 @@ export class EscalaService {
       }
     });
 
+    // Aplica a ordem salva dos consultores se existir
+    const customOrder = this.loadOrdemConsultores();
+    if (customOrder && customOrder.length > 0) {
+      const orderedMap: Record<string, string[]> = {};
+      customOrder.forEach(name => {
+        if (resultMap[name]) {
+          orderedMap[name] = resultMap[name];
+        }
+      });
+      Object.keys(resultMap).forEach(name => {
+        if (!orderedMap[name]) {
+          orderedMap[name] = resultMap[name];
+        }
+      });
+      return orderedMap;
+    }
+
     return resultMap;
+  }
+
+  private static LOCAL_STORAGE_ORDEM_KEY = 'paxflow_escala_ordem_consultores_v1';
+
+  public static loadOrdemConsultores(): string[] {
+    try {
+      const stored = localStorage.getItem(this.LOCAL_STORAGE_ORDEM_KEY);
+      if (stored) return JSON.parse(stored);
+    } catch (e) {}
+    return [];
+  }
+
+  public static async salvarOrdemConsultores(ordem: string[]): Promise<boolean> {
+    try {
+      localStorage.setItem(this.LOCAL_STORAGE_ORDEM_KEY, JSON.stringify(ordem));
+      try {
+        await supabase.from('configuracoes').upsert({
+          chave: 'escala_ordem_consultores',
+          valor: JSON.stringify(ordem)
+        });
+      } catch (e) {}
+      return true;
+    } catch (e) {
+      console.error('Erro ao salvar ordem dos consultores:', e);
+      return false;
+    }
   }
 
   /**
