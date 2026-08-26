@@ -1,16 +1,21 @@
-# Plano Arquitetural Completo: Escalonamento Multi-Tenant & Grupos de Agências (PaxFlow)
+# Especificação Arquitetural Enterprise: Escalonamento Multi-Tenant & Grupos de Agências (PaxFlow)
 
 > [!IMPORTANT]
-> **Status:** Documentação Técnica Salva para Implementação Futura.
-> **Nota de Risco & Não-Regressão:** A migração para Multi-Tenant exige o cumprimento rigoroso da camada de compatibilidade legada (`DEFAULT_AGENCY_UUID` + helper `getActiveAgencyId()`) para garantir zero regressão ou interrupção na agência atualmente ativa no sistema.
+> **Status:** Documentação Técnica Salva para Implementação Futura (Revisão Cirúrgica v2.0).
+> **Princípio de Segurança Primário:** A `agencia_id` é a unidade primária e obrigatória de isolamento operacional. A ausência de contexto de agência em ambiente multi-tenant é tratada como **Erro de Aplicação**, nunca como fallback silencioso definitivo.
 
 ---
 
-## 1. Resumo da Solução e Viabilidade
+## 1. Princípios Arquiteturais Fundamentais
 
-O escalonamento do PaxFlow para atender **N agências de turismo** (sejam agências únicas/independentes ou redes/grupos empresariais) é **altamente viável** e segue as melhores práticas de arquitetura SaaS moderna baseada em **PostgreSQL / Supabase Multi-Tenant por Coluna com Row Level Security (RLS)**.
-
-Esta abordagem permite isolamento total de dados entre empresas concorrentes, suporte a consolidação de relatórios para diretorias de redes/holdings e retenção de alta performance sem a complexidade de manter múltiplos bancos de dados.
+1. **Agência como Tenant Operacional**: Toda entidade operacional (`clientes`, `viagens`, `orcamentos`, `reembolsos`, `escala`) pertence a **exatamente uma agência** (`agencia_id NOT NULL`).
+2. **Grupo como Camada de Agregação e Autorização**: O `grupo_id` é uma camada de consolidação. A associação ao grupo é derivada da relação `agencia -> grupo`, evitando redundância e anomalias de dados (ex: viagem com `agencia_id = A` e `grupo_id = B`).
+3. **Defesa em Profundidade (Defense in Depth)**:
+   - *Frontend*: Interface reativa ao contexto ativo (`AgencyContext`).
+   - *Backend*: Serviços validam autorização do usuário e escopo do tenant em todas as rotas.
+   - *Banco de Dados*: Funções centralizadas de RLS + Constraints `NOT NULL` e `FOREIGN KEY`.
+4. **Fallback Transitório com Telemetria**: A agência padrão (`DEFAULT_AGENCY_UUID`) é utilizada exclusivamente durante a fase de migração de dados legados, registrando logs de auditoria. No estado final, requisições sem `agencia_id` disparam erro imediato.
+5. **Segurança de Segredos**: Credenciais de integrações (Digisac) nunca são expostas ao frontend ou trafegadas em query parameters de URLs.
 
 ---
 
@@ -18,33 +23,37 @@ Esta abordagem permite isolamento total de dados entre empresas concorrentes, su
 
 | Pilar Arquitetural | Decisão Selecionada | Descrição Técnica |
 | :--- | :--- | :--- |
-| **Modelo de Organização** | **Hierárquico Dedicado** | Tabela `grupos_agencias` (Holding/Rede) e tabela `agencias` (Filiais/Lojas). Agências independentes possuem `grupo_id = NULL`. |
-| **Isolamento de Dados** | **Isolamento Estrito + Leitura de Grupo** | Cada operação (`clientes`, `viagens`, `orcamentos`, `reembolsos`, `escala`) é atrelada estritamente a um `agencia_id`. O nível Grupo possui visibilidade consolidada para leitura/relatórios. |
-| **Hierarquia de Papéis** | **4 Níveis de Acesso** | `super_admin` (Equipe PaxFlow) $\rightarrow$ `grupo_director` (Diretoria da Rede) $\rightarrow$ `agencia_admin` (Gerente da Loja) $\rightarrow$ `consultor` (Operacional). |
-| **Vínculo Usuário-Agência** | **E-mail Único + N Agências** | Tabela `usuario_agencias` mapeia `user_id` em 1 ou mais agências. O usuário faz login 1 vez e pode alternar o contexto de agência na barra superior. |
-| **Branding & Links Públicos** | **Customização por Agência com Slug** | Cada agência possui `slug`, `logo_url`, `cor_primaria` e credenciais WhatsApp Digisac. Links públicos (Itinerário VIP e NPS) carregam a marca da agência correspondente via `slug`. |
-| **Segurança em Links Públicos** | **Tokens Criptográficos (UUIDv4)** | Links públicos usam `public_access_token` (32 caracteres) por viagem com verificação de agência, impedindo varredura ou adivinhação de URLs por terceiros. |
-| **Integração WhatsApp Digisac** | **Webhooks com Secret por Agência** | As URLs de webhook no Digisac contêm um token/secret único da agência (`/api/webhooks/digisac?key=AGENCIA_KEY`), roteando mensagens recebidas sem ambiguidade. |
-| **Armazenamento de Arquivos** | **Storage Gerenciado PaxFlow** | Todos os documentos são mantidos no Supabase Storage do PaxFlow sob a estrutura de pastas `/{grupo_id}/{agencia_id}/{cliente_id}/filename.pdf`, protegidos por RLS no Storage. |
-| **Segurança no Banco** | **Supabase RLS por Colunas** | Adição de `agencia_id` e `grupo_id` em todas as tabelas operacionais com políticas RLS automáticas ativadas no banco. |
-| **Onboarding & Anti-Spam** | **Auto-Cadastro com Moderação** | O auto-cadastro cria a agência com status `'pendente_aprovacao'`. O `super_admin` pode **Aprovar** (libera acesso completo) ou **Negar** (executa expurgo/purge automático apagando todos os dados criados). |
-| **Limites de Plano** | **Sem Limites (Fase Beta)** | Sem bloqueios de plano ou cotas de usuários na fase inicial do rollout Multi-Tenant. |
-| **Compatibilidade Legada** | **Migration em 3 Passos** | ID Padrão para agência legada + helper `getActiveAgencyId()` no código com fallback transparente para o tenant padrão caso `agencia_id` esteja ausente. |
+| **Modelo Organizacional** | **Hierárquico Dedicado** | Tabela `grupos_agencias` (Rede/Holding) e tabela `agencias` (Filiais). Agências únicas possuem `grupo_id = NULL`. |
+| **Fonte Única de Verdade** | **`agencia_id` Obrigatório** | Tabelas operacionais contêm estritamente `agencia_id NOT NULL`. O grupo é resolvido via JOIN com `agencias.grupo_id`. |
+| **Modelagem de Tabelas** | **Tabelas de Configuração Desacopladas** | Divisão em `agencias`, `agencia_settings`, `agencia_branding` e `agencia_integracoes` (evitando mega-tabelas). |
+| **Identidade e Autorização** | **Modelos de Membership Separados** | `usuario_agencias` (papéis: `agencia_admin`, `consultor`) e `usuario_grupos` (papel: `grupo_director`). `super_admin` possui escopo global. |
+| **Contexto da Aplicação** | **`AgencyContext` Reativo Centralizado** | O objeto de contexto gerencia `activeAgencyId`, `availableAgencies`, `role` e `permissions`. O Tenant Switcher altera o contexto ativo sem ignorar autorizações no backend. |
+| **Branding & Links Públicos** | **Customização por Agência com Slug** | Cada agência possui `slug` único, `logo_url` e `cor_primaria`. Links públicos validam o `slug` e as permissões do recurso. |
+| **Segurança em Links Públicos** | **Tokens Criptográficos (UUIDv4)** | `public_access_token UUID NOT NULL UNIQUE DEFAULT gen_random_uuid()`. O backend valida token $\rightarrow$ viagem $\rightarrow$ agência $\rightarrow$ permissão pública. |
+| **Integração WhatsApp Digisac** | **Webhook REST com Assinatura em Header** | `POST /api/webhooks/digisac/{agencia_id}` com validação de assinatura `X-Webhook-Signature` no header e controle de idempotência. |
+| **Armazenamento de Arquivos** | **Storage Estruturado com ID Único** | `/agencias/{agencia_id}/clientes/{cliente_id}/{document_id}/{filename}` no Supabase Storage com RLS por pasta de agência. |
+| **Funções RLS Centralizadas** | **Helper Functions SQL** | Policies de RLS reutilizam `user_is_super_admin()`, `user_can_access_agency()` e `user_can_access_group()`. |
+| **Onboarding & Anti-Spam** | **Fluxo com Moderação + Expurgo** | Cadastro via site cria agência com `status = 'pendente_aprovacao'`. Super Admin Aprova (ativa acesso) ou Nega (executa purge auditado). |
+| **Rollout da Migração** | **Implantação em 9 Ondas com Rollback** | Rollout incremental com feature flags, validação de integridade, testes de isolamento negativo e plano de desativação/rollback. |
 
 ---
 
-## 3. Modelo de Dados Proposto (Esquema SQL/Supabase)
+## 3. Modelo de Dados Relacional (Esquema SQL/Supabase)
 
 ```mermaid
 erDiagram
     GRUPOS_AGENCIAS ||--o{ AGENCIAS : "possui filiais"
-    AGENCIAS ||--o{ USUARIO_AGENCIAS : "possui membros"
-    PERFIS_CONSULTORES ||--o{ USUARIO_AGENCIAS : "participa de"
-    AGENCIAS ||--o{ CLIENTES : "cadastra"
+    AGENCIAS ||--|| AGENCIA_SETTINGS : "configura"
+    AGENCIAS ||--|| AGENCIA_BRANDING : "personaliza"
+    AGENCIAS ||--|| AGENCIA_INTEGRACOES : "conecta"
+    AGENCIAS ||--o{ USUARIO_AGENCIAS : "associa"
+    GRUPOS_AGENCIAS ||--o{ USUARIO_GRUPOS : "gerencia"
+    PERFIS_USUARIOS ||--o{ USUARIO_AGENCIAS : "membro de"
+    PERFIS_USUARIOS ||--o{ USUARIO_GRUPOS : "diretor em"
+    AGENCIAS ||--o{ CLIENTES : "pertence a"
     AGENCIAS ||--o{ VIAGENS : "opera"
     AGENCIAS ||--o{ ORCAMENTOS : "negocia"
     AGENCIAS ||--o{ REEMBOLSOS : "gerencia"
-    AGENCIAS ||--o{ ESCALA_DIARIA : "escala"
 
     GRUPOS_AGENCIAS {
         uuid id PK
@@ -55,21 +64,37 @@ erDiagram
 
     AGENCIAS {
         uuid id PK
-        uuid grupo_id FK "opcional"
+        uuid grupo_id FK "nullable"
         string nome
         string slug UK "ex: turismo-vip"
         string cnpj
-        string logo_url
-        string cor_primaria
         string status "pendente_aprovacao | ativa | bloqueada"
-        string digisac_domain
-        string digisac_token
-        string digisac_service_id
-        string webhook_secret
         timestamp created_at
     }
 
-    PERFIS_CONSULTORES {
+    AGENCIA_BRANDING {
+        uuid agencia_id PK,FK
+        string logo_url
+        string cor_primaria
+        string favicon_url
+    }
+
+    AGENCIA_INTEGRACOES {
+        uuid agencia_id PK,FK
+        string digisac_domain
+        string digisac_service_id
+        string digisac_token_encrypted
+        string webhook_secret
+    }
+
+    AGENCIA_SETTINGS {
+        uuid agencia_id PK,FK
+        int prazo_reembolso_dias
+        int sla_pre_embarque_dias
+        boolean enviar_nps_automatico
+    }
+
+    PERFIS_USUARIOS {
         uuid id PK "auth.uid()"
         string nome
         string email UK
@@ -79,99 +104,75 @@ erDiagram
 
     USUARIO_AGENCIAS {
         uuid id PK
-        uuid user_id FK "auth.uid()"
+        uuid user_id FK
         uuid agencia_id FK
-        uuid grupo_id FK "opcional"
-        string role "super_admin | grupo_director | agencia_admin | consultor"
+        string role "agencia_admin | consultor"
         boolean ativo
-        timestamp created_at
+        constraint UK_user_agencia "UNIQUE(user_id, agencia_id)"
+    }
+
+    USUARIO_GRUPOS {
+        uuid id PK
+        uuid user_id FK
+        uuid grupo_id FK
+        string role "grupo_director"
+        boolean ativo
+        constraint UK_user_grupo "UNIQUE(user_id, grupo_id)"
     }
 ```
 
-### Novas Tabelas a Criar
-
-1. **`grupos_agencias`**:
-   - `id` (UUID, Primary Key)
-   - `nome` (Text)
-   - `cnpj_matriz` (Text, Opcional)
-   - `created_at` (Timestamp)
-
-2. **`agencias`**:
-   - `id` (UUID, Primary Key)
-   - `grupo_id` (UUID, Foreign Key $\rightarrow$ `grupos_agencias.id`, Nullable)
-   - `nome` (Text)
-   - `slug` (Text, Unique, Ex: `"viagens-exemplo"`)
-   - `cnpj` (Text)
-   - `logo_url` (Text)
-   - `cor_primaria` (Text)
-   - `status` (Text: `'pendente_aprovacao'`, `'ativa'`, `'recusada'`, `'bloqueada'`)
-   - `digisac_domain`, `digisac_token`, `digisac_service_id`, `webhook_secret` (Text)
-   - `created_at` (Timestamp)
-
-3. **`usuario_agencias`** (Mapeamento N-para-N entre Usuários e Agências):
-   - `id` (UUID, Primary Key)
-   - `user_id` (UUID, Foreign Key $\rightarrow$ `perfis_consultores.id`)
-   - `agencia_id` (UUID, Foreign Key $\rightarrow$ `agencias.id`)
-   - `grupo_id` (UUID, Foreign Key $\rightarrow$ `grupos_agencias.id`, Nullable)
-   - `role` (Text: `'super_admin'`, `'grupo_director'`, `'agencia_admin'`, `'consultor'`)
-   - `ativo` (Boolean, Default `true`)
-   - `created_at` (Timestamp)
-
-### Alterações em Tabelas Existentes
-
-Adição da coluna `agencia_id` (UUID REFERENCES `agencias(id)`) e `grupo_id` (Nullable) em:
-- `global_settings` (convertida em `agencia_settings`)
-- `clientes`
-- `viagens` (incluindo a coluna `public_access_token` UUID DEFAULT gen_random_uuid())
-- `produtos_viagem`
-- `orcamentos`
-- `reembolsos`
-- `escala_diaria`
-- `solicitacoes_escala`
-- `banco_folgas`
-- `meta_periodos`
-- `mensagens_diretas`
-
 ---
 
-## 4. Políticas de Segurança (Row Level Security - RLS)
+## 4. Políticas RLS com Funções Centralizadas de Autorização
 
-As políticas de segurança no Supabase serão configuradas para extrair o `agencia_id` e `grupo_id` diretamente das permissões do usuário autenticado via tabela `usuario_agencias`:
+Para evitar duplicidade de código SQL e garantir manutenibilidade em todas as tabelas operacionais, serão criadas três funções SQL de segurança:
 
 ```sql
--- Exemplo de política de isolamento para a tabela de Viagens
-CREATE POLICY "Isolamento de Viagens por Agencia e Grupo" 
+-- 1. Verificar se o usuário é Super Admin PaxFlow
+CREATE OR REPLACE FUNCTION user_is_super_admin(p_user_id UUID)
+RETURNS BOOLEAN AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM perfis_usuarios pu
+    WHERE pu.id = p_user_id AND pu.is_super_admin = true
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- 2. Verificar se o usuário possui acesso à agência específica
+CREATE OR REPLACE FUNCTION user_can_access_agency(p_user_id UUID, p_agencia_id UUID)
+RETURNS BOOLEAN AS $$
+BEGIN
+  -- Acesso direto via agência
+  IF EXISTS (
+    SELECT 1 FROM usuario_agencias ua
+    WHERE ua.user_id = p_user_id AND ua.agencia_id = p_agencia_id AND ua.ativo = true
+  ) THEN
+    RETURN true;
+  END IF;
+
+  -- Acesso via Grupo (se o usuário for Diretor do Grupo ao qual a agência pertence)
+  RETURN EXISTS (
+    SELECT 1 FROM usuario_grupos ug
+    JOIN agencias a ON a.grupo_id = ug.grupo_id
+    WHERE ug.user_id = p_user_id AND a.id = p_agencia_id AND ug.ativo = true
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- 3. Exemplo de Policy RLS em tabela operacional (Viagens)
+CREATE POLICY "Isolamento de Viagens por Agencia" 
 ON viagens 
 FOR ALL 
 USING (
-  -- 1. Super Admin acessa todas as viagens
-  EXISTS (
-    SELECT 1 FROM usuario_agencias ua 
-    WHERE ua.user_id = auth.uid() AND ua.role = 'super_admin' AND ua.ativo = true
-  )
-  OR 
-  -- 2. Diretor do Grupo acessa viagens de todas as agências do seu grupo
-  EXISTS (
-    SELECT 1 FROM usuario_agencias ua 
-    WHERE ua.user_id = auth.uid() 
-      AND ua.role = 'grupo_director' 
-      AND ua.grupo_id = viagens.grupo_id 
-      AND ua.ativo = true
-  )
-  OR 
-  -- 3. Admin da Agência e Consultores acessam apenas a sua agência
-  EXISTS (
-    SELECT 1 FROM usuario_agencias ua 
-    WHERE ua.user_id = auth.uid() 
-      AND ua.agencia_id = viagens.agencia_id 
-      AND ua.ativo = true
-  )
+  user_is_super_admin(auth.uid()) 
+  OR user_can_access_agency(auth.uid(), agencia_id)
 );
 ```
 
 ---
 
-## 5. Roteamento de Webhooks do WhatsApp Digisac
+## 5. Arquitetura de Webhooks Digisac com Idempotência e Segurança
 
 ```mermaid
 sequenceDiagram
@@ -180,74 +181,48 @@ sequenceDiagram
     participant Digisac as API Digisac
     participant Webhook as Edge Function PaxFlow
     participant DB as Supabase DB
-    participant Inbox as Caixa de Entrada da Agência
+    participant Inbox as Inbox da Agência
 
-    Cliente->>Digisac: Envia mensagem no WhatsApp da Agência B
-    Digisac->>Webhook: Dispara Webhook HTTP POST (/api/webhooks/digisac?key=SECRET_AGENCIA_B)
-    Webhook->>DB: Consulta 'agencias' WHERE webhook_secret = 'SECRET_AGENCIA_B'
-    DB-->>Webhook: Retorna agencia_id da Agência B
-    Webhook->>DB: Salva mensagem com agencia_id = Agência B
-    DB-->>Inbox: Exibe mensagem exclusivamente no Inbox da Agência B
-```
-
----
-
-## 6. Workflow de Onboarding & Moderação Anti-Spam
-
-```mermaid
-sequenceDiagram
-    autonumber
-    actor User as Usuário da Agência
-    participant App as PaxFlow Web App
-    participant DB as Supabase DB
-    actor Admin as Super Admin PaxFlow
-
-    User->>App: Preenche cadastro no site (Nome, E-mail, Agência, CNPJ)
-    App->>DB: Cria registro com status = 'pendente_aprovacao'
-    App-->>User: Exibe mensagem: "Cadastro recebido! Aguardando aprovação."
-    DB-->>Admin: Notifica Super Admin (Painel / Alerta)
-    alt Super Admin Aprova
-        Admin->>DB: Altera status para 'ativa'
-        DB-->>User: Envia e-mail de boas-vindas e libera login completo
-    else Super Admin Nega
-        Admin->>DB: Executa Expurgo / Cascading Delete
-        DB->>DB: Apaga Agência, Usuário e Dados criados
-        DB-->>User: Envia e-mail notificando que a solicitação não foi aprovada
+    Cliente->>Digisac: Envia mensagem no WhatsApp
+    Digisac->>Webhook: POST /api/webhooks/digisac/{agencia_id} [X-Webhook-Signature]
+    Webhook->>DB: Busca agencia_integracoes WHERE agencia_id = {agencia_id}
+    Webhook->>Webhook: Valida HMAC Signature com webhook_secret
+    Webhook->>DB: Verifica Idempotência (message_id no Redis/Table)
+    alt Mensagem já processada
+        Webhook-->>Digisac: HTTP 200 (Ignorado por duplicidade)
+    else Nova mensagem
+        Webhook->>DB: Salva mensagem com agencia_id estrito
+        DB-->>Inbox: Atualiza a Caixa de Entrada da agência em tempo real
+        Webhook-->>Digisac: HTTP 200 OK
     end
 ```
 
 ---
 
-## 7. Garantia de Zero Regressão para a Agência Atual
+## 6. Plano de Migração Incremental em 9 Ondas (Rollout & Rollback)
 
-Para assegurar que a agência atual continue funcionando perfeitamente sem nenhuma interrupção ou perda de dados durante e após o deploy:
+```mermaid
+flowchart TD
+    F0[Fase 0: Preparação, Backup & Feature Flags] --> F1[Fase 1: Estrutura de Banco & Tabelas Multi-Tenant]
+    F1 --> F2[Fase 2: Backfill com DEFAULT_AGENCY_UUID]
+    F2 --> F3[Fase 3: Validação de Integridade de Dados Legados]
+    F3 --> F4[Fase 4: AgencyContext no Frontend com Fallback Logado]
+    F4 --> F5[Fase 5: Migração das Leitura de Banco com Filtro de Tenant]
+    F5 --> F6[Fase 6: Escrita Obrigatória com agencia_id]
+    F6 --> F7[Fase 7: Ativação das Policies RLS e Funções SQL]
+    F7 --> F8[Fase 8: Liberação do Multi-Tenant & Switcher]
+    F8 --> F9[Fase 9: Depreciação do Fallback & Remoção de Código Legado]
+```
 
-1. **Migration com Agência Default (Passo 1)**:
-   - A migration de banco criará um registro fixo na tabela `agencias`: `id = '00000000-0000-0000-0000-000000000001'`, `nome = 'PaxFlow Main Agency'`, `slug = 'paxflow'`.
-   - Um script SQL preencherá automaticamente todas as linhas existentes em `clientes`, `viagens`, `orcamentos`, `reembolsos`, `escala_diaria` e `perfis_consultores` com este `agencia_id` padrão.
+### Checklist dos Critérios de Conclusão (Definition of Done)
 
-2. **Helper `getActiveAgencyId()` no Código (Passo 2)**:
-   - Toda chamada no frontend/backend passará por uma função utilitária `getActiveAgencyId()`.
-   - Se por qualquer motivo a sessão do usuário não contiver um `agencia_id` definido (ou em chamadas legadas), o helper retorna automaticamente o `DEFAULT_AGENCY_UUID`.
-
-3. **Validação em Staging (Passo 3)**:
-   - O processo de migração será rodado em um ambiente de homologação (Staging) idêntico ao de produção antes do lançamento oficial.
-
----
-
-## 8. Plano de Execução Futura (Quando Solicitado)
-
-### Fase 1: Migrações de Banco & Segurança RLS
-- Criar migrations SQL para as tabelas `grupos_agencias`, `agencias` e `usuario_agencias`.
-- Adicionar `agencia_id` e `public_access_token` nas tabelas operacionais.
-- Preencher a agência legada padrão e aplicar políticas RLS no Supabase.
-
-### Fase 2: Serviços TypeScript & Contexto de Agência
-- Atualizar `src/types/index.ts` com as novas interfaces.
-- Criar o helper `getActiveAgencyId()` em `src/services/` com fallback transparente.
-- Atualizar serviços de busca para incluir o escopo de `agencia_id`.
-
-### Fase 3: Portal Super Admin & Interface Multi-Tenant
-- Criar a tela de moderação `/super-admin` para Aprovar/Negar cadastros pendentes com expurgo automático.
-- Implementar o seletor de agências no topo (Tenant Switcher) para usuários com perfil `grupo_director` ou multi-agência.
-- Atualizar o roteamento dos itinerários públicos para usar `public_access_token`.
+- [ ] 100% das entidades operacionais contêm `agencia_id NOT NULL` válido.
+- [ ] 0 registros com anomalias de pertencimento entre agência e grupo.
+- [ ] 100% das tabelas críticas protegidas por RLS reutilizando as funções SQL de segurança.
+- [ ] **Testes Negativos de Isolamento Automatizados**:
+  - *Teste*: Agência A tenta acessar registros da Agência B via ID direto $\rightarrow$ Resultado esperado: `404 Not Found` / `403 Forbidden`.
+- [ ] Diretor de Grupo visualiza relatórios consolidados das agências filiadas.
+- [ ] Roteamento de Webhooks Digisac validado via HMAC e idempotência por `message_id`.
+- [ ] Links públicos acessíveis exclusivamente via `public_access_token` UUID aleatório.
+- [ ] Armazenamento de arquivos no Storage organizado no padrão `/agencias/{agencia_id}/...`.
+- [ ] Ocorrências do fallback da agência legada reduzidas a **Zero** no monitoramento de logs.
