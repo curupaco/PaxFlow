@@ -1367,17 +1367,21 @@ export class Dashboard {
       }
 
       // Busca Textual
+      // Busca Textual Multicritério (Nome, CPF, Telefone, E-mail, Destino, LOC)
       if (this.buscaTermo) {
         const q = this.buscaTermo.toLowerCase().trim();
+        const qClean = q.replace(/\D/g, '');
         const cliNome = v.cliente?.nome?.toLowerCase() || '';
-        const cliDoc = v.cliente?.documento?.toLowerCase() || '';
+        const cliDoc = v.cliente?.documento?.toLowerCase() || v.cliente?.cpf?.toLowerCase() || '';
+        const cliDocClean = cliDoc.replace(/\D/g, '');
         const cliEmail = v.cliente?.email?.toLowerCase() || '';
         const cliTelefone = v.cliente?.telefone?.toLowerCase() || '';
+        const cliTelClean = cliTelefone.replace(/\D/g, '');
         const dest = v.destino?.toLowerCase() || '';
         const loc = v.codigo_localizador?.toLowerCase() || '';
         const ref = (v.codigo_ref || v.codigoRef || '').toLowerCase();
         const obs = v.observacoes?.toLowerCase() || '';
-        const consultorNome = v.consultor_id === this.user.id ? 'você' : 'outro consultor';
+        const consultorNome = v.consultor_id === this.user?.id ? 'você' : 'outro consultor';
 
         const matchesProductLoc = v.produtos && Array.isArray(v.produtos) && v.produtos.some((p: any) => {
           const prodLoc = (p.codigo_reserva || '').toLowerCase();
@@ -1388,11 +1392,17 @@ export class Dashboard {
           return (text || '').toLowerCase().includes(q);
         });
 
+        const matchesCleanDigits = qClean.length >= 3 && (
+          (cliDocClean.length > 0 && cliDocClean.includes(qClean)) ||
+          (cliTelClean.length > 0 && cliTelClean.includes(qClean))
+        );
+
         const matches = (
           cliNome.includes(q) ||
           cliDoc.includes(q) ||
           cliEmail.includes(q) ||
           cliTelefone.includes(q) ||
+          matchesCleanDigits ||
           dest.includes(q) ||
           loc.includes(q) ||
           ref.includes(q) ||
@@ -1543,7 +1553,7 @@ export class Dashboard {
                   <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
               </div>
-              <input id="input-busca-viagem" type="text" placeholder="Pesquisar viagens..." value="${this.buscaTermo}" class="w-full text-xs font-semibold pl-10 pr-4 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition" />
+              <input id="input-busca-viagem" type="text" placeholder="Pesquisar por Nome, CPF, Telefone ou E-mail..." value="${this.buscaTermo}" class="w-full text-xs font-semibold pl-10 pr-4 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition" />
             </div>
 
             <!-- Botão de Filtros de Data -->

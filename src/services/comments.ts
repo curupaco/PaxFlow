@@ -787,4 +787,39 @@ export class CommentsService {
     });
     console.log('[Comments Auto Sched] Parse succeeded:', { targetConsultantId, dataLembrete, periodo });
   }
+
+  /**
+   * Grava automaticamente um log de auditoria de atendimento presencial nos comentários do item
+   * (Apenas quando acessado por consultor não-titular. Administradores são isentos de log).
+   */
+  public static async registrarLogAtendimentoBalcao(
+    tipoItem: 'orcamento' | 'viagem' | 'produto',
+    itemId: string,
+    usuarioNome: string,
+    userId: string
+  ): Promise<boolean> {
+    try {
+      const now = new Date();
+      const dataStr = now.toLocaleDateString('pt-BR');
+      const horaStr = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+      const logText = `👁️ Atendimento Presencial / Balcão: Item acessado por ${usuarioNome} em ${dataStr} às ${horaStr}.`;
+
+      const { error } = await supabase.from('comentarios').insert({
+        tipo_item: tipoItem,
+        item_id: itemId,
+        autor_id: userId,
+        texto: logText,
+        created_at: now.toISOString()
+      });
+
+      if (error) {
+        console.warn('Erro ao gravar log de auditoria no Supabase:', error.message);
+      }
+      return true;
+    } catch (e) {
+      console.error('Erro ao registrar log de atendimento de balcão:', e);
+      return false;
+    }
+  }
 }

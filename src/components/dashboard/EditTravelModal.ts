@@ -158,6 +158,35 @@ export class EditTravelModal {
         }
       }
 
+      // Verificação de Atendimento Presencial / Balcão (Modo Co-Piloto)
+      const currentUserId = this.options.user?.id;
+      const userRole = this.options.perfil?.role || 'consultor';
+      const isOwner = viagem && (viagem.consultor_id === currentUserId || viagem.consultor_responsavel_id === currentUserId);
+      const isCoPiloto = !isOwner && userRole !== 'admin';
+
+      if (isCoPiloto && viagem) {
+        const coPilotoNome = this.options.perfil?.nome || 'Consultor';
+        const titularNome = this.options.consultores.find(c => c.id === viagem.consultor_id)?.nome || 'Consultor Titular';
+
+        const sessionKey = `paxflow-balcao-logged-${tripId}-${currentUserId}`;
+        if (!sessionStorage.getItem(sessionKey)) {
+          sessionStorage.setItem(sessionKey, 'true');
+          await CommentsService.registrarLogAtendimentoBalcao('viagem', tripId, coPilotoNome, currentUserId || 'usr-1');
+
+          const { BalcaoService } = await import('../../services/balcaoService');
+          await BalcaoService.gerarAlertaAtendimentoBalcao(
+            viagem.consultor_id,
+            titularNome,
+            viagem.cliente?.nome || 'Cliente',
+            coPilotoNome,
+            'viagem',
+            tripId
+          );
+        }
+        (viagem as any)._isCoPiloto = true;
+        (viagem as any)._titularNome = titularNome;
+      }
+
       // Busca lista de clientes
       const { data: clientes, error: errClientes } = await supabase
         .from('clientes')
@@ -298,6 +327,19 @@ export class EditTravelModal {
 
     modalContent.innerHTML = `
       <div class="p-6">
+        ${v._isCoPiloto ? `
+          <div class="mb-4 p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-center justify-between text-xs font-bold text-amber-700 dark:text-amber-300 animate-fade-in">
+            <div class="flex items-center gap-2">
+              <span class="text-base">🤝</span>
+              <div>
+                <span class="font-extrabold">Modo Co-Piloto (Atendimento Presencial de Balcão)</span>
+                <p class="text-[11px] font-medium text-amber-600/80 dark:text-amber-400/80">Você está atendendo o cliente no balcão. O consultor titular continua sendo <strong>${v._titularNome}</strong>.</p>
+              </div>
+            </div>
+            <span class="px-2.5 py-1 rounded bg-amber-500/20 text-[10px] font-black uppercase tracking-wider shrink-0">Auditoria Ativa</span>
+          </div>
+        ` : ''}
+
         <!-- Topo com Título e Fechar -->
         <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 mb-4">
           <div>
