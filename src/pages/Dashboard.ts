@@ -1686,16 +1686,6 @@ export class Dashboard {
               </div>
             </div>
 
-            <!-- Campo de Busca de Viagens -->
-            <div class="relative min-w-[200px] md:min-w-[280px] flex-1 sm:flex-initial">
-              <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-400">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </div>
-              <input id="input-busca-viagem" type="text" placeholder="Pesquisar por Nome, CPF, Telefone ou E-mail..." value="${this.buscaTermo}" class="w-full text-xs font-semibold pl-10 pr-4 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition" />
-            </div>
-
             <!-- Botão de Filtros de Data -->
             <button id="btn-toggle-filtros" class="px-4 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs rounded-xl border border-slate-200/50 dark:border-slate-700/55 flex items-center justify-center gap-1.5 transition">
               <span>📅</span>
@@ -1787,8 +1777,6 @@ export class Dashboard {
         <!-- CONTEÚDO PRINCIPAL (LISTA / TABELA) -->
         <main class="flex-1 p-6 flex flex-col min-h-0 bg-slate-50/50 dark:bg-slate-950 overflow-y-auto custom-scrollbar">
           
-          ${this.renderBalcaoSectionHTML()}
-
           ${filtrados.length === 0 ? `
             <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-12 text-center shadow-xs flex flex-col items-center justify-center space-y-4 flex-1">
               <div class="text-slate-300 dark:text-slate-700 text-5xl">✈️</div>
