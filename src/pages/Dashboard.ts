@@ -535,11 +535,7 @@ export class Dashboard {
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (this.perfil && this.perfil.role !== 'admin') {
-          this.viagens = parsed.filter((v: any) => v.consultor_id === this.user.id);
-        } else {
-          this.viagens = parsed;
-        }
+        this.viagens = parsed || [];
       } catch (e) {
         this.viagens = [];
       }
@@ -1408,32 +1404,51 @@ export class Dashboard {
         }
       }
 
-      // Busca Textual
-      // Busca Textual Multicritério (Nome, CPF, Telefone, E-mail, Destino, LOC)
+      // Busca Textual Multicritério Global (Nome, CPF, Telefone, E-mail, Título, Destino, LOC, Produtos, Passageiros)
       if (this.buscaTermo) {
         const q = this.buscaTermo.toLowerCase().trim();
         const qClean = q.replace(/\D/g, '');
-        const cliNome = v.cliente?.nome?.toLowerCase() || '';
-        const cliDoc = v.cliente?.documento?.toLowerCase() || v.cliente?.cpf?.toLowerCase() || '';
+
+        // 1. Cliente
+        const cliNome = (v.cliente?.nome || v.cliente_nome || v.nome_cliente || v.nomeCliente || '').toLowerCase();
+        const cliDoc = (v.cliente?.documento || v.cliente?.cpf || v.cpf || v.documento || '').toLowerCase();
         const cliDocClean = cliDoc.replace(/\D/g, '');
-        const cliEmail = v.cliente?.email?.toLowerCase() || '';
-        const cliTelefone = v.cliente?.telefone?.toLowerCase() || '';
+        const cliEmail = (v.cliente?.email || v.email || '').toLowerCase();
+        const cliTelefone = (v.cliente?.telefone || v.telefone || '').toLowerCase();
         const cliTelClean = cliTelefone.replace(/\D/g, '');
-        const dest = v.destino?.toLowerCase() || '';
-        const loc = v.codigo_localizador?.toLowerCase() || '';
+
+        // 2. Dados da Viagem
+        const titulo = (v.titulo || v.nome_viagem || v.nomeViagem || v.nome || '').toLowerCase();
+        const dest = (v.destino || v.destino_ref?.nome || v.destinoRef?.nome || '').toLowerCase();
+        const loc = (v.codigo_localizador || v.codigoLocalizador || v.localizador || '').toLowerCase();
         const ref = (v.codigo_ref || v.codigoRef || '').toLowerCase();
-        const obs = v.observacoes?.toLowerCase() || '';
+        const obs = (v.observacoes || v.obs || '').toLowerCase();
+        const statusStr = (v.status || '').toLowerCase();
+        const consultorNomeReal = (v.consultor?.nome || v.consultor_nome || '').toLowerCase();
         const consultorNome = v.consultor_id === this.user?.id ? 'você' : 'outro consultor';
 
-        const matchesProductLoc = v.produtos && Array.isArray(v.produtos) && v.produtos.some((p: any) => {
-          const prodLoc = (p.codigo_reserva || '').toLowerCase();
-          return prodLoc.includes(q);
+        // 3. Passageiros
+        const matchesPassageiros = Array.isArray(v.passageiros) && v.passageiros.some((p: any) => {
+          const pName = typeof p === 'string' ? p : (p?.nome || p?.name || '');
+          return (pName || '').toLowerCase().includes(q);
         });
 
-        const matchesComments = v.comentarios_busca && Array.isArray(v.comentarios_busca) && v.comentarios_busca.some((text: string) => {
+        // 4. Produtos e Serviços vinculados
+        const matchesProdutos = Array.isArray(v.produtos) && v.produtos.some((p: any) => {
+          const prodTitle = (p.titulo || p.nome || p.descricao || '').toLowerCase();
+          const prodForn = (p.fornecedor || '').toLowerCase();
+          const prodTipo = (p.tipo || p.tipo_produto || '').toLowerCase();
+          const prodReserva = (p.codigo_reserva || p.localizador || '').toLowerCase();
+          const prodObs = (p.observacoes || '').toLowerCase();
+          return prodTitle.includes(q) || prodForn.includes(q) || prodTipo.includes(q) || prodReserva.includes(q) || prodObs.includes(q);
+        });
+
+        // 5. Comentários
+        const matchesComments = Array.isArray(v.comentarios_busca) && v.comentarios_busca.some((text: string) => {
           return (text || '').toLowerCase().includes(q);
         });
 
+        // 6. Números Limpos (CPF / Telefone)
         const matchesCleanDigits = qClean.length >= 3 && (
           (cliDocClean.length > 0 && cliDocClean.includes(qClean)) ||
           (cliTelClean.length > 0 && cliTelClean.includes(qClean))
@@ -1444,14 +1459,18 @@ export class Dashboard {
           cliDoc.includes(q) ||
           cliEmail.includes(q) ||
           cliTelefone.includes(q) ||
-          matchesCleanDigits ||
+          titulo.includes(q) ||
           dest.includes(q) ||
           loc.includes(q) ||
           ref.includes(q) ||
           obs.includes(q) ||
+          statusStr.includes(q) ||
+          consultorNomeReal.includes(q) ||
           consultorNome.includes(q) ||
-          matchesProductLoc ||
-          matchesComments
+          matchesPassageiros ||
+          matchesProdutos ||
+          matchesComments ||
+          matchesCleanDigits
         );
 
         if (!matches) return false;
