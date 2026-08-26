@@ -39,6 +39,7 @@ export class EditTravelModal {
   private selectedProductId: string | null = null;
   private destAutocomplete: DestinosAutocomplete | null = null;
   private locConferenciasMap: { [locKey: string]: boolean } = {};
+  private currentLoadedViagem: any = null;
 
   constructor(options: EditTravelModalOptions) {
     this.options = options;
@@ -211,6 +212,8 @@ export class EditTravelModal {
         (viagem as any)._isCoPiloto = true;
         (viagem as any)._titularNome = titularNome;
       }
+
+      this.currentLoadedViagem = viagem;
 
       // Busca lista de clientes
       const { data: clientesData } = await supabase
@@ -1902,37 +1905,54 @@ export class EditTravelModal {
     let produtos: any[] = [];
     let isError = false;
 
-    try {
-      const { data, error } = await supabase
-        .from('produtos_viagem')
-        .select('*')
-        .eq('viagem_id', tripId)
-        .order('created_at', { ascending: true });
+    // 1. Tenta usar os produtos presentes na viagem ja carregada (por exemplo via RPC obter_viagem_co_piloto)
+    if (this.currentLoadedViagem && Array.isArray(this.currentLoadedViagem.produtos) && this.currentLoadedViagem.produtos.length > 0) {
+      produtos = this.currentLoadedViagem.produtos;
+    }
 
-      if (error) throw error;
-      produtos = data || [];
-      localStorage.setItem(`paxflow-produtos-viagem-${tripId}`, JSON.stringify(produtos));
-    } catch (err: any) {
-      console.error('Erro ao buscar produtos da viagem:', err);
-      isError = true;
+    // 2. Se vazio, consulta a tabela produtos_viagem no Supabase
+    if (produtos.length === 0) {
+      try {
+        const { data, error } = await supabase
+          .from('produtos_viagem')
+          .select('*')
+          .eq('viagem_id', tripId)
+          .order('created_at', { ascending: true });
+
+        if (!error && data && data.length > 0) {
+          produtos = data;
+        }
+      } catch (err: any) {
+        console.warn('Busca direta de produtos falhou ou foi bloqueada por RLS:', err);
+      }
+    }
+
+    // 3. Se ainda vazio, chama a RPC SECURITY DEFINER obter_produtos_co_piloto (bypasses RLS)
+    if (produtos.length === 0) {
+      try {
+        const { data: rpcProds, error: rpcErr } = await supabase.rpc('obter_produtos_co_piloto', { p_trip_id: tripId });
+        if (!rpcErr && rpcProds && Array.isArray(rpcProds) && rpcProds.length > 0) {
+          produtos = rpcProds;
+        }
+      } catch (e) {
+        console.warn('RPC obter_produtos_co_piloto nao disponivel:', e);
+      }
+    }
+
+    // 4. Fallback final: localStorage
+    if (produtos.length === 0) {
       const saved = localStorage.getItem(`paxflow-produtos-viagem-${tripId}`);
       if (saved) {
         try {
           produtos = JSON.parse(saved);
-          isError = false;
         } catch (e) {
           produtos = [];
         }
       }
     }
 
-    if (isError) {
-      container.innerHTML = `
-        <p class="text-center text-xs text-rose-500 font-bold py-4">
-          Falha ao buscar produtos.
-        </p>
-      `;
-      return;
+    if (produtos.length > 0) {
+      localStorage.setItem(`paxflow-produtos-viagem-${tripId}`, JSON.stringify(produtos));
     }
 
     let formasAtivas: any[] = [];

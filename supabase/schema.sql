@@ -798,6 +798,23 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+-- ============================================================================
+-- 18. RPC SECURITY DEFINER: obter_produtos_co_piloto
+-- ============================================================================
+CREATE OR REPLACE FUNCTION public.obter_produtos_co_piloto(p_trip_id TEXT)
+RETURNS JSON AS $$
+DECLARE
+    result JSON;
+BEGIN
+    SELECT COALESCE(JSON_AGG(row_to_json(p)), '[]'::json) INTO result
+    FROM public.produtos_viagem p
+    WHERE p.viagem_id::text = p_trip_id;
+
+    RETURN result;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+
 
 
 
