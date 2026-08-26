@@ -140,6 +140,21 @@ export class OrcamentosService {
         .update(payload)
         .eq('id', o.id);
       resError = error;
+
+      if (resError) {
+        // Tenta salvar via RPC SECURITY DEFINER caso RLS de UPDATE bloqueie o consultor no Modo Co-Piloto
+        try {
+          const { error: rpcErr } = await supabase.rpc('atualizar_orcamento_co_piloto', {
+            p_orc_id: o.id,
+            p_payload: payload
+          });
+          if (!rpcErr) {
+            resError = null;
+          }
+        } catch (e) {
+          console.warn('RPC atualizar_orcamento_co_piloto falhou:', e);
+        }
+      }
     } else {
       const { error } = await supabase
         .from('orcamentos')

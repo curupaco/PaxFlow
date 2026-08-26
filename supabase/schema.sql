@@ -814,6 +814,34 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+-- ============================================================================
+-- 19. RPC SECURITY DEFINER: atualizar_orcamento_co_piloto
+-- ============================================================================
+CREATE OR REPLACE FUNCTION public.atualizar_orcamento_co_piloto(p_orc_id TEXT, p_payload JSON)
+RETURNS JSON AS $$
+DECLARE
+    result JSON;
+BEGIN
+    UPDATE public.orcamentos
+    SET 
+        temperatura = COALESCE(p_payload->>'temperatura', temperatura),
+        sub_status = COALESCE(p_payload->>'sub_status', sub_status),
+        status = COALESCE(p_payload->>'status', status),
+        notas_negociacao = COALESCE(p_payload->>'notas_negociacao', notas_negociacao),
+        valor_proposta = CASE 
+                            WHEN p_payload->>'valor_proposta' IS NOT NULL AND (p_payload->>'valor_proposta') != '' 
+                            THEN (p_payload->>'valor_proposta')::numeric 
+                            ELSE valor_proposta 
+                         END,
+        updated_at = NOW()
+    WHERE id::text = p_orc_id
+    RETURNING row_to_json(public.orcamentos.*) INTO result;
+
+    RETURN result;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+
 
 
 

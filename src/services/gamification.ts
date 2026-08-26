@@ -323,20 +323,24 @@ export function obterProgressoNivel(totalXp: number): LevelProgress {
  */
 export async function registrarXp(userId: string, acaoChave: string, xpGanho: number): Promise<void> {
   try {
+    const { getSessaoAtual } = await import('./supabase');
+    const { user } = await getSessaoAtual();
+    const activeUserId = user?.id || userId;
+
     const { error } = await supabase
       .from('profiles_xp_logs')
       .insert({
-        profile_id: userId,
+        profile_id: activeUserId,
         acao_chave: acaoChave,
         xp_ganho: xpGanho
       });
 
-    // Ignora o erro 23505 (violência de restrição única do Postgres - ação já pontuada antes)
+    // Ignora o erro 23505 (violacao de restricao unica do Postgres - ação já pontuada antes) e RLS
     if (error && error.code !== '23505') {
-      console.warn('Erro ao registrar XP no Supabase:', error.message);
+      console.warn('Aviso ao registrar XP no Supabase:', error.message);
     }
   } catch (err) {
-    console.error('Erro na chamada registrarXp:', err);
+    console.warn('Aviso silencioso na chamada registrarXp:', err);
   }
 }
 
