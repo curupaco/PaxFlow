@@ -113,9 +113,9 @@ export class OrcamentosPage {
       // 5. Configurar Canal Realtime do Supabase
       this.setupRealtimeChannel();
 
-      // 6. Deep linking from Inbox
+      // 6. Deep linking from Inbox / Busca Co-Piloto
       if (targetId) {
-        this.openVerNotasModal(targetId);
+        await this.openVerNotasModal(targetId);
       }
     } catch (err: any) {
       console.error('Erro na inicialização de OrcamentosPage:', err);
@@ -2344,12 +2344,106 @@ export class OrcamentosPage {
   /**
    * Abre o Modal de Visualização de Notas e Históricos
    */
-  private openVerNotasModal(id: string): void {
-    const orc = this.orcamentos.find(o => o.id === id);
+  private async openVerNotasModal(id: string): Promise<void> {
+    let orc = this.orcamentos.find(o => o.id === id);
+
+    if (!orc) {
+      // 1. Tenta carregar via RPC SECURITY DEFINER (Modo Co-Piloto sem travas de RLS)
+      try {
+        const { data: rpcData, error: rpcErr } = await supabase.rpc('obter_orcamento_co_piloto', { p_orc_id: id });
+        if (!rpcErr && rpcData) {
+          const d = rpcData;
+          orc = {
+            id: d.id,
+            consultorId: d.consultor_id || d.consultorId,
+            clienteId: d.cliente_id || d.clienteId,
+            cliente_id: d.cliente_id || d.clienteId,
+            nomeCliente: d.nome_cliente || d.nomeCliente || d.cliente?.nome || 'Cliente',
+            contato: d.contato || d.cliente?.telefone || d.cliente?.email || '',
+            destino: d.destino || '',
+            dataViagem: d.data_viagem || d.dataViagem || '',
+            temperatura: d.temperatura || 'Frio',
+            tags: d.tags || [],
+            status: d.status || 'SOLICITADO',
+            subStatus: d.sub_status || d.subStatus || '',
+            notasNegociacao: d.notas_negociacao || d.notasNegociacao || '',
+            valorProposta: d.valor_proposta !== undefined ? Number(d.valor_proposta) : (d.valorProposta !== undefined ? Number(d.valorProposta) : undefined),
+            createdAt: d.created_at || d.createdAt,
+            updatedAt: d.updated_at || d.updatedAt
+          };
+          this.orcamentos.push(orc);
+        }
+      } catch (e) {
+        console.warn('RPC obter_orcamento_co_piloto falhou:', e);
+      }
+    }
+
+    if (!orc) {
+      // 2. Consulta direta no Supabase
+      try {
+        const { data: d } = await supabase
+          .from('orcamentos')
+          .select('*, cliente:clientes(*)')
+          .eq('id', id)
+          .maybeSingle();
+        if (d) {
+          orc = {
+            id: d.id,
+            consultorId: d.consultor_id || d.consultorId,
+            clienteId: d.cliente_id || d.clienteId,
+            cliente_id: d.cliente_id || d.clienteId,
+            nomeCliente: d.nome_cliente || d.nomeCliente || d.cliente?.nome || 'Cliente',
+            contato: d.contato || d.cliente?.telefone || d.cliente?.email || '',
+            destino: d.destino || '',
+            dataViagem: d.data_viagem || d.dataViagem || '',
+            temperatura: d.temperatura || 'Frio',
+            tags: d.tags || [],
+            status: d.status || 'SOLICITADO',
+            subStatus: d.sub_status || d.subStatus || '',
+            notasNegociacao: d.notas_negociacao || d.notasNegociacao || '',
+            valorProposta: d.valor_proposta !== undefined ? Number(d.valor_proposta) : (d.valorProposta !== undefined ? Number(d.valorProposta) : undefined),
+            createdAt: d.created_at || d.createdAt,
+            updatedAt: d.updated_at || d.updatedAt
+          };
+          this.orcamentos.push(orc);
+        }
+      } catch (e) {}
+    }
+
     if (!orc) {
       console.warn(`Orçamento com ID ${id} não encontrado na lista atual.`);
       this.showToast(`Orçamento não encontrado ou sem permissão de acesso.`, 'error');
       return;
+    }
+
+    // Auditoria e Alerta de Atendimento Co-Piloto para Orçamentos
+    const currentUserId = this.user?.id;
+    const userRole = this.perfil?.role || 'consultor';
+    const isOwner = orc.consultorId === currentUserId || (orc as any).consultor_id === currentUserId;
+    const isCoPiloto = !isOwner && userRole !== 'admin';
+
+    if (isCoPiloto) {
+      const coPilotoNome = this.perfil?.nome || 'Consultor';
+      const titular = this.consultores.find(c => c.id === orc.consultorId || c.id === (orc as any).consultor_id);
+      const titularNome = titular?.nome || 'Consultor Titular';
+
+      const sessionKey = `paxflow-balcao-logged-orc-${id}-${currentUserId}`;
+      if (!sessionStorage.getItem(sessionKey)) {
+        sessionStorage.setItem(sessionKey, 'true');
+        await CommentsService.registrarLogAtendimentoBalcao('orcamento', id, coPilotoNome, currentUserId || 'usr-1');
+
+        if (orc.consultorId || (orc as any).consultor_id) {
+          const { BalcaoService } = await import('../services/balcaoService');
+          await BalcaoService.gerarAlertaAtendimentoBalcao(
+            orc.consultorId || (orc as any).consultor_id,
+            titularNome,
+            orc.nomeCliente || 'Cliente',
+            coPilotoNome,
+            'orcamento',
+            id
+          );
+        }
+      }
     }
 
     this.renderModalOverlay();
