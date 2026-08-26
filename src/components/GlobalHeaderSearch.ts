@@ -35,7 +35,7 @@ export class GlobalHeaderSearch {
                 <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
-            <input id="global-search-input" type="text" placeholder="🔍 Pesquisar em TODA a agência (Nome, CPF, LOC, Orçamento, Thiago...)" class="w-full text-xs font-semibold pl-10 pr-8 py-2 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 text-slate-800 dark:text-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition shadow-inner" />
+            <input id="global-search-input" type="text" placeholder="Pesquisar em toda a agência..." class="w-full text-xs font-semibold pl-10 pr-8 py-2 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 text-slate-800 dark:text-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition shadow-inner" />
             <button id="btn-clear-global-search" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 hidden text-xs font-bold">✕</button>
           </div>
 
