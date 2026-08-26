@@ -261,12 +261,8 @@ export class ComercialDashboard {
         const keyOrc = `paxflow-orcamentos-${this.user?.id || 'global'}`;
         localStorage.setItem(keyOrc, JSON.stringify(this.orcamentos));
 
-      // 2. Carregar Viagens do banco
+      // 2. Carregar Viagens do banco para busca Co-Piloto e relatorios
       let queryVia = supabase.from('viagens').select('*, produtos:produtos_viagem(*)');
-      
-      if (this.perfil && this.perfil.role !== 'admin') {
-        queryVia = queryVia.eq('consultor_id', this.user.id);
-      }
       const { data: dataVia, error: errVia } = await queryVia;
       if (errVia) throw errVia;
 

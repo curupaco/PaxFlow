@@ -28,11 +28,7 @@ export class OrcamentosService {
       .select('*, destino_ref:destinos(*)')
       .order('created_at', { ascending: false });
 
-    // Consultor comum só vê seus próprios orçamentos
-    if (perfil && perfil.role !== 'admin') {
-      query = query.eq('consultor_id', user.id);
-    }
-
+    // Carrega todos os orçamentos para suportar busca global (Modo Co-Piloto) e kanban
     const { data, error } = await query;
     if (error) throw error;
 
