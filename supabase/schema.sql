@@ -841,6 +841,86 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+-- ============================================================================
+-- 20. RPC SECURITY DEFINER: atualizar_viagem_co_piloto
+-- ============================================================================
+CREATE OR REPLACE FUNCTION public.atualizar_viagem_co_piloto(p_trip_id TEXT, p_payload JSON)
+RETURNS JSON AS $$
+DECLARE
+    result JSON;
+BEGIN
+    UPDATE public.viagens
+    SET 
+        cliente_id = COALESCE((p_payload->>'cliente_id')::uuid, cliente_id),
+        consultor_id = COALESCE((p_payload->>'consultor_id')::uuid, consultor_id),
+        destino = COALESCE(p_payload->>'destino', destino),
+        codigo_localizador = COALESCE(p_payload->>'codigo_localizador', codigo_localizador),
+        valor_total = CASE WHEN p_payload->>'valor_total' IS NOT NULL AND (p_payload->>'valor_total') != '' THEN (p_payload->>'valor_total')::numeric ELSE valor_total END,
+        data_ida = CASE WHEN p_payload->>'data_ida' IS NOT NULL AND (p_payload->>'data_ida') != '' THEN (p_payload->>'data_ida')::date ELSE data_ida END,
+        data_volta = CASE WHEN p_payload->>'data_volta' IS NOT NULL AND (p_payload->>'data_volta') != '' THEN (p_payload->>'data_volta')::date ELSE data_volta END,
+        data_financeiro = CASE WHEN p_payload->>'data_financeiro' IS NOT NULL AND (p_payload->>'data_financeiro') != '' THEN (p_payload->>'data_financeiro')::date ELSE data_financeiro END,
+        status = COALESCE(p_payload->>'status', status),
+        observacoes = COALESCE(p_payload->>'observacoes', observacoes),
+        processo_conferido = CASE WHEN p_payload->>'processo_conferido' IS NOT NULL THEN (p_payload->>'processo_conferido')::boolean ELSE processo_conferido END,
+        updated_at = NOW()
+    WHERE id::text = p_trip_id
+    RETURNING row_to_json(public.viagens.*) INTO result;
+
+    RETURN result;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- ============================================================================
+-- 21. RPC SECURITY DEFINER: salvar_produto_co_piloto
+-- ============================================================================
+CREATE OR REPLACE FUNCTION public.salvar_produto_co_piloto(p_prod_id TEXT, p_payload JSON)
+RETURNS JSON AS $$
+DECLARE
+    result JSON;
+BEGIN
+    IF p_prod_id IS NOT NULL AND p_prod_id != '' AND EXISTS (SELECT 1 FROM public.produtos_viagem WHERE id::text = p_prod_id) THEN
+        UPDATE public.produtos_viagem
+        SET 
+            tipo_produto = COALESCE(p_payload->>'tipo_produto', tipo_produto),
+            fornecedor = COALESCE(p_payload->>'fornecedor', fornecedor),
+            descricao = COALESCE(p_payload->>'descricao', descricao),
+            status = COALESCE(p_payload->>'status', status),
+            valor_venda = CASE WHEN p_payload->>'valor_venda' IS NOT NULL AND (p_payload->>'valor_venda') != '' THEN (p_payload->>'valor_venda')::numeric ELSE valor_venda END,
+            valor_custo = CASE WHEN p_payload->>'valor_custo' IS NOT NULL AND (p_payload->>'valor_custo') != '' THEN (p_payload->>'valor_custo')::numeric ELSE valor_custo END,
+            updated_at = NOW()
+        WHERE id::text = p_prod_id
+        RETURNING row_to_json(public.produtos_viagem.*) INTO result;
+    ELSE
+        INSERT INTO public.produtos_viagem (
+            viagem_id, tipo_produto, fornecedor, descricao, status, valor_venda, valor_custo
+        ) VALUES (
+            (p_payload->>'viagem_id')::uuid,
+            p_payload->>'tipo_produto',
+            p_payload->>'fornecedor',
+            p_payload->>'descricao',
+            COALESCE(p_payload->>'status', 'confirmado'),
+            COALESCE((p_payload->>'valor_venda')::numeric, 0),
+            COALESCE((p_payload->>'valor_custo')::numeric, 0)
+        )
+        RETURNING row_to_json(public.produtos_viagem.*) INTO result;
+    END IF;
+
+    RETURN result;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- ============================================================================
+-- 22. RPC SECURITY DEFINER: deletar_produto_co_piloto
+-- ============================================================================
+CREATE OR REPLACE FUNCTION public.deletar_produto_co_piloto(p_prod_id TEXT)
+RETURNS BOOLEAN AS $$
+BEGIN
+    DELETE FROM public.produtos_viagem WHERE id::text = p_prod_id;
+    RETURN TRUE;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+
 
 
 

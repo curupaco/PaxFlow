@@ -1042,10 +1042,20 @@ export class EditTravelModal {
       };
 
       try {
-        const { error } = await supabase
+        let { error } = await supabase
           .from('viagens')
           .update(payload)
           .eq('id', v.id);
+
+        if (error) {
+          try {
+            const { error: rpcErr } = await supabase.rpc('atualizar_viagem_co_piloto', {
+              p_trip_id: v.id,
+              p_payload: payload
+            });
+            if (!rpcErr) error = null;
+          } catch (e) {}
+        }
 
         if (error) throw error;
 
