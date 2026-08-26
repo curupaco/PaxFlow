@@ -748,12 +748,19 @@ export class InboxService {
           } else if (sol.status === 'pendente_admin' && isAdmin) {
             shouldInclude = true;
             cardTitle = `Aprovação de Escala: ${sol.tipo.toUpperCase()}`;
-            cardSubject = `Solicitação de ${sol.tipo === 'troca' ? 'Troca de Turno' : sol.tipo === 'folga' ? 'Folga' : 'Férias'} - ${sol.solicitante_nome}`;
+            cardSubject = `Solicitação de ${sol.tipo === 'troca' ? 'Troca de Turno' : sol.tipo === 'folga' ? 'Folga Semanal' : 'Férias'} - ${sol.solicitante_nome}`;
             cardBody = `
-              <strong>Solicitante:</strong> ${sol.solicitante_nome}<br>
-              ${sol.tipo === 'troca' ? `• <strong>Troca com:</strong> ${sol.destinatario_nome}<br>• <strong>Data Solicitante:</strong> ${sol.data_origem}<br>• <strong>Data Colega:</strong> ${sol.data_destino}` : `• <strong>Data Solicitada:</strong> ${sol.data_origem}`}<br>
-              • <strong>Motivo:</strong> ${sol.motivo || 'Sem observações'}<br><br>
-              <em>Acesse a aba 'Escala' ou responda esta solicitação para atualizar automaticamente a grade.</em>
+              <div class="space-y-2">
+                <p><strong>Solicitante:</strong> ${sol.solicitante_nome}</p>
+                <p>${sol.tipo === 'troca' ? `• <strong>Troca com:</strong> ${sol.destinatario_nome}<br>• <strong>Data Solicitante:</strong> ${sol.data_origem}<br>• <strong>Data Colega:</strong> ${sol.data_destino}` : `• <strong>Data Solicitada:</strong> ${sol.data_origem}`}</p>
+                <p>• <strong>Motivo:</strong> ${sol.motivo || 'Sem observações'}</p>
+                <div class="pt-2">
+                  <button class="btn-ver-na-escala inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-extrabold transition shadow-md shadow-indigo-950/20" data-sol-id="${sol.id}">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                    <span>Ver na Escala</span>
+                  </button>
+                </div>
+              </div>
             `;
           } else if ((sol.status === 'aprovado' || sol.status === 'recusado') && isUserSolicitante) {
             shouldInclude = true;

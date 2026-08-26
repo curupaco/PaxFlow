@@ -90,10 +90,18 @@ export class InboxPage {
       const rawBanco = await EscalaService.loadBancoFolgas();
       this.eventosEscalaData = await EscalaService.loadEventosEscala();
 
+      const daysInMonth = new Date(this.escalaAno, this.escalaMes, 0).getDate();
+
       // Mapa para desduplicar consultores por chave normalizada
       const teamMap = new Map<string, { displayName: string; participates: boolean }>();
 
-      // 1. Se os consultores do sistema estiverem carregados, usa-os como fonte da verdade
+      // 1. Integrantes padrão da agência para garantir roster completo
+      const defaultTeam = ["Marinna Morena", "Guto Bassaroto", "Maria Carvalho", "Rafael Sousa", "Eduardo Mariano", "Laura Montu", "Fernanda Ganem"];
+      defaultTeam.forEach(n => {
+        teamMap.set(n.trim().toLowerCase(), { displayName: n.trim(), participates: true });
+      });
+
+      // 2. Se houver consultores do banco de dados, mescla-os mantendo participa_escala
       if (this.consultants && this.consultants.length > 0) {
         this.consultants.forEach(c => {
           if (c.nome) {
@@ -101,12 +109,6 @@ export class InboxPage {
             const doesParticipate = c.participa_escala !== false && c.participaEscala !== false;
             teamMap.set(key, { displayName: c.nome.trim(), participates: doesParticipate });
           }
-        });
-      } else {
-        // Fallback apenas se não houver perfis carregados no momento
-        ["Marinna Morena", "Guto Bassaroto", "Maria Carvalho", "Rafael Sousa", "Eduardo Mariano", "Laura Montu", "Fernanda Ganem"].forEach(n => {
-          const key = n.trim().toLowerCase();
-          teamMap.set(key, { displayName: n.trim(), participates: true });
         });
       }
 
@@ -125,9 +127,15 @@ export class InboxPage {
         });
 
         if (existingKey && rawEscala[existingKey]) {
-          cleanEscalaData[info.displayName] = rawEscala[existingKey];
+          // Ajusta tamanho do vetor para o número real de dias do mês
+          const arr = rawEscala[existingKey];
+          if (arr.length < daysInMonth) {
+            cleanEscalaData[info.displayName] = [...arr, ...new Array(daysInMonth - arr.length).fill('')];
+          } else {
+            cleanEscalaData[info.displayName] = arr.slice(0, daysInMonth);
+          }
         } else {
-          cleanEscalaData[info.displayName] = new Array(31).fill('');
+          cleanEscalaData[info.displayName] = new Array(daysInMonth).fill('');
         }
       });
       this.escalaData = cleanEscalaData;
@@ -1278,6 +1286,20 @@ export class InboxPage {
       this.setupEventListeners();
     });
 
+    // 1.1 Botão Ver na Escala dentro dos cards do Inbox
+    document.querySelectorAll('.btn-ver-na-escala').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const solId = btn.getAttribute('data-sol-id');
+        this.activeTab = 'escala';
+        this.render();
+        this.setupEventListeners();
+        if (solId) {
+          this.abrirModalSolicitacaoPorId(solId);
+        }
+      });
+    });
+
     const folderEnviadas = document.getElementById('folder-enviadas');
     folderEnviadas?.addEventListener('click', () => {
       this.activeTab = 'enviadas';
@@ -1652,10 +1674,32 @@ export class InboxPage {
       'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
     ];
     const monthNameStr = `${monthNames[this.escalaMes - 1]} ${this.escalaAno}`;
-    const weekdaysLetter = ["S", "D", "S", "T", "Q", "Q", "S", "S", "D", "S", "T", "Q", "Q", "S", "S", "D", "S", "T", "Q", "Q", "S", "S", "D", "S", "T", "Q", "Q", "S", "S", "D", "S"];
+    const dayNamesShort = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+    const daysInMonth = new Date(this.escalaAno, this.escalaMes, 0).getDate();
+    const feriadosDoMes = EscalaService.getFeriadosDoMes(this.escalaAno, this.escalaMes);
 
     const activeEntries = Object.entries(this.escalaData);
     const isAdmin = this.perfil?.role === 'admin';
+
+    // Regras de Navegação por Perfil (Ponto 04)
+    const now = new Date();
+    const curYear = now.getFullYear();
+    const curMonth = now.getMonth() + 1; // 1-indexed
+
+    let maxYear = curYear;
+    let maxMonth = curMonth + 2;
+    if (maxMonth > 12) {
+      maxMonth -= 12;
+      maxYear += 1;
+    }
+
+    const isPrevDisabled = !isAdmin && (
+      this.escalaAno < curYear || (this.escalaAno === curYear && this.escalaMes <= curMonth)
+    );
+
+    const isNextDisabled = !isAdmin && (
+      this.escalaAno > maxYear || (this.escalaAno === maxYear && this.escalaMes >= maxMonth)
+    );
 
     let html = `
       <div class="escala-container">
@@ -1669,9 +1713,9 @@ export class InboxPage {
           <div class="flex items-center gap-2 flex-wrap justify-end">
             <!-- Month & Today Nav Bar -->
             <div class="flex items-center bg-white/10 dark:bg-slate-900/40 border border-white/15 dark:border-slate-800 rounded-xl p-1 backdrop-blur-md shrink-0">
-              <button id="btn-escala-prev-month" class="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-white/20 text-white font-bold transition text-xs">‹</button>
+              <button id="btn-escala-prev-month" ${isPrevDisabled ? 'disabled' : ''} class="w-7 h-7 rounded-lg flex items-center justify-center ${isPrevDisabled ? 'opacity-30 cursor-not-allowed text-white/40' : 'hover:bg-white/20 text-white font-bold transition'} text-xs">‹</button>
               <div id="escalaMonthName" class="px-2.5 text-[11px] font-black text-white min-w-[95px] text-center uppercase tracking-wide">${monthNameStr}</div>
-              <button id="btn-escala-next-month" class="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-white/20 text-white font-bold transition text-xs">›</button>
+              <button id="btn-escala-next-month" ${isNextDisabled ? 'disabled' : ''} class="w-7 h-7 rounded-lg flex items-center justify-center ${isNextDisabled ? 'opacity-30 cursor-not-allowed text-white/40' : 'hover:bg-white/20 text-white font-bold transition'} text-xs">›</button>
               <div class="h-3.5 w-px bg-white/20 mx-1"></div>
               <button id="btn-escala-hoje" class="px-2.5 py-1 hover:bg-white/20 text-white rounded-lg text-[11px] font-extrabold transition">Hoje</button>
             </div>
@@ -1682,6 +1726,10 @@ export class InboxPage {
               <span>Solicitar Troca / Folga</span>
             </button>
             ${isAdmin ? `
+              <button id="btn-escala-export-pdf" class="h-9 px-3.5 bg-rose-600 hover:bg-rose-500 active:scale-95 text-white rounded-xl text-xs font-extrabold transition-all flex items-center gap-1.5 shadow-md shadow-rose-950/20 border border-rose-400/30 shrink-0" title="Exportar Escala Mensal em PDF">
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <span>Exportar PDF</span>
+              </button>
               <button id="btn-escala-admin-edit" class="h-9 px-3.5 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white rounded-xl text-xs font-extrabold transition-all flex items-center gap-1.5 shadow-md shadow-indigo-950/20 border border-indigo-400/30 shrink-0">
                 <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                 <span>Editar Escala</span>
@@ -1720,13 +1768,23 @@ export class InboxPage {
               <thead>
                 <tr>
                   <th class="name-col">Equipe</th>
-                  ${Array.from({ length: 31 }, (_, i) => {
+                  ${Array.from({ length: daysInMonth }, (_, i) => {
                     const dayNum = i + 1;
-                    const isToday = dayNum === new Date().getDate() && (new Date().getMonth() + 1) === this.escalaMes;
+                    const dateObj = new Date(this.escalaAno, this.escalaMes - 1, dayNum);
+                    const dayOfWeek = dateObj.getDay(); // 0 = Dom, 6 = Sáb
+                    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+                    const feriado = feriadosDoMes[dayNum];
+                    const isToday = dayNum === now.getDate() && (now.getMonth() + 1) === this.escalaMes && now.getFullYear() === this.escalaAno;
+
+                    let thExtraCls = '';
+                    if (isToday) thExtraCls += ' escala-today-th';
+                    if (feriado) thExtraCls += ' bg-rose-500/20 dark:bg-rose-500/30 text-rose-700 dark:text-rose-300 font-black';
+                    else if (isWeekend) thExtraCls += ' bg-amber-500/15 dark:bg-amber-400/20 text-amber-700 dark:text-amber-300 font-extrabold';
+
                     return `
-                      <th class="${isToday ? 'escala-today-th' : ''}">
-                        <span class="daynum">${dayNum}</span>
-                        <span class="dow">${weekdaysLetter[i % 7]}</span>
+                      <th class="${thExtraCls}" title="${feriado ? `Feriado ${feriado.tipo.toUpperCase()}: ${feriado.nome}` : dayNamesShort[dayOfWeek]}">
+                        <span class="daynum ${feriado ? 'text-rose-600 dark:text-rose-400 font-black' : isWeekend ? 'text-amber-600 dark:text-amber-400 font-black' : ''}">${dayNum}</span>
+                        <span class="dow text-[9px] uppercase tracking-tighter ${feriado ? 'text-rose-600 dark:text-rose-400 font-extrabold' : isWeekend ? 'text-amber-600 dark:text-amber-400 font-bold' : 'text-slate-400'}">${feriado ? 'FER' : dayNamesShort[dayOfWeek]}</span>
                       </th>
                     `;
                   }).join('')}
@@ -1739,10 +1797,19 @@ export class InboxPage {
                       <strong>${name}</strong>
                       <small>Equipe Agatur</small>
                     </td>
-                    ${vals.map((v, dayIdx) => {
+                    ${Array.from({ length: daysInMonth }, (_, dayIdx) => {
+                      const v = vals[dayIdx] || '';
                       const cls = EscalaService.getTurnoCls(v);
+                      const dateObj = new Date(this.escalaAno, this.escalaMes - 1, dayIdx + 1);
+                      const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
+                      const feriado = feriadosDoMes[dayIdx + 1];
+
+                      let tdBgCls = '';
+                      if (feriado) tdBgCls = 'bg-rose-500/5 dark:bg-rose-950/20';
+                      else if (isWeekend) tdBgCls = 'bg-amber-500/5 dark:bg-amber-950/10';
+
                       return `
-                        <td>
+                        <td class="${tdBgCls}">
                           <div class="escala-cell ${cls}" data-escala-consultor="${name}" data-escala-day="${dayIdx}">
                             ${v || '—'}
                           </div>
@@ -1871,6 +1938,11 @@ export class InboxPage {
 
     // Auto-focus on HOJE immediately when the module opens
     setTimeout(() => scrollToToday('auto'), 60);
+
+    // Admin Export PDF Button
+    document.getElementById('btn-escala-export-pdf')?.addEventListener('click', () => {
+      this.exportarEscalaPDF();
+    });
 
     // Admin Gerenciar Integrantes Button
     document.getElementById('btn-escala-gerenciar-membros')?.addEventListener('click', () => {
@@ -2372,4 +2444,231 @@ export class InboxPage {
       }
     });
   }
+
+  /**
+   * Exporta a escala mensal atual em um PDF formatado para controle jurídico/arquivamento
+   */
+  private exportarEscalaPDF(): void {
+    const daysInMonth = new Date(this.escalaAno, this.escalaMes, 0).getDate();
+    const feriadosDoMes = EscalaService.getFeriadosDoMes(this.escalaAno, this.escalaMes);
+    const dayNamesShort = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+    const monthNames = [
+      'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+      'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+    ];
+    const monthStr = `${monthNames[this.escalaMes - 1]} / ${this.escalaAno}`;
+    const activeEntries = Object.entries(this.escalaData);
+
+    const win = window.open('', '_blank');
+    if (!win) {
+      this.showToast('Permita popups para exportar a escala em PDF.', 'error');
+      return;
+    }
+
+    const printHtml = `
+      <!DOCTYPE html>
+      <html lang="pt-BR">
+      <head>
+        <meta charset="UTF-8">
+        <title>Escala de Funcionários - ${monthStr}</title>
+        <style>
+          @page { size: landscape; margin: 8mm; }
+          body { font-family: 'Helvetica Neue', Arial, sans-serif; color: #0f172a; margin: 0; padding: 15px; font-size: 10px; }
+          .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #0f172a; padding-bottom: 10px; margin-bottom: 15px; }
+          .header h1 { margin: 0; font-size: 18px; text-transform: uppercase; letter-spacing: 1px; color: #0f172a; }
+          .header p { margin: 3px 0 0 0; color: #64748b; font-size: 10px; }
+          .badge-juridico { background: #e0e7ff; color: #3730a3; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 10px; border: 1px solid #c7d2fe; }
+          table { width: 100%; border-collapse: collapse; margin-bottom: 15px; table-layout: fixed; }
+          th, td { border: 1px solid #cbd5e1; text-align: center; padding: 5px 2px; font-size: 9px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+          th { background-color: #f1f5f9; font-weight: bold; color: #334155; }
+          th.weekend { background-color: #fef3c7; color: #92400e; }
+          th.holiday { background-color: #ffe4e6; color: #9f1239; }
+          td.name-col { text-align: left; font-weight: bold; width: 140px; background-color: #f8fafc; padding-left: 6px; }
+          .shift-c10 { background: #e0f2fe; color: #0369a1; font-weight: bold; }
+          .shift-c12 { background: #e0e7ff; color: #4338ca; font-weight: bold; }
+          .shift-c14 { background: #fae8ff; color: #86198f; font-weight: bold; }
+          .shift-c15 { background: #fce7f3; color: #9d174d; font-weight: bold; }
+          .shift-folga { background: #dcfce7; color: #15803d; font-weight: bold; }
+          .shift-ferias { background: #ffedd5; color: #c2410c; font-weight: bold; }
+          .shift-event { background: #f1f5f9; color: #475569; font-style: italic; }
+          .legend { display: flex; gap: 12px; font-size: 9px; margin-top: 15px; padding: 8px; background: #f8fafc; border-radius: 6px; border: 1px solid #e2e8f0; }
+          .legend-item { display: flex; align-items: center; gap: 4px; }
+          .footer-signatures { display: flex; justify-content: space-between; margin-top: 40px; padding-top: 10px; }
+          .sig-box { width: 42%; text-align: center; border-top: 1px solid #94a3b8; padding-top: 5px; font-size: 10px; color: #475569; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div>
+            <h1>PaxFlow — Escala Mensal de Trabalho</h1>
+            <p>Agência de Viagens • Documento Oficial para Registro Operacional e Jurídico</p>
+          </div>
+          <div style="text-align: right;">
+            <span class="badge-juridico">Referência: ${monthStr}</span>
+            <div style="font-size: 8px; color: #64748b; margin-top: 5px;">Emissão: ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}</div>
+          </div>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th class="name-col">Colaborador / Turno</th>
+              ${Array.from({ length: daysInMonth }, (_, i) => {
+                const dayNum = i + 1;
+                const dateObj = new Date(this.escalaAno, this.escalaMes - 1, dayNum);
+                const dow = dateObj.getDay();
+                const isWeekend = dow === 0 || dow === 6;
+                const feriado = feriadosDoMes[dayNum];
+                const cls = feriado ? 'holiday' : isWeekend ? 'weekend' : '';
+                return `
+                  <th class="${cls}">
+                    <div>${dayNum}</div>
+                    <div style="font-size: 7px;">${feriado ? 'FER' : dayNamesShort[dow]}</div>
+                  </th>
+                `;
+              }).join('')}
+            </tr>
+          </thead>
+          <tbody>
+            ${activeEntries.map(([name, vals]) => `
+              <tr>
+                <td class="name-col">${name}</td>
+                ${Array.from({ length: daysInMonth }, (_, dayIdx) => {
+                  const v = vals[dayIdx] || '—';
+                  let shiftCls = '';
+                  if (v.includes('10') || v.includes('11')) shiftCls = 'shift-c10';
+                  else if (v.includes('12') || v.includes('13')) shiftCls = 'shift-c12';
+                  else if (v.includes('14')) shiftCls = 'shift-c14';
+                  else if (v.includes('15')) shiftCls = 'shift-c15';
+                  else if (v.toLowerCase().includes('folga')) shiftCls = 'shift-folga';
+                  else if (v.toLowerCase().includes('féria')) shiftCls = 'shift-ferias';
+                  else if (v.toLowerCase().includes('reuniã')) shiftCls = 'shift-event';
+
+                  return `<td class="${shiftCls}">${v}</td>`;
+                }).join('')}
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+
+        <div class="legend">
+          <strong>Legenda dos Turnos:</strong>
+          <span class="legend-item"><span class="shift-c10" style="padding: 1px 4px;">10-17 / 11-18</span> Manhã/Tarde</span>
+          <span class="legend-item"><span class="shift-c12" style="padding: 1px 4px;">12-19 / 13-20</span> Intermediário</span>
+          <span class="legend-item"><span class="shift-c14" style="padding: 1px 4px;">14-21</span> Tarde/Noite</span>
+          <span class="legend-item"><span class="shift-c15" style="padding: 1px 4px;">15-22</span> Fechamento</span>
+          <span class="legend-item"><span class="shift-folga" style="padding: 1px 4px;">Folga</span> DSR / Folga</span>
+          <span class="legend-item"><span class="shift-ferias" style="padding: 1px 4px;">Férias</span> Férias</span>
+        </div>
+
+        <div class="footer-signatures">
+          <div class="sig-box">
+            <strong>Gerência Operacional / RH</strong><br>
+            Visto de Aprovação da Escala
+          </div>
+          <div class="sig-box">
+            <strong>Supervisão de Equipe</strong><br>
+            Conferência de Cumpriação de Turnos
+          </div>
+        </div>
+
+        <script>
+          window.onload = function() {
+            setTimeout(function() { window.print(); }, 250);
+          };
+        </script>
+      </body>
+      </html>
+    `;
+
+    win.document.write(printHtml);
+    win.document.close();
+  }
+
+  /**
+   * Abre o modal de aprovação/rejeição para a gerência diretamente a partir do botão "Ver na Escala" do Inbox
+   */
+  private async abrirModalSolicitacaoPorId(solId: string): Promise<void> {
+    const list = await EscalaService.loadSolicitacoes();
+    const sol = list.find(s => s.id === solId);
+    if (!sol) {
+      this.showToast('Solicitação de escala não encontrada.', 'error');
+      return;
+    }
+
+    const modalHtml = `
+      <div id="escala-decidir-modal-backdrop" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4">
+          <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3">
+            <div>
+              <h3 class="text-base font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                <span class="w-6 h-6 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 border border-indigo-500/20">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </span>
+                Análise de Solicitação de Escala
+              </h3>
+              <p class="text-xs text-slate-400 font-semibold mt-0.5">Decisão da gestão da agência</p>
+            </div>
+            <button id="modal-decidir-close" class="text-slate-400 hover:text-slate-600 text-lg font-bold">✕</button>
+          </div>
+
+          <div class="space-y-3 text-xs text-slate-700 dark:text-slate-300">
+            <div class="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl space-y-1.5 border border-slate-200 dark:border-slate-800">
+              <p><strong>Solicitante:</strong> ${sol.solicitante_nome}</p>
+              <p><strong>Tipo:</strong> ${sol.tipo === 'troca' ? 'Troca de Turno' : sol.tipo === 'folga' ? 'Folga Semanal' : 'Férias'}</p>
+              <p><strong>Data Solicitada:</strong> ${sol.data_origem}</p>
+              ${sol.destinatario_nome ? `<p><strong>Troca com:</strong> ${sol.destinatario_nome}</p>` : ''}
+              <p><strong>Motivo:</strong> ${sol.motivo || 'Sem justificativa informada'}</p>
+              <p><strong>Status Atual:</strong> <span class="px-2 py-0.5 rounded text-[10px] font-bold ${sol.status === 'aprovado' ? 'bg-emerald-500/20 text-emerald-600' : sol.status === 'recusado' ? 'bg-rose-500/20 text-rose-600' : 'bg-amber-500/20 text-amber-600'}">${sol.status.toUpperCase()}</span></p>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Observação / Justificativa da Gestão</label>
+              <input id="decidir-resposta-admin" type="text" placeholder="Ex: Aprovado conforme escala..." class="w-full text-xs font-semibold p-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
+          </div>
+
+          <div class="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
+            <button id="btn-decidir-recusar" class="px-4 py-2 text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 rounded-xl transition">Recusar</button>
+            <button id="btn-decidir-aprovar" class="px-5 py-2 text-xs font-black text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition shadow-md shadow-emerald-600/20">Aprovar e Atualizar Escala</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const backdrop = document.createElement('div');
+    backdrop.innerHTML = modalHtml;
+    const modalEl = backdrop.firstElementChild!;
+    document.body.appendChild(modalEl);
+
+    const closeBtn = modalEl.querySelector('#modal-decidir-close')!;
+    const btnAprovar = modalEl.querySelector('#btn-decidir-aprovar')!;
+    const btnRecusar = modalEl.querySelector('#btn-decidir-recusar')!;
+
+    const close = () => modalEl.remove();
+    (closeBtn as HTMLElement).onclick = close;
+
+    (btnAprovar as HTMLElement).onclick = async () => {
+      const resp = (modalEl.querySelector('#decidir-resposta-admin') as HTMLInputElement).value.trim();
+      await EscalaService.atualizarStatusSolicitacao(sol.id, 'aprovado', resp);
+      close();
+      this.showToast('Solicitação aprovada e escala atualizada!', 'success');
+      await this.loadEscalaData();
+      await this.loadAndBuildAlerts();
+      this.render();
+      this.setupEventListeners();
+    };
+
+    (btnRecusar as HTMLElement).onclick = async () => {
+      const resp = (modalEl.querySelector('#decidir-resposta-admin') as HTMLInputElement).value.trim();
+      await EscalaService.atualizarStatusSolicitacao(sol.id, 'recusado', resp);
+      close();
+      this.showToast('Solicitação recusada com sucesso.', 'success');
+      await this.loadEscalaData();
+      await this.loadAndBuildAlerts();
+      this.render();
+      this.setupEventListeners();
+    };
+  }
 }
+

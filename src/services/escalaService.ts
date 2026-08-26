@@ -14,11 +14,62 @@ export const TURNO_PRESETS: TurnoConfig[] = [
   { codigo: 'F', label: 'Falta / Feriado / Vazio', corClass: 'off' },
 ];
 
+export interface FeriadoInfo {
+  dia: number;
+  nome: string;
+  tipo: 'nacional' | 'estadual' | 'local';
+}
+
 export class EscalaService {
   private static LOCAL_STORAGE_ESCALA_KEY = 'paxflow_escala_diaria_v1';
   private static LOCAL_STORAGE_SOLICITACOES_KEY = 'paxflow_escala_solicitacoes_v1';
   private static LOCAL_STORAGE_BANCO_KEY = 'paxflow_escala_banco_folgas_v1';
   private static LOCAL_STORAGE_EVENTOS_KEY = 'paxflow_escala_eventos_v1';
+
+  /**
+   * Helper que retorna feriados nacionais e estaduais para um mês/ano
+   */
+  public static getFeriadosDoMes(ano: number, mes: number): Record<number, FeriadoInfo> {
+    const feriados: Record<number, FeriadoInfo> = {};
+
+    const fixosNacionais: Record<string, string> = {
+      '1-1': 'Confraternização Universal',
+      '4-21': 'Tiradentes',
+      '5-1': 'Dia do Trabalho',
+      '9-7': 'Independência do Brasil',
+      '10-12': 'Nsa. Sra. Aparecida',
+      '11-2': 'Finados',
+      '11-15': 'Proclamação da República',
+      '11-20': 'Dia da Consciência Negra',
+      '12-25': 'Natal'
+    };
+
+    const fixosEstaduais: Record<string, string> = {
+      '1-25': 'Aniversário de São Paulo (SP)',
+      '4-23': 'Dia de São Jorge (RJ)',
+      '7-9': 'Revolução Constitucionalista (SP)'
+    };
+
+    const keyPrefix = `${mes}-`;
+
+    Object.entries(fixosNacionais).forEach(([key, nome]) => {
+      if (key.startsWith(keyPrefix)) {
+        const dia = parseInt(key.split('-')[1], 10);
+        feriados[dia] = { dia, nome, tipo: 'nacional' };
+      }
+    });
+
+    Object.entries(fixosEstaduais).forEach(([key, nome]) => {
+      if (key.startsWith(keyPrefix)) {
+        const dia = parseInt(key.split('-')[1], 10);
+        if (!feriados[dia]) {
+          feriados[dia] = { dia, nome, tipo: 'estadual' };
+        }
+      }
+    });
+
+    return feriados;
+  }
 
   /**
    * Helper to get CSS class for a given shift value
@@ -241,19 +292,25 @@ export class EscalaService {
    * Fetch all Shift Change / Off requests
    */
   public static async loadSolicitacoes(): Promise<SolicitacaoEscala[]> {
+    let localItems: SolicitacaoEscala[] = [];
+    try {
+      const stored = localStorage.getItem(this.LOCAL_STORAGE_SOLICITACOES_KEY);
+      if (stored) localItems = JSON.parse(stored);
+    } catch (e) {}
+
     try {
       const { data, error } = await supabase.from('escala_solicitacoes').select('*').order('created_at', { ascending: false });
       if (!error && data && data.length > 0) {
-        return data as SolicitacaoEscala[];
+        const map = new Map<string, SolicitacaoEscala>();
+        (data as SolicitacaoEscala[]).forEach(item => map.set(item.id, item));
+        localItems.forEach(item => {
+          if (!map.has(item.id)) map.set(item.id, item);
+        });
+        return Array.from(map.values()).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
       }
     } catch (e) {}
 
-    try {
-      const stored = localStorage.getItem(this.LOCAL_STORAGE_SOLICITACOES_KEY);
-      if (stored) return JSON.parse(stored);
-    } catch (e) {}
-
-    return [];
+    return localItems;
   }
 
   /**
