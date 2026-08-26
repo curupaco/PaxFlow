@@ -732,5 +732,72 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+-- ============================================================================
+-- 16. RPC SECURITY DEFINER: obter_viagem_co_piloto
+-- ============================================================================
+CREATE OR REPLACE FUNCTION public.obter_viagem_co_piloto(p_trip_id TEXT)
+RETURNS JSON AS $$
+DECLARE
+    result JSON;
+BEGIN
+    SELECT row_to_json(v_data) INTO result
+    FROM (
+        SELECT 
+            v.*,
+            JSON_BUILD_OBJECT(
+                'id', c.id,
+                'nome', c.nome,
+                'email', c.email,
+                'telefone', c.telefone,
+                'documento', c.documento
+            ) AS cliente,
+            COALESCE((
+                SELECT JSON_AGG(row_to_json(p))
+                FROM public.produtos_viagem p
+                WHERE p.viagem_id = v.id
+            ), '[]'::json) AS produtos,
+            COALESCE((
+                SELECT JSON_AGG(row_to_json(r))
+                FROM public.reembolsos r
+                WHERE r.viagem_id = v.id
+            ), '[]'::json) AS reembolsos
+        FROM public.viagens v
+        LEFT JOIN public.clientes c ON c.id = v.cliente_id
+        WHERE v.id::text = p_trip_id
+    ) v_data;
+
+    RETURN result;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- ============================================================================
+-- 17. RPC SECURITY DEFINER: obter_orcamento_co_piloto
+-- ============================================================================
+CREATE OR REPLACE FUNCTION public.obter_orcamento_co_piloto(p_orc_id TEXT)
+RETURNS JSON AS $$
+DECLARE
+    result JSON;
+BEGIN
+    SELECT row_to_json(o_data) INTO result
+    FROM (
+        SELECT 
+            o.*,
+            JSON_BUILD_OBJECT(
+                'id', c.id,
+                'nome', c.nome,
+                'email', c.email,
+                'telefone', c.telefone,
+                'documento', c.documento
+            ) AS cliente
+        FROM public.orcamentos o
+        LEFT JOIN public.clientes c ON c.id = o.cliente_id
+        WHERE o.id::text = p_orc_id
+    ) o_data;
+
+    RETURN result;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+
 
 

@@ -124,6 +124,18 @@ export class EditTravelModal {
       }
 
       if (!viagem) {
+        // Tenta buscar via RPC SECURITY DEFINER (para Co-Piloto sem bloqueio de RLS)
+        try {
+          const { data: rpcData, error: rpcErr } = await supabase.rpc('obter_viagem_co_piloto', { p_trip_id: tripId });
+          if (!rpcErr && rpcData) {
+            viagem = rpcData;
+          }
+        } catch (e) {
+          console.warn('RPC obter_viagem_co_piloto falhou, usando fallbacks:', e);
+        }
+      }
+
+      if (!viagem) {
         viagem = (this.options.viagens || []).find(v => v.id === tripId);
       }
 
@@ -135,32 +147,6 @@ export class EditTravelModal {
             viagem = (parsed || []).find((v: any) => v.id === tripId);
           } catch (e) {}
         }
-      }
-
-      if (!viagem) {
-        try {
-          const { BalcaoService } = await import('../../services/balcaoService');
-          const resultados = await BalcaoService.buscarMulticriterio(tripId);
-          for (const res of resultados) {
-            const foundV = res.viagens.find(v => v.id === tripId);
-            if (foundV) {
-              viagem = {
-                id: foundV.id,
-                destino: foundV.destino,
-                status: foundV.status,
-                consultor_id: foundV.consultorId,
-                consultor_nome: foundV.consultorNome,
-                cliente: res.cliente,
-                cliente_id: res.cliente.id,
-                data_ida: new Date().toISOString().split('T')[0],
-                data_volta: new Date().toISOString().split('T')[0],
-                valor_total: 0,
-                produtos: []
-              };
-              break;
-            }
-          }
-        } catch (e) {}
       }
 
       if (!viagem) {
