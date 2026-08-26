@@ -181,13 +181,13 @@ export class LandingPage {
             <!-- Window top bar (No dev titles) -->
             <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4 mb-4">
               <div class="flex items-center gap-2">
-                <span class="w-2.5 h-2.5 bg-slate-200 dark:bg-slate-800 rounded-full"></span>
-                <span class="w-2.5 h-2.5 bg-slate-200 dark:bg-slate-800 rounded-full"></span>
-                <span class="w-2.5 h-2.5 bg-slate-200 dark:bg-slate-800 rounded-full"></span>
-                <span id="window-path-text" class="text-[10px] text-slate-600 dark:text-slate-300 font-extrabold ml-2">PaxFlow - Painel de Controle</span>
+                <span class="w-2.5 h-2.5 bg-rose-500 rounded-full"></span>
+                <span class="w-2.5 h-2.5 bg-amber-500 rounded-full"></span>
+                <span class="w-2.5 h-2.5 bg-emerald-500 rounded-full"></span>
+                <span id="window-path-text" class="text-[10px] font-black text-slate-600 dark:text-slate-300 ml-2 uppercase tracking-wide">PaxFlow - Painel de Controle</span>
               </div>
               <div class="flex gap-2">
-                <span class="px-2.5 py-0.5 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-bold text-[9px] rounded-lg">DEMO EM TEMPO REAL</span>
+                <span class="px-2 py-0.5 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-extrabold text-[9px] rounded-md uppercase">DEMO EM TEMPO REAL</span>
               </div>
             </div>
 
@@ -220,14 +220,14 @@ export class LandingPage {
                   <div class="bg-slate-50 dark:bg-slate-950/50 border border-slate-200/60 dark:border-slate-800 p-4.5 rounded-2xl shadow-sm">
                     <span class="text-[9px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider block">Ticket Médio</span>
                     <div class="flex items-baseline gap-2 mt-1">
-                      <span class="text-xl font-black text-emerald-600 dark:text-emerald-450">R$ 6.200,00</span>
+                      <span class="text-xl font-black text-emerald-600 dark:text-emerald-400">R$ 6.200,00</span>
                       <span class="text-[9px] text-slate-500">Por Viagem</span>
                     </div>
                   </div>
                 </div>
 
                 <div class="bg-slate-50/50 dark:bg-slate-950/40 border border-slate-200/50 dark:border-slate-800 rounded-2xl p-5">
-                  <div class="flex items-center justify-between mb-4 border-b border-slate-200/50 dark:border-slate-805 pb-2.5">
+                  <div class="flex items-center justify-between mb-4 border-b border-slate-200/50 dark:border-slate-800 pb-2.5">
                     <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Funil Comercial Operativo</span>
                     <span class="px-2 py-0.5 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[9px] font-bold rounded-lg">Dados em Tempo Real</span>
                   </div>
@@ -248,7 +248,7 @@ export class LandingPage {
                         <span>75 (62%)</span>
                       </div>
                       <div class="w-full bg-slate-200/60 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                        <div class="bg-indigo-550 h-full w-[62%] rounded-full"></div>
+                        <div class="bg-indigo-500 h-full w-[62%] rounded-full"></div>
                       </div>
                     </div>
                     <div>
@@ -287,7 +287,7 @@ export class LandingPage {
                         <tr class="hover:bg-slate-100/30 dark:hover:bg-slate-800/10 transition-colors duration-200">
                           <td class="px-4 py-3 text-center"><span class="text-xs">⚠️</span></td>
                           <td class="px-4 py-3">
-                            <div class="font-extrabold text-slate-800 dark:text-slate-150">Passageiro Demo 01</div>
+                            <div class="font-extrabold text-slate-800 dark:text-slate-100">Passageiro Demo 01</div>
                             <span class="inline-block mt-0.5 px-1.5 py-0.5 bg-slate-200/50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-extrabold text-[8px] rounded border border-slate-300/40 dark:border-slate-700/50 uppercase">BA921</span>
                           </td>
                           <td class="px-4 py-3">
@@ -298,8 +298,8 @@ export class LandingPage {
                           </td>
                           <td class="px-4 py-3 whitespace-nowrap">12/08/2026 a 19/08/2026</td>
                           <td class="px-4 py-3">
-                            <div class="font-bold text-indigo-650 dark:text-indigo-400">R$ 5.400,00</div>
-                            <div class="text-[8px] text-emerald-600 dark:text-emerald-455 font-bold mt-0.5">Rentabilidade: R$ 800,00</div>
+                            <div class="font-bold text-indigo-600 dark:text-indigo-400">R$ 5.400,00</div>
+                            <div class="text-[8px] text-emerald-600 dark:text-emerald-400 font-bold mt-0.5">Rentabilidade: R$ 800,00</div>
                           </td>
                           <td class="px-4 py-3">
                             <span class="inline-flex px-2 py-0.5 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[8px] font-bold uppercase border border-amber-500/20">Pré-Embarque</span>
@@ -308,7 +308,7 @@ export class LandingPage {
                         <tr class="hover:bg-slate-100/30 dark:hover:bg-slate-800/10 transition-colors duration-200">
                           <td class="px-4 py-3 text-center"><span class="text-xs">🟢</span></td>
                           <td class="px-4 py-3">
-                            <div class="font-extrabold text-slate-800 dark:text-slate-150">Passageira Demo 02</div>
+                            <div class="font-extrabold text-slate-800 dark:text-slate-100">Passageira Demo 02</div>
                             <span class="inline-block mt-0.5 px-1.5 py-0.5 bg-slate-200/50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-extrabold text-[8px] rounded border border-slate-300/40 dark:border-slate-700/50 uppercase">US441</span>
                           </td>
                           <td class="px-4 py-3">
@@ -320,8 +320,8 @@ export class LandingPage {
                           </td>
                           <td class="px-4 py-3 whitespace-nowrap">15/07/2026 a 30/07/2026</td>
                           <td class="px-4 py-3">
-                            <div class="font-bold text-indigo-650 dark:text-indigo-400">R$ 12.800,00</div>
-                            <div class="text-[8px] text-emerald-600 dark:text-emerald-455 font-bold mt-0.5">Rentabilidade: R$ 2.400,00</div>
+                            <div class="font-bold text-indigo-600 dark:text-indigo-400">R$ 12.800,00</div>
+                            <div class="text-[8px] text-emerald-600 dark:text-emerald-400 font-bold mt-0.5">Rentabilidade: R$ 2.400,00</div>
                           </td>
                           <td class="px-4 py-3">
                             <span class="inline-flex px-2 py-0.5 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[8px] font-bold uppercase border border-indigo-500/20">Pós-Venda</span>
@@ -346,7 +346,7 @@ export class LandingPage {
                     <div class="p-2.5 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-xl shadow-sm">
                       <span class="block font-bold text-slate-800 dark:text-slate-200 truncate">Grécia / Lua de Mel</span>
                       <span class="block text-[8px] text-slate-400 mt-0.5">Cliente Exemplo 01</span>
-                      <span class="block text-[9px] font-black text-indigo-650 dark:text-indigo-400 mt-1">R$ 24.000,00</span>
+                      <span class="block text-[9px] font-black text-indigo-600 dark:text-indigo-400 mt-1">R$ 24.000,00</span>
                     </div>
                   </div>
                   <!-- Em Análise -->
@@ -355,7 +355,7 @@ export class LandingPage {
                     <div class="p-2.5 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-xl shadow-sm">
                       <span class="block font-bold text-slate-800 dark:text-slate-200 truncate">Férias em Família</span>
                       <span class="block text-[8px] text-slate-400 mt-0.5">Cliente Exemplo 02</span>
-                      <span class="block text-[9px] font-black text-indigo-650 dark:text-indigo-400 mt-1">R$ 15.600,00</span>
+                      <span class="block text-[9px] font-black text-indigo-600 dark:text-indigo-400 mt-1">R$ 15.600,00</span>
                     </div>
                   </div>
                   <!-- Proposta -->
@@ -364,7 +364,7 @@ export class LandingPage {
                     <div class="p-2.5 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-xl shadow-sm border-l-2 border-l-amber-500">
                       <span class="block font-bold text-slate-800 dark:text-slate-200 truncate">Férias em Natal</span>
                       <span class="block text-[8px] text-slate-400 mt-0.5">Cliente Exemplo 03</span>
-                      <span class="block text-[9px] font-black text-indigo-650 dark:text-indigo-400 mt-1">R$ 8.900,00</span>
+                      <span class="block text-[9px] font-black text-indigo-600 dark:text-indigo-400 mt-1">R$ 8.900,00</span>
                     </div>
                   </div>
                   <!-- Ganho -->
@@ -373,7 +373,7 @@ export class LandingPage {
                     <div class="p-2.5 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-xl shadow-sm border-l-2 border-l-emerald-500">
                       <span class="block font-bold text-slate-800 dark:text-slate-200 truncate">Mochilão Europa</span>
                       <span class="block text-[8px] text-slate-400 mt-0.5">Cliente Exemplo 04</span>
-                      <span class="block text-[9px] font-black text-emerald-600 dark:text-emerald-450 mt-1">R$ 18.200,00</span>
+                      <span class="block text-[9px] font-black text-emerald-600 dark:text-emerald-400 mt-1">R$ 18.200,00</span>
                     </div>
                   </div>
                 </div>
@@ -390,7 +390,7 @@ export class LandingPage {
                   <div class="md:col-span-1 space-y-2 border-r border-slate-200 dark:border-slate-800 pr-3">
                     <span class="text-[8px] font-bold text-slate-400 uppercase tracking-wider block mb-1">ALERTAS RECENTES</span>
                     <div class="p-2 bg-rose-500/5 dark:bg-rose-950/20 border border-rose-500/20 dark:border-rose-900/30 rounded-xl">
-                      <div class="flex justify-between font-extrabold text-rose-600 dark:text-rose-455">
+                      <div class="flex justify-between font-extrabold text-rose-600 dark:text-rose-400">
                         <span>SLA Passaporte</span>
                         <span>Urgente</span>
                       </div>
@@ -410,7 +410,7 @@ export class LandingPage {
                     <div class="space-y-2">
                       <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
                         <span class="font-extrabold text-slate-700 dark:text-slate-300">Thread: Alerta SLA - Passageira Demo 03</span>
-                        <span class="text-[8px] font-bold text-rose-555">Viagem em 15/12/2026</span>
+                        <span class="text-[8px] font-bold text-rose-500">Viagem em 15/12/2026</span>
                       </div>
                       <div class="space-y-2 max-h-[120px] overflow-y-auto pr-1">
                         <div class="p-2.5 bg-rose-500/10 border border-rose-500/20 dark:border-rose-900/30 rounded-xl">
@@ -460,7 +460,7 @@ export class LandingPage {
                 </div>
                 <div class="flex justify-between items-center mb-1">
                   <span class="font-bold text-slate-700 dark:text-slate-300">Reembolsos e Créditos Pendentes</span>
-                  <span class="px-2 py-0.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-455 text-[8px] font-bold rounded-lg border border-emerald-500/20">R$ 6.230,00 pendente</span>
+                  <span class="px-2 py-0.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[8px] font-bold rounded-lg border border-emerald-500/20">R$ 6.230,00 pendente</span>
                 </div>
                 <div class="overflow-x-auto text-[10px]">
                   <table class="w-full text-left border-collapse">
@@ -477,13 +477,13 @@ export class LandingPage {
                         <td class="py-2.5 font-bold text-slate-800 dark:text-slate-200">Passageiro Demo 04</td>
                         <td class="py-2.5">LATAM Airlines</td>
                         <td class="py-2.5 font-bold text-slate-800 dark:text-slate-200">R$ 1.850,00</td>
-                        <td class="py-2.5"><span class="px-1.5 py-0.5 bg-rose-500/10 text-rose-555 border border-rose-500/20 text-[8px] font-bold rounded-md uppercase">Solicitado</span></td>
+                        <td class="py-2.5"><span class="px-1.5 py-0.5 bg-rose-500/10 text-rose-500 border border-rose-500/20 text-[8px] font-bold rounded-md uppercase">Solicitado</span></td>
                       </tr>
                       <tr>
                         <td class="py-2.5 font-bold text-slate-800 dark:text-slate-200">Passageira Demo 05</td>
                         <td class="py-2.5">Decolar</td>
                         <td class="py-2.5 font-bold text-slate-800 dark:text-slate-200">R$ 3.400,00</td>
-                        <td class="py-2.5"><span class="px-1.5 py-0.5 bg-amber-500/10 text-amber-600 dark:text-amber-450 border border-amber-500/20 text-[8px] font-bold rounded-md uppercase">Em Análise</span></td>
+                        <td class="py-2.5"><span class="px-1.5 py-0.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 text-[8px] font-bold rounded-md uppercase">Em Análise</span></td>
                       </tr>
                     </tbody>
                   </table>
@@ -536,7 +536,7 @@ export class LandingPage {
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <!-- Public Itinerary Card -->
                   <div class="bg-slate-50/50 dark:bg-slate-950/60 border border-slate-200/60 dark:border-slate-800 p-4 rounded-2xl text-left space-y-2">
-                    <span class="text-[8px] font-bold text-indigo-650 dark:text-indigo-400 uppercase tracking-wider block">Itinerário Digital do Cliente</span>
+                    <span class="text-[8px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider block">Itinerário Digital do Cliente</span>
                     <p class="text-[10px] text-slate-500 dark:text-slate-400 leading-normal">
                       O passageiro acompanha voos, hotéis, traslados e vouchers de forma responsiva no celular, organizada por dias com contagem regressiva para a partida.
                     </p>
@@ -544,7 +544,7 @@ export class LandingPage {
 
                   <!-- Public NPS Card -->
                   <div class="bg-slate-50/50 dark:bg-slate-950/60 border border-slate-200/60 dark:border-slate-800 p-4 rounded-2xl text-left space-y-2">
-                    <span class="text-[8px] font-bold text-emerald-600 dark:text-emerald-455 uppercase tracking-wider block">Pesquisa de Satisfação NPS</span>
+                    <span class="text-[8px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider block">Pesquisa de Satisfação NPS</span>
                     <p class="text-[10px] text-slate-500 dark:text-slate-400 leading-normal">
                       Pesquisa pós-viagem enviada ao cliente com interface amigável para avaliar o serviço do consultor, alimentando as estatísticas no painel de controle.
                     </p>
@@ -556,7 +556,7 @@ export class LandingPage {
             <!-- All Modules at a Glance Grid (No Clicking Required - Na Cara!) -->
             <div class="w-full mt-12 pt-10 border-t border-slate-200/60 dark:border-slate-800 text-left">
               <div class="text-center max-w-2xl mx-auto mb-10 space-y-2">
-                <span class="px-3 py-1 bg-indigo-500/10 text-indigo-650 dark:text-indigo-400 text-[10px] font-black uppercase tracking-widest rounded-full border border-indigo-500/20">
+                <span class="px-3 py-1 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[10px] font-black uppercase tracking-widest rounded-full border border-indigo-500/20">
                   Visão Geral de Todos os Módulos
                 </span>
                 <h3 class="text-xl sm:text-2xl font-black text-slate-800 dark:text-white">
@@ -758,10 +758,10 @@ export class LandingPage {
               </div>
 
               <!-- Right Side: Auto-Rotating Mockup Card (3s timer) -->
-              <div class="lg:col-span-8 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 shadow-md relative overflow-hidden flex flex-col justify-between min-h-[380px]">
+              <div class="lg:col-span-8 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl shadow-xl p-5 md:p-7 text-left relative overflow-hidden backdrop-blur-md flex flex-col justify-between min-h-[380px] transition-colors duration-300">
                 
                 <!-- Header of Preview -->
-                <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3 mb-4">
+                <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4 mb-4">
                   <div class="flex items-center gap-2">
                     <span class="w-2.5 h-2.5 bg-rose-500 rounded-full"></span>
                     <span class="w-2.5 h-2.5 bg-amber-500 rounded-full"></span>
@@ -770,7 +770,7 @@ export class LandingPage {
                       01. Itinerário Digital no Celular
                     </span>
                   </div>
-                  <span class="px-2 py-0.5 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-extrabold text-[9px] rounded-md">
+                  <span class="px-2 py-0.5 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-extrabold text-[9px] rounded-md uppercase">
                     ROTAÇÃO AUTOMÁTICA (3S)
                   </span>
                 </div>
@@ -891,7 +891,7 @@ export class LandingPage {
               
               <!-- Column 1: The Pain -->
               <div class="p-5 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-sm">
-                <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-rose-500/5 text-rose-600 dark:text-rose-455 text-[9px] font-bold rounded-lg uppercase tracking-wider mb-4">
+                <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-rose-500/5 text-rose-600 dark:text-rose-400 text-[9px] font-bold rounded-lg uppercase tracking-wider mb-4">
                   ❌ Como é hoje nas agências
                 </div>
                 <ul class="space-y-3 text-[10px] text-slate-500 dark:text-slate-400 font-medium">
@@ -916,7 +916,7 @@ export class LandingPage {
 
               <!-- Column 2: The Solution -->
               <div class="p-5 bg-indigo-50/10 dark:bg-slate-900 border border-indigo-100/50 dark:border-slate-800 rounded-2xl shadow-sm">
-                <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-emerald-500/5 text-emerald-600 dark:text-emerald-455 text-[9px] font-bold rounded-lg uppercase tracking-wider mb-4">
+                <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-emerald-500/5 text-emerald-600 dark:text-emerald-400 text-[9px] font-bold rounded-lg uppercase tracking-wider mb-4">
                   ✅ Com a plataforma PaxFlow
                 </div>
                 <ul class="space-y-3 text-[10px] text-slate-600 dark:text-slate-300 font-medium">
@@ -961,7 +961,7 @@ export class LandingPage {
             
             <!-- Section Header -->
             <div class="text-center max-w-3xl mx-auto space-y-3">
-              <span class="px-3 py-1 bg-indigo-500/10 text-indigo-650 dark:text-indigo-400 border border-indigo-500/20 text-[10px] font-black uppercase tracking-widest rounded-full">
+              <span class="px-3 py-1 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 text-[10px] font-black uppercase tracking-widest rounded-full">
                 Guia Completo de Recursos
               </span>
               <h2 class="text-2xl sm:text-4xl font-black text-slate-800 dark:text-white tracking-tight">
@@ -1024,7 +1024,7 @@ export class LandingPage {
             <!-- PILLAR 2: CRM & KANBAN -->
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center bg-white dark:bg-slate-900 p-7 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-md">
               <div class="lg:col-span-6 lg:order-2 space-y-4">
-                <div class="inline-flex items-center gap-2 px-3 py-1 bg-indigo-500/10 text-indigo-650 dark:text-indigo-400 text-[10px] font-black uppercase rounded-lg border border-indigo-500/20">
+                <div class="inline-flex items-center gap-2 px-3 py-1 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[10px] font-black uppercase rounded-lg border border-indigo-500/20">
                   <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
                   Pilar 02 • Pipeline Comercial
                 </div>
