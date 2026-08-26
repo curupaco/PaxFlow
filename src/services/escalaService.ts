@@ -123,6 +123,9 @@ export class EscalaService {
    * Fetches full monthly schedule table
    */
   public static async loadEscalaMensal(ano: number, mes: number): Promise<Record<string, string[]>> {
+    const initial = this.getInitialMockData();
+    let loadedMap: Record<string, string[]> = {};
+
     try {
       const { data, error } = await supabase
         .from('escala_diaria')
@@ -131,37 +134,44 @@ export class EscalaService {
         .lte('data', `${ano}-${String(mes).padStart(2, '0')}-31`);
 
       if (!error && data && data.length > 0) {
-        const result: Record<string, string[]> = {};
         data.forEach((row: any) => {
           const name = row.consultor_nome || 'Consultor';
-          if (!result[name]) {
-            result[name] = new Array(31).fill('');
+          if (!loadedMap[name]) {
+            loadedMap[name] = new Array(31).fill('');
           }
           const dayNum = parseInt(row.data.split('-')[2], 10) - 1;
           if (dayNum >= 0 && dayNum < 31) {
-            result[name][dayNum] = row.turno_codigo || row.observacao_custom || '';
+            loadedMap[name][dayNum] = row.turno_codigo || row.observacao_custom || '';
           }
         });
-        return result;
       }
     } catch (e) {
       console.warn('Fallback para armazenamento local de escala:', e);
     }
 
-    try {
-      const stored = localStorage.getItem(this.LOCAL_STORAGE_ESCALA_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (parsed[`${ano}-${mes}`]) {
-          return parsed[`${ano}-${mes}`];
+    if (Object.keys(loadedMap).length === 0) {
+      try {
+        const stored = localStorage.getItem(this.LOCAL_STORAGE_ESCALA_KEY);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed[`${ano}-${mes}`]) {
+            loadedMap = parsed[`${ano}-${mes}`];
+          }
         }
+      } catch (e) {
+        console.error('Erro ao ler localStorage de escala:', e);
       }
-    } catch (e) {
-      console.error('Erro ao ler localStorage de escala:', e);
     }
 
-    const initial = this.getInitialMockData();
-    return initial.mockEmployeesSchedule;
+    // Merge loadedMap com os dados mock iniciais para garantir roster completo do mês de Agosto
+    const resultMap: Record<string, string[]> = { ...initial.mockEmployeesSchedule };
+    Object.keys(loadedMap).forEach(name => {
+      if (loadedMap[name] && loadedMap[name].some(val => val !== '')) {
+        resultMap[name] = loadedMap[name];
+      }
+    });
+
+    return resultMap;
   }
 
   /**
@@ -200,7 +210,7 @@ export class EscalaService {
       
       if (!dataMap[key]) {
         const initial = this.getInitialMockData();
-        dataMap[key] = initial.mockEmployeesSchedule;
+        dataMap[key] = { ...initial.mockEmployeesSchedule };
       }
 
       if (!dataMap[key][consultorNome]) {
@@ -353,12 +363,12 @@ export class EscalaService {
     localStorage.setItem(this.LOCAL_STORAGE_SOLICITACOES_KEY, JSON.stringify(list));
 
     if (novoStatus === 'aprovado') {
-      const ano = new Date(target.data_origem).getFullYear();
-      const mes = new Date(target.data_origem).getMonth() + 1;
-      const diaOrigemIdx = parseInt(target.data_origem.split('-')[2], 10) - 1;
+      const [ano, mes, diaOrigem] = target.data_origem.split('-').map(Number);
+      const diaOrigemIdx = diaOrigem - 1;
 
       if (target.tipo === 'troca' && target.destinatario_nome && target.data_destino) {
-        const diaDestinoIdx = parseInt(target.data_destino.split('-')[2], 10) - 1;
+        const [_, __, diaDestino] = target.data_destino.split('-').map(Number);
+        const diaDestinoIdx = diaDestino - 1;
         if (target.solicitante_nome && target.destinatario_nome) {
           const currentMap = await this.loadEscalaMensal(ano, mes);
           const t1 = currentMap[target.solicitante_nome]?.[diaOrigemIdx] || '10-17';

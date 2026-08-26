@@ -417,6 +417,51 @@
   color: #94a3b8;
 }
 
+/* Destaques de Finais de Semana e Feriados */
+.escala-table th.escala-weekend-th {
+  background-color: #fef3c7 !important;
+}
+.dark .escala-table th.escala-weekend-th {
+  background-color: #451a03 !important;
+}
+.escala-table th.escala-weekend-th .daynum,
+.escala-table th.escala-weekend-th .dow {
+  color: #b45309 !important;
+}
+.dark .escala-table th.escala-weekend-th .daynum,
+.dark .escala-table th.escala-weekend-th .dow {
+  color: #fde68a !important;
+}
+
+.escala-table th.escala-holiday-th {
+  background-color: #ffe4e6 !important;
+}
+.dark .escala-table th.escala-holiday-th {
+  background-color: #4c0519 !important;
+}
+.escala-table th.escala-holiday-th .daynum,
+.escala-table th.escala-holiday-th .dow {
+  color: #be123c !important;
+}
+.dark .escala-table th.escala-holiday-th .daynum,
+.dark .escala-table th.escala-holiday-th .dow {
+  color: #fecdd3 !important;
+}
+
+.escala-table td.escala-weekend-td {
+  background-color: #fefce8 !important;
+}
+.dark .escala-table td.escala-weekend-td {
+  background-color: #1a160e !important;
+}
+
+.escala-table td.escala-holiday-td {
+  background-color: #fff1f2 !important;
+}
+.dark .escala-table td.escala-holiday-td {
+  background-color: #260c13 !important;
+}
+
 .escala-table .name-col {
   position: sticky !important;
   left: 0;

@@ -1778,13 +1778,13 @@ export class InboxPage {
 
                     let thExtraCls = '';
                     if (isToday) thExtraCls += ' escala-today-th';
-                    if (feriado) thExtraCls += ' bg-rose-500/20 dark:bg-rose-500/30 text-rose-700 dark:text-rose-300 font-black';
-                    else if (isWeekend) thExtraCls += ' bg-amber-500/15 dark:bg-amber-400/20 text-amber-700 dark:text-amber-300 font-extrabold';
+                    if (feriado) thExtraCls += ' escala-holiday-th';
+                    else if (isWeekend) thExtraCls += ' escala-weekend-th';
 
                     return `
                       <th class="${thExtraCls}" title="${feriado ? `Feriado ${feriado.tipo.toUpperCase()}: ${feriado.nome}` : dayNamesShort[dayOfWeek]}">
-                        <span class="daynum ${feriado ? 'text-rose-600 dark:text-rose-400 font-black' : isWeekend ? 'text-amber-600 dark:text-amber-400 font-black' : ''}">${dayNum}</span>
-                        <span class="dow text-[9px] uppercase tracking-tighter ${feriado ? 'text-rose-600 dark:text-rose-400 font-extrabold' : isWeekend ? 'text-amber-600 dark:text-amber-400 font-bold' : 'text-slate-400'}">${feriado ? 'FER' : dayNamesShort[dayOfWeek]}</span>
+                        <span class="daynum">${dayNum}</span>
+                        <span class="dow text-[9px] uppercase tracking-tighter">${feriado ? 'FER' : dayNamesShort[dayOfWeek]}</span>
                       </th>
                     `;
                   }).join('')}
@@ -1805,8 +1805,8 @@ export class InboxPage {
                       const feriado = feriadosDoMes[dayIdx + 1];
 
                       let tdBgCls = '';
-                      if (feriado) tdBgCls = 'bg-rose-500/5 dark:bg-rose-950/20';
-                      else if (isWeekend) tdBgCls = 'bg-amber-500/5 dark:bg-amber-950/10';
+                      if (feriado) tdBgCls = 'escala-holiday-td';
+                      else if (isWeekend) tdBgCls = 'escala-weekend-td';
 
                       return `
                         <td class="${tdBgCls}">
@@ -1934,7 +1934,15 @@ export class InboxPage {
     };
 
     // Hoje button click
-    document.getElementById('btn-escala-hoje')?.addEventListener('click', () => scrollToToday('smooth'));
+    document.getElementById('btn-escala-hoje')?.addEventListener('click', async () => {
+      const now = new Date();
+      this.escalaAno = now.getFullYear();
+      this.escalaMes = now.getMonth() + 1;
+      await this.loadEscalaData();
+      this.render();
+      this.setupEventListeners();
+      setTimeout(() => scrollToToday('smooth'), 60);
+    });
 
     // Auto-focus on HOJE immediately when the module opens
     setTimeout(() => scrollToToday('auto'), 60);
