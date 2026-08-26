@@ -10,6 +10,7 @@ import { showBadgeCelebrationModal, showLevelUpModal } from './utils/celebration
 import { traduzirErro } from './utils/errorTranslator';
 import { Router } from './router';
 import { LandingPage } from './pages/LandingPage';
+import { GlobalHeaderSearch } from './components/GlobalHeaderSearch';
 
 (window as any).traduzirErro = traduzirErro;
 
@@ -439,13 +440,21 @@ class App {
           </nav>
         </aside>
 
-        <!-- Área Principal de Exibição de Conteúdo -->
-        <div id="page-content" class="flex-1 flex flex-col overflow-hidden min-w-0 bg-slate-50/50 dark:bg-slate-950">
-          <!-- Injetado dinamicamente via router -->
+        <!-- Área Principal de Exibição de Conteúdo (Com Cabeçalho Global) -->
+        <div class="flex-1 flex flex-col overflow-hidden min-w-0 bg-slate-50/50 dark:bg-slate-950">
+          <div id="global-header-mount"></div>
+          <div id="page-content" class="flex-1 flex flex-col overflow-hidden min-w-0">
+            <!-- Injetado dinamicamente via router -->
+          </div>
         </div>
 
       </div>
     `;
+
+    const headerMount = document.getElementById('global-header-mount');
+    if (headerMount) {
+      GlobalHeaderSearch.init(headerMount);
+    }
 
     this.atualizarSidebarProfileFooter();
     this.setupNavigationListeners();
