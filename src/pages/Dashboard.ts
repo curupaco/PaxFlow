@@ -6,6 +6,7 @@ import { SendTemplateMessageModal } from '../components/dashboard/SendTemplateMe
 import { getAvatarSvg, mesclarAvataresLocais } from '../services/avatars';
 import { showCustomConfirm } from '../services/dialog';
 import { CommentsService } from '../services/comments';
+import { BalcaoService, ResultadoBuscaBalcao } from '../services/balcaoService';
 import {
   renderCurrencyInputHTML,
   renderDateInputHTML,
@@ -106,6 +107,8 @@ export class Dashboard {
   private selectedConferenceFilter: 'todos' | 'nenhuma' | 'financeiro' | 'processo' | 'completo' = 'todos';
   private sortables: Sortable[] = [];
   private buscaTermo: string = '';
+  private balcaoResultados: ResultadoBuscaBalcao[] = [];
+  private balcaoSearchTimeout: any = null;
   private isFallbackMode: boolean = false;
   private realtimeChannel: any = null;
   private storageListener: ((e: StorageEvent) => void) | null = null;
@@ -1343,6 +1346,72 @@ export class Dashboard {
       }
     }, duration);
   }
+  /**
+   * Renderiza a seção Modo Co-Piloto (Pesquisa de Balcão - Toda a Agência)
+   */
+  private renderBalcaoSectionHTML(): string {
+    if (!this.buscaTermo || this.balcaoResultados.length === 0) return '';
+
+    return `
+      <div class="mb-6 p-5 bg-gradient-to-r from-indigo-900 via-slate-900 to-indigo-950 text-white rounded-2xl shadow-xl border border-indigo-500/30 animate-fade-in shrink-0">
+        <div class="flex items-center justify-between gap-3 mb-4 pb-3 border-b border-indigo-500/20">
+          <div class="flex items-center gap-2.5">
+            <span class="p-2 rounded-xl bg-indigo-500/20 text-indigo-300 text-base">🤝</span>
+            <div>
+              <h3 class="text-sm font-black tracking-wide text-indigo-100 uppercase">Modo Co-Piloto — Pesquisa de Balcão (Toda a Agência)</h3>
+              <p class="text-xs text-indigo-300">Itens encontrados no banco de dados para resgate presencial instantâneo.</p>
+            </div>
+          </div>
+          <span class="px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 text-[10px] font-black uppercase tracking-wider">${this.balcaoResultados.length} cliente(s) localizado(s)</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          ${this.balcaoResultados.map(res => `
+            <div class="bg-slate-800/80 border border-slate-700/60 rounded-xl p-3.5 flex flex-col justify-between gap-3 hover:border-indigo-500/50 transition">
+              <div>
+                <div class="flex items-center justify-between gap-2 mb-1">
+                  <span class="font-extrabold text-sm text-white truncate">${res.cliente.nome}</span>
+                  <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">Cliente</span>
+                </div>
+                <div class="text-[11px] text-slate-400 space-y-0.5 font-mono">
+                  ${res.cliente.cpf ? `<div>CPF: ${res.cliente.cpf}</div>` : ''}
+                  ${res.cliente.telefone ? `<div>Tel: ${res.cliente.telefone}</div>` : ''}
+                  ${res.cliente.email ? `<div>Email: ${res.cliente.email}</div>` : ''}
+                </div>
+              </div>
+
+              <div class="space-y-1.5 pt-2 border-t border-slate-700/40">
+                ${res.viagens.map(v => `
+                  <div class="flex items-center justify-between gap-2 text-xs bg-slate-900/60 p-2.5 rounded-lg border border-slate-700/40">
+                    <div class="truncate">
+                      <span class="block font-bold text-indigo-200 truncate">✈️ ${v.titulo}</span>
+                      <span class="block text-[10px] text-slate-400">Titular: ${v.consultorNome}</span>
+                    </div>
+                    <button class="btn-balcao-open-trip shrink-0 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[10px] font-extrabold transition uppercase shadow-md" data-trip-id="${v.id}">
+                      Atender 🤝
+                    </button>
+                  </div>
+                `).join('')}
+
+                ${res.orcamentos.map(o => `
+                  <div class="flex items-center justify-between gap-2 text-xs bg-slate-900/60 p-2.5 rounded-lg border border-slate-700/40">
+                    <div class="truncate">
+                      <span class="block font-bold text-amber-200 truncate">📋 ${o.titulo}</span>
+                      <span class="block text-[10px] text-slate-400">Titular: ${o.consultorNome}</span>
+                    </div>
+                    <button class="btn-balcao-open-orc shrink-0 px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-[10px] font-extrabold transition uppercase shadow-md" data-orc-id="${o.id}">
+                      Atender 🤝
+                    </button>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+
      /**
    * Renderiza a interface do Dashboard principal
    */
@@ -1716,8 +1785,10 @@ export class Dashboard {
         </div>
 
         <!-- CONTEÚDO PRINCIPAL (LISTA / TABELA) -->
-        <main class="flex-1 p-6 flex flex-col min-h-0 bg-slate-50/50 dark:bg-slate-950 overflow-hidden">
+        <main class="flex-1 p-6 flex flex-col min-h-0 bg-slate-50/50 dark:bg-slate-950 overflow-y-auto custom-scrollbar">
           
+          ${this.renderBalcaoSectionHTML()}
+
           ${filtrados.length === 0 ? `
             <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-12 text-center shadow-xs flex flex-col items-center justify-center space-y-4 flex-1">
               <div class="text-slate-300 dark:text-slate-700 text-5xl">✈️</div>
@@ -2117,10 +2188,11 @@ Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : '
       this.render();
     });
 
-    // 1. Campo de busca de viagens
+    // 1. Campo de busca de viagens com resgate Co-Piloto (Toda a Agência)
     const searchInput = document.getElementById('input-busca-viagem') as HTMLInputElement;
     searchInput?.addEventListener('input', (e) => {
-      this.buscaTermo = (e.target as HTMLInputElement).value;
+      const val = (e.target as HTMLInputElement).value;
+      this.buscaTermo = val;
       this.render();
 
       // Restaura o foco e coloca o cursor no final
@@ -2129,6 +2201,48 @@ Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : '
         input.focus();
         input.setSelectionRange(input.value.length, input.value.length);
       }
+
+      clearTimeout(this.balcaoSearchTimeout);
+      if (val.trim().length >= 2) {
+        this.balcaoSearchTimeout = setTimeout(async () => {
+          this.balcaoResultados = await BalcaoService.buscarMulticriterio(val);
+          this.render();
+          const inp = document.getElementById('input-busca-viagem') as HTMLInputElement;
+          if (inp) {
+            inp.focus();
+            inp.setSelectionRange(inp.value.length, inp.value.length);
+          }
+        }, 300);
+      } else {
+        this.balcaoResultados = [];
+      }
+    });
+
+    // Ouvintes para abrir viagem no Modo Co-Piloto a partir dos resultados de Balcão
+    this.container.querySelectorAll('.btn-balcao-open-trip').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const tripId = btn.getAttribute('data-trip-id');
+        if (!tripId) return;
+
+        let trip = this.viagens.find(v => v.id === tripId);
+        if (!trip) {
+          try {
+            const { data } = await supabase
+              .from('viagens')
+              .select('*, cliente:clientes(*), reembolsos(*), produtos:produtos_viagem(*), destino_ref:destinos(*)')
+              .eq('id', tripId)
+              .single();
+            if (data) {
+              trip = data;
+              this.viagens.push(trip);
+            }
+          } catch (err) {}
+        }
+        if (trip) {
+          this.openEdicaoEProdutosModal(tripId);
+        }
+      });
     });
 
     // 2. Botão de Toggle Filtros de Data
