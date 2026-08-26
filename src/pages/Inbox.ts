@@ -139,7 +139,26 @@ export class InboxPage {
           cleanEscalaData[info.displayName] = new Array(daysInMonth).fill('');
         }
       });
-      this.escalaData = cleanEscalaData;
+
+      // Aplica a ordem salva dos consultores em escalaData
+      const customOrder = EscalaService.loadOrdemConsultores();
+      if (customOrder && customOrder.length > 0) {
+        const orderedEscalaData: Record<string, string[]> = {};
+        customOrder.forEach(name => {
+          const matchedKey = Object.keys(cleanEscalaData).find(k => k.trim().toLowerCase() === name.trim().toLowerCase());
+          if (matchedKey && cleanEscalaData[matchedKey]) {
+            orderedEscalaData[matchedKey] = cleanEscalaData[matchedKey];
+          }
+        });
+        Object.keys(cleanEscalaData).forEach(name => {
+          if (!orderedEscalaData[name]) {
+            orderedEscalaData[name] = cleanEscalaData[name];
+          }
+        });
+        this.escalaData = orderedEscalaData;
+      } else {
+        this.escalaData = cleanEscalaData;
+      }
 
       // Reconstrói bancoFolgasData desduplicada apenas para quem participa_escala === true
       const cleanBancoData: BancoFolgasItem[] = [];
@@ -2386,9 +2405,8 @@ export class InboxPage {
         if (labelDestino) labelDestino.innerText = 'Data de Fim das Férias';
       } else { // folga
         blockColega.style.display = 'none';
-        blockDataDestino.style.display = 'block';
-        if (labelOrigem) labelOrigem.innerText = 'Data da Folga (Início)';
-        if (labelDestino) labelDestino.innerText = 'Data Fim da Folga (Se for +1 dia)';
+        blockDataDestino.style.display = 'none';
+        if (labelOrigem) labelOrigem.innerText = 'Data Alvo da Folga';
       }
     };
 
@@ -2419,7 +2437,7 @@ export class InboxPage {
         destinatario_id: tipo === 'troca' ? destinatarioId : undefined,
         destinatario_nome: tipo === 'troca' ? destinatarioNome : undefined,
         data_origem: dataOrigem,
-        data_destino: dataDestino || dataOrigem,
+        data_destino: tipo === 'folga' ? dataOrigem : (dataDestino || dataOrigem),
         motivo,
         status: tipo === 'troca' ? 'pendente_colega' : 'pendente_admin'
       });
