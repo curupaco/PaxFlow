@@ -24,6 +24,16 @@ export class BalcaoService {
     const rawQuery = query.trim().toLowerCase();
     const cleanDigits = query.replace(/\D/g, '');
 
+    // 0. Tenta invocar a RPC PostgreSQL SECURITY DEFINER (bypasses RLS para consulta de balcão)
+    try {
+      const { data: rpcData, error: rpcErr } = await supabase.rpc('buscar_balcao_co_piloto', { query_text: query });
+      if (!rpcErr && rpcData && Array.isArray(rpcData) && rpcData.length > 0) {
+        return rpcData as ResultadoBuscaBalcao[];
+      }
+    } catch (e) {
+      console.warn('RPC buscar_balcao_co_piloto não disponível, usando fallback cliente:', e);
+    }
+
     const resultadosMap = new Map<string, ResultadoBuscaBalcao>();
 
     try {

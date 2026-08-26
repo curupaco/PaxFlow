@@ -659,4 +659,78 @@ CREATE OR REPLACE TRIGGER audit_reembolsos_trigger
   AFTER INSERT OR UPDATE OR DELETE ON public.reembolsos
   FOR EACH ROW EXECUTE FUNCTION public.process_audit_log();
 
+-- ============================================================================
+-- 15. RPC SECURITY DEFINER: buscar_balcao_co_piloto (Busca Global de Balcão)
+-- ============================================================================
+CREATE OR REPLACE FUNCTION public.buscar_balcao_co_piloto(query_text TEXT)
+RETURNS JSON AS $$
+DECLARE
+    result JSON;
+    raw_query TEXT;
+    clean_digits TEXT;
+BEGIN
+    raw_query := LOWER(TRIM(query_text));
+    clean_digits := REGEXP_REPLACE(query_text, '\D', '', 'g');
+
+    SELECT COALESCE(JSON_AGG(row_data), '[]'::json) INTO result
+    FROM (
+        SELECT 
+            JSON_BUILD_OBJECT(
+                'id', c.id,
+                'nome', c.nome,
+                'cpf', c.documento,
+                'telefone', c.telefone,
+                'email', c.email
+            ) AS cliente,
+            COALESCE((
+                SELECT JSON_AGG(JSON_BUILD_OBJECT(
+                    'id', v.id,
+                    'titulo', COALESCE(v.destino, 'Viagem'),
+                    'consultorNome', COALESCE(p.nome, 'Consultor Titular'),
+                    'consultorId', v.consultor_id,
+                    'destino', COALESCE(v.destino, ''),
+                    'status', v.status
+                ))
+                FROM public.viagens v
+                LEFT JOIN public.profiles p ON p.id = v.consultor_id
+                WHERE v.cliente_id = c.id 
+                   OR LOWER(v.destino) LIKE '%' || raw_query || '%'
+                   OR LOWER(COALESCE(v.codigo_localizador, '')) LIKE '%' || raw_query || '%'
+            ), '[]'::json) AS viagens,
+            COALESCE((
+                SELECT JSON_AGG(JSON_BUILD_OBJECT(
+                    'id', o.id,
+                    'titulo', COALESCE(o.destino, 'Orçamento'),
+                    'consultorNome', COALESCE(p.nome, 'Consultor Titular'),
+                    'consultorId', o.consultor_id,
+                    'data', CAST(o.created_at AS TEXT),
+                    'total', 'R$ ' || COALESCE(CAST(o.valor_proposta AS TEXT), '0,00')
+                ))
+                FROM public.orcamentos o
+                LEFT JOIN public.profiles p ON p.id = o.consultor_id
+                WHERE o.cliente_id = c.id 
+                   OR LOWER(COALESCE(o.destino, '')) LIKE '%' || raw_query || '%'
+                   OR LOWER(COALESCE(o.nome_cliente, '')) LIKE '%' || raw_query || '%'
+            ), '[]'::json) AS orcamentos,
+            '[]'::json AS reembolsos
+        FROM public.clientes c
+        WHERE LOWER(c.nome) LIKE '%' || raw_query || '%'
+           OR LOWER(COALESCE(c.email, '')) LIKE '%' || raw_query || '%'
+           OR (LENGTH(clean_digits) >= 3 AND REGEXP_REPLACE(COALESCE(c.documento, ''), '\D', '', 'g') LIKE '%' || clean_digits || '%')
+           OR (LENGTH(clean_digits) >= 3 AND REGEXP_REPLACE(COALESCE(c.telefone, ''), '\D', '', 'g') LIKE '%' || clean_digits || '%')
+           OR EXISTS (
+                SELECT 1 FROM public.viagens v 
+                WHERE v.cliente_id = c.id AND (LOWER(v.destino) LIKE '%' || raw_query || '%' OR LOWER(COALESCE(v.codigo_localizador, '')) LIKE '%' || raw_query || '%')
+           )
+           OR EXISTS (
+                SELECT 1 FROM public.orcamentos o 
+                WHERE o.cliente_id = c.id AND (LOWER(COALESCE(o.destino, '')) LIKE '%' || raw_query || '%' OR LOWER(COALESCE(o.nome_cliente, '')) LIKE '%' || raw_query || '%')
+           )
+    ) row_data;
+
+    RETURN result;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+
 
