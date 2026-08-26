@@ -2320,7 +2320,7 @@ export class InboxPage {
             </div>
 
             <div>
-              <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Sua Data Alvo</label>
+              <label id="label-data-origem" class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Data de Início / Turno</label>
               <input id="solicitar-data-origem" type="date" value="${dateStr}" class="w-full text-xs font-semibold p-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
             </div>
 
@@ -2339,7 +2339,7 @@ export class InboxPage {
             </div>
 
             <div id="block-data-destino">
-              <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Data do Turno do Colega (Para Troca)</label>
+              <label id="label-data-destino" class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Data de Fim / Término</label>
               <input id="solicitar-data-destino" type="date" value="${dateStr}" class="w-full text-xs font-semibold p-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
             </div>
 
@@ -2369,11 +2369,31 @@ export class InboxPage {
     const blockColega = document.getElementById('block-colega')!;
     const blockDataDestino = document.getElementById('block-data-destino')!;
 
-    tipoSelect.onchange = () => {
-      const isTroca = tipoSelect.value === 'troca';
-      blockColega.style.display = isTroca ? 'block' : 'none';
-      if (blockDataDestino) blockDataDestino.style.display = isTroca ? 'block' : 'none';
+    const labelOrigem = document.getElementById('label-data-origem');
+    const labelDestino = document.getElementById('label-data-destino');
+
+    const updateFormFields = () => {
+      const val = tipoSelect.value;
+      if (val === 'troca') {
+        blockColega.style.display = 'block';
+        blockDataDestino.style.display = 'block';
+        if (labelOrigem) labelOrigem.innerText = 'Sua Data do Turno';
+        if (labelDestino) labelDestino.innerText = 'Data do Turno do Colega (Para Troca)';
+      } else if (val === 'ferias') {
+        blockColega.style.display = 'none';
+        blockDataDestino.style.display = 'block';
+        if (labelOrigem) labelOrigem.innerText = 'Data de Início das Férias';
+        if (labelDestino) labelDestino.innerText = 'Data de Fim das Férias';
+      } else { // folga
+        blockColega.style.display = 'none';
+        blockDataDestino.style.display = 'block';
+        if (labelOrigem) labelOrigem.innerText = 'Data da Folga (Início)';
+        if (labelDestino) labelDestino.innerText = 'Data Fim da Folga (Se for +1 dia)';
+      }
     };
+
+    tipoSelect.onchange = updateFormFields;
+    updateFormFields();
 
     const close = () => backdrop.remove();
     closeBtn.onclick = close;
