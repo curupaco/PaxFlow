@@ -348,12 +348,10 @@ html.dark .landing-page-wrapper .grid-bg {
 }
 
 .landing-v2 .grid-bg {
-  background-size: 18px 26px;
-  background-image: 
-    linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
-  mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, #000 60%, transparent 100%);
-  -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, #000 60%, transparent 100%);
+  background-size: 22px 22px;
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.07) 1px, transparent 1.5px);
+  mask-image: radial-gradient(ellipse 80% 70% at 50% 0%, #000 55%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 70% at 50% 0%, #000 55%, transparent 100%);
 }
 
 /* ================= LANDING V2 MOTION SYSTEM ================= */
@@ -578,6 +576,177 @@ html.dark .landing-page-wrapper .grid-bg {
   letter-spacing: -0.02em;
   line-height: 1.15;
   font-style: normal !important;
+}
+
+/* ================= LANDING V2 PREMIUM EFFECTS ================= */
+
+/* Item 2: Glassmorphism cards com borda de gradiente */
+.landing-v2 .pf-glass {
+  position: relative;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.015));
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid transparent;
+  background-clip: padding-box;
+}
+.landing-v2 .pf-glass::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(160deg, rgba(0, 168, 245, 0.5), rgba(255, 255, 255, 0.06) 40%, rgba(0, 229, 163, 0.4));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* Item 2: Beam de luz atravessando seções */
+.landing-v2 .pf-beam {
+  position: absolute;
+  width: 220px;
+  height: 140%;
+  top: -20%;
+  background: linear-gradient(90deg, transparent, rgba(0, 168, 245, 0.10), transparent);
+  transform: rotate(18deg);
+  animation: pf-beam 9s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes pf-beam {
+  0% { left: -30%; opacity: 0; }
+  15% { opacity: 1; }
+  50% { left: 110%; opacity: 0; }
+  100% { left: 110%; opacity: 0; }
+}
+
+/* Item 6: Shine sweep em botões/CTAs */
+.landing-v2 .pf-shine {
+  position: relative;
+  overflow: hidden;
+}
+.landing-v2 .pf-shine::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -120%;
+  height: 100%;
+  width: 60%;
+  background: linear-gradient(105deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+  transform: skewX(-20deg);
+}
+.landing-v2 .pf-shine:hover::after {
+  animation: pf-shine-sweep 0.9s ease forwards;
+}
+@keyframes pf-shine-sweep {
+  to { left: 130%; }
+}
+
+/* Item 6: Tilt 3D (transformlogic via JS seta --rx/--ry; CSS aplica) */
+.landing-v2 .pf-tilt3d {
+  transform-style: preserve-3d;
+  transform: perspective(800px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  transition: transform 0.2s ease-out;
+}
+
+/* Item 5: Cursor glow */
+.landing-v2 .pf-cursor-glow {
+  position: fixed;
+  width: 520px;
+  height: 520px;
+  left: 0;
+  top: 0;
+  border-radius: 9999px;
+  background: radial-gradient(circle, rgba(0, 168, 245, 0.12), rgba(0, 229, 163, 0.06) 45%, transparent 70%);
+  pointer-events: none;
+  z-index: 3;
+  mix-blend-mode: screen;
+  transform: translate3d(-50%, -50%, 0);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+/* Item 8: Barras de progresso animadas */
+.landing-v2 .pf-bar-fill {
+  width: 0;
+  transition: width 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.landing-v2 .pf-bar-fill.pf-revealed {
+  width: var(--bar-w, 100%);
+}
+
+/* Item 14: Escala tipográfica mais clara */
+.landing-v2 .pf-eyebrow {
+  font-family: 'Inter', sans-serif !important;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+.landing-v2 .pf-subtitle {
+  color: #94a3b8;
+  font-weight: 500;
+  line-height: 1.6;
+}
+.landing-v2 .pf-body {
+  color: #cbd5e1;
+  font-weight: 400;
+  line-height: 1.65;
+}
+
+/* Item 17: prefers-reduced-motion estendido */
+@media (prefers-reduced-motion: reduce) {
+  .landing-v2 .pf-beam,
+  .landing-v2 .pf-shine::after,
+  .landing-v2 .pf-glow,
+  .landing-v2 .pf-float,
+  .landing-v2 .pf-float-slow,
+  .landing-v2 .pf-float-delay,
+  .landing-v2 .pf-spin,
+  .landing-v2 .pf-spin-rev,
+  .landing-v2 .pf-spin-slow,
+  .landing-v2 .pf-marquee,
+  .landing-v2 .pf-bounce,
+  .landing-v2 .pf-tilt,
+  .landing-v2 .pf-pulse-ring::before,
+  .landing-v2 .pf-shimmer-text,
+  .landing-v2 .pf-wave-line {
+    animation: none !important;
+  }
+  .landing-v2 .pf-tilt3d {
+    transform: none !important;
+  }
+  .landing-v2 .pf-cursor-glow {
+    display: none;
+  }
+}
+
+/* Item 18: Responsividade do comparativo e cards em mobile */
+@media (max-width: 640px) {
+  .landing-v2 .pf-compare-text {
+    font-size: 12px;
+  }
+  .landing-v2 .pf-zone h2,
+  .landing-v2 section h2 {
+    font-size: 1.6rem !important;
+    line-height: 1.15 !important;
+  }
+  .landing-v2 .pf-marquee {
+    animation-duration: 20s;
+  }
+}
+
+/* Item 3: Toolbar sticky com shrink ao scroll */
+.landing-v2 #pf-topbar {
+  background: linear-gradient(180deg, rgba(6, 7, 15, 0.88), rgba(6, 7, 15, 0.6));
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+}
+.landing-v2 #pf-topbar.pf-topbar-scrolled {
+  padding-top: 0.6rem;
+  padding-bottom: 0.6rem;
+  box-shadow: 0 10px 40px -18px rgba(0, 168, 245, 0.45);
+  border-bottom-color: rgba(0, 168, 245, 0.25);
 }
 
 

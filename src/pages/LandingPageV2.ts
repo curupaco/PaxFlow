@@ -9,6 +9,7 @@ export class LandingPageV2 {
     this.render();
     this.setupEventListeners();
     this.setupScrollEffects();
+    this.setupPremiumEffects();
   }
 
   private setupScrollEffects(): void {
@@ -110,6 +111,85 @@ export class LandingPageV2 {
     });
   }
 
+  private setupPremiumEffects(): void {
+    const scope = this.container.querySelector('.landing-v2');
+    if (!scope) return;
+    const isReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // Item 3: Toolbar sticky shrink
+    const topbar = scope.querySelector<HTMLElement>('#pf-topbar');
+    if (topbar) {
+      const onTbScroll = () => {
+        topbar.classList.toggle('pf-topbar-scrolled', (window.scrollY || 0) > 24);
+      };
+      window.addEventListener('scroll', onTbScroll, { passive: true });
+      onTbScroll();
+    }
+
+    if (isReduced) return;
+
+    // Item 5: Cursor glow
+    const glow = scope.querySelector<HTMLElement>('#pf-cursor-glow');
+    if (glow && window.matchMedia('(pointer: fine)').matches) {
+      let rall = requestAnimationFrame(() => {});
+      cancelAnimationFrame(rall);
+      let tx = 0, ty = 0, cx = 0, cy = 0, moving = false;
+      window.addEventListener('mousemove', (e) => {
+        tx = e.clientX;
+        ty = e.clientY;
+        if (!moving) {
+          moving = true;
+          glow.style.opacity = '1';
+          cx = tx; cy = ty;
+          const loop = () => {
+            cx += (tx - cx) * 0.12;
+            cy += (ty - cy) * 0.12;
+            glow.style.transform = `translate3d(${cx - 260}px, ${cy - 260}px, 0)`;
+            rall = requestAnimationFrame(loop);
+          };
+          loop();
+        }
+      });
+      window.addEventListener('mouseleave', () => {
+        moving = false;
+        glow.style.opacity = '0';
+        cancelAnimationFrame(rall);
+      });
+    }
+
+    // Item 6: Tilt 3D nos cards .pf-tilt3d
+    const tiltCards = scope.querySelectorAll<HTMLElement>('.pf-tilt3d');
+    tiltCards.forEach(card => {
+      card.addEventListener('mousemove', (e) => {
+        const r = card.getBoundingClientRect();
+        const px = (e.clientX - r.left) / r.width - 0.5;
+        const py = (e.clientY - r.top) / r.height - 0.5;
+        card.style.setProperty('--ry', (px * 10).toFixed(1) + 'deg');
+        card.style.setProperty('--rx', (-py * 10).toFixed(1) + 'deg');
+      });
+      card.addEventListener('mouseleave', () => {
+        card.style.setProperty('--ry', '0deg');
+        card.style.setProperty('--rx', '0deg');
+      });
+    });
+
+    // Item 8: Barras de progresso (animam quando o painel dashboard está visível)
+    const bars = scope.querySelectorAll<HTMLElement>('.pf-bar-fill');
+    const runBars = () => {
+      const panel = scope.querySelector<HTMLElement>('#panel-dashboard');
+      if (!panel || panel.classList.contains('hidden')) return;
+      bars.forEach(bar => {
+        if (bar.getAttribute('data-done') === 'true') return;
+        bar.setAttribute('data-done', 'true');
+        bar.style.setProperty('--bar-w', (bar.getAttribute('data-bar') || '0') + '%');
+        requestAnimationFrame(() => bar.classList.add('pf-revealed'));
+      });
+    };
+    window.addEventListener('scroll', runBars, { passive: true });
+    window.addEventListener('pf:anim-bars', runBars);
+    runBars();
+  }
+
   private render(): void {
     this.container.innerHTML = `
       <div class="landing-v2 min-h-screen bg-[#06070f] text-white font-sans selection:bg-fuchsia-500 selection:text-white relative overflow-x-hidden flex flex-col">
@@ -131,8 +211,11 @@ export class LandingPageV2 {
         <!-- ===== SCROLL PROGRESS BAR ===== -->
         <div class="fixed top-0 left-0 z-[60] h-1 w-full bg-transparent"><div id="pf-scroll-progress" class="h-full w-0 bg-gradient-to-r from-[#00a8f5] via-[#00e5a3] to-[#f5af19]"></div></div>
 
+        <!-- ===== CURSOR GLOW (desktop) ===== -->
+        <div id="pf-cursor-glow" class="pf-cursor-glow hidden md:block" aria-hidden="true"></div>
+
         <!-- ===== TOP NAV ===== -->
-        <header class="relative z-30 w-full px-6 py-4 flex items-center justify-between bg-[#06070f]/70 backdrop-blur-xl border-b border-white/10 sticky top-0">
+        <header id="pf-topbar" class="relative z-30 w-full px-6 py-4 flex items-center justify-between bg-[#06070f]/70 backdrop-blur-xl border-b border-white/10 sticky top-0 transition-all duration-300">
           <a href="#topo" class="flex items-center gap-3 group">
             <span class="relative w-10 h-10 rounded-2xl bg-white/10 p-1 shadow-lg pf-pulse-ring">
               <img src="/logo.svg" alt="PaxFlow Logo" class="w-full h-full object-contain rounded-xl" />
@@ -151,13 +234,14 @@ export class LandingPageV2 {
               <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.205 1.654z"/></svg>
               <span class="hidden lg:inline">WhatsApp</span>
             </button>
-            <button id="btn-menu-demo" class="pf-animated-gradient px-4 py-2 rounded-xl bg-gradient-to-r from-[#0052d4] via-[#00a8f5] to-[#00e5a3] text-white font-extrabold text-xs uppercase tracking-wide shadow-lg shadow-blue-500/30 transition hover:scale-[1.04]">Modo Demo</button>
+            <button id="btn-menu-demo" class="pf-shine pf-animated-gradient px-4 py-2 rounded-xl bg-gradient-to-r from-[#0052d4] via-[#00a8f5] to-[#00e5a3] text-white font-extrabold text-xs uppercase tracking-wide shadow-lg shadow-blue-500/30 transition hover:scale-[1.04]">Modo Demo</button>
             <button id="btn-acessar-login" class="px-4 py-2 rounded-xl bg-white hover:bg-slate-200 text-slate-900 font-extrabold text-xs uppercase tracking-wide shadow-lg transition">Entrar</button>
           </div>
         </header>
 
         <!-- ===== HERO (logo maior e centralizado) ===== -->
-        <main id="topo" class="relative z-10 w-full max-w-6xl mx-auto px-6 pt-14 pb-20 text-center flex flex-col items-center">
+        <main id="topo" class="relative z-10 w-full max-w-6xl mx-auto px-6 pt-14 pb-20 text-center flex flex-col items-center overflow-hidden">
+          <div class="pf-beam"></div>
           <span class="pf-rise inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/[0.06] border border-[#00e5a3]/40 text-[#00e5a3] font-bold text-[11px] uppercase tracking-widest mb-8">
             <span class="w-2 h-2 rounded-full bg-[#00e5a3] animate-pulse"></span>
             O CRM & Pós-Venda 100% Especializado em Turismo
@@ -189,7 +273,7 @@ export class LandingPageV2 {
           </p>
 
           <div class="pf-rise-4 flex flex-col sm:flex-row items-center gap-4 mb-14 w-full justify-center">
-            <button id="btn-iniciar-demo" class="pf-animated-gradient w-full sm:w-auto px-8 py-4 rounded-2xl text-white font-black text-sm tracking-wider uppercase flex items-center justify-center gap-2 bg-gradient-to-r from-[#0052d4] via-[#00a8f5] to-[#00e5a3] shadow-2xl shadow-blue-500/30 hover:scale-[1.05] transition-transform">
+            <button id="btn-iniciar-demo" class="pf-shine pf-animated-gradient w-full sm:w-auto px-8 py-4 rounded-2xl text-white font-black text-sm tracking-wider uppercase flex items-center justify-center gap-2 bg-gradient-to-r from-[#0052d4] via-[#00a8f5] to-[#00e5a3] shadow-2xl shadow-blue-500/30 hover:scale-[1.05] transition-transform">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
               Iniciar Modo Demonstração
             </button>
@@ -283,9 +367,9 @@ export class LandingPageV2 {
                     <span class="px-2 py-0.5 rounded-lg bg-[#00e5a3]/15 text-[#00e5a3] text-[9px] font-bold">Dados em Tempo Real</span>
                   </div>
                   <div class="space-y-3">
-                    <div><div class="flex justify-between text-xs font-bold mb-1 text-slate-400"><span>Orçamentos Criados</span><span>120</span></div><div class="w-full bg-white/10 h-2 rounded-full overflow-hidden"><div class="bg-gradient-to-r from-[#0052d4] to-[#00a8f5] h-full w-full rounded-full"></div></div></div>
-                    <div><div class="flex justify-between text-xs font-bold mb-1 text-slate-400"><span>Propostas Enviadas</span><span>75 (62%)</span></div><div class="w-full bg-white/10 h-2 rounded-full overflow-hidden"><div class="bg-gradient-to-r from-[#f12711] to-[#f5af19] h-full w-[62%] rounded-full"></div></div></div>
-                    <div><div class="flex justify-between text-xs font-bold mb-1 text-slate-400"><span>Negociações Fechadas</span><span>24 (20%)</span></div><div class="w-full bg-white/10 h-2 rounded-full overflow-hidden"><div class="bg-gradient-to-r from-[#00e5a3] to-teal-400 h-full w-[20%] rounded-full"></div></div></div>
+                    <div><div class="flex justify-between text-xs font-bold mb-1 text-slate-400"><span>Orçamentos Criados</span><span>120</span></div><div class="w-full bg-white/10 h-2 rounded-full overflow-hidden"><div class="pf-bar-fill bg-gradient-to-r from-[#0052d4] to-[#00a8f5] h-full rounded-full" data-bar="100"></div></div></div>
+                    <div><div class="flex justify-between text-xs font-bold mb-1 text-slate-400"><span>Propostas Enviadas</span><span>75 (62%)</span></div><div class="w-full bg-white/10 h-2 rounded-full overflow-hidden"><div class="pf-bar-fill bg-gradient-to-r from-[#f12711] to-[#f5af19] h-full rounded-full" data-bar="62"></div></div></div>
+                    <div><div class="flex justify-between text-xs font-bold mb-1 text-slate-400"><span>Negociações Fechadas</span><span>24 (20%)</span></div><div class="w-full bg-white/10 h-2 rounded-full overflow-hidden"><div class="pf-bar-fill bg-gradient-to-r from-[#00e5a3] to-teal-400 h-full rounded-full" data-bar="20"></div></div></div>
                   </div>
                 </div>
               </div>
@@ -367,7 +451,7 @@ export class LandingPageV2 {
               <p class="text-sm text-slate-400 font-medium">Sem curva de aprendizado longa: você vê, configura e começa a vender melhor no mesmo dia.</p>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div data-reveal="up" style="transition-delay:.05s" class="relative p-7 rounded-3xl bg-white/[0.04] border border-white/10 backdrop-blur-md overflow-hidden group hover:border-[#00a8f5]/40 transition">
+              <div data-reveal="left" style="transition-delay:.05s" class="relative p-7 rounded-3xl bg-white/[0.04] border border-white/10 backdrop-blur-md overflow-hidden group hover:border-[#00a8f5]/40 transition">
                 <span class="absolute -top-5 -right-2 text-7xl font-black text-white/[0.05] select-none">01</span>
                 <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#0052d4] to-[#00a8f5] text-white flex items-center justify-center mb-5 text-2xl shadow-lg">👀</div>
                 <h3 class="text-xl font-black text-white">Conheça na Prática</h3>
@@ -379,7 +463,7 @@ export class LandingPageV2 {
                 <h3 class="text-xl font-black text-white">Configure Sua Marca</h3>
                 <p class="text-sm text-slate-400 font-medium mt-2 leading-relaxed">Envie seu logotipo e escolha suas cores. Itinerários, vouchers e pesquisas NPS passam a carregar a identidade da <strong class="text-slate-100">sua agência</strong> automaticamente.</p>
               </div>
-              <div data-reveal="up" style="transition-delay:.25s" class="relative p-7 rounded-3xl bg-white/[0.04] border border-white/10 backdrop-blur-md overflow-hidden group hover:border-[#f5af19]/40 transition">
+              <div data-reveal="right" style="transition-delay:.25s" class="relative p-7 rounded-3xl bg-white/[0.04] border border-white/10 backdrop-blur-md overflow-hidden group hover:border-[#f5af19]/40 transition">
                 <span class="absolute -top-5 -right-2 text-7xl font-black text-white/[0.05] select-none">03</span>
                 <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#f5af19] to-[#f12711] text-white flex items-center justify-center mb-5 text-2xl shadow-lg">🚀</div>
                 <h3 class="text-xl font-black text-white">Largue as Planilhas</h3>
@@ -475,11 +559,11 @@ export class LandingPageV2 {
               <h2 class="text-3xl md:text-5xl font-black tracking-tight">Agências que já largaram as planilhas</h2>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div data-reveal="up" style="transition-delay:.05s" class="p-7 rounded-3xl bg-white/[0.04] border border-white/10 backdrop-blur-md flex flex-col justify-between min-h-[240px]">
+              <div data-reveal="up" style="transition-delay:.05s" class="pf-glass p-7 rounded-3xl flex flex-col justify-between min-h-[240px]">
                 <div><div class="text-[#f5af19] mb-4 text-sm">★★★★★</div><p class="text-sm text-slate-300 leading-relaxed font-medium">"Antes, os reembolsos aéreos se perdiam no WhatsApp. Agora o cronômetro de SLA me avisa e eu nunca mais devolvi dinheiro que não precisava. Deu outra cara pro pós-venda."</p></div>
                 <div class="mt-6 flex items-center gap-3"><div class="w-11 h-11 rounded-full bg-gradient-to-br from-[#0052d4] to-[#00a8f5] flex items-center justify-center font-black text-white">MC</div><div><strong class="block text-sm font-extrabold text-white">Marina Costa</strong><span class="text-[11px] text-slate-400 font-medium">Fundadora · Costa Viagens</span></div></div>
               </div>
-              <div data-reveal="up" style="transition-delay:.15s" class="p-7 rounded-3xl bg-white/[0.04] border border-white/10 backdrop-blur-md flex flex-col justify-between min-h-[240px]">
+              <div data-reveal="up" style="transition-delay:.15s" class="pf-glass p-7 rounded-3xl flex flex-col justify-between min-h-[240px]">
                 <div><div class="text-[#f5af19] mb-4 text-sm">★★★★★</div><p class="text-sm text-slate-300 leading-relaxed font-medium">"A escala de funcionários e o banco de folgas era uma dor todo mês. O PaxFlow resolveu em um dia. Minha equipe ganhou tempo e eu ganhei previsibilidade."</p></div>
                 <div class="mt-6 flex items-center gap-3"><div class="w-11 h-11 rounded-full bg-gradient-to-br from-[#f12711] to-[#f5af19] flex items-center justify-center font-black text-white">RS</div><div><strong class="block text-sm font-extrabold text-white">Rafael Souza</strong><span class="text-[11px] text-slate-400 font-medium">Diretor · Horizonte Operadora</span></div></div>
               </div>
@@ -512,9 +596,9 @@ export class LandingPageV2 {
               <p class="text-sm text-slate-400 font-medium">O PaxFlow se integra nativamente à sua stack de atendimento e emissão, sem fricção.</p>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div data-reveal="up" style="transition-delay:.05s" class="group p-7 rounded-3xl bg-gradient-to-b from-emerald-500/15 to-white/[0.02] border border-emerald-500/25 hover:scale-[1.03] hover:border-emerald-400/50 transition-transform"><div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 text-white flex items-center justify-center mb-4 shadow-lg pf-tilt"><svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.205 1.654z"/></svg></div><h3 class="text-xl font-black text-white">Digisac / WhatsApp</h3><p class="text-sm text-slate-400 font-medium mt-1 leading-relaxed">Atendimento com histórico split-screen, envio de modelos e notificações automáticas de embarque e NPS.</p></div>
+              <div data-reveal="left" style="transition-delay:.05s" class="group p-7 rounded-3xl bg-gradient-to-b from-emerald-500/15 to-white/[0.02] border border-emerald-500/25 hover:scale-[1.03] hover:border-emerald-400/50 transition-transform"><div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 text-white flex items-center justify-center mb-4 shadow-lg pf-tilt"><svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.205 1.654z"/></svg></div><h3 class="text-xl font-black text-white">Digisac / WhatsApp</h3><p class="text-sm text-slate-400 font-medium mt-1 leading-relaxed">Atendimento com histórico split-screen, envio de modelos e notificações automáticas de embarque e NPS.</p></div>
               <div data-reveal="up" style="transition-delay:.15s" class="group p-7 rounded-3xl bg-gradient-to-b from-[#00a8f5]/15 to-white/[0.02] border border-[#00a8f5]/25 hover:scale-[1.03] hover:border-[#00a8f5]/50 transition-transform"><div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#0052d4] to-[#00a8f5] text-white flex items-center justify-center mb-4 shadow-lg pf-tilt" style="animation-delay:.5s"><svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg></div><h3 class="text-xl font-black text-white">Companhias Aéreas</h3><p class="text-sm text-slate-400 font-medium mt-1 leading-relaxed">Conciliação de reembolsos e créditos, localizadores (LOC) e monitoramento de SLAs de estorno.</p></div>
-              <div data-reveal="up" style="transition-delay:.25s" class="group p-7 rounded-3xl bg-gradient-to-b from-[#f5af19]/15 to-white/[0.02] border border-[#f5af19]/25 hover:scale-[1.03] hover:border-[#f5af19]/50 transition-transform"><div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#f5af19] to-[#f12711] text-white flex items-center justify-center mb-4 shadow-lg pf-tilt" style="animation-delay:1s"><svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg></div><h3 class="text-xl font-black text-white">Upload & Documentos</h3><p class="text-sm text-slate-400 font-medium mt-1 leading-relaxed">Armazenamento seguro por cliente no Supabase Storage com links de acesso controlados.</p></div>
+              <div data-reveal="right" style="transition-delay:.25s" class="group p-7 rounded-3xl bg-gradient-to-b from-[#f5af19]/15 to-white/[0.02] border border-[#f5af19]/25 hover:scale-[1.03] hover:border-[#f5af19]/50 transition-transform"><div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#f5af19] to-[#f12711] text-white flex items-center justify-center mb-4 shadow-lg pf-tilt" style="animation-delay:1s"><svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg></div><h3 class="text-xl font-black text-white">Upload & Documentos</h3><p class="text-sm text-slate-400 font-medium mt-1 leading-relaxed">Armazenamento seguro por cliente no Supabase Storage com links de acesso controlados.</p></div>
             </div>
           </div>
         </section>
@@ -611,13 +695,13 @@ export class LandingPageV2 {
 
         <!-- ===== CTA FINAL ===== -->
         <section id="recursos" class="relative z-10 w-full py-20 px-6 border-t border-white/10 text-center overflow-hidden">
-          <div class="absolute inset-0 bg-gradient-to-br from-[#0052d4]/30 via-[#0a0d1f] to-[#f12711]/30 pf-animated-gradient opacity-60"></div>
+          <div class="pf-beam"></div>          <div class="absolute inset-0 bg-gradient-to-br from-[#0052d4]/30 via-[#0a0d1f] to-[#f12711]/30 pf-animated-gradient opacity-60"></div>
           <div class="pf-zone relative max-w-3xl mx-auto space-y-6">
             <span class="px-4 py-1.5 rounded-full bg-[#00e5a3]/20 text-[#00e5a3] border border-[#00e5a3]/30 text-[10px] font-black uppercase tracking-widest">Leve sua agência para o próximo nível</span>
             <h2 class="text-3xl sm:text-5xl font-black tracking-tight leading-tight pf-shimmer-text">Pronto para revolucionar a operação da sua agência?</h2>
             <p class="text-sm sm:text-base text-slate-300 max-w-2xl mx-auto leading-relaxed">Assuma o controle total dos pós-vendas, reembolsos, SLAs de vistos e escalas da sua equipe.</p>
             <div class="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-              <button id="btn-cta-demo-final" class="pf-animated-gradient w-full sm:w-auto px-8 py-4 rounded-2xl text-white font-black text-xs tracking-wider uppercase flex items-center justify-center gap-2 bg-gradient-to-r from-[#0052d4] via-[#00a8f5] to-[#00e5a3] shadow-2xl hover:scale-[1.05] transition-transform">Modo Demonstração</button>
+              <button id="btn-cta-demo-final" class="pf-shine pf-animated-gradient w-full sm:w-auto px-8 py-4 rounded-2xl text-white font-black text-xs tracking-wider uppercase flex items-center justify-center gap-2 bg-gradient-to-r from-[#0052d4] via-[#00a8f5] to-[#00e5a3] shadow-2xl hover:scale-[1.05] transition-transform">Modo Demonstração</button>
               <button id="btn-cta-whatsapp-final" class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs tracking-wider uppercase shadow-xl flex items-center justify-center gap-2 transition">Falar com Consultor</button>
               <button id="btn-cta-login-final" class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-white/[0.08] hover:bg-white/[0.15] text-white font-black text-xs tracking-wider uppercase border border-white/15 transition">Acessar Sistema Real</button>
             </div>
@@ -716,21 +800,31 @@ export class LandingPageV2 {
       document.getElementById(`panel-${tabName}`)?.classList.remove('hidden');
       const pathEl = document.getElementById('window-path-text');
       if (pathEl) pathEl.textContent = pathTexts[tabName];
+      if (tabName === 'dashboard') window.dispatchEvent(new Event('pf:anim-bars'));
     };
 
     tabs.forEach((tab, index) => {
       const btn = document.getElementById(`tab-btn-${tab}`);
       btn?.addEventListener('click', () => {
-        if (autoTabTimer) { clearInterval(autoTabTimer); autoTabTimer = null; }
+        if (autoTabTimer) { clearTimeout(autoTabTimer); autoTabTimer = null; }
         currentTabIndex = index;
         switchTab(tab);
       });
     });
 
-    autoTabTimer = setInterval(() => {
-      currentTabIndex = (currentTabIndex + 1) % tabs.length;
-      switchTab(tabs[currentTabIndex]);
-    }, 3000);
+    const startAutoRotate = () => {
+      if (autoTabTimer) return;
+      const timer = () => {
+        autoTabTimer = window.setTimeout(() => {
+          currentTabIndex = (currentTabIndex + 1) % tabs.length;
+          switchTab(tabs[currentTabIndex]);
+          autoTabTimer = null;
+          timer();
+        }, 3400 + Math.random() * 1800);
+      };
+      timer();
+    };
+    startAutoRotate();
 
     // Brand carousel
     const brandTabs = ['itinerario', 'voucher', 'nps', 'whatsapp'];
