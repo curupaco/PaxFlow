@@ -698,6 +698,7 @@ export class LandingPageV2 {
           <div class="pf-beam"></div>          <div class="absolute inset-0 bg-gradient-to-br from-[#0052d4]/30 via-[#0a0d1f] to-[#f12711]/30 pf-animated-gradient opacity-60"></div>
           <div class="pf-zone relative max-w-3xl mx-auto space-y-6">
             <span class="px-4 py-1.5 rounded-full bg-[#00e5a3]/20 text-[#00e5a3] border border-[#00e5a3]/30 text-[10px] font-black uppercase tracking-widest">Leve sua agência para o próximo nível</span>
+            <p class="text-sm sm:text-lg font-bold tracking-wide text-white/90">Da venda até a volta! <span class="text-white/60 font-semibold">— o PaxFlow cuida de tudo no meio do caminho.</span></p>
             <h2 class="text-3xl sm:text-5xl font-black tracking-tight leading-tight pf-shimmer-text">Pronto para revolucionar a operação da sua agência?</h2>
             <p class="text-sm sm:text-base text-slate-300 max-w-2xl mx-auto leading-relaxed">Assuma o controle total dos pós-vendas, reembolsos, SLAs de vistos e escalas da sua equipe.</p>
             <div class="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
@@ -710,17 +711,17 @@ export class LandingPageV2 {
         </section>
 
         <!-- ===== FOOTER ===== -->
-        <footer class="relative z-10 w-full border-t border-white/10 py-24 px-6 text-center text-xs text-slate-500 font-medium overflow-visible">
+        <footer class="relative z-10 w-full border-t border-white/10 py-10 px-6 text-center text-xs text-slate-500 font-medium overflow-visible">
 
-          <!-- Logo girando à esquerda, estourando a área do rodapé -->
-          <div data-parallax="20" class="pf-float pointer-events-none absolute -left-16 -top-20 w-64 h-64 md:w-80 md:h-80 opacity-70" aria-hidden="true">
+          <!-- Logo girando à esquerda, estourando a área do rodapé e alinhado com o badge do CTA -->
+          <div data-parallax="20" class="pf-float pointer-events-none absolute -left-16 md:-left-20 -top-[180px] w-64 h-64 md:w-80 md:h-80 opacity-70" aria-hidden="true">
             <div class="absolute -inset-8 rounded-full bg-gradient-to-br from-[#0052d4] via-[#00a8f5] to-[#00e5a3] blur-3xl opacity-40 pf-glow"></div>
             <div class="relative w-full h-full rounded-full bg-gradient-to-br from-[#0a1a3f] to-[#0d0f1f] border-2 border-[#00a8f5]/25 shadow-2xl flex items-center justify-center overflow-hidden">
               <img src="/logo.svg" alt="PaxFlow" class="w-[82%] h-[82%] object-contain pf-spin-slow" />
             </div>
           </div>
 
-          <div class="max-w-4xl mx-auto flex flex-col items-center gap-6 relative">
+          <div class="max-w-4xl mx-auto flex flex-col items-center gap-4 relative">
             <!-- Logo do header centralizado -->
             <a href="#topo" class="flex items-center justify-center gap-3 group pointer-events-auto">
               <span class="relative w-12 h-12 rounded-2xl bg-white/10 p-1.5 shadow-lg pf-pulse-ring">
