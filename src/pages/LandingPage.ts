@@ -1,4 +1,4 @@
-export class LandingPageV2 {
+export class LandingPage {
   private container: HTMLElement;
 
   constructor(container: HTMLElement) {
