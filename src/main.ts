@@ -10,6 +10,7 @@ import { showBadgeCelebrationModal, showLevelUpModal } from './utils/celebration
 import { traduzirErro } from './utils/errorTranslator';
 import { Router } from './router';
 import { LandingPage } from './pages/LandingPage';
+import { LandingPageV2 } from './pages/LandingPageV2';
 import { GlobalHeaderSearch } from './components/GlobalHeaderSearch';
 
 (window as any).traduzirErro = traduzirErro;
@@ -78,14 +79,20 @@ class App {
     this.applyInitialTheme();
     this.renderLoading();
 
-        // Detecção da rota /conheca para isolamento da Landing Page
-    const isConhecaRoute = 
-      window.location.pathname.includes('/conheca') || 
-      window.location.search.includes('conheca') || 
+        // Detecção das rotas públicas da Landing Page
+    // /conheca (v1) e /conheca/1 (v2)
+    const path = window.location.pathname;
+    const isConhecaRoute =
+      path.endsWith('/conheca') || path.includes('/conheca/') ||
+      window.location.search.includes('conheca') ||
       window.location.hash.includes('conheca');
+    const isConhecaV2Route =
+      path.includes('/conheca/1') ||
+      window.location.search.includes('conheca/1') ||
+      window.location.hash.includes('conheca/1');
 
     if (isConhecaRoute && sessionStorage.getItem('paxflowSandbox') !== 'true') {
-      this.renderLandingPage();
+      this.renderLandingPage(isConhecaV2Route);
       return;
     }
 
@@ -160,8 +167,9 @@ class App {
   /**
    * Renderiza a Landing Page comercial
    */
-  private renderLandingPage(): void {
-    const page = new LandingPage(this.container);
+  private renderLandingPage(usarV2: boolean = false): void {
+    // /conheca => v1 (original). /conheca/1 => v2 (nova).
+    const page = usarV2 ? new LandingPageV2(this.container) : new LandingPage(this.container);
     page.init();
 
     // Escuta transição para o Modo Sandbox
