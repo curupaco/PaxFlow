@@ -543,21 +543,41 @@ html.dark .landing-page-wrapper .grid-bg {
 .landing-v2 {
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  font-family: 'Inter', 'Roboto', sans-serif !important;
+  font-style: normal !important;
 }
 .landing-v2 h1,
 .landing-v2 h2,
 .landing-v2 h3,
 .landing-v2 .pf-display {
-  font-family: 'Unbounded', 'Inter', sans-serif;
+  font-family: 'Unbounded', 'Inter', sans-serif !important;
+  font-style: normal !important;
   letter-spacing: -0.01em;
+}
+.landing-v2 h4,
+.landing-v2 h5,
+.landing-v2 h6,
+.landing-v2 strong,
+.landing-v2 b {
+  font-style: normal !important;
+}
+.landing-v2 p,
+.landing-v2 span,
+.landing-v2 a,
+.landing-v2 button,
+.landing-v2 li,
+.landing-v2 summary {
+  font-family: 'Inter', 'Roboto', sans-serif !important;
+  font-style: normal !important;
 }
 .landing-v2 .pf-num {
   font-variant-numeric: tabular-nums;
 }
 .landing-v2 .pf-hero-headline {
-  font-family: 'Unbounded', 'Inter', sans-serif;
+  font-family: 'Unbounded', 'Inter', sans-serif !important;
   letter-spacing: -0.02em;
   line-height: 1.15;
+  font-style: normal !important;
 }
 
 
