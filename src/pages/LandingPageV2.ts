@@ -42,10 +42,14 @@ export class LandingPageV2 {
         window.requestAnimationFrame(() => {
           const vh = window.innerHeight;
           const mid = vh / 2;
+          const sy = window.scrollY || 0;
           for (const el of parallaxEls) {
             const amount = parseFloat(el.getAttribute('data-parallax') || '20');
             const rect = el.getBoundingClientRect();
-            const center = rect.top + rect.height / 2;
+            const isFixed = el.offsetParent === null || el.closest('.fixed, [class*="fixed"]');
+            const center = isFixed
+              ? sy + rect.top + rect.height / 2
+              : rect.top + rect.height / 2;
             const travel = (center - mid) / vh;
             const shift = travel * amount;
             el.style.transform = `translate3d(0, ${shift.toFixed(1)}px, 0)`;
@@ -73,6 +77,11 @@ export class LandingPageV2 {
           <div data-parallax="50" class="absolute bottom-[-10%] left-[15%] w-[50vw] h-[50vw] rounded-full bg-gradient-to-tr from-[#00e5a3]/25 via-teal-500/10 to-transparent blur-3xl pf-float-delay"></div>
           <div data-parallax="-20" class="absolute top-[45%] left-[35%] w-[30vw] h-[30vw] rounded-full bg-gradient-to-br from-fuchsia-600/20 to-sky-500/10 blur-3xl pf-float-slow"></div>
           <div class="absolute inset-0 opacity-[0.08] grid-bg"></div>
+        </div>
+
+        <!-- ===== LOGO WATERMARK fixo gigante (acompanha o scroll) ===== -->
+        <div class="pointer-events-none fixed inset-0 z-[1] flex items-center justify-center overflow-hidden">
+          <img data-parallax="95" src="/logo.svg" alt="" class="pf-logo-watermark max-w-[78vmin] max-h-[78vmin] w-[78vmin] h-[78vmin] object-contain opacity-[0.07] drop-shadow-[0_0_30px_rgba(0,168,245,0.15)]" />
         </div>
 
         <!-- ===== TOP NAV ===== -->
@@ -121,14 +130,14 @@ export class LandingPageV2 {
             </div>
           </div>
 
-          <h1 class="pf-rise-2 text-4xl sm:text-6xl md:text-7xl font-black tracking-tight leading-[1.02] mb-6 max-w-5xl">
+          <h1 class="pf-hero-headline pf-rise-2 text-4xl sm:text-6xl md:text-7xl font-black tracking-tight mb-6 max-w-5xl">
             <span class="pf-shimmer-text">Pax</span><span class="bg-gradient-to-r from-[#00a8f5] via-[#00e5a3] to-[#f5af19] bg-clip-text text-transparent pf-animated-gradient">Flow</span>
-            <span class="block mt-2 text-2xl sm:text-4xl md:text-5xl font-extrabold text-slate-200">A gestão operacional da sua agência de viagens,</span>
-            <span class="block mt-1 bg-gradient-to-r from-fuchsia-500 via-rose-500 to-amber-500 bg-clip-text text-transparent pf-animated-gradient">simplificada</span>
+            <span class="block mt-3 text-2xl sm:text-4xl md:text-5xl font-extrabold text-slate-100">A operação da sua agência de viagens</span>
+            <span class="block mt-1 bg-gradient-to-r from-fuchsia-500 via-rose-500 to-amber-500 bg-clip-text text-transparent pf-animated-gradient">sem fricção, sem planilhas</span>
           </h1>
 
           <p class="pf-rise-3 text-base md:text-xl text-slate-300 max-w-2xl mb-10 leading-relaxed font-medium">
-            Abandone as planilhas manuais e a desorganização. Centralize pós-vendas, controle de passaportes e vistos, conciliação de reembolsos aéreos, escala de funcionários e itinerários em uma plataforma viva e intuitiva.
+            Diga adeus à desorganização. Centralize pós-vendas, passaportes e vistos, reembolsos aéreos, escalas e itinerários em uma plataforma viva — pensada para o turismo, não para planilhas.
           </p>
 
           <div class="pf-rise-4 flex flex-col sm:flex-row items-center gap-4 mb-14 w-full justify-center">

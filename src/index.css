@@ -539,5 +539,26 @@ html.dark .landing-page-wrapper .grid-bg {
   }
 }
 
+/* ================= LANDING V2 TYPOGRAPHY ================= */
+.landing-v2 {
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+.landing-v2 h1,
+.landing-v2 h2,
+.landing-v2 h3,
+.landing-v2 .pf-display {
+  font-family: 'Space Grotesk', 'Inter', sans-serif;
+  letter-spacing: -0.02em;
+}
+.landing-v2 .pf-num {
+  font-variant-numeric: tabular-nums;
+}
+.landing-v2 .pf-hero-headline {
+  font-family: 'Space Grotesk', 'Inter', sans-serif;
+  letter-spacing: -0.03em;
+  line-height: 1.02;
+}
+
 
 
