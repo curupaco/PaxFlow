@@ -714,7 +714,7 @@ export class LandingPageV2 {
         <footer class="relative z-10 w-full border-t border-white/10 py-10 px-6 text-center text-xs text-slate-500 font-medium overflow-visible">
 
           <!-- Logo girando à esquerda, estourando a área do rodapé e alinhado com o badge do CTA -->
-          <div data-parallax="20" class="pf-float pointer-events-none absolute -left-16 md:-left-20 -top-[180px] w-64 h-64 md:w-80 md:h-80 opacity-70" aria-hidden="true">
+          <div data-parallax="20" class="pf-float pointer-events-none absolute -left-16 md:-left-20 -top-[215px] md:-top-[245px] w-64 h-64 md:w-80 md:h-80 opacity-70" aria-hidden="true">
             <div class="absolute -inset-8 rounded-full bg-gradient-to-br from-[#0052d4] via-[#00a8f5] to-[#00e5a3] blur-3xl opacity-40 pf-glow"></div>
             <div class="relative w-full h-full rounded-full bg-gradient-to-br from-[#0a1a3f] to-[#0d0f1f] border-2 border-[#00a8f5]/25 shadow-2xl flex items-center justify-center overflow-hidden">
               <img src="/logo.svg" alt="PaxFlow" class="w-[82%] h-[82%] object-contain pf-spin-slow" />
