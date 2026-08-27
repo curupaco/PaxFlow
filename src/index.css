@@ -548,16 +548,16 @@ html.dark .landing-page-wrapper .grid-bg {
 .landing-v2 h2,
 .landing-v2 h3,
 .landing-v2 .pf-display {
-  font-family: 'Sora', 'Inter', sans-serif;
-  letter-spacing: -0.02em;
+  font-family: 'Unbounded', 'Inter', sans-serif;
+  letter-spacing: -0.01em;
 }
 .landing-v2 .pf-num {
   font-variant-numeric: tabular-nums;
 }
 .landing-v2 .pf-hero-headline {
-  font-family: 'Sora', 'Inter', sans-serif;
-  letter-spacing: -0.03em;
-  line-height: 1.02;
+  font-family: 'Unbounded', 'Inter', sans-serif;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
 }
 
 

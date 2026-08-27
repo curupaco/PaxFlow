@@ -130,10 +130,10 @@ export class LandingPageV2 {
             </div>
           </div>
 
-          <h1 class="pf-hero-headline pf-rise-2 text-4xl sm:text-6xl md:text-7xl font-black tracking-tight mb-6 max-w-5xl">
+          <h1 class="pf-hero-headline pf-rise-2 text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight mb-6 max-w-5xl">
             <span class="pf-shimmer-text">Pax</span><span class="bg-gradient-to-r from-[#00a8f5] via-[#00e5a3] to-[#f5af19] bg-clip-text text-transparent pf-animated-gradient">Flow</span>
-            <span class="block mt-3 text-2xl sm:text-4xl md:text-5xl font-extrabold text-slate-100">A operação da sua agência de viagens</span>
-            <span class="block mt-1 bg-gradient-to-r from-fuchsia-500 via-rose-500 to-amber-500 bg-clip-text text-transparent pf-animated-gradient">sem fricção, sem planilhas</span>
+            <span class="block mt-5 text-xl sm:text-3xl md:text-4xl font-semibold text-slate-100">A operação da sua agência de viagens</span>
+            <span class="block mt-1.5 text-xl sm:text-3xl md:text-4xl font-semibold bg-gradient-to-r from-fuchsia-500 via-rose-500 to-amber-500 bg-clip-text text-transparent pf-animated-gradient">sem fricção, sem planilhas</span>
           </h1>
 
           <p class="pf-rise-3 text-base md:text-xl text-slate-300 max-w-2xl mb-10 leading-relaxed font-medium">

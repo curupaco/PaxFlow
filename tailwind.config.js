@@ -11,7 +11,7 @@ module.exports = {
       fontFamily: {
         sans: ['Inter', 'sans-serif'],
         roboto: ['Roboto', 'sans-serif'],
-        display: ['Sora', 'Inter', 'sans-serif'],
+        display: ['Unbounded', 'Inter', 'sans-serif'],
       }
     },
   },
