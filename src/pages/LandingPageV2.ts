@@ -710,13 +710,32 @@ export class LandingPageV2 {
         </section>
 
         <!-- ===== FOOTER ===== -->
-        <footer class="relative z-10 w-full border-t border-white/10 py-8 px-6 text-center text-xs text-slate-500 font-medium">
-          <div class="max-w-4xl mx-auto flex flex-wrap items-center justify-center gap-x-6 gap-y-2 mb-5">
-            <span class="flex items-center gap-1.5">🛡️ Dados protegidos e criptografados</span>
-            <span class="flex items-center gap-1.5">🔐 Conformidade com a LGPD</span>
-            <span class="flex items-center gap-1.5">🔄 Atualizações constantes</span>
+        <footer class="relative z-10 w-full border-t border-white/10 py-24 px-6 text-center text-xs text-slate-500 font-medium overflow-visible">
+
+          <!-- Logo girando à esquerda, estourando a área do rodapé -->
+          <div data-parallax="20" class="pf-float pointer-events-none absolute -left-16 -top-20 w-64 h-64 md:w-80 md:h-80 opacity-70" aria-hidden="true">
+            <div class="absolute -inset-8 rounded-full bg-gradient-to-br from-[#0052d4] via-[#00a8f5] to-[#00e5a3] blur-3xl opacity-40 pf-glow"></div>
+            <div class="relative w-full h-full rounded-full bg-gradient-to-br from-[#0a1a3f] to-[#0d0f1f] border-2 border-[#00a8f5]/25 shadow-2xl flex items-center justify-center overflow-hidden">
+              <img src="/logo.svg" alt="PaxFlow" class="w-[82%] h-[82%] object-contain pf-spin-slow" />
+            </div>
           </div>
-          <p>© 2026 PaxFlow. Todos os direitos reservados. Sistema Especializado em CRM & Pós-Venda Turístico.</p>
+
+          <div class="max-w-4xl mx-auto flex flex-col items-center gap-6 relative">
+            <!-- Logo do header centralizado -->
+            <a href="#topo" class="flex items-center justify-center gap-3 group pointer-events-auto">
+              <span class="relative w-12 h-12 rounded-2xl bg-white/10 p-1.5 shadow-lg pf-pulse-ring">
+                <img src="/logo.svg" alt="PaxFlow" class="w-full h-full object-contain rounded-xl" />
+              </span>
+              <span class="text-lg font-black tracking-tight text-white">Pax<span class="bg-gradient-to-r from-[#00a8f5] via-[#00e5a3] to-[#f5af19] bg-clip-text text-transparent">Flow</span></span>
+            </a>
+
+            <div class="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
+              <span class="flex items-center gap-1.5">🛡️ Dados protegidos e criptografados</span>
+              <span class="flex items-center gap-1.5">🔐 Conformidade com a LGPD</span>
+              <span class="flex items-center gap-1.5">🔄 Atualizações constantes</span>
+            </div>
+            <p>© 2026 PaxFlow. Todos os direitos reservados. Sistema Especializado em CRM & Pós-Venda Turístico.</p>
+          </div>
         </footer>
 
         <!-- Floating WhatsApp FAB -->
