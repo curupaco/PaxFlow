@@ -192,7 +192,7 @@ export class LandingPageV2 {
 
   private render(): void {
     this.container.innerHTML = `
-      <div class="landing-v2 min-h-screen bg-[#06070f] text-white font-sans selection:bg-fuchsia-500 selection:text-white relative overflow-x-hidden flex flex-col">
+      <div class="landing-v2 min-h-screen bg-[#06070f] text-white font-sans selection:bg-fuchsia-500 selection:text-white relative overflow-x-clip flex flex-col">
 
         <!-- ===== AMBIENT COLOR FIELD (muito movimento) ===== -->
         <div class="pointer-events-none fixed inset-0 z-0 overflow-hidden">
