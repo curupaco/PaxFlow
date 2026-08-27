@@ -32,6 +32,29 @@ export class LandingPageV2 {
           el.classList.add('pf-revealed');
         }
       }
+      animateCounters();
+    };
+
+    const animateCounters = (): void => {
+      const vh = window.innerHeight;
+      const counters = scope.querySelectorAll<HTMLElement>('[data-count]');
+      counters.forEach(el => {
+        if (el.getAttribute('data-counted') === 'true') return;
+        const rect = el.getBoundingClientRect();
+        if (rect.top > vh || rect.bottom < 0) return;
+        el.setAttribute('data-counted', 'true');
+        const target = parseFloat(el.getAttribute('data-count') || '0');
+        const suffix = el.getAttribute('data-suffix') || '';
+        const duration = 1400;
+        const start = performance.now();
+        const step = (now: number): void => {
+          const p = Math.min((now - start) / duration, 1);
+          const eased = 1 - Math.pow(1 - p, 3);
+          el.textContent = Math.round(target * eased) + suffix;
+          if (p < 1) requestAnimationFrame(step);
+        };
+        requestAnimationFrame(step);
+      });
     };
 
     if (!isReduced) {
@@ -64,6 +87,18 @@ export class LandingPageV2 {
     } else {
       applyReveal();
     }
+
+    const anchors = scope.querySelectorAll<HTMLAnchorElement>('a[href^="#"]');
+    anchors.forEach(a => {
+      a.addEventListener('click', (e) => {
+        const id = a.getAttribute('href');
+        if (!id || id === '#') return;
+        const target = document.querySelector<HTMLElement>(id);
+        if (!target) return;
+        e.preventDefault();
+        target.scrollIntoView({ behavior: isReduced ? 'auto' : 'smooth', block: 'start' });
+      });
+    });
   }
 
   private render(): void {
@@ -100,11 +135,12 @@ export class LandingPageV2 {
             <a href="#faq" class="hover:text-fuchsia-400 transition">FAQ</a>
           </nav>
           <div class="flex items-center gap-2.5">
-            <button id="btn-header-whatsapp" class="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white font-extrabold text-xs uppercase tracking-wide shadow-lg shadow-emerald-500/25 transition hover:scale-[1.04] flex items-center gap-2">
+            <button id="btn-header-whatsapp" class="hidden sm:flex px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white font-extrabold text-xs uppercase tracking-wide shadow-lg shadow-emerald-500/25 transition hover:scale-[1.04] flex items-center gap-2">
               <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.205 1.654z"/></svg>
-              <span class="hidden sm:inline">WhatsApp</span>
+              <span class="hidden lg:inline">WhatsApp</span>
             </button>
-            <button id="btn-acessar-login" class="px-4 py-2 rounded-xl bg-white hover:bg-slate-200 text-slate-900 font-extrabold text-xs uppercase tracking-wide shadow-lg transition">Acessar Sistema</button>
+            <button id="btn-menu-demo" class="pf-animated-gradient px-4 py-2 rounded-xl bg-gradient-to-r from-[#0052d4] via-[#00a8f5] to-[#00e5a3] text-white font-extrabold text-xs uppercase tracking-wide shadow-lg shadow-blue-500/30 transition hover:scale-[1.04]">Modo Demo</button>
+            <button id="btn-acessar-login" class="px-4 py-2 rounded-xl bg-white hover:bg-slate-200 text-slate-900 font-extrabold text-xs uppercase tracking-wide shadow-lg transition">Entrar</button>
           </div>
         </header>
 
@@ -148,10 +184,19 @@ export class LandingPageV2 {
             <button id="btn-conhecer-login" class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-white/5 hover:bg-white/10 text-slate-200 font-bold text-sm tracking-wider uppercase border border-white/15 transition">Entrar no Sistema Real</button>
           </div>
 
+          <!-- Social proof badges -->
+          <div class="pf-rise-4 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 mb-14 text-[11px] font-semibold text-slate-300">
+            <span class="flex items-center gap-2">
+              <span class="text-[#f5af19] text-xs">★★★★★</span> Adotado por agências de viagens
+            </span>
+            <span class="flex items-center gap-2 opacity-80"><span class="text-[#00e5a3]">✓</span> Setup em minutos</span>
+            <span class="flex items-center gap-2 opacity-80"><span class="text-[#00e5a3]">✓</span> Sem fidelidade, cancele quando quiser</span>
+          </div>
+
           <!-- Stats bar -->
           <div class="pf-rise-5 grid grid-cols-2 md:grid-cols-4 gap-4 w-full max-w-4xl mx-auto mb-16 p-6 rounded-3xl bg-white/[0.04] border border-white/10 backdrop-blur-md pf-glow">
-            <div class="text-center p-3 rounded-2xl bg-gradient-to-b from-[#0052d4]/20 to-transparent"><span class="block text-3xl font-black text-[#00a8f5]">100%</span><span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Foco em Turismo</span></div>
-            <div class="text-center p-3 rounded-2xl bg-gradient-to-b from-[#f12711]/20 to-transparent"><span class="block text-3xl font-black text-[#f5af19]">180 dias</span><span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Alerta Vistos & Passaporte</span></div>
+            <div class="text-center p-3 rounded-2xl bg-gradient-to-b from-[#0052d4]/20 to-transparent"><span class="pf-num block text-3xl font-black text-[#00a8f5]" data-count="100" data-suffix="%">0%</span><span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Foco em Turismo</span></div>
+            <div class="text-center p-3 rounded-2xl bg-gradient-to-b from-[#f12711]/20 to-transparent"><span class="pf-num block text-3xl font-black text-[#f5af19]" data-count="180" data-suffix=" dias">0 dias</span><span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Alerta Vistos & Passaporte</span></div>
             <div class="text-center p-3 rounded-2xl bg-gradient-to-b from-[#00e5a3]/20 to-transparent"><span class="block text-3xl font-black text-[#00e5a3]">Escala + Banco</span><span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Gestão de Equipe</span></div>
             <div class="text-center p-3 rounded-2xl bg-gradient-to-b from-fuchsia-600/20 to-transparent"><span class="block text-3xl font-black text-fuchsia-400">WhatsApp SLA</span><span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Hub Integrado</span></div>
           </div>
@@ -301,6 +346,48 @@ export class LandingPageV2 {
           </div>
         </main>
 
+        <!-- ===== COMO FUNCIONA (3 passos) ===== -->
+        <section class="relative z-10 w-full py-20 px-6 border-t border-white/10">
+          <div class="pf-zone max-w-6xl mx-auto">
+            <div class="text-center max-w-3xl mx-auto mb-14 space-y-3">
+              <span class="px-4 py-1.5 rounded-full bg-[#00a8f5]/15 border border-[#00a8f5]/30 text-[#00a8f5] text-[10px] font-black uppercase tracking-widest">Como Funciona</span>
+              <h2 class="text-3xl md:text-5xl font-black tracking-tight">Da primeira telinha à operação turbinada em 3 passos</h2>
+              <p class="text-sm text-slate-400 font-medium">Sem curva de aprendizado longa: você vê, configura e começa a vender melhor no mesmo dia.</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div data-reveal="up" style="transition-delay:.05s" class="relative p-7 rounded-3xl bg-white/[0.04] border border-white/10 backdrop-blur-md overflow-hidden group hover:border-[#00a8f5]/40 transition">
+                <span class="absolute -top-5 -right-2 text-7xl font-black text-white/[0.05] select-none">01</span>
+                <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#0052d4] to-[#00a8f5] text-white flex items-center justify-center mb-5 text-2xl shadow-lg">👀</div>
+                <h3 class="text-xl font-black text-white">Conheça na Prática</h3>
+                <p class="text-sm text-slate-400 font-medium mt-2 leading-relaxed">Explore o <strong class="text-slate-100">Modo Demonstração</strong>: um ambiente real e interativo, com dados fictícios, para entender cada tela sem precisar cadastrar nada.</p>
+              </div>
+              <div data-reveal="up" style="transition-delay:.15s" class="relative p-7 rounded-3xl bg-white/[0.04] border border-white/10 backdrop-blur-md overflow-hidden group hover:border-[#00e5a3]/40 transition">
+                <span class="absolute -top-5 -right-2 text-7xl font-black text-white/[0.05] select-none">02</span>
+                <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#00e5a3] to-teal-400 text-[#062a1f] flex items-center justify-center mb-5 text-2xl shadow-lg">🎨</div>
+                <h3 class="text-xl font-black text-white">Configure Sua Marca</h3>
+                <p class="text-sm text-slate-400 font-medium mt-2 leading-relaxed">Envie seu logotipo e escolha suas cores. Itinerários, vouchers e pesquisas NPS passam a carregar a identidade da <strong class="text-slate-100">sua agência</strong> automaticamente.</p>
+              </div>
+              <div data-reveal="up" style="transition-delay:.25s" class="relative p-7 rounded-3xl bg-white/[0.04] border border-white/10 backdrop-blur-md overflow-hidden group hover:border-[#f5af19]/40 transition">
+                <span class="absolute -top-5 -right-2 text-7xl font-black text-white/[0.05] select-none">03</span>
+                <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#f5af19] to-[#f12711] text-white flex items-center justify-center mb-5 text-2xl shadow-lg">🚀</div>
+                <h3 class="text-xl font-black text-white">Largue as Planilhas</h3>
+                <p class="text-sm text-slate-400 font-medium mt-2 leading-relaxed">Deixe o PaxFlow monitorar pós-vendas, reembolsos, passaportes e escalas 24/7 — e foque o seu tempo no que gera receita: <strong class="text-slate-100">vender mais</strong>.</p>
+              </div>
+            </div>
+
+            <!-- Pra quem é -->
+            <div data-reveal="zoom" class="mt-14 rounded-3xl bg-gradient-to-r from-[#0052d4]/20 via-white/[0.03] to-[#f12711]/20 border border-white/10 p-8 text-center max-w-4xl mx-auto">
+              <span class="text-[10px] font-black uppercase tracking-widest text-[#00e5a3]">Feito sob medida para</span>
+              <div class="flex flex-wrap justify-center gap-3 mt-4">
+                <span class="px-4 py-2 rounded-full bg-white/[0.05] border border-white/10 text-sm font-semibold text-slate-200">Agências de Turismo</span>
+                <span class="px-4 py-2 rounded-full bg-white/[0.05] border border-white/10 text-sm font-semibold text-slate-200">Operadoras</span>
+                <span class="px-4 py-2 rounded-full bg-white/[0.05] border border-white/10 text-sm font-semibold text-slate-200">Franquias de Viagens</span>
+                <span class="px-4 py-2 rounded-full bg-white/[0.05] border border-white/10 text-sm font-semibold text-slate-200">Consultores de Viagem</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <!-- ===== SUA MARCA (brand showcase com carrossel - de volta da v1) ===== -->
         <section id="marcas" class="relative z-10 w-full py-20 px-6 border-t border-white/10 bg-gradient-to-b from-transparent to-[#0a0d1f]">
           <div class="pf-zone max-w-6xl mx-auto space-y-12 relative">
@@ -363,6 +450,40 @@ export class LandingPageV2 {
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== DEPOIMENTOS (prova social) ===== -->
+        <section class="relative z-10 w-full py-20 px-6 border-t border-white/10">
+          <div class="pf-zone max-w-6xl mx-auto">
+            <div class="text-center max-w-3xl mx-auto mb-14 space-y-3">
+              <span class="px-4 py-1.5 rounded-full bg-[#00e5a3]/15 border border-[#00e5a3]/30 text-[#00e5a3] text-[10px] font-black uppercase tracking-widest">Depoimentos</span>
+              <h2 class="text-3xl md:text-5xl font-black tracking-tight">Agências que já largaram as planilhas</h2>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div data-reveal="up" style="transition-delay:.05s" class="p-7 rounded-3xl bg-white/[0.04] border border-white/10 backdrop-blur-md flex flex-col justify-between min-h-[240px]">
+                <div><div class="text-[#f5af19] mb-4 text-sm">★★★★★</div><p class="text-sm text-slate-300 leading-relaxed font-medium">"Antes, os reembolsos aéreos se perdiam no WhatsApp. Agora o cronômetro de SLA me avisa e eu nunca mais devolvi dinheiro que não precisava. Deu outra cara pro pós-venda."</p></div>
+                <div class="mt-6 flex items-center gap-3"><div class="w-11 h-11 rounded-full bg-gradient-to-br from-[#0052d4] to-[#00a8f5] flex items-center justify-center font-black text-white">MC</div><div><strong class="block text-sm font-extrabold text-white">Marina Costa</strong><span class="text-[11px] text-slate-400 font-medium">Fundadora · Costa Viagens</span></div></div>
+              </div>
+              <div data-reveal="up" style="transition-delay:.15s" class="p-7 rounded-3xl bg-white/[0.04] border border-white/10 backdrop-blur-md flex flex-col justify-between min-h-[240px]">
+                <div><div class="text-[#f5af19] mb-4 text-sm">★★★★★</div><p class="text-sm text-slate-300 leading-relaxed font-medium">"A escala de funcionários e o banco de folgas era uma dor todo mês. O PaxFlow resolveu em um dia. Minha equipe ganhou tempo e eu ganhei previsibilidade."</p></div>
+                <div class="mt-6 flex items-center gap-3"><div class="w-11 h-11 rounded-full bg-gradient-to-br from-[#f12711] to-[#f5af19] flex items-center justify-center font-black text-white">RS</div><div><strong class="block text-sm font-extrabold text-white">Rafael Souza</strong><span class="text-[11px] text-slate-400 font-medium">Diretor · Horizonte Operadora</span></div></div>
+              </div>
+              <div data-reveal="up" style="transition-delay:.25s" class="p-7 rounded-3xl bg-gradient-to-b from-[#00e5a3]/12 to-white/[0.02] border border-[#00e5a3]/20 backdrop-blur-md flex flex-col justify-between min-h-[240px]">
+                <div><div class="text-[#f5af19] mb-4 text-sm">★★★★★</div><p class="text-sm text-slate-200 leading-relaxed font-medium">"O itinerário digital com a nossa marca impressiona os clientes. Eles elogiam o app e a gente ainda ganha o NPS direto no fluxo. Virou vitrine de venda."</p></div>
+                <div class="mt-6 flex items-center gap-3"><div class="w-11 h-11 rounded-full bg-gradient-to-br from-[#00e5a3] to-teal-400 text-[#062a1f] flex items-center justify-center font-black">JL</div><div><strong class="block text-sm font-extrabold text-white">Juliana Lima</strong><span class="text-[11px] text-slate-400 font-medium">Gerente · Mar Azul Franquias</span></div></div>
+              </div>
+            </div>
+
+            <div data-reveal="up" class="mt-12 rounded-2xl bg-white/[0.03] border border-white/10 p-6">
+              <span class="block text-center text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">Aumente a retenção e a previsão da sua operação</span>
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+                <div><span class="pf-num block text-3xl font-black text-[#00a8f5]" data-count="41" data-suffix="%">0%</span><span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Menos retrabalho no pós-venda</span></div>
+                <div><span class="pf-num block text-3xl font-black text-[#00e5a3]" data-count="30" data-suffix="%">0%</span><span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Mais tempo em vendas</span></div>
+                <div><span class="pf-num block text-3xl font-black text-[#f5af19]" data-count="100" data-suffix="%">0%</span><span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Reembolsos sob controle</span></div>
+                <div><span class="pf-num block text-3xl font-black text-fuchsia-400" data-count="6" data-suffix="x">0x</span><span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Fidelização com itinerários white-label</span></div>
               </div>
             </div>
           </div>
@@ -437,11 +558,17 @@ export class LandingPageV2 {
               <button id="btn-cta-whatsapp-final" class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs tracking-wider uppercase shadow-xl flex items-center justify-center gap-2 transition">Falar com Consultor</button>
               <button id="btn-cta-login-final" class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-white/[0.08] hover:bg-white/[0.15] text-white font-black text-xs tracking-wider uppercase border border-white/15 transition">Acessar Sistema Real</button>
             </div>
+            <p class="pt-6 text-xs text-slate-400 font-medium">🔒 Experimente sem compromisso · Sem cartão de crédito · Cancele quando quiser</p>
           </div>
         </section>
 
         <!-- ===== FOOTER ===== -->
-        <footer class="relative z-10 w-full border-t border-white/10 py-6 px-6 text-center text-xs text-slate-500 font-medium">
+        <footer class="relative z-10 w-full border-t border-white/10 py-8 px-6 text-center text-xs text-slate-500 font-medium">
+          <div class="max-w-4xl mx-auto flex flex-wrap items-center justify-center gap-x-6 gap-y-2 mb-5">
+            <span class="flex items-center gap-1.5">🛡️ Dados protegidos e criptografados</span>
+            <span class="flex items-center gap-1.5">🔐 Conformidade com a LGPD</span>
+            <span class="flex items-center gap-1.5">🔄 Atualizações constantes</span>
+          </div>
           <p>© 2026 PaxFlow. Todos os direitos reservados. Sistema Especializado em CRM & Pós-Venda Turístico.</p>
         </footer>
 
@@ -478,6 +605,7 @@ export class LandingPageV2 {
     };
 
     document.getElementById('btn-iniciar-demo')?.addEventListener('click', handleStartDemo);
+    document.getElementById('btn-menu-demo')?.addEventListener('click', handleStartDemo);
     document.getElementById('btn-acessar-login')?.addEventListener('click', handleAcessarReal);
     document.getElementById('btn-conhecer-login')?.addEventListener('click', handleAcessarReal);
     document.getElementById('btn-cta-demo-final')?.addEventListener('click', handleStartDemo);
