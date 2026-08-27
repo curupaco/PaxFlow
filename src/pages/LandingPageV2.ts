@@ -711,31 +711,28 @@ export class LandingPageV2 {
         </section>
 
         <!-- ===== FOOTER ===== -->
-        <footer class="relative z-10 w-full border-t border-white/10 py-10 px-6 text-center text-xs text-slate-500 font-medium overflow-visible">
-
-          <!-- Logo girando à esquerda, estourando a área do rodapé e alinhado com o badge do CTA -->
-          <div data-parallax="20" class="pf-float pointer-events-none absolute -left-16 md:-left-20 -top-[215px] md:-top-[245px] w-64 h-64 md:w-80 md:h-80 opacity-70" aria-hidden="true">
-            <div class="absolute -inset-8 rounded-full bg-gradient-to-br from-[#0052d4] via-[#00a8f5] to-[#00e5a3] blur-3xl opacity-40 pf-glow"></div>
-            <div class="relative w-full h-full rounded-full bg-gradient-to-br from-[#0a1a3f] to-[#0d0f1f] border-2 border-[#00a8f5]/25 shadow-2xl flex items-center justify-center overflow-hidden">
-              <img src="/logo.svg" alt="PaxFlow" class="w-[82%] h-[82%] object-contain pf-spin-slow" />
-            </div>
-          </div>
-
-          <div class="max-w-4xl mx-auto flex flex-col items-center gap-4 relative">
-            <!-- Logo do header centralizado -->
-            <a href="#topo" class="flex items-center justify-center gap-3 group pointer-events-auto">
-              <span class="relative w-12 h-12 rounded-2xl bg-white/10 p-1.5 shadow-lg pf-pulse-ring">
-                <img src="/logo.svg" alt="PaxFlow" class="w-full h-full object-contain rounded-xl" />
+        <footer class="relative z-10 w-full border-t border-white/10 py-5 px-6 sm:px-10 text-xs text-slate-400 font-medium">
+          <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+            
+            <!-- Logo do PaxFlow à esquerda -->
+            <a href="#topo" class="flex items-center gap-2.5 group pointer-events-auto shrink-0">
+              <span class="relative w-8 h-8 rounded-xl bg-white/10 p-1 shadow-md pf-pulse-ring shrink-0">
+                <img src="/logo.svg" alt="PaxFlow" class="w-full h-full object-contain rounded-lg" />
               </span>
-              <span class="text-lg font-black tracking-tight text-white">Pax<span class="bg-gradient-to-r from-[#00a8f5] via-[#00e5a3] to-[#f5af19] bg-clip-text text-transparent">Flow</span></span>
+              <span class="text-base font-black tracking-tight text-white">Pax<span class="bg-gradient-to-r from-[#00a8f5] via-[#00e5a3] to-[#f5af19] bg-clip-text text-transparent">Flow</span></span>
             </a>
 
-            <div class="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
-              <span class="flex items-center gap-1.5">🛡️ Dados protegidos e criptografados</span>
-              <span class="flex items-center gap-1.5">🔐 Conformidade com a LGPD</span>
-              <span class="flex items-center gap-1.5">🔄 Atualizações constantes</span>
+            <!-- Selos de segurança e copyright alinhados à direita -->
+            <div class="flex flex-col sm:flex-row items-center gap-x-6 gap-y-2 text-center md:text-right">
+              <div class="flex flex-wrap items-center justify-center md:justify-end gap-x-4 gap-y-1 text-slate-400 text-[11px]">
+                <span class="flex items-center gap-1">🛡️ Dados protegidos</span>
+                <span class="flex items-center gap-1">🔐 Conformidade LGPD</span>
+                <span class="flex items-center gap-1">🔄 Atualizações constantes</span>
+              </div>
+              <span class="hidden sm:inline text-slate-600">|</span>
+              <p class="text-[11px] text-slate-400">© 2026 PaxFlow. Todos os direitos reservados. Sistema Especializado em CRM & Pós-Venda Turístico.</p>
             </div>
-            <p>© 2026 PaxFlow. Todos os direitos reservados. Sistema Especializado em CRM & Pós-Venda Turístico.</p>
+
           </div>
         </footer>
 
