@@ -57,6 +57,14 @@ export class LandingPageV2 {
       });
     };
 
+    const updateProgress = (sy: number): void => {
+      const bar = scope.querySelector<HTMLElement>('#pf-scroll-progress');
+      if (!bar) return;
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      const pct = max <= 0 ? 0 : (sy / max) * 100;
+      bar.style.width = pct.toFixed(1) + '%';
+    };
+
     if (!isReduced) {
       let ticking = false;
       const onScroll = (): void => {
@@ -78,6 +86,7 @@ export class LandingPageV2 {
             el.style.transform = `translate3d(0, ${shift.toFixed(1)}px, 0)`;
           }
           applyReveal();
+          updateProgress(sy);
           ticking = false;
         });
       };
@@ -116,8 +125,11 @@ export class LandingPageV2 {
 
         <!-- ===== LOGO WATERMARK fixo gigante deslocado à direita (acompanha o scroll) ===== -->
         <div class="pointer-events-none fixed inset-0 z-[1] flex items-center justify-end overflow-hidden">
-          <img data-parallax="95" src="/logo.svg" alt="" class="pf-logo-watermark max-w-[70vmin] max-h-[70vmin] w-[70vmin] h-[70vmin] object-contain opacity-[0.07] mr-[-10vmin] drop-shadow-[0_0_30px_rgba(0,168,245,0.15)]" />
+          <img data-parallax="95" src="/logo.svg" alt="" class="pf-logo-watermark max-w-[66vmin] max-h-[66vmin] w-[66vmin] h-[66vmin] object-contain opacity-[0.13] blur-[2px] mr-[-8vmin] saturate-150 drop-shadow-[0_0_40px_rgba(0,168,245,0.35)]" />
         </div>
+
+        <!-- ===== SCROLL PROGRESS BAR ===== -->
+        <div class="fixed top-0 left-0 z-[60] h-1 w-full bg-transparent"><div id="pf-scroll-progress" class="h-full w-0 bg-gradient-to-r from-[#00a8f5] via-[#00e5a3] to-[#f5af19]"></div></div>
 
         <!-- ===== TOP NAV ===== -->
         <header class="relative z-30 w-full px-6 py-4 flex items-center justify-between bg-[#06070f]/70 backdrop-blur-xl border-b border-white/10 sticky top-0">
@@ -518,6 +530,55 @@ export class LandingPageV2 {
           </div>
         </section>
 
+        <!-- ===== PLANILHAS vs PAXFLOW (comparativo) ===== -->
+        <section class="relative z-10 w-full py-20 px-6 border-t border-white/10">
+          <div class="pf-zone max-w-5xl mx-auto">
+            <div class="text-center max-w-3xl mx-auto mb-12 space-y-3">
+              <span class="px-4 py-1.5 rounded-full bg-fuchsia-500/15 border border-fuchsia-500/30 text-fuchsia-300 text-[10px] font-black uppercase tracking-widest">Comparativo</span>
+              <h2 class="text-3xl md:text-5xl font-black tracking-tight">Planilha ou PaxFlow? Veja a diferença.</h2>
+            </div>
+            <div class="rounded-3xl overflow-hidden border border-white/10 backdrop-blur-md">
+              <div class="grid grid-cols-3 text-center text-[10px] font-black uppercase tracking-wider">
+                <div class="p-4 bg-white/[0.02] border-b border-white/10 text-slate-500">Recurso</div>
+                <div class="p-4 bg-[#f12711]/5 border-b border-white/10 text-[#f5af19]">Planilha ❌</div>
+                <div class="p-4 bg-gradient-to-b from-[#00e5a3]/10 to-transparent border-b border-white/10 text-[#00e5a3]">PaxFlow ✅</div>
+              </div>
+              <div class="divide-y divide-white/[0.06]">
+                <div class="grid grid-cols-3 text-sm items-center">
+                  <div class="p-4 px-5 font-semibold text-white">Pós-venda e LOC</div>
+                  <div class="p-4 px-5 text-slate-500 text-center">Falha / se perde no WhatsApp</div>
+                  <div class="p-4 px-5 text-slate-300 text-center"><span class="text-[#00e5a3]">●</span> Centralizado com alertas</div>
+                </div>
+                <div class="grid grid-cols-3 text-sm items-center bg-white/[0.02]">
+                  <div class="p-4 px-5 font-semibold text-white">Reembolsos aéreos</div>
+                  <div class="p-4 px-5 text-slate-500 text-center">Perda de prazos e créditos</div>
+                  <div class="p-4 px-5 text-slate-300 text-center"><span class="text-[#00e5a3]">●</span> Cronômetro de SLA automático</div>
+                </div>
+                <div class="grid grid-cols-3 text-sm items-center">
+                  <div class="p-4 px-5 font-semibold text-white">Passaportes e vistos</div>
+                  <div class="p-4 px-5 text-slate-500 text-center">Controle manual, esquece</div>
+                  <div class="p-4 px-5 text-slate-300 text-center"><span class="text-[#00e5a3]">●</span> Alerta automático 6 meses antes</div>
+                </div>
+                <div class="grid grid-cols-3 text-sm items-center bg-white/[0.02]">
+                  <div class="p-4 px-5 font-semibold text-white">Escala da equipe</div>
+                  <div class="p-4 px-5 text-slate-500 text-center">Conflito de horários</div>
+                  <div class="p-4 px-5 text-slate-300 text-center"><span class="text-[#00e5a3]">●</span> Turnos + banco de folgas</div>
+                </div>
+                <div class="grid grid-cols-3 text-sm items-center">
+                  <div class="p-4 px-5 font-semibold text-white">Identidade da agência</div>
+                  <div class="p-4 px-5 text-slate-500 text-center">Genérico, sem marca</div>
+                  <div class="p-4 px-5 text-slate-300 text-center"><span class="text-[#00e5a3]">●</span> White-label com sua logo e cores</div>
+                </div>
+                <div class="grid grid-cols-3 text-sm items-center bg-white/[0.02]">
+                  <div class="p-4 px-5 font-semibold text-white">Faturamento / conversão</div>
+                  <div class="p-4 px-5 text-slate-500 text-center">Cálculo manual demorado</div>
+                  <div class="p-4 px-5 text-slate-300 text-center"><span class="text-[#00e5a3]">●</span> Painel em tempo real</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <!-- ===== PLANOS ===== -->
         <section id="planos" class="relative z-10 w-full py-20 px-6 border-t border-white/10">
           <div class="pf-zone max-w-5xl mx-auto">
@@ -542,6 +603,8 @@ export class LandingPageV2 {
               <details data-reveal="up" style="transition-delay:.08s" class="group bg-white/[0.04] border border-white/10 rounded-2xl p-5 [&_summary::-webkit-details-marker]:hidden"><summary class="flex items-center justify-between cursor-pointer focus:outline-none"><h3 class="text-sm font-extrabold text-white">Posso controlar a escala de todos os funcionários?</h3><span class="ml-1.5 shrink-0 rounded-full bg-white/10 p-1.5 text-white transition group-open:-rotate-180"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg></span></summary><p class="mt-3 text-sm leading-relaxed text-slate-400 font-medium">Sim! O módulo de Central Administrativa permite atribuir turnos, controlar saldos no Banco de Folgas e aprovar solicitações de trocas.</p></details>
               <details data-reveal="up" style="transition-delay:.16s" class="group bg-white/[0.04] border border-white/10 rounded-2xl p-5 [&_summary::-webkit-details-marker]:hidden"><summary class="flex items-center justify-between cursor-pointer focus:outline-none"><h3 class="text-sm font-extrabold text-white">Como funciona o alerta de passaportes e vistos?</h3><span class="ml-1.5 shrink-0 rounded-full bg-white/10 p-1.5 text-white transition group-open:-rotate-180"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg></span></summary><p class="mt-3 text-sm leading-relaxed text-slate-400 font-medium">O PaxFlow calcula a diferença entre a validade dos documentos e a data da viagem. Se a validade for inferior a 6 meses, gera alertas prioritários no Inbox.</p></details>
               <details data-reveal="up" style="transition-delay:.24s" class="group bg-white/[0.04] border border-white/10 rounded-2xl p-5 [&_summary::-webkit-details-marker]:hidden"><summary class="flex items-center justify-between cursor-pointer focus:outline-none"><h3 class="text-sm font-extrabold text-white">Como a página do cliente assume as cores da minha agência?</h3><span class="ml-1.5 shrink-0 rounded-full bg-white/10 p-1.5 text-white transition group-open:-rotate-180"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg></span></summary><p class="mt-3 text-sm leading-relaxed text-slate-400 font-medium">Em Configurações, você envia sua logomarca e seleciona a cor primária. Todos os itinerários públicos passam a exibir seu logotipo e paleta automaticamente.</p></details>
+              <details data-reveal="up" style="transition-delay:.32s" class="group bg-white/[0.04] border border-white/10 rounded-2xl p-5 [&_summary::-webkit-details-marker]:hidden"><summary class="flex items-center justify-between cursor-pointer focus:outline-none"><h3 class="text-sm font-extrabold text-white">Preciso de fidelidade ou cartão de crédito para testar?</h3><span class="ml-1.5 shrink-0 rounded-full bg-white/10 p-1.5 text-white transition group-open:-rotate-180"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg></span></summary><p class="mt-3 text-sm leading-relaxed text-slate-400 font-medium">Não. Comece pelo Modo Demonstração — um ambiente completo e gratuito com dados fictícios. Se quiser seguir, é sem contrato de fidelidade: você pode cancelar quando quiser.</p></details>
+              <details data-reveal="up" style="transition-delay:.40s" class="group bg-white/[0.04] border border-white/10 rounded-2xl p-5 [&_summary::-webkit-details-marker]:hidden"><summary class="flex items-center justify-between cursor-pointer focus:outline-none"><h3 class="text-sm font-extrabold text-white">Minha agência já usa planilhas. Como funciona a migração?</h3><span class="ml-1.5 shrink-0 rounded-full bg-white/10 p-1.5 text-white transition group-open:-rotate-180"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg></span></summary><p class="mt-3 text-sm leading-relaxed text-slate-400 font-medium">Nada é perdido. Nossos planos contam com onboarding guiado para importar seus clientes, viagens e reembolsos para o PaxFlow, mantendo o histórico que já construiu.</p></details>
             </div>
           </div>
         </section>
