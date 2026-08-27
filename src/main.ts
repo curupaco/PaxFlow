@@ -10,7 +10,7 @@ import { showBadgeCelebrationModal, showLevelUpModal } from './utils/celebration
 import { traduzirErro } from './utils/errorTranslator';
 import { Router } from './router';
 import { LandingPage } from './pages/LandingPage';
-import { LandingPageV2 } from './pages/LandingPageV2';
+import { LandingPageV2 } from './pages/LandingPage';
 import { GlobalHeaderSearch } from './components/GlobalHeaderSearch';
 
 (window as any).traduzirErro = traduzirErro;
