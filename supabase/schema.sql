@@ -669,6 +669,10 @@ DECLARE
     raw_query TEXT;
     clean_digits TEXT;
 BEGIN
+    IF auth.uid() IS NULL THEN
+        RAISE EXCEPTION 'Acesso negado: Usuário não autenticado no PaxFlow.';
+    END IF;
+
     raw_query := LOWER(TRIM(query_text));
     clean_digits := REGEXP_REPLACE(query_text, '\D', '', 'g');
 
@@ -740,6 +744,10 @@ RETURNS JSON AS $$
 DECLARE
     result JSON;
 BEGIN
+    IF auth.uid() IS NULL THEN
+        RAISE EXCEPTION 'Acesso negado: Usuário não autenticado no PaxFlow.';
+    END IF;
+
     SELECT row_to_json(v_data) INTO result
     FROM (
         SELECT 
@@ -778,6 +786,10 @@ RETURNS JSON AS $$
 DECLARE
     result JSON;
 BEGIN
+    IF auth.uid() IS NULL THEN
+        RAISE EXCEPTION 'Acesso negado: Usuário não autenticado no PaxFlow.';
+    END IF;
+
     SELECT row_to_json(o_data) INTO result
     FROM (
         SELECT 
@@ -806,6 +818,10 @@ RETURNS JSON AS $$
 DECLARE
     result JSON;
 BEGIN
+    IF auth.uid() IS NULL THEN
+        RAISE EXCEPTION 'Acesso negado: Usuário não autenticado no PaxFlow.';
+    END IF;
+
     SELECT COALESCE(JSON_AGG(row_to_json(p)), '[]'::json) INTO result
     FROM public.produtos_viagem p
     WHERE p.viagem_id::text = p_trip_id;
@@ -822,6 +838,10 @@ RETURNS JSON AS $$
 DECLARE
     result JSON;
 BEGIN
+    IF auth.uid() IS NULL THEN
+        RAISE EXCEPTION 'Acesso negado: Usuário não autenticado no PaxFlow.';
+    END IF;
+
     UPDATE public.orcamentos
     SET 
         temperatura = COALESCE(p_payload->>'temperatura', temperatura),
@@ -849,6 +869,10 @@ RETURNS JSON AS $$
 DECLARE
     result JSON;
 BEGIN
+    IF auth.uid() IS NULL THEN
+        RAISE EXCEPTION 'Acesso negado: Usuário não autenticado no PaxFlow.';
+    END IF;
+
     UPDATE public.viagens
     SET 
         cliente_id = COALESCE((p_payload->>'cliente_id')::uuid, cliente_id),
@@ -878,6 +902,10 @@ RETURNS JSON AS $$
 DECLARE
     result JSON;
 BEGIN
+    IF auth.uid() IS NULL THEN
+        RAISE EXCEPTION 'Acesso negado: Usuário não autenticado no PaxFlow.';
+    END IF;
+
     IF p_prod_id IS NOT NULL AND p_prod_id != '' AND EXISTS (SELECT 1 FROM public.produtos_viagem WHERE id::text = p_prod_id) THEN
         UPDATE public.produtos_viagem
         SET 
@@ -915,6 +943,10 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE OR REPLACE FUNCTION public.deletar_produto_co_piloto(p_prod_id TEXT)
 RETURNS BOOLEAN AS $$
 BEGIN
+    IF auth.uid() IS NULL THEN
+        RAISE EXCEPTION 'Acesso negado: Usuário não autenticado no PaxFlow.';
+    END IF;
+
     DELETE FROM public.produtos_viagem WHERE id::text = p_prod_id;
     RETURN TRUE;
 END;

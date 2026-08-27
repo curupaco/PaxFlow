@@ -160,7 +160,7 @@ export class BalcaoService {
       const horaStr = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
       await EscalaService.criarSolicitacao({
-        tipo: 'folga', // Modelo unificado de notificação
+        tipo: 'atendimento_balcao', // Modelo unificado de notificação de balcão
         solicitante_id: titularId,
         solicitante_nome: consultorCoPilotoNome,
         destinatario_id: titularId,

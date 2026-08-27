@@ -2911,7 +2911,7 @@ export class InboxPage {
           <div class="space-y-3 text-xs text-slate-700 dark:text-slate-300">
             <div class="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl space-y-1.5 border border-slate-200 dark:border-slate-800">
               <p><strong>Solicitante:</strong> ${sol.solicitante_nome}</p>
-              <p><strong>Tipo:</strong> ${sol.tipo === 'troca' ? 'Troca de Turno' : sol.tipo === 'folga' ? 'Folga Semanal' : 'Férias'}</p>
+              <p><strong>Tipo:</strong> ${sol.tipo === 'troca' ? 'Troca de Turno' : sol.tipo === 'folga' ? 'Folga Semanal' : sol.tipo === 'atendimento_balcao' ? '🤝 Atendimento de Balcão' : 'Férias'}</p>
               <p><strong>Data Solicitante (Origem):</strong> ${sol.data_origem}</p>
               ${sol.destinatario_nome ? `<p><strong>Troca com Colega:</strong> ${sol.destinatario_nome}</p>` : ''}
               ${sol.data_destino ? `<p><strong>Data do Colega (Destino):</strong> ${sol.data_destino}</p>` : ''}

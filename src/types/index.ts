@@ -460,7 +460,7 @@ export interface EscalaDiaria {
  */
 export interface SolicitacaoEscala {
   id: string;
-  tipo: 'troca' | 'folga' | 'ferias';
+  tipo: 'troca' | 'folga' | 'ferias' | 'atendimento_balcao';
   solicitante_id: string;
   solicitante_nome?: string;
   destinatario_id?: string; // Preenchido no caso de troca entre consultores
