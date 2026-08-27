@@ -8,6 +8,58 @@ export class LandingPageV2 {
   public init(): void {
     this.render();
     this.setupEventListeners();
+    this.setupScrollEffects();
+  }
+
+  private setupScrollEffects(): void {
+    const scope = this.container.querySelector('.landing-v2');
+    if (!scope) return;
+
+    const parallaxEls = Array.from(scope.querySelectorAll<HTMLElement>('[data-parallax]'));
+    const revealItems = [
+      ...Array.from(scope.querySelectorAll<HTMLElement>('[data-reveal]')),
+      ...Array.from(scope.querySelectorAll<HTMLElement>('.pf-zone')),
+      ...Array.from(scope.querySelectorAll<HTMLElement>('.pf-slide-up, .pf-slide-left, .pf-slide-right')),
+    ];
+
+    const isReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const applyReveal = (): void => {
+      const vh = window.innerHeight;
+      for (const el of revealItems) {
+        const r = el.getBoundingClientRect();
+        if (r.top < vh * 0.92 && r.bottom > 0) {
+          el.classList.add('pf-revealed');
+        }
+      }
+    };
+
+    if (!isReduced) {
+      let ticking = false;
+      const onScroll = (): void => {
+        if (ticking) return;
+        ticking = true;
+        window.requestAnimationFrame(() => {
+          const vh = window.innerHeight;
+          const mid = vh / 2;
+          for (const el of parallaxEls) {
+            const amount = parseFloat(el.getAttribute('data-parallax') || '20');
+            const rect = el.getBoundingClientRect();
+            const center = rect.top + rect.height / 2;
+            const travel = (center - mid) / vh;
+            const shift = travel * amount;
+            el.style.transform = `translate3d(0, ${shift.toFixed(1)}px, 0)`;
+          }
+          applyReveal();
+          ticking = false;
+        });
+      };
+      window.addEventListener('scroll', onScroll, { passive: true });
+      window.addEventListener('resize', onScroll);
+      onScroll();
+    } else {
+      applyReveal();
+    }
   }
 
   private render(): void {
@@ -16,10 +68,10 @@ export class LandingPageV2 {
 
         <!-- ===== AMBIENT COLOR FIELD (muito movimento) ===== -->
         <div class="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-          <div class="absolute top-[-15%] left-[-10%] w-[60vw] h-[60vw] rounded-full bg-gradient-to-br from-[#0052d4]/35 via-[#00a8f5]/20 to-transparent blur-3xl pf-float-slow"></div>
-          <div class="absolute top-[20%] right-[-15%] w-[55vw] h-[55vw] rounded-full bg-gradient-to-bl from-[#f12711]/30 via-[#f5af19]/20 to-transparent blur-3xl pf-float"></div>
-          <div class="absolute bottom-[-10%] left-[15%] w-[50vw] h-[50vw] rounded-full bg-gradient-to-tr from-[#00e5a3]/25 via-teal-500/10 to-transparent blur-3xl pf-float-delay"></div>
-          <div class="absolute top-[45%] left-[35%] w-[30vw] h-[30vw] rounded-full bg-gradient-to-br from-fuchsia-600/20 to-sky-500/10 blur-3xl pf-float-slow"></div>
+          <div data-parallax="30" class="absolute top-[-15%] left-[-10%] w-[60vw] h-[60vw] rounded-full bg-gradient-to-br from-[#0052d4]/35 via-[#00a8f5]/20 to-transparent blur-3xl pf-float-slow"></div>
+          <div data-parallax="-40" class="absolute top-[20%] right-[-15%] w-[55vw] h-[55vw] rounded-full bg-gradient-to-bl from-[#f12711]/30 via-[#f5af19]/20 to-transparent blur-3xl pf-float"></div>
+          <div data-parallax="50" class="absolute bottom-[-10%] left-[15%] w-[50vw] h-[50vw] rounded-full bg-gradient-to-tr from-[#00e5a3]/25 via-teal-500/10 to-transparent blur-3xl pf-float-delay"></div>
+          <div data-parallax="-20" class="absolute top-[45%] left-[35%] w-[30vw] h-[30vw] rounded-full bg-gradient-to-br from-fuchsia-600/20 to-sky-500/10 blur-3xl pf-float-slow"></div>
           <div class="absolute inset-0 opacity-[0.08] grid-bg"></div>
         </div>
 
@@ -55,14 +107,17 @@ export class LandingPageV2 {
           </span>
 
           <!-- Logo grande centralizado em card de bússola -->
-          <div class="pf-rise-1 relative mb-10">
-            <div class="relative w-36 h-36 md:w-44 md:h-44 pf-float">
-              <div class="absolute inset-0 rounded-full bg-gradient-to-br from-[#0052d4] via-[#00a8f5] to-[#00e5a3] blur-2xl opacity-60 pf-glow"></div>
+          <div data-parallax="26" class="pf-rise-1 relative mb-12">
+            <div class="relative w-56 h-56 md:w-72 md:h-72 pf-float">
+              <div class="absolute -inset-8 rounded-full bg-gradient-to-br from-[#0052d4] via-[#00a8f5] to-[#00e5a3] blur-3xl opacity-60 pf-glow"></div>
               <div class="relative w-full h-full rounded-full bg-gradient-to-br from-[#0a1a3f] to-[#0d0f1f] border-2 border-[#00a8f5]/30 shadow-2xl flex items-center justify-center overflow-hidden">
-                <img src="/logo.svg" alt="PaxFlow" class="w-[78%] h-[78%] object-contain pf-spin-slow" />
+                <img src="/logo.svg" alt="PaxFlow" class="w-[82%] h-[82%] object-contain pf-spin-slow" />
               </div>
-              <span class="absolute -top-2 -left-2 w-8 h-8 rounded-full bg-gradient-to-br from-[#f12711] to-[#f5af19] flex items-center justify-center text-white font-black text-sm shadow-xl pf-bounce">✈️</span>
-              <span class="absolute -bottom-1 -right-1 w-9 h-9 rounded-full bg-gradient-to-br from-[#00e5a3] to-[#00a8f5] flex items-center justify-center text-white text-xs font-black shadow-xl pf-bounce" style="animation-delay:.4s">+</span>
+              <span class="absolute -top-3 -left-3 w-11 h-11 rounded-full bg-gradient-to-br from-[#f12711] to-[#f5af19] flex items-center justify-center text-white font-black text-lg shadow-xl pf-bounce">✈️</span>
+              <span class="absolute -bottom-2 -right-2 w-12 h-12 rounded-full bg-gradient-to-br from-[#00e5a3] to-[#00a8f5] flex items-center justify-center text-white text-lg font-black shadow-xl pf-bounce" style="animation-delay:.4s">+</span>
+              <span class="absolute top-1/2 -left-16 hidden md:flex w-24 h-24 rounded-2xl bg-white/[0.04] border border-white/10 items-center justify-center pf-spin-rev shadow-xl">
+                <img src="/logo.svg" alt="" class="w-14 h-14 object-contain" />
+              </span>
             </div>
           </div>
 
@@ -239,7 +294,8 @@ export class LandingPageV2 {
 
         <!-- ===== SUA MARCA (brand showcase com carrossel - de volta da v1) ===== -->
         <section id="marcas" class="relative z-10 w-full py-20 px-6 border-t border-white/10 bg-gradient-to-b from-transparent to-[#0a0d1f]">
-          <div class="max-w-6xl mx-auto space-y-12">
+          <div class="pf-zone max-w-6xl mx-auto space-y-12 relative">
+            <div data-parallax="22" class="pf-float pointer-events-none absolute -top-6 -right-4 hidden lg:flex w-20 h-20 rounded-2xl bg-white/[0.03] border border-white/10 items-center justify-center shadow-xl opacity-60"><img src="/logo.svg" alt="" class="w-12 h-12 object-contain" /></div>
             <div class="text-center max-w-3xl mx-auto space-y-3">
               <span class="px-4 py-1.5 rounded-full bg-[#00e5a3]/15 border border-[#00e5a3]/30 text-[#00e5a3] text-[10px] font-black uppercase tracking-widest">Identidade Visual da Sua Agência</span>
               <h2 class="text-3xl md:text-5xl font-black tracking-tight">Sua Marca, Seu Logotipo e Suas Cores<br class="hidden md:block" /> em Cada Ponto de Contato</h2>
@@ -247,7 +303,7 @@ export class LandingPageV2 {
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch max-w-5xl mx-auto">
-              <div class="lg:col-span-4 bg-white/[0.04] border border-white/10 p-6 rounded-3xl space-y-3 shadow-md flex flex-col justify-between">
+              <div data-reveal="left" class="lg:col-span-4 bg-white/[0.04] border border-white/10 p-6 rounded-3xl space-y-3 shadow-md flex flex-col justify-between">
                 <div class="space-y-2.5">
                   <span class="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-2">Canais com Sua Marca</span>
                   <button id="brand-tab-itinerario" class="w-full p-4 rounded-2xl text-left transition-all duration-200 flex items-start gap-3 bg-gradient-to-r from-[#0052d4] to-[#00a8f5] text-white shadow-xl pf-glow"><span class="p-2 bg-white/20 rounded-xl text-sm">📱</span><div><strong class="block text-xs font-black">01. Itinerário Digital VIP</strong><span class="text-[10px] opacity-90 font-medium block mt-0.5">Página do cliente com logo, cores e timeline no celular.</span></div></button>
@@ -258,7 +314,7 @@ export class LandingPageV2 {
                 <div class="text-[10px] text-slate-400 pt-3 border-t border-white/10 flex items-center gap-2"><span class="text-base">💡</span><span><strong>Configuração em 1 clique:</strong> Basta fazer upload da sua logomarca em <em>Configurações</em> e todos os 4 canais são atualizados instantaneamente.</span></div>
               </div>
 
-              <div class="lg:col-span-8 bg-white/[0.04] border border-white/10 rounded-3xl shadow-xl p-6 md:p-8 text-left relative overflow-hidden backdrop-blur-md flex flex-col justify-between min-h-[400px] pf-glow">
+              <div data-reveal="right" class="lg:col-span-8 bg-white/[0.04] border border-white/10 rounded-3xl shadow-xl p-6 md:p-8 text-left relative overflow-hidden backdrop-blur-md flex flex-col justify-between min-h-[400px] pf-glow">
                 <div class="flex items-center justify-between border-b border-white/10 pb-4 mb-5">
                   <div class="flex items-center gap-2"><span class="w-3 h-3 bg-[#f12711] rounded-full"></span><span class="w-3 h-3 bg-[#f5af19] rounded-full"></span><span class="w-3 h-3 bg-[#00e5a3] rounded-full"></span><span id="brand-preview-title" class="text-[10px] font-black text-slate-300 ml-2 uppercase tracking-wide">01. Itinerário Digital no Celular</span></div>
                   <span class="px-2 py-0.5 rounded-lg bg-gradient-to-r from-[#00a8f5]/20 to-[#f5af19]/20 text-[#00e5a3] font-extrabold text-[9px] uppercase border border-[#00e5a3]/30">Rotação Automática (3s)</span>
@@ -305,55 +361,57 @@ export class LandingPageV2 {
 
         <!-- ===== INTEGRAÇÕES ===== -->
         <section id="integracao" class="relative z-10 w-full py-20 px-6 border-t border-white/10">
-          <div class="max-w-6xl mx-auto">
+          <div class="pf-zone max-w-6xl mx-auto relative">
+            <div data-parallax="34" class="pf-float-slow pointer-events-none absolute -top-10 -left-10 hidden lg:flex w-28 h-28 rounded-3xl bg-white/[0.03] border border-white/10 items-center justify-center shadow-xl opacity-70 rotate-12"><img src="/logo.svg" alt="" class="w-16 h-16 object-contain" /></div>
+            <div data-parallax="-28" class="pf-float pointer-events-none absolute -bottom-12 -right-8 hidden lg:flex w-24 h-24 rounded-3xl bg-white/[0.03] border border-white/10 items-center justify-center shadow-xl opacity-70 -rotate-6"><img src="/logo.svg" alt="" class="w-14 h-14 object-contain" /></div>
             <div class="text-center max-w-3xl mx-auto mb-12 space-y-3">
               <span class="px-4 py-1.5 rounded-full bg-[#00a8f5]/15 border border-[#00a8f5]/30 text-[#00a8f5] text-[10px] font-black uppercase tracking-widest">Integrações</span>
               <h2 class="text-3xl md:text-5xl font-black tracking-tight">Conecte-se às ferramentas que já usa</h2>
               <p class="text-sm text-slate-400 font-medium">O PaxFlow se integra nativamente à sua stack de atendimento e emissão, sem fricção.</p>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div class="group p-7 rounded-3xl bg-gradient-to-b from-emerald-500/15 to-white/[0.02] border border-emerald-500/25 hover:scale-[1.03] hover:border-emerald-400/50 transition-transform"><div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 text-white flex items-center justify-center mb-4 shadow-lg pf-tilt"><svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.205 1.654z"/></svg></div><h3 class="text-xl font-black text-white">Digisac / WhatsApp</h3><p class="text-sm text-slate-400 font-medium mt-1 leading-relaxed">Atendimento com histórico split-screen, envio de modelos e notificações automáticas de embarque e NPS.</p></div>
-              <div class="group p-7 rounded-3xl bg-gradient-to-b from-[#00a8f5]/15 to-white/[0.02] border border-[#00a8f5]/25 hover:scale-[1.03] hover:border-[#00a8f5]/50 transition-transform"><div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#0052d4] to-[#00a8f5] text-white flex items-center justify-center mb-4 shadow-lg pf-tilt" style="animation-delay:.5s"><svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg></div><h3 class="text-xl font-black text-white">Companhias Aéreas</h3><p class="text-sm text-slate-400 font-medium mt-1 leading-relaxed">Conciliação de reembolsos e créditos, localizadores (LOC) e monitoramento de SLAs de estorno.</p></div>
-              <div class="group p-7 rounded-3xl bg-gradient-to-b from-[#f5af19]/15 to-white/[0.02] border border-[#f5af19]/25 hover:scale-[1.03] hover:border-[#f5af19]/50 transition-transform"><div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#f5af19] to-[#f12711] text-white flex items-center justify-center mb-4 shadow-lg pf-tilt" style="animation-delay:1s"><svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg></div><h3 class="text-xl font-black text-white">Upload & Documentos</h3><p class="text-sm text-slate-400 font-medium mt-1 leading-relaxed">Armazenamento seguro por cliente no Supabase Storage com links de acesso controlados.</p></div>
+              <div data-reveal="up" style="transition-delay:.05s" class="group p-7 rounded-3xl bg-gradient-to-b from-emerald-500/15 to-white/[0.02] border border-emerald-500/25 hover:scale-[1.03] hover:border-emerald-400/50 transition-transform"><div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 text-white flex items-center justify-center mb-4 shadow-lg pf-tilt"><svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.205 1.654z"/></svg></div><h3 class="text-xl font-black text-white">Digisac / WhatsApp</h3><p class="text-sm text-slate-400 font-medium mt-1 leading-relaxed">Atendimento com histórico split-screen, envio de modelos e notificações automáticas de embarque e NPS.</p></div>
+              <div data-reveal="up" style="transition-delay:.15s" class="group p-7 rounded-3xl bg-gradient-to-b from-[#00a8f5]/15 to-white/[0.02] border border-[#00a8f5]/25 hover:scale-[1.03] hover:border-[#00a8f5]/50 transition-transform"><div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#0052d4] to-[#00a8f5] text-white flex items-center justify-center mb-4 shadow-lg pf-tilt" style="animation-delay:.5s"><svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg></div><h3 class="text-xl font-black text-white">Companhias Aéreas</h3><p class="text-sm text-slate-400 font-medium mt-1 leading-relaxed">Conciliação de reembolsos e créditos, localizadores (LOC) e monitoramento de SLAs de estorno.</p></div>
+              <div data-reveal="up" style="transition-delay:.25s" class="group p-7 rounded-3xl bg-gradient-to-b from-[#f5af19]/15 to-white/[0.02] border border-[#f5af19]/25 hover:scale-[1.03] hover:border-[#f5af19]/50 transition-transform"><div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#f5af19] to-[#f12711] text-white flex items-center justify-center mb-4 shadow-lg pf-tilt" style="animation-delay:1s"><svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg></div><h3 class="text-xl font-black text-white">Upload & Documentos</h3><p class="text-sm text-slate-400 font-medium mt-1 leading-relaxed">Armazenamento seguro por cliente no Supabase Storage com links de acesso controlados.</p></div>
             </div>
           </div>
         </section>
 
         <!-- ===== PROBLEMA vs SOLUÇÃO ===== -->
         <section class="relative z-10 w-full py-16 px-6 border-t border-white/10">
-          <div class="max-w-5xl mx-auto">
+          <div class="pf-zone max-w-5xl mx-auto">
             <h2 class="text-2xl md:text-4xl font-black tracking-tight text-center mb-10">Por que substituir planilhas pelo PaxFlow?</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-              <div class="p-6 rounded-3xl bg-gradient-to-b from-[#f12711]/10 to-white/[0.02] border border-[#f12711]/20 pf-rise"><span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-[#f12711]/15 text-[#f5af19] text-[10px] font-bold rounded-lg uppercase tracking-wider mb-4">❌ Como é hoje</span><ul class="space-y-3 text-sm text-slate-400 font-medium"><li class="flex items-start gap-2"><span class="text-[#f12711] shrink-0">✕</span>Informações fragmentadas de localizadores de voo (LOC) e reservas.</li><li class="flex items-start gap-2"><span class="text-[#f12711] shrink-0">✕</span>Falhas no monitoramento de vencimento de passaportes e vistos.</li><li class="flex items-start gap-2"><span class="text-[#f12711] shrink-0">✕</span>Esquecimento de saldos e créditos de reembolso com cias aéreas.</li><li class="flex items-start gap-2"><span class="text-[#f12711] shrink-0">✕</span>Perda de orçamentos e leads no WhatsApp de consultores.</li></ul></div>
-              <div class="p-6 rounded-3xl bg-gradient-to-b from-[#00e5a3]/10 to-white/[0.02] border border-[#00e5a3]/20 pf-rise-1"><span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-[#00e5a3]/15 text-[#00e5a3] text-[10px] font-bold rounded-lg uppercase tracking-wider mb-4">✅ Com o PaxFlow</span><ul class="space-y-3 text-sm text-slate-300 font-medium"><li class="flex items-start gap-2"><span class="text-[#00e5a3] shrink-0">✓</span>Painel comercial com faturamento e markups consolidados.</li><li class="flex items-start gap-2"><span class="text-[#00e5a3] shrink-0">✓</span>Monitoramento de SLAs com alertas automáticos antecipados.</li><li class="flex items-start gap-2"><span class="text-[#00e5a3] shrink-0">✓</span>Automações inteligentes de fluxo e transições de status.</li><li class="flex items-start gap-2"><span class="text-[#00e5a3] shrink-0">✓</span>Fichas de clientes e central de reembolsos unificadas.</li></ul></div>
+              <div data-reveal="left" class="p-6 rounded-3xl bg-gradient-to-b from-[#f12711]/10 to-white/[0.02] border border-[#f12711]/20"><span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-[#f12711]/15 text-[#f5af19] text-[10px] font-bold rounded-lg uppercase tracking-wider mb-4">❌ Como é hoje</span><ul class="space-y-3 text-sm text-slate-400 font-medium"><li class="flex items-start gap-2"><span class="text-[#f12711] shrink-0">✕</span>Informações fragmentadas de localizadores de voo (LOC) e reservas.</li><li class="flex items-start gap-2"><span class="text-[#f12711] shrink-0">✕</span>Falhas no monitoramento de vencimento de passaportes e vistos.</li><li class="flex items-start gap-2"><span class="text-[#f12711] shrink-0">✕</span>Esquecimento de saldos e créditos de reembolso com cias aéreas.</li><li class="flex items-start gap-2"><span class="text-[#f12711] shrink-0">✕</span>Perda de orçamentos e leads no WhatsApp de consultores.</li></ul></div>
+              <div data-reveal="right" class="p-6 rounded-3xl bg-gradient-to-b from-[#00e5a3]/10 to-white/[0.02] border border-[#00e5a3]/20"><span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-[#00e5a3]/15 text-[#00e5a3] text-[10px] font-bold rounded-lg uppercase tracking-wider mb-4">✅ Com o PaxFlow</span><ul class="space-y-3 text-sm text-slate-300 font-medium"><li class="flex items-start gap-2"><span class="text-[#00e5a3] shrink-0">✓</span>Painel comercial com faturamento e markups consolidados.</li><li class="flex items-start gap-2"><span class="text-[#00e5a3] shrink-0">✓</span>Monitoramento de SLAs com alertas automáticos antecipados.</li><li class="flex items-start gap-2"><span class="text-[#00e5a3] shrink-0">✓</span>Automações inteligentes de fluxo e transições de status.</li><li class="flex items-start gap-2"><span class="text-[#00e5a3] shrink-0">✓</span>Fichas de clientes e central de reembolsos unificadas.</li></ul></div>
             </div>
           </div>
         </section>
 
         <!-- ===== PLANOS ===== -->
         <section id="planos" class="relative z-10 w-full py-20 px-6 border-t border-white/10">
-          <div class="max-w-5xl mx-auto">
+          <div class="pf-zone max-w-5xl mx-auto">
             <div class="text-center max-w-3xl mx-auto mb-14 space-y-3">
               <span class="px-4 py-1.5 rounded-full bg-[#f5af19]/15 border border-[#f5af19]/30 text-[#f5af19] text-[10px] font-black uppercase tracking-widest">Planos</span>
               <h2 class="text-3xl md:text-5xl font-black tracking-tight">Escolha o plano ideal para a sua agência</h2>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div class="p-7 rounded-3xl bg-white/[0.04] border border-white/10 hover:scale-[1.02] transition-transform pf-rise"><h3 class="text-lg font-black text-white">Starter</h3><p class="text-sm text-slate-400 mt-1">Para agências em início de profissionalização</p><div class="mt-5 mb-6"><span class="text-4xl font-black text-[#00a8f5]">R$ 197</span><span class="text-sm text-slate-400">/mês</span></div><ul class="space-y-2.5 text-sm text-slate-300 font-medium"><li class="flex items-center gap-2"><span class="text-[#00e5a3]">✓</span>Até 5 consultores</li><li class="flex items-center gap-2"><span class="text-[#00e5a3]">✓</span>Pipeline de orçamentos</li><li class="flex items-center gap-2"><span class="text-[#00e5a3]">✓</span>Alertas de passaporte e SLA</li></ul><button class="mt-6 w-full py-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs uppercase transition">Começar</button></div>
-              <div class="pf-glow relative p-7 rounded-3xl bg-gradient-to-br from-[#0052d4] via-[#00a8f5] to-[#00e5a3] shadow-2xl pf-animated-gradient pf-rise-1 scale-[1.03]"><span class="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-[#f5af19] text-slate-900 text-[9px] font-black uppercase tracking-wider shadow-lg">Mais Popular</span><h3 class="text-lg font-black text-white">Profissional</h3><p class="text-sm text-white/85 mt-1">Para agências em crescimento</p><div class="mt-5 mb-6"><span class="text-4xl font-black text-white">R$ 397</span><span class="text-sm text-white/80">/mês</span></div><ul class="space-y-2.5 text-sm text-white/95 font-medium"><li class="flex items-center gap-2"><span class="text-white">✓</span>Consultores ilimitados</li><li class="flex items-center gap-2"><span class="text-white">✓</span>Todos os módulos + Digisac</li><li class="flex items-center gap-2"><span class="text-white">✓</span>Relatórios e Analytics</li><li class="flex items-center gap-2"><span class="text-white">✓</span>Itinerários white-label</li></ul><button id="btn-plano-profissional" class="mt-6 w-full py-3 rounded-2xl bg-white text-slate-900 hover:bg-slate-100 font-bold text-xs uppercase transition">Começar agora</button></div>
-              <div class="p-7 rounded-3xl bg-white/[0.04] border border-white/10 hover:scale-[1.02] transition-transform pf-rise-2"><h3 class="text-lg font-black text-white">Enterprise</h3><p class="text-sm text-slate-400 mt-1">Para franquias e grandes operações</p><div class="mt-5 mb-6"><span class="text-4xl font-black text-[#f5af19]">Sob consulta</span></div><ul class="space-y-2.5 text-sm text-slate-300 font-medium"><li class="flex items-center gap-2"><span class="text-[#00e5a3]">✓</span>Multi-franquia</li><li class="flex items-center gap-2"><span class="text-[#00e5a3]">✓</span>Suporte dedicado</li><li class="flex items-center gap-2"><span class="text-[#00e5a3]">✓</span>Onboarding guiado</li></ul><button id="btn-plano-enterprise" class="mt-6 w-full py-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs uppercase transition">Falar conosco</button></div>
+              <div data-reveal="up" style="transition-delay:.05s" class="p-7 rounded-3xl bg-white/[0.04] border border-white/10 hover:scale-[1.02] transition-transform"><h3 class="text-lg font-black text-white">Starter</h3><p class="text-sm text-slate-400 mt-1">Para agências em início de profissionalização</p><div class="mt-5 mb-6"><span class="text-4xl font-black text-[#00a8f5]">R$ 197</span><span class="text-sm text-slate-400">/mês</span></div><ul class="space-y-2.5 text-sm text-slate-300 font-medium"><li class="flex items-center gap-2"><span class="text-[#00e5a3]">✓</span>Até 5 consultores</li><li class="flex items-center gap-2"><span class="text-[#00e5a3]">✓</span>Pipeline de orçamentos</li><li class="flex items-center gap-2"><span class="text-[#00e5a3]">✓</span>Alertas de passaporte e SLA</li></ul><button class="mt-6 w-full py-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs uppercase transition">Começar</button></div>
+              <div data-reveal="up" style="transition-delay:.15s" class="pf-glow relative p-7 rounded-3xl bg-gradient-to-br from-[#0052d4] via-[#00a8f5] to-[#00e5a3] shadow-2xl pf-animated-gradient scale-[1.03]"><span class="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-[#f5af19] text-slate-900 text-[9px] font-black uppercase tracking-wider shadow-lg">Mais Popular</span><h3 class="text-lg font-black text-white">Profissional</h3><p class="text-sm text-white/85 mt-1">Para agências em crescimento</p><div class="mt-5 mb-6"><span class="text-4xl font-black text-white">R$ 397</span><span class="text-sm text-white/80">/mês</span></div><ul class="space-y-2.5 text-sm text-white/95 font-medium"><li class="flex items-center gap-2"><span class="text-white">✓</span>Consultores ilimitados</li><li class="flex items-center gap-2"><span class="text-white">✓</span>Todos os módulos + Digisac</li><li class="flex items-center gap-2"><span class="text-white">✓</span>Relatórios e Analytics</li><li class="flex items-center gap-2"><span class="text-white">✓</span>Itinerários white-label</li></ul><button id="btn-plano-profissional" class="mt-6 w-full py-3 rounded-2xl bg-white text-slate-900 hover:bg-slate-100 font-bold text-xs uppercase transition">Começar agora</button></div>
+              <div data-reveal="up" style="transition-delay:.25s" class="p-7 rounded-3xl bg-white/[0.04] border border-white/10 hover:scale-[1.02] transition-transform"><h3 class="text-lg font-black text-white">Enterprise</h3><p class="text-sm text-slate-400 mt-1">Para franquias e grandes operações</p><div class="mt-5 mb-6"><span class="text-4xl font-black text-[#f5af19]">Sob consulta</span></div><ul class="space-y-2.5 text-sm text-slate-300 font-medium"><li class="flex items-center gap-2"><span class="text-[#00e5a3]">✓</span>Multi-franquia</li><li class="flex items-center gap-2"><span class="text-[#00e5a3]">✓</span>Suporte dedicado</li><li class="flex items-center gap-2"><span class="text-[#00e5a3]">✓</span>Onboarding guiado</li></ul><button id="btn-plano-enterprise" class="mt-6 w-full py-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs uppercase transition">Falar conosco</button></div>
             </div>
           </div>
         </section>
 
         <!-- ===== FAQ ===== -->
         <section id="faq" class="relative z-10 w-full py-20 px-6 border-t border-white/10">
-          <div class="max-w-4xl mx-auto space-y-10">
+          <div class="pf-zone max-w-4xl mx-auto space-y-10">
             <div class="text-center space-y-2"><span class="px-3 py-1 rounded-full bg-white/[0.06] text-slate-300 border border-white/10 text-[10px] font-black uppercase tracking-widest">Tire suas dúvidas</span><h2 class="text-3xl md:text-4xl font-black tracking-tight">Perguntas Frequentes</h2></div>
             <div class="space-y-4">
-              <details class="group bg-white/[0.04] border border-white/10 rounded-2xl p-5 [&_summary::-webkit-details-marker]:hidden" open><summary class="flex items-center justify-between cursor-pointer focus:outline-none"><h3 class="text-sm font-extrabold text-white">Como funciona o Modo Demonstração?</h3><span class="ml-1.5 shrink-0 rounded-full bg-white/10 p-1.5 text-white transition group-open:-rotate-180"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg></span></summary><p class="mt-3 text-sm leading-relaxed text-slate-400 font-medium">É um ambiente de simulação completo e interativo, pré-populado com dados fictícios de clientes, viagens, reembolsos e escalas. Permite testar todas as telas e recursos em tempo real, sem cadastro prévio.</p></details>
-              <details class="group bg-white/[0.04] border border-white/10 rounded-2xl p-5 [&_summary::-webkit-details-marker]:hidden"><summary class="flex items-center justify-between cursor-pointer focus:outline-none"><h3 class="text-sm font-extrabold text-white">Posso controlar a escala de todos os funcionários?</h3><span class="ml-1.5 shrink-0 rounded-full bg-white/10 p-1.5 text-white transition group-open:-rotate-180"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg></span></summary><p class="mt-3 text-sm leading-relaxed text-slate-400 font-medium">Sim! O módulo de Central Administrativa permite atribuir turnos, controlar saldos no Banco de Folgas e aprovar solicitações de trocas.</p></details>
-              <details class="group bg-white/[0.04] border border-white/10 rounded-2xl p-5 [&_summary::-webkit-details-marker]:hidden"><summary class="flex items-center justify-between cursor-pointer focus:outline-none"><h3 class="text-sm font-extrabold text-white">Como funciona o alerta de passaportes e vistos?</h3><span class="ml-1.5 shrink-0 rounded-full bg-white/10 p-1.5 text-white transition group-open:-rotate-180"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg></span></summary><p class="mt-3 text-sm leading-relaxed text-slate-400 font-medium">O PaxFlow calcula a diferença entre a validade dos documentos e a data da viagem. Se a validade for inferior a 6 meses, gera alertas prioritários no Inbox.</p></details>
-              <details class="group bg-white/[0.04] border border-white/10 rounded-2xl p-5 [&_summary::-webkit-details-marker]:hidden"><summary class="flex items-center justify-between cursor-pointer focus:outline-none"><h3 class="text-sm font-extrabold text-white">Como a página do cliente assume as cores da minha agência?</h3><span class="ml-1.5 shrink-0 rounded-full bg-white/10 p-1.5 text-white transition group-open:-rotate-180"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg></span></summary><p class="mt-3 text-sm leading-relaxed text-slate-400 font-medium">Em Configurações, você envia sua logomarca e seleciona a cor primária. Todos os itinerários públicos passam a exibir seu logotipo e paleta automaticamente.</p></details>
+              <details data-reveal="up" class="group bg-white/[0.04] border border-white/10 rounded-2xl p-5 [&_summary::-webkit-details-marker]:hidden" open><summary class="flex items-center justify-between cursor-pointer focus:outline-none"><h3 class="text-sm font-extrabold text-white">Como funciona o Modo Demonstração?</h3><span class="ml-1.5 shrink-0 rounded-full bg-white/10 p-1.5 text-white transition group-open:-rotate-180"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg></span></summary><p class="mt-3 text-sm leading-relaxed text-slate-400 font-medium">É um ambiente de simulação completo e interativo, pré-populado com dados fictícios de clientes, viagens, reembolsos e escalas. Permite testar todas as telas e recursos em tempo real, sem cadastro prévio.</p></details>
+              <details data-reveal="up" style="transition-delay:.08s" class="group bg-white/[0.04] border border-white/10 rounded-2xl p-5 [&_summary::-webkit-details-marker]:hidden"><summary class="flex items-center justify-between cursor-pointer focus:outline-none"><h3 class="text-sm font-extrabold text-white">Posso controlar a escala de todos os funcionários?</h3><span class="ml-1.5 shrink-0 rounded-full bg-white/10 p-1.5 text-white transition group-open:-rotate-180"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg></span></summary><p class="mt-3 text-sm leading-relaxed text-slate-400 font-medium">Sim! O módulo de Central Administrativa permite atribuir turnos, controlar saldos no Banco de Folgas e aprovar solicitações de trocas.</p></details>
+              <details data-reveal="up" style="transition-delay:.16s" class="group bg-white/[0.04] border border-white/10 rounded-2xl p-5 [&_summary::-webkit-details-marker]:hidden"><summary class="flex items-center justify-between cursor-pointer focus:outline-none"><h3 class="text-sm font-extrabold text-white">Como funciona o alerta de passaportes e vistos?</h3><span class="ml-1.5 shrink-0 rounded-full bg-white/10 p-1.5 text-white transition group-open:-rotate-180"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg></span></summary><p class="mt-3 text-sm leading-relaxed text-slate-400 font-medium">O PaxFlow calcula a diferença entre a validade dos documentos e a data da viagem. Se a validade for inferior a 6 meses, gera alertas prioritários no Inbox.</p></details>
+              <details data-reveal="up" style="transition-delay:.24s" class="group bg-white/[0.04] border border-white/10 rounded-2xl p-5 [&_summary::-webkit-details-marker]:hidden"><summary class="flex items-center justify-between cursor-pointer focus:outline-none"><h3 class="text-sm font-extrabold text-white">Como a página do cliente assume as cores da minha agência?</h3><span class="ml-1.5 shrink-0 rounded-full bg-white/10 p-1.5 text-white transition group-open:-rotate-180"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg></span></summary><p class="mt-3 text-sm leading-relaxed text-slate-400 font-medium">Em Configurações, você envia sua logomarca e seleciona a cor primária. Todos os itinerários públicos passam a exibir seu logotipo e paleta automaticamente.</p></details>
             </div>
           </div>
         </section>
@@ -361,7 +419,7 @@ export class LandingPageV2 {
         <!-- ===== CTA FINAL ===== -->
         <section id="recursos" class="relative z-10 w-full py-20 px-6 border-t border-white/10 text-center overflow-hidden">
           <div class="absolute inset-0 bg-gradient-to-br from-[#0052d4]/30 via-[#0a0d1f] to-[#f12711]/30 pf-animated-gradient opacity-60"></div>
-          <div class="relative max-w-3xl mx-auto space-y-6">
+          <div class="pf-zone relative max-w-3xl mx-auto space-y-6">
             <span class="px-4 py-1.5 rounded-full bg-[#00e5a3]/20 text-[#00e5a3] border border-[#00e5a3]/30 text-[10px] font-black uppercase tracking-widest">Leve sua agência para o próximo nível</span>
             <h2 class="text-3xl sm:text-5xl font-black tracking-tight leading-tight pf-shimmer-text">Pronto para revolucionar a operação da sua agência?</h2>
             <p class="text-sm sm:text-base text-slate-300 max-w-2xl mx-auto leading-relaxed">Assuma o controle total dos pós-vendas, reembolsos, SLAs de vistos e escalas da sua equipe.</p>

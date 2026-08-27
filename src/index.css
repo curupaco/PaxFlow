@@ -461,5 +461,83 @@ html.dark .landing-page-wrapper .grid-bg {
 }
 .landing-v2 .pf-bounce { animation: pf-bounce 1.6s ease-in-out infinite; }
 
+/* ================= LANDING V2 SCROLL REVEAL & PARALLAX ================= */
+
+/* Reveal on scroll (estado inicial, ativado pelo JS ao entrar no viewport) */
+.landing-v2 [data-reveal] {
+  opacity: 0;
+  transform: translateY(40px) scale(0.97);
+  transition:
+    opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+.landing-v2 [data-reveal].pf-revealed {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+.landing-v2 [data-reveal="left"] { transform: translateX(-50px) scale(0.97); }
+.landing-v2 [data-reveal="right"] { transform: translateX(50px) scale(0.97); }
+.landing-v2 [data-reveal="zoom"] { transform: scale(0.9); }
+.landing-v2 [data-reveal="left"].pf-revealed,
+.landing-v2 [data-reveal="right"].pf-revealed,
+.landing-v2 [data-reveal="zoom"].pf-revealed {
+  transform: translateX(0) scale(1);
+}
+
+/* Slide-in para itens PEQUENOS (badges, chips, ícones) com stagger via transition-delay inline */
+.landing-v2 .pf-slide-up,
+.landing-v2 .pf-slide-left,
+.landing-v2 .pf-slide-right {
+  opacity: 0;
+  transition:
+    opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+.landing-v2 .pf-slide-up { transform: translateY(18px); }
+.landing-v2 .pf-slide-left { transform: translateX(-20px); }
+.landing-v2 .pf-slide-right { transform: translateX(20px); }
+.landing-v2 .pf-slide-up.pf-revealed,
+.landing-v2 .pf-slide-left.pf-revealed,
+.landing-v2 .pf-slide-right.pf-revealed {
+  opacity: 1;
+  transform: translate(0, 0);
+}
+
+/* Parallax (JS move estes elementos com translateY proporcional ao scroll) */
+.landing-v2 [data-parallax] {
+  transition: transform 0.2s linear;
+  will-change: transform;
+}
+
+/* Transição suave de zonas do site (estado inicial das seções) */
+.landing-v2 .pf-zone {
+  opacity: 0;
+  transform: translateY(60px);
+  transition:
+    opacity 1s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 1s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.landing-v2 .pf-zone.pf-revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-v2 [data-reveal],
+  .landing-v2 .pf-slide-up,
+  .landing-v2 .pf-slide-left,
+  .landing-v2 .pf-slide-right,
+  .landing-v2 .pf-zone {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .landing-v2 [data-parallax] {
+    transform: none !important;
+  }
+}
+
 
 
