@@ -79,9 +79,9 @@ export class LandingPageV2 {
           <div class="absolute inset-0 opacity-[0.08] grid-bg"></div>
         </div>
 
-        <!-- ===== LOGO WATERMARK fixo gigante (acompanha o scroll) ===== -->
-        <div class="pointer-events-none fixed inset-0 z-[1] flex items-center justify-center overflow-hidden">
-          <img data-parallax="95" src="/logo.svg" alt="" class="pf-logo-watermark max-w-[78vmin] max-h-[78vmin] w-[78vmin] h-[78vmin] object-contain opacity-[0.07] drop-shadow-[0_0_30px_rgba(0,168,245,0.15)]" />
+        <!-- ===== LOGO WATERMARK fixo gigante deslocado à direita (acompanha o scroll) ===== -->
+        <div class="pointer-events-none fixed inset-0 z-[1] flex items-center justify-end overflow-hidden">
+          <img data-parallax="95" src="/logo.svg" alt="" class="pf-logo-watermark max-w-[70vmin] max-h-[70vmin] w-[70vmin] h-[70vmin] object-contain opacity-[0.07] mr-[-10vmin] drop-shadow-[0_0_30px_rgba(0,168,245,0.15)]" />
         </div>
 
         <!-- ===== TOP NAV ===== -->
