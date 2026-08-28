@@ -51,6 +51,12 @@ export class EmailReaderModal {
     }
     const lastMessage = threadMessages.length > 0 ? threadMessages[threadMessages.length - 1] : null;
 
+    const firstMsg = threadMessages.length > 0 ? threadMessages[0] : null;
+    const headerAvatar = (firstMsg && firstMsg.remetente?.avatar_url) 
+      ? firstMsg.remetente.avatar_url 
+      : (item.senderAvatar || 'panda');
+    const headerSenderName = item.isSent ? 'Você' : ((firstMsg && firstMsg.remetente?.nome) ? firstMsg.remetente.nome : item.sender);
+
     modalOverlay.innerHTML = `
       <div class="bg-white dark:bg-slate-900 max-w-2xl w-full border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-2xl flex flex-col overflow-hidden transform scale-95 transition-all duration-300 relative">
         
@@ -96,12 +102,12 @@ export class EmailReaderModal {
           <!-- Email headers -->
           <div class="flex items-center gap-3.5 border-b border-slate-100 dark:border-slate-800/80 pb-5">
             <div class="w-10 h-10 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden flex items-center justify-center bg-white dark:bg-slate-900 flex-shrink-0">
-              ${getAvatarSvg(item.senderAvatar, item.sender.charAt(0), 'w-full h-full')}
+              ${getAvatarSvg(headerAvatar, headerSenderName.charAt(0), 'w-full h-full')}
             </div>
             <div class="flex-grow min-w-0">
               <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
                 <div>
-                  <span class="block text-sm font-extrabold text-slate-800 dark:text-slate-300 truncate">${item.sender}</span>
+                  <span class="block text-sm font-extrabold text-slate-800 dark:text-slate-300 truncate">${headerSenderName}</span>
                   <span class="block text-[10px] text-slate-500 dark:text-slate-400 font-semibold truncate">
                     De: &lt;${item.type === 'direct_message' ? (item.sender === 'Você' ? 'voce' : item.sender.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '')) + '@paxflow.com.br' : 'alertas@paxflow.com.br'}&gt;
                   </span>
