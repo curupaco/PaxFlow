@@ -2,7 +2,7 @@ import { supabase } from './supabase';
 import { PerfilConsultor, AlertItem } from '../types';
 import { BADGE_DEFINITIONS } from './gamification';
 import { EscalaService } from './escalaService';
-import { formatTipoSolicitacaoEscala, formatStatusEscala, formatReembolsoStatus } from '../utils/messageFormatter';
+import { formatTipoSolicitacaoEscala, formatStatusEscala, formatReembolsoStatus, formatarDataBR, formatarPeriodoDataBR } from '../utils/messageFormatter';
 
 export class InboxService {
   /**
@@ -752,18 +752,18 @@ export class InboxService {
           let cardBody = '';
           let cardSender = sol.solicitante_nome || 'Central de Escala';
 
-          const rangeStr = sol.data_destino && sol.data_destino !== sol.data_origem
-            ? `${sol.data_origem} a ${sol.data_destino}`
-            : sol.data_origem;
+          const dataOrigemFmt = formatarDataBR(sol.data_origem);
+          const dataDestinoFmt = formatarDataBR(sol.data_destino);
+          const rangeStr = formatarPeriodoDataBR(sol.data_origem, sol.data_destino);
 
           // 1. Troca pendente de aceite pelo colega destinatário
           if (sol.status === 'pendente_colega') {
             if (isUserDestinatario) {
               shouldInclude = true;
               cardTitle = 'Troca de Turno Solicitada por Colega';
-              cardSubject = `${sol.solicitante_nome} solicitou trocar o turno de ${sol.data_origem} com você!`;
+              cardSubject = `${sol.solicitante_nome} solicitou trocar o turno de ${dataOrigemFmt} com você!`;
               cardBody = `
-                <strong>${sol.solicitante_nome}</strong> deseja trocar seu turno de <strong>${sol.data_origem}</strong> com o seu turno de <strong>${sol.data_destino || sol.data_origem}</strong>.<br><br>
+                <strong>${sol.solicitante_nome}</strong> deseja trocar seu turno de <strong>${dataOrigemFmt}</strong> com o seu turno de <strong>${dataDestinoFmt || dataOrigemFmt}</strong>.<br><br>
                 • <strong>Motivo:</strong> ${sol.motivo || 'Não informado'}<br><br>
                 <div class="pt-2">
                   <button class="btn-ver-na-escala inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-extrabold transition shadow-md shadow-indigo-950/20" data-sol-id="${sol.id}">
@@ -792,7 +792,7 @@ export class InboxService {
                 <div class="space-y-2">
                   <p>🤝 <strong>Atendimento Presencial Registrado</strong></p>
                   <p>${sol.motivo || `Seu cliente foi atendido no balcão por ${sol.solicitante_nome}.`}</p>
-                  <p class="text-[11px] text-slate-400"><strong>Data e Hora:</strong> ${sol.data_origem}</p>
+                  <p class="text-[11px] text-slate-400"><strong>Data e Hora:</strong> ${dataOrigemFmt}</p>
                 </div>
               `;
             }
@@ -807,7 +807,7 @@ export class InboxService {
               cardBody = `
                 <div class="space-y-2">
                   <p><strong>Solicitante:</strong> ${sol.solicitante_nome}</p>
-                  <p>${sol.tipo === 'troca' ? `• <strong>Troca com:</strong> ${sol.destinatario_nome}<br>• <strong>Data Solicitante:</strong> ${sol.data_origem}<br>• <strong>Data Colega:</strong> ${sol.data_destino}` : `• <strong>Período Solicitado:</strong> ${rangeStr}`}</p>
+                  <p>${sol.tipo === 'troca' ? `• <strong>Troca com:</strong> ${sol.destinatario_nome}<br>• <strong>Data Solicitante:</strong> ${dataOrigemFmt}<br>• <strong>Data Colega:</strong> ${dataDestinoFmt}` : `• <strong>Período Solicitado:</strong> ${rangeStr}`}</p>
                   <p>• <strong>Motivo:</strong> ${sol.motivo || 'Sem observações'}</p>
                   <div class="pt-2">
                     <button class="btn-ver-na-escala inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-extrabold transition shadow-md shadow-indigo-950/20" data-sol-id="${sol.id}">

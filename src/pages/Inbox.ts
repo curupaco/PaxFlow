@@ -6,6 +6,7 @@ import { InboxService } from '../services/inboxService';
 import { EscalaService, TURNO_PRESETS } from '../services/escalaService';
 import { EmailReaderModal } from '../components/inbox/EmailReaderModal';
 import { NewMessageModal } from '../components/inbox/NewMessageModal';
+import { formatarDataBR } from '../utils/messageFormatter';
 import './Inbox.css';
 
 
@@ -2912,9 +2913,9 @@ export class InboxPage {
             <div class="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl space-y-1.5 border border-slate-200 dark:border-slate-800">
               <p><strong>Solicitante:</strong> ${sol.solicitante_nome}</p>
               <p><strong>Tipo:</strong> ${sol.tipo === 'troca' ? 'Troca de Turno' : sol.tipo === 'folga' ? 'Folga Semanal' : sol.tipo === 'atendimento_balcao' ? '🤝 Atendimento de Balcão' : 'Férias'}</p>
-              <p><strong>Data Solicitante (Origem):</strong> ${sol.data_origem}</p>
+              <p><strong>Data Solicitante (Origem):</strong> ${formatarDataBR(sol.data_origem)}</p>
               ${sol.destinatario_nome ? `<p><strong>Troca com Colega:</strong> ${sol.destinatario_nome}</p>` : ''}
-              ${sol.data_destino ? `<p><strong>Data do Colega (Destino):</strong> ${sol.data_destino}</p>` : ''}
+              ${sol.data_destino ? `<p><strong>Data do Colega (Destino):</strong> ${formatarDataBR(sol.data_destino)}</p>` : ''}
               <p><strong>Motivo:</strong> ${sol.motivo || 'Sem justificativa informada'}</p>
               <p><strong>Status Atual:</strong> <span class="px-2 py-0.5 rounded text-[10px] font-bold ${sol.status === 'aprovado' ? 'bg-emerald-500/20 text-emerald-600' : sol.status === 'recusado' ? 'bg-rose-500/20 text-rose-600' : 'bg-amber-500/20 text-amber-600'}">${sol.status === 'aprovado' ? 'Aprovada' : sol.status === 'recusado' ? 'Recusada' : 'Em Análise'}</span></p>
             </div>

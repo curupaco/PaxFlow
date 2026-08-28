@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { EscalaDiaria, SolicitacaoEscala, BancoFolgasItem, EventoEscalaItem, TurnoConfig } from '../types';
+import { formatarDataBR } from '../utils/messageFormatter';
 
 export const TURNO_PRESETS: TurnoConfig[] = [
   { codigo: '10-17', label: '10:00 - 17:00', corClass: 'c10' },
@@ -463,7 +464,7 @@ export class EscalaService {
               consultor_id: admin.id,
               criador_id: newObj.solicitante_id || null,
               titulo: `Solicitação de Escala: ${tipoLabel}`,
-              descricao: `${newObj.solicitante_nome} solicitou ${tipoLabel} (${newObj.data_origem}). Motivo: ${newObj.motivo || 'Sem justificativa'}`,
+              descricao: `${newObj.solicitante_nome} solicitou ${tipoLabel} (${formatarDataBR(newObj.data_origem)}). Motivo: ${newObj.motivo || 'Sem justificativa'}`,
               data_lembrete: newObj.data_origem,
               prioridade: 'alta',
               concluido: false,
@@ -476,7 +477,7 @@ export class EscalaService {
           consultor_id: newObj.destinatario_id,
           criador_id: newObj.solicitante_id || null,
           titulo: 'Solicitação de Troca de Turno',
-          descricao: `${newObj.solicitante_nome} solicitou trocar o turno de ${newObj.data_origem} com você.`,
+          descricao: `${newObj.solicitante_nome} solicitou trocar o turno de ${formatarDataBR(newObj.data_origem)} com você.`,
           data_lembrete: newObj.data_origem,
           prioridade: 'alta',
           concluido: false,

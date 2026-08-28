@@ -59,3 +59,41 @@ export function formatReembolsoStatus(status: string): string {
       return status || 'Em Processamento';
   }
 }
+
+/**
+ * Converte qualquer string de data (YYYY-MM-DD, ISO, YYYY-MM-DDTHH:mm:ss) para dd/mm/aaaa
+ */
+export function formatarDataBR(dateStr?: string | null): string {
+  if (!dateStr) return '';
+  const str = String(dateStr).trim();
+  if (/^\d{2}\/\d{2}\/\d{4}/.test(str)) return str;
+
+  const ymdMatch = str.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{2}):(\d{2}))?/);
+  if (ymdMatch) {
+    const [_, ano, mes, dia, hora, min] = ymdMatch;
+    let formatted = `${dia}/${mes}/${ano}`;
+    if (hora && min) formatted += ` às ${hora}:${min}`;
+    return formatted;
+  }
+
+  try {
+    const d = new Date(str);
+    if (!isNaN(d.getTime())) {
+      return d.toLocaleDateString('pt-BR');
+    }
+  } catch {}
+
+  return str;
+}
+
+/**
+ * Formata um intervalo de datas para dd/mm/aaaa ou dd/mm/aaaa a dd/mm/aaaa
+ */
+export function formatarPeriodoDataBR(dataOrigem: string, dataDestino?: string): string {
+  const fOrigem = formatarDataBR(dataOrigem);
+  const fDestino = formatarDataBR(dataDestino);
+  if (fDestino && fDestino !== fOrigem) {
+    return `${fOrigem} a ${fDestino}`;
+  }
+  return fOrigem;
+}
