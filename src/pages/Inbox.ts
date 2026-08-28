@@ -2916,7 +2916,7 @@ export class InboxPage {
               ${sol.destinatario_nome ? `<p><strong>Troca com Colega:</strong> ${sol.destinatario_nome}</p>` : ''}
               ${sol.data_destino ? `<p><strong>Data do Colega (Destino):</strong> ${sol.data_destino}</p>` : ''}
               <p><strong>Motivo:</strong> ${sol.motivo || 'Sem justificativa informada'}</p>
-              <p><strong>Status Atual:</strong> <span class="px-2 py-0.5 rounded text-[10px] font-bold ${sol.status === 'aprovado' ? 'bg-emerald-500/20 text-emerald-600' : sol.status === 'recusado' ? 'bg-rose-500/20 text-rose-600' : 'bg-amber-500/20 text-amber-600'}">${sol.status.toUpperCase()}</span></p>
+              <p><strong>Status Atual:</strong> <span class="px-2 py-0.5 rounded text-[10px] font-bold ${sol.status === 'aprovado' ? 'bg-emerald-500/20 text-emerald-600' : sol.status === 'recusado' ? 'bg-rose-500/20 text-rose-600' : 'bg-amber-500/20 text-amber-600'}">${sol.status === 'aprovado' ? 'Aprovada' : sol.status === 'recusado' ? 'Recusada' : 'Em Análise'}</span></p>
             </div>
 
             <div>

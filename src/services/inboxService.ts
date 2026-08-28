@@ -2,6 +2,7 @@ import { supabase } from './supabase';
 import { PerfilConsultor, AlertItem } from '../types';
 import { BADGE_DEFINITIONS } from './gamification';
 import { EscalaService } from './escalaService';
+import { formatTipoSolicitacaoEscala, formatStatusEscala, formatReembolsoStatus } from '../utils/messageFormatter';
 
 export class InboxService {
   /**
@@ -766,12 +767,30 @@ export class InboxService {
               cardBody = `Você solicitou troca de turno de ${rangeStr} com ${sol.destinatario_nome}.`;
             }
           } 
+          // 1. Caso especial: Atendimento no Balcão (Co-Piloto) - Notificação Operacional
+          if (sol.tipo === 'atendimento_balcao') {
+            const isUserDestinatarioBalcao = sol.destinatario_id === user.id || (sol.destinatario_nome && perfil?.nome && sol.destinatario_nome.trim().toLowerCase() === perfil.nome.trim().toLowerCase());
+            if (isUserDestinatarioBalcao || isAdmin) {
+              shouldInclude = true;
+              cardTitle = '🤝 Atendimento no Balcão (Co-Piloto)';
+              cardSender = sol.solicitante_nome || 'Consultor Co-Piloto';
+              cardSubject = sol.motivo || `Seu cliente foi atendido presencialmente no balcão por ${sol.solicitante_nome}.`;
+              cardBody = `
+                <div class="space-y-2">
+                  <p>🤝 <strong>Atendimento Presencial Registrado</strong></p>
+                  <p>${sol.motivo || `Seu cliente foi atendido no balcão por ${sol.solicitante_nome}.`}</p>
+                  <p class="text-[11px] text-slate-400"><strong>Data e Hora:</strong> ${sol.data_origem}</p>
+                </div>
+              `;
+            }
+          }
           // 2. Solicitação pendente de aprovação pela gestão (folga, férias ou troca aceita pelo colega)
           else if (sol.status === 'pendente_admin') {
+            const tipoInfo = formatTipoSolicitacaoEscala(sol.tipo);
             if (isAdmin) {
               shouldInclude = true;
-              cardTitle = `Aprovação de Escala: ${sol.tipo.toUpperCase()}`;
-              cardSubject = `Solicitação de ${sol.tipo === 'troca' ? 'Troca de Turno (Aceita pelo Colega)' : sol.tipo === 'folga' ? 'Folga Semanal' : 'Férias'} - ${sol.solicitante_nome}`;
+              cardTitle = `Aprovação de Escala: ${tipoInfo.label}`;
+              cardSubject = `${tipoInfo.title} - ${sol.solicitante_nome}`;
               cardBody = `
                 <div class="space-y-2">
                   <p><strong>Solicitante:</strong> ${sol.solicitante_nome}</p>
@@ -788,35 +807,38 @@ export class InboxService {
             } else if (isUserSolicitante || isUserDestinatario) {
               shouldInclude = true;
               isSentItem = true;
-              cardTitle = `Solicitação de ${sol.tipo.toUpperCase()} Enviada à Gestão`;
-              cardSubject = `Sua solicitação de ${sol.tipo} (${rangeStr}) está sob análise da gestão da agência.`;
-              cardBody = `Sua solicitação de ${sol.tipo} enviada em ${new Date(sol.created_at).toLocaleDateString('pt-BR')} foi encaminhada para aprovação final dos administradores.`;
+              cardTitle = `${tipoInfo.title} Enviada à Gestão`;
+              cardSubject = `Sua solicitação de ${tipoInfo.label} (${rangeStr}) está sob análise da gestão.`;
+              cardBody = `Sua solicitação de ${tipoInfo.label} enviada em ${new Date(sol.created_at).toLocaleDateString('pt-BR')} foi encaminhada para aprovação final dos administradores.`;
             }
           } 
           // 3. Resposta final da gestão ou recusa pelo colega
           else if (sol.status === 'aprovado' || sol.status === 'recusado') {
+            const tipoInfo = formatTipoSolicitacaoEscala(sol.tipo);
+            const statusInfo = formatStatusEscala(sol.status);
             const isUserEnvolvido = isUserSolicitante || (sol.tipo === 'troca' && isUserDestinatario);
+
             if (isUserEnvolvido) {
               shouldInclude = true;
               const isRecusadoPorColega = sol.status === 'recusado' && (sol.resposta_admin || '').toLowerCase().includes('colega');
-              cardTitle = `Resposta da Escala: ${sol.status === 'aprovado' ? 'APROVADA' : 'RECUSADA'}`;
+              cardTitle = `Resposta da Escala: ${statusInfo.label.toUpperCase()}`;
               cardSender = isRecusadoPorColega ? (sol.destinatario_nome || 'Colega') : 'Gestão da Agência';
               cardSubject = isRecusadoPorColega
                 ? `Sua solicitação de troca com ${sol.destinatario_nome} foi recusada pelo colega.`
-                : `Sua solicitação de ${sol.tipo.toUpperCase()} (${rangeStr}) foi ${sol.status === 'aprovado' ? 'APROVADA' : 'RECUSADA'} pela gestão.`;
+                : `Sua solicitação de ${tipoInfo.label} (${rangeStr}) foi ${statusInfo.label} pela gestão.`;
               cardBody = `
                 <div class="space-y-2">
-                  <p>A solicitação de <strong>${sol.tipo === 'troca' ? 'Troca de Turno' : sol.tipo === 'folga' ? 'Folga Semanal' : 'Férias'}</strong> referente a <strong>${rangeStr}</strong> foi finalizada.</p>
-                  <p>• <strong>Status Final:</strong> <span class="${sol.status === 'aprovado' ? 'text-emerald-600 font-extrabold' : 'text-rose-600 font-extrabold'}">${sol.status.toUpperCase()}</span></p>
+                  <p>A solicitação de <strong>${tipoInfo.label}</strong> referente a <strong>${rangeStr}</strong> foi finalizada.</p>
+                  <p>• <strong>Status Final:</strong> <span class="${statusInfo.badgeClass}">${statusInfo.label}</span></p>
                   <p>• <strong>Observações:</strong> ${sol.resposta_admin || 'Sem observações adicionais.'}</p>
                 </div>
               `;
             } else if (isAdmin) {
               shouldInclude = true;
               isSentItem = true;
-              cardTitle = `Decisão de Escala: ${sol.tipo.toUpperCase()} (${sol.status.toUpperCase()})`;
+              cardTitle = `Decisão de Escala: ${tipoInfo.label} (${statusInfo.label})`;
               cardSubject = `Decisão enviada para ${sol.solicitante_nome} (${rangeStr}).`;
-              cardBody = `Você definiu a solicitação de ${sol.solicitante_nome} como ${sol.status.toUpperCase()}. Observação: ${sol.resposta_admin || 'Sem observação'}.`;
+              cardBody = `Você definiu a solicitação de ${sol.solicitante_nome} como ${statusInfo.label}. Observação: ${sol.resposta_admin || 'Sem observação'}.`;
             }
           }
 
