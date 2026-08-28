@@ -23,7 +23,8 @@ export const HELP_CATEGORIES: HelpCategory[] = [
   { id: 'orcamentos', title: 'Orçamentos & CRM', icon: '📄' },
   { id: 'reembolsos', title: 'Reembolsos & Financeiro', icon: '💰' },
   { id: 'clientes', title: 'Clientes & Relatórios', icon: '👥' },
-  { id: 'copiloto', title: 'Co-piloto de IA & Governança', icon: '🤖' }
+  { id: 'copiloto', title: 'Co-piloto de IA & Governança', icon: '🤖' },
+  { id: 'realtime', title: 'Mensageria & Tempo Real', icon: '⚡' }
 ];
 
 export const HELP_ITEMS: HelpItem[] = [
@@ -457,6 +458,22 @@ export const HELP_ITEMS: HelpItem[] = [
     label: 'Segurança, Monitoramento de Logs e Proteção de Dados (Privacy & Security)',
     description: 'Garantias de segurança, auditoria de requisições e isolamento de requisições da IA.',
     details: 'A arquitetura do Co-piloto de IA no PaxFlow segue rígidos padrões de segurança e privacidade:\n\n- **Monitoramento e Audit Log de Requisições**: Cada interação com a IA registra uma entrada de log auditável com ID do usuário, timestamp, ID da agência e escopo da solicitação.\n- **Validação de Segurança no Backend**: As Edge Functions e endpoints de IA validam obrigatoriamente a sessão do usuário e o status da chave `copiloto_ativo` no banco de dados. Caso uma agência desative o recurso, qualquer chamada direta é rejeitada com `HTTP 403 Forbidden` no servidor.\n- **Comentários e Sanitização de Código**: Trechos de chamadas à IA possuem marcadores explícitos de auditoria de código (`// SECURITY GUARD: Copiloto feature flag check`). Dados sensíveis de pagamento (como números de cartão de crédito) são higienizados e nunca trafegam para provedores de inteligência artificial.'
+  },
+
+  // ==================== 12. Mensageria & Tempo Real ====================
+  {
+    id: 'realtime-mensageria-instantanea',
+    modulo: 'realtime',
+    label: 'Recepção de Mensagens e Solicitações de Escala em Tempo Real (< 1s)',
+    description: 'Como funciona a sincronização instantânea via WebSockets sem recarregar a página.',
+    details: 'O PaxFlow conta com uma infraestrutura de mensageria em tempo real conectada via WebSockets Supabase:\n\n- **Atualização Dinâmica na Inbox**: Quando um colega solicita troca de turno, o administrador responde ou um cliente é atendido no balcão, a notificação surge na Inbox em menos de 1 segundo, sem necessidade de dar F5 ou recarregar a página.\n- **Alerta Sonoro e Toast Flutuante**: A recepção de novos alertas dispara um tom harmônico cortês (Web Audio API) e um Toast no topo da tela indicando o tipo da mensagem.\n- **Desempenho Otimizado**: Consumo zero de dados quando ocioso e reconexão automática em segundo plano.'
+  },
+  {
+    id: 'padronizacao-datas-mensagens',
+    modulo: 'realtime',
+    label: 'Padronização Global de Datas e Linguagem Cortês',
+    description: 'Padrão brasileiro dd/mm/aaaa em todos os alertas, solicitações e relatórios.',
+    details: 'Todas as datas no PaxFlow seguem rigorosamente o formato nacional **dd/mm/aaaa** (ex: `30/08/2026` ou `30/08/2026 às 14:30`).\n\n- **Eliminação de Jargões**: Termos técnicos de banco de dados (como `ATENDIMENTO_BALCAO`, `solicitado_fornecedor`, `troca`) são traduzidos automaticamente em português fluido (`Atendimento no Balcão`, `Troca de Turno`, `Aguardando Fornecedor`).'
   }
 ];
 
