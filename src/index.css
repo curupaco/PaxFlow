@@ -354,6 +354,15 @@ html.dark .landing-page-wrapper .grid-bg {
   -webkit-mask-image: radial-gradient(ellipse 80% 70% at 50% 0%, #000 55%, transparent 100%);
 }
 
+/* Prevenção de salto de rolagem ("dança") no mobile durante rotações de abas */
+.landing-v2 {
+  overflow-anchor: none;
+}
+.landing-v2 #mockup-panels-container,
+.landing-v2 #brand-panels-container {
+  contain: layout style;
+}
+
 /* ================= LANDING V2 MOTION SYSTEM ================= */
 
 @keyframes pf-float {

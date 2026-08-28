@@ -563,8 +563,8 @@ export class LandingPage {
                   <span class="px-2 py-0.5 rounded-lg bg-gradient-to-r from-[#00a8f5]/20 to-[#f5af19]/20 text-[#00e5a3] font-extrabold text-[9px] uppercase border border-[#00e5a3]/30">Rotação Automática (3s)</span>
                 </div>
 
-                <div id="brand-panels-container" class="flex-1 flex flex-col justify-center">
-                  <div id="brand-panel-itinerario" class="space-y-4 tab-pane-transition">
+                <div id="brand-panels-container" class="flex-1 flex flex-col justify-center min-h-[240px]">
+                  <div id="brand-panel-itinerario" class="space-y-4 tab-pane-transition min-h-[220px] flex flex-col justify-center">
                     <div class="bg-white/[0.04] p-5 rounded-2xl border border-white/10 space-y-3">
                       <div class="flex items-center justify-between border-b border-white/10 pb-3">
                         <div class="flex items-center gap-3"><div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#0052d4] to-[#00e5a3] flex items-center justify-center text-white text-lg shadow-md">✈️</div><div><strong class="block text-sm font-extrabold text-white">Sua Agência de Viagens</strong><span class="block text-[9px] text-slate-400 uppercase font-bold tracking-wider">Itinerário Digital do Cliente</span></div></div>
@@ -575,14 +575,14 @@ export class LandingPage {
                     </div>
                   </div>
 
-                  <div id="brand-panel-voucher" class="space-y-4 tab-pane-transition hidden">
+                  <div id="brand-panel-voucher" class="space-y-4 tab-pane-transition hidden min-h-[220px] flex flex-col justify-center">
                     <div class="bg-white/[0.04] p-5 rounded-2xl border border-white/10 space-y-3">
                       <div class="flex items-center justify-between border-b border-white/10 pb-3"><div class="flex items-center gap-3"><div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#f5af19] to-[#f12711] flex items-center justify-center text-white text-lg shadow-md">📄</div><div><strong class="block text-sm font-extrabold text-white">Voucher Oficial de Confirmação</strong><span class="block text-[9px] text-slate-400 uppercase font-bold tracking-wider">Documento PDF com Logotipo da Sua Agência</span></div></div><span class="text-[9px] font-bold bg-[#00e5a3]/15 text-[#00e5a3] px-2 py-1 rounded-lg">RESERVA CONFIRMADA</span></div>
                       <div class="p-4 bg-white/[0.06] rounded-xl border border-white/10 space-y-1 text-xs"><span class="text-[9px] font-bold text-slate-400 uppercase">Companhia Aérea & Voo</span><strong class="block text-white">Air France • Voo AF-443 (GRU ✈️ CDG)</strong><span class="block text-[9px] text-slate-400">Cabine Executiva • Assento 4A • Bilhete: 057-24901928</span></div>
                     </div>
                   </div>
 
-                  <div id="brand-panel-nps" class="space-y-4 tab-pane-transition hidden">
+                  <div id="brand-panel-nps" class="space-y-4 tab-pane-transition hidden min-h-[220px] flex flex-col justify-center">
                     <div class="bg-white/[0.04] p-5 rounded-2xl border border-white/10 space-y-3 text-center">
                       <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#00e5a3] to-[#00a8f5] text-white flex items-center justify-center text-xl font-black mx-auto shadow-md pf-pulse-ring">⭐</div>
                       <div><strong class="block text-sm font-extrabold text-white">Como foi sua experiência com a Sua Agência?</strong><span class="block text-[10px] text-slate-400 font-medium">Sua avaliação ajuda a premiar nosso consultor de viagens</span></div>
@@ -590,7 +590,7 @@ export class LandingPage {
                     </div>
                   </div>
 
-                  <div id="brand-panel-whatsapp" class="space-y-4 tab-pane-transition hidden">
+                  <div id="brand-panel-whatsapp" class="space-y-4 tab-pane-transition hidden min-h-[220px] flex flex-col justify-center">
                     <div class="bg-emerald-950/40 p-4 rounded-2xl border border-emerald-500/30 space-y-2.5 text-left text-xs">
                       <div class="flex items-center gap-2 border-b border-emerald-500/20 pb-2"><div class="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 text-white flex items-center justify-center font-black text-sm">💬</div><div><strong class="block text-white font-extrabold text-xs">Sua Agência de Viagens (WhatsApp Oficial)</strong><span class="block text-[8px] text-emerald-400 font-bold uppercase">Mensagem Automática PaxFlow</span></div></div>
                       <p class="text-slate-300 text-[11px] leading-relaxed">"Olá! 👋 Sua viagem para Paris está se aproximando! Acesse o seu <strong>Itinerário Digital Oficial</strong> no link: <span class="text-[#00e5a3] underline font-bold">suaagencia.paxflow.com/itinerario/PAX-8840</span>"</p>
@@ -869,15 +869,33 @@ export class LandingPage {
       });
     });
 
+    let isMockupVisible = true;
+    let isBrandVisible = true;
+
+    if ('IntersectionObserver' in window) {
+      const mockupEl = document.getElementById('mockup-panels-container');
+      const brandEl = document.getElementById('brand-panels-container');
+      const obs = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.target === mockupEl) isMockupVisible = entry.isIntersecting;
+          if (entry.target === brandEl) isBrandVisible = entry.isIntersecting;
+        });
+      }, { threshold: 0.15 });
+      if (mockupEl) obs.observe(mockupEl);
+      if (brandEl) obs.observe(brandEl);
+    }
+
     const startAutoRotate = () => {
       if (autoTabTimer) return;
       const timer = () => {
         autoTabTimer = window.setTimeout(() => {
-          currentTabIndex = (currentTabIndex + 1) % tabs.length;
-          switchTab(tabs[currentTabIndex]);
+          if (isMockupVisible) {
+            currentTabIndex = (currentTabIndex + 1) % tabs.length;
+            switchTab(tabs[currentTabIndex]);
+          }
           autoTabTimer = null;
           timer();
-        }, 3400 + Math.random() * 1800);
+        }, 3600 + Math.random() * 1800);
       };
       timer();
     };
@@ -920,8 +938,10 @@ export class LandingPage {
     });
 
     brandAutoTimer = setInterval(() => {
-      brandTabIndex = (brandTabIndex + 1) % brandTabs.length;
-      switchBrandTab(brandTabs[brandTabIndex]);
-    }, 3000);
+      if (isBrandVisible) {
+        brandTabIndex = (brandTabIndex + 1) % brandTabs.length;
+        switchBrandTab(brandTabs[brandTabIndex]);
+      }
+    }, 3400);
   }
 }
