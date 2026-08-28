@@ -103,12 +103,26 @@ export class InboxPage {
         teamMap.set(n.trim().toLowerCase(), { displayName: n.trim(), participates: true });
       });
 
-      // 2. Se houver consultores do banco de dados, mescla-os mantendo participa_escala
+      // 2. Inclui todos os consultores que já possuem turnos cadastrados na escala (rawEscala)
+      Object.keys(rawEscala).forEach(n => {
+        if (n && n.trim()) {
+          const key = n.trim().toLowerCase();
+          if (!teamMap.has(key)) {
+            teamMap.set(key, { displayName: n.trim(), participates: true });
+          }
+        }
+      });
+
+      // 3. Se houver consultores do banco de dados, mescla-os garantindo que qualquer consultor com escala continue visível
       if (this.consultants && this.consultants.length > 0) {
         this.consultants.forEach(c => {
           if (c.nome) {
             const key = c.nome.trim().toLowerCase();
-            const doesParticipate = c.participa_escala !== false && c.participaEscala !== false;
+            const isExplicitlyDisabled = c.participa_escala === false || c.participaEscala === false;
+            // Se o consultor tem dados na escala bruta, mantemos visível para exibição completa
+            const hasShiftsInRaw = rawEscala[c.nome] && rawEscala[c.nome].some(v => v !== '');
+            const doesParticipate = !isExplicitlyDisabled || hasShiftsInRaw;
+
             teamMap.set(key, { displayName: c.nome.trim(), participates: doesParticipate });
           }
         });
@@ -1824,13 +1838,8 @@ export class InboxPage {
       maxYear += 1;
     }
 
-    const isPrevDisabled = !isAdmin && (
-      this.escalaAno < curYear || (this.escalaAno === curYear && this.escalaMes <= curMonth)
-    );
-
-    const isNextDisabled = !isAdmin && (
-      this.escalaAno > maxYear || (this.escalaAno === maxYear && this.escalaMes >= maxMonth)
-    );
+    const isPrevDisabled = false;
+    const isNextDisabled = false;
 
     let html = `
       <div class="escala-container">
