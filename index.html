@@ -58,8 +58,28 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-          .then((reg) => console.log('Service Worker registrado com sucesso!', reg.scope))
+        navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' })
+          .then((reg) => {
+            console.log('Service Worker registrado com sucesso!', reg.scope);
+
+            // Tenta verificar atualização a cada 1 minuto
+            setInterval(() => {
+              reg.update().catch(() => {});
+            }, 60 * 1000);
+
+            reg.addEventListener('updatefound', () => {
+              const newWorker = reg.installing;
+              if (newWorker) {
+                newWorker.addEventListener('statechange', () => {
+                  if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                    window.dispatchEvent(new CustomEvent('paxflow-new-version-available', {
+                      detail: { source: 'service-worker', worker: newWorker }
+                    }));
+                  }
+                });
+              }
+            });
+          })
           .catch((err) => console.warn('Falha ao registrar Service Worker:', err));
       });
     }

@@ -8,6 +8,13 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(clients.claim());
 });
 
+// Responde a mensagens do cliente para forçar atualização do SW
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
+
 // Escuta o evento push enviado em segundo plano pelo sistema operacional
 self.addEventListener('push', (event) => {
   if (!event.data) return;

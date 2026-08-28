@@ -13,8 +13,14 @@ import { LandingPage } from './pages/LandingPage';
 import { LandingPageOLD } from './pages/LandingPage_OLD';
 import { GlobalHeaderSearch } from './components/GlobalHeaderSearch';
 import { RealtimeMessagingService } from './services/realtimeMessaging';
+import { VersionChecker } from './services/versionChecker';
+import { VersionToast } from './components/VersionToast';
 
 (window as any).traduzirErro = traduzirErro;
+
+// Inicializa mecanismo anti-cache e detector de novas versões
+VersionChecker.getInstance().init();
+VersionToast.init();
 
 class App {
   private container: HTMLElement;

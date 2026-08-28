@@ -1,0 +1,26 @@
+# Regras de Cache no Cloudflare Pages para o PaxFlow
+
+# Prevenir cache do HTML de entrada, Service Worker e arquivo de controle de versão
+/index.html
+  Cache-Control: no-cache, no-store, must-revalidate, max-age=0
+  Pragma: no-cache
+  Expires: 0
+
+/sw.js
+  Cache-Control: no-cache, no-store, must-revalidate, max-age=0
+  Pragma: no-cache
+  Expires: 0
+
+/version.json
+  Cache-Control: no-cache, no-store, must-revalidate, max-age=0
+  Pragma: no-cache
+  Expires: 0
+
+/
+  Cache-Control: no-cache, no-store, must-revalidate, max-age=0
+  Pragma: no-cache
+  Expires: 0
+
+# Cache longo e imutável para assets compilados com hash pelo Vite
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
