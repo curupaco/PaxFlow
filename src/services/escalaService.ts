@@ -127,6 +127,7 @@ export class EscalaService {
   public static async loadEscalaMensal(ano: number, mes: number): Promise<Record<string, string[]>> {
     const initial = this.getInitialMockData();
     let loadedMap: Record<string, string[]> = {};
+    let hasSavedData = false;
 
     try {
       const { data, error } = await supabase
@@ -136,6 +137,7 @@ export class EscalaService {
         .lte('data', `${ano}-${String(mes).padStart(2, '0')}-31`);
 
       if (!error && data && data.length > 0) {
+        hasSavedData = true;
         data.forEach((row: any) => {
           const name = row.consultor_nome || 'Consultor';
           if (!loadedMap[name]) {
@@ -151,13 +153,14 @@ export class EscalaService {
       console.warn('Fallback para armazenamento local de escala:', e);
     }
 
-    if (Object.keys(loadedMap).length === 0) {
+    if (!hasSavedData) {
       try {
         const stored = localStorage.getItem(this.LOCAL_STORAGE_ESCALA_KEY);
         if (stored) {
           const parsed = JSON.parse(stored);
           if (parsed[`${ano}-${mes}`]) {
             loadedMap = parsed[`${ano}-${mes}`];
+            hasSavedData = true;
           }
         }
       } catch (e) {
@@ -165,13 +168,23 @@ export class EscalaService {
       }
     }
 
-    // Merge loadedMap com os dados mock iniciais para garantir roster completo do mês de Agosto
-    const resultMap: Record<string, string[]> = { ...initial.mockEmployeesSchedule };
-    Object.keys(loadedMap).forEach(name => {
-      if (loadedMap[name] && loadedMap[name].some(val => val !== '')) {
-        resultMap[name] = loadedMap[name];
-      }
-    });
+    let resultMap: Record<string, string[]> = {};
+
+    if (hasSavedData) {
+      // Se há dados salvos para este mês (Supabase ou localStorage), respeita estritamente o que foi gravado pelo admin (inclusive celulas vazias '')
+      const allConsultants = Array.from(new Set([...Object.keys(initial.mockEmployeesSchedule), ...Object.keys(loadedMap)]));
+      allConsultants.forEach(name => {
+        resultMap[name] = loadedMap[name] !== undefined ? loadedMap[name] : new Array(31).fill('');
+      });
+    } else if (ano === 2026 && mes === 8) {
+      // Mês inicial de demonstração (Agosto/2026) sem edições anteriores
+      resultMap = { ...initial.mockEmployeesSchedule };
+    } else {
+      // Qualquer outro mês (ex: Outubro, Novembro) sem edições gravadas inicia com linhas em branco
+      Object.keys(initial.mockEmployeesSchedule).forEach(name => {
+        resultMap[name] = new Array(31).fill('');
+      });
+    }
 
     // Aplica a ordem salva dos consultores se existir
     const customOrder = this.loadOrdemConsultores();
@@ -254,8 +267,9 @@ export class EscalaService {
       let dataMap: Record<string, Record<string, string[]>> = stored ? JSON.parse(stored) : {};
       
       if (!dataMap[key]) {
-        const initial = this.getInitialMockData();
-        dataMap[key] = { ...initial.mockEmployeesSchedule };
+        // Carrega o mapa atual do mês para inicialização precisa
+        const initialMap = await this.loadEscalaMensal(ano, mes);
+        dataMap[key] = initialMap;
       }
 
       if (!dataMap[key][consultorNome]) {

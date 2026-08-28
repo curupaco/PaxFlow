@@ -488,6 +488,13 @@ export const HELP_ITEMS: HelpItem[] = [
     label: 'Navegação e Recursos Nativos no Celular (Gestão Mobile)',
     description: 'Botão flutuante FAB (+ Nova Viagem), compartilhamento nativo e modal full-screen.',
     details: 'A tela de Gestão de Viagens do PaxFlow foi 100% redesenhada para uso fluido em smartphones:\n\n- **Botão Flutuante (FAB)**: No canto inferior direito da tela do celular, o botão circular **`[+ Nova Viagem]`** permite cadastrar novas viagens com o polegar de forma rápida.\n- **Compartilhamento Nativo (`🔗`)**: Toque no ícone de corrente no card da viagem para acionar a folha de compartilhamento nativa do celular (iOS/Android), enviando o itinerário público direto para o cliente via WhatsApp, Telegram ou Mensagem.\n- **Modal Full-Screen no Celular**: O modal de detalhes da viagem ocupa 100% da altura da tela no smartphone com os botões de ação fixados no rodapé para salvamento sem esforço.'
+  },
+  {
+    id: 'como-instalar-app-celular-android-ios',
+    modulo: 'realtime',
+    label: 'Como Instalar o PaxFlow no Celular (Android & iPhone / iOS)',
+    description: 'Guia passo a passo de como adicionar o aplicativo à tela inicial do smartphone sem baixar na loja.',
+    details: 'O PaxFlow é um aplicativo Web PWA (Progressive Web App) que não precisa ser baixado pela Google Play Store ou Apple App Store. Ele funciona com visual e velocidade nativos diretamente no seu celular:\n\n📱 **COMO INSTALAR NO IPHONE (iOS - Safari):**\n1. Abra o navegador **Safari** no seu iPhone e acesse a URL do sistema (ex: `https://paxflow.com.br`).\n2. Toque no botão de **Compartilhar** (ícone do quadrado com a seta para cima `⎋` no menu inferior do Safari).\n3. Role a lista de opções para baixo e toque em **"Adicionar à Tela de Início"** (`➕`).\n4. Toque em **"Adicionar"** no canto superior direito.\n5. O ícone do PaxFlow aparecerá na sua tela inicial como um aplicativo nativo!\n\n🤖 **COMO INSTALAR NO ANDROID (Google Chrome / Edge):**\n1. Abra o navegador **Google Chrome** no seu celular Android e acesse o PaxFlow.\n2. Toque no banner automático **"Adicionar PaxFlow à tela inicial"** ou toque no menu de 3 pontinhos (`⋮`) no canto superior direito.\n3. Selecione **"Instalar aplicativo"** ou **"Adicionar à tela inicial"**.\n4. Confirme clicando em **"Instalar"**. Pronto! O PaxFlow aparecerá na sua gaveta de aplicativos e na tela inicial.'
   }
 ];
 
