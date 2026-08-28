@@ -423,7 +423,32 @@ export class InboxPage {
             </div>
           </div>
 
-          <div class="flex flex-wrap items-center gap-3 w-full md:w-auto md:justify-end">
+           <div class="flex flex-wrap items-center gap-3 w-full md:w-auto md:justify-end">
+            <!-- Barra de Abas de Topo (Alternador Mensagens vs Escala) -->
+            <div class="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800/60 p-1.5 rounded-2xl border border-slate-200/50 dark:border-slate-700/50 shrink-0">
+              <button id="inbox-top-tab-mensagens" class="px-3.5 py-2 rounded-xl text-xs font-black transition flex items-center gap-2 select-none ${
+                this.activeTab !== 'escala'
+                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
+                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+              }">
+                <span>📨 Mensagens & Alertas</span>
+                <span class="px-2 py-0.5 rounded-md text-[10px] font-black ${
+                  this.activeTab !== 'escala' ? 'bg-white/20 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
+                }">${totalAtivos}</span>
+              </button>
+
+              <button id="inbox-top-tab-escala" class="px-3.5 py-2 rounded-xl text-xs font-black transition flex items-center gap-2 select-none ${
+                this.activeTab === 'escala'
+                  ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-md shadow-violet-600/20'
+                  : 'bg-violet-50 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300 hover:bg-violet-100 dark:hover:bg-violet-900/50 border border-violet-200/40 dark:border-violet-800/40'
+              }">
+                <span>📅 ESCALA DE FUNCIONÁRIOS</span>
+                <span class="px-1.5 py-0.5 rounded text-[9px] uppercase tracking-wider font-black ${
+                  this.activeTab === 'escala' ? 'bg-white/20 text-white' : 'bg-violet-200/60 dark:bg-violet-900/60 text-violet-800 dark:text-violet-200'
+                }">AGÊNCIA</span>
+              </button>
+            </div>
+
             <!-- Seletor de Consultores (Apenas para Admins) -->
             ${this.perfil?.role === 'admin' ? `
               <div class="flex items-center gap-1.5 shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2.5 py-1.5 rounded-xl shadow-sm">
@@ -443,6 +468,13 @@ export class InboxPage {
           <!-- Mobile View: Compact 1-line Horizontal Pill Bar (Hidden on desktop) -->
           <div class="block md:hidden overflow-x-auto pb-1 custom-scrollbar">
             <div class="flex items-center gap-2">
+              <button id="mobile-pill-escala" class="px-3 py-2 rounded-xl ${
+                this.activeTab === 'escala'
+                  ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-md font-black'
+                  : 'bg-violet-50 dark:bg-violet-950/40 border border-violet-200/50 dark:border-violet-900/40 text-violet-700 dark:text-violet-300 font-bold'
+              } flex items-center gap-1.5 shrink-0 text-xs select-none">
+                <span>📅 Escala de Turnos</span>
+              </button>
               <div class="px-3 py-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100/50 dark:border-indigo-900/40 flex items-center gap-2 shrink-0 text-xs font-bold text-slate-700 dark:text-slate-200">
                 <span>⚡ Alertas:</span>
                 <span class="px-2 py-0.5 rounded-md bg-indigo-600 text-white font-black text-[11px]">${totalAtivos}</span>
@@ -1352,6 +1384,29 @@ export class InboxPage {
       this.setupEventListeners();
     };
     window.addEventListener('paxflow:new-message', (this as any)._onRealtimeInboxBound);
+
+    // 0. Top Header Tabs & Mobile Pills (Alternadores de Mensagens vs Escala)
+    const topTabMensagens = document.getElementById('inbox-top-tab-mensagens');
+    topTabMensagens?.addEventListener('click', () => {
+      this.activeTab = 'ativos';
+      this.applyFilters();
+      this.render();
+      this.setupEventListeners();
+    });
+
+    const topTabEscala = document.getElementById('inbox-top-tab-escala');
+    topTabEscala?.addEventListener('click', () => {
+      this.activeTab = 'escala';
+      this.render();
+      this.setupEventListeners();
+    });
+
+    const mobilePillEscala = document.getElementById('mobile-pill-escala');
+    mobilePillEscala?.addEventListener('click', () => {
+      this.activeTab = 'escala';
+      this.render();
+      this.setupEventListeners();
+    });
 
     // 1. Folders click listeners
     const folderAtivos = document.getElementById('folder-ativos');
