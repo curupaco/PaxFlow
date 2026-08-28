@@ -407,7 +407,7 @@ export class LandingPage {
 
           <!-- Module tour -->
           <div class="w-full text-center mb-8">
-            <h2 class="text-2xl md:text-4xl font-black tracking-tight bg-gradient-to-r from-[#00a8f5] via-[#00e5a3] to-[#f5af19] bg-clip-text text-transparent pf-animated-gradient">Conheça os Módulos do PaxFlow</h2>
+            <h2 class="text-2xl md:text-4xl font-black tracking-tight text-white">Conheça os Módulos do PaxFlow</h2>
             <p class="text-sm text-slate-400 font-medium mt-2">Clique nas abas abaixo para visualizar as telas reais da nossa solução</p>
           </div>
 
@@ -533,7 +533,7 @@ export class LandingPage {
           <div class="pf-zone max-w-6xl mx-auto">
             <div class="text-center max-w-3xl mx-auto mb-14 space-y-3">
               <span class="px-4 py-1.5 rounded-full bg-[#00a8f5]/15 border border-[#00a8f5]/30 text-[#00a8f5] text-[10px] font-black uppercase tracking-widest">Como Funciona</span>
-              <h2 class="text-3xl md:text-5xl font-black tracking-tight">Da primeira telinha à operação turbinada em 3 passos</h2>
+              <h2 class="text-3xl md:text-5xl font-black tracking-tight text-white">Da primeira telinha à operação turbinada em 3 passos</h2>
               <p class="text-sm text-slate-400 font-medium">Sem curva de aprendizado longa: você vê, configura e começa a vender melhor no mesmo dia.</p>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -577,9 +577,9 @@ export class LandingPage {
               <span class="px-4 py-1.5 rounded-full bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 text-[10px] font-black uppercase tracking-widest">
                 Diferencial Exclusivo PaxFlow
               </span>
-              <h2 class="text-3xl md:text-5xl font-black tracking-tight leading-tight">
+              <h2 class="text-3xl md:text-5xl font-black tracking-tight leading-tight text-white">
                 Sua Agência não para no escritório.<br class="hidden md:block" />
-                <span class="bg-gradient-to-r from-cyan-400 via-teal-300 to-emerald-400 bg-clip-text text-transparent pf-animated-gradient">
+                <span class="text-cyan-400">
                   Gestão Mobile 100% Nativa &amp; PWA
                 </span>
               </h2>
@@ -628,7 +628,7 @@ export class LandingPage {
             <div data-parallax="22" class="pf-float pointer-events-none absolute -top-6 -right-4 hidden lg:flex w-20 h-20 rounded-2xl bg-white/[0.03] border border-white/10 items-center justify-center shadow-xl opacity-60"><img src="/logo.svg" alt="" class="w-12 h-12 object-contain" /></div>
             <div class="text-center max-w-3xl mx-auto space-y-3">
               <span class="px-4 py-1.5 rounded-full bg-[#00e5a3]/15 border border-[#00e5a3]/30 text-[#00e5a3] text-[10px] font-black uppercase tracking-widest">Identidade Visual da Sua Agência</span>
-              <h2 class="text-3xl md:text-5xl font-black tracking-tight">Sua Marca, Seu Logotipo e Suas Cores<br class="hidden md:block" /> em Cada Ponto de Contato</h2>
+              <h2 class="text-3xl md:text-5xl font-black tracking-tight text-white">Sua Marca, Seu Logotipo e Suas Cores<br class="hidden md:block" /> em Cada Ponto de Contato</h2>
               <p class="text-sm text-slate-400 font-medium leading-relaxed">Toda a comunicação enviada ao seu passageiro carrega o logotipo oficial, o nome e a paleta de cores da sua própria agência — sem marcas de terceiros.</p>
             </div>
 
@@ -694,7 +694,7 @@ export class LandingPage {
           <div class="pf-zone max-w-6xl mx-auto">
             <div class="text-center max-w-3xl mx-auto mb-14 space-y-3">
               <span class="px-4 py-1.5 rounded-full bg-[#00e5a3]/15 border border-[#00e5a3]/30 text-[#00e5a3] text-[10px] font-black uppercase tracking-widest">Depoimentos</span>
-              <h2 class="text-3xl md:text-5xl font-black tracking-tight">Agências que já largaram as planilhas</h2>
+              <h2 class="text-3xl md:text-5xl font-black tracking-tight text-white">Agências que já largaram as planilhas</h2>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div data-reveal="up" style="transition-delay:.05s" class="pf-glass p-7 rounded-3xl flex flex-col justify-between min-h-[240px]">
@@ -730,7 +730,7 @@ export class LandingPage {
             <div data-parallax="-28" class="pf-float pointer-events-none absolute -bottom-12 -right-8 hidden lg:flex w-24 h-24 rounded-3xl bg-white/[0.03] border border-white/10 items-center justify-center shadow-xl opacity-70 -rotate-6"><img src="/logo.svg" alt="" class="w-14 h-14 object-contain" /></div>
             <div class="text-center max-w-3xl mx-auto mb-12 space-y-3">
               <span class="px-4 py-1.5 rounded-full bg-[#00a8f5]/15 border border-[#00a8f5]/30 text-[#00a8f5] text-[10px] font-black uppercase tracking-widest">Integrações</span>
-              <h2 class="text-3xl md:text-5xl font-black tracking-tight">Conecte-se às ferramentas que já usa</h2>
+              <h2 class="text-3xl md:text-5xl font-black tracking-tight text-white">Conecte-se às ferramentas que já usa</h2>
               <p class="text-sm text-slate-400 font-medium">O PaxFlow se integra nativamente à sua stack de atendimento e emissão, sem fricção.</p>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -746,7 +746,7 @@ export class LandingPage {
           <div class="pf-zone max-w-5xl mx-auto">
             <div class="text-center max-w-3xl mx-auto mb-12 space-y-3">
               <span class="px-4 py-1.5 rounded-full bg-fuchsia-500/15 border border-fuchsia-500/30 text-fuchsia-300 text-[10px] font-black uppercase tracking-widest">Comparativo</span>
-              <h2 class="text-3xl md:text-5xl font-black tracking-tight">Planilha ou PaxFlow? Veja a diferença.</h2>
+              <h2 class="text-3xl md:text-5xl font-black tracking-tight text-white">Planilha ou PaxFlow? Veja a diferença.</h2>
             </div>
             <div class="rounded-3xl overflow-hidden border border-white/10 backdrop-blur-md">
               <div class="grid grid-cols-3 text-center text-[10px] font-black uppercase tracking-wider">
@@ -795,7 +795,7 @@ export class LandingPage {
           <div class="pf-zone max-w-5xl mx-auto">
             <div class="text-center max-w-3xl mx-auto mb-14 space-y-3">
               <span class="px-4 py-1.5 rounded-full bg-[#f5af19]/15 border border-[#f5af19]/30 text-[#f5af19] text-[10px] font-black uppercase tracking-widest">Planos</span>
-              <h2 class="text-3xl md:text-5xl font-black tracking-tight">Escolha o plano ideal para a sua agência</h2>
+              <h2 class="text-3xl md:text-5xl font-black tracking-tight text-white">Escolha o plano ideal para a sua agência</h2>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div data-reveal="up" style="transition-delay:.05s" class="p-7 rounded-3xl bg-white/[0.04] border border-white/10 hover:scale-[1.02] transition-transform"><h3 class="text-lg font-black text-white">Starter</h3><p class="text-sm text-slate-400 mt-1">Para agências em início de profissionalização</p><div class="mt-5 mb-6"><span class="text-4xl font-black text-[#00a8f5]">R$ 399</span><span class="text-sm text-slate-400">/mês</span></div><ul class="space-y-2.5 text-sm text-slate-300 font-medium"><li class="flex items-center gap-2"><span class="text-[#00e5a3]">✓</span>Até 5 consultores</li><li class="flex items-center gap-2"><span class="text-[#00e5a3]">✓</span>Pipeline de orçamentos</li><li class="flex items-center gap-2"><span class="text-[#00e5a3]">✓</span>Alertas de passaporte e SLA</li></ul><button class="mt-6 w-full py-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs uppercase transition">Começar</button></div>
@@ -808,7 +808,7 @@ export class LandingPage {
         <!-- ===== FAQ ===== -->
         <section id="faq" class="relative z-10 w-full py-20 px-6 border-t border-white/10">
           <div class="pf-zone max-w-4xl mx-auto space-y-10">
-            <div class="text-center space-y-2"><span class="px-3 py-1 rounded-full bg-white/[0.06] text-slate-300 border border-white/10 text-[10px] font-black uppercase tracking-widest">Tire suas dúvidas</span><h2 class="text-3xl md:text-4xl font-black tracking-tight">Perguntas Frequentes</h2></div>
+            <div class="text-center space-y-2"><span class="px-3 py-1 rounded-full bg-white/[0.06] text-slate-300 border border-white/10 text-[10px] font-black uppercase tracking-widest">Tire suas dúvidas</span><h2 class="text-3xl md:text-4xl font-black tracking-tight text-white">Perguntas Frequentes</h2></div>
             <div class="space-y-4">
               <details data-reveal="up" class="group bg-white/[0.04] border border-white/10 rounded-2xl p-5 [&_summary::-webkit-details-marker]:hidden" open><summary class="flex items-center justify-between cursor-pointer focus:outline-none"><h3 class="text-sm font-extrabold text-white">Como funciona o Modo Demonstração?</h3><span class="ml-1.5 shrink-0 rounded-full bg-white/10 p-1.5 text-white transition group-open:-rotate-180"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg></span></summary><p class="mt-3 text-sm leading-relaxed text-slate-400 font-medium">É um ambiente de simulação completo e interativo, pré-populado com dados fictícios de clientes, viagens, reembolsos e escalas. Permite testar todas as telas e recursos em tempo real, sem cadastro prévio.</p></details>
               <details data-reveal="up" style="transition-delay:.08s" class="group bg-white/[0.04] border border-white/10 rounded-2xl p-5 [&_summary::-webkit-details-marker]:hidden"><summary class="flex items-center justify-between cursor-pointer focus:outline-none"><h3 class="text-sm font-extrabold text-white">Posso controlar a escala de todos os funcionários?</h3><span class="ml-1.5 shrink-0 rounded-full bg-white/10 p-1.5 text-white transition group-open:-rotate-180"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg></span></summary><p class="mt-3 text-sm leading-relaxed text-slate-400 font-medium">Sim! O módulo de Central Administrativa permite atribuir turnos, controlar saldos no Banco de Folgas e aprovar solicitações de trocas.</p></details>

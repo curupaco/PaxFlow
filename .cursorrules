@@ -4,7 +4,16 @@ Este arquivo define as regras estritas de desenvolvimento, padrões arquiteturai
 
 ---
 
-## 📅 1. Contexto Temporal e Internacionalização (i18n)
+## 👑 1. Autoridade de Decisão do Produto (Premissa Fundamental Absoluta)
+
+* 🛑 **O USUÁRIO É O ÚNICO DONO DO PRODUTO E UNILATERALMENTE O ÚNICO TOMADOR DE DECISÕES**:
+  * 💡 **SUGESTÕES E RECOMENDAÇÕES**: São **sempre muito bem-vindas**. O assistente de IA pode e deve propor ideias, alternativas de design, melhorias técnicas, alertas e opções para avaliação do usuário.
+  * 🛑 **DECISÕES UNILATERAIS DE EXECUÇÃO**: Estritamente **PROIBIDAS**. O assistente **NUNCA** deve tomar decisões autônomas ou implementar alterações de design, estilos (cores, tipografia, efeitos visuais, gradientes, animações), regras de negócio, fluxos de usuário ou estrutura de telas sem a solicitação ou aprovação prévia e explícita do usuário.
+  * **Papel do Assistente**: Sugerir caminhos quando pertinente, mas limitar-se a implementar exclusivamente o que foi aprovado/solicitado pelo usuário.
+
+---
+
+## 📅 2. Contexto Temporal e Internacionalização (i18n)
 
 * **ANO ATUAL DE REFERÊNCIA**: **2026**.
   * **CRÍTICO**: Qualquer lógica, cálculo de SLA, contadores de tempo ou dados simulados (mock data) deve assumir o ano de **2026**. Não utilize a data do sistema host.
