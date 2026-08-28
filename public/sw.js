@@ -1,75 +1,61 @@
-const CACHE_NAME = 'paxflow-cache-v1';
-const ASSETS_TO_CACHE = [
-  '/',
-  '/index.html',
-  '/todo.html',
-  '/logo.svg'
-];
+// PaxFlow PWA Service Worker for Web Push Notifications
 
-// Install Event
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS_TO_CACHE);
-    })
-  );
   self.skipWaiting();
 });
 
-// Activate Event
 self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cache) => {
-          if (cache !== CACHE_NAME) {
-            return caches.delete(cache);
-          }
-        })
-      );
-    })
-  );
-  self.clients.claim();
+  event.waitUntil(clients.claim());
 });
 
-// Fetch Event (Stale-while-revalidate for JS/CSS assets, network-first for others)
-self.addEventListener('fetch', (event) => {
-  // Only handle GET requests and skip Supabase API calls
-  if (event.request.method !== 'GET' || event.request.url.includes('/supabase.co/')) {
-    return;
+// Escuta o evento push enviado em segundo plano pelo sistema operacional
+self.addEventListener('push', (event) => {
+  if (!event.data) return;
+
+  let payload = { title: 'PaxFlow', body: 'Nova notificação recebida', url: '/#inbox' };
+  try {
+    payload = event.data.json();
+  } catch (e) {
+    payload.body = event.data.text();
   }
 
-  event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        // Fetch in the background to update cache
-        fetch(event.request)
-          .then((networkResponse) => {
-            if (networkResponse.status === 200) {
-              caches.open(CACHE_NAME).then((cache) => {
-                cache.put(event.request, networkResponse);
-              });
+  const options = {
+    body: payload.body || 'Nova mensagem no PaxFlow',
+    icon: '/icon-192.png',
+    badge: '/icon-192.png',
+    vibrate: [100, 50, 100],
+    data: {
+      url: payload.url || '/#inbox'
+    },
+    actions: [
+      { action: 'open', title: 'Abrir no PaxFlow' }
+    ]
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(payload.title || 'PaxFlow', options)
+  );
+});
+
+// Responde ao clique na notificação nativa da tela de bloqueio do celular
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const targetUrl = event.notification.data?.url || '/#inbox';
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if (client.url.includes(location.origin) && 'focus' in client) {
+          return client.focus().then(() => {
+            if ('navigate' in client) {
+              return client.navigate(targetUrl);
             }
-          })
-          .catch(() => {
-            // Ignore background fetch failures
           });
-        return cachedResponse;
-      }
-
-      return fetch(event.request).then((networkResponse) => {
-        if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
-          return networkResponse;
         }
-
-        // Cache newly fetched assets
-        const responseToCache = networkResponse.clone();
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, responseToCache);
-        });
-
-        return networkResponse;
-      });
+      }
+      if (clients.openWindow) {
+        return clients.openWindow(targetUrl);
+      }
     })
   );
 });

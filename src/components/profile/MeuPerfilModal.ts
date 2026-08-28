@@ -4,6 +4,7 @@ import { supabase, atualizarSenhaAtual } from '../../services/supabase';
 import { showCustomAlert } from '../../services/dialog';
 import { obterProgressoNivel, BADGE_DEFINITIONS, obterMedalhasUsuario, obterCampanhasAtivas, obterProgressoCampanha } from '../../services/gamification';
 import { renderHelpIcon } from '../../utils/helpHelper';
+import { PushNotificationService } from '../../services/pushNotificationService';
 
 export interface MeuPerfilModalOptions {
   perfil: PerfilConsultor;
@@ -117,6 +118,19 @@ export class MeuPerfilModal {
                   <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">Confirmar Senha</label>
                   <input id="input-mp-senha-confirm" type="password" minlength="6" autocomplete="new-password" placeholder="Confirme a senha" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs" />
                 </div>
+              </div>
+            </div>
+
+            <!-- Card de Notificações Push PWA -->
+            <div class="border-t border-slate-100 dark:border-slate-800 pt-3.5">
+              <div class="p-3.5 bg-gradient-to-br from-indigo-50/60 to-purple-50/30 dark:from-indigo-950/20 dark:to-purple-950/10 border border-indigo-100 dark:border-indigo-900/30 rounded-xl flex items-center justify-between gap-3">
+                <div class="space-y-0.5">
+                  <span class="block text-xs font-black text-indigo-900 dark:text-indigo-300 flex items-center gap-1.5">📱 Notificações no Celular (PWA)</span>
+                  <p class="text-[11px] text-slate-500 dark:text-slate-400 font-medium leading-tight">Receba solicitações de escala e mensagens diretas na tela de bloqueio do celular.</p>
+                </div>
+                <button type="button" id="btn-toggle-push-notifications" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-extrabold transition shrink-0 shadow-sm shadow-indigo-600/20">
+                  <span>Ativar</span>
+                </button>
               </div>
             </div>
           </div>
@@ -487,6 +501,36 @@ export class MeuPerfilModal {
         }
       }
     });
+
+    // Lógica do botão de Notificações Push no Celular
+    const pushBtn = overlay.querySelector('#btn-toggle-push-notifications') as HTMLButtonElement;
+    if (pushBtn) {
+      PushNotificationService.isSubscribed().then(isSub => {
+        if (isSub) {
+          pushBtn.className = 'px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-extrabold transition shrink-0 shadow-sm shadow-emerald-600/20';
+          pushBtn.innerHTML = '<span>Ativado ✓</span>';
+        }
+      });
+
+      pushBtn.addEventListener('click', async () => {
+        const isSub = await PushNotificationService.isSubscribed();
+        try {
+          if (isSub) {
+            await PushNotificationService.unsubscribeUser(perfil.id);
+            pushBtn.className = 'px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-extrabold transition shrink-0 shadow-sm shadow-indigo-600/20';
+            pushBtn.innerHTML = '<span>Ativar</span>';
+            options.showToast('Notificações no celular desativadas.', 'success');
+          } else {
+            await PushNotificationService.subscribeUser(perfil.id);
+            pushBtn.className = 'px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-extrabold transition shrink-0 shadow-sm shadow-emerald-600/20';
+            pushBtn.innerHTML = '<span>Ativado ✓</span>';
+            options.showToast('Notificações push ativadas para este celular!', 'success');
+          }
+        } catch (err: any) {
+          showCustomAlert(err.message || 'Erro ao alterar notificações no celular.', 'Notificações no Celular');
+        }
+      });
+    }
 
     // Enviar formulário
     const form = overlay.querySelector('#form-meu-perfil') as HTMLFormElement;

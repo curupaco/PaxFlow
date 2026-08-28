@@ -1,6 +1,7 @@
 import { supabase } from './supabase';
 import { EscalaDiaria, SolicitacaoEscala, BancoFolgasItem, EventoEscalaItem, TurnoConfig } from '../types';
 import { formatarDataBR } from '../utils/messageFormatter';
+import { PushSenderService } from './pushSenderService';
 
 export const TURNO_PRESETS: TurnoConfig[] = [
   { codigo: '10-17', label: '10:00 - 17:00', corClass: 'c10' },
@@ -470,6 +471,12 @@ export class EscalaService {
               concluido: false,
               created_at: newObj.created_at
             });
+            // Dispara Web Push no celular dos administradores
+            PushSenderService.sendToUser(admin.id, {
+              title: `📅 Solicitação de Escala: ${tipoLabel}`,
+              body: `${newObj.solicitante_nome} solicitou ${tipoLabel} (${formatarDataBR(newObj.data_origem)})`,
+              url: '/#inbox'
+            });
           }
         }
       } else if (newObj.status === 'pendente_colega' && newObj.destinatario_id) {
@@ -482,6 +489,12 @@ export class EscalaService {
           prioridade: 'alta',
           concluido: false,
           created_at: newObj.created_at
+        });
+        // Dispara Web Push no celular do colega
+        PushSenderService.sendToUser(newObj.destinatario_id, {
+          title: '🔄 Troca de Turno Solicitada',
+          body: `${newObj.solicitante_nome} solicitou trocar o turno de ${formatarDataBR(newObj.data_origem)} com você.`,
+          url: '/#inbox'
         });
       }
     } catch (errLembrete) {
