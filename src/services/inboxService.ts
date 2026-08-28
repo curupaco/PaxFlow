@@ -739,6 +739,13 @@ export class InboxService {
 
       // --- PART 7: SOLICITAÇÕES DE ESCALA (TROCAS, FOLGAS E FÉRIAS) ---
       try {
+        const { data: allProfilesData } = await supabase.from('profiles').select('id, nome, avatar_url');
+        const profilesMap = new Map<string, any>();
+        (allProfilesData || []).forEach((p: any) => {
+          if (p.id) profilesMap.set(p.id, p);
+          if (p.nome) profilesMap.set(p.nome.toLowerCase().trim(), p);
+        });
+
         const solicitacoesEscala = await EscalaService.loadSolicitacoes();
         (solicitacoesEscala || []).forEach(sol => {
           const isUserSolicitante = String(sol.solicitante_id) === String(user.id) || sol.solicitante_nome === perfil?.nome;
@@ -752,6 +759,10 @@ export class InboxService {
           let cardBody = '';
           let cardSender = sol.solicitante_nome || 'Central de Escala';
 
+          // Obter avatar real do solicitante/remetente da solicitação
+          const solProfile = profilesMap.get(sol.solicitante_id) || profilesMap.get((sol.solicitante_nome || '').toLowerCase().trim());
+          const senderAvatarReal = (sol as any).solicitante_avatar || solProfile?.avatar_url || undefined;
+
           const dataOrigemFmt = formatarDataBR(sol.data_origem);
           const dataDestinoFmt = formatarDataBR(sol.data_destino);
           const rangeStr = formatarPeriodoDataBR(sol.data_origem, sol.data_destino);
@@ -763,21 +774,24 @@ export class InboxService {
               cardTitle = 'Troca de Turno Solicitada por Colega';
               cardSubject = `${sol.solicitante_nome} solicitou trocar o turno de ${dataOrigemFmt} com você!`;
               cardBody = `
-                <strong>${sol.solicitante_nome}</strong> deseja trocar seu turno de <strong>${dataOrigemFmt}</strong> com o seu turno de <strong>${dataDestinoFmt || dataOrigemFmt}</strong>.<br><br>
-                • <strong>Motivo:</strong> ${sol.motivo || 'Não informado'}<br><br>
-                <div class="pt-2">
-                  <button class="btn-ver-na-escala inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-extrabold transition shadow-md shadow-indigo-950/20" data-sol-id="${sol.id}">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                    <span>Analisar na Escala</span>
-                  </button>
+                <div class="space-y-2">
+                  <p><strong>Solicitante:</strong> ${sol.solicitante_nome}</p>
+                  <p>• <strong>Data Solicitante:</strong> ${dataOrigemFmt}<br>• <strong>Sua Data (Colega):</strong> ${dataDestinoFmt}</p>
+                  <p>• <strong>Motivo:</strong> ${sol.motivo || 'Sem observações'}</p>
+                  <div class="pt-2">
+                    <button class="btn-ver-na-escala inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-extrabold transition shadow-md shadow-indigo-950/20" data-sol-id="${sol.id}">
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                      <span>Ver na Escala</span>
+                    </button>
+                  </div>
                 </div>
               `;
             } else if (isUserSolicitante) {
               shouldInclude = true;
               isSentItem = true;
-              cardTitle = 'Troca de Turno Enviada para Colega';
-              cardSubject = `Solicitação enviada para ${sol.destinatario_nome}. Aguardando aceite do colega.`;
-              cardBody = `Você solicitou troca de turno de ${rangeStr} com ${sol.destinatario_nome}.`;
+              cardTitle = 'Solicitação de Troca Enviada ao Colega';
+              cardSubject = `Sua solicitação de troca com ${sol.destinatario_nome} (${dataOrigemFmt}) aguarda aceite do colega.`;
+              cardBody = `Você solicitou trocar seu turno de ${dataOrigemFmt} com o turno de ${dataDestinoFmt} de ${sol.destinatario_nome}.`;
             }
           } 
           // 1. Caso especial: Atendimento no Balcão (Co-Piloto) - Notificação Operacional
@@ -864,7 +878,7 @@ export class InboxService {
               type: 'escala_solicitacao',
               title: cardTitle,
               sender: cardSender,
-              senderAvatar: 'panda',
+              senderAvatar: senderAvatarReal,
               dateStr: new Date(sol.created_at).toLocaleDateString('pt-BR'),
               subject: cardSubject,
               body: cardBody,
