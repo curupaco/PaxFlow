@@ -377,18 +377,18 @@ export class EditTravelModal {
         ` : ''}
 
         <!-- Topo com Título e Fechar -->
-        <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 mb-4">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 dark:border-slate-800 pb-3 mb-4 gap-3">
           <div>
-            <h3 class="text-lg font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5 font-sans">
+            <h3 class="text-base sm:text-lg font-black text-slate-800 dark:text-slate-100 flex flex-wrap items-center gap-1.5 font-sans">
               ✈️ Gerenciar Viagem ${renderHelpIcon('conferencia-viagem')}
               ${(v.codigoRef || v.codigo_ref) ? `<span class="ml-1 text-xs font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded border border-slate-200/50 dark:border-slate-700/50">${v.codigoRef || v.codigo_ref}</span>` : ''}
             </h3>
             <p class="text-xs text-slate-400 dark:text-slate-400 font-semibold">Destino: <span class="font-bold text-slate-600 dark:text-slate-300">${v.destino}</span> &bull; Loc: <span class="font-bold text-slate-600 dark:text-slate-300">${v.codigo_localizador || 'Sem LOC'}</span></p>
           </div>
-          <div class="flex items-center gap-3">
+          <div class="flex items-center justify-between sm:justify-end gap-2 flex-wrap">
             <!-- Botão de Processo -->
             ${isAdmin ? `
-              <button id="btn-processo-global" class="px-3 py-1.5 rounded-lg text-[10px] font-black tracking-wider transition uppercase shadow-sm border font-sans ${
+              <button id="btn-processo-global" class="px-2.5 py-1.5 rounded-lg text-[10px] font-black tracking-wider transition uppercase shadow-sm border font-sans ${
                 viagemProcessoConferido 
                   ? 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-700 dark:bg-emerald-500/20 dark:hover:bg-emerald-500/30 dark:text-emerald-400 dark:border-emerald-800' 
                   : 'bg-slate-100 hover:bg-slate-200 text-slate-500 border-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-400 dark:border-slate-700'
@@ -396,47 +396,50 @@ export class EditTravelModal {
                 ${viagemProcessoConferido ? '✔️ Processo Conferido' : '⚙️ Conferir Processo'}
               </button>
             ` : (viagemProcessoConferido ? `
-              <span class="px-3 py-1.5 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-600 dark:text-emerald-400 dark:bg-emerald-950/20 dark:border-emerald-900/40 text-[10px] font-black flex items-center gap-1 shadow-sm font-sans">
+              <span class="px-2.5 py-1.5 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-600 dark:text-emerald-400 dark:bg-emerald-950/20 dark:border-emerald-900/40 text-[10px] font-black flex items-center gap-1 shadow-sm font-sans">
                 ✔️ Processo Conferido
               </span>
             ` : '')}
 
-            <button id="btn-financeiro-global" class="hidden px-3 py-1.5 rounded-lg text-[10px] font-black tracking-wider transition uppercase shadow-sm border font-sans"></button>
-            <button id="btn-close-edit-modal-x" class="text-slate-400 hover:text-rose-500 dark:text-slate-400 dark:hover:text-rose-400 font-bold transition">✕</button>
+            <button id="btn-financeiro-global" class="hidden px-2.5 py-1.5 rounded-lg text-[10px] font-black tracking-wider transition uppercase shadow-sm border font-sans"></button>
+            <button id="btn-close-edit-modal-x" class="p-1 text-slate-400 hover:text-rose-500 dark:text-slate-400 dark:hover:text-rose-400 font-bold transition text-lg ml-auto sm:ml-0">✕</button>
           </div>
         </div>
 
         <!-- Seletor de Abas Premium (visível apenas no mobile) -->
-        <div class="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 mb-5 pb-px lg:hidden">
-          <button id="tab-detalhes-btn" class="border-b-2 ${activeTab === 'detalhes' ? 'border-indigo-600 dark:border-indigo-400 text-indigo-600 dark:text-indigo-400 font-black' : 'border-transparent text-slate-400 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 font-semibold'} px-4 py-2 text-sm transition">
+        <div class="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 mb-5 pb-px lg:hidden overflow-x-auto custom-scrollbar">
+          <button id="tab-detalhes-btn" class="border-b-2 ${activeTab === 'detalhes' ? 'border-indigo-600 dark:border-indigo-400 text-indigo-600 dark:text-indigo-400 font-black' : 'border-transparent text-slate-400 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 font-semibold'} px-3 py-2 text-xs sm:text-sm transition shrink-0">
             📝 Detalhes e Edição
           </button>
-          <button id="tab-produtos-btn" class="border-b-2 ${activeTab === 'produtos' ? 'border-indigo-600 dark:border-indigo-400 text-indigo-600 dark:text-indigo-400 font-black' : 'border-transparent text-slate-400 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 font-semibold'} px-4 py-2 text-sm transition">
+          <button id="tab-produtos-btn" class="border-b-2 ${activeTab === 'produtos' ? 'border-indigo-600 dark:border-indigo-400 text-indigo-600 dark:text-indigo-400 font-black' : 'border-transparent text-slate-400 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 font-semibold'} px-3 py-2 text-xs sm:text-sm transition shrink-0">
             🛍️ Produtos e Serviços
           </button>
           ${v.reembolsos && v.reembolsos.length > 0 ? `
-            <button id="tab-reembolsos-btn" class="border-b-2 border-transparent px-4 py-2 text-sm font-semibold text-slate-400 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition">
+            <button id="tab-reembolsos-btn" class="border-b-2 border-transparent px-3 py-2 text-xs sm:text-sm font-semibold text-slate-400 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition shrink-0">
               💸 Histórico de Reembolsos
             </button>
           ` : ''}
         </div>
 
-        <!-- Layout de duas/três colunas no Desktop / abas no Mobile -->
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-
-          <!-- COLUNA DA ESQUERDA (Detalhes e Edição) -->
-          <div id="tab-detalhes-content" class="space-y-4 tab-pane-transition ${activeTab === 'produtos' ? 'hidden' : ''} ${this.selectedProductId ? 'lg:col-span-4' : 'lg:col-span-5'} lg:!block">
-            <!-- Detalhes do Dono e SLA no Topo -->
-            <div class="flex flex-wrap items-center justify-between gap-3 p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/50 dark:border-slate-800">
+        <!-- CONTEÚDO PRINCIPAL (Grid 3 Colunas no Desktop) -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          
+          <!-- COLUNA DA ESQUERDA (Detalhes da Viagem e Cronograma) -->
+          <div id="tab-detalhes-content" class="space-y-4 ${activeTab === 'produtos' ? 'hidden lg:block' : ''} ${this.selectedProductId ? 'lg:col-span-4' : 'lg:col-span-5'}">
+            
+            <!-- Perfil do Responsável e SLA -->
+            <div class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/50 dark:border-slate-800 flex-wrap gap-2">
               <div class="flex items-center gap-2">
                 <span class="text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider font-sans">Responsável:</span>
-                <select id="edit-viagem-consultor" required ${viagemProcessoConferido ? 'disabled' : ''} class="px-2.5 py-1 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-700 dark:text-slate-200 text-xs font-bold shadow-sm cursor-pointer font-sans">
-                  ${this.options.consultores.map(c => `<option value="${c.id}" ${c.id === v.consultor_id ? 'selected' : ''}>${c.nome}</option>`).join('')}
+                <select id="edit-viagem-consultor" ${!isAdmin ? 'disabled' : ''} class="text-xs font-extrabold bg-transparent text-slate-700 dark:text-slate-300 focus:outline-none cursor-pointer border border-slate-200/60 dark:border-slate-700 rounded-lg px-2 py-1 font-sans">
+                  ${this.options.consultores.map(c => `
+                    <option value="${c.id}" ${c.id === v.consultor_id ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">${c.nome}</option>
+                  `).join('')}
                 </select>
               </div>
-              
+
               ${sla.alert ? `
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-1.5">
                   <span class="text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider font-sans">Alerta SLA:</span>
                   <span class="px-2.5 py-1 rounded-lg text-xs font-black tracking-wide animate-pulse border font-sans ${
                     sla.type === 'pre-embarque' 
@@ -481,7 +484,8 @@ export class EditTravelModal {
                 ${renderCurrencyInputHTML('edit-viagem-valor', v.valor_total || 0, '0,00', true, viagemProcessoConferido)}
               </div>
 
-              <div class="grid grid-cols-3 gap-3">
+              <!-- Datas Responsivas (1 coluna no mobile, 3 colunas no desktop) -->
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 leading-tight font-sans">Data Ida *</label>
                   ${renderDateInputHTML('edit-viagem-ida', v.data_ida || '', 'DD/MM/AAAA', true, viagemProcessoConferido)}
@@ -512,17 +516,23 @@ export class EditTravelModal {
                 <textarea id="edit-viagem-obs" rows="2.5" ${viagemProcessoConferido ? 'disabled' : ''} class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 text-sm font-medium font-sans">${v.observacoes || ''}</textarea>
               </div>
 
-              <div class="flex items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-800 mt-4 font-sans">
+              <!-- Rodapé Fixo (Sticky Footer) para Ações de Salvamento -->
+              <div class="sticky bottom-0 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 pt-3 pb-2 z-20 flex items-center justify-between gap-2 font-sans flex-wrap">
                 <div>
                   ${this.options.perfil?.role === 'admin' && !viagemProcessoConferido ? `
-                    <button id="btn-excluir-viagem" type="button" class="px-5 py-2.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-900/20 text-rose-600 dark:text-rose-400 font-extrabold text-xs tracking-wider rounded-xl transition uppercase">
-                      Excluir Viagem
+                    <button id="btn-excluir-viagem" type="button" class="px-4 py-2.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-900/20 text-rose-600 dark:text-rose-400 font-extrabold text-[11px] tracking-wider rounded-xl transition uppercase">
+                      Excluir
                     </button>
                   ` : ''}
                 </div>
-                <div class="flex items-center gap-3">
-                  <button id="btn-cancel-edit" type="button" ${viagemProcessoConferido ? 'disabled' : ''} class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs tracking-wider rounded-xl transition uppercase ${viagemProcessoConferido ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}">Cancelar</button>
-                  <button id="btn-salvar-viagem" type="submit" ${viagemProcessoConferido ? 'disabled' : ''} class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/10 transition uppercase ${viagemProcessoConferido ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}">Salvar Alterações</button>
+
+                <div class="flex items-center gap-2 ml-auto">
+                  <button id="btn-close-edit-modal" type="button" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold text-xs tracking-wider rounded-xl transition uppercase">
+                    Cancelar
+                  </button>
+                  <button type="submit" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/20 transition uppercase">
+                    Salvar Alterações
+                  </button>
                 </div>
               </div>
             </form>
@@ -566,7 +576,7 @@ export class EditTravelModal {
           <div id="tab-produtos-content" class="space-y-5 tab-pane-transition ${activeTab === 'detalhes' || (this.selectedProductId && activeTab === 'produtos') ? 'hidden' : ''} ${this.selectedProductId ? 'lg:col-span-4 lg:!block' : 'lg:col-span-7 lg:!block'} lg:!mt-0">
             
             <!-- Painel Financeiro (Totalizadores e Saldo Pendente) -->
-            <div id="painel-financeiro-produtos" class="grid grid-cols-4 gap-3 p-3.5 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/50 dark:border-slate-800 mb-4">
+            <div id="painel-financeiro-produtos" class="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3.5 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/50 dark:border-slate-800 mb-4">
               <div>
                 <span class="block text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wider leading-tight">Valor da Venda</span>
                 <strong id="fin-valor-venda" class="text-sm font-black text-slate-800 dark:text-slate-100">R$ 0,00</strong>

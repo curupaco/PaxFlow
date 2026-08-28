@@ -302,7 +302,7 @@ html.dark .pf-bottom-sheet-content {
     padding: 0 !important;
   }
 
-  /* Alvo nos containers dos modais para virarem tela cheia */
+  /* Alvo nos containers dos modais para virarem tela cheia com altura dinâmica (100dvh) */
   #modal-content-container,
   #modal-container,
   #modal-container-product-comments,
@@ -317,11 +317,11 @@ html.dark .pf-bottom-sheet-content {
   .bg-white.dark\:bg-slate-900.border.border-slate-200.dark\:border-slate-800.w-full.max-w-lg.rounded-3xl.shadow-2xl.overflow-hidden.flex.flex-col {
     width: 100% !important;
     max-width: 100% !important;
-    height: 100% !important;
-    max-height: 100vh !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
     border-radius: 0px !important;
     margin: 0 !important;
-    padding: 1.25rem !important;
+    padding: 1rem !important;
     overflow-y: auto !important;
     transform: scale(1) !important;
     border: none !important;

@@ -225,14 +225,14 @@ export function renderLateralEditorPaneHTML(
   const disabledAttr = isLocConferido ? 'disabled' : '';
 
   return `
-    <div id="selected-product-editor-pane" class="space-y-4 lg:col-span-4 border-t lg:border-t-0 lg:border-l border-slate-100 dark:border-slate-800 lg:pl-6 pt-4 lg:pt-0 ${activeTab === 'produtos' ? 'block' : 'hidden lg:block'} max-h-[80vh] overflow-y-auto pr-1">
+    <div id="selected-product-editor-pane" class="space-y-4 lg:col-span-4 border-t lg:border-t-0 lg:border-l border-slate-100 dark:border-slate-800 lg:pl-6 pt-4 lg:pt-0 ${activeTab === 'produtos' ? 'block fixed inset-0 z-50 bg-white dark:bg-slate-900 p-4 lg:relative lg:inset-auto lg:z-auto lg:p-0' : 'hidden lg:block'} max-h-[100dvh] lg:max-h-[80vh] overflow-y-auto custom-scrollbar">
       <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 mb-2 sticky top-0 bg-white dark:bg-slate-900 z-10">
         <h4 class="text-xs font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5 uppercase tracking-wide font-sans">
           <span class="p-1 bg-indigo-50 dark:bg-indigo-950 text-indigo-500 rounded-lg text-xs flex items-center justify-center">${getIconForType(selectedProduct.tipo)}</span>
           <span>Editar Serviço: ${selectedProduct.tipo}</span>
         </h4>
-        <button id="btn-close-product-editor" type="button" class="text-[10px] font-black text-slate-400 hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded transition uppercase tracking-wider font-sans">
-          Fechar
+        <button id="btn-close-product-editor" type="button" class="text-[10px] font-black text-white bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 px-3 py-1.5 rounded-xl transition uppercase tracking-wider font-sans shadow-sm flex items-center gap-1">
+          <span>← Voltar aos Produtos</span>
         </button>
       </div>
 
