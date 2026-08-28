@@ -290,31 +290,23 @@ html.dark .pf-bottom-sheet-content {
 
 /* Otimização de Modais no Mobile (Tela Cheia) */
 @media (max-width: 767px) {
-  /* Alvo nos overlays fixos para garantir preenchimento completo */
+  /* Alvo estrito nos overlays de modal ativos para alinhamento */
   #modal-overlay,
-  .fixed.inset-0.bg-slate-900\/60,
-  .fixed.inset-0.bg-slate-900\/40,
-  .fixed.inset-0.bg-slate-950\/40,
-  .fixed.inset-0.z-50.flex.items-center.justify-center {
+  #email-reader-modal,
+  #new-message-modal {
     display: flex !important;
     align-items: flex-end !important;
     justify-content: center !important;
     padding: 0 !important;
   }
 
-  /* Alvo nos containers dos modais para virarem tela cheia com altura dinâmica (100dvh) */
-  #modal-content-container,
-  #modal-container,
+  /* Alvo estrito nos containers de modais específicos para tela cheia dinâmica (100dvh) */
+  #modal-overlay > #modal-container,
+  #modal-overlay #modal-content-container,
   #modal-container-product-comments,
   #paxflow-doc-viewer-container,
   #todo-card-modal-card,
-  #todo-cols-modal-card,
-  .bg-white.dark\:bg-slate-900.max-w-2xl.w-full,
-  .bg-white.dark\:bg-slate-900.max-w-lg.w-full,
-  .bg-white.dark\:bg-slate-900.max-w-md.w-full,
-  .bg-white.w-full.max-w-lg.rounded-3xl,
-  .bg-white.dark\:bg-slate-900.border.w-full.max-w-md,
-  .bg-white.dark\:bg-slate-900.border.border-slate-200.dark\:border-slate-800.w-full.max-w-lg.rounded-3xl.shadow-2xl.overflow-hidden.flex.flex-col {
+  #todo-cols-modal-card {
     width: 100% !important;
     max-width: 100% !important;
     height: 100dvh !important;
