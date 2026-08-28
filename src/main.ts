@@ -12,6 +12,7 @@ import { Router } from './router';
 import { LandingPage } from './pages/LandingPage';
 import { LandingPageOLD } from './pages/LandingPage_OLD';
 import { GlobalHeaderSearch } from './components/GlobalHeaderSearch';
+import { RealtimeMessagingService } from './services/realtimeMessaging';
 
 (window as any).traduzirErro = traduzirErro;
 
@@ -829,6 +830,23 @@ class App {
    */
   private inicializarRealtimeProfile(): void {
     if (!this.perfil) return;
+
+    // Inicializa o serviço de tempo real de mensagens e solicitações de escala
+    RealtimeMessagingService.init(this.perfil.id, this.perfil.role);
+
+    // Registra ouvinte global para toasts flutuantes de novas mensagens
+    window.removeEventListener('paxflow:new-message', (this as any)._onNewMessageBound);
+    (this as any)._onNewMessageBound = (e: CustomEvent) => {
+      this.atualizarInboxBadge();
+      const detail = e.detail;
+      const title = detail?.table === 'escala_solicitacoes' 
+        ? '📅 Solicitação de Escala Recebida' 
+        : detail?.table === 'mensagens_diretas' 
+        ? '💬 Nova Mensagem Direta' 
+        : '🔔 Nova Notificação Recebida';
+      this.showToast(`${title}!`, 'success');
+    };
+    window.addEventListener('paxflow:new-message', (this as any)._onNewMessageBound);
 
     // Cancela qualquer inscrição anterior
     supabase.channel(`profile-realtime-${this.perfil.id}`).unsubscribe();

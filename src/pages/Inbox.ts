@@ -1322,6 +1322,15 @@ export class InboxPage {
    * Set up page event listeners (clicks, tabs, selects, modal triggers)
    */
   private setupEventListeners(): void {
+    // Escuta de tempo real para receber novas mensagens e atualizar a lista sem F5
+    window.removeEventListener('paxflow:new-message', (this as any)._onRealtimeInboxBound);
+    (this as any)._onRealtimeInboxBound = async () => {
+      await this.loadAndBuildAlerts();
+      this.render();
+      this.setupEventListeners();
+    };
+    window.addEventListener('paxflow:new-message', (this as any)._onRealtimeInboxBound);
+
     // 1. Folders click listeners
     const folderAtivos = document.getElementById('folder-ativos');
     folderAtivos?.addEventListener('click', () => {
