@@ -1700,7 +1700,9 @@ export class ConfiguracoesPage {
                   </div>
                 </div>
                 <div class="border-t border-slate-100 dark:border-slate-800 pt-5 space-y-4">
-                  <h3 class="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-2">Identidade Visual da Agência (White-Label)</h3>
+                  <h3 class="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                    Identidade Visual da Agência (White-Label) ${renderHelpIcon('customizacao-marca-white-label')}
+                  </h3>
                   
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>

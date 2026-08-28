@@ -35,7 +35,8 @@ export class GlobalHeaderSearch {
                 <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
-            <input id="global-search-input" type="text" placeholder="Pesquisar em toda a agência..." class="w-full text-xs font-semibold pl-10 pr-8 py-2 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 text-slate-800 dark:text-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition shadow-inner" />
+            <input id="global-search-input" type="text" placeholder="Pesquisar em toda a agência..." class="w-full text-xs font-semibold pl-10 pr-12 py-2 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 text-slate-800 dark:text-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition shadow-inner" />
+            <kbd class="hidden sm:inline-flex items-center px-1.5 py-0.5 text-[9px] bg-slate-200/70 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-mono rounded border border-slate-300/60 dark:border-slate-700/60 absolute right-8 top-1/2 -translate-y-1/2 pointer-events-none select-none font-bold">/</kbd>
             <button id="btn-clear-global-search" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 hidden text-xs font-bold">✕</button>
           </div>
 
@@ -98,6 +99,15 @@ export class GlobalHeaderSearch {
       }
       if (clearBtn) clearBtn.classList.add('hidden');
       if (this.dropdownEl) this.dropdownEl.classList.add('hidden');
+    });
+
+    // Atalho de teclado '/' para focar no campo de busca global
+    document.addEventListener('keydown', (e: KeyboardEvent) => {
+      if (e.key === '/' && !['INPUT', 'TEXTAREA', 'SELECT'].includes((document.activeElement?.tagName || ''))) {
+        e.preventDefault();
+        this.inputEl?.focus();
+        this.inputEl?.select();
+      }
     });
 
     // Oculta ao clicar fora

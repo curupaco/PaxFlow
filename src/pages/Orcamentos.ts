@@ -862,6 +862,14 @@ export class OrcamentosPage {
         <!-- Corpo Principal Kanban -->
         <main class="flex-1 p-6 overflow-x-auto flex md:flex flex-col md:flex-row gap-6 items-stretch md:items-start custom-scrollbar">
           
+          <!-- Colunas Kanban com Somatório Financeiro -->
+          <%
+            const calcTotal = (list: any[]) => list.reduce((acc, curr) => acc + (curr.valorViagem || curr.valorProposta || 0), 0);
+            const sumSolicitado = calcTotal(solicitado);
+            const sumEmAndamento = calcTotal(emAndamento);
+            const sumAguardando = calcTotal(aguardando);
+            const sumConcluido = calcTotal(concluido);
+          %>
           <!-- Coluna 1: SOLICITADO -->
           <div class="w-full md:w-80 bg-slate-100/70 dark:bg-slate-900/40 border border-slate-200/50 dark:border-slate-800/80 border-t-4 border-t-indigo-500 rounded-2xl p-4 flex-col shrink-0 orcamentos-column ${this.activeColumnMobile === 'SOLICITADO' ? 'flex' : 'hidden md:flex'}">
             <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-200/60 dark:border-slate-800/60 select-none">
@@ -874,6 +882,7 @@ export class OrcamentosPage {
                 <span class="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-wider">Solicitado</span>
                 <span class="px-2 py-0.5 bg-indigo-100 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-400 rounded-full text-[10px] font-black">${solicitado.length}</span>
               </div>
+              <span class="text-[10px] font-black text-indigo-600 dark:text-indigo-400">R$ ${solicitado.reduce((acc, curr) => acc + (curr.valorProposta || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
             </div>
             ${this.renderSortControls('SOLICITADO')}
             <div class="flex flex-col gap-4 overflow-y-auto max-h-[700px] pr-1 custom-scrollbar">
@@ -895,6 +904,7 @@ export class OrcamentosPage {
                 <span class="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-wider">Em Andamento</span>
                 <span class="px-2 py-0.5 bg-amber-100 dark:bg-indigo-950/80 text-amber-600 dark:text-amber-400 rounded-full text-[10px] font-black">${emAndamento.length}</span>
               </div>
+              <span class="text-[10px] font-black text-amber-600 dark:text-amber-400">R$ ${emAndamento.reduce((acc, curr) => acc + (curr.valorProposta || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
             </div>
             ${this.renderSortControls('EM_ANDAMENTO')}
             <div class="flex flex-col gap-4 overflow-y-auto max-h-[700px] pr-1 custom-scrollbar">
@@ -915,6 +925,7 @@ export class OrcamentosPage {
                 <span class="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-wider">Aguardando</span>
                 <span class="px-2 py-0.5 bg-rose-100 dark:bg-indigo-950/80 text-rose-600 dark:text-rose-400 rounded-full text-[10px] font-black">${aguardando.length}</span>
               </div>
+              <span class="text-[10px] font-black text-rose-600 dark:text-rose-400">R$ ${aguardando.reduce((acc, curr) => acc + (curr.valorProposta || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
             </div>
             ${this.renderSortControls('AGUARDANDO')}
             <div class="flex flex-col gap-4 overflow-y-auto max-h-[700px] pr-1 custom-scrollbar">
@@ -985,7 +996,7 @@ export class OrcamentosPage {
     const isAdmin = this.perfil?.role === 'admin';
 
     return `
-      <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/85 p-4 rounded-xl shadow-sm card-orcamento relative flex flex-col gap-3.5 select-none animate-card-in" data-id="${o.id}">
+      <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/85 p-4 rounded-xl shadow-sm card-orcamento pf-card-hover pf-card-glass ${o.temperatura === 'Quente' ? 'pf-glow-hot' : ''} relative flex flex-col gap-3.5 select-none animate-card-in" data-id="${o.id}">
         
         <!-- Topo do Card: Nome e Detalhes -->
         <div class="flex items-start justify-between gap-2.5">

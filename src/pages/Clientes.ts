@@ -775,14 +775,16 @@ export class ClientesPage {
     // Se nenhum cliente estiver selecionado, exibe uma bela tela inicial (Glassmorphic)
     if (!c) {
       fichaEl.innerHTML = `
-        <div class="h-full min-h-[500px] bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl flex flex-col items-center justify-center p-8 text-center shadow-sm">
-          <div class="w-20 h-20 bg-indigo-50/50 dark:bg-indigo-950/40 text-indigo-500 dark:text-indigo-400 rounded-3xl flex items-center justify-center text-4xl mb-4 border border-indigo-100/30 dark:border-indigo-900/30 shadow-inner animate-pulse">
+        <div class="h-full min-h-[500px] pf-card-glass rounded-3xl flex flex-col items-center justify-center p-8 text-center shadow-lg border border-slate-200/80 dark:border-slate-800/80">
+          <div class="w-20 h-20 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 text-indigo-600 dark:text-indigo-400 rounded-3xl flex items-center justify-center text-4xl mb-4 border border-indigo-500/30 shadow-inner animate-pulse">
             👥
           </div>
-          <h3 class="text-xl font-black text-slate-800 dark:text-slate-200 tracking-tight mb-2">Ficha de Gestão de Clientes</h3>
-          <p class="text-sm text-slate-400 dark:text-slate-400 max-w-sm mb-6 font-medium">Selecione um cliente na barra lateral para editar suas informações, validar passaportes ou anexar arquivos diretamente no Google Drive corporativo.</p>
-          <button id="btn-novo-cliente-vazio" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-lg shadow-indigo-600/10 transition">
-            ➕ Cadastrar Novo Cliente
+          <h3 class="text-xl font-black text-slate-800 dark:text-slate-100 tracking-tight mb-2">Ficha de Gestão de Clientes</h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400 max-w-sm mb-6 font-semibold leading-relaxed">
+            Selecione um cliente na lista à esquerda para editar informações, acompanhar histórico de vendas, consultar passaportes e gerenciar pastas no Google Drive corporativo.
+          </p>
+          <button id="btn-novo-cliente-vazio" class="px-6 py-3 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white font-extrabold text-xs uppercase tracking-wider rounded-2xl shadow-xl shadow-indigo-600/25 pf-button-press pf-focus-ring transition flex items-center gap-2">
+            <span>➕</span> Cadastrar Novo Cliente
           </button>
         </div>
       `;

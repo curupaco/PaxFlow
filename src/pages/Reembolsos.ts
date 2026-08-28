@@ -518,8 +518,8 @@ export class ReembolsosPage {
               <!-- Desktop View: Table (Hidden on mobile portrait) -->
               <div class="hidden md:block overflow-x-auto custom-scrollbar">
                 <table class="w-full text-left border-collapse">
-                  <thead>
-                    <tr class="bg-slate-50 dark:bg-slate-800 text-[10px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
+                  <thead class="sticky top-0 z-20 backdrop-blur-md">
+                    <tr class="bg-slate-50/90 dark:bg-slate-800/90 text-[10px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
                       <th class="py-4 px-5">Cliente</th>
                       <th class="py-4 px-5">Viagem / Localizador</th>
                       <th class="py-4 px-5">Produto Cancelado</th>
