@@ -6,10 +6,43 @@ export class LandingPage {
   }
 
   public init(): void {
+    this.setupMetaTags();
     this.render();
     this.setupEventListeners();
     this.setupScrollEffects();
     this.setupPremiumEffects();
+  }
+
+  private setupMetaTags(): void {
+    document.title = '🧭 PaxFlow - O CRM & Pós-Venda 100% Especializado em Turismo';
+
+    const setMeta = (property: string, content: string, isName = false) => {
+      const selector = isName ? `meta[name="${property}"]` : `meta[property="${property}"]`;
+      let el = document.querySelector<HTMLMetaElement>(selector);
+      if (!el) {
+        el = document.createElement('meta');
+        if (isName) el.setAttribute('name', property);
+        else el.setAttribute('property', property);
+        document.head.appendChild(el);
+      }
+      el.setAttribute('content', content);
+    };
+
+    const siteUrl = window.location.origin + window.location.pathname;
+    const imageUrl = window.location.origin + '/logo.svg';
+
+    setMeta('description', 'Centralize pós-vendas, passaportes, vistos, reembolsos aéreos e escalas da sua agência de viagens em uma plataforma viva, sem planilhas.', true);
+    setMeta('og:type', 'website');
+    setMeta('og:site_name', 'PaxFlow');
+    setMeta('og:title', '🧭 PaxFlow - O CRM & Pós-Venda 100% Especializado em Turismo');
+    setMeta('og:description', 'Centralize pós-vendas, passaportes, vistos, reembolsos aéreos e escalas da sua agência de viagens em uma plataforma viva, sem planilhas.');
+    setMeta('og:image', imageUrl);
+    setMeta('og:url', siteUrl);
+
+    setMeta('twitter:card', 'summary_large_image', true);
+    setMeta('twitter:title', '🧭 PaxFlow - O CRM & Pós-Venda 100% Especializado em Turismo', true);
+    setMeta('twitter:description', 'Centralize pós-vendas, passaportes, vistos, reembolsos aéreos e escalas da sua agência de viagens em uma plataforma viva, sem planilhas.', true);
+    setMeta('twitter:image', imageUrl, true);
   }
 
   private setupScrollEffects(): void {
