@@ -58,29 +58,44 @@ export class LandingPage {
       ...Array.from(scope.querySelectorAll<HTMLElement>('[data-reveal]')),
       ...Array.from(scope.querySelectorAll<HTMLElement>('.pf-zone')),
       ...Array.from(scope.querySelectorAll<HTMLElement>('.pf-slide-up, .pf-slide-left, .pf-slide-right')),
+      ...Array.from(scope.querySelectorAll<HTMLElement>('[class*="pf-rise"]')),
+      ...Array.from(scope.querySelectorAll<HTMLElement>('[data-count]')),
     ];
 
     const isReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     // Animação de contadores numéricos
-    const animateCountersInEl = (targetContainer: HTMLElement): void => {
-      const counters = targetContainer.querySelectorAll<HTMLElement>('[data-count]');
-      counters.forEach(el => {
-        if (el.getAttribute('data-counted') === 'true') return;
-        el.setAttribute('data-counted', 'true');
-        const target = parseFloat(el.getAttribute('data-count') || '0');
-        const suffix = el.getAttribute('data-suffix') || '';
-        const duration = 1200;
-        const start = performance.now();
-        const step = (now: number): void => {
-          const p = Math.min((now - start) / duration, 1);
-          const eased = 1 - Math.pow(1 - p, 3);
-          el.textContent = Math.round(target * eased) + suffix;
-          if (p < 1) requestAnimationFrame(step);
-        };
-        requestAnimationFrame(step);
-      });
+    const animateCounterEl = (el: HTMLElement): void => {
+      if (el.getAttribute('data-counted') === 'true') return;
+      el.setAttribute('data-counted', 'true');
+      const target = parseFloat(el.getAttribute('data-count') || '0');
+      const suffix = el.getAttribute('data-suffix') || '';
+      const duration = 1200;
+      const start = performance.now();
+      const step = (now: number): void => {
+        const p = Math.min((now - start) / duration, 1);
+        const eased = 1 - Math.pow(1 - p, 3);
+        el.textContent = Math.round(target * eased) + suffix;
+        if (p < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
     };
+
+    const animateCountersInEl = (targetContainer: HTMLElement): void => {
+      if (targetContainer.hasAttribute('data-count')) {
+        animateCounterEl(targetContainer);
+      }
+      const counters = targetContainer.querySelectorAll<HTMLElement>('[data-count]');
+      counters.forEach(el => animateCounterEl(el));
+    };
+
+    // Executa animação imediatamente para contadores já visíveis no topo da tela
+    scope.querySelectorAll<HTMLElement>('[data-count]').forEach(el => {
+      const rect = el.getBoundingClientRect();
+      if (rect.top < window.innerHeight && rect.bottom >= 0) {
+        animateCounterEl(el);
+      }
+    });
 
     // Observer de alta performance para revelar elementos sem engasgos de layout
     if ('IntersectionObserver' in window) {
@@ -102,7 +117,10 @@ export class LandingPage {
       revealItems.forEach(item => observer.observe(item));
 
       // Garante visibilidade do topo imediatamente no carregamento inicial
-      revealItems.slice(0, 4).forEach(item => item.classList.add('pf-revealed'));
+      revealItems.slice(0, 8).forEach(item => {
+        item.classList.add('pf-revealed');
+        animateCountersInEl(item);
+      });
     } else {
       revealItems.forEach(item => {
         item.classList.add('pf-revealed');
@@ -342,8 +360,8 @@ export class LandingPage {
 
           <!-- Stats bar -->
           <div class="pf-rise-5 grid grid-cols-2 md:grid-cols-4 gap-4 w-full max-w-4xl mx-auto mb-16 p-6 rounded-3xl bg-white/[0.04] border border-white/10 backdrop-blur-md pf-glow">
-            <div class="text-center p-3 rounded-2xl bg-gradient-to-b from-[#0052d4]/20 to-transparent"><span class="pf-num block text-3xl font-black text-[#00a8f5]" data-count="100" data-suffix="%">0%</span><span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Foco em Turismo</span></div>
-            <div class="text-center p-3 rounded-2xl bg-gradient-to-b from-[#f12711]/20 to-transparent"><span class="pf-num block text-3xl font-black text-[#f5af19]" data-count="180" data-suffix=" dias">0 dias</span><span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Alerta Vistos & Passaporte</span></div>
+            <div class="text-center p-3 rounded-2xl bg-gradient-to-b from-[#0052d4]/20 to-transparent"><span class="pf-num block text-3xl font-black text-[#00a8f5]" data-count="100" data-suffix="%">100%</span><span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Foco em Turismo</span></div>
+            <div class="text-center p-3 rounded-2xl bg-gradient-to-b from-[#f12711]/20 to-transparent"><span class="pf-num block text-3xl font-black text-[#f5af19]" data-count="180" data-suffix=" dias">180 dias</span><span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Alerta Vistos & Passaporte</span></div>
             <div class="text-center p-3 rounded-2xl bg-gradient-to-b from-[#00e5a3]/20 to-transparent"><span class="block text-3xl font-black text-[#00e5a3]">Escala + Banco</span><span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Gestão de Equipe</span></div>
             <div class="text-center p-3 rounded-2xl bg-gradient-to-b from-fuchsia-600/20 to-transparent"><span class="block text-3xl font-black text-fuchsia-400">WhatsApp SLA</span><span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Hub Integrado</span></div>
           </div>
@@ -627,10 +645,10 @@ export class LandingPage {
             <div data-reveal="up" class="mt-12 rounded-2xl bg-white/[0.03] border border-white/10 p-6">
               <span class="block text-center text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">Aumente a retenção e a previsão da sua operação</span>
               <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-                <div><span class="pf-num block text-3xl font-black text-[#00a8f5]" data-count="41" data-suffix="%">0%</span><span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Menos retrabalho no pós-venda</span></div>
-                <div><span class="pf-num block text-3xl font-black text-[#00e5a3]" data-count="30" data-suffix="%">0%</span><span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Mais tempo em vendas</span></div>
-                <div><span class="pf-num block text-3xl font-black text-[#f5af19]" data-count="100" data-suffix="%">0%</span><span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Reembolsos sob controle</span></div>
-                <div><span class="pf-num block text-3xl font-black text-fuchsia-400" data-count="6" data-suffix="x">0x</span><span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Fidelização com itinerários white-label</span></div>
+                <div><span class="pf-num block text-3xl font-black text-[#00a8f5]" data-count="41" data-suffix="%">41%</span><span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Menos retrabalho no pós-venda</span></div>
+                <div><span class="pf-num block text-3xl font-black text-[#00e5a3]" data-count="30" data-suffix="%">30%</span><span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Mais tempo em vendas</span></div>
+                <div><span class="pf-num block text-3xl font-black text-[#f5af19]" data-count="100" data-suffix="%">100%</span><span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Reembolsos sob controle</span></div>
+                <div><span class="pf-num block text-3xl font-black text-fuchsia-400" data-count="6" data-suffix="x">6x</span><span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Fidelização com itinerários white-label</span></div>
               </div>
             </div>
           </div>
