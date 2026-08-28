@@ -428,7 +428,7 @@ export class LandingPage {
               <div id="panel-viagens" class="space-y-4 tab-pane-transition hidden">
                 <div class="p-4 rounded-2xl bg-gradient-to-r from-[#00a8f5]/25 to-cyan-500/10 border border-[#00a8f5]/25 text-sm text-slate-200 flex items-center gap-2">
                   <span class="text-lg">✈️</span>
-                  <span><strong>Operação de Pós-Venda:</strong> Acompanhe todas as viagens por localizador (LOC), período e rentabilidade. O ícone de SLA (⚠️) avisa quando o passaporte precisa de atenção.</span>
+                  <span><strong>Operação de Pós-Venda &amp; Gestão Mobile Nativa:</strong> Acompanhe viagens por localizador (LOC) com botão flutuante FAB (+ Nova Viagem), compartilhamento nativo de itinerários (navigator.share) no smartphone e alertas visuais de SLA (⚠️).</span>
                 </div>
                 <div class="bg-white/[0.03] border border-white/10 rounded-2xl overflow-hidden">
                   <div class="overflow-x-auto custom-scrollbar">

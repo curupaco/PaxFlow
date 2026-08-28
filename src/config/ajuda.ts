@@ -481,6 +481,13 @@ export const HELP_ITEMS: HelpItem[] = [
     label: 'Notificações Push Nativas no Celular (PWA no Android & iOS)',
     description: 'Como receber alertas na tela de bloqueio do celular mesmo com o aplicativo fechado.',
     details: 'O PaxFlow suporta Notificações Push Nativas para celulares (Android e iOS 16.4+):\n\n- **Como Ativar**: Acesse seu perfil (clicando na sua carinha no rodapé da barra lateral) e clique no botão **📱 Notificações no Celular (PWA)** ➔ **Ativar**.\n- **Requisito no iPhone (iOS)**: No Safari do iPhone, toque no botão de Compartilhar e selecione **"Adicionar à Tela de Início"**. Ao abrir o aplicativo pelo ícone da tela inicial, ative as notificações no perfil.\n- **Funcionamento com App Fechado**: O celular vibrará e tocará exibindo a notificação com o ícone do PaxFlow na tela de bloqueio. Ao tocar na notificação, o aplicativo abrirá diretamente na mensagem ou solicitação correspondente.'
+  },
+  {
+    id: 'gestao-viagens-mobile',
+    modulo: 'viagens',
+    label: 'Navegação e Recursos Nativos no Celular (Gestão Mobile)',
+    description: 'Botão flutuante FAB (+ Nova Viagem), compartilhamento nativo e modal full-screen.',
+    details: 'A tela de Gestão de Viagens do PaxFlow foi 100% redesenhada para uso fluido em smartphones:\n\n- **Botão Flutuante (FAB)**: No canto inferior direito da tela do celular, o botão circular **`[+ Nova Viagem]`** permite cadastrar novas viagens com o polegar de forma rápida.\n- **Compartilhamento Nativo (`🔗`)**: Toque no ícone de corrente no card da viagem para acionar a folha de compartilhamento nativa do celular (iOS/Android), enviando o itinerário público direto para o cliente via WhatsApp, Telegram ou Mensagem.\n- **Modal Full-Screen no Celular**: O modal de detalhes da viagem ocupa 100% da altura da tela no smartphone com os botões de ação fixados no rodapé para salvamento sem esforço.'
   }
 ];
 

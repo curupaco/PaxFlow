@@ -233,6 +233,61 @@ html.dark .text-slate-400 {
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
+/* Bottom Sheet Mobile Animation & Controls */
+.pf-bottom-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 50;
+  animation: tabFadeIn 0.2s ease-out forwards;
+}
+
+.pf-bottom-sheet-content {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: #ffffff;
+  border-top-left-radius: 1.5rem;
+  border-top-right-radius: 1.5rem;
+  z-index: 51;
+  padding: 1.5rem;
+  box-shadow: 0 -10px 25px -5px rgba(0, 0, 0, 0.2);
+  animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+html.dark .pf-bottom-sheet-content {
+  background-color: #0f172a;
+  border-top: 1px solid #1e293b;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.pf-fab-btn {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 40;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 9999px;
+  background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 25px -5px rgba(79, 70, 229, 0.5);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s;
+}
+
+.pf-fab-btn:active {
+  transform: scale(0.92);
+}
+
 /* Otimização de Modais no Mobile (Tela Cheia) */
 @media (max-width: 767px) {
   /* Alvo nos overlays fixos para garantir preenchimento completo */

@@ -2145,6 +2145,9 @@ Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : '
             <button class="btn-action-view px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold rounded-xl shadow-md shadow-indigo-600/10 transition text-xs uppercase" data-trip-id="${v.id}">
               🔍 Detalhes
             </button>
+            <button class="btn-action-share-mobile p-2 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/45 dark:hover:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 rounded-xl border border-indigo-100/30 dark:border-indigo-900/30 transition flex items-center justify-center font-bold text-xs" data-trip-id="${v.id}" title="Compartilhar Itinerário">
+              🔗
+            </button>
             <button class="btn-action-whatsapp p-2 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/45 dark:hover:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400 rounded-xl border border-emerald-100/30 dark:border-emerald-900/30 transition flex items-center justify-center" data-trip-id="${v.id}" title="Enviar Mensagem de WhatsApp">
               <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.724-1.455L0 24zm6.59-4.846c1.6.95 3.197 1.451 4.777 1.451 5.51 0 9.997-4.493 10-10.008.002-2.673-1.037-5.186-2.93-7.079-1.892-1.893-4.401-2.934-7.078-2.934-5.518 0-10.007 4.493-10.01 10.01-.001 1.708.455 3.377 1.32 4.887L1.134 22.84l4.513-1.186zm11.23-7.925c-.297-.149-1.758-.868-2.03-.967-.273-.099-.471-.148-.669.149-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.568-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/></svg>
             </button>
@@ -2437,5 +2440,51 @@ Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : '
         this.render();
       });
     });
+
+    // 12. Botão Flutuante (FAB) de Nova Viagem para Mobile
+    document.getElementById('btn-fab-nova-viagem')?.addEventListener('click', () => {
+      this.openNovaViagemModal();
+    });
+
+    // 13. Botão de Compartilhamento Nativo no Celular (navigator.share)
+    this.container.querySelectorAll('.btn-action-share-mobile').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const tripId = btn.getAttribute('data-trip-id');
+        const viagem = this.viagens.find(v => v.id === tripId);
+        if (viagem) {
+          this.compartilharItinerarioMobile(viagem);
+        }
+      });
+    });
+  }
+
+  /**
+   * Compartilha o link do itinerário público utilizando o recurso nativo navigator.share do dispositivo móvel
+   */
+  private async compartilharItinerarioMobile(viagem: any): Promise<void> {
+    const url = `${window.location.origin}/#itinerario?id=${viagem.id}`;
+    const title = `Itinerário de Viagem - ${viagem.destino}`;
+    const text = `Olá ${viagem.cliente?.nome || 'Passageiro'}, confira os detalhes do seu itinerário de viagem para ${viagem.destino}:`;
+
+    if (typeof navigator !== 'undefined' && (navigator as any).share) {
+      try {
+        await (navigator as any).share({
+          title,
+          text,
+          url
+        });
+        return;
+      } catch (err) {
+        // Usuário cancelou ou navegador não concluiu
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(`${text}\n${url}`);
+      this.showToast('Link do itinerário copiado para a área de transferência!', 'success');
+    } catch (e) {
+      this.showToast('Erro ao copiar link.', 'error');
+    }
   }
 }

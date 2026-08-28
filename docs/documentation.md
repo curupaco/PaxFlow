@@ -482,6 +482,19 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
   - Painel com saldos de folgas compensatórias por consultor e histórico de justificativas.
   - Agenda de reuniões corporativas, coffees e treinamentos da franquia por data e responsável.
 
+### 3.25 Redesenho de Usabilidade Mobile da Gestão de Viagens [NEW]
+
+**Experiência mobile-first de padrão aplicativo nativo** para acompanhamento operacional de viagens em smartphones Android e iOS.
+
+- **Botão Flutuante (FAB - Floating Action Button)**:
+  - Botão circular de alta prioridade (`[+ Nova Viagem]`) fixado no canto inferior direito da tela móvel (`fixed bottom-6 right-6`), permitindo abrir o formulário de cadastro de viagem instantaneamente com o polegar.
+- **Compartilhamento Nativo (`navigator.share`)**:
+  - Botão `[🔗]` integrado no card mobile de cada viagem que dispara a folha de compartilhamento nativa do sistema operacional (iOS/Android), enviando o link do itinerário público do cliente diretamente via WhatsApp, Telegram, e-mail ou cópia rápida.
+- **Modal Responsivo Full-Screen (`EditTravelModal.ts`)**:
+  - O modal de gerenciamento de viagem adapta-se automaticamente a 100% da altura do smartphone com as ações `[Cancelar]` e `[Salvar Alterações]` fixadas no rodapé da viewport para facilidade de toque.
+- **Gavetas Inferiores (Bottom Sheets)**:
+  - Estilos de transição e backdrop com desfoque (`.pf-bottom-sheet-content`) para interações rápidas no celular sem distorções horizontais.
+
 ---
 
 ## 4. Diferenciais Competitivos
