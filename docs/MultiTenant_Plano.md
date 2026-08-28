@@ -1,8 +1,8 @@
 # Especificação Arquitetural Enterprise: Escalonamento Multi-Tenant & Grupos de Agências (PaxFlow)
 
 > [!IMPORTANT]
-> **Status:** Documentação Técnica Salva para Implementação Futura (Revisão Cirúrgica v2.0).
-> **Princípio de Segurança Primário:** A `agencia_id` é a unidade primária e obrigatória de isolamento operacional. A ausência de contexto de agência em ambiente multi-tenant é tratada como **Erro de Aplicação**, nunca como fallback silencioso definitivo.
+> **Status:** Documentação Técnica Salva para Implementação Futura (Revisão Cirúrgica v2.1).
+> **Princípio de Segurança Primário:** A `agencia_id` é a unidade primária e obrigatória de isolamento operacional e de regras de negócio. A ausência de contexto de agência em ambiente multi-tenant é tratada como **Erro de Aplicação**, nunca como fallback silencioso definitivo.
 
 ---
 
@@ -12,10 +12,11 @@
 2. **Grupo como Camada de Agregação e Autorização**: O `grupo_id` é uma camada de consolidação. A associação ao grupo é derivada da relação `agencia -> grupo`, evitando redundância e anomalias de dados (ex: viagem com `agencia_id = A` e `grupo_id = B`).
 3. **Defesa em Profundidade (Defense in Depth)**:
    - *Frontend*: Interface reativa ao contexto ativo (`AgencyContext`).
-   - *Backend*: Serviços validam autorização do usuário e escopo do tenant em todas as rotas.
+   - *Backend*: Serviços validam autorização do usuário, escopo do tenant e estado da *feature flag* em todas as rotas.
    - *Banco de Dados*: Funções centralizadas de RLS + Constraints `NOT NULL` e `FOREIGN KEY`.
-4. **Fallback Transitório com Telemetria**: A agência padrão (`DEFAULT_AGENCY_UUID`) é utilizada exclusivamente durante a fase de migração de dados legados, registrando logs de auditoria. No estado final, requisições sem `agencia_id` disparam erro imediato.
-5. **Segurança de Segredos**: Credenciais de integrações (Digisac) nunca são expostas ao frontend ou trafegadas em query parameters de URLs.
+4. **Governança do Co-piloto de IA por Tenant**: O recurso de Co-piloto é controlado granularmente por agência (`copiloto_ativo` em `agencia_settings`). Se desativado, os atalhos, modais e chamadas de IA daquela agência são totalmente bloqueados no frontend e rejeitados no backend.
+5. **Fallback Transitório com Telemetria**: A agência padrão (`DEFAULT_AGENCY_UUID`) é utilizada exclusivamente durante a fase de migração de dados legados, registrando logs de auditoria. No estado final, requisições sem `agencia_id` disparam erro imediato.
+6. **Segurança de Segredos**: Credenciais de integrações (Digisac, IA, Google Drive) nunca são expostas ao frontend ou trafegadas em query parameters de URLs.
 
 ---
 
@@ -26,14 +27,14 @@
 | **Modelo Organizacional** | **Hierárquico Dedicado** | Tabela `grupos_agencias` (Rede/Holding) e tabela `agencias` (Filiais). Agências únicas possuem `grupo_id = NULL`. |
 | **Fonte Única de Verdade** | **`agencia_id` Obrigatório** | Tabelas operacionais contêm estritamente `agencia_id NOT NULL`. O grupo é resolvido via JOIN com `agencias.grupo_id`. |
 | **Modelagem de Tabelas** | **Tabelas de Configuração Desacopladas** | Divisão em `agencias`, `agencia_settings`, `agencia_branding` e `agencia_integracoes` (evitando mega-tabelas). |
+| **Governança do Co-piloto (IA)** | **Feature Flag por Agência** | Campo `copiloto_ativo BOOLEAN DEFAULT true` em `agencia_settings`. Controla visibilidade UI e bloqueia requisições backend/Edge Functions por agência. |
 | **Identidade e Autorização** | **Modelos de Membership Separados** | `usuario_agencias` (papéis: `agencia_admin`, `consultor`) e `usuario_grupos` (papel: `grupo_director`). `super_admin` possui escopo global. |
-| **Contexto da Aplicação** | **`AgencyContext` Reativo Centralizado** | O objeto de contexto gerencia `activeAgencyId`, `availableAgencies`, `role` e `permissions`. O Tenant Switcher altera o contexto ativo sem ignorar autorizações no backend. |
-| **Branding & Links Públicos** | **Customização por Agência com Slug** | Cada agência possui `slug` único, `logo_url` e `cor_primaria`. Links públicos validam o `slug` e as permissões do recurso. |
+| **Contexto da Aplicação** | **`AgencyContext` Reativo Centralizado** | O objeto de contexto gerencia `activeAgencyId`, `availableAgencies`, `role`, `permissions` e `copilotoAtivo`. O Tenant Switcher altera o contexto ativo sem ignorar autorizações no backend. |
+| **Branding & Open Graph** | **Customização por Agência com Slug** | Cada agência possui `slug` único, `logo_url`, `cor_primaria`, `favicon_url` e Meta Tags Open Graph dinâmicas. |
 | **Segurança em Links Públicos** | **Tokens Criptográficos (UUIDv4)** | `public_access_token UUID NOT NULL UNIQUE DEFAULT gen_random_uuid()`. O backend valida token $\rightarrow$ viagem $\rightarrow$ agência $\rightarrow$ permissão pública. |
 | **Integração WhatsApp Digisac** | **Webhook REST com Assinatura em Header** | `POST /api/webhooks/digisac/{agencia_id}` com validação de assinatura `X-Webhook-Signature` no header e controle de idempotência. |
 | **Armazenamento de Arquivos** | **Storage Estruturado com ID Único** | `/agencias/{agencia_id}/clientes/{cliente_id}/{document_id}/{filename}` no Supabase Storage com RLS por pasta de agência. |
 | **Funções RLS Centralizadas** | **Helper Functions SQL** | Policies de RLS reutilizam `user_is_super_admin()`, `user_can_access_agency()` e `user_can_access_group()`. |
-| **Onboarding & Anti-Spam** | **Fluxo com Moderação + Expurgo** | Cadastro via site cria agência com `status = 'pendente_aprovacao'`. Super Admin Aprova (ativa acesso) ou Nega (executa purge auditado). |
 | **Rollout da Migração** | **Implantação em 9 Ondas com Rollback** | Rollout incremental com feature flags, validação de integridade, testes de isolamento negativo e plano de desativação/rollback. |
 
 ---
@@ -77,6 +78,7 @@ erDiagram
         string logo_url
         string cor_primaria
         string favicon_url
+        string og_image_url
     }
 
     AGENCIA_INTEGRACOES {
@@ -89,9 +91,11 @@ erDiagram
 
     AGENCIA_SETTINGS {
         uuid agencia_id PK,FK
+        boolean copiloto_ativo "DEFAULT true"
         int prazo_reembolso_dias
         int sla_pre_embarque_dias
         boolean enviar_nps_automatico
+        boolean permitir_consultor_criar_viagem
     }
 
     PERFIS_USUARIOS {
@@ -123,7 +127,23 @@ erDiagram
 
 ---
 
-## 4. Políticas RLS com Funções Centralizadas de Autorização
+## 4. Governança & Segurança do Módulo Co-piloto (IA)
+
+> [!CAUTION]
+> **Risco de Vazamento de Cota de API & Uso Indevido:**
+> Caso uma agência desative o Co-piloto de IA nas configurações globais (`copiloto_ativo = false`), a desativação **deve ocorrer no Frontend e no Backend simultaneamente**.
+
+### Fluxo de Validação de Segurança do Co-piloto
+1. **Frontend (App Shell & Routers)**:
+   - O objeto `AgencyContext` lê `copiloto_ativo` da agência selecionada.
+   - Se `copiloto_ativo === false`, oculta botões, ícones, modais e atalhos de teclado referentes ao Co-piloto.
+2. **Backend / Edge Functions**:
+   - Cada chamada de inferência ou automação de IA valida obrigatoriamente se a agência solicitante possui `copiloto_ativo = true`.
+   - Se `copiloto_ativo === false`, a requisição é rejeitada com `HTTP 403 Forbidden` (`{"error": "O recurso Co-piloto está desativado para esta agência."}`).
+
+---
+
+## 5. Políticas RLS com Funções Centralizadas de Autorização
 
 Para evitar duplicidade de código SQL e garantir manutenibilidade em todas as tabelas operacionais, serão criadas três funções SQL de segurança:
 
@@ -172,7 +192,7 @@ USING (
 
 ---
 
-## 5. Arquitetura de Webhooks Digisac com Idempotência e Segurança
+## 6. Arquitetura de Webhooks Digisac com Idempotência e Segurança
 
 ```mermaid
 sequenceDiagram
@@ -199,7 +219,7 @@ sequenceDiagram
 
 ---
 
-## 6. Plano de Migração Incremental em 9 Ondas (Rollout & Rollback)
+## 7. Plano de Migração Incremental em 9 Ondas (Rollout & Rollback)
 
 ```mermaid
 flowchart TD
@@ -219,6 +239,8 @@ flowchart TD
 - [ ] 100% das entidades operacionais contêm `agencia_id NOT NULL` válido.
 - [ ] 0 registros com anomalias de pertencimento entre agência e grupo.
 - [ ] 100% das tabelas críticas protegidas por RLS reutilizando as funções SQL de segurança.
+- [ ] **Feature Flag `copiloto_ativo` por Agência**:
+  - *Teste*: Agência com `copiloto_ativo = false` tenta acessar atalhos ou chamadas de IA $\rightarrow$ UI oculta e backend retorna `403 Forbidden`.
 - [ ] **Testes Negativos de Isolamento Automatizados**:
   - *Teste*: Agência A tenta acessar registros da Agência B via ID direto $\rightarrow$ Resultado esperado: `404 Not Found` / `403 Forbidden`.
 - [ ] Diretor de Grupo visualiza relatórios consolidados das agências filiadas.

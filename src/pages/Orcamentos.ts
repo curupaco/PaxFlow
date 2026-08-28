@@ -8,6 +8,7 @@ import { SendTemplateMessageModal } from '../components/dashboard/SendTemplateMe
 import { getAvatarSvg, mesclarAvataresLocais } from '../services/avatars';
 import { showCustomConfirm, showCustomAlert } from '../services/dialog';
 import { CommentsService } from '../services/comments';
+import { renderHelpIcon } from '../utils/helpHelper';
 import {
   renderPhoneInputHTML,
   renderEmailInputHTML,
@@ -1249,7 +1250,9 @@ export class OrcamentosPage {
 
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Temperatura do Lead *</label>
+              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5 flex items-center">
+                Temperatura do Lead * ${renderHelpIcon('temperatura-crm')}
+              </label>
               <select id="select-orc-temp" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm">
                 <option value="Normal" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Normal (50% de chance)</option>
                 <option value="Quente" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Quente (Alta chance)</option>

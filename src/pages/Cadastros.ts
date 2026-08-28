@@ -4,6 +4,7 @@ import { showCustomAlert, showCustomConfirm } from '../services/dialog';
 import { MetasService } from '../services/metasService';
 import { BADGE_DEFINITIONS } from '../services/gamification';
 import { parseBrFloat } from '../services/csvImporter';
+import { renderHelpIcon } from '../utils/helpHelper';
 
 export class CadastrosPage {
   private container: HTMLElement;
@@ -1889,7 +1890,9 @@ export class CadastrosPage {
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Variáveis do Sistema Utilizadas (separadas por vírgula) *</label>
+            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5 flex items-center">
+              Variáveis do Sistema Utilizadas (separadas por vírgula) * ${renderHelpIcon('editor-templates-drag-drop')}
+            </label>
             <input id="input-tem-variaveis" type="text" required value="${editando && editando.variaveis_suportadas ? editando.variaveis_suportadas.join(', ') : 'cliente, destino, consultor'}" placeholder="cliente, destino, localizador, consultor, link_itinerario, link_feedback" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
             <p class="text-[9px] text-slate-400 dark:text-slate-400 font-semibold mt-1">Insira exatamente as variáveis que você usou entre {{ }} no texto (ex: cliente, destino, consultor).</p>
           </div>

@@ -37,25 +37,37 @@ export class HelpModal {
             <p class="text-xs text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wider mt-0.5">Entenda os campos, datas e métricas do sistema</p>
           </div>
           
-          <div class="flex items-center gap-2">
-            <div class="relative w-full md:w-64">
+          <div class="flex flex-col md:flex-row items-stretch md:items-center gap-2">
+            <div class="relative w-full md:w-72">
               <input 
                 id="input-ajuda-busca" 
                 type="text" 
-                placeholder="Buscar termo ou conceito..." 
-                class="w-full pl-9 pr-4 py-2 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition"
+                placeholder="Buscar termo, recurso ou conceito..." 
+                class="w-full pl-9 pr-8 py-2 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition"
               />
               <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-400 text-xs">🔍</span>
+              <span id="ajuda-search-count" class="hidden absolute right-3 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 font-extrabold text-[9px]"></span>
             </div>
             
             <button 
               id="btn-ajuda-close" 
-              class="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition"
+              class="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition self-end md:self-auto"
               title="Fechar"
             >
               ✕
             </button>
           </div>
+        </div>
+
+        <!-- Barra de Ateliê de Buscas Rápidas (Pílulas) -->
+        <div class="px-6 py-2 bg-slate-50/80 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800 flex items-center gap-1.5 overflow-x-auto text-[10px] select-none shrink-0">
+          <span class="font-extrabold text-slate-400 uppercase tracking-wider text-[9px] mr-1 shrink-0">Atalhos:</span>
+          <button data-quick-search="co-piloto" class="btn-ajuda-pill px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold hover:border-indigo-500 hover:text-indigo-650 transition shrink-0">🤖 Co-piloto</button>
+          <button data-quick-search="passaporte" class="btn-ajuda-pill px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold hover:border-indigo-500 hover:text-indigo-650 transition shrink-0">🚨 Passaporte</button>
+          <button data-quick-search="nps" class="btn-ajuda-pill px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold hover:border-indigo-500 hover:text-indigo-650 transition shrink-0">⭐ NPS</button>
+          <button data-quick-search="escala" class="btn-ajuda-pill px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold hover:border-indigo-500 hover:text-indigo-650 transition shrink-0">📅 Escala</button>
+          <button data-quick-search="reembolso" class="btn-ajuda-pill px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold hover:border-indigo-500 hover:text-indigo-650 transition shrink-0">💸 Reembolso</button>
+          <button data-quick-search="faturamento" class="btn-ajuda-pill px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold hover:border-indigo-500 hover:text-indigo-650 transition shrink-0">📊 Faturamento</button>
         </div>
 
         <!-- Corpo do Modal (Sidebar + Conteúdo) -->
@@ -141,29 +153,64 @@ export class HelpModal {
 
     const searchInput = document.getElementById('input-ajuda-busca') as HTMLInputElement;
     searchInput?.addEventListener('input', () => {
-      this.searchQuery = searchInput.value.toLowerCase();
+      this.searchQuery = searchInput.value.toLowerCase().trim();
       this.renderItems();
     });
+
+    // Pílulas de atalho rápido
+    const pillButtons = card?.querySelectorAll('.btn-ajuda-pill');
+    pillButtons?.forEach(pill => {
+      pill.addEventListener('click', () => {
+        const query = pill.getAttribute('data-quick-search') || '';
+        if (searchInput) {
+          searchInput.value = query;
+          this.searchQuery = query.toLowerCase();
+          this.renderItems();
+        }
+      });
+    });
+  }
+
+  private static highlightText(text: string, query: string): string {
+    if (!query || query.length < 2) return text;
+    try {
+      const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(`(${escaped})`, 'gi');
+      return text.replace(regex, '<mark class="bg-amber-200 dark:bg-amber-900/70 font-bold text-slate-900 dark:text-amber-100 px-0.5 rounded">$1</mark>');
+    } catch {
+      return text;
+    }
   }
 
   private static renderItems(): void {
     const container = document.getElementById('ajuda-itens-list');
+    const countEl = document.getElementById('ajuda-search-count');
     if (!container) return;
 
     const filtered = HELP_ITEMS.filter(item => {
       const matchesCategory = this.selectedCategory === 'all' || item.modulo === this.selectedCategory;
-      const matchesSearch = item.label.toLowerCase().includes(this.searchQuery) || 
+      const matchesSearch = !this.searchQuery || 
+                            item.label.toLowerCase().includes(this.searchQuery) || 
                             item.description.toLowerCase().includes(this.searchQuery) ||
                             (item.details && item.details.toLowerCase().includes(this.searchQuery));
       return matchesCategory && matchesSearch;
     });
 
+    if (countEl) {
+      if (this.searchQuery) {
+        countEl.textContent = `${filtered.length} termo(s)`;
+        countEl.classList.remove('hidden');
+      } else {
+        countEl.classList.add('hidden');
+      }
+    }
+
     if (filtered.length === 0) {
       container.innerHTML = `
         <div class="flex flex-col items-center justify-center py-12 text-center">
           <span class="text-3xl mb-3">🔍</span>
-          <p class="text-sm font-bold text-slate-500 dark:text-slate-400">Nenhum termo encontrado</p>
-          <p class="text-xs text-slate-400 dark:text-slate-400 mt-1">Tente buscar por termos mais genéricos.</p>
+          <p class="text-sm font-bold text-slate-500 dark:text-slate-400">Nenhum termo encontrado para "${this.searchQuery}"</p>
+          <p class="text-xs text-slate-400 dark:text-slate-400 mt-1">Tente buscar por termos mais genéricos como "passaporte", "nps", "reembolso" ou "escala".</p>
         </div>
       `;
       return;
@@ -171,6 +218,10 @@ export class HelpModal {
 
     container.innerHTML = filtered.map(item => {
       const category = HELP_CATEGORIES.find(c => c.id === item.modulo);
+      const highlightedLabel = this.highlightText(item.label, this.searchQuery);
+      const highlightedDesc = this.highlightText(item.description, this.searchQuery);
+      const highlightedDetails = item.details ? this.highlightText(item.details, this.searchQuery) : 'Nenhum detalhe adicional disponível.';
+
       return `
         <div 
           class="help-item-card bg-white dark:bg-slate-800/40 hover:bg-slate-50/50 dark:hover:bg-slate-800/60 border border-slate-200/60 dark:border-slate-800/60 rounded-2xl p-4 transition-all duration-300 cursor-pointer shadow-sm relative group"
@@ -178,17 +229,17 @@ export class HelpModal {
         >
           <div class="flex items-start justify-between gap-3">
             <div class="space-y-1">
-              <div class="flex items-center gap-2">
-                <h4 class="text-sm font-black text-slate-800 dark:text-slate-100 group-hover:text-indigo-650 dark:group-hover:text-indigo-400 transition-colors">${item.label}</h4>
+              <div class="flex items-center gap-2 flex-wrap">
+                <h4 class="text-sm font-black text-slate-800 dark:text-slate-100 group-hover:text-indigo-650 dark:group-hover:text-indigo-400 transition-colors">${highlightedLabel}</h4>
                 ${category ? `<span class="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-400 rounded text-[9px] font-black uppercase tracking-wider">${category.icon} ${category.title}</span>` : ''}
               </div>
-              <p class="text-xs text-slate-600 dark:text-slate-300 font-semibold leading-relaxed">${item.description}</p>
+              <p class="text-xs text-slate-600 dark:text-slate-300 font-semibold leading-relaxed">${highlightedDesc}</p>
             </div>
             <span class="expand-icon text-slate-400 transition-transform duration-300 text-xs shrink-0 select-none">▼</span>
           </div>
           
           <div class="details-section hidden mt-4 pt-3.5 border-t border-slate-100 dark:border-slate-800/60 text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed whitespace-pre-line">
-            ${item.details || 'Nenhum detalhe adicional disponível.'}
+            ${highlightedDetails}
           </div>
         </div>
       `;

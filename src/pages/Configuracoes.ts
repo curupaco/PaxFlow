@@ -5,6 +5,7 @@ import { getAvatarSvg, AVATAR_OPTIONS, mesclarAvataresLocais, salvarAvatarLocal 
 import { renderEmailInputHTML, setupFormValidation } from '../utils/masks';
 import { showCustomAlert, showCustomConfirm } from '../services/dialog';
 import { parseCSV, batchInsertOrcamentos, formatBrDateToYmd, parseBrFloat } from '../services/csvImporter';
+import { renderHelpIcon } from '../utils/helpHelper';
 
 
 declare const process: any;
@@ -1560,7 +1561,7 @@ export class ConfiguracoesPage {
                 <div class="border-t border-slate-100 dark:border-slate-800 pt-5 space-y-4">
                   <div class="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
                     <h3 class="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider flex items-center gap-2">
-                      <span>🤖</span> Recursos & Inteligência Artificial
+                      <span>🤖</span> Recursos & Inteligência Artificial ${renderHelpIcon('copiloto-ativacao-desativacao')}
                     </h3>
                   </div>
 
@@ -1582,7 +1583,7 @@ export class ConfiguracoesPage {
                 <div class="border-t border-slate-100 dark:border-slate-800 pt-5 space-y-4">
                   <div class="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
                     <h3 class="text-xs font-black text-emerald-600 dark:text-emerald-455 uppercase tracking-wider flex items-center gap-2">
-                      <span>💬</span> Integração Digisac (Envio de WhatsApp)
+                      <span>💬</span> Integração Digisac (Envio de WhatsApp) ${renderHelpIcon('historico-conversas-digisac')}
                     </h3>
                     <div id="digisac-status-badge" class="px-2 py-0.5 rounded-lg text-[9px] font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
                       Não Verificado

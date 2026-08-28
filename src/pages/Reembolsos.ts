@@ -2,6 +2,7 @@ import { supabase, getSessaoAtual } from '../services/supabase';
 import { PerfilConsultor, Reembolso } from '../types';
 import { getAvatarSvg } from '../services/avatars';
 import { showCustomConfirm } from '../services/dialog';
+import { renderHelpIcon } from '../utils/helpHelper';
 
 // Injeta estilos premium e customizações para a Central de Reembolsos no DOM
 if (typeof document !== 'undefined') {
@@ -439,7 +440,9 @@ export class ReembolsosPage {
           <div class="flex items-center gap-3">
             <img src="/logo.svg" alt="PaxFlow Logo" class="h-10 w-auto object-contain md:hidden" />
             <div>
-              <h1 class="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight">Reembolsos</h1>
+              <h1 class="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight flex items-center gap-1.5">
+                Reembolsos ${renderHelpIcon('fluxo-reembolso-completo')}
+              </h1>
               <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Controle de Cancelamentos e SLAs em Tempo Real</p>
             </div>
           </div>

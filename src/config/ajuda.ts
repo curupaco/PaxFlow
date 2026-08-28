@@ -22,7 +22,8 @@ export const HELP_CATEGORIES: HelpCategory[] = [
   { id: 'viagens', title: 'Gestão de Viagens', icon: '✈️' },
   { id: 'orcamentos', title: 'Orçamentos & CRM', icon: '📄' },
   { id: 'reembolsos', title: 'Reembolsos & Financeiro', icon: '💰' },
-  { id: 'clientes', title: 'Clientes & Relatórios', icon: '👥' }
+  { id: 'clientes', title: 'Clientes & Relatórios', icon: '👥' },
+  { id: 'copiloto', title: 'Co-piloto de IA & Governança', icon: '🤖' }
 ];
 
 export const HELP_ITEMS: HelpItem[] = [
@@ -54,6 +55,13 @@ export const HELP_ITEMS: HelpItem[] = [
     label: 'Dicas Práticas de Produtividade e Navegação',
     description: 'Pequenos truques para otimizar sua rotina operacional e ganhar tempo.',
     details: 'Aproveite estes recursos para navegar mais rápido:\n\n- **Teclado**: Use a tecla `Esc` para fechar rapidamente qualquer modal ou visualizador de documentos no sistema.\n- **Links Rápidos (Contacts)**: Na visualização de orçamentos e viagens, clique nos botões de contato ao lado do nome do cliente para abrir diretamente o WhatsApp Web com o número dele pré-preenchido, ou iniciar um e-mail.\n- **Notificações Integradas**: Se você enviar um e-mail interno para um colega, pode marcar a caixa "Agendar Lembrete" para inserir automaticamente uma tarefa no calendário dele.'
+  },
+  {
+    id: 'busca-global-header',
+    modulo: 'onboarding',
+    label: 'Busca Global Rápida (Atalho por Código, Nome, CPF ou LOC)',
+    description: 'Como localizar qualquer registro do sistema instantaneamente pelo cabeçalho superior.',
+    details: 'No topo da barra de navegação, o PaxFlow fornece um campo de busca unificado que lê todo o banco de dados em milissegundos:\n\n- **Busca por Código Sequencial**: Digite `CLI-0012`, `ORC-0402`, `VIA-0118` ou `RBS-0091` para ir direto para a ficha correspondente.\n- **Busca por Localizador (LOC)**: Digite o código da reserva da cia aérea/fornecedor (ex: `PAX-8840` ou `AF443`) para filtrar as viagens.\n- **Busca por Dados do Cliente**: Digite o nome, e-mail ou CPF do cliente. O PaxFlow agrupa e exibe os resultados separados por categoria.'
   },
 
   // ==================== 1. Fluxos de Trabalho & SLAs ====================
@@ -324,9 +332,16 @@ export const HELP_ITEMS: HelpItem[] = [
   {
     id: 'identidade-visual-branding',
     modulo: 'clientes',
-    label: 'Configurações de Marca da Agência (White-Label)',
-    description: 'Como personalizar as telas públicas com logotipo e cores da sua agência.',
-    details: 'Administradores podem acessar a aba de Configurações para remover os logotipos do PaxFlow e definir a cor primária hexadecimal corporativa. Isso se aplica automaticamente às páginas de Itinerário Digital e Pesquisa NPS visualizadas pelo passageiro final.'
+    label: 'Configurações de Marca da Agência (White-Label & Open Graph)',
+    description: 'Como personalizar as telas públicas e compartilhamentos com logotipo e cores da sua agência.',
+    details: 'Administradores podem acessar a aba de Configurações para enviar a logomarca da agência, favicon (.svg e .png) e definir a cor primária hexadecimal corporativa. Isso atualiza automaticamente as páginas do Itinerário Digital, Pesquisa NPS e os cartões de compartilhamento social (WhatsApp / Facebook / LinkedIn).'
+  },
+  {
+    id: 'relatorios-exportacao-dados',
+    modulo: 'clientes',
+    label: 'Exportação de Relatórios Financeiros e Comerciais (Excel, CSV e PDF)',
+    description: 'Como extrair dados de vendas, faturamento e comissões para auditoria externa.',
+    details: 'No menu **Relatórios**, administradores e consultores (com permissão) podem filtrar a produção da agência por intervalo de datas, consultor responsável e tipo de serviço:\n\n1. **Filtros Avançados**: Selecione o período de competência e a visão desejada (Vendas Concluídas, Reembolsos ou Funil de Orçamentos).\n2. **Exportação com 1 Clique**: Utilize os botões `Baixar Excel / CSV` para gerar relatórios tabulares compatíveis com softwares contábeis ou de BI.\n3. **Impressão de Dossiê**: É possível gerar versões em PDF com o logotipo da agência para envio a clientes corporativos.'
   },
   {
     id: 'auto-status-em-andamento',
@@ -412,6 +427,29 @@ export const HELP_ITEMS: HelpItem[] = [
     label: 'Banco de Folgas e Agenda de Treinamentos/Eventos',
     description: 'Controle de saldos de folgas compensatórias e compromissos da equipe.',
     details: 'Na parte inferior da tela de Escala, o PaxFlow disponibiliza dois painéis integrados:\n\n- **Banco de Folgas**: Acompanhe o saldo numérico de dias acumulados de cada funcionário com o histórico de justificativas e metas atingidas.\n- **Treinamentos · Coffee · Eventos**: Registre reuniões, treinamentos corporativos e eventos de franqueados especificando a data e o consultor ou equipe responsável.'
+  },
+
+  // ==================== 11. Co-piloto de IA & Governança ====================
+  {
+    id: 'copiloto-visao-geral',
+    modulo: 'copiloto',
+    label: 'Visão Geral do Co-piloto de IA e Assistência Operacional',
+    description: 'Como a Inteligência Artificial auxilia no pós-venda, CRM e sugestão de ações.',
+    details: 'O Co-piloto de IA do PaxFlow é o assistente inteligente integrado ao sistema projetado para apoiar consultores e gestores em tarefas de alta produtividade:\n\n1. **Sugestão de Respostas e Comunicação**: Geração de rascunhos inteligentes para mensagens de WhatsApp, e-mails de acompanhamento e lembretes de pré-embarque.\n2. **Triagem e Resumo de Viagens**: Leitura rápida de observações complexas, itinerários e ocorrências de pós-venda para gerar resumos de 1 parágrafo.\n3. **Análise de SLAs e Riscos**: Sinalização preventiva de pendências de passaportes, vistos e prazos limite de reembolsos.'
+  },
+  {
+    id: 'copiloto-ativacao-desativacao',
+    modulo: 'copiloto',
+    label: 'Ativação e Desativação Global do Co-piloto (Controle do Admin)',
+    description: 'Como o administrador da agência pode ligar ou desligar o Co-piloto de IA.',
+    details: 'Para atender às preferências de compliance ou custos de cada agência, o Co-piloto possui um controle global de ligar/desligar:\n\n- **Acesso Restrito ao Admin**: Apenas usuários com papel de Administrador (`role === "admin"`) podem visualizar e alterar a chave nas Configurações.\n- **Onde Configurar**: Acesse o menu **Configurações -> aba Geral / Sistema**, localize o card **Recursos & Inteligência Artificial** e altere o botão de alternância (Toggle Switch).\n- **Comportamento quando Desativado (`false`)**: O PaxFlow oculta 100% dos botões, ícones, modais e atalhos de teclado do Co-piloto em toda a interface para todos os usuários da agência.'
+  },
+  {
+    id: 'copiloto-seguranca-monitoramento',
+    modulo: 'copiloto',
+    label: 'Segurança, Monitoramento de Logs e Proteção de Dados (Privacy & Security)',
+    description: 'Garantias de segurança, auditoria de requisições e isolamento de requisições da IA.',
+    details: 'A arquitetura do Co-piloto de IA no PaxFlow segue rígidos padrões de segurança e privacidade:\n\n- **Monitoramento e Audit Log de Requisições**: Cada interação com a IA registra uma entrada de log auditável com ID do usuário, timestamp, ID da agência e escopo da solicitação.\n- **Validação de Segurança no Backend**: As Edge Functions e endpoints de IA validam obrigatoriamente a sessão do usuário e o status da chave `copiloto_ativo` no banco de dados. Caso uma agência desative o recurso, qualquer chamada direta é rejeitada com `HTTP 403 Forbidden` no servidor.\n- **Comentários e Sanitização de Código**: Trechos de chamadas à IA possuem marcadores explícitos de auditoria de código (`// SECURITY GUARD: Copiloto feature flag check`). Dados sensíveis de pagamento (como números de cartão de crédito) são higienizados e nunca trafegam para provedores de inteligência artificial.'
   }
 ];
 
