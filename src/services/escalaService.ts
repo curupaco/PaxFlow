@@ -127,8 +127,9 @@ export class EscalaService {
   public static async loadEscalaMensal(ano: number, mes: number): Promise<Record<string, string[]>> {
     const initial = this.getInitialMockData();
     let loadedMap: Record<string, string[]> = {};
-    let hasSavedData = false;
+    let isFromDbOrStorage = false;
 
+    // 1. Busca os registros diretamente no banco de dados (Supabase: tabela escala_diaria)
     try {
       const { data, error } = await supabase
         .from('escala_diaria')
@@ -137,7 +138,7 @@ export class EscalaService {
         .lte('data', `${ano}-${String(mes).padStart(2, '0')}-31`);
 
       if (!error && data && data.length > 0) {
-        hasSavedData = true;
+        isFromDbOrStorage = true;
         data.forEach((row: any) => {
           const name = row.consultor_nome || 'Consultor';
           if (!loadedMap[name]) {
@@ -150,37 +151,36 @@ export class EscalaService {
         });
       }
     } catch (e) {
-      console.warn('Fallback para armazenamento local de escala:', e);
+      console.warn('Erro/offline ao consultar escala no Supabase:', e);
     }
 
-    if (!hasSavedData) {
+    // 2. Se o banco de dados não retornou nenhum registro, verifica o cache de fallback
+    if (!isFromDbOrStorage) {
       try {
         const stored = localStorage.getItem(this.LOCAL_STORAGE_ESCALA_KEY);
         if (stored) {
           const parsed = JSON.parse(stored);
           if (parsed[`${ano}-${mes}`]) {
             loadedMap = parsed[`${ano}-${mes}`];
-            hasSavedData = true;
+            isFromDbOrStorage = true;
           }
         }
-      } catch (e) {
-        console.error('Erro ao ler localStorage de escala:', e);
-      }
+      } catch (e) {}
     }
 
     let resultMap: Record<string, string[]> = {};
 
-    if (hasSavedData) {
-      // Se há dados salvos para este mês (Supabase ou localStorage), respeita estritamente o que foi gravado pelo admin (inclusive celulas vazias '')
+    // 3. Se o banco de dados (ou cache) tem dados para este mês: usa 100% o que está no Banco
+    if (isFromDbOrStorage) {
       const allConsultants = Array.from(new Set([...Object.keys(initial.mockEmployeesSchedule), ...Object.keys(loadedMap)]));
       allConsultants.forEach(name => {
         resultMap[name] = loadedMap[name] !== undefined ? loadedMap[name] : new Array(31).fill('');
       });
     } else if (ano === 2026 && mes === 8) {
-      // Mês inicial de demonstração (Agosto/2026) sem edições anteriores
+      // Mês inicial de demonstração (Agosto/2026) se NUNCA nada foi gravado no banco
       resultMap = { ...initial.mockEmployeesSchedule };
     } else {
-      // Qualquer outro mês (ex: Outubro, Novembro) sem edições gravadas inicia com linhas em branco
+      // Qualquer outro mês novo sem dados no banco inicia 100% em branco
       Object.keys(initial.mockEmployeesSchedule).forEach(name => {
         resultMap[name] = new Array(31).fill('');
       });
