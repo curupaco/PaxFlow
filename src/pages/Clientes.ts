@@ -5,6 +5,7 @@ import { Cliente, PerfilConsultor } from '../types';
 import { showCustomConfirm } from '../services/dialog';
 import { registrarXp } from '../services/gamification';
 import { SendTemplateMessageModal } from '../components/dashboard/SendTemplateMessageModal';
+import { renderHelpIcon } from '../utils/helpHelper';
 import {
   renderPhoneInputHTML,
   renderEmailInputHTML,
@@ -913,8 +914,10 @@ export class ClientesPage {
 
           <!-- Seção 2: Documentação Internacional (Passaporte & Vistos) -->
           <div class="border-t border-slate-100 dark:border-slate-800 pt-5">
-            <h3 class="text-sm font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-4 border-b border-indigo-50/50 dark:border-slate-800 pb-1">2. Documentação Internacional</h3>
-            
+            <h3 class="text-sm font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-4 border-b border-indigo-50/50 dark:border-slate-800 pb-1 flex items-center gap-1.5">
+              2. Documentação Internacional ${renderHelpIcon('alerta-passaporte-validade')}
+            </h3>
+
             <!-- Alertas Visuais de SLA do Passaporte -->
             ${passSla.status !== 'none' && passSla.status !== 'ok' ? `
               <div class="mb-4 px-4 py-3 rounded-xl flex items-center gap-2 text-xs font-bold ${
@@ -946,7 +949,9 @@ export class ClientesPage {
           <!-- Seção 3: Anexos e Upload Google Drive (Exibida apenas para clientes existentes) -->
           ${isNew ? '' : `
             <div class="border-t border-slate-100 dark:border-slate-800 pt-5">
-              <h3 class="text-sm font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-3 border-b border-indigo-50/50 dark:border-slate-800 pb-1">3. Upload Seguro de Documentos (Google Drive Agência)</h3>
+              <h3 class="text-sm font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-3 border-b border-indigo-50/50 dark:border-slate-800 pb-1 flex items-center gap-1.5">
+                3. Upload Seguro de Documentos (Google Drive Agência) ${renderHelpIcon('upload-google-drive')}
+              </h3>
               <p class="text-xs text-slate-400 dark:text-slate-400 mb-3.5 font-medium">Os arquivos anexados serão inseridos automaticamente em uma pasta estruturada do Google Drive central da agência, sem vinculação com contas pessoais.</p>
               
               <!-- Componente de Upload Drag & Drop -->

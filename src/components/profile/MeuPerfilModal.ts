@@ -3,6 +3,7 @@ import { getAvatarSvg, AVATAR_OPTIONS, salvarAvatarLocal } from '../../services/
 import { supabase, atualizarSenhaAtual } from '../../services/supabase';
 import { showCustomAlert } from '../../services/dialog';
 import { obterProgressoNivel, BADGE_DEFINITIONS, obterMedalhasUsuario, obterCampanhasAtivas, obterProgressoCampanha } from '../../services/gamification';
+import { renderHelpIcon } from '../../utils/helpHelper';
 
 export interface MeuPerfilModalOptions {
   perfil: PerfilConsultor;
@@ -125,7 +126,7 @@ export class MeuPerfilModal {
             <!-- Bloco de Gamificação (XP e Nível) -->
             <div class="bg-indigo-50/30 dark:bg-indigo-950/10 border border-indigo-100/50 dark:border-indigo-900/20 rounded-2xl p-4 space-y-2.5">
               <div class="flex justify-between items-center text-xs">
-                <span class="font-extrabold text-slate-700 dark:text-slate-400 flex items-center gap-1.5">${progress.patenteEmoji} Patente: ${progress.patente}</span>
+                <span class="font-extrabold text-slate-700 dark:text-slate-400 flex items-center gap-1.5">${progress.patenteEmoji} Patente: ${progress.patente} ${renderHelpIcon('patentes-evolucao-mochileiro')}</span>
                 <span class="font-black text-indigo-600 dark:text-indigo-400">${progress.xpAtual} / ${progress.xpProximoNivel} XP</span>
               </div>
               <div class="w-full bg-slate-200 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
@@ -284,13 +285,21 @@ export class MeuPerfilModal {
       const unlockedSet = new Set(userBadges);
       const gridEl = document.getElementById('modal-badges-grid');
       if (gridEl) {
-        gridEl.innerHTML = BADGE_DEFINITIONS.map(badge => {
+        gridEl.innerHTML = BADGE_DEFINITIONS.map((badge, idx) => {
           const isUnlocked = unlockedSet.has(badge.key);
+          const colMod = idx % 7;
+          let alignClass = 'left-1/2 -translate-x-1/2';
+          if (colMod <= 1) {
+            alignClass = 'left-0 translate-x-0';
+          } else if (colMod >= 5) {
+            alignClass = 'right-0 translate-x-0';
+          }
+
           if (isUnlocked) {
             return `
               <div class="group relative flex flex-col items-center justify-center p-2 rounded-xl bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-200/40 dark:border-indigo-900/30 transition transform hover:scale-115 cursor-pointer shadow-sm">
                 <span class="text-xl">${badge.emoji}</span>
-                <div class="absolute bottom-full mb-2 hidden group-hover:flex flex-col bg-slate-900 text-white text-[10px] p-2.5 rounded-xl w-48 shadow-2xl border border-slate-700/50 z-[100] text-center left-1/2 -translate-x-1/2 select-none pointer-events-none">
+                <div class="absolute bottom-full mb-2 hidden group-hover:flex flex-col bg-slate-900 text-white text-[10px] p-2.5 rounded-xl w-48 shadow-2xl border border-slate-700/50 z-[100] text-center ${alignClass} select-none pointer-events-none">
                   <span class="font-extrabold text-indigo-400 text-xs mb-0.5">${badge.nome}</span>
                   <span class="text-slate-300 leading-relaxed">${badge.descricao}</span>
                   <span class="text-[8px] text-emerald-400 font-bold uppercase mt-1">✓ Conquistada</span>
@@ -301,7 +310,7 @@ export class MeuPerfilModal {
             return `
               <div class="group relative flex flex-col items-center justify-center p-2 rounded-xl bg-slate-100/50 dark:bg-slate-800/30 border border-slate-200/50 dark:border-slate-800/50 opacity-40 hover:opacity-75 transition transform hover:scale-115 cursor-pointer filter grayscale">
                 <span class="text-xl">${badge.emoji}</span>
-                <div class="absolute bottom-full mb-2 hidden group-hover:flex flex-col bg-slate-900 text-white text-[10px] p-2.5 rounded-xl w-48 shadow-2xl border border-slate-700/50 z-[100] text-center left-1/2 -translate-x-1/2 select-none pointer-events-none">
+                <div class="absolute bottom-full mb-2 hidden group-hover:flex flex-col bg-slate-900 text-white text-[10px] p-2.5 rounded-xl w-48 shadow-2xl border border-slate-700/50 z-[100] text-center ${alignClass} select-none pointer-events-none">
                   <span class="font-extrabold text-slate-400 text-xs mb-0.5">${badge.nome}</span>
                   <span class="text-slate-400 leading-relaxed">${badge.descricao}</span>
                   <span class="text-[8px] text-amber-500 font-bold uppercase mt-1">🔒 Bloqueada</span>

@@ -1,4 +1,5 @@
 import { renderCurrencyInputHTML, renderDateInputHTML } from '../../utils/masks';
+import { renderHelpIcon } from '../../utils/helpHelper';
 
 export const formatarDataLocal = (dStr: string): string => {
   if (!dStr) return '';
@@ -331,7 +332,9 @@ export function renderLateralEditorPaneHTML(
                   ${renderCurrencyInputHTML(`edit-prod-markup-${selectedProduct.id}`, selectedProduct.markup || 0, '0,00', true, isLocConferido || !isVendaValid)}
                 </div>
                 <div>
-                  <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase mb-0.5">RAV</label>
+                  <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase mb-0.5 flex items-center">
+                    RAV ${renderHelpIcon('rav-comissao')}
+                  </label>
                   ${renderCurrencyInputHTML(`edit-prod-rav-${selectedProduct.id}`, selectedProduct.rav || 0, '0,00', true, isLocConferido || !isVendaValid)}
                 </div>
                 <div>

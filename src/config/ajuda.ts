@@ -112,9 +112,16 @@ export const HELP_ITEMS: HelpItem[] = [
   {
     id: 'xp-gamificacao',
     modulo: 'geral',
-    label: 'XP e Sistema de Níveis',
-    description: 'Pontuação de experiência (XP) acumulada pelos consultores ao cadastrar e concluir vendas.',
-    details: 'Cada ação no PaxFlow gera pontos de experiência (XP) para o consultor, que evolui de nível e ganha patentes (ex: Agente Iniciante, Explorador, Diretor de Viagens). Vendas maiores e NPS alto dão bônus de XP.'
+    label: 'XP, Sistema de Níveis e Pontuação Operacional',
+    description: 'Como funciona o acúmulo de pontos de experiência (XP) nas rotinas diárias da agência.',
+    details: 'O PaxFlow recompensa a produtividade e a qualidade dos dados inseridos pelos consultores. Cada ação executada no sistema concede pontos de experiência (XP):\n\n- **👤 Ficha de Cliente Completa (Nome, E-mail, Telefone e CPF/CNPJ)**: +30 XP\n- **🛂 Passaporte Cadastrado com SLA Válido**: +50 XP\n- **📄 Orçamento Convertido em Venda (Status "Aceito")**: +100 XP\n- **⭐ Venda de Alta Performance (Primeira Classe > R$ 20.000)**: +200 XP\n- **💸 Reembolso Concluído sem estouro de SLA**: +75 XP\n- **🎯 Conclusão de Campanhas de Metas**: Bônus extra de +500 a +2.000 XP por meta batida.\n- **👑 Coleção de Medalhas (Badges)**: Até 30 medalhas exclusivas conquistadas por marcos da carreira.'
+  },
+  {
+    id: 'patentes-evolucao-mochileiro',
+    modulo: 'geral',
+    label: 'Evolução de Patentes: De Mochileiro a Embaixador do Turismo',
+    description: 'Níveis necessários e a escala de patentes da carreira no PaxFlow.',
+    details: 'Todos os novos consultores iniciam na patente de **Mochileiro** e sobem na hierarquia à medida que acumulam XP e sobem de nível:\n\n1. 🎒 **Mochileiro** (Níveis 1 a 4 | 0 a 2.499 XP acumulados):\n   - Nível 1: 0 a 249 XP\n   - Nível 2: 250 a 749 XP (+500 XP para evoluir)\n   - Nível 3: 750 a 1.499 XP (+750 XP para evoluir)\n   - Nível 4: 1.500 a 2.499 XP (+1.000 XP para evoluir)\n\n2. 🗺️ **Explorador** (Níveis 5 a 9 | 2.500 a 7.499 XP acumulados):\n   - Conquistada ao atingir o Nível 5. Exige 1.000 XP por cada nível subsequente.\n\n3. 🧭 **Navegador** (Níveis 10 a 14 | 7.500 a 12.499 XP acumulados):\n   - Patente atribuída aos consultores de alta consistência operacional.\n\n4. 🌟 **Guia de Elite** (Níveis 15 a 19 | 12.500 a 17.499 XP acumulados):\n   - Reservada para consultores com grande bagagem de vendas e qualidade cadastral.\n\n5. 👑 **Embaixador do Turismo** (Nível 20+ | 17.500+ XP acumulados):\n   - O grau máximo de honra e senioridade no PaxFlow.'
   },
   {
     id: 'inbox-alertas',

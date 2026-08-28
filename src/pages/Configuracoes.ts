@@ -1544,7 +1544,9 @@ export class ConfiguracoesPage {
 
                 <div class="border-t border-slate-100 dark:border-slate-800 pt-5">
                   <div>
-                    <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Taxa de Cancelamento Retida (%)</label>
+                    <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5 flex items-center">
+                      Taxa de Cancelamento Retida (%) ${renderHelpIcon('taxa-cancelamento-reembolso')}
+                    </label>
                     <input id="input-taxa" type="number" step="0.01" min="0" max="100" value="${this.settings.taxaCancelamentoPadrao}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-bold" />
                     <p class="text-[10px] text-slate-400 dark:text-slate-400 mt-1.5 font-medium">Taxa retida padrão sugerida durante a solicitação de reembolsos.</p>
                   </div>
