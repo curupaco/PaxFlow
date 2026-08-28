@@ -201,7 +201,7 @@ export class InboxService {
           type: 'manual',
           title: `Lembrete cadastrado - ${typeText}`,
           sender: lem.consultor?.nome || 'PaxFlow Reminders',
-          senderAvatar: lem.consultor?.avatar_url || 'panda',
+          senderAvatar: lem.consultor?.avatar_url || undefined,
           dateStr: dataFormatada,
           periodText: periodoText,
           subject: subject,
@@ -243,7 +243,7 @@ export class InboxService {
             type: 'passport',
             title: passSla.status === 'expired' ? '🚨 Passaporte EXPIRADO!' : '⚠️ Alerta SLA - Validade de Passaporte',
             sender: 'PaxFlow SLA Control',
-            senderAvatar: 'lion',
+            senderAvatar: undefined,
             dateStr: new Date(validade).toLocaleDateString('pt-BR'),
             subject: `O passaporte do passageiro ${c.nome} está ${passSla.status === 'expired' ? 'expirado' : 'perto de vencer'}.`,
             body: `O passaporte do passageiro <strong>${c.nome}</strong> está ${passSla.status === 'expired' ? '<strong class="text-rose-500">expirado!</strong>' : `próximo ao vencimento (${passSla.days} dias restantes).`}<br><br><strong>Detalhes do Cliente:</strong><br>• E-mail: ${c.email || 'Não cadastrado'}<br>• Telefone: ${c.telefone || 'Não cadastrado'}<br>• Passaporte: ${c.passaporte_numero || 'S/N'}<br>• Vencimento: ${new Date(validade).toLocaleDateString('pt-BR')}<br><br>Recomenda-se contatar o cliente para providenciar a emissão de um novo passaporte para viagens internacionais.`,
@@ -309,7 +309,7 @@ export class InboxService {
             type: 'refund',
             title: titleText,
             sender: 'PaxFlow Finance Alert',
-            senderAvatar: 'fox',
+            senderAvatar: undefined,
             dateStr: `${diasAbertos} dias aberto (${isAtrasado ? `${diasAbertos - prazoReembolsoDias}d de atraso` : 'no prazo'})`,
             subject: `Reembolso de ${clienteNome} (${destino}) - ${isAtrasado ? 'PRAZO EXCEDIDO' : 'PRESTES A VENCER'}`,
             body: `O processo de reembolso referente à viagem de <strong>${clienteNome}</strong> para <strong>${destino}</strong> exige atenção da equipe financeira.<br><br>• <strong>Prazo da Agência:</strong> ${prazoReembolsoDias} dias.<br>• <strong>Tempo Decorrido:</strong> ${diasAbertos} dias (${isAtrasado ? `<span class="text-rose-600 font-extrabold">${diasAbertos - prazoReembolsoDias} dias de atraso</span>` : 'Prestes a vencer'}).<br>• <strong>Status Atual:</strong> ${statusText}<br>• <strong>Valor Solicitado:</strong> R$ ${Number(rem.valor_solicitado || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}<br><br><strong>Ação Exigida:</strong> Favor verificar junto ao financeiro ou fornecedor para efetuar a devolução ao cliente e evitar disputas.`,
@@ -381,7 +381,7 @@ export class InboxService {
               type: 'campaign_notification',
               title: `🎯 Campanha Ativa: ${not.campaign.titulo}`,
               sender: 'PaxFlow Gamificação',
-              senderAvatar: 'panda',
+              senderAvatar: undefined,
               dateStr: dataFormatada,
               subject: `Meta: ${metaLabel}`,
               body: `
@@ -432,7 +432,7 @@ export class InboxService {
 
             const remetente = not.mensagem.remetente;
             const senderName = remetente ? remetente.nome : 'Consultor';
-            const senderAvatar = remetente ? remetente.avatar_url : 'panda';
+            const senderAvatar = remetente ? remetente.avatar_url : undefined;
 
             // Formatar destinatários
             const dests = not.mensagem.mensagem_destinatarios || [];
@@ -472,7 +472,7 @@ export class InboxService {
 
           const author = not.comentario.autor;
           const authorName = author ? author.nome : 'Consultor';
-          const authorAvatar = author ? author.avatar_url : 'panda';
+          const authorAvatar = author ? author.avatar_url : undefined;
 
           let itemLabel = 'Item';
           let linkAttr = '';
@@ -535,7 +535,7 @@ export class InboxService {
         (enviadasData || []).forEach((msg: any) => {
           const dataFormatada = new Date(msg.created_at).toLocaleDateString('pt-BR');
           const senderName = msg.remetente ? msg.remetente.nome : 'Consultor';
-          const senderAvatar = msg.remetente ? msg.remetente.avatar_url : 'panda';
+          const senderAvatar = msg.remetente ? msg.remetente.avatar_url : undefined;
 
           // Formatar destinatários
           const dests = msg.mensagem_destinatarios || [];
@@ -618,7 +618,7 @@ export class InboxService {
               type: 'pre-embarque',
               title: isUrgente ? '🚨 URGENTE - Embarque em menos de 48h!' : '✈️ Alerta - Pré-Embarque de Cliente',
               sender: 'PaxFlow Operações',
-              senderAvatar: 'panda',
+              senderAvatar: undefined,
               dateStr: dataIda.toLocaleDateString('pt-BR'),
               subject: isUrgente 
                 ? `🚨 EMBARQUE PRÓXIMO: ${clienteNome} viaja para ${destino} em menos de 48h!`
@@ -654,7 +654,7 @@ export class InboxService {
                       type: 'pre-embarque',
                       title: '✈️ Alerta - Ida de Trecho Aéreo',
                       sender: 'PaxFlow Operações',
-                      senderAvatar: 'panda',
+                      senderAvatar: undefined,
                       dateStr: dataIda.toLocaleDateString('pt-BR'),
                       subject: `Embarque de ${clienteNome}: ${labelTrecho} em breve!`,
                       body: `A ida do trecho aéreo <strong>${labelTrecho}</strong> do passageiro <strong>${clienteNome}</strong> está agendada para iniciar em menos de 48 horas.<br><br>• <strong>Data de Ida do Trecho:</strong> ${dataIda.toLocaleDateString('pt-BR')}<br>• <strong>Localizador (LOC):</strong> ${p.codigo_reserva || 'Não informado'}<br><br><strong>Ações recomendadas:</strong><br>1. Enviar os vouchers de voo correspondentes.<br>2. Auxiliar o cliente com o check-in online na companhia aérea.<br>3. Confirmar se a documentação necessária de embarque está em mãos.`,
@@ -683,7 +683,7 @@ export class InboxService {
                       type: 'pre-embarque',
                       title: '✈️ Alerta - Volta de Trecho Aéreo',
                       sender: 'PaxFlow Operações',
-                      senderAvatar: 'panda',
+                      senderAvatar: undefined,
                       dateStr: dataVolta.toLocaleDateString('pt-BR'),
                       subject: `Retorno de ${clienteNome}: ${labelTrecho} em breve!`,
                       body: `O retorno do trecho aéreo <strong>${labelTrecho}</strong> do passageiro <strong>${clienteNome}</strong> está agendado para iniciar em menos de 48 horas.<br><br>• <strong>Data de Volta do Trecho:</strong> ${dataVolta.toLocaleDateString('pt-BR')}<br>• <strong>Localizador (LOC):</strong> ${p.codigo_reserva || 'Não informado'}<br><br><strong>Ações recomendadas:</strong><br>1. Enviar os vouchers de voo correspondentes.<br>2. Auxiliar o cliente com o check-in online na companhia aérea.<br>3. Confirmar se a documentação necessária de embarque está em mãos.`,
@@ -722,7 +722,7 @@ export class InboxService {
               type: 'pos-viagem-nps',
               title: '⭐ Alerta - NPS de Pós-Viagem',
               sender: 'PaxFlow Relacionamento',
-              senderAvatar: 'lion',
+              senderAvatar: undefined,
               dateStr: dataVolta.toLocaleDateString('pt-BR'),
               subject: `Coletar NPS do cliente ${clienteNome} pós-retorno de ${destino}`,
               body: `O passageiro <strong>${clienteNome}</strong> retornou de sua viagem para <strong>${destino}</strong>.<br><br>• <strong>Data de Retorno:</strong> ${dataVolta.toLocaleDateString('pt-BR')}<br><br>Esta é a hora de ouro para medir a satisfação do cliente! Envie a pesquisa NPS para entender como foi a experiência e fortalecer o relacionamento.`,

@@ -344,7 +344,7 @@ export interface AlertItem {
   type: 'manual' | 'passport' | 'refund' | 'mention' | 'direct_message' | 'campaign_notification' | 'pre-embarque' | 'pos-viagem-nps' | 'escala_solicitacao' | 'escala_lembrete';
   title: string;
   sender: string;
-  senderAvatar: string;
+  senderAvatar?: string;
   dateStr: string;
   periodText?: string;
   subject: string;

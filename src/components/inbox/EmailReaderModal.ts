@@ -54,7 +54,7 @@ export class EmailReaderModal {
     const firstMsg = threadMessages.length > 0 ? threadMessages[0] : null;
     const headerAvatar = (firstMsg && firstMsg.remetente?.avatar_url) 
       ? firstMsg.remetente.avatar_url 
-      : (item.senderAvatar || 'panda');
+      : (item.senderAvatar || undefined);
     const headerSenderName = item.isSent ? 'Você' : ((firstMsg && firstMsg.remetente?.nome) ? firstMsg.remetente.nome : item.sender);
 
     modalOverlay.innerHTML = `
@@ -129,7 +129,7 @@ export class EmailReaderModal {
                 ${threadMessages.map((msg, index) => {
                   const msgDate = new Date(msg.created_at).toLocaleString('pt-BR');
                   const msgSender = msg.remetente_id === item.consultorId && item.isSent ? 'Você' : (msg.remetente?.nome || 'Consultor');
-                  const msgAvatar = msg.remetente?.avatar_url || 'panda';
+                  const msgAvatar = msg.remetente?.avatar_url || undefined;
                   const isLast = index === threadMessages.length - 1;
                   
                   return `

@@ -770,7 +770,7 @@ export class InboxPage {
 
                           <!-- Avatar -->
                           <div class="w-10 h-10 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden flex items-center justify-center bg-white dark:bg-slate-900 flex-shrink-0 ${isUnread ? 'ring-2 ring-indigo-500/20' : ''}">
-                            ${getAvatarSvg(a.senderAvatar, a.sender.charAt(0), 'w-full h-full')}
+                            ${getAvatarSvg(a.senderAvatar, a.sender, 'w-full h-full')}
                           </div>
 
                           <!-- Text info -->
@@ -1280,7 +1280,7 @@ export class InboxPage {
                   
                   <!-- Avatar -->
                   <div class="w-9 h-9 border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden flex items-center justify-center bg-white dark:bg-slate-900 flex-shrink-0">
-                    ${getAvatarSvg(a.senderAvatar, a.sender.charAt(0), 'w-full h-full')}
+                    ${getAvatarSvg(a.senderAvatar, a.sender, 'w-full h-full')}
                   </div>
 
                   <!-- Alert Content details -->
