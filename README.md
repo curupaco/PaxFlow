@@ -1,7 +1,5 @@
 # PaxFlow
 
-**Plataforma de Gestão Operacional e Fluxo de Passageiros para Agências de Viagem**
-
 Plataforma SaaS de gestão operacional e fluxo de passageiros no turismo: acompanhamento de viagens, SLAs de passaporte/visto, pipeline de orçamentos, reembolsos e gestão documental — tudo integrado ao Supabase Storage e com colaboração em tempo real.
 
 ---
@@ -9,7 +7,7 @@ Plataforma SaaS de gestão operacional e fluxo de passageiros no turismo: acompa
 ## Stack
 
 | Camada | Tecnologia |
-|---|---|
+| --- | --- |
 | Frontend | TypeScript, Vite 5, Tailwind CSS 3 |
 | Backend & BD | Supabase (PostgreSQL + Auth + Realtime) |
 | Upload & Armazenamento | Supabase Storage + Canvas API (Compactação Client-side) |
@@ -57,7 +55,6 @@ Plataforma SaaS de gestão operacional e fluxo de passageiros no turismo: acompa
 - **Automações de Status e Transições de Fluxo [NEW]** — Motor de regras inteligente e integrado. Detecta interações do consultor (como anotações) para iniciar atendimentos de orçamentos, expira propostas por inatividade (30 dias) e gerencia os estágios de viagens (Pré-Embarque e Pós-Viagem) com base em datas cronológicas. Sincroniza também as solicitações de reembolsos com a viagem do cliente de forma bidirecional.
 - **Utilitários de Banco de Dados** — Acompanha o script `supabase/clean_db.sql`, permitindo efetuar uma limpeza de dados transacionais e de teste em ambientes Supabase de maneira 100% resiliente e sem interferir na infraestrutura cadastrada.
 
-
 ---
 
 ## Pré-requisitos
@@ -95,11 +92,10 @@ VITE_SUPABASE_URL=https://seu-projeto.supabase.co
 VITE_SUPABASE_ANON_KEY=sua-chave-anon
 ```
 
-
 ## Scripts
 
-| Comando | Descrição |
-|---|---|
+| Camada | Tecnologia |
+| --- | --- |
 | `npm run dev` | Inicia servidor de desenvolvimento |
 | `npm run build` | Compila para produção |
 | `npm run preview` | Preview do build de produção |
@@ -108,7 +104,7 @@ VITE_SUPABASE_ANON_KEY=sua-chave-anon
 
 ## Estrutura do Projeto
 
-```
+```text
 src/
 ├── main.ts           # Shell da SPA (auth, navegação, tema, sidebar, router)
 ├── index.css         # Estilos globais + Tailwind + Custom Animations
