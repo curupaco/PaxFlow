@@ -155,7 +155,8 @@ class App {
         this.renderAppShell();
         this.inicializarRealtimeProfile();
         this.router = new Router(document.getElementById('page-content')!);
-        this.navigate('analytics');
+        const defaultPage = (this.perfil && this.perfil.role === 'admin') ? 'analytics' : 'inbox';
+        this.navigate(defaultPage);
         this.checarNotificacoesCampanhaLogin();
       }
     } catch (err) {
@@ -270,7 +271,8 @@ class App {
         this.perfil = perfil;
         this.renderAppShell();
         this.router = new Router(document.getElementById('page-content')!);
-        this.navigate('inbox');
+        const defaultPage = (perfil && perfil.role === 'admin') ? 'analytics' : 'inbox';
+        this.navigate(defaultPage);
       },
       showToast: (message, type) => this.showToast(message, type)
     });
