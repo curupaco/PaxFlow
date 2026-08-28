@@ -387,16 +387,24 @@ export class EscalaService {
     } catch (e) {}
 
     try {
-      const { data, error } = await supabase.from('escala_solicitacoes').select('*').order('created_at', { ascending: false });
+      const { data, error } = await supabase
+        .from('escala_solicitacoes')
+        .select('*')
+        .order('created_at', { ascending: false });
+
       if (!error && data && data.length > 0) {
         const map = new Map<string, SolicitacaoEscala>();
         (data as SolicitacaoEscala[]).forEach(item => map.set(item.id, item));
         localItems.forEach(item => {
           if (!map.has(item.id)) map.set(item.id, item);
         });
-        return Array.from(map.values()).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        const merged = Array.from(map.values()).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        localStorage.setItem(this.LOCAL_STORAGE_SOLICITACOES_KEY, JSON.stringify(merged));
+        return merged;
       }
-    } catch (e) {}
+    } catch (e) {
+      console.warn('Aviso ao carregar solicitações de escala do Supabase:', e);
+    }
 
     return localItems;
   }
@@ -405,9 +413,16 @@ export class EscalaService {
    * Create a new Shift Swap or Day Off Request
    */
   public static async criarSolicitacao(sol: Omit<SolicitacaoEscala, 'id' | 'created_at'>): Promise<SolicitacaoEscala> {
+    let uuid = '';
+    try {
+      uuid = crypto.randomUUID();
+    } catch {
+      uuid = 'sol-' + Date.now() + '-' + Math.random().toString(36).substring(2, 9);
+    }
+
     const newObj: SolicitacaoEscala = {
       ...sol,
-      id: 'sol-' + Date.now(),
+      id: uuid,
       created_at: new Date().toISOString()
     };
 
@@ -416,8 +431,61 @@ export class EscalaService {
     localStorage.setItem(this.LOCAL_STORAGE_SOLICITACOES_KEY, JSON.stringify(list));
 
     try {
-      await supabase.from('escala_solicitacoes').insert(newObj);
-    } catch (e) {}
+      const { error } = await supabase.from('escala_solicitacoes').insert({
+        id: newObj.id,
+        tipo: newObj.tipo,
+        solicitante_id: newObj.solicitante_id || null,
+        solicitante_nome: newObj.solicitante_nome || 'Consultor',
+        destinatario_id: newObj.destinatario_id || null,
+        destinatario_nome: newObj.destinatario_nome || null,
+        data_origem: newObj.data_origem,
+        data_destino: newObj.data_destino || newObj.data_origem,
+        motivo: newObj.motivo || '',
+        status: newObj.status || 'pendente_admin',
+        created_at: newObj.created_at
+      });
+
+      if (error) {
+        console.warn('Erro ao salvar escala_solicitacoes no Supabase:', error.message);
+      }
+    } catch (e) {
+      console.warn('Erro na chamada Supabase criarSolicitacao:', e);
+    }
+
+    // Criar lembretes na Inbox para garantir que Administradores recebam o alerta em tempo real em qualquer dispositivo
+    try {
+      if (newObj.status === 'pendente_admin') {
+        const { data: admins } = await supabase.from('profiles').select('id').eq('role', 'admin');
+        if (admins && admins.length > 0) {
+          const tipoLabel = newObj.tipo === 'troca' ? 'Troca de Turno' : newObj.tipo === 'folga' ? 'Folga Semanal' : newObj.tipo === 'ferias' ? 'Férias' : 'Atendimento no Balcão';
+          for (const admin of admins) {
+            await supabase.from('lembretes').insert({
+              consultor_id: admin.id,
+              criador_id: newObj.solicitante_id || null,
+              titulo: `Solicitação de Escala: ${tipoLabel}`,
+              descricao: `${newObj.solicitante_nome} solicitou ${tipoLabel} (${newObj.data_origem}). Motivo: ${newObj.motivo || 'Sem justificativa'}`,
+              data_lembrete: newObj.data_origem,
+              prioridade: 'alta',
+              concluido: false,
+              created_at: newObj.created_at
+            });
+          }
+        }
+      } else if (newObj.status === 'pendente_colega' && newObj.destinatario_id) {
+        await supabase.from('lembretes').insert({
+          consultor_id: newObj.destinatario_id,
+          criador_id: newObj.solicitante_id || null,
+          titulo: 'Solicitação de Troca de Turno',
+          descricao: `${newObj.solicitante_nome} solicitou trocar o turno de ${newObj.data_origem} com você.`,
+          data_lembrete: newObj.data_origem,
+          prioridade: 'alta',
+          concluido: false,
+          created_at: newObj.created_at
+        });
+      }
+    } catch (errLembrete) {
+      console.warn('Aviso ao sincronizar lembrete da escala:', errLembrete);
+    }
 
     return newObj;
   }
@@ -498,7 +566,23 @@ export class EscalaService {
         .from('escala_solicitacoes')
         .update({ status: novoStatus, resposta_admin: respostaAdmin })
         .eq('id', solicitacaoId);
-    } catch (e) {}
+
+      if (target.solicitante_id) {
+        const statusLabel = novoStatus === 'aprovado' ? 'Aprovada' : novoStatus === 'recusado' ? 'Recusada' : 'Atualizada';
+        await supabase.from('lembretes').insert({
+          consultor_id: target.solicitante_id,
+          criador_id: target.solicitante_id,
+          titulo: `Resposta da Escala: ${statusLabel}`,
+          descricao: `Sua solicitação de escala foi ${statusLabel}. Observação: ${respostaAdmin || 'Sem observações'}`,
+          data_lembrete: target.data_origem,
+          prioridade: 'alta',
+          concluido: false,
+          created_at: new Date().toISOString()
+        });
+      }
+    } catch (e) {
+      console.warn('Erro ao atualizar status da solicitacao no Supabase:', e);
+    }
 
     return true;
   }

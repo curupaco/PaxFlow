@@ -285,7 +285,10 @@ export class InboxService {
         const diffMs = hoje.getTime() - dataAbertura.getTime();
         const diasAbertos = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-        if (diasAbertos > prazoReembolsoDias) {
+        // Alerta a partir de 2 dias antes do estoiro do prazo ou quando vencido
+        if (diasAbertos >= (prazoReembolsoDias - 2)) {
+          const isAtrasado = diasAbertos >= prazoReembolsoDias;
+          const isVencendoHoje = diasAbertos === prazoReembolsoDias;
           const uniqueId = `refund-${rem.id}`;
           const isArchived = archivedList.includes(uniqueId);
           const clienteNome = rem.viagem?.cliente?.nome || 'Passageiro';
@@ -295,15 +298,21 @@ export class InboxService {
           dataSla.setDate(dataSla.getDate() + prazoReembolsoDias);
           const eventDateStr = dataSla.toISOString().split('T')[0];
 
+          const titleText = isAtrasado 
+            ? (isVencendoHoje ? '⚠️ URGENTE - SLA de Reembolso Vence HOJE!' : '🚨 CRÍTICO - Reembolso VENCIDO!')
+            : '⏳ Alerta Preventivo - Reembolso Próximo ao Vencimento';
+
+          const statusText = formatReembolsoStatus(rem.status);
+
           list.push({
             id: uniqueId,
             type: 'refund',
-            title: '🚨 Alerta SLA - Reembolso Atrasado',
+            title: titleText,
             sender: 'PaxFlow Finance Alert',
             senderAvatar: 'fox',
-            dateStr: `${diasAbertos} dias aberto`,
-            subject: `O reembolso de ${clienteNome} para ${destino} excedeu o SLA de ${prazoReembolsoDias} dias.`,
-            body: `O processo de reembolso referente à viagem de <strong>${clienteNome}</strong> para <strong>${destino}</strong> ultrapassou o limite operacional estabelecido pela agência.<br><br>• <strong>Prazo da Agência:</strong> ${prazoReembolsoDias} dias.<br>• <strong>Tempo Decorrido:</strong> ${diasAbertos} dias.<br>• <strong>Status Atual:</strong> ${(rem.status || 'solicitado').toUpperCase()}<br>• <strong>Valor Solicitado:</strong> R$ ${Number(rem.valor_solicitado || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}<br><br>Por favor, averigue com o financeiro ou fornecedor a situação para agilizar o encerramento do processo.`,
+            dateStr: `${diasAbertos} dias aberto (${isAtrasado ? `${diasAbertos - prazoReembolsoDias}d de atraso` : 'no prazo'})`,
+            subject: `Reembolso de ${clienteNome} (${destino}) - ${isAtrasado ? 'PRAZO EXCEDIDO' : 'PRESTES A VENCER'}`,
+            body: `O processo de reembolso referente à viagem de <strong>${clienteNome}</strong> para <strong>${destino}</strong> exige atenção da equipe financeira.<br><br>• <strong>Prazo da Agência:</strong> ${prazoReembolsoDias} dias.<br>• <strong>Tempo Decorrido:</strong> ${diasAbertos} dias (${isAtrasado ? `<span class="text-rose-600 font-extrabold">${diasAbertos - prazoReembolsoDias} dias de atraso</span>` : 'Prestes a vencer'}).<br>• <strong>Status Atual:</strong> ${statusText}<br>• <strong>Valor Solicitado:</strong> R$ ${Number(rem.valor_solicitado || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}<br><br><strong>Ação Exigida:</strong> Favor verificar junto ao financeiro ou fornecedor para efetuar a devolução ao cliente e evitar disputas.`,
             targetId: rem.id,
             arquivado: isArchived,
             consultorId: consultorId || '',
@@ -591,26 +600,30 @@ export class InboxService {
         const clienteNome = v.cliente?.nome || 'Passageiro';
         const destino = v.destino || 'Destino';
 
-        // 1. Alerta de Pré-Embarque (48h antes da ida)
+        // 1. Alerta de Pré-Embarque (Até 7 dias antes da ida)
         if (v.data_ida) {
-          const dataIda = new Date(v.data_ida);
+          const dataIda = new Date(v.data_ida + 'T00:00:00');
           const diffMs = dataIda.getTime() - hoje.getTime();
           const horasAteIda = diffMs / (1000 * 60 * 60);
 
-          // Se a viagem inicia em até 48 horas (e ainda não aconteceu)
-          if (horasAteIda > 0 && horasAteIda <= 48) {
+          // Se a viagem inicia em até 7 dias (168 horas) e ainda não ocorreu
+          if (horasAteIda > -24 && horasAteIda <= 168) {
+            const isUrgente = horasAteIda <= 48;
             const uniqueId = `pre-embarque-${v.id}`;
             const isArchived = archivedList.includes(uniqueId);
+            const diasRestantes = Math.max(0, Math.ceil(horasAteIda / 24));
 
             list.push({
               id: uniqueId,
               type: 'pre-embarque',
-              title: '✈️ Alerta - Pré-Embarque de Cliente',
+              title: isUrgente ? '🚨 URGENTE - Embarque em menos de 48h!' : '✈️ Alerta - Pré-Embarque de Cliente',
               sender: 'PaxFlow Operações',
               senderAvatar: 'panda',
               dateStr: dataIda.toLocaleDateString('pt-BR'),
-              subject: `A viagem de ${clienteNome} para ${destino} inicia em breve!`,
-              body: `A viagem de <strong>${clienteNome}</strong> com destino a <strong>${destino}</strong> está agendada para iniciar em menos de 48 horas.<br><br>• <strong>Data de Ida:</strong> ${dataIda.toLocaleDateString('pt-BR')}<br>• <strong>Localizador (LOC):</strong> ${v.codigo_localizador || 'Não informado'}<br><br><strong>Ações recomendadas:</strong><br>1. Enviar os vouchers de vôos/hotéis.<br>2. Auxiliar o cliente com o check-in online das companhias aéreas.<br>3. Verificar se as vacinas e passaportes/vistos estão em mãos.`,
+              subject: isUrgente 
+                ? `🚨 EMBARQUE PRÓXIMO: ${clienteNome} viaja para ${destino} em menos de 48h!`
+                : `Pré-Embarque: ${clienteNome} viaja para ${destino} em ${diasRestantes} dia(s).`,
+              body: `A viagem de <strong>${clienteNome}</strong> com destino a <strong>${destino}</strong> está agendada para <strong>${dataIda.toLocaleDateString('pt-BR')}</strong> (${diasRestantes} dia(s) restante(s)).<br><br>• <strong>Data de Ida:</strong> ${dataIda.toLocaleDateString('pt-BR')}<br>• <strong>Localizador (LOC):</strong> ${v.codigo_localizador || 'Não informado'}<br><br><strong>Checklist de Segurança Operacional:</strong><br>1. Confirmar emissão e envio de todos os vouchers.<br>2. Auxiliar o cliente com o check-in online das companhias aéreas.<br>3. Conferir validade do passaporte, vistos e vacinas em mãos.`,
               targetId: v.id,
               arquivado: isArchived,
               consultorId: v.consultor_id || '',
