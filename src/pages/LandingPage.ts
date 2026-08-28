@@ -25,28 +25,15 @@ export class LandingPage {
 
     const isReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    const applyReveal = (): void => {
-      const vh = window.innerHeight;
-      for (const el of revealItems) {
-        const r = el.getBoundingClientRect();
-        if (r.top < vh * 0.92 && r.bottom > 0) {
-          el.classList.add('pf-revealed');
-        }
-      }
-      animateCounters();
-    };
-
-    const animateCounters = (): void => {
-      const vh = window.innerHeight;
-      const counters = scope.querySelectorAll<HTMLElement>('[data-count]');
+    // Animação de contadores numéricos
+    const animateCountersInEl = (targetContainer: HTMLElement): void => {
+      const counters = targetContainer.querySelectorAll<HTMLElement>('[data-count]');
       counters.forEach(el => {
         if (el.getAttribute('data-counted') === 'true') return;
-        const rect = el.getBoundingClientRect();
-        if (rect.top > vh || rect.bottom < 0) return;
         el.setAttribute('data-counted', 'true');
         const target = parseFloat(el.getAttribute('data-count') || '0');
         const suffix = el.getAttribute('data-suffix') || '';
-        const duration = 1400;
+        const duration = 1200;
         const start = performance.now();
         const step = (now: number): void => {
           const p = Math.min((now - start) / duration, 1);
@@ -58,6 +45,35 @@ export class LandingPage {
       });
     };
 
+    // Observer de alta performance para revelar elementos sem engasgos de layout
+    if ('IntersectionObserver' in window) {
+      const observer = new IntersectionObserver((entries, obs) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const el = entry.target as HTMLElement;
+            el.classList.add('pf-revealed');
+            animateCountersInEl(el);
+            obs.unobserve(el);
+          }
+        });
+      }, {
+        root: null,
+        rootMargin: '120px 0px 50px 0px', // Revela 120px antes de entrar no viewport!
+        threshold: 0.05
+      });
+
+      revealItems.forEach(item => observer.observe(item));
+
+      // Garante visibilidade do topo imediatamente no carregamento inicial
+      revealItems.slice(0, 4).forEach(item => item.classList.add('pf-revealed'));
+    } else {
+      revealItems.forEach(item => {
+        item.classList.add('pf-revealed');
+        animateCountersInEl(item);
+      });
+    }
+
+    // Scroll Progress Bar
     const updateProgress = (sy: number): void => {
       const bar = scope.querySelector<HTMLElement>('#pf-scroll-progress');
       if (!bar) return;
@@ -72,32 +88,30 @@ export class LandingPage {
         if (ticking) return;
         ticking = true;
         window.requestAnimationFrame(() => {
+          const sy = window.scrollY || 0;
+          updateProgress(sy);
+
+          // Parallax leve e otimizado apenas para elementos no viewport
           const vh = window.innerHeight;
           const mid = vh / 2;
-          const sy = window.scrollY || 0;
           for (const el of parallaxEls) {
-            const amount = parseFloat(el.getAttribute('data-parallax') || '20');
             const rect = el.getBoundingClientRect();
-            const isFixed = el.offsetParent === null || el.closest('.fixed, [class*="fixed"]');
-            const center = isFixed
-              ? sy + rect.top + rect.height / 2
-              : rect.top + rect.height / 2;
+            if (rect.bottom < 0 || rect.top > vh) continue; // Pula elementos fora da tela
+            const amount = parseFloat(el.getAttribute('data-parallax') || '20');
+            const center = rect.top + rect.height / 2;
             const travel = (center - mid) / vh;
             const shift = travel * amount;
             el.style.transform = `translate3d(0, ${shift.toFixed(1)}px, 0)`;
           }
-          applyReveal();
-          updateProgress(sy);
           ticking = false;
         });
       };
       window.addEventListener('scroll', onScroll, { passive: true });
-      window.addEventListener('resize', onScroll);
+      window.addEventListener('resize', onScroll, { passive: true });
       onScroll();
-    } else {
-      applyReveal();
     }
 
+    // Smooth Scroll para Links Internos (#)
     const anchors = scope.querySelectorAll<HTMLAnchorElement>('a[href^="#"]');
     anchors.forEach(a => {
       a.addEventListener('click', (e) => {
@@ -205,7 +219,7 @@ export class LandingPage {
 
         <!-- ===== LOGO WATERMARK fixo gigante deslocado à direita (acompanha o scroll) ===== -->
         <div class="pointer-events-none fixed inset-0 z-[1] flex items-center justify-end overflow-hidden">
-          <img data-parallax="95" src="/logo.svg" alt="" class="pf-logo-watermark max-w-[66vmin] max-h-[66vmin] w-[66vmin] h-[66vmin] object-contain opacity-[0.13] blur-[2px] mr-[-8vmin] saturate-150 drop-shadow-[0_0_40px_rgba(0,168,245,0.35)]" />
+          <img data-parallax="95" src="/logo.svg" alt="" width="280" height="280" loading="eager" class="pf-logo-watermark max-w-[66vmin] max-h-[66vmin] w-[66vmin] h-[66vmin] object-contain opacity-[0.13] blur-[2px] mr-[-8vmin] saturate-150 drop-shadow-[0_0_40px_rgba(0,168,245,0.35)]" />
         </div>
 
         <!-- ===== SCROLL PROGRESS BAR ===== -->
@@ -599,17 +613,6 @@ export class LandingPage {
               <div data-reveal="left" style="transition-delay:.05s" class="group p-7 rounded-3xl bg-gradient-to-b from-emerald-500/15 to-white/[0.02] border border-emerald-500/25 hover:scale-[1.03] hover:border-emerald-400/50 transition-transform"><div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 text-white flex items-center justify-center mb-4 shadow-lg pf-tilt"><svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.205 1.654z"/></svg></div><h3 class="text-xl font-black text-white">Digisac / WhatsApp</h3><p class="text-sm text-slate-400 font-medium mt-1 leading-relaxed">Atendimento com histórico split-screen, envio de modelos e notificações automáticas de embarque e NPS.</p></div>
               <div data-reveal="up" style="transition-delay:.15s" class="group p-7 rounded-3xl bg-gradient-to-b from-[#00a8f5]/15 to-white/[0.02] border border-[#00a8f5]/25 hover:scale-[1.03] hover:border-[#00a8f5]/50 transition-transform"><div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#0052d4] to-[#00a8f5] text-white flex items-center justify-center mb-4 shadow-lg pf-tilt" style="animation-delay:.5s"><svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg></div><h3 class="text-xl font-black text-white">Companhias Aéreas</h3><p class="text-sm text-slate-400 font-medium mt-1 leading-relaxed">Conciliação de reembolsos e créditos, localizadores (LOC) e monitoramento de SLAs de estorno.</p></div>
               <div data-reveal="right" style="transition-delay:.25s" class="group p-7 rounded-3xl bg-gradient-to-b from-[#f5af19]/15 to-white/[0.02] border border-[#f5af19]/25 hover:scale-[1.03] hover:border-[#f5af19]/50 transition-transform"><div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#f5af19] to-[#f12711] text-white flex items-center justify-center mb-4 shadow-lg pf-tilt" style="animation-delay:1s"><svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg></div><h3 class="text-xl font-black text-white">Upload & Documentos</h3><p class="text-sm text-slate-400 font-medium mt-1 leading-relaxed">Armazenamento seguro por cliente no Supabase Storage com links de acesso controlados.</p></div>
-            </div>
-          </div>
-        </section>
-
-        <!-- ===== PROBLEMA vs SOLUÇÃO ===== -->
-        <section class="relative z-10 w-full py-16 px-6 border-t border-white/10">
-          <div class="pf-zone max-w-5xl mx-auto">
-            <h2 class="text-2xl md:text-4xl font-black tracking-tight text-center mb-10">Por que substituir planilhas pelo PaxFlow?</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-              <div data-reveal="left" class="p-6 rounded-3xl bg-gradient-to-b from-[#f12711]/10 to-white/[0.02] border border-[#f12711]/20"><span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-[#f12711]/15 text-[#f5af19] text-[10px] font-bold rounded-lg uppercase tracking-wider mb-4">❌ Como é hoje</span><ul class="space-y-3 text-sm text-slate-400 font-medium"><li class="flex items-start gap-2"><span class="text-[#f12711] shrink-0">✕</span>Informações fragmentadas de localizadores de voo (LOC) e reservas.</li><li class="flex items-start gap-2"><span class="text-[#f12711] shrink-0">✕</span>Falhas no monitoramento de vencimento de passaportes e vistos.</li><li class="flex items-start gap-2"><span class="text-[#f12711] shrink-0">✕</span>Esquecimento de saldos e créditos de reembolso com cias aéreas.</li><li class="flex items-start gap-2"><span class="text-[#f12711] shrink-0">✕</span>Perda de orçamentos e leads no WhatsApp de consultores.</li></ul></div>
-              <div data-reveal="right" class="p-6 rounded-3xl bg-gradient-to-b from-[#00e5a3]/10 to-white/[0.02] border border-[#00e5a3]/20"><span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-[#00e5a3]/15 text-[#00e5a3] text-[10px] font-bold rounded-lg uppercase tracking-wider mb-4">✅ Com o PaxFlow</span><ul class="space-y-3 text-sm text-slate-300 font-medium"><li class="flex items-start gap-2"><span class="text-[#00e5a3] shrink-0">✓</span>Painel comercial com faturamento e markups consolidados.</li><li class="flex items-start gap-2"><span class="text-[#00e5a3] shrink-0">✓</span>Monitoramento de SLAs com alertas automáticos antecipados.</li><li class="flex items-start gap-2"><span class="text-[#00e5a3] shrink-0">✓</span>Automações inteligentes de fluxo e transições de status.</li><li class="flex items-start gap-2"><span class="text-[#00e5a3] shrink-0">✓</span>Fichas de clientes e central de reembolsos unificadas.</li></ul></div>
             </div>
           </div>
         </section>

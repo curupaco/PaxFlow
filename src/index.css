@@ -459,43 +459,81 @@ html.dark .landing-page-wrapper .grid-bg {
 }
 .landing-v2 .pf-bounce { animation: pf-bounce 1.6s ease-in-out infinite; }
 
+/* ================= LANDING V2 SKELETON SHIMMER SYSTEM ================= */
+@keyframes pf-shimmer-sweep {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.pf-skeleton-shimmer {
+  position: relative;
+  overflow: hidden;
+  background-color: rgba(255, 255, 255, 0.05);
+}
+.pf-skeleton-shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.09) 50%,
+    transparent 100%
+  );
+  animation: pf-shimmer-sweep 1.4s infinite;
+}
+
+.pf-skeleton-box {
+  border-radius: 0.75rem;
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
+.pf-skeleton-text {
+  height: 0.75rem;
+  border-radius: 0.375rem;
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
 /* ================= LANDING V2 SCROLL REVEAL & PARALLAX ================= */
 
-/* Reveal on scroll (estado inicial, ativado pelo JS ao entrar no viewport) */
+/* Reveal on scroll (estado inicial ágil, ativado pelo IntersectionObserver) */
 .landing-v2 [data-reveal] {
-  opacity: 0;
-  transform: translateY(40px) scale(0.97);
+  opacity: 0.15;
+  transform: translateY(20px) scale(0.98);
   transition:
-    opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
-    transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   will-change: opacity, transform;
+  backface-visibility: hidden;
 }
 .landing-v2 [data-reveal].pf-revealed {
   opacity: 1;
   transform: translateY(0) scale(1);
 }
-.landing-v2 [data-reveal="left"] { transform: translateX(-50px) scale(0.97); }
-.landing-v2 [data-reveal="right"] { transform: translateX(50px) scale(0.97); }
-.landing-v2 [data-reveal="zoom"] { transform: scale(0.9); }
+.landing-v2 [data-reveal="left"] { transform: translateX(-24px) scale(0.98); }
+.landing-v2 [data-reveal="right"] { transform: translateX(24px) scale(0.98); }
+.landing-v2 [data-reveal="zoom"] { transform: scale(0.94); }
 .landing-v2 [data-reveal="left"].pf-revealed,
 .landing-v2 [data-reveal="right"].pf-revealed,
 .landing-v2 [data-reveal="zoom"].pf-revealed {
   transform: translateX(0) scale(1);
 }
 
-/* Slide-in para itens PEQUENOS (badges, chips, ícones) com stagger via transition-delay inline */
+/* Slide-in para itens PEQUENOS (badges, chips, ícones) com stagger */
 .landing-v2 .pf-slide-up,
 .landing-v2 .pf-slide-left,
 .landing-v2 .pf-slide-right {
-  opacity: 0;
+  opacity: 0.2;
   transition:
-    opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
-    transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
   will-change: opacity, transform;
+  backface-visibility: hidden;
 }
-.landing-v2 .pf-slide-up { transform: translateY(18px); }
-.landing-v2 .pf-slide-left { transform: translateX(-20px); }
-.landing-v2 .pf-slide-right { transform: translateX(20px); }
+.landing-v2 .pf-slide-up { transform: translateY(12px); }
+.landing-v2 .pf-slide-left { transform: translateX(-12px); }
+.landing-v2 .pf-slide-right { transform: translateX(12px); }
 .landing-v2 .pf-slide-up.pf-revealed,
 .landing-v2 .pf-slide-left.pf-revealed,
 .landing-v2 .pf-slide-right.pf-revealed {
@@ -503,19 +541,22 @@ html.dark .landing-page-wrapper .grid-bg {
   transform: translate(0, 0);
 }
 
-/* Parallax (JS move estes elementos com translateY proporcional ao scroll) */
+/* Parallax GPU acelerado */
 .landing-v2 [data-parallax] {
-  transition: transform 0.2s linear;
+  transition: transform 0.15s ease-out;
   will-change: transform;
+  backface-visibility: hidden;
 }
 
-/* Transição suave de zonas do site (estado inicial das seções) */
+/* Transição suave de zonas do site */
 .landing-v2 .pf-zone {
-  opacity: 0;
-  transform: translateY(60px);
+  opacity: 0.2;
+  transform: translateY(24px);
   transition:
-    opacity 1s cubic-bezier(0.16, 1, 0.3, 1),
-    transform 1s cubic-bezier(0.16, 1, 0.3, 1);
+    opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+  backface-visibility: hidden;
 }
 .landing-v2 .pf-zone.pf-revealed {
   opacity: 1;
