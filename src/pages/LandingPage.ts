@@ -293,6 +293,7 @@ export class LandingPage {
           </a>
           <nav class="hidden lg:flex items-center gap-8 text-sm font-bold text-slate-300">
             <a href="#recursos" class="hover:text-[#00e5a3] transition">Recursos</a>
+            <a href="#mobile-pwa" class="hover:text-cyan-400 transition flex items-center gap-1.5"><span class="text-xs">📱</span>App Mobile</a>
             <a href="#marcas" class="hover:text-[#00a8f5] transition">Sua Marca</a>
             <a href="#integracao" class="hover:text-[#f5af19] transition">Integrações</a>
             <a href="#planos" class="hover:text-[#f12711] transition">Planos</a>
@@ -311,9 +312,9 @@ export class LandingPage {
         <!-- ===== HERO (logo maior e centralizado) ===== -->
         <main id="topo" class="relative z-10 w-full max-w-6xl mx-auto px-6 pt-14 pb-20 text-center flex flex-col items-center overflow-hidden">
           <div class="pf-beam"></div>
-          <span class="pf-rise inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/[0.06] border border-[#00e5a3]/40 text-[#00e5a3] font-bold text-[11px] uppercase tracking-widest mb-8">
+          <span class="pf-rise inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/[0.06] border border-[#00e5a3]/40 text-[#00e5a3] font-bold text-[11px] uppercase tracking-widest mb-8 shadow-lg shadow-cyan-500/10">
             <span class="w-2 h-2 rounded-full bg-[#00e5a3] animate-pulse"></span>
-            O CRM & Pós-Venda 100% Especializado em Turismo
+            📱 100% PWA &amp; Mobile Nativo (iOS &amp; Android) | CRM &amp; Pós-Venda em Turismo
           </span>
 
           <!-- Logo grande centralizado em card de bússola -->
@@ -334,11 +335,11 @@ export class LandingPage {
           <h1 class="pf-hero-headline pf-rise-2 text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight mb-6 max-w-5xl">
             <span class="pf-shimmer-text">Pax</span><span class="bg-gradient-to-r from-[#00a8f5] via-[#00e5a3] to-[#f5af19] bg-clip-text text-transparent pf-animated-gradient">Flow</span>
             <span class="block mt-5 text-xl sm:text-3xl md:text-4xl font-semibold text-slate-100">A operação da sua agência de viagens</span>
-            <span class="block mt-1.5 text-xl sm:text-3xl md:text-4xl font-semibold bg-gradient-to-r from-fuchsia-500 via-rose-500 to-amber-500 bg-clip-text text-transparent pf-animated-gradient">sem fricção, sem planilhas</span>
+            <span class="block mt-1.5 text-xl sm:text-3xl md:text-4xl font-semibold bg-gradient-to-r from-fuchsia-500 via-rose-500 to-amber-500 bg-clip-text text-transparent pf-animated-gradient">no computador e no seu celular</span>
           </h1>
 
           <p class="pf-rise-3 text-base md:text-xl text-slate-300 max-w-2xl mb-10 leading-relaxed font-medium">
-            Diga adeus à desorganização. Centralize pós-vendas, passaportes e vistos, reembolsos aéreos, escalas e itinerários em uma plataforma viva — pensada para o turismo, não para planilhas.
+            Diga adeus à desorganização. Centralize pós-vendas, passaportes, vistos, reembolsos, escalas e itinerários em um web-app vivo no computador ou direto no smartphone (iOS & Android) com notificações Push nativas — sem planilhas.
           </p>
 
           <div class="pf-rise-4 flex flex-col sm:flex-row items-center gap-4 mb-14 w-full justify-center">
@@ -354,21 +355,24 @@ export class LandingPage {
             <span class="flex items-center gap-2">
               <span class="text-[#f5af19] text-xs">★★★★★</span> Adotado por agências de viagens
             </span>
+            <span class="flex items-center gap-2 text-cyan-400 font-extrabold"><span class="text-sm">📱</span> App PWA no Celular (iOS/Android)</span>
+            <span class="flex items-center gap-2 text-amber-400 font-extrabold"><span class="text-sm">🔔</span> Push Notifications Nativas</span>
             <span class="flex items-center gap-2 opacity-80"><span class="text-[#00e5a3]">✓</span> Setup em minutos</span>
-            <span class="flex items-center gap-2 opacity-80"><span class="text-[#00e5a3]">✓</span> Sem fidelidade, cancele quando quiser</span>
           </div>
 
           <!-- Stats bar -->
           <div class="pf-rise-5 grid grid-cols-2 md:grid-cols-4 gap-4 w-full max-w-4xl mx-auto mb-16 p-6 rounded-3xl bg-white/[0.04] border border-white/10 backdrop-blur-md pf-glow">
             <div class="text-center p-3 rounded-2xl bg-gradient-to-b from-[#0052d4]/20 to-transparent"><span class="pf-num block text-3xl font-black text-[#00a8f5]" data-count="100" data-suffix="%">100%</span><span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Foco em Turismo</span></div>
-            <div class="text-center p-3 rounded-2xl bg-gradient-to-b from-[#f12711]/20 to-transparent"><span class="pf-num block text-3xl font-black text-[#f5af19]" data-count="180" data-suffix=" dias">180 dias</span><span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Alerta Vistos & Passaporte</span></div>
-            <div class="text-center p-3 rounded-2xl bg-gradient-to-b from-[#00e5a3]/20 to-transparent"><span class="block text-3xl font-black text-[#00e5a3]">Escala + Banco</span><span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Gestão de Equipe</span></div>
+            <div class="text-center p-3 rounded-2xl bg-gradient-to-b from-[#f12711]/20 to-transparent"><span class="pf-num block text-3xl font-black text-[#f5af19]" data-count="180" data-suffix=" dias">180 dias</span><span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Alerta Vistos &amp; Passaporte</span></div>
+            <div class="text-center p-3 rounded-2xl bg-gradient-to-b from-[#00e5a3]/20 to-transparent"><span class="block text-3xl font-black text-[#00e5a3]">Mobile &amp; PWA</span><span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">App Celular iOS / Android</span></div>
             <div class="text-center p-3 rounded-2xl bg-gradient-to-b from-fuchsia-600/20 to-transparent"><span class="block text-3xl font-black text-fuchsia-400">WhatsApp SLA</span><span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Hub Integrado</span></div>
           </div>
 
           <!-- Marquee de diferenciais -->
           <div class="w-full max-w-5xl mb-16 rounded-3xl overflow-hidden border border-white/10 bg-white/[0.03] pf-marquee-wrap">
             <div class="pf-marquee gap-12 py-4 px-6 text-sm font-bold">
+              <span class="flex items-center gap-2 text-cyan-400">📱 App PWA no Celular (Instalação em 1 Clique)</span>
+              <span class="flex items-center gap-2 text-amber-400">🔔 Push Notifications no iOS &amp; Android</span>
               <span class="flex items-center gap-2 text-[#00e5a3]">✦ Alertas de passaporte e visto</span>
               <span class="flex items-center gap-2 text-[#00a8f5]">✦ Reembolsos com cronômetro SLA</span>
               <span class="flex items-center gap-2 text-[#f5af19]">✦ Escala de funcionários</span>
@@ -377,7 +381,10 @@ export class LandingPage {
               <span class="flex items-center gap-2 text-[#00a8f5]">✦ WhatsApp + Digisac nativo</span>
               <span class="flex items-center gap-2 text-[#f5af19]">✦ Gamificação da equipe</span>
               <span class="flex items-center gap-2 text-rose-400">✦ Pipeline de orçamentos</span>
-              <span class="flex items-center gap-2 text-[#00e5a3]">✦ Alertas de passaporte e visto</span>
+              <span class="flex items-center gap-2 text-cyan-400">📱 App PWA no Celular (Instalação em 1 Clique)</span>
+              <span class="flex items-center gap-2 text-amber-400">🔔 Push Notifications no iOS &amp; Android</span>
+            </div>
+          </div>
               <span class="flex items-center gap-2 text-[#00a8f5]">✦ Reembolsos com cronômetro SLA</span>
               <span class="flex items-center gap-2 text-[#f5af19]">✦ Escala de funcionários</span>
               <span class="flex items-center gap-2 text-fuchsia-400">✦ Itinerário digital do cliente</span>
@@ -548,6 +555,58 @@ export class LandingPage {
                 <span class="px-4 py-2 rounded-full bg-white/[0.05] border border-white/10 text-sm font-semibold text-slate-200">Operadoras</span>
                 <span class="px-4 py-2 rounded-full bg-white/[0.05] border border-white/10 text-sm font-semibold text-slate-200">Franquias de Viagens</span>
                 <span class="px-4 py-2 rounded-full bg-white/[0.05] border border-white/10 text-sm font-semibold text-slate-200">Consultores de Viagem</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== DIFERENCIAL EXCLUSIVO MOBILE & PWA ===== -->
+        <section id="mobile-pwa" class="relative z-10 w-full py-20 px-6 border-t border-white/10 bg-gradient-to-b from-[#06070f] via-[#09152b]/60 to-[#06070f]">
+          <div class="pf-zone max-w-6xl mx-auto space-y-12">
+            <div class="text-center max-w-3xl mx-auto space-y-4">
+              <span class="px-4 py-1.5 rounded-full bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 text-[10px] font-black uppercase tracking-widest">
+                Diferencial Exclusivo PaxFlow
+              </span>
+              <h2 class="text-3xl md:text-5xl font-black tracking-tight leading-tight">
+                Sua Agência não para no escritório.<br class="hidden md:block" />
+                <span class="bg-gradient-to-r from-cyan-400 via-teal-300 to-emerald-400 bg-clip-text text-transparent pf-animated-gradient">
+                  Gestão Mobile 100% Nativa &amp; PWA
+                </span>
+              </h2>
+              <p class="text-sm text-slate-300 font-medium max-w-2xl mx-auto leading-relaxed">
+                Leve o PaxFlow no bolso. Instale direto na tela inicial do seu celular (iOS e Android) sem depender de lojas de aplicativos, com atualizações instantâneas, experiência fluida e notificações Push em tempo real.
+              </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div data-reveal="left" class="p-7 rounded-3xl bg-white/[0.04] border border-cyan-500/25 backdrop-blur-md space-y-4 hover:border-cyan-400/50 transition shadow-xl pf-glow">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-500/25 to-blue-500/25 text-cyan-400 border border-cyan-500/30 flex items-center justify-center text-2xl font-black shadow-inner">
+                  📱
+                </div>
+                <h3 class="text-xl font-extrabold text-white">App PWA sem Lojas</h3>
+                <p class="text-xs text-slate-300 leading-relaxed font-medium">
+                  Adicione à tela de início do seu iPhone (Safari) ou Android (Chrome) em 1 clique. Carregamento ultra-rápido de app nativo sem consumir espaço de armazenamento.
+                </p>
+              </div>
+
+              <div data-reveal="up" class="p-7 rounded-3xl bg-white/[0.04] border border-emerald-500/25 backdrop-blur-md space-y-4 hover:border-emerald-400/50 transition shadow-xl pf-glow">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500/25 to-teal-500/25 text-emerald-400 border border-emerald-500/30 flex items-center justify-center text-2xl font-black shadow-inner">
+                  🔔
+                </div>
+                <h3 class="text-xl font-extrabold text-white">Push Notifications Nativas</h3>
+                <p class="text-xs text-slate-300 leading-relaxed font-medium">
+                  Alertas em tempo real na tela de bloqueio do celular sobre prazos de vistos e passaportes, vouchers liberados, solicitações de viagem e SLAs estourando.
+                </p>
+              </div>
+
+              <div data-reveal="right" class="p-7 rounded-3xl bg-white/[0.04] border border-fuchsia-500/25 backdrop-blur-md space-y-4 hover:border-fuchsia-400/50 transition shadow-xl pf-glow">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-fuchsia-500/25 to-purple-500/25 text-fuchsia-400 border border-fuchsia-500/30 flex items-center justify-center text-2xl font-black shadow-inner">
+                  ✈️
+                </div>
+                <h3 class="text-xl font-extrabold text-white">Itinerário Mobile do Passageiro</h3>
+                <p class="text-xs text-slate-300 leading-relaxed font-medium">
+                  Seu cliente recebe um link público personalizado com as cores da sua agência para acompanhar voos, vouchers e responder à pesquisa NPS no smartphone.
+                </p>
               </div>
             </div>
           </div>
