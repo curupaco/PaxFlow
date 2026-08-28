@@ -457,7 +457,7 @@ export class LandingPage {
               </div>
 
               <div id="panel-inbox" class="space-y-4 tab-pane-transition hidden text-xs">
-                <div class="p-4 rounded-2xl bg-gradient-to-r from-[#f12711]/25 to-rose-500/10 border border-[#f12711]/25 text-sm text-slate-200 flex items-center gap-2"><span class="text-lg">⚡</span><span><strong>Mensageria em Tempo Real (&lt; 1s) &amp; Alertas de Segurança:</strong> Comunicação via WebSockets sem recarregar a página, alertas sonoros corteses, avisos de atendimento no balcão (Co-Piloto), SLA de passaportes e pré-embarque em 7 dias.</span></div>
+                <div class="p-4 rounded-2xl bg-gradient-to-r from-[#f12711]/25 to-rose-500/10 border border-[#f12711]/25 text-sm text-slate-200 flex items-center gap-2"><span class="text-lg">📱</span><span><strong>Mensageria &amp; Push no Celular:</strong> Notificações Push nativas em smartphones Android e iOS na tela de bloqueio (mesmo com o aplicativo fechado), além de sincronização em tempo real (&lt; 1s) e alertas sonoros.</span></div>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div class="md:col-span-1 space-y-2 border-r border-white/10 pr-3"><span class="text-[8px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Alertas Recentes</span>
                     <div class="p-2 bg-[#f12711]/10 border border-[#f12711]/25 rounded-xl"><div class="flex justify-between font-extrabold text-[#f5af19]"><span>SLA Passaporte</span><span>Urgente</span></div><span class="block text-slate-400 truncate mt-0.5">Passageira Demo 03 (Validade &lt; 180d)</span></div>

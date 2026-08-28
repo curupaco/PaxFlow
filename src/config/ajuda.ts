@@ -474,6 +474,13 @@ export const HELP_ITEMS: HelpItem[] = [
     label: 'Padronização Global de Datas e Linguagem Cortês',
     description: 'Padrão brasileiro dd/mm/aaaa em todos os alertas, solicitações e relatórios.',
     details: 'Todas as datas no PaxFlow seguem rigorosamente o formato nacional **dd/mm/aaaa** (ex: `30/08/2026` ou `30/08/2026 às 14:30`).\n\n- **Eliminação de Jargões**: Termos técnicos de banco de dados (como `ATENDIMENTO_BALCAO`, `solicitado_fornecedor`, `troca`) são traduzidos automaticamente em português fluido (`Atendimento no Balcão`, `Troca de Turno`, `Aguardando Fornecedor`).'
+  },
+  {
+    id: 'pwa-push-celular-notificacoes',
+    modulo: 'realtime',
+    label: 'Notificações Push Nativas no Celular (PWA no Android & iOS)',
+    description: 'Como receber alertas na tela de bloqueio do celular mesmo com o aplicativo fechado.',
+    details: 'O PaxFlow suporta Notificações Push Nativas para celulares (Android e iOS 16.4+):\n\n- **Como Ativar**: Acesse seu perfil (clicando na sua carinha no rodapé da barra lateral) e clique no botão **📱 Notificações no Celular (PWA)** ➔ **Ativar**.\n- **Requisito no iPhone (iOS)**: No Safari do iPhone, toque no botão de Compartilhar e selecione **"Adicionar à Tela de Início"**. Ao abrir o aplicativo pelo ícone da tela inicial, ative as notificações no perfil.\n- **Funcionamento com App Fechado**: O celular vibrará e tocará exibindo a notificação com o ícone do PaxFlow na tela de bloqueio. Ao tocar na notificação, o aplicativo abrirá diretamente na mensagem ou solicitação correspondente.'
   }
 ];
 
