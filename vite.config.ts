@@ -2,15 +2,14 @@ import { defineConfig, loadEnv, Plugin } from 'vite';
 import { resolve } from 'path';
 import fs from 'fs';
 
-function generateVersionPlugin(): Plugin {
+function generateVersionPlugin(buildTimestamp: number): Plugin {
   return {
     name: 'generate-version-plugin',
     buildStart() {
-      const buildTime = Date.now();
       const versionData = {
-        version: `1.0.0-${buildTime}`,
-        buildTime: buildTime,
-        timestamp: new Date(buildTime).toISOString(),
+        version: `1.0.0-${buildTimestamp}`,
+        buildTime: buildTimestamp,
+        timestamp: new Date(buildTimestamp).toISOString(),
       };
       const publicDir = resolve(__dirname, 'public');
       if (!fs.existsSync(publicDir)) {
@@ -28,7 +27,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   const buildTime = Date.now();
   return {
-    plugins: [generateVersionPlugin()],
+    plugins: [generateVersionPlugin(buildTime)],
     define: {
       'process.env.GOOGLE_CLIENT_ID': JSON.stringify(env.GOOGLE_CLIENT_ID),
       'process.env.GOOGLE_CLIENT_SECRET': JSON.stringify(env.GOOGLE_CLIENT_SECRET),

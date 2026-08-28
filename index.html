@@ -72,9 +72,10 @@
               if (newWorker) {
                 newWorker.addEventListener('statechange', () => {
                   if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                    window.dispatchEvent(new CustomEvent('paxflow-new-version-available', {
-                      detail: { source: 'service-worker', worker: newWorker }
-                    }));
+                    // Consulta o VersionChecker para validar se existe build nova antes de disparar o alerta
+                    if (window.VersionChecker) {
+                      window.VersionChecker.getInstance().checkForUpdates();
+                    }
                   }
                 });
               }

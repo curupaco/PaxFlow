@@ -9,12 +9,18 @@ export class VersionChecker {
   private currentBuildTime: number;
   private isUpdateAvailable: boolean = false;
   private checkIntervalTimer: any = null;
+  private latestRemoteVersion: VersionInfo | null = null;
 
   private constructor() {
-    // __PAXFLOW_BUILD_TIME__ é injetado pelo Vite durante o build
     this.currentBuildTime = typeof __PAXFLOW_BUILD_TIME__ !== 'undefined'
       ? __PAXFLOW_BUILD_TIME__
-      : Date.now();
+      : 0;
+
+    // Se já tivermos aceitado esta versão no localStorage, atualiza a referência local
+    const ackTime = parseInt(localStorage.getItem('paxflow_acknowledged_build_time') || '0', 10);
+    if (ackTime > this.currentBuildTime) {
+      this.currentBuildTime = ackTime;
+    }
   }
 
   public static getInstance(): VersionChecker {
@@ -28,7 +34,12 @@ export class VersionChecker {
    * Inicializa o monitoramento de versão no PaxFlow
    */
   public init(intervalMs: number = 3 * 60 * 1000): void {
-    // Executa verificação inicial logo após a montagem do app
+    // Desativa alertas automáticos em ambiente de desenvolvimento local (localhost)
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      return;
+    }
+
+    // Executa verificação inicial após a montagem do app
     setTimeout(() => this.checkForUpdates(), 5000);
 
     // Configura polling regular
@@ -69,10 +80,15 @@ export class VersionChecker {
       if (!response.ok) return false;
 
       const data: VersionInfo = await response.json();
+      this.latestRemoteVersion = data;
 
-      if (data && data.buildTime && data.buildTime > this.currentBuildTime) {
+      const ackTime = parseInt(localStorage.getItem('paxflow_acknowledged_build_time') || '0', 10);
+      const effectiveLocalBuild = Math.max(this.currentBuildTime, ackTime);
+
+      // Tolera até 1000ms de divergência para evitar inconsistência de buildTime
+      if (data && data.buildTime && data.buildTime > (effectiveLocalBuild + 1000)) {
         console.log('[PaxFlow VersionChecker] Nova versão detectada!', {
-          local: this.currentBuildTime,
+          localEffective: effectiveLocalBuild,
           remote: data.buildTime
         });
         this.notifyNewVersionAvailable(data);
@@ -103,6 +119,12 @@ export class VersionChecker {
    * Recarrega a página de forma limpa, limpando service workers se necessário
    */
   public forceReload(): void {
+    if (this.latestRemoteVersion && this.latestRemoteVersion.buildTime) {
+      localStorage.setItem('paxflow_acknowledged_build_time', String(this.latestRemoteVersion.buildTime));
+    } else if (this.currentBuildTime) {
+      localStorage.setItem('paxflow_acknowledged_build_time', String(this.currentBuildTime));
+    }
+
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistrations().then((registrations) => {
         for (const registration of registrations) {
@@ -118,3 +140,5 @@ export class VersionChecker {
     }
   }
 }
+
+(window as any).VersionChecker = VersionChecker;
