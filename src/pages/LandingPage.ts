@@ -58,25 +58,29 @@ export class LandingPage {
       ...Array.from(scope.querySelectorAll<HTMLElement>('[data-reveal]')),
       ...Array.from(scope.querySelectorAll<HTMLElement>('.pf-zone')),
       ...Array.from(scope.querySelectorAll<HTMLElement>('.pf-slide-up, .pf-slide-left, .pf-slide-right')),
-      ...Array.from(scope.querySelectorAll<HTMLElement>('[class*="pf-rise"]')),
-      ...Array.from(scope.querySelectorAll<HTMLElement>('[data-count]')),
     ];
 
     const isReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    // Animação de contadores numéricos
+    // Animação de contadores numéricos (subindo de 0 até o valor alvo)
     const animateCounterEl = (el: HTMLElement): void => {
       if (el.getAttribute('data-counted') === 'true') return;
       el.setAttribute('data-counted', 'true');
       const target = parseFloat(el.getAttribute('data-count') || '0');
       const suffix = el.getAttribute('data-suffix') || '';
-      const duration = 1200;
+      const duration = 1600;
       const start = performance.now();
+
       const step = (now: number): void => {
         const p = Math.min((now - start) / duration, 1);
         const eased = 1 - Math.pow(1 - p, 3);
-        el.textContent = Math.round(target * eased) + suffix;
-        if (p < 1) requestAnimationFrame(step);
+        const currentVal = Math.round(target * eased);
+        el.textContent = currentVal + suffix;
+        if (p < 1) {
+          requestAnimationFrame(step);
+        } else {
+          el.textContent = target + suffix;
+        }
       };
       requestAnimationFrame(step);
     };
@@ -89,43 +93,49 @@ export class LandingPage {
       counters.forEach(el => animateCounterEl(el));
     };
 
-    // Executa animação imediatamente para contadores já visíveis no topo da tela
-    scope.querySelectorAll<HTMLElement>('[data-count]').forEach(el => {
-      const rect = el.getBoundingClientRect();
-      if (rect.top < window.innerHeight && rect.bottom >= 0) {
-        animateCounterEl(el);
-      }
-    });
+    // Observer exclusivo para acionar a contagem animada quando o contador entrar na tela
+    const counterElements = Array.from(scope.querySelectorAll<HTMLElement>('[data-count]'));
+    if ('IntersectionObserver' in window) {
+      const counterObserver = new IntersectionObserver((entries, obs) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const el = entry.target as HTMLElement;
+            animateCounterEl(el);
+            obs.unobserve(el);
+          }
+        });
+      }, {
+        threshold: 0.15,
+        rootMargin: '0px 0px -20px 0px'
+      });
 
-    // Observer de alta performance para revelar elementos sem engasgos de layout
+      counterElements.forEach(counter => counterObserver.observe(counter));
+    } else {
+      counterElements.forEach(counter => animateCounterEl(counter));
+    }
+
+    // Observer de alta performance para revelar elementos gerais da página
     if ('IntersectionObserver' in window) {
       const observer = new IntersectionObserver((entries, obs) => {
         entries.forEach(entry => {
           if (entry.isIntersecting) {
             const el = entry.target as HTMLElement;
             el.classList.add('pf-revealed');
-            animateCountersInEl(el);
             obs.unobserve(el);
           }
         });
       }, {
         root: null,
-        rootMargin: '120px 0px 50px 0px', // Revela 120px antes de entrar no viewport!
+        rootMargin: '120px 0px 50px 0px',
         threshold: 0.05
       });
 
       revealItems.forEach(item => observer.observe(item));
 
-      // Garante visibilidade do topo imediatamente no carregamento inicial
-      revealItems.slice(0, 8).forEach(item => {
-        item.classList.add('pf-revealed');
-        animateCountersInEl(item);
-      });
+      // Revela elementos iniciais do topo sem acionar contadores antecipadamente
+      revealItems.slice(0, 4).forEach(item => item.classList.add('pf-revealed'));
     } else {
-      revealItems.forEach(item => {
-        item.classList.add('pf-revealed');
-        animateCountersInEl(item);
-      });
+      revealItems.forEach(item => item.classList.add('pf-revealed'));
     }
 
     // Scroll Progress Bar
@@ -362,8 +372,8 @@ export class LandingPage {
 
           <!-- Stats bar -->
           <div class="pf-rise-5 grid grid-cols-2 md:grid-cols-4 gap-4 w-full max-w-4xl mx-auto mb-16 p-6 rounded-3xl bg-white/[0.04] border border-white/10 backdrop-blur-md pf-glow">
-            <div class="text-center p-3 rounded-2xl bg-gradient-to-b from-[#0052d4]/20 to-transparent"><span class="pf-num block text-3xl font-black text-[#00a8f5]" data-count="100" data-suffix="%">100%</span><span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Foco em Turismo</span></div>
-            <div class="text-center p-3 rounded-2xl bg-gradient-to-b from-[#f12711]/20 to-transparent"><span class="pf-num block text-3xl font-black text-[#f5af19]" data-count="180" data-suffix=" dias">180 dias</span><span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Alerta Vistos &amp; Passaporte</span></div>
+            <div class="text-center p-3 rounded-2xl bg-gradient-to-b from-[#0052d4]/20 to-transparent"><span class="pf-num block text-3xl font-black text-[#00a8f5]" data-count="100" data-suffix="%">0%</span><span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Foco em Turismo</span></div>
+            <div class="text-center p-3 rounded-2xl bg-gradient-to-b from-[#f12711]/20 to-transparent"><span class="pf-num block text-3xl font-black text-[#f5af19]" data-count="180" data-suffix=" dias">0 dias</span><span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Alerta Vistos &amp; Passaporte</span></div>
             <div class="text-center p-3 rounded-2xl bg-gradient-to-b from-[#00e5a3]/20 to-transparent"><span class="block text-3xl font-black text-[#00e5a3]">Mobile &amp; PWA</span><span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">App Celular iOS / Android</span></div>
             <div class="text-center p-3 rounded-2xl bg-gradient-to-b from-fuchsia-600/20 to-transparent"><span class="block text-3xl font-black text-fuchsia-400">WhatsApp SLA</span><span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Hub Integrado</span></div>
           </div>
@@ -704,10 +714,10 @@ export class LandingPage {
             <div data-reveal="up" class="mt-12 rounded-2xl bg-white/[0.03] border border-white/10 p-6">
               <span class="block text-center text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">Aumente a retenção e a previsão da sua operação</span>
               <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-                <div><span class="pf-num block text-3xl font-black text-[#00a8f5]" data-count="41" data-suffix="%">41%</span><span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Menos retrabalho no pós-venda</span></div>
-                <div><span class="pf-num block text-3xl font-black text-[#00e5a3]" data-count="30" data-suffix="%">30%</span><span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Mais tempo em vendas</span></div>
-                <div><span class="pf-num block text-3xl font-black text-[#f5af19]" data-count="100" data-suffix="%">100%</span><span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Reembolsos sob controle</span></div>
-                <div><span class="pf-num block text-3xl font-black text-fuchsia-400" data-count="6" data-suffix="x">6x</span><span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Fidelização com itinerários white-label</span></div>
+                <div><span class="pf-num block text-3xl font-black text-[#00a8f5]" data-count="41" data-suffix="%">0%</span><span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Menos retrabalho no pós-venda</span></div>
+                <div><span class="pf-num block text-3xl font-black text-[#00e5a3]" data-count="30" data-suffix="%">0%</span><span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Mais tempo em vendas</span></div>
+                <div><span class="pf-num block text-3xl font-black text-[#f5af19]" data-count="100" data-suffix="%">0%</span><span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Reembolsos sob controle</span></div>
+                <div><span class="pf-num block text-3xl font-black text-fuchsia-400" data-count="6" data-suffix="x">0x</span><span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Fidelização com itinerários white-label</span></div>
               </div>
             </div>
           </div>
@@ -817,7 +827,7 @@ export class LandingPage {
           <div class="pf-zone relative max-w-3xl mx-auto space-y-6">
             <span class="px-4 py-1.5 rounded-full bg-[#00e5a3]/20 text-[#00e5a3] border border-[#00e5a3]/30 text-[10px] font-black uppercase tracking-widest">Leve sua agência para o próximo nível</span>
             <p class="text-xl sm:text-3xl font-black tracking-tight bg-gradient-to-r from-[#00a8f5] via-[#00e5a3] to-[#f5af19] bg-clip-text text-transparent pf-animated-gradient">Da venda até a volta!</p>
-            <h2 class="text-3xl sm:text-5xl font-black tracking-tight leading-tight pf-shimmer-text">Pronto para revolucionar a operação da sua agência?</h2>
+            <h2 class="text-3xl sm:text-5xl font-black tracking-tight leading-tight text-white">Pronto para revolucionar a operação da sua agência?</h2>
             <p class="text-sm sm:text-base text-slate-300 max-w-2xl mx-auto leading-relaxed">Assuma o controle total dos pós-vendas, reembolsos, SLAs de vistos e escalas da sua equipe.</p>
             <div class="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
               <button id="btn-cta-demo-final" class="pf-shine pf-animated-gradient w-full sm:w-auto px-8 py-4 rounded-2xl text-white font-black text-xs tracking-wider uppercase flex items-center justify-center gap-2 bg-gradient-to-r from-[#0052d4] via-[#00a8f5] to-[#00e5a3] shadow-2xl hover:scale-[1.05] transition-transform">Modo Demonstração</button>
