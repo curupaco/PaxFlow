@@ -68,6 +68,8 @@ export interface GlobalSettings {
   tempo_desistencia_orcamento_dias?: number;
   permitir_consultor_criar_viagem?: boolean;
   permitirConsultorCriarViagem?: boolean;
+  copiloto_ativo?: boolean;
+  copilotoAtivo?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }

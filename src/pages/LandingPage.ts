@@ -29,7 +29,7 @@ export class LandingPage {
     };
 
     const siteUrl = window.location.origin + window.location.pathname;
-    const imageUrl = window.location.origin + '/logo.svg';
+    const imageUrl = window.location.origin + '/og-image.png';
 
     setMeta('description', 'Centralize pós-vendas, passaportes, vistos, reembolsos aéreos e escalas da sua agência de viagens em uma plataforma viva, sem planilhas.', true);
     setMeta('og:type', 'website');
@@ -37,6 +37,10 @@ export class LandingPage {
     setMeta('og:title', 'PaxFlow - O CRM & Pós-Venda 100% Especializado em Turismo');
     setMeta('og:description', 'Centralize pós-vendas, passaportes, vistos, reembolsos aéreos e escalas da sua agência de viagens em uma plataforma viva, sem planilhas.');
     setMeta('og:image', imageUrl);
+    setMeta('og:image:secure_url', imageUrl);
+    setMeta('og:image:type', 'image/png');
+    setMeta('og:image:width', '1200');
+    setMeta('og:image:height', '630');
     setMeta('og:url', siteUrl);
 
     setMeta('twitter:card', 'summary_large_image', true);

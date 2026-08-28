@@ -219,7 +219,9 @@ export class ConfiguracoesPage {
           tempoDesistenciaOrcamentoDias: data.tempo_desistencia_orcamento_dias !== undefined ? data.tempo_desistencia_orcamento_dias : 30,
           tempo_desistencia_orcamento_dias: data.tempo_desistencia_orcamento_dias !== undefined ? data.tempo_desistencia_orcamento_dias : 30,
           permitirConsultorCriarViagem: data.permitir_consultor_criar_viagem !== undefined ? data.permitir_consultor_criar_viagem : (data.permitirConsultorCriarViagem !== undefined ? data.permitirConsultorCriarViagem : false),
-          permitir_consultor_criar_viagem: data.permitir_consultor_criar_viagem !== undefined ? data.permitir_consultor_criar_viagem : (data.permitirConsultorCriarViagem !== undefined ? data.permitirConsultorCriarViagem : false)
+          permitir_consultor_criar_viagem: data.permitir_consultor_criar_viagem !== undefined ? data.permitir_consultor_criar_viagem : (data.permitirConsultorCriarViagem !== undefined ? data.permitirConsultorCriarViagem : false),
+          copilotoAtivo: data.copiloto_ativo !== undefined ? data.copiloto_ativo : (data.copilotoAtivo !== undefined ? data.copilotoAtivo : true),
+          copiloto_ativo: data.copiloto_ativo !== undefined ? data.copiloto_ativo : (data.copilotoAtivo !== undefined ? data.copilotoAtivo : true)
         };
       } else {
         const initialPayload = {
@@ -234,6 +236,7 @@ export class ConfiguracoesPage {
           enviar_nps_automatico: false,
           agency_logo_url: '',
           agency_primary_color: '#4f46e5',
+          copiloto_ativo: true,
           digisac_token: '',
           digisac_domain: '',
           digisac_service_id: '',
@@ -379,6 +382,7 @@ export class ConfiguracoesPage {
         const digisacEnableRoutingVal = (document.getElementById('input-digisac-enable-routing') as HTMLInputElement).checked;
         const digisacEnableBotTriggersVal = (document.getElementById('input-digisac-enable-bot-triggers') as HTMLInputElement).checked;
         const digisacEnableWebhooksVal = (document.getElementById('input-digisac-enable-webhooks') as HTMLInputElement).checked;
+        const copilotoAtivoVal = (document.getElementById('input-copiloto-ativo') as HTMLInputElement)?.checked ?? true;
 
         const payload = {
           agency_name: agencyNameVal,
@@ -387,6 +391,7 @@ export class ConfiguracoesPage {
           limite_upload_mb: limiteUploadVal,
           agency_primary_color: primaryColorVal,
           agency_logo_url: logoUrlVal,
+          copiloto_ativo: copilotoAtivoVal,
           digisac_token: digisacTokenVal,
           digisac_domain: digisacDomainVal,
           digisac_service_id: digisacServiceIdVal,
@@ -406,8 +411,9 @@ export class ConfiguracoesPage {
 
           if (error) throw error;
 
-          this.showToast('Configurações globais salvas!', 'success');
+          this.showToast('Configurações globais salvas com sucesso!', 'success');
           await this.loadSettings();
+          window.dispatchEvent(new CustomEvent('paxflow-settings-updated', { detail: this.settings }));
           this.render();
           this.setupEventListeners();
         } catch (err: any) {
@@ -1547,6 +1553,28 @@ export class ConfiguracoesPage {
                   <div>
                     <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Limite de Upload (MB)</label>
                     <input id="input-limite-upload" type="number" min="1" max="500" value="${this.settings.limiteUploadMb || 25}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-bold" />
+                  </div>
+                </div>
+
+                <!-- Recursos & Inteligência Artificial (Co-piloto) -->
+                <div class="border-t border-slate-100 dark:border-slate-800 pt-5 space-y-4">
+                  <div class="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+                    <h3 class="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider flex items-center gap-2">
+                      <span>🤖</span> Recursos & Inteligência Artificial
+                    </h3>
+                  </div>
+
+                  <div class="flex items-center justify-between p-4 bg-slate-50/70 dark:bg-slate-900/50 border border-slate-200/80 dark:border-slate-800 rounded-2xl">
+                    <div class="flex flex-col gap-1 pr-4">
+                      <span class="text-xs font-bold text-slate-800 dark:text-slate-200">Assistente Co-piloto de IA</span>
+                      <span class="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
+                        Habilita o assistente inteligente de co-piloto na interface e nos fluxos operacionais da agência. Se desativado, o recurso fica totalmente oculto para a equipe.
+                      </span>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer shrink-0">
+                      <input id="input-copiloto-ativo" type="checkbox" ${this.settings.copilotoAtivo !== false ? 'checked' : ''} class="sr-only peer">
+                      <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:after:border-slate-600 peer-checked:bg-indigo-600"></div>
+                    </label>
                   </div>
                 </div>
 
