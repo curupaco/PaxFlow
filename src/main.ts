@@ -854,6 +854,20 @@ class App {
         ? '💬 Nova Mensagem Direta' 
         : '🔔 Nova Notificação Recebida';
       this.showToast(`${title}!`, 'success');
+
+      // Se permissão nativa estiver concedida, exibe pop-up nativo de Desktop (estilo Outlook/Slack/Gmail)
+      if ('Notification' in window && Notification.permission === 'granted') {
+        try {
+          const n = new Notification(title, {
+            body: 'Você recebeu um novo item na sua Caixa de Entrada do PaxFlow.',
+            icon: '/logo.svg'
+          });
+          n.onclick = () => {
+            window.focus();
+            this.navigate('inbox');
+          };
+        } catch (e) {}
+      }
     };
     window.addEventListener('paxflow:new-message', (this as any)._onNewMessageBound);
 
