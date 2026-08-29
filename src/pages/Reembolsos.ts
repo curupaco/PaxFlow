@@ -499,7 +499,7 @@ export class ReembolsosPage {
           <!-- Tabela de Reembolsos -->
           <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden flex flex-col">
             <div class="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/40 dark:bg-slate-900/40">
-              <h2 class="text-sm font-black text-slate-700 dark:text-slate-300 tracking-wider uppercase">Fila de Reembolsos Ativos</h2>
+              <h2 class="text-sm font-black text-slate-700 dark:text-slate-300 tracking-wider uppercase flex items-center gap-1.5">Fila de Reembolsos Ativos ${renderHelpIcon('status-reembolso')}</h2>
               <span class="px-2.5 py-1 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400 font-extrabold text-[10px] rounded border border-indigo-100 dark:border-indigo-900/40 uppercase tracking-wider">
                 ${this.buscaTermo ? `${filtrados.length} de ${totalReembolsos}` : totalReembolsos} solicitações
               </span>

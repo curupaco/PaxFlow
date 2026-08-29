@@ -1545,7 +1545,7 @@ export class ConfiguracoesPage {
                 <div class="border-t border-slate-100 dark:border-slate-800 pt-5">
                   <div>
                     <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5 flex items-center">
-                      Taxa de Cancelamento Retida (%) ${renderHelpIcon('taxa-cancelamento-reembolso')}
+                      Taxa de Cancelamento Retida (%) ${renderHelpIcon('taxas-multas-cancelamento')}
                     </label>
                     <input id="input-taxa" type="number" step="0.01" min="0" max="100" value="${this.settings.taxaCancelamentoPadrao}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-bold" />
                     <p class="text-[10px] text-slate-400 dark:text-slate-400 mt-1.5 font-medium">Taxa retida padrão sugerida durante a solicitação de reembolsos.</p>
@@ -1703,7 +1703,7 @@ export class ConfiguracoesPage {
                 </div>
                 <div class="border-t border-slate-100 dark:border-slate-800 pt-5 space-y-4">
                   <h3 class="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                    Identidade Visual da Agência (White-Label) ${renderHelpIcon('customizacao-marca-white-label')}
+                    Identidade Visual da Agência (White-Label) ${renderHelpIcon('identidade-visual-branding')}
                   </h3>
                   
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">

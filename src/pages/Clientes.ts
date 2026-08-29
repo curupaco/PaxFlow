@@ -885,7 +885,9 @@ export class ClientesPage {
                 ${renderPhoneInputHTML('input-telefone', c.telefone, '(11) 99999-9999', false)}
               </div>
               <div>
-                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Documento (CPF/CNPJ)</label>
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5 flex items-center">
+                  Documento (CPF/CNPJ) ${renderHelpIcon('tipo-pessoa-cliente')}
+                </label>
                 ${renderDocumentInputHTML('input-documento', c.documento || '', 'CPF ou CNPJ', false)}
               </div>
               <div>

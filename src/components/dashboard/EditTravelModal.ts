@@ -495,13 +495,13 @@ export class EditTravelModal {
                   ${renderDateInputHTML('edit-viagem-volta', v.data_volta || '', 'DD/MM/AAAA', false, viagemProcessoConferido)}
                 </div>
                 <div>
-                  <label id="label-edit-viagem-data-financeiro" class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 leading-tight font-sans">Data Finan. ${v.status !== 'fechado' ? '*' : ''}</label>
+                  <label id="label-edit-viagem-data-financeiro" class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 leading-tight font-sans flex items-center gap-1">Data Finan. ${v.status !== 'fechado' ? '*' : ''} ${renderHelpIcon('data-financeiro')}</label>
                   ${renderDateInputHTML('edit-viagem-data-financeiro', v.data_financeiro || '', 'DD/MM/AAAA', v.status !== 'fechado', viagemProcessoConferido)}
                 </div>
               </div>
 
               <div>
-                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 font-sans">Status / Etapa *</label>
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 font-sans flex items-center gap-1">Status / Etapa * ${renderHelpIcon('status-viagem')}</label>
                 <select id="edit-viagem-status" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm font-sans">
                   <option value="pos_venda" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100" ${v.status === 'fechado' ? 'disabled' : ''} ${v.status === 'pos_venda' ? 'selected' : ''}>Pós-Venda</option>
                   <option value="fechado" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100" ${v.status === 'fechado' ? 'selected' : ''}>Fechado</option>

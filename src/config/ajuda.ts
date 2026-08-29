@@ -495,6 +495,20 @@ export const HELP_ITEMS: HelpItem[] = [
     label: 'Como Instalar o PaxFlow no Celular (Android & iPhone / iOS)',
     description: 'Guia passo a passo de como adicionar o aplicativo à tela inicial do smartphone sem baixar na loja.',
     details: 'O PaxFlow é um aplicativo Web PWA (Progressive Web App) que não precisa ser baixado pela Google Play Store ou Apple App Store. Ele funciona com visual e velocidade nativos diretamente no seu celular:\n\n📱 **COMO INSTALAR NO IPHONE (iOS - Safari):**\n1. Abra o navegador **Safari** no seu iPhone e acesse a URL do sistema (ex: `https://paxflow.com.br`).\n2. Toque no botão de **Compartilhar** (ícone do quadrado com a seta para cima `⎋` no menu inferior do Safari).\n3. Role a lista de opções para baixo e toque em **"Adicionar à Tela de Início"** (`➕`).\n4. Toque em **"Adicionar"** no canto superior direito.\n5. O ícone do PaxFlow aparecerá na sua tela inicial como um aplicativo nativo!\n\n🤖 **COMO INSTALAR NO ANDROID (Google Chrome / Edge):**\n1. Abra o navegador **Google Chrome** no seu celular Android e acesse o PaxFlow.\n2. Toque no banner automático **"Adicionar PaxFlow à tela inicial"** ou toque no menu de 3 pontinhos (`⋮`) no canto superior direito.\n3. Selecione **"Instalar aplicativo"** ou **"Adicionar à tela inicial"**.\n4. Confirme clicando em **"Instalar"**. Pronto! O PaxFlow aparecerá na sua gaveta de aplicativos e na tela inicial.'
+  },
+  {
+    id: 'alerta-passaporte-validade',
+    modulo: 'clientes',
+    label: 'Alerta e Gestão de Validade de Passaportes',
+    description: 'Regras de antecedência (SLA de 180 dias) para viagem internacional e visto.',
+    details: 'Muitos países exigem que o passaporte do passageiro tenha no mínimo 6 meses (180 dias) de validade a partir da data de entrada ou retorno.\n\n- O PaxFlow calcula automaticamente o prazo de expiração do documento cadastrado na ficha do cliente e sinaliza no Inbox e nos cards com alertas visuais amarelos (Atenção) ou vermelhos (Crítico/Vencido).'
+  },
+  {
+    id: 'upload-google-drive',
+    modulo: 'clientes',
+    label: 'Upload Seguro de Documentos (Google Drive Agência)',
+    description: 'Armazenamento seguro e organizado de documentos, passaportes e vouchers.',
+    details: 'Os arquivos e anexos de clientes são processados e enviados diretamente para o armazenamento seguro da agência.\n\n- Imagens enviadas passam por compilação e otimização local via Canvas API, garantindo arquivos leves e visualização rápida no Lightbox inline.'
   }
 ];
 

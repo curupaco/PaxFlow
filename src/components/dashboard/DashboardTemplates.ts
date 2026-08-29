@@ -324,16 +324,20 @@ export function renderLateralEditorPaneHTML(
                   ${renderCurrencyInputHTML(`edit-prod-taxa-${selectedProduct.id}`, selectedProduct.taxa || 0, '0,00', true, isLocConferido || !isVendaValid)}
                 </div>
                 <div>
-                  <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase mb-0.5">Comissão da Agência</label>
+                  <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase mb-0.5 flex items-center">
+                    Comissão da Agência ${renderHelpIcon('comissao')}
+                  </label>
                   ${renderCurrencyInputHTML(`edit-prod-comissao-${selectedProduct.id}`, selectedProduct.comissao || 0, '0,00', true, isLocConferido || !isVendaValid)}
                 </div>
                 <div>
-                  <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase mb-0.5">Markup</label>
+                  <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase mb-0.5 flex items-center">
+                    Markup ${renderHelpIcon('markup')}
+                  </label>
                   ${renderCurrencyInputHTML(`edit-prod-markup-${selectedProduct.id}`, selectedProduct.markup || 0, '0,00', true, isLocConferido || !isVendaValid)}
                 </div>
                 <div>
                   <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase mb-0.5 flex items-center">
-                    RAV ${renderHelpIcon('rav-comissao')}
+                    RAV ${renderHelpIcon('rav')}
                   </label>
                   ${renderCurrencyInputHTML(`edit-prod-rav-${selectedProduct.id}`, selectedProduct.rav || 0, '0,00', true, isLocConferido || !isVendaValid)}
                 </div>

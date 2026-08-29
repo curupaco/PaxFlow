@@ -265,6 +265,13 @@ export class HelpModal {
   }
 
   private static highlightTerm(itemId: string): void {
+    const aliases: Record<string, string> = {
+      'rav-comissao': 'rav',
+      'taxa-cancelamento-reembolso': 'taxas-multas-cancelamento',
+      'customizacao-marca-white-label': 'identidade-visual-branding'
+    };
+    const targetId = aliases[itemId] || itemId;
+
     const searchInput = document.getElementById('input-ajuda-busca') as HTMLInputElement;
     if (searchInput) {
       searchInput.value = '';
@@ -286,7 +293,7 @@ export class HelpModal {
     this.renderItems();
 
     setTimeout(() => {
-      const card = document.querySelector(`.help-item-card[data-item-id="${itemId}"]`) as HTMLElement;
+      const card = document.querySelector(`.help-item-card[data-item-id="${targetId}"]`) as HTMLElement;
       if (card) {
         const details = card.querySelector('.details-section');
         const icon = card.querySelector('.expand-icon');
