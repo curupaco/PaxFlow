@@ -91,8 +91,20 @@ export class PushSenderService {
   public static async sendToUser(userId: string, payload: PushPayload): Promise<void> {
     if (!userId) return;
 
+    // 1. Tenta invocar a Edge Function do Supabase (envio server-side livre de CORS)
     try {
-      // Busca todas as inscrições registradas para este usuário no banco de dados
+      const { data, error } = await supabase.functions.invoke('send-push', {
+        body: { userId, payload }
+      });
+      if (!error && data?.success) {
+        return;
+      }
+    } catch (e) {
+      // Ignora e continua para o fallback VAPID local
+    }
+
+    // 2. Fallback: Envio VAPID direto via client
+    try {
       const { data: subs, error } = await supabase
         .from('push_subscriptions')
         .select('*')
@@ -100,7 +112,6 @@ export class PushSenderService {
 
       if (error || !subs || subs.length === 0) return;
 
-      // Dispara o Web Push VAPID para os endpoints dos aparelhos do usuário (Apple APNs / Google FCM)
       for (const sub of subs) {
         if (!sub.endpoint) continue;
 
@@ -118,7 +129,7 @@ export class PushSenderService {
             }
           });
         } catch (e) {
-          // Erro silencioso em caso de falha de conexão individual ou endpoint expirado
+          // Erro silencioso em caso de restrição de navegador
         }
       }
     } catch (err) {

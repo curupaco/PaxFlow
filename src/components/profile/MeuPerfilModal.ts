@@ -5,6 +5,7 @@ import { showCustomAlert } from '../../services/dialog';
 import { obterProgressoNivel, BADGE_DEFINITIONS, obterMedalhasUsuario, obterCampanhasAtivas, obterProgressoCampanha } from '../../services/gamification';
 import { renderHelpIcon } from '../../utils/helpHelper';
 import { PushNotificationService } from '../../services/pushNotificationService';
+import { PushSenderService } from '../../services/pushSenderService';
 
 export interface MeuPerfilModalOptions {
   perfil: PerfilConsultor;
@@ -128,9 +129,14 @@ export class MeuPerfilModal {
                   <span class="block text-xs font-black text-indigo-900 dark:text-indigo-300 flex items-center gap-1.5">📱 Notificações no Celular (PWA)</span>
                   <p class="text-[11px] text-slate-500 dark:text-slate-400 font-medium leading-tight">Receba solicitações de escala e mensagens diretas na tela de bloqueio do celular.</p>
                 </div>
-                <button type="button" id="btn-toggle-push-notifications" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-extrabold transition shrink-0 shadow-sm shadow-indigo-600/20">
-                  <span>Ativar</span>
-                </button>
+                <div class="flex items-center gap-2 shrink-0">
+                  <button type="button" id="btn-toggle-push-notifications" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-extrabold transition shrink-0 shadow-sm shadow-indigo-600/20">
+                    <span>Ativar</span>
+                  </button>
+                  <button type="button" id="btn-test-push-notification" class="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-xs font-black transition shrink-0 shadow-sm shadow-amber-600/20 flex items-center gap-1" title="Dispara uma notificação de teste direto no seu celular para verificar o funcionamento">
+                    <span>🧪 Testar</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -528,6 +534,49 @@ export class MeuPerfilModal {
           }
         } catch (err: any) {
           showCustomAlert(err.message || 'Erro ao alterar notificações no celular.', 'Notificações no Celular');
+        }
+      });
+    }
+
+    // Lógica do botão de Teste de Notificação Push
+    const testPushBtn = overlay.querySelector('#btn-test-push-notification') as HTMLButtonElement;
+    if (testPushBtn) {
+      testPushBtn.addEventListener('click', async () => {
+        const originalHtml = testPushBtn.innerHTML;
+        testPushBtn.disabled = true;
+        testPushBtn.innerHTML = '<span>Disparando...</span>';
+
+        try {
+          // 1. Dispara notificação push via backend/service para o próprio consultor
+          await PushSenderService.sendToUser(perfil.id, {
+            title: '🧪 Teste de Notificação PaxFlow',
+            body: `Olá, ${perfil.nome}! Se você recebeu isto na tela do celular, suas notificações em segundo plano estão 100% ativas!`,
+            url: '/#inbox'
+          });
+
+          // 2. Notificação local no navegador para teste imediato se app estiver em primeiro plano
+          if ('Notification' in window && Notification.permission === 'granted') {
+            try {
+              const reg = await navigator.serviceWorker.ready;
+              await reg.showNotification('🧪 Teste de Notificação PaxFlow', {
+                body: `Olá, ${perfil.nome}! Notificação enviada com sucesso para o seu aparelho.`,
+                icon: '/logo.svg',
+                vibrate: [100, 50, 100]
+              } as any);
+            } catch (e) {
+              new Notification('🧪 Teste de Notificação PaxFlow', {
+                body: `Olá, ${perfil.nome}! Notificação enviada com sucesso para o seu aparelho.`,
+                icon: '/logo.svg'
+              });
+            }
+          }
+
+          options.showToast('Disparado! Feche/minimize o aplicativo no celular para ver o alerta na tela de bloqueio.', 'success');
+        } catch (err: any) {
+          showCustomAlert('Falha ao disparar teste: ' + (err.message || 'Verifique se a função do Supabase está ativa.'), 'Erro de Teste');
+        } finally {
+          testPushBtn.disabled = false;
+          testPushBtn.innerHTML = originalHtml;
         }
       });
     }
