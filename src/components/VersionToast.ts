@@ -23,12 +23,16 @@ export class VersionToast {
       this.showToast();
     });
 
-    // Detecta se o usuário está interagindo na tela
+    // Detecta se o usuário está interagindo na tela (suporta mouse, teclado e touch em smartphones)
     const markActive = () => {
       this.isUserActive = true;
     };
     window.addEventListener('mousemove', markActive, { passive: true });
     window.addEventListener('keydown', markActive, { passive: true });
+    window.addEventListener('touchstart', markActive, { passive: true });
+    window.addEventListener('touchmove', markActive, { passive: true });
+    window.addEventListener('pointerdown', markActive, { passive: true });
+    window.addEventListener('scroll', markActive, { passive: true });
   }
 
   public showToast(): void {
@@ -36,7 +40,7 @@ export class VersionToast {
 
     this.containerEl = document.createElement('div');
     this.containerEl.id = 'paxflow-version-toast';
-    this.containerEl.className = 'fixed bottom-6 right-6 z-[99999] max-w-md w-full px-4 animate-bounce-short';
+    this.containerEl.className = 'fixed bottom-4 left-1/2 -translate-x-1/2 md:translate-x-0 md:left-auto md:right-6 md:bottom-6 z-[99999] max-w-md w-[calc(100%-2rem)] sm:w-full px-2 sm:px-4 animate-bounce-short';
 
     this.containerEl.innerHTML = `
       <div class="bg-slate-900/95 backdrop-blur-md border border-cyan-500/40 text-white p-5 rounded-2xl shadow-2xl shadow-cyan-500/20 flex flex-col gap-3">
