@@ -39,6 +39,159 @@ export class InboxService {
   }
 
   /**
+   * Retrieves list of read alert IDs for a specific user from Supabase and LocalStorage
+   */
+  static async getReadAlerts(userId: string): Promise<string[]> {
+    const readSet = new Set<string>();
+
+    try {
+      if (userId) {
+        const userVal = localStorage.getItem(`paxflow_read_alerts_${userId}`);
+        const userList: string[] = userVal ? JSON.parse(userVal) : [];
+        userList.forEach(id => readSet.add(id));
+      }
+      const legacyVal = localStorage.getItem('paxflow_read_alerts');
+      const legacyList: string[] = legacyVal ? JSON.parse(legacyVal) : [];
+      legacyList.forEach(id => readSet.add(id));
+    } catch (e) {
+      console.warn('Erro ao carregar alertas lidos locais:', e);
+    }
+
+    if (userId) {
+      try {
+        const { data: notifRead } = await supabase
+          .from('notificacoes')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('lida', true);
+
+        if (notifRead && Array.isArray(notifRead)) {
+          notifRead.forEach(n => readSet.add(`mention-${n.id}`));
+        }
+
+        const { data: dbReadItems } = await supabase
+          .from('inbox_read_items')
+          .select('alert_id')
+          .eq('user_id', userId);
+
+        if (dbReadItems && Array.isArray(dbReadItems)) {
+          dbReadItems.forEach(i => readSet.add(i.alert_id));
+        }
+      } catch (e) {}
+    }
+
+    return Array.from(readSet);
+  }
+
+  /**
+   * Marks a specific alert as read in DB and LocalStorage
+   */
+  static async markAlertAsRead(userId: string, alertId: string): Promise<void> {
+    try {
+      const readList = await this.getReadAlerts(userId);
+      if (!readList.includes(alertId)) {
+        readList.push(alertId);
+        if (userId) localStorage.setItem(`paxflow_read_alerts_${userId}`, JSON.stringify(readList));
+        localStorage.setItem('paxflow_read_alerts', JSON.stringify(readList));
+      }
+
+      if (alertId.startsWith('mention-')) {
+        const notifId = alertId.replace('mention-', '');
+        await supabase
+          .from('notificacoes')
+          .update({ lida: true })
+          .eq('id', notifId);
+      }
+
+      if (userId) {
+        try {
+          await supabase
+            .from('inbox_read_items')
+            .upsert({ user_id: userId, alert_id: alertId, read_at: new Date().toISOString() });
+        } catch (e) {}
+      }
+
+      window.dispatchEvent(new CustomEvent('paxflow-inbox-updated'));
+    } catch (err) {
+      console.error('Erro ao marcar alerta como lido no serviço:', err);
+    }
+  }
+
+  /**
+   * Marks a specific alert as unread in DB and LocalStorage
+   */
+  static async markAlertAsUnread(userId: string, alertId: string): Promise<void> {
+    try {
+      let readList = await this.getReadAlerts(userId);
+      readList = readList.filter(id => id !== alertId);
+      if (userId) localStorage.setItem(`paxflow_read_alerts_${userId}`, JSON.stringify(readList));
+      localStorage.setItem('paxflow_read_alerts', JSON.stringify(readList));
+
+      if (alertId.startsWith('mention-')) {
+        const notifId = alertId.replace('mention-', '');
+        await supabase
+          .from('notificacoes')
+          .update({ lida: false })
+          .eq('id', notifId);
+      }
+
+      if (userId) {
+        try {
+          await supabase
+            .from('inbox_read_items')
+            .delete()
+            .eq('user_id', userId)
+            .eq('alert_id', alertId);
+        } catch (e) {}
+      }
+
+      window.dispatchEvent(new CustomEvent('paxflow-inbox-updated'));
+    } catch (err) {
+      console.error('Erro ao marcar alerta como não lido no serviço:', err);
+    }
+  }
+
+  /**
+   * Marks multiple alert IDs as read
+   */
+  static async markAllAlertsAsRead(userId: string, alertIds: string[]): Promise<void> {
+    try {
+      const readList = await this.getReadAlerts(userId);
+      const updatedSet = new Set([...readList, ...alertIds]);
+      const updatedList = Array.from(updatedSet);
+
+      if (userId) localStorage.setItem(`paxflow_read_alerts_${userId}`, JSON.stringify(updatedList));
+      localStorage.setItem('paxflow_read_alerts', JSON.stringify(updatedList));
+
+      const mentionIds = alertIds
+        .filter(id => id.startsWith('mention-'))
+        .map(id => id.replace('mention-', ''));
+
+      if (mentionIds.length > 0) {
+        await supabase
+          .from('notificacoes')
+          .update({ lida: true })
+          .in('id', mentionIds);
+      }
+
+      if (userId && alertIds.length > 0) {
+        try {
+          const rows = alertIds.map(alert_id => ({
+            user_id: userId,
+            alert_id,
+            read_at: new Date().toISOString()
+          }));
+          await supabase.from('inbox_read_items').upsert(rows);
+        } catch (e) {}
+      }
+
+      window.dispatchEvent(new CustomEvent('paxflow-inbox-updated'));
+    } catch (err) {
+      console.error('Erro ao marcar alertas como lidos em massa:', err);
+    }
+  }
+
+  /**
    * Fetches data from Supabase and compiles the alerts (manual & SLAs)
    */
   static async loadAndBuildAlerts(

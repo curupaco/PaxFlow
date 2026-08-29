@@ -11,6 +11,7 @@ export interface EmailReaderModalOptions {
   onReply?: (item: AlertItem) => void;
   perfil: PerfilConsultor | null;
   onDelete?: (item: AlertItem) => Promise<void>;
+  onMarkUnread?: (item: AlertItem) => Promise<void>;
 }
 
 export class EmailReaderModal {
@@ -206,6 +207,12 @@ export class EmailReaderModal {
           <button id="modal-footer-close-btn" class="px-4 py-2 text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl transition border border-slate-200/40 dark:border-slate-700/40">
             Fechar
           </button>
+
+          ${options.onMarkUnread ? `
+            <button id="modal-footer-unread-btn" class="px-4 py-2 text-xs font-extrabold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-indigo-600 dark:text-indigo-400 rounded-xl transition border border-slate-200/40 dark:border-slate-700/40 flex items-center gap-1.5">
+              ✉️ Marcar Não Lida
+            </button>
+          ` : ''}
           
           ${item.type !== 'direct_message' || !item.isSent ? `
             <button id="modal-footer-archive-btn" class="px-4 py-2 text-xs font-extrabold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition shadow-md shadow-indigo-600/10 flex items-center gap-1.5">
@@ -256,6 +263,13 @@ export class EmailReaderModal {
 
     document.getElementById('modal-close-btn')?.addEventListener('click', () => closeModal());
     document.getElementById('modal-footer-close-btn')?.addEventListener('click', () => closeModal());
+
+    document.getElementById('modal-footer-unread-btn')?.addEventListener('click', async () => {
+      closeModal(true);
+      if (options.onMarkUnread) {
+        await options.onMarkUnread(item);
+      }
+    });
 
     // Reply handler
     document.getElementById('modal-reply-btn')?.addEventListener('click', () => {

@@ -1037,13 +1037,12 @@ class App {
     try {
       const { InboxService } = await import('./services/inboxService');
       const alerts = await InboxService.loadAndBuildAlerts(this.user, this.perfil, 3);
+      const readList = await InboxService.getReadAlerts(this.user.id);
       
-      const readVal = localStorage.getItem('paxflow_read_alerts');
-      const readList: string[] = readVal ? JSON.parse(readVal) : [];
       const currentPerfil = this.perfil;
       let filteredAlerts = alerts;
       if (currentPerfil && currentPerfil.role === 'admin') {
-        filteredAlerts = alerts.filter(a => a.consultorId === currentPerfil.id);
+        filteredAlerts = alerts.filter(a => a.consultorId === currentPerfil.id || a.isReceivedByMe || a.isCreatedByMe);
       }
       
       const unreadCount = filteredAlerts.filter(a => !a.arquivado && !readList.includes(a.id) && !a.isSent).length;

@@ -395,15 +395,6 @@ export class LandingPage {
               <span class="flex items-center gap-2 text-amber-400">🔔 Push Notifications no iOS &amp; Android</span>
             </div>
           </div>
-              <span class="flex items-center gap-2 text-[#00a8f5]">✦ Reembolsos com cronômetro SLA</span>
-              <span class="flex items-center gap-2 text-[#f5af19]">✦ Escala de funcionários</span>
-              <span class="flex items-center gap-2 text-fuchsia-400">✦ Itinerário digital do cliente</span>
-              <span class="flex items-center gap-2 text-[#00e5a3]">✦ Gestão documental integrada</span>
-              <span class="flex items-center gap-2 text-[#00a8f5]">✦ WhatsApp + Digisac nativo</span>
-              <span class="flex items-center gap-2 text-[#f5af19]">✦ Gamificação da equipe</span>
-              <span class="flex items-center gap-2 text-rose-400">✦ Pipeline de orçamentos</span>
-            </div>
-          </div>
 
           <!-- Module tour -->
           <div class="w-full text-center mb-8">

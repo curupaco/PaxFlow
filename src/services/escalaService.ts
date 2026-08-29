@@ -525,10 +525,38 @@ export class EscalaService {
     solicitacaoId: string,
     novoStatus: 'pendente_admin' | 'aprovado' | 'recusado',
     respostaAdmin?: string
-  ): Promise<boolean> {
-    const list = await this.loadSolicitacoes();
-    const target = list.find(s => s.id === solicitacaoId);
-    if (!target) return false;
+  ): Promise<{ success: boolean; alreadyProcessed?: boolean; currentStatus?: string }> {
+    let list = await this.loadSolicitacoes();
+    let target = list.find(s => s.id === solicitacaoId);
+
+    // Checagem em tempo real no banco de dados para evitar corrida de concorrência entre admins
+    try {
+      const { data: dbCheck } = await supabase
+        .from('escala_solicitacoes')
+        .select('*')
+        .eq('id', solicitacaoId)
+        .maybeSingle();
+
+      if (dbCheck) {
+        if (dbCheck.status === 'aprovado' || dbCheck.status === 'recusado') {
+          return {
+            success: false,
+            alreadyProcessed: true,
+            currentStatus: dbCheck.status
+          };
+        }
+      }
+    } catch (e) {}
+
+    if (!target) return { success: false };
+
+    if (target.status === 'aprovado' || target.status === 'recusado') {
+      return {
+        success: false,
+        alreadyProcessed: true,
+        currentStatus: target.status
+      };
+    }
 
     target.status = novoStatus;
     if (respostaAdmin) target.resposta_admin = respostaAdmin;
@@ -612,6 +640,6 @@ export class EscalaService {
       console.warn('Erro ao atualizar status da solicitacao no Supabase:', e);
     }
 
-    return true;
+    return { success: true };
   }
 }

@@ -20,6 +20,9 @@ export class InboxPage {
   // App state
   private activeTab: 'ativos' | 'arquivados' | 'todos' | 'enviadas' | 'escala' = 'ativos';
   private selectedConsultantFilter: string = 'todos';
+  private categoryFilter: string = 'todos';
+  private selectedAlertIds: Set<string> = new Set();
+  private readList: string[] = [];
   private searchQuery: string = '';
   private consultants: PerfilConsultor[] = [];
 
@@ -63,7 +66,7 @@ export class InboxPage {
       // 3. Fetch active consultants list
       await this.loadConsultants();
       if (this.perfil?.role === 'admin') {
-        this.selectedConsultantFilter = 'todos';
+        this.selectedConsultantFilter = this.user.id;
       }
 
       // 4. Fetch all reminders and build unified alert list
@@ -255,6 +258,9 @@ export class InboxPage {
   private async loadAndBuildAlerts(): Promise<void> {
     try {
       this.alerts = await InboxService.loadAndBuildAlerts(this.user, this.perfil, this.prazoReembolsoDias);
+      if (this.user?.id) {
+        this.readList = await InboxService.getReadAlerts(this.user.id);
+      }
     } catch (err) {
       console.error('Erro ao compilar alertas no serviço:', err);
     }
@@ -263,7 +269,7 @@ export class InboxPage {
   }
 
   /**
-   * Applies the current active filters, search queries, and consultant filters to the compiled alert list
+   * Applies the current active filters, search queries, category filters, and consultant filters
    */
   private applyFilters(): void {
     let result = [...this.alerts];
@@ -281,7 +287,26 @@ export class InboxPage {
 
     // 2. Filter by Consultant (Admin only)
     if (this.perfil?.role === 'admin' && this.selectedConsultantFilter !== 'todos') {
-      result = result.filter(a => a.consultorId === this.selectedConsultantFilter);
+      result = result.filter(a => a.consultorId === this.selectedConsultantFilter || a.isReceivedByMe || a.isCreatedByMe);
+    }
+
+    // 2.5 Filter by Category (Summary Cards & Mobile Pills)
+    if (this.categoryFilter !== 'todos') {
+      if (this.categoryFilter === 'alertas') {
+        result = result.filter(a => a.type === 'passport' || a.type === 'refund' || a.type === 'pre-embarque' || a.type === 'pos-viagem-nps' || a.type === 'campaign_notification');
+      } else if (this.categoryFilter === 'depois') {
+        result = result.filter(a => a.type === 'manual');
+      } else if (this.categoryFilter === 'passaporte') {
+        result = result.filter(a => a.type === 'passport');
+      } else if (this.categoryFilter === 'refund') {
+        result = result.filter(a => a.type === 'refund');
+      } else if (this.categoryFilter === 'direct_message') {
+        result = result.filter(a => a.type === 'direct_message');
+      } else if (this.categoryFilter === 'escala') {
+        result = result.filter(a => a.type === 'escala_solicitacao');
+      } else if (this.categoryFilter === 'mention') {
+        result = result.filter(a => a.type === 'mention');
+      }
     }
 
     // 3. Search query filter
@@ -305,9 +330,8 @@ export class InboxPage {
     this.filteredAlerts = result;
   }
 
-
   /**
-   * Retrieves list of locally archived auto-alert IDs from localStorage
+   * Retrieves list of archived alert IDs
    */
   private getArchivedLocalAlerts(): string[] {
     try {
@@ -319,7 +343,7 @@ export class InboxPage {
   }
 
   /**
-   * Archives or unarchives a local auto-alert item ID
+   * Archives or unarchives a local alert item ID
    */
   private toggleLocalAlertArchive(id: string, shouldArchive: boolean): void {
     try {
@@ -337,39 +361,37 @@ export class InboxPage {
   }
 
   /**
-   * Retrieves list of locally read alert IDs from localStorage
-   */
-  private getReadLocalAlerts(): string[] {
-    try {
-      const val = localStorage.getItem('paxflow_read_alerts');
-      return val ? JSON.parse(val) : [];
-    } catch {
-      return [];
-    }
-  }
-
-  /**
    * Marks a specific alert ID as read
    */
   private async markAlertAsRead(id: string): Promise<void> {
-    try {
-      const list = this.getReadLocalAlerts();
-      if (!list.includes(id)) {
-        list.push(id);
-        localStorage.setItem('paxflow_read_alerts', JSON.stringify(list));
-      }
+    if (!this.user?.id) return;
+    await InboxService.markAlertAsRead(this.user.id, id);
+    this.readList = await InboxService.getReadAlerts(this.user.id);
+  }
 
-      if (id.startsWith('mention-')) {
-        const notifId = id.replace('mention-', '');
-        await supabase
-          .from('notificacoes')
-          .update({ lida: true })
-          .eq('id', notifId);
-      }
-      window.dispatchEvent(new CustomEvent('paxflow-inbox-updated'));
-    } catch (err) {
-      console.error('Erro ao marcar alerta como lido:', err);
-    }
+  /**
+   * Marks a specific alert ID as unread
+   */
+  private async markAlertAsUnread(id: string): Promise<void> {
+    if (!this.user?.id) return;
+    await InboxService.markAlertAsUnread(this.user.id, id);
+    this.readList = await InboxService.getReadAlerts(this.user.id);
+    this.showToast('Mensagem marcada como não lida.', 'success');
+    this.render();
+    this.setupEventListeners();
+  }
+
+  /**
+   * Marks all currently displayed alerts as read
+   */
+  private async markAllAlertsAsRead(): Promise<void> {
+    if (!this.user?.id) return;
+    const idsToMark = this.filteredAlerts.map(a => a.id);
+    await InboxService.markAllAlertsAsRead(this.user.id, idsToMark);
+    this.readList = await InboxService.getReadAlerts(this.user.id);
+    this.showToast('Todas as mensagens exibidas foram marcadas como lidas.', 'success');
+    this.render();
+    this.setupEventListeners();
   }
 
   /**
@@ -415,7 +437,7 @@ export class InboxPage {
     const totalEnviadas = baseAlertsForCounters.filter(a => a.isSent).length;
 
     // Determine unread alerts status for visual header badge indicator
-    const readList = this.getReadLocalAlerts();
+    const readList = this.readList;
     const hasUnread = baseAlertsForCounters.some(a => !a.arquivado && !readList.includes(a.id) && !a.isSent);
 
     // 2. Build the main page container markup
@@ -482,36 +504,39 @@ export class InboxPage {
           <!-- Mobile View: Compact 1-line Horizontal Pill Bar (Hidden on desktop) -->
           <div class="block md:hidden overflow-x-auto pb-1 custom-scrollbar">
             <div class="flex items-center gap-2">
-              <button id="mobile-pill-escala" class="px-3 py-2 rounded-xl ${
-                this.activeTab === 'escala'
+              <button data-filter-category="todos" class="px-3 py-2 rounded-xl ${this.categoryFilter === 'todos' ? 'bg-indigo-600 text-white font-black' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold'} shrink-0 text-xs select-none">
+                <span>📋 Todos</span>
+              </button>
+              <button data-filter-category="escala" class="px-3 py-2 rounded-xl ${
+                this.categoryFilter === 'escala' || this.activeTab === 'escala'
                   ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-md font-black'
                   : 'bg-violet-50 dark:bg-violet-950/40 border border-violet-200/50 dark:border-violet-900/40 text-violet-700 dark:text-violet-300 font-bold'
               } flex items-center gap-1.5 shrink-0 text-xs select-none">
-                <span>📅 Escala de Turnos</span>
+                <span>📅 Escala</span>
               </button>
-              <div class="px-3 py-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100/50 dark:border-indigo-900/40 flex items-center gap-2 shrink-0 text-xs font-bold text-slate-700 dark:text-slate-200">
+              <button data-filter-category="alertas" class="px-3 py-2 rounded-xl ${this.categoryFilter === 'alertas' ? 'bg-indigo-600 text-white font-black' : 'bg-indigo-50 dark:bg-indigo-950/40 text-slate-700 dark:text-slate-200'} border border-indigo-100/50 dark:border-indigo-900/40 flex items-center gap-2 shrink-0 text-xs font-bold cursor-pointer">
                 <span>⚡ Alertas:</span>
                 <span class="px-2 py-0.5 rounded-md bg-indigo-600 text-white font-black text-[11px]">${totalAtivos}</span>
-              </div>
-              <div class="px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800/60 border border-slate-200/50 dark:border-slate-700/50 flex items-center gap-2 shrink-0 text-xs font-bold text-slate-700 dark:text-slate-200">
+              </button>
+              <button data-filter-category="depois" class="px-3 py-2 rounded-xl ${this.categoryFilter === 'depois' ? 'bg-slate-700 text-white font-black' : 'bg-slate-100 dark:bg-slate-800/60 text-slate-700 dark:text-slate-200'} border border-slate-200/50 dark:border-slate-700/50 flex items-center gap-2 shrink-0 text-xs font-bold cursor-pointer">
                 <span>📌 Depois:</span>
                 <span class="px-2 py-0.5 rounded-md bg-slate-700 dark:bg-slate-600 text-white font-black text-[11px]">${totalManual}</span>
-              </div>
-              <div class="px-3 py-2 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-100/50 dark:border-amber-900/40 flex items-center gap-2 shrink-0 text-xs font-bold text-amber-800 dark:text-amber-300">
+              </button>
+              <button data-filter-category="passaporte" class="px-3 py-2 rounded-xl ${this.categoryFilter === 'passaporte' ? 'bg-amber-600 text-white font-black' : 'bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300'} border border-amber-100/50 dark:border-amber-900/40 flex items-center gap-2 shrink-0 text-xs font-bold cursor-pointer">
                 <span>🛂 Passaportes:</span>
                 <span class="px-2 py-0.5 rounded-md bg-amber-600 text-white font-black text-[11px]">${totalPassport}</span>
-              </div>
-              <div class="px-3 py-2 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-100/50 dark:border-rose-900/40 flex items-center gap-2 shrink-0 text-xs font-bold text-rose-800 dark:text-rose-300">
+              </button>
+              <button data-filter-category="refund" class="px-3 py-2 rounded-xl ${this.categoryFilter === 'refund' ? 'bg-rose-600 text-white font-black' : 'bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-300'} border border-rose-100/50 dark:border-rose-900/40 flex items-center gap-2 shrink-0 text-xs font-bold cursor-pointer">
                 <span>💰 Reembolsos:</span>
                 <span class="px-2 py-0.5 rounded-md bg-rose-600 text-white font-black text-[11px]">${totalRefund}</span>
-              </div>
+              </button>
             </div>
           </div>
 
           <!-- Desktop View: Glass Stats Summary Row (Hidden on mobile) -->
           <div class="hidden md:grid md:grid-cols-4 gap-4">
             
-            <div class="inbox-glass p-5 rounded-2xl shadow-sm flex items-center justify-between border border-white/60 dark:border-slate-900/60">
+            <div data-filter-category="alertas" class="inbox-glass p-5 rounded-2xl shadow-sm flex items-center justify-between border ${this.categoryFilter === 'alertas' ? 'ring-2 ring-indigo-500 border-indigo-500 bg-indigo-50/20 dark:bg-indigo-950/20' : 'border-white/60 dark:border-slate-900/60'} cursor-pointer hover:shadow-md transition">
               <div>
                 <span class="block text-xs font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-1">Alertas Ativos</span>
                 <span class="text-3xl font-black text-slate-800 dark:text-slate-100 tracking-tight">${totalAtivos}</span>
@@ -524,7 +549,7 @@ export class InboxPage {
               </div>
             </div>
 
-            <div class="inbox-glass p-5 rounded-2xl shadow-sm flex items-center justify-between">
+            <div data-filter-category="depois" class="inbox-glass p-5 rounded-2xl shadow-sm flex items-center justify-between border ${this.categoryFilter === 'depois' ? 'ring-2 ring-indigo-500 border-indigo-500 bg-indigo-50/20 dark:bg-indigo-950/20' : 'border-white/60 dark:border-slate-900/60'} cursor-pointer hover:shadow-md transition">
               <div>
                 <span class="block text-xs font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-1">Agendados "Depois"</span>
                 <span class="text-3xl font-black text-slate-800 dark:text-slate-100 tracking-tight">${totalManual}</span>
@@ -534,7 +559,7 @@ export class InboxPage {
               </div>
             </div>
 
-            <div class="inbox-glass p-5 rounded-2xl shadow-sm flex items-center justify-between">
+            <div data-filter-category="passaporte" class="inbox-glass p-5 rounded-2xl shadow-sm flex items-center justify-between border ${this.categoryFilter === 'passaporte' ? 'ring-2 ring-amber-500 border-amber-500 bg-amber-50/20 dark:bg-amber-950/20' : 'border-white/60 dark:border-slate-900/60'} cursor-pointer hover:shadow-md transition">
               <div>
                 <span class="block text-xs font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-1">Passaportes SLA</span>
                 <span class="text-3xl font-black text-slate-800 dark:text-slate-100 tracking-tight">${totalPassport}</span>
@@ -544,7 +569,7 @@ export class InboxPage {
               </div>
             </div>
 
-            <div class="inbox-glass p-5 rounded-2xl shadow-sm flex items-center justify-between">
+            <div data-filter-category="refund" class="inbox-glass p-5 rounded-2xl shadow-sm flex items-center justify-between border ${this.categoryFilter === 'refund' ? 'ring-2 ring-rose-500 border-rose-500 bg-rose-50/20 dark:bg-rose-950/20' : 'border-white/60 dark:border-slate-900/60'} cursor-pointer hover:shadow-md transition">
               <div>
                 <span class="block text-xs font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-1">Reembolsos SLA</span>
                 <span class="text-3xl font-black text-slate-800 dark:text-slate-100 tracking-tight">${totalRefund}</span>
@@ -738,6 +763,39 @@ export class InboxPage {
                 </div>
 
                 ${this.currentView === 'list' ? `
+                  <!-- Bulk Action Bar -->
+                  <div class="flex flex-wrap items-center justify-between gap-3 p-3 rounded-2xl bg-white/60 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800/80 shadow-sm mb-3 text-xs">
+                    <div class="flex items-center gap-3">
+                      <label class="flex items-center gap-1.5 cursor-pointer font-bold text-slate-700 dark:text-slate-300">
+                        <input type="checkbox" id="inbox-select-all-checkbox" class="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer" ${this.selectedAlertIds.size > 0 && this.selectedAlertIds.size === this.filteredAlerts.length ? 'checked' : ''} />
+                        <span>Selecionar todos (${this.filteredAlerts.length})</span>
+                      </label>
+                      ${this.selectedAlertIds.size > 0 ? `
+                        <span class="px-2 py-0.5 rounded bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 font-extrabold text-[11px]">
+                          ${this.selectedAlertIds.size} selecionado(s)
+                        </span>
+                      ` : ''}
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-2">
+                      ${this.selectedAlertIds.size > 0 ? `
+                        <button id="btn-bulk-read" class="px-3 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 font-extrabold hover:bg-indigo-100 transition">
+                          ✓ Marcar Lida(s)
+                        </button>
+                        <button id="btn-bulk-unread" class="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-extrabold hover:bg-slate-200 transition">
+                          ✉️ Marcar Não Lida(s)
+                        </button>
+                        <button id="btn-bulk-archive" class="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-extrabold hover:bg-slate-200 transition">
+                          📦 Arquivar Selecionada(s)
+                        </button>
+                      ` : `
+                        <button id="btn-mark-all-read" class="px-3 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 font-extrabold hover:bg-indigo-100 transition flex items-center gap-1.5">
+                          ✓ Marcar TODAS como lidas
+                        </button>
+                      `}
+                    </div>
+                  </div>
+
                   <!-- Alerts Mail Stack -->
                   <div class="space-y-3 custom-scrollbar overflow-y-auto max-h-[calc(100vh-310px)] pr-1">
                     ${this.filteredAlerts.length === 0 ? `
@@ -777,10 +835,15 @@ export class InboxPage {
                       const isUnread = !a.arquivado && !readList.includes(a.id);
 
                       return `
-                        <div class="inbox-card inbox-glass p-5 rounded-2xl border ${isUnread ? 'border-indigo-200 dark:border-indigo-900/60 bg-indigo-50/5 dark:bg-indigo-950/5' : 'border-white/60 dark:border-slate-900/60'} shadow-sm flex items-start gap-4 cursor-pointer relative" data-alert-id="${a.id}">
+                        <div class="inbox-card inbox-glass p-5 rounded-2xl border ${isUnread ? 'border-indigo-200 dark:border-indigo-900/60 bg-indigo-50/5 dark:bg-indigo-950/5' : 'border-white/60 dark:border-slate-900/60'} shadow-sm flex items-start gap-3 cursor-pointer relative" data-alert-id="${a.id}">
                           
+                          <!-- Checkbox de Seleção em Massa -->
+                          <div class="pt-0.5" onclick="event.stopPropagation()">
+                            <input type="checkbox" class="inbox-item-checkbox w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer" data-alert-id="${a.id}" ${this.selectedAlertIds.has(a.id) ? 'checked' : ''} />
+                          </div>
+
                           <!-- Unread Indicator Dot -->
-                          ${isUnread ? `<span class="absolute top-5 left-2 w-2 h-2 rounded-full bg-indigo-600 dark:bg-indigo-400 animate-pulse"></span>` : ''}
+                          ${isUnread ? `<span class="absolute top-5 left-1 w-2 h-2 rounded-full bg-indigo-600 dark:bg-indigo-400 animate-pulse"></span>` : ''}
 
                           <!-- Avatar -->
                           <div class="w-10 h-10 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden flex items-center justify-center bg-white dark:bg-slate-900 flex-shrink-0 ${isUnread ? 'ring-2 ring-indigo-500/20' : ''}">
@@ -1676,6 +1739,94 @@ export class InboxPage {
       });
     });
 
+    // Category Cards & Pills click listeners
+    this.container.querySelectorAll('[data-filter-category]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const cat = (btn as HTMLElement).dataset.filterCategory;
+        if (cat) {
+          if (cat === 'escala') {
+            this.activeTab = 'escala';
+            this.categoryFilter = 'todos';
+          } else {
+            if (this.activeTab === 'escala') this.activeTab = 'ativos';
+            this.categoryFilter = this.categoryFilter === cat ? 'todos' : cat;
+          }
+          this.applyFilters();
+          this.render();
+          this.setupEventListeners();
+        }
+      });
+    });
+
+    // Bulk selection listeners
+    const selectAllCheckbox = this.container.querySelector('#inbox-select-all-checkbox') as HTMLInputElement;
+    if (selectAllCheckbox) {
+      selectAllCheckbox.addEventListener('change', () => {
+        if (selectAllCheckbox.checked) {
+          this.filteredAlerts.forEach(a => this.selectedAlertIds.add(a.id));
+        } else {
+          this.selectedAlertIds.clear();
+        }
+        this.render();
+        this.setupEventListeners();
+      });
+    }
+
+    this.container.querySelectorAll('.inbox-item-checkbox').forEach(cb => {
+      cb.addEventListener('click', (e) => e.stopPropagation());
+      cb.addEventListener('change', (e) => {
+        const alertId = (cb as HTMLElement).dataset.alertId;
+        if (alertId) {
+          if ((cb as HTMLInputElement).checked) {
+            this.selectedAlertIds.add(alertId);
+          } else {
+            this.selectedAlertIds.delete(alertId);
+          }
+          this.render();
+          this.setupEventListeners();
+        }
+      });
+    });
+
+    this.container.querySelector('#btn-bulk-read')?.addEventListener('click', async () => {
+      if (!this.user?.id) return;
+      const ids = Array.from(this.selectedAlertIds);
+      await InboxService.markAllAlertsAsRead(this.user.id, ids);
+      this.selectedAlertIds.clear();
+      this.readList = await InboxService.getReadAlerts(this.user.id);
+      this.showToast(`${ids.length} mensagem(ns) marcada(s) como lida(s).`, 'success');
+      this.render();
+      this.setupEventListeners();
+    });
+
+    this.container.querySelector('#btn-bulk-unread')?.addEventListener('click', async () => {
+      if (!this.user?.id) return;
+      const ids = Array.from(this.selectedAlertIds);
+      for (const id of ids) {
+        await InboxService.markAlertAsUnread(this.user.id, id);
+      }
+      this.selectedAlertIds.clear();
+      this.readList = await InboxService.getReadAlerts(this.user.id);
+      this.showToast(`${ids.length} mensagem(ns) marcada(s) como não lida(s).`, 'success');
+      this.render();
+      this.setupEventListeners();
+    });
+
+    this.container.querySelector('#btn-bulk-archive')?.addEventListener('click', async () => {
+      const ids = Array.from(this.selectedAlertIds);
+      ids.forEach(id => this.toggleLocalAlertArchive(id, true));
+      this.selectedAlertIds.clear();
+      this.showToast(`${ids.length} mensagem(ns) arquivada(s).`, 'success');
+      await this.loadAndBuildAlerts();
+      this.render();
+      this.setupEventListeners();
+    });
+
+    this.container.querySelector('#btn-mark-all-read')?.addEventListener('click', async () => {
+      await this.markAllAlertsAsRead();
+    });
+
     // 9. Open Email modal reader when clicking alert cards (List, Week, or Agenda)
     const alertCards = document.querySelectorAll('.inbox-card');
     alertCards.forEach(card => {
@@ -1699,6 +1850,9 @@ export class InboxPage {
   private openEmailReaderModal(item: AlertItem): void {
     EmailReaderModal.open(item, {
       perfil: this.perfil,
+      onMarkUnread: async (clickedItem: AlertItem) => {
+        await this.markAlertAsUnread(clickedItem.id);
+      },
       onArchive: async (clickedItem) => {
         try {
           if (clickedItem.type === 'manual') {
