@@ -834,7 +834,7 @@ export class RelatoriosPage {
             custoTotal += (p.valorCusto || p.valor_custo || 0);
             comissaoTotal += (p.comissao || 0);
             markupTotal += (p.markup || 0);
-            ravTotal += (p.rav || 0);
+            ravTotal += ((p.rav || 0) * 0.88);
           }
         });
       }
@@ -857,7 +857,7 @@ export class RelatoriosPage {
             }
             productTypes[tipo].faturamento += (p.valorVenda || 0);
             productTypes[tipo].custo += (p.valorCusto || 0);
-            productTypes[tipo].lucro += ((p.comissao || 0) + (p.markup || 0) + (p.rav || 0));
+            productTypes[tipo].lucro += ((p.comissao || 0) + (p.markup || 0) + ((p.rav || 0) * 0.88));
           }
         });
       }
@@ -1206,7 +1206,7 @@ export class RelatoriosPage {
             const custo = (p.valorCusto || p.valor_custo || 0);
             const comissao = (p.comissao || 0);
             const markup = (p.markup || 0);
-            const rav = (p.rav || 0);
+            const rav = ((p.rav || 0) * 0.88);
 
             supplierStats[supplier].totalSold += venda;
             supplierStats[supplier].totalCusto += custo;
@@ -2563,7 +2563,7 @@ export class RelatoriosPage {
             if (p.status !== 'cancelado') {
               comissaoTotal += (p.comissao || 0);
               markupTotal += (p.markup || 0);
-              ravTotal += (p.rav || 0);
+              ravTotal += ((p.rav || 0) * 0.88);
             }
           });
         }
@@ -2609,7 +2609,7 @@ export class RelatoriosPage {
             if (p.status !== 'cancelado') {
               stats[supplier].sold += (p.valorVenda || 0);
               stats[supplier].custo += (p.valorCusto || p.valor_custo || 0);
-              stats[supplier].lucro += ((p.comissao || 0) + (p.markup || 0) + (p.rav || 0));
+              stats[supplier].lucro += ((p.comissao || 0) + (p.markup || 0) + ((p.rav || 0) * 0.88));
               stats[supplier].salesCount++;
             }
           });

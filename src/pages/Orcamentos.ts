@@ -771,15 +771,15 @@ export class OrcamentosPage {
     });
 
     // Separação dos orçamentos filtrados por coluna e ordenados individualmente
-    const solicitado = this.sortColumn(filtrados.filter(o => o.status === 'SOLICITADO'), 'SOLICITADO');
-    const emAndamento = this.sortColumn(filtrados.filter(o => o.status === 'EM_ANDAMENTO'), 'EM_ANDAMENTO');
-    const aguardando = this.sortColumn(filtrados.filter(o => o.status === 'AGUARDANDO'), 'AGUARDANDO');
+    const solicitado = this.sortColumn(filtrados.filter(o => (o.status || '').toUpperCase() === 'SOLICITADO'), 'SOLICITADO');
+    const emAndamento = this.sortColumn(filtrados.filter(o => (o.status || '').toUpperCase() === 'EM_ANDAMENTO'), 'EM_ANDAMENTO');
+    const aguardando = this.sortColumn(filtrados.filter(o => (o.status || '').toUpperCase() === 'AGUARDANDO'), 'AGUARDANDO');
     
-    let concluidoRaw = filtrados.filter(o => o.status === 'CONCLUIDO');
+    let concluidoRaw = filtrados.filter(o => (o.status || '').toUpperCase() === 'CONCLUIDO');
     if (this.filterConcluido === 'fechada') {
-      concluidoRaw = concluidoRaw.filter(o => o.subStatus === 'ACEITO');
+      concluidoRaw = concluidoRaw.filter(o => (o.subStatus || (o as any).sub_status || '').toUpperCase() === 'ACEITO');
     } else if (this.filterConcluido === 'desistencia') {
-      concluidoRaw = concluidoRaw.filter(o => o.subStatus !== 'ACEITO');
+      concluidoRaw = concluidoRaw.filter(o => (o.subStatus || (o as any).sub_status || '').toUpperCase() !== 'ACEITO');
     }
     // Filtrar para mostrar apenas mês corrente se showAllConcluded for false
     if (!this.showAllConcluded) {

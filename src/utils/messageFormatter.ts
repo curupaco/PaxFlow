@@ -46,6 +46,7 @@ export function formatReembolsoStatus(status: string): string {
 
   switch (cleanStatus) {
     case 'solicitado':
+    case 'reembolso_solicitado':
       return 'Solicitado / Em Análise';
     case 'solicitado_fornecedor':
       return 'Aguardando Resposta do Fornecedor';

@@ -1686,12 +1686,14 @@ export class EditTravelModal {
       if (Math.abs(saldoPend) < 0.01) {
         saldoPend = 0;
       }
-      const rentabilidade = comissao + markup + (rav * 0.88);
+      const rentabilidade = isNaN(comissao + markup + (rav * 0.88)) ? 0 : (comissao + markup + (rav * 0.88));
+      const totalDistVal = isNaN(totalDist) ? 0 : totalDist;
+      const saldoPendVal = isNaN(saldoPend) ? 0 : saldoPend;
 
       editTarifaInput.value = formatCurrencyValue(tarifa);
-      totalDistEl.textContent = `R$ ${totalDist.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+      totalDistEl.textContent = `R$ ${totalDistVal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
       rentabilidadeEl.textContent = `R$ ${rentabilidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
-      saldoPendEl.textContent = `R$ ${saldoPend.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+      saldoPendEl.textContent = `R$ ${saldoPendVal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
 
       if (rentabilidade >= 0) {
         rentabilidadeEl.className = 'font-black text-emerald-600 dark:text-emerald-400';
