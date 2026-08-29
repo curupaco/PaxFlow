@@ -427,18 +427,37 @@ export class InboxPage {
     // 1. Calculate counters for badges
     let baseAlertsForCounters = [...this.alerts];
     if (this.perfil?.role === 'admin' && this.selectedConsultantFilter !== 'todos') {
-      baseAlertsForCounters = baseAlertsForCounters.filter(a => a.consultorId === this.selectedConsultantFilter);
+      baseAlertsForCounters = baseAlertsForCounters.filter(a => a.consultorId === this.selectedConsultantFilter || a.isReceivedByMe || a.isCreatedByMe);
     }
 
-    const totalAtivos = baseAlertsForCounters.filter(a => !a.arquivado && !a.isSent).length;
-    const totalManual = baseAlertsForCounters.filter(a => a.type === 'manual' && !a.arquivado && !a.isSent).length;
-    const totalPassport = baseAlertsForCounters.filter(a => a.type === 'passport' && !a.arquivado && !a.isSent).length;
-    const totalRefund = baseAlertsForCounters.filter(a => a.type === 'refund' && !a.arquivado && !a.isSent).length;
+    const readList = this.readList;
+
+    // Filter subsets for totals and unread counts
+    const activeAlerts = baseAlertsForCounters.filter(a => !a.arquivado && !a.isSent);
+    const totalAtivos = activeAlerts.length;
+    const unreadAtivos = activeAlerts.filter(a => !readList.includes(a.id)).length;
+
+    const manualAlerts = activeAlerts.filter(a => a.type === 'manual');
+    const totalManual = manualAlerts.length;
+    const unreadManual = manualAlerts.filter(a => !readList.includes(a.id)).length;
+
+    const passportAlerts = activeAlerts.filter(a => a.type === 'passport');
+    const totalPassport = passportAlerts.length;
+    const unreadPassport = passportAlerts.filter(a => !readList.includes(a.id)).length;
+
+    const refundAlerts = activeAlerts.filter(a => a.type === 'refund');
+    const totalRefund = refundAlerts.length;
+    const unreadRefund = refundAlerts.filter(a => !readList.includes(a.id)).length;
+
     const totalEnviadas = baseAlertsForCounters.filter(a => a.isSent).length;
 
-    // Determine unread alerts status for visual header badge indicator
-    const readList = this.readList;
-    const hasUnread = baseAlertsForCounters.some(a => !a.arquivado && !readList.includes(a.id) && !a.isSent);
+    const archivedAlerts = baseAlertsForCounters.filter(a => a.arquivado && !a.isSent);
+    const totalArquivados = archivedAlerts.length;
+    const unreadArquivados = archivedAlerts.filter(a => !readList.includes(a.id)).length;
+
+    const allInboxAlerts = baseAlertsForCounters.filter(a => !a.isSent);
+    const totalGeral = allInboxAlerts.length;
+    const unreadGeral = allInboxAlerts.filter(a => !readList.includes(a.id)).length;
 
     // 2. Build the main page container markup
     this.container.innerHTML = `
@@ -470,7 +489,7 @@ export class InboxPage {
                 <span>📨 Mensagens & Alertas</span>
                 <span class="px-2 py-0.5 rounded-md text-[10px] font-black ${
                   this.activeTab !== 'escala' ? 'bg-white/20 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
-                }">${totalAtivos}</span>
+                }">${unreadAtivos > 0 ? `🔴 ${unreadAtivos} / ${totalAtivos}` : `${totalAtivos}`}</span>
               </button>
 
               <button id="inbox-top-tab-escala" class="px-3.5 py-2 rounded-xl text-xs font-black transition flex items-center gap-2 select-none ${
@@ -504,8 +523,11 @@ export class InboxPage {
           <!-- Mobile View: Compact 1-line Horizontal Pill Bar (Hidden on desktop) -->
           <div class="block md:hidden overflow-x-auto pb-1 custom-scrollbar">
             <div class="flex items-center gap-2">
-              <button data-filter-category="todos" class="px-3 py-2 rounded-xl ${this.categoryFilter === 'todos' ? 'bg-indigo-600 text-white font-black' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold'} shrink-0 text-xs select-none">
-                <span>📋 Todos</span>
+              <button data-filter-category="todos" class="px-3 py-2 rounded-xl ${this.categoryFilter === 'todos' ? 'bg-indigo-600 text-white font-black' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold'} shrink-0 text-xs select-none flex items-center gap-1.5">
+                <span>📋 Entrada</span>
+                <span class="px-1.5 py-0.5 rounded text-[10px] font-black ${this.categoryFilter === 'todos' ? 'bg-white/20 text-white' : 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300'}">
+                  ${unreadAtivos > 0 ? `🔴 ${unreadAtivos}/${totalAtivos}` : `${totalAtivos}`}
+                </span>
               </button>
               <button data-filter-category="escala" class="px-3 py-2 rounded-xl ${
                 this.categoryFilter === 'escala' || this.activeTab === 'escala'
@@ -514,21 +536,23 @@ export class InboxPage {
               } flex items-center gap-1.5 shrink-0 text-xs select-none">
                 <span>📅 Escala</span>
               </button>
-              <button data-filter-category="alertas" class="px-3 py-2 rounded-xl ${this.categoryFilter === 'alertas' ? 'bg-indigo-600 text-white font-black' : 'bg-indigo-50 dark:bg-indigo-950/40 text-slate-700 dark:text-slate-200'} border border-indigo-100/50 dark:border-indigo-900/40 flex items-center gap-2 shrink-0 text-xs font-bold cursor-pointer">
-                <span>⚡ Alertas:</span>
-                <span class="px-2 py-0.5 rounded-md bg-indigo-600 text-white font-black text-[11px]">${totalAtivos}</span>
-              </button>
               <button data-filter-category="depois" class="px-3 py-2 rounded-xl ${this.categoryFilter === 'depois' ? 'bg-slate-700 text-white font-black' : 'bg-slate-100 dark:bg-slate-800/60 text-slate-700 dark:text-slate-200'} border border-slate-200/50 dark:border-slate-700/50 flex items-center gap-2 shrink-0 text-xs font-bold cursor-pointer">
                 <span>📌 Depois:</span>
-                <span class="px-2 py-0.5 rounded-md bg-slate-700 dark:bg-slate-600 text-white font-black text-[11px]">${totalManual}</span>
+                <span class="px-2 py-0.5 rounded-md ${unreadManual > 0 ? 'bg-rose-600 text-white' : 'bg-slate-700 dark:bg-slate-600 text-white'} font-black text-[11px]">
+                  ${unreadManual > 0 ? `🔴 ${unreadManual}/${totalManual}` : `${totalManual}`}
+                </span>
               </button>
               <button data-filter-category="passaporte" class="px-3 py-2 rounded-xl ${this.categoryFilter === 'passaporte' ? 'bg-amber-600 text-white font-black' : 'bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300'} border border-amber-100/50 dark:border-amber-900/40 flex items-center gap-2 shrink-0 text-xs font-bold cursor-pointer">
                 <span>🛂 Passaportes:</span>
-                <span class="px-2 py-0.5 rounded-md bg-amber-600 text-white font-black text-[11px]">${totalPassport}</span>
+                <span class="px-2 py-0.5 rounded-md ${unreadPassport > 0 ? 'bg-rose-600 text-white' : 'bg-amber-600 text-white'} font-black text-[11px]">
+                  ${unreadPassport > 0 ? `🔴 ${unreadPassport}/${totalPassport}` : `${totalPassport}`}
+                </span>
               </button>
               <button data-filter-category="refund" class="px-3 py-2 rounded-xl ${this.categoryFilter === 'refund' ? 'bg-rose-600 text-white font-black' : 'bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-300'} border border-rose-100/50 dark:border-rose-900/40 flex items-center gap-2 shrink-0 text-xs font-bold cursor-pointer">
                 <span>💰 Reembolsos:</span>
-                <span class="px-2 py-0.5 rounded-md bg-rose-600 text-white font-black text-[11px]">${totalRefund}</span>
+                <span class="px-2 py-0.5 rounded-md ${unreadRefund > 0 ? 'bg-rose-600 text-white' : 'bg-rose-600 text-white'} font-black text-[11px]">
+                  ${unreadRefund > 0 ? `🔴 ${unreadRefund}/${totalRefund}` : `${totalRefund}`}
+                </span>
               </button>
             </div>
           </div>
@@ -536,10 +560,16 @@ export class InboxPage {
           <!-- Desktop View: Glass Stats Summary Row (Hidden on mobile) -->
           <div class="hidden md:grid md:grid-cols-4 gap-4">
             
-            <div data-filter-category="alertas" class="inbox-glass p-5 rounded-2xl shadow-sm flex items-center justify-between border ${this.categoryFilter === 'alertas' ? 'ring-2 ring-indigo-500 border-indigo-500 bg-indigo-50/20 dark:bg-indigo-950/20' : 'border-white/60 dark:border-slate-900/60'} cursor-pointer hover:shadow-md transition">
+            <div data-filter-category="todos" class="inbox-glass p-5 rounded-2xl shadow-sm flex items-center justify-between border ${this.categoryFilter === 'todos' ? 'ring-2 ring-indigo-500 border-indigo-500 bg-indigo-50/20 dark:bg-indigo-950/20' : 'border-white/60 dark:border-slate-900/60'} cursor-pointer hover:shadow-md transition">
               <div>
-                <span class="block text-xs font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-1">Alertas Ativos</span>
-                <span class="text-3xl font-black text-slate-800 dark:text-slate-100 tracking-tight">${totalAtivos}</span>
+                <span class="block text-xs font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-1">Entrada (Todas)</span>
+                <div class="flex items-baseline gap-2">
+                  <span class="text-3xl font-black text-slate-800 dark:text-slate-100 tracking-tight">${totalAtivos}</span>
+                  ${unreadAtivos > 0 
+                    ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-500 text-white animate-pulse">🔴 ${unreadAtivos} não lida(s)</span>`
+                    : `<span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">✓ 0 não lidas</span>`
+                  }
+                </div>
               </div>
               <div class="p-3 bg-indigo-50 dark:bg-indigo-950/30 text-indigo-500 dark:text-indigo-400 rounded-xl">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
@@ -552,7 +582,13 @@ export class InboxPage {
             <div data-filter-category="depois" class="inbox-glass p-5 rounded-2xl shadow-sm flex items-center justify-between border ${this.categoryFilter === 'depois' ? 'ring-2 ring-indigo-500 border-indigo-500 bg-indigo-50/20 dark:bg-indigo-950/20' : 'border-white/60 dark:border-slate-900/60'} cursor-pointer hover:shadow-md transition">
               <div>
                 <span class="block text-xs font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-1">Agendados "Depois"</span>
-                <span class="text-3xl font-black text-slate-800 dark:text-slate-100 tracking-tight">${totalManual}</span>
+                <div class="flex items-baseline gap-2">
+                  <span class="text-3xl font-black text-slate-800 dark:text-slate-100 tracking-tight">${totalManual}</span>
+                  ${unreadManual > 0 
+                    ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-500 text-white">🔴 ${unreadManual} não lida(s)</span>`
+                    : `<span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-slate-100 dark:bg-slate-800 text-slate-500">✓ 0 não lidas</span>`
+                  }
+                </div>
               </div>
               <div class="p-3 bg-indigo-50 dark:bg-indigo-950/30 text-indigo-500 dark:text-indigo-400 rounded-xl">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
@@ -562,7 +598,13 @@ export class InboxPage {
             <div data-filter-category="passaporte" class="inbox-glass p-5 rounded-2xl shadow-sm flex items-center justify-between border ${this.categoryFilter === 'passaporte' ? 'ring-2 ring-amber-500 border-amber-500 bg-amber-50/20 dark:bg-amber-950/20' : 'border-white/60 dark:border-slate-900/60'} cursor-pointer hover:shadow-md transition">
               <div>
                 <span class="block text-xs font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-1">Passaportes SLA</span>
-                <span class="text-3xl font-black text-slate-800 dark:text-slate-100 tracking-tight">${totalPassport}</span>
+                <div class="flex items-baseline gap-2">
+                  <span class="text-3xl font-black text-slate-800 dark:text-slate-100 tracking-tight">${totalPassport}</span>
+                  ${unreadPassport > 0 
+                    ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-500 text-white">🔴 ${unreadPassport} não lida(s)</span>`
+                    : `<span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-slate-100 dark:bg-slate-800 text-slate-500">✓ 0 não lidas</span>`
+                  }
+                </div>
               </div>
               <div class="p-3 bg-amber-50 dark:bg-amber-950/30 text-amber-500 dark:text-amber-400 rounded-xl">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"/></svg>
@@ -572,7 +614,13 @@ export class InboxPage {
             <div data-filter-category="refund" class="inbox-glass p-5 rounded-2xl shadow-sm flex items-center justify-between border ${this.categoryFilter === 'refund' ? 'ring-2 ring-rose-500 border-rose-500 bg-rose-50/20 dark:bg-rose-950/20' : 'border-white/60 dark:border-slate-900/60'} cursor-pointer hover:shadow-md transition">
               <div>
                 <span class="block text-xs font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-1">Reembolsos SLA</span>
-                <span class="text-3xl font-black text-slate-800 dark:text-slate-100 tracking-tight">${totalRefund}</span>
+                <div class="flex items-baseline gap-2">
+                  <span class="text-3xl font-black text-slate-800 dark:text-slate-100 tracking-tight">${totalRefund}</span>
+                  ${unreadRefund > 0 
+                    ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-500 text-white">🔴 ${unreadRefund} não lida(s)</span>`
+                    : `<span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-slate-100 dark:bg-slate-800 text-slate-500">✓ 0 não lidas</span>`
+                  }
+                </div>
               </div>
               <div class="p-3 bg-rose-50 dark:bg-rose-950/30 text-rose-500 dark:text-rose-400 rounded-xl">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -611,7 +659,10 @@ export class InboxPage {
                     </svg>
                     Caixa de Entrada
                   </span>
-                  <span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">${totalAtivos}</span>
+                  <div class="flex items-center gap-1">
+                    ${unreadAtivos > 0 ? `<span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-rose-500 text-white animate-pulse">🔴 ${unreadAtivos}</span>` : ''}
+                    <span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">${totalAtivos}</span>
+                  </div>
                 </button>
 
                 <button id="folder-enviadas" class="w-full px-3 py-2.5 rounded-xl flex items-center justify-between text-xs font-bold transition select-none ${
@@ -642,9 +693,10 @@ export class InboxPage {
                     </svg>
                     Arquivados
                   </span>
-                  <span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">${
-                    baseAlertsForCounters.filter(a => a.arquivado && !a.isSent).length
-                  }</span>
+                  <div class="flex items-center gap-1">
+                    ${unreadArquivados > 0 ? `<span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-rose-500 text-white">🔴 ${unreadArquivados}</span>` : ''}
+                    <span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">${totalArquivados}</span>
+                  </div>
                 </button>
 
                 <button id="folder-todos" class="w-full px-3 py-2.5 rounded-xl flex items-center justify-between text-xs font-bold transition select-none ${
@@ -656,7 +708,10 @@ export class InboxPage {
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
                     Mensagens Totais
                   </span>
-                  <span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">${baseAlertsForCounters.filter(a => !a.isSent).length}</span>
+                  <div class="flex items-center gap-1">
+                    ${unreadGeral > 0 ? `<span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-rose-500 text-white">🔴 ${unreadGeral}</span>` : ''}
+                    <span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">${totalGeral}</span>
+                  </div>
                 </button>
 
                 <button id="folder-escala" class="w-full px-3 py-2.5 rounded-xl flex items-center justify-between text-xs font-bold transition select-none ${
@@ -698,7 +753,7 @@ export class InboxPage {
                       ? 'border-indigo-600/50 text-indigo-600 bg-indigo-600/5 dark:border-indigo-500/50 dark:text-indigo-400 dark:bg-indigo-500/10' 
                       : 'border-slate-200/60 dark:border-slate-800 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800/40'
                   } rounded-xl text-xs font-bold whitespace-nowrap transition flex items-center gap-1.5 focus:outline-none">
-                    📥 Entrada (${totalAtivos})
+                    📥 Entrada (${totalAtivos}${unreadAtivos > 0 ? ` • 🔴 ${unreadAtivos}` : ''})
                   </button>
                   <button id="mobile-folder-enviadas" class="px-4 py-2.5 bg-white dark:bg-slate-900 border ${
                     this.activeTab === 'enviadas' 
@@ -712,14 +767,14 @@ export class InboxPage {
                       ? 'border-indigo-600/50 text-indigo-600 bg-indigo-600/5 dark:border-indigo-500/50 dark:text-indigo-400 dark:bg-indigo-500/10' 
                       : 'border-slate-200/60 dark:border-slate-800 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800/40'
                   } rounded-xl text-xs font-bold whitespace-nowrap transition flex items-center gap-1.5 focus:outline-none">
-                    🗄️ Arquivados (${baseAlertsForCounters.filter(a => a.arquivado && !a.isSent).length})
+                    🗄️ Arquivados (${totalArquivados}${unreadArquivados > 0 ? ` • 🔴 ${unreadArquivados}` : ''})
                   </button>
                   <button id="mobile-folder-todos" class="px-4 py-2.5 bg-white dark:bg-slate-900 border ${
                     this.activeTab === 'todos' 
                       ? 'border-indigo-600/50 text-indigo-600 bg-indigo-600/5 dark:border-indigo-500/50 dark:text-indigo-400 dark:bg-indigo-500/10' 
                       : 'border-slate-200/60 dark:border-slate-800 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800/40'
                   } rounded-xl text-xs font-bold whitespace-nowrap transition flex items-center gap-1.5 focus:outline-none">
-                    📋 Total (${baseAlertsForCounters.filter(a => !a.isSent).length})
+                    📋 Total (${totalGeral}${unreadGeral > 0 ? ` • 🔴 ${unreadGeral}` : ''})
                   </button>
                   <button id="mobile-folder-escala" class="px-4 py-2.5 bg-white dark:bg-slate-900 border ${
                     this.activeTab === 'escala' 
