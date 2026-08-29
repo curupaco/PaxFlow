@@ -16,6 +16,8 @@ import { RealtimeMessagingService } from './services/realtimeMessaging';
 import { VersionChecker } from './services/versionChecker';
 import { VersionToast } from './components/VersionToast';
 
+import { PushNotificationService } from './services/pushNotificationService';
+
 (window as any).traduzirErro = traduzirErro;
 
 // Inicializa mecanismo anti-cache e detector de novas versões
@@ -165,6 +167,7 @@ class App {
         const defaultPage = (this.perfil && this.perfil.role === 'admin') ? 'analytics' : 'inbox';
         this.navigate(defaultPage);
         this.checarNotificacoesCampanhaLogin();
+        PushNotificationService.checkAndPromptAutoPermission(user.id);
       }
     } catch (err) {
       console.error('Erro ao inicializar app:', err);

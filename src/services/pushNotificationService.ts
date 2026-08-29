@@ -1,11 +1,11 @@
 import { supabase } from './supabase';
 
-// Chave pública VAPID padrão para assinatura de notificações Push Web (padrão RFC 8292)
-const VAPID_PUBLIC_KEY = 'BEl62iUYgUivxIkv69yViEuiBIa-m9GYv50mBKhQJeLw916_O-w3_lH3qLzG9x23-vM096950_mZ_x32';
+// Chave pública VAPID válida padrão P-256 uncompressed EC public key (65 bytes, RFC 8292)
+const VAPID_PUBLIC_KEY = 'BDl0ts9WHN3s9YEIfC-K8qrFXZDliWz97UuvX52zQfGrjolzANyj8XXwKlI7oeYAxrnSqBrGKiLkLVnYZ2X0OGQ';
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
   const rawData = window.atob(base64);
   const outputArray = new Uint8Array(rawData.length);
   for (let i = 0; i < rawData.length; ++i) {
@@ -20,6 +20,13 @@ export class PushNotificationService {
    */
   public static isSupported(): boolean {
     return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+  }
+
+  /**
+   * Verifica se o aparelho é um dispositivo iOS (iPhone / iPad / iPod)
+   */
+  public static isIOS(): boolean {
+    return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   }
 
   /**
@@ -39,6 +46,7 @@ export class PushNotificationService {
     if (!this.isSupported()) return null;
     try {
       const reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+      await navigator.serviceWorker.ready;
       return reg;
     } catch (err) {
       console.warn('Erro ao registrar Service Worker do PaxFlow:', err);
@@ -59,17 +67,21 @@ export class PushNotificationService {
    */
   public static async subscribeUser(userId: string): Promise<boolean> {
     if (!this.isSupported()) {
+      if (this.isIOS() && !this.isStandalone()) {
+        throw new Error('No iOS, as Notificações Push exigem que você adicione o PaxFlow à Tela de Início (Compartilhar > Adicionar à Tela de Início).');
+      }
       throw new Error('Seu navegador ou dispositivo não possui suporte a Notificações Push.');
+    }
+
+    // Solicita permissão primeiro durante a interação do usuário para compatibilidade com iOS WebKit
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') {
+      throw new Error('Permissão de notificação negada no seu aparelho.');
     }
 
     const reg = await this.registerServiceWorker();
     if (!reg) {
       throw new Error('Não foi possível registrar o Service Worker no seu celular.');
-    }
-
-    const permission = await Notification.requestPermission();
-    if (permission !== 'granted') {
-      throw new Error('Permissão de notificação negada pelo usuário.');
     }
 
     try {
@@ -114,6 +126,9 @@ export class PushNotificationService {
       return true;
     } catch (err: any) {
       console.error('Erro ao inscrever para Web Push:', err);
+      if (err.message && err.message.includes('applicationServerKey')) {
+        throw new Error('Erro nas chaves de notificação P-256 do dispositivo. Tente novamente.');
+      }
       throw err;
     }
   }
@@ -154,4 +169,28 @@ export class PushNotificationService {
       return false;
     }
   }
+
+  /**
+   * Pede permissão de notificação automaticamente apenas na primeira vez no dispositivo (Android, iOS e Web)
+   */
+  public static async checkAndPromptAutoPermission(userId: string): Promise<void> {
+    if (!userId || !this.isSupported()) return;
+
+    const alreadyPrompted = localStorage.getItem('paxflow_auto_push_prompted');
+    if (alreadyPrompted === 'true') return;
+
+    // Marca imediatamente no localStorage para não repetir a solicitação automática
+    localStorage.setItem('paxflow_auto_push_prompted', 'true');
+
+    try {
+      const permStatus = this.getPermissionStatus();
+      if (permStatus === 'granted' || permStatus === 'default') {
+        await this.subscribeUser(userId);
+      }
+    } catch (err) {
+      console.info('Solicitação automática de notificação push finalizada:', err);
+    }
+  }
 }
+
+
