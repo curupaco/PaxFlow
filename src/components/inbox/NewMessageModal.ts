@@ -1,6 +1,7 @@
 import { supabase } from '../../services/supabase';
 import { PerfilConsultor } from '../../types';
 import { showCustomAlert } from '../../services/dialog';
+import { PushSenderService } from '../../services/pushSenderService';
 
 export interface NewMessageModalOptions {
   onSent: () => void;
@@ -477,6 +478,17 @@ export class NewMessageModal {
           .insert(notifInserts);
 
         if (notifErr) throw notifErr;
+
+        // Dispara notificação Web Push no celular dos destinatários (mesmo com app fechado)
+        const senderProfile = profiles.find(p => p.id === currentUser.id);
+        const senderNome = senderProfile?.nome || 'Consultor';
+        for (const recipientId of uniqueRecipients) {
+          PushSenderService.sendToUser(recipientId, {
+            title: `💬 Nova Mensagem: ${assunto}`,
+            body: `De: ${senderNome}`,
+            url: '/#inbox'
+          });
+        }
 
         // 3.5. If scheduling is enabled, insert lembretes
         if (chkAgendar?.checked && dataLembrete) {

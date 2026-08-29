@@ -2,6 +2,7 @@ import { supabase } from './supabase';
 import { getAvatarSvg } from './avatars';
 import { showCustomConfirm } from './dialog';
 import { Comentario, PerfilConsultor } from '../types';
+import { PushSenderService } from './pushSenderService';
 
 function converterLinks(texto: string): string {
   if (!texto) return '';
@@ -560,6 +561,14 @@ export class CommentsService {
       console.error('[Mentions] Erro ao inserir notificações de menção:', error);
     } else {
       console.log('[Mentions] Notificações inseridas com sucesso no banco:', data);
+      // Dispara notificação Web Push no celular dos consultores mencionados
+      for (const targetUser of uniqueMentions) {
+        PushSenderService.sendToUser(targetUser.id, {
+          title: '💬 Você foi mencionado(a)',
+          body: `Você recebeu uma nova menção em um ${tipoItem} no PaxFlow.`,
+          url: '/#inbox'
+        });
+      }
     }
   }
 

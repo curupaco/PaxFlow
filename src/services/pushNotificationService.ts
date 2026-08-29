@@ -1,7 +1,7 @@
 import { supabase } from './supabase';
 
 // Chave pública VAPID válida padrão P-256 uncompressed EC public key (65 bytes, RFC 8292)
-const VAPID_PUBLIC_KEY = 'BDl0ts9WHN3s9YEIfC-K8qrFXZDliWz97UuvX52zQfGrjolzANyj8XXwKlI7oeYAxrnSqBrGKiLkLVnYZ2X0OGQ';
+const VAPID_PUBLIC_KEY = 'BGftIe5tKDG01vXBhlcEK7f98RS77TwrJdCZwVkWvnB3-Xwbiv6tUBXfAbnejr6-pfN_lNNHXRF_ZzVDguDsyrk';
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
