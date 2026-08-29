@@ -192,7 +192,7 @@ export class SendTemplateMessageModal {
             </div>
 
             <!-- Rodapé de Ações (Mobile / Normal) -->
-            <div class="flex flex-wrap items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+            <div class="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800">
               ${footerButtonsHtml}
             </div>
           </div>

@@ -517,20 +517,20 @@ export class EditTravelModal {
               </div>
 
               <!-- Rodapé Fixo (Sticky Footer) para Ações de Salvamento -->
-              <div class="sticky bottom-0 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 pt-3 pb-2 z-20 flex items-center justify-between gap-2 font-sans flex-wrap">
-                <div>
+              <div class="sticky bottom-0 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 pt-3 pb-2 z-20 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2.5 font-sans">
+                <div class="flex items-center gap-2 w-full sm:w-auto">
                   ${this.options.perfil?.role === 'admin' && !viagemProcessoConferido ? `
-                    <button id="btn-excluir-viagem" type="button" class="px-4 py-2.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-900/20 text-rose-600 dark:text-rose-400 font-extrabold text-[11px] tracking-wider rounded-xl transition uppercase">
+                    <button id="btn-excluir-viagem" type="button" class="w-full sm:w-auto px-4 py-2.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-900/20 text-rose-600 dark:text-rose-400 font-extrabold text-[11px] tracking-wider rounded-xl transition uppercase">
                       Excluir
                     </button>
                   ` : ''}
                 </div>
 
-                <div class="flex items-center gap-2 ml-auto">
-                  <button id="btn-close-edit-modal" type="button" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold text-xs tracking-wider rounded-xl transition uppercase">
+                <div class="flex items-center gap-2 w-full sm:w-auto sm:ml-auto">
+                  <button id="btn-close-edit-modal" type="button" class="flex-1 sm:flex-none px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold text-xs tracking-wider rounded-xl transition uppercase text-center">
                     Cancelar
                   </button>
-                  <button type="submit" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/20 transition uppercase">
+                  <button type="submit" class="flex-1 sm:flex-none px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/20 transition uppercase text-center">
                     Salvar Alterações
                   </button>
                 </div>

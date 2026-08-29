@@ -37,7 +37,7 @@ export function renderTimelineHTML(cronograma: any[]): string {
                   ${formatarDataLocal(item.data)}
                 </span>
               </div>
-              <p class="text-xs font-bold text-slate-700 dark:text-slate-200 mt-1 leading-relaxed">${item.rotulo}</p>
+              <p class="text-xs font-bold text-slate-700 dark:text-slate-200 mt-1 leading-relaxed break-words">${item.rotulo}</p>
             </div>
           </div>
         `).join('')}

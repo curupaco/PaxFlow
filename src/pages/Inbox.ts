@@ -652,16 +652,16 @@ export class InboxPage {
                     ? 'bg-indigo-600/10 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400' 
                     : 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800/40'
                 }">
-                  <span class="flex items-center gap-2.5">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                  <span class="flex items-center gap-2.5 min-w-0 flex-1 truncate text-left">
+                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                       <rect width="20" height="16" x="2" y="4" rx="2" />
                       <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
                     </svg>
-                    Caixa de Entrada
+                    <span class="truncate">Caixa de Entrada</span>
                   </span>
-                  <div class="flex items-center gap-1">
-                    ${unreadAtivos > 0 ? `<span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-rose-500 text-white animate-pulse">🔴 ${unreadAtivos}</span>` : ''}
-                    <span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">${totalAtivos}</span>
+                  <div class="flex items-center gap-1 shrink-0 ml-2">
+                    ${unreadAtivos > 0 ? `<span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-rose-500 text-white animate-pulse whitespace-nowrap inline-flex items-center shrink-0">🔴 ${unreadAtivos}</span>` : ''}
+                    <span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 whitespace-nowrap inline-flex items-center shrink-0">${totalAtivos}</span>
                   </div>
                 </button>
 
@@ -670,14 +670,14 @@ export class InboxPage {
                     ? 'bg-indigo-600/10 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400' 
                     : 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800/40'
                 }">
-                  <span class="flex items-center gap-2.5">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <span class="flex items-center gap-2.5 min-w-0 flex-1 truncate text-left">
+                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                       <line x1="22" y1="2" x2="11" y2="13"></line>
                       <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
                     </svg>
-                    Enviadas
+                    <span class="truncate">Enviadas</span>
                   </span>
-                  <span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">${totalEnviadas}</span>
+                  <span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 whitespace-nowrap inline-flex items-center shrink-0 ml-2">${totalEnviadas}</span>
                 </button>
 
                 <button id="folder-arquivados" class="w-full px-3 py-2.5 rounded-xl flex items-center justify-between text-xs font-bold transition select-none ${
@@ -685,17 +685,17 @@ export class InboxPage {
                     ? 'bg-indigo-600/10 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400' 
                     : 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800/40'
                 }">
-                  <span class="flex items-center gap-2.5">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                  <span class="flex items-center gap-2.5 min-w-0 flex-1 truncate text-left">
+                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
                       <polyline points="21 8 21 21 3 21 3 8"></polyline>
                       <rect x="1" y="3" width="22" height="5"></rect>
                       <line x1="10" y1="12" x2="14" y2="12"></line>
                     </svg>
-                    Arquivados
+                    <span class="truncate">Arquivados</span>
                   </span>
-                  <div class="flex items-center gap-1">
-                    ${unreadArquivados > 0 ? `<span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-rose-500 text-white">🔴 ${unreadArquivados}</span>` : ''}
-                    <span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">${totalArquivados}</span>
+                  <div class="flex items-center gap-1 shrink-0 ml-2">
+                    ${unreadArquivados > 0 ? `<span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-rose-500 text-white whitespace-nowrap inline-flex items-center shrink-0">🔴 ${unreadArquivados}</span>` : ''}
+                    <span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 whitespace-nowrap inline-flex items-center shrink-0">${totalArquivados}</span>
                   </div>
                 </button>
 
@@ -704,13 +704,13 @@ export class InboxPage {
                     ? 'bg-indigo-600/10 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400' 
                     : 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800/40'
                 }">
-                  <span class="flex items-center gap-2.5">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-                    Mensagens Totais
+                  <span class="flex items-center gap-2.5 min-w-0 flex-1 truncate text-left">
+                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                    <span class="truncate">Todas</span>
                   </span>
-                  <div class="flex items-center gap-1">
-                    ${unreadGeral > 0 ? `<span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-rose-500 text-white">🔴 ${unreadGeral}</span>` : ''}
-                    <span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">${totalGeral}</span>
+                  <div class="flex items-center gap-1 shrink-0 ml-2">
+                    ${unreadGeral > 0 ? `<span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-rose-500 text-white whitespace-nowrap inline-flex items-center shrink-0">🔴 ${unreadGeral}</span>` : ''}
+                    <span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 whitespace-nowrap inline-flex items-center shrink-0">${totalGeral}</span>
                   </div>
                 </button>
 
@@ -719,16 +719,16 @@ export class InboxPage {
                     ? 'bg-indigo-600/10 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400' 
                     : 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800/40'
                 }">
-                  <span class="flex items-center gap-2.5">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                  <span class="flex items-center gap-2.5 min-w-0 flex-1 truncate text-left">
+                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                       <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
                       <line x1="16" y1="2" x2="16" y2="6"/>
                       <line x1="8" y1="2" x2="8" y2="6"/>
                       <line x1="3" y1="10" x2="21" y2="10"/>
                     </svg>
-                    Escala de Funcionários
+                    <span class="truncate">Escala</span>
                   </span>
-                  <span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300">Nova</span>
+                  <span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300 whitespace-nowrap inline-flex items-center shrink-0 ml-2">Nova</span>
                 </button>
 
               </div>
