@@ -1,6 +1,7 @@
 import Sortable from 'sortablejs';
 import { supabase, getSessaoAtual, logoutConsultor } from '../services/supabase';
 import { Viagem, Cliente, ProdutoViagem, GlobalSettings, PerfilConsultor } from '../types';
+import { RiskScoreService } from '../services/riskScoreService';
 import { DestinosAutocomplete } from '../components/DestinosAutocomplete';
 import { SendTemplateMessageModal } from '../components/dashboard/SendTemplateMessageModal';
 import { getAvatarSvg, mesclarAvataresLocais } from '../services/avatars';
@@ -1897,17 +1898,27 @@ export class Dashboard {
     }
     const valorVenda = Number(v.valor_total) || 0;
 
+    // Calcular PaxFlow Risk Score™
+    const risk = RiskScoreService.calculateTripRiskScore(v, v.cliente, v.produtos, this.settings);
+
     return `
       <tr class="${rowBg} transition-colors duration-200">
-        <!-- SLA -->
-        <td class="px-5 py-4 text-center select-none" title="Legenda do SLA:
+        <!-- SLA & Risk Score -->
+        <td class="px-4 py-4 text-center select-none" title="Legenda do SLA:
 🟢 Normal (Tudo em dia)
 ⚠️ Alerta (Pré-embarque próximo)
 🚨 Atrasado (Pós-viagem excedido)
 ✅ Concluído (Reembolso pago)
 
 Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : 'SLA Normal')}">
-          <span class="text-base">${slaIcon}</span>
+          <div class="flex items-center justify-center gap-2">
+            <span class="text-base">${slaIcon}</span>
+            ${this.settings?.habilitar_risk_score !== false ? `
+              <button class="btn-open-risk-score px-2 py-0.5 rounded-lg text-[10px] font-black tracking-wider flex items-center gap-1 border shadow-xs transition transform hover:scale-105 ${risk.badgeClass}" data-trip-id="${v.id}" title="PaxFlow Risk Score™: ${risk.score}/100 (${risk.fraseStatus}) — Clique para abrir o diagnósticos">
+                <span>🛡️ ${risk.score}</span>
+              </button>
+            ` : ''}
+          </div>
         </td>
 
         <!-- Cliente / LOC -->
@@ -2051,9 +2062,12 @@ Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : '
     }
     const valorVenda = Number(v.valor_total) || 0;
 
+    // Calcular PaxFlow Risk Score™
+    const risk = RiskScoreService.calculateTripRiskScore(v, v.cliente, v.produtos, this.settings);
+
     return `
       <div class="${cardBg} border border-slate-200/60 dark:border-slate-800 border-l-4 ${cardBorder} rounded-2xl p-5 shadow-sm space-y-4">
-        <!-- Header: SLA + Cliente + LOC -->
+        <!-- Header: SLA + Risk Score + Cliente + LOC -->
         <div class="flex items-start justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
           <div class="space-y-1">
             <div class="font-black text-sm text-slate-800 dark:text-slate-100">${v.cliente?.nome || 'Cliente Desconhecido'}</div>
@@ -2073,9 +2087,17 @@ Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : '
               ` : ''}
             </div>
           </div>
-          <div class="flex flex-col items-end shrink-0" title="${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : 'SLA Normal')}">
-            <span class="text-lg">${slaIcon}</span>
-            ${sla.alert ? `<span class="text-[8px] font-black text-rose-600 dark:text-rose-400 uppercase tracking-widest mt-0.5">SLA ATIVO</span>` : ''}
+
+          <div class="flex items-center gap-2">
+            ${this.settings?.habilitar_risk_score !== false ? `
+              <button class="btn-open-risk-score px-2 py-0.5 rounded-lg text-[9px] font-black tracking-wider flex items-center gap-1 border shadow-xs transition transform hover:scale-105 ${risk.badgeClass}" data-trip-id="${v.id}" title="PaxFlow Risk Score™: ${risk.score}/100 — Clique para abrir o diagnósticos">
+                <span>🛡️ ${risk.score}</span>
+              </button>
+            ` : ''}
+            <div class="flex flex-col items-end shrink-0" title="${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : 'SLA Normal')}">
+              <span class="text-lg">${slaIcon}</span>
+              ${sla.alert ? `<span class="text-[8px] font-black text-rose-600 dark:text-rose-400 uppercase tracking-widest mt-0.5">SLA ATIVO</span>` : ''}
+            </div>
           </div>
         </div>
 
