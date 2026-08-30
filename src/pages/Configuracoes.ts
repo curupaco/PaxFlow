@@ -1792,15 +1792,39 @@ export class ConfiguracoesPage {
               </div>
             </div>
 
-            <!-- Algoritmo Preditivo de Risco Operacional -->
-            <div class="border-t border-slate-100 dark:border-slate-800 pt-5">
-              <h3 class="text-xs font-black text-rose-600 dark:text-rose-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                <span>🚨</span> Algoritmo Preditivo de Risco Operacional ${renderHelpIcon('painel-preditivo-risco')}
-              </h3>
+            <!-- Algoritmo Preditivo de Risco Operacional & PaxFlow Risk Score™ -->
+            <div class="border-t border-slate-100 dark:border-slate-800 pt-5 space-y-4">
+              <div class="flex items-center justify-between">
+                <div>
+                  <h3 class="text-xs font-black text-rose-600 dark:text-rose-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <span>🛡️</span> PaxFlow Risk Score™ & Algoritmo Preditivo ${renderHelpIcon('painel-preditivo-risco')}
+                  </h3>
+                  <p class="text-[10px] text-slate-400 mt-0.5">Auditoria automática de saúde de viagens (0 a 100) e ações de resolução em 1-clique.</p>
+                </div>
+                
+                <label class="relative inline-flex items-center cursor-pointer shrink-0">
+                  <input id="input-habilitar-risk-score" type="checkbox" ${this.settings.habilitar_risk_score !== false ? 'checked' : ''} class="sr-only peer">
+                  <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:after:border-slate-600 peer-checked:bg-rose-600"></div>
+                </label>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                <div>
+                  <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Janela de Carência Operacional (Dias antes do embarque) *</label>
+                  <input id="input-risk-score-carencia-dias" type="number" min="15" max="180" required value="${this.settings.risk_score_janela_carencia_dias || 60}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-bold" />
+                  <p class="text-[10px] text-slate-400 mt-1">Viagens com embarque a mais de X dias mantêm nota 100 (evita falsos positivos em vendas antecipadas).</p>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Nota Limite para Alerta Crítico (Nível Vermelho) *</label>
+                  <input id="input-risk-score-limite-critico" type="number" min="10" max="80" required value="${this.settings.risk_score_limite_critico || 50}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-bold" />
+                  <p class="text-[10px] text-slate-400 mt-1">Pontuações abaixo deste patamar disparam alerta de perigo e notificação de gerência.</p>
+                </div>
+              </div>
+
               <div>
-                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Antecedência de Embarque para Alerta de Risco (Dias) *</label>
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Antecedência Padrão de Auditoria de Embarque (Dias) *</label>
                 <input id="input-antecedencia-risco" type="number" min="1" max="90" required value="${this.settings.antecedencia_risco_operacional_dias || this.settings.antecedenciaRiscoOperacionalDias || 15}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-bold" />
-                <p class="text-[10px] text-slate-400 mt-1">Janela de dias antes do embarque para auditarmos pendências de conferência de LOC, passaportes e vouchers no Painel Preditivo.</p>
               </div>
             </div>
 
@@ -2252,6 +2276,9 @@ export class ConfiguracoesPage {
       const enviarNpsInput = document.getElementById('input-enviar-nps') as HTMLInputElement;
       const prazoReembolsoInput = document.getElementById('input-prazo-reembolso') as HTMLInputElement;
       const antecedenciaRiscoInput = document.getElementById('input-antecedencia-risco') as HTMLInputElement;
+      const habilitarRiskScoreInput = document.getElementById('input-habilitar-risk-score') as HTMLInputElement;
+      const carenciaRiskScoreInput = document.getElementById('input-risk-score-carencia-dias') as HTMLInputElement;
+      const limiteCriticoRiskScoreInput = document.getElementById('input-risk-score-limite-critico') as HTMLInputElement;
 
       const tempoDesistenciaVal = tempoDesistenciaInput ? Number(tempoDesistenciaInput.value) : this.settings.tempoDesistenciaOrcamentoDias;
       const slaPreVal = slaPreInput ? Number(slaPreInput.value) : this.settings.slaPreEmbarqueDias;
@@ -2259,6 +2286,9 @@ export class ConfiguracoesPage {
       const enviarNpsVal = enviarNpsInput ? enviarNpsInput.checked : this.settings.enviarNpsAutomatico;
       const prazoReembolsoVal = prazoReembolsoInput ? Number(prazoReembolsoInput.value) : this.settings.prazoReembolsoDias;
       const antecedenciaRiscoVal = antecedenciaRiscoInput ? Number(antecedenciaRiscoInput.value) : (this.settings.antecedencia_risco_operacional_dias || 15);
+      const habilitarRiskScoreVal = habilitarRiskScoreInput ? habilitarRiskScoreInput.checked : (this.settings.habilitar_risk_score !== false);
+      const carenciaRiskScoreVal = carenciaRiskScoreInput ? Number(carenciaRiskScoreInput.value) : (this.settings.risk_score_janela_carencia_dias || 60);
+      const limiteCriticoRiskScoreVal = limiteCriticoRiskScoreInput ? Number(limiteCriticoRiskScoreInput.value) : (this.settings.risk_score_limite_critico || 50);
 
       const payload = {
         tempo_desistencia_orcamento_dias: tempoDesistenciaVal,
@@ -2266,7 +2296,10 @@ export class ConfiguracoesPage {
         sla_pos_viagem_dias: slaPosVal,
         enviar_nps_automatico: enviarNpsVal,
         prazo_reembolso_dias: prazoReembolsoVal,
-        antecedencia_risco_operacional_dias: antecedenciaRiscoVal
+        antecedencia_risco_operacional_dias: antecedenciaRiscoVal,
+        habilitar_risk_score: habilitarRiskScoreVal,
+        risk_score_janela_carencia_dias: carenciaRiskScoreVal,
+        risk_score_limite_critico: limiteCriticoRiskScoreVal
       };
 
       try {

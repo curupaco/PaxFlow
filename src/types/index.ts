@@ -39,7 +39,7 @@ export interface GlobalSettings {
   googleRefreshToken?: string; // Token de renovação persistido para integração com o Google Drive
   googleParentFolderId?: string; // ID da pasta mãe no Google Drive para armazenamento centralizado
   slaPreEmbarqueDias?: number; // Dias de SLA para alertas de embarque
-  slaPosViagemDias?: number; // Dias de SLA para contatos de pós-venda
+  slaPosViagemDias?: number; // Dias de SLA para contatos de pós-viagem
   limiteUploadMb?: number; // Limite de tamanho para upload de arquivos em MB
   enviarNpsAutomatico?: boolean; // Habilita o envio automático de pesquisas de NPS
   agency_logo_url?: string;
@@ -72,8 +72,68 @@ export interface GlobalSettings {
   copilotoAtivo?: boolean;
   antecedencia_risco_operacional_dias?: number;
   antecedenciaRiscoOperacionalDias?: number;
+  habilitar_risk_score?: boolean;
+  habilitarRiskScore?: boolean;
+  risk_score_janela_carencia_dias?: number;
+  riskScoreJanelaCarenciaDias?: number;
+  risk_score_limite_critico?: number;
+  riskScoreLimiteCritico?: number;
+  pesos_pilares_risk_score?: {
+    pilar1_documental: number;
+    pilar2_vouchers: number;
+    pilar3_governanca: number;
+    pilar4_roteiro: number;
+    pilar5_cadastro: number;
+  };
   createdAt?: string;
   updatedAt?: string;
+}
+
+/**
+ * Representa um registro do histórico temporal de evolução do Risk Score.
+ */
+export interface RiskTimelineEntry {
+  id: string;
+  viagem_id: string;
+  score_anterior: number;
+  score_novo: number;
+  nivel_anterior: 'verde' | 'amarelo' | 'vermelho';
+  nivel_novo: 'verde' | 'amarelo' | 'vermelho';
+  descricao_acao: string;
+  autor_nome: string;
+  created_at: string;
+}
+
+/**
+ * Representa um item individual de risco/pendência detectado no diagnósticos.
+ */
+export interface RiskItem {
+  id: string;
+  pilar: 1 | 2 | 3 | 4 | 5;
+  pilarNome: string;
+  titulo: string;
+  descricaoHumana: string;
+  penalidadePontos: number;
+  resolvido: boolean;
+  acaoTipo: 'anexar_voucher' | 'anexar_voucher_geral' | 'preencher_passaporte' | 'preencher_visto' | 'vincular_loc' | 'conferir_operacional' | 'notificar_consultor' | 'justificar_risco';
+  acaoRotulo: string;
+  produtoId?: string;
+  justificativa?: string;
+}
+
+/**
+ * Resultado completo do cálculo do PaxFlow Risk Score™ para uma viagem.
+ */
+export interface RiskScoreResult {
+  score: number;
+  nivel: 'verde' | 'amarelo' | 'vermelho';
+  corHex: string;
+  badgeClass: string;
+  fraseStatus: string;
+  isGracePeriod: boolean;
+  gracePeriodMensagem?: string;
+  itens: RiskItem[];
+  historico: RiskTimelineEntry[];
 }
 
 /**
@@ -139,6 +199,12 @@ export interface Viagem {
   orcamentoId?: string;
   orcamento_id?: string;
   isProcessoConferido?: boolean;
+  voucher_geral_pacote?: string; // URL do PDF do voucher unificado
+  voucher_geral_anexado?: boolean;
+  risk_score_override?: number;
+  risk_score_justificativa?: string;
+  risk_score_justificado_por?: string;
+  risk_score_justificado_em?: string;
 }
 
 /**

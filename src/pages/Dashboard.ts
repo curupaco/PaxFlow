@@ -2298,7 +2298,22 @@ Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : '
       this.render();
     });
 
-    // 8. Evento de clique nos botões "Ver Detalhes"
+    // Evento de clique no PaxFlow Risk Score Badge
+    this.container.querySelectorAll('.btn-open-risk-score').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const tripId = btn.getAttribute('data-trip-id');
+        if (tripId) {
+          const { RiskDiagnosisDrawer } = await import('../components/risk/RiskDiagnosisDrawer');
+          RiskDiagnosisDrawer.open(tripId, this.user, this.perfil, async () => {
+            await this.loadViagens();
+            this.render();
+          });
+        }
+      });
+    });
+
+    // Evento de clique nos botões "Ver Detalhes"
     this.container.querySelectorAll('.btn-action-view').forEach(btn => {
       btn.addEventListener('click', () => {
         const tripId = btn.getAttribute('data-trip-id');
