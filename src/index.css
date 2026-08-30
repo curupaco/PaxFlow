@@ -435,6 +435,9 @@ html.dark .landing-page-wrapper .grid-bg {
 /* Prevenção de salto de rolagem ("dança") no mobile durante rotações de abas */
 .landing-v2 {
   overflow-anchor: none;
+  overflow-x: hidden !important;
+  max-width: 100vw;
+  width: 100%;
 }
 .landing-v2 #mockup-panels-container,
 .landing-v2 #brand-panels-container {

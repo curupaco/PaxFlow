@@ -271,10 +271,10 @@ export class LandingPage {
 
   private render(): void {
     this.container.innerHTML = `
-      <div class="landing-v2 min-h-screen bg-[#06070f] text-white font-sans selection:bg-fuchsia-500 selection:text-white relative overflow-x-clip flex flex-col">
+      <div class="landing-v2 min-h-screen max-w-full w-full bg-[#06070f] text-white font-sans selection:bg-fuchsia-500 selection:text-white relative overflow-x-hidden flex flex-col">
 
         <!-- ===== AMBIENT COLOR FIELD (muito movimento) ===== -->
-        <div class="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+        <div class="pointer-events-none fixed inset-0 z-0 overflow-hidden max-w-full">
           <div data-parallax="30" class="absolute top-[-15%] left-[-10%] w-[60vw] h-[60vw] rounded-full bg-gradient-to-br from-[#0052d4]/35 via-[#00a8f5]/20 to-transparent blur-3xl pf-float-slow"></div>
           <div data-parallax="-40" class="absolute top-[20%] right-[-15%] w-[55vw] h-[55vw] rounded-full bg-gradient-to-bl from-[#f12711]/30 via-[#f5af19]/20 to-transparent blur-3xl pf-float"></div>
           <div data-parallax="50" class="absolute bottom-[-10%] left-[15%] w-[50vw] h-[50vw] rounded-full bg-gradient-to-tr from-[#00e5a3]/25 via-teal-500/10 to-transparent blur-3xl pf-float-delay"></div>
@@ -283,7 +283,7 @@ export class LandingPage {
         </div>
 
         <!-- ===== LOGO WATERMARK fixo gigante deslocado à direita (acompanha o scroll) ===== -->
-        <div class="pointer-events-none fixed inset-0 z-[1] flex items-center justify-end overflow-hidden">
+        <div class="pointer-events-none fixed inset-0 z-[1] flex items-center justify-end overflow-hidden max-w-full">
           <img data-parallax="95" src="/logo.svg" alt="" width="280" height="280" loading="eager" class="pf-logo-watermark max-w-[66vmin] max-h-[66vmin] w-[66vmin] h-[66vmin] object-contain opacity-[0.13] blur-[2px] mr-[-8vmin] saturate-150 drop-shadow-[0_0_40px_rgba(0,168,245,0.35)]" />
         </div>
 

@@ -471,11 +471,6 @@ class App {
                 <span class="${this.sidebarCollapsed ? 'md:hidden' : ''}">Central de Ajuda</span>
               </button>
 
-              <!-- Link: Site Comercial PaxFlow -->
-              <a href="#conheca" target="_blank" class="w-full px-3 py-1.5 rounded-xl flex items-center ${this.sidebarCollapsed ? 'justify-center' : 'justify-start'} gap-2.5 font-semibold text-xs text-left transition select-none text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/40 group">
-                <span class="text-sm">🌐</span>
-                <span class="${this.sidebarCollapsed ? 'md:hidden' : ''}">Site PaxFlow</span>
-              </a>
 
             </div>
 
