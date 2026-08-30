@@ -136,116 +136,34 @@
 
 <body class="text-slate-800 antialiased min-h-screen flex flex-col font-sans">
 
-  <!-- Container Principal do Aplicativo com Fallback Semântico SSR estático para Crawlers e IAs -->
-  <div id="app" class="flex-1 flex flex-col min-h-screen">
-    
-    <!-- CONTEÚDO ESTÁTICO SEMÂNTICO (Lido por Googlebot, Bingbot, ChatGPT, Perplexity e Gemini antes do JS carregar) -->
-    <header style="background-color: #06070f; color: #ffffff; padding: 20px; text-align: center;">
-      <nav style="max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; items-center: center;">
-        <img src="/logo.svg" alt="PaxFlow Logo" style="height: 40px;" />
-        <div>
-          <a href="#recursos" style="color: #94a3b8; text-decoration: none; margin-right: 20px;">Recursos</a>
-          <a href="#diferenciais" style="color: #94a3b8; text-decoration: none; margin-right: 20px;">Diferenciais</a>
-          <a href="#faq" style="color: #94a3b8; text-decoration: none; margin-right: 20px;">FAQ</a>
-          <a href="/login" style="color: #818cf8; text-decoration: none; font-weight: bold;">Acessar PaxFlow</a>
+  <!-- Container Principal do Aplicativo -->
+  <div id="app" class="flex-1 flex flex-col min-h-screen bg-[#06070f] text-slate-100 items-center justify-center">
+    <div class="flex flex-col items-center justify-center space-y-5 p-6 text-center">
+      <div class="relative flex items-center justify-center">
+        <div class="w-16 h-16 rounded-2xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center shadow-2xl backdrop-blur-md">
+          <img src="/logo.svg" alt="PaxFlow Logo" class="w-10 h-10 animate-pulse" />
         </div>
-      </nav>
-    </header>
-
-    <main style="background-color: #06070f; color: #f8fafc; padding: 60px 20px;">
-      
-      <!-- Hero Section -->
-      <section style="max-width: 900px; margin: 0 auto; text-align: center;">
-        <h1 style="font-size: 2.5rem; font-weight: 900; line-height: 1.2; margin-bottom: 20px; color: #ffffff;">
-          PaxFlow — O CRM & Pós-Venda 100% Especializado em Agências de Viagens
-        </h1>
-        <p style="font-size: 1.25rem; color: #94a3b8; line-height: 1.6; margin-bottom: 30px;">
-          Elimine o caos das planilhas. Centralize itinerários, alertas automáticos de vistos e passaportes em 180 dias, pré-embarque, reembolsos e pós-venda viva em um ecossistema Web completo para sua agência de turismo.
-        </p>
-        <div style="display: flex; justify-content: center; gap: 15px; margin-bottom: 40px;">
-          <a href="/login" style="background-color: #4f46e5; color: #ffffff; padding: 15px 30px; border-radius: 12px; font-weight: 800; text-decoration: none; text-transform: uppercase;">
-            🚀 Testar Gratuitamente no PaxFlow
-          </a>
+        <div class="absolute -inset-1 rounded-2xl bg-indigo-500/10 blur-xl -z-10"></div>
+      </div>
+      <div class="flex flex-col items-center space-y-2">
+        <div class="flex items-center gap-2">
+          <div class="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+          <span class="text-xs font-black tracking-widest text-slate-400 uppercase">Inicializando PaxFlow...</span>
         </div>
-      </section>
-
-      <!-- Recursos Chave -->
-      <section id="recursos" style="max-width: 1100px; margin: 60px auto 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px;">
-        
-        <article style="background-color: #0f172a; padding: 25px; border-radius: 16px; border: 1px solid #1e293b;">
-          <h2 style="font-size: 1.2rem; color: #f43f5e; margin-bottom: 10px;">🚨 Painel Preditivo de Risco Operacional & Churn</h2>
-          <p style="color: #94a3b8; font-size: 0.95rem; line-height: 1.5;">
-            Monitore viagens a menos de X dias do embarque auditando pendências de bilhetes, LOC, passaportes e vouchers antes que se tornem um problema na viagem do cliente.
-          </p>
-        </article>
-
-        <article style="background-color: #0f172a; padding: 25px; border-radius: 16px; border: 1px solid #1e293b;">
-          <h2 style="font-size: 1.2rem; color: #818cf8; margin-bottom: 10px;">✈️ Importador PNR & E-Ticket 1-Clique</h2>
-          <p style="color: #94a3b8; font-size: 0.95rem; line-height: 1.5;">
-            Cole o e-ticket ou texto emitido das companhias Gol, Latam, Azul ou GDS e deixe a inteligência do PaxFlow extrair dados de voo, bilhete, passageiros e trechos automaticamente.
-          </p>
-        </article>
-
-        <article style="background-color: #0f172a; padding: 25px; border-radius: 16px; border: 1px solid #1e293b;">
-          <h2 style="font-size: 1.2rem; color: #fbbf24; margin-bottom: 10px;">🛂 SLA de Passaportes & Vistos (180 Dias)</h2>
-          <p style="color: #94a3b8; font-size: 0.95rem; line-height: 1.5;">
-            Alertas automáticos disparados no Inbox com 180 dias de antecedência para viagens internacionais, prevenindo multas e embarques impedidos.
-          </p>
-        </article>
-
-        <article style="background-color: #0f172a; padding: 25px; border-radius: 16px; border: 1px solid #1e293b;">
-          <h2 style="font-size: 1.2rem; color: #34d399; margin-bottom: 10px;">💬 Atendimento de Balcão & WhatsApp DigiSac</h2>
-          <p style="color: #94a3b8; font-size: 0.95rem; line-height: 1.5;">
-            Integração nativa com a API do DigiSac para envio de modelos de mensagens, vouchers em PDF diretamente no WhatsApp e gestão de balcão presencial.
-          </p>
-        </article>
-
-        <article style="background-color: #0f172a; padding: 25px; border-radius: 16px; border: 1px solid #1e293b;">
-          <h2 style="font-size: 1.2rem; color: #38bdf8; margin-bottom: 10px;">📱 Web SaaS Completo + PWA Mobile com Push Notifications</h2>
-          <p style="color: #94a3b8; font-size: 0.95rem; line-height: 1.5;">
-            Uma plataforma de alta produtividade para desktop com suporte a aplicativo PWA para notificações push urgentes no celular dos consultores em emergências.
-          </p>
-        </article>
-
-        <article style="background-color: #0f172a; padding: 25px; border-radius: 16px; border: 1px solid #1e293b;">
-          <h2 style="font-size: 1.2rem; color: #c084fc; margin-bottom: 10px;">⭐ Pesquisas NPS Automáticas & Pós-Venda Viva</h2>
-          <p style="color: #94a3b8; font-size: 0.95rem; line-height: 1.5;">
-            Disparo autônomo de pesquisas de satisfação ao término das viagens dos clientes para mensurar a reputação da sua agência e fidelizar novos bilhetes.
-          </p>
-        </article>
-
-      </section>
-
-      <!-- Seção FAQ -->
-      <section id="faq" style="max-width: 900px; margin: 80px auto 0;">
-        <h2 style="font-size: 1.8rem; font-weight: 800; text-align: center; margin-bottom: 30px; color: #ffffff;">
-          Perguntas Frequentes sobre o PaxFlow
-        </h2>
-        
-        <div style="space-y: 20px;">
-          <details style="background-color: #0f172a; padding: 20px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #1e293b;">
-            <summary style="font-weight: 700; cursor: pointer; color: #f8fafc;">O que faz do PaxFlow o melhor CRM para agências de turismo?</summary>
-            <p style="color: #94a3b8; margin-top: 10px; font-size: 0.95rem; line-height: 1.5;">
-              Diferente de CRMs genéricos do mercado, o PaxFlow foi desenhado exclusivamente para a rotina do agente de viagens. Ele possui regras de negócio específicas para PNRs, e-tickets, regrinhas de reembolso de bilhetes, controle de passaportes em 180 dias e escala de consultores.
-            </p>
-          </details>
-
-          <details style="background-color: #0f172a; padding: 20px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #1e293b;">
-            <summary style="font-weight: 700; cursor: pointer; color: #f8fafc;">O PaxFlow substitui minhas planilhas de pós-venda?</summary>
-            <p style="color: #94a3b8; margin-top: 10px; font-size: 0.95rem; line-height: 1.5;">
-              Sim! O PaxFlow elimina 100% das planilhas manuais de Excel, centralizando histórico de vendas, passaportes dos clientes em armazenamento seguro e status de viagens em tempo real em um pipeline Kanban dinâmico.
-            </p>
-          </details>
-        </div>
-      </section>
-
-    </main>
-
-    <footer style="background-color: #030712; color: #64748b; padding: 30px 20px; text-align: center; font-size: 0.85rem; border-t: 1px solid #1e293b;">
-      <p>&copy; 2026 PaxFlow — Todos os direitos reservados. O CRM & Pós-Venda para Agências de Viagens.</p>
-    </footer>
-
+      </div>
+    </div>
   </div>
+
+  <!-- Fallback semântico estático para navegadores sem JavaScript -->
+  <noscript>
+    <div style="background-color: #06070f; color: #ffffff; padding: 40px 20px; text-align: center; font-family: sans-serif;">
+      <h1>PaxFlow — O CRM & Pós-Venda 100% Especializado em Agências de Viagens</h1>
+      <p style="color: #94a3b8; max-width: 600px; margin: 20px auto;">
+        Centralize pós-vendas, passaportes, vistos, reembolsos aéreos e alertas de risco da sua agência em uma plataforma viva.
+      </p>
+      <a href="/login" style="background-color: #4f46e5; color: #ffffff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">Acessar PaxFlow</a>
+    </div>
+  </noscript>
 
   <!-- Script de Entrada Principal (Vite / TypeScript - Substitui o fallback acima pelo app dinâmico quando carregado) -->
   <script type="module" src="/src/main.ts"></script>

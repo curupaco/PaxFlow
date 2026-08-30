@@ -143,8 +143,8 @@ class App {
       });
     }
 
-    // Se o visitante/crawler não possui token de autenticação no localStorage e não está acessando /login,
-    // renderiza a Landing Page síncrona sem apagar o HTML nem aguardar requisições assíncronas de rede
+    // Se o visitante não possui token de autenticação no localStorage e não está acessando /login,
+    // renderiza a Landing Page interativa imediatamente
     const hasAuthToken = Object.keys(localStorage).some(k => k.includes('sb-') && k.includes('-auth-token'));
     if (!hasAuthToken && !isLoginRoute) {
       this.renderLandingPage(isConhecaOldRoute);
