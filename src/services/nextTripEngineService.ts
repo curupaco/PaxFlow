@@ -24,10 +24,10 @@ export class NextTripEngineService {
     const agora = new Date();
     const oportunidades: NextTripOpportunity[] = [];
 
-    // Agrupa viagens por cliente_id
+    // Agrupa viagens por cliente_id ou clienteId
     const viagensPorCliente = new Map<string, any[]>();
     viagens.forEach(v => {
-      const cId = v.cliente_id || (v.cliente && v.cliente.id);
+      const cId = v.cliente_id || v.clienteId || (v.cliente && (v.cliente.id || v.cliente.cliente_id));
       if (cId) {
         if (!viagensPorCliente.has(cId)) viagensPorCliente.set(cId, []);
         viagensPorCliente.get(cId)!.push(v);
@@ -52,23 +52,24 @@ export class NextTripEngineService {
 
       // Ordena viagens da mais recente para a mais antiga
       cViagens.sort((a, b) => {
-        const dA = new Date(a.data_volta || a.data_ida || a.created_at || 0).getTime();
-        const dB = new Date(b.data_volta || b.data_ida || b.created_at || 0).getTime();
+        const dA = new Date(a.data_volta || a.dataVolta || a.data_ida || a.dataIda || a.created_at || a.createdAt || 0).getTime();
+        const dB = new Date(b.data_volta || b.dataVolta || b.data_ida || b.dataIda || b.created_at || b.createdAt || 0).getTime();
         return dB - dA;
       });
 
       const ultimaViagem = cViagens[0];
-      const consultorTitularId = ultimaViagem.consultor_id || cliente.consultor_id || '';
-      const consultorTitularNome = ultimaViagem.consultor_nome || cliente.consultor_nome || 'Consultor Titular';
+      const consultorTitularId = ultimaViagem.consultor_id || ultimaViagem.consultorId || cliente.consultor_id || cliente.consultorId || '';
+      const consultorTitularNome = ultimaViagem.consultor_nome || ultimaViagem.consultorNome || cliente.consultor_nome || cliente.consultorNome || 'Consultor Titular';
 
-      if (userRole !== 'admin' && currentUserId && consultorTitularId !== currentUserId) {
+      if (userRole !== 'admin' && currentUserId && consultorTitularId && consultorTitularId !== currentUserId) {
         return;
       }
 
       // Se o cliente já tem orçamento em aberto ou viagem agendada no futuro, pular
       const temViagemFutura = cViagens.some(v => {
-        if (!v.data_ida) return false;
-        return new Date(v.data_ida).getTime() > agora.getTime();
+        const dIda = v.data_ida || v.dataIda;
+        if (!dIda) return false;
+        return new Date(dIda).getTime() > agora.getTime();
       });
       if (temViagemFutura || orcamentosAbertosPorCliente.has(cliente.id)) {
         return;
@@ -95,7 +96,8 @@ export class NextTripEngineService {
       let scoreConformidade = 10;
 
       // 1. Sazonalidade (30 pontos max)
-      const dataVolta = new Date(ultimaViagem.data_volta || ultimaViagem.data_ida || ultimaViagem.created_at || agora);
+      const rawDate = ultimaViagem.data_volta || ultimaViagem.dataVolta || ultimaViagem.data_ida || ultimaViagem.dataIda || ultimaViagem.created_at || ultimaViagem.createdAt;
+      const dataVolta = rawDate ? new Date(rawDate) : agora;
       const diffMeses = Math.floor((agora.getTime() - dataVolta.getTime()) / (1000 * 60 * 60 * 24 * 30.43));
 
       if (diffMeses >= 10 && diffMeses <= 14) {
@@ -111,7 +113,7 @@ export class NextTripEngineService {
       }
 
       // 2. NPS (25 pontos max)
-      const npsNota = ultimaViagem.nps_nota || ultimaViagem.npsNota || cliente.nps_nota || 10;
+      const npsNota = ultimaViagem.nps_nota ?? ultimaViagem.npsNota ?? cliente.nps_nota ?? cliente.npsNota ?? 10;
       if (npsNota >= 9) {
         scoreNps = 25;
       } else if (npsNota >= npsMinimo) {
