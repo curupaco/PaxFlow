@@ -374,25 +374,25 @@ export class LandingPage {
           <div class="pf-rise-5 grid grid-cols-2 md:grid-cols-4 gap-4 w-full max-w-4xl mx-auto mb-16 p-6 rounded-3xl bg-white/[0.04] border border-white/10 backdrop-blur-md pf-glow">
             <div class="text-center p-3 rounded-2xl bg-gradient-to-b from-[#0052d4]/20 to-transparent"><span class="pf-num block text-3xl font-black text-[#00a8f5]" data-count="100" data-suffix="%">0%</span><span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Foco em Turismo</span></div>
             <div class="text-center p-3 rounded-2xl bg-gradient-to-b from-[#f12711]/20 to-transparent"><span class="pf-num block text-3xl font-black text-[#f5af19]" data-count="180" data-suffix=" dias">0 dias</span><span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Alerta Vistos &amp; Passaporte</span></div>
-            <div class="text-center p-3 rounded-2xl bg-gradient-to-b from-[#00e5a3]/20 to-transparent"><span class="block text-3xl font-black text-[#00e5a3]">PWA Mobile</span><span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Com Notificações Push</span></div>
-            <div class="text-center p-3 rounded-2xl bg-gradient-to-b from-fuchsia-600/20 to-transparent"><span class="block text-3xl font-black text-fuchsia-400">WhatsApp SLA</span><span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Hub Integrado</span></div>
+            <div class="text-center p-3 rounded-2xl bg-gradient-to-b from-emerald-600/20 to-transparent"><span class="block text-3xl font-black text-emerald-400">🛡️ Risk Score</span><span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Saúde Operacional 0-100</span></div>
+            <div class="text-center p-3 rounded-2xl bg-gradient-to-b from-fuchsia-600/20 to-transparent"><span class="block text-3xl font-black text-fuchsia-400">PWA Mobile</span><span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Notificações Push</span></div>
           </div>
 
           <!-- Marquee de diferenciais -->
           <div class="w-full max-w-5xl mb-16 rounded-3xl overflow-hidden border border-white/10 bg-white/[0.03] pf-marquee-wrap">
             <div class="pf-marquee gap-12 py-4 px-6 text-sm font-bold">
+              <span class="flex items-center gap-2 text-emerald-400">🛡️ PaxFlow Risk Score™ (Diagnóstico Preditivo 0-100)</span>
               <span class="flex items-center gap-2 text-cyan-400">📱 App PWA no Celular (Instalação em 1 Clique)</span>
               <span class="flex items-center gap-2 text-amber-400">🔔 Push Notifications no iOS &amp; Android</span>
-              <span class="flex items-center gap-2 text-[#00e5a3]">✦ Alertas de passaporte e visto</span>
+              <span class="flex items-center gap-2 text-[#00e5a3]">✦ Alertas de passaporte e visto em 180 dias</span>
               <span class="flex items-center gap-2 text-[#00a8f5]">✦ Reembolsos com cronômetro SLA</span>
-              <span class="flex items-center gap-2 text-[#f5af19]">✦ Escala de funcionários</span>
+              <span class="flex items-center gap-2 text-[#f5af19]">✦ Escala de funcionários e banco de folgas</span>
               <span class="flex items-center gap-2 text-fuchsia-400">✦ Itinerário digital do cliente</span>
+              <span class="flex items-center gap-2 text-emerald-400">🛡️ PaxFlow Risk Score™ (Diagnóstico Preditivo 0-100)</span>
               <span class="flex items-center gap-2 text-[#00e5a3]">✦ Gestão documental integrada</span>
               <span class="flex items-center gap-2 text-[#00a8f5]">✦ WhatsApp + Digisac nativo</span>
               <span class="flex items-center gap-2 text-[#f5af19]">✦ Gamificação da equipe</span>
               <span class="flex items-center gap-2 text-rose-400">✦ Pipeline de orçamentos</span>
-              <span class="flex items-center gap-2 text-cyan-400">📱 App PWA no Celular (Instalação em 1 Clique)</span>
-              <span class="flex items-center gap-2 text-amber-400">🔔 Push Notifications no iOS &amp; Android</span>
             </div>
           </div>
 

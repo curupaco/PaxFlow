@@ -35,6 +35,8 @@
    - 3.22 [Alertas Automatizados de Pré-Embarque e Pós-Viagem NPS](#322-alertas-automatizados-de-pré-embarque-e-pós-viagem-nps)
    - 3.23 [Métricas Avançadas de Performance e Rendimento de Equipe](#323-métricas-avançadas-de-performance-e-rendimento-de-equipe)
    - 3.24 [Central Administrativa de Escala de Funcionários](#324-central-administrativa-de-escala-de-funcionários)
+   - 3.25 [Redesenho de Usabilidade Mobile da Gestão de Viagens](#325-redesenho-de-usabilidade-mobile-da-gestão-de-viagens)
+   - 3.26 [PaxFlow Risk Score™ (Diagnóstico Preditivo de Saúde Operacional 0 a 100)](#326-paxflow-risk-score-diagnóstico-preditivo-de-saúde-operacional-0-a-100)
 4. [Diferenciais Competitivos](#4-diferenciais-competitivos)
 5. [Arquitetura Tecnológica](#5-arquitetura-tecnológica)
 6. [Segurança e Conformidade](#6-segurança-e-conformidade)
@@ -494,6 +496,27 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
   - O modal de gerenciamento de viagem adapta-se automaticamente a 100% da altura do smartphone com as ações `[Cancelar]` e `[Salvar Alterações]` fixadas no rodapé da viewport para facilidade de toque.
 - **Gavetas Inferiores (Bottom Sheets)**:
   - Estilos de transição e backdrop com desfoque (`.pf-bottom-sheet-content`) para interações rápidas no celular sem distorções horizontais.
+
+### 3.26 PaxFlow Risk Score™ (Diagnóstico Preditivo de Saúde Operacional 0 a 100) [NEW]
+
+**Motor de inteligência preditiva de auditoria operacional** que calcula e monitora 24/7 a saúde operacional de cada viagem cadastrada na agência.
+
+- **Pontuação Dinâmica de 0 a 100**: Toda viagem é inicializada com nota 100 (Saúde Operacional Total). O algoritmo varre continuamente o dossiê da viagem e aplica penalidades parametrizadas no score conforme encontra inconformidades operacionais.
+- **Os 4 Pilares da Auditoria de Risco**:
+  1. **Documental & Vistos (Peso 30%)**: Valida se o cliente possui número e validade de passaporte cadastrados e se a data de expiração possui no mínimo **180 dias de validade** a partir da data de desembarque/retorno da viagem internacional.
+  2. **Financeiro & LOCs (Peso 30%)**: Audita se os valores dos produtos foram 100% quitados através das Formas de Recebimento cadastradas e se o código de reserva (LOC) passou pelo processo de Conferência Financeira administrativa.
+  3. **Logística & Vouchers (Peso 20%)**: Audita a anexação dos vouchers e comprovantes oficiais emitidos pelos fornecedores (voos, hotéis, receptivos) e a presença de códigos de reserva nos produtos.
+  4. **SLAs Temporais (Peso 20%)**: Audita o status da viagem em relação à data de embarque na janela de carência.
+- **Isenções Inteligentes**: O algoritmo detecta a categoria e destino da viagem, aplicando isenções automáticas para não penalizar indevidamente a agência:
+  - **Viagens Nacionais**: Isentas de passaporte e visto.
+  - **Passeios / Bate-Volta (duração <= 1 dia)**: Isentos de exigência de vouchers de hospedagem.
+  - **Vouchers Unificados**: Reconhecimento automático de vouchers gerais de pacote anexados à viagem.
+- **Gaveta Lateral de Diagnóstico (`RiskDiagnosisDrawer.ts`)**:
+  - Ao clicar no badge 🛡️ da viagem, abre-se uma gaveta lateral animada detalhando o diagnóstico, os pontos perdidos por pilar e botões de ação rápida de 1-Clique para resolver cada pendência (ex: *🛂 Preencher Passaporte*, *💳 Conferir Recebimentos*, *📎 Anexar Voucher*).
+- **Visibilidade Unificada**:
+  - Exibido nos cards do Kanban do Dashboard, na tabela do Dashboard e no topo do modal **Gerenciar Viagem** (`EditTravelModal.ts`).
+- **Controle Administrativo Global**:
+  - Administradores podem ativar/desativar o recurso (`habilitar_risk_score`), ajustar a janela de carência pré-embarque (padrão 60 dias) e o limite crítico de risco (padrão < 50 pontos) na aba *Automações* das Configurações.
 
 ---
 

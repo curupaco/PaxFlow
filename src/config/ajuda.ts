@@ -102,6 +102,14 @@ export const HELP_ITEMS: HelpItem[] = [
     details: 'O Calendário do Inbox oferece três visões (Mês, Semana, Agenda) e categoriza os alertas graficamente:\n\n- **Verde**: Lembretes e atividades criadas para você mesmo.\n- **Laranja/Âmbar**: Lembretes delegados a você por colegas de equipe.\n- **Azul**: Lembretes que você criou e delegou para outros consultores.\n\n**Acompanhamento Reativo**: Se você delegar uma tarefa a um consultor e ele a concluir (arquivar), o evento aparecerá no seu calendário com estilo riscado (`line-through`) e 50% de opacidade, indicando visualmente que a pendência foi resolvida.'
   },
 
+  {
+    id: 'paxflow-risk-score',
+    modulo: 'processos',
+    label: 'PaxFlow Risk Score™ (Diagnóstico Inteligente de Risco Operacional)',
+    description: 'Como funciona o cálculo de 0 a 100 de Saúde Operacional e a prevenção de erros em viagens.',
+    details: 'O PaxFlow Risk Score™ é o algoritmo de inteligência preditiva que monitora 24/7 a saúde operacional de todas as viagens cadastradas na agência.\n\n1. **Pontuação de Saúde (0 a 100)**: Toda viagem inicia com score 100 (Saúde Total). Conforme o sistema detecta inconsistências operacionais na janela de carência pré-embarque, aplica penalidades no score.\n2. **Os 4 Pilares Auditados**:\n   - **Documental & Vistos (Peso 30%)**: Audita se o passaporte do cliente foi cadastrado e se possui mais de 180 dias de validade a partir da data de retorno da viagem internacional.\n   - **Financeiro & LOCs (Peso 30%)**: Verifica se o valor de venda dos serviços está 100% quitado por formas de recebimento e se o LOC passou pela conferência financeira.\n   - **Logística & Vouchers (Peso 20%)**: Audita se os vouchers dos fornecedores (voos, hotéis, traslados) foram anexados e se há LOCs preenchidos.\n   - **SLAs Temporais (Peso 20%)**: Audita a proximidade da data de embarque em relação ao status de conferência de processo.\n3. **Isenções Inteligentes**: Viagens nacionais não são penalizadas por vistos ou passaportes ausentes, e passeios bate-volta são isentos de exigência de vouchers de hospedagem.\n4. **Diagnóstico Interativo (Drawer de Risco)**: Clicar no badge 🛡️ (presente no grid do Dashboard e no modal Gerenciar Viagem) abre o painel lateral com o diagnóstico detalhado e botões de resolução rápida em 1-Clique.\n5. **Configurações Globais**: Administradores podem ativar ou desativar o recurso e personalizar a janela de carência (dias antes do embarque) e limite crítico no menu Configurações -> Automações.'
+  },
+
   // ==================== 2. Conceitos Gerais ====================
   {
     id: 'nps',
