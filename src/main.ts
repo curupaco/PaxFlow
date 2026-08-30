@@ -88,22 +88,13 @@ class App {
     this.applyInitialTheme();
     this.renderLoading();
 
-        // Detecção das rotas públicas da Landing Page
-    // /conheca (v1) e /conheca/1 (v2)
+    // Detecção de rotas
     const path = window.location.pathname;
-    const isConhecaRoute =
-      path.endsWith('/conheca') || path.includes('/conheca/') ||
-      window.location.search.includes('conheca') ||
-      window.location.hash.includes('conheca');
+    const isLoginRoute = path.includes('/login') || window.location.search.includes('login') || window.location.hash.includes('login');
     const isConhecaOldRoute =
       path.includes('/conheca/old') ||
       window.location.search.includes('conheca/old') ||
       window.location.hash.includes('conheca/old');
-
-    if (isConhecaRoute && sessionStorage.getItem('paxflowSandbox') !== 'true') {
-      this.renderLandingPage(isConhecaOldRoute);
-      return;
-    }
 
     // Detecção de rotas públicas (Itinerário e NPS/Feedback)
     const isPublicItineraryRoute = window.location.hash.includes('itinerario');
@@ -157,7 +148,12 @@ class App {
       const { user, perfil, error } = await getSessaoAtual();
 
       if (error || !user) {
-        this.renderLogin();
+        // Se a rota for explicitamente /login, exibe a tela de login; caso contrário, exibe a Landing Page comercial
+        if (isLoginRoute) {
+          this.renderLogin();
+        } else {
+          this.renderLandingPage(isConhecaOldRoute);
+        }
       } else {
         this.user = user;
         this.perfil = perfil;
@@ -171,7 +167,11 @@ class App {
       }
     } catch (err) {
       console.error('Erro ao inicializar app:', err);
-      this.renderLogin();
+      if (isLoginRoute) {
+        this.renderLogin();
+      } else {
+        this.renderLandingPage(isConhecaOldRoute);
+      }
     }
   }
 
