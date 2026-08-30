@@ -86,7 +86,6 @@ class App {
    */
   public async init(): Promise<void> {
     this.applyInitialTheme();
-    this.renderLoading();
 
     // Detecção de rotas
     const path = window.location.pathname;
@@ -144,11 +143,18 @@ class App {
       });
     }
 
+    // Se o visitante/crawler não possui token de autenticação no localStorage e não está acessando /login,
+    // renderiza a Landing Page síncrona sem apagar o HTML nem aguardar requisições assíncronas de rede
+    const hasAuthToken = Object.keys(localStorage).some(k => k.includes('sb-') && k.includes('-auth-token'));
+    if (!hasAuthToken && !isLoginRoute) {
+      this.renderLandingPage(isConhecaOldRoute);
+      return;
+    }
+
     try {
       const { user, perfil, error } = await getSessaoAtual();
 
       if (error || !user) {
-        // Se a rota for explicitamente /login, exibe a tela de login; caso contrário, exibe a Landing Page comercial
         if (isLoginRoute) {
           this.renderLogin();
         } else {
