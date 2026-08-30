@@ -545,6 +545,13 @@ export const HELP_ITEMS: HelpItem[] = [
     label: '🛡️ Trava de Segurança para Alterações Não Salvas',
     description: 'Proteção automática contra descarte acidental de formulários em edição.',
     details: 'Ao preencher ou editar fichas de clientes, orçamentos ou viagens, o PaxFlow detecta se houver modificações pendentes. Caso tente fechar o modal ou sair da página sem salvar, o sistema exibirá uma tela de alerta solicitando sua confirmação antes de descartar os dados.'
+  },
+  {
+    id: 'paxflow-next-trip-engine',
+    modulo: 'processos',
+    label: '🎯 Next Trip Engine™ (Motor Preditivo de Recompra)',
+    description: 'Inteligência de ciclo de vida que indica quais clientes estão no momento ideal para comprar outra viagem.',
+    details: 'O Next Trip Engine™ analisa o histórico transacional do cliente (datas de retorno, destinos anteriores, notas de NPS, ticket médio e mês habitual de férias) para calcular o Score de Prontidão de Recompra (0 a 100):\n\n- **Clusters de Afinidade**: Agrupa os clientes em públicos estratégicos no Dashboard (ex: *Europa ~12 meses*, *Resorts no Verão*, *Disney/Família*, *Aniversário de Viagem*).\n- **Ações Rápidas de 1-Clique**: Permite abrir instantaneamente um **Orçamento Preditivo** pré-preenchido ou disparar um **WhatsApp Personalizado** com dados da última viagem.\n- **Snooze Automático de 30 Dias**: Ao abordar o cliente, a oportunidade entra no estado "Em Abordagem" e fica em carência por 30 dias para evitar contatos repetitivos.'
   }
 ];
 

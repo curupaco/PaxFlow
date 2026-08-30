@@ -37,6 +37,7 @@
    - 3.24 [Central Administrativa de Escala de Funcionários](#324-central-administrativa-de-escala-de-funcionários)
    - 3.25 [Redesenho de Usabilidade Mobile da Gestão de Viagens](#325-redesenho-de-usabilidade-mobile-da-gestão-de-viagens)
    - 3.26 [PaxFlow Risk Score™ (Diagnóstico Preditivo de Saúde Operacional 0 a 100)](#326-paxflow-risk-score-diagnóstico-preditivo-de-saúde-operacional-0-a-100)
+   - 3.27 [Next Trip Engine™ (Motor Preditivo de Recompra & Ciclo de Vida do Viajante)](#327-next-trip-engine-motor-preditivo-de-recompra--ciclo-de-vida-do-viajante)
 4. [Diferenciais Competitivos](#4-diferenciais-competitivos)
 5. [Arquitetura Tecnológica](#5-arquitetura-tecnológica)
 6. [Segurança e Conformidade](#6-segurança-e-conformidade)
@@ -517,6 +518,34 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
   - Exibido nos cards do Kanban do Dashboard, na tabela do Dashboard e no topo do modal **Gerenciar Viagem** (`EditTravelModal.ts`).
 - **Controle Administrativo Global**:
   - Administradores podem ativar/desativar o recurso (`habilitar_risk_score`), ajustar a janela de carência pré-embarque (padrão 60 dias) e o limite crítico de risco (padrão < 50 pontos) na aba *Automações* das Configurações.
+
+---
+
+### 3.27 Next Trip Engine™ (Motor Preditivo de Recompra & Ciclo de Vida do Viajante) [NEW / EM BREVE]
+
+**Motor de inteligência comercial preditiva** que analisa o histórico transacional do cliente (*quem viajou, para onde, quando, com quem, quanto gastou, notas de NPS e preferências*) para responder dinamicamente: *"Quais clientes da agência estão no momento ideal para comprar uma nova viagem?"*.
+
+- **Pontuação de Prontidão de Recompra (0 a 100)**: Avaliação em tempo real combinando 5 vetores essenciais:
+  1. **Sazonalidade Temporal (30%)**: Ciclicidade decorrida desde o último retorno (ex: ~11-13 meses para viagens anuais, ~5-6 meses para escapadas curtas).
+  2. **Satisfação (NPS 25%)**: Clientes Promotores (NPS 9-10) ganham impulso de prontidão; clientes neutros/detratores são congelados.
+  3. **Perfil de Destino & Ticket Médio (20%)**: Classificação por categorias de afinidade (Europa, Resorts/Praia, Disney/Família, Cruzeiros, Neve).
+  4. **Mês Habitual de Viagem (15%)**: Períodos históricos recorrentes de férias (Julho, Réveillon, Carnaval).
+  5. **Conformidade Operacional (10%)**: Ausência de reembolsos pendentes ou disputas ativas.
+- **Visualização por Clusters de Afinidade**:
+  - Exibido em um painel preditivo no Dashboard agrupando clientes em audiências acionáveis (ex: *🎯 4 clientes viajaram para Europa há ~12 meses*, *🏝️ 3 clientes com padrão de Resorts no Verão*, *🎂 5 aniversários de viagem este mês*).
+  - Exibição de badge dinâmico na **Ficha do Cliente** (`🎯 Prontidão de Recompra: 88/100`) e envio de notificações preditivas no **Inbox** para scores > 80/100.
+- **Ações Rápidas de 1-Clique**:
+  - `🎯 Criar Orçamento Preditivo`: Abre o formulário de novo orçamento com Cliente, Destino Recomendado e Temperatura *🔥 Quente* pré-carregados.
+  - `💬 Disparar WhatsApp Personalizado`: Abre o modal de mensagens com variáveis dinâmicas (`{primeiro_nome}`, `{ultimo_destino}`, `{proximo_ano}`) para envio instantâneo via DigiSac/WhatsApp Web.
+- **Gestão de Abordagem & Snooze de 30 Dias**:
+  - Ao atuar sobre a oportunidade (disparo de WhatsApp ou criação de orçamento), o status muda para *"Em Abordagem"* e entra em carência automática por 30 dias para evitar abordagens repetitivas. Se um novo orçamento for fechado, o ciclo de ciclo de vida é resetado para o novo embarque.
+- **Agrupamento Familiar**:
+  - Viagens anteriores com múltiplos passageiros (casais, famílias) são consolidadas no nome do **Titular/Comprador Principal** (*Família Silva — 4 passageiros*), evitando duplicidade de abordagens no mesmo núcleo familiar.
+- **Governança & Parâmetros Administrativos**:
+  - Consultores visualizam e atuam sobre as oportunidades dos seus próprios clientes titulares; Administradores possuem visão global de toda a agência.
+  - Administradores podem ajustar os parâmetros de sensibilidade (Janela de Sazonalidade, Nota mínima de NPS, Corte de Score e Dias de Snooze) na aba *Configurações -> Automações*.
+- **4 Modelos Padrão Nativos de WhatsApp**:
+  - Modelos nativos pré-carregados para *Aniversário de Viagem 12m*, *Resorts de Verão*, *Disney & Família* e *Recompra VIP Promotor NPS*.
 
 ---
 
