@@ -904,31 +904,26 @@ export class ClientesPage {
         
         <!-- Botão Voltar (Apenas Mobile) -->
         <div class="lg:hidden flex items-center mb-2">
-          <button id="btn-voltar-lista-mobile" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-black rounded-xl transition flex items-center gap-1.5 uppercase">
-            ← Voltar para Lista
-          </button>
-        </div>
-
-        <!-- Topo da Ficha: Nome & Botão Google Drive -->
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-5">
-          <div class="flex items-center gap-3">
-            <div class="w-12 h-12 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/40 text-indigo-600 dark:text-indigo-400 rounded-xl flex items-center justify-center font-bold text-lg shadow-inner">
+          <button id="btn-voltar-lista-mobile" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-black rounded-x        <!-- Topo da Ficha: Nome & Botão Google Drive -->
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-5">
+          <div class="flex items-start sm:items-center gap-3">
+            <div class="w-12 h-12 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/40 text-indigo-600 dark:text-indigo-400 rounded-2xl flex items-center justify-center font-black text-base shadow-sm shrink-0">
               ${isNew ? 'NC' : (c.nome || 'NC').substring(0,2).toUpperCase()}
             </div>
-            <div>
-              <h2 class="text-xl font-black text-slate-800 dark:text-slate-200 leading-snug tracking-tight">
+            <div class="min-w-0 flex-1">
+              <h2 class="text-xl font-black text-slate-800 dark:text-slate-100 leading-snug tracking-tight truncate">
                 ${isNew ? 'Novo Cliente / Passageiro' : c.nome}
               </h2>
-              <p class="text-xs text-slate-400 dark:text-slate-400 font-semibold flex items-center gap-1">
-                <span>Cadastro e Documentação</span>
-                ${c.codigoRef ? `&bull; <span class="font-mono text-indigo-650 dark:text-indigo-400 font-bold">${c.codigoRef}</span>` : ''}
-                ${!isNew ? `&bull; <span class="text-indigo-600 dark:text-indigo-400 font-bold">${c.email}</span>` : ''}
-              </p>
+              <div class="text-xs text-slate-500 dark:text-slate-400 font-semibold flex flex-wrap items-center gap-1.5 mt-0.5">
+                <span>Ficha e Documentação</span>
+                ${c.codigoRef ? `<span class="font-mono text-indigo-600 dark:text-indigo-400 font-bold px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-950/40 rounded border border-indigo-100 dark:border-indigo-900/30">${c.codigoRef}</span>` : ''}
+                ${!isNew && c.email ? `<span class="text-slate-400">&bull;</span><span class="text-indigo-600 dark:text-indigo-400 font-bold truncate">${c.email}</span>` : ''}
+              </div>
               ${!isNew && c.classificacoes && c.classificacoes.length > 0 ? `
-                <div class="flex flex-wrap gap-1.5 mt-1.5">
+                <div class="flex flex-wrap gap-1.5 mt-2">
                   ${c.classificacoes.map(tag => `
-                    <span class="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-md font-black text-[9px] uppercase tracking-wider border border-slate-200/50 dark:border-slate-800 flex items-center gap-0.5">
-                      📢 ${tag}
+                    <span class="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-md font-black text-[9px] uppercase tracking-wider border border-slate-200/60 dark:border-slate-700/60 flex items-center gap-1">
+                      <span>📢</span> ${tag}
                     </span>
                   `).join('')}
                 </div>
@@ -936,24 +931,23 @@ export class ClientesPage {
             </div>
           </div>
 
-          <!-- Botão Proeminente do Google Drive (Exibido apenas para clientes existentes) -->
+          <!-- Botões de Ação na Ficha -->
           ${isNew ? '' : `
-            <div class="flex flex-wrap items-center gap-2.5">
-              <button type="button" id="btn-cliente-whatsapp" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs tracking-wide rounded-xl shadow-md shadow-emerald-600/10 flex items-center justify-center gap-2 transition transform hover:-translate-y-0.5 uppercase">
+            <div class="flex flex-wrap items-center gap-2 shrink-0">
+              <button type="button" id="btn-cliente-whatsapp" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-md shadow-emerald-600/10 flex items-center justify-center gap-2 transition transform hover:-translate-y-0.5 uppercase">
                 <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.724-1.455L0 24zm6.59-4.846c1.6.95 3.197 1.451 4.777 1.451 5.51 0 9.997-4.493 10-10.008.002-2.673-1.037-5.186-2.93-7.079-1.892-1.893-4.401-2.934-7.078-2.934-5.518 0-10.007 4.493-10.01 10.01-.001 1.708.455 3.377 1.32 4.887L1.134 22.84l4.513-1.186zm11.23-7.925c-.297-.149-1.758-.868-2.03-.967-.273-.099-.471-.148-.669.149-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.568-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/></svg>
                 WhatsApp
               </button>
               ${c.googleDriveFolderUrl ? `
-                <button type="button" id="btn-view-passport-inline" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wide rounded-xl shadow-md shadow-indigo-600/10 flex items-center justify-center gap-2 transition transform hover:-translate-y-0.5 uppercase">
-                  <span class="text-lg">🔍</span> Ver Passaporte
+                <button type="button" id="btn-view-passport-inline" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-md shadow-indigo-600/10 flex items-center justify-center gap-1.5 transition transform hover:-translate-y-0.5 uppercase">
+                  <span>🔍</span> Ver Passaporte
                 </button>
-                <a href="${c.googleDriveFolderUrl}" target="_blank" class="px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-extrabold text-xs tracking-wide rounded-xl shadow-md shadow-emerald-600/10 flex items-center justify-center gap-2 transition transform hover:-translate-y-0.5 uppercase">
-                  <span class="text-lg">📁</span> Pasta no Drive
+                <a href="${c.googleDriveFolderUrl}" target="_blank" class="px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-md shadow-emerald-600/10 flex items-center justify-center gap-1.5 transition transform hover:-translate-y-0.5 uppercase">
+                  <span>📁</span> Drive
                 </a>
               ` : `
-                <span class="px-4 py-2 bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-400 rounded-lg text-xs font-semibold border border-slate-200/40 dark:border-slate-700/40 text-center">
-                  Sem pasta ativa no Drive
-                </span>
+                <span class="px-3.5 py-2 bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-400 rounded-xl text-xs font-semibold border border-slate-200/50 dark:border-slate-700/50 text-center">
+                  Sem pasta no Drive
               `}
             </div>
           `}
@@ -1223,10 +1217,10 @@ export class ClientesPage {
    */
   private render(): void {
     this.container.innerHTML = `
-      <div class="min-h-screen bg-slate-50/50 dark:bg-slate-950 flex flex-col font-sans transition-colors duration-200">
+      <div class="w-full flex flex-col font-sans transition-colors duration-200">
         
         <!-- Cabeçalho -->
-        <header class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 sticky top-0 z-30 px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 transition-colors duration-200">
+        <header class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 sticky top-0 z-30 px-6 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-colors duration-200">
           <div class="flex items-center gap-3">
             <img src="/logo.svg" alt="PaxFlow Logo" class="h-10 w-auto object-contain md:hidden" />
             <div>
@@ -1235,7 +1229,7 @@ export class ClientesPage {
             </div>
           </div>
           
-          <div class="flex flex-wrap items-center gap-3 w-full md:w-auto md:justify-end">
+          <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto justify-end">
             <!-- Botão de Ação Primária -->
             <button id="btn-novo-cliente" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-1.5 transition transform hover:-translate-y-0.5 uppercase shrink-0">
               <svg width="16" height="16" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
