@@ -314,7 +314,7 @@ class App {
 
     this.container.innerHTML = `
       ${bannerHtml}
-      <div class="min-h-screen flex flex-col md:flex-row bg-slate-50/50 dark:bg-slate-950 transition-colors duration-200">
+      <div class="min-h-screen w-full max-w-full overflow-x-hidden flex flex-col md:flex-row bg-slate-50/50 dark:bg-slate-950 transition-colors duration-200">
         
         <!-- Mobile Top Bar (Header com Suporte a Safe Area iOS) -->
         <header class="md:hidden bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800/60 px-4 pt-safe pb-3 flex items-center justify-between sticky top-0 z-40 shadow-sm transition-colors duration-200">
@@ -467,9 +467,9 @@ class App {
         </aside>
 
         <!-- Área Principal de Exibição de Conteúdo (Com Cabeçalho Global) -->
-        <div class="flex-1 flex flex-col overflow-hidden min-w-0 bg-slate-50/50 dark:bg-slate-950">
-          <div id="global-header-mount"></div>
-          <div id="page-content" class="flex-1 flex flex-col overflow-hidden min-w-0">
+        <div class="flex-1 flex flex-col overflow-x-hidden min-w-0 max-w-full bg-slate-50/50 dark:bg-slate-950">
+          <div id="global-header-mount" class="w-full max-w-full overflow-x-hidden"></div>
+          <div id="page-content" class="flex-1 flex flex-col overflow-x-hidden min-w-0 max-w-full">
             <!-- Injetado dinamicamente via router -->
           </div>
         </div>
