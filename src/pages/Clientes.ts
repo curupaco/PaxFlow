@@ -928,6 +928,14 @@ export class ClientesPage {
                   `).join('')}
                 </div>
               ` : ''}
+
+              ${!isNew && (c as any).viagens && (c as any).viagens.length > 0 ? `
+                <div class="mt-2.5">
+                  <span class="px-2.5 py-1 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 text-[10px] font-black uppercase tracking-wider inline-flex items-center gap-1">
+                    🎯 Next Trip Engine™: Recompra Recomendada
+                  </span>
+                </div>
+              ` : ''}
             </div>
           </div>
 

@@ -37,6 +37,32 @@ export class SendTemplateMessageModal {
       templates = templatesRes.data || [];
       settings = settingsRes.data;
 
+      // Fallback para templates nativos caso o banco não possua modelos cadastrados
+      if (!templates || templates.length === 0) {
+        templates = [
+          {
+            id: 'tpl-native-1',
+            titulo: '🎂 Aniversário de Viagem (~12 meses)',
+            conteudo: 'Olá {{cliente}}! Faz quase 1 ano da sua viagem para {{destino}}. Já iniciamos o planejamento para as próximas temporadas! Que tal conversarmos sobre suas próximas férias?'
+          },
+          {
+            id: 'tpl-native-2',
+            titulo: '🏝️ Resorts de Verão All-Inclusive',
+            conteudo: 'Olá {{cliente}}! O verão está chegando e lembramos da sua viagem incrível. Selecionamos resorts All-Inclusive fantásticos para este ano!'
+          },
+          {
+            id: 'tpl-native-3',
+            titulo: '🏰 Disney & Família',
+            conteudo: 'Olá {{cliente}}! As cotações da temporada Disney / Orlando já estão abertas com condições especiais para toda a família!'
+          },
+          {
+            id: 'tpl-native-4',
+            titulo: '🌟 Recompra VIP Promotor NPS',
+            conteudo: 'Olá {{cliente}}! Ficamos muito felizes com seu excelente feedback na última viagem. Como nosso cliente VIP, queremos apresentar opções exclusivas para seu próximo destino!'
+          }
+        ];
+      }
+
       // Buscar dados completos da viagem e consultor responsável, se houver viagemId
       if (options.viagemId) {
         const { data: vData } = await supabase

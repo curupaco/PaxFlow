@@ -85,8 +85,41 @@ export interface GlobalSettings {
     pilar4_roteiro: number;
     pilar5_cadastro: number;
   };
+  habilitar_next_trip_engine?: boolean;
+  habilitarNextTripEngine?: boolean;
+  next_trip_janela_sazonalidade_meses?: number;
+  nextTripJanelaSazonalidadeMeses?: number;
+  next_trip_nps_minimo?: number;
+  nextTripNpsMinimo?: number;
+  next_trip_corte_prontidao_alta?: number;
+  nextTripCorteProntidaoAlta?: number;
+  next_trip_snooze_dias?: number;
+  nextTripSnoozeDias?: number;
   createdAt?: string;
   updatedAt?: string;
+}
+
+/**
+ * Representa uma oportunidade de recompra identificada pelo Next Trip Engine.
+ */
+export interface NextTripOpportunity {
+  clienteId: string;
+  clienteNome: string;
+  clienteTelefone?: string;
+  clienteEmail?: string;
+  consultorId: string;
+  consultorNome: string;
+  scoreProntidao: number; // 0 a 100
+  nivelProntidao: 'alto' | 'medio' | 'baixo';
+  destinoRecomendado: string;
+  categoriaDestino: 'europa' | 'resort' | 'disney' | 'cruzeiro' | 'nacional' | 'geral';
+  ultimaViagemData: string;
+  ultimoDestino: string;
+  npsNota?: number;
+  motivoSugestao: string;
+  statusAbordagem: 'pendente' | 'em_abordagem' | 'snoozed';
+  snoozeAte?: string;
+  totalPassageirosGrupo?: number;
 }
 
 /**

@@ -2290,6 +2290,14 @@ export class ConfiguracoesPage {
       const carenciaRiskScoreVal = carenciaRiskScoreInput ? Number(carenciaRiskScoreInput.value) : (this.settings.risk_score_janela_carencia_dias || 60);
       const limiteCriticoRiskScoreVal = limiteCriticoRiskScoreInput ? Number(limiteCriticoRiskScoreInput.value) : (this.settings.risk_score_limite_critico || 50);
 
+      const habilitarNextTripInput = document.getElementById('input-habilitar-next-trip-engine') as HTMLInputElement;
+      const corteScoreNextTripInput = document.getElementById('input-next-trip-corte-score') as HTMLInputElement;
+      const snoozeDiasNextTripInput = document.getElementById('input-next-trip-snooze-dias') as HTMLInputElement;
+
+      const habilitarNextTripVal = habilitarNextTripInput ? habilitarNextTripInput.checked : (this.settings.habilitar_next_trip_engine !== false);
+      const corteScoreNextTripVal = corteScoreNextTripInput ? Number(corteScoreNextTripInput.value) : (this.settings.next_trip_corte_prontidao_alta || 75);
+      const snoozeDiasNextTripVal = snoozeDiasNextTripInput ? Number(snoozeDiasNextTripInput.value) : (this.settings.next_trip_snooze_dias || 30);
+
       const payload = {
         tempo_desistencia_orcamento_dias: tempoDesistenciaVal,
         sla_pre_embarque_dias: slaPreVal,
@@ -2299,7 +2307,10 @@ export class ConfiguracoesPage {
         antecedencia_risco_operacional_dias: antecedenciaRiscoVal,
         habilitar_risk_score: habilitarRiskScoreVal,
         risk_score_janela_carencia_dias: carenciaRiskScoreVal,
-        risk_score_limite_critico: limiteCriticoRiskScoreVal
+        risk_score_limite_critico: limiteCriticoRiskScoreVal,
+        habilitar_next_trip_engine: habilitarNextTripVal,
+        next_trip_corte_prontidao_alta: corteScoreNextTripVal,
+        next_trip_snooze_dias: snoozeDiasNextTripVal
       };
 
       try {

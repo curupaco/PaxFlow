@@ -2,6 +2,8 @@ import Sortable from 'sortablejs';
 import { supabase, getSessaoAtual, logoutConsultor } from '../services/supabase';
 import { Viagem, Cliente, ProdutoViagem, GlobalSettings, PerfilConsultor } from '../types';
 import { RiskScoreService } from '../services/riskScoreService';
+import { NextTripEngineService } from '../services/nextTripEngineService';
+import { NextTripDashboardWidget } from '../components/dashboard/NextTripDashboardWidget';
 import { DestinosAutocomplete } from '../components/DestinosAutocomplete';
 import { SendTemplateMessageModal } from '../components/dashboard/SendTemplateMessageModal';
 import { getAvatarSvg, mesclarAvataresLocais } from '../services/avatars';
@@ -1798,7 +1800,8 @@ export class Dashboard {
 
         <!-- CONTEÚDO PRINCIPAL (LISTA / TABELA) -->
         <main class="flex-1 p-6 flex flex-col min-h-0 bg-slate-50/50 dark:bg-slate-950 overflow-y-auto custom-scrollbar">
-          
+          <div id="next-trip-engine-mount"></div>
+          ${this.renderBalcaoSectionHTML()}
           ${filtrados.length === 0 ? `
             <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-12 text-center shadow-xs flex flex-col items-center justify-center space-y-4 flex-1">
               <div class="text-slate-300 dark:text-slate-700 text-5xl">✈️</div>
@@ -1840,6 +1843,77 @@ export class Dashboard {
 
     // 6. Vincular ouvintes de eventos
     this.setupUIEventListeners();
+
+    // 7. Renderizar o Next Trip Engine Widget
+    this.renderNextTripEngineWidget();
+  }
+
+  /**
+   * Renderiza o Next Trip Engine Widget (Painel Preditivo de Recompra)
+   */
+  private async renderNextTripEngineWidget(): Promise<void> {
+    const mount = this.container.querySelector('#next-trip-engine-mount') as HTMLElement;
+    if (!mount) return;
+
+    try {
+      const [{ data: clientesData }, { data: orcamentosData }] = await Promise.all([
+        supabase.from('clientes').select('*'),
+        supabase.from('orcamentos').select('*')
+      ]);
+
+      const clientes = clientesData || [];
+      const orcamentos = orcamentosData || [];
+
+      const oportunidades = NextTripEngineService.calculateOpportunities(
+        clientes,
+        this.viagens,
+        orcamentos,
+        this.settings,
+        this.user?.id,
+        this.perfil?.role
+      );
+
+      if (oportunidades.length === 0) {
+        mount.innerHTML = '';
+        return;
+      }
+
+      new NextTripDashboardWidget({
+        container: mount,
+        oportunidades,
+        onCriarOrcamento: (op) => {
+          this.openNovoOrcamentoPreditivo(op);
+        },
+        onDispararWhatsApp: (op) => {
+          this.openWhatsAppPreditivo(op);
+        },
+        onUpdate: () => {
+          this.renderNextTripEngineWidget();
+        }
+      });
+    } catch (e) {
+      console.warn('Erro ao carregar Next Trip Engine Widget:', e);
+    }
+  }
+
+  /**
+   * Abre o modal de Novo Orçamento pré-preenchido com dados da oportunidade preditiva
+   */
+  private openNovoOrcamentoPreditivo(op: any): void {
+    window.location.hash = `#orcamentos?novo=true&cliente_id=${op.clienteId}&destino=${encodeURIComponent(op.destinoRecomendado)}`;
+  }
+
+  /**
+   * Abre o modal de disparo de mensagem de WhatsApp pré-preenchido para o cliente
+   */
+  private openWhatsAppPreditivo(op: any): void {
+    SendTemplateMessageModal.open({
+      clienteNome: op.clienteNome,
+      clienteTelefone: op.clienteTelefone || '',
+      destino: op.destinoRecomendado,
+      consultorNome: op.consultorNome,
+      showToast: (msg, type) => this.showToast(msg, type)
+    });
   }
 
   /**
