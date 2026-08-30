@@ -1,6 +1,7 @@
 import { supabase } from '../../services/supabase';
 import { DestinosAutocomplete } from '../DestinosAutocomplete';
 import { CommentsService } from '../../services/comments';
+import { RiskScoreService } from '../../services/riskScoreService';
 import { showCustomConfirm } from '../../services/dialog';
 import { SendTemplateMessageModal } from './SendTemplateMessageModal';
 import { renderHelpIcon } from '../../utils/helpHelper';
@@ -43,6 +44,7 @@ export class EditTravelModal {
   private destAutocomplete: DestinosAutocomplete | null = null;
   private locConferenciasMap: { [locKey: string]: boolean } = {};
   private currentLoadedViagem: any = null;
+  private globalSettings: any = null;
 
   constructor(options: EditTravelModalOptions) {
     this.options = options;
@@ -66,6 +68,16 @@ export class EditTravelModal {
       }
     });
     
+    // Carrega configurações globais se ainda não carregadas
+    if (!this.globalSettings && !this.options.isFallbackMode) {
+      try {
+        const { data: sData } = await supabase.from('global_settings').select('*').limit(1).maybeSingle();
+        this.globalSettings = sData || null;
+      } catch (e) {
+        console.warn('Erro ao carregar global_settings no EditTravelModal:', e);
+      }
+    }
+
     // Carrega conferências do LOC
     this.locConferenciasMap = {};
     if (!this.options.isFallbackMode) {
@@ -363,6 +375,9 @@ export class EditTravelModal {
     const viagemProcessoConferido = !!v.processo_conferido;
     const isAdmin = this.options.perfil?.role === 'admin';
 
+    const risk = RiskScoreService.calculateTripRiskScore(v, v.cliente, v.produtos, this.globalSettings);
+    const showRiskScore = this.globalSettings?.habilitar_risk_score !== false;
+
     modalContent.innerHTML = `
       <div class="p-6">
         ${v._isCoPiloto ? `
@@ -384,6 +399,11 @@ export class EditTravelModal {
             <h3 class="text-base sm:text-lg font-black text-slate-800 dark:text-slate-100 flex flex-wrap items-center gap-1.5 font-sans">
               ✈️ Gerenciar Viagem ${renderHelpIcon('conferencia-viagem')}
               ${(v.codigoRef || v.codigo_ref) ? `<span class="ml-1 text-xs font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded border border-slate-200/50 dark:border-slate-700/50">${v.codigoRef || v.codigo_ref}</span>` : ''}
+              ${showRiskScore ? `
+                <button id="btn-modal-risk-score-header" class="ml-1 px-2.5 py-0.5 rounded-lg text-[10px] sm:text-xs font-black tracking-wider flex items-center gap-1 border shadow-xs transition transform hover:scale-105 cursor-pointer font-sans ${risk.badgeClass}" title="PaxFlow Risk Score™: ${risk.score}/100 (${risk.fraseStatus}) — Clique para abrir o diagnóstico de risco">
+                  <span>🛡️ Risk Score: ${risk.score}/100</span>
+                </button>
+              ` : ''}
             </h3>
             <p class="text-xs text-slate-400 dark:text-slate-400 font-semibold">Destino: <span class="font-bold text-slate-600 dark:text-slate-300">${v.destino}</span> &bull; Loc: <span class="font-bold text-slate-600 dark:text-slate-300">${v.codigo_localizador || 'Sem LOC'}</span></p>
           </div>
@@ -429,7 +449,7 @@ export class EditTravelModal {
           <!-- COLUNA DA ESQUERDA (Detalhes da Viagem e Cronograma) -->
           <div id="tab-detalhes-content" class="space-y-4 ${activeTab === 'produtos' ? 'hidden lg:block' : ''} ${this.selectedProductId ? 'lg:col-span-4' : 'lg:col-span-5'}">
             
-            <!-- Perfil do Responsável e SLA -->
+            <!-- Perfil do Responsável, SLA e Risk Score -->
             <div class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/50 dark:border-slate-800 flex-wrap gap-2">
               <div class="flex items-center gap-2">
                 <span class="text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider font-sans">Responsável:</span>
@@ -440,18 +460,29 @@ export class EditTravelModal {
                 </select>
               </div>
 
-              ${sla.alert ? `
-                <div class="flex items-center gap-1.5">
-                  <span class="text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider font-sans">Alerta SLA:</span>
-                  <span class="px-2.5 py-1 rounded-lg text-xs font-black tracking-wide animate-pulse border font-sans ${
-                    sla.type === 'pre-embarque' 
-                      ? 'bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 border-rose-100 dark:border-rose-900/55' 
-                      : 'bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-900/55'
-                  }">
-                    ⚠️ ${sla.text}
-                  </span>
-                </div>
-              ` : ''}
+              <div class="flex items-center gap-2 flex-wrap">
+                ${showRiskScore ? `
+                  <div class="flex items-center gap-1.5">
+                    <span class="text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider font-sans">Risk Score:</span>
+                    <button id="btn-modal-risk-score-panel" class="px-2.5 py-1 rounded-lg text-xs font-black tracking-wide border shadow-xs transition transform hover:scale-105 cursor-pointer font-sans ${risk.badgeClass}" title="PaxFlow Risk Score™: ${risk.score}/100 (${risk.fraseStatus}) — Clique para abrir o diagnóstico">
+                      <span>🛡️ ${risk.score}/100</span>
+                    </button>
+                  </div>
+                ` : ''}
+
+                ${sla.alert ? `
+                  <div class="flex items-center gap-1.5">
+                    <span class="text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider font-sans">Alerta SLA:</span>
+                    <span class="px-2.5 py-1 rounded-lg text-xs font-black tracking-wide animate-pulse border font-sans ${
+                      sla.type === 'pre-embarque' 
+                        ? 'bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 border-rose-100 dark:border-rose-900/55' 
+                        : 'bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-900/55'
+                    }">
+                      ⚠️ ${sla.text}
+                    </span>
+                  </div>
+                ` : ''}
+              </div>
             </div>
 
             <!-- Atalhos de Comunicação -->
@@ -673,6 +704,17 @@ export class EditTravelModal {
         this.options.showToast('Erro ao copiar link NPS.', 'error');
       });
     });
+
+    // Abrir Diagnóstico do PaxFlow Risk Score™
+    const handleOpenRisk = async () => {
+      const { RiskDiagnosisDrawer } = await import('../risk/RiskDiagnosisDrawer');
+      RiskDiagnosisDrawer.open(v.id, this.options.user, this.options.perfil, async () => {
+        await this.options.onUpdate();
+        await this.open(v.id);
+      });
+    };
+    document.getElementById('btn-modal-risk-score-header')?.addEventListener('click', handleOpenRisk);
+    document.getElementById('btn-modal-risk-score-panel')?.addEventListener('click', handleOpenRisk);
 
     // Toggle Processo Global (topo)
     const btnProcessoGlobal = document.getElementById('btn-processo-global');
