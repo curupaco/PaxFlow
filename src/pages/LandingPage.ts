@@ -324,7 +324,7 @@ export class LandingPage {
           <div class="pf-beam"></div>
           <span class="pf-rise inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/[0.06] border border-[#00e5a3]/40 text-[#00e5a3] font-bold text-[11px] uppercase tracking-widest mb-8 shadow-lg shadow-cyan-500/10">
             <span class="w-2 h-2 rounded-full bg-[#00e5a3] animate-pulse"></span>
-            📱 100% PWA &amp; Mobile Nativo (iOS &amp; Android) | CRM &amp; Pós-Venda em Turismo
+            🚀 Gestão Operacional &amp; Pós-Venda para Agências de Turismo
           </span>
 
           <!-- Logo grande centralizado em card de bússola -->
@@ -345,11 +345,11 @@ export class LandingPage {
           <h1 class="pf-hero-headline pf-rise-2 text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight mb-6 max-w-5xl">
             <span class="pf-shimmer-text">Pax</span><span class="bg-gradient-to-r from-[#00a8f5] via-[#00e5a3] to-[#f5af19] bg-clip-text text-transparent pf-animated-gradient">Flow</span>
             <span class="block mt-5 text-xl sm:text-3xl md:text-4xl font-semibold text-slate-100">A operação da sua agência de viagens</span>
-            <span class="block mt-1.5 text-xl sm:text-3xl md:text-4xl font-semibold bg-gradient-to-r from-fuchsia-500 via-rose-500 to-amber-500 bg-clip-text text-transparent pf-animated-gradient">no computador e no seu celular</span>
+            <span class="block mt-1.5 text-xl sm:text-3xl md:text-4xl font-semibold bg-gradient-to-r from-fuchsia-500 via-rose-500 to-amber-500 bg-clip-text text-transparent pf-animated-gradient">do orçamento ao pós-venda</span>
           </h1>
 
           <p class="pf-rise-3 text-base md:text-xl text-slate-300 max-w-2xl mb-10 leading-relaxed font-medium">
-            Diga adeus à desorganização. Centralize pós-vendas, passaportes, vistos, reembolsos, escalas e itinerários em um web-app vivo no computador ou direto no smartphone (iOS & Android) com notificações Push nativas — sem planilhas.
+            Diga adeus à desorganização. Centralize pós-vendas, passaportes, vistos, reembolsos, escalas e relatórios gerenciais em uma plataforma completa — com suporte PWA no celular e notificações Push nativas em tempo real.
           </p>
 
           <div class="pf-rise-4 flex flex-col sm:flex-row items-center gap-4 mb-14 w-full justify-center">
@@ -365,8 +365,8 @@ export class LandingPage {
             <span class="flex items-center gap-2">
               <span class="text-[#f5af19] text-xs">★★★★★</span> Adotado por agências de viagens
             </span>
-            <span class="flex items-center gap-2 text-cyan-400 font-extrabold"><span class="text-sm">📱</span> App PWA no Celular (iOS/Android)</span>
-            <span class="flex items-center gap-2 text-amber-400 font-extrabold"><span class="text-sm">🔔</span> Push Notifications Nativas</span>
+            <span class="flex items-center gap-2 text-cyan-400 font-extrabold"><span class="text-sm">💻</span> Plataforma Web Completa</span>
+            <span class="flex items-center gap-2 text-amber-400 font-extrabold"><span class="text-sm">📱</span> App PWA Mobile com Push</span>
             <span class="flex items-center gap-2 opacity-80"><span class="text-[#00e5a3]">✓</span> Setup em minutos</span>
           </div>
 
@@ -374,7 +374,7 @@ export class LandingPage {
           <div class="pf-rise-5 grid grid-cols-2 md:grid-cols-4 gap-4 w-full max-w-4xl mx-auto mb-16 p-6 rounded-3xl bg-white/[0.04] border border-white/10 backdrop-blur-md pf-glow">
             <div class="text-center p-3 rounded-2xl bg-gradient-to-b from-[#0052d4]/20 to-transparent"><span class="pf-num block text-3xl font-black text-[#00a8f5]" data-count="100" data-suffix="%">0%</span><span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Foco em Turismo</span></div>
             <div class="text-center p-3 rounded-2xl bg-gradient-to-b from-[#f12711]/20 to-transparent"><span class="pf-num block text-3xl font-black text-[#f5af19]" data-count="180" data-suffix=" dias">0 dias</span><span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Alerta Vistos &amp; Passaporte</span></div>
-            <div class="text-center p-3 rounded-2xl bg-gradient-to-b from-[#00e5a3]/20 to-transparent"><span class="block text-3xl font-black text-[#00e5a3]">Mobile &amp; PWA</span><span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">App Celular iOS / Android</span></div>
+            <div class="text-center p-3 rounded-2xl bg-gradient-to-b from-[#00e5a3]/20 to-transparent"><span class="block text-3xl font-black text-[#00e5a3]">PWA Mobile</span><span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Com Notificações Push</span></div>
             <div class="text-center p-3 rounded-2xl bg-gradient-to-b from-fuchsia-600/20 to-transparent"><span class="block text-3xl font-black text-fuchsia-400">WhatsApp SLA</span><span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Hub Integrado</span></div>
           </div>
 
@@ -561,21 +561,21 @@ export class LandingPage {
           </div>
         </section>
 
-        <!-- ===== DIFERENCIAL EXCLUSIVO MOBILE & PWA ===== -->
+        <!-- ===== MOBILIDADE & PWA COM PUSH ===== -->
         <section id="mobile-pwa" class="relative z-10 w-full py-20 px-6 border-t border-white/10 bg-gradient-to-b from-[#06070f] via-[#09152b]/60 to-[#06070f]">
           <div class="pf-zone max-w-6xl mx-auto space-y-12">
             <div class="text-center max-w-3xl mx-auto space-y-4">
               <span class="px-4 py-1.5 rounded-full bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 text-[10px] font-black uppercase tracking-widest">
-                Diferencial Exclusivo PaxFlow
+                Mobilidade &amp; Notificações Push
               </span>
               <h2 class="text-3xl md:text-5xl font-black tracking-tight leading-tight text-white">
-                Sua Agência não para no escritório.<br class="hidden md:block" />
+                Sua agência de viagens sempre conectada.<br class="hidden md:block" />
                 <span class="text-cyan-400">
-                  Gestão Mobile 100% Nativa &amp; PWA
+                  Versão PWA para Mobile com Notificações
                 </span>
               </h2>
               <p class="text-sm text-slate-300 font-medium max-w-2xl mx-auto leading-relaxed">
-                Leve o PaxFlow no bolso. Instale direto na tela inicial do seu celular (iOS e Android) sem depender de lojas de aplicativos, com atualizações instantâneas, experiência fluida e notificações Push em tempo real.
+                Opere com máxima velocidade no computador e acompanhe alertas instantâneos de vistos, passaportes e tarefas diretamente no seu celular com o aplicativo PWA nativo do PaxFlow.
               </p>
             </div>
 
@@ -726,7 +726,7 @@ export class LandingPage {
             </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div data-reveal="left" style="transition-delay:.05s" class="group p-7 rounded-3xl bg-gradient-to-b from-emerald-500/15 to-white/[0.02] border border-emerald-500/25 hover:scale-[1.03] hover:border-emerald-400/50 transition-transform"><div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 text-white flex items-center justify-center mb-4 shadow-lg pf-tilt"><svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.205 1.654z"/></svg></div><h3 class="text-xl font-black text-white">Digisac / WhatsApp</h3><p class="text-sm text-slate-400 font-medium mt-1 leading-relaxed">Atendimento com histórico split-screen, envio de modelos e notificações automáticas de embarque e NPS.</p></div>
-              <div data-reveal="up" style="transition-delay:.15s" class="group p-7 rounded-3xl bg-gradient-to-b from-[#00a8f5]/15 to-white/[0.02] border border-[#00a8f5]/25 hover:scale-[1.03] hover:border-[#00a8f5]/50 transition-transform"><div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#0052d4] to-[#00a8f5] text-white flex items-center justify-center mb-4 shadow-lg pf-tilt" style="animation-delay:.5s"><svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg></div><h3 class="text-xl font-black text-white">Companhias Aéreas</h3><p class="text-sm text-slate-400 font-medium mt-1 leading-relaxed">Conciliação de reembolsos e créditos, localizadores (LOC) e monitoramento de SLAs de estorno.</p></div>
+              <div data-reveal="up" style="transition-delay:.15s" class="group p-7 rounded-3xl bg-gradient-to-b from-[#00a8f5]/15 to-white/[0.02] border border-[#00a8f5]/25 hover:scale-[1.03] hover:border-[#00a8f5]/50 transition-transform"><div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#0052d4] to-[#00a8f5] text-white flex items-center justify-center mb-4 shadow-lg pf-tilt" style="animation-delay:.5s"><svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg></div><h3 class="text-xl font-black text-white">Companhias Aéreas & PNR ⚡</h3><p class="text-sm text-slate-400 font-medium mt-1 leading-relaxed">Importador 1-clique de bilhetes (Gol, Azul, LATAM, Amadeus, Sabre), conciliação de LOCs e alertas preditivos de embarque.</p></div>
               <div data-reveal="right" style="transition-delay:.25s" class="group p-7 rounded-3xl bg-gradient-to-b from-[#f5af19]/15 to-white/[0.02] border border-[#f5af19]/25 hover:scale-[1.03] hover:border-[#f5af19]/50 transition-transform"><div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#f5af19] to-[#f12711] text-white flex items-center justify-center mb-4 shadow-lg pf-tilt" style="animation-delay:1s"><svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg></div><h3 class="text-xl font-black text-white">Upload & Documentos</h3><p class="text-sm text-slate-400 font-medium mt-1 leading-relaxed">Armazenamento seguro por cliente no Supabase Storage com links de acesso controlados.</p></div>
             </div>
           </div>

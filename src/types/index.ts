@@ -70,6 +70,8 @@ export interface GlobalSettings {
   permitirConsultorCriarViagem?: boolean;
   copiloto_ativo?: boolean;
   copilotoAtivo?: boolean;
+  antecedencia_risco_operacional_dias?: number;
+  antecedenciaRiscoOperacionalDias?: number;
   createdAt?: string;
   updatedAt?: string;
 }

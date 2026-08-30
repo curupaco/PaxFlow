@@ -2236,6 +2236,16 @@ export class ConfiguracoesPage {
                   </div>
                 </div>
 
+                <!-- Algoritmo Preditivo & Riscos Operacionais -->
+                <div class="border-t border-slate-100 dark:border-slate-800 pt-5">
+                  <h3 class="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-3">🚨 Algoritmo Preditivo & Risco Operacional</h3>
+                  <div>
+                    <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Antecedência de Embarque para Alerta de Risco (Dias) *</label>
+                    <input id="input-antecedencia-risco" type="number" min="1" max="90" required value="${this.settings.antecedencia_risco_operacional_dias || this.settings.antecedenciaRiscoOperacionalDias || 15}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-bold" />
+                    <p class="text-[10px] text-slate-400 dark:text-slate-400 mt-1.5 font-medium leading-relaxed">Janela de dias antes do embarque para auditarmos pendências de conferência financeira, passaportes e vouchers.</p>
+                  </div>
+                </div>
+
                 <div class="border-t border-slate-100 dark:border-slate-800 pt-5 flex justify-end">
                   <button type="submit" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-md transition">
                     Salvar Automações
@@ -2276,13 +2286,15 @@ export class ConfiguracoesPage {
       const slaPosVal = Number((document.getElementById('input-sla-pos') as HTMLInputElement).value);
       const enviarNpsVal = (document.getElementById('input-enviar-nps') as HTMLInputElement).checked;
       const prazoReembolsoVal = Number((document.getElementById('input-prazo-reembolso') as HTMLInputElement).value);
+      const antecedenciaRiscoVal = Number((document.getElementById('input-antecedencia-risco') as HTMLInputElement).value);
 
       const payload = {
         tempo_desistencia_orcamento_dias: tempoDesistenciaVal,
         sla_pre_embarque_dias: slaPreVal,
         sla_pos_viagem_dias: slaPosVal,
         enviar_nps_automatico: enviarNpsVal,
-        prazo_reembolso_dias: prazoReembolsoVal
+        prazo_reembolso_dias: prazoReembolsoVal,
+        antecedencia_risco_operacional_dias: antecedenciaRiscoVal
       };
 
       try {

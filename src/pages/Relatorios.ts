@@ -5,6 +5,8 @@ import { formatBrDateToIso } from '../utils/masks';
 import { obterProgressoNivel, BADGE_DEFINITIONS } from '../services/gamification';
 import { EditTravelModal } from '../components/dashboard/EditTravelModal';
 import { CommentsService } from '../services/comments';
+import { SendTemplateMessageModal } from '../components/dashboard/SendTemplateMessageModal';
+import { confirmUnsavedChanges } from '../components/common/UnsavedChangesModal';
 
 if (typeof document !== 'undefined') {
   const style = document.createElement('style');
@@ -52,7 +54,7 @@ export class RelatoriosPage {
   private container: HTMLElement;
   private user: any = null;
   private perfil: PerfilConsultor | null = null;
-  private activeTab: 'desempenho' | 'prazos' | 'faturamento' | 'perdas' | 'previsoes' | 'fornecedores' | 'origens' | 'auditoria' | 'posvenda' | 'gamificacao' | 'embarques' = 'desempenho';
+  private activeTab: 'desempenho' | 'prazos' | 'faturamento' | 'perdas' | 'previsoes' | 'fornecedores' | 'origens' | 'auditoria' | 'posvenda' | 'gamificacao' | 'embarques' | 'riscopreditivo' = 'desempenho';
 
   // Controle de estado para grupos colapsáveis da barra lateral
   private collapsedGroups: { [key: string]: boolean } = {
@@ -461,6 +463,9 @@ export class RelatoriosPage {
                 <button data-tab="previsoes" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 ${this.activeTab === 'previsoes' ? 'report-tab-active' : 'text-slate-500'}">
                   🔮 Previsões Preditivas
                 </button>
+                <button data-tab="riscopreditivo" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 ${this.activeTab === 'riscopreditivo' ? 'report-tab-active' : 'text-slate-500'}">
+                  🚨 Previsão de Risco & Churn
+                </button>
               </div>
             </div>
 
@@ -564,6 +569,8 @@ export class RelatoriosPage {
         return this.renderEmbarques(data);
       case 'gamificacao':
         return this.renderGamificacao(data);
+      case 'riscopreditivo':
+        return this.renderRiscoPreditivo(data);
       default:
         return '';
     }
@@ -2478,6 +2485,62 @@ export class RelatoriosPage {
         });
       });
     }
+
+    // Ouvintes para o Painel Preditivo de Risco
+    document.querySelectorAll('.btn-risk-wa').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const phone = btn.getAttribute('data-phone') || '';
+        const name = btn.getAttribute('data-name') || 'Cliente';
+        const msg = encodeURIComponent(`Olá ${name}, tudo bem? Estou passando para alinhar os detalhes da sua proposta na agência...`);
+        window.open(`https://wa.me/55${phone.replace(/\D/g, '')}?text=${msg}`, '_blank');
+      });
+    });
+
+    document.querySelectorAll('.btn-risk-remind').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const title = btn.getAttribute('data-title') || 'Acompanhamento de Risco';
+        const consultorId = btn.getAttribute('data-consultor') || this.user.id;
+        try {
+          await supabase.from('lembretes').insert({
+            title: `🚨 RISCO: ${title}`,
+            consultor_id: consultorId,
+            status: 'PENDENTE',
+            prioridade: 'URGENTE',
+            created_at: new Date().toISOString()
+          });
+          this.showToast('Lembrete urgente de risco criado no Inbox com sucesso!', 'success');
+        } catch (err: any) {
+          this.showToast('Erro ao criar lembrete de risco.', 'error', err);
+        }
+      });
+    });
+
+    document.querySelectorAll('.btn-risk-edit').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const tripId = btn.getAttribute('data-trip-id');
+        if (tripId) {
+          const editModal = new EditTravelModal({
+            perfil: this.perfil,
+            consultores: this.consultores,
+            tiposProduto: this.tiposProduto,
+            viagens: this.viagens,
+            isFallbackMode: false,
+            user: this.user,
+            onUpdate: async () => {
+              await this.loadData();
+              this.render();
+              this.setupEventListeners();
+            },
+            showToast: (m, t, err) => this.showToast(m, t, err),
+            checkSLA: () => ({ alert: false, type: null, text: '' })
+          });
+          await editModal.open(tripId, 'detalhes');
+        }
+      });
+    });
   }
 
   private showToast(message: string, type: 'success' | 'error' = 'success', err?: any): void {
@@ -2874,6 +2937,266 @@ export class RelatoriosPage {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  }
+
+  /**
+   * VIEW: Painel Preditivo de Risco & Churn (Item 4.5)
+   */
+  private renderRiscoPreditivo(data: any): string {
+    const agora = new Date();
+    const antecedenciaDias = this.prazoReembolsoDias || 15; // Dias para embarque em risco
+
+    // 1. Risco Comercial (Orçamentos)
+    const orcamentosAtivos = data.orcamentos.filter((o: any) => o.status !== 'CONCLUIDO');
+    const orcamentosEmRisco: any[] = [];
+
+    orcamentosAtivos.forEach((o: any) => {
+      const updatedDate = new Date(o.updated_at || o.created_at || Date.now());
+      const diffHours = (agora.getTime() - updatedDate.getTime()) / (1000 * 60 * 60);
+      const temp = (o.temperatura || o.lead_temperatura || 'QUENTE').toUpperCase();
+      const valor = Number(o.valor_total || o.valorTotal || 0);
+
+      let emRisco = false;
+      let nivelRisco = 'BAIXO';
+      let motivoRisco = '';
+
+      if (temp === 'QUENTE' && diffHours >= 48) {
+        emRisco = true;
+        nivelRisco = 'ALTO';
+        motivoRisco = `Lead Quente sem contato há ${Math.floor(diffHours / 24)}d (${Math.floor(diffHours)}h)`;
+      } else if (temp === 'MORNO' && diffHours >= 120) {
+        emRisco = true;
+        nivelRisco = 'MÉDIO';
+        motivoRisco = `Lead Morno estagnado há ${Math.floor(diffHours / 24)} dias`;
+      } else if (temp === 'FRIO' && diffHours >= 240) {
+        emRisco = true;
+        nivelRisco = 'BAIXO';
+        motivoRisco = `Lead Frio sem interação há ${Math.floor(diffHours / 24)} dias`;
+      }
+
+      if (emRisco) {
+        const consultor = this.consultores.find((c: any) => c.id === (o.consultor_id || o.consultorId));
+        orcamentosEmRisco.push({
+          ...o,
+          diffHours,
+          nivelRisco,
+          motivoRisco,
+          valor,
+          consultorNome: consultor?.nome || 'Consultor'
+        });
+      }
+    });
+
+    orcamentosEmRisco.sort((a, b) => b.valor - a.valor);
+
+    // 2. Risco Operacional (Viagens Fechadas)
+    const viagensEmRisco: any[] = [];
+
+    data.viagens.forEach((v: any) => {
+      if (!v.data_saida && !v.dataSaida) return;
+      const dataSaida = new Date(v.data_saida || v.dataSaida);
+      const diffDiasEmbarque = Math.ceil((dataSaida.getTime() - agora.getTime()) / (1000 * 60 * 60 * 24));
+
+      if (diffDiasEmbarque >= 0 && diffDiasEmbarque <= antecedenciaDias) {
+        const pendencias: string[] = [];
+
+        // Inconsistência 1: LOC sem conferência financeira ou saldo aberto
+        const hasOpenLoc = (v.produtos || []).some((p: any) => {
+          const loc = (p.codigo_reserva || p.codigoReserva || '').trim().toUpperCase();
+          const conf = (data.locConferencias || []).find((c: any) => c.codigo_localizador === loc);
+          return !conf || !conf.conferido;
+        });
+        if (hasOpenLoc) pendencias.push('LOC sem conferência financeira');
+
+        // Inconsistência 2: Passaporte/visto expirando
+        if (v.cliente?.passaporte_validade) {
+          const validade = new Date(v.cliente.passaporte_validade);
+          const diffSla = Math.ceil((validade.getTime() - dataSaida.getTime()) / (1000 * 60 * 60 * 24));
+          if (diffSla < 180) pendencias.push(`Passaporte vence em SLA crítico (${diffSla}d)`);
+        }
+
+        // Inconsistência 3: Sem vouchers salvos
+        if (!v.produtos || v.produtos.length === 0) {
+          pendencias.push('Viagem sem produtos/vouchers salvos');
+        }
+
+        if (pendencias.length > 0) {
+          viagensEmRisco.push({
+            ...v,
+            diffDiasEmbarque,
+            pendencias,
+            consultorNome: v.consultor?.nome || 'Consultor'
+          });
+        }
+      }
+    });
+
+    const ticketRiscoTotal = orcamentosEmRisco.reduce((s, o) => s + o.valor, 0);
+
+    return `
+      <div class="space-y-6 animate-fade-in">
+        
+        <!-- Header banner -->
+        <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border border-indigo-500/30 rounded-2xl p-6 text-white shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div>
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/20 border border-amber-500/40 text-amber-300 font-extrabold text-[10px] uppercase rounded-full tracking-wider mb-2">
+              🚨 Algoritmo Preditivo Ativo
+            </span>
+            <h2 class="text-xl font-black tracking-tight text-white font-style-normal">Painel de Previsão de Risco & Churn</h2>
+            <p class="text-xs text-slate-300 font-medium mt-1">Monitoramento ativo em tempo real de oportunidades comerciais esfriando e sinistros operacionais em viagens.</p>
+          </div>
+          <div class="flex items-center gap-4 shrink-0">
+            <div class="text-right">
+              <span class="block text-[10px] font-bold text-slate-400 uppercase">Ticket em Risco</span>
+              <span class="text-2xl font-black text-amber-400">R$ ${ticketRiscoTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- KPIs Preditivos -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-5 rounded-2xl shadow-sm">
+            <span class="text-[10px] font-black text-rose-500 uppercase tracking-wider block mb-1">Cotações em Risco Alto</span>
+            <span class="text-3xl font-black text-slate-800 dark:text-slate-100">${orcamentosEmRisco.filter(o => o.nivelRisco === 'ALTO').length}</span>
+            <span class="block text-xs text-slate-400 font-semibold mt-1">Leads quentes estagnados > 48h</span>
+          </div>
+
+          <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-5 rounded-2xl shadow-sm">
+            <span class="text-[10px] font-black text-amber-500 uppercase tracking-wider block mb-1">Cotações em Risco Médio/Baixo</span>
+            <span class="text-3xl font-black text-slate-800 dark:text-slate-100">${orcamentosEmRisco.filter(o => o.nivelRisco !== 'ALTO').length}</span>
+            <span class="block text-xs text-slate-400 font-semibold mt-1">Leads mornos e frios estagnados</span>
+          </div>
+
+          <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-5 rounded-2xl shadow-sm">
+            <span class="text-[10px] font-black text-indigo-500 uppercase tracking-wider block mb-1">Viagens com Risco no Embarque</span>
+            <span class="text-3xl font-black text-slate-800 dark:text-slate-100">${viagensEmRisco.length}</span>
+            <span class="block text-xs text-slate-400 font-semibold mt-1">Embarque nos próximos ${antecedenciaDias} dias com pendências</span>
+          </div>
+        </div>
+
+        <!-- Seção 1: Risco Comercial (Orçamentos Esfriando) -->
+        <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-base font-black text-slate-800 dark:text-slate-100 uppercase tracking-wide flex items-center gap-2 font-style-normal">
+              <span>📉</span> Cotações em Risco Comercial (${orcamentosEmRisco.length})
+            </h3>
+            <span class="text-xs font-semibold text-slate-400">Ordenados por valor de proposta</span>
+          </div>
+
+          ${orcamentosEmRisco.length === 0 ? `
+            <div class="p-8 text-center text-slate-400 text-xs font-semibold">
+              ✅ Nenhuma cotação em risco de desistência no momento. Excelente trabalho da equipe!
+            </div>
+          ` : `
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="border-b border-slate-200 dark:border-slate-800 text-[10px] font-bold uppercase text-slate-400 tracking-wider">
+                    <th class="py-3 px-3">Cliente / Orçamento</th>
+                    <th class="py-3 px-3">Temperatura</th>
+                    <th class="py-3 px-3">Inatividade</th>
+                    <th class="py-3 px-3">Valor Estimado</th>
+                    <th class="py-3 px-3">Consultor</th>
+                    <th class="py-3 px-3 text-right">Ações Rápidas</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 text-xs font-medium">
+                  ${orcamentosEmRisco.map(o => `
+                    <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition">
+                      <td class="py-3 px-3">
+                        <span class="font-bold text-slate-800 dark:text-slate-100 block">${o.cliente_nome || o.clienteNome || 'Cliente'}</span>
+                        <span class="text-[10px] text-slate-400 font-mono">${o.codigo_ref || 'ORÇ'} • ${o.destino || 'Destino'}</span>
+                      </td>
+                      <td class="py-3 px-3">
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${
+                          o.nivelRisco === 'ALTO' ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400' : 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400'
+                        }">
+                          ${o.temperatura || 'QUENTE'} (${o.nivelRisco})
+                        </span>
+                      </td>
+                      <td class="py-3 px-3 text-slate-500 font-semibold">${o.motivoRisco}</td>
+                      <td class="py-3 px-3 font-bold text-slate-800 dark:text-slate-200">R$ ${o.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                      <td class="py-3 px-3 text-slate-500">${o.consultorNome}</td>
+                      <td class="py-3 px-3 text-right">
+                        <div class="flex items-center justify-end gap-1.5">
+                          <button data-phone="${o.cliente_telefone || ''}" data-name="${o.cliente_nome || ''}" class="btn-risk-wa px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] rounded-lg transition shadow-sm" title="Disparar WhatsApp">
+                            💬 WhatsApp
+                          </button>
+                          <button data-title="${o.cliente_nome || 'Orçamento'} - ${o.destino || ''}" data-consultor="${o.consultor_id}" class="btn-risk-remind px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[10px] rounded-lg transition shadow-sm" title="Criar Lembrete Urgente">
+                            ⏰ Lembrete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          `}
+        </div>
+
+        <!-- Seção 2: Risco Operacional (Viagens Próximas do Embarque) -->
+        <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-base font-black text-slate-800 dark:text-slate-100 uppercase tracking-wide flex items-center gap-2 font-style-normal">
+              <span>✈️</span> Viagens com Risco Operacional no Embarque (${viagensEmRisco.length})
+            </h3>
+            <span class="text-xs font-semibold text-slate-400">Embarque nos próximos ${antecedenciaDias} dias</span>
+          </div>
+
+          ${viagensEmRisco.length === 0 ? `
+            <div class="p-8 text-center text-slate-400 text-xs font-semibold">
+              ✅ Todas as viagens próximas do embarque estão 100% conferidas e em conformidade!
+            </div>
+          ` : `
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="border-b border-slate-200 dark:border-slate-800 text-[10px] font-bold uppercase text-slate-400 tracking-wider">
+                    <th class="py-3 px-3">Passageiro / Viagem</th>
+                    <th class="py-3 px-3">Dias p/ Embarque</th>
+                    <th class="py-3 px-3">Inconsistências Encontradas</th>
+                    <th class="py-3 px-3">Consultor</th>
+                    <th class="py-3 px-3 text-right">Ações Rápidas</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 text-xs font-medium">
+                  ${viagensEmRisco.map(v => `
+                    <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition">
+                      <td class="py-3 px-3">
+                        <span class="font-bold text-slate-800 dark:text-slate-100 block">${v.cliente?.nome || 'Passageiro'}</span>
+                        <span class="text-[10px] text-slate-400 font-mono">${v.codigo_ref || 'VIA'} • ${v.destino}</span>
+                      </td>
+                      <td class="py-3 px-3">
+                        <span class="px-2.5 py-1 rounded-full text-[10px] font-black bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400 uppercase">
+                          ${v.diffDiasEmbarque} dias
+                        </span>
+                      </td>
+                      <td class="py-3 px-3 text-slate-600 dark:text-slate-300">
+                        <div class="flex flex-wrap gap-1">
+                          ${v.pendencias.map((p: string) => `
+                            <span class="px-2 py-0.5 bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400 border border-amber-200 dark:border-amber-900/40 text-[10px] font-bold rounded">⚠️ ${p}</span>
+                          `).join('')}
+                        </div>
+                      </td>
+                      <td class="py-3 px-3 text-slate-500">${v.consultorNome}</td>
+                      <td class="py-3 px-3 text-right">
+                        <div class="flex items-center justify-end gap-1.5">
+                          <button data-trip-id="${v.id}" class="btn-risk-edit px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-white font-bold text-[10px] rounded-lg transition shadow-sm" title="Abrir Ficha da Viagem">
+                            📝 Ver Viagem
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          `}
+        </div>
+
+      </div>
+    `;
   }
 
   private renderAuthError(msg: string): void {

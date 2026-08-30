@@ -29,6 +29,10 @@ export class ClientesPage {
   private mobileDetailOpen: boolean = false;
 
 
+  // Variáveis para seleção em massa e limpeza de recursos
+  private selectedClientIds: Set<string> = new Set();
+  private activeCleanups: (() => void)[] = [];
+
   // Variáveis para paginação infinita
   private paginaAtual: number = 0;
   private limitePagina: number = 30;
@@ -74,6 +78,11 @@ export class ClientesPage {
    * Limpa ouvintes de eventos globais ao desmontar a página
    */
   public destroy(): void {
+    this.activeCleanups.forEach(fn => {
+      try { fn(); } catch (e) { console.error('Erro ao executar cleanup:', e); }
+    });
+    this.activeCleanups = [];
+    this.selectedClientIds.clear();
   }
 
   /**
@@ -223,11 +232,13 @@ export class ClientesPage {
           Nenhum cliente correspondente.
         </div>
       `;
+      this.renderBulkActionBar();
       return;
     }
 
     listaEl.innerHTML = filtrados.map(c => {
       const isSelected = this.clienteSelecionado?.id === c.id;
+      const isChecked = this.selectedClientIds.has(c.id);
       const passSla = this.checkPassaporteSLA(c.passaporteValidade);
       
       let borderSlaClass = 'border-l-4 border-l-slate-200 dark:border-l-slate-700';
@@ -241,22 +252,40 @@ export class ClientesPage {
         : (c.telefone && c.telefone.trim() !== '' && c.telefone !== 'NULL' ? c.telefone : '');
 
       return `
-        <button data-cliente-id="${c.id}" class="w-full text-left p-4 rounded-xl border ${
-          isSelected 
-            ? 'border-indigo-200 dark:border-indigo-500/30 bg-indigo-50/40 dark:bg-indigo-950/20 text-indigo-900 dark:text-indigo-200 shadow-sm' 
-            : 'border-slate-100 dark:border-slate-800/80 hover:border-slate-200 dark:hover:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50/50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
-        } transition flex items-center justify-between gap-3 ${borderSlaClass} group">
-          <div class="overflow-hidden">
-            <span class="block text-sm font-black truncate">
-              ${c.codigoRef ? `<span class="text-[10px] font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded mr-1.5">${c.codigoRef}</span>` : ''}
-              ${c.nome && c.nome !== 'NULL' ? c.nome : 'Cliente sem nome'}
-            </span>
-            <span class="block text-[11px] text-slate-400 dark:text-slate-400 font-semibold truncate group-hover:text-slate-500 dark:group-hover:text-slate-400 transition">${contatoExibido}</span>
-          </div>
-          <span class="text-xs">👤</span>
-        </button>
+        <div class="flex items-center gap-2 p-1 rounded-xl ${isSelected ? 'bg-indigo-50/30 dark:bg-indigo-950/20' : ''}">
+          <input type="checkbox" data-select-cliente-id="${c.id}" ${isChecked ? 'checked' : ''} class="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer shrink-0 ml-2" />
+          <button data-cliente-id="${c.id}" class="flex-1 text-left p-3.5 rounded-xl border ${
+            isSelected 
+              ? 'border-indigo-200 dark:border-indigo-500/30 bg-indigo-50/40 dark:bg-indigo-950/20 text-indigo-900 dark:text-indigo-200 shadow-sm' 
+              : 'border-slate-100 dark:border-slate-800/80 hover:border-slate-200 dark:hover:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50/50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
+          } transition flex items-center justify-between gap-3 ${borderSlaClass} group">
+            <div class="overflow-hidden">
+              <span class="block text-sm font-black truncate">
+                ${c.codigoRef ? `<span class="text-[10px] font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded mr-1.5">${c.codigoRef}</span>` : ''}
+                ${c.nome && c.nome !== 'NULL' ? c.nome : 'Cliente sem nome'}
+              </span>
+              <span class="block text-[11px] text-slate-400 dark:text-slate-400 font-semibold truncate group-hover:text-slate-500 dark:group-hover:text-slate-400 transition">${contatoExibido}</span>
+            </div>
+            <span class="text-xs">👤</span>
+          </button>
+        </div>
       `;
     }).join('');
+
+    // Adiciona o ouvinte em cada checkbox
+    listaEl.querySelectorAll('input[data-select-cliente-id]').forEach((chk: any) => {
+      chk.addEventListener('change', (e: Event) => {
+        const id = chk.getAttribute('data-select-cliente-id');
+        if (id) {
+          if ((e.target as HTMLInputElement).checked) {
+            this.selectedClientIds.add(id);
+          } else {
+            this.selectedClientIds.delete(id);
+          }
+          this.renderBulkActionBar();
+        }
+      });
+    });
 
     // Adiciona o ouvinte em cada botão da lista
     listaEl.querySelectorAll('button[data-cliente-id]').forEach(btn => {
@@ -265,6 +294,70 @@ export class ClientesPage {
         const selected = this.clientes.find(c => c.id === id) || null;
         this.selecionarCliente(selected);
       });
+    });
+
+    this.renderBulkActionBar();
+  }
+
+  /**
+   * Renderiza a barra flutuante de ações em massa para clientes selecionados
+   */
+  private renderBulkActionBar(): void {
+    let bar = document.getElementById('clientes-bulk-action-bar');
+    if (this.selectedClientIds.size === 0) {
+      if (bar) bar.remove();
+      return;
+    }
+
+    if (!bar) {
+      bar = document.createElement('div');
+      bar.id = 'clientes-bulk-action-bar';
+      bar.className = 'fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900/95 dark:bg-slate-800/95 backdrop-blur-md text-white px-5 py-3 rounded-2xl shadow-2xl border border-slate-700 flex items-center gap-4 animate-fadeInCard';
+      document.body.appendChild(bar);
+    }
+
+    bar.innerHTML = `
+      <div class="flex items-center gap-2 text-xs font-bold border-r border-slate-700 pr-4">
+        <span class="w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center font-black">${this.selectedClientIds.size}</span>
+        <span>Selecionados</span>
+      </div>
+      <button id="btn-bulk-tag" class="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-xl border border-slate-700 transition flex items-center gap-1.5">
+        <span>🏷️</span> Tag em Massa
+      </button>
+      <button id="btn-bulk-clear" class="px-3 py-1.5 text-xs text-slate-400 hover:text-white transition">
+        Limpar
+      </button>
+    `;
+
+    bar.querySelector('#btn-bulk-clear')?.addEventListener('click', () => {
+      this.selectedClientIds.clear();
+      this.filtrarERenderizarLista();
+    });
+
+    bar.querySelector('#btn-bulk-tag')?.addEventListener('click', async () => {
+      const tagInput = prompt('Digite a tag a ser adicionada aos clientes selecionados (ex: VIP, Disney2027):');
+      if (!tagInput || !tagInput.trim()) return;
+      const tagClean = tagInput.trim();
+
+      try {
+        const ids = Array.from(this.selectedClientIds);
+        for (const id of ids) {
+          const cli = this.clientes.find(c => c.id === id);
+          if (cli) {
+            const currentTags = cli.classificacoes || [];
+            if (!currentTags.includes(tagClean)) {
+              const updatedTags = [...currentTags, tagClean];
+              await supabase.from('clientes').update({ classificacoes: updatedTags }).eq('id', id);
+              cli.classificacoes = updatedTags;
+            }
+          }
+        }
+        this.showToast(`Tag "${tagClean}" adicionada a ${ids.length} clientes!`, 'success');
+        this.selectedClientIds.clear();
+        this.filtrarERenderizarLista();
+      } catch (err: any) {
+        this.showToast('Erro ao aplicar tags em massa.', 'error', err);
+      }
     });
   }
 

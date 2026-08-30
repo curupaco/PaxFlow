@@ -509,6 +509,34 @@ export const HELP_ITEMS: HelpItem[] = [
     label: 'Upload Seguro de Documentos (Google Drive Agência)',
     description: 'Armazenamento seguro e organizado de documentos, passaportes e vouchers.',
     details: 'Os arquivos e anexos de clientes são processados e enviados diretamente para o armazenamento seguro da agência.\n\n- Imagens enviadas passam por compilação e otimização local via Canvas API, garantindo arquivos leves e visualização rápida no Lightbox inline.'
+  },
+  {
+    id: 'importador-pnr-1clique',
+    modulo: 'viagens',
+    label: '⚡ Importador de PNR e E-mails de Emissão (1-Clique)',
+    description: 'Como importar reservas de voos e hotéis colando o e-mail de confirmação da cia aérea ou GDS.',
+    details: 'No formulário de inclusão de novos produtos da viagem, clique no botão "⚡ Importar PNR / E-mail". Cole o texto completo da confirmação recebida (Gol, Azul, LATAM, Amadeus, Sabre) e clique em "Processar Dados". O PaxFlow fará a leitura inteligente do Localizador (LOC), Fornecedor e trechos do voo, preenchendo os campos automaticamente sem digitação manual.'
+  },
+  {
+    id: 'painel-preditivo-risco',
+    modulo: 'processos',
+    label: '🚨 Painel Preditivo de Risco de Cancelamento & Churn',
+    description: 'Como a inteligência do PaxFlow detecta e previne perda de cotações e problemas no embarque.',
+    details: 'Disponível no menu Relatórios (aba "Previsão de Risco & Churn") e no Dashboard. O algoritmo varre o sistema 24/7 e sinaliza:\n- **Risco Comercial**: Orçamentos com leads esfriando por falta de contato (Quente > 48h, Morno > 5d, Frio > 10d), ordenados pelo ticket financeiro.\n- **Risco Operacional**: Viagens prestes a embarcar nos próximos N dias com pendências de conferência de LOC, passaportes a vencer no SLA ou ausência de vouchers.\n- **Ações de 1-Clique**: Cada card de risco possui botões rápidos para disparar mensagens no WhatsApp, agendar lembretes urgentes no Inbox ou abrir a ficha do cliente/viagem.'
+  },
+  {
+    id: 'acoes-massa-clientes',
+    modulo: 'clientes',
+    label: '🏷️ Seleção e Ações em Massa (Batch Operations)',
+    description: 'Como selecionar múltiplos clientes para aplicar tags ou enviar comunicados de uma só vez.',
+    details: 'Na página de Clientes, marque a caixa de seleção (checkbox) ao lado de cada cliente desejado. Uma barra de ações flutuante surgirá na parte inferior da tela permitindo aplicar etiquetas/tags em massa (ex: "VIP", "Disney 2027") para todo o grupo de 1 só vez.'
+  },
+  {
+    id: 'trava-alteracoes-nao-salvas',
+    modulo: 'processos',
+    label: '🛡️ Trava de Segurança para Alterações Não Salvas',
+    description: 'Proteção automática contra descarte acidental de formulários em edição.',
+    details: 'Ao preencher ou editar fichas de clientes, orçamentos ou viagens, o PaxFlow detecta se houver modificações pendentes. Caso tente fechar o modal ou sair da página sem salvar, o sistema exibirá uma tela de alerta solicitando sua confirmação antes de descartar os dados.'
   }
 ];
 

@@ -4,6 +4,8 @@ import { CommentsService } from '../../services/comments';
 import { showCustomConfirm } from '../../services/dialog';
 import { SendTemplateMessageModal } from './SendTemplateMessageModal';
 import { renderHelpIcon } from '../../utils/helpHelper';
+import { parsePnrText } from '../../utils/pnrParser';
+import { confirmUnsavedChanges } from '../common/UnsavedChangesModal';
 import {
   renderCurrencyInputHTML,
   renderDateInputHTML,
@@ -1227,6 +1229,63 @@ export class EditTravelModal {
         const nextIndex = listaTrechos.querySelectorAll('.trecho-item-row').length;
         this.addNewTrechoRow(listaTrechos, nextIndex);
       }
+    });
+
+    // Importador Rápido de PNR / E-mail de Emissão
+    document.getElementById('btn-importar-pnr')?.addEventListener('click', () => {
+      const pnrModalOverlay = document.createElement('div');
+      pnrModalOverlay.className = 'fixed inset-0 z-[99999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-fadeInCard';
+      pnrModalOverlay.innerHTML = `
+        <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 max-w-lg w-full p-6 text-slate-800 dark:text-slate-100">
+          <div class="flex items-center justify-between mb-4 border-b border-slate-100 dark:border-slate-800 pb-3">
+            <h3 class="text-base font-black text-slate-800 dark:text-slate-100 uppercase tracking-wide flex items-center gap-2">
+              <span>⚡</span> Importar PNR / E-mail de Emissão
+            </h3>
+            <button id="btn-close-pnr-modal" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-lg">✕</button>
+          </div>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">Cole abaixo o texto completo do e-mail de confirmação ou bilhete (Gol, Azul, LATAM, Amadeus, Sabre) para preencher o formulário automaticamente:</p>
+          <textarea id="pnr-raw-text-input" rows="6" placeholder="Cole aqui o texto do e-mail de emissão ou voucher..." class="w-full p-3 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 rounded-xl text-xs font-mono text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-amber-500 mb-4"></textarea>
+          <div class="flex items-center justify-end gap-3">
+            <button id="btn-cancel-pnr" class="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl">Cancelar</button>
+            <button id="btn-process-pnr" class="px-4 py-2 text-xs font-extrabold text-white bg-amber-500 hover:bg-amber-600 rounded-xl shadow-md flex items-center gap-1.5">
+              <span>⚡</span> Processar Dados
+            </button>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(pnrModalOverlay);
+
+      pnrModalOverlay.querySelector('#btn-close-pnr-modal')?.addEventListener('click', () => pnrModalOverlay.remove());
+      pnrModalOverlay.querySelector('#btn-cancel-pnr')?.addEventListener('click', () => pnrModalOverlay.remove());
+
+      pnrModalOverlay.querySelector('#btn-process-pnr')?.addEventListener('click', () => {
+        const textVal = (pnrModalOverlay.querySelector('#pnr-raw-text-input') as HTMLTextAreaElement)?.value || '';
+        if (!textVal.trim()) {
+          this.options.showToast('Cole o texto da confirmação de reserva.', 'error');
+          return;
+        }
+
+        const parsed = parsePnrText(textVal);
+        if (parsed.localizador) {
+          const locInput = document.getElementById('prod-reserva') as HTMLInputElement;
+          if (locInput) locInput.value = parsed.localizador;
+        }
+
+        if (parsed.fornecedor) {
+          const fornInput = document.getElementById('prod-fornecedor') as HTMLInputElement;
+          if (fornInput) fornInput.value = parsed.fornecedor;
+        }
+
+        const tipoSelect = document.getElementById('prod-tipo') as HTMLSelectElement;
+        if (tipoSelect) {
+          tipoSelect.value = 'AÉREO OPERADORA';
+          tipoSelect.dispatchEvent(new Event('change'));
+        }
+
+        pnrModalOverlay.remove();
+        this.options.showToast('Dados do PNR importados no formulário com sucesso!', 'success');
+      });
     });
 
     // Datas adicionais dinâmicas
