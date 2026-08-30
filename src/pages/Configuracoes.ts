@@ -109,7 +109,7 @@ export class ConfiguracoesPage {
   private perfil: PerfilConsultor | null = null;
   private settings: GlobalSettings | null = null;
   private consultores: PerfilConsultor[] = [];
-  private activeTab: 'geral' | 'consultores' | 'importacoes' | 'automacoes' = 'geral';
+  private activeTab: 'branding' | 'automacoes' | 'integracoes' | 'consultores' | 'importacoes' = 'branding';
 
   // Propriedades do estado de importação de CSV
   private parsedHeaders: string[] = [];
@@ -334,370 +334,447 @@ export class ConfiguracoesPage {
   /**
    * Altera a aba ativa e re-renderiza o componente
    */
-  private switchTab(tab: 'geral' | 'consultores' | 'importacoes' | 'automacoes'): void {
+  private switchTab(tab: 'branding' | 'automacoes' | 'integracoes' | 'consultores' | 'importacoes'): void {
     this.activeTab = tab;
     this.render();
     this.setupEventListeners();
   }
 
   /**
-   * Associa os eventos gerais de salvamento e login com o Google
+   * Associa os eventos da barra lateral e dos formulários por aba
    */
   private setupEventListeners(): void {
-    // Configura os botões das abas
-    document.getElementById('tab-geral-btn')?.addEventListener('click', () => this.switchTab('geral'));
+    // Configura os botões da barra lateral Master-Detail
+    document.getElementById('tab-branding-btn')?.addEventListener('click', () => this.switchTab('branding'));
+    document.getElementById('tab-automacoes-btn')?.addEventListener('click', () => this.switchTab('automacoes'));
+    document.getElementById('tab-integracoes-btn')?.addEventListener('click', () => this.switchTab('integracoes'));
     document.getElementById('tab-consultores-btn')?.addEventListener('click', () => this.switchTab('consultores'));
     document.getElementById('tab-importacoes-btn')?.addEventListener('click', () => this.switchTab('importacoes'));
-    document.getElementById('tab-automacoes-btn')?.addEventListener('click', () => this.switchTab('automacoes'));
 
-    if (this.activeTab === 'importacoes') {
+    if (this.activeTab === 'branding') {
+      this.setupBrandingEvents();
+    } else if (this.activeTab === 'automacoes') {
+      this.setupAutomacoesEvents();
+    } else if (this.activeTab === 'integracoes') {
+      this.setupIntegracoesEvents();
+    } else if (this.activeTab === 'consultores') {
+      this.setupConsultoresEvents();
+    } else if (this.activeTab === 'importacoes') {
       this.setupImportacoesEvents();
     }
+  }
 
-    if (this.activeTab === 'automacoes') {
-      this.setupAutomacoesEvents();
-    }
+  /**
+   * Eventos da Aba 1: Identidade & Marca
+   */
+  private setupBrandingEvents(): void {
+    const form = document.getElementById('form-config-branding') as HTMLFormElement;
+    setupFormValidation('form-config-branding', [
+      { id: 'input-email-suporte', type: 'email' }
+    ]);
+    
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!this.settings) return;
 
-    if (this.activeTab === 'geral') {
-      const form = document.getElementById('form-configuracoes') as HTMLFormElement;
-      setupFormValidation('form-configuracoes', [
-        { id: 'input-email-suporte', type: 'email' }
-      ]);
-      form?.addEventListener('submit', async (e) => {
-        e.preventDefault();
+      const agencyNameVal = (document.getElementById('input-agency-name') as HTMLInputElement).value;
+      const emailSuporteVal = (document.getElementById('input-email-suporte') as HTMLInputElement).value;
+      const taxaVal = Number((document.getElementById('input-taxa') as HTMLInputElement).value);
+      const limiteUploadVal = Number((document.getElementById('input-limite-upload') as HTMLInputElement).value);
+      const primaryColorVal = (document.getElementById('input-agency-primary-color') as HTMLInputElement).value;
+      const logoUrlVal = (document.getElementById('input-agency-logo-url') as HTMLInputElement).value;
+      const copilotoAtivoVal = (document.getElementById('input-copiloto-ativo') as HTMLInputElement)?.checked ?? true;
 
-        if (!this.settings) return;
+      const payload = {
+        agency_name: agencyNameVal,
+        email_suporte: emailSuporteVal,
+        taxa_cancelamento_padrao: taxaVal,
+        limite_upload_mb: limiteUploadVal,
+        agency_primary_color: primaryColorVal,
+        agency_logo_url: logoUrlVal,
+        copiloto_ativo: copilotoAtivoVal
+      };
 
-        const agencyNameVal = (document.getElementById('input-agency-name') as HTMLInputElement).value;
-        const emailSuporteVal = (document.getElementById('input-email-suporte') as HTMLInputElement).value;
-        const taxaVal = Number((document.getElementById('input-taxa') as HTMLInputElement).value);
-        const limiteUploadVal = Number((document.getElementById('input-limite-upload') as HTMLInputElement).value);
-        const primaryColorVal = (document.getElementById('input-agency-primary-color') as HTMLInputElement).value;
-        const logoUrlVal = (document.getElementById('input-agency-logo-url') as HTMLInputElement).value;
-        const digisacTokenVal = (document.getElementById('input-digisac-token') as HTMLInputElement).value;
-        const digisacDomainVal = (document.getElementById('input-digisac-domain') as HTMLInputElement).value;
-        const digisacServiceIdVal = (document.getElementById('input-digisac-service-id') as HTMLInputElement).value;
-        const digisacEnableManualSendVal = (document.getElementById('input-digisac-enable-manual-send') as HTMLInputElement).checked;
-        const digisacEnableChatHistoryVal = (document.getElementById('input-digisac-enable-chat-history') as HTMLInputElement).checked;
-        const digisacEnableVouchersVal = (document.getElementById('input-digisac-enable-vouchers') as HTMLInputElement).checked;
-        const digisacEnableRoutingVal = (document.getElementById('input-digisac-enable-routing') as HTMLInputElement).checked;
-        const digisacEnableBotTriggersVal = (document.getElementById('input-digisac-enable-bot-triggers') as HTMLInputElement).checked;
-        const digisacEnableWebhooksVal = (document.getElementById('input-digisac-enable-webhooks') as HTMLInputElement).checked;
-        const copilotoAtivoVal = (document.getElementById('input-copiloto-ativo') as HTMLInputElement)?.checked ?? true;
+      try {
+        const { error } = await supabase
+          .from('global_settings')
+          .update(payload)
+          .eq('id', this.settings.id);
 
-        const payload = {
-          agency_name: agencyNameVal,
-          email_suporte: emailSuporteVal,
-          taxa_cancelamento_padrao: taxaVal,
-          limite_upload_mb: limiteUploadVal,
-          agency_primary_color: primaryColorVal,
-          agency_logo_url: logoUrlVal,
-          copiloto_ativo: copilotoAtivoVal,
-          digisac_token: digisacTokenVal,
-          digisac_domain: digisacDomainVal,
-          digisac_service_id: digisacServiceIdVal,
-          digisac_enable_manual_send: digisacEnableManualSendVal,
-          digisac_enable_chat_history: digisacEnableChatHistoryVal,
-          digisac_enable_vouchers: digisacEnableVouchersVal,
-          digisac_enable_routing: digisacEnableRoutingVal,
-          digisac_enable_bot_triggers: digisacEnableBotTriggersVal,
-          digisac_enable_webhooks: digisacEnableWebhooksVal
-        };
+        if (error) throw error;
 
-        try {
-          const { error } = await supabase
-            .from('global_settings')
-            .update(payload)
-            .eq('id', this.settings.id);
+        this.showToast('Identidade visual e marca salvas com sucesso!', 'success');
+        await this.loadSettings();
+        window.dispatchEvent(new CustomEvent('paxflow-settings-updated', { detail: this.settings }));
+        this.render();
+        this.setupEventListeners();
+      } catch (err: any) {
+        console.error('Erro ao salvar marca:', err);
+        this.showToast('Falha ao gravar configurações de marca.', 'error');
+      }
+    });
 
-          if (error) throw error;
+    // Color picker listener
+    document.getElementById('input-agency-primary-color')?.addEventListener('input', (e) => {
+      const color = (e.target as HTMLInputElement).value;
+      const span = document.querySelector('#input-agency-primary-color + span');
+      if (span) span.textContent = color.toUpperCase();
 
-          this.showToast('Configurações globais salvas com sucesso!', 'success');
-          await this.loadSettings();
-          window.dispatchEvent(new CustomEvent('paxflow-settings-updated', { detail: this.settings }));
-          this.render();
-          this.setupEventListeners();
-        } catch (err: any) {
-          console.error('Erro ao salvar configurações globais:', err);
-          this.showToast('Falha ao gravar configurações.', 'error');
-        }
-      });
+      const previewBadge = document.getElementById('brand-color-preview-badge');
+      if (previewBadge) {
+        previewBadge.style.backgroundColor = color;
+      }
+    });
 
-      // Listen color picker change
-      document.getElementById('input-agency-primary-color')?.addEventListener('input', (e) => {
-        const color = (e.target as HTMLInputElement).value;
-        const label = color.toUpperCase();
-        const span = document.querySelector('#input-agency-primary-color + span');
-        if (span) span.textContent = label;
-      });
+    // Logo upload listener
+    const logoInput = document.getElementById('input-agency-logo-file') as HTMLInputElement;
+    logoInput?.addEventListener('change', async () => {
+      const file = logoInput.files?.[0];
+      if (!file) return;
 
-      // Logo upload listener
-      const logoInput = document.getElementById('input-agency-logo-file') as HTMLInputElement;
-      logoInput?.addEventListener('change', async () => {
-        const file = logoInput.files?.[0];
-        if (!file) return;
+      const loader = document.getElementById('logo-upload-spinner');
+      if (loader) loader.classList.remove('hidden');
 
-        const loader = document.getElementById('logo-upload-spinner');
-        if (loader) loader.classList.remove('hidden');
+      try {
+        const blob = await compressLogo(file);
+        const ext = file.name.split('.').pop() || 'jpg';
+        const userId = this.perfil?.id || 'public';
+        const path = `${userId}/logos/agency_${Date.now()}.${ext}`;
 
-        try {
-          const blob = await compressLogo(file);
-          const ext = file.name.split('.').pop() || 'jpg';
-          const userId = this.perfil?.id || 'public';
-          const path = `${userId}/logos/agency_${Date.now()}.${ext}`;
-
-          const { error: uploadError } = await supabase.storage
-            .from('avatars')
-            .upload(path, blob, {
-              contentType: `image/${ext === 'jpg' ? 'jpeg' : ext}`,
-              upsert: true
-            });
-
-          if (uploadError) throw uploadError;
-
-          const { data } = supabase.storage
-            .from('avatars')
-            .getPublicUrl(path);
-
-          const publicUrl = data.publicUrl;
-
-          const inputUrl = document.getElementById('input-agency-logo-url') as HTMLInputElement;
-          if (inputUrl) inputUrl.value = publicUrl;
-
-          const previewImg = document.getElementById('img-agency-logo-preview') as HTMLImageElement;
-          if (previewImg) {
-            previewImg.src = publicUrl;
-            previewImg.classList.remove('hidden');
-          }
-
-          this.showToast('Logotipo carregado!', 'success');
-        } catch (err: any) {
-          console.error('Erro no upload do logo:', err);
-          this.showToast('Erro ao carregar logotipo.', 'error');
-        } finally {
-          if (loader) loader.classList.add('hidden');
-        }
-      });
-
-      document.getElementById('btn-testar-digisac')?.addEventListener('click', async () => {
-        const btn = document.getElementById('btn-testar-digisac') as HTMLButtonElement;
-        const statusEl = document.getElementById('digisac-status-badge');
-        const resultEl = document.getElementById('digisac-test-result');
-        
-        const domainInput = document.getElementById('input-digisac-domain') as HTMLInputElement;
-        const serviceIdInput = document.getElementById('input-digisac-service-id') as HTMLInputElement;
-        const tokenInput = document.getElementById('input-digisac-token') as HTMLInputElement;
-
-        if (!domainInput || !serviceIdInput || !tokenInput) return;
-
-        const domain = domainInput.value.trim();
-        const serviceId = serviceIdInput.value.trim();
-        const token = tokenInput.value.trim();
-
-        if (!domain || !serviceId || !token) {
-          this.showToast('Preencha os campos do Digisac antes de testar.', 'error');
-          return;
-        }
-
-        if (btn) {
-          btn.disabled = true;
-          btn.textContent = 'Testando...';
-        }
-        if (statusEl) {
-          statusEl.className = 'px-2 py-0.5 rounded-lg text-[9px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20';
-          statusEl.textContent = 'Verificando...';
-        }
-        if (resultEl) {
-          resultEl.className = 'text-[10px] font-semibold text-amber-500';
-          resultEl.textContent = 'Verificando status do canal no Digisac...';
-        }
-
-        try {
-          let cleanDomain = domain.replace(/\/$/, '');
-          if (cleanDomain.endsWith('/api/v1')) {
-            cleanDomain = cleanDomain.slice(0, -7);
-          } else if (cleanDomain.endsWith('/api/v1/')) {
-            cleanDomain = cleanDomain.slice(0, -8);
-          } else if (cleanDomain.endsWith('/api')) {
-            cleanDomain = cleanDomain.slice(0, -4);
-          }
-
-          const url = `${cleanDomain}/api/v1/services/${serviceId}`;
-          const response = await fetch(url, {
-            method: 'GET',
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
+        const { error: uploadError } = await supabase.storage
+          .from('avatars')
+          .upload(path, blob, {
+            contentType: `image/${ext === 'jpg' ? 'jpeg' : ext}`,
+            upsert: true
           });
 
-          if (response.status === 200) {
-            const serviceData = await response.json();
-            const serviceName = serviceData.name || 'WhatsApp';
-            
-            if (statusEl) {
-              statusEl.className = 'px-2 py-0.5 rounded-lg text-[9px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20';
-              statusEl.textContent = 'Conectado';
-            }
-            if (resultEl) {
-              resultEl.className = 'text-[10px] font-semibold text-emerald-600 dark:text-emerald-450';
-              resultEl.textContent = `Sucesso! Canal: "${serviceName}"`;
-            }
-            this.showToast('Conexão estabelecida com o Digisac!', 'success');
-          } else if (response.status === 401 || response.status === 403) {
-            if (statusEl) {
-              statusEl.className = 'px-2 py-0.5 rounded-lg text-[9px] font-bold uppercase tracking-wider bg-rose-500/10 text-rose-600 dark:text-rose-455 border border-rose-500/20';
-              statusEl.textContent = 'Erro Auth';
-            }
-            if (resultEl) {
-              resultEl.className = 'text-[10px] font-semibold text-rose-555';
-              resultEl.textContent = 'Token de acesso inválido ou expirado.';
-            }
-            this.showToast('Erro: Token do Digisac inválido.', 'error');
-          } else if (response.status === 404) {
-            if (statusEl) {
-              statusEl.className = 'px-2 py-0.5 rounded-lg text-[9px] font-bold uppercase tracking-wider bg-rose-500/10 text-rose-600 dark:text-rose-455 border border-rose-500/20';
-              statusEl.textContent = 'ID Inválido';
-            }
-            if (resultEl) {
-              resultEl.className = 'text-[10px] font-semibold text-rose-555';
-              resultEl.textContent = 'ID de Conexão não encontrado.';
-            }
-            this.showToast('ID da Conexão não encontrado no Digisac.', 'error');
-          } else {
-            const errText = await response.text();
-            throw new Error(errText || `Erro HTTP ${response.status}`);
+        if (uploadError) throw uploadError;
+
+        const { data } = supabase.storage
+          .from('avatars')
+          .getPublicUrl(path);
+
+        const publicUrl = data.publicUrl;
+
+        const inputUrl = document.getElementById('input-agency-logo-url') as HTMLInputElement;
+        if (inputUrl) inputUrl.value = publicUrl;
+
+        const previewImg = document.getElementById('img-agency-logo-preview') as HTMLImageElement;
+        if (previewImg) {
+          previewImg.src = publicUrl;
+          previewImg.classList.remove('hidden');
+        }
+
+        this.showToast('Logotipo carregado com sucesso!', 'success');
+      } catch (err: any) {
+        console.error('Erro no upload do logo:', err);
+        this.showToast('Erro ao carregar logotipo.', 'error');
+      } finally {
+        if (loader) loader.classList.add('hidden');
+      }
+    });
+
+    // Alteração de Senha do Administrador
+    const formSenha = document.getElementById('form-senha-admin') as HTMLFormElement;
+    formSenha?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const novaSenha = (document.getElementById('input-nova-senha') as HTMLInputElement).value;
+      const confSenha = (document.getElementById('input-confirmar-senha') as HTMLInputElement).value;
+
+      if (!novaSenha || novaSenha.length < 6) {
+        this.showToast('A senha precisa ter no mínimo 6 caracteres.', 'error');
+        return;
+      }
+      if (novaSenha !== confSenha) {
+        this.showToast('As senhas digitadas não coincidem.', 'error');
+        return;
+      }
+
+      try {
+        const { error } = await atualizarSenhaAtual(novaSenha);
+        if (error) throw error;
+
+        this.showToast('Sua senha foi alterada com sucesso!', 'success');
+        formSenha.reset();
+      } catch (err: any) {
+        console.error('Erro ao atualizar senha:', err);
+        this.showToast('Erro ao atualizar senha.', 'error');
+      }
+    });
+  }
+
+  /**
+   * Eventos da Aba 3: Integrações & Comunicação
+   */
+  private setupIntegracoesEvents(): void {
+    const form = document.getElementById('form-config-integracoes') as HTMLFormElement;
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!this.settings) return;
+
+      const digisacDomainVal = (document.getElementById('input-digisac-domain') as HTMLInputElement).value;
+      const digisacServiceIdVal = (document.getElementById('input-digisac-service-id') as HTMLInputElement).value;
+      const digisacTokenVal = (document.getElementById('input-digisac-token') as HTMLInputElement).value;
+      const digisacEnableManualSendVal = (document.getElementById('input-digisac-enable-manual-send') as HTMLInputElement).checked;
+      const digisacEnableChatHistoryVal = (document.getElementById('input-digisac-enable-chat-history') as HTMLInputElement).checked;
+      const digisacEnableVouchersVal = (document.getElementById('input-digisac-enable-vouchers') as HTMLInputElement).checked;
+      const digisacEnableRoutingVal = (document.getElementById('input-digisac-enable-routing') as HTMLInputElement).checked;
+      const digisacEnableBotTriggersVal = (document.getElementById('input-digisac-enable-bot-triggers') as HTMLInputElement).checked;
+      const digisacEnableWebhooksVal = (document.getElementById('input-digisac-enable-webhooks') as HTMLInputElement).checked;
+
+      const payload = {
+        digisac_domain: digisacDomainVal,
+        digisac_service_id: digisacServiceIdVal,
+        digisac_token: digisacTokenVal,
+        digisac_enable_manual_send: digisacEnableManualSendVal,
+        digisac_enable_chat_history: digisacEnableChatHistoryVal,
+        digisac_enable_vouchers: digisacEnableVouchersVal,
+        digisac_enable_routing: digisacEnableRoutingVal,
+        digisac_enable_bot_triggers: digisacEnableBotTriggersVal,
+        digisac_enable_webhooks: digisacEnableWebhooksVal
+      };
+
+      try {
+        const { error } = await supabase
+          .from('global_settings')
+          .update(payload)
+          .eq('id', this.settings.id);
+
+        if (error) throw error;
+
+        this.showToast('Configurações do DigiSac salvas!', 'success');
+        await this.loadSettings();
+        this.render();
+        this.setupEventListeners();
+      } catch (err: any) {
+        console.error('Erro ao salvar integrações:', err);
+        this.showToast('Falha ao salvar integrações.', 'error');
+      }
+    });
+
+    // Testar Digisac
+    document.getElementById('btn-testar-digisac')?.addEventListener('click', async () => {
+      const btn = document.getElementById('btn-testar-digisac') as HTMLButtonElement;
+      const statusEl = document.getElementById('digisac-status-badge');
+      const resultEl = document.getElementById('digisac-test-result');
+      
+      const domainInput = document.getElementById('input-digisac-domain') as HTMLInputElement;
+      const serviceIdInput = document.getElementById('input-digisac-service-id') as HTMLInputElement;
+      const tokenInput = document.getElementById('input-digisac-token') as HTMLInputElement;
+
+      if (!domainInput || !serviceIdInput || !tokenInput) return;
+
+      const domain = domainInput.value.trim();
+      const serviceId = serviceIdInput.value.trim();
+      const token = tokenInput.value.trim();
+
+      if (!domain || !serviceId || !token) {
+        this.showToast('Preencha os campos do Digisac antes de testar.', 'error');
+        return;
+      }
+
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Testando...';
+      }
+      if (statusEl) {
+        statusEl.className = 'px-2 py-0.5 rounded-lg text-[9px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20';
+        statusEl.textContent = 'Verificando...';
+      }
+      if (resultEl) {
+        resultEl.className = 'text-[10px] font-semibold text-amber-500';
+        resultEl.textContent = 'Verificando status do canal no Digisac...';
+      }
+
+      try {
+        let cleanDomain = domain.replace(/\/$/, '');
+        if (cleanDomain.endsWith('/api/v1')) {
+          cleanDomain = cleanDomain.slice(0, -7);
+        } else if (cleanDomain.endsWith('/api/v1/')) {
+          cleanDomain = cleanDomain.slice(0, -8);
+        } else if (cleanDomain.endsWith('/api')) {
+          cleanDomain = cleanDomain.slice(0, -4);
+        }
+
+        const url = `${cleanDomain}/api/v1/services/${serviceId}`;
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`
           }
-        } catch (err: any) {
-          console.error('Erro de teste Digisac:', err);
+        });
+
+        if (response.status === 200) {
+          const serviceData = await response.json();
+          const serviceName = serviceData.name || 'WhatsApp';
+          
+          if (statusEl) {
+            statusEl.className = 'px-2 py-0.5 rounded-lg text-[9px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20';
+            statusEl.textContent = 'Conectado';
+          }
+          if (resultEl) {
+            resultEl.className = 'text-[10px] font-semibold text-emerald-600 dark:text-emerald-450';
+            resultEl.textContent = `Sucesso! Canal: "${serviceName}"`;
+          }
+          this.showToast('Conexão estabelecida com o Digisac!', 'success');
+        } else if (response.status === 401 || response.status === 403) {
           if (statusEl) {
             statusEl.className = 'px-2 py-0.5 rounded-lg text-[9px] font-bold uppercase tracking-wider bg-rose-500/10 text-rose-600 dark:text-rose-455 border border-rose-500/20';
-            statusEl.textContent = 'Erro Conexão';
+            statusEl.textContent = 'Erro Auth';
           }
           if (resultEl) {
             resultEl.className = 'text-[10px] font-semibold text-rose-555';
-            resultEl.textContent = `Falha de conexão: ${err.message || 'Verifique o domínio.'}`;
+            resultEl.textContent = 'Token de acesso inválido ou expirado.';
           }
-          this.showToast('Não foi possível conectar ao servidor do Digisac.', 'error');
-        } finally {
-          if (btn) {
-            btn.disabled = false;
-            btn.textContent = '⚡ Testar Conexão';
+          this.showToast('Erro: Token do Digisac inválido.', 'error');
+        } else if (response.status === 404) {
+          if (statusEl) {
+            statusEl.className = 'px-2 py-0.5 rounded-lg text-[9px] font-bold uppercase tracking-wider bg-rose-500/10 text-rose-600 dark:text-rose-455 border border-rose-500/20';
+            statusEl.textContent = 'ID Inválido';
           }
+          if (resultEl) {
+            resultEl.className = 'text-[10px] font-semibold text-rose-555';
+            resultEl.textContent = 'ID de Conexão não encontrado.';
+          }
+          this.showToast('ID da Conexão não encontrado no Digisac.', 'error');
+        } else {
+          const errText = await response.text();
+          throw new Error(errText || `Erro HTTP ${response.status}`);
         }
-      });
-
-      document.getElementById('btn-test-drive-connection')?.addEventListener('click', async () => {
-        const btn = document.getElementById('btn-test-drive-connection') as HTMLButtonElement;
-        if (!btn || !this.settings) return;
-        
-        btn.disabled = true;
-        const originalText = btn.innerHTML;
-        btn.innerHTML = `<span class="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin inline-block align-middle mr-1.5 font-black"></span> Testando...`;
-        
-        try {
-          const { data, error } = await supabase.storage.from('documentos-clientes').list('', { limit: 1 });
-          
-          if (error) {
-            throw error;
-          }
-          
-          this.storageError = null;
-          this.showToast('Conexão com Supabase Storage ativa! Bucket "documentos-clientes" acessado com sucesso.', 'success');
-          this.render();
-          this.setupEventListeners();
-        } catch (err: any) {
-          console.error('[Storage Connection Test Error]:', err);
-          this.storageError = err.message || 'Erro de conexão com o Supabase Storage.';
-          await showCustomAlert(
-            `Falha ao conectar ao Supabase Storage:\n\n` +
-            `- Mensagem: ${this.storageError}\n\n` +
-            `Dica: Certifique-se de que o bucket 'documentos-clientes' foi criado no painel do Supabase e as políticas RLS foram aplicadas.`,
-            'Erro de Armazenamento'
-          );
-          this.showToast('Falha no teste da conexão de armazenamento.', 'error');
-          this.render();
-          this.setupEventListeners();
-        } finally {
+      } catch (err: any) {
+        console.error('Erro de teste Digisac:', err);
+        if (statusEl) {
+          statusEl.className = 'px-2 py-0.5 rounded-lg text-[9px] font-bold uppercase tracking-wider bg-rose-500/10 text-rose-600 dark:text-rose-455 border border-rose-500/20';
+          statusEl.textContent = 'Erro Conexão';
+        }
+        if (resultEl) {
+          resultEl.className = 'text-[10px] font-semibold text-rose-555';
+          resultEl.textContent = `Falha de conexão: ${err.message || 'Verifique o domínio.'}`;
+        }
+        this.showToast('Não foi possível conectar ao servidor do Digisac.', 'error');
+      } finally {
+        if (btn) {
           btn.disabled = false;
-          btn.innerHTML = originalText;
+          btn.textContent = '⚡ Testar Conexão';
+        }
+      }
+    });
+
+    // Testar Storage / Google Drive
+    document.getElementById('btn-test-drive-connection')?.addEventListener('click', async () => {
+      const btn = document.getElementById('btn-test-drive-connection') as HTMLButtonElement;
+      if (!btn || !this.settings) return;
+      
+      btn.disabled = true;
+      const originalText = btn.innerHTML;
+      btn.innerHTML = `<span class="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin inline-block align-middle mr-1.5 font-black"></span> Testando...`;
+      
+      try {
+        const { data, error } = await supabase.storage.from('documentos-clientes').list('', { limit: 1 });
+        
+        if (error) {
+          throw error;
+        }
+        
+        this.storageError = null;
+        this.showToast('Conexão com Supabase Storage ativa! Bucket "documentos-clientes" acessado com sucesso.', 'success');
+        this.render();
+        this.setupEventListeners();
+      } catch (err: any) {
+        console.error('[Storage Connection Test Error]:', err);
+        this.storageError = err.message || 'Erro de conexão com o Supabase Storage.';
+        await showCustomAlert(
+          `Falha ao conectar ao Supabase Storage:\n\n` +
+          `- Mensagem: ${this.storageError}\n\n` +
+          `Dica: Certifique-se de que o bucket 'documentos-clientes' foi criado no painel do Supabase e as políticas RLS foram aplicadas.`,
+          'Erro de Armazenamento'
+        );
+        this.showToast('Falha no teste da conexão de armazenamento.', 'error');
+        this.render();
+        this.setupEventListeners();
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+      }
+    });
+  }
+
+  /**
+   * Eventos da Aba 4: Equipe & Permissões
+   */
+  private setupConsultoresEvents(): void {
+    // Cadastro de consultor
+    document.getElementById('btn-novo-consultor')?.addEventListener('click', () => {
+      this.abrirModalNovoConsultor();
+    });
+
+    // Clique no botão Editar Consultor
+    const editButtons = document.querySelectorAll('.btn-editar-user');
+    editButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.getAttribute('data-id');
+        const consultor = this.consultores.find(c => c.id === id);
+        if (consultor) {
+          this.abrirModalEditarConsultor(consultor);
         }
       });
-    }
+    });
 
-    if (this.activeTab === 'consultores') {
-      // Cadastro de consultor
-      document.getElementById('btn-novo-consultor')?.addEventListener('click', () => {
-        this.abrirModalNovoConsultor();
-      });
-
-      // Clique no botão Editar Consultor
-      const editButtons = document.querySelectorAll('.btn-editar-user');
-      editButtons.forEach(btn => {
-        btn.addEventListener('click', () => {
-          const id = btn.getAttribute('data-id');
-          const consultor = this.consultores.find(c => c.id === id);
-          if (consultor) {
-            this.abrirModalEditarConsultor(consultor);
-          }
-        });
-      });
-
-      // Alteração de Role (Dropdown)
-      const roleSelects = document.querySelectorAll('.select-role-user');
-      roleSelects.forEach(select => {
-        select.addEventListener('change', async (e) => {
-          const el = e.target as HTMLSelectElement;
-          const id = el.getAttribute('data-id');
-          const roleVal = el.value as 'admin' | 'consultor';
-          if (id) {
-            await this.atualizarRoleConsultor(id, roleVal);
-          }
-        });
-      });
-
-      // Ativar/Desativar
-      const toggleButtons = document.querySelectorAll('.btn-toggle-status-user');
-      toggleButtons.forEach(btn => {
-        btn.addEventListener('click', async (e) => {
-          const el = e.currentTarget as HTMLButtonElement;
-          const id = el.getAttribute('data-id');
-          const currentActive = el.getAttribute('data-active') === 'true';
-          if (id) {
-            await this.atualizarStatusConsultor(id, !currentActive);
-          }
-        });
-      });
-
-      // Permissão do botão "Nova Viagem" para Consultores
-      document.getElementById('toggle-permitir-consultor-criar-viagem')?.addEventListener('change', async (e) => {
-        const checkbox = e.target as HTMLInputElement;
-        const newValue = checkbox.checked;
-        if (!this.settings) return;
-
-        this.settings.permitirConsultorCriarViagem = newValue;
-        this.settings.permitir_consultor_criar_viagem = newValue;
-
-        try {
-          const { error } = await supabase
-            .from('global_settings')
-            .update({ permitir_consultor_criar_viagem: newValue })
-            .eq('id', this.settings.id);
-
-          if (error) throw error;
-
-          this.showToast(
-            newValue
-              ? 'Criação direta de viagens PERMITIDA para consultores.'
-              : 'Criação direta de viagens BLOQUEADA para consultores (botão oculto).',
-            'success'
-          );
-        } catch (err: any) {
-          console.error('Erro ao atualizar permissão de criação de viagem:', err);
-          this.showToast('Erro ao atualizar permissão.', 'error');
-          checkbox.checked = !newValue;
+    // Alteração de Role (Dropdown)
+    const roleSelects = document.querySelectorAll('.select-role-user');
+    roleSelects.forEach(select => {
+      select.addEventListener('change', async (e) => {
+        const el = e.target as HTMLSelectElement;
+        const id = el.getAttribute('data-id');
+        const roleVal = el.value as 'admin' | 'consultor';
+        if (id) {
+          await this.atualizarRoleConsultor(id, roleVal);
         }
       });
-    }
+    });
+
+    // Ativar/Desativar
+    const toggleButtons = document.querySelectorAll('.btn-toggle-status-user');
+    toggleButtons.forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const el = e.currentTarget as HTMLButtonElement;
+        const id = el.getAttribute('data-id');
+        const currentActive = el.getAttribute('data-active') === 'true';
+        if (id) {
+          await this.atualizarStatusConsultor(id, !currentActive);
+        }
+      });
+    });
+
+    // Permissão do botão "Nova Viagem" para Consultores
+    document.getElementById('toggle-permitir-consultor-criar-viagem')?.addEventListener('change', async (e) => {
+      const checkbox = e.target as HTMLInputElement;
+      const newValue = checkbox.checked;
+      if (!this.settings) return;
+
+      this.settings.permitirConsultorCriarViagem = newValue;
+      this.settings.permitir_consultor_criar_viagem = newValue;
+
+      try {
+        const { error } = await supabase
+          .from('global_settings')
+          .update({ permitir_consultor_criar_viagem: newValue })
+          .eq('id', this.settings.id);
+
+        if (error) throw error;
+
+        this.showToast(
+          newValue
+            ? 'Criação direta de viagens PERMITIDA para consultores.'
+            : 'Criação direta de viagens BLOQUEADA para consultores (botão oculto).',
+          'success'
+        );
+      } catch (err: any) {
+        console.error('Erro ao atualizar permissão de criação de viagem:', err);
+        this.showToast('Erro ao atualizar permissão.', 'error');
+        checkbox.checked = !newValue;
+      }
+    });
   }
 
   /**
@@ -1448,7 +1525,7 @@ export class ConfiguracoesPage {
   }
 
   /**
-   * Renderiza a página administrativa
+   * Renderiza a página administrativa no formato Master-Detail (Sidebar Vertical + Conteúdo por Categoria)
    */
   private render(): void {
     if (!this.settings) return;
@@ -1460,816 +1537,704 @@ export class ConfiguracoesPage {
           <div class="flex items-center gap-3">
             <img src="/logo.svg" alt="PaxFlow Logo" class="h-10 w-auto object-contain animate-fade-in md:hidden" />
             <div>
-              <h1 class="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight">Configurações</h1>
+              <h1 class="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight">Configurações da Agência</h1>
               <p class="text-xs text-slate-500 dark:text-slate-400 font-medium flex items-center gap-1.5">
-                <span>Configurações Globais</span> &bull; 
+                <span>Painel de Controle Central</span> &bull; 
                 <span class="text-indigo-600 dark:text-indigo-400 font-bold uppercase tracking-wider text-[10px]">Administrador</span>
               </p>
             </div>
           </div>
         </header>
 
-        <!-- Abas de Navegação -->
-        <div class="px-6 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 transition-colors">
-          <div class="max-w-4xl mx-auto w-full flex flex-wrap gap-x-6 gap-y-1 pb-1">
-            <button id="tab-geral-btn" class="shrink-0 py-4 px-1 border-b-2 text-sm font-extrabold transition select-none flex items-center gap-2 ${
-              this.activeTab === 'geral' 
-                ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400' 
-                : 'border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
-            }">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-              Parâmetros Globais
-            </button>
-            <button id="tab-consultores-btn" class="shrink-0 py-4 px-1 border-b-2 text-sm font-extrabold transition select-none flex items-center gap-2 ${
-              this.activeTab === 'consultores' 
-                ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400' 
-                : 'border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
-            }">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-              Gestão de Consultores
-            </button>
-            <button id="tab-importacoes-btn" class="shrink-0 py-4 px-1 border-b-2 text-sm font-extrabold transition select-none flex items-center gap-2 ${
-              this.activeTab === 'importacoes' 
-                ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400' 
-                : 'border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
-            }">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-              </svg>
-              Importações
-            </button>
+        <div class="flex-1 flex flex-col md:flex-row max-w-7xl mx-auto w-full p-6 gap-6 items-start">
+          <aside class="w-full md:w-64 lg:w-72 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-3 shadow-sm shrink-0">
+            <div class="px-3 py-2 text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Categorias de Configuração</div>
+            <nav class="space-y-1.5 mt-1">
+              ${['branding', 'automacoes', 'integracoes', 'consultores', 'importacoes'].map(tab => {
+                const labels = { branding: 'Identidade & Marca', automacoes: 'SLAs & Prazos', integracoes: 'Integrações', consultores: 'Equipe & Permissões', importacoes: 'Importações & CSV' };
+                const sub = { branding: 'Logo, cor e senhas', automacoes: 'Vistos, churn e risco', integracoes: 'DigiSac e Storage', consultores: 'Cargos e acesso', importacoes: 'Carga em lote de dados' };
+                const icons = { branding: '🎨', automacoes: '⏰', integracoes: '🔌', consultores: '👥', importacoes: '🛠️' };
+                const isActive = this.activeTab === tab;
+                return `
+                  <button id="tab-${tab}-btn" class="w-full text-left p-3 rounded-xl transition flex items-start gap-3 select-none ${isActive ? 'bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 font-extrabold border border-indigo-200/70 dark:border-indigo-800/70 shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 font-semibold'}">
+                    <span class="text-xl shrink-0">${icons[tab as keyof typeof icons]}</span>
+                    <div class="min-w-0">
+                      <strong class="block text-xs leading-none">${labels[tab as keyof typeof labels]}</strong>
+                      <span class="text-[10px] text-slate-400 dark:text-slate-500 font-normal block mt-1">${sub[tab as keyof typeof sub]}</span>
+                    </div>
+                  </button>
+                `;
+              }).join('')}
+            </nav>
+          </aside>
+          <main class="flex-1 w-full min-w-0 animate-fade-in">
+            ${this.renderActiveTabContent()}
+          </main>
+        </div>
+      </div>
+    `;
+  }
 
-            <button id="tab-automacoes-btn" class="shrink-0 py-4 px-1 border-b-2 text-sm font-extrabold transition select-none flex items-center gap-2 ${
-              this.activeTab === 'automacoes' 
-                ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400' 
-                : 'border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
-            }">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-              Automações
+  private renderActiveTabContent(): string {
+    switch (this.activeTab) {
+      case 'branding': return this.renderTabBranding();
+      case 'automacoes': return this.renderTabAutomacoes();
+      case 'integracoes': return this.renderTabIntegracoes();
+      case 'consultores': return this.renderTabConsultores();
+      case 'importacoes': return this.renderTabImportacoes();
+      default: return this.renderTabBranding();
+    }
+  }
+
+  /**
+   * Renderiza a Aba 1: Identidade & Marca
+   */
+  private renderTabBranding(): string {
+    if (!this.settings) return '';
+
+    return `
+      <div class="space-y-6 animate-fade-in">
+        
+        <!-- Card Marca & Logotipo -->
+        <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
+          <h2 class="text-base font-black text-slate-800 dark:text-slate-200 tracking-tight border-b border-slate-100 dark:border-slate-800 pb-3.5 mb-5 flex items-center gap-2">
+            <span>🎨</span> Identidade Visual & Branding White-Label
+          </h2>
+
+          <form id="form-config-branding" class="space-y-6">
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div>
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
+                  Nome da Agência de Viagens * ${renderHelpIcon('customizacao-logo-branding')}
+                </label>
+                <input id="input-agency-name" type="text" required value="${this.settings.agencyName}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold" />
+                <p class="text-[10px] text-slate-400 mt-1">Exibido no topo do sistema, PDFs e itinerários públicos dos clientes.</p>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
+                  E-mail de Suporte e Alertas * ${renderHelpIcon('seguranca-privacidade-lgpd')}
+                </label>
+                ${renderEmailInputHTML('input-email-suporte', this.settings.emailSuporte || '', 'email@agencia.com')}
+                <p class="text-[10px] text-slate-400 mt-1">Remetente oficial das notificações da agência.</p>
+              </div>
+            </div>
+
+            <!-- Upload de Logotipo -->
+            <div class="border-t border-slate-100 dark:border-slate-800 pt-5">
+              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                Logotipo da Agência (White-Label) ${renderHelpIcon('customizacao-logo-branding')}
+              </label>
+              
+              <div class="flex flex-col sm:flex-row items-center gap-4 p-4 bg-slate-50/70 dark:bg-slate-900/50 border border-slate-200/80 dark:border-slate-800 rounded-2xl">
+                <div class="w-20 h-20 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-2 flex items-center justify-center shrink-0 shadow-sm relative overflow-hidden">
+                  <img id="img-agency-logo-preview" src="${this.settings.agencyLogoUrl || '/logo.svg'}" alt="Preview Logo" class="max-w-full max-h-full object-contain" />
+                  <div id="logo-upload-spinner" class="absolute inset-0 bg-slate-900/60 flex items-center justify-center hidden">
+                    <div class="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  </div>
+                </div>
+
+                <div class="flex-1 space-y-2 text-center sm:text-left">
+                  <input id="input-agency-logo-url" type="hidden" value="${this.settings.agencyLogoUrl || ''}" />
+                  <input id="input-agency-logo-file" type="file" accept="image/*" class="hidden" />
+                  <label for="input-agency-logo-file" class="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 rounded-xl text-xs font-bold cursor-pointer transition shadow-sm">
+                    📁 Selecionar Arquivo de Imagem
+                  </label>
+                  <p class="text-[10px] text-slate-400 font-medium">Recomendado: PNG ou JPG com fundo transparente (compressão automática).</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Seletor de Cor Primária White-Label -->
+            <div class="border-t border-slate-100 dark:border-slate-800 pt-5">
+              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">
+                Cor Primária de Destaque (White-Label)
+              </label>
+
+              <div class="flex items-center gap-4">
+                <div class="flex items-center gap-3 p-3 bg-slate-50/70 dark:bg-slate-900/50 border border-slate-200/80 dark:border-slate-800 rounded-xl">
+                  <input id="input-agency-primary-color" type="color" value="${this.settings.agencyPrimaryColor || '#4f46e5'}" class="w-10 h-10 rounded-lg cursor-pointer border-0 bg-transparent" />
+                  <span class="text-xs font-black text-slate-800 dark:text-slate-200 tracking-wider">${(this.settings.agencyPrimaryColor || '#4f46e5').toUpperCase()}</span>
+                </div>
+
+                <div class="flex items-center gap-2 px-3 py-2 rounded-xl text-white font-extrabold text-xs shadow-md transition" id="brand-color-preview-badge" style="background-color: ${this.settings.agencyPrimaryColor || '#4f46e5'};">
+                  <span>Pré-visualização do Botão</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Outras preferências de marca -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-slate-100 dark:border-slate-800 pt-5">
+              <div>
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5 flex items-center">
+                  Taxa de Cancelamento Retida (%) ${renderHelpIcon('taxas-multas-cancelamento')}
+                </label>
+                <input id="input-taxa" type="number" step="0.01" min="0" max="100" value="${this.settings.taxaCancelamentoPadrao}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-bold" />
+                <p class="text-[10px] text-slate-400 mt-1">Taxa retida padrão sugerida nos cálculos de reembolso.</p>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Limite de Upload por Arquivo (MB)</label>
+                <input id="input-limite-upload" type="number" min="1" max="500" value="${this.settings.limiteUploadMb || 25}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-bold" />
+                <p class="text-[10px] text-slate-400 mt-1">Tamanho máximo permitido para anexos de clientes.</p>
+              </div>
+            </div>
+
+            <!-- Assistente Co-piloto toggle -->
+            <div class="flex items-center justify-between p-4 bg-slate-50/70 dark:bg-slate-900/50 border border-slate-200/80 dark:border-slate-800 rounded-2xl border-t">
+              <div class="flex flex-col gap-1 pr-4">
+                <span class="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                  🤖 Assistente Co-Piloto de IA ${renderHelpIcon('copiloto-ativacao-desativacao')}
+                </span>
+                <span class="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
+                  Habilita alertas em tempo real de atendimento presencial de balcão e assistente inteligente.
+                </span>
+              </div>
+              <label class="relative inline-flex items-center cursor-pointer shrink-0">
+                <input id="input-copiloto-ativo" type="checkbox" ${this.settings.copilotoAtivo !== false ? 'checked' : ''} class="sr-only peer">
+                <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:after:border-slate-600 peer-checked:bg-indigo-600"></div>
+              </label>
+            </div>
+
+            <div class="pt-3 flex justify-end">
+              <button type="submit" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-indigo-600/20 transition transform hover:-translate-y-0.5">
+                💾 Salvar Identidade & Marca
+              </button>
+            </div>
+
+          </form>
+        </div>
+
+        <!-- Card Segurança & Minha Conta -->
+        <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
+          <h2 class="text-base font-black text-slate-800 dark:text-slate-200 tracking-tight border-b border-slate-100 dark:border-slate-800 pb-3.5 mb-5 flex items-center gap-2">
+            <span>🔑</span> Segurança & Alteração de Senha
+          </h2>
+
+          <form id="form-senha-admin" class="space-y-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Nova Senha de Acesso *</label>
+                <input id="input-nova-senha" type="password" minlength="6" placeholder="••••••••" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold" />
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Confirmar Nova Senha *</label>
+                <input id="input-confirmar-senha" type="password" minlength="6" placeholder="••••••••" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold" />
+              </div>
+            </div>
+
+            <div class="pt-2 flex justify-end">
+              <button type="submit" class="px-5 py-2.5 bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl transition">
+                🔒 Atualizar Minha Senha
+              </button>
+            </div>
+          </form>
+        </div>
+
+      </div>
+    `;
+  }
+
+  /**
+   * Renderiza a Aba 2: SLAs, Prazos & Algoritmo Preditivo
+   */
+  private renderTabAutomacoes(): string {
+    if (!this.settings) return '';
+
+    return `
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-start animate-fade-in">
+        
+        <div class="md:col-span-8 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
+          <h2 class="text-base font-black text-slate-800 dark:text-slate-200 tracking-tight border-b border-slate-100 dark:border-slate-800 pb-3.5 mb-5 flex items-center gap-2">
+            <span>⏰</span> Parâmetros de SLAs & Prazos Automáticos
+          </h2>
+
+          <form id="form-automacoes" class="space-y-6">
+            
+            <!-- Passaporte SLA Badge -->
+            <div class="p-4 bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-900/40 rounded-xl flex items-start gap-3">
+              <span class="text-xl shrink-0">🛂</span>
+              <div>
+                <strong class="block text-xs font-black text-amber-800 dark:text-amber-300">SLA de Passaporte & Vistos (Fixado em 180 Dias) ${renderHelpIcon('alerta-passaporte-validade')}</strong>
+                <p class="text-[11px] text-amber-700/90 dark:text-amber-400 mt-1 leading-relaxed">
+                  O PaxFlow monitora automaticamente a expiração de passaportes e vistos dos clientes, gerando alertas no Inbox com 180 dias de antecedência para viagens internacionais.
+                </p>
+              </div>
+            </div>
+
+            <!-- Viagens Kanban SLAs -->
+            <div>
+              <h3 class="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-3">SLAs de Kanban & Viagens</h3>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Alerta Pré-Embarque (Dias antes) *</label>
+                  <input id="input-sla-pre" type="number" min="1" required value="${this.settings.slaPreEmbarqueDias}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-bold" />
+                  <p class="text-[10px] text-slate-400 mt-1">Sinaliza alerta de prioridade em viagens a menos de X dias do embarque.</p>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Alerta Pós-Viagem (Dias depois) *</label>
+                  <input id="input-sla-pos" type="number" min="1" required value="${this.settings.slaPosViagemDias}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-bold" />
+                  <p class="text-[10px] text-slate-400 mt-1">Alerta a equipe caso a finalização do pós-venda passe de X dias.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Orçamentos e Churn -->
+            <div class="border-t border-slate-100 dark:border-slate-800 pt-5">
+              <h3 class="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-3">Funil de Orçamentos & Churn de Leads</h3>
+              <div>
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Inatividade para Desistência de Orçamento (Dias) *</label>
+                <input id="input-tempo-desistencia" type="number" min="1" max="365" required value="${this.settings.tempoDesistenciaOrcamentoDias || 30}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-bold" />
+                <p class="text-[10px] text-slate-400 mt-1">Orçamentos parados sem atualização por mais de X dias serão marcados como Desistência.</p>
+              </div>
+            </div>
+
+            <!-- Algoritmo Preditivo de Risco Operacional -->
+            <div class="border-t border-slate-100 dark:border-slate-800 pt-5">
+              <h3 class="text-xs font-black text-rose-600 dark:text-rose-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                <span>🚨</span> Algoritmo Preditivo de Risco Operacional ${renderHelpIcon('painel-preditivo-risco')}
+              </h3>
+              <div>
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Antecedência de Embarque para Alerta de Risco (Dias) *</label>
+                <input id="input-antecedencia-risco" type="number" min="1" max="90" required value="${this.settings.antecedencia_risco_operacional_dias || this.settings.antecedenciaRiscoOperacionalDias || 15}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-bold" />
+                <p class="text-[10px] text-slate-400 mt-1">Janela de dias antes do embarque para auditarmos pendências de conferência de LOC, passaportes e vouchers no Painel Preditivo.</p>
+              </div>
+            </div>
+
+            <!-- Reembolsos & NPS -->
+            <div class="border-t border-slate-100 dark:border-slate-800 pt-5">
+              <h3 class="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-3">Reembolsos & Pesquisas NPS</h3>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Prazo Padrão de Reembolso (Dias) *</label>
+                  <input id="input-prazo-reembolso" type="number" min="1" max="180" required value="${this.settings.prazoReembolsoDias || 30}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-bold" />
+                  <p class="text-[10px] text-slate-400 mt-1">Prazo limite sugerido aos clientes para desfecho financeiro.</p>
+                </div>
+
+                <div class="flex flex-col justify-between p-3 bg-slate-50/70 dark:bg-slate-800/40 rounded-xl border border-slate-200/60 dark:border-slate-700">
+                  <div class="space-y-0.5">
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-200">Disparo Automático de NPS</label>
+                    <p class="text-[10px] text-slate-400">Envia pesquisa de satisfação no término da viagem.</p>
+                  </div>
+                  <div class="mt-2">
+                    <input id="input-enviar-nps" type="checkbox" ${this.settings.enviarNpsAutomatico ? 'checked' : ''} class="w-5 h-5 text-indigo-600 focus:ring-indigo-500 border-slate-300 dark:border-slate-700 rounded cursor-pointer" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="pt-3 flex justify-end">
+              <button type="submit" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-indigo-600/20 transition transform hover:-translate-y-0.5">
+                💾 Salvar SLAs & Automações
+              </button>
+            </div>
+
+          </form>
+        </div>
+
+        <div class="md:col-span-4 space-y-4">
+          <div class="bg-indigo-50/60 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/40 rounded-2xl p-5">
+            <h3 class="text-xs font-black text-indigo-800 dark:text-indigo-300 uppercase tracking-wider mb-2">💡 Funcionamento Autônomo</h3>
+            <p class="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
+              O PaxFlow executa checagens periódicas 24/7 com base nestes prazos para manter os Kanban, alertas e relatórios gerenciais sempre sincronizados.
+            </p>
+          </div>
+        </div>
+
+      </div>
+    `;
+  }
+
+  /**
+   * Renderiza a Aba 3: Integrações & Comunicação
+   */
+  private renderTabIntegracoes(): string {
+    if (!this.settings) return '';
+
+    return `
+      <div class="space-y-6 animate-fade-in">
+        
+        <!-- Card DigiSac API -->
+        <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
+          <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3.5 mb-5">
+            <h2 class="text-base font-black text-slate-800 dark:text-slate-200 tracking-tight flex items-center gap-2">
+              <span>💬</span> Integração WhatsApp / DigiSac API ${renderHelpIcon('historico-conversas-digisac')}
+            </h2>
+            <div id="digisac-status-badge" class="px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+              Não Verificado
+            </div>
+          </div>
+
+          <form id="form-config-integracoes" class="space-y-6">
+            
+            <div>
+              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">URL da Instância / Domínio *</label>
+              <input id="input-digisac-domain" type="url" placeholder="Ex: https://minhaagencia.digisac.chat" value="${this.settings.digisacDomain || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs" />
+              <p class="text-[9px] text-slate-400 mt-1">Endereço do seu ambiente DigiSac.</p>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">ID da Conexão (serviceId) *</label>
+                <input id="input-digisac-service-id" type="text" placeholder="Ex: 5ac6..." value="${this.settings.digisacServiceId || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs" />
+                <p class="text-[9px] text-slate-400 mt-1">ID do canal WhatsApp no Digisac.</p>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Token de Acesso Pessoal (API) *</label>
+                <input id="input-digisac-token" type="password" placeholder="••••••••••••••••" value="${this.settings.digisacToken || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs" />
+                <p class="text-[9px] text-slate-400 mt-1">Token gerado em Menu > Conta > API.</p>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-3 pt-1">
+              <button id="btn-testar-digisac" type="button" class="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-slate-700 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm">
+                ⚡ Testar Conexão DigiSac
+              </button>
+              <span id="digisac-test-result" class="text-[10px] font-bold text-slate-500 dark:text-slate-400"></span>
+            </div>
+
+            <!-- Toggles DigiSac -->
+            <div class="border-t border-slate-100 dark:border-slate-800 pt-5">
+              <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider mb-3">Recursos Habilitados (DigiSac)</h3>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                
+                <div class="flex items-center justify-between p-3 bg-slate-50/50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-700 rounded-xl">
+                  <div class="pr-2">
+                    <span class="text-xs font-bold text-slate-700 dark:text-slate-200 block">Envio Manual de Mensagens</span>
+                    <span class="text-[10px] text-slate-400">Permite envio manual de mensagens no chat.</span>
+                  </div>
+                  <input id="input-digisac-enable-manual-send" type="checkbox" ${this.settings.digisac_enable_manual_send !== false ? 'checked' : ''} class="w-4 h-4 text-indigo-600 focus:ring-indigo-500 border-slate-300 rounded cursor-pointer shrink-0" />
+                </div>
+
+                <div class="flex items-center justify-between p-3 bg-slate-50/50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-700 rounded-xl">
+                  <div class="pr-2">
+                    <span class="text-xs font-bold text-slate-700 dark:text-slate-200 block">Sincronização de Histórico</span>
+                    <span class="text-[10px] text-slate-400">Exibe histórico das conversas no Inbox.</span>
+                  </div>
+                  <input id="input-digisac-enable-chat-history" type="checkbox" ${this.settings.digisac_enable_chat_history !== false ? 'checked' : ''} class="w-4 h-4 text-indigo-600 focus:ring-indigo-500 border-slate-300 rounded cursor-pointer shrink-0" />
+                </div>
+
+                <div class="flex items-center justify-between p-3 bg-slate-50/50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-700 rounded-xl">
+                  <div class="pr-2">
+                    <span class="text-xs font-bold text-slate-700 dark:text-slate-200 block">Envio de Vouchers</span>
+                    <span class="text-[10px] text-slate-400">Anexa vouchers em formato PDF diretamente no chat.</span>
+                  </div>
+                  <input id="input-digisac-enable-vouchers" type="checkbox" ${this.settings.digisac_enable_vouchers !== false ? 'checked' : ''} class="w-4 h-4 text-indigo-600 focus:ring-indigo-500 border-slate-300 rounded cursor-pointer shrink-0" />
+                </div>
+
+                <div class="flex items-center justify-between p-3 bg-slate-50/50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-700 rounded-xl">
+                  <div class="pr-2">
+                    <span class="text-xs font-bold text-slate-700 dark:text-slate-200 block">Roteamento Inteligente</span>
+                    <span class="text-[10px] text-slate-400">Encaminha mensagens para o consultor titular.</span>
+                  </div>
+                  <input id="input-digisac-enable-routing" type="checkbox" ${this.settings.digisac_enable_routing !== false ? 'checked' : ''} class="w-4 h-4 text-indigo-600 focus:ring-indigo-500 border-slate-300 rounded cursor-pointer shrink-0" />
+                </div>
+
+                <div class="flex items-center justify-between p-3 bg-slate-50/50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-700 rounded-xl">
+                  <div class="pr-2">
+                    <span class="text-xs font-bold text-slate-700 dark:text-slate-200 block">Gatilhos de Bot</span>
+                    <span class="text-[10px] text-slate-400">Dispara bots do DigiSac via automações.</span>
+                  </div>
+                  <input id="input-digisac-enable-bot-triggers" type="checkbox" ${this.settings.digisac_enable_bot_triggers !== false ? 'checked' : ''} class="w-4 h-4 text-indigo-600 focus:ring-indigo-500 border-slate-300 rounded cursor-pointer shrink-0" />
+                </div>
+
+                <div class="flex items-center justify-between p-3 bg-slate-50/50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-700 rounded-xl">
+                  <div class="pr-2">
+                    <span class="text-xs font-bold text-slate-700 dark:text-slate-200 block">Webhooks de Eventos</span>
+                    <span class="text-[10px] text-slate-400">Recebe notificações de status em tempo real.</span>
+                  </div>
+                  <input id="input-digisac-enable-webhooks" type="checkbox" ${this.settings.digisac_enable_webhooks !== false ? 'checked' : ''} class="w-4 h-4 text-indigo-600 focus:ring-indigo-500 border-slate-300 rounded cursor-pointer shrink-0" />
+                </div>
+
+              </div>
+            </div>
+
+            <div class="pt-3 flex justify-end">
+              <button type="submit" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-indigo-600/20 transition transform hover:-translate-y-0.5">
+                💾 Salvar Integração DigiSac
+              </button>
+            </div>
+
+          </form>
+        </div>
+
+        <!-- Card Storage / Google Drive -->
+        <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+            <h3 class="text-sm font-black text-slate-800 dark:text-slate-200 tracking-tight flex items-center gap-2">
+              <span>📁</span> Armazenamento Seguro de Documentos (Storage) ${renderHelpIcon('upload-google-drive')}
+            </h3>
+            <span class="px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wider ${this.storageError ? 'bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400 border border-rose-200' : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200'}">
+              ${this.storageError ? 'Erro de Conexão' : 'Ativo & Protegido'}
+            </span>
+          </div>
+
+          <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
+            Os arquivos e passaportes dos clientes são mantidos em bucket privado com criptografia de ponta a ponta e links de acesso temporário com expiração.
+          </p>
+
+          <div class="flex items-center justify-between pt-2">
+            <button id="btn-test-drive-connection" type="button" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold transition shadow-sm">
+              🧪 Testar Conexão do Storage
             </button>
           </div>
         </div>
 
-        <!-- Renderização da Aba: Parâmetros Gerais -->
-        ${this.activeTab === 'geral' ? `
-          <main class="flex-1 p-6 max-w-4xl mx-auto w-full grid grid-cols-1 md:grid-cols-12 gap-6 items-start animate-fade-in">
-            
-            <!-- Coluna Esquerda: SLAs e Regras -->
-            <div class="md:col-span-8 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
-              <h2 class="text-base font-black text-slate-800 dark:text-slate-200 tracking-tight border-b border-slate-100 dark:border-slate-800 pb-3.5 mb-5 flex items-center gap-2.5">
-                <svg class="w-5 h-5 text-indigo-500 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
-                </svg>
-                Regras do Negócio & Parâmetros de SLAs
-              </h2>
+      </div>
+    `;
+  }
 
-              <form id="form-configuracoes" class="space-y-6">
-                
-                <div>
-                  <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Nome da Agência de Viagens *</label>
-                  <input id="input-agency-name" type="text" required value="${this.settings.agencyName}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold" />
-                </div>
+  /**
+   * Renderiza a Aba 4: Equipe & Permissões
+   */
+  private renderTabConsultores(): string {
+    return `
+      <div class="space-y-6 animate-fade-in">
+        
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-lg font-black text-slate-800 dark:text-slate-200 tracking-tight">Equipe de Consultores</h2>
+            <p class="text-xs text-slate-400 font-medium">Controle de acessos, status e papéis de permissão (RBAC)</p>
+          </div>
+          <button id="btn-novo-consultor" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/20 flex items-center gap-1.5 transition transform hover:-translate-y-0.5 uppercase">
+            <span>+</span> Novo Consultor
+          </button>
+        </div>
 
-                <div>
-                  <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">E-mail de Suporte e Alertas *</label>
-                  ${renderEmailInputHTML('input-email-suporte', this.settings.emailSuporte || '', 'email@agencia.com')}
-                </div>
-
-                <div class="border-t border-slate-100 dark:border-slate-800 pt-5">
-                  <div>
-                    <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5 flex items-center">
-                      Taxa de Cancelamento Retida (%) ${renderHelpIcon('taxas-multas-cancelamento')}
-                    </label>
-                    <input id="input-taxa" type="number" step="0.01" min="0" max="100" value="${this.settings.taxaCancelamentoPadrao}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-bold" />
-                    <p class="text-[10px] text-slate-400 dark:text-slate-400 mt-1.5 font-medium">Taxa retida padrão sugerida durante a solicitação de reembolsos.</p>
-                  </div>
-                </div>
-
-                <div class="border-t border-slate-100 dark:border-slate-800 pt-5">
-                  <div>
-                    <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Limite de Upload (MB)</label>
-                    <input id="input-limite-upload" type="number" min="1" max="500" value="${this.settings.limiteUploadMb || 25}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-bold" />
-                  </div>
-                </div>
-
-                <!-- Recursos & Inteligência Artificial (Co-piloto) -->
-                <div class="border-t border-slate-100 dark:border-slate-800 pt-5 space-y-4">
-                  <div class="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
-                    <h3 class="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider flex items-center gap-2">
-                      <span>🤖</span> Recursos & Inteligência Artificial ${renderHelpIcon('copiloto-ativacao-desativacao')}
-                    </h3>
-                  </div>
-
-                  <div class="flex items-center justify-between p-4 bg-slate-50/70 dark:bg-slate-900/50 border border-slate-200/80 dark:border-slate-800 rounded-2xl">
-                    <div class="flex flex-col gap-1 pr-4">
-                      <span class="text-xs font-bold text-slate-800 dark:text-slate-200">Assistente Co-piloto de IA</span>
-                      <span class="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
-                        Habilita o assistente inteligente de co-piloto na interface e nos fluxos operacionais da agência. Se desativado, o recurso fica totalmente oculto para a equipe.
-                      </span>
-                    </div>
-                    <label class="relative inline-flex items-center cursor-pointer shrink-0">
-                      <input id="input-copiloto-ativo" type="checkbox" ${this.settings.copilotoAtivo !== false ? 'checked' : ''} class="sr-only peer">
-                      <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:after:border-slate-600 peer-checked:bg-indigo-600"></div>
-                    </label>
-                  </div>
-                </div>
-
-                <!-- Integração Digisac (WhatsApp) -->
-                <div class="border-t border-slate-100 dark:border-slate-800 pt-5 space-y-4">
-                  <div class="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
-                    <h3 class="text-xs font-black text-emerald-600 dark:text-emerald-455 uppercase tracking-wider flex items-center gap-2">
-                      <span>💬</span> Integração Digisac (Envio de WhatsApp) ${renderHelpIcon('historico-conversas-digisac')}
-                    </h3>
-                    <div id="digisac-status-badge" class="px-2 py-0.5 rounded-lg text-[9px] font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
-                      Não Verificado
-                    </div>
-                  </div>
+        <!-- Tabela de Consultores -->
+        <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-slate-50 dark:bg-slate-800/60 text-[10px] text-slate-400 font-black uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
+                  <th class="py-4 px-5">Consultor</th>
+                  <th class="py-4 px-5">E-mail</th>
+                  <th class="py-4 px-5 text-center">Cargo</th>
+                  <th class="py-4 px-5 text-center">Status</th>
+                  <th class="py-4 px-5 text-right">Ações</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-sm text-slate-700 dark:text-slate-300 font-semibold">
+                ${this.consultores.map(c => {
+                  const isSelf = c.id === this.user?.id;
+                  const statusBadge = c.ativo 
+                    ? `<span class="inline-flex px-2.5 py-0.5 bg-emerald-50 dark:bg-emerald-950/45 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/40 text-[10px] font-bold rounded">Ativo</span>` 
+                    : `<span class="inline-flex px-2.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-300 dark:border-slate-800 text-[10px] font-bold rounded">Inativo</span>`;
+                  const roleBadge = c.role === 'admin'
+                    ? `<span class="inline-flex px-2.5 py-0.5 bg-purple-50 dark:bg-purple-950/45 text-purple-700 dark:text-purple-400 border border-purple-100 dark:border-purple-900/40 text-[10px] font-bold rounded">ADMIN</span>`
+                    : `<span class="inline-flex px-2.5 py-0.5 bg-indigo-50 dark:bg-indigo-950/45 text-indigo-700 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/40 text-[10px] font-bold rounded">Consultor</span>`;
                   
-                  <div>
-                    <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
-                      URL da Instância / Domínio
-                    </label>
-                    <input id="input-digisac-domain" type="url" placeholder="Ex: https://minhaagencia.digisac.chat" value="${this.settings.digisacDomain || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs" />
-                    <p class="text-[9px] text-slate-400 dark:text-slate-400 mt-1 font-medium">Domínio completo da sua conta do Digisac.</p>
-                  </div>
-
-                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">ID da Conexão (serviceId)</label>
-                      <input id="input-digisac-service-id" type="text" placeholder="Ex: 5ac6..." value="${this.settings.digisacServiceId || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs" />
-                      <p class="text-[9px] text-slate-400 dark:text-slate-400 mt-1 font-medium">O identificador da conexão do WhatsApp ativa no Digisac.</p>
-                    </div>
-
-                    <div>
-                      <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Token de Acesso Pessoal (API)</label>
-                      <input id="input-digisac-token" type="password" placeholder="••••••••••••••••" value="${this.settings.digisacToken || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs" />
-                      <p class="text-[9px] text-slate-400 dark:text-slate-400 mt-1 font-medium">Gerado em Menu > Conta > API > Tokens de acesso pessoal.</p>
-                    </div>
-                  </div>
-
-                  <div class="flex items-center gap-2 pt-1 pb-3">
-                    <button id="btn-testar-digisac" type="button" class="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-indigo-600 dark:text-indigo-400 border border-indigo-100/50 dark:border-slate-700 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm">
-                      ⚡ Testar Conexão
-                    </button>
-                    <span id="digisac-test-result" class="text-[9px] font-bold text-slate-500 dark:text-slate-400"></span>
-                  </div>
-
-                  <!-- Funcionalidades Ativas (Toggles) -->
-                  <div class="border-t border-slate-100 dark:border-slate-800 pt-4">
-                    <h4 class="text-xs font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-3">Recursos Habilitados (Digisac)</h4>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  return `
+                    <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/10 transition-colors">
+                      <td class="py-4 px-5 flex items-center gap-3">
+                        ${getAvatarSvg(c.avatar_url, c.nome || 'C', 'w-8 h-8')}
+                        <div>
+                          <span class="block text-slate-800 dark:text-slate-200 font-bold">${c.nome}</span>
+                          ${isSelf ? '<span class="inline-block text-[8px] bg-slate-100 dark:bg-slate-800 text-slate-400 px-1 py-0.5 rounded uppercase tracking-wider font-extrabold">Você</span>' : ''}
+                        </div>
+                      </td>
                       
-                      <!-- Manual Send Toggle -->
-                      <div class="flex items-center justify-between p-3 bg-slate-50/50 dark:bg-slate-900/50 border border-slate-150 dark:border-slate-800/80 rounded-xl">
-                        <div class="flex flex-col gap-0.5 pr-2">
-                          <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Envio Manual de Mensagens</span>
-                          <span class="text-[10px] text-slate-400 dark:text-slate-400 leading-normal">Permite enviar modelos de mensagens manualmente nos chats.</span>
-                        </div>
-                        <label class="inline-flex items-center cursor-pointer select-none shrink-0 relative">
-                          <input id="input-digisac-enable-manual-send" type="checkbox" ${this.settings.digisac_enable_manual_send !== false ? 'checked' : ''} class="sr-only peer" />
-                          <div class="w-9 h-5 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500 relative"></div>
-                        </label>
-                      </div>
-
-                      <!-- Chat History Toggle -->
-                      <div class="flex items-center justify-between p-3 bg-slate-50/50 dark:bg-slate-900/50 border border-slate-150 dark:border-slate-800/80 rounded-xl">
-                        <div class="flex flex-col gap-0.5 pr-2">
-                          <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Sincronização de Histórico</span>
-                          <span class="text-[10px] text-slate-400 dark:text-slate-400 leading-normal">Mantém histórico de conversas atualizado no painel.</span>
-                        </div>
-                        <label class="inline-flex items-center cursor-pointer select-none shrink-0 relative">
-                          <input id="input-digisac-enable-chat-history" type="checkbox" ${this.settings.digisac_enable_chat_history !== false ? 'checked' : ''} class="sr-only peer" />
-                          <div class="w-9 h-5 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500 relative"></div>
-                        </label>
-                      </div>
-
-                      <!-- Vouchers Toggle -->
-                      <div class="flex items-center justify-between p-3 bg-slate-50/50 dark:bg-slate-900/50 border border-slate-150 dark:border-slate-800/80 rounded-xl">
-                        <div class="flex flex-col gap-0.5 pr-2">
-                          <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Envio de Vouchers</span>
-                          <span class="text-[10px] text-slate-400 dark:text-slate-400 leading-normal">Permite enviar vouchers e itinerários via WhatsApp.</span>
-                        </div>
-                        <label class="inline-flex items-center cursor-pointer select-none shrink-0 relative">
-                          <input id="input-digisac-enable-vouchers" type="checkbox" ${this.settings.digisac_enable_vouchers !== false ? 'checked' : ''} class="sr-only peer" />
-                          <div class="w-9 h-5 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500 relative"></div>
-                        </label>
-                      </div>
-
-                      <!-- Routing Toggle -->
-                      <div class="flex items-center justify-between p-3 bg-slate-50/50 dark:bg-slate-900/50 border border-slate-150 dark:border-slate-800/80 rounded-xl">
-                        <div class="flex flex-col gap-0.5 pr-2">
-                          <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Distribuição de Conversas (Fila)</span>
-                          <span class="text-[10px] text-slate-400 dark:text-slate-400 leading-normal">Roteamento inteligente de chats para consultores.</span>
-                        </div>
-                        <label class="inline-flex items-center cursor-pointer select-none shrink-0 relative">
-                          <input id="input-digisac-enable-routing" type="checkbox" ${this.settings.digisac_enable_routing !== false ? 'checked' : ''} class="sr-only peer" />
-                          <div class="w-9 h-5 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500 relative"></div>
-                        </label>
-                      </div>
-
-                      <!-- Bot Triggers Toggle -->
-                      <div class="flex items-center justify-between p-3 bg-slate-50/50 dark:bg-slate-900/50 border border-slate-150 dark:border-slate-800/80 rounded-xl">
-                        <div class="flex flex-col gap-0.5 pr-2">
-                          <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Gatilhos de Robôs (Bots)</span>
-                          <span class="text-[10px] text-slate-400 dark:text-slate-400 leading-normal">Acionamento automático de fluxos de chat do Digisac.</span>
-                        </div>
-                        <label class="inline-flex items-center cursor-pointer select-none shrink-0 relative">
-                          <input id="input-digisac-enable-bot-triggers" type="checkbox" ${this.settings.digisac_enable_bot_triggers !== false ? 'checked' : ''} class="sr-only peer" />
-                          <div class="w-9 h-5 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500 relative"></div>
-                        </label>
-                      </div>
-
-                      <!-- Webhooks Toggle -->
-                      <div class="flex items-center justify-between p-3 bg-slate-50/50 dark:bg-slate-900/50 border border-slate-150 dark:border-slate-800/80 rounded-xl">
-                        <div class="flex flex-col gap-0.5 pr-2">
-                          <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Webhooks de Eventos</span>
-                          <span class="text-[10px] text-slate-400 dark:text-slate-400 leading-normal">Envio de status de leitura/mensagens recebidas via webhook.</span>
-                        </div>
-                        <label class="inline-flex items-center cursor-pointer select-none shrink-0 relative">
-                          <input id="input-digisac-enable-webhooks" type="checkbox" ${this.settings.digisac_enable_webhooks !== false ? 'checked' : ''} class="sr-only peer" />
-                          <div class="w-9 h-5 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500 relative"></div>
-                        </label>
-                      </div>
-
-                    </div>
-                  </div>
-                </div>
-                <div class="border-t border-slate-100 dark:border-slate-800 pt-5 space-y-4">
-                  <h3 class="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                    Identidade Visual da Agência (White-Label) ${renderHelpIcon('identidade-visual-branding')}
-                  </h3>
-                  
-                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Cor Primária (Hexadecimal) *</label>
-                      <div class="flex items-center gap-2">
-                        <input id="input-agency-primary-color" type="color" value="${this.settings.agencyPrimaryColor || '#4f46e5'}" class="w-10 h-10 border border-slate-200 dark:border-slate-700 bg-transparent rounded-lg cursor-pointer" />
-                        <span class="text-xs font-mono font-bold text-slate-600">${this.settings.agencyPrimaryColor || '#4f46e5'}</span>
-                      </div>
-                      <p class="text-[10px] text-slate-400 dark:text-slate-400 mt-1.5 font-medium leading-relaxed">Cor usada nos botões, links e destaques das telas públicas (Itinerário e NPS).</p>
-                    </div>
-
-                    <div>
-                      <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Logotipo da Agência *</label>
-                      <input id="input-agency-logo-url" type="hidden" value="${this.settings.agencyLogoUrl || ''}" />
-                      <div class="flex items-center gap-3">
-                        <label class="px-4 py-2 text-xs font-extrabold bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-100/60 dark:hover:bg-indigo-900/60 text-indigo-650 dark:text-indigo-400 rounded-xl transition border border-indigo-200/40 dark:border-indigo-850 cursor-pointer flex items-center gap-1.5">
-                          📁 Selecionar Logo
-                          <input id="input-agency-logo-file" type="file" accept="image/*" class="hidden" />
-                        </label>
-                        <div id="logo-upload-spinner" class="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin hidden"></div>
-                      </div>
-                      <p class="text-[10px] text-slate-400 dark:text-slate-400 mt-1.5 font-medium leading-relaxed">Envie um arquivo PNG/JPG leve. Ele será exibido no topo do Itinerário e NPS.</p>
+                      <td class="py-4 px-5 text-slate-500 dark:text-slate-400 font-medium">
+                        ${c.email}
+                      </td>
                       
-                      <!-- Preview do Logotipo -->
-                      <div class="mt-3.5">
-                        <img id="img-agency-logo-preview" src="${this.settings.agencyLogoUrl || ''}" class="max-h-12 max-w-full rounded border border-slate-200 dark:border-slate-800 p-1 bg-white dark:bg-slate-950 ${this.settings.agencyLogoUrl ? '' : 'hidden'}" />
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                      <td class="py-4 px-5 text-center">
+                        ${roleBadge}
+                      </td>
+                      
+                      <td class="py-4 px-5 text-center">
+                        ${statusBadge}
+                      </td>
+                      
+                      <td class="py-4 px-5 text-right space-x-1.5">
+                        <button data-id="${c.id}" class="btn-editar-user px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-bold transition uppercase">
+                          Editar ✏️
+                        </button>
+                        
+                        ${isSelf ? `
+                          <span class="text-xs text-slate-400 font-semibold italic ml-2">Você</span>
+                        ` : `
+                          <select data-id="${c.id}" class="select-role-user px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                            <option value="consultor" ${c.role === 'consultor' ? 'selected' : ''}>Tornar Consultor</option>
+                            <option value="admin" ${c.role === 'admin' ? 'selected' : ''}>Tornar ADMIN</option>
+                          </select>
+                          
+                          <button data-id="${c.id}" data-active="${c.ativo}" class="btn-toggle-status-user px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                            c.ativo 
+                              ? 'bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400' 
+                              : 'bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400'
+                          }">
+                            ${c.ativo ? 'Desativar' : 'Ativar'}
+                          </button>
+                        `}
+                      </td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
 
-                <div class="flex justify-end pt-4 border-t border-slate-100 dark:border-slate-800 mt-6">
-                  <button type="submit" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/10 transition uppercase">
-                    Salvar Parâmetros
-                  </button>
-                </div>
-              </form>
+        <!-- Card Permissões Especiais -->
+        <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm flex flex-col gap-4">
+          <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+            <div>
+              <h3 class="text-sm font-black text-slate-800 dark:text-slate-200 tracking-tight flex items-center gap-2">
+                🔒 Regras de Permissão de Operação
+              </h3>
+              <p class="text-xs text-slate-400 font-medium">Restrições de criação e edição de viagens para consultores</p>
             </div>
+          </div>
 
-            <!-- Coluna Direita: Supabase Storage -->
-            <div class="md:col-span-4 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm flex flex-col gap-5">
-              <h2 class="text-sm font-black text-slate-800 dark:text-slate-200 tracking-tight border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2">
-                <svg class="w-5 h-5 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
-                </svg>
-                Armazenamento de Arquivos
-              </h2>
-
-              <p class="text-xs text-slate-400 dark:text-slate-400 font-medium leading-relaxed">
-                O PaxFlow realiza o upload de passaportes e propostas de forma direta e segura no bucket <code class="font-mono text-indigo-500 bg-indigo-50/40 dark:bg-indigo-950 px-1 py-0.5 rounded">documentos-clientes</code> do Supabase Storage.
-              </p>
-
-              <div class="border border-slate-100 dark:border-slate-800 rounded-xl p-4 flex flex-col items-center justify-center text-center gap-2 bg-slate-50/50 dark:bg-slate-950/40 transition-colors">
-                ${this.storageError ? `
-                  <span class="text-3xl animate-pulse">❌</span>
-                  <span class="px-2 py-0.5 bg-rose-50 dark:bg-rose-950/45 text-rose-700 dark:text-rose-400 border border-rose-100 dark:border-rose-900/40 font-black text-[9px] rounded uppercase tracking-wider">Erro de Conexão</span>
-                  <p class="text-[10px] text-rose-600 dark:text-rose-400 font-bold mt-1 max-w-xs leading-normal">
-                    ${this.storageError}
-                  </p>
-                  <p class="text-[9px] text-slate-400 dark:text-slate-400 leading-relaxed mt-0.5">
-                    Certifique-se de que o bucket privado <strong>documentos-clientes</strong> foi criado no Supabase e as políticas RLS foram aplicadas.
-                  </p>
-                ` : `
-                  <span class="text-3xl animate-fade-in">✅</span>
-                  <span class="px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/45 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/40 font-black text-[9px] rounded uppercase tracking-wider">Conectado (Produção)</span>
-                  <p class="text-[10px] text-slate-500 dark:text-slate-400 font-bold mt-1">Bucket Supabase Storage Ativo</p>
-                  <p class="text-[9px] text-slate-400 dark:text-slate-400 leading-relaxed mt-0.5">Pronto para uploads em produção no storage oficial.</p>
-                `}
-              </div>
-
-              <div class="space-y-2.5">
-                <button id="btn-test-drive-connection" class="w-full py-2.5 px-4 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-extrabold text-xs tracking-wider rounded-xl transition uppercase flex items-center justify-center gap-2">
-                  🧪 Testar Conexão do Storage
-                </button>
-              </div>
-              
-              <p class="text-[9px] text-slate-400 dark:text-slate-400 font-medium leading-normal text-center">
-                Os arquivos são armazenados de forma privada e acessados através de URLs assinadas temporárias e seguras de 15 minutos.
+          <div class="flex items-center justify-between p-4 bg-slate-50/50 dark:bg-slate-800/30 rounded-xl border border-slate-200/50 dark:border-slate-800">
+            <div class="space-y-0.5 pr-4">
+              <label for="toggle-permitir-consultor-criar-viagem" class="text-xs font-bold text-slate-800 dark:text-slate-200 cursor-pointer">
+                Permitir botão "Nova Viagem" para Consultores
+              </label>
+              <p class="text-[11px] text-slate-400 font-medium leading-relaxed">
+                Quando desativado, consultores só criam vendas convertendo orçamentos aprovados.
               </p>
             </div>
-          </main>
-        ` : this.activeTab === 'consultores' ? `
-          <!-- Renderização da Aba: Gestão de Consultores -->
-          <main class="flex-1 p-6 max-w-4xl mx-auto w-full flex flex-col gap-6 animate-fade-in">
-            
-            <div class="flex items-center justify-between">
+            <label class="relative inline-flex items-center cursor-pointer shrink-0">
+              <input type="checkbox" id="toggle-permitir-consultor-criar-viagem" ${this.settings?.permitirConsultorCriarViagem ? 'checked' : ''} class="sr-only peer" />
+              <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-indigo-600"></div>
+            </label>
+          </div>
+        </div>
+
+      </div>
+    `;
+  }
+
+  /**
+   * Renderiza a Aba 5: Importações & CSV
+   */
+  private renderTabImportacoes(): string {
+    return `
+      <div class="space-y-6 animate-fade-in text-slate-800 dark:text-slate-100">
+        ${this.isImporting ? `
+          <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-12 text-center shadow-xl flex flex-col items-center justify-center gap-4">
+            <div class="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+            <h3 class="text-lg font-black text-slate-800 dark:text-slate-100">Processando Carga de Dados...</h3>
+            <p class="text-xs text-slate-400">Por favor, aguarde enquanto inserimos os registros em lote no PaxFlow.</p>
+          </div>
+        ` : this.csvRows.length === 0 ? `
+          <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-8 shadow-sm text-center space-y-6">
+            <div class="w-16 h-16 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-2xl flex items-center justify-center text-3xl mx-auto border border-indigo-100 dark:border-indigo-900">
+              🛠️
+            </div>
+            <div>
+              <h2 class="text-lg font-black text-slate-800 dark:text-slate-100">Importação em Lote de Chamados DigiSac (CSV)</h2>
+              <p class="text-xs text-slate-400 font-medium max-w-md mx-auto mt-1 leading-relaxed">
+                Carregue relatórios de exportação de atendimentos do DigiSac para gerar orçamentos e sincronizar histórico de vendas automaticamente.
+              </p>
+            </div>
+
+            <div id="csv-dropzone" class="max-w-md mx-auto p-8 border-2 border-dashed border-slate-200 dark:border-slate-700 hover:border-indigo-500 rounded-2xl bg-slate-50/50 dark:bg-slate-800/30 transition text-center cursor-pointer">
+              <input id="input-csv-file" type="file" accept=".csv" class="hidden" />
+              <input id="csv-file-input" type="file" accept=".csv" class="hidden" />
+              <label for="input-csv-file" class="cursor-pointer block space-y-2">
+                <span class="block text-3xl">📄</span>
+                <span class="block text-xs font-bold text-indigo-600 dark:text-indigo-400">Clique ou arraste o arquivo CSV aqui</span>
+                <span class="block text-[10px] text-slate-400 font-medium">Delimitado por vírgula (,) ou ponto e vírgula (;)</span>
+              </label>
+            </div>
+          </div>
+        ` : `
+          <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-6">
+            <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
               <div>
-                <h2 class="text-lg font-black text-slate-800 dark:text-slate-200 tracking-tight">Consultores da Agência</h2>
-                <p class="text-xs text-slate-400 dark:text-slate-400 font-medium">Controle de acessos, status e níveis de permissão</p>
+                <h3 class="text-base font-black text-slate-800 dark:text-slate-100">Mapeamento de Colunas (${this.csvRows.length} Registros Detectados)</h3>
+                <p class="text-xs text-slate-400 font-medium">Associe os campos do seu CSV aos dados do PaxFlow</p>
               </div>
-              <button id="btn-novo-consultor" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/20 flex items-center gap-1.5 transition transform hover:-translate-y-0.5 uppercase">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                </svg>
-                Novo Consultor
+              <button id="btn-cancelar-importacao" class="px-4 py-2 border border-slate-200 hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-extrabold text-xs rounded-xl transition uppercase">
+                Cancelar
               </button>
             </div>
 
-            <!-- Tabela de Consultores -->
-            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden transition-colors">
-              <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                  <thead>
-                    <tr class="bg-slate-600/5 dark:bg-slate-800/60 text-[10px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
-                      <th class="py-4 px-5">Consultor</th>
-                      <th class="py-4 px-5">E-mail</th>
-                      <th class="py-4 px-5 text-center">Nível de Acesso</th>
-                      <th class="py-4 px-5 text-center">Status</th>
-                      <th class="py-4 px-5 text-right">Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-sm text-slate-700 dark:text-slate-300 font-semibold bg-white/50 dark:bg-slate-900/30">
-                    ${this.consultores.map(c => {
-                      const isSelf = c.id === this.user.id;
-                      const statusBadge = c.ativo 
-                        ? `<span class="inline-flex px-2.5 py-0.5 bg-emerald-50 dark:bg-emerald-950/45 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/40 text-[10px] font-bold rounded">Ativo</span>` 
-                        : `<span class="inline-flex px-2.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-300 dark:border-slate-800 text-[10px] font-bold rounded">Inativo</span>`;
-                      const roleBadge = c.role === 'admin'
-                        ? `<span class="inline-flex px-2.5 py-0.5 bg-purple-50 dark:bg-purple-950/45 text-purple-700 dark:text-purple-400 border border-purple-100 dark:border-purple-900/40 text-[10px] font-bold rounded">ADMIN</span>`
-                        : `<span class="inline-flex px-2.5 py-0.5 bg-indigo-50 dark:bg-indigo-950/45 text-indigo-700 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/40 text-[10px] font-bold rounded">Consultor</span>`;
-                      
-                      return `
-                        <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/10 transition-colors">
-                          <!-- Consultor -->
-                          <td class="py-4 px-5 flex items-center gap-3">
-                            ${getAvatarSvg(c.avatar_url, c.nome || 'C', 'w-8 h-8')}
-                            <div>
-                              <span class="block text-slate-800 dark:text-slate-200 font-bold">${c.nome}</span>
-                              ${isSelf ? '<span class="inline-block text-[8px] bg-slate-100 dark:bg-slate-800 text-slate-400 px-1 py-0.5 rounded uppercase tracking-wider font-extrabold">Você</span>' : ''}
-                            </div>
-                          </td>
-                          
-                          <!-- E-mail -->
-                          <td class="py-4 px-5 text-slate-500 dark:text-slate-400 font-medium">
-                            ${c.email}
-                          </td>
-                          
-                          <!-- Nível de Acesso -->
-                          <td class="py-4 px-5 text-center">
-                            ${roleBadge}
-                          </td>
-                          
-                          <!-- Status -->
-                          <td class="py-4 px-5 text-center">
-                            ${statusBadge}
-                          </td>
-                          
-                          <!-- Ações -->
-                          <td class="py-4 px-5 text-right space-x-1.5">
-                            <button data-id="${c.id}" class="btn-editar-user px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-bold transition uppercase">
-                              Editar ✏️
-                            </button>
-                            
-                            ${isSelf ? `
-                              <span class="text-xs text-slate-400 dark:text-slate-400 font-semibold italic ml-2">Você</span>
-                            ` : `
-                              <select data-id="${c.id}" class="select-role-user px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                                <option value="consultor" ${c.role === 'consultor' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Tornar Consultor</option>
-                                <option value="admin" ${c.role === 'admin' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Tornar ADMIN</option>
-                              </select>
-                              
-                              <button data-id="${c.id}" data-active="${c.ativo}" class="btn-toggle-status-user px-3 py-1.5 rounded-lg text-xs font-bold transition ${
-                                c.ativo 
-                                  ? 'bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 hover:dark:bg-rose-950/30' 
-                                  : 'bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 hover:dark:bg-emerald-950/30'
-                              }">
-                                ${c.ativo ? 'Desativar' : 'Ativar'}
-                              </button>
-                            `}
-                          </td>
-                        </tr>
-                      `;
-                    }).join('')}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            <!-- Card de Permissões e Restrições de Operação -->
-            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm flex flex-col gap-4">
-              <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-                <div>
-                  <h3 class="text-sm font-black text-slate-800 dark:text-slate-200 tracking-tight flex items-center gap-2">
-                    🔒 Permissões e Restrições de Operação
-                  </h3>
-                  <p class="text-xs text-slate-400 dark:text-slate-400 font-medium">Controle as regras e ações permitidas para a equipe de consultores</p>
-                </div>
-              </div>
-
-              <div class="flex items-center justify-between p-4 bg-slate-50/50 dark:bg-slate-800/30 rounded-xl border border-slate-200/50 dark:border-slate-800">
-                <div class="space-y-0.5 pr-4">
-                  <label for="toggle-permitir-consultor-criar-viagem" class="text-xs font-bold text-slate-800 dark:text-slate-200 cursor-pointer">
-                    Permitir botão "Nova Viagem" para Consultores
-                  </label>
-                  <p class="text-[11px] text-slate-400 dark:text-slate-400 font-medium leading-relaxed">
-                    Quando desativado (padrão), o botão <strong>"Nova Viagem"</strong> no Dashboard fica oculto para consultores, forçando-os a seguir o fluxo completo via Orçamento. Admins continuam com acesso total.
-                  </p>
-                </div>
-                <label class="relative inline-flex items-center cursor-pointer shrink-0">
-                  <input type="checkbox" id="toggle-permitir-consultor-criar-viagem" ${this.settings?.permitirConsultorCriarViagem ? 'checked' : ''} class="sr-only peer" />
-                  <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-indigo-600"></div>
-                </label>
-              </div>
-            </div>
-          </main>
-        ` : this.activeTab === 'importacoes' ? `
-          <!-- Renderização da Aba: Importações -->
-          <main class="flex-1 p-6 max-w-4xl mx-auto w-full flex flex-col gap-6 animate-fade-in text-slate-800 dark:text-slate-100">
-            
-            ${this.isImporting ? `
-              <!-- Spinner de Progresso -->
-              <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-12 text-center shadow-xl flex flex-col items-center justify-center gap-4">
-                <div class="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-                <h3 class="text-lg font-black tracking-tight text-slate-800 dark:text-slate-200">Importação em Lote Ativa</h3>
-                <p class="text-xs text-slate-400 dark:text-slate-400 font-semibold max-w-sm">Estamos processando as linhas do arquivo CSV e inserindo de forma performática no banco de dados. Isso pode levar alguns segundos...</p>
-              </div>
-            ` : this.parsedHeaders.length === 0 ? `
-              <!-- Dropzone Inicial -->
-              <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 shadow-sm flex flex-col gap-6">
-                <div>
-                  <h2 class="text-lg font-black tracking-tight">Importação de Histórico de Chamados</h2>
-                  <p class="text-xs text-slate-400 dark:text-slate-400 font-semibold">Alimente sua base de Orçamentos do PaxFlow importando chamados do DIGISAC</p>
-                </div>
-
-                <div id="csv-dropzone" class="border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-indigo-400 dark:hover:border-indigo-600 rounded-2xl p-12 text-center cursor-pointer transition bg-slate-50/50 dark:bg-slate-950/20 hover:bg-indigo-50/5 dark:hover:bg-indigo-950/5 flex flex-col items-center justify-center gap-3 group">
-                  <div class="w-14 h-14 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-2xl flex items-center justify-center text-3xl group-hover:scale-110 transition shadow-inner">
-                    📥
-                  </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              ${[
+                { key: 'nome', label: 'Nome do Cliente *' },
+                { key: 'contato', label: 'Contato/Telefone *' },
+                { key: 'atendente', label: 'Atendente/Operador' },
+                { key: 'tags', label: 'Tags do Chamado' },
+                { key: 'notas', label: 'Notas e Protocolo' },
+                { key: 'data_viagem', label: 'Data da Viagem' },
+                { key: 'valor_proposta', label: 'Valor da Proposta' }
+              ].map(field => {
+                const selectedVal = this.columnMapping[field.key] || '';
+                return `
                   <div>
-                    <span class="block text-sm font-extrabold text-slate-700 dark:text-slate-300">Arraste e solte o arquivo CSV aqui</span>
-                    <span class="block text-xs text-slate-400 dark:text-slate-400 font-medium mt-1">Delimitado por ponto e vírgula (;) ou vírgula (,)</span>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">${field.label}</label>
+                    <select data-key="${field.key}" class="select-mapping-column w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg text-xs font-semibold text-slate-800 dark:text-slate-200">
+                      <option value="">-- Não Mapear --</option>
+                      ${this.parsedHeaders.map(h => `<option value="${h}" ${selectedVal === h ? 'selected' : ''}>${h}</option>`).join('')}
+                    </select>
                   </div>
-                  <div class="mt-2">
-                    <label class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl transition shadow-lg shadow-indigo-600/10 cursor-pointer uppercase">
-                      Selecionar Arquivo
-                      <input id="csv-file-input" type="file" accept=".csv" class="hidden" />
-                    </label>
-                  </div>
-                </div>
+                `;
+              }).join('')}
+            </div>
 
-                <!-- Info Box -->
-                <div class="bg-indigo-50/30 dark:bg-indigo-950/15 border border-indigo-100/50 dark:border-indigo-900/20 rounded-2xl p-5 text-xs text-slate-500 dark:text-slate-400 font-semibold leading-relaxed space-y-2">
-                  <p class="font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider text-[10px]">💡 Como funciona a importação:</p>
-                  <p>1. Você baixa o relatório de histórico de chamados no painel do DIGISAC em formato **CSV**.</p>
-                  <p>2. Faz o upload do arquivo acima. O PaxFlow lerá os cabeçalhos das colunas automaticamente.</p>
-                  <p>3. Você faz o mapeamento ("de-para") para definir qual coluna do CSV corresponde ao nome do cliente, telefone, etc.</p>
-                  <p>4. O sistema identificará os atendentes únicos e permitirá associá-los aos seus consultores do PaxFlow.</p>
-                </div>
-              </div>
-            ` : `
-              <!-- Mapeamento e Configurações (CSV Carregado) -->
-              <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
-                
-                <!-- Coluna Esquerda: Mapeamento de Colunas -->
-                <div class="md:col-span-7 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 shadow-sm flex flex-col gap-5">
-                  <h3 class="text-sm font-black tracking-tight border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2">
-                    <span class="text-base">🔀</span> Mapeamento de Colunas (De-Para)
-                  </h3>
-
-                  <div class="space-y-4">
-                    ${[
-                      { key: 'nome', label: 'Nome do Cliente *', desc: 'Identifica o lead comprador no pipeline.' },
-                      { key: 'contato', label: 'Contato/Telefone *', desc: 'Número de WhatsApp, celular ou e-mail.' },
-                      { key: 'atendente', label: 'Atendente/Operador', desc: 'Atribui a responsabilidade pelo lead.' },
-                      { key: 'tags', label: 'Tags do Chamado', desc: 'Tags do DIGISAC convertidas em tags de orçamento.' },
-                      { key: 'notas', label: 'Notas e Protocolo', desc: 'Notas de negociação, assunto ou resumo do chamado.' },
-                      { key: 'data_viagem', label: 'Data da Viagem', desc: 'Data em que a viagem ocorrerá.' },
-                      { key: 'valor_proposta', label: 'Valor da Proposta', desc: 'Valor monetário estimado ou proposto.' }
-                    ].map(field => {
-                      const selectedVal = this.columnMapping[field.key] || '';
-                      return `
-                        <div>
-                          <div class="flex justify-between items-center mb-1">
-                            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">${field.label}</label>
-                            <span class="text-[9px] text-slate-400 dark:text-slate-400 font-medium">${field.desc}</span>
-                          </div>
-                          <select id="select-map-${field.key}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs font-bold text-slate-800 dark:text-slate-100">
-                            <option value="">-- Não Mapear (Ignorar) --</option>
-                            ${this.parsedHeaders.map(h => `
-                              <option value="${h}" ${h === selectedVal ? 'selected' : ''}>${h}</option>
-                            `).join('')}
-                          </select>
-                        </div>
-                      `;
-                    }).join('')}
-                  </div>
-                </div>
-
-                <!-- Coluna Direita: Parâmetros Gerais -->
-                <div class="md:col-span-5 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 shadow-sm flex flex-col gap-5">
-                  <h3 class="text-sm font-black tracking-tight border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2">
-                    <span class="text-base">⚙️</span> Parâmetros Gerais do Lote
-                  </h3>
-
-                  <div class="space-y-4">
-                    <div>
-                      <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Destino Padrão *</label>
-                      <input id="input-default-destino" type="text" required value="${this.defaultDestino}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs font-bold text-slate-800 dark:text-slate-100" />
-                      <p class="text-[9px] text-slate-400 dark:text-slate-400 mt-1 font-medium">Os orçamentos criados terão este destino preenchido por padrão.</p>
-                    </div>
-
-                    <div>
-                      <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Temperatura Padrão *</label>
-                      <select id="select-default-temp" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs font-bold text-slate-800 dark:text-slate-100">
-                        <option value="Frio" ${this.defaultTemperatura === 'Frio' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Frio ❄️</option>
-                        <option value="Normal" ${this.defaultTemperatura === 'Normal' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Normal ⚡</option>
-                        <option value="Quente" ${this.defaultTemperatura === 'Quente' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Quente 🔥</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Status Inicial *</label>
-                      <select id="select-default-status" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs font-bold text-slate-800 dark:text-slate-100">
-                        <option value="SOLICITADO" ${this.defaultStatus === 'SOLICITADO' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Solicitado</option>
-                        <option value="EM_ANDAMENTO" ${this.defaultStatus === 'EM_ANDAMENTO' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Em Andamento</option>
-                        <option value="AGUARDANDO" ${this.defaultStatus === 'AGUARDANDO' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Aguardando</option>
-                        <option value="CONCLUIDO" ${this.defaultStatus === 'CONCLUIDO' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Concluído</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
+            <!-- Parâmetros Padrão -->
+            <div class="border-t border-slate-100 dark:border-slate-800 pt-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">Destino Padrão</label>
+                <input id="input-default-destino" type="text" value="${this.defaultDestino}" class="w-full px-3 py-2 border rounded-lg text-xs font-semibold" />
               </div>
 
-              <!-- Atribuição de Consultores -->
-              <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 shadow-sm flex flex-col gap-5">
-                <div>
-                  <h3 class="text-sm font-black tracking-tight border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2">
-                    <span class="text-base">👤</span> Distribuição de Responsabilidade (Mapeamento de Consultores)
-                  </h3>
-                  <p class="text-[10px] text-slate-400 dark:text-slate-400 font-semibold mt-1.5">Associamos os atendentes únicos detectados no CSV aos consultores ativos do PaxFlow.</p>
-                </div>
-
-                <div class="overflow-hidden border border-slate-100 dark:border-slate-800 rounded-2xl">
-                  <table class="w-full text-left border-collapse text-xs font-semibold">
-                    <thead>
-                      <tr class="bg-slate-500/5 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 uppercase border-b border-slate-100 dark:border-slate-800 tracking-wider">
-                        <th class="py-3 px-4 font-black">Atendente no CSV (DIGISAC)</th>
-                        <th class="py-3 px-4 font-black text-right">Consultor no PaxFlow</th>
-                      </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800 bg-white/50 dark:bg-slate-900/30">
-                      ${this.uniqueAttendants.map((att, idx) => {
-                        const selectedConsultant = this.attendantMapping[att] || '';
-                        return `
-                          <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/15 transition">
-                            <td class="py-3.5 px-4 font-bold text-slate-800 dark:text-slate-300">
-                              ${att}
-                            </td>
-                            <td class="py-3.5 px-4 text-right">
-                              <select id="select-atendente-mapping-${idx}" class="px-3 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-500 text-xs font-bold text-slate-800 dark:text-slate-100 max-w-[240px]">
-                                <option value="" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">-- Usar Consultor Padrão (${this.perfil?.nome.split(' ')[0] || 'Você'}) --</option>
-                                ${this.consultores.map(c => `
-                                  <option value="${c.id}" ${c.id === selectedConsultant ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">${c.nome}</option>
-                                `).join('')}
-                              </select>
-                            </td>
-                          </tr>
-                        `;
-                      }).join('')}
-                    </tbody>
-                  </table>
-                </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">Temperatura Padrão</label>
+                <select id="select-default-temp" class="w-full px-3 py-2 border rounded-lg text-xs font-semibold">
+                  <option value="Quente" ${this.defaultTemperatura === 'Quente' ? 'selected' : ''}>Quente 🔥</option>
+                  <option value="Normal" ${this.defaultTemperatura === 'Normal' ? 'selected' : ''}>Normal 🟡</option>
+                  <option value="Frio" ${this.defaultTemperatura === 'Frio' ? 'selected' : ''}>Frio ❄️</option>
+                </select>
               </div>
 
-              <!-- Preview de Dados -->
-              <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 shadow-sm flex flex-col gap-4">
-                <div>
-                  <h3 class="text-sm font-black tracking-tight border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2">
-                    <span class="text-base">👁️</span> Pré-visualização Mapeada (Primeiros 3 Leads)
-                  </h3>
-                  <p class="text-[10px] text-slate-400 dark:text-slate-400 font-semibold mt-1.5">Veja uma simulação de como os orçamentos serão registrados antes de prosseguir.</p>
-                </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">Status Inicial</label>
+                <select id="select-default-status" class="w-full px-3 py-2 border rounded-lg text-xs font-semibold">
+                  <option value="SOLICITADO" ${this.defaultStatus === 'SOLICITADO' ? 'selected' : ''}>Solicitado</option>
+                  <option value="EM_ANDAMENTO" ${this.defaultStatus === 'EM_ANDAMENTO' ? 'selected' : ''}>Em Andamento</option>
+                  <option value="AGUARDANDO" ${this.defaultStatus === 'AGUARDANDO' ? 'selected' : ''}>Aguardando</option>
+                  <option value="CONCLUIDO" ${this.defaultStatus === 'CONCLUIDO' ? 'selected' : ''}>Concluído</option>
+                </select>
+              </div>
+            </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  ${[0, 1, 2].map(idx => {
-                    const row = this.csvRows[idx];
-                    if (!row) return '';
-
-                    const nomeCol = this.columnMapping['nome'];
-                    const contatoCol = this.columnMapping['contato'];
-                    const atendenteCol = this.columnMapping['atendente'];
-                    const tagsCol = this.columnMapping['tags'];
-                    const dataViagemCol = this.columnMapping['data_viagem'];
-                    const valorPropostaCol = this.columnMapping['valor_proposta'];
-
-                    const nameVal = row[this.parsedHeaders.indexOf(nomeCol)] || 'Cliente Importado';
-                    const contactVal = row[this.parsedHeaders.indexOf(contatoCol)] || '';
-                    const rawTags = tagsCol ? row[this.parsedHeaders.indexOf(tagsCol)] : '';
-                    const tagsList = rawTags ? rawTags.split(/[;,|]+/).map(t => t.trim()).filter(Boolean) : [];
-
-                    const rawAtendente = atendenteCol ? row[this.parsedHeaders.indexOf(atendenteCol)] : '';
-                    const mappedConsultantId = this.attendantMapping[rawAtendente || '(Sem Atendente)'] || '';
-                    const consultantMatch = this.consultores.find(c => c.id === mappedConsultantId) || this.perfil;
-
-                    const rawDataViagem = dataViagemCol ? row[this.parsedHeaders.indexOf(dataViagemCol)] : '';
-                    const rawValorProposta = valorPropostaCol ? row[this.parsedHeaders.indexOf(valorPropostaCol)] : '';
-                    const valorPropostaVal = rawValorProposta ? parseBrFloat(rawValorProposta) : null;
-
+            <!-- De-Para Atendentes -->
+            ${this.uniqueAttendants.length > 0 ? `
+              <div class="border-t border-slate-100 dark:border-slate-800 pt-4 space-y-3">
+                <h4 class="text-xs font-black text-slate-500 uppercase tracking-wide">Mapeamento de Atendentes</h4>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  ${this.uniqueAttendants.map(att => {
+                    const assignedId = this.attendantMapping[att] || '';
                     return `
-                      <div class="bg-slate-50/50 dark:bg-slate-800/20 border border-slate-200/60 dark:border-slate-800/80 p-4 rounded-2xl flex flex-col gap-3">
-                        <div class="flex items-start justify-between gap-1.5">
-                          <div class="overflow-hidden">
-                            <span class="block text-[11px] font-black text-slate-800 dark:text-slate-200 truncate leading-tight">${nameVal}</span>
-                            <span class="block text-[9px] text-slate-400 dark:text-slate-400 font-semibold truncate mt-0.5">${contactVal}</span>
-                          </div>
-                          <span class="px-2 py-0.5 bg-rose-50 text-rose-700 dark:bg-rose-950/20 dark:text-rose-400 border border-rose-100/30 dark:border-rose-900/30 text-[8px] font-black uppercase rounded tracking-wider shrink-0">
-                            ${this.defaultTemperatura}
-                          </span>
-                        </div>
-
-                        <div class="flex flex-col gap-1 text-[9px] font-semibold text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900/30 p-2 rounded-xl border border-slate-100 dark:border-slate-800/50">
-                          <div class="flex justify-between">
-                            <span>Destino:</span>
-                            <span class="font-extrabold text-slate-700 dark:text-slate-400 truncate max-w-[110px]">${this.defaultDestino}</span>
-                          </div>
-                          <div class="flex justify-between">
-                            <span>Status:</span>
-                            <span class="font-extrabold text-slate-700 dark:text-slate-300">${this.defaultStatus}</span>
-                          </div>
-                          ${rawDataViagem ? `
-                            <div class="flex justify-between">
-                              <span>Data Viagem:</span>
-                              <span class="font-extrabold text-slate-700 dark:text-slate-300 truncate max-w-[110px]">${rawDataViagem.split(' ')[0]}</span>
-                            </div>
-                          ` : ''}
-                          ${valorPropostaVal !== null ? `
-                            <div class="flex justify-between">
-                              <span>Valor Proposta:</span>
-                              <span class="font-black text-indigo-600 dark:text-indigo-400">R$ ${valorPropostaVal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-                            </div>
-                          ` : ''}
-                          <div class="flex justify-between mt-1 pt-1 border-t border-slate-100 dark:border-slate-800/50">
-                            <span>Consultor:</span>
-                            <span class="font-black text-indigo-600 dark:text-indigo-400">👤 ${consultantMatch?.nome.split(' ')[0] || 'Consultor'}</span>
-                          </div>
-                        </div>
-
-                        ${tagsList.length > 0 ? `
-                          <div class="flex flex-wrap gap-1">
-                            ${tagsList.slice(0, 3).map(tag => `
-                              <span class="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-400 border border-slate-200/40 dark:border-slate-700/40 rounded text-[7px] font-extrabold">${tag}</span>
-                            `).join('')}
-                          </div>
-                        ` : ''}
+                      <div class="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/60 dark:border-slate-700">
+                        <span class="block text-xs font-bold text-slate-700 dark:text-slate-200 mb-1 truncate">DIGISAC: ${att}</span>
+                        <select data-attendant="${att}" class="select-mapping-attendant w-full px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg text-xs font-semibold">
+                          <option value="">-- Atribuir a Mim --</option>
+                          ${this.consultores.map(c => `<option value="${c.id}" ${assignedId === c.id ? 'selected' : ''}>${c.nome}</option>`).join('')}
+                        </select>
                       </div>
                     `;
                   }).join('')}
                 </div>
               </div>
+            ` : ''}
 
-              <!-- Ações do Rodapé -->
-              <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-200/60 dark:border-slate-800/60">
-                <button id="btn-cancelar-importacao" class="px-5 py-3 border border-slate-200 hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-extrabold text-xs tracking-wider rounded-xl transition uppercase">
-                  Limpar e Voltar
-                </button>
-                <button id="btn-confirmar-importacao" class="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs tracking-wider rounded-xl transition shadow-lg shadow-emerald-500/20 uppercase">
-                  🚀 Confirmar Importação (${this.csvRows.length} Leads)
-                </button>
-              </div>
-            `}
-          </main>
-        ` : this.activeTab === 'automacoes' ? `
-          <!-- Renderização da Aba: Automações -->
-          <main class="flex-1 p-6 max-w-4xl mx-auto w-full grid grid-cols-1 md:grid-cols-12 gap-6 items-start animate-fade-in text-slate-800 dark:text-slate-100">
-            
-            <div class="md:col-span-8 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
-              <h2 class="text-base font-black text-slate-800 dark:text-slate-200 tracking-tight border-b border-slate-100 dark:border-slate-800 pb-3.5 mb-5 flex items-center gap-2.5">
-                <svg class="w-5 h-5 text-indigo-500 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-                Configurações de Automações & SLAs
-              </h2>
-
-              <form id="form-automacoes" class="space-y-6">
-                
-                <!-- Orçamentos -->
-                <div>
-                  <h3 class="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-3">Fluxo de Orçamentos</h3>
-                  <div class="space-y-4">
-                    <div>
-                      <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Tempo limite de inatividade (Dias) *</label>
-                      <input id="input-tempo-desistencia" type="number" min="1" max="365" required value="${this.settings.tempoDesistenciaOrcamentoDias || 30}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-bold" />
-                      <p class="text-[10px] text-slate-400 dark:text-slate-400 mt-1.5 font-medium leading-relaxed">Orçamentos no estado "AGUARDANDO" sem interação por mais de X dias serão automaticamente alterados para "DESISTÊNCIA".</p>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Viagens (Kanban) -->
-                <div class="border-t border-slate-100 dark:border-slate-800 pt-5">
-                  <h3 class="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-3">Fluxo de Vendas & Viagens</h3>
-                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Alerta Pré-Embarque (Dias antes) *</label>
-                      <input id="input-sla-pre" type="number" min="1" required value="${this.settings.slaPreEmbarqueDias}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-bold" />
-                      <p class="text-[10px] text-slate-400 dark:text-slate-400 mt-1.5 font-medium leading-relaxed">Sinaliza em vermelho o card de viagem que estiver a menos dias do embarque do que este limite.</p>
-                    </div>
-
-                    <div>
-                      <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Alerta Pós-Viagem (Dias depois) *</label>
-                      <input id="input-sla-pos" type="number" min="1" required value="${this.settings.slaPosViagemDias}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-bold" />
-                      <p class="text-[10px] text-slate-400 dark:text-slate-400 mt-1.5 font-medium leading-relaxed">Sinaliza em laranja a viagem concluída se a finalização operacional não ocorrer em até X dias.</p>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- NPS e Pós-Venda -->
-                <div class="border-t border-slate-100 dark:border-slate-800 pt-5">
-                  <h3 class="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-3">Pesquisas de Satisfação (NPS)</h3>
-                  <div class="flex items-center justify-between gap-4">
-                    <div class="flex-1 min-w-0">
-                      <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1 flex items-center gap-1.5 font-bold">
-                        Disparo Automático de NPS
-                      </label>
-                      <p class="text-[10px] text-slate-400 dark:text-slate-400 font-medium leading-relaxed">Enviar e-mail/WhatsApp automaticamente solicitando feedback de satisfação após o término da viagem.</p>
-                    </div>
-                    <div class="relative flex items-center shrink-0">
-                      <input id="input-enviar-nps" type="checkbox" ${this.settings.enviarNpsAutomatico ? 'checked' : ''} class="w-5 h-5 text-indigo-600 focus:ring-indigo-500 border-slate-300 dark:border-slate-700 rounded cursor-pointer" />
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Reembolsos -->
-                <div class="border-t border-slate-100 dark:border-slate-800 pt-5">
-                  <h3 class="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-3">Fluxo de Reembolsos</h3>
-                  <div>
-                    <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Prazo padrão de reembolso (Dias) *</label>
-                    <input id="input-prazo-reembolso" type="number" min="1" max="180" required value="${this.settings.prazoReembolsoDias || 30}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-bold" />
-                    <p class="text-[10px] text-slate-400 dark:text-slate-400 mt-1.5 font-medium leading-relaxed">Prazo estimado em dias sugerido aos clientes para a finalização dos estornos.</p>
-                  </div>
-                </div>
-
-                <!-- Algoritmo Preditivo & Riscos Operacionais -->
-                <div class="border-t border-slate-100 dark:border-slate-800 pt-5">
-                  <h3 class="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-3">🚨 Algoritmo Preditivo & Risco Operacional</h3>
-                  <div>
-                    <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Antecedência de Embarque para Alerta de Risco (Dias) *</label>
-                    <input id="input-antecedencia-risco" type="number" min="1" max="90" required value="${this.settings.antecedencia_risco_operacional_dias || this.settings.antecedenciaRiscoOperacionalDias || 15}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-bold" />
-                    <p class="text-[10px] text-slate-400 dark:text-slate-400 mt-1.5 font-medium leading-relaxed">Janela de dias antes do embarque para auditarmos pendências de conferência financeira, passaportes e vouchers.</p>
-                  </div>
-                </div>
-
-                <div class="border-t border-slate-100 dark:border-slate-800 pt-5 flex justify-end">
-                  <button type="submit" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-md transition">
-                    Salvar Automações
-                  </button>
-                </div>
-
-              </form>
+            <div class="flex justify-end pt-4 border-t border-slate-100 dark:border-slate-800">
+              <button id="btn-confirmar-importacao" class="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-emerald-500/20 transition">
+                🚀 Confirmar Importação (${this.csvRows.length} Registros)
+              </button>
             </div>
-
-            <!-- Informações Laterais -->
-            <div class="md:col-span-4 space-y-6">
-              <div class="bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900 rounded-2xl p-5">
-                <h3 class="text-xs font-black text-indigo-800 dark:text-indigo-300 uppercase tracking-wider mb-2">💡 Sobre as Automações</h3>
-                <p class="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
-                  Estas regras operam de forma autônoma para garantir a atualização dos cartões de orçamentos e vendas sem sobrecarregar a equipe.
-                  <br/><br/>
-                  <strong>Mudanças de Estado Automáticas:</strong>
-                  Quando um prazo expira ou um gatilho é acionado, o status é atualizado imediatamente em tempo real para toda a agência.
-                </p>
-              </div>
-            </div>
-
-          </main>
-        ` : ''}
+          </div>
+        `}
       </div>
     `;
   }
@@ -2281,12 +2246,19 @@ export class ConfiguracoesPage {
 
       if (!this.settings) return;
 
-      const tempoDesistenciaVal = Number((document.getElementById('input-tempo-desistencia') as HTMLInputElement).value);
-      const slaPreVal = Number((document.getElementById('input-sla-pre') as HTMLInputElement).value);
-      const slaPosVal = Number((document.getElementById('input-sla-pos') as HTMLInputElement).value);
-      const enviarNpsVal = (document.getElementById('input-enviar-nps') as HTMLInputElement).checked;
-      const prazoReembolsoVal = Number((document.getElementById('input-prazo-reembolso') as HTMLInputElement).value);
-      const antecedenciaRiscoVal = Number((document.getElementById('input-antecedencia-risco') as HTMLInputElement).value);
+      const tempoDesistenciaInput = document.getElementById('input-tempo-desistencia') as HTMLInputElement;
+      const slaPreInput = document.getElementById('input-sla-pre') as HTMLInputElement;
+      const slaPosInput = document.getElementById('input-sla-pos') as HTMLInputElement;
+      const enviarNpsInput = document.getElementById('input-enviar-nps') as HTMLInputElement;
+      const prazoReembolsoInput = document.getElementById('input-prazo-reembolso') as HTMLInputElement;
+      const antecedenciaRiscoInput = document.getElementById('input-antecedencia-risco') as HTMLInputElement;
+
+      const tempoDesistenciaVal = tempoDesistenciaInput ? Number(tempoDesistenciaInput.value) : this.settings.tempoDesistenciaOrcamentoDias;
+      const slaPreVal = slaPreInput ? Number(slaPreInput.value) : this.settings.slaPreEmbarqueDias;
+      const slaPosVal = slaPosInput ? Number(slaPosInput.value) : this.settings.slaPosViagemDias;
+      const enviarNpsVal = enviarNpsInput ? enviarNpsInput.checked : this.settings.enviarNpsAutomatico;
+      const prazoReembolsoVal = prazoReembolsoInput ? Number(prazoReembolsoInput.value) : this.settings.prazoReembolsoDias;
+      const antecedenciaRiscoVal = antecedenciaRiscoInput ? Number(antecedenciaRiscoInput.value) : (this.settings.antecedencia_risco_operacional_dias || 15);
 
       const payload = {
         tempo_desistencia_orcamento_dias: tempoDesistenciaVal,
