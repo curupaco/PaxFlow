@@ -27,7 +27,44 @@ export class NextTripDashboardWidget {
   public render(): void {
     if (!this.container) return;
     if (this.oportunidades.length === 0) {
-      this.container.innerHTML = '';
+      this.container.innerHTML = `
+        <div class="mb-6 p-5 bg-gradient-to-r from-indigo-950 via-slate-900 to-indigo-900 text-white rounded-2xl shadow-xl border border-indigo-500/30 animate-fade-in shrink-0">
+          <div class="flex items-center justify-between gap-3 mb-3 pb-3 border-b border-indigo-500/20 flex-wrap">
+            <div class="flex items-center gap-2.5">
+              <span class="p-2 rounded-xl bg-indigo-500/20 text-indigo-300 text-base">🎯</span>
+              <div>
+                <h3 class="text-sm font-black tracking-wide text-indigo-100 uppercase font-sans">Next Trip Engine™ — Motor Preditivo de Recompra</h3>
+                <p class="text-xs text-indigo-300">Inteligência comercial preditiva para identificar clientes no momento ideal de nova compra.</p>
+              </div>
+            </div>
+            <span class="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-black uppercase tracking-wider border border-emerald-500/30">
+              ⚡ Algoritmo Ativo
+            </span>
+          </div>
+          <div class="p-4 bg-slate-900/60 rounded-xl border border-indigo-500/20 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-indigo-200">
+            <div class="flex items-center gap-3">
+              <span class="text-2xl">✨</span>
+              <div>
+                <strong class="text-white font-bold block text-sm">Oportunidades em Monitoramento</strong>
+                <span class="text-slate-300 text-xs">O PaxFlow analisa continuamente viagens concluídas (> 9 meses), notas de NPS e histórico de destinos para calcular a janela exata de recompra de cada cliente.</span>
+              </div>
+            </div>
+            <button id="btn-gerar-demo-next-trip" class="shrink-0 px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white font-black text-xs rounded-xl shadow-lg transition uppercase tracking-wide border border-indigo-400/30 flex items-center gap-2">
+              <span>🎯</span> Simular Oportunidades Demo
+            </button>
+          </div>
+        </div>
+      `;
+
+      this.container.querySelector('#btn-gerar-demo-next-trip')?.addEventListener('click', () => {
+        // Limpar qualquer snooze ativo para forçar a simulação de oportunidades
+        Object.keys(localStorage).forEach(key => {
+          if (key.startsWith('next_trip_snooze_')) localStorage.removeItem(key);
+        });
+        (window as any).paxflowForceNextTripDemo = true;
+        this.onUpdate();
+      });
+
       return;
     }
 

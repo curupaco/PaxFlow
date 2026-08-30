@@ -407,6 +407,7 @@ export class LandingPage {
           <div class="w-full mb-8">
             <div class="flex flex-wrap justify-center gap-2 p-2 rounded-3xl bg-white/[0.04] border border-white/10 max-w-6xl mx-auto backdrop-blur-md">
               <button id="tab-btn-dashboard" class="px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 bg-gradient-to-r from-[#0052d4] to-[#00a8f5] text-white shadow-lg pf-glow">Painel Comercial</button>
+              <button id="tab-btn-nexttrip" class="px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 text-slate-400 hover:text-indigo-300 hover:bg-white/5 transition">🎯 Next Trip Engine™</button>
               <button id="tab-btn-viagens" class="px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 text-slate-400 hover:text-[#00a8f5] hover:bg-white/5 transition">Viagens</button>
               <button id="tab-btn-orcamentos" class="px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 text-slate-400 hover:text-[#00e5a3] hover:bg-white/5 transition">Orçamentos</button>
               <button id="tab-btn-inbox" class="px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 text-slate-400 hover:text-rose-400 hover:bg-white/5 transition">Alertas & SLAs</button>
@@ -449,6 +450,62 @@ export class LandingPage {
                     <div><div class="flex justify-between text-xs font-bold mb-1 text-slate-400"><span>Orçamentos Criados</span><span>120</span></div><div class="w-full bg-white/10 h-2 rounded-full overflow-hidden"><div class="pf-bar-fill bg-gradient-to-r from-[#0052d4] to-[#00a8f5] h-full rounded-full" data-bar="100"></div></div></div>
                     <div><div class="flex justify-between text-xs font-bold mb-1 text-slate-400"><span>Propostas Enviadas</span><span>75 (62%)</span></div><div class="w-full bg-white/10 h-2 rounded-full overflow-hidden"><div class="pf-bar-fill bg-gradient-to-r from-[#f12711] to-[#f5af19] h-full rounded-full" data-bar="62"></div></div></div>
                     <div><div class="flex justify-between text-xs font-bold mb-1 text-slate-400"><span>Negociações Fechadas</span><span>24 (20%)</span></div><div class="w-full bg-white/10 h-2 rounded-full overflow-hidden"><div class="pf-bar-fill bg-gradient-to-r from-[#00e5a3] to-teal-400 h-full rounded-full" data-bar="20"></div></div></div>
+                  </div>
+                </div>
+              </div>
+
+              <div id="panel-nexttrip" class="space-y-4 tab-pane-transition hidden text-xs">
+                <div class="p-4 rounded-2xl bg-gradient-to-r from-indigo-900/60 via-purple-900/40 to-indigo-950/60 border border-indigo-500/30 text-sm text-slate-200 flex items-center justify-between flex-wrap gap-2">
+                  <div class="flex items-center gap-2">
+                    <span class="text-xl">🎯</span>
+                    <span><strong>Next Trip Engine™ (Motor Preditivo de Recompra):</strong> Algoritmo inteligente que analisa histórico de viagens concluídas (> 9 meses), NPS e preferências para prever o momento exato de sugerir novas viagens aos seus clientes.</span>
+                  </div>
+                  <span class="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-black uppercase tracking-wider border border-emerald-500/30">
+                    🔥 3 Oportunidades de Recompra
+                  </span>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div class="bg-slate-900/90 border border-indigo-500/40 p-4 rounded-2xl space-y-2.5 shadow-xl">
+                    <div class="flex items-center justify-between">
+                      <span class="font-black text-white text-sm">Mariana & Família Costa</span>
+                      <span class="px-2 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[9px] font-black rounded-lg">🎯 94/100</span>
+                    </div>
+                    <p class="text-slate-400 text-[11px] font-medium">Última viagem: Orlando (Out/2025) • Promotora NPS 10</p>
+                    <div class="p-2.5 bg-indigo-950/60 rounded-xl border border-indigo-500/30 text-indigo-200 text-[11px] font-bold">
+                      Sugestão: Europa 12m (Paris & Roma)
+                    </div>
+                    <div class="flex gap-2 pt-1">
+                      <span class="flex-1 px-2.5 py-1.5 bg-indigo-600 text-white font-black rounded-xl text-center text-[10px] uppercase tracking-wider shadow">💬 WhatsApp 1-Clique</span>
+                      <span class="flex-1 px-2.5 py-1.5 bg-slate-800 text-indigo-300 border border-indigo-500/30 font-black rounded-xl text-center text-[10px] uppercase tracking-wider">📋 Orçamento</span>
+                    </div>
+                  </div>
+                  <div class="bg-slate-900/90 border border-indigo-500/40 p-4 rounded-2xl space-y-2.5 shadow-xl">
+                    <div class="flex items-center justify-between">
+                      <span class="font-black text-white text-sm">Carlos Eduardo Oliveira</span>
+                      <span class="px-2 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[9px] font-black rounded-lg">🎯 86/100</span>
+                    </div>
+                    <p class="text-slate-400 text-[11px] font-medium">Última viagem: Cancún (Dez/2025) • Aniversário de Viagem</p>
+                    <div class="p-2.5 bg-indigo-950/60 rounded-xl border border-indigo-500/30 text-indigo-200 text-[11px] font-bold">
+                      Sugestão: Resort All-Inclusive (Praia do Forte)
+                    </div>
+                    <div class="flex gap-2 pt-1">
+                      <span class="flex-1 px-2.5 py-1.5 bg-indigo-600 text-white font-black rounded-xl text-center text-[10px] uppercase tracking-wider shadow">💬 WhatsApp 1-Clique</span>
+                      <span class="flex-1 px-2.5 py-1.5 bg-slate-800 text-indigo-300 border border-indigo-500/30 font-black rounded-xl text-center text-[10px] uppercase tracking-wider">📋 Orçamento</span>
+                    </div>
+                  </div>
+                  <div class="bg-slate-900/90 border border-indigo-500/40 p-4 rounded-2xl space-y-2.5 shadow-xl">
+                    <div class="flex items-center justify-between">
+                      <span class="font-black text-white text-sm">Fernanda & Gabriel Santos</span>
+                      <span class="px-2 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[9px] font-black rounded-lg">🎯 78/100</span>
+                    </div>
+                    <p class="text-slate-400 text-[11px] font-medium">Última viagem: Maldivas (Ago/2025) • Janela de Férias</p>
+                    <div class="p-2.5 bg-indigo-950/60 rounded-xl border border-indigo-500/30 text-indigo-200 text-[11px] font-bold">
+                      Sugestão: Grécia & Ilhas Gregas
+                    </div>
+                    <div class="flex gap-2 pt-1">
+                      <span class="flex-1 px-2.5 py-1.5 bg-indigo-600 text-white font-black rounded-xl text-center text-[10px] uppercase tracking-wider shadow">💬 WhatsApp 1-Clique</span>
+                      <span class="flex-1 px-2.5 py-1.5 bg-slate-800 text-indigo-300 border border-indigo-500/30 font-black rounded-xl text-center text-[10px] uppercase tracking-wider">📋 Orçamento</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -558,6 +615,58 @@ export class LandingPage {
                 <span class="px-4 py-2 rounded-full bg-white/[0.05] border border-white/10 text-sm font-semibold text-slate-200">Operadoras</span>
                 <span class="px-4 py-2 rounded-full bg-white/[0.05] border border-white/10 text-sm font-semibold text-slate-200">Franquias de Viagens</span>
                 <span class="px-4 py-2 rounded-full bg-white/[0.05] border border-white/10 text-sm font-semibold text-slate-200">Consultores de Viagem</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== NEXT TRIP ENGINE (Destaque Exclusivo) ===== -->
+        <section id="next-trip-section" class="relative z-10 w-full py-20 px-6 border-t border-white/10 bg-gradient-to-b from-[#06070f] via-[#100d2e]/80 to-[#06070f]">
+          <div class="pf-zone max-w-6xl mx-auto space-y-12">
+            <div class="text-center max-w-3xl mx-auto space-y-4">
+              <span class="px-4 py-1.5 rounded-full bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 text-[10px] font-black uppercase tracking-widest">
+                🎯 Exclusividade PaxFlow
+              </span>
+              <h2 class="text-3xl md:text-5xl font-black tracking-tight leading-tight text-white">
+                Next Trip Engine™<br />
+                <span class="bg-gradient-to-r from-indigo-400 via-purple-400 to-[#00a8f5] bg-clip-text text-transparent pf-animated-gradient">
+                  Motor Preditivo de Recompra
+                </span>
+              </h2>
+              <p class="text-sm text-slate-300 font-medium max-w-2xl mx-auto leading-relaxed">
+                Transforme a base de clientes antigos da sua agência em vendas ativas. O algoritmo analisa 5 vetores estratégicos para dizer à sua equipe exatamente <strong>quem está no momento ideal para comprar uma nova viagem hoje</strong>.
+              </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div data-reveal="left" class="p-7 rounded-3xl bg-white/[0.04] border border-indigo-500/30 backdrop-blur-md space-y-4 hover:border-indigo-400/60 transition shadow-xl pf-glow">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-600/30 to-purple-600/30 text-indigo-300 border border-indigo-500/40 flex items-center justify-center text-2xl font-black">
+                  📊
+                </div>
+                <h3 class="text-xl font-extrabold text-white">Score de Prontidão 0-100</h3>
+                <p class="text-xs text-slate-300 leading-relaxed font-medium">
+                  Cálculo em tempo real combinando tempo de retorno (> 9 meses), notas de NPS (Promotores 9-10), preferências de viagem e janela habitual de férias.
+                </p>
+              </div>
+
+              <div data-reveal="up" class="p-7 rounded-3xl bg-white/[0.04] border border-purple-500/30 backdrop-blur-md space-y-4 hover:border-purple-400/60 transition shadow-xl pf-glow">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-600/30 to-fuchsia-600/30 text-purple-300 border border-purple-500/40 flex items-center justify-center text-2xl font-black">
+                  🏷️
+                </div>
+                <h3 class="text-xl font-extrabold text-white">Clusters de Afinidade</h3>
+                <p class="text-xs text-slate-300 leading-relaxed font-medium">
+                  Agrupamento automático por perfis de viagens (<em>Europa 12m</em>, <em>Resorts no Verão</em>, <em>Disney/Família</em>, <em>Aniversário de Viagem</em>) para ofertas sob medida.
+                </p>
+              </div>
+
+              <div data-reveal="right" class="p-7 rounded-3xl bg-white/[0.04] border border-emerald-500/30 backdrop-blur-md space-y-4 hover:border-emerald-400/60 transition shadow-xl pf-glow">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-600/30 to-teal-600/30 text-emerald-300 border border-emerald-500/40 flex items-center justify-center text-2xl font-black">
+                  ⚡
+                </div>
+                <h3 class="text-xl font-extrabold text-white">Ações de 1-Clique</h3>
+                <p class="text-xs text-slate-300 leading-relaxed font-medium">
+                  Dispare um WhatsApp personalizado pré-preenchido ou crie um Orçamento Preditivo direto pelo painel, ativando carência automática de 30 dias após a abordagem.
+                </p>
               </div>
             </div>
           </div>
@@ -900,9 +1009,10 @@ export class LandingPage {
     document.getElementById('btn-plano-profissional')?.addEventListener('click', handleStartDemo);
     document.getElementById('btn-plano-enterprise')?.addEventListener('click', handleWhatsApp);
 
-    const tabs = ['dashboard', 'viagens', 'orcamentos', 'inbox', 'escala', 'reembolsos', 'relatorios', 'publicas'];
+    const tabs = ['dashboard', 'nexttrip', 'viagens', 'orcamentos', 'inbox', 'escala', 'reembolsos', 'relatorios', 'publicas'];
     const pathTexts: Record<string, string> = {
       dashboard: 'PaxFlow - Painel de Controle',
+      nexttrip: 'PaxFlow - Next Trip Engine™ (Motor Preditivo de Recompra)',
       viagens: 'PaxFlow - Operação de Viagens',
       orcamentos: 'PaxFlow - Funil de Orçamentos',
       inbox: 'PaxFlow - Central de Mensagens e Alertas',
@@ -915,6 +1025,7 @@ export class LandingPage {
     const baseTab = "px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 text-slate-400 hover:bg-white/5 transition";
     const activeMap: Record<string, string> = {
       dashboard: "px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 bg-gradient-to-r from-[#0052d4] to-[#00a8f5] text-white shadow-lg pf-glow",
+      nexttrip: "px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 bg-gradient-to-r from-indigo-600 via-purple-600 to-[#00a8f5] text-white shadow-lg pf-glow",
       viagens: "px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 bg-gradient-to-r from-[#00a8f5] to-cyan-500 text-white shadow-lg",
       orcamentos: "px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 bg-gradient-to-r from-[#00e5a3] to-teal-400 text-[#062a1f] shadow-lg",
       inbox: "px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 bg-gradient-to-r from-[#f12711] to-[#f5af19] text-white shadow-lg",
