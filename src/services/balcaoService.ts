@@ -140,7 +140,26 @@ export class BalcaoService {
       }
     } catch (e) {}
 
-    return Array.from(resultadosMap.values());
+    // Deduplica viagens e orçamentos dentro de cada resultado de cliente por ID
+    const resultados = Array.from(resultadosMap.values()).map(item => {
+      const vMap = new Map<string, any>();
+      (item.viagens || []).forEach(v => {
+        if (v && v.id && !vMap.has(v.id)) vMap.set(v.id, v);
+      });
+
+      const oMap = new Map<string, any>();
+      (item.orcamentos || []).forEach(o => {
+        if (o && o.id && !oMap.has(o.id)) oMap.set(o.id, o);
+      });
+
+      return {
+        ...item,
+        viagens: Array.from(vMap.values()),
+        orcamentos: Array.from(oMap.values())
+      };
+    });
+
+    return resultados;
   }
 
   /**

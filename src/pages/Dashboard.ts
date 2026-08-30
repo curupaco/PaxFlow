@@ -1348,10 +1348,40 @@ export class Dashboard {
     }, duration);
   }
   /**
-   * Renderiza a seção Modo Co-Piloto (Pesquisa de Balcão - Toda a Agência)
+   * Renderiza a seção Modo Co-Piloto (Pesquisa de Balcão - Outros Consultores)
    */
   private renderBalcaoSectionHTML(): string {
-    if (!this.buscaTermo || this.balcaoResultados.length === 0) return '';
+    if (!this.buscaTermo || !this.balcaoResultados || this.balcaoResultados.length === 0) return '';
+
+    const currentUserId = this.user?.id;
+    const mainListTripIds = new Set(this.viagens.filter(v => {
+      if (this.perfil?.role !== 'admin') {
+        return v.consultor_id === currentUserId || v.consultor_responsavel_id === currentUserId;
+      }
+      return true;
+    }).map(v => v.id));
+
+    // Filtra balcaoResultados removendo os itens do próprio usuário ou que já estejam na lista principal
+    const resultadosFiltrados = this.balcaoResultados.map(res => {
+      const viagensOutros = (res.viagens || []).filter(v => {
+        const isMinhaViagem = v.consultorId === currentUserId;
+        const jaEstaNaListaPrincipal = mainListTripIds.has(v.id);
+        return !isMinhaViagem && !jaEstaNaListaPrincipal;
+      });
+
+      const orcamentosOutros = (res.orcamentos || []).filter(o => {
+        const isMeuOrcamento = o.consultorId === currentUserId;
+        return !isMeuOrcamento;
+      });
+
+      return {
+        ...res,
+        viagens: viagensOutros,
+        orcamentos: orcamentosOutros
+      };
+    }).filter(res => res.viagens.length > 0 || res.orcamentos.length > 0);
+
+    if (resultadosFiltrados.length === 0) return '';
 
     return `
       <div class="mb-6 p-5 bg-gradient-to-r from-indigo-900 via-slate-900 to-indigo-950 text-white rounded-2xl shadow-xl border border-indigo-500/30 animate-fade-in shrink-0">
@@ -1359,15 +1389,15 @@ export class Dashboard {
           <div class="flex items-center gap-2.5">
             <span class="p-2 rounded-xl bg-indigo-500/20 text-indigo-300 text-base">🤝</span>
             <div>
-              <h3 class="text-sm font-black tracking-wide text-indigo-100 uppercase">Modo Co-Piloto — Pesquisa de Balcão (Toda a Agência)</h3>
-              <p class="text-xs text-indigo-300">Itens encontrados no banco de dados para resgate presencial instantâneo.</p>
+              <h3 class="text-sm font-black tracking-wide text-indigo-100 uppercase">Modo Co-Piloto — Pesquisa de Balcão (Outros Consultores)</h3>
+              <p class="text-xs text-indigo-300">Clientes de outros consultores localizados para atendimento presencial no balcão.</p>
             </div>
           </div>
-          <span class="px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 text-[10px] font-black uppercase tracking-wider">${this.balcaoResultados.length} cliente(s) localizado(s)</span>
+          <span class="px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 text-[10px] font-black uppercase tracking-wider">${resultadosFiltrados.length} cliente(s) localizado(s)</span>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-          ${this.balcaoResultados.map(res => `
+          ${resultadosFiltrados.map(res => `
             <div class="bg-slate-800/80 border border-slate-700/60 rounded-xl p-3.5 flex flex-col justify-between gap-3 hover:border-indigo-500/50 transition">
               <div>
                 <div class="flex items-center justify-between gap-2 mb-1">

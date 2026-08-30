@@ -122,14 +122,33 @@ export class GlobalHeaderSearch {
   private renderSearchResults(query: string, resultados: ResultadoBuscaBalcao[]): void {
     if (!this.dropdownEl) return;
 
+    // Sanitiza e deduplica por ID
+    const resultadosSanitizados = resultados.map(res => {
+      const vMap = new Map<string, any>();
+      (res.viagens || []).forEach(v => {
+        if (v && v.id && !vMap.has(v.id)) vMap.set(v.id, v);
+      });
+
+      const oMap = new Map<string, any>();
+      (res.orcamentos || []).forEach(o => {
+        if (o && o.id && !oMap.has(o.id)) oMap.set(o.id, o);
+      });
+
+      return {
+        ...res,
+        viagens: Array.from(vMap.values()),
+        orcamentos: Array.from(oMap.values())
+      };
+    });
+
     let totalViagens = 0;
     let totalOrcamentos = 0;
-    resultados.forEach(r => {
+    resultadosSanitizados.forEach(r => {
       totalViagens += r.viagens.length;
       totalOrcamentos += r.orcamentos.length;
     });
 
-    const totalItens = resultados.length + totalViagens + totalOrcamentos;
+    const totalItens = resultadosSanitizados.length + totalViagens + totalOrcamentos;
 
     if (totalItens === 0) {
       this.dropdownEl.innerHTML = `
@@ -152,7 +171,7 @@ export class GlobalHeaderSearch {
       <div class="space-y-3">
     `;
 
-    resultados.forEach(res => {
+    resultadosSanitizados.forEach(res => {
       html += `
         <div class="bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/60 rounded-xl p-3 space-y-2">
           <div class="flex items-center justify-between gap-2 border-b border-slate-200/40 dark:border-slate-700/40 pb-1.5">
