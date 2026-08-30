@@ -1651,52 +1651,52 @@ export class Dashboard {
       </style>
       <div class="dashboard-container bg-slate-50/50 dark:bg-slate-950 flex flex-col font-sans transition-colors duration-200 overflow-hidden">
         
-        <!-- CABEÇALHO DO OPERACIONAL (COMPACTO E FINO) -->
-        <header class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 sticky top-0 z-30 px-6 py-2.5 flex flex-col lg:flex-row items-center justify-between gap-3 transition-colors duration-200 shadow-xs">
-          <div class="flex items-center gap-2.5 shrink-0">
-            <img src="/logo.svg" alt="PaxFlow Logo" class="h-8 w-auto object-contain md:hidden" />
+        <!-- CABEÇALHO PADRONIZADO IGUAL ÀS DEMAIS TELAS DO PAXFLOW -->
+        <header class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 sticky top-0 z-30 px-6 py-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 transition-colors duration-200">
+          <div class="flex items-center gap-3 shrink-0">
+            <img src="/logo.svg" alt="PaxFlow Logo" class="h-10 w-auto object-contain md:hidden" />
             <div>
-              <h1 class="text-base font-black text-slate-800 dark:text-slate-100 tracking-tight leading-none">${this.settings.agencyName}</h1>
-              <p class="text-[10px] text-slate-400 font-semibold leading-none mt-1">Viagens (Painel Operacional)</p>
+              <h1 class="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight">${this.settings.agencyName}</h1>
+              <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Viagens (Painel Operacional)</p>
             </div>
           </div>
           
-          <div class="flex flex-wrap items-center gap-2 w-full lg:w-auto lg:justify-end text-xs">
+          <div class="flex items-center gap-2.5 w-full md:w-auto md:justify-end overflow-x-auto custom-scrollbar py-0.5">
             <!-- Pill Switch Segmentado: Mês Corrente vs Ver Tudo -->
-            <div class="inline-flex p-0.5 bg-slate-100 dark:bg-slate-800/80 rounded-xl border border-slate-200/60 dark:border-slate-700/60 shrink-0 select-none">
-              <button id="btn-view-month-current" class="px-2.5 py-1 rounded-lg text-[11px] font-black transition ${this.viewModeMonth === 'current' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'}">
+            <div class="inline-flex p-1 bg-slate-100 dark:bg-slate-800/80 rounded-xl border border-slate-200/60 dark:border-slate-700/60 shrink-0 select-none">
+              <button id="btn-view-month-current" class="px-3 py-1.5 rounded-lg text-xs font-black transition ${this.viewModeMonth === 'current' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'}">
                 📅 Mês Corrente (${this.getFormattedCurrentMonthLabel()})
               </button>
-              <button id="btn-view-month-all" class="px-2.5 py-1 rounded-lg text-[11px] font-black transition ${this.viewModeMonth === 'all' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'}">
+              <button id="btn-view-month-all" class="px-3 py-1.5 rounded-lg text-xs font-black transition ${this.viewModeMonth === 'all' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'}">
                 🌐 Ver Tudo
               </button>
             </div>
 
-            <!-- Stats Rápidos em Linha Única Fina -->
-            <div class="flex items-center gap-2 bg-slate-100/70 dark:bg-slate-800/50 px-3 py-1 rounded-xl border border-slate-200/40 dark:border-slate-700/40 shrink-0 text-[11px]">
+            <!-- Stats Rápidos em Linha Única -->
+            <div class="flex items-center gap-2 bg-slate-100/70 dark:bg-slate-800/50 px-3.5 py-2 rounded-xl border border-slate-200/50 dark:border-slate-700/50 shrink-0 text-xs">
               <span class="font-extrabold text-slate-600 dark:text-slate-300">Viagens: <strong class="text-slate-900 dark:text-white font-black">${counts.todos}</strong></span>
               <span class="text-slate-300 dark:text-slate-700">&bull;</span>
               <span class="font-extrabold text-slate-600 dark:text-slate-300">SLAs: <strong class="${totalSlaAlerts > 0 ? 'text-rose-600 animate-pulse' : 'text-slate-900 dark:text-white'} font-black">${totalSlaAlerts}</strong></span>
             </div>
 
             <!-- Botão de Filtros de Data -->
-            <button id="btn-toggle-filtros" class="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-extrabold text-[11px] rounded-xl border border-slate-200/60 dark:border-slate-700/60 flex items-center justify-center gap-1 transition shrink-0">
+            <button id="btn-toggle-filtros" class="px-3.5 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-extrabold text-xs rounded-xl border border-slate-200/60 dark:border-slate-700/60 flex items-center justify-center gap-1.5 transition shrink-0">
               <span>📅 Data</span>
               <span class="text-[9px]">${this.showFiltersPanel ? '▲' : '▼'}</span>
             </button>
 
             <!-- Seletor de Consultores (Apenas para Admins) -->
             ${this.perfil?.role === 'admin' ? `
-              <div class="flex items-center gap-1 shrink-0 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 px-2 py-1 rounded-xl shadow-xs">
-                <span class="text-[9px] font-black uppercase text-slate-400 dark:text-slate-400 select-none">Equipe:</span>
-                <select id="select-dashboard-consultor" class="text-[11px] font-extrabold bg-transparent text-slate-700 dark:text-slate-300 focus:outline-none cursor-pointer max-w-[130px]">
+              <div class="flex items-center gap-1.5 shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2.5 py-1.5 rounded-xl shadow-sm">
+                <span class="text-[10px] font-black uppercase text-slate-400 dark:text-slate-400 select-none">Equipe:</span>
+                <select id="select-dashboard-consultor" class="text-xs font-bold bg-transparent text-slate-700 dark:text-slate-300 focus:outline-none cursor-pointer max-w-[130px]">
                   <option value="todos" ${this.selectedConsultantId === 'todos' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Todos</option>
                   ${this.consultores.map(c => `<option value="${c.id}" ${this.selectedConsultantId === c.id ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">${c.nome}</option>`).join('')}
                 </select>
               </div>
-              <div class="flex items-center gap-1 shrink-0 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 px-2 py-1 rounded-xl shadow-xs">
-                <span class="text-[9px] font-black uppercase text-slate-400 dark:text-slate-400 select-none">Conf.:</span>
-                <select id="select-dashboard-conferencia" class="text-[11px] font-extrabold bg-transparent text-slate-700 dark:text-slate-300 focus:outline-none cursor-pointer max-w-[130px]">
+              <div class="flex items-center gap-1.5 shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2.5 py-1.5 rounded-xl shadow-sm">
+                <span class="text-[10px] font-black uppercase text-slate-400 dark:text-slate-400 select-none">Conf.:</span>
+                <select id="select-dashboard-conferencia" class="text-xs font-bold bg-transparent text-slate-700 dark:text-slate-300 focus:outline-none cursor-pointer max-w-[130px]">
                   <option value="todos" ${this.selectedConferenceFilter === 'todos' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Todas</option>
                   <option value="nenhuma" ${this.selectedConferenceFilter === 'nenhuma' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Nenhuma</option>
                   <option value="financeiro" ${this.selectedConferenceFilter === 'financeiro' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Financeiro</option>
@@ -1708,8 +1708,8 @@ export class Dashboard {
 
             <!-- Botão Criar Card / Nova Viagem -->
             ${(this.perfil?.role === 'admin' || !!this.settings?.permitirConsultorCriarViagem || !!this.settings?.permitir_consultor_criar_viagem) ? `
-              <button id="btn-nova-viagem" class="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-[11px] tracking-wider rounded-xl shadow-md shadow-indigo-600/20 flex items-center justify-center gap-1 transition transform hover:-translate-y-0.5 uppercase shrink-0">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+              <button id="btn-nova-viagem" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-1.5 transition transform hover:-translate-y-0.5 uppercase shrink-0">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                 </svg>
                 <span>Nova Viagem</span>
