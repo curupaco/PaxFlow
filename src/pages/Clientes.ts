@@ -1217,31 +1217,28 @@ export class ClientesPage {
    */
   private render(): void {
     this.container.innerHTML = `
-      <div class="w-full flex flex-col font-sans transition-colors duration-200">
+      <div class="w-full flex-1 flex flex-col overflow-hidden font-sans transition-colors duration-200">
         
-        <!-- Cabeçalho -->
-        <header class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 sticky top-0 z-30 px-6 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-colors duration-200">
-          <div class="flex items-center gap-3">
-            <img src="/logo.svg" alt="PaxFlow Logo" class="h-10 w-auto object-contain md:hidden" />
+        <!-- Sub-cabeçalho da Tela de Clientes -->
+        <div class="px-6 py-3.5 bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800/80 flex items-center justify-between gap-4 shrink-0 shadow-xs">
+          <div class="flex items-center gap-2.5">
+            <span class="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-sm shadow-inner">👥</span>
             <div>
-              <h1 class="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight">Clientes</h1>
-              <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Ficha Única e Documentação</p>
+              <h1 class="text-base font-black text-slate-800 dark:text-slate-100 tracking-tight leading-none">Clientes</h1>
+              <p class="text-[10px] text-slate-400 dark:text-slate-400 font-semibold leading-none mt-1">Ficha Única & Documentação Corporativa</p>
             </div>
           </div>
           
-          <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto justify-end">
-            <!-- Botão de Ação Primária -->
-            <button id="btn-novo-cliente" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-1.5 transition transform hover:-translate-y-0.5 uppercase shrink-0">
-              <svg width="16" height="16" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-              </svg>
-              <span>Novo Cliente</span>
-            </button>
-          </div>
-        </header>
+          <button id="btn-novo-cliente" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-md shadow-indigo-600/20 flex items-center justify-center gap-1.5 transition transform hover:-translate-y-0.5 uppercase shrink-0">
+            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+            <span>Novo Cliente</span>
+          </button>
+        </div>
 
         <!-- Corpo Principal com Duas Colunas -->
-        <main class="flex-1 p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <main class="flex-1 p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start overflow-y-auto custom-scrollbar">
           
           <!-- Coluna Esquerda: Lista de Clientes (Busca & Navegação) -->
           <div id="clientes-lista-col" class="lg:col-span-4 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-4 shadow-sm flex flex-col gap-4 lg:flex ${this.mobileDetailOpen ? 'hidden' : 'flex'}">
