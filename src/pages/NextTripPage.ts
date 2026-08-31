@@ -140,7 +140,7 @@ export class NextTripPage {
           </div>
 
           <div class="flex items-center gap-2">
-            <button id="btn-recarregar-next-trip" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-extrabold text-xs rounded-xl border border-slate-200 dark:border-slate-700 flex items-center gap-1.5 transition">
+            <button id="btn-recarregar-next-trip" class="h-10 px-3.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-extrabold text-xs rounded-xl border border-slate-200 dark:border-slate-700 flex items-center gap-1.5 transition">
               <span>🔄 Recalcular</span>
             </button>
           </div>
@@ -198,19 +198,19 @@ export class NextTripPage {
               
               <!-- Busca por Texto -->
               <div class="relative flex-1 min-w-[200px]">
-                <input id="input-busca-next-trip" type="text" placeholder="Buscar cliente, destino ou observação..." value="${this.filterBusca}" class="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-                <span class="absolute left-3 top-2.5 text-slate-400 text-xs">🔍</span>
+                <input id="input-busca-next-trip" type="text" placeholder="Buscar cliente, destino ou observação..." value="${this.filterBusca}" class="h-10 w-full pl-9 pr-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 flex items-center" />
+                <span class="absolute left-3 top-3 text-slate-400 text-xs">🔍</span>
               </div>
 
               <!-- Filtro de Potencial -->
-              <select id="select-filter-prontidao" class="px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 focus:outline-none cursor-pointer">
+              <select id="select-filter-prontidao" class="h-10 px-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 focus:outline-none cursor-pointer">
                 <option value="todos" ${this.filterProntidao === 'todos' ? 'selected' : ''}>Todos os Potenciais</option>
                 <option value="alto" ${this.filterProntidao === 'alto' ? 'selected' : ''}>🔥 Alto Potencial (>= 75)</option>
                 <option value="medio" ${this.filterProntidao === 'medio' ? 'selected' : ''}>⏳ Médio Potencial</option>
               </select>
 
               <!-- Filtro de Categoria -->
-              <select id="select-filter-categoria" class="px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 focus:outline-none cursor-pointer">
+              <select id="select-filter-categoria" class="h-10 px-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 focus:outline-none cursor-pointer">
                 <option value="todos" ${this.filterCategoria === 'todos' ? 'selected' : ''}>Todas as Categorias</option>
                 <option value="europa" ${this.filterCategoria === 'europa' ? 'selected' : ''}>🇪🇺 Europa</option>
                 <option value="resort" ${this.filterCategoria === 'resort' ? 'selected' : ''}>🏖️ Resort All-Inclusive</option>
@@ -221,7 +221,7 @@ export class NextTripPage {
 
               <!-- Filtro de Consultores (Admins) -->
               ${isAdmin ? `
-                <select id="select-filter-consultor" class="px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 focus:outline-none cursor-pointer max-w-[160px]">
+                <select id="select-filter-consultor" class="h-10 px-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 focus:outline-none cursor-pointer max-w-[160px]">
                   <option value="todos" ${this.filterConsultor === 'todos' ? 'selected' : ''}>Todos Consultores</option>
                   ${this.consultores.map(c => `<option value="${c.id}" ${this.filterConsultor === c.id ? 'selected' : ''}>${c.nome}</option>`).join('')}
                 </select>

@@ -493,7 +493,7 @@ export class ReembolsosPage {
                 <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
-            <input id="input-busca-reembolso" type="text" placeholder="Pesquisar por cliente, destino, localizador, fornecedor, status..." value="${this.buscaTermo}" class="w-full text-xs font-semibold pl-10 pr-4 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition" />
+            <input id="input-busca-reembolso" type="text" placeholder="Pesquisar por cliente, destino, localizador, fornecedor, status..." value="${this.buscaTermo}" class="h-10 w-full text-xs font-semibold pl-10 pr-4 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition flex items-center" />
           </div>
 
           <!-- Tabela de Reembolsos -->
@@ -600,7 +600,7 @@ export class ReembolsosPage {
                           <!-- Status / Ação -->
                           <td class="py-4.5 px-5 text-center">
                             <div class="flex items-center justify-center gap-2">
-                              <select data-reembolso-id="${r.id}" class="select-status-reembolso px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 cursor-pointer">
+                              <select data-reembolso-id="${r.id}" class="select-status-reembolso h-8 px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 cursor-pointer">
                                 <option value="Aguardando Fornecedor" ${r.status === 'Aguardando Fornecedor' || r.status === 'solicitado' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Aguardando Fornecedor</option>
                                 <option value="em_analise" ${r.status === 'em_analise' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Em Análise</option>
                                 <option value="aprovado" ${r.status === 'aprovado' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Aprovado</option>
@@ -609,7 +609,7 @@ export class ReembolsosPage {
                                 <option value="cancelado" ${r.status === 'cancelado' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Cancelado</option>
                               </select>
                               ${this.perfil?.role === 'admin' ? `
-                                <button data-delete-reembolso-id="${r.id}" class="p-2 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-900/30 text-rose-600 dark:text-rose-400 rounded-lg border border-rose-100/30 dark:border-rose-900/30 transition text-xs flex items-center justify-center shadow-sm" title="Excluir Reembolso">
+                                <button data-delete-reembolso-id="${r.id}" class="h-8 w-8 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-900/30 text-rose-600 dark:text-rose-400 rounded-lg border border-rose-100/30 dark:border-rose-900/30 transition text-xs flex items-center justify-center shadow-sm" title="Excluir Reembolso">
                                   🗑️
                                 </button>
                               ` : ''}

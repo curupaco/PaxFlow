@@ -500,7 +500,7 @@ export class CadastrosPage {
                   <h2 class="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider">Campanhas Internas</h2>
                   <p class="text-xs text-slate-400 dark:text-slate-400 font-medium">Criação, ativação e controle de metas por período</p>
                 </div>
-                <button id="btn-nova-campanha" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/20 flex items-center gap-1.5 transition transform hover:-translate-y-0.5 uppercase">
+                <button id="btn-nova-campanha" class="h-10 px-5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-1.5 transition transform hover:-translate-y-0.5 uppercase">
                   Nova Campanha
                 </button>
               </div>
@@ -572,17 +572,17 @@ export class CadastrosPage {
                               ${statusBadge}
                             </td>
                             <td class="py-4 px-5 text-right space-x-2">
-                              <button data-id="${cam.id}" class="btn-editar-campanha px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 hover:dark:bg-indigo-950/50 transition border border-indigo-200/40 dark:border-indigo-800/40 uppercase">
+                              <button data-id="${cam.id}" class="btn-editar-campanha h-8 px-3 inline-flex items-center justify-center rounded-lg text-xs font-bold bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 hover:dark:bg-indigo-950/50 transition border border-indigo-200/40 dark:border-indigo-800/40 uppercase">
                                 Editar
                               </button>
-                              <button data-id="${cam.id}" data-active="${cam.ativa}" class="btn-toggle-status-campanha px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                              <button data-id="${cam.id}" data-active="${cam.ativa}" class="btn-toggle-status-campanha h-8 px-3 inline-flex items-center justify-center rounded-lg text-xs font-bold transition ${
                                 cam.ativa 
                                   ? 'bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 hover:dark:bg-rose-950/30' 
                                   : 'bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 hover:dark:bg-emerald-950/30'
                               }">
                                 ${cam.ativa ? 'Pausar' : 'Ativar'}
                               </button>
-                              <button data-id="${cam.id}" class="btn-excluir-campanha px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-50 hover:bg-rose-50 dark:bg-rose-950/30 text-slate-400 hover:text-rose-500 transition border border-slate-200/40 dark:border-slate-700/40 uppercase">
+                              <button data-id="${cam.id}" class="btn-excluir-campanha h-8 px-3 inline-flex items-center justify-center rounded-lg text-xs font-bold bg-slate-50 hover:bg-rose-50 dark:bg-rose-950/30 text-slate-400 hover:text-rose-500 transition border border-slate-200/40 dark:border-slate-700/40 uppercase">
                                 Excluir
                               </button>
                             </td>
@@ -602,7 +602,7 @@ export class CadastrosPage {
                   <h2 class="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider">Modelos de Mensagem</h2>
                   <p class="text-xs text-slate-400 dark:text-slate-400 font-medium">Configure os textos de WhatsApp que serão enviados aos clientes</p>
                 </div>
-                <button id="btn-novo-template" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/20 flex items-center gap-1.5 transition transform hover:-translate-y-0.5 uppercase">
+                <button id="btn-novo-template" class="h-10 px-5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-1.5 transition transform hover:-translate-y-0.5 uppercase">
                   Novo Modelo
                 </button>
               </div>
@@ -642,10 +642,10 @@ export class CadastrosPage {
                               </div>
                             </td>
                             <td class="py-4 px-5 text-right space-x-2">
-                              <button data-id="${tem.id}" class="btn-editar-template px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-50 hover:bg-indigo-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 transition uppercase">
+                              <button data-id="${tem.id}" class="btn-editar-template h-8 px-3 inline-flex items-center justify-center rounded-lg text-xs font-bold bg-slate-50 hover:bg-indigo-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 transition uppercase">
                                 Editar
                               </button>
-                              <button data-id="${tem.id}" class="btn-excluir-template px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-50 hover:bg-rose-50 dark:bg-rose-950/30 text-slate-400 hover:text-rose-500 transition border border-slate-200/40 dark:border-slate-700/40 uppercase">
+                              <button data-id="${tem.id}" class="btn-excluir-template h-8 px-3 inline-flex items-center justify-center rounded-lg text-xs font-bold bg-slate-50 hover:bg-rose-50 dark:bg-rose-950/30 text-slate-400 hover:text-rose-500 transition border border-slate-200/40 dark:border-slate-700/40 uppercase">
                                 Excluir
                               </button>
                             </td>
@@ -665,7 +665,7 @@ export class CadastrosPage {
                   <h2 class="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider">Metas Financeiras & Campanhas</h2>
                   <p class="text-xs text-slate-400 dark:text-slate-400 font-medium">Cadastre períodos de metas financeiras (bruto/lucro) e faixas de prêmios por consultor</p>
                 </div>
-                <button id="btn-nova-meta" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-emerald-600/20 flex items-center gap-1.5 transition transform hover:-translate-y-0.5 uppercase">
+                <button id="btn-nova-meta" class="h-10 px-5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-1.5 transition transform hover:-translate-y-0.5 uppercase">
                   Nova Meta
                 </button>
               </div>
