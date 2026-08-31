@@ -997,9 +997,12 @@ export class LandingPage {
     const handleAcessarReal = () => {
       (window as any).paxflowSandbox = false;
       sessionStorage.removeItem('paxflowSandbox');
-      window.location.hash = '';
-      window.location.search = '';
-      window.location.pathname = '/';
+      if (window.location.pathname !== '/' || window.location.search) {
+        window.location.href = '/#login';
+      } else {
+        window.location.hash = '#login';
+        window.dispatchEvent(new CustomEvent('paxflow-navigate-to-login'));
+      }
     };
 
     const handleWhatsApp = () => {

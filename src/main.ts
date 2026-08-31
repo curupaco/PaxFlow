@@ -160,11 +160,11 @@ class App {
       return;
     }
 
-    // Se o visitante não possui token de autenticação no localStorage (e não está no modo demo/sandbox) e não está acessando /login,
-    // renderiza a Landing Page interativa imediatamente
+    // Se o visitante não possui token de autenticação no localStorage (e não está no modo demo/sandbox),
+    // direciona por padrão para a página de Login
     const hasAuthToken = isSandbox || Object.keys(localStorage).some(k => k.includes('sb-') && k.includes('-auth-token'));
-    if (!hasAuthToken && !isLoginRoute) {
-      this.renderLandingPage();
+    if (!hasAuthToken) {
+      this.renderLogin();
       return;
     }
 
@@ -172,11 +172,7 @@ class App {
       const { user, perfil, error } = await getSessaoAtual();
 
       if (error || !user) {
-        if (isLoginRoute) {
-          this.renderLogin();
-        } else {
-          this.renderLandingPage();
-        }
+        this.renderLogin();
       } else {
         this.user = user;
         this.perfil = perfil;
@@ -190,11 +186,7 @@ class App {
       }
     } catch (err) {
       console.error('Erro ao inicializar app:', err);
-      if (isLoginRoute) {
-        this.renderLogin();
-      } else {
-        this.renderLandingPage();
-      }
+      this.renderLogin();
     }
   }
 
@@ -212,6 +204,11 @@ class App {
       } else {
         window.location.reload();
       }
+    }, { once: true });
+
+    // Escuta transição para a Tela de Login a partir da Landing Page
+    window.addEventListener('paxflow-navigate-to-login', () => {
+      this.renderLogin();
     }, { once: true });
   }
 
