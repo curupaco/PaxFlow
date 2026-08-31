@@ -453,36 +453,36 @@ export class ReembolsosPage {
           
           <!-- Cards de Métricas Premium -->
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            <div class="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 p-5 rounded-2xl shadow-sm flex items-center justify-between">
+            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-5 rounded-2xl shadow-xs flex items-center justify-between">
               <div>
-                <span class="block text-xs font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider">Total de Processos</span>
+                <span class="block text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-1">Total de Processos</span>
                 <span class="text-2xl font-black text-slate-800 dark:text-slate-200">${totalReembolsos}</span>
               </div>
-              <span class="p-3 bg-indigo-50 dark:bg-indigo-950/45 text-indigo-500 dark:text-indigo-400 rounded-xl text-lg font-bold">📋</span>
+              <span class="w-10 h-10 bg-indigo-50 dark:bg-indigo-950/45 text-indigo-500 dark:text-indigo-400 rounded-xl text-base font-extrabold flex items-center justify-center shrink-0">📋</span>
             </div>
 
-            <div class="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 p-5 rounded-2xl shadow-sm flex items-center justify-between">
+            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-5 rounded-2xl shadow-xs flex items-center justify-between">
               <div>
-                <span class="block text-xs font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider">Aguardando Fornecedor</span>
+                <span class="block text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-1">Aguardando Fornecedor</span>
                 <span class="text-2xl font-black text-amber-600 dark:text-amber-400">${aguardandoFornecedor}</span>
               </div>
-              <span class="p-3 bg-amber-50 dark:bg-amber-950/45 text-amber-500 dark:text-amber-400 rounded-xl text-lg font-bold">⏳</span>
+              <span class="w-10 h-10 bg-amber-50 dark:bg-amber-950/45 text-amber-500 dark:text-amber-400 rounded-xl text-base font-extrabold flex items-center justify-center shrink-0">⏳</span>
             </div>
 
-            <div class="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 p-5 rounded-2xl shadow-sm flex items-center justify-between">
+            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-5 rounded-2xl shadow-xs flex items-center justify-between">
               <div>
-                <span class="block text-xs font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider">Reembolsos Pagos (Concluídos)</span>
+                <span class="block text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-1">Reembolsos Pagos</span>
                 <span class="text-2xl font-black text-emerald-600 dark:text-emerald-400">${concluidos}</span>
               </div>
-              <span class="p-3 bg-emerald-50 dark:bg-emerald-950/45 text-emerald-500 dark:text-emerald-400 rounded-xl text-lg font-bold">✅</span>
+              <span class="w-10 h-10 bg-emerald-50 dark:bg-emerald-950/45 text-emerald-500 dark:text-emerald-400 rounded-xl text-base font-extrabold flex items-center justify-center shrink-0">✅</span>
             </div>
 
-            <div class="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 p-5 rounded-2xl shadow-sm flex items-center justify-between">
+            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-5 rounded-2xl shadow-xs flex items-center justify-between">
               <div>
-                <span class="block text-xs font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider">Valor Pago (Aprovado)</span>
+                <span class="block text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-1">Valor Pago (Aprovado)</span>
                 <span class="text-xl font-black text-indigo-600 dark:text-indigo-400">R$ ${somaTotalReembolsado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
               </div>
-              <span class="p-3 bg-indigo-50 dark:bg-indigo-950/45 text-indigo-600 dark:text-indigo-400 rounded-xl text-lg font-bold">💰</span>
+              <span class="w-10 h-10 bg-indigo-50 dark:bg-indigo-950/45 text-indigo-600 dark:text-indigo-400 rounded-xl text-base font-extrabold flex items-center justify-center shrink-0">💰</span>
             </div>
           </div>
 
@@ -506,8 +506,12 @@ export class ReembolsosPage {
             </div>
 
             ${filtrados.length === 0 ? `
-              <div class="p-12 text-center text-slate-400 dark:text-slate-400 text-xs font-semibold">
-                Nenhuma solicitação de reembolso correspondente encontrada.
+              <div class="p-12 text-center space-y-3">
+                <div class="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 text-2xl flex items-center justify-center mx-auto shadow-xs border border-slate-200/50 dark:border-slate-700/50">
+                  💸
+                </div>
+                <h3 class="text-sm font-extrabold text-slate-700 dark:text-slate-300">Nenhum reembolso encontrado</h3>
+                <p class="text-xs text-slate-400 dark:text-slate-400 font-medium max-w-sm mx-auto">Não encontramos nenhuma solicitação correspondente ao termo ou filtro selecionado.</p>
               </div>
             ` : `
               <!-- Mobile View: Cards (Visible only on mobile portrait) -->

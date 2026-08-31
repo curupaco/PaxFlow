@@ -1021,7 +1021,7 @@ export class OrcamentosPage {
           
           <div class="flex flex-col items-end gap-1 shrink-0">
             <!-- Seletor de Temperatura -->
-            <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${tempClass}">
+            <span class="h-5 px-2 rounded-md text-[9px] font-black uppercase tracking-wider inline-flex items-center ${tempClass}">
               ${o.temperatura}
             </span>
             ${isAdmin ? `
@@ -1156,9 +1156,14 @@ export class OrcamentosPage {
    */
   private renderEmptySlot(): string {
     return `
-      <div class="border-2 border-dashed border-slate-200 dark:border-slate-800/60 rounded-xl flex flex-col items-center justify-center p-8 text-center text-slate-400 dark:text-slate-400/80 text-[10px] font-bold uppercase tracking-wider select-none min-h-[140px] gap-1.5">
-        <span>Sem orçamentos</span>
-        <span class="text-[9px] font-semibold text-slate-400 dark:text-slate-400 normal-case">Estágio vazio</span>
+      <div class="border-2 border-dashed border-slate-200/80 dark:border-slate-800/60 rounded-2xl flex flex-col items-center justify-center p-6 text-center text-slate-400 dark:text-slate-400 select-none min-h-[140px] gap-2 bg-slate-50/40 dark:bg-slate-900/20">
+        <div class="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 text-base flex items-center justify-center border border-slate-200/50 dark:border-slate-700/50">
+          📥
+        </div>
+        <div>
+          <span class="block text-xs font-extrabold text-slate-600 dark:text-slate-300">Sem orçamentos</span>
+          <span class="block text-[10px] font-medium text-slate-400 dark:text-slate-400">Nenhum card nesta etapa</span>
+        </div>
       </div>
     `;
   }
@@ -1254,18 +1259,18 @@ export class OrcamentosPage {
 
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5 flex items-center">
+              <label class="block text-[11px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5 flex items-center">
                 Temperatura do Lead * ${renderHelpIcon('temperatura-crm')}
               </label>
-              <select id="select-orc-temp" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm">
+              <select id="select-orc-temp" required class="h-10 w-full px-3.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs cursor-pointer">
                 <option value="Normal" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Normal (50% de chance)</option>
                 <option value="Quente" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Quente (Alta chance)</option>
                 <option value="Frio" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Frio (Baixa chance)</option>
               </select>
             </div>
             <div>
-              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Origem do Lead *</label>
-              <select id="select-orc-origem" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm">
+              <label class="block text-[11px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Origem do Lead *</label>
+              <select id="select-orc-origem" required class="h-10 w-full px-3.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs cursor-pointer">
                 <option value="" disabled selected class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Selecione a Origem...</option>
                 <option value="WhatsApp" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">WhatsApp</option>
                 <option value="Instagram" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Instagram</option>
@@ -1279,8 +1284,8 @@ export class OrcamentosPage {
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Consultor Responsável</label>
-            <select id="select-orc-consultor" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" ${this.perfil?.role !== 'admin' ? 'disabled' : ''}>
+            <label class="block text-[11px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Consultor Responsável</label>
+            <select id="select-orc-consultor" required class="h-10 w-full px-3.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs cursor-pointer" ${this.perfil?.role !== 'admin' ? 'disabled' : ''}>
               ${consultoresOptions.map(c => `<option value="${c.id}" ${c.id === this.user.id ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">${c.nome}</option>`).join('')}
             </select>
           </div>
