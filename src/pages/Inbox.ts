@@ -508,7 +508,7 @@ export class InboxPage {
                 <span>📨 Mensagens & Alertas</span>
                 <span class="px-2 py-0.5 rounded-md text-[10px] font-black ${
                   this.activeTab !== 'escala' ? 'bg-white/20 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
-                }">${unreadAtivos > 0 ? `🔴 ${unreadAtivos} / ${totalAtivos}` : `${totalAtivos}`}</span>
+                }">${unreadAtivos > 0 ? `${unreadAtivos} / ${totalAtivos}` : `${totalAtivos}`}</span>
               </button>
 
               <button id="inbox-top-tab-escala" class="px-3.5 py-2 rounded-xl text-xs font-black transition flex items-center gap-2 select-none ${
@@ -545,7 +545,7 @@ export class InboxPage {
               <button data-filter-category="todos" class="px-3 py-2 rounded-xl ${this.categoryFilter === 'todos' ? 'bg-indigo-600 text-white font-black' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold'} shrink-0 text-xs select-none flex items-center gap-1.5">
                 <span>📋 Entrada</span>
                 <span class="px-1.5 py-0.5 rounded text-[10px] font-black ${this.categoryFilter === 'todos' ? 'bg-white/20 text-white' : 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300'}">
-                  ${unreadAtivos > 0 ? `🔴 ${unreadAtivos}/${totalAtivos}` : `${totalAtivos}`}
+                  ${unreadAtivos > 0 ? `${unreadAtivos}/${totalAtivos}` : `${totalAtivos}`}
                 </span>
               </button>
               <button data-filter-category="escala" class="px-3 py-2 rounded-xl ${
@@ -558,19 +558,19 @@ export class InboxPage {
               <button data-filter-category="depois" class="px-3 py-2 rounded-xl ${this.categoryFilter === 'depois' ? 'bg-slate-700 text-white font-black' : 'bg-slate-100 dark:bg-slate-800/60 text-slate-700 dark:text-slate-200'} border border-slate-200/50 dark:border-slate-700/50 flex items-center gap-2 shrink-0 text-xs font-bold cursor-pointer">
                 <span>📌 Depois:</span>
                 <span class="px-2 py-0.5 rounded-md ${unreadManual > 0 ? 'bg-rose-600 text-white' : 'bg-slate-700 dark:bg-slate-600 text-white'} font-black text-[11px]">
-                  ${unreadManual > 0 ? `🔴 ${unreadManual}/${totalManual}` : `${totalManual}`}
+                  ${unreadManual > 0 ? `${unreadManual}/${totalManual}` : `${totalManual}`}
                 </span>
               </button>
               <button data-filter-category="passaporte" class="px-3 py-2 rounded-xl ${this.categoryFilter === 'passaporte' ? 'bg-amber-600 text-white font-black' : 'bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300'} border border-amber-100/50 dark:border-amber-900/40 flex items-center gap-2 shrink-0 text-xs font-bold cursor-pointer">
                 <span>🛂 Passaportes:</span>
                 <span class="px-2 py-0.5 rounded-md ${unreadPassport > 0 ? 'bg-rose-600 text-white' : 'bg-amber-600 text-white'} font-black text-[11px]">
-                  ${unreadPassport > 0 ? `🔴 ${unreadPassport}/${totalPassport}` : `${totalPassport}`}
+                  ${unreadPassport > 0 ? `${unreadPassport}/${totalPassport}` : `${totalPassport}`}
                 </span>
               </button>
               <button data-filter-category="refund" class="px-3 py-2 rounded-xl ${this.categoryFilter === 'refund' ? 'bg-rose-600 text-white font-black' : 'bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-300'} border border-rose-100/50 dark:border-rose-900/40 flex items-center gap-2 shrink-0 text-xs font-bold cursor-pointer">
                 <span>💰 Reembolsos:</span>
                 <span class="px-2 py-0.5 rounded-md ${unreadRefund > 0 ? 'bg-rose-600 text-white' : 'bg-rose-600 text-white'} font-black text-[11px]">
-                  ${unreadRefund > 0 ? `🔴 ${unreadRefund}/${totalRefund}` : `${totalRefund}`}
+                  ${unreadRefund > 0 ? `${unreadRefund}/${totalRefund}` : `${totalRefund}`}
                 </span>
               </button>
             </div>
@@ -585,7 +585,7 @@ export class InboxPage {
                 <div class="flex items-baseline gap-2">
                   <span class="text-3xl font-black text-slate-800 dark:text-slate-100 tracking-tight">${totalAtivos}</span>
                   ${unreadAtivos > 0 
-                    ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-500 text-white animate-pulse">🔴 ${unreadAtivos} não lida(s)</span>`
+                    ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-500 text-white animate-pulse">${unreadAtivos} não lida(s)</span>`
                     : `<span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">✓ 0 não lidas</span>`
                   }
                 </div>
@@ -604,7 +604,7 @@ export class InboxPage {
                 <div class="flex items-baseline gap-2">
                   <span class="text-3xl font-black text-slate-800 dark:text-slate-100 tracking-tight">${totalManual}</span>
                   ${unreadManual > 0 
-                    ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-500 text-white">🔴 ${unreadManual} não lida(s)</span>`
+                    ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-500 text-white">${unreadManual} não lida(s)</span>`
                     : `<span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-slate-100 dark:bg-slate-800 text-slate-500">✓ 0 não lidas</span>`
                   }
                 </div>
@@ -620,7 +620,7 @@ export class InboxPage {
                 <div class="flex items-baseline gap-2">
                   <span class="text-3xl font-black text-slate-800 dark:text-slate-100 tracking-tight">${totalPassport}</span>
                   ${unreadPassport > 0 
-                    ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-500 text-white">🔴 ${unreadPassport} não lida(s)</span>`
+                    ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-500 text-white">${unreadPassport} não lida(s)</span>`
                     : `<span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-slate-100 dark:bg-slate-800 text-slate-500">✓ 0 não lidas</span>`
                   }
                 </div>
@@ -636,7 +636,7 @@ export class InboxPage {
                 <div class="flex items-baseline gap-2">
                   <span class="text-3xl font-black text-slate-800 dark:text-slate-100 tracking-tight">${totalRefund}</span>
                   ${unreadRefund > 0 
-                    ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-500 text-white">🔴 ${unreadRefund} não lida(s)</span>`
+                    ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-500 text-white">${unreadRefund} não lida(s)</span>`
                     : `<span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-slate-100 dark:bg-slate-800 text-slate-500">✓ 0 não lidas</span>`
                   }
                 </div>
@@ -713,7 +713,7 @@ export class InboxPage {
                     <span class="truncate">Arquivados</span>
                   </span>
                   <div class="flex items-center gap-1 shrink-0 ml-2">
-                    ${unreadArquivados > 0 ? `<span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-rose-500 text-white whitespace-nowrap inline-flex items-center shrink-0">🔴 ${unreadArquivados}</span>` : ''}
+                    ${unreadArquivados > 0 ? `<span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300 whitespace-nowrap inline-flex items-center shrink-0" title="${unreadArquivados} não lido(s)">${unreadArquivados}</span>` : ''}
                     <span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 whitespace-nowrap inline-flex items-center shrink-0">${totalArquivados}</span>
                   </div>
                 </button>
@@ -728,7 +728,7 @@ export class InboxPage {
                     <span class="truncate">Todas</span>
                   </span>
                   <div class="flex items-center gap-1 shrink-0 ml-2">
-                    ${unreadGeral > 0 ? `<span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-rose-500 text-white whitespace-nowrap inline-flex items-center shrink-0">🔴 ${unreadGeral}</span>` : ''}
+                    ${unreadGeral > 0 ? `<span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300 whitespace-nowrap inline-flex items-center shrink-0" title="${unreadGeral} não lido(s)">${unreadGeral}</span>` : ''}
                     <span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 whitespace-nowrap inline-flex items-center shrink-0">${totalGeral}</span>
                   </div>
                 </button>
@@ -747,7 +747,6 @@ export class InboxPage {
                     </svg>
                     <span class="truncate">Escala</span>
                   </span>
-                  <span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300 whitespace-nowrap inline-flex items-center shrink-0 ml-2">Nova</span>
                 </button>
 
               </div>
@@ -772,7 +771,7 @@ export class InboxPage {
                       ? 'border-indigo-600/50 text-indigo-600 bg-indigo-600/5 dark:border-indigo-500/50 dark:text-indigo-400 dark:bg-indigo-500/10' 
                       : 'border-slate-200/60 dark:border-slate-800 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800/40'
                   } rounded-xl text-xs font-bold whitespace-nowrap transition flex items-center gap-1.5 focus:outline-none">
-                    📥 Entrada (${totalAtivos}${unreadAtivos > 0 ? ` • 🔴 ${unreadAtivos}` : ''})
+                    📥 Entrada (${totalAtivos}${unreadAtivos > 0 ? ` • ${unreadAtivos} não lida(s)` : ''})
                   </button>
                   <button id="mobile-folder-enviadas" class="px-4 py-2.5 bg-white dark:bg-slate-900 border ${
                     this.activeTab === 'enviadas' 
@@ -786,14 +785,14 @@ export class InboxPage {
                       ? 'border-indigo-600/50 text-indigo-600 bg-indigo-600/5 dark:border-indigo-500/50 dark:text-indigo-400 dark:bg-indigo-500/10' 
                       : 'border-slate-200/60 dark:border-slate-800 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800/40'
                   } rounded-xl text-xs font-bold whitespace-nowrap transition flex items-center gap-1.5 focus:outline-none">
-                    🗄️ Arquivados (${totalArquivados}${unreadArquivados > 0 ? ` • 🔴 ${unreadArquivados}` : ''})
+                    🗄️ Arquivados (${totalArquivados}${unreadArquivados > 0 ? ` • ${unreadArquivados} não lida(s)` : ''})
                   </button>
                   <button id="mobile-folder-todos" class="px-4 py-2.5 bg-white dark:bg-slate-900 border ${
                     this.activeTab === 'todos' 
                       ? 'border-indigo-600/50 text-indigo-600 bg-indigo-600/5 dark:border-indigo-500/50 dark:text-indigo-400 dark:bg-indigo-500/10' 
                       : 'border-slate-200/60 dark:border-slate-800 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800/40'
                   } rounded-xl text-xs font-bold whitespace-nowrap transition flex items-center gap-1.5 focus:outline-none">
-                    📋 Total (${totalGeral}${unreadGeral > 0 ? ` • 🔴 ${unreadGeral}` : ''})
+                    📋 Total (${totalGeral}${unreadGeral > 0 ? ` • ${unreadGeral} não lida(s)` : ''})
                   </button>
                   <button id="mobile-folder-escala" class="px-4 py-2.5 bg-white dark:bg-slate-900 border ${
                     this.activeTab === 'escala' 
