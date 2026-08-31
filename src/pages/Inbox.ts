@@ -2564,6 +2564,7 @@ export class InboxPage {
             <div>
               <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Turno Padrão de Trabalho</label>
               <select id="modal-batch-turno" class="w-full text-xs font-semibold p-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <option value="">— Vazio / Limpar —</option>
                 ${TURNO_PRESETS.filter(p => !['Folga', 'Férias', 'F'].includes(p.codigo)).map(p => `
                   <option value="${p.codigo}">${p.codigo} (${p.label})</option>
                 `).join('')}
