@@ -4,6 +4,7 @@ import { NextTripOpportunity, PerfilConsultor } from '../types';
 import { SendTemplateMessageModal } from '../components/dashboard/SendTemplateMessageModal';
 import { renderHelpIcon } from '../utils/helpHelper';
 import { UpsellEngineService } from '../services/upsellEngineService';
+import { MOCK_CLIENTES, MOCK_VIAGENS, MOCK_ORCAMENTOS, MOCK_CONSULTORES } from '../utils/mockData';
 
 export class NextTripPage {
   private container: HTMLElement;
@@ -61,20 +62,19 @@ export class NextTripPage {
         supabase.from('global_settings').select('*').limit(1).maybeSingle()
       ]);
 
-      this.clientes = clientesData || [];
-      this.viagens = viagensData || [];
-      this.orcamentos = orcamentosData || [];
-      this.consultores = consultoresData || [];
+      this.clientes = (clientesData && clientesData.length > 0) ? clientesData : MOCK_CLIENTES;
+      this.viagens = (viagensData && viagensData.length > 0) ? viagensData : MOCK_VIAGENS;
+      this.orcamentos = (orcamentosData && orcamentosData.length > 0) ? orcamentosData : MOCK_ORCAMENTOS;
+      this.consultores = (consultoresData && consultoresData.length > 0) ? consultoresData : (MOCK_CONSULTORES as any);
       this.settings = settingsData || {};
 
       this.calcularOportunidades();
     } catch (e) {
       console.warn('Erro ao carregar dados do Supabase para NextTripPage:', e);
-      // Fallback para localStorage
-      const savedVia = localStorage.getItem('paxflow-viagens-local');
-      if (savedVia) {
-        try { this.viagens = JSON.parse(savedVia); } catch (_) {}
-      }
+      this.clientes = MOCK_CLIENTES;
+      this.viagens = MOCK_VIAGENS;
+      this.orcamentos = MOCK_ORCAMENTOS;
+      this.consultores = MOCK_CONSULTORES as any;
       this.calcularOportunidades();
     }
   }

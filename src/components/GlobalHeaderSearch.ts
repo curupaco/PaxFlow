@@ -27,7 +27,7 @@ export class GlobalHeaderSearch {
     if (!this.container) return;
 
     const html = `
-      <header id="global-header-bar" class="min-h-12 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 px-4 md:px-6 md:pt-safe py-2 flex items-center justify-between gap-4 shrink-0 z-40 md:sticky top-0 w-full max-w-full overflow-x-hidden">
+      <header id="global-header-bar" class="min-h-12 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 px-4 md:px-6 md:pt-safe py-2 flex items-center justify-between gap-4 shrink-0 z-40 w-full max-w-full overflow-x-hidden">
         <div class="relative flex-1 max-w-xl">
           <div class="relative">
             <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
