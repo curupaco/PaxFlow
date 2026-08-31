@@ -467,13 +467,17 @@ export class EscalaService {
     list.unshift(newObj);
     localStorage.setItem(this.LOCAL_STORAGE_SOLICITACOES_KEY, JSON.stringify(list));
 
+    const isValidUUID = (val: any) => typeof val === 'string' && /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(val);
+    const safeSolicitanteId = isValidUUID(newObj.solicitante_id) ? newObj.solicitante_id : null;
+    const safeDestinatarioId = isValidUUID(newObj.destinatario_id) ? newObj.destinatario_id : null;
+
     try {
       const { error } = await supabase.from('escala_solicitacoes').insert({
         id: newObj.id,
         tipo: newObj.tipo,
-        solicitante_id: newObj.solicitante_id || null,
+        solicitante_id: safeSolicitanteId,
         solicitante_nome: newObj.solicitante_nome || 'Consultor',
-        destinatario_id: newObj.destinatario_id || null,
+        destinatario_id: safeDestinatarioId,
         destinatario_nome: newObj.destinatario_nome || null,
         data_origem: newObj.data_origem,
         data_destino: newObj.data_destino || newObj.data_origem,
@@ -498,7 +502,7 @@ export class EscalaService {
           for (const admin of admins) {
             await supabase.from('lembretes').insert({
               consultor_id: admin.id,
-              criador_id: newObj.solicitante_id || null,
+              criador_id: safeSolicitanteId,
               titulo: `Solicitação de Escala: ${tipoLabel}`,
               descricao: `${newObj.solicitante_nome} solicitou ${tipoLabel} (${formatarDataBR(newObj.data_origem)}). Motivo: ${newObj.motivo || 'Sem justificativa'}`,
               data_lembrete: newObj.data_origem,
@@ -514,21 +518,26 @@ export class EscalaService {
             });
           }
         }
-      } else if (newObj.status === 'pendente_colega' && newObj.destinatario_id) {
+      } else if ((newObj.status === 'pendente_colega' || newObj.status === 'pendente_consultor') && newObj.destinatario_id) {
+        const titulo = newObj.status === 'pendente_consultor' ? '🔄 Proposta de Troca de Horário da Gestão' : 'Solicitação de Troca de Turno';
+        const desc = newObj.status === 'pendente_consultor' 
+          ? `O Administrador ${newObj.solicitante_nome} enviou uma proposta de alteração de escala para ${formatarDataBR(newObj.data_origem)}. ${newObj.motivo ? `Justificativa: ${newObj.motivo}` : ''}`
+          : `${newObj.solicitante_nome} solicitou trocar o turno de ${formatarDataBR(newObj.data_origem)} com você.`;
+
         await supabase.from('lembretes').insert({
           consultor_id: newObj.destinatario_id,
           criador_id: newObj.solicitante_id || null,
-          titulo: 'Solicitação de Troca de Turno',
-          descricao: `${newObj.solicitante_nome} solicitou trocar o turno de ${formatarDataBR(newObj.data_origem)} com você.`,
+          titulo,
+          descricao: desc,
           data_lembrete: newObj.data_origem,
           prioridade: 'alta',
           concluido: false,
           created_at: newObj.created_at
         });
-        // Dispara Web Push no celular do colega
+        // Dispara Web Push no celular do consultor/colega
         PushSenderService.sendToUser(newObj.destinatario_id, {
-          title: '🔄 Troca de Turno Solicitada',
-          body: `${newObj.solicitante_nome} solicitou trocar o turno de ${formatarDataBR(newObj.data_origem)} com você.`,
+          title: titulo,
+          body: desc,
           url: '/#inbox'
         });
       }
@@ -644,6 +653,7 @@ export class EscalaService {
         .update({ status: novoStatus, resposta_admin: respostaAdmin })
         .eq('id', solicitacaoId);
 
+      // 1. Notifica o solicitante direto se houver
       if (target.solicitante_id) {
         const statusLabel = novoStatus === 'aprovado' ? 'Aprovada' : novoStatus === 'recusado' ? 'Recusada' : 'Atualizada';
         await supabase.from('lembretes').insert({
@@ -656,6 +666,34 @@ export class EscalaService {
           concluido: false,
           created_at: new Date().toISOString()
         });
+      }
+
+      // 2. Notifica TODOS os Administradores da agência sobre o retorno do consultor
+      const { data: admins } = await supabase.from('profiles').select('id').eq('role', 'admin');
+      if (admins && admins.length > 0) {
+        const consultorNome = target.destinatario_nome || target.solicitante_nome || 'Consultor';
+        const resText = novoStatus === 'aprovado' 
+          ? 'ACEITOU a proposta e a escala foi atualizada automaticamente!' 
+          : 'RECUSOU a proposta de troca de horário.';
+
+        for (const admin of admins) {
+          await supabase.from('lembretes').insert({
+            consultor_id: admin.id,
+            criador_id: target.destinatario_id || target.solicitante_id || null,
+            titulo: `🔄 Retorno de Escala: ${consultorNome} ${novoStatus === 'aprovado' ? 'Aprovou ✅' : 'Recusou ❌'}`,
+            descricao: `O consultor ${consultorNome} ${resText} Data: ${formatarDataBR(target.data_origem)}. ${respostaAdmin ? `Observação: ${respostaAdmin}` : ''}`,
+            data_lembrete: target.data_origem,
+            prioridade: 'alta',
+            concluido: false,
+            created_at: new Date().toISOString()
+          });
+
+          PushSenderService.sendToUser(admin.id, {
+            title: `🔄 Retorno da Escala: ${consultorNome}`,
+            body: `O consultor ${consultorNome} ${novoStatus === 'aprovado' ? 'APROVOU' : 'RECUSOU'} a proposta de escala (${formatarDataBR(target.data_origem)})`,
+            url: '/#inbox'
+          });
+        }
       }
     } catch (e) {
       console.warn('Erro ao atualizar status da solicitacao no Supabase:', e);

@@ -2634,6 +2634,10 @@ export class InboxPage {
 
     const otherConsultants = (this.consultants || []).filter(c => c.nome !== this.perfil?.nome);
 
+    const isAdmin = this.perfil?.role === 'admin';
+    const modalTitle = isAdmin ? 'Propor Alteração / Troca de Escala' : 'Solicitar Alteração de Escala';
+    const modalSub = isAdmin ? 'Envie uma proposta de troca de horário para aprovação do consultor.' : 'Envie uma solicitação para a equipe ou gestão.';
+
     const modalHtml = `
       <div id="escala-solicitar-modal-backdrop" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
         <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4">
@@ -2643,9 +2647,9 @@ export class InboxPage {
                 <span class="w-6 h-6 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 border border-indigo-500/20">
                   <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                 </span>
-                Solicitar Alteração de Escala
+                ${modalTitle}
               </h3>
-              <p class="text-xs text-slate-400 font-semibold mt-0.5">Envie uma solicitação para a equipe ou gestão.</p>
+              <p class="text-xs text-slate-400 font-semibold mt-0.5">${modalSub}</p>
             </div>
             <button id="modal-solicitar-close" class="text-slate-400 hover:text-slate-600 text-lg font-bold">✕</button>
           </div>
@@ -2751,21 +2755,26 @@ export class InboxPage {
       const destinatarioNome = selectedOpt?.getAttribute('data-nome') || selectedOpt?.text || 'Colega';
 
       const solicitanteNome = this.perfil?.nome || 'Consultor';
+      const isUserAdmin = this.perfil?.role === 'admin';
+      const statusFinal = isUserAdmin ? 'pendente_consultor' : (tipo === 'troca' ? 'pendente_colega' : 'pendente_admin');
 
       await EscalaService.criarSolicitacao({
         tipo,
         solicitante_id: this.user?.id || 'usr-1',
         solicitante_nome: solicitanteNome,
-        destinatario_id: tipo === 'troca' ? destinatarioId : undefined,
-        destinatario_nome: tipo === 'troca' ? destinatarioNome : undefined,
+        destinatario_id: (tipo === 'troca' || isUserAdmin) ? destinatarioId : undefined,
+        destinatario_nome: (tipo === 'troca' || isUserAdmin) ? destinatarioNome : undefined,
         data_origem: dataOrigem,
         data_destino: tipo === 'folga' ? dataOrigem : (dataDestino || dataOrigem),
         motivo,
-        status: tipo === 'troca' ? 'pendente_colega' : 'pendente_admin'
+        status: statusFinal
       });
 
       close();
-      this.showToast('Solicitação enviada com sucesso! Notificação gerada no Inbox.', 'success');
+      const msg = isUserAdmin 
+        ? `Proposta enviada para ${destinatarioNome}! Notificação gerada.` 
+        : 'Solicitação enviada com sucesso! Notificação gerada no Inbox.';
+      this.showToast(msg, 'success');
       await this.loadAndBuildAlerts();
       this.render();
       this.setupEventListeners();
@@ -3200,9 +3209,15 @@ export class InboxPage {
 
     const isUserColega = (String(sol.destinatario_id) === String(this.user?.id) || sol.destinatario_nome === this.perfil?.nome);
     const isPendenteColega = sol.status === 'pendente_colega';
+    const isPendenteConsultor = sol.status === 'pendente_consultor';
 
     let actionButtonsHtml = '';
-    if (isPendenteColega && isUserColega) {
+    if (isPendenteConsultor && isUserColega) {
+      actionButtonsHtml = `
+        <button id="btn-decidir-recusar" class="px-4 py-2 text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 rounded-xl transition">Recusar Proposta</button>
+        <button id="btn-decidir-aprovar" class="px-5 py-2 text-xs font-black text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition shadow-md shadow-emerald-600/20">Aceitar e Atualizar Escala</button>
+      `;
+    } else if (isPendenteColega && isUserColega) {
       actionButtonsHtml = `
         <button id="btn-decidir-recusar" class="px-4 py-2 text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 rounded-xl transition">Recusar Troca</button>
         <button id="btn-decidir-aprovar" class="px-5 py-2 text-xs font-black text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition shadow-md shadow-emerald-600/20">Aceitar e Enviar para Gestão</button>
@@ -3271,7 +3286,9 @@ export class InboxPage {
       const novoStatus = isPendenteColega ? 'pendente_admin' : 'aprovado';
       await EscalaService.atualizarStatusSolicitacao(sol.id, novoStatus, resp);
       close();
-      const msg = isPendenteColega ? 'Troca aceita! Encaminhada para aprovação da gestão.' : 'Solicitação aprovada e escala atualizada!';
+      const msg = isPendenteColega 
+        ? 'Troca aceita! Encaminhada para aprovação da gestão.' 
+        : (isPendenteConsultor ? 'Proposta aceita! Escala atualizada automaticamente e administradores notificados.' : 'Solicitação aprovada e escala atualizada!');
       this.showToast(msg, 'success');
       await this.loadEscalaData();
       await this.loadAndBuildAlerts();

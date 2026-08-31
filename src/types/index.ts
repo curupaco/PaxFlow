@@ -595,7 +595,7 @@ export interface SolicitacaoEscala {
   data_destino?: string; // YYYY-MM-DD (para trocas de data)
   turno_destino?: string;
   motivo?: string;
-  status: 'pendente_colega' | 'pendente_admin' | 'aprovado' | 'recusado';
+  status: 'pendente_colega' | 'pendente_admin' | 'pendente_consultor' | 'aprovado' | 'recusado';
   resposta_admin?: string;
   created_at: string;
   updated_at?: string;
