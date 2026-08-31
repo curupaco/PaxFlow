@@ -64,7 +64,7 @@ export class NextTripDashboardWidget {
             <span class="text-xs text-indigo-300 hidden sm:inline">&bull; ${this.oportunidades.length} Oportunidade(s) de Recompra</span>
             ${altaProntidaoCount > 0 ? `
               <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[9px] font-black uppercase tracking-wider border border-emerald-500/30">
-                🔥 ${altaProntidaoCount} Alta Prontidão
+                🔥 ${altaProntidaoCount} Alto Potencial
               </span>
             ` : ''}
           </div>
@@ -98,7 +98,7 @@ export class NextTripDashboardWidget {
           </div>
           <div class="flex items-center gap-2">
             <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-black uppercase tracking-wider border border-emerald-500/30">
-              🔥 ${altaProntidaoCount} Alta Prontidão
+              🔥 ${altaProntidaoCount} Alto Potencial
             </span>
             <span class="px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 text-[10px] font-black uppercase tracking-wider border border-indigo-500/30">
               ${this.oportunidades.length} Oportunidades

@@ -2,6 +2,7 @@ import { supabase, getSessaoAtual } from '../services/supabase';
 import { NextTripEngineService } from '../services/nextTripEngineService';
 import { NextTripOpportunity, PerfilConsultor } from '../types';
 import { SendTemplateMessageModal } from '../components/dashboard/SendTemplateMessageModal';
+import { renderHelpIcon } from '../utils/helpHelper';
 
 export class NextTripPage {
   private container: HTMLElement;
@@ -119,7 +120,7 @@ export class NextTripPage {
       <div class="min-h-screen bg-slate-50/50 dark:bg-slate-950 flex flex-col font-sans transition-colors duration-200">
         
         <!-- Cabeçalho Fixo -->
-        <header class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 sticky top-0 z-30 px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 transition-colors duration-200">
+        <header class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 sticky top-[57px] z-30 px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 transition-colors duration-200">
           <div class="flex items-center gap-3">
             <div class="p-2.5 rounded-2xl bg-indigo-600/10 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 shrink-0">
               <svg width="22" height="22" class="w-5.5 h-5.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
@@ -130,7 +131,7 @@ export class NextTripPage {
             </div>
             <div>
               <h1 class="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight flex items-center gap-2">
-                <span>Next Trip Engine™</span>
+                <span>Next Trip Engine™</span> ${renderHelpIcon('paxflow-next-trip-engine')}
                 <span class="px-2 py-0.5 text-[9px] font-black uppercase tracking-wider bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30 rounded-md self-center leading-none inline-flex items-center">Preditivo</span>
               </h1>
               <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Inteligência comercial preditiva para identificação e abordagem na janela ideal de recompra</p>
@@ -163,7 +164,7 @@ export class NextTripPage {
 
             <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-5 rounded-2xl shadow-xs border-l-4 border-l-emerald-500">
               <div class="flex items-center justify-between text-slate-400 mb-2">
-                <span class="text-[10px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Alta Prontidão (>= 75)</span>
+                <span class="text-[10px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Alto Potencial (>= 75)</span>
                 <span class="text-lg">🔥</span>
               </div>
               <div class="text-2xl font-black text-emerald-600 dark:text-emerald-400">${altaProntidaoCount}</div>
@@ -172,7 +173,7 @@ export class NextTripPage {
 
             <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-5 rounded-2xl shadow-xs border-l-4 border-l-amber-500">
               <div class="flex items-center justify-between text-slate-400 mb-2">
-                <span class="text-[10px] font-black uppercase tracking-wider text-amber-600 dark:text-amber-400">Média Prontidão</span>
+                <span class="text-[10px] font-black uppercase tracking-wider text-amber-600 dark:text-amber-400">Médio Potencial</span>
                 <span class="text-lg">⏳</span>
               </div>
               <div class="text-2xl font-black text-amber-600 dark:text-amber-400">${mediaProntidaoCount}</div>
@@ -200,11 +201,11 @@ export class NextTripPage {
                 <span class="absolute left-3 top-2.5 text-slate-400 text-xs">🔍</span>
               </div>
 
-              <!-- Filtro de Prontidão -->
+              <!-- Filtro de Potencial -->
               <select id="select-filter-prontidao" class="px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 focus:outline-none cursor-pointer">
-                <option value="todos" ${this.filterProntidao === 'todos' ? 'selected' : ''}>Todas as Prontidões</option>
-                <option value="alto" ${this.filterProntidao === 'alto' ? 'selected' : ''}>🔥 Alta Prontidão (>= 75)</option>
-                <option value="medio" ${this.filterProntidao === 'medio' ? 'selected' : ''}>⏳ Média Prontidão</option>
+                <option value="todos" ${this.filterProntidao === 'todos' ? 'selected' : ''}>Todos os Potenciais</option>
+                <option value="alto" ${this.filterProntidao === 'alto' ? 'selected' : ''}>🔥 Alto Potencial (>= 75)</option>
+                <option value="medio" ${this.filterProntidao === 'medio' ? 'selected' : ''}>⏳ Médio Potencial</option>
               </select>
 
               <!-- Filtro de Categoria -->

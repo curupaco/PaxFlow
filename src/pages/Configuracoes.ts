@@ -1533,7 +1533,7 @@ export class ConfiguracoesPage {
     this.container.innerHTML = `
       <div class="min-h-screen bg-slate-50/50 dark:bg-slate-950 flex flex-col font-sans transition-colors duration-200">
         
-        <header class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 sticky top-0 z-30 px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 transition-colors duration-200">
+        <header class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 sticky top-[57px] z-30 px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 transition-colors duration-200">
           <div class="flex items-center gap-3">
             <img src="/logo.svg" alt="PaxFlow Logo" class="h-10 w-auto object-contain animate-fade-in md:hidden" />
             <div>
@@ -1846,7 +1846,7 @@ export class ConfiguracoesPage {
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
                 <div>
-                  <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Corte de Score para Alta Prontidão (0 - 100) *</label>
+                  <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Corte de Score para Alto Potencial (0 - 100) *</label>
                   <input id="input-next-trip-corte-score" type="number" min="50" max="95" required value="${this.settings.next_trip_corte_prontidao_alta || 75}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-bold" />
                   <p class="text-[10px] text-slate-400 mt-1">Pontuação mínima calculada pelo algoritmo para destacar clientes em alta prioridade de abordagem.</p>
                 </div>

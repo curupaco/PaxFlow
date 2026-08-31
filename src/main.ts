@@ -365,8 +365,8 @@ class App {
         <!-- Backdrop Mobile Menu -->
         <div id="mobile-menu-backdrop" class="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-40 transition-opacity duration-300 opacity-0 pointer-events-none md:hidden"></div>
         
-        <!-- Sidebar Menu (Drawer on mobile, permanent sidebar on desktop) -->
-        <aside id="app-sidebar" class="fixed md:sticky md:top-0 md:h-screen inset-y-0 left-0 w-64 md:${this.sidebarCollapsed ? 'w-20' : 'w-64'} bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 flex flex-col border-r border-slate-200 dark:border-slate-800/60 shadow-2xl md:shadow-xl z-50 md:z-20 transition-all duration-300 transform -translate-x-full md:translate-x-0 pt-safe pb-safe">
+        <!-- Sidebar Menu (Drawer no mobile, fixo na lateral no desktop) -->
+        <aside id="app-sidebar" class="fixed inset-y-0 left-0 h-screen w-64 md:${this.sidebarCollapsed ? 'w-20' : 'w-64'} bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 flex flex-col border-r border-slate-200 dark:border-slate-800/60 shadow-2xl md:shadow-xl z-50 md:z-30 transition-all duration-300 transform -translate-x-full md:translate-x-0 pt-safe pb-safe">
           
           <!-- Logo & Título -->
           <div id="sidebar-header" class="border-b border-slate-100 dark:border-slate-800 flex items-center gap-2.5 relative transition-all duration-200 ${this.sidebarCollapsed ? 'p-3.5 justify-center' : 'px-5 py-4'}">
@@ -492,7 +492,7 @@ class App {
         </aside>
 
         <!-- Área Principal de Exibição de Conteúdo (Com Cabeçalho Global) -->
-        <div class="flex-1 flex flex-col overflow-x-hidden min-w-0 max-w-full bg-slate-50/50 dark:bg-slate-950">
+        <div id="app-main-content" class="flex-1 flex flex-col overflow-x-hidden min-w-0 max-w-full bg-slate-50/50 dark:bg-slate-950 ${this.sidebarCollapsed ? 'md:pl-20' : 'md:pl-64'} transition-all duration-300">
           <div id="global-header-mount" class="w-full max-w-full overflow-x-hidden"></div>
           <div id="page-content" class="flex-1 flex flex-col overflow-x-hidden min-w-0 max-w-full">
             <!-- Injetado dinamicamente via router -->
@@ -960,9 +960,15 @@ class App {
     const chevron = collapseBtn?.querySelector('svg');
 
     const header = document.getElementById('sidebar-header');
+    const mainContent = document.getElementById('app-main-content');
+
     if (this.sidebarCollapsed) {
       aside.classList.remove('md:w-64');
       aside.classList.add('md:w-20');
+      if (mainContent) {
+        mainContent.classList.remove('md:pl-64');
+        mainContent.classList.add('md:pl-20');
+      }
       chevron?.classList.add('rotate-180');
       if (header) {
         header.classList.remove('p-6');
@@ -971,6 +977,10 @@ class App {
     } else {
       aside.classList.remove('md:w-20');
       aside.classList.add('md:w-64');
+      if (mainContent) {
+        mainContent.classList.remove('md:pl-20');
+        mainContent.classList.add('md:pl-64');
+      }
       chevron?.classList.remove('rotate-180');
       if (header) {
         header.classList.remove('p-5', 'justify-center');
