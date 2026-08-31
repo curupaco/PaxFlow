@@ -2857,6 +2857,11 @@ export class InboxPage {
    * Modal: Edit Leave Bank Balances
    */
   private openBancoFolgasModal(): void {
+    if (this.perfil?.role !== 'admin') {
+      this.showToast('Apenas administradores podem alterar o Banco de Folgas.', 'error');
+      return;
+    }
+
     const modalHtml = `
       <div id="escala-banco-modal-backdrop" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
         <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 max-w-lg w-full shadow-2xl space-y-4 max-h-[85vh] overflow-y-auto custom-scrollbar">

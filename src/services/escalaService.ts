@@ -708,23 +708,6 @@ export class EscalaService {
         for (let d = diaOrigemIdx; d <= diaFimIdx; d++) {
           await this.salvarCelulaEscala(ano, mes, target.solicitante_nome, d, 'Folga');
         }
-        // Abatimento automático de 1 dia no Banco de Folgas
-        try {
-          const banco = await this.loadBancoFolgas();
-          const member = banco.find(b => 
-            b.consultor_nome.trim().toLowerCase() === target.solicitante_nome?.trim().toLowerCase()
-          );
-          if (member && member.saldo_dias && String(member.saldo_dias) !== '—') {
-            const currentBalance = parseInt(String(member.saldo_dias), 10);
-            if (!isNaN(currentBalance) && currentBalance > 0) {
-              member.saldo_dias = String(currentBalance - 1);
-              member.detalhes_historico = `${member.detalhes_historico || ''} · Folga ref ${diaOrigem}/${mes}`.trim();
-              await this.salvarBancoFolgas(banco);
-            }
-          }
-        } catch (e) {
-          console.warn('Erro ao abater saldo do banco de folgas:', e);
-        }
       } else if (target.tipo === 'ferias' && target.solicitante_nome) {
         let diaFimIdx = diaOrigemIdx;
         if (target.data_destino) {
