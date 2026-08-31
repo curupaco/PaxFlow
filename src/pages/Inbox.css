@@ -511,6 +511,7 @@
 }
 
 .escala-cell {
+  position: relative;
   min-height: 38px;
   height: 38px;
   max-height: 38px;
@@ -533,6 +534,19 @@
 .escala-cell:hover {
   outline: 2px solid rgba(37, 99, 235, 0.4);
   transform: scale(1.03);
+}
+
+.escala-obs-dot {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #f59e0b;
+  box-shadow: 0 0 5px rgba(245, 158, 11, 0.8);
+  pointer-events: none;
+  z-index: 2;
 }
 
 /* Turnos Presets Color Palette */

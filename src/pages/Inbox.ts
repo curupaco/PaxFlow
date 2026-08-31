@@ -2211,11 +2211,9 @@ export class InboxPage {
 
                         return `
                           <td class="${tdBgCls}">
-                            <div class="escala-cell ${cls} relative group/cell" data-escala-consultor="${name}" data-escala-day="${dayIdx}" title="${obs ? `💬 Observação: ${obs}` : ''}">
+                            <div class="escala-cell ${cls}" data-escala-consultor="${name}" data-escala-day="${dayIdx}" ${obs ? `data-escala-obs="${obs.replace(/"/g, '&quot;')}"` : ''}>
                               <span>${v || '—'}</span>
-                              ${obs ? `
-                                <span class="ml-1 inline-flex items-center text-[10px] text-amber-400 font-black shrink-0" title="${obs}">💬</span>
-                              ` : ''}
+                              ${obs ? `<span class="escala-obs-dot"></span>` : ''}
                             </div>
                           </td>
                         `;
@@ -2405,6 +2403,47 @@ export class InboxPage {
         }
       });
     });
+
+    // Tooltip Flutuante Global para Comentários da Escala (Sem cortes por overflow)
+    let tooltipEl = document.getElementById('escala-global-tooltip');
+    if (!tooltipEl) {
+      tooltipEl = document.createElement('div');
+      tooltipEl.id = 'escala-global-tooltip';
+      tooltipEl.className = 'fixed hidden z-[9999] px-3 py-1.5 text-xs font-semibold bg-slate-900/95 text-slate-100 dark:bg-slate-800/95 dark:text-slate-100 border border-slate-700/80 rounded-xl shadow-2xl backdrop-blur-md pointer-events-none transition-opacity duration-150 max-w-xs leading-snug';
+      document.body.appendChild(tooltipEl);
+    }
+
+    const tableScroll = document.getElementById('escalaTableScroll');
+    if (tableScroll) {
+      tableScroll.addEventListener('mouseover', (e) => {
+        const cell = (e.target as HTMLElement).closest('[data-escala-obs]');
+        if (cell && tooltipEl) {
+          const obsText = cell.getAttribute('data-escala-obs');
+          if (obsText) {
+            tooltipEl.textContent = `💬 ${obsText}`;
+            tooltipEl.classList.remove('hidden');
+          }
+        }
+      });
+
+      tableScroll.addEventListener('mousemove', (e) => {
+        const cell = (e.target as HTMLElement).closest('[data-escala-obs]');
+        if (cell && tooltipEl && !tooltipEl.classList.contains('hidden')) {
+          const rect = cell.getBoundingClientRect();
+          const x = Math.min(Math.max(rect.left + rect.width / 2 - 80, 10), window.innerWidth - 200);
+          const y = rect.top > 45 ? rect.top - 38 : rect.bottom + 8;
+          tooltipEl.style.left = `${x}px`;
+          tooltipEl.style.top = `${y}px`;
+        }
+      });
+
+      tableScroll.addEventListener('mouseout', (e) => {
+        const related = e.relatedTarget as HTMLElement;
+        if (!related || !related.closest('[data-escala-obs]')) {
+          if (tooltipEl) tooltipEl.classList.add('hidden');
+        }
+      });
+    }
 
     // Edit Banco de Folgas
     document.getElementById('btn-edit-banco-folgas')?.addEventListener('click', () => {
