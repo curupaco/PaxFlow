@@ -95,13 +95,13 @@ export class EscalaService {
    */
   private static getInitialMockData() {
     const mockEmployeesSchedule: Record<string, string[]> = {
-      "Marinna Morena": ["10", "14", "10-17", "10-17", "10-17", "10-17", "Folga", "F", "F", "10-17", "10-17", "10-17", "10-17", "10-17", "10", "14", "10-17", "10-17", "10-17", "10-17", "Folga", "F", "F", "10-17", "10-17", "10-17", "10-17", "10-17", "10", "14", "10-17"],
-      "Guto Bassaroto": ["F", "F", "Folga", "10-17", "10-17", "13-20", "10-17", "10", "14", "10-17", "10-17", "10-17", "10-17", "12-19", "F", "F", "Folga", "15-22", "13-20", "13-20", "10-17", "10", "14", "13-20", "13-20", "13-20", "13-20", "Folga", "F", "F", "13-20"],
-      "Maria Carvalho": ["F", "F", "10-17", "13-20", "13-20", "15-22", "13-20", "10", "14", "13-20", "13-20", "13-20", "13-20", "13-20", "F", "F", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Folga"],
-      "Rafael Sousa": ["10", "14", "15-22", "15-22", "15-22", "Folga", "15-22", "F", "F", "15-22", "15-22", "15-22", "15-22", "15-22", "10", "14", "15-22", "Folga", "15-22", "15-22", "15-22", "F", "F", "15-22", "15-22", "15-22", "15-22", "15-22", "10", "14", "15-22"],
-      "Eduardo Mariano": ["", "", "12-19", "-", "Reunião", "-", "11-18", "", "", "12-19", "-", "11-18", "-", "10-17", "", "", "13-20", "-", "10-17", "Reunião", "13-20", "", "", "12-19", "-", "12-19", "-", "12-19", "", "", "12-19"],
-      "Laura Montu": ["", "", "12-19", "-", "Reunião", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "12", "15", "11-18", "-", "-", "11-18", "11-18", "", "", "-"],
-      "Fernanda Ganem": ["", "", "14-21", "14-21", "14-21", "-", "-", "", "", "Férias", "Férias", "Férias", "Férias", "Férias", "", "", "-", "12-19", "-", "Reunião", "-", "", "", "14-21", "-", "-", "14-21", "-", "", "", "14-21"]
+      "Marinna Morena": ["10-17", "14-21", "10-17", "10-17", "10-17", "10-17", "Folga", "F", "F", "10-17", "10-17", "10-17", "10-17", "10-17", "10-17", "14-21", "10-17", "10-17", "10-17", "10-17", "Folga", "F", "F", "10-17", "10-17", "10-17", "10-17", "10-17", "10-17", "14-21", "10-17"],
+      "Guto Bassaroto": ["F", "F", "Folga", "10-17", "10-17", "13-20", "10-17", "10-17", "14-21", "10-17", "10-17", "10-17", "10-17", "12-19", "F", "F", "Folga", "15-22", "13-20", "13-20", "10-17", "10-17", "14-21", "13-20", "13-20", "13-20", "13-20", "Folga", "F", "F", "13-20"],
+      "Maria Carvalho": ["F", "F", "10-17", "13-20", "13-20", "15-22", "13-20", "10-17", "14-21", "13-20", "13-20", "13-20", "13-20", "13-20", "F", "F", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Folga"],
+      "Rafael Sousa": ["10-17", "14-21", "15-22", "15-22", "15-22", "Folga", "15-22", "F", "F", "15-22", "15-22", "15-22", "15-22", "15-22", "10-17", "14-21", "15-22", "Folga", "15-22", "15-22", "15-22", "F", "F", "15-22", "15-22", "15-22", "15-22", "15-22", "10-17", "14-21", "15-22"],
+      "Eduardo Mariano": ["Folga", "Folga", "12-19", "-", "Reunião", "-", "11-18", "Folga", "Folga", "12-19", "-", "11-18", "-", "10-17", "Folga", "Folga", "13-20", "-", "10-17", "Reunião", "13-20", "Folga", "Folga", "12-19", "-", "12-19", "-", "12-19", "Folga", "Folga", "12-19"],
+      "Laura Montu": ["Folga", "Folga", "12-19", "-", "Reunião", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "12-19", "15-22", "11-18", "-", "-", "11-18", "11-18", "Folga", "Folga", "-"],
+      "Fernanda Ganem": ["Folga", "Folga", "14-21", "14-21", "14-21", "-", "-", "Folga", "Folga", "Férias", "Férias", "Férias", "Férias", "Férias", "Folga", "Folga", "-", "12-19", "-", "Reunião", "-", "Folga", "Folga", "14-21", "-", "-", "14-21", "-", "Folga", "Folga", "14-21"]
     };
 
     const mockBancoFolgas: BancoFolgasItem[] = [
@@ -126,8 +126,10 @@ export class EscalaService {
    */
   public static async loadEscalaMensal(ano: number, mes: number): Promise<Record<string, string[]>> {
     const initial = this.getInitialMockData();
-    let loadedMap: Record<string, string[]> = {};
-    let isFromDbOrStorage = false;
+    let dbLoadedMap: Record<string, string[]> = {};
+    let localLoadedMap: Record<string, string[]> = {};
+    let isFromDb = false;
+    let isFromLocal = false;
 
     const daysInMonth = new Date(ano, mes, 0).getDate();
     const monthStr = String(mes).padStart(2, '0');
@@ -142,15 +144,15 @@ export class EscalaService {
         .lte('data', `${ano}-${monthStr}-${lastDayStr}`);
 
       if (!error && data && data.length > 0) {
-        isFromDbOrStorage = true;
+        isFromDb = true;
         data.forEach((row: any) => {
           const name = row.consultor_nome || 'Consultor';
-          if (!loadedMap[name]) {
-            loadedMap[name] = new Array(31).fill('');
+          if (!dbLoadedMap[name]) {
+            dbLoadedMap[name] = new Array(31).fill('');
           }
           const dayNum = parseInt(row.data.split('-')[2], 10) - 1;
           if (dayNum >= 0 && dayNum < 31) {
-            loadedMap[name][dayNum] = row.turno_codigo || row.observacao_custom || '';
+            dbLoadedMap[name][dayNum] = row.turno_codigo || row.observacao_custom || '';
           }
         });
       }
@@ -158,73 +160,88 @@ export class EscalaService {
       console.warn('Erro/offline ao consultar escala no Supabase:', e);
     }
 
-    // 2. Mescla com o cache de fallback local caso existam apontamentos não sincronizados
+    // 2. Busca do cache local
     try {
       const stored = localStorage.getItem(this.LOCAL_STORAGE_ESCALA_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
         const key = `${ano}-${mes}`;
         if (parsed[key]) {
-          const localMap = parsed[key] as Record<string, string[]>;
-          if (isFromDbOrStorage) {
-            // Se o banco retornou dados, mescla células locais preenchidas que estejam em branco no banco
-            Object.keys(localMap).forEach(name => {
-              if (!loadedMap[name]) {
-                loadedMap[name] = [...localMap[name]];
-              } else {
-                localMap[name].forEach((val, idx) => {
-                  if (val && !loadedMap[name][idx]) {
-                    loadedMap[name][idx] = val;
-                    // Sincroniza em segundo plano essa célula para o Supabase
-                    this.salvarCelulaEscala(ano, mes, name, idx, val);
-                  }
-                });
-              }
-            });
-          } else {
-            loadedMap = localMap;
-            isFromDbOrStorage = true;
-          }
+          localLoadedMap = parsed[key] as Record<string, string[]>;
+          isFromLocal = true;
         }
       }
     } catch (e) {}
 
-    let resultMap: Record<string, string[]> = {};
-
-    // 3. Se o banco de dados (ou cache) tem dados para este mês: usa 100% o que está no Banco
-    if (isFromDbOrStorage) {
-      const allConsultants = Array.from(new Set([...Object.keys(initial.mockEmployeesSchedule), ...Object.keys(loadedMap)]));
-      allConsultants.forEach(name => {
-        resultMap[name] = loadedMap[name] !== undefined ? loadedMap[name] : new Array(31).fill('');
-      });
-    } else if (ano === 2026 && mes === 8) {
-      // Mês inicial de demonstração (Agosto/2026) se NUNCA nada foi gravado no banco
-      resultMap = { ...initial.mockEmployeesSchedule };
+    // Base mock ou lista vazia por consultor
+    let baseMap: Record<string, string[]> = {};
+    if (ano === 2026 && mes === 8 && !isFromDb && !isFromLocal) {
+      baseMap = { ...initial.mockEmployeesSchedule };
     } else {
-      // Qualquer outro mês novo sem dados no banco inicia 100% em branco
-      Object.keys(initial.mockEmployeesSchedule).forEach(name => {
-        resultMap[name] = new Array(31).fill('');
+      const allNames = Array.from(new Set([
+        ...Object.keys(initial.mockEmployeesSchedule),
+        ...Object.keys(dbLoadedMap),
+        ...Object.keys(localLoadedMap)
+      ]));
+      allNames.forEach(name => {
+        baseMap[name] = new Array(31).fill('');
       });
     }
+
+    // Mesclagem robusta de células: local > db > base
+    const mergedMap: Record<string, string[]> = {};
+    const allConsultants = Array.from(new Set([
+      ...Object.keys(baseMap),
+      ...Object.keys(dbLoadedMap),
+      ...Object.keys(localLoadedMap)
+    ]));
+
+    allConsultants.forEach(name => {
+      const baseArr = baseMap[name] || new Array(31).fill('');
+      const dbArr = dbLoadedMap[name];
+      const localArr = localLoadedMap[name];
+
+      mergedMap[name] = new Array(31).fill('');
+
+      for (let i = 0; i < 31; i++) {
+        if (dbArr && dbArr[i] !== undefined && dbArr[i] !== '') {
+          mergedMap[name][i] = dbArr[i];
+        } else if (localArr && localArr[i] !== undefined && localArr[i] !== '') {
+          mergedMap[name][i] = localArr[i];
+        } else {
+          mergedMap[name][i] = baseArr[i] || '';
+        }
+      }
+    });
+
+    // Atualiza o cache local com a visão mais recente e consistente
+    try {
+      const key = `${ano}-${mes}`;
+      const stored = localStorage.getItem(this.LOCAL_STORAGE_ESCALA_KEY);
+      let dataMap: Record<string, Record<string, string[]>> = stored ? JSON.parse(stored) : {};
+      dataMap[key] = mergedMap;
+      localStorage.setItem(this.LOCAL_STORAGE_ESCALA_KEY, JSON.stringify(dataMap));
+    } catch (e) {}
 
     // Aplica a ordem salva dos consultores se existir
     const customOrder = this.loadOrdemConsultores();
     if (customOrder && customOrder.length > 0) {
       const orderedMap: Record<string, string[]> = {};
       customOrder.forEach(name => {
-        if (resultMap[name]) {
-          orderedMap[name] = resultMap[name];
+        const matched = Object.keys(mergedMap).find(k => k.trim().toLowerCase() === name.trim().toLowerCase());
+        if (matched && mergedMap[matched]) {
+          orderedMap[matched] = mergedMap[matched];
         }
       });
-      Object.keys(resultMap).forEach(name => {
+      Object.keys(mergedMap).forEach(name => {
         if (!orderedMap[name]) {
-          orderedMap[name] = resultMap[name];
+          orderedMap[name] = mergedMap[name];
         }
       });
       return orderedMap;
     }
 
-    return resultMap;
+    return mergedMap;
   }
 
   private static LOCAL_STORAGE_ORDEM_KEY = 'paxflow_escala_ordem_consultores_v1';
@@ -288,9 +305,7 @@ export class EscalaService {
       let dataMap: Record<string, Record<string, string[]>> = stored ? JSON.parse(stored) : {};
       
       if (!dataMap[key]) {
-        // Carrega o mapa atual do mês para inicialização precisa
-        const initialMap = await this.loadEscalaMensal(ano, mes);
-        dataMap[key] = initialMap;
+        dataMap[key] = {};
       }
 
       if (!dataMap[key][consultorNome]) {
@@ -404,13 +419,54 @@ export class EscalaService {
     diasFolgaSemanais: number[]
   ): Promise<boolean> {
     const daysInMonth = new Date(ano, mes, 0).getDate();
+    const rowsToUpsert: any[] = [];
+    const valuesArray = new Array(31).fill('');
+
     for (let dayIdx = 0; dayIdx < daysInMonth; dayIdx++) {
       const dateObj = new Date(ano, mes - 1, dayIdx + 1);
       const dow = dateObj.getDay();
       const valor = diasFolgaSemanais.includes(dow) ? 'Folga' : turnoPadrao;
-      await this.salvarCelulaEscala(ano, mes, consultorNome, dayIdx, valor);
+      valuesArray[dayIdx] = valor;
+
+      const dataFormatted = `${ano}-${String(mes).padStart(2, '0')}-${String(dayIdx + 1).padStart(2, '0')}`;
+      rowsToUpsert.push({
+        consultor_nome: consultorNome,
+        data: dataFormatted,
+        turno_codigo: valor,
+        updated_at: new Date().toISOString()
+      });
     }
-    return true;
+
+    // 1. Bulk upsert no Supabase
+    try {
+      const { error } = await supabase
+        .from('escala_diaria')
+        .upsert(rowsToUpsert, { onConflict: 'consultor_nome,data' });
+
+      if (error) {
+        console.warn('Supabase batch upsert escala_diaria warning:', error.message);
+      }
+    } catch (e) {
+      console.warn('Batch salvo no modo fallback local:', e);
+    }
+
+    // 2. Atualização atômica no localStorage
+    try {
+      const key = `${ano}-${mes}`;
+      const stored = localStorage.getItem(this.LOCAL_STORAGE_ESCALA_KEY);
+      let dataMap: Record<string, Record<string, string[]>> = stored ? JSON.parse(stored) : {};
+
+      if (!dataMap[key]) {
+        dataMap[key] = {};
+      }
+
+      dataMap[key][consultorNome] = valuesArray;
+      localStorage.setItem(this.LOCAL_STORAGE_ESCALA_KEY, JSON.stringify(dataMap));
+      return true;
+    } catch (e) {
+      console.error('Erro ao preencher mês em lote:', e);
+      return false;
+    }
   }
 
   /**

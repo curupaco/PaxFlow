@@ -145,14 +145,8 @@ export class InboxPage {
       teamMap.forEach((info, key) => {
         if (!info.participates) return; // Omitir se o funcionário não participa da escala
 
-        const firstName = info.displayName.split(' ')[0].toLowerCase();
-        
-        // Busca chave exata pelo nome completo ou por primeiro nome (ex: 'Marinna' -> 'Marinna Morena')
-        const existingKey = Object.keys(rawEscala).find(k => {
-          const kLower = k.trim().toLowerCase();
-          const kFirstName = kLower.split(' ')[0];
-          return kLower === key || kFirstName === firstName;
-        });
+        // Busca chave exata pelo nome completo do consultor
+        const existingKey = Object.keys(rawEscala).find(k => k.trim().toLowerCase() === key);
 
         if (existingKey && rawEscala[existingKey]) {
           // Ajusta tamanho do vetor para o número real de dias do mês
@@ -192,12 +186,7 @@ export class InboxPage {
       teamMap.forEach((info, key) => {
         if (!info.participates) return;
 
-        const firstName = info.displayName.split(' ')[0].toLowerCase();
-        const existing = rawBanco.find(b => {
-          const bLower = b.consultor_nome.trim().toLowerCase();
-          const bFirstName = bLower.split(' ')[0];
-          return bLower === key || bFirstName === firstName;
-        });
+        const existing = rawBanco.find(b => b.consultor_nome.trim().toLowerCase() === key);
 
         if (existing) {
           cleanBancoData.push({ ...existing, consultor_nome: info.displayName });
@@ -1521,6 +1510,7 @@ export class InboxPage {
     window.removeEventListener('paxflow:new-message', (this as any)._onRealtimeInboxBound);
     (this as any)._onRealtimeInboxBound = async () => {
       await this.loadAndBuildAlerts();
+      await this.loadEscalaData();
       this.render();
       this.setupEventListeners();
     };

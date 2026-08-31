@@ -64,6 +64,12 @@ export class RealtimeMessagingService {
           { event: '*', schema: 'public', table: 'comentarios' },
           (payload: any) => this.handlePayload('comentarios', payload)
         )
+        // 6. Inscrição na tabela de escala_diaria
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'escala_diaria' },
+          (payload: any) => this.handlePayload('escala_diaria', payload)
+        )
         .subscribe((status: string) => {
           if (status === 'SUBSCRIBED') {
             console.log('⚡ Realtime Messaging conectado com sucesso para o usuário:', userId);
@@ -95,6 +101,8 @@ export class RealtimeMessagingService {
                        String(newRecord.solicitante_id) === String(this.activeUserId) ||
                        this.activeUserRole === 'admin';
       if (isTarget) isRelevant = true;
+    } else if (table === 'escala_diaria') {
+      isRelevant = true;
     } else if (table === 'lembretes') {
       const isTarget = String(newRecord.consultor_id) === String(this.activeUserId) ||
                        String(newRecord.criador_id) === String(this.activeUserId);
