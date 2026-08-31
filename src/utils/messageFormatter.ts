@@ -67,20 +67,28 @@ export function formatReembolsoStatus(status: string): string {
 export function formatarDataBR(dateStr?: string | null): string {
   if (!dateStr) return '';
   const str = String(dateStr).trim();
-  if (/^\d{2}\/\d{2}\/\d{4}/.test(str)) return str;
 
+  // Caso já esteja no padrão DD/MM/AAAA exato
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(str)) return str;
+
+  // Pattern para YYYY-MM-DD (com ou sem T/Hora)
   const ymdMatch = str.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{2}):(\d{2}))?/);
   if (ymdMatch) {
     const [_, ano, mes, dia, hora, min] = ymdMatch;
     let formatted = `${dia}/${mes}/${ano}`;
-    if (hora && min) formatted += ` às ${hora}:${min}`;
+    if (hora && min && (hora !== '00' || min !== '00')) {
+      formatted += ` às ${hora}:${min}`;
+    }
     return formatted;
   }
 
   try {
     const d = new Date(str);
     if (!isNaN(d.getTime())) {
-      return d.toLocaleDateString('pt-BR');
+      const dia = String(d.getUTCDate()).padStart(2, '0');
+      const mes = String(d.getUTCMonth() + 1).padStart(2, '0');
+      const ano = d.getUTCFullYear();
+      return `${dia}/${mes}/${ano}`;
     }
   } catch {}
 

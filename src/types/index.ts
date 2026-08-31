@@ -573,7 +573,7 @@ export interface EscalaDiaria {
   consultor_id: string;
   consultor_nome?: string;
   equipe?: string;
-  data: string; // YYYY-MM-DD
+  data: string; // YYYY-MM-DD no banco, exibido obrigatoriamente como DD/MM/AAAA na UI
   turno_codigo: string; // ex: '10-17', 'Folga', 'Férias', etc.
   observacao_custom?: string;
   created_at?: string;
@@ -590,9 +590,9 @@ export interface SolicitacaoEscala {
   solicitante_nome?: string;
   destinatario_id?: string; // Preenchido no caso de troca entre consultores
   destinatario_nome?: string;
-  data_origem: string; // YYYY-MM-DD
+  data_origem: string; // YYYY-MM-DD no banco, exibido obrigatoriamente como DD/MM/AAAA na UI
   turno_origem?: string;
-  data_destino?: string; // YYYY-MM-DD (para trocas de data)
+  data_destino?: string; // YYYY-MM-DD (para trocas de data), exibido obrigatoriamente como DD/MM/AAAA na UI
   turno_destino?: string;
   motivo?: string;
   status: 'pendente_colega' | 'pendente_admin' | 'pendente_consultor' | 'aprovado' | 'recusado';
