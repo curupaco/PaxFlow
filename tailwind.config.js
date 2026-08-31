@@ -2,7 +2,6 @@
 module.exports = {
   content: [
     "./index.html",
-    "./todo.html",
     "./src/**/*.{js,ts,jsx,tsx}"
   ],
   darkMode: 'class',

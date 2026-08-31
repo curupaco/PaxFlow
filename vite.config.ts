@@ -37,7 +37,6 @@ export default defineConfig(({ mode }) => {
       rollupOptions: {
         input: {
           main: resolve(__dirname, 'index.html'),
-          todo: resolve(__dirname, 'todo.html'),
         },
       },
     },

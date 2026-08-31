@@ -10,7 +10,6 @@ import { showBadgeCelebrationModal, showLevelUpModal } from './utils/celebration
 import { traduzirErro } from './utils/errorTranslator';
 import { Router } from './router';
 import { LandingPage } from './pages/LandingPage';
-import { LandingPageOLD } from './pages/LandingPage_OLD';
 import { GlobalHeaderSearch } from './components/GlobalHeaderSearch';
 import { RealtimeMessagingService } from './services/realtimeMessaging';
 import { VersionChecker } from './services/versionChecker';
@@ -157,7 +156,7 @@ class App {
 
     // Se o usuário acessar explicitamente /conheca ou /landing (e não estiver em modo demo), exibe a Landing Page comercial
     if (isConhecaRoute) {
-      this.renderLandingPage(isConhecaOldRoute);
+      this.renderLandingPage();
       return;
     }
 
@@ -165,7 +164,7 @@ class App {
     // renderiza a Landing Page interativa imediatamente
     const hasAuthToken = isSandbox || Object.keys(localStorage).some(k => k.includes('sb-') && k.includes('-auth-token'));
     if (!hasAuthToken && !isLoginRoute) {
-      this.renderLandingPage(isConhecaOldRoute);
+      this.renderLandingPage();
       return;
     }
 
@@ -176,7 +175,7 @@ class App {
         if (isLoginRoute) {
           this.renderLogin();
         } else {
-          this.renderLandingPage(isConhecaOldRoute);
+          this.renderLandingPage();
         }
       } else {
         this.user = user;
@@ -194,7 +193,7 @@ class App {
       if (isLoginRoute) {
         this.renderLogin();
       } else {
-        this.renderLandingPage(isConhecaOldRoute);
+        this.renderLandingPage();
       }
     }
   }
@@ -202,9 +201,8 @@ class App {
   /**
    * Renderiza a Landing Page comercial
    */
-  private renderLandingPage(usarOld: boolean = false): void {
-    // /conheca => LandingPage.ts. /conheca/old => LandingPage_OLD.ts.
-    const page = usarOld ? new LandingPageOLD(this.container) : new LandingPage(this.container);
+  private renderLandingPage(): void {
+    const page = new LandingPage(this.container);
     page.init();
 
     // Escuta transição para o Modo Sandbox
