@@ -2517,7 +2517,8 @@ export class CadastrosPage {
     });
 
     // Add Faixa click
-    document.getElementById('btn-add-faixa')?.addEventListener('click', () => {
+    overlay.querySelector('#btn-add-faixa')?.addEventListener('click', () => {
+
       const container = document.getElementById('container-faixas-premios');
       if (!container) return;
 
@@ -2790,7 +2791,8 @@ export class CadastrosPage {
     });
 
     // Add Faixa click
-    document.getElementById('btn-add-faixa')?.addEventListener('click', () => {
+    overlay.querySelector('#btn-add-faixa')?.addEventListener('click', () => {
+
       const container = document.getElementById('container-faixas-premios');
       if (!container) return;
 
