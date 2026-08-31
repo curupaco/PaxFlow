@@ -111,8 +111,17 @@ const getMockDataForTable = (table: string): any[] => {
   const localData = localStorage.getItem(`sandbox-paxflow-${table}`);
   if (localData) {
     try { 
-      defaultData = JSON.parse(localData); 
-    } catch (e) {}
+      const parsed = JSON.parse(localData); 
+      if (table === 'viagens' && (!Array.isArray(parsed) || !parsed.some((v: any) => v.id === 'sandbox-viagem-nexttrip-1'))) {
+        localStorage.removeItem(`sandbox-paxflow-${table}`);
+      } else if (table === 'clientes' && (!Array.isArray(parsed) || !parsed.some((c: any) => c.id === 'sandbox-cliente-4'))) {
+        localStorage.removeItem(`sandbox-paxflow-${table}`);
+      } else {
+        defaultData = parsed;
+      }
+    } catch (e) {
+      localStorage.removeItem(`sandbox-paxflow-${table}`);
+    }
   }
   if (!defaultData || defaultData.length === 0) {
     if (table === 'clientes') defaultData = MOCK_CLIENTES;
