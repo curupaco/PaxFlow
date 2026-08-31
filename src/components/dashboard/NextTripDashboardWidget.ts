@@ -30,30 +30,22 @@ export class NextTripDashboardWidget {
 
     if (this.oportunidades.length === 0) {
       this.container.innerHTML = `
-        <div class="mb-4 p-4 bg-gradient-to-r from-indigo-950 via-slate-900 to-indigo-900 text-white rounded-2xl shadow-lg border border-indigo-500/30 animate-fade-in shrink-0">
-          <div class="flex items-center justify-between gap-3 flex-wrap">
-            <div class="flex items-center gap-2.5">
-              <span class="p-1.5 rounded-xl bg-indigo-500/20 text-indigo-300 text-base">🎯</span>
-              <div>
-                <h3 class="text-xs font-black tracking-wide text-indigo-100 uppercase font-sans">Next Trip Engine™ — Motor Preditivo de Recompra</h3>
-                <p class="text-[11px] text-indigo-300">Inteligência comercial preditiva para identificar clientes no momento ideal de nova compra.</p>
-              </div>
-            </div>
-            <div class="flex items-center gap-2">
-              <button id="btn-gerar-demo-next-trip" class="shrink-0 px-3 py-1.5 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white font-extrabold text-[10px] rounded-xl shadow transition uppercase tracking-wide border border-indigo-400/30 flex items-center gap-1.5">
-                <span>🎯</span> Simular Oportunidades Demo
-              </button>
+        <div class="mb-4 px-4 py-3 bg-gradient-to-r from-indigo-950 via-slate-900 to-indigo-900 text-white rounded-2xl shadow-lg border border-indigo-500/30 animate-fade-in shrink-0 flex items-center justify-between gap-3">
+          <div class="flex items-center gap-2.5">
+            <span class="p-1.5 rounded-xl bg-indigo-500/20 text-indigo-300 text-base">🎯</span>
+            <div>
+              <h3 class="text-xs font-black tracking-wide text-indigo-100 uppercase font-sans">Next Trip Engine™ — Monitoramento Ativo</h3>
+              <p class="text-[11px] text-indigo-300">Nenhuma oportunidade na janela de recompra (> 90 dias pós-retorno) mapeada para os seus clientes no momento.</p>
             </div>
           </div>
+          <button id="btn-open-full-next-trip-empty" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-extrabold uppercase rounded-xl border border-indigo-400/30 transition flex items-center gap-1 shrink-0">
+            <span>Ver Central Preditiva ➔</span>
+          </button>
         </div>
       `;
 
-      this.container.querySelector('#btn-gerar-demo-next-trip')?.addEventListener('click', () => {
-        Object.keys(localStorage).forEach(key => {
-          if (key.startsWith('next_trip_snooze_')) localStorage.removeItem(key);
-        });
-        (window as any).paxflowForceNextTripDemo = true;
-        this.onUpdate();
+      this.container.querySelector('#btn-open-full-next-trip-empty')?.addEventListener('click', () => {
+        window.location.hash = '#next-trip';
       });
 
       return;

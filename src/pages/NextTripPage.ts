@@ -78,7 +78,7 @@ export class NextTripPage {
   }
 
   private calcularOportunidades(): void {
-    let ops = NextTripEngineService.calculateOpportunities(
+    const ops = NextTripEngineService.calculateOpportunities(
       this.clientes,
       this.viagens,
       this.orcamentos,
@@ -87,91 +87,7 @@ export class NextTripPage {
       this.perfil?.role || 'consultor'
     );
 
-    const activeOps = ops.filter(op => op.statusAbordagem !== 'snoozed');
-
-    // Se não houver oportunidades calculadas ou se demo ativado, carrega amostras demonstrativas
-    if (activeOps.length === 0 || (window as any).paxflowForceNextTripDemo) {
-      ['demo-c1', 'demo-c2', 'demo-c3', 'demo-c4'].forEach(cId => {
-        localStorage.removeItem(`next_trip_snooze_${cId}`);
-      });
-
-      ops = [
-        {
-          clienteId: 'demo-c1',
-          clienteNome: 'Mariana & Família Costa',
-          clienteTelefone: '51999887766',
-          clienteEmail: 'mariana.costa@email.com',
-          consultorId: this.user?.id || 'demo-cons',
-          consultorNome: this.perfil?.nome || 'Consultor Titular',
-          scoreProntidao: 94,
-          nivelProntidao: 'alto',
-          destinoRecomendado: 'Europa 12m (Paris & Roma)',
-          categoriaDestino: 'europa',
-          ultimaViagemData: '15/10/2025',
-          ultimoDestino: 'Orlando & Disney World',
-          npsNota: 10,
-          motivoSugestao: 'Viajou para Orlando há 10 meses • Promotor NPS 10 • Período habitual de férias em Julho',
-          statusAbordagem: 'pendente',
-          totalPassageirosGrupo: 4
-        },
-        {
-          clienteId: 'demo-c2',
-          clienteNome: 'Carlos Eduardo Oliveira',
-          clienteTelefone: '11988776655',
-          clienteEmail: 'carlos.eduardo@empresa.com.br',
-          consultorId: this.user?.id || 'demo-cons',
-          consultorNome: this.perfil?.nome || 'Consultor Titular',
-          scoreProntidao: 86,
-          nivelProntidao: 'alto',
-          destinoRecomendado: 'Resort All-Inclusive (Praia do Forte)',
-          categoriaDestino: 'resort',
-          ultimaViagemData: '02/12/2025',
-          ultimoDestino: 'Cancún All-Inclusive',
-          npsNota: 9,
-          motivoSugestao: 'Aniversário de Viagem em 15 dias • Cliente VIP de recompra recorrente',
-          statusAbordagem: 'pendente',
-          totalPassageirosGrupo: 2
-        },
-        {
-          clienteId: 'demo-c3',
-          clienteNome: 'Fernanda & Gabriel Santos',
-          clienteTelefone: '21977665544',
-          clienteEmail: 'fernanda.santos@email.com',
-          consultorId: this.user?.id || 'demo-cons',
-          consultorNome: this.perfil?.nome || 'Consultor Titular',
-          scoreProntidao: 78,
-          nivelProntidao: 'alto',
-          destinoRecomendado: 'Grécia & Ilhas Gregas',
-          categoriaDestino: 'europa',
-          ultimaViagemData: '20/08/2025',
-          ultimoDestino: 'Maldivas & Dubai',
-          npsNota: 10,
-          motivoSugestao: 'Promotor NPS 10 • Histórico de viagens em Setembro',
-          statusAbordagem: 'pendente',
-          totalPassageirosGrupo: 2
-        },
-        {
-          clienteId: 'demo-c4',
-          clienteNome: 'Rodrigo & Patrícia Lima',
-          clienteTelefone: '31966554433',
-          clienteEmail: 'rodrigo.lima@email.com',
-          consultorId: this.user?.id || 'demo-cons',
-          consultorNome: this.perfil?.nome || 'Consultor Titular',
-          scoreProntidao: 68,
-          nivelProntidao: 'medio',
-          destinoRecomendado: 'Cruzeiro Marítimo All-Inclusive',
-          categoriaDestino: 'cruzeiro',
-          ultimaViagemData: '10/06/2025',
-          ultimoDestino: 'Bariloche & Santiago',
-          npsNota: 8,
-          motivoSugestao: 'Viajou há 14 meses • Perfil de viagem em grupo familiar',
-          statusAbordagem: 'pendente',
-          totalPassageirosGrupo: 3
-        }
-      ];
-    }
-
-    this.oportunidades = ops.filter(op => op.statusAbordagem !== 'snoozed');
+    this.oportunidades = (ops || []).filter(op => op.statusAbordagem !== 'snoozed');
   }
 
   private getFilteredOportunidades(): NextTripOpportunity[] {
@@ -218,9 +134,6 @@ export class NextTripPage {
           <div class="flex items-center gap-2">
             <button id="btn-recarregar-next-trip" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-extrabold text-xs rounded-xl border border-slate-200 dark:border-slate-700 flex items-center gap-1.5 transition">
               <span>🔄 Recalcular</span>
-            </button>
-            <button id="btn-demo-toggle" class="px-3.5 py-2 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white font-black text-xs rounded-xl shadow-md transition uppercase tracking-wide border border-indigo-400/30 flex items-center gap-1.5">
-              <span>⚡ Modo Demo</span>
             </button>
           </div>
         </header>
@@ -412,16 +325,7 @@ export class NextTripPage {
 
     // Botão recarregar
     this.container.querySelector('#btn-recarregar-next-trip')?.addEventListener('click', async () => {
-      delete (window as any).paxflowForceNextTripDemo;
       await this.loadData();
-      this.render();
-      this.setupEventListeners();
-    });
-
-    // Botão Modo Demo
-    this.container.querySelector('#btn-demo-toggle')?.addEventListener('click', () => {
-      (window as any).paxflowForceNextTripDemo = true;
-      this.calcularOportunidades();
       this.render();
       this.setupEventListeners();
     });

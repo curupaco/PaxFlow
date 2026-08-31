@@ -1176,72 +1176,7 @@ export class ComercialDashboard {
       console.warn('Erro ao carregar dados do Supabase para Next Trip Engine:', e);
     }
 
-    const activeOps = (oportunidades || []).filter(op => op.statusAbordagem !== 'snoozed');
 
-    // Se não houver oportunidades ativas calculadas (ou se forçado via modo demo / sandbox), carrega as oportunidades demonstrativas
-    if (activeOps.length === 0 || (window as any).paxflowForceNextTripDemo || (window as any).paxflowSandbox) {
-      // Limpa snoozes fictícios dos clientes demo para garantir que apareçam como pendentes
-      ['demo-c1', 'demo-c2', 'demo-c3'].forEach(cId => {
-        localStorage.removeItem(`next_trip_snooze_${cId}`);
-      });
-
-      oportunidades = [
-        {
-          clienteId: 'demo-c1',
-          clienteNome: 'Mariana & Família Costa',
-          clienteTelefone: '51999887766',
-          clienteEmail: 'mariana.costa@email.com',
-          consultorId: this.user?.id || 'demo-cons',
-          consultorNome: this.perfil?.nome || 'Consultor Titular',
-          scoreProntidao: 94,
-          nivelProntidao: 'alto',
-          destinoRecomendado: 'Europa 12m (Paris & Roma)',
-          categoriaDestino: 'europa',
-          ultimaViagemData: '15/10/2025',
-          ultimoDestino: 'Orlando & Disney World',
-          npsNota: 10,
-          motivoSugestao: 'Viajou para Orlando há 10 meses • Promotor NPS 10 • Período habitual de férias de Julho',
-          statusAbordagem: 'pendente',
-          totalPassageirosGrupo: 4
-        },
-        {
-          clienteId: 'demo-c2',
-          clienteNome: 'Carlos Eduardo Oliveira',
-          clienteTelefone: '11988776655',
-          clienteEmail: 'carlos.eduardo@empresa.com.br',
-          consultorId: this.user?.id || 'demo-cons',
-          consultorNome: this.perfil?.nome || 'Consultor Titular',
-          scoreProntidao: 86,
-          nivelProntidao: 'alto',
-          destinoRecomendado: 'Resort All-Inclusive (Praia do Forte)',
-          categoriaDestino: 'resort',
-          ultimaViagemData: '02/12/2025',
-          ultimoDestino: 'Cancún All-Inclusive',
-          npsNota: 9,
-          motivoSugestao: 'Aniversário de Viagem em 15 dias • Cliente VIP de recompra recorrente',
-          statusAbordagem: 'pendente',
-          totalPassageirosGrupo: 2
-        },
-        {
-          clienteId: 'demo-c3',
-          clienteNome: 'Fernanda & Gabriel Santos',
-          clienteTelefone: '21977665544',
-          clienteEmail: 'fernanda.santos@email.com',
-          consultorId: this.user?.id || 'demo-cons',
-          consultorNome: this.perfil?.nome || 'Consultor Titular',
-          scoreProntidao: 78,
-          nivelProntidao: 'alto',
-          destinoRecomendado: 'Grécia & Ilhas Gregas',
-          categoriaDestino: 'europa',
-          ultimaViagemData: '20/08/2025',
-          ultimoDestino: 'Maldivas & Dubai',
-          npsNota: 10,
-          motivoSugestao: 'Promotor NPS 10 • Histórico de viagens em Setembro',
-          statusAbordagem: 'pendente',
-          totalPassageirosGrupo: 2
-        }
-      ];
-    }
 
     new NextTripDashboardWidget({
       container: mount,
