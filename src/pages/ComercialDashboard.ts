@@ -270,12 +270,17 @@ export class ComercialDashboard {
       if (errVia) throw errVia;
 
       this.viagens = (dataVia || []).map(d => ({
+        ...d,
         id: d.id,
         clienteId: d.cliente_id,
+        cliente_id: d.cliente_id,
         consultorId: d.consultor_id,
+        consultor_id: d.consultor_id,
         destino: d.destino,
         dataIda: d.data_ida,
+        data_ida: d.data_ida,
         dataVolta: d.data_volta,
+        data_volta: d.data_volta,
         valorTotal: d.valor_total ? Number(d.valor_total) : 0,
         status: d.status,
         codigoLocalizador: d.codigo_localizador,
@@ -1173,8 +1178,8 @@ export class ComercialDashboard {
 
     const activeOps = (oportunidades || []).filter(op => op.statusAbordagem !== 'snoozed');
 
-    // Carrega oportunidades demonstrativas APENAS se forçado explicitamente via modo demo
-    if ((window as any).paxflowForceNextTripDemo) {
+    // Se não houver oportunidades ativas calculadas (ou se forçado via modo demo / sandbox), carrega as oportunidades demonstrativas
+    if (activeOps.length === 0 || (window as any).paxflowForceNextTripDemo || (window as any).paxflowSandbox) {
       // Limpa snoozes fictícios dos clientes demo para garantir que apareçam como pendentes
       ['demo-c1', 'demo-c2', 'demo-c3'].forEach(cId => {
         localStorage.removeItem(`next_trip_snooze_${cId}`);
