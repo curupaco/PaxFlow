@@ -643,9 +643,9 @@ export class LandingPage {
                 <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-600/30 to-purple-600/30 text-indigo-300 border border-indigo-500/40 flex items-center justify-center text-2xl font-black">
                   📊
                 </div>
-                <h3 class="text-xl font-extrabold text-white">Score de Prontidão 0-100</h3>
+                <h3 class="text-xl font-extrabold text-white">Score de Potencial 0-100</h3>
                 <p class="text-xs text-slate-300 leading-relaxed font-medium">
-                  Cálculo em tempo real combinando tempo de retorno (> 9 meses), notas de NPS (Promotores 9-10), preferências de viagem e janela habitual de férias.
+                  Cálculo em tempo real combinando tempo de retorno (> 90 dias), notas de NPS (Promotores 9-10), preferências de viagem e janela habitual de férias.
                 </p>
               </div>
 

@@ -521,19 +521,19 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 
 ---
 
-### 3.27 Next Trip Engine™ (Motor Preditivo de Recompra & Ciclo de Vida do Viajante) [NEW / EM BREVE]
+### 3.27 Next Trip Engine™ (Motor Preditivo de Recompra & Ciclo de Vida do Viajante)
 
-**Motor de inteligência comercial preditiva** que analisa o histórico transacional do cliente (*quem viajou, para onde, quando, com quem, quanto gastou, notas de NPS e preferências*) para responder dinamicamente: *"Quais clientes da agência estão no momento ideal para comprar uma nova viagem?"*.
+**Motor de inteligência comercial preditiva** que analisa o histórico transacional do cliente (*quem viajou, para onde, quando, com quem, quanto gastou, notas de NPS e preferências*) para responder dinamicamente: *"Quais clientes da agência estão no momento ideal para comprar uma nova viagem?"*. Acessível na tela dedicada **🎯 Next Trip Engine** no menu lateral (`#next-trip`) e em versão compacta nos Dashboards.
 
-- **Pontuação de Prontidão de Recompra (0 a 100)**: Avaliação em tempo real combinando 5 vetores essenciais:
-  1. **Sazonalidade Temporal (30%)**: Ciclicidade decorrida desde o último retorno (ex: ~11-13 meses para viagens anuais, ~5-6 meses para escapadas curtas).
-  2. **Satisfação (NPS 25%)**: Clientes Promotores (NPS 9-10) ganham impulso de prontidão; clientes neutros/detratores são congelados.
-  3. **Perfil de Destino & Ticket Médio (20%)**: Classificação por categorias de afinidade (Europa, Resorts/Praia, Disney/Família, Cruzeiros, Neve).
+- **Score de Potencial de Recompra (0 a 100)**: Avaliação em tempo real combinando 5 vetores essenciais:
+  1. **Sazonalidade Temporal (30%)**: Ciclicidade decorrida desde o último retorno (> 90 dias pós-retorno).
+  2. **Satisfação (NPS 25%)**: Clientes Promotores (NPS 9-10) ganham impulso de potencial; clientes neutros/detratores possuem prioridade menor.
+  3. **Perfil de Destino & Ticket Médio (20%)**: Classificação por categorias de afinidade (Europa, Resorts/Praia, Disney/Família, Cruzeiros, Nacional).
   4. **Mês Habitual de Viagem (15%)**: Períodos históricos recorrentes de férias (Julho, Réveillon, Carnaval).
   5. **Conformidade Operacional (10%)**: Ausência de reembolsos pendentes ou disputas ativas.
-- **Visualização por Clusters de Afinidade**:
-  - Exibido em um painel preditivo no Dashboard agrupando clientes em audiências acionáveis (ex: *🎯 4 clientes viajaram para Europa há ~12 meses*, *🏝️ 3 clientes com padrão de Resorts no Verão*, *🎂 5 aniversários de viagem este mês*).
-  - Exibição de badge dinâmico na **Ficha do Cliente** (`🎯 Prontidão de Recompra: 88/100`) e envio de notificações preditivas no **Inbox** para scores > 80/100.
+- **Visualização & Filtros na Central Preditiva**:
+  - Exibido na tela dedicada (`#next-trip`) com filtros por **Alto Potencial (>= 75)**, **Médio Potencial**, Categoria de Destino, Busca por Cliente/Destino e Filtro por Consultor Titular.
+  - Exibição de badge dinâmico (`🔥 Potencial: 88/100`) e estatísticas agregadas da carteira.
 - **Ações Rápidas de 1-Clique**:
   - `🎯 Criar Orçamento Preditivo`: Abre o formulário de novo orçamento com Cliente, Destino Recomendado e Temperatura *🔥 Quente* pré-carregados.
   - `💬 Disparar WhatsApp Personalizado`: Abre o modal de mensagens com variáveis dinâmicas (`{primeiro_nome}`, `{ultimo_destino}`, `{proximo_ano}`) para envio instantâneo via DigiSac/WhatsApp Web.
