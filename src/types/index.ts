@@ -580,6 +580,11 @@ export interface EscalaDiaria {
   updated_at?: string;
 }
 
+export interface CelulaEscalaItem {
+  turno: string;
+  observacao?: string;
+}
+
 /**
  * Representa uma solicitação de alteração de escala ou folga/férias.
  */

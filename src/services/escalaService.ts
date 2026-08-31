@@ -24,6 +24,7 @@ export interface FeriadoInfo {
 
 export class EscalaService {
   private static LOCAL_STORAGE_ESCALA_KEY = 'paxflow_escala_diaria_v1';
+  private static LOCAL_STORAGE_ESCALA_OBS_KEY = 'paxflow_escala_diaria_obs_v1';
   private static LOCAL_STORAGE_SOLICITACOES_KEY = 'paxflow_escala_solicitacoes_v1';
   private static LOCAL_STORAGE_BANCO_KEY = 'paxflow_escala_banco_folgas_v1';
   private static LOCAL_STORAGE_EVENTOS_KEY = 'paxflow_escala_eventos_v1';
@@ -244,6 +245,67 @@ export class EscalaService {
     return mergedMap;
   }
 
+  /**
+   * Fetches full monthly schedule comments map
+   */
+  public static async loadEscalaComentarios(ano: number, mes: number): Promise<Record<string, string[]>> {
+    let dbObsMap: Record<string, string[]> = {};
+    let localObsMap: Record<string, string[]> = {};
+    const monthStr = String(mes).padStart(2, '0');
+    const daysInMonth = new Date(ano, mes, 0).getDate();
+    const lastDayStr = String(daysInMonth).padStart(2, '0');
+
+    try {
+      const { data, error } = await supabase
+        .from('escala_diaria')
+        .select('consultor_nome, data, observacao_custom')
+        .gte('data', `${ano}-${monthStr}-01`)
+        .lte('data', `${ano}-${monthStr}-${lastDayStr}`);
+
+      if (!error && data && data.length > 0) {
+        data.forEach((row: any) => {
+          const name = row.consultor_nome || 'Consultor';
+          if (!dbObsMap[name]) {
+            dbObsMap[name] = new Array(31).fill('');
+          }
+          const dayNum = parseInt(row.data.split('-')[2], 10) - 1;
+          if (dayNum >= 0 && dayNum < 31) {
+            dbObsMap[name][dayNum] = row.observacao_custom || '';
+          }
+        });
+      }
+    } catch (e) {}
+
+    try {
+      const stored = localStorage.getItem(this.LOCAL_STORAGE_ESCALA_OBS_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        const key = `${ano}-${mes}`;
+        if (parsed[key]) {
+          localObsMap = parsed[key] as Record<string, string[]>;
+        }
+      }
+    } catch (e) {}
+
+    const mergedObs: Record<string, string[]> = {};
+    const allNames = Array.from(new Set([...Object.keys(dbObsMap), ...Object.keys(localObsMap)]));
+
+    allNames.forEach(name => {
+      mergedObs[name] = new Array(31).fill('');
+      const dbArr = dbObsMap[name];
+      const localArr = localObsMap[name];
+      for (let i = 0; i < 31; i++) {
+        if (dbArr && dbArr[i] !== undefined && dbArr[i] !== '') {
+          mergedObs[name][i] = dbArr[i];
+        } else if (localArr && localArr[i] !== undefined && localArr[i] !== '') {
+          mergedObs[name][i] = localArr[i];
+        }
+      }
+    });
+
+    return mergedObs;
+  }
+
   private static LOCAL_STORAGE_ORDEM_KEY = 'paxflow_escala_ordem_consultores_v1';
 
   public static loadOrdemConsultores(): string[] {
@@ -271,14 +333,15 @@ export class EscalaService {
   }
 
   /**
-   * Save a single day cell edit for a consultant
+   * Save a single day cell edit for a consultant with optional comment
    */
   public static async salvarCelulaEscala(
     ano: number,
     mes: number,
     consultorNome: string,
     diaIndex: number,
-    valor: string
+    valor: string,
+    observacao?: string
   ): Promise<boolean> {
     const dataFormatted = `${ano}-${String(mes).padStart(2, '0')}-${String(diaIndex + 1).padStart(2, '0')}`;
 
@@ -289,6 +352,7 @@ export class EscalaService {
           consultor_nome: consultorNome,
           data: dataFormatted,
           turno_codigo: valor,
+          observacao_custom: observacao || null,
           updated_at: new Date().toISOString()
         }, { onConflict: 'consultor_nome,data' });
 
@@ -314,6 +378,15 @@ export class EscalaService {
 
       dataMap[key][consultorNome][diaIndex] = valor;
       localStorage.setItem(this.LOCAL_STORAGE_ESCALA_KEY, JSON.stringify(dataMap));
+
+      // Salva observação no local storage
+      const storedObs = localStorage.getItem(this.LOCAL_STORAGE_ESCALA_OBS_KEY);
+      let obsMap: Record<string, Record<string, string[]>> = storedObs ? JSON.parse(storedObs) : {};
+      if (!obsMap[key]) obsMap[key] = {};
+      if (!obsMap[key][consultorNome]) obsMap[key][consultorNome] = new Array(31).fill('');
+      obsMap[key][consultorNome][diaIndex] = observacao || '';
+      localStorage.setItem(this.LOCAL_STORAGE_ESCALA_OBS_KEY, JSON.stringify(obsMap));
+
       return true;
     } catch (e) {
       console.error('Erro ao salvar célula da escala:', e);
@@ -409,30 +482,34 @@ export class EscalaService {
   }
 
   /**
-   * Auto-fill an entire month schedule for a consultant in batch
+   * Auto-fill an entire month schedule for a consultant in batch with optional comment
    */
   public static async preencherMesEmLote(
     ano: number,
     mes: number,
     consultorNome: string,
     turnoPadrao: string,
-    diasFolgaSemanais: number[]
+    diasFolgaSemanais: number[],
+    observacaoLote?: string
   ): Promise<boolean> {
     const daysInMonth = new Date(ano, mes, 0).getDate();
     const rowsToUpsert: any[] = [];
     const valuesArray = new Array(31).fill('');
+    const obsArray = new Array(31).fill('');
 
     for (let dayIdx = 0; dayIdx < daysInMonth; dayIdx++) {
       const dateObj = new Date(ano, mes - 1, dayIdx + 1);
       const dow = dateObj.getDay();
       const valor = diasFolgaSemanais.includes(dow) ? 'Folga' : turnoPadrao;
       valuesArray[dayIdx] = valor;
+      obsArray[dayIdx] = observacaoLote || '';
 
       const dataFormatted = `${ano}-${String(mes).padStart(2, '0')}-${String(dayIdx + 1).padStart(2, '0')}`;
       rowsToUpsert.push({
         consultor_nome: consultorNome,
         data: dataFormatted,
         turno_codigo: valor,
+        observacao_custom: observacaoLote || null,
         updated_at: new Date().toISOString()
       });
     }
@@ -462,6 +539,13 @@ export class EscalaService {
 
       dataMap[key][consultorNome] = valuesArray;
       localStorage.setItem(this.LOCAL_STORAGE_ESCALA_KEY, JSON.stringify(dataMap));
+
+      const storedObs = localStorage.getItem(this.LOCAL_STORAGE_ESCALA_OBS_KEY);
+      let obsMap: Record<string, Record<string, string[]>> = storedObs ? JSON.parse(storedObs) : {};
+      if (!obsMap[key]) obsMap[key] = {};
+      obsMap[key][consultorNome] = obsArray;
+      localStorage.setItem(this.LOCAL_STORAGE_ESCALA_OBS_KEY, JSON.stringify(obsMap));
+
       return true;
     } catch (e) {
       console.error('Erro ao preencher mês em lote:', e);

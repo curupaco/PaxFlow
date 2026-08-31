@@ -31,10 +31,11 @@ export class InboxPage {
   private escalaAno: number = 2026;
   private escalaMes: number = 8;
   private escalaData: Record<string, string[]> = {};
+  private escalaObservacoesData: Record<string, string[]> = {};
   private bancoFolgasData: BancoFolgasItem[] = [];
   private eventosEscalaData: EventoEscalaItem[] = [];
   private selectedLojaEquipeFilter: string = 'todas';
-  
+
   // Calendar specific state
   private currentView: 'list' | 'calendar' = 'list';
   private calendarMode: 'month' | 'week' | 'agenda' = 'month';
@@ -93,6 +94,7 @@ export class InboxPage {
   private async loadEscalaData(): Promise<void> {
     try {
       const rawEscala = await EscalaService.loadEscalaMensal(this.escalaAno, this.escalaMes);
+      const rawObs = await EscalaService.loadEscalaComentarios(this.escalaAno, this.escalaMes);
       const rawBanco = await EscalaService.loadBancoFolgas();
       this.eventosEscalaData = await EscalaService.loadEventosEscala();
 
@@ -140,16 +142,18 @@ export class InboxPage {
         });
       }
 
-      // Reconstrói escalaData desduplicada apenas para quem participa_escala === true
+      // Reconstrói escalaData e escalaObservacoesData desduplicadas apenas para quem participa_escala === true
       const cleanEscalaData: Record<string, string[]> = {};
+      const cleanObsData: Record<string, string[]> = {};
+
       teamMap.forEach((info, key) => {
         if (!info.participates) return; // Omitir se o funcionário não participa da escala
 
         // Busca chave exata pelo nome completo do consultor
         const existingKey = Object.keys(rawEscala).find(k => k.trim().toLowerCase() === key);
+        const existingObsKey = Object.keys(rawObs).find(k => k.trim().toLowerCase() === key);
 
         if (existingKey && rawEscala[existingKey]) {
-          // Ajusta tamanho do vetor para o número real de dias do mês
           const arr = rawEscala[existingKey];
           if (arr.length < daysInMonth) {
             cleanEscalaData[info.displayName] = [...arr, ...new Array(daysInMonth - arr.length).fill('')];
@@ -159,26 +163,43 @@ export class InboxPage {
         } else {
           cleanEscalaData[info.displayName] = new Array(daysInMonth).fill('');
         }
+
+        if (existingObsKey && rawObs[existingObsKey]) {
+          const obsArr = rawObs[existingObsKey];
+          if (obsArr.length < daysInMonth) {
+            cleanObsData[info.displayName] = [...obsArr, ...new Array(daysInMonth - obsArr.length).fill('')];
+          } else {
+            cleanObsData[info.displayName] = obsArr.slice(0, daysInMonth);
+          }
+        } else {
+          cleanObsData[info.displayName] = new Array(daysInMonth).fill('');
+        }
       });
 
-      // Aplica a ordem salva dos consultores em escalaData
+      // Aplica a ordem salva dos consultores em escalaData e escalaObservacoesData
       const customOrder = EscalaService.loadOrdemConsultores();
       if (customOrder && customOrder.length > 0) {
         const orderedEscalaData: Record<string, string[]> = {};
+        const orderedObsData: Record<string, string[]> = {};
+
         customOrder.forEach(name => {
           const matchedKey = Object.keys(cleanEscalaData).find(k => k.trim().toLowerCase() === name.trim().toLowerCase());
           if (matchedKey && cleanEscalaData[matchedKey]) {
             orderedEscalaData[matchedKey] = cleanEscalaData[matchedKey];
+            orderedObsData[matchedKey] = cleanObsData[matchedKey] || new Array(daysInMonth).fill('');
           }
         });
         Object.keys(cleanEscalaData).forEach(name => {
           if (!orderedEscalaData[name]) {
             orderedEscalaData[name] = cleanEscalaData[name];
+            orderedObsData[name] = cleanObsData[name] || new Array(daysInMonth).fill('');
           }
         });
         this.escalaData = orderedEscalaData;
+        this.escalaObservacoesData = orderedObsData;
       } else {
         this.escalaData = cleanEscalaData;
+        this.escalaObservacoesData = cleanObsData;
       }
 
       // Reconstrói bancoFolgasData desduplicada apenas para quem participa_escala === true
@@ -2178,6 +2199,7 @@ export class InboxPage {
                       </td>
                       ${Array.from({ length: daysInMonth }, (_, dayIdx) => {
                         const v = vals[dayIdx] || '';
+                        const obs = this.escalaObservacoesData[name]?.[dayIdx] || '';
                         const cls = EscalaService.getTurnoCls(v);
                         const dateObj = new Date(this.escalaAno, this.escalaMes - 1, dayIdx + 1);
                         const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
@@ -2189,8 +2211,11 @@ export class InboxPage {
 
                         return `
                           <td class="${tdBgCls}">
-                            <div class="escala-cell ${cls}" data-escala-consultor="${name}" data-escala-day="${dayIdx}">
-                              ${v || '—'}
+                            <div class="escala-cell ${cls} relative group/cell" data-escala-consultor="${name}" data-escala-day="${dayIdx}" title="${obs ? `💬 Observação: ${obs}` : ''}">
+                              <span>${v || '—'}</span>
+                              ${obs ? `
+                                <span class="ml-1 inline-flex items-center text-[10px] text-amber-400 font-black shrink-0" title="${obs}">💬</span>
+                              ` : ''}
                             </div>
                           </td>
                         `;
@@ -2463,6 +2488,7 @@ export class InboxPage {
   private openAdminCellEditModal(consultor: string, dayIdx: number, valorAtual: string): void {
     const dayNum = dayIdx + 1;
     const dateStr = `${dayNum}/${String(this.escalaMes).padStart(2, '0')}/${this.escalaAno}`;
+    const obsAtual = this.escalaObservacoesData[consultor]?.[dayIdx] || '';
 
     const modalHtml = `
       <div id="escala-edit-modal-backdrop" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
@@ -2476,16 +2502,25 @@ export class InboxPage {
           </div>
 
           <div class="space-y-3">
-            <label class="block text-xs font-bold text-slate-600 dark:text-slate-300">Horário / Situação Padrão</label>
-            <select id="modal-escala-select" class="w-full text-xs font-semibold p-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-              <option value="">— Vazio / Limpar —</option>
-              ${TURNO_PRESETS.map(p => `
-                <option value="${p.codigo}" ${valorAtual === p.codigo ? 'selected' : ''}>${p.codigo} (${p.label})</option>
-              `).join('')}
-            </select>
+            <div>
+              <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Horário / Situação Padrão</label>
+              <select id="modal-escala-select" class="w-full text-xs font-semibold p-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <option value="">— Vazio / Limpar —</option>
+                ${TURNO_PRESETS.map(p => `
+                  <option value="${p.codigo}" ${valorAtual === p.codigo ? 'selected' : ''}>${p.codigo} (${p.label})</option>
+                `).join('')}
+              </select>
+            </div>
 
-            <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 pt-1">Ou Digite Texto Livre / Observação Customizada</label>
-            <input id="modal-escala-custom" type="text" placeholder="Ex: Reunião Matriz, Treinamento às 14h..." value="${TURNO_PRESETS.some(p => p.codigo === valorAtual) ? '' : valorAtual}" class="w-full text-xs font-semibold p-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            <div>
+              <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Ou Digite Texto Livre / Turno Customizado</label>
+              <input id="modal-escala-custom" type="text" placeholder="Ex: Plantão Franquia, Treinamento às 14h..." value="${TURNO_PRESETS.some(p => p.codigo === valorAtual) ? '' : valorAtual}" class="w-full text-xs font-semibold p-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">💬 Comentário / Observação do Dia (Opcional)</label>
+              <input id="modal-escala-obs" type="text" placeholder="Ex: Entrada 30min atrasada autorizada por Marinna" value="${obsAtual}" class="w-full text-xs font-semibold p-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
           </div>
 
           <div class="flex items-center justify-between pt-3 border-t border-slate-200 dark:border-slate-800">
@@ -2525,6 +2560,7 @@ export class InboxPage {
       const selectVal = (document.getElementById('modal-escala-select') as HTMLSelectElement).value;
       const customVal = (document.getElementById('modal-escala-custom') as HTMLInputElement).value.trim();
       const finalVal = customVal || selectVal;
+      const finalObs = (document.getElementById('modal-escala-obs') as HTMLInputElement).value.trim();
 
       const currentVal = this.escalaData[consultor]?.[dayIdx] || '';
       const isCurrentlyOffOrVacation = currentVal === 'Folga' || currentVal === 'Férias';
@@ -2537,7 +2573,7 @@ export class InboxPage {
         }
       }
 
-      await EscalaService.salvarCelulaEscala(this.escalaAno, this.escalaMes, consultor, dayIdx, finalVal);
+      await EscalaService.salvarCelulaEscala(this.escalaAno, this.escalaMes, consultor, dayIdx, finalVal, finalObs);
       await this.loadEscalaData();
       close();
       this.showToast('Escala atualizada com sucesso!', 'success');
@@ -2593,6 +2629,11 @@ export class InboxPage {
                 <label class="flex items-center gap-2"><input type="checkbox" value="5" class="batch-folga-check accent-indigo-600" /> Sexta</label>
               </div>
             </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">💬 Comentário / Observação para os Dias do Lote (Opcional)</label>
+              <input id="modal-batch-obs" type="text" placeholder="Ex: Plantão Teletrabalho Franquia" class="w-full text-xs font-semibold p-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
           </div>
 
           <div class="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
@@ -2616,8 +2657,9 @@ export class InboxPage {
       const turnoPadrao = (modalEl.querySelector('#modal-batch-turno') as HTMLSelectElement).value;
       const folgaChecks = modalEl.querySelectorAll<HTMLInputElement>('.batch-folga-check:checked');
       const diasFolga = Array.from(folgaChecks).map(c => parseInt(c.value, 10));
+      const observacaoLote = (modalEl.querySelector('#modal-batch-obs') as HTMLInputElement).value.trim();
 
-      await EscalaService.preencherMesEmLote(this.escalaAno, this.escalaMes, consultor, turnoPadrao, diasFolga);
+      await EscalaService.preencherMesEmLote(this.escalaAno, this.escalaMes, consultor, turnoPadrao, diasFolga, observacaoLote);
       close();
       this.showToast(`Padrão mensal aplicado para ${consultor}!`, 'success');
       await this.loadEscalaData();
