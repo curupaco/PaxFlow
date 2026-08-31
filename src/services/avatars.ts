@@ -253,7 +253,7 @@ export function getAvatarSvg(avatarId: string | undefined, initials: string = 'C
 
   if (isPaxflowPersona) {
     return `
-      <div class="${extraClasses} bg-gradient-to-br from-indigo-600 via-indigo-700 to-violet-800 text-white rounded-xl flex items-center justify-center border border-indigo-500/30 select-none shadow-sm transition hover:scale-105 duration-200 p-1 shrink-0">
+      <div class="${extraClasses} bg-gradient-to-br from-indigo-50 via-slate-50 to-purple-50 dark:from-slate-800 dark:via-indigo-950/50 dark:to-slate-900 rounded-xl flex items-center justify-center border border-indigo-100/80 dark:border-indigo-900/50 select-none shadow-sm transition hover:scale-105 duration-200 p-1.5 shrink-0">
         <img src="/logo.svg" alt="PaxFlow" class="w-full h-full object-contain filter drop-shadow-sm" />
       </div>
     `;
