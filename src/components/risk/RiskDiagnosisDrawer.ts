@@ -1,15 +1,26 @@
 import { supabase } from '../../services/supabase';
 import { Viagem, Cliente, ProdutoViagem, GlobalSettings, RiskScoreResult, RiskItem } from '../../types';
 import { RiskScoreService } from '../../services/riskScoreService';
-import { showCustomAlert, showCustomConfirm } from '../../services/dialog';
+import { showCustomAlert, showCustomConfirm, showCustomPrompt } from '../../services/dialog';
 import { registrarXp } from '../../services/gamification';
 import { showBadgeCelebrationModal } from '../../utils/celebrations';
+
+function escapeHtml(str: string): string {
+  if (!str) return '';
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 
 export class RiskDiagnosisDrawer {
   private static drawerId = 'paxflow-risk-drawer';
 
   public static async open(viagemId: string, user: any, perfil: any, onUpdate?: () => void): Promise<void> {
-    this.close();
+    // Fecha qualquer gaveta existente imediatamente de forma síncrona para evitar race condition no DOM
+    this.close(true);
 
     // 1. Carregar dados da viagem, cliente, produtos e settings
     let viagem: Viagem | null = null;
@@ -32,7 +43,7 @@ export class RiskDiagnosisDrawer {
     }
 
     if (!viagem) {
-      showCustomAlert('Não foi possível carregar os dados da viagem.', 'error');
+      showCustomAlert('Não foi possível carregar os dados da viagem.', 'Erro');
       return;
     }
 
@@ -59,7 +70,7 @@ export class RiskDiagnosisDrawer {
           </div>
           <div>
             <h3 class="text-base font-black tracking-tight text-slate-800 dark:text-slate-100">Diagnóstico de Risco PaxFlow™</h3>
-            <p class="text-xs text-slate-400 font-semibold">${viagem.destino} — ${cliente ? cliente.nome : 'Cliente Sem Perfil'}</p>
+            <p class="text-xs text-slate-400 font-semibold">${escapeHtml(viagem.destino)} — ${cliente ? escapeHtml(cliente.nome) : 'Cliente Sem Perfil'}</p>
           </div>
         </div>
         <button id="btn-close-risk-drawer" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition">
@@ -85,12 +96,12 @@ export class RiskDiagnosisDrawer {
           </div>
 
           <p class="text-xs font-bold text-slate-600 dark:text-slate-300 max-w-sm leading-relaxed mt-1">
-            ${diagnosis.fraseStatus}
+            ${escapeHtml(diagnosis.fraseStatus)}
           </p>
 
           ${diagnosis.gracePeriodMensagem ? `
             <div class="mt-4 p-3 bg-white/80 dark:bg-slate-800/80 rounded-xl text-[11px] text-slate-500 dark:text-slate-400 font-medium border border-slate-200/50 dark:border-slate-700">
-              💡 ${diagnosis.gracePeriodMensagem}
+              💡 ${escapeHtml(diagnosis.gracePeriodMensagem)}
             </div>
           ` : ''}
         </div>
@@ -125,9 +136,9 @@ export class RiskDiagnosisDrawer {
               <div class="flex items-start justify-between gap-2">
                 <div>
                   <span class="inline-block text-[9px] font-black uppercase tracking-wider text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 px-2 py-0.5 rounded-md mb-1">
-                    ${item.pilarNome}
+                    ${escapeHtml(item.pilarNome)}
                   </span>
-                  <h5 class="text-xs font-black text-slate-800 dark:text-slate-100">${item.titulo}</h5>
+                  <h5 class="text-xs font-black text-slate-800 dark:text-slate-100">${escapeHtml(item.titulo)}</h5>
                 </div>
                 <span class="px-2 py-1 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 text-[10px] font-bold rounded-lg shrink-0">
                   -${item.penalidadePontos} pts
@@ -135,12 +146,12 @@ export class RiskDiagnosisDrawer {
               </div>
 
               <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
-                ${item.descricaoHumana}
+                ${escapeHtml(item.descricaoHumana)}
               </p>
 
               <div class="pt-2 flex justify-end">
                 <button data-action="${item.acaoTipo}" data-item-id="${item.id}" class="btn-resolve-risk-item px-3.5 py-1.5 bg-slate-900 dark:bg-slate-700 hover:bg-indigo-600 dark:hover:bg-indigo-600 text-white font-extrabold text-[11px] rounded-xl transition shadow-sm flex items-center gap-1.5">
-                  ${item.acaoRotulo}
+                  ${escapeHtml(item.acaoRotulo)}
                 </button>
               </div>
             </div>
@@ -151,8 +162,8 @@ export class RiskDiagnosisDrawer {
         ${viagem.risk_score_justificativa ? `
           <div class="p-4 bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-900/40 rounded-2xl space-y-1">
             <strong class="block text-xs font-black text-amber-900 dark:text-amber-300">Justificativa Operacional Registrada ✍️</strong>
-            <p class="text-xs text-amber-800/90 dark:text-amber-400 italic font-medium">"${viagem.risk_score_justificativa}"</p>
-            <span class="block text-[9px] text-amber-700/70 dark:text-amber-500">Por ${viagem.risk_score_justificado_por || 'Consultor'} em ${viagem.risk_score_justificado_em ? new Date(viagem.risk_score_justificado_em).toLocaleDateString() : ''}</span>
+            <p class="text-xs text-amber-800/90 dark:text-amber-400 italic font-medium">"${escapeHtml(viagem.risk_score_justificativa)}"</p>
+            <span class="block text-[9px] text-amber-700/70 dark:text-amber-500">Por ${escapeHtml(viagem.risk_score_justificado_por || 'Consultor')} em ${viagem.risk_score_justificado_em ? new Date(viagem.risk_score_justificado_em).toLocaleDateString('pt-BR') : ''}</span>
           </div>
         ` : `
           <div class="pt-2">
@@ -194,15 +205,17 @@ export class RiskDiagnosisDrawer {
       const file = e.target?.files?.[0];
       if (!file) return;
 
+      const jaTinhaVoucher = viagem?.voucher_geral_anexado;
+
       const reader = new FileReader();
       reader.onload = async () => {
         const base64Url = reader.result as string;
         const saved = await RiskScoreService.salvarVoucherGeralPacote(viagemId, base64Url);
         if (saved) {
-          showCustomAlert('Voucher Geral da Operadora vinculado com sucesso!', 'success');
+          showCustomAlert('Voucher Geral da Operadora vinculado com sucesso!', 'Sucesso');
           
-          // Recompensa de XP se score atingir Verde
-          if (user && user.id) {
+          // Recompensa de XP apenas se for a primeira vinculação
+          if (!jaTinhaVoucher && user && user.id) {
             await registrarXp(user.id, 'BLINDAGEM_RISK_SCORE', 50);
             showBadgeCelebrationModal('Operador Blindado', '🛡️', 'Viagem 100% conformada!');
           }
@@ -220,10 +233,11 @@ export class RiskDiagnosisDrawer {
         const action = btn.getAttribute('data-action');
         
         if (action === 'conferir_operacional') {
+          const jaConferido = viagem?.processo_conferido || viagem?.isProcessoConferido;
           await supabase.from('viagens').update({ processo_conferido: true, isProcessoConferido: true }).eq('id', viagemId);
-          showCustomAlert('Conferência Operacional marcada como concluída! +50 XP', 'success');
+          showCustomAlert('Conferência Operacional marcada como concluída!', 'Sucesso');
           
-          if (user && user.id) {
+          if (!jaConferido && user && user.id) {
             await registrarXp(user.id, 'CONFERENCIA_RISK_SCORE', 50);
           }
 
@@ -231,21 +245,42 @@ export class RiskDiagnosisDrawer {
           RiskDiagnosisDrawer.open(viagemId, user, perfil, onUpdate);
         } else if (action === 'anexar_voucher' || action === 'anexar_voucher_geral') {
           uploadInput?.click();
-        } else if (action === 'preencher_passaporte') {
-          showCustomAlert('Por favor, edite o perfil do cliente na aba Clientes para atualizar os dados de passaporte.', 'info');
-        } else if (action === 'vincular_loc') {
-          showCustomAlert('Utilize o botão de edição da viagem no Kanban para vincular o localizador (LOC).', 'info');
+        } else if (action === 'vincular_loc' || action === 'preencher_passaporte') {
+          // Abrir modal de edição da viagem para resolução rápida
+          this.close(true);
+          const { EditTravelModal } = await import('../dashboard/EditTravelModal');
+          const editModal = new EditTravelModal({
+            perfil,
+            user,
+            consultores: [],
+            tiposProduto: [],
+            viagens: viagem ? [viagem] : [],
+            isFallbackMode: false,
+            onUpdate: async () => {
+              if (onUpdate) onUpdate();
+              RiskDiagnosisDrawer.open(viagemId, user, perfil, onUpdate);
+            },
+            showToast: (msg) => showCustomAlert(msg, 'Aviso'),
+            checkSLA: () => ({ alert: false, type: null, text: '' })
+          });
+          await editModal.open(viagemId);
         }
+
       });
     });
 
-    // Handler de registrar justificativa
+    // Handler de registrar justificativa com modal customizado
     drawer.querySelector('#btn-abrir-justificativa-risco')?.addEventListener('click', async () => {
-      const text = prompt('Digite a justificativa operacional para atenuar o risco desta viagem:');
+      const text = await showCustomPrompt(
+        'Digite a justificativa operacional de exceção para atenuar o risco desta viagem:',
+        'Registrar Justificativa Operacional',
+        viagem?.risk_score_justificativa || '',
+        'Ex: Documentação validada manualmente direto com a operadora...'
+      );
       if (text && text.trim()) {
         const ok = await RiskScoreService.registrarJustificativaRisco(viagemId, text.trim(), perfil?.nome || 'Consultor');
         if (ok) {
-          showCustomAlert('Justificativa operacional registrada!', 'success');
+          showCustomAlert('Justificativa operacional registrada com sucesso!', 'Sucesso');
           if (onUpdate) onUpdate();
           RiskDiagnosisDrawer.open(viagemId, user, perfil, onUpdate);
         }
@@ -253,20 +288,30 @@ export class RiskDiagnosisDrawer {
     });
   }
 
-  public static close(): void {
+  public static close(immediate = false): void {
     const drawer = document.getElementById(this.drawerId);
     const backdrop = document.getElementById(`${this.drawerId}-backdrop`);
 
     if (drawer) {
-      drawer.classList.remove('translate-x-0');
-      drawer.classList.add('translate-x-full');
-      setTimeout(() => drawer.remove(), 300);
+      drawer.id = `${this.drawerId}-closing`;
+      if (immediate) {
+        drawer.remove();
+      } else {
+        drawer.classList.remove('translate-x-0');
+        drawer.classList.add('translate-x-full');
+        setTimeout(() => drawer.remove(), 300);
+      }
     }
 
     if (backdrop) {
-      backdrop.classList.remove('opacity-100');
-      backdrop.classList.add('opacity-0');
-      setTimeout(() => backdrop.remove(), 300);
+      backdrop.id = `${this.drawerId}-backdrop-closing`;
+      if (immediate) {
+        backdrop.remove();
+      } else {
+        backdrop.classList.remove('opacity-100');
+        backdrop.classList.add('opacity-0');
+        setTimeout(() => backdrop.remove(), 300);
+      }
     }
   }
 }

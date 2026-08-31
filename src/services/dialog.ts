@@ -144,3 +144,79 @@ export function showCustomConfirm(
     overlay.querySelector('#paxflow-confirm-btn-cancel')?.addEventListener('click', () => closeConfirm(false));
   });
 }
+
+export function showCustomPrompt(
+  message: string,
+  title: string = 'Entrada de Dados',
+  defaultValue: string = '',
+  placeholder: string = 'Digite aqui...'
+): Promise<string | null> {
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.id = 'paxflow-prompt-overlay';
+    overlay.className = 'fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 transition-all duration-300 opacity-0';
+
+    overlay.innerHTML = `
+      <div class="bg-white dark:bg-slate-900 w-full max-w-[420px] rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 transform scale-95 transition-all duration-300 flex flex-col relative overflow-hidden" id="paxflow-custom-prompt-card">
+        <!-- Top decorative gradient line -->
+        <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-amber-500"></div>
+
+        <div class="p-6 pt-7 flex flex-col gap-3">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-2xl bg-indigo-50 dark:bg-indigo-950/30 text-indigo-500 dark:text-indigo-400 flex items-center justify-center text-lg font-bold border border-indigo-100/40 dark:border-indigo-900/30 shadow-inner shrink-0">
+              ✍️
+            </div>
+            <h3 class="text-base font-black text-slate-800 dark:text-slate-100 tracking-tight leading-snug">${title}</h3>
+          </div>
+          <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold leading-relaxed">${message}</p>
+          <textarea id="paxflow-prompt-input" rows="3" placeholder="${placeholder}" class="w-full mt-1 p-3 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-medium text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 resize-none">${defaultValue}</textarea>
+        </div>
+
+        <div class="px-6 pb-6 pt-1 flex gap-3">
+          <button id="paxflow-prompt-btn-cancel" class="flex-1 py-3 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white font-extrabold text-xs tracking-wider rounded-xl transition duration-200 uppercase focus:outline-none border border-slate-200/50 dark:border-slate-700/50">
+            Cancelar
+          </button>
+          <button id="paxflow-prompt-btn-ok" class="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/15 hover:shadow-indigo-600/25 transition duration-200 uppercase focus:outline-none">
+            Salvar
+          </button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    // Focus input
+    const input = overlay.querySelector('#paxflow-prompt-input') as HTMLTextAreaElement;
+    setTimeout(() => {
+      overlay.classList.add('opacity-100');
+      const card = overlay.querySelector('#paxflow-custom-prompt-card') as HTMLElement;
+      if (card) {
+        card.classList.remove('scale-95');
+        card.classList.add('scale-100');
+      }
+      input?.focus();
+    }, 10);
+
+    const closePrompt = (result: string | null) => {
+      const card = overlay.querySelector('#paxflow-custom-prompt-card') as HTMLElement;
+      if (card) {
+        card.classList.remove('scale-100');
+        card.classList.add('scale-95');
+      }
+      overlay.classList.remove('opacity-100');
+      overlay.classList.add('opacity-0');
+      setTimeout(() => {
+        overlay.remove();
+        resolve(result);
+      }, 250);
+    };
+
+    overlay.querySelector('#paxflow-prompt-btn-ok')?.addEventListener('click', () => {
+      const val = input?.value?.trim() || '';
+      closePrompt(val || null);
+    });
+
+    overlay.querySelector('#paxflow-prompt-btn-cancel')?.addEventListener('click', () => closePrompt(null));
+  });
+}
+

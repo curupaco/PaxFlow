@@ -44,9 +44,25 @@ export class RiskScoreService {
     const itens: RiskItem[] = [];
 
     // Isenções Inteligentes por Categoria
-    const destinoNome = (viagem.destino || '').toLowerCase();
-    const isNacional = destinoNome.includes('brasil') || destinoNome.includes('br') || 
-                      ['orlando', 'miami', 'paris', 'roma', 'cancun', 'lisboa', 'madrid', 'londres', 'ny', 'new york', 'tulum', 'bariloche', 'santiago', 'buenos aires', 'disney'].every(d => !destinoNome.includes(d));
+    const destinoNome = (viagem.destino || '').toLowerCase().trim();
+    const termosInternacionais = [
+      'orlando', 'miami', 'paris', 'roma', 'cancun', 'lisboa', 'madrid', 'londres', 
+      'ny', 'new york', 'tulum', 'bariloche', 'santiago', 'buenos aires', 'disney',
+      'eua', 'usa', 'europa', 'tokyo', 'toquio', 'japao', 'japan', 'italia', 'franca', 'grécia', 'grecia',
+      'espanha', 'portugal', 'argentina', 'chile', 'uruguay', 'uruguai', 'colombia', 'peru',
+      'mexico', 'dubai', 'emirados', 'inglaterra', 'canada', 'australia', 'internacional', 'exterior'
+    ];
+    const termosNacionais = [
+      'brasil', 'br', 'são paulo', 'sao paulo', 'rio de janeiro', 'gramado', 'caldas novas', 'salvador', 'fortaleza',
+      'recife', 'florianopolis', 'maceio', 'natal', 'porto seguro', 'curitiba', 'belo horizonte',
+      'manaus', 'foz do iguacu', 'bonito', 'noronha', 'porto de galinhas', 'maragogi', 'campos do jordao'
+    ];
+
+    const temTermoInternacional = termosInternacionais.some(d => destinoNome.includes(d));
+    const temTermoNacional = termosNacionais.some(d => destinoNome.includes(d));
+
+    const isNacional = temTermoInternacional ? false : (temTermoNacional || destinoNome.length === 0);
+
     
     const temVoo = produtos.some(p => (p.tipo || '').toLowerCase().includes('voo') || (p.tipo || '').toLowerCase().includes('aéreo'));
     

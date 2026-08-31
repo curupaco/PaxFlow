@@ -2397,12 +2397,19 @@ export class InboxPage {
       btn.addEventListener('click', async (e) => {
         e.stopPropagation();
         const evId = btn.getAttribute('data-delete-evento-id');
-        if (evId && confirm('Deseja realmente excluir este treinamento/evento?')) {
-          await EscalaService.deletarEvento(evId);
-          this.showToast('Evento excluído com sucesso.', 'success');
-          await this.loadEscalaData();
-          this.render();
-          this.setupEventListeners();
+        if (evId) {
+          const confirmed = await showCustomConfirm(
+            'Deseja realmente excluir este treinamento/evento?',
+            'Excluir Evento',
+            { isDestructive: true, confirmText: 'Excluir' }
+          );
+          if (confirmed) {
+            await EscalaService.deletarEvento(evId);
+            this.showToast('Evento excluído com sucesso.', 'success');
+            await this.loadEscalaData();
+            this.render();
+            this.setupEventListeners();
+          }
         }
       });
     });

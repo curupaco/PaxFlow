@@ -438,7 +438,7 @@ export class SendTemplateMessageModal {
 
         const finalPhone = limparTelefone(customPhone);
         if (!finalPhone) {
-          alert('Por favor, informe um telefone de cliente válido.');
+          options.showToast('Por favor, informe um telefone de cliente válido.', 'error');
           return;
         }
 
@@ -459,7 +459,7 @@ export class SendTemplateMessageModal {
 
         const finalPhone = limparTelefone(customPhone);
         if (!finalPhone) {
-          alert('Por favor, informe um telefone de cliente válido.');
+          options.showToast('Por favor, informe um telefone de cliente válido.', 'error');
           return;
         }
 
@@ -533,7 +533,7 @@ export class SendTemplateMessageModal {
 
         const finalPhone = limparTelefone(customPhone);
         if (!finalPhone) {
-          alert('Por favor, informe um telefone de cliente válido.');
+          options.showToast('Por favor, informe um telefone de cliente válido.', 'error');
           return;
         }
 

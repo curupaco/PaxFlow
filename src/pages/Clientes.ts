@@ -2,7 +2,8 @@ import { supabase, getSessaoAtual } from '../services/supabase';
 import { uploadDocumentoCliente } from '../services/googleDrive';
 import { getAvatarSvg } from '../services/avatars';
 import { Cliente, PerfilConsultor } from '../types';
-import { showCustomConfirm } from '../services/dialog';
+import { showCustomConfirm, showCustomPrompt } from '../services/dialog';
+
 import { registrarXp } from '../services/gamification';
 import { SendTemplateMessageModal } from '../components/dashboard/SendTemplateMessageModal';
 import { renderHelpIcon } from '../utils/helpHelper';
@@ -335,9 +336,15 @@ export class ClientesPage {
     });
 
     bar.querySelector('#btn-bulk-tag')?.addEventListener('click', async () => {
-      const tagInput = prompt('Digite a tag a ser adicionada aos clientes selecionados (ex: VIP, Disney2027):');
+      const tagInput = await showCustomPrompt(
+        'Digite a tag a ser adicionada aos clientes selecionados:',
+        'Adicionar Tag em Massa',
+        '',
+        'Ex: VIP, Disney2027, Europa'
+      );
       if (!tagInput || !tagInput.trim()) return;
       const tagClean = tagInput.trim();
+
 
       try {
         const ids = Array.from(this.selectedClientIds);
