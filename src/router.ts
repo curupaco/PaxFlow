@@ -7,6 +7,7 @@ import { ReembolsosPage } from './pages/Reembolsos';
 import { ConfiguracoesPage } from './pages/Configuracoes';
 import { CadastrosPage } from './pages/Cadastros';
 import { RelatoriosPage } from './pages/Relatorios';
+import { NextTripPage } from './pages/NextTripPage';
 
 export class Router {
   private pageContentEl: HTMLElement;
@@ -58,6 +59,9 @@ export class Router {
         break;
       case 'orcamentos':
         this.currentPageInstance = new OrcamentosPage(this.pageContentEl);
+        break;
+      case 'next-trip':
+        this.currentPageInstance = new NextTripPage(this.pageContentEl);
         break;
       case 'clientes':
         this.currentPageInstance = new ClientesPage(this.pageContentEl);

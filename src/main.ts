@@ -409,6 +409,12 @@ class App {
                 <span class="${this.sidebarCollapsed ? 'md:hidden' : ''}">Orçamentos</span>
               </button>
 
+              <!-- Link: Next Trip Engine -->
+              <button id="nav-next-trip" class="w-full px-3 py-1.5 rounded-xl flex items-center ${this.sidebarCollapsed ? 'justify-center' : 'justify-start'} gap-2.5 font-semibold text-xs text-left transition select-none group">
+                <span class="text-base group-hover:scale-110 transition-transform">🎯</span>
+                <span class="${this.sidebarCollapsed ? 'md:hidden' : ''}">Next Trip Engine</span>
+              </button>
+
               <!-- Link: Dashboard Kanban -->
               <button id="nav-dashboard" class="w-full px-3 py-1.5 rounded-xl flex items-center ${this.sidebarCollapsed ? 'justify-center' : 'justify-start'} gap-2.5 font-semibold text-xs text-left transition select-none group">
                 <svg width="18" height="18" class="w-4.5 h-4.5 text-slate-400 group-hover:text-slate-600 dark:text-slate-400 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
@@ -1026,7 +1032,7 @@ class App {
    * Associa eventos aos botões de navegação lateral
    */
   private setupNavigationListeners(): void {
-    const pages = ['analytics', 'inbox', 'orcamentos', 'dashboard', 'clientes', 'reembolsos', 'relatorios', 'cadastros', 'configuracoes'];
+    const pages = ['analytics', 'inbox', 'orcamentos', 'next-trip', 'dashboard', 'clientes', 'reembolsos', 'relatorios', 'cadastros', 'configuracoes'];
 
     pages.forEach(page => {
       const btn = document.getElementById(`nav-${page}`);
@@ -1050,7 +1056,7 @@ class App {
     this.router.navigate(page, extraId);
 
     // Atualiza os estilos de botões ativos na Sidebar
-    const navButtons = ['analytics', 'inbox', 'orcamentos', 'dashboard', 'clientes', 'reembolsos', 'relatorios', 'cadastros', 'configuracoes'];
+    const navButtons = ['analytics', 'inbox', 'orcamentos', 'next-trip', 'dashboard', 'clientes', 'reembolsos', 'relatorios', 'cadastros', 'configuracoes'];
     navButtons.forEach(p => {
       const btn = document.getElementById(`nav-${p}`);
       if (btn) {

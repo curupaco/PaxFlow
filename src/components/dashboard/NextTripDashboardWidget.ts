@@ -112,7 +112,11 @@ export class NextTripDashboardWidget {
               ${this.oportunidades.length} Oportunidades
             </span>
             
-            <button id="btn-toggle-next-trip-collapse" class="ml-2 px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[10px] font-bold uppercase rounded-lg border border-slate-700 transition flex items-center gap-1">
+            <button id="btn-open-full-next-trip" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-extrabold uppercase rounded-lg border border-indigo-400/30 transition flex items-center gap-1">
+              <span>Ver Tela Completa ➔</span>
+            </button>
+
+            <button id="btn-toggle-next-trip-collapse" class="ml-1 px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[10px] font-bold uppercase rounded-lg border border-slate-700 transition flex items-center gap-1">
               <span>Recolher ▲</span>
             </button>
           </div>
@@ -180,6 +184,11 @@ export class NextTripDashboardWidget {
 
   private setupListeners(): void {
     if (!this.container) return;
+
+    // Listener de Abrir Tela Completa
+    this.container.querySelector('#btn-open-full-next-trip')?.addEventListener('click', () => {
+      window.location.hash = '#next-trip';
+    });
 
     // Listener de Recolher/Expandir
     this.container.querySelector('#btn-toggle-next-trip-collapse')?.addEventListener('click', () => {
