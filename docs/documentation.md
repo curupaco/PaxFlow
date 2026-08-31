@@ -38,6 +38,7 @@
    - 3.25 [Redesenho de Usabilidade Mobile da Gestão de Viagens](#325-redesenho-de-usabilidade-mobile-da-gestão-de-viagens)
    - 3.26 [PaxFlow Risk Score™ (Diagnóstico Preditivo de Saúde Operacional 0 a 100)](#326-paxflow-risk-score-diagnóstico-preditivo-de-saúde-operacional-0-a-100)
    - 3.27 [Next Trip Engine™ (Motor Preditivo de Recompra & Ciclo de Vida do Viajante)](#327-next-trip-engine-motor-preditivo-de-recompra--ciclo-de-vida-do-viajante)
+   - 3.28 [PaxFlow Upsell Engine™ (Motor Preditivo de Oportunidades & Ticket Médio)](#328-paxflow-upsell-engine-motor-preditivo-de-oportunidades--ticket-médio)
 4. [Diferenciais Competitivos](#4-diferenciais-competitivos)
 5. [Arquitetura Tecnológica](#5-arquitetura-tecnológica)
 6. [Segurança e Conformidade](#6-segurança-e-conformidade)
@@ -543,6 +544,21 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
   - Viagens anteriores com múltiplos passageiros (casais, famílias) são consolidadas no nome do **Titular/Comprador Principal** (*Família Silva — 4 passageiros*), evitando duplicidade de abordagens no mesmo núcleo familiar.
 - **Governança & Parâmetros Administrativos**:
   - Consultores visualizam e atuam sobre as oportunidades dos seus próprios clientes titulares; Administradores possuem visão global de toda a agência.
+
+### 3.28 PaxFlow Upsell Engine™ (Motor Preditivo de Oportunidades & Ticket Médio) [NEW]
+
+**Algoritmo preditivo de recomendação de adicionais e upgrades em tempo real**, desenhado para elevar a margem de contribuição e o ticket médio de cotações de orçamentos e oportunidades de recompra.
+
+- **5 Gatilhos Inteligentes de Recomendação**:
+  1. **🛡️ Seguro Saúde Internacional Obrigatório**: Disparado automaticamente em cotações internacionais (Europa, EUA/Orlando, Disney, Cancún, Chile, Argentina) quando nenhum seguro saúde estiver vinculado.
+  2. **🎟️ Passeios VIPs & Ingressos de Atrações**: Sugere pacotes de passeios privativos e ingressos antecipados para destinos de alto fluxo.
+  3. **🚘 Transfer Privativo Aeroporto-Hotel**: Recomendação ativada para grupos de 3+ passageiros, viagens internacionais ou cotações acima de R$ 8.000,00 sem traslado cadastrado.
+  4. **🏨 Upgrade de Categoria de Hotelaria / All-Inclusive**: Identifica pacotes com hospedagem padrão e sugere acréscimo de meia pensão ou categoria luxo com margem estimada de +18%.
+  5. **📋 Seguro Cancel Flex (Reembolso 100%)**: Recomendação para cotações acima de R$ 10.000,00 que diminui a hesitação do cliente e acelera o fechamento do contrato.
+- **Inclusão em 1-Clique nas Notas de Orçamento**:
+  - No modal de envio de proposta, o consultor pode clicar em `+ Incluir` para injetar o texto da sugestão diretamente na proposta comercial.
+- **Controle de Ativação Global**:
+  - Pode ser ativado ou desativado em tempo real por administradores na aba **Automações** das Configurações (`global_settings_table.habilitar_upsell_preditivo`).
   - Administradores podem ajustar os parâmetros de sensibilidade (Janela de Sazonalidade, Nota mínima de NPS, Corte de Score e Dias de Snooze) na aba *Configurações -> Automações*.
 - **4 Modelos Padrão Nativos de WhatsApp**:
   - Modelos nativos pré-carregados para *Aniversário de Viagem 12m*, *Resorts de Verão*, *Disney & Família* e *Recompra VIP Promotor NPS*.

@@ -35,6 +35,7 @@ export class OrcamentosPage {
   private loading: boolean = false;
   private isFallbackMode: boolean = false;
   private realtimeChannel: any = null;
+  private settings: any = null;
   private buscaTermo: string = '';
   private selectedConsultantId: string = 'todos';
   private filterConcluido: 'todos' | 'fechada' | 'desistencia' = 'todos';
@@ -1684,7 +1685,7 @@ export class OrcamentosPage {
    * Abre o modal obrigatório para a coluna EM ANDAMENTO -> AGUARDANDO
    * Exige notas textuais e upload de proposta comercial integrando com Google Drive corporativo
    */
-  private openEnviarPropostaModal(id: string): void {
+  private async openEnviarPropostaModal(id: string): Promise<void> {
     const orc = this.orcamentos.find(o => o.id === id);
     if (!orc) return;
 
@@ -1693,13 +1694,21 @@ export class OrcamentosPage {
     const modalContent = document.getElementById('modal-content-container');
     if (!modalContent || !portal) return;
 
+    if (!this.settings) {
+      try {
+        const { data: st } = await supabase.from('global_settings').select('*').limit(1).maybeSingle();
+        this.settings = st || {};
+      } catch (_) {}
+    }
+
     const upsellOps = UpsellEngineService.calculateUpsellOpportunities(
       [],
       orc.destino,
       2,
       orc.valorProposta || 0,
       this.perfil,
-      this.user
+      this.user,
+      this.settings
     );
 
     modalContent.innerHTML = `
@@ -1716,14 +1725,14 @@ export class OrcamentosPage {
         </p>
 
         ${upsellOps.length > 0 ? `
-          <!-- BLOCO PREDIÇÃO PAXFLOW UPSELL ENGINE (RESTRITO THIAGO COSTA) -->
+          <!-- BLOCO PREDIÇÃO PAXFLOW UPSELL ENGINE -->
           <div class="p-4 bg-gradient-to-br from-indigo-950/60 via-slate-900 to-purple-950/60 border border-indigo-500/30 rounded-2xl mb-5 text-white space-y-3 shadow-lg">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-2">
                 <span class="text-base">💡</span>
                 <h4 class="text-xs font-black uppercase tracking-wider text-indigo-200">PaxFlow Upsell Engine™ — Upgrades & Experiências Recomendadas</h4>
               </div>
-              <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">Piloto Thiago Costa</span>
+              <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">Preditivo IA</span>
             </div>
 
             <div class="grid grid-cols-1 gap-2.5">

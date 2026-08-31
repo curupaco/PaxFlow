@@ -2,33 +2,24 @@ import { UpsellOpportunity } from '../types';
 
 export class UpsellEngineService {
   /**
-   * Verifica se o usuário logado possui permissão para visualizar o PaxFlow Upsell Engine™ (Restrito a Thiago Costa na fase piloto).
+   * Verifica se o PaxFlow Upsell Engine™ está habilitado globalmente nas configurações da agência.
+   * Retorna true por padrão a menos que explicitamente desativado nas configurações.
    */
-  public static isUserThiagoCosta(perfil?: any, user?: any): boolean {
+  public static isUpsellEnabled(settings?: any): boolean {
+    if (localStorage.getItem('paxflow_upsell_override') === 'false') return false;
     if (localStorage.getItem('paxflow_upsell_override') === 'true') return true;
     
-    let nome = (perfil?.nome || '').toLowerCase();
-    let email = (user?.email || perfil?.email || '').toLowerCase();
-
-    if (!nome && !email) {
-      try {
-        const savedPerfil = localStorage.getItem('paxflow_perfil_atual') || localStorage.getItem('paxflow_user');
-        if (savedPerfil) {
-          const parsed = JSON.parse(savedPerfil);
-          nome = (parsed.nome || '').toLowerCase();
-          email = (parsed.email || '').toLowerCase();
-        }
-      } catch (_) {}
+    if (settings && (settings.habilitar_upsell_preditivo === false || settings.habilitarUpsellPreditivo === false)) {
+      return false;
     }
+    return true;
+  }
 
-    if (!nome && !email) return true;
-
-    return (
-      nome.includes('thiago costa') ||
-      nome.includes('thiago') ||
-      email.includes('thiago') ||
-      email.includes('curupaco')
-    );
+  /**
+   * Alias de compatibilidade retroativa.
+   */
+  public static isUserThiagoCosta(perfil?: any, user?: any): boolean {
+    return this.isUpsellEnabled();
   }
 
   /**
@@ -40,10 +31,11 @@ export class UpsellEngineService {
     totalPax: number = 1,
     valorTotal: number = 0,
     perfil?: any,
-    user?: any
+    user?: any,
+    settings?: any
   ): UpsellOpportunity[] {
-    // Trava de liberação gradual: apenas Thiago Costa visualiza na fase de testes
-    if (!this.isUserThiagoCosta(perfil, user)) {
+    // Liberação geral: verifica a chave de configuração global da agência
+    if (!this.isUpsellEnabled(settings || perfil)) {
       return [];
     }
 

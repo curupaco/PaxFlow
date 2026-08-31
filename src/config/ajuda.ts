@@ -299,6 +299,13 @@ export const HELP_ITEMS: HelpItem[] = [
     description: 'Disparo de comunicações automatizadas utilizando tags reativas.',
     details: 'Para agilizar o contato, administradores podem cadastrar modelos de WhatsApp com variáveis dinâmicas (como `{{cliente}}` e `{{link_itinerario}}`). Na ficha de orçamentos e viagens, clicar no ícone do WhatsApp abre o aplicativo com a mensagem pronta substituindo as variáveis automaticamente.'
   },
+  {
+    id: 'upsell-engine-preditivo',
+    modulo: 'orcamentos',
+    label: 'PaxFlow Upsell Engine™ (Recomendações Preditivas)',
+    description: 'Sugestões inteligentes de adicionais e upgrades em propostas comerciais.',
+    details: 'O PaxFlow Upsell Engine™ analisa automaticamente os destinos e produtos cadastrados em uma cotação e gera sugestões de adicionais de alta margem (Seguros Saúde Internacional, Passes & Ingressos VIPs, Transfer Privativo, Upgrades de Hotelaria e Seguro Cancel Flex). Ao enviar a proposta, o consultor pode clicar em "+ Incluir" para adicionar a sugestão ao resumo comercial em 1-clique.'
+  },
 
   // ==================== 6. Reembolsos & Financeiro ====================
   {

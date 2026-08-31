@@ -381,12 +381,14 @@ export class LandingPage {
           <!-- Marquee de diferenciais -->
           <div class="w-full max-w-5xl mb-16 rounded-3xl overflow-hidden border border-white/10 bg-white/[0.03] pf-marquee-wrap">
             <div class="pf-marquee gap-12 py-4 px-6 text-sm font-bold">
+              <span class="flex items-center gap-2 text-purple-400">🚀 PaxFlow Upsell Engine™ (Oportunidades &amp; Upgrades)</span>
               <span class="flex items-center gap-2 text-indigo-400">🎯 Next Trip Engine™ (Motor Preditivo de Recompra)</span>
               <span class="flex items-center gap-2 text-emerald-400">🛡️ PaxFlow Risk Score™ (Diagnóstico Preditivo 0-100)</span>
               <span class="flex items-center gap-2 text-cyan-400">📱 App PWA no Celular (Instalação em 1 Clique)</span>
               <span class="flex items-center gap-2 text-amber-400">🔔 Push Notifications no iOS &amp; Android</span>
               <span class="flex items-center gap-2 text-[#00e5a3]">✦ Alertas de passaporte e visto em 180 dias</span>
               <span class="flex items-center gap-2 text-[#00a8f5]">✦ Reembolsos com cronômetro SLA</span>
+              <span class="flex items-center gap-2 text-purple-400">🚀 PaxFlow Upsell Engine™ (Oportunidades &amp; Upgrades)</span>
               <span class="flex items-center gap-2 text-indigo-400">🎯 Next Trip Engine™ (Motor Preditivo de Recompra)</span>
               <span class="flex items-center gap-2 text-[#f5af19]">✦ Escala de funcionários e banco de folgas</span>
               <span class="flex items-center gap-2 text-fuchsia-400">✦ Itinerário digital do cliente</span>

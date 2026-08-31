@@ -222,7 +222,9 @@ export class ConfiguracoesPage {
           permitirConsultorCriarViagem: data.permitir_consultor_criar_viagem !== undefined ? data.permitir_consultor_criar_viagem : (data.permitirConsultorCriarViagem !== undefined ? data.permitirConsultorCriarViagem : false),
           permitir_consultor_criar_viagem: data.permitir_consultor_criar_viagem !== undefined ? data.permitir_consultor_criar_viagem : (data.permitirConsultorCriarViagem !== undefined ? data.permitirConsultorCriarViagem : false),
           copilotoAtivo: data.copiloto_ativo !== undefined ? data.copiloto_ativo : (data.copilotoAtivo !== undefined ? data.copilotoAtivo : true),
-          copiloto_ativo: data.copiloto_ativo !== undefined ? data.copiloto_ativo : (data.copilotoAtivo !== undefined ? data.copilotoAtivo : true)
+          copiloto_ativo: data.copiloto_ativo !== undefined ? data.copiloto_ativo : (data.copilotoAtivo !== undefined ? data.copilotoAtivo : true),
+          habilitarUpsellPreditivo: data.habilitar_upsell_preditivo !== false,
+          habilitar_upsell_preditivo: data.habilitar_upsell_preditivo !== false
         };
       } else {
         const initialPayload = {
@@ -248,7 +250,8 @@ export class ConfiguracoesPage {
           digisac_enable_bot_triggers: true,
           digisac_enable_webhooks: true,
           tempo_desistencia_orcamento_dias: 30,
-          permitir_consultor_criar_viagem: false
+          permitir_consultor_criar_viagem: false,
+          habilitar_upsell_preditivo: true
         };
 
         const { data: inserted, error: insertError } = await supabase
@@ -1882,6 +1885,23 @@ export class ConfiguracoesPage {
               </div>
             </div>
 
+            <!-- PaxFlow Upsell Engine Configuration Card -->
+            <div class="border-t border-slate-100 dark:border-slate-800 pt-5 space-y-4">
+              <div class="flex items-center justify-between gap-4">
+                <div>
+                  <h3 class="text-xs font-black text-purple-600 dark:text-purple-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <span>🚀</span> PaxFlow Upsell Engine™ — Sugestões Preditivas de Ticket ${renderHelpIcon('upsell-engine-preditivo')}
+                  </h3>
+                  <p class="text-[10px] text-slate-400 mt-0.5">Algoritmo inteligente de recomendação de Upgrades, Experiências VIPs, Seguros e Cancel Flex em orçamentos e viagens.</p>
+                </div>
+                
+                <label class="relative inline-flex items-center cursor-pointer shrink-0">
+                  <input id="input-habilitar-upsell-preditivo" type="checkbox" ${this.settings.habilitar_upsell_preditivo !== false ? 'checked' : ''} class="sr-only peer">
+                  <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:after:border-slate-600 peer-checked:bg-purple-600"></div>
+                </label>
+              </div>
+            </div>
+
             <!-- Reembolsos & NPS -->
             <div class="border-t border-slate-100 dark:border-slate-800 pt-5">
               <h3 class="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-3">Reembolsos & Pesquisas NPS</h3>
@@ -2375,6 +2395,9 @@ export class ConfiguracoesPage {
       const corteScoreNextTripVal = corteScoreNextTripInput ? Number(corteScoreNextTripInput.value) : (this.settings.next_trip_corte_prontidao_alta || 75);
       const snoozeDiasNextTripVal = snoozeDiasNextTripInput ? Number(snoozeDiasNextTripInput.value) : (this.settings.next_trip_snooze_dias || 30);
 
+      const habilitarUpsellInput = document.getElementById('input-habilitar-upsell-preditivo') as HTMLInputElement;
+      const habilitarUpsellVal = habilitarUpsellInput ? habilitarUpsellInput.checked : (this.settings.habilitar_upsell_preditivo !== false);
+
       const payload = {
         tempo_desistencia_orcamento_dias: tempoDesistenciaVal,
         sla_pre_embarque_dias: slaPreVal,
@@ -2387,7 +2410,8 @@ export class ConfiguracoesPage {
         risk_score_limite_critico: limiteCriticoRiskScoreVal,
         habilitar_next_trip_engine: habilitarNextTripVal,
         next_trip_corte_prontidao_alta: corteScoreNextTripVal,
-        next_trip_snooze_dias: snoozeDiasNextTripVal
+        next_trip_snooze_dias: snoozeDiasNextTripVal,
+        habilitar_upsell_preditivo: habilitarUpsellVal
       };
 
       try {

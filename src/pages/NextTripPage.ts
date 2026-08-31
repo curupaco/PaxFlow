@@ -293,18 +293,19 @@ export class NextTripPage {
             op.totalPassageirosGrupo || 2,
             5000,
             this.perfil,
-            this.user
+            this.user,
+            this.settings
           );
           if (!upsells || upsells.length === 0) return '';
 
           return `
-            <!-- BLOCO PREDIÇÃO UPSELL ENGINE (EXCLUSIVO THIAGO COSTA) -->
+            <!-- BLOCO PREDIÇÃO UPSELL ENGINE -->
             <div class="p-3 bg-gradient-to-r from-purple-950/70 via-indigo-950/70 to-slate-900/70 border border-purple-500/30 rounded-xl space-y-2 text-white">
               <div class="flex items-center justify-between">
                 <span class="text-[10px] font-black uppercase text-purple-300 tracking-wider flex items-center gap-1">
                   <span>🚀</span> PaxFlow Upsell Engine™
                 </span>
-                <span class="px-1.5 py-0.5 rounded text-[8px] font-black bg-purple-500/20 text-purple-300 border border-purple-500/30">Piloto Thiago Costa</span>
+                <span class="px-1.5 py-0.5 rounded text-[8px] font-black bg-purple-500/20 text-purple-300 border border-purple-500/30">Preditivo IA</span>
               </div>
               <div class="space-y-1.5">
                 ${upsells.map(u => `

@@ -95,6 +95,8 @@ export interface GlobalSettings {
   nextTripCorteProntidaoAlta?: number;
   next_trip_snooze_dias?: number;
   nextTripSnoozeDias?: number;
+  habilitar_upsell_preditivo?: boolean;
+  habilitarUpsellPreditivo?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }

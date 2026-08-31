@@ -192,7 +192,7 @@ export class NextTripDashboardWidget {
 
           <!-- Rodapé da Gaveta -->
           <div class="p-4 border-t border-slate-800 bg-slate-950/80 flex items-center justify-between">
-            <span class="text-xs text-slate-400 font-medium">PaxFlow Preditivo &bull; Piloto Thiago Costa</span>
+            <span class="text-xs text-slate-400 font-medium">PaxFlow Preditivo &bull; Inteligência IA</span>
             <button id="btn-drawer-full-page" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-extrabold uppercase tracking-wide transition">
               Ver Tela Completa ➔
             </button>
