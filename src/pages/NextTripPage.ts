@@ -3,6 +3,7 @@ import { NextTripEngineService } from '../services/nextTripEngineService';
 import { NextTripOpportunity, PerfilConsultor } from '../types';
 import { SendTemplateMessageModal } from '../components/dashboard/SendTemplateMessageModal';
 import { renderHelpIcon } from '../utils/helpHelper';
+import { UpsellEngineService } from '../services/upsellEngineService';
 
 export class NextTripPage {
   private container: HTMLElement;
@@ -119,8 +120,8 @@ export class NextTripPage {
     this.container.innerHTML = `
       <div class="min-h-screen bg-slate-50/50 dark:bg-slate-950 flex flex-col font-sans transition-colors duration-200">
         
-        <!-- Cabeçalho Fixo -->
-        <header class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 sticky top-[57px] z-30 px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 transition-colors duration-200">
+        <!-- Cabeçalho -->
+        <header class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 relative z-10 md:sticky md:top-[57px] md:z-30 px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 transition-colors duration-200">
           <div class="flex items-center gap-3">
             <div class="p-2.5 rounded-2xl bg-indigo-600/10 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 shrink-0">
               <svg width="22" height="22" class="w-5.5 h-5.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
@@ -284,6 +285,41 @@ export class NextTripPage {
             Última viagem: <strong>${op.ultimoDestino}</strong> (${op.ultimaViagemData})
           </div>
         </div>
+
+        ${(() => {
+          const upsells = UpsellEngineService.calculateUpsellOpportunities(
+            [],
+            op.destinoRecomendado,
+            op.totalPassageirosGrupo || 2,
+            5000,
+            this.perfil,
+            this.user
+          );
+          if (!upsells || upsells.length === 0) return '';
+
+          return `
+            <!-- BLOCO PREDIÇÃO UPSELL ENGINE (EXCLUSIVO THIAGO COSTA) -->
+            <div class="p-3 bg-gradient-to-r from-purple-950/70 via-indigo-950/70 to-slate-900/70 border border-purple-500/30 rounded-xl space-y-2 text-white">
+              <div class="flex items-center justify-between">
+                <span class="text-[10px] font-black uppercase text-purple-300 tracking-wider flex items-center gap-1">
+                  <span>🚀</span> PaxFlow Upsell Engine™
+                </span>
+                <span class="px-1.5 py-0.5 rounded text-[8px] font-black bg-purple-500/20 text-purple-300 border border-purple-500/30">Piloto Thiago Costa</span>
+              </div>
+              <div class="space-y-1.5">
+                ${upsells.map(u => `
+                  <div class="p-2 bg-white/5 rounded-lg border border-white/10 space-y-0.5">
+                    <div class="flex items-center justify-between text-xs font-bold text-slate-100">
+                      <span>${u.titulo}</span>
+                      <span class="text-emerald-400 font-extrabold text-[11px]">+ R$ ${u.valorEstimado.toLocaleString('pt-BR')}</span>
+                    </div>
+                    <p class="text-[10px] text-slate-300 font-medium leading-tight">${u.descricao}</p>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `;
+        })()}
 
         <!-- Botões de Ação Rápida 1-Clique -->
         <div class="flex items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">

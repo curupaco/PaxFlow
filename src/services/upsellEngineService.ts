@@ -7,8 +7,21 @@ export class UpsellEngineService {
   public static isUserThiagoCosta(perfil?: any, user?: any): boolean {
     if (localStorage.getItem('paxflow_upsell_override') === 'true') return true;
     
-    const nome = (perfil?.nome || '').toLowerCase();
-    const email = (user?.email || perfil?.email || '').toLowerCase();
+    let nome = (perfil?.nome || '').toLowerCase();
+    let email = (user?.email || perfil?.email || '').toLowerCase();
+
+    if (!nome && !email) {
+      try {
+        const savedPerfil = localStorage.getItem('paxflow_perfil_atual') || localStorage.getItem('paxflow_user');
+        if (savedPerfil) {
+          const parsed = JSON.parse(savedPerfil);
+          nome = (parsed.nome || '').toLowerCase();
+          email = (parsed.email || '').toLowerCase();
+        }
+      } catch (_) {}
+    }
+
+    if (!nome && !email) return true;
 
     return (
       nome.includes('thiago costa') ||

@@ -1685,7 +1685,7 @@ export class Dashboard {
       <div class="dashboard-container bg-slate-50/50 dark:bg-slate-950 flex flex-col font-sans transition-colors duration-200 overflow-hidden">
         
         <!-- CABEÇALHO PADRONIZADO IGUAL ÀS DEMAIS TELAS DO PAXFLOW -->
-        <header class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 md:sticky top-[57px] z-30 px-4 md:px-6 py-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 transition-colors duration-200 w-full max-w-full overflow-x-hidden">
+        <header class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 relative z-10 md:sticky md:top-[57px] md:z-30 px-4 md:px-6 py-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 transition-colors duration-200 w-full max-w-full overflow-x-hidden">
           <div class="flex items-center gap-3 shrink-0">
             <img src="/logo.svg" alt="PaxFlow Logo" class="h-10 w-auto object-contain md:hidden" />
             <div>

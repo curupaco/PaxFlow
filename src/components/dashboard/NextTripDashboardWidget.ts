@@ -1,4 +1,5 @@
 import { NextTripOpportunity } from '../../types';
+import { UpsellEngineService } from '../../services/upsellEngineService';
 import { NextTripEngineService } from '../../services/nextTripEngineService';
 
 export class NextTripDashboardWidget {
@@ -146,6 +147,29 @@ export class NextTripDashboardWidget {
                       Última viagem: ${op.ultimoDestino} (${op.ultimaViagemData})
                     </div>
                   </div>
+
+                  ${(() => {
+                    const upsells = UpsellEngineService.calculateUpsellOpportunities(
+                      [],
+                      op.destinoRecomendado,
+                      2,
+                      5000,
+                      null,
+                      null
+                    );
+                    if (!upsells || upsells.length === 0) return '';
+                    const topUpsell = upsells[0];
+
+                    return `
+                      <div class="my-1.5 p-2 bg-gradient-to-r from-purple-950/80 to-indigo-950/80 border border-purple-500/40 rounded-lg text-white space-y-0.5">
+                        <div class="flex items-center justify-between text-[9px] font-black uppercase text-purple-300">
+                          <span>🚀 Upsell Preditivo</span>
+                          <span class="text-emerald-400 font-extrabold">+R$ ${topUpsell.valorEstimado}</span>
+                        </div>
+                        <p class="text-[10px] font-bold text-slate-100 truncate">${topUpsell.titulo}</p>
+                      </div>
+                    `;
+                  })()}
                 </div>
 
                 <!-- Ações Rápidas 1-Clique -->
