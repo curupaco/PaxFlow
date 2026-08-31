@@ -3162,6 +3162,8 @@ export class InboxPage {
       return;
     }
 
+    const printComments: { consultor: string; dia: number; obs: string }[] = [];
+
     const printHtml = `
       <!DOCTYPE html>
       <html lang="pt-BR">
@@ -3169,18 +3171,18 @@ export class InboxPage {
         <meta charset="UTF-8">
         <title>Escala de Funcionários - ${monthStr}</title>
         <style>
-          @page { size: landscape; margin: 8mm; }
-          body { font-family: 'Helvetica Neue', Arial, sans-serif; color: #0f172a; margin: 0; padding: 15px; font-size: 10px; }
-          .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #0f172a; padding-bottom: 10px; margin-bottom: 15px; }
+          @page { size: landscape; margin: 6mm; }
+          body { font-family: 'Helvetica Neue', Arial, sans-serif; color: #0f172a; margin: 0; padding: 12px; font-size: 9.5px; }
+          .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #0f172a; padding-bottom: 8px; margin-bottom: 12px; }
           .header h1 { margin: 0; font-size: 18px; text-transform: uppercase; letter-spacing: 1px; color: #0f172a; }
-          .header p { margin: 3px 0 0 0; color: #64748b; font-size: 10px; }
+          .header p { margin: 3px 0 0 0; color: #64748b; font-size: 9.5px; }
           .badge-juridico { background: #e0e7ff; color: #3730a3; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 10px; border: 1px solid #c7d2fe; }
-          table { width: 100%; border-collapse: collapse; margin-bottom: 15px; table-layout: fixed; }
-          th, td { border: 1px solid #cbd5e1; text-align: center; padding: 5px 2px; font-size: 9px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+          table { width: 100%; border-collapse: collapse; margin-bottom: 12px; table-layout: auto; }
+          th, td { border: 1px solid #cbd5e1; text-align: center; padding: 5px 2px; font-size: 9px; overflow: visible; white-space: nowrap; }
           th { background-color: #f1f5f9; font-weight: bold; color: #334155; }
           th.weekend { background-color: #fef3c7; color: #92400e; }
           th.holiday { background-color: #ffe4e6; color: #9f1239; }
-          td.name-col { text-align: left; font-weight: bold; width: 140px; background-color: #f8fafc; padding-left: 6px; }
+          td.name-col { text-align: left; font-weight: bold; width: 170px; min-width: 170px; background-color: #f8fafc; padding-left: 8px; white-space: nowrap; overflow: visible; font-size: 10px; }
           .shift-c10 { background: #e0f2fe; color: #0369a1; font-weight: bold; }
           .shift-c12 { background: #e0e7ff; color: #4338ca; font-weight: bold; }
           .shift-c14 { background: #fae8ff; color: #86198f; font-weight: bold; }
@@ -3188,9 +3190,10 @@ export class InboxPage {
           .shift-folga { background: #dcfce7; color: #15803d; font-weight: bold; }
           .shift-ferias { background: #ffedd5; color: #c2410c; font-weight: bold; }
           .shift-event { background: #f1f5f9; color: #475569; font-style: italic; }
-          .legend { display: flex; gap: 12px; font-size: 9px; margin-top: 15px; padding: 8px; background: #f8fafc; border-radius: 6px; border: 1px solid #e2e8f0; }
+          .legend { display: flex; gap: 12px; font-size: 9px; margin-top: 10px; padding: 8px; background: #f8fafc; border-radius: 6px; border: 1px solid #e2e8f0; }
           .legend-item { display: flex; align-items: center; gap: 4px; }
-          .footer-signatures { display: flex; justify-content: space-between; margin-top: 40px; padding-top: 10px; }
+          .comments-section { margin-top: 12px; padding: 10px 14px; background: #fffbe0; border: 1px solid #fef08a; border-radius: 8px; font-size: 9px; page-break-inside: avoid; }
+          .footer-signatures { display: flex; justify-content: space-between; margin-top: 30px; padding-top: 10px; page-break-inside: avoid; }
           .sig-box { width: 42%; text-align: center; border-top: 1px solid #94a3b8; padding-top: 5px; font-size: 10px; color: #475569; }
         </style>
       </head>
@@ -3232,6 +3235,11 @@ export class InboxPage {
                 <td class="name-col">${name}</td>
                 ${Array.from({ length: daysInMonth }, (_, dayIdx) => {
                   const v = vals[dayIdx] || '—';
+                  const obs = this.escalaObservacoesData[name]?.[dayIdx];
+                  if (obs && obs.trim()) {
+                    printComments.push({ consultor: name, dia: dayIdx + 1, obs: obs.trim() });
+                  }
+
                   let shiftCls = '';
                   if (v.includes('10') || v.includes('11')) shiftCls = 'shift-c10';
                   else if (v.includes('12') || v.includes('13')) shiftCls = 'shift-c12';
@@ -3241,7 +3249,7 @@ export class InboxPage {
                   else if (v.toLowerCase().includes('féria')) shiftCls = 'shift-ferias';
                   else if (v.toLowerCase().includes('reuniã')) shiftCls = 'shift-event';
 
-                  return `<td class="${shiftCls}">${v}</td>`;
+                  return `<td class="${shiftCls}">${v}${obs ? ` <sup style="color: #d97706; font-weight: bold;">*</sup>` : ''}</td>`;
                 }).join('')}
               </tr>
             `).join('')}
@@ -3256,7 +3264,22 @@ export class InboxPage {
           <span class="legend-item"><span class="shift-c15" style="padding: 1px 4px;">15-22</span> Fechamento</span>
           <span class="legend-item"><span class="shift-folga" style="padding: 1px 4px;">Folga</span> DSR / Folga</span>
           <span class="legend-item"><span class="shift-ferias" style="padding: 1px 4px;">Férias</span> Férias</span>
+          <span class="legend-item"><sup style="color: #d97706; font-weight: bold;">*</sup> Possui Observação</span>
         </div>
+
+        ${printComments.length > 0 ? `
+          <div class="comments-section">
+            <strong style="color: #854d0e; display: block; margin-bottom: 6px; font-size: 10px;">💬 Observações e Notas Registradas do Mês (${monthStr}):</strong>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px 16px;">
+              ${printComments.map(c => `
+                <div style="color: #334155;">
+                  <strong style="color: #0f172a;">• Dia ${String(c.dia).padStart(2, '0')}/${String(this.escalaMes).padStart(2, '0')} — ${c.consultor}:</strong>
+                  <span>${c.obs}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        ` : ''}
 
         <div class="footer-signatures">
           <div class="sig-box">
