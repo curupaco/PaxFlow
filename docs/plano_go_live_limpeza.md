@@ -31,7 +31,7 @@ Este documento contém o plano de limpeza oficial e o script SQL validado para z
 | **Comunicação** | `public.mensagem_destinatarios` | 🔴 **APAGAR** | Zera relacionamentos de destinatários da Inbox. |
 | **Comunicação** | `public.comentarios` | 🔴 **APAGAR** | Zera anotações e comentários de testes. |
 | **Comunicação** | `public.notificacoes` | 🔴 **APAGAR** | Zera notificações internas da Inbox dos consultores. |
-| **Financeiro / Audit**| `public.loc_conferencias` & `loc_pagamentos` | 🔴 **APAGAR** | Zera conferências financeiras e logs de pagamento. |
+| **Financeiro / Audit** | `public.loc_conferencias` & `loc_pagamentos` | 🔴 **APAGAR** | Zera conferências financeiras e logs de pagamento. |
 | **Auditoria** | `public.audit_logs` | 🔴 **APAGAR** | Zera o histórico de logs de auditoria da fase de testes. |
 | **Pesquisa** | `public.feedbacks_nps` | 🔴 **APAGAR** | Zera avaliações de NPS fictícias. |
 | **Gamificação** | `public.profiles` (`xp`, `nivel`) | 🔄 **RESETAR** | **Reset**: Define `xp = 0` e `nivel = 1` para reinício competitivo. |
@@ -44,6 +44,7 @@ Este documento contém o plano de limpeza oficial e o script SQL validado para z
 ## 1. Passo Pré-Execução (Segurança)
 
 Antes de rodar o script no editor do Supabase:
+
 1. Acesse o **Supabase Dashboard** > **Database** > **Backups**.
 2. Clique em **Take Backup** (ou exporte uma cópia de segurança em formato `.sql`).
 
@@ -124,6 +125,7 @@ UNION ALL
 SELECT 'todo_cards (DEVE CONTER REGISTROS)', COUNT(*) FROM public.todo_cards;
 ```
 
-### Resultado Esperado da Verificação:
+### Resultado Esperado da Verificação
+
 - `viagens`, `orcamentos`, `reembolsos`, `lembretes`, `notificacoes`: **0**
 - `clientes`, `profiles`, `escala_diaria`, `todo_cards`: **Maior que 0 (Preservados)**
