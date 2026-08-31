@@ -21,7 +21,7 @@ export class LoginPage {
    */
   public init(): void {
     this.container.innerHTML = `
-      <div class="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-6 bg-gradient-to-tr from-slate-100 to-indigo-50/40 dark:from-[#0b0f19] dark:to-[#0f172a] transition-colors duration-200 relative overflow-hidden animate-fade-in">
+      <div class="min-h-screen w-full bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-6 bg-gradient-to-tr from-slate-100 via-indigo-50/40 to-slate-100 dark:from-[#0b0f19] dark:to-[#0f172a] transition-colors duration-200 relative overflow-hidden animate-fade-in">
         
         <!-- Glowing background blobs -->
         <div class="absolute -top-40 -left-40 w-[500px] h-[500px] bg-indigo-500/5 dark:bg-indigo-500/10 rounded-full blur-[100px] animate-pulse"></div>
