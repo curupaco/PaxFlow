@@ -241,6 +241,24 @@ export const AVATAR_OPTIONS: AvatarOption[] = [
 ];
 
 export function getAvatarSvg(avatarId: string | undefined, initials: string = 'C', extraClasses: string = 'w-10 h-10'): string {
+  const normInitials = (initials || '').toLowerCase();
+  const isPaxflowPersona = avatarId === 'paxflow' || 
+    normInitials.includes('paxflow') || 
+    normInitials.includes('suporte técnico') ||
+    normInitials.includes('operacoes') ||
+    normInitials.includes('operações') ||
+    normInitials.includes('finance') ||
+    normInitials.includes('qualidade') ||
+    normInitials.includes('reminders');
+
+  if (isPaxflowPersona) {
+    return `
+      <div class="${extraClasses} bg-gradient-to-br from-indigo-600 via-indigo-700 to-violet-800 text-white rounded-xl flex items-center justify-center border border-indigo-500/30 select-none shadow-sm transition hover:scale-105 duration-200 p-1 shrink-0">
+        <img src="/logo.svg" alt="PaxFlow" class="w-full h-full object-contain filter drop-shadow-sm" />
+      </div>
+    `;
+  }
+
   // Caso o avatar seja uma URL (imagem customizada no storage do Supabase ou link externo)
   if (avatarId && (avatarId.startsWith('http') || avatarId.startsWith('/') || avatarId.startsWith('data:'))) {
     return `
