@@ -1828,6 +1828,37 @@ export class ConfiguracoesPage {
               </div>
             </div>
 
+            <!-- Next Trip Engine Configuration Card -->
+            <div class="border-t border-slate-100 dark:border-slate-800 pt-5 space-y-4">
+              <div class="flex items-center justify-between gap-4">
+                <div>
+                  <h3 class="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <span>🎯</span> Next Trip Engine™ — Motor Preditivo de Recompra ${renderHelpIcon('next-trip-engine')}
+                  </h3>
+                  <p class="text-[10px] text-slate-400 mt-0.5">Identificação preditiva de janelas de recompra baseada no histórico de viagens e NPS.</p>
+                </div>
+                
+                <label class="relative inline-flex items-center cursor-pointer shrink-0">
+                  <input id="input-habilitar-next-trip-engine" type="checkbox" ${this.settings.habilitar_next_trip_engine !== false ? 'checked' : ''} class="sr-only peer">
+                  <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:after:border-slate-600 peer-checked:bg-indigo-600"></div>
+                </label>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                <div>
+                  <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Corte de Score para Alta Prontidão (0 - 100) *</label>
+                  <input id="input-next-trip-corte-score" type="number" min="50" max="95" required value="${this.settings.next_trip_corte_prontidao_alta || 75}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-bold" />
+                  <p class="text-[10px] text-slate-400 mt-1">Pontuação mínima calculada pelo algoritmo para destacar clientes em alta prioridade de abordagem.</p>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Dias de Snooze / Adiamento de Abordagem *</label>
+                  <input id="input-next-trip-snooze-dias" type="number" min="7" max="180" required value="${this.settings.next_trip_snooze_dias || 30}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-bold" />
+                  <p class="text-[10px] text-slate-400 mt-1">Período (em dias) que a oportunidade fica silenciada após o consultor adiar a abordagem.</p>
+                </div>
+              </div>
+            </div>
+
             <!-- Reembolsos & NPS -->
             <div class="border-t border-slate-100 dark:border-slate-800 pt-5">
               <h3 class="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-3">Reembolsos & Pesquisas NPS</h3>

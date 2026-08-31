@@ -24,13 +24,24 @@ export class NextTripEngineService {
     const agora = new Date();
     const oportunidades: NextTripOpportunity[] = [];
 
-    // Agrupa viagens por cliente_id ou clienteId
+    // Agrupa viagens por cliente_id, clienteId, e-mail ou CPF do cliente
     const viagensPorCliente = new Map<string, any[]>();
     viagens.forEach(v => {
       const cId = v.cliente_id || v.clienteId || (v.cliente && (v.cliente.id || v.cliente.cliente_id));
+      const cEmail = (v.cliente_email || v.clienteEmail || (v.cliente && v.cliente.email) || '').toLowerCase().trim();
+      const cCpf = (v.cliente_cpf || v.clienteCpf || (v.cliente && v.cliente.cpf) || '').replace(/\D/g, '');
+
       if (cId) {
         if (!viagensPorCliente.has(cId)) viagensPorCliente.set(cId, []);
         viagensPorCliente.get(cId)!.push(v);
+      }
+      if (cEmail) {
+        if (!viagensPorCliente.has(`email:${cEmail}`)) viagensPorCliente.set(`email:${cEmail}`, []);
+        viagensPorCliente.get(`email:${cEmail}`)!.push(v);
+      }
+      if (cCpf) {
+        if (!viagensPorCliente.has(`cpf:${cCpf}`)) viagensPorCliente.set(`cpf:${cCpf}`, []);
+        viagensPorCliente.get(`cpf:${cCpf}`)!.push(v);
       }
     });
 
@@ -39,15 +50,23 @@ export class NextTripEngineService {
     if (orcamentos && orcamentos.length > 0) {
       orcamentos.forEach(o => {
         const cId = o.cliente_id || o.clienteId;
+        const cEmail = (o.cliente_email || o.clienteEmail || (o.cliente && o.cliente.email) || '').toLowerCase().trim();
         const st = (o.status || '').toUpperCase();
-        if (cId && (st === 'SOLICITADO' || st === 'EM_ANDAMENTO' || st === 'AGUARDANDO')) {
-          orcamentosAbertosPorCliente.add(cId);
+        if (st === 'SOLICITADO' || st === 'EM_ANDAMENTO' || st === 'AGUARDANDO') {
+          if (cId) orcamentosAbertosPorCliente.add(cId);
+          if (cEmail) orcamentosAbertosPorCliente.add(`email:${cEmail}`);
         }
       });
     }
 
     clientes.forEach(cliente => {
-      const cViagens = viagensPorCliente.get(cliente.id) || [];
+      const clienteEmailKey = cliente.email ? `email:${cliente.email.toLowerCase().trim()}` : '';
+      const clienteCpfKey = cliente.cpf ? `cpf:${cliente.cpf.replace(/\D/g, '')}` : '';
+
+      const cViagens = viagensPorCliente.get(cliente.id) ||
+                       (clienteEmailKey ? viagensPorCliente.get(clienteEmailKey) : undefined) ||
+                       (clienteCpfKey ? viagensPorCliente.get(clienteCpfKey) : undefined) || [];
+
       if (cViagens.length === 0) return;
 
       // Ordena viagens da mais recente para a mais antiga
