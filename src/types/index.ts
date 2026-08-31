@@ -123,6 +123,21 @@ export interface NextTripOpportunity {
 }
 
 /**
+ * Representa uma oportunidade de aumento de ticket médio (Upsell / Experiência) identificada pelo PaxFlow Upsell Engine.
+ */
+export interface UpsellOpportunity {
+  id: string;
+  tipo: 'seguro_saude' | 'passes_experiencias' | 'transfer_privativo' | 'upgrade_hotel' | 'cancel_flex';
+  titulo: string;
+  descricao: string;
+  produtoSugerido: string;
+  categoriaProduto: 'seguro' | 'transfer' | 'passeio' | 'hotel' | 'outro';
+  valorEstimado: number;
+  badgeTexto: string;
+  corBadge: string;
+}
+
+/**
  * Representa um registro do histórico temporal de evolução do Risk Score.
  */
 export interface RiskTimelineEntry {

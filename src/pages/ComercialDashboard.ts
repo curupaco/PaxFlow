@@ -8,6 +8,7 @@ import { renderHelpIcon } from '../utils/helpHelper';
 import { NextTripDashboardWidget } from '../components/dashboard/NextTripDashboardWidget';
 import { NextTripEngineService } from '../services/nextTripEngineService';
 import { SendTemplateMessageModal } from '../components/dashboard/SendTemplateMessageModal';
+import { UpsellEngineService } from '../services/upsellEngineService';
 
 // Injeta estilos específicos premium para o Dashboard de Relatórios
 if (typeof document !== 'undefined') {

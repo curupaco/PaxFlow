@@ -9,6 +9,7 @@ import { getAvatarSvg, mesclarAvataresLocais } from '../services/avatars';
 import { showCustomConfirm, showCustomAlert } from '../services/dialog';
 import { CommentsService } from '../services/comments';
 import { renderHelpIcon } from '../utils/helpHelper';
+import { UpsellEngineService } from '../services/upsellEngineService';
 import {
   renderPhoneInputHTML,
   renderEmailInputHTML,
@@ -1687,6 +1688,15 @@ export class OrcamentosPage {
     const modalContent = document.getElementById('modal-content-container');
     if (!modalContent || !portal) return;
 
+    const upsellOps = UpsellEngineService.calculateUpsellOpportunities(
+      [],
+      orc.destino,
+      2,
+      orc.valorProposta || 0,
+      this.perfil,
+      this.user
+    );
+
     modalContent.innerHTML = `
       <div class="p-6">
         <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3 mb-5">
@@ -1699,6 +1709,37 @@ export class OrcamentosPage {
         <p class="text-xs text-slate-400 dark:text-slate-400 mb-4 font-semibold">
           Para avançar o orçamento de <span class="font-extrabold text-indigo-600 dark:text-indigo-400">${orc.nomeCliente}</span> para o estágio de <strong>AGUARDANDO</strong>, é obrigatório registrar o resumo da proposta comercial ou fazer upload do documento corporativo (pelo menos um dos dois).
         </p>
+
+        ${upsellOps.length > 0 ? `
+          <!-- BLOCO PREDIÇÃO PAXFLOW UPSELL ENGINE (RESTRITO THIAGO COSTA) -->
+          <div class="p-4 bg-gradient-to-br from-indigo-950/60 via-slate-900 to-purple-950/60 border border-indigo-500/30 rounded-2xl mb-5 text-white space-y-3 shadow-lg">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="text-base">💡</span>
+                <h4 class="text-xs font-black uppercase tracking-wider text-indigo-200">PaxFlow Upsell Engine™ — Upgrades & Experiências Recomendadas</h4>
+              </div>
+              <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">Piloto Thiago Costa</span>
+            </div>
+
+            <div class="grid grid-cols-1 gap-2.5">
+              ${upsellOps.map(u => `
+                <div class="p-3 bg-white/5 rounded-xl border border-white/10 flex items-center justify-between gap-3">
+                  <div class="space-y-0.5">
+                    <div class="flex items-center gap-2">
+                      <span class="text-xs font-black text-indigo-100">${u.titulo}</span>
+                      <span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${u.corBadge}">${u.badgeTexto}</span>
+                    </div>
+                    <p class="text-[11px] text-slate-300 font-medium">${u.descricao}</p>
+                    <span class="text-[10px] text-indigo-300 font-bold block">+ R$ ${u.valorEstimado.toLocaleString('pt-BR')} (Sugestão: ${u.produtoSugerido})</span>
+                  </div>
+                  <button type="button" data-upsell-text="${u.produtoSugerido} - R$ ${u.valorEstimado}" class="btn-add-upsell-to-notes px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[10px] font-black uppercase shrink-0 transition">
+                    + Incluir
+                  </button>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        ` : ''}
 
         <form id="form-enviar-proposta" class="space-y-5">
           <div>
@@ -1759,6 +1800,22 @@ export class OrcamentosPage {
     const closeModal = () => this.closeModal();
     document.getElementById('btn-close-modal-x')?.addEventListener('click', closeModal);
     document.getElementById('btn-cancel-modal')?.addEventListener('click', closeModal);
+
+    // Event Listener dos Botões do PaxFlow Upsell Engine™
+    modalContent.querySelectorAll('.btn-add-upsell-to-notes').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const target = e.currentTarget as HTMLButtonElement;
+        const upsellText = target.getAttribute('data-upsell-text');
+        const textarea = document.getElementById('textarea-orc-notas') as HTMLTextAreaElement;
+        if (textarea && upsellText) {
+          const currentVal = textarea.value.trim();
+          textarea.value = currentVal ? `${currentVal}\n\n[UPSELL RECOMENDADO]: ${upsellText}` : `[UPSELL RECOMENDADO]: ${upsellText}`;
+          target.disabled = true;
+          target.innerText = '✅ Adicionado';
+          target.classList.replace('bg-indigo-600', 'bg-emerald-600');
+        }
+      });
+    });
 
     // Upload Lógica
     const dropzone = document.getElementById('upload-proposta-dropzone') as HTMLElement;

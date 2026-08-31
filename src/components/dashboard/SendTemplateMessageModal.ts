@@ -59,6 +59,16 @@ export class SendTemplateMessageModal {
             id: 'tpl-native-4',
             titulo: '🌟 Recompra VIP Promotor NPS',
             conteudo: 'Olá {{cliente}}! Ficamos muito felizes com seu excelente feedback na última viagem. Como nosso cliente VIP, queremos apresentar opções exclusivas para seu próximo destino!'
+          },
+          {
+            id: 'tpl-native-upsell-1',
+            titulo: '🚘 Upgrade & Experiência: Transfer Privativo',
+            conteudo: 'Olá {{cliente}}! Para sua viagem a {{destino}}, selecionamos uma opção exclusiva de Transfer Privativo (Aeroporto ↔ Hotel) para seu grupo viajar com total conforto e pontualidade!'
+          },
+          {
+            id: 'tpl-native-upsell-2',
+            titulo: '🛡️ Upgrade & Experiência: Seguro Saúde Ampliado',
+            conteudo: 'Olá {{cliente}}! Recomendamos reforçar a cobertura médica da sua viagem para {{destino}} com nossa apólice VIP de Cancelamento Flexível e Assistência 24h.'
           }
         ];
       }
