@@ -119,14 +119,17 @@ export class NextTripEngineService {
       const dataVolta = rawDate ? new Date(rawDate) : agora;
       const diffMeses = Math.floor((agora.getTime() - dataVolta.getTime()) / (1000 * 60 * 60 * 24 * 30.43));
 
+      // Se a viagem foi concluída há menos de 3 meses ou está no futuro, não é uma oportunidade de recompra ainda
+      if (diffMeses < 3) {
+        return;
+      }
+
       if (diffMeses >= 10 && diffMeses <= 14) {
         scoreSazonalidade = 30; // Janela ideal de ~1 ano
       } else if (diffMeses >= 5 && diffMeses <= 9) {
         scoreSazonalidade = 20;
       } else if (diffMeses >= 15 && diffMeses <= 24) {
         scoreSazonalidade = 25;
-      } else if (diffMeses < 3) {
-        scoreSazonalidade = 5;
       } else {
         scoreSazonalidade = 15;
       }

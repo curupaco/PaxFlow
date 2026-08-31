@@ -1173,8 +1173,8 @@ export class ComercialDashboard {
 
     const activeOps = (oportunidades || []).filter(op => op.statusAbordagem !== 'snoozed');
 
-    // Se não houver oportunidades ativas calculadas (ou se forçado via modo demo / sandbox), carrega as oportunidades demonstrativas
-    if (activeOps.length === 0 || (window as any).paxflowForceNextTripDemo || (window as any).paxflowSandbox) {
+    // Carrega oportunidades demonstrativas APENAS se forçado explicitamente via modo demo
+    if ((window as any).paxflowForceNextTripDemo) {
       // Limpa snoozes fictícios dos clientes demo para garantir que apareçam como pendentes
       ['demo-c1', 'demo-c2', 'demo-c3'].forEach(cId => {
         localStorage.removeItem(`next_trip_snooze_${cId}`);
