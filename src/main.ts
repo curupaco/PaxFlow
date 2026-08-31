@@ -143,23 +143,27 @@ class App {
       });
     }
 
-    const isConhecaRoute =
-      path.includes('/conheca') ||
-      path.includes('/landing') ||
-      window.location.search.includes('conheca') ||
-      window.location.search.includes('landing') ||
-      window.location.hash.includes('conheca') ||
-      window.location.hash.includes('landing');
+    const isSandbox = (window as any).paxflowSandbox === true;
 
-    // Se o usuário acessar explicitamente /conheca ou /landing, exibe a Landing Page comercial (mesmo que logado)
+    const isConhecaRoute =
+      !isSandbox && (
+        path.includes('/conheca') ||
+        path.includes('/landing') ||
+        window.location.search.includes('conheca') ||
+        window.location.search.includes('landing') ||
+        window.location.hash.includes('conheca') ||
+        window.location.hash.includes('landing')
+      );
+
+    // Se o usuário acessar explicitamente /conheca ou /landing (e não estiver em modo demo), exibe a Landing Page comercial
     if (isConhecaRoute) {
       this.renderLandingPage(isConhecaOldRoute);
       return;
     }
 
-    // Se o visitante não possui token de autenticação no localStorage e não está acessando /login,
+    // Se o visitante não possui token de autenticação no localStorage (e não está no modo demo/sandbox) e não está acessando /login,
     // renderiza a Landing Page interativa imediatamente
-    const hasAuthToken = Object.keys(localStorage).some(k => k.includes('sb-') && k.includes('-auth-token'));
+    const hasAuthToken = isSandbox || Object.keys(localStorage).some(k => k.includes('sb-') && k.includes('-auth-token'));
     if (!hasAuthToken && !isLoginRoute) {
       this.renderLandingPage(isConhecaOldRoute);
       return;
@@ -205,7 +209,11 @@ class App {
 
     // Escuta transição para o Modo Sandbox
     window.addEventListener('paxflow-navigate-to-demo', () => {
-      window.location.reload();
+      if (window.location.pathname !== '/' || window.location.search || window.location.hash) {
+        window.location.href = '/';
+      } else {
+        window.location.reload();
+      }
     }, { once: true });
   }
 

@@ -983,7 +983,11 @@ export class LandingPage {
       Object.keys(localStorage).forEach(key => {
         if (key.startsWith('sandbox-')) localStorage.removeItem(key);
       });
-      window.dispatchEvent(new CustomEvent('paxflow-navigate-to-demo'));
+      if (window.location.pathname !== '/' || window.location.search || window.location.hash) {
+        window.location.href = '/';
+      } else {
+        window.dispatchEvent(new CustomEvent('paxflow-navigate-to-demo'));
+      }
     };
 
     const handleAcessarReal = () => {

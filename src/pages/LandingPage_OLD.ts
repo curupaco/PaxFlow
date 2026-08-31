@@ -1368,8 +1368,12 @@ export class LandingPageOLD {
         }
       });
 
-      // Redireciona disparando navegação interna
-      window.dispatchEvent(new CustomEvent('paxflow-navigate-to-demo'));
+      // Redireciona disparando navegação interna ou atualizando a URL para a raiz
+      if (window.location.pathname !== '/' || window.location.search || window.location.hash) {
+        window.location.href = '/';
+      } else {
+        window.dispatchEvent(new CustomEvent('paxflow-navigate-to-demo'));
+      }
     };
 
     const handleAcessarReal = () => {
