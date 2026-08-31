@@ -25,6 +25,7 @@ export class InboxPage {
   private readList: string[] = [];
   private searchQuery: string = '';
   private consultants: PerfilConsultor[] = [];
+  private allConsultants: PerfilConsultor[] = [];
 
   // Escala specific state
   private escalaAno: number = 2026;
@@ -106,27 +107,35 @@ export class InboxPage {
         teamMap.set(n.trim().toLowerCase(), { displayName: n.trim(), participates: true });
       });
 
-      // 2. Inclui todos os consultores que já possuem turnos cadastrados na escala (rawEscala)
-      Object.keys(rawEscala).forEach(n => {
-        if (n && n.trim()) {
-          const key = n.trim().toLowerCase();
-          if (!teamMap.has(key)) {
-            teamMap.set(key, { displayName: n.trim(), participates: true });
-          }
+      // 1. Mapeia todos os consultores cadastrados por nome (minúsculo)
+      const profileByNameMap = new Map<string, PerfilConsultor>();
+      (this.allConsultants || []).forEach(c => {
+        if (c.nome) {
+          profileByNameMap.set(c.nome.trim().toLowerCase(), c);
         }
       });
 
-      // 3. Se houver consultores do banco de dados, mescla-os garantindo que qualquer consultor com escala continue visível
-      if (this.consultants && this.consultants.length > 0) {
-        this.consultants.forEach(c => {
+      // 2. Inclui consultores da escala bruta verificando se estão inativos ou se participa_escala === false
+      Object.keys(rawEscala).forEach(n => {
+        if (n && n.trim()) {
+          const key = n.trim().toLowerCase();
+          const prof = profileByNameMap.get(key);
+          const isExplicitlyDisabled = prof
+            ? (prof.ativo === false || prof.participa_escala === false || prof.participaEscala === false)
+            : false;
+
+          teamMap.set(key, { displayName: n.trim(), participates: !isExplicitlyDisabled });
+        }
+      });
+
+      // 3. Mescla todos os consultores do banco de dados respeitando o status ativo e participa_escala
+      if (this.allConsultants && this.allConsultants.length > 0) {
+        this.allConsultants.forEach(c => {
           if (c.nome) {
             const key = c.nome.trim().toLowerCase();
-            const isExplicitlyDisabled = c.participa_escala === false || c.participaEscala === false;
-            // Se o consultor tem dados na escala bruta, mantemos visível para exibição completa
-            const hasShiftsInRaw = rawEscala[c.nome] && rawEscala[c.nome].some(v => v !== '');
-            const doesParticipate = !isExplicitlyDisabled || hasShiftsInRaw;
+            const isExplicitlyDisabled = c.ativo === false || c.participa_escala === false || c.participaEscala === false;
 
-            teamMap.set(key, { displayName: c.nome.trim(), participates: doesParticipate });
+            teamMap.set(key, { displayName: c.nome.trim(), participates: !isExplicitlyDisabled });
           }
         });
       }
@@ -242,11 +251,11 @@ export class InboxPage {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('ativo', true)
         .order('nome', { ascending: true });
 
       if (error) throw error;
-      this.consultants = data || [];
+      this.allConsultants = data || [];
+      this.consultants = (data || []).filter(c => c.ativo !== false);
     } catch (err) {
       console.error('Erro ao carregar consultores para filtro:', err);
     }

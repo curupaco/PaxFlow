@@ -829,9 +829,14 @@ export class ConfiguracoesPage {
    */
   private async atualizarStatusConsultor(id: string, ativo: boolean): Promise<void> {
     try {
+      const payload: any = { ativo };
+      if (!ativo) {
+        payload.participa_escala = false;
+      }
+
       const { error } = await supabase
         .from('profiles')
-        .update({ ativo })
+        .update(payload)
         .eq('id', id);
 
       if (error) throw error;
