@@ -31,18 +31,23 @@ export class VersionChecker {
   }
 
   /**
+   * Obtém a versão atual do sistema
+   */
+  public getCurrentVersion(): string {
+    if (this.latestRemoteVersion && this.latestRemoteVersion.version) {
+      return this.latestRemoteVersion.version;
+    }
+    return '1.0.0';
+  }
+
+  /**
    * Inicializa o monitoramento de versão no PaxFlow
    */
   public init(intervalMs: number = 3 * 60 * 1000): void {
-    // Desativa alertas automáticos em ambiente de desenvolvimento local (localhost)
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-      return;
-    }
-
     // Executa verificação inicial após a montagem do app
-    setTimeout(() => this.checkForUpdates(), 5000);
+    setTimeout(() => this.checkForUpdates(), 3000);
 
-    // Configura polling regular
+    // Configura polling regular a cada N minutos
     if (this.checkIntervalTimer) {
       clearInterval(this.checkIntervalTimer);
     }
@@ -65,8 +70,8 @@ export class VersionChecker {
   /**
    * Consulta o arquivo /version.json com cache-busting rigoroso
    */
-  public async checkForUpdates(): Promise<boolean> {
-    if (this.isUpdateAvailable) return true;
+  public async checkForUpdates(forceCheck: boolean = false): Promise<boolean> {
+    if (this.isUpdateAvailable && !forceCheck) return true;
 
     try {
       const response = await fetch(`/version.json?t=${Date.now()}`, {
@@ -85,11 +90,12 @@ export class VersionChecker {
       const ackTime = parseInt(localStorage.getItem('paxflow_acknowledged_build_time') || '0', 10);
       const effectiveLocalBuild = Math.max(this.currentBuildTime, ackTime);
 
-      // Tolera até 1000ms de divergência para evitar inconsistência de buildTime
-      if (data && data.buildTime && data.buildTime > (effectiveLocalBuild + 1000)) {
-        console.log('[PaxFlow VersionChecker] Nova versão detectada!', {
+      // Detecta nova versão por buildTime superior ou se effectiveLocalBuild ainda não estiver gravado
+      if (data && data.buildTime && (data.buildTime > (effectiveLocalBuild + 1000) || (effectiveLocalBuild === 0 && data.buildTime > 0))) {
+        console.log('[PaxFlow VersionChecker] 🚀 Nova versão detectada no servidor!', {
           localEffective: effectiveLocalBuild,
-          remote: data.buildTime
+          remote: data.buildTime,
+          version: data.version
         });
         this.notifyNewVersionAvailable(data);
         return true;
@@ -116,7 +122,7 @@ export class VersionChecker {
   }
 
   /**
-   * Recarrega a página de forma limpa, limpando service workers se necessário
+   * Recarrega a página de forma limpa, gravando a nova versão aceita e atualizando Service Workers
    */
   public forceReload(): void {
     if (this.latestRemoteVersion && this.latestRemoteVersion.buildTime) {

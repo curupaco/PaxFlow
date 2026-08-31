@@ -697,6 +697,29 @@ export class ConfiguracoesPage {
         btn.innerHTML = originalText;
       }
     });
+
+    // Manual Version Update Checker
+    document.getElementById('btn-buscar-atualizacao-sistema')?.addEventListener('click', async () => {
+      const btn = document.getElementById('btn-buscar-atualizacao-sistema') as HTMLButtonElement;
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Verificando... ⏳';
+      }
+      try {
+        const { VersionChecker } = await import('../services/versionChecker');
+        const hasUpdate = await VersionChecker.getInstance().checkForUpdates(true);
+        if (!hasUpdate) {
+          await showCustomAlert('Seu PaxFlow já está rodando na versão mais recente disponível no servidor! ✨', 'Sistema Atualizado');
+        }
+      } catch (err: any) {
+        await showCustomAlert('Erro ao consultar servidor de versões.', 'Erro');
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = '🔍 Verificar Novas Versões Agora';
+        }
+      }
+    });
   }
 
   /**
@@ -2039,7 +2062,30 @@ export class ConfiguracoesPage {
           </div>
         </div>
 
+        <!-- Card de Versão do Sistema & Atualizações -->
+        <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+            <h3 class="text-sm font-black text-slate-800 dark:text-slate-200 tracking-tight flex items-center gap-2">
+              <span>⚡</span> Atualizações e Versão do Sistema
+            </h3>
+            <span class="px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-900/40">
+              v1.0.0
+            </span>
+          </div>
+
+          <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
+            O PaxFlow monitora continuamente a presença de novas versões publicadas no servidor. Quando um novo build ou melhoria estiver disponível, um alerta flutuante avisará os usuários ativos para recarregar sem perda de dados.
+          </p>
+
+          <div class="flex items-center justify-between pt-2">
+            <button id="btn-buscar-atualizacao-sistema" type="button" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl transition shadow-md shadow-indigo-600/20 uppercase tracking-wider flex items-center gap-1.5">
+              🔍 Verificar Novas Versões Agora
+            </button>
+          </div>
+        </div>
+
       </div>
+
     `;
   }
 

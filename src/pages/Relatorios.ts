@@ -1798,7 +1798,15 @@ export class RelatoriosPage {
       }
 
       // Check post-sales contact status for returned travels
-      if (dVolta && dVolta < hoje && dVolta >= limitePos && v.status === 'pos_viagem') {
+      const isPosContatoDone = Boolean(
+        v.pos_contato_concluido ||
+        v.nps_respondido ||
+        v.nps_nota !== undefined ||
+        v.npsNota !== undefined ||
+        v.status === 'concluida'
+      );
+
+      if (dVolta && dVolta < hoje && dVolta >= limitePos && v.status === 'pos_viagem' && !isPosContatoDone) {
         const cNome = this.consultores.find(c => c.id === (v.consultor_id || v.consultorId))?.nome || 'Não designado';
         posVendaPendente.push({
           cliente: v.cliente?.nome || 'Cliente não informado',
@@ -2821,7 +2829,15 @@ export class RelatoriosPage {
         }
 
         // Pending post-sale contact
-        if (dVolta && dVolta < hoje && dVolta >= limitePos && v.status === 'pos_viagem') {
+        const isPosContatoDone = Boolean(
+          v.pos_contato_concluido ||
+          v.nps_respondido ||
+          v.nps_nota !== undefined ||
+          v.npsNota !== undefined ||
+          v.status === 'concluida'
+        );
+
+        if (dVolta && dVolta < hoje && dVolta >= limitePos && v.status === 'pos_viagem' && !isPosContatoDone) {
           csvContent += `"Pós-Venda Pendente";"${clienteNome}";"${v.destino}";"${dataVoltaStr}";"Retornou em pos_viagem"\n`;
         }
       });

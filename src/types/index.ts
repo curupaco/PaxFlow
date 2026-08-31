@@ -253,6 +253,11 @@ export interface Viagem {
   risk_score_justificativa?: string;
   risk_score_justificado_por?: string;
   risk_score_justificado_em?: string;
+  nps_nota?: number;
+  npsNota?: number;
+  nps_respondido?: boolean;
+  nps_respondido_em?: string;
+  pos_contato_concluido?: boolean;
 }
 
 /**

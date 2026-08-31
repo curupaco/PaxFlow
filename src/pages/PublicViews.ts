@@ -483,6 +483,23 @@ export class PublicViews {
 
         if (error) throw error;
 
+        // Atualiza a viagem no banco com a nota NPS e finaliza o SLA pós-viagem
+        try {
+          await supabase
+            .from('viagens')
+            .update({
+              nps_nota: selectedScore,
+              nps_respondido: true,
+              nps_respondido_em: new Date().toISOString(),
+              pos_contato_concluido: true,
+              status: 'concluida',
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', viagemId);
+        } catch (vErr) {
+          console.warn('Aviso ao atualizar viagem com resposta do NPS:', vErr);
+        }
+
         // Renderiza tela de obrigado
         this.renderObrigado(data);
       } catch (err: any) {

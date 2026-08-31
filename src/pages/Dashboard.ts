@@ -682,7 +682,15 @@ export class Dashboard {
     }
 
     // Regra de SLA para "Pós-Viagem" (contato obrigatório pós-retorno dentro do prazo de SLA)
-    if (viagem.status === 'pos_viagem' && viagem.data_volta) {
+    const isPosContatoConcluido = Boolean(
+      viagem.pos_contato_concluido ||
+      viagem.nps_respondido ||
+      viagem.nps_nota !== undefined ||
+      viagem.npsNota !== undefined ||
+      viagem.status === 'concluida'
+    );
+
+    if (viagem.status === 'pos_viagem' && viagem.data_volta && !isPosContatoConcluido) {
       const dataVolta = new Date(viagem.data_volta + 'T00:00:00');
       dataVolta.setHours(0, 0, 0, 0);
 
@@ -697,6 +705,7 @@ export class Dashboard {
         };
       }
     }
+
 
     return { alert: false, type: null, text: '' };
   }

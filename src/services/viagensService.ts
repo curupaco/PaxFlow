@@ -70,7 +70,8 @@ export class ViagensService {
       }
 
       for (const v of rawViagens) {
-        if (v.status === 'reembolso_solicitado' || v.status === 'cancelada') continue;
+        if (v.status === 'reembolso_solicitado' || v.status === 'cancelada' || v.status === 'concluida' || v.pos_contato_concluido) continue;
+
 
         // Auto transition to pre_embarque
         if ((v.status === 'fechado' || v.status === 'pos_venda') && v.data_ida) {
