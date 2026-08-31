@@ -1112,33 +1112,33 @@ export class OrcamentosPage {
           <!-- AÇÕES DO FLUXO (Exibidas na extrema direita) -->
           <div class="flex items-center gap-1.5 shrink-0">
             ${o.status === 'SOLICITADO' ? `
-              <button data-action="iniciar" data-id="${o.id}" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-black tracking-wider uppercase rounded-lg shadow-sm transition flex items-center gap-0.5">
+              <button data-action="iniciar" data-id="${o.id}" class="h-8 px-3 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-black tracking-wider uppercase rounded-lg shadow-sm transition flex items-center justify-center gap-0.5">
                 Iniciar ▶️
               </button>
             ` : ''}
 
             ${o.status === 'EM_ANDAMENTO' ? `
-              <button data-action="inserir-proposta" data-id="${o.id}" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-black tracking-wider uppercase rounded-lg shadow-sm transition flex items-center gap-0.5">
+              <button data-action="inserir-proposta" data-id="${o.id}" class="h-8 px-3 bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-black tracking-wider uppercase rounded-lg shadow-sm transition flex items-center justify-center gap-0.5">
                 Enviar Proposta 📤
               </button>
             ` : ''}
 
             ${o.status === 'AGUARDANDO' ? `
               <div class="flex items-center gap-1">
-                <button data-action="alterar" data-id="${o.id}" title="Alterar Proposta" class="p-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-black rounded-lg transition text-xs">
+                <button data-action="alterar" data-id="${o.id}" title="Alterar Proposta" class="h-8 w-8 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-black rounded-lg transition text-xs flex items-center justify-center">
                   🔄
                 </button>
-                <button data-action="desistir" data-id="${o.id}" title="Desistir" class="p-1.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-900/20 text-rose-600 dark:text-rose-400 font-black rounded-lg transition text-xs">
+                <button data-action="desistir" data-id="${o.id}" title="Desistir" class="h-8 w-8 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-900/20 text-rose-600 dark:text-rose-400 font-black rounded-lg transition text-xs flex items-center justify-center">
                   🚫
                 </button>
-                <button data-action="aceitar" data-id="${o.id}" class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black tracking-wider uppercase rounded-lg shadow-sm transition flex items-center gap-0.5">
+                <button data-action="aceitar" data-id="${o.id}" class="h-8 px-3 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black tracking-wider uppercase rounded-lg shadow-sm transition flex items-center justify-center gap-0.5">
                   Vender 🏆
                 </button>
               </div>
             ` : ''}
 
             ${isAdmin ? `
-              <button data-action="excluir" data-id="${o.id}" title="Excluir Card (Admin Only)" class="p-1 hover:bg-rose-50 dark:hover:bg-rose-950/20 text-slate-300 hover:text-rose-500 rounded transition flex items-center justify-center">
+              <button data-action="excluir" data-id="${o.id}" title="Excluir Card (Admin Only)" class="h-8 w-8 hover:bg-rose-50 dark:hover:bg-rose-950/20 text-slate-400 hover:text-rose-500 rounded-lg transition flex items-center justify-center">
                 <svg width="12" height="12" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
@@ -1294,9 +1294,9 @@ export class OrcamentosPage {
             <p class="text-[10px] text-slate-400 dark:text-slate-400 mt-1">Ex: Casal, Nacional, Luxo, Disney</p>
           </div>
 
-          <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">
-            <button id="btn-cancel-modal" type="button" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs tracking-wider rounded-xl transition uppercase">Cancelar</button>
-            <button type="submit" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/10 transition uppercase">Criar Orçamento</button>
+          <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
+            <button id="btn-cancel-modal" type="button" class="h-10 px-5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs tracking-wider rounded-xl transition uppercase flex items-center justify-center">Cancelar</button>
+            <button type="submit" class="h-10 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/10 transition uppercase flex items-center justify-center">Criar Orçamento</button>
           </div>
         </form>
       </div>
@@ -1788,9 +1788,9 @@ export class OrcamentosPage {
             ` : ''}
           </div>
 
-          <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">
-            <button id="btn-cancel-modal" type="button" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs tracking-wider rounded-xl transition uppercase">Cancelar</button>
-            <button type="submit" id="btn-submit-proposta" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/10 transition uppercase">Avançar Orçamento 🚀</button>
+          <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
+            <button id="btn-cancel-modal" type="button" class="h-10 px-5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs tracking-wider rounded-xl transition uppercase flex items-center justify-center">Cancelar</button>
+            <button type="submit" id="btn-submit-proposta" class="h-10 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/10 transition uppercase flex items-center justify-center">Avançar Orçamento 🚀</button>
           </div>
         </form>
       </div>
@@ -2136,9 +2136,9 @@ export class OrcamentosPage {
             </div>
           </div>
 
-          <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">
-            <button id="btn-cancel-modal" type="button" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs tracking-wider rounded-xl transition uppercase">Cancelar</button>
-            <button type="submit" id="btn-submit-fechar" class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-emerald-600/10 transition uppercase">Emitir Viagem & Confirmar 🏆</button>
+          <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
+            <button id="btn-cancel-modal" type="button" class="h-10 px-5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs tracking-wider rounded-xl transition uppercase flex items-center justify-center">Cancelar</button>
+            <button type="submit" id="btn-submit-fechar" class="h-10 px-6 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-emerald-600/10 transition uppercase flex items-center justify-center">Emitir Viagem & Confirmar 🏆</button>
           </div>
         </form>
       </div>
@@ -2367,9 +2367,9 @@ export class OrcamentosPage {
             </select>
           </div>
 
-          <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">
-            <button id="btn-cancel-modal" type="button" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs tracking-wider rounded-xl transition uppercase">Cancelar</button>
-            <button type="submit" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/10 transition uppercase">Confirmar Transferência</button>
+          <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
+            <button id="btn-cancel-modal" type="button" class="h-10 px-5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs tracking-wider rounded-xl transition uppercase flex items-center justify-center">Cancelar</button>
+            <button type="submit" class="h-10 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/10 transition uppercase flex items-center justify-center">Confirmar Transferência</button>
           </div>
         </form>
       </div>
@@ -2687,9 +2687,9 @@ export class OrcamentosPage {
             </select>
           </div>
 
-          <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">
-            <button id="btn-cancel-modal" type="button" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs tracking-wider rounded-xl transition uppercase">Cancelar</button>
-            <button type="submit" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/10 transition uppercase">Agendar Alerta</button>
+          <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
+            <button id="btn-cancel-modal" type="button" class="h-10 px-5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs tracking-wider rounded-xl transition uppercase flex items-center justify-center">Cancelar</button>
+            <button type="submit" class="h-10 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/10 transition uppercase flex items-center justify-center">Agendar Alerta</button>
           </div>
         </form>
       </div>
@@ -2795,9 +2795,9 @@ export class OrcamentosPage {
             <input id="input-motivo-customizado" type="text" placeholder="Digite o motivo da desistência..." class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
           </div>
 
-          <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">
-            <button id="btn-cancel-modal" type="button" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs tracking-wider rounded-xl transition uppercase">Cancelar</button>
-            <button type="submit" class="px-6 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-rose-600/10 transition uppercase">Confirmar Desistência</button>
+          <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
+            <button id="btn-cancel-modal" type="button" class="h-10 px-5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs tracking-wider rounded-xl transition uppercase flex items-center justify-center">Cancelar</button>
+            <button type="submit" class="h-10 px-6 bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-rose-600/10 transition uppercase flex items-center justify-center">Confirmar Desistência</button>
           </div>
         </form>
       </div>

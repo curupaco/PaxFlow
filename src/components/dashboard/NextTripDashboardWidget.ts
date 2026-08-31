@@ -170,16 +170,16 @@ export class NextTripDashboardWidget {
                     ` : ''}
 
                     <!-- Ações Rápidas 1-Clique -->
-                    <div class="flex items-center gap-2 pt-2 border-t border-slate-700/50">
-                      <button class="btn-drawer-orc flex-1 px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-extrabold uppercase transition flex items-center justify-center gap-1" data-cliente-id="${op.clienteId}">
+                    <div class="flex items-stretch gap-2 pt-2 border-t border-slate-700/50">
+                      <button class="btn-drawer-orc h-10 flex-1 px-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-[11px] font-extrabold uppercase transition flex items-center justify-center gap-1 whitespace-nowrap overflow-hidden text-ellipsis" data-cliente-id="${op.clienteId}">
                         <span>🎯 Criar Orçamento</span>
                       </button>
 
-                      <button class="btn-drawer-wsp flex-1 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-extrabold uppercase transition flex items-center justify-center gap-1" data-cliente-id="${op.clienteId}">
+                      <button class="btn-drawer-wsp h-10 flex-1 px-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-[11px] font-extrabold uppercase transition flex items-center justify-center gap-1 whitespace-nowrap overflow-hidden text-ellipsis" data-cliente-id="${op.clienteId}">
                         <span>💬 WhatsApp</span>
                       </button>
 
-                      <button class="btn-drawer-snooze px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-xl text-xs font-bold transition" title="Adiar por 30 dias" data-cliente-id="${op.clienteId}">
+                      <button class="btn-drawer-snooze h-10 w-10 shrink-0 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-xl text-xs font-bold transition flex items-center justify-center" title="Adiar por 30 dias" data-cliente-id="${op.clienteId}">
                         <span>⏸️</span>
                       </button>
                     </div>

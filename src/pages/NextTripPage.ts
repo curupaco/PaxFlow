@@ -322,16 +322,16 @@ export class NextTripPage {
         })()}
 
         <!-- Botões de Ação Rápida 1-Clique -->
-        <div class="flex items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-          <button class="btn-next-trip-orc flex-1 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-extrabold uppercase tracking-wide transition shadow-md flex items-center justify-center gap-1.5" data-cliente-id="${op.clienteId}">
+        <div class="flex items-stretch gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+          <button class="btn-next-trip-orc h-10 flex-1 px-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-[11px] font-extrabold uppercase tracking-wide transition shadow-sm flex items-center justify-center gap-1 whitespace-nowrap overflow-hidden text-ellipsis" data-cliente-id="${op.clienteId}">
             <span>🎯 Criar Orçamento</span>
           </button>
 
-          <button class="btn-next-trip-wsp flex-1 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-extrabold uppercase tracking-wide transition shadow-md flex items-center justify-center gap-1.5" data-cliente-id="${op.clienteId}">
+          <button class="btn-next-trip-wsp h-10 flex-1 px-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[11px] font-extrabold uppercase tracking-wide transition shadow-sm flex items-center justify-center gap-1 whitespace-nowrap overflow-hidden text-ellipsis" data-cliente-id="${op.clienteId}">
             <span>💬 WhatsApp</span>
           </button>
 
-          <button class="btn-next-trip-snooze px-3 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-bold transition" title="Adiar abordagem por 30 dias" data-cliente-id="${op.clienteId}">
+          <button class="btn-next-trip-snooze h-10 w-10 shrink-0 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-bold transition flex items-center justify-center" title="Adiar abordagem por 30 dias" data-cliente-id="${op.clienteId}">
             <span>⏸️</span>
           </button>
         </div>
