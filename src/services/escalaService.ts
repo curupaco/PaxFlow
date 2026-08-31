@@ -496,7 +496,9 @@ export class EscalaService {
     // Criar lembretes na Inbox para garantir que Administradores recebam o alerta em tempo real em qualquer dispositivo
     try {
       if (newObj.status === 'pendente_admin') {
-        const { data: admins } = await supabase.from('profiles').select('id').eq('role', 'admin');
+        const { data: adminsData } = await supabase.from('profiles').select('id, role');
+        const admins = (adminsData || []).filter(a => (a.role || '').toLowerCase() === 'admin');
+
         if (admins && admins.length > 0) {
           const tipoLabel = newObj.tipo === 'troca' ? 'Troca de Turno' : newObj.tipo === 'folga' ? 'Folga Semanal' : newObj.tipo === 'ferias' ? 'Férias' : 'Atendimento no Balcão';
           for (const admin of admins) {
@@ -546,6 +548,38 @@ export class EscalaService {
     }
 
     return newObj;
+  }
+
+  /**
+   * Permite que o consultor solicitante cancele sua própria solicitação se estiver pendente
+   */
+  public static async cancelarSolicitacao(solicitacaoId: string, userId: string): Promise<boolean> {
+    const list = await this.loadSolicitacoes();
+    const target = list.find(s => s.id === solicitacaoId);
+    if (!target) return false;
+
+    if (target.status !== 'pendente_colega' && target.status !== 'pendente_admin') {
+      return false;
+    }
+
+    target.status = 'recusado';
+    target.resposta_admin = 'Cancelada pelo próprio solicitante';
+    target.updated_at = new Date().toISOString();
+
+    localStorage.setItem(this.LOCAL_STORAGE_SOLICITACOES_KEY, JSON.stringify(list));
+
+    try {
+      await supabase
+        .from('escala_solicitacoes')
+        .update({
+          status: 'recusado',
+          resposta_admin: 'Cancelada pelo próprio solicitante',
+          updated_at: target.updated_at
+        })
+        .eq('id', solicitacaoId);
+    } catch (e) {}
+
+    return true;
   }
 
   /**

@@ -2536,6 +2536,17 @@ export class InboxPage {
       const customVal = (document.getElementById('modal-escala-custom') as HTMLInputElement).value.trim();
       const finalVal = customVal || selectVal;
 
+      const currentVal = this.escalaData[consultor]?.[dayIdx] || '';
+      const isCurrentlyOffOrVacation = currentVal === 'Folga' || currentVal === 'Férias';
+      const isSettingWorkShift = finalVal && finalVal !== 'Folga' && finalVal !== 'Férias' && finalVal !== '';
+
+      if (isCurrentlyOffOrVacation && isSettingWorkShift) {
+        const confirmMsg = `⚠️ ALERTA DE CONFLITO OPERACIONAL:\n\n${consultor} está registrado(a) como "${currentVal}" no dia ${dayIdx + 1}/${this.escalaMes}.\n\nDeseja realmente sobrepor este registro por um turno de trabalho normal (${finalVal})?`;
+        if (!confirm(confirmMsg)) {
+          return;
+        }
+      }
+
       await EscalaService.salvarCelulaEscala(this.escalaAno, this.escalaMes, consultor, dayIdx, finalVal);
       await this.loadEscalaData();
       close();
@@ -3207,9 +3218,12 @@ export class InboxPage {
       return;
     }
 
+    const isSolicitante = (String(sol.solicitante_id) === String(this.user?.id) || sol.solicitante_nome === this.perfil?.nome);
     const isUserColega = (String(sol.destinatario_id) === String(this.user?.id) || sol.destinatario_nome === this.perfil?.nome);
     const isPendenteColega = sol.status === 'pendente_colega';
     const isPendenteConsultor = sol.status === 'pendente_consultor';
+    const isAdmin = (this.perfil?.role || '').toLowerCase() === 'admin';
+    const isPendente = isPendenteColega || sol.status === 'pendente_admin';
 
     let actionButtonsHtml = '';
     if (isPendenteConsultor && isUserColega) {
@@ -3222,10 +3236,25 @@ export class InboxPage {
         <button id="btn-decidir-recusar" class="px-4 py-2 text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 rounded-xl transition">Recusar Troca</button>
         <button id="btn-decidir-aprovar" class="px-5 py-2 text-xs font-black text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition shadow-md shadow-emerald-600/20">Aceitar e Enviar para Gestão</button>
       `;
-    } else {
+    } else if (isAdmin && (sol.status === 'pendente_admin' || isPendenteColega)) {
       actionButtonsHtml = `
         <button id="btn-decidir-recusar" class="px-4 py-2 text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 rounded-xl transition">Recusar</button>
         <button id="btn-decidir-aprovar" class="px-5 py-2 text-xs font-black text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition shadow-md shadow-emerald-600/20">Aprovar e Atualizar Escala</button>
+      `;
+    } else {
+      actionButtonsHtml = `
+        <div class="flex items-center justify-between w-full">
+          <span class="text-xs font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-3.5 py-2 rounded-xl border border-amber-200 dark:border-amber-900/50 flex items-center gap-1.5">
+            <span>⏳</span>
+            <span>Aguardando aprovação da gestão</span>
+          </span>
+          <div class="flex items-center gap-2">
+            ${isSolicitante && isPendente ? `
+              <button id="btn-decidir-cancelar" class="px-3.5 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl transition border border-rose-200 dark:border-rose-900/50">Cancelar Solicitação</button>
+            ` : ''}
+            <button id="modal-decidir-close-btn" class="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition">Fechar</button>
+          </div>
+        </div>
       `;
     }
 
@@ -3256,10 +3285,12 @@ export class InboxPage {
               <p><strong>Status Atual:</strong> <span class="px-2 py-0.5 rounded text-[10px] font-bold ${sol.status === 'aprovado' ? 'bg-emerald-500/20 text-emerald-600' : sol.status === 'recusado' ? 'bg-rose-500/20 text-rose-600' : 'bg-amber-500/20 text-amber-600'}">${sol.status === 'aprovado' ? 'Aprovada' : sol.status === 'recusado' ? 'Recusada' : 'Em Análise'}</span></p>
             </div>
 
-            <div>
-              <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Observação / Justificativa</label>
-              <input id="decidir-resposta-admin" type="text" placeholder="Ex: De acordo com a troca de horário..." class="w-full text-xs font-semibold p-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-            </div>
+            ${isAdmin ? `
+              <div>
+                <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Observação / Justificativa</label>
+                <input id="decidir-resposta-admin" type="text" placeholder="Ex: De acordo com a troca de horário..." class="w-full text-xs font-semibold p-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              </div>
+            ` : ''}
           </div>
 
           <div class="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
@@ -3275,37 +3306,57 @@ export class InboxPage {
     document.body.appendChild(modalEl);
 
     const closeBtn = modalEl.querySelector('#modal-decidir-close')!;
-    const btnAprovar = modalEl.querySelector('#btn-decidir-aprovar')!;
-    const btnRecusar = modalEl.querySelector('#btn-decidir-recusar')!;
+    const closeSecondaryBtn = modalEl.querySelector('#modal-decidir-close-btn');
+    const btnAprovar = modalEl.querySelector('#btn-decidir-aprovar');
+    const btnRecusar = modalEl.querySelector('#btn-decidir-recusar');
+    const btnCancelar = modalEl.querySelector('#btn-decidir-cancelar');
 
     const close = () => modalEl.remove();
     (closeBtn as HTMLElement).onclick = close;
+    if (closeSecondaryBtn) (closeSecondaryBtn as HTMLElement).onclick = close;
 
-    (btnAprovar as HTMLElement).onclick = async () => {
-      const resp = (modalEl.querySelector('#decidir-resposta-admin') as HTMLInputElement).value.trim();
-      const novoStatus = isPendenteColega ? 'pendente_admin' : 'aprovado';
-      await EscalaService.atualizarStatusSolicitacao(sol.id, novoStatus, resp);
-      close();
-      const msg = isPendenteColega 
-        ? 'Troca aceita! Encaminhada para aprovação da gestão.' 
-        : (isPendenteConsultor ? 'Proposta aceita! Escala atualizada automaticamente e administradores notificados.' : 'Solicitação aprovada e escala atualizada!');
-      this.showToast(msg, 'success');
-      await this.loadEscalaData();
-      await this.loadAndBuildAlerts();
-      this.render();
-      this.setupEventListeners();
-    };
+    if (btnCancelar) {
+      (btnCancelar as HTMLElement).onclick = async () => {
+        if (!confirm('Deseja realmente cancelar esta solicitação de escala?')) return;
+        await EscalaService.cancelarSolicitacao(sol.id, this.user?.id || '');
+        close();
+        this.showToast('Solicitação cancelada com sucesso.', 'success');
+        await this.loadEscalaData();
+        await this.loadAndBuildAlerts();
+        this.render();
+        this.setupEventListeners();
+      };
+    }
 
-    (btnRecusar as HTMLElement).onclick = async () => {
-      const resp = (modalEl.querySelector('#decidir-resposta-admin') as HTMLInputElement).value.trim();
-      await EscalaService.atualizarStatusSolicitacao(sol.id, 'recusado', resp);
-      close();
-      this.showToast('Solicitação recusada com sucesso.', 'success');
-      await this.loadEscalaData();
-      await this.loadAndBuildAlerts();
-      this.render();
-      this.setupEventListeners();
-    };
+    if (btnAprovar) {
+      (btnAprovar as HTMLElement).onclick = async () => {
+        const resp = (modalEl.querySelector('#decidir-resposta-admin') as HTMLInputElement)?.value?.trim() || '';
+        const novoStatus = isPendenteColega ? 'pendente_admin' : 'aprovado';
+        await EscalaService.atualizarStatusSolicitacao(sol.id, novoStatus, resp);
+        close();
+        const msg = isPendenteColega 
+          ? 'Troca aceita! Encaminhada para aprovação da gestão.' 
+          : (isPendenteConsultor ? 'Proposta aceita! Escala atualizada automaticamente e administradores notificados.' : 'Solicitação aprovada e escala atualizada!');
+        this.showToast(msg, 'success');
+        await this.loadEscalaData();
+        await this.loadAndBuildAlerts();
+        this.render();
+        this.setupEventListeners();
+      };
+    }
+
+    if (btnRecusar) {
+      (btnRecusar as HTMLElement).onclick = async () => {
+        const resp = (modalEl.querySelector('#decidir-resposta-admin') as HTMLInputElement)?.value?.trim() || '';
+        await EscalaService.atualizarStatusSolicitacao(sol.id, 'recusado', resp);
+        close();
+        this.showToast('Solicitação recusada com sucesso.', 'success');
+        await this.loadEscalaData();
+        await this.loadAndBuildAlerts();
+        this.render();
+        this.setupEventListeners();
+      };
+    }
   }
 }
 
