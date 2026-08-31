@@ -43,7 +43,7 @@ export class NextTripDashboardWidget {
       `;
 
       this.container.querySelector('#btn-open-full-next-trip-empty')?.addEventListener('click', () => {
-        window.location.hash = '#next-trip';
+        window.dispatchEvent(new CustomEvent('paxflow-navigate', { detail: { page: 'next-trip' } }));
       });
 
       return;
@@ -83,7 +83,7 @@ export class NextTripDashboardWidget {
     });
 
     this.container.querySelector('#btn-open-full-next-trip')?.addEventListener('click', () => {
-      window.location.hash = '#next-trip';
+      window.dispatchEvent(new CustomEvent('paxflow-navigate', { detail: { page: 'next-trip' } }));
     });
   }
 
@@ -210,7 +210,7 @@ export class NextTripDashboardWidget {
     portal.querySelector('#btn-close-next-trip-drawer')?.addEventListener('click', closeDrawer);
     portal.querySelector('#btn-drawer-full-page')?.addEventListener('click', () => {
       closeDrawer();
-      window.location.hash = '#next-trip';
+      window.dispatchEvent(new CustomEvent('paxflow-navigate', { detail: { page: 'next-trip' } }));
     });
 
     // Listeners de Ações dentro do Drawer

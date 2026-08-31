@@ -1061,6 +1061,24 @@ class App {
       HelpModal.open();
       this.toggleMobileMenu(false);
     });
+
+    // Suporte para rota por Hash (#next-trip, #orcamentos, etc)
+    window.addEventListener('hashchange', () => {
+      const hashRaw = window.location.hash.replace('#', '');
+      const hashPage = hashRaw.split('?')[0];
+      if (hashPage && pages.includes(hashPage)) {
+        this.navigate(hashPage);
+      }
+    });
+
+    // Suporte a disparos globais de navegação da SPA
+    window.addEventListener('paxflow-navigate', (e: any) => {
+      const page = e.detail?.page;
+      if (page) {
+        window.location.hash = `#${page}`;
+        this.navigate(page, e.detail?.extraId);
+      }
+    });
   }
 
   /**
