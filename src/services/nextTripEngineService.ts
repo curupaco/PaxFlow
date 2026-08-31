@@ -2,6 +2,38 @@ import { GlobalSettings, NextTripOpportunity } from '../types';
 
 export class NextTripEngineService {
   /**
+   * Converte strings de datas nos formatos BR (DD/MM/AAAA) ou ISO para um objeto Date válido.
+   */
+  public static parseDataSegura(rawDate: any): Date | null {
+    if (!rawDate) return null;
+    if (rawDate instanceof Date) return isNaN(rawDate.getTime()) ? null : rawDate;
+
+    if (typeof rawDate === 'string') {
+      const str = rawDate.trim();
+      if (!str) return null;
+
+      // Formato BR: DD/MM/AAAA ou DD/MM/AAAA HH:mm
+      if (/^\d{1,2}\/\d{1,2}\/\d{4}/.test(str)) {
+        const parts = str.split(' ')[0].split('/');
+        if (parts.length === 3) {
+          const d = parseInt(parts[0], 10);
+          const m = parseInt(parts[1], 10) - 1;
+          const y = parseInt(parts[2], 10);
+          const dt = new Date(y, m, d);
+          return isNaN(dt.getTime()) ? null : dt;
+        }
+      }
+
+      // Formato ISO ou YYYY-MM-DD
+      const dt = new Date(str.includes('T') ? str : `${str}T00:00:00`);
+      return isNaN(dt.getTime()) ? null : dt;
+    }
+
+    const dt = new Date(rawDate);
+    return isNaN(dt.getTime()) ? null : dt;
+  }
+
+  /**
    * Calcula as oportunidades de recompra para os clientes da agência
    */
   public static calculateOpportunities(
@@ -69,11 +101,13 @@ export class NextTripEngineService {
 
       if (cViagens.length === 0) return;
 
-      // Ordena viagens da mais recente para a mais antiga
+      // Ordena viagens da mais recente para a mais antiga usando parsing de data seguro
       cViagens.sort((a, b) => {
-        const dA = new Date(a.data_volta || a.dataVolta || a.data_ida || a.dataIda || a.created_at || a.createdAt || 0).getTime();
-        const dB = new Date(b.data_volta || b.dataVolta || b.data_ida || b.dataIda || b.created_at || b.createdAt || 0).getTime();
-        return dB - dA;
+        const dateA = NextTripEngineService.parseDataSegura(a.data_volta || a.dataVolta || a.data_ida || a.dataIda || a.created_at || a.createdAt);
+        const dateB = NextTripEngineService.parseDataSegura(b.data_volta || b.dataVolta || b.data_ida || b.dataIda || b.created_at || b.createdAt);
+        const tA = dateA ? dateA.getTime() : 0;
+        const tB = dateB ? dateB.getTime() : 0;
+        return tB - tA;
       });
 
       const ultimaViagem = cViagens[0];
@@ -88,9 +122,14 @@ export class NextTripEngineService {
       const temViagemFutura = cViagens.some(v => {
         const dIda = v.data_ida || v.dataIda;
         if (!dIda) return false;
-        return new Date(dIda).getTime() > agora.getTime();
+        const parsedIda = NextTripEngineService.parseDataSegura(dIda);
+        return parsedIda ? parsedIda.getTime() > agora.getTime() : false;
       });
-      if (temViagemFutura || orcamentosAbertosPorCliente.has(cliente.id)) {
+
+      const temOrcamentoAberto = orcamentosAbertosPorCliente.has(cliente.id) ||
+                                (clienteEmailKey && orcamentosAbertosPorCliente.has(clienteEmailKey));
+
+      if (temViagemFutura || temOrcamentoAberto) {
         return;
       }
 
@@ -116,13 +155,17 @@ export class NextTripEngineService {
 
       // 1. Sazonalidade (30 pontos max)
       const rawDate = ultimaViagem.data_volta || ultimaViagem.dataVolta || ultimaViagem.data_ida || ultimaViagem.dataIda || ultimaViagem.created_at || ultimaViagem.createdAt;
-      const dataVolta = rawDate ? new Date(rawDate) : agora;
-      const diffMeses = Math.floor((agora.getTime() - dataVolta.getTime()) / (1000 * 60 * 60 * 24 * 30.43));
+      const dataVolta = NextTripEngineService.parseDataSegura(rawDate);
+      if (!dataVolta) return;
 
-      // Se a viagem foi concluída há menos de 3 meses ou está no futuro, não é uma oportunidade de recompra ainda
-      if (diffMeses < 3) {
-        return;
-      }
+      const diffMs = agora.getTime() - dataVolta.getTime();
+      // Se a data de volta é no futuro ou ocorreu há menos de 90 dias (3 meses), ignora (não é janela de recompra)
+      if (diffMs < 0) return;
+
+      const diffDias = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+      if (diffDias < 90) return; // Menos de 3 meses pós-viagem
+
+      const diffMeses = Math.floor(diffDias / 30.43);
 
       if (diffMeses >= 10 && diffMeses <= 14) {
         scoreSazonalidade = 30; // Janela ideal de ~1 ano
