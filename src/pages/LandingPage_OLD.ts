@@ -1363,7 +1363,7 @@ export class LandingPageOLD {
 
       // Limpa chaves anteriores de sandbox do localStorage para forçar reset ao iniciar demo ("reiniciou, perdeu")
       Object.keys(localStorage).forEach(key => {
-        if (key.startsWith('sandbox-')) {
+        if ((key.startsWith('sandbox-') || key.startsWith('paxflow-')) && key !== 'theme' && key !== 'paxflow-sidebar-collapsed') {
           localStorage.removeItem(key);
         }
       });

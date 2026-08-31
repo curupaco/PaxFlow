@@ -981,7 +981,9 @@ export class LandingPage {
       (window as any).paxflowSandbox = true;
       sessionStorage.setItem('paxflowSandbox', 'true');
       Object.keys(localStorage).forEach(key => {
-        if (key.startsWith('sandbox-')) localStorage.removeItem(key);
+        if ((key.startsWith('sandbox-') || key.startsWith('paxflow-')) && key !== 'theme' && key !== 'paxflow-sidebar-collapsed') {
+          localStorage.removeItem(key);
+        }
       });
       if (window.location.pathname !== '/' || window.location.search || window.location.hash) {
         window.location.href = '/';

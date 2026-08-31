@@ -41,7 +41,7 @@ const normalizeMockItem = (item: any): any => {
   const newItem = { ...item };
   
   const mappings: Record<string, string> = {
-    // budgets
+    // budgets & generic ids
     consultorId: 'consultor_id',
     clienteId: 'cliente_id',
     nomeCliente: 'nome_cliente',
@@ -66,6 +66,8 @@ const normalizeMockItem = (item: any): any => {
     valorTotal: 'valor_total',
     codigoLocalizador: 'codigo_localizador',
     dataFinanceiro: 'data_financeiro',
+    npsNota: 'nps_nota',
+    isProcessoConferido: 'processo_conferido',
     
     // products
     viagemId: 'viagem_id',
@@ -105,63 +107,87 @@ const normalizeMockItem = (item: any): any => {
 };
 
 const getMockDataForTable = (table: string): any[] => {
+  let defaultData: any[] = [];
   const localData = localStorage.getItem(`sandbox-paxflow-${table}`);
   if (localData) {
     try { 
-      return JSON.parse(localData).map((item: any) => normalizeMockItem(item)); 
+      defaultData = JSON.parse(localData); 
     } catch (e) {}
   }
-  let defaultData: any[] = [];
-  if (table === 'clientes') defaultData = MOCK_CLIENTES;
-  else if (table === 'viagens') defaultData = MOCK_VIAGENS;
-  else if (table === 'produtos_viagem') defaultData = MOCK_PRODUTOS;
-  else if (table === 'orcamentos') defaultData = MOCK_ORCAMENTOS;
-  else if (table === 'profiles') defaultData = MOCK_CONSULTORES;
-  else if (table === 'reembolsos') defaultData = MOCK_REEMBOLSOS;
-  else if (table === 'tipos_produto') defaultData = MOCK_TIPOS_PRODUTO;
-  else if (table === 'lembretes') defaultData = [];
-  else if (table === 'notificacoes') {
-    defaultData = MOCK_ALERTS.map((a, index) => ({
-      id: a.id.replace('mention-', '').replace('passport-', '').replace('refund-', ''),
-      user_id: 'sandbox-user-id',
-      tipo_item: a.type === 'passport' ? 'viagem' : 'mensagem',
-      item_id: a.targetId,
-      parent_id: a.targetId,
-      lida: a.arquivado,
-      arquivada: a.arquivado,
-      created_at: a.createdAt,
-      comentario: a.type === 'mention' ? { texto: a.body.substring(0, 100) } : null,
-      mensagem: a.type === 'direct_message' ? {
+  if (!defaultData || defaultData.length === 0) {
+    if (table === 'clientes') defaultData = MOCK_CLIENTES;
+    else if (table === 'viagens') defaultData = MOCK_VIAGENS;
+    else if (table === 'produtos_viagem') defaultData = MOCK_PRODUTOS;
+    else if (table === 'orcamentos') defaultData = MOCK_ORCAMENTOS;
+    else if (table === 'profiles') defaultData = MOCK_CONSULTORES;
+    else if (table === 'reembolsos') defaultData = MOCK_REEMBOLSOS;
+    else if (table === 'tipos_produto') defaultData = MOCK_TIPOS_PRODUTO;
+    else if (table === 'lembretes') defaultData = [];
+    else if (table === 'notificacoes') {
+      defaultData = MOCK_ALERTS.map((a, index) => ({
+        id: a.id.replace('mention-', '').replace('passport-', '').replace('refund-', ''),
+        user_id: 'sandbox-user-id',
+        tipo_item: a.type === 'passport' ? 'viagem' : 'mensagem',
+        item_id: a.targetId,
+        parent_id: a.targetId,
+        lida: a.arquivado,
+        arquivada: a.arquivado,
+        created_at: a.createdAt,
+        comentario: a.type === 'mention' ? { texto: a.body.substring(0, 100) } : null,
+        mensagem: a.type === 'direct_message' ? {
+          id: a.targetId,
+          assunto: a.title,
+          conteudo: a.body,
+          created_at: a.createdAt,
+          remetente_id: a.senderId,
+          remetente: MOCK_CONSULTORES.find(c => c.id === a.senderId) || MOCK_CONSULTORES[1]
+        } : null
+      }));
+    } else if (table === 'mensagens_diretas') {
+      defaultData = MOCK_ALERTS.filter(a => a.type === 'direct_message').map(a => ({
         id: a.targetId,
+        remetente_id: a.senderId,
         assunto: a.title,
         conteudo: a.body,
         created_at: a.createdAt,
-        remetente_id: a.senderId,
         remetente: MOCK_CONSULTORES.find(c => c.id === a.senderId) || MOCK_CONSULTORES[1]
-      } : null
-    }));
-  } else if (table === 'mensagens_diretas') {
-    defaultData = MOCK_ALERTS.filter(a => a.type === 'direct_message').map(a => ({
-      id: a.targetId,
-      remetente_id: a.senderId,
-      assunto: a.title,
-      conteudo: a.body,
-      created_at: a.createdAt,
-      remetente: MOCK_CONSULTORES.find(c => c.id === a.senderId) || MOCK_CONSULTORES[1]
-    }));
-  } else if (table === 'profiles_xp_logs') {
-    defaultData = MOCK_CONSULTORES.map(c => ({
-      id: `initial-xp-${c.id}`,
-      profile_id: c.id,
-      acao_chave: 'carga_inicial_xp',
-      xp_ganho: c.xp || 0,
-      created_at: new Date().toISOString()
-    }));
-  } else if (table === 'profiles_badges') {
-    defaultData = [];
+      }));
+    } else if (table === 'profiles_xp_logs') {
+      defaultData = MOCK_CONSULTORES.map(c => ({
+        id: `initial-xp-${c.id}`,
+        profile_id: c.id,
+        acao_chave: 'carga_inicial_xp',
+        xp_ganho: c.xp || 0,
+        created_at: new Date().toISOString()
+      }));
+    } else if (table === 'profiles_badges') {
+      defaultData = [];
+    }
   }
-  
-  const normalized = defaultData.map((item: any) => normalizeMockItem(item));
+
+  let normalized = defaultData.map((item: any) => normalizeMockItem(item));
+
+  // Enriquecer dados relacionais para viagens no mock
+  if (table === 'viagens') {
+    const clientesDb = MOCK_CLIENTES.map(c => normalizeMockItem(c));
+    const produtosDb = MOCK_PRODUTOS.map(p => normalizeMockItem(p));
+    const reembolsosDb = MOCK_REEMBOLSOS.map(r => normalizeMockItem(r));
+
+    normalized = normalized.map((v: any) => {
+      const cli = clientesDb.find((c: any) => c.id === (v.cliente_id || v.clienteId));
+      const prods = produtosDb.filter((p: any) => (p.viagem_id || p.viagemId) === v.id);
+      const reembs = reembolsosDb.filter((r: any) => (r.viagem_id || r.viagemId) === v.id);
+
+      return {
+        ...v,
+        cliente: v.cliente || cli || null,
+        cliente_nome: v.cliente_nome || (cli ? cli.nome : 'Cliente Sandbox'),
+        produtos: (v.produtos && v.produtos.length > 0) ? v.produtos : prods,
+        reembolsos: (v.reembolsos && v.reembolsos.length > 0) ? v.reembolsos : reembs
+      };
+    });
+  }
+
   localStorage.setItem(`sandbox-paxflow-${table}`, JSON.stringify(normalized));
   return normalized;
 };

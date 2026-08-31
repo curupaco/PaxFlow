@@ -135,9 +135,9 @@ class App {
 
     if (sessionStorage.getItem('paxflowSandbox') === 'true') {
       (window as any).paxflowSandbox = true;
-      // Garante o comportamento 'reiniciou, perdeu': limpa as chaves temporárias para carregar o mock limpo
+      // Garante o comportamento 'reiniciou, perdeu': limpa as chaves temporárias do localStorage para carregar os dados novos do mock
       Object.keys(localStorage).forEach(key => {
-        if (key.startsWith('sandbox-')) {
+        if ((key.startsWith('sandbox-') || key.startsWith('paxflow-')) && key !== 'theme' && key !== 'paxflow-sidebar-collapsed') {
           localStorage.removeItem(key);
         }
       });
