@@ -148,6 +148,36 @@ export class UpsellEngineService {
       });
     }
 
+    // GATILHO NACIONAL / FALLBACK 1: Transfer & Traslado Terrestre Privativo
+    if (!temTransfer) {
+      oportunidades.push({
+        id: 'upsell-transfer-nacional',
+        tipo: 'transfer_privativo',
+        titulo: '🚘 Transfer Privativo & Traslado VIP',
+        descricao: `Destino ${destino || 'Nacional'}. Incluir receptivo com motorista privativo na chegada agrega grande valor ao pacote.`,
+        produtoSugerido: 'Transfer Privativo Receptivo (Aeroporto ↔ Hotel / Passeios)',
+        categoriaProduto: 'transfer',
+        valorEstimado: 380,
+        badgeTexto: '+R$ 380 Média',
+        corBadge: 'bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border-indigo-500/30'
+      });
+    }
+
+    // GATILHO NACIONAL / FALLBACK 2: Seguro Viagem Nacional & Bagagem
+    if (!temSeguro) {
+      oportunidades.push({
+        id: 'upsell-seguro-nacional',
+        tipo: 'seguro_saude',
+        titulo: '🛡️ Seguro Viagem Nacional & Bagagem Protegida',
+        descricao: 'Proteção hospitalar e extravio de bagagem para viagens pelo Brasil com custo acessível e excelente margem.',
+        produtoSugerido: 'Seguro Viagem Brasil (Cobertura R$ 30.000 + Bagagem)',
+        categoriaProduto: 'seguro',
+        valorEstimado: 220,
+        badgeTexto: '+R$ 220 Margem',
+        corBadge: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
+      });
+    }
+
     return oportunidades;
   }
 }
