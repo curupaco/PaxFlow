@@ -190,7 +190,7 @@ export class GlobalHeaderSearch {
             <div class="flex items-center justify-between gap-2 bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200 dark:border-slate-700 text-xs">
               <div class="truncate">
                 <span class="block font-bold text-slate-800 dark:text-slate-100 truncate">✈️ ${v.titulo}</span>
-                <span class="block text-[10px] text-indigo-500 font-semibold">Titular: ${v.consultorNome}</span>
+                <span class="block text-[10px] text-indigo-500 font-semibold">Consultor: ${v.consultorNome}</span>
               </div>
               <button class="global-open-trip shrink-0 px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md text-[10px] font-black uppercase transition shadow-sm" data-trip-id="${v.id}">
                 Atender 🤝
@@ -203,7 +203,7 @@ export class GlobalHeaderSearch {
             <div class="flex items-center justify-between gap-2 bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200 dark:border-slate-700 text-xs">
               <div class="truncate">
                 <span class="block font-bold text-slate-800 dark:text-slate-100 truncate">📋 ${o.titulo}</span>
-                <span class="block text-[10px] text-amber-500 font-semibold">Titular: ${o.consultorNome} · ${o.total}</span>
+                <span class="block text-[10px] text-amber-500 font-semibold">Consultor: ${o.consultorNome} · ${o.total}</span>
               </div>
               <button class="global-open-orc shrink-0 px-3 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-md text-[10px] font-black uppercase transition shadow-sm" data-orc-id="${o.id}">
                 Atender 🤝

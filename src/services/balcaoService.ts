@@ -97,7 +97,7 @@ export class BalcaoService {
             item.viagens.push({
               id: v.id,
               titulo: v.titulo || v.nome_viagem || `Viagem para ${v.destino || 'Destino'}`,
-              consultorNome: v.consultor_nome || 'Consultor Titular',
+              consultorNome: v.consultor_nome || 'Agência',
               consultorId: v.consultor_id || '',
               destino: v.destino || 'Destino',
               status: v.status || 'ativa'
@@ -130,7 +130,7 @@ export class BalcaoService {
             item.orcamentos.push({
               id: o.id,
               titulo: o.titulo_orcamento || `Orçamento ${o.codigo_orcamento || ''}`,
-              consultorNome: o.consultor_nome || 'Consultor Titular',
+              consultorNome: o.consultor_nome || 'Agência',
               consultorId: o.consultor_id || '',
               data: o.created_at || '',
               total: o.valor_total ? `R$ ${o.valor_total}` : 'R$ 0,00'

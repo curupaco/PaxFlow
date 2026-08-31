@@ -207,7 +207,7 @@ export class EditTravelModal {
 
       if (isCoPiloto && viagem) {
         const coPilotoNome = this.options.perfil?.nome || 'Consultor';
-        const titularNome = this.options.consultores.find(c => c.id === viagem.consultor_id)?.nome || 'Consultor Titular';
+        const titularNome = this.options.consultores.find(c => c.id === viagem.consultor_id)?.nome || 'Consultor Responsável';
 
         const sessionKey = `paxflow-balcao-logged-${tripId}-${currentUserId}`;
         if (!sessionStorage.getItem(sessionKey)) {

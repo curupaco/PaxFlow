@@ -135,7 +135,7 @@ export class NextTripDashboardWidget {
                     <div class="flex items-center justify-between gap-2 border-b border-slate-700/50 pb-2">
                       <div class="truncate">
                         <h4 class="font-black text-sm text-white truncate">${op.clienteNome}</h4>
-                        <span class="text-[10px] text-slate-400 font-mono">Titular: ${op.consultorNome}</span>
+                        <span class="text-[10px] text-slate-400 font-mono">Consultor: ${op.consultorNome}</span>
                       </div>
                       <span class="px-2.5 py-1 rounded-xl text-xs font-black border ${
                         op.nivelProntidao === 'alto'

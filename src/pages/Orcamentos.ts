@@ -2488,7 +2488,7 @@ export class OrcamentosPage {
     if (isCoPiloto) {
       const coPilotoNome = this.perfil?.nome || 'Consultor';
       const titular = this.consultores.find(c => c.id === orc.consultorId || c.id === (orc as any).consultor_id);
-      const titularNome = titular?.nome || 'Consultor Titular';
+      const titularNome = titular?.nome || 'Consultor Responsável';
 
       const sessionKey = `paxflow-balcao-logged-orc-${id}-${currentUserId}`;
       if (!sessionStorage.getItem(sessionKey)) {

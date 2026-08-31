@@ -1419,7 +1419,7 @@ export class Dashboard {
                   <div class="flex items-center justify-between gap-2 text-xs bg-slate-900/60 p-2.5 rounded-lg border border-slate-700/40">
                     <div class="truncate">
                       <span class="block font-bold text-indigo-200 truncate">✈️ ${v.titulo}</span>
-                      <span class="block text-[10px] text-slate-400">Titular: ${v.consultorNome}</span>
+                      <span class="block text-[10px] text-slate-400">Consultor: ${v.consultorNome}</span>
                     </div>
                     <button class="btn-balcao-open-trip shrink-0 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[10px] font-extrabold transition uppercase shadow-md" data-trip-id="${v.id}">
                       Atender 🤝
@@ -1431,7 +1431,7 @@ export class Dashboard {
                   <div class="flex items-center justify-between gap-2 text-xs bg-slate-900/60 p-2.5 rounded-lg border border-slate-700/40">
                     <div class="truncate">
                       <span class="block font-bold text-amber-200 truncate">📋 ${o.titulo}</span>
-                      <span class="block text-[10px] text-slate-400">Titular: ${o.consultorNome}</span>
+                      <span class="block text-[10px] text-slate-400">Consultor: ${o.consultorNome}</span>
                     </div>
                     <button class="btn-balcao-open-orc shrink-0 px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-[10px] font-extrabold transition uppercase shadow-md" data-orc-id="${o.id}">
                       Atender 🤝

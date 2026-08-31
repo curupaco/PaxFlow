@@ -112,7 +112,7 @@ export class NextTripEngineService {
 
       const ultimaViagem = cViagens[0];
       const consultorTitularId = ultimaViagem.consultor_id || ultimaViagem.consultorId || cliente.consultor_id || cliente.consultorId || '';
-      const consultorTitularNome = ultimaViagem.consultor_nome || ultimaViagem.consultorNome || cliente.consultor_nome || cliente.consultorNome || 'Consultor Titular';
+      const consultorTitularNome = ultimaViagem.consultor_nome || ultimaViagem.consultorNome || cliente.consultor_nome || cliente.consultorNome || 'Agência';
 
       if (userRole !== 'admin' && currentUserId && consultorTitularId && consultorTitularId !== currentUserId) {
         return;
