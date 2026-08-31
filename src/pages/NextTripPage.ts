@@ -121,11 +121,17 @@ export class NextTripPage {
         <!-- Cabeçalho Fixo -->
         <header class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 sticky top-0 z-30 px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 transition-colors duration-200">
           <div class="flex items-center gap-3">
-            <span class="p-2.5 rounded-2xl bg-indigo-600/10 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 text-2xl">🎯</span>
+            <div class="p-2.5 rounded-2xl bg-indigo-600/10 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 shrink-0">
+              <svg width="22" height="22" class="w-5.5 h-5.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                <circle cx="12" cy="12" r="9" />
+                <circle cx="12" cy="12" r="5" />
+                <circle cx="12" cy="12" r="1.5" fill="currentColor" />
+              </svg>
+            </div>
             <div>
               <h1 class="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight flex items-center gap-2">
                 <span>Next Trip Engine™</span>
-                <span class="px-2.5 py-0.5 bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30 text-[10px] font-black rounded-lg uppercase tracking-wider">Preditivo</span>
+                <span class="px-2 py-0.5 text-[9px] font-black uppercase tracking-wider bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30 rounded-md self-center leading-none inline-flex items-center">Preditivo</span>
               </h1>
               <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Inteligência comercial preditiva para identificação e abordagem na janela ideal de recompra</p>
             </div>
@@ -145,7 +151,11 @@ export class NextTripPage {
             <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-5 rounded-2xl shadow-xs">
               <div class="flex items-center justify-between text-slate-400 mb-2">
                 <span class="text-[10px] font-black uppercase tracking-wider">Oportunidades Mapeadas</span>
-                <span class="text-lg">🎯</span>
+                <svg width="18" height="18" class="w-4.5 h-4.5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                  <circle cx="12" cy="12" r="9" />
+                  <circle cx="12" cy="12" r="5" />
+                  <circle cx="12" cy="12" r="1.5" fill="currentColor" />
+                </svg>
               </div>
               <div class="text-2xl font-black text-slate-800 dark:text-white">${this.oportunidades.length}</div>
               <span class="text-[10px] text-slate-400 font-medium">Clientes monitorados na janela de recompra</span>
