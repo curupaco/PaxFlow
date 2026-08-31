@@ -129,13 +129,17 @@ export class EscalaService {
     let loadedMap: Record<string, string[]> = {};
     let isFromDbOrStorage = false;
 
+    const daysInMonth = new Date(ano, mes, 0).getDate();
+    const monthStr = String(mes).padStart(2, '0');
+    const lastDayStr = String(daysInMonth).padStart(2, '0');
+
     // 1. Busca os registros diretamente no banco de dados (Supabase: tabela escala_diaria)
     try {
       const { data, error } = await supabase
         .from('escala_diaria')
         .select('*')
-        .gte('data', `${ano}-${String(mes).padStart(2, '0')}-01`)
-        .lte('data', `${ano}-${String(mes).padStart(2, '0')}-31`);
+        .gte('data', `${ano}-${monthStr}-01`)
+        .lte('data', `${ano}-${monthStr}-${lastDayStr}`);
 
       if (!error && data && data.length > 0) {
         isFromDbOrStorage = true;
@@ -154,19 +158,36 @@ export class EscalaService {
       console.warn('Erro/offline ao consultar escala no Supabase:', e);
     }
 
-    // 2. Se o banco de dados não retornou nenhum registro, verifica o cache de fallback
-    if (!isFromDbOrStorage) {
-      try {
-        const stored = localStorage.getItem(this.LOCAL_STORAGE_ESCALA_KEY);
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (parsed[`${ano}-${mes}`]) {
-            loadedMap = parsed[`${ano}-${mes}`];
+    // 2. Mescla com o cache de fallback local caso existam apontamentos não sincronizados
+    try {
+      const stored = localStorage.getItem(this.LOCAL_STORAGE_ESCALA_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        const key = `${ano}-${mes}`;
+        if (parsed[key]) {
+          const localMap = parsed[key] as Record<string, string[]>;
+          if (isFromDbOrStorage) {
+            // Se o banco retornou dados, mescla células locais preenchidas que estejam em branco no banco
+            Object.keys(localMap).forEach(name => {
+              if (!loadedMap[name]) {
+                loadedMap[name] = [...localMap[name]];
+              } else {
+                localMap[name].forEach((val, idx) => {
+                  if (val && !loadedMap[name][idx]) {
+                    loadedMap[name][idx] = val;
+                    // Sincroniza em segundo plano essa célula para o Supabase
+                    this.salvarCelulaEscala(ano, mes, name, idx, val);
+                  }
+                });
+              }
+            });
+          } else {
+            loadedMap = localMap;
             isFromDbOrStorage = true;
           }
         }
-      } catch (e) {}
-    }
+      }
+    } catch (e) {}
 
     let resultMap: Record<string, string[]> = {};
 

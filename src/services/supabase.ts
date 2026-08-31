@@ -281,6 +281,20 @@ export const supabase = new Proxy(realSupabase, {
                 });
                 return makeQueryBuilder(filtered);
               },
+              gte: (column: string, value: any) => {
+                const filtered = currentData.filter(item => {
+                  const val = item[column] !== undefined ? item[column] : item[toCamel(column)];
+                  return String(val) >= String(value);
+                });
+                return makeQueryBuilder(filtered);
+              },
+              lte: (column: string, value: any) => {
+                const filtered = currentData.filter(item => {
+                  const val = item[column] !== undefined ? item[column] : item[toCamel(column)];
+                  return String(val) <= String(value);
+                });
+                return makeQueryBuilder(filtered);
+              },
               not: (column: string, operator: string, value: any) => {
                 return makeQueryBuilder(currentData);
               },
@@ -344,6 +358,37 @@ export const supabase = new Proxy(realSupabase, {
                 }
 
                 return Promise.resolve({ data: newItems, error: null });
+              },
+              upsert: (payload: any, options?: any) => {
+                const arrayPayload = Array.isArray(payload) ? payload : [payload];
+                const db = getData();
+                const onConflictCols = options?.onConflict ? options.onConflict.split(',') : ['id'];
+
+                const nextDb = [...db];
+                const updatedItems: any[] = [];
+
+                arrayPayload.forEach(item => {
+                  const idx = nextDb.findIndex(existing => {
+                    return onConflictCols.every((col: string) => String(existing[col]) === String(item[col]));
+                  });
+
+                  if (idx !== -1) {
+                    nextDb[idx] = { ...nextDb[idx], ...item, updated_at: new Date().toISOString() };
+                    updatedItems.push(nextDb[idx]);
+                  } else {
+                    const newItem = {
+                      id: item.id || 'sandbox-id-' + Math.random().toString(36).substr(2, 9),
+                      created_at: new Date().toISOString(),
+                      updated_at: new Date().toISOString(),
+                      ...item
+                    };
+                    nextDb.push(newItem);
+                    updatedItems.push(newItem);
+                  }
+                });
+
+                saveData(nextDb);
+                return Promise.resolve({ data: updatedItems, error: null });
               },
               update: (payload: any) => {
                 return {
