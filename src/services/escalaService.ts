@@ -769,37 +769,35 @@ export class EscalaService {
     localStorage.setItem(this.LOCAL_STORAGE_SOLICITACOES_KEY, JSON.stringify(list));
 
     if (novoStatus === 'aprovado') {
-      const [ano, mes, diaOrigem] = target.data_origem.split('-').map(Number);
-      const diaOrigemIdx = diaOrigem - 1;
-
       if (target.tipo === 'troca' && target.destinatario_nome && target.data_destino) {
-        const [_, __, diaDestino] = target.data_destino.split('-').map(Number);
-        const diaDestinoIdx = diaDestino - 1;
-        if (target.solicitante_nome && target.destinatario_nome) {
-          const currentMap = await this.loadEscalaMensal(ano, mes);
-          const t1 = currentMap[target.solicitante_nome]?.[diaOrigemIdx] || '10-17';
-          const t2 = currentMap[target.destinatario_nome]?.[diaDestinoIdx] || '10-17';
+        const [anoOrigem, mesOrigem, diaOrigem] = target.data_origem.split('-').map(Number);
+        const [anoDestino, mesDestino, diaDestino] = target.data_destino.split('-').map(Number);
 
-          await this.salvarCelulaEscala(ano, mes, target.solicitante_nome, diaOrigemIdx, t2);
-          await this.salvarCelulaEscala(ano, mes, target.destinatario_nome, diaDestinoIdx, t1);
+        const diaOrigemIdx = diaOrigem - 1;
+        const diaDestinoIdx = diaDestino - 1;
+
+        if (target.solicitante_nome && target.destinatario_nome) {
+          const origMap = await this.loadEscalaMensal(anoOrigem, mesOrigem);
+          const destMap = (anoOrigem === anoDestino && mesOrigem === mesDestino)
+            ? origMap
+            : await this.loadEscalaMensal(anoDestino, mesDestino);
+
+          const t1 = origMap[target.solicitante_nome]?.[diaOrigemIdx] || '10-17';
+          const t2 = destMap[target.destinatario_nome]?.[diaDestinoIdx] || '10-17';
+
+          await this.salvarCelulaEscala(anoOrigem, mesOrigem, target.solicitante_nome, diaOrigemIdx, t2);
+          await this.salvarCelulaEscala(anoDestino, mesDestino, target.destinatario_nome, diaDestinoIdx, t1);
         }
-      } else if (target.tipo === 'folga' && target.solicitante_nome) {
-        let diaFimIdx = diaOrigemIdx;
-        if (target.data_destino) {
-          const [_, __, diaDest] = target.data_destino.split('-').map(Number);
-          if (!isNaN(diaDest) && diaDest >= diaOrigem) diaFimIdx = diaDest - 1;
-        }
-        for (let d = diaOrigemIdx; d <= diaFimIdx; d++) {
-          await this.salvarCelulaEscala(ano, mes, target.solicitante_nome, d, 'Folga');
-        }
-      } else if (target.tipo === 'ferias' && target.solicitante_nome) {
-        let diaFimIdx = diaOrigemIdx;
-        if (target.data_destino) {
-          const [_, __, diaDest] = target.data_destino.split('-').map(Number);
-          if (!isNaN(diaDest) && diaDest >= diaOrigem) diaFimIdx = diaDest - 1;
-        }
-        for (let d = diaOrigemIdx; d <= diaFimIdx; d++) {
-          await this.salvarCelulaEscala(ano, mes, target.solicitante_nome, d, 'Férias');
+      } else if ((target.tipo === 'folga' || target.tipo === 'ferias') && target.solicitante_nome) {
+        const valorTurno = target.tipo === 'folga' ? 'Folga' : 'Férias';
+        const dStart = new Date(target.data_origem + 'T00:00:00');
+        const dEnd = target.data_destino ? new Date(target.data_destino + 'T00:00:00') : dStart;
+
+        for (let dt = new Date(dStart); dt <= dEnd; dt.setDate(dt.getDate() + 1)) {
+          const curAno = dt.getFullYear();
+          const curMes = dt.getMonth() + 1;
+          const curDiaIdx = dt.getDate() - 1;
+          await this.salvarCelulaEscala(curAno, curMes, target.solicitante_nome, curDiaIdx, valorTurno);
         }
       }
     }
