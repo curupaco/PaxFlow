@@ -4,16 +4,18 @@ import { obterAvatarLocal } from './avatars';
 
 declare const process: any;
 
-// Suporta ambientes baseados em Node (process.env) ou no navegador/Vite (import.meta.env)
-const supabaseUrl = 
-  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_URL) || 
-  (typeof process !== 'undefined' && process.env?.SUPABASE_URL) || 
-  '';
+const SUPABASE_URL_DEFAULT = 'https://fscfmnqcqioqiibvzhub.supabase.co';
+const SUPABASE_ANON_KEY_DEFAULT = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZzY2ZtbnFjcWlvcWlpYnZ6aHViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4ODUwNzgsImV4cCI6MjA5NTQ2MTA3OH0.xfOvO9JZYjA3QcGX5mwGKghWhIYbh4Y_-nDjaVMruAk';
 
-const supabaseAnonKey = 
-  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_ANON_KEY) || 
-  (typeof process !== 'undefined' && process.env?.SUPABASE_ANON_KEY) || 
-  '';
+// Suporta ambientes baseados em Node (process.env) ou no navegador/Vite (import.meta.env)
+const envUrl = typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env.VITE_SUPABASE_URL : undefined;
+const envKey = typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env.VITE_SUPABASE_ANON_KEY : undefined;
+
+const procUrl = typeof process !== 'undefined' && process.env ? process.env.SUPABASE_URL : undefined;
+const procKey = typeof process !== 'undefined' && process.env ? process.env.SUPABASE_ANON_KEY : undefined;
+
+const supabaseUrl = envUrl || procUrl || SUPABASE_URL_DEFAULT;
+const supabaseAnonKey = envKey || procKey || SUPABASE_ANON_KEY_DEFAULT;
 
 if (!supabaseUrl || !supabaseAnonKey) {
   console.warn(
