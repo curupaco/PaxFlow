@@ -107,10 +107,10 @@ export class EscalaService {
     };
 
     const mockBancoFolgas: BancoFolgasItem[] = [
-      { consultor_id: "c-1", consultor_nome: "Marinna Morena", equipe: "Equipe Agatur", saldo_dias: "1", detalhes_historico: "Meta Jun" },
-      { consultor_id: "c-2", consultor_nome: "Maria Carvalho", equipe: "Equipe Agatur", saldo_dias: "10", detalhes_historico: "8mar26 – Folga ref 22/03 · Meta de Abril · Ref 05/04 · REF 03/05 · ref 17/05 · ref 14/06/26 · META JUNHO · REF 02/11/25" },
-      { consultor_id: "c-3", consultor_nome: "Rafael Sousa", equipe: "Equipe Agatur", saldo_dias: "2", detalhes_historico: "1 Folga Meta Março – Domingo Extra 28/06" },
-      { consultor_id: "c-4", consultor_nome: "Guto Bassaroto", equipe: "Equipe Agatur", saldo_dias: "—", detalhes_historico: "Sem saldo pendente" }
+      { consultor_id: "c-1", consultor_nome: "Marinna Morena", equipe: "Equipe Agaxtur", saldo_dias: "1", detalhes_historico: "Meta Jun" },
+      { consultor_id: "c-2", consultor_nome: "Maria Carvalho", equipe: "Equipe Agaxtur", saldo_dias: "10", detalhes_historico: "8mar26 – Folga ref 22/03 · Meta de Abril · Ref 05/04 · REF 03/05 · ref 17/05 · ref 14/06/26 · META JUNHO · REF 02/11/25" },
+      { consultor_id: "c-3", consultor_nome: "Rafael Sousa", equipe: "Equipe Agaxtur", saldo_dias: "2", detalhes_historico: "1 Folga Meta Março – Domingo Extra 28/06" },
+      { consultor_id: "c-4", consultor_nome: "Guto Bassaroto", equipe: "Equipe Agaxtur", saldo_dias: "—", detalhes_historico: "Sem saldo pendente" }
     ];
 
     const mockEventos: EventoEscalaItem[] = [
@@ -470,7 +470,7 @@ export class EscalaService {
         id: item.id || `bf-${item.consultor_nome.trim().toLowerCase().replace(/\s+/g, '-')}`,
         consultor_id: item.consultor_id || `c-${item.consultor_nome}`,
         consultor_nome: item.consultor_nome,
-        equipe: item.equipe || 'Equipe Agatur',
+        equipe: item.equipe || 'Equipe Agaxtur',
         saldo_dias: String(item.saldo_dias),
         detalhes_historico: item.detalhes_historico || '',
         updated_at: new Date().toISOString()

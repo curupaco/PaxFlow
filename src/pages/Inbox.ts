@@ -221,7 +221,7 @@ export class InboxPage {
           cleanBancoData.push({
             consultor_id: `c-${info.displayName}`,
             consultor_nome: info.displayName,
-            equipe: 'Equipe Agatur',
+            equipe: 'Equipe Agaxtur',
             saldo_dias: '—',
             detalhes_historico: 'Sem saldo acumulado'
           });
@@ -2227,7 +2227,7 @@ export class InboxPage {
                         <div class="flex items-center justify-between gap-1">
                           <div class="truncate">
                             <strong>${name}</strong>
-                            <small class="text-slate-400 block">Equipe Agatur</small>
+                            <small class="text-slate-400 block">Equipe Agaxtur</small>
                           </div>
                           ${isAdmin ? `
                             <div class="flex flex-col items-center gap-0.5 shrink-0 opacity-80 hover:opacity-100 transition select-none">
