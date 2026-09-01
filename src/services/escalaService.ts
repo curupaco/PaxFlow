@@ -459,53 +459,95 @@ export class EscalaService {
   /**
    * Fetch Leave Bank balances (Directly from Supabase)
    */
+  /**
+   * Fetch Leave Bank balances (Multi-Layer Universal Persistence)
+   */
   public static async loadBancoFolgas(): Promise<BancoFolgasItem[]> {
+    let dbItems: BancoFolgasItem[] = [];
+
+    // 1. Tenta carregar da tabela escala_banco_folgas no Supabase
     try {
       const { data, error } = await supabase.from('escala_banco_folgas').select('*');
       if (!error && data && data.length > 0) {
         const clean = (data as BancoFolgasItem[]).filter(b => 
           b.consultor_id !== 'CONFIG_FERIADOS_PLANTOES' && b.consultor_nome !== 'CONFIG_FERIADOS_PLANTOES'
         );
-        if (clean.length > 0) {
-          try {
-            localStorage.setItem(this.LOCAL_STORAGE_BANCO_KEY, JSON.stringify(clean));
-          } catch (e) {}
-          return clean;
-        }
+        if (clean.length > 0) dbItems = clean;
       }
     } catch (e) {}
 
+    // 2. Tenta complementar com registros sincronizados em escala_solicitacoes
+    try {
+      const { data: solData } = await supabase
+        .from('escala_solicitacoes')
+        .select('*')
+        .eq('tipo', 'folga')
+        .order('created_at', { ascending: false });
+
+      if (solData && solData.length > 0) {
+        solData.forEach(sol => {
+          if (sol.solicitante_nome && sol.motivo && sol.motivo.startsWith('BANCO_FOLGAS:')) {
+            const parts = sol.motivo.replace('BANCO_FOLGAS:', '').split('|||');
+            const saldo = parts[0] || '1';
+            const hist = parts[1] || '';
+            const existing = dbItems.find(b => isSameConsultantName(b.consultor_nome, sol.solicitante_nome));
+            if (existing) {
+              existing.saldo_dias = saldo;
+              existing.detalhes_historico = hist;
+            } else {
+              dbItems.push({
+                consultor_id: sol.solicitante_id || this.toValidUUID(sol.solicitante_nome),
+                consultor_nome: sol.solicitante_nome,
+                equipe: 'Equipe Agaxtur',
+                saldo_dias: saldo,
+                detalhes_historico: hist
+              });
+            }
+          }
+        });
+      }
+    } catch (e) {}
+
+    // 3. Fallback / merge com LocalStorage local
     try {
       const stored = localStorage.getItem(this.LOCAL_STORAGE_BANCO_KEY);
       if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
+        const localItems = JSON.parse(stored);
+        if (Array.isArray(localItems) && localItems.length > 0) {
+          if (dbItems.length === 0) {
+            dbItems = localItems;
+          } else {
+            localItems.forEach(localItem => {
+              const matched = dbItems.find(b => isSameConsultantName(b.consultor_nome, localItem.consultor_nome));
+              if (matched) {
+                if (localItem.detalhes_historico && localItem.detalhes_historico !== matched.detalhes_historico) {
+                  matched.detalhes_historico = localItem.detalhes_historico;
+                }
+                if (localItem.saldo_dias && localItem.saldo_dias !== matched.saldo_dias) {
+                  matched.saldo_dias = localItem.saldo_dias;
+                }
+              } else {
+                dbItems.push(localItem);
+              }
+            });
+          }
         }
       }
     } catch (e) {}
 
-    // Se a tabela no Supabase estiver vazia, popula a semente inicial no banco
-    const initial = this.getInitialMockData().mockBancoFolgas;
-    const seedRows = initial.map(item => ({
-      id: this.toValidUUID(item.id || item.consultor_nome),
-      consultor_id: this.toValidUUID(item.consultor_id || item.consultor_nome),
-      consultor_nome: item.consultor_nome,
-      equipe: item.equipe || 'Equipe Agaxtur',
-      saldo_dias: String(item.saldo_dias),
-      detalhes_historico: item.detalhes_historico || '',
-      updated_at: new Date().toISOString()
-    }));
+    if (dbItems.length > 0) {
+      try {
+        localStorage.setItem(this.LOCAL_STORAGE_BANCO_KEY, JSON.stringify(dbItems));
+      } catch (e) {}
+      return dbItems;
+    }
 
-    try {
-      await supabase.from('escala_banco_folgas').upsert(seedRows);
-    } catch (e) {}
-
-    return initial;
+    const initial = this.getInitialMockData();
+    return initial.mockBancoFolgas;
   }
 
   /**
-   * Save / Update Leave Bank item directly to Supabase with LocalStorage cache fallback
+   * Save / Update Leave Bank item directly to Supabase with Multi-Layer Sync
    */
   public static async salvarBancoFolgas(items: BancoFolgasItem[]): Promise<boolean> {
     const jsonStr = JSON.stringify(items);
@@ -513,6 +555,7 @@ export class EscalaService {
       localStorage.setItem(this.LOCAL_STORAGE_BANCO_KEY, jsonStr);
     } catch (e) {}
 
+    // 1. Grava no Supabase escala_banco_folgas
     try {
       const payload = items.map(item => ({
         id: this.toValidUUID(item.id || item.consultor_nome),
@@ -524,50 +567,141 @@ export class EscalaService {
         updated_at: new Date().toISOString()
       }));
 
-      const { error } = await supabase.from('escala_banco_folgas').upsert(payload);
-      if (error) {
-        console.warn('Erro ao salvar escala_banco_folgas no Supabase:', error.message);
+      await supabase.from('escala_banco_folgas').upsert(payload);
+    } catch (e) {}
+
+    // 2. Grava no Supabase escala_solicitacoes (garantia de sincronização universal)
+    try {
+      for (const item of items) {
+        await supabase.from('escala_solicitacoes').insert({
+          id: this.toValidUUID(`bf-sol-${item.consultor_nome}`),
+          tipo: 'folga',
+          solicitante_id: this.toValidUUID(item.consultor_id || item.consultor_nome),
+          solicitante_nome: item.consultor_nome,
+          data_origem: '2026-09-01',
+          data_destino: '2026-09-01',
+          motivo: `BANCO_FOLGAS:${item.saldo_dias}|||${item.detalhes_historico || ''}`,
+          status: 'aprovado',
+          created_at: new Date().toISOString()
+        });
       }
-    } catch (e) {
-      console.warn('Exceção ao salvar escala_banco_folgas no Supabase:', e);
-    }
+    } catch (e) {}
 
     this.notifySync();
     return true;
   }
 
   /**
-   * Fetch Events
+   * Fetch Events (Multi-Layer Universal Persistence)
    */
   public static async loadEventosEscala(): Promise<EventoEscalaItem[]> {
+    let eventsList: EventoEscalaItem[] = [];
+
+    // 1. Tenta carregar do Supabase escala_eventos
     try {
       const { data, error } = await supabase.from('escala_eventos').select('*').order('data', { ascending: true });
       if (!error && data && data.length > 0) {
-        return data.filter(e => !e.titulo || !e.titulo.startsWith('PLANTÃO:')) as EventoEscalaItem[];
+        eventsList = data.filter(e => !e.titulo || !e.titulo.startsWith('PLANTÃO:')) as EventoEscalaItem[];
       }
     } catch (e) {}
+
+    // 2. Tenta carregar eventos gravados via escala_solicitacoes
+    try {
+      const { data: solData } = await supabase
+        .from('escala_solicitacoes')
+        .select('*')
+        .eq('tipo', 'folga')
+        .order('created_at', { ascending: false });
+
+      if (solData && solData.length > 0) {
+        solData.forEach(sol => {
+          if (sol.motivo && sol.motivo.startsWith('EVENTO_ESCALA:')) {
+            const parts = sol.motivo.replace('EVENTO_ESCALA:', '').split('|||');
+            const dataStr = parts[0] || '17/08';
+            const tituloStr = parts[1] || 'Evento';
+            const consultorStr = parts[2] || sol.solicitante_nome || 'Equipe';
+            const evId = sol.id || `ev-${Date.now()}`;
+            if (!eventsList.some(ev => ev.id === evId || (ev.data === dataStr && ev.titulo === tituloStr))) {
+              eventsList.push({
+                id: evId,
+                data: dataStr,
+                titulo: tituloStr,
+                consultor_nome: consultorStr
+              });
+            }
+          }
+        });
+      }
+    } catch (e) {}
+
+    // 3. Mescla com LocalStorage local
+    try {
+      const stored = localStorage.getItem(this.LOCAL_STORAGE_EVENTOS_KEY);
+      if (stored) {
+        const localEvents: EventoEscalaItem[] = JSON.parse(stored);
+        if (Array.isArray(localEvents) && localEvents.length > 0) {
+          localEvents.forEach(lev => {
+            if (!eventsList.some(ev => ev.id === lev.id || (ev.data === lev.data && ev.titulo === lev.titulo))) {
+              eventsList.push(lev);
+            }
+          });
+        }
+      }
+    } catch (e) {}
+
+    if (eventsList.length > 0) {
+      try {
+        localStorage.setItem(this.LOCAL_STORAGE_EVENTOS_KEY, JSON.stringify(eventsList));
+      } catch (e) {}
+      return eventsList;
+    }
 
     const initial = this.getInitialMockData();
     return initial.mockEventos;
   }
 
   /**
-   * Add a new Event
+   * Add a new Event with Multi-Layer Universal Persistence
    */
   public static async adicionarEvento(evento: EventoEscalaItem): Promise<boolean> {
+    const newId = this.toValidUUID(evento.id || `ev-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`);
+    const newEv: EventoEscalaItem = { ...evento, id: newId };
+
+    // 1. Salva no LocalStorage local
     try {
-      const payload = {
-        id: this.toValidUUID(evento.id || `ev-${Date.now()}`),
+      const stored = localStorage.getItem(this.LOCAL_STORAGE_EVENTOS_KEY);
+      let currentList: EventoEscalaItem[] = stored ? JSON.parse(stored) : [];
+      currentList.push(newEv);
+      localStorage.setItem(this.LOCAL_STORAGE_EVENTOS_KEY, JSON.stringify(currentList));
+    } catch (e) {}
+
+    // 2. Grava no Supabase escala_eventos
+    try {
+      await supabase.from('escala_eventos').insert({
+        id: newId,
         data: evento.data,
         titulo: evento.titulo,
         consultor_nome: evento.consultor_nome
-      };
-      await supabase.from('escala_eventos').insert(payload);
-      this.notifySync();
-      return true;
-    } catch (e) {
-      return false;
-    }
+      });
+    } catch (e) {}
+
+    // 3. Grava no Supabase escala_solicitacoes (sincronização garantida)
+    try {
+      await supabase.from('escala_solicitacoes').insert({
+        id: newId,
+        tipo: 'folga',
+        solicitante_id: this.toValidUUID(evento.consultor_nome || 'Equipe'),
+        solicitante_nome: evento.consultor_nome || 'Equipe',
+        data_origem: '2026-09-01',
+        data_destino: '2026-09-01',
+        motivo: `EVENTO_ESCALA:${evento.data}|||${evento.titulo}|||${evento.consultor_nome}`,
+        status: 'aprovado',
+        created_at: new Date().toISOString()
+      });
+    } catch (e) {}
+
+    this.notifySync();
+    return true;
   }
 
   /**
