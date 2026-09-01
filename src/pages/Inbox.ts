@@ -28,8 +28,8 @@ export class InboxPage {
   private allConsultants: PerfilConsultor[] = [];
 
   // Escala specific state
-  private escalaAno: number = 2026;
-  private escalaMes: number = 8;
+  private escalaAno: number = new Date().getFullYear();
+  private escalaMes: number = new Date().getMonth() + 1;
   private escalaData: Record<string, string[]> = {};
   private escalaObservacoesData: Record<string, string[]> = {};
   private bancoFolgasData: BancoFolgasItem[] = [];

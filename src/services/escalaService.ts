@@ -123,9 +123,9 @@ export class EscalaService {
     const mockFeriadosPlantoes: import('../types').FeriadoPlantaoInfo[] = [
       {
         id: 'fp-1',
-        data: '09/07',
-        nome: 'Revolução Constitucionalista (SP)',
-        nomeCurto: '09/07 Rev. SP',
+        data: '21/04',
+        nome: 'Tiradentes',
+        nomeCurto: '21/04 Tirad.',
         consultoresTrabalharam: []
       },
       {
@@ -137,9 +137,9 @@ export class EscalaService {
       },
       {
         id: 'fp-3',
-        data: '21/04',
-        nome: 'Tiradentes',
-        nomeCurto: '21/04 Tirad.',
+        data: '09/07',
+        nome: 'Revolução Constitucionalista (SP)',
+        nomeCurto: '09/07 Rev. SP',
         consultoresTrabalharam: []
       }
     ];
@@ -426,7 +426,8 @@ export class EscalaService {
     try {
       const { data, error } = await supabase.from('escala_banco_folgas').select('*');
       if (!error && data && data.length > 0) {
-        return data as BancoFolgasItem[];
+        const clean = (data as BancoFolgasItem[]).filter(b => b.consultor_id !== 'CONFIG_FERIADOS_PLANTOES');
+        if (clean.length > 0) return clean;
       }
     } catch (e) {
       console.warn('Fallback local para banco de folgas:', e);
@@ -462,14 +463,15 @@ export class EscalaService {
   public static async loadEventosEscala(): Promise<EventoEscalaItem[]> {
     try {
       const { data, error } = await supabase.from('escala_eventos').select('*').order('data', { ascending: true });
-      if (!error && data && data.length > 0) {
+      if (!error && data) {
+        localStorage.setItem(this.LOCAL_STORAGE_EVENTOS_KEY, JSON.stringify(data));
         return data as EventoEscalaItem[];
       }
     } catch (e) {}
 
     try {
       const stored = localStorage.getItem(this.LOCAL_STORAGE_EVENTOS_KEY);
-      if (stored) return JSON.parse(stored);
+      if (stored !== null) return JSON.parse(stored);
     } catch (e) {}
 
     const initial = this.getInitialMockData();
@@ -510,6 +512,7 @@ export class EscalaService {
    * Fetch Holiday Shifts (Plantões dos Últimos 3 Feriados)
    */
   public static async loadFeriadosPlantoes(): Promise<import('../types').FeriadoPlantaoInfo[]> {
+    // 1. Tenta tabela dedicada no Supabase
     try {
       const { data, error } = await supabase.from('escala_feriados_plantoes').select('*');
       if (!error && data && data.length > 0) {
@@ -517,6 +520,16 @@ export class EscalaService {
       }
     } catch (e) {}
 
+    // 2. Tenta registro global sincronizado na tabela escala_banco_folgas no Supabase
+    try {
+      const { data, error } = await supabase.from('escala_banco_folgas').select('*').eq('consultor_id', 'CONFIG_FERIADOS_PLANTOES').maybeSingle();
+      if (!error && data && data.detalhes_historico) {
+        const parsed = JSON.parse(data.detalhes_historico);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
+
+    // 3. Fallback Local Storage
     try {
       const stored = localStorage.getItem(this.LOCAL_STORAGE_FERIADOS_PLANTOES_KEY);
       if (stored) return JSON.parse(stored);
@@ -531,10 +544,25 @@ export class EscalaService {
    */
   public static async salvarFeriadosPlantoes(items: import('../types').FeriadoPlantaoInfo[]): Promise<boolean> {
     try {
+      // 1. Salva no localStorage local
       localStorage.setItem(this.LOCAL_STORAGE_FERIADOS_PLANTOES_KEY, JSON.stringify(items));
+
+      // 2. Tenta salvar na tabela dedicada escala_feriados_plantoes
       await supabase.from('escala_feriados_plantoes').upsert(items);
+
+      // 3. Garante sincronia para TODOS os usuarios salvando no Supabase escala_banco_folgas
+      await supabase.from('escala_banco_folgas').upsert({
+        consultor_id: 'CONFIG_FERIADOS_PLANTOES',
+        consultor_nome: 'CONFIG_FERIADOS_PLANTOES',
+        equipe: 'Sistema',
+        saldo_dias: '0',
+        detalhes_historico: JSON.stringify(items),
+        updated_at: new Date().toISOString()
+      });
+
       return true;
     } catch (e) {
+      console.warn('Erro ao salvar plantões de feriados no Supabase:', e);
       return false;
     }
   }
