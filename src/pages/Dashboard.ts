@@ -220,21 +220,32 @@ export class Dashboard {
    * Configura canal em tempo real do Supabase para atualizar as viagens automaticamente
    */
   private setupRealtime(): void {
-    if (this.realtimeChannel) return;
+    try {
+      if (this.realtimeChannel) {
+        try {
+          supabase.removeChannel(this.realtimeChannel);
+        } catch (e) {}
+        this.realtimeChannel = null;
+      }
 
-    this.realtimeChannel = supabase
-      .channel('operational-dashboard-changes')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'viagens' },
-        async (payload: any) => {
-          console.log('[Dashboard] Realtime update on viagens:', payload.eventType);
-          await this.loadViagens();
-          this.render();
-          this.setupDragAndDrop();
-        }
-      )
-      .subscribe();
+      const channelName = `operational-dashboard-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+
+      this.realtimeChannel = supabase
+        .channel(channelName)
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'viagens' },
+          async (payload: any) => {
+            console.log('[Dashboard] Realtime update on viagens:', payload.eventType);
+            await this.loadViagens();
+            this.render();
+            this.setupDragAndDrop();
+          }
+        )
+        .subscribe();
+    } catch (e) {
+      console.warn('[Dashboard] Erro ao registrar realtime:', e);
+    }
   }
 
   /**

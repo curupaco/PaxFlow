@@ -141,29 +141,40 @@ export class ComercialDashboard {
    * Configura canal em tempo real do Supabase para atualizar o Dashboard automaticamente
    */
   private setupRealtime(): void {
-    if (this.realtimeChannel) return;
+    try {
+      if (this.realtimeChannel) {
+        try {
+          supabase.removeChannel(this.realtimeChannel);
+        } catch (e) {}
+        this.realtimeChannel = null;
+      }
 
-    this.realtimeChannel = supabase
-      .channel('comercial-dashboard-changes')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'orcamentos' },
-        async (payload: any) => {
-          console.log('[ComercialDashboard] Realtime update on orcamentos:', payload.eventType);
-          await this.loadData();
-          this.renderMetricsSection();
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'viagens' },
-        async (payload: any) => {
-          console.log('[ComercialDashboard] Realtime update on viagens:', payload.eventType);
-          await this.loadData();
-          this.renderMetricsSection();
-        }
-      )
-      .subscribe();
+      const channelName = `comercial-dashboard-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+
+      this.realtimeChannel = supabase
+        .channel(channelName)
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'orcamentos' },
+          async (payload: any) => {
+            console.log('[ComercialDashboard] Realtime update on orcamentos:', payload.eventType);
+            await this.loadData();
+            this.renderMetricsSection();
+          }
+        )
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'viagens' },
+          async (payload: any) => {
+            console.log('[ComercialDashboard] Realtime update on viagens:', payload.eventType);
+            await this.loadData();
+            this.renderMetricsSection();
+          }
+        )
+        .subscribe();
+    } catch (e) {
+      console.warn('[ComercialDashboard] Erro ao registrar realtime:', e);
+    }
   }
 
   /**

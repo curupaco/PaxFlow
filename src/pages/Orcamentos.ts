@@ -2784,13 +2784,26 @@ export class OrcamentosPage {
   private setupRealtimeChannel(): void {
     if (this.isFallbackMode) return;
 
-    this.realtimeChannel = supabase
-      .channel('orcamentos-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'orcamentos' }, async () => {
-        await this.loadOrcamentos();
-        this.render();
-      })
-      .subscribe();
+    try {
+      if (this.realtimeChannel) {
+        try {
+          supabase.removeChannel(this.realtimeChannel);
+        } catch (e) {}
+        this.realtimeChannel = null;
+      }
+
+      const channelName = `orcamentos-realtime-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+
+      this.realtimeChannel = supabase
+        .channel(channelName)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'orcamentos' }, async () => {
+          await this.loadOrcamentos();
+          this.render();
+        })
+        .subscribe();
+    } catch (e) {
+      console.warn('Aviso: Erro ao registrar escuta do canal em tempo real para orçamentos:', e);
+    }
   }
 
   /**
@@ -2798,9 +2811,11 @@ export class OrcamentosPage {
    */
   public destroy(): void {
     if (this.realtimeChannel) {
-      supabase.removeChannel(this.realtimeChannel);
+      try {
+        supabase.removeChannel(this.realtimeChannel);
+      } catch (e) {}
+      this.realtimeChannel = null;
     }
-
   }
 
   /**
