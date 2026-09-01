@@ -80,7 +80,10 @@ export class InboxPage {
       // 5. Load Escala data
       await this.loadEscalaData();
 
-      // 6. Render Page UI and attach action listeners
+      // 6. Configura sincronização em tempo real (Realtime)
+      this.setupRealtime();
+
+      // 7. Render Page UI and attach action listeners
       this.render();
       this.setupEventListeners();
       this.setupGlobalEventListeners();
@@ -234,10 +237,47 @@ export class InboxPage {
     }
   }
 
+  private realtimeChannel: any = null;
+
+  /**
+   * Configura ouvinte em tempo real para sincronização entre usuários
+   */
+  private setupRealtime(): void {
+    try {
+      if (this.realtimeChannel) {
+        supabase.removeChannel(this.realtimeChannel);
+        this.realtimeChannel = null;
+      }
+
+      const channelName = `inbox-escala-realtime-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+      this.realtimeChannel = supabase
+        .channel(channelName)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'escala_banco_folgas' }, async () => {
+          await this.loadEscalaData();
+          this.render();
+          this.setupEventListeners();
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'global_settings' }, async () => {
+          await this.loadEscalaData();
+          this.render();
+          this.setupEventListeners();
+        })
+        .subscribe();
+    } catch (err) {
+      console.warn('Erro ao configurar realtime na escala:', err);
+    }
+  }
+
   /**
    * Destroy page elements if necessary
    */
   public destroy(): void {
+    if (this.realtimeChannel) {
+      try {
+        supabase.removeChannel(this.realtimeChannel);
+      } catch (e) {}
+      this.realtimeChannel = null;
+    }
   }
 
   /**

@@ -423,16 +423,29 @@ export class EscalaService {
    * Fetch Leave Bank balances
    */
   public static async loadBancoFolgas(): Promise<BancoFolgasItem[]> {
+    // 1. Tenta carregar os registros diretamente da tabela escala_banco_folgas do Supabase
     try {
       const { data, error } = await supabase.from('escala_banco_folgas').select('*');
       if (!error && data && data.length > 0) {
-        const clean = (data as BancoFolgasItem[]).filter(b => b.consultor_id !== 'CONFIG_FERIADOS_PLANTOES');
+        const clean = (data as BancoFolgasItem[]).filter(b => 
+          b.consultor_id !== 'CONFIG_FERIADOS_PLANTOES' && b.consultor_nome !== 'CONFIG_FERIADOS_PLANTOES'
+        );
         if (clean.length > 0) return clean;
       }
     } catch (e) {
-      console.warn('Fallback local para banco de folgas:', e);
+      console.warn('Fallback para banco_folgas_json em global_settings:', e);
     }
 
+    // 2. Tenta carregar do JSON global sincronizado em global_settings
+    try {
+      const { data, error } = await supabase.from('global_settings').select('*').limit(1).maybeSingle();
+      if (!error && data && data.banco_folgas_json) {
+        const parsed = JSON.parse(data.banco_folgas_json);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
+
+    // 3. Fallback Local Storage
     try {
       const stored = localStorage.getItem(this.LOCAL_STORAGE_BANCO_KEY);
       if (stored) {
@@ -449,10 +462,33 @@ export class EscalaService {
    */
   public static async salvarBancoFolgas(items: BancoFolgasItem[]): Promise<boolean> {
     try {
+      // 1. Salva no localStorage local
       localStorage.setItem(this.LOCAL_STORAGE_BANCO_KEY, JSON.stringify(items));
-      await supabase.from('escala_banco_folgas').upsert(items);
+
+      // 2. Prepara cada item com id unico por consultor para evitar conflitos de upsert
+      const payload = items.map(item => ({
+        id: item.id || `bf-${item.consultor_nome.trim().toLowerCase().replace(/\s+/g, '-')}`,
+        consultor_id: item.consultor_id || `c-${item.consultor_nome}`,
+        consultor_nome: item.consultor_nome,
+        equipe: item.equipe || 'Equipe Agatur',
+        saldo_dias: String(item.saldo_dias),
+        detalhes_historico: item.detalhes_historico || '',
+        updated_at: new Date().toISOString()
+      }));
+
+      // 3. Upsert na tabela escala_banco_folgas
+      await supabase.from('escala_banco_folgas').upsert(payload);
+
+      // 4. Garante sincronia global no Supabase via global_settings
+      await supabase.from('global_settings').upsert({
+        id: 1,
+        banco_folgas_json: JSON.stringify(items),
+        updated_at: new Date().toISOString()
+      });
+
       return true;
     } catch (e) {
+      console.warn('Erro ao salvar banco de folgas no Supabase:', e);
       return false;
     }
   }
