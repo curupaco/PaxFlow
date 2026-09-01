@@ -375,8 +375,8 @@ class App {
           <div id="sidebar-header" class="border-b border-slate-100 dark:border-slate-800 flex items-center gap-2.5 relative transition-all duration-200 ${this.sidebarCollapsed ? 'p-3.5 justify-center' : 'px-5 py-4'}">
             <img src="/logo.svg" alt="PaxFlow Logo" class="h-8 w-8 object-contain filter drop-shadow-md shrink-0" />
             <span id="sidebar-logo-text" class="text-base font-black text-slate-800 dark:text-white tracking-tight ${this.sidebarCollapsed ? 'md:hidden' : ''}">PaxFlow</span>
-            <button id="sidebar-collapse-btn" class="absolute top-1/2 -translate-y-1/2 right-[-14px] p-1.5 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-200 shadow-md hidden md:flex items-center justify-center transition z-30">
-              <svg width="16" height="16" class="w-4 h-4 transform ${this.sidebarCollapsed ? 'rotate-180' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+            <button id="sidebar-collapse-btn" title="${this.sidebarCollapsed ? 'Expandir Menu' : 'Colapsar Menu'}" class="absolute top-1/2 -translate-y-1/2 right-[-12px] w-6 h-6 p-0 rounded-full bg-white dark:bg-slate-900 hover:bg-indigo-50 dark:hover:bg-indigo-950 border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 shadow-md hidden md:flex items-center justify-center transition duration-200 z-40">
+              <svg width="14" height="14" class="w-3.5 h-3.5 transform ${this.sidebarCollapsed ? 'rotate-180' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
               </svg>
             </button>
@@ -607,9 +607,9 @@ class App {
           <!-- Campanhas Ativas -->
           <div id="sidebar-campaigns-container" class="w-full"></div>
           
-          <div class="flex items-center justify-around gap-1.5 ${this.sidebarCollapsed ? 'flex-col mt-0.5 px-0' : 'flex-row px-2'}">
+          <div class="flex items-center justify-center gap-1.5 ${this.sidebarCollapsed ? 'flex-col mt-1 px-0' : 'flex-row px-2'}">
             <!-- Theme Toggle -->
-            <button id="theme-toggle-btn" title="Alternar Tema" class="p-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/60 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-200 rounded-xl transition border border-slate-200/20 dark:border-slate-700/20 flex items-center justify-center w-full">
+            <button id="theme-toggle-btn" title="Alternar Tema" class="${this.sidebarCollapsed ? 'w-9 h-9 p-0' : 'w-full p-1.5'} bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/60 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-200 rounded-xl transition border border-slate-200/20 dark:border-slate-700/20 flex items-center justify-center shrink-0">
               <svg width="18" height="18" class="w-4.5 h-4.5 theme-icon-light" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
               </svg>
@@ -618,7 +618,7 @@ class App {
               </svg>
             </button>
             <!-- Logout -->
-            <button id="sidebar-logout-btn" title="Sair do Sistema" class="p-1.5 bg-slate-50 hover:bg-rose-50 dark:bg-slate-800/60 dark:hover:bg-rose-950/30 text-slate-400 hover:text-rose-500 dark:text-slate-400 dark:hover:text-rose-400 rounded-xl transition border border-slate-200/20 dark:border-slate-700/20 flex items-center justify-center w-full">
+            <button id="sidebar-logout-btn" title="Sair do Sistema" class="${this.sidebarCollapsed ? 'w-9 h-9 p-0' : 'w-full p-1.5'} bg-slate-50 hover:bg-rose-50 dark:bg-slate-800/60 dark:hover:bg-rose-950/30 text-slate-400 hover:text-rose-500 dark:text-slate-400 dark:hover:text-rose-400 rounded-xl transition border border-slate-200/20 dark:border-slate-700/20 flex items-center justify-center shrink-0">
               <svg width="18" height="18" class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
               </svg>
@@ -681,6 +681,11 @@ class App {
     if (!this.user || !this.perfil) return;
     const container = document.getElementById('sidebar-campaigns-container');
     if (!container) return;
+
+    if (this.sidebarCollapsed) {
+      container.innerHTML = '';
+      return;
+    }
 
     try {
       const activeCampaigns = await obterCampanhasAtivas();
@@ -1022,6 +1027,8 @@ class App {
         }
       }
     });
+
+    this.atualizarSidebarProfileFooter();
   }
 
   /**
