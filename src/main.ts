@@ -369,13 +369,13 @@ class App {
         <div id="mobile-menu-backdrop" class="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-40 transition-opacity duration-300 opacity-0 pointer-events-none md:hidden"></div>
         
         <!-- Sidebar Menu (Drawer no mobile, fixo na lateral no desktop) -->
-        <aside id="app-sidebar" class="fixed inset-y-0 left-0 h-screen w-64 md:${this.sidebarCollapsed ? 'w-20' : 'w-64'} bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 flex flex-col border-r border-slate-200 dark:border-slate-800/60 shadow-2xl md:shadow-xl z-50 md:z-30 transition-all duration-300 transform -translate-x-full md:translate-x-0 pt-safe pb-safe">
+        <aside id="app-sidebar" class="fixed inset-y-0 left-0 h-screen w-64 md:${this.sidebarCollapsed ? 'w-20' : 'w-64'} bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 flex flex-col border-r border-slate-200 dark:border-slate-800/60 shadow-2xl md:shadow-xl z-50 md:z-50 transition-all duration-300 transform -translate-x-full md:translate-x-0 pt-safe pb-safe">
           
           <!-- Logo & Título -->
           <div id="sidebar-header" class="border-b border-slate-100 dark:border-slate-800 flex items-center gap-2.5 relative transition-all duration-200 ${this.sidebarCollapsed ? 'p-3.5 justify-center' : 'px-5 py-4'}">
             <img src="/logo.svg" alt="PaxFlow Logo" class="h-8 w-8 object-contain filter drop-shadow-md shrink-0" />
             <span id="sidebar-logo-text" class="text-base font-black text-slate-800 dark:text-white tracking-tight ${this.sidebarCollapsed ? 'md:hidden' : ''}">PaxFlow</span>
-            <button id="sidebar-collapse-btn" title="${this.sidebarCollapsed ? 'Expandir Menu' : 'Colapsar Menu'}" class="absolute top-1/2 -translate-y-1/2 right-[-12px] w-6 h-6 p-0 rounded-full bg-white dark:bg-slate-900 hover:bg-indigo-50 dark:hover:bg-indigo-950 border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 shadow-md hidden md:flex items-center justify-center transition duration-200 z-40">
+            <button id="sidebar-collapse-btn" title="${this.sidebarCollapsed ? 'Expandir Menu' : 'Colapsar Menu'}" class="absolute top-1/2 -translate-y-1/2 right-[-12px] w-6 h-6 p-0 rounded-full bg-white dark:bg-slate-900 hover:bg-indigo-50 dark:hover:bg-indigo-950 border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 shadow-md hidden md:flex items-center justify-center transition duration-200 z-50">
               <svg width="14" height="14" class="w-3.5 h-3.5 transform ${this.sidebarCollapsed ? 'rotate-180' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
               </svg>
@@ -496,7 +496,7 @@ class App {
 
         <!-- Área Principal de Exibição de Conteúdo (Com Cabeçalho Global) -->
         <div id="app-main-content" class="flex-1 flex flex-col min-w-0 max-w-full bg-slate-50/50 dark:bg-slate-950 ${this.sidebarCollapsed ? 'md:pl-20' : 'md:pl-64'} transition-all duration-300">
-          <div id="global-header-mount" class="w-full max-w-full relative z-40"></div>
+          <div id="global-header-mount" class="w-full max-w-full relative z-30"></div>
           <div id="page-content" class="flex-1 flex flex-col overflow-x-hidden min-w-0 max-w-full">
             <!-- Injetado dinamicamente via router -->
           </div>
