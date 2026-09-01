@@ -306,6 +306,20 @@ export const HELP_ITEMS: HelpItem[] = [
     description: 'Sugestões inteligentes de adicionais e upgrades em propostas comerciais.',
     details: 'O PaxFlow Upsell Engine™ analisa automaticamente os destinos e produtos cadastrados em uma cotação e gera sugestões de adicionais de alta margem (Seguros Saúde Internacional, Passes & Ingressos VIPs, Transfer Privativo, Upgrades de Hotelaria e Seguro Cancel Flex). Ao enviar a proposta, o consultor pode clicar em "+ Incluir" para adicionar a sugestão ao resumo comercial em 1-clique.'
   },
+  {
+    id: 'edicao-completa-orcamento',
+    modulo: 'orcamentos',
+    label: 'Edição Completa de Orçamento (Data da Viagem, Valor, Destino e Tags)',
+    description: 'Como atualizar dados de um orçamento ativo em qualquer etapa do Kanban.',
+    details: 'No rodapé dos cards de orçamento, clique no ícone de lápis (✏️). O modal de edição permite alterar:\n\n- **Data da Viagem**: Digite a nova data (com validação e conversão automática no banco).\n- **Valor da Proposta (R$)**: Atualize o valor cotado com máscara de moeda.\n- **Destino e Nome do Cliente**: Ajuste informações do passageiro ou rota.\n- **Contato e Temperatura**: Modifique o telefone e a classificação do lead (Frio, Normal, Quente).\n- **Tags**: Adicione palavras-chave separadas por vírgula.\n\nTodas as alterações são salvas no banco de dados e refletidas no Kanban em tempo real.'
+  },
+  {
+    id: 'reatribuicao-consultor-avatar',
+    modulo: 'orcamentos',
+    label: 'Reatribuição Rápida de Consultor pelo Avatar',
+    description: 'Como transferir a responsabilidade de um orçamento clicando na foto.',
+    details: 'No rodapé dos cards de orçamento, clicar diretamente sobre a foto/avatar do consultor responsável abre a janela de "Reatribuir Consultor Responsável". Selecione o novo membro da equipe na lista para transferir a gestão do lead imediatamente. O avatar exibe um tooltip explicativo ao passar o mouse.'
+  },
 
   // ==================== 6. Reembolsos & Financeiro ====================
   {
