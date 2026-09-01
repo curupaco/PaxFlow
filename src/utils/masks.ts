@@ -41,6 +41,7 @@ export function formatBrDateToIso(brStr: string): string | null {
   if (!brStr) return null;
   const datePart = brStr.trim().split(' ')[0];
   if (!datePart) return null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(datePart)) return datePart;
   const parts = datePart.split('/');
   if (parts.length === 3) {
     const day = parts[0].padStart(2, '0');
@@ -67,10 +68,22 @@ export function formatIsoDateToBr(isoStr: string): string {
 /**
  * Converte representações monetárias brasileiras (ex: R$ 1.234,56 ou 1.234,56) para float padrão
  */
-export function parseDoubleBr(valStr: string): number {
-  if (!valStr) return 0;
-  const clean = valStr.replace(/R\$\s?/gi, '').replace(/\./g, '').replace(',', '.').trim();
-  const num = parseFloat(clean);
+export function parseDoubleBr(valStr: string | number): number {
+  if (valStr === undefined || valStr === null || valStr === '') return 0;
+  if (typeof valStr === 'number') return isNaN(valStr) ? 0 : valStr;
+
+  const str = String(valStr).trim().replace(/R\$\s?/gi, '');
+  if (!str) return 0;
+
+  // Se contém vírgula, assume formato brasileiro (ex: 1.234,56)
+  if (str.includes(',')) {
+    const clean = str.replace(/\./g, '').replace(',', '.').trim();
+    const num = parseFloat(clean);
+    return isNaN(num) ? 0 : num;
+  }
+
+  // Se não contém vírgula, assume formato padrão float (ex: 1234.56 ou 5000)
+  const num = parseFloat(str.trim());
   return isNaN(num) ? 0 : num;
 }
 
