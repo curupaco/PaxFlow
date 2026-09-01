@@ -126,21 +126,21 @@ export class EscalaService {
         data: '09/07',
         nome: 'Revolução Constitucionalista (SP)',
         nomeCurto: '09/07 Rev. SP',
-        consultoresTrabalharam: ['Marinna Morena', 'Guto Bassaroto', 'Rafael Sousa']
+        consultoresTrabalharam: []
       },
       {
         id: 'fp-2',
         data: '01/05',
         nome: 'Dia do Trabalho',
         nomeCurto: '01/05 Trab.',
-        consultoresTrabalharam: ['Maria Carvalho', 'Eduardo Mariano', 'Laura Montu']
+        consultoresTrabalharam: []
       },
       {
         id: 'fp-3',
         data: '21/04',
         nome: 'Tiradentes',
         nomeCurto: '21/04 Tirad.',
-        consultoresTrabalharam: ['Marinna Morena', 'Fernanda Ganem', 'Rafael Sousa']
+        consultoresTrabalharam: []
       }
     ];
 

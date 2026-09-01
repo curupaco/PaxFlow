@@ -2243,19 +2243,19 @@ export class InboxPage {
                 </span>
                 Banco de folgas
               </h2>
-              <div class="flex items-center gap-2">
-                <span class="escala-badge">Saldo atual</span>
+              <div class="flex items-center gap-2 shrink-0">
+                <span class="escala-badge whitespace-nowrap">Saldo atual</span>
                 ${isAdmin ? `
                   <button id="btn-edit-banco-folgas" class="text-xs font-bold text-indigo-600 hover:text-indigo-800 dark:text-indigo-400">Editar</button>
                 ` : ''}
               </div>
             </div>
-            <div>
+            <div class="p-2">
               ${this.bancoFolgasData.map(b => `
-                <div class="escala-row">
-                  <strong class="text-slate-800 dark:text-slate-100">${b.consultor_nome}</strong>
-                  <span class="escala-balance">${b.saldo_dias}</span>
-                  <span class="text-xs text-slate-400 truncate" title="${b.detalhes_historico}">${b.detalhes_historico}</span>
+                <div class="escala-row flex items-center justify-between gap-2 p-2">
+                  <strong class="text-slate-800 dark:text-slate-100 text-xs font-bold truncate max-w-[90px]" title="${b.consultor_nome}">${b.consultor_nome.split(' ')[0]}</strong>
+                  <span class="escala-balance shrink-0">${b.saldo_dias}</span>
+                  <span class="text-xs text-slate-400 truncate flex-1 min-w-0" title="${b.detalhes_historico}">${b.detalhes_historico}</span>
                 </div>
               `).join('')}
             </div>
@@ -2270,22 +2270,22 @@ export class InboxPage {
                 </span>
                 Plantões em Feriados
               </h2>
-              <div class="flex items-center gap-2">
-                <span class="escala-badge">Últimos 3 feriados</span>
+              <div class="flex items-center gap-2 shrink-0">
+                <span class="escala-badge whitespace-nowrap">3 Feriados</span>
                 ${isAdmin ? `
                   <button id="btn-edit-feriados-plantoes" class="text-xs font-bold text-indigo-600 hover:text-indigo-800 dark:text-indigo-400">Ajustar</button>
                 ` : ''}
               </div>
             </div>
-            <div class="overflow-x-auto">
+            <div class="overflow-x-auto p-2">
               <table class="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr class="border-b border-slate-100 dark:border-slate-800 text-[10px] uppercase font-black text-slate-400">
-                    <th class="py-2 px-2">Consultor</th>
+                    <th class="py-2 px-1">Consultor</th>
                     ${(this.feriadosPlantoesData || []).map(f => `
-                      <th class="py-2 px-1 text-center" title="${f.nome}">
+                      <th class="py-2 px-0.5 text-center" title="${f.nome}">
                         <span class="block text-slate-700 dark:text-slate-300 font-extrabold">${f.data}</span>
-                        <span class="block text-[9px] font-semibold text-slate-400 truncate max-w-[70px] mx-auto">${f.nomeCurto ? f.nomeCurto.split(' ').slice(1).join(' ') : f.nome.split(' ')[0]}</span>
+                        <span class="block text-[9px] font-semibold text-slate-400 truncate max-w-[65px] mx-auto">${f.nomeCurto ? f.nomeCurto.split(' ').slice(1).join(' ') : f.nome.split(' ')[0]}</span>
                       </th>
                     `).join('')}
                   </tr>
@@ -2293,19 +2293,20 @@ export class InboxPage {
                 <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 font-semibold text-slate-700 dark:text-slate-200">
                   ${this.bancoFolgasData.map(b => {
                     const cNome = b.consultor_nome;
+                    const primeiroNome = cNome.split(' ')[0];
                     return `
                       <tr class="hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition">
-                        <td class="py-2 px-2 font-bold truncate max-w-[100px]" title="${cNome}">${cNome}</td>
+                        <td class="py-2 px-1 font-bold truncate max-w-[85px]" title="${cNome}">${primeiroNome}</td>
                         ${(this.feriadosPlantoesData || []).map(f => {
                           const trabalhou = f.consultoresTrabalharam.some(n => n.trim().toLowerCase() === cNome.trim().toLowerCase());
                           return `
-                            <td class="py-2 px-1 text-center">
+                            <td class="py-2 px-0.5 text-center">
                               ${trabalhou ? `
-                                <span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/40 text-[10px] font-black" title="Trabalhou no feriado ${f.nome}">
+                                <span class="inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/40 text-[10px] font-black" title="Trabalhou no feriado ${f.nome}">
                                   🤓 Sim
                                 </span>
                               ` : `
-                                <span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-slate-50 dark:bg-slate-800/60 text-slate-400 border border-slate-200/30 text-[10px] font-bold" title="Folgou no feriado ${f.nome}">
+                                <span class="inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-slate-50 dark:bg-slate-800/60 text-slate-400 border border-slate-200/30 text-[10px] font-bold" title="Folgou no feriado ${f.nome}">
                                   😎 Folga
                                 </span>
                               `}
@@ -2320,23 +2321,23 @@ export class InboxPage {
             </div>
           </section>
 
-          <!-- Treinamentos · Coffee · Eventos Card -->
+          <!-- Eventos Card -->
           <section class="escala-card">
             <div class="escala-card-head">
               <h2 class="flex items-center gap-2 font-black text-slate-800 dark:text-slate-100 text-sm">
                 <span class="w-6 h-6 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 border border-indigo-500/20">
                   <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
                 </span>
-                Treinamentos · Coffee · Eventos
+                Eventos
               </h2>
-              <div class="flex items-center gap-2">
-                <span class="escala-badge">${monthNames[this.escalaMes - 1]}</span>
+              <div class="flex items-center gap-2 shrink-0">
+                <span class="escala-badge whitespace-nowrap">${monthNames[this.escalaMes - 1]}</span>
                 ${isAdmin ? `
                   <button id="btn-add-evento-escala" class="text-xs font-bold text-indigo-600 hover:text-indigo-800 dark:text-indigo-400">+ Adicionar</button>
                 ` : ''}
               </div>
             </div>
-            <div class="space-y-2">
+            <div class="p-2 space-y-2">
               ${(() => {
                 const mesStr = String(this.escalaMes).padStart(2, '0');
                 const eventosDoMes = (this.eventosEscalaData || []).filter(ev => {
@@ -2349,16 +2350,16 @@ export class InboxPage {
                 }
 
                 return eventosDoMes.map(ev => `
-                  <div class="escala-eventrow flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
-                    <div class="flex items-center gap-3 shrink-0 min-w-0">
+                  <div class="escala-eventrow flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
+                    <div class="flex items-center gap-2.5 flex-1 min-w-0 mr-2">
                       <div class="escala-event-date shrink-0 font-black text-slate-800 dark:text-indigo-400 text-xs px-2 py-1 bg-slate-100 dark:bg-slate-800/80 rounded-lg border border-slate-200/50 dark:border-slate-700/50">${ev.data}</div>
-                      <div class="min-w-0">
+                      <div class="flex-1 min-w-0">
                         <strong class="text-slate-800 dark:text-slate-100 text-xs font-bold block truncate">${ev.consultor_nome}</strong>
                         <div class="text-xs text-slate-500 dark:text-slate-400 font-medium truncate">${ev.titulo}</div>
                       </div>
                     </div>
                     ${isAdmin ? `
-                      <button data-delete-evento-id="${ev.id}" class="text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 p-1.5 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition shrink-0 ml-2" title="Excluir evento">
+                      <button data-delete-evento-id="${ev.id}" class="text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 p-1.5 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition shrink-0" title="Excluir evento">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                       </button>
                     ` : ''}
