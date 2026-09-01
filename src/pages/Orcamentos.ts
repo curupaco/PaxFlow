@@ -2465,10 +2465,12 @@ export class OrcamentosPage {
         btnSave.innerHTML = `<span>⏳</span> Salvando...`;
       }
 
+      const dataViagemIso = (dataViagemVal.includes('/') ? formatBrDateToIso(dataViagemVal) : dataViagemVal) || dataViagemVal;
+
       orc.nomeCliente = nomeVal;
       orc.contato = contatoVal;
       orc.destino = destinoVal;
-      orc.dataViagem = dataViagemVal;
+      orc.dataViagem = dataViagemIso;
       orc.valorProposta = valorVal ? parseDoubleBr(valorVal) : undefined;
       orc.temperatura = tempVal || 'Normal';
       orc.tags = tagsVal ? tagsVal.split(',').map(t => t.trim()).filter(Boolean) : [];
