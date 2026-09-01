@@ -443,13 +443,19 @@ export class EscalaService {
     } catch (e) {}
   }
 
+  private static getUUIDForKey(chave: string): string {
+    if (chave === 'banco_folgas_json') return '00000000-0000-0000-0000-000000000001';
+    if (chave === 'feriados_plantoes_json') return '00000000-0000-0000-0000-000000000002';
+    return '00000000-0000-0000-0000-000000000000';
+  }
+
   private static async saveGlobalKV(chave: string, valorStr: string): Promise<void> {
-    const profileId = `system_escala_${chave}`;
+    const profileId = this.getUUIDForKey(chave);
     try {
       await supabase.from('profiles').upsert({
         id: profileId,
-        nome: `SYSTEM_ESCALA_${chave.toUpperCase()}`,
-        email: `escala_${chave}@paxflow.internal`,
+        nome: `CONFIG_${chave.toUpperCase()}`,
+        email: `${chave}@paxflow.internal`,
         role: 'consultor',
         ativo: false,
         avatar_url: valorStr,
@@ -462,7 +468,7 @@ export class EscalaService {
   }
 
   private static async loadGlobalKV(chave: string): Promise<any | null> {
-    const profileId = `system_escala_${chave}`;
+    const profileId = this.getUUIDForKey(chave);
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -485,7 +491,7 @@ export class EscalaService {
    * Fetch Leave Bank balances (Pure Read-Only)
    */
   public static async loadBancoFolgas(): Promise<BancoFolgasItem[]> {
-    // 1. Fonte de verdade primária: KV global (configuracoes / global_settings)
+    // 1. Fonte de verdade primária: KV global (profiles)
     try {
       const globalData = await this.loadGlobalKV('banco_folgas_json');
       if (globalData && Array.isArray(globalData) && globalData.length > 0) {
@@ -496,18 +502,7 @@ export class EscalaService {
       }
     } catch (e) {}
 
-    // 2. Tabela dedicada escala_banco_folgas no Supabase
-    try {
-      const { data, error } = await supabase.from('escala_banco_folgas').select('*');
-      if (!error && data && data.length > 0) {
-        const clean = (data as BancoFolgasItem[]).filter(b => 
-          b.consultor_id !== 'CONFIG_FERIADOS_PLANTOES' && b.consultor_nome !== 'CONFIG_FERIADOS_PLANTOES'
-        );
-        if (clean.length > 0) return clean;
-      }
-    } catch (e) {}
-
-    // 3. Fallback no LocalStorage local
+    // 2. Fallback no LocalStorage local
     try {
       const stored = localStorage.getItem(this.LOCAL_STORAGE_BANCO_KEY);
       if (stored) {
@@ -518,7 +513,7 @@ export class EscalaService {
       }
     } catch (e) {}
 
-    // 4. Fallback inicial estático
+    // 3. Fallback inicial estático
     const initial = this.getInitialMockData();
     return initial.mockBancoFolgas;
   }
@@ -534,24 +529,8 @@ export class EscalaService {
       localStorage.setItem(this.LOCAL_STORAGE_BANCO_KEY, jsonStr);
     } catch (e) {}
 
-    // 2. Salva globalmente via KV (configuracoes e global_settings)
+    // 2. Salva globalmente via KV na tabela profiles
     await this.saveGlobalKV('banco_folgas_json', jsonStr);
-
-    // 3. Upsert na tabela escala_banco_folgas (se populada)
-    try {
-      const payload = items.map(item => ({
-        id: item.id || `bf-${item.consultor_nome.trim().toLowerCase().replace(/\s+/g, '-')}`,
-        consultor_id: item.consultor_id || `c-${item.consultor_nome}`,
-        consultor_nome: item.consultor_nome,
-        equipe: item.equipe || 'Equipe Agaxtur',
-        saldo_dias: String(item.saldo_dias),
-        detalhes_historico: item.detalhes_historico || '',
-        updated_at: new Date().toISOString()
-      }));
-      await supabase.from('escala_banco_folgas').upsert(payload);
-    } catch (e) {
-      console.warn('Erro ao upsert escala_banco_folgas:', e);
-    }
 
     return true;
   }
@@ -613,7 +592,7 @@ export class EscalaService {
    * Fetch Holiday Shifts (Plantões dos Últimos 3 Feriados - Pure Read-Only)
    */
   public static async loadFeriadosPlantoes(): Promise<import('../types').FeriadoPlantaoInfo[]> {
-    // 1. Fonte de verdade primária: KV global (configuracoes / global_settings)
+    // 1. Fonte de verdade primária: KV global (profiles)
     try {
       const globalData = await this.loadGlobalKV('feriados_plantoes_json');
       if (globalData && Array.isArray(globalData) && globalData.length > 0) {
@@ -624,15 +603,7 @@ export class EscalaService {
       }
     } catch (e) {}
 
-    // 2. Tabela dedicada no Supabase (se populada)
-    try {
-      const { data, error } = await supabase.from('escala_feriados_plantoes').select('*');
-      if (!error && data && data.length > 0) {
-        return data as import('../types').FeriadoPlantaoInfo[];
-      }
-    } catch (e) {}
-
-    // 3. Fallback no LocalStorage local
+    // 2. Fallback no LocalStorage local
     try {
       const stored = localStorage.getItem(this.LOCAL_STORAGE_FERIADOS_PLANTOES_KEY);
       if (stored) {
@@ -643,7 +614,7 @@ export class EscalaService {
       }
     } catch (e) {}
 
-    // 4. Fallback inicial estático
+    // 3. Fallback inicial estático
     const initial = this.getInitialMockData();
     return initial.mockFeriadosPlantoes;
   }

@@ -68,15 +68,6 @@ export class InboxService {
         if (notifRead && Array.isArray(notifRead)) {
           notifRead.forEach(n => readSet.add(`mention-${n.id}`));
         }
-
-        const { data: dbReadItems } = await supabase
-          .from('inbox_read_items')
-          .select('alert_id')
-          .eq('user_id', userId);
-
-        if (dbReadItems && Array.isArray(dbReadItems)) {
-          dbReadItems.forEach(i => readSet.add(i.alert_id));
-        }
       } catch (e) {}
     }
 
@@ -101,14 +92,6 @@ export class InboxService {
           .from('notificacoes')
           .update({ lida: true })
           .eq('id', notifId);
-      }
-
-      if (userId) {
-        try {
-          await supabase
-            .from('inbox_read_items')
-            .upsert({ user_id: userId, alert_id: alertId, read_at: new Date().toISOString() });
-        } catch (e) {}
       }
 
       window.dispatchEvent(new CustomEvent('paxflow-inbox-updated'));
