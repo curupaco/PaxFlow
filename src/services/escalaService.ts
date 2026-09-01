@@ -495,33 +495,33 @@ export class EscalaService {
   }
 
   /**
-   * Fetch Leave Bank balances
+   * Fetch Leave Bank balances (Pure Read-Only)
    */
   public static async loadBancoFolgas(): Promise<BancoFolgasItem[]> {
     // 1. Fonte de verdade primária: KV global (configuracoes / global_settings)
-    const globalData = await this.loadGlobalKV('banco_folgas_json');
-    if (globalData && Array.isArray(globalData) && globalData.length > 0) {
-      try {
-        localStorage.setItem(this.LOCAL_STORAGE_BANCO_KEY, JSON.stringify(globalData));
-      } catch (e) {}
-      return globalData;
-    }
+    try {
+      const globalData = await this.loadGlobalKV('banco_folgas_json');
+      if (globalData && Array.isArray(globalData) && globalData.length > 0) {
+        try {
+          localStorage.setItem(this.LOCAL_STORAGE_BANCO_KEY, JSON.stringify(globalData));
+        } catch (e) {}
+        return globalData;
+      }
+    } catch (e) {}
 
-    // 2. Se o Supabase ainda não possui o KV global, verifica o LocalStorage local e envia para o Supabase
+    // 2. Fallback no LocalStorage local
     try {
       const stored = localStorage.getItem(this.LOCAL_STORAGE_BANCO_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          this.saveGlobalKV('banco_folgas_json', stored);
           return parsed;
         }
       }
     } catch (e) {}
 
-    // 3. Fallback inicial configurado e sincronizado com o Supabase
+    // 3. Fallback inicial estático
     const initial = this.getInitialMockData();
-    this.saveGlobalKV('banco_folgas_json', JSON.stringify(initial.mockBancoFolgas));
     return initial.mockBancoFolgas;
   }
 
@@ -612,33 +612,33 @@ export class EscalaService {
   }
 
   /**
-   * Fetch Holiday Shifts (Plantões dos Últimos 3 Feriados)
+   * Fetch Holiday Shifts (Plantões dos Últimos 3 Feriados - Pure Read-Only)
    */
   public static async loadFeriadosPlantoes(): Promise<import('../types').FeriadoPlantaoInfo[]> {
     // 1. Fonte de verdade primária: KV global (configuracoes / global_settings)
-    const globalData = await this.loadGlobalKV('feriados_plantoes_json');
-    if (globalData && Array.isArray(globalData) && globalData.length > 0) {
-      try {
-        localStorage.setItem(this.LOCAL_STORAGE_FERIADOS_PLANTOES_KEY, JSON.stringify(globalData));
-      } catch (e) {}
-      return globalData;
-    }
+    try {
+      const globalData = await this.loadGlobalKV('feriados_plantoes_json');
+      if (globalData && Array.isArray(globalData) && globalData.length > 0) {
+        try {
+          localStorage.setItem(this.LOCAL_STORAGE_FERIADOS_PLANTOES_KEY, JSON.stringify(globalData));
+        } catch (e) {}
+        return globalData;
+      }
+    } catch (e) {}
 
-    // 2. Se o Supabase ainda não possui o KV global, verifica o LocalStorage local e envia para o Supabase
+    // 2. Fallback no LocalStorage local
     try {
       const stored = localStorage.getItem(this.LOCAL_STORAGE_FERIADOS_PLANTOES_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          this.saveGlobalKV('feriados_plantoes_json', stored);
           return parsed;
         }
       }
     } catch (e) {}
 
-    // 3. Fallback inicial configurado e sincronizado com o Supabase
+    // 3. Fallback inicial estático
     const initial = this.getInitialMockData();
-    this.saveGlobalKV('feriados_plantoes_json', JSON.stringify(initial.mockFeriadosPlantoes));
     return initial.mockFeriadosPlantoes;
   }
 
