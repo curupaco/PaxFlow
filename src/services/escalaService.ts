@@ -444,28 +444,43 @@ export class EscalaService {
   }
 
   private static async saveGlobalKV(chave: string, valorStr: string): Promise<void> {
+    const now = new Date().toISOString();
+
     // 1. Tenta salvar na tabela configuracoes (chave, valor)
     try {
-      await supabase.from('configuracoes').upsert({
-        chave,
-        valor: valorStr,
-        updated_at: new Date().toISOString()
-      }, { onConflict: 'chave' });
-    } catch (e) {}
+      const { data: existing } = await supabase
+        .from('configuracoes')
+        .select('id')
+        .eq('chave', chave)
+        .maybeSingle();
+
+      if (existing && existing.id) {
+        await supabase
+          .from('configuracoes')
+          .update({ valor: valorStr, updated_at: now })
+          .eq('id', existing.id);
+      } else {
+        await supabase
+          .from('configuracoes')
+          .insert({ chave, valor: valorStr, updated_at: now });
+      }
+    } catch (e) {
+      console.warn('Erro ao gravar configuracoes no Supabase:', e);
+    }
 
     // 2. Tenta salvar em global_settings
     try {
-      const { data } = await supabase.from('global_settings').select('id').limit(1).maybeSingle();
-      if (data && data.id) {
-        await supabase.from('global_settings').update({
-          [chave]: valorStr,
-          updated_at: new Date().toISOString()
-        }).eq('id', data.id);
-      } else {
-        await supabase.from('global_settings').insert({
-          [chave]: valorStr,
-          updated_at: new Date().toISOString()
-        });
+      const { data: stData } = await supabase
+        .from('global_settings')
+        .select('id')
+        .limit(1)
+        .maybeSingle();
+
+      if (stData && stData.id) {
+        await supabase
+          .from('global_settings')
+          .update({ [chave]: valorStr, updated_at: now })
+          .eq('id', stData.id);
       }
     } catch (e) {}
 
@@ -475,7 +490,12 @@ export class EscalaService {
   private static async loadGlobalKV(chave: string): Promise<any | null> {
     // 1. Tenta carregar da tabela configuracoes (chave, valor)
     try {
-      const { data, error } = await supabase.from('configuracoes').select('valor').eq('chave', chave).maybeSingle();
+      const { data, error } = await supabase
+        .from('configuracoes')
+        .select('valor')
+        .eq('chave', chave)
+        .maybeSingle();
+
       if (!error && data && data.valor) {
         const parsed = JSON.parse(data.valor);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
@@ -484,7 +504,12 @@ export class EscalaService {
 
     // 2. Tenta carregar de global_settings
     try {
-      const { data, error } = await supabase.from('global_settings').select('*').limit(1).maybeSingle();
+      const { data, error } = await supabase
+        .from('global_settings')
+        .select('*')
+        .limit(1)
+        .maybeSingle();
+
       if (!error && data && data[chave]) {
         const parsed = JSON.parse(data[chave]);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
@@ -509,7 +534,18 @@ export class EscalaService {
       }
     } catch (e) {}
 
-    // 2. Fallback no LocalStorage local
+    // 2. Tabela dedicada escala_banco_folgas no Supabase
+    try {
+      const { data, error } = await supabase.from('escala_banco_folgas').select('*');
+      if (!error && data && data.length > 0) {
+        const clean = (data as BancoFolgasItem[]).filter(b => 
+          b.consultor_id !== 'CONFIG_FERIADOS_PLANTOES' && b.consultor_nome !== 'CONFIG_FERIADOS_PLANTOES'
+        );
+        if (clean.length > 0) return clean;
+      }
+    } catch (e) {}
+
+    // 3. Fallback no LocalStorage local
     try {
       const stored = localStorage.getItem(this.LOCAL_STORAGE_BANCO_KEY);
       if (stored) {
@@ -520,7 +556,7 @@ export class EscalaService {
       }
     } catch (e) {}
 
-    // 3. Fallback inicial estático
+    // 4. Fallback inicial estático
     const initial = this.getInitialMockData();
     return initial.mockBancoFolgas;
   }
@@ -626,7 +662,15 @@ export class EscalaService {
       }
     } catch (e) {}
 
-    // 2. Fallback no LocalStorage local
+    // 2. Tabela dedicada no Supabase (se populada)
+    try {
+      const { data, error } = await supabase.from('escala_feriados_plantoes').select('*');
+      if (!error && data && data.length > 0) {
+        return data as import('../types').FeriadoPlantaoInfo[];
+      }
+    } catch (e) {}
+
+    // 3. Fallback no LocalStorage local
     try {
       const stored = localStorage.getItem(this.LOCAL_STORAGE_FERIADOS_PLANTOES_KEY);
       if (stored) {
@@ -637,7 +681,7 @@ export class EscalaService {
       }
     } catch (e) {}
 
-    // 3. Fallback inicial estático
+    // 4. Fallback inicial estático
     const initial = this.getInitialMockData();
     return initial.mockFeriadosPlantoes;
   }
