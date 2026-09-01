@@ -181,12 +181,12 @@ export function formatBrDateToYmd(dateStr: string): string | null {
  */
 export function parseBrFloat(valStr: string): number | null {
   if (!valStr) return null;
-  let clean = valStr.replace(/R\$\s?/gi, '').replace(/\s/g, '');
-  if (clean.includes('.') && clean.includes(',')) {
-    clean = clean.replace(/\./g, '').replace(/,/g, '.');
-  } else if (clean.includes(',')) {
-    clean = clean.replace(/,/g, '.');
+  let str = String(valStr).trim().replace(/R\$\s?/gi, '').replace(/\s/g, '');
+  if (!str) return null;
+
+  if (str.includes(',')) {
+    str = str.replace(/\./g, '').replace(',', '.');
   }
-  const parsed = parseFloat(clean);
+  const parsed = parseFloat(str);
   return isNaN(parsed) ? null : parsed;
 }
