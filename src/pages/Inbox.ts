@@ -238,6 +238,7 @@ export class InboxPage {
   }
 
   private realtimeChannel: any = null;
+  private localSyncChannel: BroadcastChannel | null = null;
 
   /**
    * Configura ouvinte em tempo real para sincronização entre usuários
@@ -249,9 +250,23 @@ export class InboxPage {
         this.realtimeChannel = null;
       }
 
+      if (!this.localSyncChannel && typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+        this.localSyncChannel = new BroadcastChannel('paxflow_escala_sync');
+        this.localSyncChannel.onmessage = async () => {
+          await this.loadEscalaData();
+          this.render();
+          this.setupEventListeners();
+        };
+      }
+
       const channelName = `inbox-escala-realtime-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
       this.realtimeChannel = supabase
         .channel(channelName)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'configuracoes' }, async () => {
+          await this.loadEscalaData();
+          this.render();
+          this.setupEventListeners();
+        })
         .on('postgres_changes', { event: '*', schema: 'public', table: 'escala_banco_folgas' }, async () => {
           await this.loadEscalaData();
           this.render();
@@ -277,6 +292,12 @@ export class InboxPage {
         supabase.removeChannel(this.realtimeChannel);
       } catch (e) {}
       this.realtimeChannel = null;
+    }
+    if (this.localSyncChannel) {
+      try {
+        this.localSyncChannel.close();
+      } catch (e) {}
+      this.localSyncChannel = null;
     }
   }
 

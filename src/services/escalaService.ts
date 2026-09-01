@@ -422,35 +422,64 @@ export class EscalaService {
   /**
    * Fetch Leave Bank balances
    */
-  private static async saveGlobalSettingsField(field: string, value: string): Promise<void> {
+  private static broadcastChannel = typeof window !== 'undefined' && 'BroadcastChannel' in window
+    ? new BroadcastChannel('paxflow_escala_sync')
+    : null;
+
+  private static notifySync(): void {
+    try {
+      this.broadcastChannel?.postMessage({ type: 'escala_data_changed', timestamp: Date.now() });
+    } catch (e) {}
+  }
+
+  private static async saveGlobalKV(chave: string, valorStr: string): Promise<void> {
+    // 1. Tenta salvar na tabela configuracoes (chave, valor)
+    try {
+      await supabase.from('configuracoes').upsert({
+        chave,
+        valor: valorStr,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'chave' });
+    } catch (e) {}
+
+    // 2. Tenta salvar em global_settings
     try {
       const { data } = await supabase.from('global_settings').select('id').limit(1).maybeSingle();
       if (data && data.id) {
         await supabase.from('global_settings').update({
-          [field]: value,
+          [chave]: valorStr,
           updated_at: new Date().toISOString()
         }).eq('id', data.id);
       } else {
         await supabase.from('global_settings').insert({
-          [field]: value,
+          [chave]: valorStr,
           updated_at: new Date().toISOString()
         });
       }
-    } catch (e) {
-      console.warn(`Erro ao salvar ${field} em global_settings:`, e);
-    }
+    } catch (e) {}
+
+    this.notifySync();
   }
 
-  private static async loadGlobalSettingsField(field: string): Promise<any | null> {
+  private static async loadGlobalKV(chave: string): Promise<any | null> {
+    // 1. Tenta carregar da tabela configuracoes (chave, valor)
     try {
-      const { data, error } = await supabase.from('global_settings').select('*').limit(1).maybeSingle();
-      if (!error && data && data[field]) {
-        const parsed = JSON.parse(data[field]);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
-        }
+      const { data, error } = await supabase.from('configuracoes').select('valor').eq('chave', chave).maybeSingle();
+      if (!error && data && data.valor) {
+        const parsed = JSON.parse(data.valor);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       }
     } catch (e) {}
+
+    // 2. Tenta carregar de global_settings
+    try {
+      const { data, error } = await supabase.from('global_settings').select('*').limit(1).maybeSingle();
+      if (!error && data && data[chave]) {
+        const parsed = JSON.parse(data[chave]);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
+
     return null;
   }
 
@@ -458,8 +487,8 @@ export class EscalaService {
    * Fetch Leave Bank balances
    */
   public static async loadBancoFolgas(): Promise<BancoFolgasItem[]> {
-    // 1. Fonte de verdade primária: registro JSON global em global_settings
-    const globalData = await this.loadGlobalSettingsField('banco_folgas_json');
+    // 1. Fonte de verdade primária: KV global (configuracoes / global_settings)
+    const globalData = await this.loadGlobalKV('banco_folgas_json');
     if (globalData) {
       try {
         localStorage.setItem(this.LOCAL_STORAGE_BANCO_KEY, JSON.stringify(globalData));
@@ -501,10 +530,10 @@ export class EscalaService {
       localStorage.setItem(this.LOCAL_STORAGE_BANCO_KEY, jsonStr);
     } catch (e) {}
 
-    // 2. Salva em global_settings (Garantia primária de sincronia entre todos os usuários)
-    await this.saveGlobalSettingsField('banco_folgas_json', jsonStr);
+    // 2. Salva globalmente via KV (configuracoes e global_settings)
+    await this.saveGlobalKV('banco_folgas_json', jsonStr);
 
-    // 3. Upsert na tabela escala_banco_folgas
+    // 3. Upsert na tabela escala_banco_folgas (se populada)
     try {
       const payload = items.map(item => ({
         id: item.id || `bf-${item.consultor_nome.trim().toLowerCase().replace(/\s+/g, '-')}`,
@@ -553,6 +582,7 @@ export class EscalaService {
     try {
       localStorage.setItem(this.LOCAL_STORAGE_EVENTOS_KEY, JSON.stringify(list));
       await supabase.from('escala_eventos').insert(evento);
+      this.notifySync();
       return true;
     } catch (e) {
       return false;
@@ -568,6 +598,7 @@ export class EscalaService {
     try {
       localStorage.setItem(this.LOCAL_STORAGE_EVENTOS_KEY, JSON.stringify(updated));
       await supabase.from('escala_eventos').delete().eq('id', eventoId);
+      this.notifySync();
       return true;
     } catch (e) {
       return false;
@@ -578,8 +609,8 @@ export class EscalaService {
    * Fetch Holiday Shifts (Plantões dos Últimos 3 Feriados)
    */
   public static async loadFeriadosPlantoes(): Promise<import('../types').FeriadoPlantaoInfo[]> {
-    // 1. Fonte de verdade primária: registro JSON global em global_settings
-    const globalData = await this.loadGlobalSettingsField('feriados_plantoes_json');
+    // 1. Fonte de verdade primária: KV global (configuracoes / global_settings)
+    const globalData = await this.loadGlobalKV('feriados_plantoes_json');
     if (globalData) {
       try {
         localStorage.setItem(this.LOCAL_STORAGE_FERIADOS_PLANTOES_KEY, JSON.stringify(globalData));
@@ -625,8 +656,8 @@ export class EscalaService {
       localStorage.setItem(this.LOCAL_STORAGE_FERIADOS_PLANTOES_KEY, jsonStr);
     } catch (e) {}
 
-    // 2. Salva em global_settings (Garantia primária de sincronia entre todos os usuários)
-    await this.saveGlobalSettingsField('feriados_plantoes_json', jsonStr);
+    // 2. Salva em KV global (configuracoes / global_settings)
+    await this.saveGlobalKV('feriados_plantoes_json', jsonStr);
 
     // 3. Tenta salvar na tabela dedicada escala_feriados_plantoes (se disponível)
     try {
