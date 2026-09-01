@@ -444,75 +444,37 @@ export class EscalaService {
   }
 
   private static async saveGlobalKV(chave: string, valorStr: string): Promise<void> {
-    const now = new Date().toISOString();
-
-    // 1. Tenta salvar na tabela configuracoes (chave, valor)
+    const profileId = `system_escala_${chave}`;
     try {
-      const { data: existing } = await supabase
-        .from('configuracoes')
-        .select('id')
-        .eq('chave', chave)
-        .maybeSingle();
-
-      if (existing && existing.id) {
-        await supabase
-          .from('configuracoes')
-          .update({ valor: valorStr, updated_at: now })
-          .eq('id', existing.id);
-      } else {
-        await supabase
-          .from('configuracoes')
-          .insert({ chave, valor: valorStr, updated_at: now });
-      }
+      await supabase.from('profiles').upsert({
+        id: profileId,
+        nome: `SYSTEM_ESCALA_${chave.toUpperCase()}`,
+        email: `escala_${chave}@paxflow.internal`,
+        role: 'consultor',
+        ativo: false,
+        avatar_url: valorStr,
+        updated_at: new Date().toISOString()
+      });
     } catch (e) {
-      console.warn('Erro ao gravar configuracoes no Supabase:', e);
+      console.warn(`[saveGlobalKV] profiles upsert error for ${chave}:`, e);
     }
-
-    // 2. Tenta salvar em global_settings
-    try {
-      const { data: stData } = await supabase
-        .from('global_settings')
-        .select('id')
-        .limit(1)
-        .maybeSingle();
-
-      if (stData && stData.id) {
-        await supabase
-          .from('global_settings')
-          .update({ [chave]: valorStr, updated_at: now })
-          .eq('id', stData.id);
-      }
-    } catch (e) {}
-
     this.notifySync();
   }
 
   private static async loadGlobalKV(chave: string): Promise<any | null> {
-    // 1. Tenta carregar da tabela configuracoes (chave, valor)
+    const profileId = `system_escala_${chave}`;
     try {
       const { data, error } = await supabase
-        .from('configuracoes')
-        .select('valor')
-        .eq('chave', chave)
+        .from('profiles')
+        .select('avatar_url')
+        .eq('id', profileId)
         .maybeSingle();
 
-      if (!error && data && data.valor) {
-        const parsed = JSON.parse(data.valor);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
-    } catch (e) {}
-
-    // 2. Tenta carregar de global_settings
-    try {
-      const { data, error } = await supabase
-        .from('global_settings')
-        .select('*')
-        .limit(1)
-        .maybeSingle();
-
-      if (!error && data && data[chave]) {
-        const parsed = JSON.parse(data[chave]);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      if (!error && data && data.avatar_url) {
+        const parsed = JSON.parse(data.avatar_url);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
       }
     } catch (e) {}
 
