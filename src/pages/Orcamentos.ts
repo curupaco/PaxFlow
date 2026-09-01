@@ -540,6 +540,16 @@ export class OrcamentosPage {
       });
     });
 
+    // Botão Editar Orçamento (✏️)
+    this.container.querySelectorAll('[data-action="editar-orcamento"]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        const id = (btn as HTMLElement).dataset.id;
+        if (id) this.openEditarOrcamentoModal(id);
+      });
+    });
+
     // Botão Mudar Consultor
     this.container.querySelectorAll('[data-action="mudar-consultor"]').forEach(btn => {
       btn.addEventListener('click', (e) => {
@@ -1092,15 +1102,13 @@ export class OrcamentosPage {
           
           <!-- Grupo de Ícones de Suporte e Gestão (Esquerda) -->
           <div class="flex items-center gap-1 shrink-0">
-            <div title="Responsável: ${dono?.nome || 'Consultor'}" class="shrink-0 mr-0.5">
+            <button data-action="mudar-consultor" data-id="${o.id}" title="Responsável: ${dono?.nome || 'Consultor'} (Clique para Reatribuir)" class="shrink-0 mr-0.5 hover:opacity-80 transition transform hover:scale-105 rounded-full focus:outline-none ring-2 ring-transparent hover:ring-indigo-500/50">
               ${getAvatarSvg(dono?.avatar_url, dono?.nome || 'Consultor', 'w-6 h-6')}
-            </div>
-            <button data-action="mudar-consultor" data-id="${o.id}" title="Reatribuir Consultor" class="p-1 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg transition flex items-center justify-center shrink-0">
+            </button>
+            <button data-action="editar-orcamento" data-id="${o.id}" title="Editar Orçamento (Data da Viagem, Destino, Cliente, Contato, Tags)" class="p-1 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg transition flex items-center justify-center shrink-0">
               <svg width="14" height="14" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                <circle cx="9" cy="7" r="4" />
-                <path d="M17 14l2-2 2 2" />
-                <path d="M19 12v5" />
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
               </svg>
             </button>
             <button data-action="lembrar-depois" data-id="${o.id}" title="Me Lembre Depois" class="p-1 hover:bg-amber-50 dark:hover:bg-amber-950/40 text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 rounded-lg transition flex items-center justify-center shrink-0">
@@ -2343,6 +2351,144 @@ export class OrcamentosPage {
         this.showToast('Erro no fechamento.', 'error', err);
         btnSubmit.disabled = false;
         btnSubmit.textContent = 'Emitir Viagem & Confirmar 🏆';
+      }
+    });
+  }
+
+  /**
+   * Abre o Modal de Edição Completo do Orçamento (Data da Viagem, Destino, Contato, Nome, Tags, Valor, Temperatura)
+   */
+  private async openEditarOrcamentoModal(id: string): Promise<void> {
+    const orc = this.orcamentos.find(o => o.id === id);
+    if (!orc) return;
+
+    this.renderModalOverlay();
+
+    const html = `
+      <div id="modal-container-editar" class="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 animate-scale-up z-50 my-8">
+        
+        <!-- Header -->
+        <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
+          <div class="flex items-center gap-2">
+            <span class="text-xl">✏️</span>
+            <div>
+              <h3 class="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-wide">Editar Orçamento</h3>
+              <p class="text-[11px] font-semibold text-slate-400 dark:text-slate-400">Atualize os detalhes do orçamento ${orc.codigoRef ? `[${orc.codigoRef}]` : ''}</p>
+            </div>
+          </div>
+          <button id="btn-close-modal-x" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-black text-lg p-1 rounded-lg transition">✕</button>
+        </div>
+
+        <!-- Body -->
+        <div class="p-6 space-y-4 max-h-[75vh] overflow-y-auto custom-scrollbar">
+          
+          <!-- Nome do Cliente & Contato -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Nome do Cliente *</label>
+              <input id="input-edit-nome" type="text" value="${orc.nomeCliente || ''}" class="w-full h-10 px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Nome do cliente" />
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Contato / Telefone</label>
+              <input id="input-edit-contato" type="text" value="${orc.contato || ''}" class="w-full h-10 px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="(00) 00000-0000" />
+            </div>
+          </div>
+
+          <!-- Destino & Data da Viagem -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Destino *</label>
+              <input id="input-edit-destino" type="text" value="${orc.destino || ''}" class="w-full h-10 px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Ex: Paris, França" />
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Data da Viagem *</label>
+              ${renderDateInputHTML('input-edit-dataviagem', orc.dataViagem || '')}
+            </div>
+          </div>
+
+          <!-- Valor Proposta & Temperatura -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Valor Proposta (R$)</label>
+              ${renderCurrencyInputHTML('input-edit-valor', orc.valorProposta !== undefined && orc.valorProposta !== null ? orc.valorProposta : '', '0,00', false)}
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Temperatura</label>
+              <select id="select-edit-temperatura" class="w-full h-10 px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <option value="Frio" ${orc.temperatura === 'Frio' ? 'selected' : ''}>❄️ Frio</option>
+                <option value="Normal" ${orc.temperatura === 'Normal' ? 'selected' : ''}>🔥 Normal</option>
+                <option value="Quente" ${orc.temperatura === 'Quente' ? 'selected' : ''}>⚡ Quente</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Tags -->
+          <div>
+            <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Tags (separadas por vírgula)</label>
+            <input id="input-edit-tags" type="text" value="${orc.tags ? orc.tags.join(', ') : ''}" class="w-full h-10 px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Ex: Família, Resort, Europa" />
+          </div>
+
+        </div>
+
+        <!-- Footer -->
+        <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800/80 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-2">
+          <button id="btn-cancel-modal" class="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition">Cancelar</button>
+          <button id="btn-save-edit-orcamento" class="px-5 py-2 text-xs font-black text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-md transition flex items-center gap-1.5">
+            <span>💾</span> Salvar Alterações
+          </button>
+        </div>
+
+      </div>
+    `;
+
+    const overlay = document.getElementById('modal-overlay');
+    if (overlay) {
+      overlay.innerHTML = html;
+    }
+
+    const closeModal = () => this.closeModal();
+    document.getElementById('btn-close-modal-x')?.addEventListener('click', closeModal);
+    document.getElementById('btn-cancel-modal')?.addEventListener('click', closeModal);
+
+    document.getElementById('btn-save-edit-orcamento')?.addEventListener('click', async () => {
+      const nomeVal = (document.getElementById('input-edit-nome') as HTMLInputElement)?.value.trim();
+      const contatoVal = (document.getElementById('input-edit-contato') as HTMLInputElement)?.value.trim();
+      const destinoVal = (document.getElementById('input-edit-destino') as HTMLInputElement)?.value.trim();
+      const dataViagemVal = (document.getElementById('input-edit-dataviagem') as HTMLInputElement)?.value.trim();
+      const valorVal = (document.getElementById('input-edit-valor') as HTMLInputElement)?.value.trim();
+      const tempVal = (document.getElementById('select-edit-temperatura') as HTMLSelectElement)?.value as 'Frio' | 'Normal' | 'Quente';
+      const tagsVal = (document.getElementById('input-edit-tags') as HTMLInputElement)?.value.trim();
+
+      if (!nomeVal || !destinoVal || !dataViagemVal) {
+        this.showToast('Preencha os campos obrigatórios: Nome do Cliente, Destino e Data da Viagem.', 'error');
+        return;
+      }
+
+      const btnSave = document.getElementById('btn-save-edit-orcamento') as HTMLButtonElement;
+      if (btnSave) {
+        btnSave.disabled = true;
+        btnSave.innerHTML = `<span>⏳</span> Salvando...`;
+      }
+
+      orc.nomeCliente = nomeVal;
+      orc.contato = contatoVal;
+      orc.destino = destinoVal;
+      orc.dataViagem = dataViagemVal;
+      orc.valorProposta = valorVal ? parseDoubleBr(valorVal) : undefined;
+      orc.temperatura = tempVal || 'Normal';
+      orc.tags = tagsVal ? tagsVal.split(',').map(t => t.trim()).filter(Boolean) : [];
+
+      const success = await this.persistOrcamento(orc);
+      if (success) {
+        this.showToast('Orçamento atualizado com sucesso!', 'success');
+        this.closeModal();
+        await this.loadOrcamentos();
+        this.render();
+      } else {
+        if (btnSave) {
+          btnSave.disabled = false;
+          btnSave.innerHTML = `<span>💾</span> Salvar Alterações`;
+        }
       }
     });
   }
