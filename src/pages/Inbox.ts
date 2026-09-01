@@ -3173,6 +3173,7 @@ export class InboxPage {
       await EscalaService.salvarBancoFolgas(this.bancoFolgasData);
       close();
       this.showToast('Banco de folgas atualizado!', 'success');
+      await this.loadEscalaData();
       this.render();
       this.setupEventListeners();
     };

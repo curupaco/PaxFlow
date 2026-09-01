@@ -466,35 +466,53 @@ export class EscalaService {
         const clean = (data as BancoFolgasItem[]).filter(b => 
           b.consultor_id !== 'CONFIG_FERIADOS_PLANTOES' && b.consultor_nome !== 'CONFIG_FERIADOS_PLANTOES'
         );
-        if (clean.length > 0) return clean;
+        if (clean.length > 0) {
+          try {
+            localStorage.setItem(this.LOCAL_STORAGE_BANCO_KEY, JSON.stringify(clean));
+          } catch (e) {}
+          return clean;
+        }
       }
+    } catch (e) {}
 
-      // Se a tabela no Supabase estiver vazia, popula a semente inicial no banco
-      const initial = this.getInitialMockData().mockBancoFolgas;
-      const seedRows = initial.map(item => ({
-        id: this.toValidUUID(item.id || item.consultor_nome),
-        consultor_id: this.toValidUUID(item.consultor_id || item.consultor_nome),
-        consultor_nome: item.consultor_nome,
-        equipe: item.equipe || 'Equipe Agaxtur',
-        saldo_dias: String(item.saldo_dias),
-        detalhes_historico: item.detalhes_historico || '',
-        updated_at: new Date().toISOString()
-      }));
+    try {
+      const stored = localStorage.getItem(this.LOCAL_STORAGE_BANCO_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      }
+    } catch (e) {}
 
+    // Se a tabela no Supabase estiver vazia, popula a semente inicial no banco
+    const initial = this.getInitialMockData().mockBancoFolgas;
+    const seedRows = initial.map(item => ({
+      id: this.toValidUUID(item.id || item.consultor_nome),
+      consultor_id: this.toValidUUID(item.consultor_id || item.consultor_nome),
+      consultor_nome: item.consultor_nome,
+      equipe: item.equipe || 'Equipe Agaxtur',
+      saldo_dias: String(item.saldo_dias),
+      detalhes_historico: item.detalhes_historico || '',
+      updated_at: new Date().toISOString()
+    }));
+
+    try {
       await supabase.from('escala_banco_folgas').upsert(seedRows);
-      return initial;
-    } catch (e) {
-      console.warn('Erro ao carregar escala_banco_folgas do Supabase:', e);
-    }
+    } catch (e) {}
 
-    const initial = this.getInitialMockData();
-    return initial.mockBancoFolgas;
+    return initial;
   }
 
   /**
-   * Save / Update Leave Bank item directly to Supabase
+   * Save / Update Leave Bank item directly to Supabase with LocalStorage cache fallback
    */
   public static async salvarBancoFolgas(items: BancoFolgasItem[]): Promise<boolean> {
+    const jsonStr = JSON.stringify(items);
+    try {
+      localStorage.setItem(this.LOCAL_STORAGE_BANCO_KEY, jsonStr);
+    } catch (e) {}
+
     try {
       const payload = items.map(item => ({
         id: this.toValidUUID(item.id || item.consultor_nome),
