@@ -2363,88 +2363,83 @@ export class OrcamentosPage {
     if (!orc) return;
 
     this.renderModalOverlay();
+    const modalContent = document.getElementById('modal-content-container');
+    if (!modalContent) return;
 
     const html = `
-      <div id="modal-container-editar" class="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 animate-scale-up z-50 my-8">
-        
-        <!-- Header -->
-        <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
-          <div class="flex items-center gap-2">
-            <span class="text-xl">✏️</span>
-            <div>
-              <h3 class="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-wide">Editar Orçamento</h3>
-              <p class="text-[11px] font-semibold text-slate-400 dark:text-slate-400">Atualize os detalhes do orçamento ${orc.codigoRef ? `[${orc.codigoRef}]` : ''}</p>
-            </div>
-          </div>
-          <button id="btn-close-modal-x" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-black text-lg p-1 rounded-lg transition">✕</button>
-        </div>
-
-        <!-- Body -->
-        <div class="p-6 space-y-4 max-h-[75vh] overflow-y-auto custom-scrollbar">
-          
-          <!-- Nome do Cliente & Contato -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Nome do Cliente *</label>
-              <input id="input-edit-nome" type="text" value="${orc.nomeCliente || ''}" class="w-full h-10 px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Nome do cliente" />
-            </div>
-            <div>
-              <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Contato / Telefone</label>
-              <input id="input-edit-contato" type="text" value="${orc.contato || ''}" class="w-full h-10 px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="(00) 00000-0000" />
-            </div>
-          </div>
-
-          <!-- Destino & Data da Viagem -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Destino *</label>
-              <input id="input-edit-destino" type="text" value="${orc.destino || ''}" class="w-full h-10 px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Ex: Paris, França" />
-            </div>
-            <div>
-              <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Data da Viagem *</label>
-              ${renderDateInputHTML('input-edit-dataviagem', orc.dataViagem || '')}
-            </div>
-          </div>
-
-          <!-- Valor Proposta & Temperatura -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Valor Proposta (R$)</label>
-              ${renderCurrencyInputHTML('input-edit-valor', orc.valorProposta !== undefined && orc.valorProposta !== null ? orc.valorProposta : '', '0,00', false)}
-            </div>
-            <div>
-              <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Temperatura</label>
-              <select id="select-edit-temperatura" class="w-full h-10 px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <option value="Frio" ${orc.temperatura === 'Frio' ? 'selected' : ''}>❄️ Frio</option>
-                <option value="Normal" ${orc.temperatura === 'Normal' ? 'selected' : ''}>🔥 Normal</option>
-                <option value="Quente" ${orc.temperatura === 'Quente' ? 'selected' : ''}>⚡ Quente</option>
-              </select>
-            </div>
-          </div>
-
-          <!-- Tags -->
+      <!-- Header -->
+      <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">✏️</span>
           <div>
-            <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Tags (separadas por vírgula)</label>
-            <input id="input-edit-tags" type="text" value="${orc.tags ? orc.tags.join(', ') : ''}" class="w-full h-10 px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Ex: Família, Resort, Europa" />
+            <h3 class="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-wide">Editar Orçamento</h3>
+            <p class="text-[11px] font-semibold text-slate-400 dark:text-slate-400">Atualize os detalhes do orçamento ${orc.codigoRef ? `[${orc.codigoRef}]` : ''}</p>
           </div>
+        </div>
+        <button id="btn-close-modal-x" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-black text-lg p-1 rounded-lg transition">✕</button>
+      </div>
 
+      <!-- Body -->
+      <div class="p-6 space-y-4 max-h-[75vh] overflow-y-auto custom-scrollbar">
+        
+        <!-- Nome do Cliente & Contato -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Nome do Cliente *</label>
+            <input id="input-edit-nome" type="text" value="${orc.nomeCliente || ''}" class="w-full h-10 px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Nome do cliente" />
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Contato / Telefone</label>
+            <input id="input-edit-contato" type="text" value="${orc.contato || ''}" class="w-full h-10 px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="(00) 00000-0000" />
+          </div>
         </div>
 
-        <!-- Footer -->
-        <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800/80 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-2">
-          <button id="btn-cancel-modal" class="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition">Cancelar</button>
-          <button id="btn-save-edit-orcamento" class="px-5 py-2 text-xs font-black text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-md transition flex items-center gap-1.5">
-            <span>💾</span> Salvar Alterações
-          </button>
+        <!-- Destino & Data da Viagem -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Destino *</label>
+            <input id="input-edit-destino" type="text" value="${orc.destino || ''}" class="w-full h-10 px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Ex: Paris, França" />
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Data da Viagem *</label>
+            ${renderDateInputHTML('input-edit-dataviagem', orc.dataViagem || '')}
+          </div>
+        </div>
+
+        <!-- Valor Proposta & Temperatura -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Valor Proposta (R$)</label>
+            ${renderCurrencyInputHTML('input-edit-valor', orc.valorProposta !== undefined && orc.valorProposta !== null ? orc.valorProposta : '', '0,00', false)}
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Temperatura</label>
+            <select id="select-edit-temperatura" class="w-full h-10 px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <option value="Frio" ${orc.temperatura === 'Frio' ? 'selected' : ''}>❄️ Frio</option>
+              <option value="Normal" ${orc.temperatura === 'Normal' ? 'selected' : ''}>🔥 Normal</option>
+              <option value="Quente" ${orc.temperatura === 'Quente' ? 'selected' : ''}>⚡ Quente</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Tags -->
+        <div>
+          <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Tags (separadas por vírgula)</label>
+          <input id="input-edit-tags" type="text" value="${orc.tags ? orc.tags.join(', ') : ''}" class="w-full h-10 px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Ex: Família, Resort, Europa" />
         </div>
 
       </div>
+
+      <!-- Footer -->
+      <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800/80 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-2">
+        <button id="btn-cancel-modal" class="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition">Cancelar</button>
+        <button id="btn-save-edit-orcamento" class="px-5 py-2 text-xs font-black text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-md transition flex items-center gap-1.5">
+          <span>💾</span> Salvar Alterações
+        </button>
+      </div>
     `;
 
-    const overlay = document.getElementById('modal-overlay');
-    if (overlay) {
-      overlay.innerHTML = html;
-    }
+    modalContent.innerHTML = html;
 
     const closeModal = () => this.closeModal();
     document.getElementById('btn-close-modal-x')?.addEventListener('click', closeModal);
