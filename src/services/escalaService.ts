@@ -353,15 +353,18 @@ export class EscalaService {
    */
   public static async salvarBancoFolgas(items: BancoFolgasItem[]): Promise<boolean> {
     try {
-      const payload = items.map(item => ({
-        id: this.toValidUUID(item.id || item.consultor_nome),
-        consultor_id: this.toValidUUID(item.consultor_id || item.consultor_nome),
-        consultor_nome: item.consultor_nome,
-        equipe: item.equipe || 'Equipe Agaxtur',
-        saldo_dias: String(item.saldo_dias),
-        detalhes_historico: item.detalhes_historico || '',
-        updated_at: new Date().toISOString()
-      }));
+      const payload = items.map(item => {
+        const isRealUUID = item.consultor_id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(item.consultor_id) && !item.consultor_id.startsWith('c-');
+        return {
+          id: this.toValidUUID(item.id || item.consultor_nome),
+          consultor_id: isRealUUID ? item.consultor_id : null,
+          consultor_nome: item.consultor_nome,
+          equipe: item.equipe || 'Equipe Agaxtur',
+          saldo_dias: String(item.saldo_dias),
+          detalhes_historico: item.detalhes_historico || '',
+          updated_at: new Date().toISOString()
+        };
+      });
 
       const { error } = await supabase.from('escala_banco_folgas').upsert(payload);
       if (error) {
