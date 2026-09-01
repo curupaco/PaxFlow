@@ -444,55 +444,64 @@ export class EscalaService {
   }
 
   /**
-   * Fetch Leave Bank balances (Read-Only)
+   * Fetch Leave Bank balances (Directly from Supabase)
    */
   public static async loadBancoFolgas(): Promise<BancoFolgasItem[]> {
-    // 1. Tenta carregar da tabela dedicada no Supabase
     try {
       const { data, error } = await supabase.from('escala_banco_folgas').select('*');
       if (!error && data && data.length > 0) {
         const clean = (data as BancoFolgasItem[]).filter(b => 
           b.consultor_id !== 'CONFIG_FERIADOS_PLANTOES' && b.consultor_nome !== 'CONFIG_FERIADOS_PLANTOES'
         );
-        if (clean.length > 0) {
-          try {
-            localStorage.setItem(this.LOCAL_STORAGE_BANCO_KEY, JSON.stringify(clean));
-          } catch (e) {}
-          return clean;
-        }
+        if (clean.length > 0) return clean;
       }
-    } catch (e) {}
 
-    // 2. Fallback no LocalStorage local
-    try {
-      const stored = localStorage.getItem(this.LOCAL_STORAGE_BANCO_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
-        }
-      }
-    } catch (e) {}
+      // Se a tabela no Supabase estiver vazia, popula a semente inicial no banco
+      const initial = this.getInitialMockData().mockBancoFolgas;
+      const seedRows = initial.map(item => ({
+        id: item.id || `bf-${item.consultor_nome.trim().toLowerCase().replace(/\s+/g, '-')}`,
+        consultor_id: item.consultor_id || `c-${item.consultor_nome.trim().toLowerCase().replace(/\s+/g, '-')}`,
+        consultor_nome: item.consultor_nome,
+        equipe: item.equipe || 'Equipe Agaxtur',
+        saldo_dias: String(item.saldo_dias),
+        detalhes_historico: item.detalhes_historico || '',
+        updated_at: new Date().toISOString()
+      }));
 
-    // 3. Fallback inicial estático
+      await supabase.from('escala_banco_folgas').upsert(seedRows);
+      return initial;
+    } catch (e) {
+      console.warn('Erro ao carregar escala_banco_folgas do Supabase:', e);
+    }
+
     const initial = this.getInitialMockData();
     return initial.mockBancoFolgas;
   }
 
   /**
-   * Save / Update Leave Bank item
+   * Save / Update Leave Bank item directly to Supabase
    */
   public static async salvarBancoFolgas(items: BancoFolgasItem[]): Promise<boolean> {
-    const jsonStr = JSON.stringify(items);
-
-    // 1. Salva no localStorage local para resposta imediata
     try {
-      localStorage.setItem(this.LOCAL_STORAGE_BANCO_KEY, jsonStr);
-    } catch (e) {}
+      const payload = items.map(item => ({
+        id: item.id || `bf-${item.consultor_nome.trim().toLowerCase().replace(/\s+/g, '-')}`,
+        consultor_id: item.consultor_id || `c-${item.consultor_nome.trim().toLowerCase().replace(/\s+/g, '-')}`,
+        consultor_nome: item.consultor_nome,
+        equipe: item.equipe || 'Equipe Agaxtur',
+        saldo_dias: String(item.saldo_dias),
+        detalhes_historico: item.detalhes_historico || '',
+        updated_at: new Date().toISOString()
+      }));
 
-    // 2. Notifica abas
+      const { error } = await supabase.from('escala_banco_folgas').upsert(payload);
+      if (error) {
+        console.warn('Erro ao salvar escala_banco_folgas no Supabase:', error.message);
+      }
+    } catch (e) {
+      console.warn('Exceção ao salvar escala_banco_folgas no Supabase:', e);
+    }
+
     this.notifySync();
-
     return true;
   }
 
@@ -502,15 +511,9 @@ export class EscalaService {
   public static async loadEventosEscala(): Promise<EventoEscalaItem[]> {
     try {
       const { data, error } = await supabase.from('escala_eventos').select('*').order('data', { ascending: true });
-      if (!error && data) {
-        localStorage.setItem(this.LOCAL_STORAGE_EVENTOS_KEY, JSON.stringify(data));
+      if (!error && data && data.length > 0) {
         return data as EventoEscalaItem[];
       }
-    } catch (e) {}
-
-    try {
-      const stored = localStorage.getItem(this.LOCAL_STORAGE_EVENTOS_KEY);
-      if (stored !== null) return JSON.parse(stored);
     } catch (e) {}
 
     const initial = this.getInitialMockData();
@@ -521,11 +524,13 @@ export class EscalaService {
    * Add a new Event
    */
   public static async adicionarEvento(evento: EventoEscalaItem): Promise<boolean> {
-    const list = await this.loadEventosEscala();
-    list.push({ ...evento, id: 'ev-' + Date.now() });
     try {
-      localStorage.setItem(this.LOCAL_STORAGE_EVENTOS_KEY, JSON.stringify(list));
-      await supabase.from('escala_eventos').insert(evento);
+      const payload = {
+        ...evento,
+        id: evento.id || 'ev-' + Date.now(),
+        updated_at: new Date().toISOString()
+      };
+      await supabase.from('escala_eventos').insert(payload);
       this.notifySync();
       return true;
     } catch (e) {
@@ -537,10 +542,7 @@ export class EscalaService {
    * Delete an Event / Training
    */
   public static async deletarEvento(eventoId: string): Promise<boolean> {
-    const list = await this.loadEventosEscala();
-    const updated = list.filter(e => e.id !== eventoId);
     try {
-      localStorage.setItem(this.LOCAL_STORAGE_EVENTOS_KEY, JSON.stringify(updated));
       await supabase.from('escala_eventos').delete().eq('id', eventoId);
       this.notifySync();
       return true;
@@ -550,39 +552,76 @@ export class EscalaService {
   }
 
   /**
-   * Fetch Holiday Shifts (Plantões dos Últimos 3 Feriados - Read-Only)
+   * Fetch Holiday Shifts (Plantões dos Últimos 3 Feriados - Direct from Supabase escala_eventos)
    */
   public static async loadFeriadosPlantoes(): Promise<import('../types').FeriadoPlantaoInfo[]> {
-    // 1. LocalStorage local
     try {
-      const stored = localStorage.getItem(this.LOCAL_STORAGE_FERIADOS_PLANTOES_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
-        }
-      }
-    } catch (e) {}
+      const { data, error } = await supabase
+        .from('escala_eventos')
+        .select('*')
+        .eq('tipo', 'plantao');
 
-    // 2. Fallback inicial estático
+      if (!error && data && data.length > 0) {
+        return data.map(item => {
+          let consultores: string[] = [];
+          try {
+            consultores = typeof item.observacao === 'string' ? JSON.parse(item.observacao) : (item.consultores_plantao || []);
+          } catch {
+            consultores = Array.isArray(item.consultores_plantao) ? item.consultores_plantao : [];
+          }
+          return {
+            id: item.id,
+            data: item.data,
+            nome: item.titulo,
+            nomeCurto: item.titulo,
+            consultoresTrabalharam: consultores
+          };
+        });
+      }
+
+      // Se não houver plantões gravados, popula semente inicial em escala_eventos no Supabase
+      const initial = this.getInitialMockData().mockFeriadosPlantoes;
+      const seedEvents = initial.map(fp => ({
+        id: fp.id || `fp-${Date.now()}`,
+        data: fp.data,
+        titulo: fp.nomeCurto || fp.nome,
+        tipo: 'plantao',
+        status: 'concluido',
+        observacao: JSON.stringify(fp.consultoresTrabalharam),
+        updated_at: new Date().toISOString()
+      }));
+
+      await supabase.from('escala_eventos').upsert(seedEvents);
+      return initial;
+    } catch (e) {
+      console.warn('Erro ao carregar feriados/plantões do Supabase:', e);
+    }
+
     const initial = this.getInitialMockData();
     return initial.mockFeriadosPlantoes;
   }
 
   /**
-   * Save / Update Holiday Shifts
+   * Save / Update Holiday Shifts directly to Supabase
    */
   public static async salvarFeriadosPlantoes(items: import('../types').FeriadoPlantaoInfo[]): Promise<boolean> {
-    const jsonStr = JSON.stringify(items);
-
-    // 1. Salva no localStorage local para resposta imediata
     try {
-      localStorage.setItem(this.LOCAL_STORAGE_FERIADOS_PLANTOES_KEY, jsonStr);
-    } catch (e) {}
+      const payload = items.map(fp => ({
+        id: fp.id || `fp-${Date.now()}`,
+        data: fp.data,
+        titulo: fp.nomeCurto || fp.nome,
+        tipo: 'plantao',
+        status: 'concluido',
+        observacao: JSON.stringify(fp.consultoresTrabalharam),
+        updated_at: new Date().toISOString()
+      }));
 
-    // 2. Notifica abas
+      await supabase.from('escala_eventos').upsert(payload);
+    } catch (e) {
+      console.warn('Erro ao salvar feriados/plantões no Supabase:', e);
+    }
+
     this.notifySync();
-
     return true;
   }
 

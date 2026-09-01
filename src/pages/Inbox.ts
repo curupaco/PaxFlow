@@ -262,12 +262,22 @@ export class InboxPage {
       const channelName = `inbox-escala-realtime-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
       this.realtimeChannel = supabase
         .channel(channelName)
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, async () => {
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'escala_banco_folgas' }, async () => {
           await this.loadEscalaData();
           this.render();
           this.setupEventListeners();
         })
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'global_settings' }, async () => {
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'escala_eventos' }, async () => {
+          await this.loadEscalaData();
+          this.render();
+          this.setupEventListeners();
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'escala_solicitacoes' }, async () => {
+          await this.loadEscalaData();
+          this.render();
+          this.setupEventListeners();
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'escala_diaria' }, async () => {
           await this.loadEscalaData();
           this.render();
           this.setupEventListeners();
