@@ -423,7 +423,19 @@ export class EscalaService {
    * Fetch Leave Bank balances
    */
   public static async loadBancoFolgas(): Promise<BancoFolgasItem[]> {
-    // 1. Tenta carregar os registros diretamente da tabela escala_banco_folgas do Supabase
+    // 1. Fonte de verdade primária: registro JSON global em global_settings
+    try {
+      const { data, error } = await supabase.from('global_settings').select('banco_folgas_json').limit(1).maybeSingle();
+      if (!error && data && data.banco_folgas_json) {
+        const parsed = JSON.parse(data.banco_folgas_json);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          localStorage.setItem(this.LOCAL_STORAGE_BANCO_KEY, data.banco_folgas_json);
+          return parsed;
+        }
+      }
+    } catch (e) {}
+
+    // 2. Tabela dedicada escala_banco_folgas no Supabase
     try {
       const { data, error } = await supabase.from('escala_banco_folgas').select('*');
       if (!error && data && data.length > 0) {
@@ -431,17 +443,6 @@ export class EscalaService {
           b.consultor_id !== 'CONFIG_FERIADOS_PLANTOES' && b.consultor_nome !== 'CONFIG_FERIADOS_PLANTOES'
         );
         if (clean.length > 0) return clean;
-      }
-    } catch (e) {
-      console.warn('Fallback para banco_folgas_json em global_settings:', e);
-    }
-
-    // 2. Tenta carregar do JSON global sincronizado em global_settings
-    try {
-      const { data, error } = await supabase.from('global_settings').select('*').limit(1).maybeSingle();
-      if (!error && data && data.banco_folgas_json) {
-        const parsed = JSON.parse(data.banco_folgas_json);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       }
     } catch (e) {}
 
@@ -461,11 +462,26 @@ export class EscalaService {
    * Save / Update Leave Bank item
    */
   public static async salvarBancoFolgas(items: BancoFolgasItem[]): Promise<boolean> {
-    try {
-      // 1. Salva no localStorage local
-      localStorage.setItem(this.LOCAL_STORAGE_BANCO_KEY, JSON.stringify(items));
+    const jsonStr = JSON.stringify(items);
 
-      // 2. Prepara cada item com id unico por consultor para evitar conflitos de upsert
+    // 1. Salva no localStorage local para velocidade instantanea na tela
+    try {
+      localStorage.setItem(this.LOCAL_STORAGE_BANCO_KEY, jsonStr);
+    } catch (e) {}
+
+    // 2. Salva em global_settings (Garantia primária de sincronia entre todos os usuários)
+    try {
+      await supabase.from('global_settings').upsert({
+        id: 1,
+        banco_folgas_json: jsonStr,
+        updated_at: new Date().toISOString()
+      });
+    } catch (e) {
+      console.warn('Erro ao salvar banco_folgas_json em global_settings:', e);
+    }
+
+    // 3. Upsert na tabela escala_banco_folgas
+    try {
       const payload = items.map(item => ({
         id: item.id || `bf-${item.consultor_nome.trim().toLowerCase().replace(/\s+/g, '-')}`,
         consultor_id: item.consultor_id || `c-${item.consultor_nome}`,
@@ -475,22 +491,12 @@ export class EscalaService {
         detalhes_historico: item.detalhes_historico || '',
         updated_at: new Date().toISOString()
       }));
-
-      // 3. Upsert na tabela escala_banco_folgas
       await supabase.from('escala_banco_folgas').upsert(payload);
-
-      // 4. Garante sincronia global no Supabase via global_settings
-      await supabase.from('global_settings').upsert({
-        id: 1,
-        banco_folgas_json: JSON.stringify(items),
-        updated_at: new Date().toISOString()
-      });
-
-      return true;
     } catch (e) {
-      console.warn('Erro ao salvar banco de folgas no Supabase:', e);
-      return false;
+      console.warn('Erro ao upsert escala_banco_folgas:', e);
     }
+
+    return true;
   }
 
   /**
@@ -548,7 +554,19 @@ export class EscalaService {
    * Fetch Holiday Shifts (Plantões dos Últimos 3 Feriados)
    */
   public static async loadFeriadosPlantoes(): Promise<import('../types').FeriadoPlantaoInfo[]> {
-    // 1. Tenta tabela dedicada no Supabase
+    // 1. Fonte de verdade primária: registro JSON global em global_settings
+    try {
+      const { data, error } = await supabase.from('global_settings').select('feriados_plantoes_json').limit(1).maybeSingle();
+      if (!error && data && data.feriados_plantoes_json) {
+        const parsed = JSON.parse(data.feriados_plantoes_json);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          localStorage.setItem(this.LOCAL_STORAGE_FERIADOS_PLANTOES_KEY, data.feriados_plantoes_json);
+          return parsed;
+        }
+      }
+    } catch (e) {}
+
+    // 2. Tabela dedicada no Supabase (se populada)
     try {
       const { data, error } = await supabase.from('escala_feriados_plantoes').select('*');
       if (!error && data && data.length > 0) {
@@ -556,7 +574,7 @@ export class EscalaService {
       }
     } catch (e) {}
 
-    // 2. Tenta registro global sincronizado na tabela escala_banco_folgas no Supabase
+    // 3. Fallback no Supabase escala_banco_folgas
     try {
       const { data, error } = await supabase.from('escala_banco_folgas').select('*').eq('consultor_id', 'CONFIG_FERIADOS_PLANTOES').maybeSingle();
       if (!error && data && data.detalhes_historico) {
@@ -565,7 +583,7 @@ export class EscalaService {
       }
     } catch (e) {}
 
-    // 3. Fallback Local Storage
+    // 4. Fallback Local Storage
     try {
       const stored = localStorage.getItem(this.LOCAL_STORAGE_FERIADOS_PLANTOES_KEY);
       if (stored) return JSON.parse(stored);
@@ -579,28 +597,43 @@ export class EscalaService {
    * Save / Update Holiday Shifts
    */
   public static async salvarFeriadosPlantoes(items: import('../types').FeriadoPlantaoInfo[]): Promise<boolean> {
+    const jsonStr = JSON.stringify(items);
+
+    // 1. Salva no localStorage local para velocidade instantanea na tela
     try {
-      // 1. Salva no localStorage local
-      localStorage.setItem(this.LOCAL_STORAGE_FERIADOS_PLANTOES_KEY, JSON.stringify(items));
+      localStorage.setItem(this.LOCAL_STORAGE_FERIADOS_PLANTOES_KEY, jsonStr);
+    } catch (e) {}
 
-      // 2. Tenta salvar na tabela dedicada escala_feriados_plantoes
+    // 2. Salva em global_settings (Garantia primária de sincronia entre todos os usuários)
+    try {
+      await supabase.from('global_settings').upsert({
+        id: 1,
+        feriados_plantoes_json: jsonStr,
+        updated_at: new Date().toISOString()
+      });
+    } catch (e) {
+      console.warn('Erro ao salvar feriados_plantoes_json em global_settings:', e);
+    }
+
+    // 3. Tenta salvar na tabela dedicada escala_feriados_plantoes (se disponível)
+    try {
       await supabase.from('escala_feriados_plantoes').upsert(items);
+    } catch (e) {}
 
-      // 3. Garante sincronia para TODOS os usuarios salvando no Supabase escala_banco_folgas
+    // 4. Fallback secundário no Supabase escala_banco_folgas
+    try {
       await supabase.from('escala_banco_folgas').upsert({
+        id: 'bf-config-feriados-plantoes',
         consultor_id: 'CONFIG_FERIADOS_PLANTOES',
         consultor_nome: 'CONFIG_FERIADOS_PLANTOES',
         equipe: 'Sistema',
         saldo_dias: '0',
-        detalhes_historico: JSON.stringify(items),
+        detalhes_historico: jsonStr,
         updated_at: new Date().toISOString()
       });
+    } catch (e) {}
 
-      return true;
-    } catch (e) {
-      console.warn('Erro ao salvar plantões de feriados no Supabase:', e);
-      return false;
-    }
+    return true;
   }
 
   /**
