@@ -1087,15 +1087,15 @@ export class OrcamentosPage {
           </div>
         ` : ''}
 
-        <!-- Rodapé do Card: Responsável, Mudança de Dono e Ações -->
+        <!-- Rodapé do Card: Responsável, Ações Secundárias e Ação Principal -->
         <div class="border-t border-slate-100 dark:border-slate-800 pt-3 mt-1 flex items-center justify-between gap-2">
           
-          <!-- Avatar e botão de alteração do Consultor -->
-          <div class="flex items-center gap-1">
-            <div title="Responsável: ${dono?.nome || 'Consultor'}" class="shrink-0">
+          <!-- Grupo de Ícones de Suporte e Gestão (Esquerda) -->
+          <div class="flex items-center gap-1 shrink-0">
+            <div title="Responsável: ${dono?.nome || 'Consultor'}" class="shrink-0 mr-0.5">
               ${getAvatarSvg(dono?.avatar_url, dono?.nome || 'Consultor', 'w-6 h-6')}
             </div>
-            <button data-action="mudar-consultor" data-id="${o.id}" title="Reatribuir Consultor" class="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-indigo-500 dark:hover:text-indigo-400 rounded transition flex items-center justify-center shrink-0">
+            <button data-action="mudar-consultor" data-id="${o.id}" title="Reatribuir Consultor" class="p-1 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg transition flex items-center justify-center shrink-0">
               <svg width="14" height="14" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
                 <circle cx="9" cy="7" r="4" />
@@ -1103,14 +1103,31 @@ export class OrcamentosPage {
                 <path d="M19 12v5" />
               </svg>
             </button>
-            <button data-action="lembrar-depois" data-id="${o.id}" title="Me Lembre Depois" class="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 dark:text-slate-400 hover:text-indigo-600 rounded transition flex items-center justify-center shrink-0">
+            <button data-action="lembrar-depois" data-id="${o.id}" title="Me Lembre Depois" class="p-1 hover:bg-amber-50 dark:hover:bg-amber-950/40 text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 rounded-lg transition flex items-center justify-center shrink-0">
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
               </svg>
             </button>
+
+            ${o.status === 'AGUARDANDO' ? `
+              <button data-action="alterar" data-id="${o.id}" title="Alterar Proposta" class="p-1 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg transition flex items-center justify-center text-xs shrink-0">
+                🔄
+              </button>
+              <button data-action="desistir" data-id="${o.id}" title="Registrar Desistência" class="p-1 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-lg transition flex items-center justify-center text-xs shrink-0">
+                🚫
+              </button>
+            ` : ''}
+
+            ${isAdmin ? `
+              <button data-action="excluir" data-id="${o.id}" title="Excluir Orçamento (Admin Only)" class="p-1 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-lg transition flex items-center justify-center shrink-0">
+                <svg width="14" height="14" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+            ` : ''}
           </div>
 
-          <!-- AÇÕES DO FLUXO (Exibidas na extrema direita) -->
+          <!-- AÇÃO PRINCIPAL DO FLUXO (Extrema direita) -->
           <div class="flex items-center gap-1.5 shrink-0">
             ${o.status === 'SOLICITADO' ? `
               <button data-action="iniciar" data-id="${o.id}" class="h-8 px-3 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-black tracking-wider uppercase rounded-lg shadow-sm transition flex items-center justify-center gap-0.5">
@@ -1125,24 +1142,8 @@ export class OrcamentosPage {
             ` : ''}
 
             ${o.status === 'AGUARDANDO' ? `
-              <div class="flex items-center gap-1">
-                <button data-action="alterar" data-id="${o.id}" title="Alterar Proposta" class="h-8 w-8 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-black rounded-lg transition text-xs flex items-center justify-center">
-                  🔄
-                </button>
-                <button data-action="desistir" data-id="${o.id}" title="Desistir" class="h-8 w-8 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-900/20 text-rose-600 dark:text-rose-400 font-black rounded-lg transition text-xs flex items-center justify-center">
-                  🚫
-                </button>
-                <button data-action="aceitar" data-id="${o.id}" class="h-8 px-3 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black tracking-wider uppercase rounded-lg shadow-sm transition flex items-center justify-center gap-0.5">
-                  Vender 🏆
-                </button>
-              </div>
-            ` : ''}
-
-            ${isAdmin ? `
-              <button data-action="excluir" data-id="${o.id}" title="Excluir Card (Admin Only)" class="h-8 w-8 hover:bg-rose-50 dark:hover:bg-rose-950/20 text-slate-400 hover:text-rose-500 rounded-lg transition flex items-center justify-center">
-                <svg width="12" height="12" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
+              <button data-action="aceitar" data-id="${o.id}" class="h-8 px-3 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black tracking-wider uppercase rounded-lg shadow-sm transition flex items-center justify-center gap-0.5">
+                Vender 🏆
               </button>
             ` : ''}
           </div>
