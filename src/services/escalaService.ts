@@ -422,18 +422,50 @@ export class EscalaService {
   /**
    * Fetch Leave Bank balances
    */
-  public static async loadBancoFolgas(): Promise<BancoFolgasItem[]> {
-    // 1. Fonte de verdade primária: registro JSON global em global_settings
+  private static async saveGlobalSettingsField(field: string, value: string): Promise<void> {
     try {
-      const { data, error } = await supabase.from('global_settings').select('banco_folgas_json').limit(1).maybeSingle();
-      if (!error && data && data.banco_folgas_json) {
-        const parsed = JSON.parse(data.banco_folgas_json);
+      const { data } = await supabase.from('global_settings').select('id').limit(1).maybeSingle();
+      if (data && data.id) {
+        await supabase.from('global_settings').update({
+          [field]: value,
+          updated_at: new Date().toISOString()
+        }).eq('id', data.id);
+      } else {
+        await supabase.from('global_settings').insert({
+          [field]: value,
+          updated_at: new Date().toISOString()
+        });
+      }
+    } catch (e) {
+      console.warn(`Erro ao salvar ${field} em global_settings:`, e);
+    }
+  }
+
+  private static async loadGlobalSettingsField(field: string): Promise<any | null> {
+    try {
+      const { data, error } = await supabase.from('global_settings').select('*').limit(1).maybeSingle();
+      if (!error && data && data[field]) {
+        const parsed = JSON.parse(data[field]);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          localStorage.setItem(this.LOCAL_STORAGE_BANCO_KEY, data.banco_folgas_json);
           return parsed;
         }
       }
     } catch (e) {}
+    return null;
+  }
+
+  /**
+   * Fetch Leave Bank balances
+   */
+  public static async loadBancoFolgas(): Promise<BancoFolgasItem[]> {
+    // 1. Fonte de verdade primária: registro JSON global em global_settings
+    const globalData = await this.loadGlobalSettingsField('banco_folgas_json');
+    if (globalData) {
+      try {
+        localStorage.setItem(this.LOCAL_STORAGE_BANCO_KEY, JSON.stringify(globalData));
+      } catch (e) {}
+      return globalData;
+    }
 
     // 2. Tabela dedicada escala_banco_folgas no Supabase
     try {
@@ -470,15 +502,7 @@ export class EscalaService {
     } catch (e) {}
 
     // 2. Salva em global_settings (Garantia primária de sincronia entre todos os usuários)
-    try {
-      await supabase.from('global_settings').upsert({
-        id: 1,
-        banco_folgas_json: jsonStr,
-        updated_at: new Date().toISOString()
-      });
-    } catch (e) {
-      console.warn('Erro ao salvar banco_folgas_json em global_settings:', e);
-    }
+    await this.saveGlobalSettingsField('banco_folgas_json', jsonStr);
 
     // 3. Upsert na tabela escala_banco_folgas
     try {
@@ -555,16 +579,13 @@ export class EscalaService {
    */
   public static async loadFeriadosPlantoes(): Promise<import('../types').FeriadoPlantaoInfo[]> {
     // 1. Fonte de verdade primária: registro JSON global em global_settings
-    try {
-      const { data, error } = await supabase.from('global_settings').select('feriados_plantoes_json').limit(1).maybeSingle();
-      if (!error && data && data.feriados_plantoes_json) {
-        const parsed = JSON.parse(data.feriados_plantoes_json);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          localStorage.setItem(this.LOCAL_STORAGE_FERIADOS_PLANTOES_KEY, data.feriados_plantoes_json);
-          return parsed;
-        }
-      }
-    } catch (e) {}
+    const globalData = await this.loadGlobalSettingsField('feriados_plantoes_json');
+    if (globalData) {
+      try {
+        localStorage.setItem(this.LOCAL_STORAGE_FERIADOS_PLANTOES_KEY, JSON.stringify(globalData));
+      } catch (e) {}
+      return globalData;
+    }
 
     // 2. Tabela dedicada no Supabase (se populada)
     try {
@@ -605,15 +626,7 @@ export class EscalaService {
     } catch (e) {}
 
     // 2. Salva em global_settings (Garantia primária de sincronia entre todos os usuários)
-    try {
-      await supabase.from('global_settings').upsert({
-        id: 1,
-        feriados_plantoes_json: jsonStr,
-        updated_at: new Date().toISOString()
-      });
-    } catch (e) {
-      console.warn('Erro ao salvar feriados_plantoes_json em global_settings:', e);
-    }
+    await this.saveGlobalSettingsField('feriados_plantoes_json', jsonStr);
 
     // 3. Tenta salvar na tabela dedicada escala_feriados_plantoes (se disponível)
     try {
