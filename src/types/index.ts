@@ -631,6 +631,19 @@ export interface EventoEscalaItem {
   created_at?: string;
 }
 
+/**
+ * Representa o histórico de plantões de consultores nos últimos feriados.
+ */
+export interface FeriadoPlantaoInfo {
+  id?: string;
+  data: string; // Ex: "09/07"
+  dataIso?: string;
+  nome: string; // Ex: "Revolução Constitucionalista (SP)"
+  nomeCurto: string; // Ex: "09/07 Rev. SP"
+  consultoresTrabalharam: string[]; // Nomes dos consultores que efetivamente trabalharam
+  updated_at?: string;
+}
+
 
 
 

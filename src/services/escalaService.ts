@@ -28,6 +28,7 @@ export class EscalaService {
   private static LOCAL_STORAGE_SOLICITACOES_KEY = 'paxflow_escala_solicitacoes_v1';
   private static LOCAL_STORAGE_BANCO_KEY = 'paxflow_escala_banco_folgas_v1';
   private static LOCAL_STORAGE_EVENTOS_KEY = 'paxflow_escala_eventos_v1';
+  private static LOCAL_STORAGE_FERIADOS_PLANTOES_KEY = 'paxflow_escala_feriados_plantoes_v1';
 
   /**
    * Helper que retorna feriados nacionais e estaduais para um mês/ano
@@ -119,7 +120,31 @@ export class EscalaService {
       { id: 'ev-4', data: "20/08", consultor_nome: "Equipe", titulo: "Reunião Franqueados Matriz" }
     ];
 
-    return { mockEmployeesSchedule, mockBancoFolgas, mockEventos };
+    const mockFeriadosPlantoes: import('../types').FeriadoPlantaoInfo[] = [
+      {
+        id: 'fp-1',
+        data: '09/07',
+        nome: 'Revolução Constitucionalista (SP)',
+        nomeCurto: '09/07 Rev. SP',
+        consultoresTrabalharam: ['Marinna Morena', 'Guto Bassaroto', 'Rafael Sousa']
+      },
+      {
+        id: 'fp-2',
+        data: '01/05',
+        nome: 'Dia do Trabalho',
+        nomeCurto: '01/05 Trab.',
+        consultoresTrabalharam: ['Maria Carvalho', 'Eduardo Mariano', 'Laura Montu']
+      },
+      {
+        id: 'fp-3',
+        data: '21/04',
+        nome: 'Tiradentes',
+        nomeCurto: '21/04 Tirad.',
+        consultoresTrabalharam: ['Marinna Morena', 'Fernanda Ganem', 'Rafael Sousa']
+      }
+    ];
+
+    return { mockEmployeesSchedule, mockBancoFolgas, mockEventos, mockFeriadosPlantoes };
   }
 
   /**
@@ -475,6 +500,39 @@ export class EscalaService {
     try {
       localStorage.setItem(this.LOCAL_STORAGE_EVENTOS_KEY, JSON.stringify(updated));
       await supabase.from('escala_eventos').delete().eq('id', eventoId);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /**
+   * Fetch Holiday Shifts (Plantões dos Últimos 3 Feriados)
+   */
+  public static async loadFeriadosPlantoes(): Promise<import('../types').FeriadoPlantaoInfo[]> {
+    try {
+      const { data, error } = await supabase.from('escala_feriados_plantoes').select('*');
+      if (!error && data && data.length > 0) {
+        return data as import('../types').FeriadoPlantaoInfo[];
+      }
+    } catch (e) {}
+
+    try {
+      const stored = localStorage.getItem(this.LOCAL_STORAGE_FERIADOS_PLANTOES_KEY);
+      if (stored) return JSON.parse(stored);
+    } catch (e) {}
+
+    const initial = this.getInitialMockData();
+    return initial.mockFeriadosPlantoes;
+  }
+
+  /**
+   * Save / Update Holiday Shifts
+   */
+  public static async salvarFeriadosPlantoes(items: import('../types').FeriadoPlantaoInfo[]): Promise<boolean> {
+    try {
+      localStorage.setItem(this.LOCAL_STORAGE_FERIADOS_PLANTOES_KEY, JSON.stringify(items));
+      await supabase.from('escala_feriados_plantoes').upsert(items);
       return true;
     } catch (e) {
       return false;

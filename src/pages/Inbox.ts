@@ -1,5 +1,5 @@
 import { supabase, getSessaoAtual, logoutConsultor } from '../services/supabase';
-import { PerfilConsultor, Lembrete, Orcamento, Cliente, AlertItem, BancoFolgasItem, EventoEscalaItem, SolicitacaoEscala } from '../types';
+import { PerfilConsultor, Lembrete, Orcamento, Cliente, AlertItem, BancoFolgasItem, EventoEscalaItem, SolicitacaoEscala, FeriadoPlantaoInfo } from '../types';
 import { getAvatarSvg } from '../services/avatars';
 import { showCustomConfirm, showCustomAlert } from '../services/dialog';
 import { InboxService } from '../services/inboxService';
@@ -43,6 +43,9 @@ export class InboxPage {
   
   // Global settings
   private prazoReembolsoDias: number = 3;
+
+  // Escala Feriados Plantões
+  private feriadosPlantoesData: FeriadoPlantaoInfo[] = [];
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -222,6 +225,9 @@ export class InboxPage {
         }
       });
       this.bancoFolgasData = cleanBancoData;
+
+      // Carrega plantões dos últimos 3 feriados
+      this.feriadosPlantoesData = await EscalaService.loadFeriadosPlantoes();
 
     } catch (err) {
       console.error('Erro ao carregar dados da escala:', err);
@@ -2255,6 +2261,65 @@ export class InboxPage {
             </div>
           </section>
 
+          <!-- Plantões em Feriados Card (Últimos 3 Feriados) -->
+          <section class="escala-card">
+            <div class="escala-card-head">
+              <h2 class="flex items-center gap-2 font-black text-slate-800 dark:text-slate-100 text-sm">
+                <span class="w-6 h-6 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 border border-amber-500/20">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                </span>
+                Plantões em Feriados
+              </h2>
+              <div class="flex items-center gap-2">
+                <span class="escala-badge">Últimos 3 feriados</span>
+                ${isAdmin ? `
+                  <button id="btn-edit-feriados-plantoes" class="text-xs font-bold text-indigo-600 hover:text-indigo-800 dark:text-indigo-400">Ajustar</button>
+                ` : ''}
+              </div>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr class="border-b border-slate-100 dark:border-slate-800 text-[10px] uppercase font-black text-slate-400">
+                    <th class="py-2 px-2">Consultor</th>
+                    ${(this.feriadosPlantoesData || []).map(f => `
+                      <th class="py-2 px-1 text-center" title="${f.nome}">
+                        <span class="block text-slate-700 dark:text-slate-300 font-extrabold">${f.data}</span>
+                        <span class="block text-[9px] font-semibold text-slate-400 truncate max-w-[70px] mx-auto">${f.nomeCurto ? f.nomeCurto.split(' ').slice(1).join(' ') : f.nome.split(' ')[0]}</span>
+                      </th>
+                    `).join('')}
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 font-semibold text-slate-700 dark:text-slate-200">
+                  ${this.bancoFolgasData.map(b => {
+                    const cNome = b.consultor_nome;
+                    return `
+                      <tr class="hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition">
+                        <td class="py-2 px-2 font-bold truncate max-w-[100px]" title="${cNome}">${cNome}</td>
+                        ${(this.feriadosPlantoesData || []).map(f => {
+                          const trabalhou = f.consultoresTrabalharam.some(n => n.trim().toLowerCase() === cNome.trim().toLowerCase());
+                          return `
+                            <td class="py-2 px-1 text-center">
+                              ${trabalhou ? `
+                                <span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/40 text-[10px] font-black" title="Trabalhou no feriado ${f.nome}">
+                                  🤓 Sim
+                                </span>
+                              ` : `
+                                <span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-slate-50 dark:bg-slate-800/60 text-slate-400 border border-slate-200/30 text-[10px] font-bold" title="Folgou no feriado ${f.nome}">
+                                  😎 Folga
+                                </span>
+                              `}
+                            </td>
+                          `;
+                        }).join('')}
+                      </tr>
+                    `;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
           <!-- Treinamentos · Coffee · Eventos Card -->
           <section class="escala-card">
             <div class="escala-card-head">
@@ -2284,17 +2349,17 @@ export class InboxPage {
                 }
 
                 return eventosDoMes.map(ev => `
-                  <div class="escala-eventrow flex items-center justify-between">
-                    <div class="flex items-center gap-2">
-                      <div class="escala-event-date">${ev.data}</div>
-                      <div>
-                        <strong class="text-slate-800 dark:text-slate-100 text-xs">${ev.consultor_nome}</strong>
-                        <div class="text-xs text-slate-400 font-medium">${ev.titulo}</div>
+                  <div class="escala-eventrow flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
+                    <div class="flex items-center gap-3 shrink-0 min-w-0">
+                      <div class="escala-event-date shrink-0 font-black text-slate-800 dark:text-indigo-400 text-xs px-2 py-1 bg-slate-100 dark:bg-slate-800/80 rounded-lg border border-slate-200/50 dark:border-slate-700/50">${ev.data}</div>
+                      <div class="min-w-0">
+                        <strong class="text-slate-800 dark:text-slate-100 text-xs font-bold block truncate">${ev.consultor_nome}</strong>
+                        <div class="text-xs text-slate-500 dark:text-slate-400 font-medium truncate">${ev.titulo}</div>
                       </div>
                     </div>
                     ${isAdmin ? `
-                      <button data-delete-evento-id="${ev.id}" class="text-slate-400 hover:text-rose-600 p-1 transition" title="Excluir evento">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                      <button data-delete-evento-id="${ev.id}" class="text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 p-1.5 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition shrink-0 ml-2" title="Excluir evento">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                       </button>
                     ` : ''}
                   </div>
@@ -2447,6 +2512,11 @@ export class InboxPage {
     // Edit Banco de Folgas
     document.getElementById('btn-edit-banco-folgas')?.addEventListener('click', () => {
       this.openBancoFolgasModal();
+    });
+
+    // Edit Plantões em Feriados
+    document.getElementById('btn-edit-feriados-plantoes')?.addEventListener('click', () => {
+      this.openEditarFeriadosPlantoesModal();
     });
 
     // Add Evento
@@ -3007,6 +3077,121 @@ export class InboxPage {
       await EscalaService.salvarBancoFolgas(this.bancoFolgasData);
       close();
       this.showToast('Banco de folgas atualizado!', 'success');
+      this.render();
+      this.setupEventListeners();
+    };
+  }
+
+  /**
+   * Modal: Edit Holiday Shifts (Plantões nos Feriados)
+   */
+  private openEditarFeriadosPlantoesModal(): void {
+    if (this.perfil?.role !== 'admin') {
+      this.showToast('Apenas administradores podem ajustar o histórico de feriados.', 'error');
+      return;
+    }
+
+    const feriadosList = (this.feriadosPlantoesData && this.feriadosPlantoesData.length > 0)
+      ? [...this.feriadosPlantoesData]
+      : [
+          { id: 'fp-1', data: '09/07', nome: 'Revolução Constitucionalista (SP)', nomeCurto: '09/07 Rev. SP', consultoresTrabalharam: [] },
+          { id: 'fp-2', data: '01/05', nome: 'Dia do Trabalho', nomeCurto: '01/05 Trab.', consultoresTrabalharam: [] },
+          { id: 'fp-3', data: '21/04', nome: 'Tiradentes', nomeCurto: '21/04 Tirad.', consultoresTrabalharam: [] }
+        ];
+
+    const consultores = this.bancoFolgasData.map(b => b.consultor_nome);
+
+    const modalHtml = `
+      <div id="escala-feriados-modal-backdrop" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 max-w-xl w-full shadow-2xl space-y-4 max-h-[85vh] overflow-y-auto custom-scrollbar">
+          <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3">
+            <h3 class="text-base font-black text-slate-800 dark:text-slate-100 flex items-center gap-2.5">
+              <span class="w-7 h-7 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 border border-amber-500/20">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+              </span>
+              Ajustar Plantões nos Últimos 3 Feriados
+            </h3>
+            <button id="modal-feriados-close" class="text-slate-400 hover:text-slate-600 text-lg font-bold">✕</button>
+          </div>
+
+          <div class="space-y-4">
+            ${feriadosList.map((f, fIdx) => `
+              <div class="p-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-800/40 space-y-3">
+                <div class="grid grid-cols-3 gap-2">
+                  <div>
+                    <label class="block text-[10px] font-bold text-slate-400">Data (ex: 09/07)</label>
+                    <input type="text" id="feriado-data-${fIdx}" value="${f.data}" class="w-full text-xs font-bold p-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100" />
+                  </div>
+                  <div class="col-span-2">
+                    <label class="block text-[10px] font-bold text-slate-400">Nome do Feriado</label>
+                    <input type="text" id="feriado-nome-${fIdx}" value="${f.nome}" class="w-full text-xs font-bold p-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100" />
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 mb-1.5">Quem trabalhou neste feriado? (Marque para indicar plantão)</label>
+                  <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    ${consultores.map(cNome => {
+                      const checked = f.consultoresTrabalharam.some(n => n.trim().toLowerCase() === cNome.trim().toLowerCase());
+                      return `
+                        <label class="flex items-center gap-2 p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 cursor-pointer select-none text-xs font-bold text-slate-700 dark:text-slate-200 hover:border-indigo-500">
+                          <input type="checkbox" data-feriado-idx="${fIdx}" data-consultor-nome="${cNome}" ${checked ? 'checked' : ''} class="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500" />
+                          <span class="truncate">${cNome}</span>
+                        </label>
+                      `;
+                    }).join('')}
+                  </div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+
+          <div class="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
+            <button id="modal-feriados-cancel" class="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition">Cancelar</button>
+            <button id="modal-feriados-save" class="px-5 py-2 text-xs font-black text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition shadow-md shadow-indigo-600/20">Salvar Plantões</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const div = document.createElement('div');
+    div.innerHTML = modalHtml;
+    document.body.appendChild(div.firstElementChild!);
+
+    const backdrop = document.getElementById('escala-feriados-modal-backdrop')!;
+    const closeBtn = document.getElementById('modal-feriados-close')!;
+    const cancelBtn = document.getElementById('modal-feriados-cancel')!;
+    const saveBtn = document.getElementById('modal-feriados-save')!;
+
+    const close = () => backdrop.remove();
+    closeBtn.onclick = close;
+    cancelBtn.onclick = close;
+
+    saveBtn.onclick = async () => {
+      const updatedList: FeriadoPlantaoInfo[] = feriadosList.map((f, fIdx) => {
+        const dataVal = (document.getElementById(`feriado-data-${fIdx}`) as HTMLInputElement)?.value.trim() || f.data;
+        const nomeVal = (document.getElementById(`feriado-nome-${fIdx}`) as HTMLInputElement)?.value.trim() || f.nome;
+        
+        const checkboxes = backdrop.querySelectorAll(`input[type="checkbox"][data-feriado-idx="${fIdx}"]:checked`);
+        const consultoresTrabalharam: string[] = [];
+        checkboxes.forEach(cb => {
+          const cNome = cb.getAttribute('data-consultor-nome');
+          if (cNome) consultoresTrabalharam.push(cNome);
+        });
+
+        return {
+          id: f.id || `fp-${fIdx + 1}`,
+          data: dataVal,
+          nome: nomeVal,
+          nomeCurto: `${dataVal} ${nomeVal.split(' ')[0]}`,
+          consultoresTrabalharam
+        };
+      });
+
+      await EscalaService.salvarFeriadosPlantoes(updatedList);
+      close();
+      this.showToast('Histórico de plantões em feriados atualizado!', 'success');
+      await this.loadEscalaData();
       this.render();
       this.setupEventListeners();
     };
