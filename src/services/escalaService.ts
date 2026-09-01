@@ -3,6 +3,17 @@ import { EscalaDiaria, SolicitacaoEscala, BancoFolgasItem, EventoEscalaItem, Tur
 import { formatarDataBR } from '../utils/messageFormatter';
 import { PushSenderService } from './pushSenderService';
 
+export function isSameConsultantName(nameA: string, nameB: string): boolean {
+  if (!nameA || !nameB) return false;
+  const a = nameA.trim().toLowerCase();
+  const b = nameB.trim().toLowerCase();
+  if (a === b) return true;
+  const firstA = a.split(' ')[0];
+  const firstB = b.split(' ')[0];
+  if (firstA === firstB && firstA.length > 1) return true;
+  return a.includes(b) || b.includes(a);
+}
+
 export const TURNO_PRESETS: TurnoConfig[] = [
   { codigo: '10-17', label: '10:00 - 17:00', corClass: 'c10' },
   { codigo: '12-19', label: '12:00 - 19:00', corClass: 'c12' },
@@ -110,7 +121,7 @@ export class EscalaService {
       { consultor_id: "c-1", consultor_nome: "Marinna Morena", equipe: "Equipe Agaxtur", saldo_dias: "1", detalhes_historico: "Meta Jun" },
       { consultor_id: "c-2", consultor_nome: "Maria Carvalho", equipe: "Equipe Agaxtur", saldo_dias: "10", detalhes_historico: "8mar26 – Folga ref 22/03 · Meta de Abril · Ref 05/04 · REF 03/05 · ref 17/05 · ref 14/06/26 · META JUNHO · REF 02/11/25" },
       { consultor_id: "c-3", consultor_nome: "Rafael Sousa", equipe: "Equipe Agaxtur", saldo_dias: "2", detalhes_historico: "1 Folga Meta Março – Domingo Extra 28/06" },
-      { consultor_id: "c-4", consultor_nome: "Guto Bassaroto", equipe: "Equipe Agaxtur", saldo_dias: "—", detalhes_historico: "Sem saldo pendente" }
+      { consultor_id: "c-4", consultor_nome: "Guto Bassaroto", equipe: "Equipe Agaxtur", saldo_dias: "1", detalhes_historico: "Meta Julho" }
     ];
 
     const mockEventos: EventoEscalaItem[] = [
@@ -125,22 +136,22 @@ export class EscalaService {
         id: 'fp-1',
         data: '21/04',
         nome: 'Tiradentes',
-        nomeCurto: '21/04 Tirad.',
-        consultoresTrabalharam: []
+        nomeCurto: '21/04 TIRADENTES',
+        consultoresTrabalharam: ['Marinna Morena']
       },
       {
         id: 'fp-2',
         data: '01/05',
         nome: 'Dia do Trabalho',
-        nomeCurto: '01/05 Trab.',
-        consultoresTrabalharam: []
+        nomeCurto: '01/05 DIA TRAB.',
+        consultoresTrabalharam: ['Maria Carvalho', 'Fernanda Ganem', 'Guto Bassaroto']
       },
       {
         id: 'fp-3',
         data: '09/07',
         nome: 'Revolução Constitucionalista (SP)',
-        nomeCurto: '09/07 Rev. SP',
-        consultoresTrabalharam: []
+        nomeCurto: '09/07 REVOLUÇÃO',
+        consultoresTrabalharam: ['Marinna Morena', 'Guto Bassaroto']
       }
     ];
 
@@ -489,33 +500,28 @@ export class EscalaService {
   public static async loadBancoFolgas(): Promise<BancoFolgasItem[]> {
     // 1. Fonte de verdade primária: KV global (configuracoes / global_settings)
     const globalData = await this.loadGlobalKV('banco_folgas_json');
-    if (globalData) {
+    if (globalData && Array.isArray(globalData) && globalData.length > 0) {
       try {
         localStorage.setItem(this.LOCAL_STORAGE_BANCO_KEY, JSON.stringify(globalData));
       } catch (e) {}
       return globalData;
     }
 
-    // 2. Tabela dedicada escala_banco_folgas no Supabase
-    try {
-      const { data, error } = await supabase.from('escala_banco_folgas').select('*');
-      if (!error && data && data.length > 0) {
-        const clean = (data as BancoFolgasItem[]).filter(b => 
-          b.consultor_id !== 'CONFIG_FERIADOS_PLANTOES' && b.consultor_nome !== 'CONFIG_FERIADOS_PLANTOES'
-        );
-        if (clean.length > 0) return clean;
-      }
-    } catch (e) {}
-
-    // 3. Fallback Local Storage
+    // 2. Se o Supabase ainda não possui o KV global, verifica o LocalStorage local e envia para o Supabase
     try {
       const stored = localStorage.getItem(this.LOCAL_STORAGE_BANCO_KEY);
       if (stored) {
-        return JSON.parse(stored);
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          this.saveGlobalKV('banco_folgas_json', stored);
+          return parsed;
+        }
       }
     } catch (e) {}
 
+    // 3. Fallback inicial configurado e sincronizado com o Supabase
     const initial = this.getInitialMockData();
+    this.saveGlobalKV('banco_folgas_json', JSON.stringify(initial.mockBancoFolgas));
     return initial.mockBancoFolgas;
   }
 
@@ -611,37 +617,28 @@ export class EscalaService {
   public static async loadFeriadosPlantoes(): Promise<import('../types').FeriadoPlantaoInfo[]> {
     // 1. Fonte de verdade primária: KV global (configuracoes / global_settings)
     const globalData = await this.loadGlobalKV('feriados_plantoes_json');
-    if (globalData) {
+    if (globalData && Array.isArray(globalData) && globalData.length > 0) {
       try {
         localStorage.setItem(this.LOCAL_STORAGE_FERIADOS_PLANTOES_KEY, JSON.stringify(globalData));
       } catch (e) {}
       return globalData;
     }
 
-    // 2. Tabela dedicada no Supabase (se populada)
-    try {
-      const { data, error } = await supabase.from('escala_feriados_plantoes').select('*');
-      if (!error && data && data.length > 0) {
-        return data as import('../types').FeriadoPlantaoInfo[];
-      }
-    } catch (e) {}
-
-    // 3. Fallback no Supabase escala_banco_folgas
-    try {
-      const { data, error } = await supabase.from('escala_banco_folgas').select('*').eq('consultor_id', 'CONFIG_FERIADOS_PLANTOES').maybeSingle();
-      if (!error && data && data.detalhes_historico) {
-        const parsed = JSON.parse(data.detalhes_historico);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
-    } catch (e) {}
-
-    // 4. Fallback Local Storage
+    // 2. Se o Supabase ainda não possui o KV global, verifica o LocalStorage local e envia para o Supabase
     try {
       const stored = localStorage.getItem(this.LOCAL_STORAGE_FERIADOS_PLANTOES_KEY);
-      if (stored) return JSON.parse(stored);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          this.saveGlobalKV('feriados_plantoes_json', stored);
+          return parsed;
+        }
+      }
     } catch (e) {}
 
+    // 3. Fallback inicial configurado e sincronizado com o Supabase
     const initial = this.getInitialMockData();
+    this.saveGlobalKV('feriados_plantoes_json', JSON.stringify(initial.mockFeriadosPlantoes));
     return initial.mockFeriadosPlantoes;
   }
 

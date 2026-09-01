@@ -3,7 +3,7 @@ import { PerfilConsultor, Lembrete, Orcamento, Cliente, AlertItem, BancoFolgasIt
 import { getAvatarSvg } from '../services/avatars';
 import { showCustomConfirm, showCustomAlert } from '../services/dialog';
 import { InboxService } from '../services/inboxService';
-import { EscalaService, TURNO_PRESETS } from '../services/escalaService';
+import { EscalaService, TURNO_PRESETS, isSameConsultantName } from '../services/escalaService';
 import { EmailReaderModal } from '../components/inbox/EmailReaderModal';
 import { NewMessageModal } from '../components/inbox/NewMessageModal';
 import { formatarDataBR } from '../utils/messageFormatter';
@@ -213,7 +213,7 @@ export class InboxPage {
       teamMap.forEach((info, key) => {
         if (!info.participates) return;
 
-        const existing = rawBanco.find(b => b.consultor_nome.trim().toLowerCase() === key);
+        const existing = rawBanco.find(b => isSameConsultantName(b.consultor_nome, key) || isSameConsultantName(b.consultor_nome, info.displayName));
 
         if (existing) {
           cleanBancoData.push({ ...existing, consultor_nome: info.displayName });
@@ -2368,7 +2368,7 @@ export class InboxPage {
                       <tr class="hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition">
                         <td class="py-2 px-1 font-bold truncate max-w-[85px]" title="${cNome}">${primeiroNome}</td>
                         ${(this.feriadosPlantoesData || []).map(f => {
-                          const trabalhou = f.consultoresTrabalharam.some(n => n.trim().toLowerCase() === cNome.trim().toLowerCase());
+                          const trabalhou = f.consultoresTrabalharam.some(n => isSameConsultantName(n, cNome));
                           return `
                             <td class="py-2 px-0.5 text-center">
                               ${trabalhou ? `
@@ -3223,7 +3223,7 @@ export class InboxPage {
                   <label class="block text-[10px] font-bold text-slate-400 mb-1.5">Quem trabalhou neste feriado? (Marque para indicar plantão)</label>
                   <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
                     ${consultores.map(cNome => {
-                      const checked = f.consultoresTrabalharam.some(n => n.trim().toLowerCase() === cNome.trim().toLowerCase());
+                      const checked = f.consultoresTrabalharam.some(n => isSameConsultantName(n, cNome));
                       return `
                         <label class="flex items-center gap-2 p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 cursor-pointer select-none text-xs font-bold text-slate-700 dark:text-slate-200 hover:border-indigo-500">
                           <input type="checkbox" data-feriado-idx="${fIdx}" data-consultor-nome="${cNome}" ${checked ? 'checked' : ''} class="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500" />
