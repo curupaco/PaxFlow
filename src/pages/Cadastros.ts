@@ -1593,7 +1593,7 @@ export class CadastrosPage {
     if (!toast) {
       toast = document.createElement('div');
       toast.id = toastId;
-      toast.className = 'fixed bottom-5 right-5 px-5 py-3.5 rounded-xl shadow-2xl text-white font-semibold text-sm z-50 transition-all duration-300 transform translate-y-10 opacity-0 flex items-center gap-2';
+      toast.className = 'fixed bottom-5 right-5 px-5 py-3.5 rounded-xl shadow-2xl text-white font-semibold text-sm z-[99999] transition-all duration-300 transform translate-y-10 opacity-0 flex items-center gap-2';
       document.body.appendChild(toast);
     }
 
@@ -2589,8 +2589,13 @@ export class CadastrosPage {
         }
       });
 
-      if (faixas.length === 0) {
+      if (!isMetaLoja && faixas.length === 0) {
         this.showToast('Por favor, adicione pelo menos uma faixa de premiação válida.', 'error');
+        return;
+      }
+
+      if (isMetaLoja && valorMetaLoja <= 0) {
+        this.showToast('Por favor, informe o valor da Meta Global da Loja.', 'error');
         return;
       }
 
@@ -2865,8 +2870,13 @@ export class CadastrosPage {
         }
       });
 
-      if (faixas.length === 0) {
+      if (!isMetaLoja && faixas.length === 0) {
         this.showToast('Por favor, adicione pelo menos uma faixa de premiação válida.', 'error');
+        return;
+      }
+
+      if (isMetaLoja && valorMetaLoja <= 0) {
+        this.showToast('Por favor, informe o valor da Meta Global da Loja.', 'error');
         return;
       }
 
