@@ -355,12 +355,7 @@ export class EscalaService {
   public static async salvarOrdemConsultores(ordem: string[]): Promise<boolean> {
     try {
       localStorage.setItem(this.LOCAL_STORAGE_ORDEM_KEY, JSON.stringify(ordem));
-      try {
-        await supabase.from('configuracoes').upsert({
-          chave: 'escala_ordem_consultores',
-          valor: JSON.stringify(ordem)
-        });
-      } catch (e) {}
+      this.notifySync();
       return true;
     } catch (e) {
       console.error('Erro ao salvar ordem dos consultores:', e);
@@ -437,6 +432,24 @@ export class EscalaService {
     ? new BroadcastChannel('paxflow_escala_sync')
     : null;
 
+  private static toValidUUID(str: string): string {
+    if (!str) return '00000000-0000-4000-8000-000000000001';
+    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str)) {
+      return str;
+    }
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      hash = ((hash << 5) - hash) + str.charCodeAt(i);
+      hash |= 0;
+    }
+    const h1 = Math.abs(hash).toString(16).padStart(8, '0');
+    const h2 = Math.abs(hash * 31).toString(16).padStart(4, '0').slice(0, 4);
+    const h3 = '4' + Math.abs(hash * 17).toString(16).padStart(3, '0').slice(0, 3);
+    const h4 = '8' + Math.abs(hash * 13).toString(16).padStart(3, '0').slice(0, 3);
+    const h5 = Math.abs(hash * 7).toString(16).padStart(12, '0').slice(0, 12);
+    return `${h1}-${h2}-${h3}-${h4}-${h5}`;
+  }
+
   private static notifySync(): void {
     try {
       this.broadcastChannel?.postMessage({ type: 'escala_data_changed', timestamp: Date.now() });
@@ -459,8 +472,8 @@ export class EscalaService {
       // Se a tabela no Supabase estiver vazia, popula a semente inicial no banco
       const initial = this.getInitialMockData().mockBancoFolgas;
       const seedRows = initial.map(item => ({
-        id: item.id || `bf-${item.consultor_nome.trim().toLowerCase().replace(/\s+/g, '-')}`,
-        consultor_id: item.consultor_id || `c-${item.consultor_nome.trim().toLowerCase().replace(/\s+/g, '-')}`,
+        id: this.toValidUUID(item.id || item.consultor_nome),
+        consultor_id: this.toValidUUID(item.consultor_id || item.consultor_nome),
         consultor_nome: item.consultor_nome,
         equipe: item.equipe || 'Equipe Agaxtur',
         saldo_dias: String(item.saldo_dias),
@@ -484,8 +497,8 @@ export class EscalaService {
   public static async salvarBancoFolgas(items: BancoFolgasItem[]): Promise<boolean> {
     try {
       const payload = items.map(item => ({
-        id: item.id || `bf-${item.consultor_nome.trim().toLowerCase().replace(/\s+/g, '-')}`,
-        consultor_id: item.consultor_id || `c-${item.consultor_nome.trim().toLowerCase().replace(/\s+/g, '-')}`,
+        id: this.toValidUUID(item.id || item.consultor_nome),
+        consultor_id: this.toValidUUID(item.consultor_id || item.consultor_nome),
         consultor_nome: item.consultor_nome,
         equipe: item.equipe || 'Equipe Agaxtur',
         saldo_dias: String(item.saldo_dias),
@@ -512,7 +525,7 @@ export class EscalaService {
     try {
       const { data, error } = await supabase.from('escala_eventos').select('*').order('data', { ascending: true });
       if (!error && data && data.length > 0) {
-        return data as EventoEscalaItem[];
+        return data.filter(e => !e.titulo || !e.titulo.startsWith('PLANTÃO:')) as EventoEscalaItem[];
       }
     } catch (e) {}
 
@@ -526,9 +539,10 @@ export class EscalaService {
   public static async adicionarEvento(evento: EventoEscalaItem): Promise<boolean> {
     try {
       const payload = {
-        ...evento,
-        id: evento.id || 'ev-' + Date.now(),
-        updated_at: new Date().toISOString()
+        id: this.toValidUUID(evento.id || `ev-${Date.now()}`),
+        data: evento.data,
+        titulo: evento.titulo,
+        consultor_nome: evento.consultor_nome
       };
       await supabase.from('escala_eventos').insert(payload);
       this.notifySync();
@@ -558,37 +572,32 @@ export class EscalaService {
     try {
       const { data, error } = await supabase
         .from('escala_eventos')
-        .select('*')
-        .eq('tipo', 'plantao');
+        .select('*');
 
       if (!error && data && data.length > 0) {
-        return data.map(item => {
-          let consultores: string[] = [];
-          try {
-            consultores = typeof item.observacao === 'string' ? JSON.parse(item.observacao) : (item.consultores_plantao || []);
-          } catch {
-            consultores = Array.isArray(item.consultores_plantao) ? item.consultores_plantao : [];
-          }
-          return {
-            id: item.id,
-            data: item.data,
-            nome: item.titulo,
-            nomeCurto: item.titulo,
-            consultoresTrabalharam: consultores
-          };
-        });
+        const plantaoEvents = data.filter(e => e.titulo && e.titulo.startsWith('PLANTÃO:'));
+        if (plantaoEvents.length > 0) {
+          return plantaoEvents.map(item => {
+            const rawTitle = item.titulo.replace(/^PLANTÃO:\s*/, '');
+            const consultoresList = item.consultor_nome ? item.consultor_nome.split(',').map((s: string) => s.trim()).filter(Boolean) : [];
+            return {
+              id: item.id,
+              data: item.data,
+              nome: rawTitle,
+              nomeCurto: rawTitle,
+              consultoresTrabalharam: consultoresList
+            };
+          });
+        }
       }
 
       // Se não houver plantões gravados, popula semente inicial em escala_eventos no Supabase
       const initial = this.getInitialMockData().mockFeriadosPlantoes;
       const seedEvents = initial.map(fp => ({
-        id: fp.id || `fp-${Date.now()}`,
+        id: this.toValidUUID(fp.id || fp.nome),
         data: fp.data,
-        titulo: fp.nomeCurto || fp.nome,
-        tipo: 'plantao',
-        status: 'concluido',
-        observacao: JSON.stringify(fp.consultoresTrabalharam),
-        updated_at: new Date().toISOString()
+        titulo: `PLANTÃO: ${fp.nomeCurto || fp.nome}`,
+        consultor_nome: (fp.consultoresTrabalharam || []).join(', ')
       }));
 
       await supabase.from('escala_eventos').upsert(seedEvents);
@@ -607,13 +616,10 @@ export class EscalaService {
   public static async salvarFeriadosPlantoes(items: import('../types').FeriadoPlantaoInfo[]): Promise<boolean> {
     try {
       const payload = items.map(fp => ({
-        id: fp.id || `fp-${Date.now()}`,
+        id: this.toValidUUID(fp.id || fp.nome),
         data: fp.data,
-        titulo: fp.nomeCurto || fp.nome,
-        tipo: 'plantao',
-        status: 'concluido',
-        observacao: JSON.stringify(fp.consultoresTrabalharam),
-        updated_at: new Date().toISOString()
+        titulo: `PLANTÃO: ${fp.nomeCurto || fp.nome}`,
+        consultor_nome: (fp.consultoresTrabalharam || []).join(', ')
       }));
 
       await supabase.from('escala_eventos').upsert(payload);
