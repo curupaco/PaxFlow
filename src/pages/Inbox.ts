@@ -2291,28 +2291,33 @@ export class InboxPage {
               </div>
             </div>
             <div class="p-2 space-y-1">
-              ${this.bancoFolgasData.map(b => `
-                <div class="escala-row flex flex-col gap-1 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800/80 hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition">
-                  <div class="flex items-center justify-between gap-2 w-full">
+              ${this.bancoFolgasData.map((b, idx) => `
+                <div class="banco-folgas-accordion-item rounded-xl border border-slate-100 dark:border-slate-800/80 hover:border-indigo-500/30 transition overflow-hidden">
+                  <button type="button" class="btn-toggle-banco-row w-full flex items-center justify-between gap-2 p-2.5 bg-white dark:bg-slate-900/60 hover:bg-slate-50/80 dark:hover:bg-slate-800/40 text-left transition select-none" data-banco-row-idx="${idx}">
                     <strong class="text-slate-800 dark:text-slate-100 text-xs font-black truncate" title="${b.consultor_nome}">${b.consultor_nome.split(' ')[0]}</strong>
-                    <span class="escala-balance shrink-0">${b.saldo_dias}</span>
-                  </div>
-                  <div class="text-[11px] text-slate-500 dark:text-slate-400 font-medium leading-snug break-words">
-                    ${b.detalhes_historico || 'Sem saldo pendente'}
+                    <div class="flex items-center gap-2 shrink-0">
+                      <span class="escala-balance">${b.saldo_dias}</span>
+                      <svg class="w-3.5 h-3.5 text-slate-400 transition-transform duration-200 icon-banco-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                      </svg>
+                    </div>
+                  </button>
+                  <div class="banco-row-details hidden p-2.5 bg-slate-50/50 dark:bg-slate-950/40 border-t border-slate-100 dark:border-slate-800/60 text-[11px] text-slate-600 dark:text-slate-300 font-medium leading-snug break-words">
+                    ${b.detalhes_historico || 'Sem saldo acumulado.'}
                   </div>
                 </div>
               `).join('')}
             </div>
           </section>
 
-          <!-- Plantões em Feriados Card (Últimos 3 Feriados) -->
+          <!-- Feriados Card (Últimos 3 Feriados) -->
           <section class="escala-card">
             <div class="escala-card-head">
               <h2 class="flex items-center gap-2 font-black text-slate-800 dark:text-slate-100 text-sm">
                 <span class="w-6 h-6 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 border border-amber-500/20">
                   <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                 </span>
-                Plantões em Feriados
+                Feriados
               </h2>
               <div class="flex items-center gap-2 shrink-0">
                 <span class="escala-badge whitespace-nowrap">3 Feriados</span>
@@ -2553,6 +2558,26 @@ export class InboxPage {
         }
       });
     }
+
+    // Toggle colapsável do Banco de Folgas
+    document.querySelectorAll('.btn-toggle-banco-row').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const item = (e.currentTarget as HTMLElement).closest('.banco-folgas-accordion-item');
+        if (!item) return;
+        const details = item.querySelector('.banco-row-details');
+        const chevron = item.querySelector('.icon-banco-chevron');
+        if (details) {
+          const isHidden = details.classList.contains('hidden');
+          if (isHidden) {
+            details.classList.remove('hidden');
+            chevron?.classList.add('rotate-180');
+          } else {
+            details.classList.add('hidden');
+            chevron?.classList.remove('rotate-180');
+          }
+        }
+      });
+    });
 
     // Edit Banco de Folgas
     document.getElementById('btn-edit-banco-folgas')?.addEventListener('click', () => {
