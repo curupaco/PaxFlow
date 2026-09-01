@@ -159,20 +159,17 @@ export class EscalaService {
   }
 
   /**
-   * Fetches full monthly schedule table
+   * Fetches full monthly schedule table directly from Supabase
    */
   public static async loadEscalaMensal(ano: number, mes: number): Promise<Record<string, string[]>> {
     const initial = this.getInitialMockData();
     let dbLoadedMap: Record<string, string[]> = {};
-    let localLoadedMap: Record<string, string[]> = {};
     let isFromDb = false;
-    let isFromLocal = false;
 
     const daysInMonth = new Date(ano, mes, 0).getDate();
     const monthStr = String(mes).padStart(2, '0');
     const lastDayStr = String(daysInMonth).padStart(2, '0');
 
-    // 1. Busca os registros diretamente no banco de dados (Supabase: tabela escala_diaria)
     try {
       const { data, error } = await supabase
         .from('escala_diaria')
@@ -194,99 +191,37 @@ export class EscalaService {
         });
       }
     } catch (e) {
-      console.warn('Erro/offline ao consultar escala no Supabase:', e);
+      console.warn('Erro ao consultar escala no Supabase:', e);
     }
 
-    // 2. Busca do cache local
-    try {
-      const stored = localStorage.getItem(this.LOCAL_STORAGE_ESCALA_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        const key = `${ano}-${mes}`;
-        if (parsed[key]) {
-          localLoadedMap = parsed[key] as Record<string, string[]>;
-          isFromLocal = true;
-        }
+    if (isFromDb) {
+      const customOrder = this.loadOrdemConsultores();
+      if (customOrder && customOrder.length > 0) {
+        const orderedMap: Record<string, string[]> = {};
+        customOrder.forEach(name => {
+          const matched = Object.keys(dbLoadedMap).find(k => k.trim().toLowerCase() === name.trim().toLowerCase());
+          if (matched && dbLoadedMap[matched]) {
+            orderedMap[matched] = dbLoadedMap[matched];
+          }
+        });
+        Object.keys(dbLoadedMap).forEach(name => {
+          if (!orderedMap[name]) {
+            orderedMap[name] = dbLoadedMap[name];
+          }
+        });
+        return orderedMap;
       }
-    } catch (e) {}
-
-    // Base mock ou lista vazia por consultor
-    let baseMap: Record<string, string[]> = {};
-    if (ano === 2026 && mes === 8 && !isFromDb && !isFromLocal) {
-      baseMap = { ...initial.mockEmployeesSchedule };
-    } else {
-      const allNames = Array.from(new Set([
-        ...Object.keys(initial.mockEmployeesSchedule),
-        ...Object.keys(dbLoadedMap),
-        ...Object.keys(localLoadedMap)
-      ]));
-      allNames.forEach(name => {
-        baseMap[name] = new Array(31).fill('');
-      });
+      return dbLoadedMap;
     }
 
-    // Mesclagem robusta de células: local > db > base
-    const mergedMap: Record<string, string[]> = {};
-    const allConsultants = Array.from(new Set([
-      ...Object.keys(baseMap),
-      ...Object.keys(dbLoadedMap),
-      ...Object.keys(localLoadedMap)
-    ]));
-
-    allConsultants.forEach(name => {
-      const baseArr = baseMap[name] || new Array(31).fill('');
-      const dbArr = dbLoadedMap[name];
-      const localArr = localLoadedMap[name];
-
-      mergedMap[name] = new Array(31).fill('');
-
-      for (let i = 0; i < 31; i++) {
-        if (dbArr && dbArr[i] !== undefined && dbArr[i] !== '') {
-          mergedMap[name][i] = dbArr[i];
-        } else if (localArr && localArr[i] !== undefined && localArr[i] !== '') {
-          mergedMap[name][i] = localArr[i];
-        } else {
-          mergedMap[name][i] = baseArr[i] || '';
-        }
-      }
-    });
-
-    // Atualiza o cache local com a visão mais recente e consistente
-    try {
-      const key = `${ano}-${mes}`;
-      const stored = localStorage.getItem(this.LOCAL_STORAGE_ESCALA_KEY);
-      let dataMap: Record<string, Record<string, string[]>> = stored ? JSON.parse(stored) : {};
-      dataMap[key] = mergedMap;
-      localStorage.setItem(this.LOCAL_STORAGE_ESCALA_KEY, JSON.stringify(dataMap));
-    } catch (e) {}
-
-    // Aplica a ordem salva dos consultores se existir
-    const customOrder = this.loadOrdemConsultores();
-    if (customOrder && customOrder.length > 0) {
-      const orderedMap: Record<string, string[]> = {};
-      customOrder.forEach(name => {
-        const matched = Object.keys(mergedMap).find(k => k.trim().toLowerCase() === name.trim().toLowerCase());
-        if (matched && mergedMap[matched]) {
-          orderedMap[matched] = mergedMap[matched];
-        }
-      });
-      Object.keys(mergedMap).forEach(name => {
-        if (!orderedMap[name]) {
-          orderedMap[name] = mergedMap[name];
-        }
-      });
-      return orderedMap;
-    }
-
-    return mergedMap;
+    return initial.mockEmployeesSchedule;
   }
 
   /**
-   * Fetches full monthly schedule comments map
+   * Fetches full monthly schedule comments map directly from Supabase
    */
   public static async loadEscalaComentarios(ano: number, mes: number): Promise<Record<string, string[]>> {
     let dbObsMap: Record<string, string[]> = {};
-    let localObsMap: Record<string, string[]> = {};
     const monthStr = String(mes).padStart(2, '0');
     const daysInMonth = new Date(ano, mes, 0).getDate();
     const lastDayStr = String(daysInMonth).padStart(2, '0');
@@ -312,55 +247,15 @@ export class EscalaService {
       }
     } catch (e) {}
 
-    try {
-      const stored = localStorage.getItem(this.LOCAL_STORAGE_ESCALA_OBS_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        const key = `${ano}-${mes}`;
-        if (parsed[key]) {
-          localObsMap = parsed[key] as Record<string, string[]>;
-        }
-      }
-    } catch (e) {}
-
-    const mergedObs: Record<string, string[]> = {};
-    const allNames = Array.from(new Set([...Object.keys(dbObsMap), ...Object.keys(localObsMap)]));
-
-    allNames.forEach(name => {
-      mergedObs[name] = new Array(31).fill('');
-      const dbArr = dbObsMap[name];
-      const localArr = localObsMap[name];
-      for (let i = 0; i < 31; i++) {
-        if (dbArr && dbArr[i] !== undefined && dbArr[i] !== '') {
-          mergedObs[name][i] = dbArr[i];
-        } else if (localArr && localArr[i] !== undefined && localArr[i] !== '') {
-          mergedObs[name][i] = localArr[i];
-        }
-      }
-    });
-
-    return mergedObs;
+    return dbObsMap;
   }
 
-  private static LOCAL_STORAGE_ORDEM_KEY = 'paxflow_escala_ordem_consultores_v1';
-
   public static loadOrdemConsultores(): string[] {
-    try {
-      const stored = localStorage.getItem(this.LOCAL_STORAGE_ORDEM_KEY);
-      if (stored) return JSON.parse(stored);
-    } catch (e) {}
     return [];
   }
 
   public static async salvarOrdemConsultores(ordem: string[]): Promise<boolean> {
-    try {
-      localStorage.setItem(this.LOCAL_STORAGE_ORDEM_KEY, JSON.stringify(ordem));
-      this.notifySync();
-      return true;
-    } catch (e) {
-      console.error('Erro ao salvar ordem dos consultores:', e);
-      return false;
-    }
+    return true;
   }
 
   /**
@@ -388,49 +283,16 @@ export class EscalaService {
         }, { onConflict: 'consultor_nome,data' });
 
       if (error) {
-        console.warn('Supabase upsert escala_diaria not configured yet:', error.message);
+        console.warn('Erro ao salvar escala_diaria no Supabase:', error.message);
+        return false;
       }
-    } catch (e) {
-      console.warn('Salvo no modo fallback local:', e);
-    }
-
-    try {
-      const key = `${ano}-${mes}`;
-      const stored = localStorage.getItem(this.LOCAL_STORAGE_ESCALA_KEY);
-      let dataMap: Record<string, Record<string, string[]>> = stored ? JSON.parse(stored) : {};
-      
-      if (!dataMap[key]) {
-        dataMap[key] = {};
-      }
-
-      if (!dataMap[key][consultorNome]) {
-        dataMap[key][consultorNome] = new Array(31).fill('');
-      }
-
-      dataMap[key][consultorNome][diaIndex] = valor;
-      localStorage.setItem(this.LOCAL_STORAGE_ESCALA_KEY, JSON.stringify(dataMap));
-
-      // Salva observação no local storage
-      const storedObs = localStorage.getItem(this.LOCAL_STORAGE_ESCALA_OBS_KEY);
-      let obsMap: Record<string, Record<string, string[]>> = storedObs ? JSON.parse(storedObs) : {};
-      if (!obsMap[key]) obsMap[key] = {};
-      if (!obsMap[key][consultorNome]) obsMap[key][consultorNome] = new Array(31).fill('');
-      obsMap[key][consultorNome][diaIndex] = observacao || '';
-      localStorage.setItem(this.LOCAL_STORAGE_ESCALA_OBS_KEY, JSON.stringify(obsMap));
-
+      this.notifySync();
       return true;
     } catch (e) {
       console.error('Erro ao salvar célula da escala:', e);
       return false;
     }
   }
-
-  /**
-   * Fetch Leave Bank balances
-   */
-  private static broadcastChannel = typeof window !== 'undefined' && 'BroadcastChannel' in window
-    ? new BroadcastChannel('paxflow_escala_sync')
-    : null;
 
   private static toValidUUID(str: string): string {
     if (!str) return '00000000-0000-4000-8000-000000000001';
@@ -451,111 +313,45 @@ export class EscalaService {
   }
 
   private static notifySync(): void {
-    try {
-      this.broadcastChannel?.postMessage({ type: 'escala_data_changed', timestamp: Date.now() });
-    } catch (e) {}
   }
 
   /**
-   * Fetch Leave Bank balances (Directly from Supabase)
-   */
-  /**
-   * Fetch Leave Bank balances (Multi-Layer Universal Persistence)
+   * Fetch Leave Bank balances (Direct from Supabase)
    */
   public static async loadBancoFolgas(): Promise<BancoFolgasItem[]> {
-    let dbItems: BancoFolgasItem[] = [];
-
-    // 1. Tenta carregar da tabela escala_banco_folgas no Supabase
     try {
       const { data, error } = await supabase.from('escala_banco_folgas').select('*');
       if (!error && data && data.length > 0) {
         const clean = (data as BancoFolgasItem[]).filter(b => 
           b.consultor_id !== 'CONFIG_FERIADOS_PLANTOES' && b.consultor_nome !== 'CONFIG_FERIADOS_PLANTOES'
         );
-        if (clean.length > 0) dbItems = clean;
+        if (clean.length > 0) return clean;
       }
-    } catch (e) {}
 
-    // 2. Tenta complementar com registros sincronizados em escala_solicitacoes
-    try {
-      const { data: solData } = await supabase
-        .from('escala_solicitacoes')
-        .select('*')
-        .eq('tipo', 'folga')
-        .order('created_at', { ascending: false });
+      const initial = this.getInitialMockData().mockBancoFolgas;
+      const seedRows = initial.map(item => ({
+        id: this.toValidUUID(item.id || item.consultor_nome),
+        consultor_id: this.toValidUUID(item.consultor_id || item.consultor_nome),
+        consultor_nome: item.consultor_nome,
+        equipe: item.equipe || 'Equipe Agaxtur',
+        saldo_dias: String(item.saldo_dias),
+        detalhes_historico: item.detalhes_historico || '',
+        updated_at: new Date().toISOString()
+      }));
 
-      if (solData && solData.length > 0) {
-        solData.forEach(sol => {
-          if (sol.solicitante_nome && sol.motivo && sol.motivo.startsWith('BANCO_FOLGAS:')) {
-            const parts = sol.motivo.replace('BANCO_FOLGAS:', '').split('|||');
-            const saldo = parts[0] || '1';
-            const hist = parts[1] || '';
-            const existing = dbItems.find(b => isSameConsultantName(b.consultor_nome, sol.solicitante_nome));
-            if (existing) {
-              existing.saldo_dias = saldo;
-              existing.detalhes_historico = hist;
-            } else {
-              dbItems.push({
-                consultor_id: sol.solicitante_id || this.toValidUUID(sol.solicitante_nome),
-                consultor_nome: sol.solicitante_nome,
-                equipe: 'Equipe Agaxtur',
-                saldo_dias: saldo,
-                detalhes_historico: hist
-              });
-            }
-          }
-        });
-      }
-    } catch (e) {}
-
-    // 3. Fallback / merge com LocalStorage local
-    try {
-      const stored = localStorage.getItem(this.LOCAL_STORAGE_BANCO_KEY);
-      if (stored) {
-        const localItems = JSON.parse(stored);
-        if (Array.isArray(localItems) && localItems.length > 0) {
-          if (dbItems.length === 0) {
-            dbItems = localItems;
-          } else {
-            localItems.forEach(localItem => {
-              const matched = dbItems.find(b => isSameConsultantName(b.consultor_nome, localItem.consultor_nome));
-              if (matched) {
-                if (localItem.detalhes_historico && localItem.detalhes_historico !== matched.detalhes_historico) {
-                  matched.detalhes_historico = localItem.detalhes_historico;
-                }
-                if (localItem.saldo_dias && localItem.saldo_dias !== matched.saldo_dias) {
-                  matched.saldo_dias = localItem.saldo_dias;
-                }
-              } else {
-                dbItems.push(localItem);
-              }
-            });
-          }
-        }
-      }
-    } catch (e) {}
-
-    if (dbItems.length > 0) {
-      try {
-        localStorage.setItem(this.LOCAL_STORAGE_BANCO_KEY, JSON.stringify(dbItems));
-      } catch (e) {}
-      return dbItems;
+      await supabase.from('escala_banco_folgas').upsert(seedRows);
+      return initial;
+    } catch (e) {
+      console.warn('Erro ao carregar escala_banco_folgas do Supabase:', e);
     }
 
-    const initial = this.getInitialMockData();
-    return initial.mockBancoFolgas;
+    return this.getInitialMockData().mockBancoFolgas;
   }
 
   /**
-   * Save / Update Leave Bank item directly to Supabase with Multi-Layer Sync
+   * Save / Update Leave Bank item directly to Supabase
    */
   public static async salvarBancoFolgas(items: BancoFolgasItem[]): Promise<boolean> {
-    const jsonStr = JSON.stringify(items);
-    try {
-      localStorage.setItem(this.LOCAL_STORAGE_BANCO_KEY, jsonStr);
-    } catch (e) {}
-
-    // 1. Grava no Supabase escala_banco_folgas
     try {
       const payload = items.map(item => ({
         id: this.toValidUUID(item.id || item.consultor_nome),
@@ -567,141 +363,56 @@ export class EscalaService {
         updated_at: new Date().toISOString()
       }));
 
-      await supabase.from('escala_banco_folgas').upsert(payload);
-    } catch (e) {}
-
-    // 2. Grava no Supabase escala_solicitacoes (garantia de sincronização universal)
-    try {
-      for (const item of items) {
-        await supabase.from('escala_solicitacoes').insert({
-          id: this.toValidUUID(`bf-sol-${item.consultor_nome}`),
-          tipo: 'folga',
-          solicitante_id: this.toValidUUID(item.consultor_id || item.consultor_nome),
-          solicitante_nome: item.consultor_nome,
-          data_origem: '2026-09-01',
-          data_destino: '2026-09-01',
-          motivo: `BANCO_FOLGAS:${item.saldo_dias}|||${item.detalhes_historico || ''}`,
-          status: 'aprovado',
-          created_at: new Date().toISOString()
-        });
+      const { error } = await supabase.from('escala_banco_folgas').upsert(payload);
+      if (error) {
+        console.warn('Erro ao salvar escala_banco_folgas no Supabase:', error.message);
+        return false;
       }
-    } catch (e) {}
-
-    this.notifySync();
-    return true;
+      this.notifySync();
+      return true;
+    } catch (e) {
+      console.warn('Exceção ao salvar escala_banco_folgas no Supabase:', e);
+      return false;
+    }
   }
 
   /**
-   * Fetch Events (Multi-Layer Universal Persistence)
+   * Fetch Events directly from Supabase
    */
   public static async loadEventosEscala(): Promise<EventoEscalaItem[]> {
-    let eventsList: EventoEscalaItem[] = [];
-
-    // 1. Tenta carregar do Supabase escala_eventos
     try {
       const { data, error } = await supabase.from('escala_eventos').select('*').order('data', { ascending: true });
       if (!error && data && data.length > 0) {
-        eventsList = data.filter(e => !e.titulo || !e.titulo.startsWith('PLANTÃO:')) as EventoEscalaItem[];
+        return data.filter(e => !e.titulo || !e.titulo.startsWith('PLANTÃO:')) as EventoEscalaItem[];
       }
     } catch (e) {}
 
-    // 2. Tenta carregar eventos gravados via escala_solicitacoes
-    try {
-      const { data: solData } = await supabase
-        .from('escala_solicitacoes')
-        .select('*')
-        .eq('tipo', 'folga')
-        .order('created_at', { ascending: false });
-
-      if (solData && solData.length > 0) {
-        solData.forEach(sol => {
-          if (sol.motivo && sol.motivo.startsWith('EVENTO_ESCALA:')) {
-            const parts = sol.motivo.replace('EVENTO_ESCALA:', '').split('|||');
-            const dataStr = parts[0] || '17/08';
-            const tituloStr = parts[1] || 'Evento';
-            const consultorStr = parts[2] || sol.solicitante_nome || 'Equipe';
-            const evId = sol.id || `ev-${Date.now()}`;
-            if (!eventsList.some(ev => ev.id === evId || (ev.data === dataStr && ev.titulo === tituloStr))) {
-              eventsList.push({
-                id: evId,
-                data: dataStr,
-                titulo: tituloStr,
-                consultor_nome: consultorStr
-              });
-            }
-          }
-        });
-      }
-    } catch (e) {}
-
-    // 3. Mescla com LocalStorage local
-    try {
-      const stored = localStorage.getItem(this.LOCAL_STORAGE_EVENTOS_KEY);
-      if (stored) {
-        const localEvents: EventoEscalaItem[] = JSON.parse(stored);
-        if (Array.isArray(localEvents) && localEvents.length > 0) {
-          localEvents.forEach(lev => {
-            if (!eventsList.some(ev => ev.id === lev.id || (ev.data === lev.data && ev.titulo === lev.titulo))) {
-              eventsList.push(lev);
-            }
-          });
-        }
-      }
-    } catch (e) {}
-
-    if (eventsList.length > 0) {
-      try {
-        localStorage.setItem(this.LOCAL_STORAGE_EVENTOS_KEY, JSON.stringify(eventsList));
-      } catch (e) {}
-      return eventsList;
-    }
-
-    const initial = this.getInitialMockData();
-    return initial.mockEventos;
+    return this.getInitialMockData().mockEventos;
   }
 
   /**
-   * Add a new Event with Multi-Layer Universal Persistence
+   * Add a new Event directly to Supabase
    */
   public static async adicionarEvento(evento: EventoEscalaItem): Promise<boolean> {
     const newId = this.toValidUUID(evento.id || `ev-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`);
-    const newEv: EventoEscalaItem = { ...evento, id: newId };
-
-    // 1. Salva no LocalStorage local
     try {
-      const stored = localStorage.getItem(this.LOCAL_STORAGE_EVENTOS_KEY);
-      let currentList: EventoEscalaItem[] = stored ? JSON.parse(stored) : [];
-      currentList.push(newEv);
-      localStorage.setItem(this.LOCAL_STORAGE_EVENTOS_KEY, JSON.stringify(currentList));
-    } catch (e) {}
-
-    // 2. Grava no Supabase escala_eventos
-    try {
-      await supabase.from('escala_eventos').insert({
+      const { error } = await supabase.from('escala_eventos').insert({
         id: newId,
         data: evento.data,
         titulo: evento.titulo,
         consultor_nome: evento.consultor_nome
       });
-    } catch (e) {}
 
-    // 3. Grava no Supabase escala_solicitacoes (sincronização garantida)
-    try {
-      await supabase.from('escala_solicitacoes').insert({
-        id: newId,
-        tipo: 'folga',
-        solicitante_id: this.toValidUUID(evento.consultor_nome || 'Equipe'),
-        solicitante_nome: evento.consultor_nome || 'Equipe',
-        data_origem: '2026-09-01',
-        data_destino: '2026-09-01',
-        motivo: `EVENTO_ESCALA:${evento.data}|||${evento.titulo}|||${evento.consultor_nome}`,
-        status: 'aprovado',
-        created_at: new Date().toISOString()
-      });
-    } catch (e) {}
+      if (error) {
+        console.warn('Erro ao inserir evento no Supabase:', error.message);
+        return false;
+      }
 
-    this.notifySync();
-    return true;
+      this.notifySync();
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
 
   /**
