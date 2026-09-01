@@ -27,7 +27,7 @@ export class GlobalHeaderSearch {
     if (!this.container) return;
 
     const html = `
-      <header id="global-header-bar" class="min-h-12 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 px-4 md:px-6 md:pt-safe py-2 flex items-center justify-between gap-4 shrink-0 z-40 w-full max-w-full overflow-x-hidden">
+      <header id="global-header-bar" class="min-h-12 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 px-4 md:px-6 md:pt-safe py-2 flex items-center justify-between gap-4 shrink-0 z-40 w-full max-w-full">
         <div class="relative flex-1 max-w-xl">
           <div class="relative">
             <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -41,7 +41,7 @@ export class GlobalHeaderSearch {
           </div>
 
           <!-- Dropdown Instantâneo Co-Piloto -->
-          <div id="global-search-dropdown" class="hidden absolute left-0 right-0 mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden z-50 animate-fade-in max-h-[75vh] overflow-y-auto custom-scrollbar p-2">
+          <div id="global-search-dropdown" class="hidden absolute left-0 right-0 top-full mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-y-auto z-[999] max-h-[75vh] custom-scrollbar p-2">
           </div>
         </div>
 
