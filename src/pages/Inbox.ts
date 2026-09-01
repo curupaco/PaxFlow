@@ -2290,12 +2290,16 @@ export class InboxPage {
                 ` : ''}
               </div>
             </div>
-            <div class="p-2">
+            <div class="p-2 space-y-1">
               ${this.bancoFolgasData.map(b => `
-                <div class="escala-row flex items-center justify-between gap-2 p-2">
-                  <strong class="text-slate-800 dark:text-slate-100 text-xs font-bold truncate max-w-[90px]" title="${b.consultor_nome}">${b.consultor_nome.split(' ')[0]}</strong>
-                  <span class="escala-balance shrink-0">${b.saldo_dias}</span>
-                  <span class="text-xs text-slate-400 truncate flex-1 min-w-0" title="${b.detalhes_historico}">${b.detalhes_historico}</span>
+                <div class="escala-row flex flex-col gap-1 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800/80 hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition">
+                  <div class="flex items-center justify-between gap-2 w-full">
+                    <strong class="text-slate-800 dark:text-slate-100 text-xs font-black truncate" title="${b.consultor_nome}">${b.consultor_nome.split(' ')[0]}</strong>
+                    <span class="escala-balance shrink-0">${b.saldo_dias}</span>
+                  </div>
+                  <div class="text-[11px] text-slate-500 dark:text-slate-400 font-medium leading-snug break-words">
+                    ${b.detalhes_historico || 'Sem saldo pendente'}
+                  </div>
                 </div>
               `).join('')}
             </div>
