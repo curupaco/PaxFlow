@@ -1,28 +1,23 @@
 -- ============================================================================
--- PaxFlow — Script de Teste do Fluxo Completo (Banco de Dados)
--- ============================================================================
--- Este script valida a integridade referencial e as constraints das tabelas
--- realizando a simulação de uma venda completa:
--- 1. Cria um orçamento (SOLICITADO)
--- 2. Cria um cliente (com documento nulo, para validar a flexibilidade)
--- 3. Cria uma viagem (confirmada, vinculando o cliente e o consultor)
--- 4. Conclui o orçamento (CONCLUIDO/ACEITO vinculando o cliente)
--- 5. Valida os status resultantes
--- 6. Limpa todos os dados criados no teste
---
--- Execute este script no SQL Editor do seu console Supabase.
--- Se retornar sucesso, a integridade do banco de dados está 100% garantida!
+-- PaxFlow — Script de Teste de Integridade e Fluxo Completo (Banco de Dados)
 -- ============================================================================
 
 DO $$
 DECLARE
+  v_consultor_id UUID;
   new_client_id UUID;
   new_budget_id UUID;
   new_trip_id UUID;
   chk_status VARCHAR;
   chk_sub_status VARCHAR;
 BEGIN
-  RAISE NOTICE 'Iniciando teste de integridade do fluxo...';
+  RAISE NOTICE 'Iniciando teste de integridade do fluxo de banco de dados...';
+
+  -- Obter um consultor ativo da base
+  SELECT id INTO v_consultor_id FROM public.profiles WHERE ativo = true LIMIT 1;
+  IF v_consultor_id IS NULL THEN
+    SELECT id INTO v_consultor_id FROM public.profiles LIMIT 1;
+  END IF;
 
   -- 1. Criar Orçamento (Simulando a inserção inicial)
   INSERT INTO public.orcamentos (
@@ -34,9 +29,9 @@ BEGIN
     temperatura,
     status
   ) VALUES (
-    'd11433e1-06c5-4002-be7e-0e2c44bc5782', -- Thiago Costa (ID de exemplo ativo)
-    'Cliente Teste Fluxo',
-    '11988887777 / teste@fluxo.com',
+    v_consultor_id,
+    'Cliente Teste Integridade',
+    '11988887777 / teste@validacao.com',
     'Paris, França',
     '2026-12-01',
     'Normal',
@@ -51,32 +46,34 @@ BEGIN
     documento,
     consultor_responsavel_id
   ) VALUES (
-    'Cliente Teste Fluxo',
-    'teste@fluxo.com',
+    'Cliente Teste Integridade',
+    'teste@validacao.com',
     '11988887777',
-    NULL, -- Campo nulo que gerava o erro anteriormente
-    'd11433e1-06c5-4002-be7e-0e2c44bc5782'
+    NULL,
+    v_consultor_id
   ) RETURNING id INTO new_client_id;
 
-  -- 3. Criar Viagem / Venda (Vinculada ao cliente criado)
+  -- 3. Criar Viagem / Venda (Vinculada ao cliente)
   INSERT INTO public.viagens (
     cliente_id,
     consultor_id,
     destino,
     data_ida,
     data_volta,
+    data_financeiro,
     valor_total,
     status,
     codigo_localizador
   ) VALUES (
     new_client_id,
-    'd11433e1-06c5-4002-be7e-0e2c44bc5782',
+    v_consultor_id,
     'Paris, França',
     '2026-12-01',
     '2026-12-10',
+    '2026-12-01',
     5000.00,
     'fechado',
-    'XYZ123'
+    'TEST1234'
   ) RETURNING id INTO new_trip_id;
 
   -- 4. Fechar / Aceitar Orçamento (Atualizar status e vincular cliente)
@@ -100,5 +97,5 @@ BEGIN
   DELETE FROM public.viagens WHERE id = new_trip_id;
   DELETE FROM public.clientes WHERE id = new_client_id;
 
-  RAISE NOTICE '🏆 Fluxo de banco validado com sucesso! Nenhuma violação de integridade ou constraint detectada.';
+  RAISE NOTICE '🏆 FLUXO E INTEGRIDADE DO BANCO DE DADOS VALIDADOS COM SUCESSO!';
 END $$;

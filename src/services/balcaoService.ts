@@ -35,6 +35,14 @@ export class BalcaoService {
     }
 
     const resultadosMap = new Map<string, ResultadoBuscaBalcao>();
+    const clientesCacheMap = new Map<string, any>();
+    const consultoresMap = new Map<string, string>();
+
+    // Carrega perfis para obter os nomes dos consultores
+    try {
+      const { data: profs } = await supabase.from('profiles').select('id, nome');
+      if (profs) profs.forEach((p: any) => consultoresMap.set(p.id, p.nome));
+    } catch (e) {}
 
     try {
       // 1. Busca Clientes no Supabase
@@ -44,22 +52,24 @@ export class BalcaoService {
 
       if (clientesData && clientesData.length > 0) {
         clientesData.forEach((c: any) => {
+          clientesCacheMap.set(c.id, c);
+
           const cNome = (c.nome || '').toLowerCase();
           const cEmail = (c.email || '').toLowerCase();
-          const cCpfClean = (c.cpf || '').replace(/\D/g, '');
+          const cDocClean = (c.documento || c.cpf || '').replace(/\D/g, '');
           const cTelClean = (c.telefone || '').replace(/\D/g, '');
 
           const matchNome = cNome.includes(rawQuery);
           const matchEmail = cEmail && cEmail.includes(rawQuery);
-          const matchCpf = cleanDigits.length >= 3 && cCpfClean.includes(cleanDigits);
+          const matchDoc = cleanDigits.length >= 3 && cDocClean.includes(cleanDigits);
           const matchTel = cleanDigits.length >= 3 && cTelClean.includes(cleanDigits);
 
-          if (matchNome || matchEmail || matchCpf || matchTel) {
+          if (matchNome || matchEmail || matchDoc || matchTel) {
             resultadosMap.set(c.id, {
               cliente: {
                 id: c.id,
                 nome: c.nome || 'Cliente sem nome',
-                cpf: c.cpf,
+                cpf: c.documento || c.cpf,
                 telefone: c.telefone,
                 email: c.email
               },
@@ -80,24 +90,36 @@ export class BalcaoService {
       if (viagensData && viagensData.length > 0) {
         viagensData.forEach((v: any) => {
           const cId = v.cliente_id;
-          const vTitle = (v.titulo || v.nome_viagem || v.destino || '').toLowerCase();
-          const matchTitle = vTitle.includes(rawQuery);
+          const vDestino = (v.destino || '').toLowerCase();
+          const vLoc = (v.codigo_localizador || '').toLowerCase();
+          const vCodRef = (v.codigo_ref || '').toLowerCase();
+          const matchDestino = vDestino.includes(rawQuery);
+          const matchLoc = vLoc.includes(rawQuery);
+          const matchCodRef = vCodRef.includes(rawQuery);
 
-          if (resultadosMap.has(cId) || matchTitle) {
-            let item = resultadosMap.get(cId);
+          if ((cId && resultadosMap.has(cId)) || matchDestino || matchLoc || matchCodRef) {
+            const cliInfo = cId ? clientesCacheMap.get(cId) : null;
+            const key = cId || `viagem-${v.id}`;
+
+            let item = resultadosMap.get(key);
             if (!item) {
               item = {
-                cliente: { id: cId || 'c-' + Date.now(), nome: v.cliente_nome || 'Cliente' },
+                cliente: {
+                  id: key,
+                  nome: cliInfo?.nome || v.nome_cliente || 'Cliente'
+                },
                 orcamentos: [],
                 viagens: [],
                 reembolsos: []
               };
-              resultadosMap.set(item.cliente.id, item);
+              resultadosMap.set(key, item);
             }
+
+            const refCodeStr = v.codigo_ref ? `[${v.codigo_ref}] ` : (v.codigo_localizador ? `[LOC ${v.codigo_localizador}] ` : '');
             item.viagens.push({
               id: v.id,
-              titulo: v.titulo || v.nome_viagem || `Viagem para ${v.destino || 'Destino'}`,
-              consultorNome: v.consultor_nome || 'Agência',
+              titulo: `${refCodeStr}Viagem para ${v.destino || 'Destino'}`,
+              consultorNome: consultoresMap.get(v.consultor_id) || 'Agência',
               consultorId: v.consultor_id || '',
               destino: v.destino || 'Destino',
               status: v.status || 'ativa'
@@ -113,27 +135,45 @@ export class BalcaoService {
       if (orcData && orcData.length > 0) {
         orcData.forEach((o: any) => {
           const cId = o.cliente_id;
-          const oTitle = (o.titulo_orcamento || o.cliente_nome || '').toLowerCase();
-          const matchTitle = oTitle.includes(rawQuery);
+          const oNomeCli = (o.nome_cliente || '').toLowerCase();
+          const oDestino = (o.destino || '').toLowerCase();
+          const oCodRef = (o.codigo_ref || '').toLowerCase();
+          const oContato = (o.contato || '').toLowerCase();
 
-          if (resultadosMap.has(cId) || matchTitle) {
-            let item = resultadosMap.get(cId);
+          const matchNomeCli = oNomeCli.includes(rawQuery);
+          const matchDestino = oDestino.includes(rawQuery);
+          const matchCodRef = oCodRef.includes(rawQuery);
+          const matchContato = oContato.includes(rawQuery);
+
+          if ((cId && resultadosMap.has(cId)) || matchNomeCli || matchDestino || matchCodRef || matchContato) {
+            const cliInfo = cId ? clientesCacheMap.get(cId) : null;
+            const key = cId || `orc-${o.id}`;
+
+            let item = resultadosMap.get(key);
             if (!item) {
               item = {
-                cliente: { id: cId || 'c-' + Date.now(), nome: o.cliente_nome || 'Cliente' },
+                cliente: {
+                  id: key,
+                  nome: o.nome_cliente || cliInfo?.nome || 'Cliente'
+                },
                 orcamentos: [],
                 viagens: [],
                 reembolsos: []
               };
-              resultadosMap.set(item.cliente.id, item);
+              resultadosMap.set(key, item);
             }
+
+            const val = o.valor_proposta || o.valor_viagem;
+            const formattedValor = val ? `R$ ${Number(val).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'R$ 0,00';
+            const refCodeStr = o.codigo_ref ? `[${o.codigo_ref}] ` : '';
+
             item.orcamentos.push({
               id: o.id,
-              titulo: o.titulo_orcamento || `Orçamento ${o.codigo_orcamento || ''}`,
-              consultorNome: o.consultor_nome || 'Agência',
+              titulo: `${refCodeStr}Orçamento ${o.destino || o.nome_cliente || ''}`,
+              consultorNome: consultoresMap.get(o.consultor_id) || 'Agência',
               consultorId: o.consultor_id || '',
               data: o.created_at || '',
-              total: o.valor_total ? `R$ ${o.valor_total}` : 'R$ 0,00'
+              total: formattedValor
             });
           }
         });
