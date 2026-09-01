@@ -2415,16 +2415,20 @@ export class InboxPage {
             <div class="p-2 space-y-2">
               ${(() => {
                 const mesStr = String(this.escalaMes).padStart(2, '0');
-                const eventosDoMes = (this.eventosEscalaData || []).filter(ev => {
-                  if (!ev.data) return false;
-                  return ev.data.includes(`/${mesStr}`) || ev.data.includes(`/${this.escalaMes}`);
+                const allEvs = this.eventosEscalaData || [];
+                const eventosDoMes = allEvs.filter(ev => {
+                  if (!ev.data) return true;
+                  const d = ev.data.trim();
+                  return d.includes(`/${mesStr}`) || d.includes(`/${this.escalaMes}`) || d.includes(`-${mesStr}-`) || d.startsWith(`${mesStr}/`);
                 });
 
-                if (eventosDoMes.length === 0) {
-                  return `<div class="text-xs text-slate-400 italic p-3 text-center">Nenhum evento registrado em ${monthNames[this.escalaMes - 1]}.</div>`;
+                const finalEvs = eventosDoMes.length > 0 ? eventosDoMes : allEvs;
+
+                if (finalEvs.length === 0) {
+                  return `<div class="text-xs text-slate-400 italic p-3 text-center">Nenhum evento registrado.</div>`;
                 }
 
-                return eventosDoMes.map(ev => `
+                return finalEvs.map(ev => `
                   <div class="escala-eventrow flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
                     <div class="flex items-center gap-2.5 flex-1 min-w-0 mr-2">
                       <div class="escala-event-date shrink-0 font-black text-slate-800 dark:text-indigo-400 text-xs px-2 py-1 bg-slate-100 dark:bg-slate-800/80 rounded-lg border border-slate-200/50 dark:border-slate-700/50">${ev.data}</div>

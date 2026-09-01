@@ -384,9 +384,10 @@ export class EscalaService {
    */
   public static async loadEventosEscala(): Promise<EventoEscalaItem[]> {
     try {
-      const { data, error } = await supabase.from('escala_eventos').select('*').order('data', { ascending: true });
-      if (!error && data && data.length > 0) {
-        return data.filter(e => !e.titulo || !e.titulo.startsWith('PLANTÃO:')) as EventoEscalaItem[];
+      const { data, error } = await supabase.from('escala_eventos').select('*').order('created_at', { ascending: false });
+      if (!error && data) {
+        const clean = data.filter(e => e.titulo && !e.titulo.startsWith('PLANTÃO:')) as EventoEscalaItem[];
+        if (clean.length > 0) return clean;
       }
     } catch (e) {}
 
@@ -419,20 +420,7 @@ export class EscalaService {
   }
 
   /**
-   * Delete an Event / Training
-   */
-  public static async deletarEvento(eventoId: string): Promise<boolean> {
-    try {
-      await supabase.from('escala_eventos').delete().eq('id', eventoId);
-      this.notifySync();
-      return true;
-    } catch (e) {
-      return false;
-    }
-  }
-
-  /**
-   * Fetch Holiday Shifts (Plantões dos Últimos 3 Feriados - Direct from Supabase escala_eventos)
+   * Fetch Holiday Shifts (Strictly capped at 3 holidays)
    */
   public static async loadFeriadosPlantoes(): Promise<import('../types').FeriadoPlantaoInfo[]> {
     try {
@@ -441,7 +429,7 @@ export class EscalaService {
         .select('*');
 
       if (!error && data && data.length > 0) {
-        const plantaoEvents = data.filter(e => e.titulo && e.titulo.startsWith('PLANTÃO:'));
+        const plantaoEvents = data.filter(e => e.titulo && e.titulo.startsWith('PLANTÃO:')).slice(0, 3);
         if (plantaoEvents.length > 0) {
           return plantaoEvents.map(item => {
             const rawTitle = item.titulo.replace(/^PLANTÃO:\s*/, '');
@@ -457,8 +445,7 @@ export class EscalaService {
         }
       }
 
-      // Se não houver plantões gravados, popula semente inicial em escala_eventos no Supabase
-      const initial = this.getInitialMockData().mockFeriadosPlantoes;
+      const initial = this.getInitialMockData().mockFeriadosPlantoes.slice(0, 3);
       const seedEvents = initial.map(fp => ({
         id: this.toValidUUID(fp.id || fp.nome),
         data: fp.data,
@@ -473,28 +460,46 @@ export class EscalaService {
     }
 
     const initial = this.getInitialMockData();
-    return initial.mockFeriadosPlantoes;
+    return initial.mockFeriadosPlantoes.slice(0, 3);
   }
 
   /**
-   * Save / Update Holiday Shifts directly to Supabase
+   * Save / Update Holiday Shifts directly to Supabase (Strictly 3 holidays)
    */
   public static async salvarFeriadosPlantoes(items: import('../types').FeriadoPlantaoInfo[]): Promise<boolean> {
     try {
-      const payload = items.map(fp => ({
+      const itemsToSave = (items || []).slice(0, 3);
+      const payload = itemsToSave.map(fp => ({
         id: this.toValidUUID(fp.id || fp.nome),
         data: fp.data,
         titulo: `PLANTÃO: ${fp.nomeCurto || fp.nome}`,
         consultor_nome: (fp.consultoresTrabalharam || []).join(', ')
       }));
 
-      await supabase.from('escala_eventos').upsert(payload);
+      const { error } = await supabase.from('escala_eventos').upsert(payload);
+      if (error) {
+        console.warn('Erro ao salvar feriados/plantões no Supabase:', error.message);
+        return false;
+      }
+      this.notifySync();
+      return true;
     } catch (e) {
       console.warn('Erro ao salvar feriados/plantões no Supabase:', e);
+      return false;
     }
+  }
 
-    this.notifySync();
-    return true;
+  /**
+   * Delete an Event / Training
+   */
+  public static async deletarEvento(eventoId: string): Promise<boolean> {
+    try {
+      await supabase.from('escala_eventos').delete().eq('id', eventoId);
+      this.notifySync();
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
 
   /**
