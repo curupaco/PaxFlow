@@ -443,62 +443,23 @@ export class EscalaService {
     } catch (e) {}
   }
 
-  private static getUUIDForKey(chave: string): string {
-    if (chave === 'banco_folgas_json') return '00000000-0000-0000-0000-000000000001';
-    if (chave === 'feriados_plantoes_json') return '00000000-0000-0000-0000-000000000002';
-    return '00000000-0000-0000-0000-000000000000';
-  }
-
-  private static async saveGlobalKV(chave: string, valorStr: string): Promise<void> {
-    const profileId = this.getUUIDForKey(chave);
-    try {
-      await supabase.from('profiles').upsert({
-        id: profileId,
-        nome: `CONFIG_${chave.toUpperCase()}`,
-        email: `${chave}@paxflow.internal`,
-        role: 'consultor',
-        ativo: false,
-        avatar_url: valorStr,
-        updated_at: new Date().toISOString()
-      });
-    } catch (e) {
-      console.warn(`[saveGlobalKV] profiles upsert error for ${chave}:`, e);
-    }
-    this.notifySync();
-  }
-
-  private static async loadGlobalKV(chave: string): Promise<any | null> {
-    const profileId = this.getUUIDForKey(chave);
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('avatar_url')
-        .eq('id', profileId)
-        .maybeSingle();
-
-      if (!error && data && data.avatar_url) {
-        const parsed = JSON.parse(data.avatar_url);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
-        }
-      }
-    } catch (e) {}
-
-    return null;
-  }
-
   /**
-   * Fetch Leave Bank balances (Pure Read-Only)
+   * Fetch Leave Bank balances (Read-Only)
    */
   public static async loadBancoFolgas(): Promise<BancoFolgasItem[]> {
-    // 1. Fonte de verdade primária: KV global (profiles)
+    // 1. Tenta carregar da tabela dedicada no Supabase
     try {
-      const globalData = await this.loadGlobalKV('banco_folgas_json');
-      if (globalData && Array.isArray(globalData) && globalData.length > 0) {
-        try {
-          localStorage.setItem(this.LOCAL_STORAGE_BANCO_KEY, JSON.stringify(globalData));
-        } catch (e) {}
-        return globalData;
+      const { data, error } = await supabase.from('escala_banco_folgas').select('*');
+      if (!error && data && data.length > 0) {
+        const clean = (data as BancoFolgasItem[]).filter(b => 
+          b.consultor_id !== 'CONFIG_FERIADOS_PLANTOES' && b.consultor_nome !== 'CONFIG_FERIADOS_PLANTOES'
+        );
+        if (clean.length > 0) {
+          try {
+            localStorage.setItem(this.LOCAL_STORAGE_BANCO_KEY, JSON.stringify(clean));
+          } catch (e) {}
+          return clean;
+        }
       }
     } catch (e) {}
 
@@ -524,13 +485,13 @@ export class EscalaService {
   public static async salvarBancoFolgas(items: BancoFolgasItem[]): Promise<boolean> {
     const jsonStr = JSON.stringify(items);
 
-    // 1. Salva no localStorage local para velocidade instantanea na tela
+    // 1. Salva no localStorage local para resposta imediata
     try {
       localStorage.setItem(this.LOCAL_STORAGE_BANCO_KEY, jsonStr);
     } catch (e) {}
 
-    // 2. Salva globalmente via KV na tabela profiles
-    await this.saveGlobalKV('banco_folgas_json', jsonStr);
+    // 2. Notifica abas
+    this.notifySync();
 
     return true;
   }
@@ -589,21 +550,10 @@ export class EscalaService {
   }
 
   /**
-   * Fetch Holiday Shifts (Plantões dos Últimos 3 Feriados - Pure Read-Only)
+   * Fetch Holiday Shifts (Plantões dos Últimos 3 Feriados - Read-Only)
    */
   public static async loadFeriadosPlantoes(): Promise<import('../types').FeriadoPlantaoInfo[]> {
-    // 1. Fonte de verdade primária: KV global (profiles)
-    try {
-      const globalData = await this.loadGlobalKV('feriados_plantoes_json');
-      if (globalData && Array.isArray(globalData) && globalData.length > 0) {
-        try {
-          localStorage.setItem(this.LOCAL_STORAGE_FERIADOS_PLANTOES_KEY, JSON.stringify(globalData));
-        } catch (e) {}
-        return globalData;
-      }
-    } catch (e) {}
-
-    // 2. Fallback no LocalStorage local
+    // 1. LocalStorage local
     try {
       const stored = localStorage.getItem(this.LOCAL_STORAGE_FERIADOS_PLANTOES_KEY);
       if (stored) {
@@ -614,7 +564,7 @@ export class EscalaService {
       }
     } catch (e) {}
 
-    // 3. Fallback inicial estático
+    // 2. Fallback inicial estático
     const initial = this.getInitialMockData();
     return initial.mockFeriadosPlantoes;
   }
@@ -625,31 +575,13 @@ export class EscalaService {
   public static async salvarFeriadosPlantoes(items: import('../types').FeriadoPlantaoInfo[]): Promise<boolean> {
     const jsonStr = JSON.stringify(items);
 
-    // 1. Salva no localStorage local para velocidade instantanea na tela
+    // 1. Salva no localStorage local para resposta imediata
     try {
       localStorage.setItem(this.LOCAL_STORAGE_FERIADOS_PLANTOES_KEY, jsonStr);
     } catch (e) {}
 
-    // 2. Salva em KV global (configuracoes / global_settings)
-    await this.saveGlobalKV('feriados_plantoes_json', jsonStr);
-
-    // 3. Tenta salvar na tabela dedicada escala_feriados_plantoes (se disponível)
-    try {
-      await supabase.from('escala_feriados_plantoes').upsert(items);
-    } catch (e) {}
-
-    // 4. Fallback secundário no Supabase escala_banco_folgas
-    try {
-      await supabase.from('escala_banco_folgas').upsert({
-        id: 'bf-config-feriados-plantoes',
-        consultor_id: 'CONFIG_FERIADOS_PLANTOES',
-        consultor_nome: 'CONFIG_FERIADOS_PLANTOES',
-        equipe: 'Sistema',
-        saldo_dias: '0',
-        detalhes_historico: jsonStr,
-        updated_at: new Date().toISOString()
-      });
-    } catch (e) {}
+    // 2. Notifica abas
+    this.notifySync();
 
     return true;
   }
