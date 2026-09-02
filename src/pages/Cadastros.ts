@@ -571,20 +571,22 @@ export class CadastrosPage {
                             <td class="py-4 px-5 text-center">
                               ${statusBadge}
                             </td>
-                            <td class="py-4 px-5 text-right space-x-2">
-                              <button data-id="${cam.id}" class="btn-editar-campanha h-8 px-3 inline-flex items-center justify-center rounded-lg text-xs font-bold bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 hover:dark:bg-indigo-950/50 transition border border-indigo-200/40 dark:border-indigo-800/40 uppercase">
-                                Editar
-                              </button>
-                              <button data-id="${cam.id}" data-active="${cam.ativa}" class="btn-toggle-status-campanha h-8 px-3 inline-flex items-center justify-center rounded-lg text-xs font-bold transition ${
-                                cam.ativa 
-                                  ? 'bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 hover:dark:bg-rose-950/30' 
-                                  : 'bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 hover:dark:bg-emerald-950/30'
-                              }">
-                                ${cam.ativa ? 'Pausar' : 'Ativar'}
-                              </button>
-                              <button data-id="${cam.id}" class="btn-excluir-campanha h-8 px-3 inline-flex items-center justify-center rounded-lg text-xs font-bold bg-slate-50 hover:bg-rose-50 dark:bg-rose-950/30 text-slate-400 hover:text-rose-500 transition border border-slate-200/40 dark:border-slate-700/40 uppercase">
-                                Excluir
-                              </button>
+                            <td class="py-4 px-6 text-right">
+                              <div class="flex items-center justify-end gap-2.5 flex-wrap">
+                                <button data-id="${cam.id}" class="btn-editar-campanha h-8 px-3.5 inline-flex items-center justify-center rounded-xl text-xs font-extrabold bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-300 transition border border-indigo-200/60 dark:border-indigo-800/60 uppercase shadow-xs">
+                                  Editar
+                                </button>
+                                <button data-id="${cam.id}" data-active="${cam.ativa}" class="btn-toggle-status-campanha h-8 px-3.5 inline-flex items-center justify-center rounded-xl text-xs font-extrabold transition border uppercase shadow-xs ${
+                                  cam.ativa 
+                                    ? 'bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 border-amber-200/60 dark:border-amber-800/60' 
+                                    : 'bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 border-emerald-200/60 dark:border-emerald-800/60'
+                                }">
+                                  ${cam.ativa ? 'Pausar' : 'Ativar'}
+                                </button>
+                                <button data-id="${cam.id}" class="btn-excluir-campanha h-8 px-3.5 inline-flex items-center justify-center rounded-xl text-xs font-extrabold bg-slate-50 hover:bg-rose-50 dark:bg-slate-800 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition border border-slate-200/60 dark:border-slate-700/60 uppercase shadow-xs">
+                                  Excluir
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         `;
@@ -641,13 +643,15 @@ export class CadastrosPage {
                                 ${tagsHTML}
                               </div>
                             </td>
-                            <td class="py-4 px-5 text-right space-x-2">
-                              <button data-id="${tem.id}" class="btn-editar-template h-8 px-3 inline-flex items-center justify-center rounded-lg text-xs font-bold bg-slate-50 hover:bg-indigo-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 transition uppercase">
-                                Editar
-                              </button>
-                              <button data-id="${tem.id}" class="btn-excluir-template h-8 px-3 inline-flex items-center justify-center rounded-lg text-xs font-bold bg-slate-50 hover:bg-rose-50 dark:bg-rose-950/30 text-slate-400 hover:text-rose-500 transition border border-slate-200/40 dark:border-slate-700/40 uppercase">
-                                Excluir
-                              </button>
+                            <td class="py-4 px-6 text-right">
+                              <div class="flex items-center justify-end gap-2.5 flex-wrap">
+                                <button data-id="${tem.id}" class="btn-editar-template h-8 px-3.5 inline-flex items-center justify-center rounded-xl text-xs font-extrabold bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-300 transition border border-indigo-200/60 dark:border-indigo-800/60 uppercase shadow-xs">
+                                  Editar
+                                </button>
+                                <button data-id="${tem.id}" class="btn-excluir-template h-8 px-3.5 inline-flex items-center justify-center rounded-xl text-xs font-extrabold bg-slate-50 hover:bg-rose-50 dark:bg-slate-800 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition border border-slate-200/60 dark:border-slate-700/60 uppercase shadow-xs">
+                                  Excluir
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         `;
@@ -748,12 +752,12 @@ export class CadastrosPage {
                                 faixasHTML +
                               '</div>' +
                             '</td>' +
-                            '<td class="py-4 px-5 text-right">' +
-                              '<div class="flex items-center justify-end gap-2">' +
-                                '<button data-id="' + meta.id + '" class="btn-editar-meta px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-50 hover:bg-indigo-55 dark:bg-indigo-950/30 text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition border border-slate-200/40 dark:border-slate-700/40 uppercase">' +
+                            '<td class="py-4 px-6 text-right">' +
+                              '<div class="flex items-center justify-end gap-2.5 flex-wrap">' +
+                                '<button data-id="' + meta.id + '" class="btn-editar-meta h-8 px-3.5 inline-flex items-center justify-center rounded-xl text-xs font-extrabold bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-300 transition border border-indigo-200/60 dark:border-indigo-800/60 uppercase shadow-xs">' +
                                   'Editar' +
                                 '</button>' +
-                                '<button data-id="' + meta.id + '" class="btn-excluir-meta px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-50 hover:bg-rose-50 dark:bg-rose-950/30 text-slate-400 hover:text-rose-500 transition border border-slate-200/40 dark:border-slate-700/40 uppercase">' +
+                                '<button data-id="' + meta.id + '" class="btn-excluir-meta h-8 px-3.5 inline-flex items-center justify-center rounded-xl text-xs font-extrabold bg-slate-50 hover:bg-rose-50 dark:bg-slate-800 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition border border-slate-200/60 dark:border-slate-700/60 uppercase shadow-xs">' +
                                   'Excluir' +
                                 '</button>' +
                               '</div>' +

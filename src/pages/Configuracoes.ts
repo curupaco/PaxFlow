@@ -2190,27 +2190,29 @@ export class ConfiguracoesPage {
                         ${statusBadge}
                       </td>
                       
-                      <td class="py-4 px-5 text-right space-x-1.5">
-                        <button data-id="${c.id}" class="btn-editar-user px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-bold transition uppercase">
-                          Editar ✏️
-                        </button>
-                        
-                        ${isSelf ? `
-                          <span class="text-xs text-slate-400 font-semibold italic ml-2">Você</span>
-                        ` : `
-                          <select data-id="${c.id}" class="select-role-user px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                            <option value="consultor" ${c.role === 'consultor' ? 'selected' : ''}>Tornar Consultor</option>
-                            <option value="admin" ${c.role === 'admin' ? 'selected' : ''}>Tornar ADMIN</option>
-                          </select>
-                          
-                          <button data-id="${c.id}" data-active="${c.ativo}" class="btn-toggle-status-user px-3 py-1.5 rounded-lg text-xs font-bold transition ${
-                            c.ativo 
-                              ? 'bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400' 
-                              : 'bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400'
-                          }">
-                            ${c.ativo ? 'Desativar' : 'Ativar'}
+                      <td class="py-4 px-6 text-right">
+                        <div class="flex items-center justify-end gap-2.5 flex-wrap">
+                          <button data-id="${c.id}" class="btn-editar-user h-8 px-3.5 inline-flex items-center justify-center bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700 rounded-xl text-xs font-extrabold transition uppercase shadow-xs">
+                            Editar ✏️
                           </button>
-                        `}
+                          
+                          ${isSelf ? `
+                            <span class="text-xs text-slate-400 font-bold italic px-2">Você</span>
+                          ` : `
+                            <select data-id="${c.id}" class="select-role-user h-8 px-3 border border-slate-200/80 dark:border-slate-700 rounded-xl text-xs font-bold bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-xs">
+                              <option value="consultor" ${c.role === 'consultor' ? 'selected' : ''}>Tornar Consultor</option>
+                              <option value="admin" ${c.role === 'admin' ? 'selected' : ''}>Tornar ADMIN</option>
+                            </select>
+                            
+                            <button data-id="${c.id}" data-active="${c.ativo}" class="btn-toggle-status-user h-8 px-3.5 inline-flex items-center justify-center rounded-xl text-xs font-extrabold transition border uppercase shadow-xs ${
+                              c.ativo 
+                                ? 'bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 border-amber-200/60 dark:border-amber-800/60' 
+                                : 'bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 border-emerald-200/60 dark:border-emerald-800/60'
+                            }">
+                              ${c.ativo ? 'Desativar' : 'Ativar'}
+                            </button>
+                          `}
+                        </div>
                       </td>
                     </tr>
                   `;
