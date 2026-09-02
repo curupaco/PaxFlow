@@ -67,6 +67,7 @@ export class HelpModal {
           <button data-quick-search="nps" class="btn-ajuda-pill px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold hover:border-indigo-500 hover:text-indigo-650 transition shrink-0">⭐ NPS</button>
           <button data-quick-search="escala" class="btn-ajuda-pill px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold hover:border-indigo-500 hover:text-indigo-650 transition shrink-0">📅 Escala</button>
           <button data-quick-search="reembolso" class="btn-ajuda-pill px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold hover:border-indigo-500 hover:text-indigo-650 transition shrink-0">💸 Reembolso</button>
+          <button data-quick-search="rentabilidade" class="btn-ajuda-pill px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold hover:border-indigo-500 hover:text-indigo-650 transition shrink-0">📈 Rentabilidade</button>
           <button data-quick-search="faturamento" class="btn-ajuda-pill px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold hover:border-indigo-500 hover:text-indigo-650 transition shrink-0">📊 Faturamento</button>
         </div>
 

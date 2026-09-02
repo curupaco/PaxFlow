@@ -17,7 +17,7 @@ export const HELP_CATEGORIES: HelpCategory[] = [
   { id: 'processos', title: 'Fluxos de Trabalho & SLAs', icon: '🔄' },
   { id: 'escala', title: 'Escala de Funcionários', icon: '📅' },
   { id: 'geral', title: 'Conceitos Gerais & Gamificação', icon: '💡' },
-  { id: 'cadastros', title: 'Cadastros & Modelos', icon: '📋' },
+  { id: 'cadastros', title: 'Cadastros & Módulos', icon: '📋' },
   { id: 'dashboard', title: 'Dashboard & Metas', icon: '🏆' },
   { id: 'viagens', title: 'Gestão de Viagens', icon: '✈️' },
   { id: 'orcamentos', title: 'Orçamentos & CRM', icon: '📄' },
@@ -172,23 +172,23 @@ export const HELP_ITEMS: HelpItem[] = [
   {
     id: 'tipo-calculo-meta',
     modulo: 'dashboard',
-    label: 'Cálculo da Meta (Bruto vs Lucro)',
-    description: 'Forma como o progresso das metas financeiras é medido (Faturamento Bruto ou Lucro Real).',
-    details: 'As campanhas de metas podem ser configuradas de duas formas:\n\n1. **Faturamento Bruto**: Soma de todos os valores totais de venda das viagens menos descontos e prejuízos.\n2. **Lucro Real**: Soma de Markup + Comissões + 88% do RAV (taxa de serviço).'
+    label: 'Cálculo da Meta (Faturamento Bruto vs Rentabilidade)',
+    description: 'Forma como o progresso das metas financeiras é medido (Faturamento Bruto ou Rentabilidade).',
+    details: 'As campanhas de metas podem ser configuradas de duas formas:\n\n1. **Faturamento Bruto**: Soma de todos os valores totais de venda das viagens menos descontos e prejuízos.\n2. **Rentabilidade**: Soma do lucro estimado e rentabilidade real da operação (Markup + Comissões + 88% do RAV/taxa de serviço).'
   },
   {
     id: 'acumulado-equipe',
     modulo: 'dashboard',
     label: 'Acumulado da Equipe',
-    description: 'A soma de todo o progresso (faturamento ou lucro) atingido por todos os consultores ativos.',
+    description: 'A soma de todo o progresso (faturamento bruto ou rentabilidade) atingido por todos os consultores ativos.',
     details: 'É o valor consolidado de produção da agência inteira na campanha selecionada. Permite comparar o resultado coletivo atual com a última faixa de metas da agência.'
   },
   {
     id: 'faixas-premiacao',
     modulo: 'dashboard',
-    label: 'Faixas de Premiação',
-    description: 'Níveis de metas a serem atingidos durante a campanha comercial.',
-    details: 'Cada campanha comercial define faixas de valores (ex: Bronze, Prata, Ouro) com prêmios associados. Ao atingir o valor mínimo de uma faixa, o prêmio correspondente é desbloqueado para o consultor.'
+    label: 'Faixas de Premiação & Meta Global Loja (Opcionais)',
+    description: 'Níveis de metas a serem atingidos durante a campanha comercial ou metas globais da loja.',
+    details: 'As metas financeiras no PaxFlow suportam dois formatos operacionais:\n\n- **Campanhas com Faixas de Premiação**: Definem níveis progressivos de faturamento/rentabilidade (ex: Bronze, Prata, Ouro) com premiações e bônus de XP.\n- **Meta Global de Loja**: Permite cadastrar uma meta global unificada para a agência por período sem a obrigatoriedade de inserir faixas de premiação fracionadas.'
   },
   {
     id: 'weighted-pipeline',
@@ -225,14 +225,14 @@ export const HELP_ITEMS: HelpItem[] = [
     modulo: 'viagens',
     label: 'Comissão',
     description: 'Percentual ou valor fixo recebido de fornecedores/consolidadoras parceiras.',
-    details: 'A comissão representa a receita gerada a partir da intermediação de serviços (como hotéis, passagens aéreas e receptivos). Ela é somada ao cálculo do Lucro Real de cada viagem.'
+    details: 'A comissão representa a receita gerada a partir da intermediação de serviços (como hotéis, passagens aéreas e receptivos). Ela é somada ao cálculo da Rentabilidade de cada viagem.'
   },
   {
     id: 'rav',
     modulo: 'viagens',
     label: 'RAV (Remuneração de Agente de Viagens)',
     description: 'Taxa de serviço cobrada diretamente do cliente pela emissão ou consultoria.',
-    details: 'A RAV é a taxa de emissão de passagens ou taxa de serviço cobrada do cliente. No cálculo do Lucro Real do PaxFlow, a RAV é contabilizada com um fator de 88% para descontar taxas fiscais e administrativas padrão (ex: impostos e taxas de cartão).'
+    details: 'A RAV é a taxa de emissão de passagens ou taxa de serviço cobrada do cliente. No cálculo da Rentabilidade do PaxFlow, a RAV é contabilizada com um fator de 88% para descontar taxas fiscais e administrativas padrão (ex: impostos e taxas de cartão).'
   },
   {
     id: 'pax',
@@ -439,9 +439,9 @@ export const HELP_ITEMS: HelpItem[] = [
   {
     id: 'central-de-cadastros-modulo',
     modulo: 'cadastros',
-    label: 'Estrutura da Central de Cadastros (6 Abas)',
-    description: 'Conheça o menu unificado de Cadastros para administradores.',
-    details: 'A Central de Cadastros reestruturada reúne todas as definições operacionais da agência em 6 abas:\n\n1. **Tipos de Serviços**: cadastro dinâmico de produtos, cores e campos extras.\n2. **Gestão de Destinos**: cadastro e higienização de cidades e países de viagens.\n3. **Formas de Recebimento**: gestão de opções de pagamento (Pix, Cartão, Dinheiro).\n4. **Campanhas**: criação e controle de campanhas internas de incentivo por período.\n5. **Metas Financeiras**: parametrização de metas (faturamento bruto ou lucro real) e faixas de premiação.\n6. **Modelos de Mensagem**: templates para WhatsApp com variáveis reativas e histórico Digisac.'
+    label: 'Estrutura da Central de Cadastros (6 Módulos / Navegação Lateral)',
+    description: 'Conheça o menu unificado de Cadastros com navegação em barra lateral para administradores.',
+    details: 'A Central de Cadastros reestruturada reúne todas as definições operacionais da agência em 6 módulos organizados na barra lateral (Sidebar):\n\n1. **📦 Tipos de Serviços**: cadastro dinâmico de produtos, cores e campos extras.\n2. **📍 Gestão de Destinos**: cadastro e higienização de cidades e países de viagens.\n3. **💰 Formas de Recebimento**: gestão de opções de pagamento (Pix, Cartão, Dinheiro).\n4. **🎯 Campanhas de Vendas**: criação e controle de campanhas internas de incentivo por período.\n5. **🏆 Metas Financeiras**: parametrização de metas (Faturamento Bruto ou Rentabilidade) e faixas de premiação (opcionais para metas de loja).\n6. **💬 Modelos de Mensagem**: templates para WhatsApp com variáveis reativas, pílulas interativas e histórico Digisac.'
   },
   // ==================== 10. Escala de Funcionários ====================
   {
