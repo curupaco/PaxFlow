@@ -103,66 +103,12 @@ export class EscalaService {
     return 'off';
   }
 
-  /**
-   * Initial mock dataset matching Agatur interface for immediate rich demo
-   */
-  private static getInitialMockData() {
-    const mockEmployeesSchedule: Record<string, string[]> = {
-      "Marinna Morena": ["10-17", "14-21", "10-17", "10-17", "10-17", "10-17", "Folga", "F", "F", "10-17", "10-17", "10-17", "10-17", "10-17", "10-17", "14-21", "10-17", "10-17", "10-17", "10-17", "Folga", "F", "F", "10-17", "10-17", "10-17", "10-17", "10-17", "10-17", "14-21", "10-17"],
-      "Guto Bassaroto": ["F", "F", "Folga", "10-17", "10-17", "13-20", "10-17", "10-17", "14-21", "10-17", "10-17", "10-17", "10-17", "12-19", "F", "F", "Folga", "15-22", "13-20", "13-20", "10-17", "10-17", "14-21", "13-20", "13-20", "13-20", "13-20", "Folga", "F", "F", "13-20"],
-      "Maria Carvalho": ["F", "F", "10-17", "13-20", "13-20", "15-22", "13-20", "10-17", "14-21", "13-20", "13-20", "13-20", "13-20", "13-20", "F", "F", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Folga"],
-      "Rafael Sousa": ["10-17", "14-21", "15-22", "15-22", "15-22", "Folga", "15-22", "F", "F", "15-22", "15-22", "15-22", "15-22", "15-22", "10-17", "14-21", "15-22", "Folga", "15-22", "15-22", "15-22", "F", "F", "15-22", "15-22", "15-22", "15-22", "15-22", "10-17", "14-21", "15-22"],
-      "Eduardo Mariano": ["Folga", "Folga", "12-19", "-", "Reunião", "-", "11-18", "Folga", "Folga", "12-19", "-", "11-18", "-", "10-17", "Folga", "Folga", "13-20", "-", "10-17", "Reunião", "13-20", "Folga", "Folga", "12-19", "-", "12-19", "-", "12-19", "Folga", "Folga", "12-19"],
-      "Laura Montu": ["Folga", "Folga", "12-19", "-", "Reunião", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "Férias", "12-19", "15-22", "11-18", "-", "-", "11-18", "11-18", "Folga", "Folga", "-"],
-      "Fernanda Ganem": ["Folga", "Folga", "14-21", "14-21", "14-21", "-", "-", "Folga", "Folga", "Férias", "Férias", "Férias", "Férias", "Férias", "Folga", "Folga", "-", "12-19", "-", "Reunião", "-", "Folga", "Folga", "14-21", "-", "-", "14-21", "-", "Folga", "Folga", "14-21"]
-    };
 
-    const mockBancoFolgas: BancoFolgasItem[] = [
-      { consultor_id: "c-1", consultor_nome: "Marinna Morena", equipe: "Equipe Agaxtur", saldo_dias: "1", detalhes_historico: "Meta Jun" },
-      { consultor_id: "c-2", consultor_nome: "Maria Carvalho", equipe: "Equipe Agaxtur", saldo_dias: "10", detalhes_historico: "8mar26 – Folga ref 22/03 · Meta de Abril · Ref 05/04 · REF 03/05 · ref 17/05 · ref 14/06/26 · META JUNHO · REF 02/11/25" },
-      { consultor_id: "c-3", consultor_nome: "Rafael Sousa", equipe: "Equipe Agaxtur", saldo_dias: "2", detalhes_historico: "1 Folga Meta Março – Domingo Extra 28/06" },
-      { consultor_id: "c-4", consultor_nome: "Guto Bassaroto", equipe: "Equipe Agaxtur", saldo_dias: "1", detalhes_historico: "Meta Julho" }
-    ];
-
-    const mockEventos: EventoEscalaItem[] = [
-      { id: 'ev-1', data: "17/08", consultor_nome: "Eduardo Mariano", titulo: "SACFLOW às 14:30" },
-      { id: 'ev-2', data: "18/08", consultor_nome: "Marinna Morena", titulo: "SACFLOW às 14:30" },
-      { id: 'ev-3', data: "17/08", consultor_nome: "Rafael Sousa", titulo: "SACFLOW às 16:00" },
-      { id: 'ev-4', data: "20/08", consultor_nome: "Equipe", titulo: "Reunião Franqueados Matriz" }
-    ];
-
-    const mockFeriadosPlantoes: import('../types').FeriadoPlantaoInfo[] = [
-      {
-        id: 'fp-1',
-        data: '21/04',
-        nome: 'Tiradentes',
-        nomeCurto: '21/04 TIRADENTES',
-        consultoresTrabalharam: ['Marinna Morena']
-      },
-      {
-        id: 'fp-2',
-        data: '01/05',
-        nome: 'Dia do Trabalho',
-        nomeCurto: '01/05 DIA TRAB.',
-        consultoresTrabalharam: ['Maria Carvalho', 'Fernanda Ganem', 'Guto Bassaroto']
-      },
-      {
-        id: 'fp-3',
-        data: '09/07',
-        nome: 'Revolução Constitucionalista (SP)',
-        nomeCurto: '09/07 REVOLUÇÃO',
-        consultoresTrabalharam: ['Marinna Morena', 'Guto Bassaroto']
-      }
-    ];
-
-    return { mockEmployeesSchedule, mockBancoFolgas, mockEventos, mockFeriadosPlantoes };
-  }
 
   /**
    * Fetches full monthly schedule table directly from Supabase
    */
   public static async loadEscalaMensal(ano: number, mes: number): Promise<Record<string, string[]>> {
-    const initial = this.getInitialMockData();
     let dbLoadedMap: Record<string, string[]> = {};
     let isFromDb = false;
 
@@ -170,6 +116,22 @@ export class EscalaService {
     const monthStr = String(mes).padStart(2, '0');
     const lastDayStr = String(daysInMonth).padStart(2, '0');
 
+    // 1. Obter consultores ativos cadastrados no Supabase (profiles)
+    let activeProfilesMap: Map<string, string> = new Map();
+    try {
+      const { data: profs } = await supabase.from('profiles').select('nome');
+      if (profs && profs.length > 0) {
+        profs.forEach((p: any) => {
+          if (p.nome && p.nome.trim()) {
+            activeProfilesMap.set(p.nome.trim().toLowerCase(), p.nome.trim());
+          }
+        });
+      }
+    } catch (e) {
+      console.warn('Erro ao consultar perfis para a escala:', e);
+    }
+
+    // 2. Obter lançamentos da escala_diaria
     try {
       const { data, error } = await supabase
         .from('escala_diaria')
@@ -180,7 +142,15 @@ export class EscalaService {
       if (!error && data && data.length > 0) {
         isFromDb = true;
         data.forEach((row: any) => {
-          const name = row.consultor_nome || 'Consultor';
+          const rawName = (row.consultor_nome || 'Consultor').trim();
+          const lowerName = rawName.toLowerCase();
+
+          // Ignorar registros de usuários que não existem mais na tabela profiles
+          if (activeProfilesMap.size > 0 && !activeProfilesMap.has(lowerName)) {
+            return;
+          }
+
+          const name = activeProfilesMap.get(lowerName) || rawName;
           if (!dbLoadedMap[name]) {
             dbLoadedMap[name] = new Array(31).fill('');
           }
@@ -194,27 +164,36 @@ export class EscalaService {
       console.warn('Erro ao consultar escala no Supabase:', e);
     }
 
-    if (isFromDb) {
-      const customOrder = this.loadOrdemConsultores();
-      if (customOrder && customOrder.length > 0) {
-        const orderedMap: Record<string, string[]> = {};
-        customOrder.forEach(name => {
-          const matched = Object.keys(dbLoadedMap).find(k => k.trim().toLowerCase() === name.trim().toLowerCase());
-          if (matched && dbLoadedMap[matched]) {
-            orderedMap[matched] = dbLoadedMap[matched];
-          }
+    // Se não houver escala no banco para o mês, popula com consultores reais
+    if (!isFromDb || Object.keys(dbLoadedMap).length === 0) {
+      if (activeProfilesMap.size > 0) {
+        activeProfilesMap.forEach((originalName) => {
+          dbLoadedMap[originalName] = new Array(31).fill('10-17');
         });
-        Object.keys(dbLoadedMap).forEach(name => {
-          if (!orderedMap[name]) {
-            orderedMap[name] = dbLoadedMap[name];
-          }
-        });
-        return orderedMap;
+      } else {
+        dbLoadedMap = {};
       }
-      return dbLoadedMap;
     }
 
-    return initial.mockEmployeesSchedule;
+    // 3. Aplicar ordenação salva no Supabase (setinhas de ordenação)
+    const customOrder = await this.loadOrdemConsultores();
+    if (customOrder && customOrder.length > 0) {
+      const orderedMap: Record<string, string[]> = {};
+      customOrder.forEach(name => {
+        const matched = Object.keys(dbLoadedMap).find(k => k.trim().toLowerCase() === name.trim().toLowerCase());
+        if (matched && dbLoadedMap[matched]) {
+          orderedMap[matched] = dbLoadedMap[matched];
+        }
+      });
+      Object.keys(dbLoadedMap).forEach(name => {
+        if (!orderedMap[name]) {
+          orderedMap[name] = dbLoadedMap[name];
+        }
+      });
+      return orderedMap;
+    }
+
+    return dbLoadedMap;
   }
 
   /**
@@ -250,12 +229,50 @@ export class EscalaService {
     return dbObsMap;
   }
 
-  public static loadOrdemConsultores(): string[] {
+  public static async loadOrdemConsultores(): Promise<string[]> {
+    try {
+      const { data, error } = await supabase
+        .from('escala_banco_folgas')
+        .select('detalhes_historico')
+        .eq('consultor_id', 'CONFIG_ORDEM_ESCALA')
+        .maybeSingle();
+
+      if (!error && data && data.detalhes_historico) {
+        try {
+          const parsed = JSON.parse(data.detalhes_historico);
+          if (Array.isArray(parsed)) return parsed;
+        } catch (e) {}
+      }
+    } catch (e) {
+      console.warn('Erro ao carregar ordem dos consultores do Supabase:', e);
+    }
     return [];
   }
 
   public static async salvarOrdemConsultores(ordem: string[]): Promise<boolean> {
-    return true;
+    try {
+      const { error } = await supabase
+        .from('escala_banco_folgas')
+        .upsert({
+          id: 'CONFIG_ORDEM_ESCALA',
+          consultor_id: 'CONFIG_ORDEM_ESCALA',
+          consultor_nome: 'CONFIG_ORDEM_ESCALA',
+          equipe: 'Configuracao',
+          saldo_dias: '0',
+          detalhes_historico: JSON.stringify(ordem),
+          updated_at: new Date().toISOString()
+        });
+
+      if (error) {
+        console.error('Erro ao salvar ordem dos consultores no Supabase:', error.message);
+        return false;
+      }
+      this.notifySync();
+      return true;
+    } catch (e) {
+      console.error('Exceção ao salvar ordem dos consultores no Supabase:', e);
+      return false;
+    }
   }
 
   /**
@@ -321,31 +338,18 @@ export class EscalaService {
   public static async loadBancoFolgas(): Promise<BancoFolgasItem[]> {
     try {
       const { data, error } = await supabase.from('escala_banco_folgas').select('*');
-      if (!error && data && data.length > 0) {
+      if (!error && data) {
         const clean = (data as BancoFolgasItem[]).filter(b => 
-          b.consultor_id !== 'CONFIG_FERIADOS_PLANTOES' && b.consultor_nome !== 'CONFIG_FERIADOS_PLANTOES'
+          b.consultor_id !== 'CONFIG_FERIADOS_PLANTOES' && b.consultor_nome !== 'CONFIG_FERIADOS_PLANTOES' &&
+          b.consultor_id !== 'CONFIG_ORDEM_ESCALA' && b.consultor_nome !== 'CONFIG_ORDEM_ESCALA'
         );
-        if (clean.length > 0) return clean;
+        return clean;
       }
-
-      const initial = this.getInitialMockData().mockBancoFolgas;
-      const seedRows = initial.map(item => ({
-        id: this.toValidUUID(item.id || item.consultor_nome),
-        consultor_id: this.toValidUUID(item.consultor_id || item.consultor_nome),
-        consultor_nome: item.consultor_nome,
-        equipe: item.equipe || 'Equipe Agaxtur',
-        saldo_dias: String(item.saldo_dias),
-        detalhes_historico: item.detalhes_historico || '',
-        updated_at: new Date().toISOString()
-      }));
-
-      await supabase.from('escala_banco_folgas').upsert(seedRows);
-      return initial;
+      if (error) throw error;
     } catch (e) {
-      console.warn('Erro ao carregar escala_banco_folgas do Supabase:', e);
+      console.error('Erro ao carregar escala_banco_folgas do Supabase:', e);
     }
-
-    return this.getInitialMockData().mockBancoFolgas;
+    return [];
   }
 
   /**
@@ -368,13 +372,13 @@ export class EscalaService {
 
       const { error } = await supabase.from('escala_banco_folgas').upsert(payload);
       if (error) {
-        console.warn('Erro ao salvar escala_banco_folgas no Supabase:', error.message);
+        console.error('Erro ao salvar escala_banco_folgas no Supabase:', error.message);
         return false;
       }
       this.notifySync();
       return true;
     } catch (e) {
-      console.warn('Exceção ao salvar escala_banco_folgas no Supabase:', e);
+      console.error('Exceção ao salvar escala_banco_folgas no Supabase:', e);
       return false;
     }
   }
@@ -386,12 +390,13 @@ export class EscalaService {
     try {
       const { data, error } = await supabase.from('escala_eventos').select('*').order('created_at', { ascending: false });
       if (!error && data) {
-        const clean = data.filter(e => e.titulo && !e.titulo.startsWith('PLANTÃO:')) as EventoEscalaItem[];
-        if (clean.length > 0) return clean;
+        return data.filter(e => e.titulo && !e.titulo.startsWith('PLANTÃO:')) as EventoEscalaItem[];
       }
-    } catch (e) {}
-
-    return this.getInitialMockData().mockEventos;
+      if (error) throw error;
+    } catch (e) {
+      console.error('Erro ao carregar eventos da escala do Supabase:', e);
+    }
+    return [];
   }
 
   /**
@@ -444,23 +449,11 @@ export class EscalaService {
           });
         }
       }
-
-      const initial = this.getInitialMockData().mockFeriadosPlantoes.slice(0, 3);
-      const seedEvents = initial.map(fp => ({
-        id: this.toValidUUID(fp.id || fp.nome),
-        data: fp.data,
-        titulo: `PLANTÃO: ${fp.nomeCurto || fp.nome}`,
-        consultor_nome: (fp.consultoresTrabalharam || []).join(', ')
-      }));
-
-      await supabase.from('escala_eventos').upsert(seedEvents);
-      return initial;
+      if (error) throw error;
     } catch (e) {
-      console.warn('Erro ao carregar feriados/plantões do Supabase:', e);
+      console.error('Erro ao carregar feriados/plantões do Supabase:', e);
     }
-
-    const initial = this.getInitialMockData();
-    return initial.mockFeriadosPlantoes.slice(0, 3);
+    return [];
   }
 
   /**

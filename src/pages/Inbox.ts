@@ -131,44 +131,28 @@ export class InboxPage {
       // Mapa para desduplicar consultores por chave normalizada
       const teamMap = new Map<string, { displayName: string; participates: boolean }>();
 
-      // 1. Integrantes padrão da agência para garantir roster completo
-      const defaultTeam = ["Marinna Morena", "Guto Bassaroto", "Maria Carvalho", "Rafael Sousa", "Eduardo Mariano", "Laura Montu", "Fernanda Ganem"];
-      defaultTeam.forEach(n => {
-        teamMap.set(n.trim().toLowerCase(), { displayName: n.trim(), participates: true });
-      });
-
-      // 1. Mapeia todos os consultores cadastrados por nome (minúsculo)
+      // 1. Mapeia todos os consultores cadastrados oficialmente no banco de dados (profiles)
       const profileByNameMap = new Map<string, PerfilConsultor>();
       (this.allConsultants || []).forEach(c => {
-        if (c.nome) {
-          profileByNameMap.set(c.nome.trim().toLowerCase(), c);
+        if (c.nome && c.nome.trim()) {
+          const key = c.nome.trim().toLowerCase();
+          profileByNameMap.set(key, c);
+          const participates = c.ativo !== false && c.participa_escala !== false && c.participaEscala !== false;
+          teamMap.set(key, { displayName: c.nome.trim(), participates });
         }
       });
 
-      // 2. Inclui consultores da escala bruta verificando se estão inativos ou se participa_escala === false
+      // 2. Inclui apenas consultores que possuem cadastro real em profiles
       Object.keys(rawEscala).forEach(n => {
         if (n && n.trim()) {
           const key = n.trim().toLowerCase();
           const prof = profileByNameMap.get(key);
-          const isExplicitlyDisabled = prof
-            ? (prof.ativo === false || prof.participa_escala === false || prof.participaEscala === false)
-            : false;
-
-          teamMap.set(key, { displayName: n.trim(), participates: !isExplicitlyDisabled });
+          if (prof) {
+            const participates = prof.ativo !== false && prof.participa_escala !== false && prof.participaEscala !== false;
+            teamMap.set(key, { displayName: prof.nome.trim(), participates });
+          }
         }
       });
-
-      // 3. Mescla todos os consultores do banco de dados respeitando o status ativo e participa_escala
-      if (this.allConsultants && this.allConsultants.length > 0) {
-        this.allConsultants.forEach(c => {
-          if (c.nome) {
-            const key = c.nome.trim().toLowerCase();
-            const isExplicitlyDisabled = c.ativo === false || c.participa_escala === false || c.participaEscala === false;
-
-            teamMap.set(key, { displayName: c.nome.trim(), participates: !isExplicitlyDisabled });
-          }
-        });
-      }
 
       // Reconstrói escalaData e escalaObservacoesData desduplicadas apenas para quem participa_escala === true
       const cleanEscalaData: Record<string, string[]> = {};
@@ -205,7 +189,7 @@ export class InboxPage {
       });
 
       // Aplica a ordem salva dos consultores em escalaData e escalaObservacoesData
-      const customOrder = EscalaService.loadOrdemConsultores();
+      const customOrder = await EscalaService.loadOrdemConsultores();
       if (customOrder && customOrder.length > 0) {
         const orderedEscalaData: Record<string, string[]> = {};
         const orderedObsData: Record<string, string[]> = {};
@@ -2956,7 +2940,6 @@ export class InboxPage {
                   <option value="c-1" data-nome="Marinna">Marinna</option>
                   <option value="c-2" data-nome="Maria">Maria</option>
                   <option value="c-3" data-nome="Rafael">Rafael</option>
-                  <option value="c-4" data-nome="Guto">Guto</option>
                 `}
               </select>
             </div>
