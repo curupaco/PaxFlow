@@ -19,6 +19,13 @@ import { PushNotificationService } from './services/pushNotificationService';
 
 (window as any).traduzirErro = traduzirErro;
 
+// Trata desincronia de hash de pacotes JS ao publicar novas versões no servidor
+window.addEventListener('vite:preloadError', (event) => {
+  console.warn('[PaxFlow] Nova versão detectada durante o carregamento de módulo. Recarregando...');
+  event.preventDefault();
+  window.location.reload();
+});
+
 // Inicializa mecanismo anti-cache e detector de novas versões
 VersionChecker.getInstance().init();
 VersionToast.init();

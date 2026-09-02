@@ -171,8 +171,15 @@
   <!-- Script de Entrada Principal (Vite / TypeScript - Substitui o fallback acima pelo app dinâmico quando carregado) -->
   <script type="module" src="/src/main.ts"></script>
 
-  <!-- Service Worker Registration -->
+  <!-- Service Worker Registration & Version Sync -->
   <script>
+    // Trata erros de carregamento de módulos Vite (quando uma nova versão é publicada e os hashes mudam)
+    window.addEventListener('vite:preloadError', (event) => {
+      console.warn('[PaxFlow] Nova versão publicada no servidor. Recarregando aplicação...');
+      event.preventDefault();
+      window.location.reload();
+    });
+
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' })
