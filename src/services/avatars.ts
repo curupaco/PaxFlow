@@ -242,14 +242,32 @@ export const AVATAR_OPTIONS: AvatarOption[] = [
 
 export function getAvatarSvg(avatarId: string | undefined, initials: string = 'C', extraClasses: string = 'w-10 h-10'): string {
   const normInitials = (initials || '').toLowerCase();
+  const normAvatarId = (avatarId || '').toLowerCase();
   const isPaxflowPersona = avatarId === 'paxflow' || 
+    normAvatarId.includes('paxflow') ||
     normInitials.includes('paxflow') || 
+    normInitials.includes('gestão da agência') ||
+    normInitials.includes('gestao da agencia') ||
+    normInitials.includes('gestão') ||
+    normInitials.includes('gestao') ||
+    normInitials.includes('agência') ||
+    normInitials.includes('agencia') ||
+    normInitials.includes('central de escala') ||
     normInitials.includes('suporte técnico') ||
+    normInitials.includes('suporte') ||
     normInitials.includes('operacoes') ||
     normInitials.includes('operações') ||
     normInitials.includes('finance') ||
     normInitials.includes('qualidade') ||
-    normInitials.includes('reminders');
+    normInitials.includes('gamificação') ||
+    normInitials.includes('gamificacao') ||
+    normInitials.includes('sla control') ||
+    normInitials.includes('reminders') ||
+    normInitials.includes('alertas@') ||
+    normInitials.includes('notificacoes@') ||
+    normInitials.includes('notificação') ||
+    normInitials.includes('notificacao') ||
+    normInitials.includes('sistema');
 
   if (isPaxflowPersona) {
     return `

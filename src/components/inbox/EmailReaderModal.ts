@@ -103,7 +103,7 @@ export class EmailReaderModal {
           <!-- Email headers -->
           <div class="flex items-center gap-3.5 border-b border-slate-100 dark:border-slate-800/80 pb-5">
             <div class="w-10 h-10 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden flex items-center justify-center bg-white dark:bg-slate-900 flex-shrink-0">
-              ${getAvatarSvg(headerAvatar, headerSenderName.charAt(0), 'w-full h-full')}
+              ${getAvatarSvg(headerAvatar, headerSenderName, 'w-full h-full')}
             </div>
             <div class="flex-grow min-w-0">
               <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
@@ -141,7 +141,7 @@ export class EmailReaderModal {
                     } transition-colors duration-200">
                       <div class="flex items-center gap-3 border-b border-slate-100 dark:border-slate-800/80 pb-2 mb-3">
                         <div class="w-8 h-8 border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden flex items-center justify-center bg-white dark:bg-slate-900 flex-shrink-0">
-                          ${getAvatarSvg(msgAvatar, msgSender.charAt(0), 'w-full h-full')}
+                          ${getAvatarSvg(msgAvatar, msgSender, 'w-full h-full')}
                         </div>
                         <div class="flex-grow min-w-0">
                           <div class="flex items-center justify-between gap-1">
