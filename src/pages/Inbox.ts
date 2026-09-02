@@ -2301,7 +2301,7 @@ export class InboxPage {
         <div class="escala-bottom-grid">
           
           <!-- Banco de Folgas Card -->
-          <section class="escala-card">
+          <section class="escala-card flex flex-col">
             <div class="escala-card-head">
               <h2 class="flex items-center gap-2 font-black text-slate-800 dark:text-slate-100 text-sm">
                 <span class="w-6 h-6 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/20">
@@ -2316,10 +2316,14 @@ export class InboxPage {
                 ` : ''}
               </div>
             </div>
-            <div class="p-2.5 space-y-1.5">
+            <div class="p-2.5 space-y-1.5 flex-1">
+              <div class="flex items-center justify-between px-2.5 py-1 text-[10px] uppercase font-black text-slate-400 border-b border-slate-100 dark:border-slate-800 mb-1">
+                <span>Consultor</span>
+                <span>Saldo Acumulado</span>
+              </div>
               ${this.bancoFolgasData.map((b, idx) => `
                 <div class="banco-folgas-accordion-item rounded-xl border border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900/60 hover:border-indigo-500/30 transition overflow-hidden">
-                  <button type="button" class="btn-toggle-banco-row w-full flex items-center justify-between gap-2 p-2.5 hover:bg-slate-50/80 dark:hover:bg-slate-800/40 text-left transition select-none" data-banco-row-idx="${idx}">
+                  <button type="button" class="btn-toggle-banco-row w-full flex items-center justify-between gap-2 p-2.5 h-[42px] hover:bg-slate-50/80 dark:hover:bg-slate-800/40 text-left transition select-none" data-banco-row-idx="${idx}">
                     <strong class="text-slate-800 dark:text-slate-100 text-xs font-black truncate" title="${b.consultor_nome}">${b.consultor_nome.split(' ')[0]}</strong>
                     <div class="flex items-center gap-2 shrink-0">
                       <span class="escala-balance">${b.saldo_dias}</span>
@@ -2337,7 +2341,7 @@ export class InboxPage {
           </section>
 
           <!-- Feriados Card (Últimos 3 Feriados) -->
-          <section class="escala-card">
+          <section class="escala-card flex flex-col">
             <div class="escala-card-head">
               <h2 class="flex items-center gap-2 font-black text-slate-800 dark:text-slate-100 text-sm">
                 <span class="w-6 h-6 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 border border-amber-500/20">
@@ -2352,10 +2356,10 @@ export class InboxPage {
                 ` : ''}
               </div>
             </div>
-            <div class="p-2.5 space-y-1.5">
-              <div class="flex items-center justify-between px-2 py-0.5 text-[10px] uppercase font-black text-slate-400 border-b border-slate-100 dark:border-slate-800 mb-1">
+            <div class="p-2.5 space-y-1.5 flex-1">
+              <div class="flex items-center justify-between px-2.5 py-1 text-[10px] uppercase font-black text-slate-400 border-b border-slate-100 dark:border-slate-800 mb-1">
                 <span class="w-[72px] shrink-0">Consultor</span>
-                <div class="grid grid-cols-3 gap-1 flex-1 text-center">
+                <div class="grid grid-cols-3 gap-1.5 flex-1 text-center">
                   ${(this.feriadosPlantoesData || []).map(f => `
                     <span title="${f.nome}" class="truncate min-w-0">
                       <strong class="block text-slate-700 dark:text-slate-300 font-extrabold text-[10px]">${f.data}</strong>
@@ -2368,19 +2372,19 @@ export class InboxPage {
                 const cNome = b.consultor_nome;
                 const primeiroNome = cNome.split(' ')[0];
                 return `
-                  <div class="rounded-xl border border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900/60 p-2 flex items-center justify-between gap-1.5 hover:border-indigo-500/30 transition">
+                  <div class="rounded-xl border border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900/60 p-2.5 h-[42px] flex items-center justify-between gap-1.5 hover:border-indigo-500/30 transition">
                     <strong class="text-slate-800 dark:text-slate-100 text-xs font-black truncate w-[72px] shrink-0" title="${cNome}">${primeiroNome}</strong>
-                    <div class="grid grid-cols-3 gap-1 flex-1">
+                    <div class="grid grid-cols-3 gap-1.5 flex-1">
                       ${(this.feriadosPlantoesData || []).map(f => {
                         const trabalhou = f.consultoresTrabalharam.some(n => isSameConsultantName(n, cNome));
                         return `
-                          <div class="text-center min-w-0">
+                          <div class="text-center min-w-0 flex items-center justify-center">
                             ${trabalhou ? `
-                              <span class="block py-0.5 px-1 rounded-md bg-emerald-100/80 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-black text-[10px] leading-tight truncate" title="Trabalhou no feriado ${f.nome}">
+                              <span class="inline-flex items-center justify-center py-1 px-2 rounded-lg bg-emerald-100/80 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-black text-[10px] leading-none w-full truncate" title="Trabalhou no feriado ${f.nome}">
                                 Sim
                               </span>
                             ` : `
-                              <span class="block py-0.5 px-1 rounded-md bg-amber-100/60 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 font-bold text-[10px] leading-tight truncate" title="Folgou no feriado ${f.nome}">
+                              <span class="inline-flex items-center justify-center py-1 px-2 rounded-lg bg-amber-100/60 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 font-bold text-[10px] leading-none w-full truncate" title="Folgou no feriado ${f.nome}">
                                 Folga
                               </span>
                             `}
@@ -2395,7 +2399,7 @@ export class InboxPage {
           </section>
 
           <!-- Eventos Card -->
-          <section class="escala-card">
+          <section class="escala-card flex flex-col">
             <div class="escala-card-head">
               <h2 class="flex items-center gap-2 font-black text-slate-800 dark:text-slate-100 text-sm">
                 <span class="w-6 h-6 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 border border-indigo-500/20">
@@ -2410,7 +2414,11 @@ export class InboxPage {
                 ` : ''}
               </div>
             </div>
-            <div class="p-2.5 space-y-1.5">
+            <div class="p-2.5 space-y-1.5 flex-1">
+              <div class="flex items-center justify-between px-2.5 py-1 text-[10px] uppercase font-black text-slate-400 border-b border-slate-100 dark:border-slate-800 mb-1">
+                <span>Data & Consultor</span>
+                <span>Descrição</span>
+              </div>
               ${(() => {
                 const mesStr = String(this.escalaMes).padStart(2, '0');
                 const eventosDoMes = (this.eventosEscalaData || []).filter(ev => {
@@ -2424,7 +2432,7 @@ export class InboxPage {
                 }
 
                 return eventosDoMes.map(ev => `
-                  <div class="escala-eventrow flex items-center justify-between p-2.5 rounded-xl border border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900/60 hover:border-indigo-500/30 transition shadow-2xs">
+                  <div class="escala-eventrow flex items-center justify-between p-2.5 h-[42px] rounded-xl border border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900/60 hover:border-indigo-500/30 transition shadow-2xs">
                     <div class="flex items-center gap-2.5 flex-1 min-w-0 mr-2">
                       <div class="escala-event-date shrink-0 font-black text-indigo-700 dark:text-indigo-300 text-xs px-2.5 py-1 bg-indigo-50 dark:bg-indigo-950/50 rounded-lg border border-indigo-100 dark:border-indigo-900/40 font-mono">${ev.data}</div>
                       <div class="flex-1 min-w-0">
