@@ -1,6 +1,6 @@
 {
   "name": "paxflow",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Plataforma de Gestão Operacional e Fluxo de Passageiros para Agências de Viagem",
   "main": "index.js",
   "scripts": {
