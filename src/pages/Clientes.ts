@@ -84,6 +84,7 @@ export class ClientesPage {
     });
     this.activeCleanups = [];
     this.selectedClientIds.clear();
+    document.getElementById('clientes-bulk-action-bar')?.remove();
   }
 
   /**
@@ -317,7 +318,7 @@ export class ClientesPage {
     if (!bar) {
       bar = document.createElement('div');
       bar.id = 'clientes-bulk-action-bar';
-      bar.className = 'fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900/95 dark:bg-slate-800/95 backdrop-blur-md text-white px-5 py-3 rounded-2xl shadow-2xl border border-slate-700 flex items-center gap-4 animate-fadeInCard';
+      bar.className = 'fixed top-20 left-1/2 -translate-x-1/2 z-40 bg-slate-900/95 dark:bg-slate-800/95 backdrop-blur-md text-white px-5 py-2.5 rounded-2xl shadow-2xl border border-slate-700 flex items-center gap-4 animate-fadeInCard';
       document.body.appendChild(bar);
     }
 
