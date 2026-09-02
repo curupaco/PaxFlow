@@ -173,57 +173,61 @@ export class EmailReaderModal {
         </div>
 
         <!-- Modal Action Footer -->
-        <div class="px-5 py-4 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-end gap-3 bg-slate-50/40 dark:bg-slate-900/40">
+        <div class="px-4 py-3 sm:px-5 sm:py-4 border-t border-slate-100 dark:border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 bg-slate-50/40 dark:bg-slate-900/40">
           
-          <!-- Reply button on the left -->
-          ${item.type === 'direct_message' && !item.isSent && options.onReply ? `
-            <button id="modal-reply-btn" class="px-4 py-2 text-xs font-extrabold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition shadow-md shadow-emerald-600/10 flex items-center gap-1.5 mr-auto">
-              <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                <path d="M3 10h10a8 8 0 0 1 8 8v2M3 10l6 6m-6-6l6-6"/>
-              </svg>
-              Responder
-            </button>
-          ` : ''}
+          <!-- Lado Esquerdo: Ações Primárias (Responder / Ações / Excluir) -->
+          <div class="flex items-center gap-2 flex-wrap">
+            ${item.type === 'direct_message' && !item.isSent && options.onReply ? `
+              <button id="modal-reply-btn" class="flex-1 sm:flex-none px-4 py-2 text-xs font-extrabold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition shadow-md shadow-emerald-600/10 flex items-center justify-center gap-1.5">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                  <path d="M3 10h10a8 8 0 0 1 8 8v2M3 10l6 6m-6-6l6-6"/>
+                </svg>
+                <span>Responder</span>
+              </button>
+            ` : ''}
 
-          <!-- Botões de Ação Rápida de Pré-Embarque e NPS -->
-          ${item.type === 'pre-embarque' ? `
-            <button id="modal-action-pre-embarque-btn" class="px-4 py-2 text-xs font-extrabold bg-sky-600 hover:bg-sky-700 text-white rounded-xl transition shadow-md shadow-sky-600/10 flex items-center gap-1.5 mr-auto" data-viagem-id="${item.targetId}">
-              ✈️ Disparar Pré-Embarque
-            </button>
-          ` : ''}
-          ${item.type === 'pos-viagem-nps' ? `
-            <button id="modal-action-nps-btn" class="px-4 py-2 text-xs font-extrabold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition shadow-md shadow-emerald-600/10 flex items-center gap-1.5 mr-auto" data-viagem-id="${item.targetId}">
-              ⭐ Enviar Pesquisa NPS
-            </button>
-          ` : ''}
+            ${item.type === 'pre-embarque' ? `
+              <button id="modal-action-pre-embarque-btn" class="flex-1 sm:flex-none px-4 py-2 text-xs font-extrabold bg-sky-600 hover:bg-sky-700 text-white rounded-xl transition shadow-md shadow-sky-600/10 flex items-center justify-center gap-1.5" data-viagem-id="${item.targetId}">
+                ✈️ Disparar Pré-Embarque
+              </button>
+            ` : ''}
+            ${item.type === 'pos-viagem-nps' ? `
+              <button id="modal-action-nps-btn" class="flex-1 sm:flex-none px-4 py-2 text-xs font-extrabold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition shadow-md shadow-emerald-600/10 flex items-center justify-center gap-1.5" data-viagem-id="${item.targetId}">
+                ⭐ Enviar Pesquisa NPS
+              </button>
+            ` : ''}
 
-          <!-- Botão de Excluir (Apenas Admins) -->
-          ${(options.perfil?.role === 'admin' && options.onDelete) ? `
-            <button id="modal-delete-btn" class="px-4 py-2 text-xs font-extrabold bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-900/20 text-rose-600 dark:text-rose-400 rounded-xl transition flex items-center gap-1.5 ${(item.type === 'direct_message' && !item.isSent && options.onReply) || item.type === 'pre-embarque' || item.type === 'pos-viagem-nps' ? '' : 'mr-auto'}">
-              🗑️ Excluir
-            </button>
-          ` : ''}
+            ${(options.perfil?.role === 'admin' && options.onDelete) ? `
+              <button id="modal-delete-btn" class="px-3.5 py-2 text-xs font-extrabold bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 dark:hover:bg-rose-900/30 text-rose-600 dark:text-rose-400 rounded-xl transition flex items-center justify-center gap-1.5 border border-rose-200/50 dark:border-rose-900/40 shrink-0">
+                🗑️ Excluir
+              </button>
+            ` : ''}
+          </div>
 
-          <button id="modal-footer-close-btn" class="px-4 py-2 text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl transition border border-slate-200/40 dark:border-slate-700/40">
-            Fechar
-          </button>
+          <!-- Lado Direito: Fechar, Marcar Não Lida, Arquivar -->
+          <div class="flex items-center gap-2 justify-end flex-wrap">
+            <button id="modal-footer-close-btn" class="flex-1 sm:flex-none px-3.5 py-2 text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl transition border border-slate-200/40 dark:border-slate-700/40 text-center">
+              Fechar
+            </button>
 
-          ${options.onMarkUnread ? `
-            <button id="modal-footer-unread-btn" class="px-4 py-2 text-xs font-extrabold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-indigo-600 dark:text-indigo-400 rounded-xl transition border border-slate-200/40 dark:border-slate-700/40 flex items-center gap-1.5">
-              ✉️ Marcar Não Lida
-            </button>
-          ` : ''}
-          
-          ${item.type !== 'direct_message' || !item.isSent ? `
-            <button id="modal-footer-archive-btn" class="px-4 py-2 text-xs font-extrabold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition shadow-md shadow-indigo-600/10 flex items-center gap-1.5">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                <polyline points="21 8 21 21 3 21 3 8"></polyline>
-                <rect x="1" y="3" width="22" height="5"></rect>
-                <line x1="10" y1="12" x2="14" y2="12"></line>
-              </svg>
-              ${item.arquivado ? 'Desarquivar Mensagem' : 'Arquivar Mensagem'}
-            </button>
-          ` : ''}
+            ${options.onMarkUnread ? `
+              <button id="modal-footer-unread-btn" class="flex-1 sm:flex-none px-3.5 py-2 text-xs font-extrabold bg-indigo-50 hover:bg-indigo-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-indigo-600 dark:text-indigo-400 rounded-xl transition border border-indigo-100 dark:border-slate-700/40 flex items-center justify-center gap-1.5 text-center">
+                ✉️ Não Lida
+              </button>
+            ` : ''}
+            
+            ${item.type !== 'direct_message' || !item.isSent ? `
+              <button id="modal-footer-archive-btn" class="flex-1 sm:flex-none px-4 py-2 text-xs font-extrabold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition shadow-md shadow-indigo-600/10 flex items-center justify-center gap-1.5">
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                  <polyline points="21 8 21 21 3 21 3 8"></polyline>
+                  <rect x="1" y="3" width="22" height="5"></rect>
+                  <line x1="10" y1="12" x2="14" y2="12"></line>
+                </svg>
+                <span>${item.arquivado ? 'Restaurar' : 'Arquivar'}</span>
+              </button>
+            ` : ''}
+          </div>
+
         </div>
 
       </div>
