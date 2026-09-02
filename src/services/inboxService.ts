@@ -936,8 +936,14 @@ export class InboxService {
                   <p><strong>Solicitante:</strong> ${sol.solicitante_nome}</p>
                   <p>• <strong>Data Solicitante:</strong> ${dataOrigemFmt}<br>• <strong>Sua Data (Colega):</strong> ${dataDestinoFmt}</p>
                   <p>• <strong>Motivo:</strong> ${sol.motivo || 'Sem observações'}</p>
-                  <div class="pt-2">
-                    <button class="btn-ver-na-escala inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-extrabold transition shadow-md shadow-indigo-950/20" data-sol-id="${sol.id}">
+                  <div class="flex flex-wrap items-center gap-2 pt-3 border-t border-slate-100 dark:border-slate-800/60 mt-3">
+                    <button class="btn-aceitar-troca-inbox inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-extrabold transition shadow-md shadow-indigo-950/20" data-sol-id="${sol.id}">
+                      <span>✅ Aceitar Troca</span>
+                    </button>
+                    <button class="btn-recusar-troca-inbox inline-flex items-center gap-1.5 px-3.5 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-extrabold transition shadow-md shadow-rose-950/20" data-sol-id="${sol.id}">
+                      <span>❌ Recusar</span>
+                    </button>
+                    <button class="btn-ver-na-escala inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-extrabold transition" data-sol-id="${sol.id}">
                       <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                       <span>Ver na Escala</span>
                     </button>
@@ -964,8 +970,14 @@ export class InboxService {
                   <p><strong>Solicitante (Gestão):</strong> ${sol.solicitante_nome}</p>
                   <p>• <strong>Período:</strong> ${rangeStr}</p>
                   <p>• <strong>Motivo:</strong> ${sol.motivo || 'Sem observações'}</p>
-                  <div class="pt-2">
-                    <button class="btn-ver-na-escala inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-extrabold transition shadow-md shadow-indigo-950/20" data-sol-id="${sol.id}">
+                  <div class="flex flex-wrap items-center gap-2 pt-3 border-t border-slate-100 dark:border-slate-800/60 mt-3">
+                    <button class="btn-aceitar-proposta-inbox inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-extrabold transition shadow-md shadow-emerald-950/20" data-sol-id="${sol.id}">
+                      <span>✅ Aceitar Proposta</span>
+                    </button>
+                    <button class="btn-recusar-proposta-inbox inline-flex items-center gap-1.5 px-3.5 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-extrabold transition shadow-md shadow-rose-950/20" data-sol-id="${sol.id}">
+                      <span>❌ Recusar</span>
+                    </button>
+                    <button class="btn-ver-na-escala inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-extrabold transition" data-sol-id="${sol.id}">
                       <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                       <span>Ver na Escala</span>
                     </button>
@@ -1009,8 +1021,14 @@ export class InboxService {
                   <p><strong>Solicitante:</strong> ${sol.solicitante_nome}</p>
                   <p>${sol.tipo === 'troca' ? `• <strong>Troca com:</strong> ${sol.destinatario_nome}<br>• <strong>Data Solicitante:</strong> ${dataOrigemFmt}<br>• <strong>Data Colega:</strong> ${dataDestinoFmt}` : `• <strong>Período Solicitado:</strong> ${rangeStr}`}</p>
                   <p>• <strong>Motivo:</strong> ${sol.motivo || 'Sem observações'}</p>
-                  <div class="pt-2">
-                    <button class="btn-ver-na-escala inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-extrabold transition shadow-md shadow-indigo-950/20" data-sol-id="${sol.id}">
+                  <div class="flex flex-wrap items-center gap-2 pt-3 border-t border-slate-100 dark:border-slate-800/60 mt-3">
+                    <button class="btn-aprovar-escala-inbox inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-extrabold transition shadow-md shadow-emerald-950/20" data-sol-id="${sol.id}">
+                      <span>✅ Aprovar</span>
+                    </button>
+                    <button class="btn-recusar-escala-inbox inline-flex items-center gap-1.5 px-3.5 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-extrabold transition shadow-md shadow-rose-950/20" data-sol-id="${sol.id}">
+                      <span>❌ Recusar</span>
+                    </button>
+                    <button class="btn-ver-na-escala inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-extrabold transition" data-sol-id="${sol.id}">
                       <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                       <span>Ver na Escala</span>
                     </button>

@@ -797,7 +797,8 @@ export class EscalaService {
       }
 
       // 2. Notifica TODOS os Administradores da agência sobre o retorno do consultor
-      const { data: admins } = await supabase.from('profiles').select('id').eq('role', 'admin');
+      const { data: allProfs } = await supabase.from('profiles').select('id, role');
+      const admins = (allProfs || []).filter(a => (a.role || '').toLowerCase() === 'admin');
       if (admins && admins.length > 0) {
         const consultorNome = target.destinatario_nome || target.solicitante_nome || 'Consultor';
         const resText = novoStatus === 'aprovado' 

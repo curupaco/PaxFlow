@@ -384,15 +384,17 @@ export class InboxPage {
       result = result.filter(a => a.type === 'escala_solicitacao' && !a.arquivado);
     }
 
+    const isUserAdmin = (this.perfil?.role || '').toLowerCase() === 'admin';
+
     // 2. Filter by Consultant (Admin only)
-    if ((this.perfil?.role || '').toLowerCase() === 'admin' && this.selectedConsultantFilter !== 'todos') {
-      result = result.filter(a => a.consultorId === this.selectedConsultantFilter || a.isReceivedByMe || a.isCreatedByMe);
+    if (isUserAdmin && this.selectedConsultantFilter !== 'todos') {
+      result = result.filter(a => a.consultorId === this.selectedConsultantFilter || a.isReceivedByMe || a.isCreatedByMe || (a.type === 'escala_solicitacao' && !a.isSent));
     }
 
     // 2.5 Filter by Category (Summary Cards & Mobile Pills)
     if (this.categoryFilter !== 'todos') {
       if (this.categoryFilter === 'alertas') {
-        result = result.filter(a => a.type === 'passport' || a.type === 'refund' || a.type === 'pre-embarque' || a.type === 'pos-viagem-nps' || a.type === 'campaign_notification');
+        result = result.filter(a => a.type === 'passport' || a.type === 'refund' || a.type === 'pre-embarque' || a.type === 'pos-viagem-nps' || a.type === 'campaign_notification' || (isUserAdmin && a.type === 'escala_solicitacao' && !a.isSent));
       } else if (this.categoryFilter === 'depois') {
         result = result.filter(a => a.type === 'manual');
       } else if (this.categoryFilter === 'passaporte') {
@@ -1658,6 +1660,99 @@ export class InboxPage {
         this.setupEventListeners();
         if (solId) {
           this.abrirModalSolicitacaoPorId(solId);
+        }
+      });
+    });
+
+    // 1.2 Botão Aprovar Solicitação de Escala (Direto do Inbox)
+    document.querySelectorAll('.btn-aprovar-escala-inbox').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const solId = btn.getAttribute('data-sol-id');
+        if (!solId) return;
+
+        try {
+          const res = await EscalaService.atualizarStatusSolicitacao(solId, 'aprovado', 'Aprovado via Caixa de Entrada');
+          if (res.success) {
+            this.showToast('✅ Solicitação APROVADA com sucesso! Escala atualizada no banco.', 'success');
+          } else if (res.alreadyProcessed) {
+            this.showToast('Esta solicitação já foi finalizada anteriormente.');
+          }
+          await this.loadAndBuildAlerts();
+          await this.loadEscalaData();
+          this.render();
+          this.setupEventListeners();
+        } catch (err: any) {
+          this.showToast(err.message || 'Erro ao aprovar solicitação.', 'error');
+        }
+      });
+    });
+
+    // 1.3 Botão Recusar Solicitação de Escala (Direto do Inbox)
+    document.querySelectorAll('.btn-recusar-escala-inbox').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const solId = btn.getAttribute('data-sol-id');
+        if (!solId) return;
+
+        try {
+          const res = await EscalaService.atualizarStatusSolicitacao(solId, 'recusado', 'Recusado pela Gestão via Caixa de Entrada');
+          if (res.success) {
+            this.showToast('❌ Solicitação RECUSADA.', 'error');
+          }
+          await this.loadAndBuildAlerts();
+          await this.loadEscalaData();
+          this.render();
+          this.setupEventListeners();
+        } catch (err: any) {
+          this.showToast(err.message || 'Erro ao recusar solicitação.', 'error');
+        }
+      });
+    });
+
+    // 1.4 Botões de Aceite de Troca/Proposta pelos consultores
+    document.querySelectorAll('.btn-aceitar-troca-inbox, .btn-aceitar-proposta-inbox').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const solId = btn.getAttribute('data-sol-id');
+        if (!solId) return;
+
+        const isProposta = btn.classList.contains('btn-aceitar-proposta-inbox');
+        const nextStatus = isProposta ? 'aprovado' : 'pendente_admin';
+        const obs = isProposta ? 'Aceito pelo consultor' : 'Aceito pelo colega, encaminhado à gestão';
+
+        try {
+          const res = await EscalaService.atualizarStatusSolicitacao(solId, nextStatus, obs);
+          if (res.success) {
+            this.showToast(isProposta ? '✅ Proposta aceita! Escala atualizada.' : '✅ Troca aceita! Encaminhada à gestão.', 'success');
+          }
+          await this.loadAndBuildAlerts();
+          await this.loadEscalaData();
+          this.render();
+          this.setupEventListeners();
+        } catch (err: any) {
+          this.showToast(err.message || 'Erro ao responder solicitação.', 'error');
+        }
+      });
+    });
+
+    document.querySelectorAll('.btn-recusar-troca-inbox, .btn-recusar-proposta-inbox').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const solId = btn.getAttribute('data-sol-id');
+        if (!solId) return;
+
+        try {
+          const res = await EscalaService.atualizarStatusSolicitacao(solId, 'recusado', 'Recusado pelo colega/consultor');
+          if (res.success) {
+            this.showToast('❌ Solicitação recusada.', 'error');
+          }
+          await this.loadAndBuildAlerts();
+          await this.loadEscalaData();
+          this.render();
+          this.setupEventListeners();
+        } catch (err: any) {
+          this.showToast(err.message || 'Erro ao recusar solicitação.', 'error');
         }
       });
     });
