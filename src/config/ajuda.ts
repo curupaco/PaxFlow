@@ -158,7 +158,7 @@ export const HELP_ITEMS: HelpItem[] = [
     modulo: 'geral',
     label: 'Permissões de Acesso (RBAC - Admin vs Consultor)',
     description: 'Regras de governança sobre quem pode ler, editar e excluir informações.',
-    details: 'O PaxFlow adota controle estrito de acessos (Role-Based Access Control):\n\n- **Consultor**: Cria e edita clientes, orçamentos e viagens associados a si. Não visualiza informações financeiras confidenciais de outros consultores e não possui permissão de exclusão (botões de deletar ficam ocultos).\n- **Administrador**: Tem visão total da agência, executa auditorias comerciais de toda a equipe, gerencia configurações, cadastros dinâmicos e é o único autorizado a realizar exclusões permanentes no sistema.'
+    details: 'O PaxFlow adota o Modelo Agência Colaborativa com Controle de Acesso por Software (Role-Based Access Control):\n\n- **Consultor**: Por padrão na navegação local das telas (Orçamentos, Viagens, Clientes e Reembolsos), enxerga apenas seus próprios registros. Quando precisa apoiar um colega de equipe ou atuar em regime de balcão (Modo Co-Piloto), pode utilizar a Pesquisa Global no topo (`/`) para consultar a base inteira da agência de forma ágil e segura, sem bloqueios indevidos de banco de dados (RLS flexível no PostgreSQL).\n- **Administrador**: Tem visão consolidada e completa da agência, gerencia cadastros dinâmicos, configurações de equipe, auditorias financeiras e é o único autorizado a realizar exclusões permanentes no sistema.'
   },
   {
     id: 'traducao-erros',
