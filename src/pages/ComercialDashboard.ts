@@ -91,6 +91,7 @@ export class ComercialDashboard {
   private selectedPeriod: PeriodType = 'mes_atual';
   private selectedConsultantId: string = 'todos'; // 'todos' ou ID específico (apenas para admins)
   private selectedMetaId: string = 'todas';
+  private selectedMetaView: string = 'agency'; // 'agency' ou 'consultant-{id}'
   
   // Auxiliares de carregamento/offline
   private isFallbackMode: boolean = false;
@@ -383,12 +384,18 @@ export class ComercialDashboard {
       this.renderMetricsSection();
     });
 
-    // Event delegation para elementos dinâmicos do metricsContainer (metas e refresh)
+    // Event delegation para elementos dinâmicos do metricsContainer (metas, visão e refresh)
     this.container.addEventListener('change', (e) => {
       const target = e.target as HTMLElement;
       if (target && target.id === 'select-dashboard-meta-periodo') {
         const select = target as HTMLSelectElement;
         this.selectedMetaId = select.value;
+        this.selectedMetaView = 'agency'; // Reseta para visão consolidada da agência ao trocar de campanha
+        this.renderMetricsSection();
+      }
+      if (target && target.id === 'select-dashboard-meta-view') {
+        const select = target as HTMLSelectElement;
+        this.selectedMetaView = select.value;
         this.renderMetricsSection();
       }
     });
@@ -1422,102 +1429,156 @@ export class ComercialDashboard {
       `;
     } else if (isAdmin) {
       const agencyTotal = this.consultores.reduce((sum, c) => sum + getConsultantMetricVal(c.id), 0);
-      goalsHTML = `
-        <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
-          <!-- Coluna 1: Total da Agência (4 cols) -->
-          <div class="md:col-span-4 dashboard-glass rounded-3xl p-6 flex flex-col justify-between border border-slate-200/50 dark:border-slate-800/40">
-            <div>
-              <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/60 pb-3 mb-4">
-                <h3 class="text-xs font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider">Total Consolidado da Agência</h3>
-                <span class="text-lg">🏢</span>
+      const isSingleConsultantView = this.selectedMetaView.startsWith('consultant-');
+      const targetConsultantId = isSingleConsultantView ? this.selectedMetaView.replace('consultant-', '') : null;
+      const targetConsultant = targetConsultantId 
+        ? (this.consultores.find(c => String(c.id) === String(targetConsultantId)) || { id: targetConsultantId, nome: 'Consultor', avatar_url: undefined })
+        : null;
+
+      if (isSingleConsultantView && targetConsultant) {
+        const targetVal = getConsultantMetricVal(targetConsultant.id);
+        goalsHTML = `
+          <div class="dashboard-glass rounded-3xl p-6 relative overflow-hidden border border-slate-200/50 dark:border-slate-800/40">
+            <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/60 pb-3.5 mb-4">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full overflow-hidden shrink-0 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 flex items-center justify-center">
+                  ${getAvatarSvg(targetConsultant.avatar_url || 'panda')}
+                </div>
+                <div>
+                  <h3 class="text-sm font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                    <span>Progresso Individual: <strong>${targetConsultant.nome}</strong></span>
+                    <span class="text-[10px] bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 px-2 py-0.5 rounded-full border border-indigo-500/20 font-bold uppercase">Visão do Consultor</span>
+                  </h3>
+                  <p class="text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wider mt-0.5">${currentMeta.nome} &bull; Base: ${currentMeta.tipo_calculo === 'bruto' ? 'Faturamento Bruto' : 'Rentabilidade'} ${renderHelpIcon('tipo-calculo-meta')}</p>
+                </div>
               </div>
-              
-              <div class="flex flex-col items-center justify-center py-2">
-                <div class="relative w-32 h-32 mb-4">
-                  ${this.renderGoalPieChart(agencyTotal, currentMeta.faixas || [], currentMeta.is_meta_loja, currentMeta.valor_meta)}
+              <div class="p-2.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-2xl text-lg">🏆</div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+              <!-- Pie Chart Column -->
+              <div class="md:col-span-4 flex items-center justify-center">
+                <div class="relative w-36 h-36">
+                  ${this.renderGoalPieChart(targetVal, currentMeta.faixas || [], currentMeta.is_meta_loja, currentMeta.valor_meta)}
                   <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
                     <span class="text-[9px] font-black uppercase text-slate-400 dark:text-slate-400 tracking-wider">Atingido</span>
-                    <span class="text-sm font-black text-slate-800 dark:text-slate-100">
+                    <span class="text-base font-black text-slate-800 dark:text-slate-100">
                       ${(() => {
                         const maxVal = currentMeta.is_meta_loja 
                           ? (currentMeta.valor_meta || 1) 
                           : (sortedFaixas.length > 0 ? sortedFaixas[sortedFaixas.length - 1].valor_minimo : 1);
-                        return ((agencyTotal / maxVal) * 100).toFixed(0);
+                        return ((targetVal / maxVal) * 100).toFixed(0);
                       })()}%
                     </span>
                   </div>
                 </div>
+              </div>
 
-                <div class="text-center w-full">
-                  <span class="text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest block">Acumulado da Equipe ${renderHelpIcon('acumulado-equipe')}</span>
-                  <span class="text-xl font-black text-slate-800 dark:text-slate-100 mt-1 block">
-                    R$ ${agencyTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                  </span>
-                  ${currentMeta.is_meta_loja ? `
-                    <span class="text-[10px] text-slate-400 dark:text-slate-400 font-bold block mt-1.5">Alvo Loja: R$ ${(currentMeta.valor_meta || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-                  ` : ''}
-                </div>
+              <!-- Progress Details Column -->
+              <div class="md:col-span-8">
+                ${renderProgressBar(targetVal)}
               </div>
             </div>
           </div>
+        `;
+      } else {
+        goalsHTML = `
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+            <!-- Coluna 1: Total da Agência (4 cols) -->
+            <div class="md:col-span-4 dashboard-glass rounded-3xl p-6 flex flex-col justify-between border border-slate-200/50 dark:border-slate-800/40">
+              <div>
+                <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/60 pb-3 mb-4">
+                  <h3 class="text-xs font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider">Total Consolidado da Agência</h3>
+                  <span class="text-lg">🏢</span>
+                </div>
+                
+                <div class="flex flex-col items-center justify-center py-2">
+                  <div class="relative w-32 h-32 mb-4">
+                    ${this.renderGoalPieChart(agencyTotal, currentMeta.faixas || [], currentMeta.is_meta_loja, currentMeta.valor_meta)}
+                    <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+                      <span class="text-[9px] font-black uppercase text-slate-400 dark:text-slate-400 tracking-wider">Atingido</span>
+                      <span class="text-sm font-black text-slate-800 dark:text-slate-100">
+                        ${(() => {
+                          const maxVal = currentMeta.is_meta_loja 
+                            ? (currentMeta.valor_meta || 1) 
+                            : (sortedFaixas.length > 0 ? sortedFaixas[sortedFaixas.length - 1].valor_minimo : 1);
+                          return ((agencyTotal / maxVal) * 100).toFixed(0);
+                        })()}%
+                      </span>
+                    </div>
+                  </div>
 
-          <!-- Coluna 2: Progresso dos Consultores (8 cols) -->
-          <div class="md:col-span-8 dashboard-glass rounded-3xl p-6 border border-slate-200/50 dark:border-slate-800/40">
-            <h3 class="text-xs font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800/60 pb-3 mb-4">Acompanhamento por Consultor</h3>
-            <div class="space-y-6 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
-              ${this.consultores
-                .map(c => ({ consultant: c, val: getConsultantMetricVal(c.id) }))
-                .sort((a, b) => b.val - a.val)
-                .map(({ consultant: c, val }) => {
-                  let currentFaixaName = 'Nenhuma';
-                  let currentFaixaColor = '#6366f1';
-                  
-                  if (currentMeta.is_meta_loja) {
-                    currentFaixaName = 'Contribuição';
-                    currentFaixaColor = '#10b981';
-                  } else {
-                    for (let i = 0; i < sortedFaixas.length; i++) {
-                      if (val >= sortedFaixas[i].valor_minimo) {
-                        currentFaixaName = sortedFaixas[i].nome;
-                        currentFaixaColor = sortedFaixas[i].cor || '#6366f1';
+                  <div class="text-center w-full">
+                    <span class="text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest block">Acumulado da Equipe ${renderHelpIcon('acumulado-equipe')}</span>
+                    <span class="text-xl font-black text-slate-800 dark:text-slate-100 mt-1 block">
+                      R$ ${agencyTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </span>
+                    ${currentMeta.is_meta_loja ? `
+                      <span class="text-[10px] text-slate-400 dark:text-slate-400 font-bold block mt-1.5">Alvo Loja: R$ ${(currentMeta.valor_meta || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                    ` : ''}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Coluna 2: Progresso dos Consultores (8 cols) -->
+            <div class="md:col-span-8 dashboard-glass rounded-3xl p-6 border border-slate-200/50 dark:border-slate-800/40">
+              <h3 class="text-xs font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800/60 pb-3 mb-4">Acompanhamento por Consultor</h3>
+              <div class="space-y-6 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                ${this.consultores
+                  .map(c => ({ consultant: c, val: getConsultantMetricVal(c.id) }))
+                  .sort((a, b) => b.val - a.val)
+                  .map(({ consultant: c, val }) => {
+                    let currentFaixaName = 'Nenhuma';
+                    let currentFaixaColor = '#6366f1';
+                    
+                    if (currentMeta.is_meta_loja) {
+                      currentFaixaName = 'Contribuição';
+                      currentFaixaColor = '#10b981';
+                    } else {
+                      for (let i = 0; i < sortedFaixas.length; i++) {
+                        if (val >= sortedFaixas[i].valor_minimo) {
+                          currentFaixaName = sortedFaixas[i].nome;
+                          currentFaixaColor = sortedFaixas[i].cor || '#6366f1';
+                        }
                       }
                     }
-                  }
 
-                  const maxVal = currentMeta.is_meta_loja
-                    ? (currentMeta.valor_meta || 1)
-                    : (sortedFaixas.length > 0 ? sortedFaixas[sortedFaixas.length - 1].valor_minimo * 1.1 : 1);
-                  const pct = Math.min((val / maxVal) * 100, 100);
+                    const maxVal = currentMeta.is_meta_loja
+                      ? (currentMeta.valor_meta || 1)
+                      : (sortedFaixas.length > 0 ? sortedFaixas[sortedFaixas.length - 1].valor_minimo * 1.1 : 1);
+                    const pct = Math.min((val / maxVal) * 100, 100);
 
-                  const badgeHTML = currentMeta.is_meta_loja
-                    ? ''
-                    : `<span style="color: ${currentFaixaColor}; border-color: ${currentFaixaColor}30; background-color: ${currentFaixaColor}10" class="px-1.5 py-0.5 border rounded text-[9px] font-black uppercase tracking-wider">${currentFaixaName}</span>`;
+                    const badgeHTML = currentMeta.is_meta_loja
+                      ? ''
+                      : `<span style="color: ${currentFaixaColor}; border-color: ${currentFaixaColor}30; background-color: ${currentFaixaColor}10" class="px-1.5 py-0.5 border rounded text-[9px] font-black uppercase tracking-wider">${currentFaixaName}</span>`;
 
-                  return `
-                    <div class="space-y-1.5">
-                      <div class="flex justify-between items-center text-xs">
-                        <div class="flex items-center gap-2">
-                          <div class="w-6 h-6 rounded-full overflow-hidden shrink-0 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 flex items-center justify-center">
-                            ${getAvatarSvg(c.avatar_url || 'panda')}
+                    return `
+                      <div class="space-y-1.5 cursor-pointer hover:opacity-80 transition" title="Clique para ver o progresso individual deste consultor">
+                        <div class="flex justify-between items-center text-xs">
+                          <div class="flex items-center gap-2">
+                            <div class="w-6 h-6 rounded-full overflow-hidden shrink-0 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 flex items-center justify-center">
+                              ${getAvatarSvg(c.avatar_url || 'panda')}
+                            </div>
+                            <span class="font-extrabold text-slate-700 dark:text-slate-200">${c.nome}</span>
+                            ${badgeHTML}
                           </div>
-                          <span class="font-extrabold text-slate-700 dark:text-slate-200">${c.nome}</span>
-                          ${badgeHTML}
+                          <span class="font-extrabold text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
+                            R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            ${currentMeta.is_meta_loja ? `<span class="text-[10px] text-slate-400 dark:text-slate-400 font-bold">(${((val / maxVal) * 100).toFixed(0)}%)</span>` : ''}
+                          </span>
                         </div>
-                        <span class="font-extrabold text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
-                          R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                          ${currentMeta.is_meta_loja ? `<span class="text-[10px] text-slate-400 dark:text-slate-400 font-bold">(${((val / maxVal) * 100).toFixed(0)}%)</span>` : ''}
-                        </span>
+                        <div class="relative w-full h-2.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                          <div class="h-full rounded-full transition-all duration-300" style="width: ${pct}%; background-color: ${currentFaixaColor}"></div>
+                        </div>
                       </div>
-                      <div class="relative w-full h-2.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                        <div class="h-full rounded-full transition-all duration-300" style="width: ${pct}%; background-color: ${currentFaixaColor}"></div>
-                      </div>
-                    </div>
-                  `;
-                }).join('')}
+                    `;
+                  }).join('')}
+              </div>
             </div>
           </div>
-        </div>
-      `;
+        `;
+      }
     }
 
     return `
@@ -1529,6 +1590,18 @@ export class ComercialDashboard {
           </h2>
           
           <div class="flex items-center gap-2">
+            ${isAdmin ? `
+              <div class="flex items-center gap-1.5 shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2.5 py-1.5 rounded-xl shadow-sm">
+                <span class="text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-400 select-none">Visão:</span>
+                <select id="select-dashboard-meta-view" class="text-xs font-bold bg-transparent text-slate-700 dark:text-slate-400 focus:outline-none cursor-pointer">
+                  <option value="agency" ${this.selectedMetaView === 'agency' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">🏢 Agência Consolidada</option>
+                  ${this.consultores.map(c => `
+                    <option value="consultant-${c.id}" ${this.selectedMetaView === `consultant-${c.id}` ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">👤 ${c.nome}</option>
+                  `).join('')}
+                </select>
+              </div>
+            ` : ''}
+
             <div class="flex items-center gap-1.5 shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2.5 py-1.5 rounded-xl shadow-sm">
               <span class="text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-400 select-none">Campanha/Período:</span>
               <select id="select-dashboard-meta-periodo" class="text-xs font-bold bg-transparent text-slate-700 dark:text-slate-400 focus:outline-none cursor-pointer">
