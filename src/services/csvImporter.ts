@@ -83,44 +83,7 @@ export async function batchInsertOrcamentos(
   }
 
   if (isOffline) {
-    // Persistência em lote no LocalStorage
-    try {
-      const key = `paxflow-orcamentos-${userId || 'global'}`;
-      const saved = localStorage.getItem(key);
-      let localList: Orcamento[] = [];
-
-      if (saved) {
-        try {
-          localList = JSON.parse(saved);
-        } catch (e) {
-          console.error('Erro ao fazer parse dos orçamentos locais durante importação:', e);
-          localList = [];
-        }
-      }
-
-      const mappedLocals: Orcamento[] = orcamentos.map((o, idx) => ({
-        id: 'orc-imported-' + Math.random().toString(36).substring(2, 9) + '-' + idx,
-        consultorId: o.consultor_id,
-        nomeCliente: o.nome_cliente,
-        contato: o.contato,
-        destino: o.destino,
-        dataViagem: o.data_viagem || undefined,
-        temperatura: o.temperatura || 'Normal',
-        tags: o.tags || [],
-        status: o.status || 'SOLICITADO',
-        notasNegociacao: o.notas_negociacao || undefined,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      }));
-
-      // Adiciona no início da lista local
-      localList = [...mappedLocals, ...localList];
-      localStorage.setItem(key, JSON.stringify(localList));
-
-      return { success: true, count: mappedLocals.length };
-    } catch (err: any) {
-      return { success: false, count: 0, error: err };
-    }
+    return { success: false, count: 0, error: new Error('Conexão indisponível. Conecte-se à internet para importar orçamentos.') };
   }
 
   // Persistência oficial em lote no Supabase

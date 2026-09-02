@@ -129,38 +129,10 @@ export class ReembolsosPage {
       } else {
         this.reembolsos = rawData;
       }
-      this.saveReembolsosToLocalStorage();
     } catch (err: any) {
-      console.warn('Erro ao carregar reembolsos do banco. Ativando fallback offline:', err.message);
-      this.loadReembolsosFromLocalStorage();
-    }
-  }
-
-  /**
-   * Salva reembolsos carregados no LocalStorage para resiliência offline
-   */
-  private saveReembolsosToLocalStorage(): void {
-    localStorage.setItem('paxflow-reembolsos-local', JSON.stringify(this.reembolsos));
-  }
-
-  /**
-   * Recupera reembolsos salvos no LocalStorage
-   */
-  private loadReembolsosFromLocalStorage(): void {
-    const saved = localStorage.getItem('paxflow-reembolsos-local');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (this.perfil && this.perfil.role !== 'admin') {
-          this.reembolsos = parsed.filter((r: any) => r.viagem && r.viagem.consultor_id === this.user.id);
-        } else {
-          this.reembolsos = parsed;
-        }
-      } catch (e) {
-        this.reembolsos = [];
-      }
-    } else {
+      console.error('Erro ao carregar reembolsos do servidor:', err.message);
       this.reembolsos = [];
+      this.showToast('Erro de conexão ao carregar os reembolsos do servidor.', 'error');
     }
   }
 

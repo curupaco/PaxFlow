@@ -186,13 +186,8 @@ export class ComercialDashboard {
     this.storageListener = (e: StorageEvent) => {
       const keyOrc = `paxflow-orcamentos-${this.user?.id || 'global'}`;
       if (e.key === keyOrc || e.key === 'paxflow-viagens-local') {
-        console.log('[ComercialDashboard] localStorage update detected. Reloading...');
-        if (this.isFallbackMode) {
-          this.loadDataFromLocalStorage();
-          this.renderMetricsSection();
-        } else {
-          this.loadData().then(() => this.renderMetricsSection());
-        }
+        console.log('[ComercialDashboard] Update detected. Reloading...');
+        this.loadData().then(() => this.renderMetricsSection());
       }
     };
     window.addEventListener('storage', this.storageListener);
@@ -272,9 +267,6 @@ export class ComercialDashboard {
         createdAt: d.created_at,
         updatedAt: d.updated_at
       }));
-        // Persist orcamentos to localStorage
-        const keyOrc = `paxflow-orcamentos-${this.user?.id || 'global'}`;
-        localStorage.setItem(keyOrc, JSON.stringify(this.orcamentos));
 
       // 2. Carregar Viagens do banco para busca Co-Piloto e relatorios
       let queryVia = supabase.from('viagens').select('*, produtos:produtos_viagem(*)');
@@ -303,121 +295,24 @@ export class ComercialDashboard {
         data_financeiro: d.data_financeiro,
         produtos: d.produtos || []
       }));
-        // Persist viagens to localStorage
-        localStorage.setItem('paxflow-viagens-local', JSON.stringify(this.viagens));
 
-        // 3. Carregar Pagamentos e Formas de Recebimento
-        this.locPagamentos = [];
-        try {
-          const { data: dataPags } = await supabase
-            .from('loc_pagamentos')
-            .select('*, formas_recebimento(*)');
-          if (dataPags) {
-            this.locPagamentos = dataPags;
-          }
-        } catch (err) {
-          console.warn('Erro ao carregar pagamentos no dashboard:', err);
+      // 3. Carregar Pagamentos e Formas de Recebimento
+      this.locPagamentos = [];
+      try {
+        const { data: dataPags } = await supabase
+          .from('loc_pagamentos')
+          .select('*, formas_recebimento(*)');
+        if (dataPags) {
+          this.locPagamentos = dataPags;
         }
-  
+      } catch (err) {
+        console.warn('Erro ao carregar pagamentos no dashboard:', err);
+      }
+
     } catch (err: any) {
-      console.warn('Ativando fallback offline no Dashboard: obtendo do LocalStorage.', err.message);
-      this.isFallbackMode = true;
-      this.loadDataFromLocalStorage();
+      console.error('Erro de conexão no ComercialDashboard:', err.message);
+      this.isFallbackMode = false;
     }
-  }
-
-  /**
-   * Recupera dados salvos localmente
-   */
-  private loadDataFromLocalStorage(): void {
-    // Orçamentos
-    const keyOrc = `paxflow-orcamentos-${this.user?.id || 'global'}`;
-    const savedOrc = localStorage.getItem(keyOrc);
-    if (savedOrc) {
-      try {
-        const parsed = JSON.parse(savedOrc);
-        const mapped = (parsed || []).map((d: any) => ({
-          id: d.id,
-          consultorId: d.consultor_id || d.consultorId,
-          clienteId: d.cliente_id || d.clienteId,
-          cliente_id: d.cliente_id || d.clienteId,
-          nomeCliente: d.nome_cliente || d.nomeCliente,
-          contato: d.contato,
-          destino: d.destino,
-          dataViagem: d.data_viagem || d.dataViagem,
-          temperatura: d.temperatura,
-          tags: d.tags || [],
-          status: d.status,
-          subStatus: d.sub_status || d.subStatus,
-          notasNegociacao: d.notas_negociacao || d.notasNegociacao,
-          valorProposta: d.valor_proposta !== undefined ? Number(d.valor_proposta) : (d.valorProposta !== undefined ? Number(d.valorProposta) : undefined),
-          createdAt: d.created_at || d.createdAt,
-          updatedAt: d.updated_at || d.updatedAt
-        }));
-        this.orcamentos = (this.perfil && this.perfil.role !== 'admin')
-          ? mapped.filter((o: any) => o.consultorId === this.user.id)
-          : mapped;
-      } catch (e) {
-        this.orcamentos = [];
-      }
-    }
-
-    // Viagens
-    const savedVia = localStorage.getItem('paxflow-viagens-local'); // Se houver
-    if (savedVia) {
-      try {
-        const parsed = JSON.parse(savedVia);
-        const mapped = (parsed || []).map((d: any) => ({
-          id: d.id,
-          clienteId: d.cliente_id || d.clienteId,
-          consultorId: d.consultor_id || d.consultorId,
-          destino: d.destino,
-          dataIda: d.data_ida || d.dataIda,
-          dataVolta: d.data_volta || d.dataVolta,
-          valorTotal: d.valor_total !== undefined ? Number(d.valor_total) : (d.valorTotal !== undefined ? Number(d.valorTotal) : 0),
-          status: d.status,
-          codigoLocalizador: d.codigo_localizador || d.codigoLocalizador,
-          observacoes: d.observacoes,
-          createdAt: d.created_at || d.createdAt,
-          updatedAt: d.updated_at || d.updatedAt,
-          dataFinanceiro: d.data_financeiro || d.dataFinanceiro,
-          data_financeiro: d.data_financeiro || d.dataFinanceiro
-        }));
-        this.viagens = (this.perfil && this.perfil.role !== 'admin')
-          ? mapped.filter((v: any) => v.consultorId === this.user.id)
-          : mapped;
-      } catch (e) {
-        this.viagens = [];
-      }
-    } else {
-      // Mock de viagens base
-      this.viagens = [
-        {
-          id: 'v1',
-          clienteId: 'c1',
-          consultorId: this.user?.id || 'me',
-          destino: 'Orlando, EUA',
-          dataIda: '2026-11-15',
-          dataVolta: '2026-11-28',
-          valorTotal: 18450,
-          status: 'confirmada',
-          createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString()
-        },
-        {
-          id: 'v2',
-          clienteId: 'c2',
-          consultorId: this.user?.id || 'me',
-          destino: 'Roma, Itália',
-          dataIda: '2027-04-10',
-          dataVolta: '2027-04-22',
-          valorTotal: 24300,
-          status: 'planejamento',
-          createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
-        }
-      ];
-    }
-
-    this.locPagamentos = [];
   }
 
   /**

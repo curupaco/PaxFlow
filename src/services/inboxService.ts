@@ -189,29 +189,49 @@ export class InboxService {
       return list;
     }
 
-    try {
-      // --- PART 1: MANUAL REMINDERS ("Me Lembre Depois") ---
-      let lembretesQuery = supabase
-        .from('lembretes')
-        .select(`
-          *,
-          orcamento:orcamentos (*),
-          viagem:viagens (*),
-          consultor:profiles!lembretes_consultor_id_fkey (*)
-        `)
-        .order('created_at', { ascending: false });
+    const userIsAdmin = (perfil?.role || '').toLowerCase() === 'admin';
 
-      if (perfil && perfil.role !== 'admin') {
-        // Safe combination in real Supabase
-        lembretesQuery = lembretesQuery.or(`consultor_id.eq.${user.id},criador_id.eq.${user.id}`);
+    // --- PART 1: MANUAL REMINDERS ("Me Lembre Depois") ---
+    try {
+      let lembretesData: any[] = [];
+
+      try {
+        let lembretesQuery = supabase
+          .from('lembretes')
+          .select(`
+            *,
+            orcamento:orcamentos (*),
+            viagem:viagens (*),
+            consultor:profiles!lembretes_consultor_id_fkey (*)
+          `)
+          .order('created_at', { ascending: false });
+
+        if (!userIsAdmin) {
+          lembretesQuery = lembretesQuery.or(`consultor_id.eq.${user.id},criador_id.eq.${user.id}`);
+        }
+
+        const { data, error } = await lembretesQuery;
+        if (!error && data) {
+          lembretesData = data;
+        } else {
+          // Fallback query sem join estrito caso FK do PostgREST falhe
+          let fallbackQuery = supabase
+            .from('lembretes')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+          if (!userIsAdmin) {
+            fallbackQuery = fallbackQuery.or(`consultor_id.eq.${user.id},criador_id.eq.${user.id}`);
+          }
+          const { data: fData } = await fallbackQuery;
+          lembretesData = fData || [];
+        }
+      } catch (errQ) {
+        console.warn('Erro ao consultar tabela de lembretes:', errQ);
       }
 
-      const { data: lembretesData, error: lembretesErr } = await lembretesQuery;
-      if (lembretesErr) throw lembretesErr;
-
-      // Local defensive filtering for non-admin to ensure sandbox and real envs both behave identically
-      let filteredLembretes = lembretesData || [];
-      if (perfil && perfil.role !== 'admin') {
+      let filteredLembretes = lembretesData;
+      if (!userIsAdmin) {
         filteredLembretes = filteredLembretes.filter((lem: any) => 
           String(lem.consultor_id) === String(user.id) || String(lem.criador_id) === String(user.id)
         );
@@ -886,7 +906,7 @@ export class InboxService {
         (solicitacoesEscala || []).forEach(sol => {
           const isUserSolicitante = String(sol.solicitante_id) === String(user.id) || sol.solicitante_nome === perfil?.nome;
           const isUserDestinatario = String(sol.destinatario_id) === String(user.id) || sol.destinatario_nome === perfil?.nome;
-          const isAdmin = perfil?.role === 'admin';
+          const isAdmin = userIsAdmin;
 
           let shouldInclude = false;
           let isSentItem = false;

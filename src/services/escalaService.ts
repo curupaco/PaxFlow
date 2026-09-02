@@ -535,38 +535,16 @@ export class EscalaService {
       });
     }
 
-    // 1. Bulk upsert no Supabase
+    // Bulk upsert no Supabase
     try {
       const { error } = await supabase
         .from('escala_diaria')
         .upsert(rowsToUpsert, { onConflict: 'consultor_nome,data' });
 
       if (error) {
-        console.warn('Supabase batch upsert escala_diaria warning:', error.message);
+        console.error('Erro ao salvar escala no Supabase:', error.message);
+        return false;
       }
-    } catch (e) {
-      console.warn('Batch salvo no modo fallback local:', e);
-    }
-
-    // 2. Atualização atômica no localStorage
-    try {
-      const key = `${ano}-${mes}`;
-      const stored = localStorage.getItem(this.LOCAL_STORAGE_ESCALA_KEY);
-      let dataMap: Record<string, Record<string, string[]>> = stored ? JSON.parse(stored) : {};
-
-      if (!dataMap[key]) {
-        dataMap[key] = {};
-      }
-
-      dataMap[key][consultorNome] = valuesArray;
-      localStorage.setItem(this.LOCAL_STORAGE_ESCALA_KEY, JSON.stringify(dataMap));
-
-      const storedObs = localStorage.getItem(this.LOCAL_STORAGE_ESCALA_OBS_KEY);
-      let obsMap: Record<string, Record<string, string[]>> = storedObs ? JSON.parse(storedObs) : {};
-      if (!obsMap[key]) obsMap[key] = {};
-      obsMap[key][consultorNome] = obsArray;
-      localStorage.setItem(this.LOCAL_STORAGE_ESCALA_OBS_KEY, JSON.stringify(obsMap));
-
       return true;
     } catch (e) {
       console.error('Erro ao preencher mês em lote:', e);
@@ -577,38 +555,30 @@ export class EscalaService {
   /**
    * Fetch all Shift Change / Off requests
    */
+  /**
+   * Fetch all Shift Change / Off requests directly from Supabase
+   */
   public static async loadSolicitacoes(): Promise<SolicitacaoEscala[]> {
-    let localItems: SolicitacaoEscala[] = [];
-    try {
-      const stored = localStorage.getItem(this.LOCAL_STORAGE_SOLICITACOES_KEY);
-      if (stored) localItems = JSON.parse(stored);
-    } catch (e) {}
-
     try {
       const { data, error } = await supabase
         .from('escala_solicitacoes')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (!error && data && data.length > 0) {
-        const map = new Map<string, SolicitacaoEscala>();
-        (data as SolicitacaoEscala[]).forEach(item => map.set(item.id, item));
-        localItems.forEach(item => {
-          if (!map.has(item.id)) map.set(item.id, item);
-        });
-        const merged = Array.from(map.values()).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-        localStorage.setItem(this.LOCAL_STORAGE_SOLICITACOES_KEY, JSON.stringify(merged));
-        return merged;
+      if (error) {
+        console.error('Erro ao carregar solicitações de escala do Supabase:', error.message);
+        throw new Error(`Erro ao carregar solicitações: ${error.message}`);
       }
-    } catch (e) {
-      console.warn('Aviso ao carregar solicitações de escala do Supabase:', e);
-    }
 
-    return localItems;
+      return (data as SolicitacaoEscala[]) || [];
+    } catch (e: any) {
+      console.error('Exceção ao carregar solicitações de escala do Supabase:', e);
+      throw e;
+    }
   }
 
   /**
-   * Create a new Shift Swap or Day Off Request
+   * Create a new Shift Swap or Day Off Request directly in Supabase
    */
   public static async criarSolicitacao(sol: Omit<SolicitacaoEscala, 'id' | 'created_at'>): Promise<SolicitacaoEscala> {
     let uuid = '';
@@ -624,34 +594,27 @@ export class EscalaService {
       created_at: new Date().toISOString()
     };
 
-    const list = await this.loadSolicitacoes();
-    list.unshift(newObj);
-    localStorage.setItem(this.LOCAL_STORAGE_SOLICITACOES_KEY, JSON.stringify(list));
-
     const isValidUUID = (val: any) => typeof val === 'string' && /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(val);
     const safeSolicitanteId = isValidUUID(newObj.solicitante_id) ? newObj.solicitante_id : null;
     const safeDestinatarioId = isValidUUID(newObj.destinatario_id) ? newObj.destinatario_id : null;
 
-    try {
-      const { error } = await supabase.from('escala_solicitacoes').insert({
-        id: newObj.id,
-        tipo: newObj.tipo,
-        solicitante_id: safeSolicitanteId,
-        solicitante_nome: newObj.solicitante_nome || 'Consultor',
-        destinatario_id: safeDestinatarioId,
-        destinatario_nome: newObj.destinatario_nome || null,
-        data_origem: newObj.data_origem,
-        data_destino: newObj.data_destino || newObj.data_origem,
-        motivo: newObj.motivo || '',
-        status: newObj.status || 'pendente_admin',
-        created_at: newObj.created_at
-      });
+    const { error } = await supabase.from('escala_solicitacoes').insert({
+      id: newObj.id,
+      tipo: newObj.tipo,
+      solicitante_id: safeSolicitanteId,
+      solicitante_nome: newObj.solicitante_nome || 'Consultor',
+      destinatario_id: safeDestinatarioId,
+      destinatario_nome: newObj.destinatario_nome || null,
+      data_origem: newObj.data_origem,
+      data_destino: newObj.data_destino || newObj.data_origem,
+      motivo: newObj.motivo || '',
+      status: newObj.status || 'pendente_admin',
+      created_at: newObj.created_at
+    });
 
-      if (error) {
-        console.warn('Erro ao salvar escala_solicitacoes no Supabase:', error.message);
-      }
-    } catch (e) {
-      console.warn('Erro na chamada Supabase criarSolicitacao:', e);
+    if (error) {
+      console.error('Erro ao salvar escala_solicitacoes no Supabase:', error.message);
+      throw new Error(`Não foi possível enviar a solicitação: ${error.message}`);
     }
 
     // Criar lembretes na Inbox para garantir que Administradores recebam o alerta em tempo real em qualquer dispositivo
@@ -715,32 +678,36 @@ export class EscalaService {
    * Permite que o consultor solicitante cancele sua própria solicitação se estiver pendente
    */
   public static async cancelarSolicitacao(solicitacaoId: string, userId: string): Promise<boolean> {
-    const list = await this.loadSolicitacoes();
-    const target = list.find(s => s.id === solicitacaoId);
-    if (!target) return false;
-
-    if (target.status !== 'pendente_colega' && target.status !== 'pendente_admin') {
-      return false;
-    }
-
-    target.status = 'recusado';
-    target.resposta_admin = 'Cancelada pelo próprio solicitante';
-    target.updated_at = new Date().toISOString();
-
-    localStorage.setItem(this.LOCAL_STORAGE_SOLICITACOES_KEY, JSON.stringify(list));
-
     try {
-      await supabase
+      const { data: target, error: fetchErr } = await supabase
+        .from('escala_solicitacoes')
+        .select('*')
+        .eq('id', solicitacaoId)
+        .maybeSingle();
+
+      if (fetchErr || !target) return false;
+
+      if (target.status !== 'pendente_colega' && target.status !== 'pendente_admin') {
+        return false;
+      }
+
+      const updatedAt = new Date().toISOString();
+      const { error: updateErr } = await supabase
         .from('escala_solicitacoes')
         .update({
           status: 'recusado',
           resposta_admin: 'Cancelada pelo próprio solicitante',
-          updated_at: target.updated_at
+          updated_at: updatedAt
         })
         .eq('id', solicitacaoId);
-    } catch (e) {}
 
-    return true;
+      if (updateErr) throw new Error(updateErr.message);
+
+      return true;
+    } catch (e) {
+      console.error('Erro ao cancelar solicitação no Supabase:', e);
+      return false;
+    }
   }
 
   /**
@@ -751,43 +718,35 @@ export class EscalaService {
     novoStatus: 'pendente_admin' | 'aprovado' | 'recusado',
     respostaAdmin?: string
   ): Promise<{ success: boolean; alreadyProcessed?: boolean; currentStatus?: string }> {
-    let list = await this.loadSolicitacoes();
-    let target = list.find(s => s.id === solicitacaoId);
+    let target: SolicitacaoEscala | null = null;
 
-    // Checagem em tempo real no banco de dados para evitar corrida de concorrência entre admins
+    // Checagem e busca em tempo real no banco de dados
     try {
-      const { data: dbCheck } = await supabase
+      const { data: dbCheck, error: dbErr } = await supabase
         .from('escala_solicitacoes')
         .select('*')
         .eq('id', solicitacaoId)
         .maybeSingle();
 
-      if (dbCheck) {
-        if (dbCheck.status === 'aprovado' || dbCheck.status === 'recusado') {
-          return {
-            success: false,
-            alreadyProcessed: true,
-            currentStatus: dbCheck.status
-          };
-        }
+      if (dbErr || !dbCheck) return { success: false };
+
+      if (dbCheck.status === 'aprovado' || dbCheck.status === 'recusado') {
+        return {
+          success: false,
+          alreadyProcessed: true,
+          currentStatus: dbCheck.status
+        };
       }
-    } catch (e) {}
+      target = dbCheck as SolicitacaoEscala;
+    } catch (e) {
+      return { success: false };
+    }
 
     if (!target) return { success: false };
-
-    if (target.status === 'aprovado' || target.status === 'recusado') {
-      return {
-        success: false,
-        alreadyProcessed: true,
-        currentStatus: target.status
-      };
-    }
 
     target.status = novoStatus;
     if (respostaAdmin) target.resposta_admin = respostaAdmin;
     target.updated_at = new Date().toISOString();
-
-    localStorage.setItem(this.LOCAL_STORAGE_SOLICITACOES_KEY, JSON.stringify(list));
 
     if (novoStatus === 'aprovado') {
       if (target.tipo === 'troca' && target.destinatario_nome && target.data_destino) {

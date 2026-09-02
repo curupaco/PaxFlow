@@ -95,17 +95,6 @@ export class EditTravelModal {
         console.warn('Erro ao carregar conferências do LOC:', err);
       }
     }
-    const localConferenciasSaved = localStorage.getItem(`paxflow-loc-conferencias-${tripId}`);
-    if (localConferenciasSaved) {
-      try {
-        const parsed = JSON.parse(localConferenciasSaved);
-        Object.keys(parsed).forEach(k => {
-          if (this.locConferenciasMap[k] === undefined) {
-            this.locConferenciasMap[k] = parsed[k];
-          }
-        });
-      } catch (e) {}
-    }
 
     try {
       const modalWidthClass = this.selectedProductId ? 'max-w-[1380px]' : 'max-w-6xl';
@@ -153,16 +142,6 @@ export class EditTravelModal {
 
       if (!viagem) {
         viagem = (this.options.viagens || []).find(v => v.id === tripId);
-      }
-
-      if (!viagem) {
-        const saved = localStorage.getItem('paxflow-viagens-local');
-        if (saved) {
-          try {
-            const parsed = JSON.parse(saved);
-            viagem = (parsed || []).find((v: any) => v.id === tripId);
-          } catch (e) {}
-        }
       }
 
       if (!viagem) {

@@ -3034,26 +3034,31 @@ export class InboxPage {
       const isUserAdmin = this.perfil?.role === 'admin';
       const statusFinal = isUserAdmin ? 'pendente_consultor' : (tipo === 'troca' ? 'pendente_colega' : 'pendente_admin');
 
-      await EscalaService.criarSolicitacao({
-        tipo,
-        solicitante_id: this.user?.id || 'usr-1',
-        solicitante_nome: solicitanteNome,
-        destinatario_id: (tipo === 'troca' || isUserAdmin) ? destinatarioId : undefined,
-        destinatario_nome: (tipo === 'troca' || isUserAdmin) ? destinatarioNome : undefined,
-        data_origem: dataOrigem,
-        data_destino: tipo === 'folga' ? dataOrigem : (dataDestino || dataOrigem),
-        motivo,
-        status: statusFinal
-      });
+      try {
+        await EscalaService.criarSolicitacao({
+          tipo,
+          solicitante_id: this.user?.id || 'usr-1',
+          solicitante_nome: solicitanteNome,
+          destinatario_id: (tipo === 'troca' || isUserAdmin) ? destinatarioId : undefined,
+          destinatario_nome: (tipo === 'troca' || isUserAdmin) ? destinatarioNome : undefined,
+          data_origem: dataOrigem,
+          data_destino: tipo === 'folga' ? dataOrigem : (dataDestino || dataOrigem),
+          motivo,
+          status: statusFinal
+        });
 
-      close();
-      const msg = isUserAdmin 
-        ? `Proposta enviada para ${destinatarioNome}! Notificação gerada.` 
-        : 'Solicitação enviada com sucesso! Notificação gerada no Inbox.';
-      this.showToast(msg, 'success');
-      await this.loadAndBuildAlerts();
-      this.render();
-      this.setupEventListeners();
+        close();
+        const msg = isUserAdmin 
+          ? `Proposta enviada para ${destinatarioNome}! Notificação gerada.` 
+          : 'Solicitação enviada com sucesso! Notificação gerada no Inbox.';
+        this.showToast(msg, 'success');
+        await this.loadAndBuildAlerts();
+        this.render();
+        this.setupEventListeners();
+      } catch (err: any) {
+        console.error('Erro ao criar solicitação:', err);
+        this.showToast(err.message || 'Erro de conexão ao enviar solicitação ao banco de dados.', 'error');
+      }
     };
   }
 

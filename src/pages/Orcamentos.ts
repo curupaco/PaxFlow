@@ -171,11 +171,11 @@ export class OrcamentosPage {
     try {
       this.orcamentos = await OrcamentosService.loadOrcamentos(this.user, this.perfil);
       this.isFallbackMode = false;
-    this.saveOrcamentosToLocalStorage();
     } catch (err: any) {
-      console.warn('Tabela "orcamentos" indisponível ou erro na consulta. Ativando fallback de armazenamento local (localStorage):', err.message);
-      this.isFallbackMode = true;
-      this.loadOrcamentosFromLocalStorage();
+      console.error('Erro ao carregar orçamentos do Supabase:', err.message);
+      this.isFallbackMode = false;
+      this.orcamentos = [];
+      this.showToast('Erro de conexão ao carregar orçamentos do servidor.', 'error');
     }
   }
 
@@ -192,97 +192,9 @@ export class OrcamentosPage {
   }
 
   /**
-   * Carrega orçamentos salvos no LocalStorage (Modo Fallback / Offline)
-   */
-  private loadOrcamentosFromLocalStorage(): void {
-    const key = `paxflow-orcamentos-${this.user?.id || 'global'}`;
-    const saved = localStorage.getItem(key);
-
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        // Filtra para consultor normal se for o caso
-        if (this.perfil && this.perfil.role !== 'admin') {
-          this.orcamentos = parsed.filter((o: any) => o.consultorId === this.user.id);
-        } else {
-          this.orcamentos = parsed;
-        }
-      } catch (e) {
-        console.error('Erro ao fazer parse dos orçamentos locais:', e);
-        this.orcamentos = [];
-      }
-    } else {
-      // Massa de dados de demonstração inicial
-      const defaultData: Orcamento[] = [
-        {
-          id: 'orc-demo-1',
-          consultorId: this.user?.id || 'me',
-          nomeCliente: 'Guilherme Siqueira',
-          contato: '(11) 99111-2233 / guilherme@email.com',
-          destino: 'Orlando, EUA',
-          dataViagem: '2026-11-15',
-          temperatura: 'Quente',
-          tags: ['Família', 'Parques', 'EUA'],
-          status: 'SOLICITADO',
-          createdAt: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString() // 12 horas atrás
-        },
-        {
-          id: 'orc-demo-2',
-          consultorId: this.user?.id || 'me',
-          nomeCliente: 'Natália Albuquerque',
-          contato: 'natalia@viagens.com',
-          destino: 'Roma, Itália',
-          dataViagem: '2027-04-10',
-          temperatura: 'Normal',
-          tags: ['Lua de Mel', 'Europa'],
-          status: 'EM_ANDAMENTO',
-          createdAt: new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString() // 2 dias atrás
-        },
-        {
-          id: 'orc-demo-3',
-          consultorId: this.user?.id || 'me',
-          nomeCliente: 'Roberto Carlos',
-          contato: '(21) 98888-7777',
-          destino: 'Buenos Aires, Argentina',
-          dataViagem: '2026-08-20',
-          temperatura: 'Frio',
-          tags: ['Nacional/América do Sul', 'Show'],
-          status: 'AGUARDANDO',
-          notasNegociacao: 'Opção de voo direto Aerolíneas Argentinas enviado, aguardando resposta sobre o hotel.',
-          valorProposta: 3450,
-          documentosUrl: ['https://drive.google.com/drive/folders/mock-proposal'],
-          createdAt: new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString() // 3 dias atrás
-        }
-      ];
-
-      this.orcamentos = defaultData;
-      this.saveOrcamentosToLocalStorage();
-    }
-  }
-
-  /**
-   * Salva o estado dos orçamentos locais
-   */
-  private saveOrcamentosToLocalStorage(): void {
-    const key = `paxflow-orcamentos-${this.user?.id || 'global'}`;
-    localStorage.setItem(key, JSON.stringify(this.orcamentos));
-  }
-
-  /**
-   * Salva ou atualiza um orçamento (de forma reativa no Supabase ou local)
+   * Salva ou atualiza um orçamento no Supabase
    */
   private async persistOrcamento(o: Orcamento): Promise<boolean> {
-    if (this.isFallbackMode) {
-      const idx = this.orcamentos.findIndex(item => item.id === o.id);
-      if (idx !== -1) {
-        this.orcamentos[idx] = { ...o, updatedAt: new Date().toISOString() };
-      } else {
-        this.orcamentos.unshift({ ...o, id: o.id || 'orc-' + Math.random().toString(36).substr(2, 9), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
-      }
-      this.saveOrcamentosToLocalStorage();
-      return true;
-    }
-
     try {
       const { success, dbVersionDegraded } = await OrcamentosService.persistOrcamento(o);
       if (dbVersionDegraded) {
@@ -291,35 +203,25 @@ export class OrcamentosPage {
       return success;
     } catch (err: any) {
       console.error('Erro ao persistir orçamento no Supabase:', err);
-      this.showToast('Erro ao salvar no banco. Salvando localmente no navegador!', 'error', err);
-      // Ativa fallback para salvar as alterações em andamento
-      this.isFallbackMode = true;
-      this.loadOrcamentosFromLocalStorage();
-      return this.persistOrcamento(o);
+      this.showToast('Erro ao salvar no banco de dados. Verifique a conexão com a internet.', 'error');
+      return false;
     }
   }
 
   /**
    * Deleta um orçamento (apenas Admins)
    */
-
   private async deleteOrcamento(id: string): Promise<boolean> {
-    if (this.isFallbackMode) {
-      this.orcamentos = this.orcamentos.filter(o => o.id !== id);
-      this.saveOrcamentosToLocalStorage();
-      return true;
-    }
-
     try {
       const success = await OrcamentosService.deleteOrcamento(id);
       if (success) {
         this.orcamentos = this.orcamentos.filter(o => o.id !== id);
-        this.saveOrcamentosToLocalStorage();
       }
       return success;
     } catch (err: any) {
-      console.error('Erro ao deletar orçamento:', err);
-      throw err;
+      console.error('Erro ao deletar orçamento no Supabase:', err);
+      this.showToast('Erro ao excluir orçamento do servidor.', 'error');
+      return false;
     }
   }
 
