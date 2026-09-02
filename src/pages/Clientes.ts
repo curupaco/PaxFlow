@@ -103,11 +103,13 @@ export class ClientesPage {
         .order('nome', { ascending: true })
         .range(this.paginaAtual * this.limitePagina, (this.paginaAtual + 1) * this.limitePagina - 1);
 
+      if (this.perfil && this.perfil.role !== 'admin' && this.user?.id) {
+        query = query.eq('consultor_responsavel_id', this.user.id);
+      }
+
       if (this.buscaTermo.trim()) {
         const q = `%${this.buscaTermo.trim()}%`;
         query = query.or(`nome.ilike.${q},email.ilike.${q},documento.ilike.${q},telefone.ilike.${q},codigo_ref.ilike.${q}`);
-      } else if (this.perfil && this.perfil.role !== 'admin' && this.user?.id) {
-        query = query.eq('consultor_responsavel_id', this.user.id);
       }
 
       const { data, error, count } = await query;
