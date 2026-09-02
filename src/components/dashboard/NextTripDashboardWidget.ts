@@ -30,11 +30,11 @@ export class NextTripDashboardWidget {
 
     if (this.oportunidades.length === 0) {
       this.container.innerHTML = `
-        <div class="mb-4 px-4 py-2.5 bg-slate-900/90 dark:bg-slate-900/90 backdrop-blur-md text-white rounded-2xl shadow-md border border-slate-800 flex items-center justify-between gap-3 shrink-0">
+        <div class="mb-4 px-4 py-2.5 bg-white dark:bg-slate-900/90 backdrop-blur-md text-slate-800 dark:text-white rounded-2xl shadow-xs border border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3 shrink-0">
           <div class="flex items-center gap-2.5">
             <span class="text-base">🎯</span>
-            <span class="text-xs font-black tracking-wide text-slate-200 uppercase font-sans">Next Trip Engine™</span>
-            <span class="text-xs text-slate-400 hidden sm:inline">&bull; Nenhuma oportunidade pendente (> 90 dias)</span>
+            <span class="text-xs font-black tracking-wide text-slate-800 dark:text-slate-200 uppercase font-sans">Next Trip Engine™</span>
+            <span class="text-xs text-slate-500 dark:text-slate-400 hidden sm:inline">&bull; Nenhuma oportunidade pendente (> 90 dias)</span>
           </div>
           <button id="btn-open-full-next-trip-empty" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-extrabold uppercase rounded-xl border border-indigo-400/30 transition flex items-center gap-1 shrink-0">
             <span>Ver Tela Completa ➔</span>
@@ -51,26 +51,26 @@ export class NextTripDashboardWidget {
 
     const altaProntidaoCount = this.oportunidades.filter(o => o.nivelProntidao === 'alto').length;
 
-    // BARRA ULTRA-DISCRETA DE 1-LINHA (Pílula Compacta)
+    // BARRA ELEGANTE COMPACTA (Tema Responsivo)
     this.container.innerHTML = `
-      <div class="mb-4 px-4 py-2.5 bg-slate-900/90 dark:bg-slate-900/90 backdrop-blur-md text-white rounded-2xl shadow-md border border-indigo-500/30 flex items-center justify-between gap-3 shrink-0">
+      <div class="mb-4 px-4 py-2.5 bg-indigo-50/70 dark:bg-slate-900/90 backdrop-blur-md text-slate-800 dark:text-white rounded-2xl shadow-xs border border-indigo-100 dark:border-indigo-500/30 flex items-center justify-between gap-3 shrink-0">
         <div class="flex items-center gap-2.5 truncate">
-          <span class="p-1 rounded-lg bg-indigo-500/20 text-indigo-300 text-sm">🎯</span>
-          <span class="text-xs font-black tracking-wide text-indigo-100 uppercase font-sans">Next Trip Engine™</span>
-          <span class="text-xs text-indigo-300 font-bold hidden sm:inline">&bull; ${this.oportunidades.length} Oportunidade(s) Preditiva(s)</span>
+          <span class="p-1 rounded-lg bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 text-sm">🎯</span>
+          <span class="text-xs font-black tracking-wide text-indigo-950 dark:text-indigo-100 uppercase font-sans">Next Trip Engine™</span>
+          <span class="text-xs text-indigo-600 dark:text-indigo-300 font-bold hidden sm:inline">&bull; ${this.oportunidades.length} Oportunidade(s) Preditiva(s)</span>
           ${altaProntidaoCount > 0 ? `
-            <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[9px] font-black uppercase tracking-wider border border-emerald-500/30">
+            <span class="px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-[9px] font-black uppercase tracking-wider border border-emerald-200 dark:border-emerald-500/30">
               🔥 ${altaProntidaoCount} Alto Potencial
             </span>
           ` : ''}
         </div>
 
         <div class="flex items-center gap-2 shrink-0">
-          <button id="btn-open-next-trip-drawer" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-black uppercase rounded-xl shadow-md border border-indigo-400/30 transition flex items-center gap-1">
+          <button id="btn-open-next-trip-drawer" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-black uppercase rounded-xl shadow-xs border border-indigo-400/30 transition flex items-center gap-1">
             <span>🚀 Ver Oportunidades</span>
           </button>
 
-          <button id="btn-open-full-next-trip" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[10px] font-bold uppercase rounded-xl border border-slate-700 transition flex items-center gap-1">
+          <button id="btn-open-full-next-trip" class="px-3 py-1.5 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-[10px] font-bold uppercase rounded-xl border border-slate-200 dark:border-slate-700 transition flex items-center gap-1">
             <span>Ver Tudo ➔</span>
           </button>
         </div>
@@ -103,23 +103,23 @@ export class NextTripDashboardWidget {
 
     portal.innerHTML = `
       <div class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex justify-end animate-fade-in">
-        <div class="w-full max-w-2xl bg-slate-900 text-white h-full shadow-2xl border-l border-slate-800 flex flex-col justify-between overflow-hidden animate-slide-left">
+        <div class="w-full max-w-2xl bg-white dark:bg-slate-900 text-slate-900 dark:text-white h-full shadow-2xl border-l border-slate-200 dark:border-slate-800 flex flex-col justify-between overflow-hidden animate-slide-left">
           
           <!-- Cabeçalho da Gaveta -->
-          <div class="p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/50">
+          <div class="p-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-950/50">
             <div class="flex items-center gap-2.5">
-              <span class="p-2 rounded-xl bg-indigo-600/20 text-indigo-400 text-lg">🎯</span>
+              <span class="p-2 rounded-xl bg-indigo-100 dark:bg-indigo-600/20 text-indigo-600 dark:text-indigo-400 text-lg">🎯</span>
               <div>
-                <h3 class="text-sm font-black uppercase text-white tracking-wide">Next Trip Engine™ & Upsell</h3>
-                <p class="text-xs text-indigo-300 font-medium">Oportunidades de Recompra e Upgrades Preditivos</p>
+                <h3 class="text-sm font-black uppercase text-slate-900 dark:text-white tracking-wide">Next Trip Engine™ & Upsell</h3>
+                <p class="text-xs text-indigo-600 dark:text-indigo-300 font-medium">Oportunidades de Recompra e Upgrades Preditivos</p>
               </div>
             </div>
 
             <div class="flex items-center gap-3">
-              <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-black uppercase border border-emerald-500/30">
+              <span class="px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-[10px] font-black uppercase border border-emerald-200 dark:border-emerald-500/30">
                 🔥 ${altaProntidaoCount} Alto Potencial
               </span>
-              <button id="btn-close-next-trip-drawer" class="text-slate-400 hover:text-white text-2xl font-bold p-1 transition">&times;</button>
+              <button id="btn-close-next-trip-drawer" class="text-slate-400 hover:text-slate-700 dark:hover:text-white text-2xl font-bold p-1 transition">&times;</button>
             </div>
           </div>
 
@@ -130,47 +130,47 @@ export class NextTripDashboardWidget {
                 const upsells = UpsellEngineService.calculateUpsellOpportunities([], op.destinoRecomendado, 2, 5000, null, null);
                 
                 return `
-                  <div class="bg-slate-800/90 border border-slate-700/70 rounded-2xl p-4 flex flex-col justify-between gap-3 shadow-md hover:border-indigo-500/60 transition space-y-2">
+                  <div class="bg-slate-50 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700/70 rounded-2xl p-4 flex flex-col justify-between gap-3 shadow-xs hover:border-indigo-400 dark:hover:border-indigo-500/60 transition space-y-2">
                     
-                    <div class="flex items-center justify-between gap-2 border-b border-slate-700/50 pb-2">
+                    <div class="flex items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-700/50 pb-2">
                       <div class="truncate">
-                        <h4 class="font-black text-sm text-white truncate">${op.clienteNome}</h4>
-                        <span class="text-[10px] text-slate-400 font-mono">Consultor: ${op.consultorNome}</span>
+                        <h4 class="font-black text-sm text-slate-900 dark:text-white truncate">${op.clienteNome}</h4>
+                        <span class="text-[10px] text-slate-500 dark:text-slate-400 font-mono">Consultor: ${op.consultorNome}</span>
                       </div>
                       <span class="px-2.5 py-1 rounded-xl text-xs font-black border ${
                         op.nivelProntidao === 'alto'
-                          ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                          : 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                          ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-500/40'
+                          : 'bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-500/40'
                       }">
                         🎯 ${op.scoreProntidao}/100
                       </span>
                     </div>
 
                     <!-- Sugestão Recompra -->
-                    <div class="p-3 bg-slate-900/80 rounded-xl border border-slate-700/40 space-y-1">
-                      <div class="flex items-center justify-between text-indigo-300 font-extrabold text-xs">
+                    <div class="p-3 bg-white dark:bg-slate-900/80 rounded-xl border border-slate-200 dark:border-slate-700/40 space-y-1">
+                      <div class="flex items-center justify-between text-indigo-600 dark:text-indigo-300 font-extrabold text-xs">
                         <span>💡 Sugestão: ${op.destinoRecomendado}</span>
                       </div>
-                      <p class="text-xs text-slate-300 font-medium leading-relaxed">${op.motivoSugestao}</p>
-                      <div class="text-[10px] text-slate-400 font-mono pt-1 border-t border-slate-800">
+                      <p class="text-xs text-slate-700 dark:text-slate-300 font-medium leading-relaxed">${op.motivoSugestao}</p>
+                      <div class="text-[10px] text-slate-500 dark:text-slate-400 font-mono pt-1 border-t border-slate-100 dark:border-slate-800">
                         Última viagem: <strong>${op.ultimoDestino}</strong> (${op.ultimaViagemData})
                       </div>
                     </div>
 
                     ${upsells && upsells.length > 0 ? `
                       <!-- Oportunidade de Upsell -->
-                      <div class="p-3 bg-gradient-to-r from-purple-950/70 to-indigo-950/70 border border-purple-500/40 rounded-xl text-white space-y-1">
-                        <div class="flex items-center justify-between text-[10px] font-black uppercase text-purple-300">
+                      <div class="p-3 bg-purple-50 dark:bg-gradient-to-r dark:from-purple-950/70 dark:to-indigo-950/70 border border-purple-200 dark:border-purple-500/40 rounded-xl text-slate-900 dark:text-white space-y-1">
+                        <div class="flex items-center justify-between text-[10px] font-black uppercase text-purple-700 dark:text-purple-300">
                           <span>🚀 Upsell Recomendado</span>
-                          <span class="text-emerald-400 font-extrabold text-xs">+ R$ ${upsells[0].valorEstimado.toLocaleString('pt-BR')}</span>
+                          <span class="text-emerald-600 dark:text-emerald-400 font-extrabold text-xs">+ R$ ${upsells[0].valorEstimado.toLocaleString('pt-BR')}</span>
                         </div>
-                        <p class="text-xs font-bold text-slate-100">${upsells[0].titulo}</p>
-                        <p class="text-[10px] text-slate-300 leading-tight">${upsells[0].descricao}</p>
+                        <p class="text-xs font-bold text-slate-800 dark:text-slate-100">${upsells[0].titulo}</p>
+                        <p class="text-[10px] text-slate-600 dark:text-slate-300 leading-tight">${upsells[0].descricao}</p>
                       </div>
                     ` : ''}
 
                     <!-- Ações Rápidas 1-Clique -->
-                    <div class="flex items-stretch gap-2 pt-2 border-t border-slate-700/50">
+                    <div class="flex items-stretch gap-2 pt-2 border-t border-slate-200 dark:border-slate-700/50">
                       <button class="btn-drawer-orc h-10 flex-1 px-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-[11px] font-extrabold uppercase transition flex items-center justify-center gap-1 whitespace-nowrap overflow-hidden text-ellipsis" data-cliente-id="${op.clienteId}">
                         <span>🎯 Criar Orçamento</span>
                       </button>
@@ -179,7 +179,7 @@ export class NextTripDashboardWidget {
                         <span>💬 WhatsApp</span>
                       </button>
 
-                      <button class="btn-drawer-snooze h-10 w-10 shrink-0 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-xl text-xs font-bold transition flex items-center justify-center" title="Adiar por 30 dias" data-cliente-id="${op.clienteId}">
+                      <button class="btn-drawer-snooze h-10 w-10 shrink-0 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-600 transition flex items-center justify-center" title="Adiar por 30 dias" data-cliente-id="${op.clienteId}">
                         <span>⏸️</span>
                       </button>
                     </div>
@@ -191,8 +191,8 @@ export class NextTripDashboardWidget {
           </div>
 
           <!-- Rodapé da Gaveta -->
-          <div class="p-4 border-t border-slate-800 bg-slate-950/80 flex items-center justify-between">
-            <span class="text-xs text-slate-400 font-medium">PaxFlow Preditivo &bull; Inteligência IA</span>
+          <div class="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/80 flex items-center justify-between">
+            <span class="text-xs text-slate-500 dark:text-slate-400 font-medium">PaxFlow Preditivo &bull; Inteligência IA</span>
             <button id="btn-drawer-full-page" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-extrabold uppercase tracking-wide transition">
               Ver Tela Completa ➔
             </button>
