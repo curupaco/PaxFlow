@@ -2,6 +2,7 @@ import { AlertItem, PerfilConsultor } from '../../types';
 import { getAvatarSvg } from '../../services/avatars';
 import { showCustomAlert, showCustomConfirm } from '../../services/dialog';
 import { InboxService } from '../../services/inboxService';
+import { EscalaService } from '../../services/escalaService';
 import { supabase } from '../../services/supabase';
 import { SendTemplateMessageModal } from '../dashboard/SendTemplateMessageModal';
 
@@ -43,6 +44,9 @@ export class EmailReaderModal {
     } else if (item.type === 'pos-viagem-nps') {
       badgeClass = 'bg-gradient-to-tr from-emerald-500 to-teal-600 dark:from-emerald-600 dark:to-teal-500';
       badgeText = 'Pós-Viagem NPS ⭐';
+    } else if (item.type === 'escala_solicitacao') {
+      badgeClass = 'bg-gradient-to-tr from-violet-600 to-indigo-600 dark:from-violet-500 dark:to-indigo-500 text-white font-extrabold';
+      badgeText = 'Escala 📅';
     }
 
     // Load thread messages if it's a direct message
@@ -415,6 +419,104 @@ export class EmailReaderModal {
           window.dispatchEvent(new CustomEvent('paxflow-navigate', {
             detail: { page: 'dashboard', extraId: viagemId }
           }));
+        }
+      });
+    });
+
+    // BOTÕES DE AÇÃO DE ESCALA DENTRO DO MODAL DE LEITURA
+    modalOverlay.querySelectorAll('.btn-aprovar-escala-inbox').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const solId = btn.getAttribute('data-sol-id');
+        if (!solId) return;
+
+        try {
+          const res = await EscalaService.atualizarStatusSolicitacao(solId, 'aprovado', 'Aprovado via Leitor de Mensagem');
+          closeModal(true);
+          if (res.success) {
+            showCustomAlert('✅ Solicitação APROVADA com sucesso! A escala foi atualizada no banco de dados.', 'Sucesso');
+          } else if (res.alreadyProcessed) {
+            showCustomAlert('Esta solicitação já foi finalizada anteriormente.', 'Aviso');
+          }
+          window.dispatchEvent(new CustomEvent('paxflow:new-message'));
+        } catch (err: any) {
+          showCustomAlert(err.message || 'Erro ao aprovar solicitação.', 'Erro');
+        }
+      });
+    });
+
+    modalOverlay.querySelectorAll('.btn-recusar-escala-inbox').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const solId = btn.getAttribute('data-sol-id');
+        if (!solId) return;
+
+        try {
+          const res = await EscalaService.atualizarStatusSolicitacao(solId, 'recusado', 'Recusado pela Gestão via Leitor de Mensagem');
+          closeModal(true);
+          if (res.success) {
+            showCustomAlert('❌ Solicitação RECUSADA.', 'Info');
+          }
+          window.dispatchEvent(new CustomEvent('paxflow:new-message'));
+        } catch (err: any) {
+          showCustomAlert(err.message || 'Erro ao recusar solicitação.', 'Erro');
+        }
+      });
+    });
+
+    modalOverlay.querySelectorAll('.btn-ver-na-escala').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        closeModal(true);
+        window.dispatchEvent(new CustomEvent('paxflow-navigate', {
+          detail: { page: 'inbox', activeTab: 'escala' }
+        }));
+      });
+    });
+
+    modalOverlay.querySelectorAll('.btn-aceitar-troca-inbox, .btn-aceitar-proposta-inbox').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const solId = btn.getAttribute('data-sol-id');
+        if (!solId) return;
+
+        const isProposta = btn.classList.contains('btn-aceitar-proposta-inbox');
+        const nextStatus = isProposta ? 'aprovado' : 'pendente_admin';
+        const obs = isProposta ? 'Aceito pelo consultor' : 'Aceito pelo colega, encaminhado à gestão';
+
+        try {
+          const res = await EscalaService.atualizarStatusSolicitacao(solId, nextStatus, obs);
+          closeModal(true);
+          if (res.success) {
+            showCustomAlert(isProposta ? '✅ Proposta aceita! Escala atualizada.' : '✅ Troca aceita! Encaminhada à gestão.', 'Sucesso');
+          }
+          window.dispatchEvent(new CustomEvent('paxflow:new-message'));
+        } catch (err: any) {
+          showCustomAlert(err.message || 'Erro ao responder solicitação.', 'Erro');
+        }
+      });
+    });
+
+    modalOverlay.querySelectorAll('.btn-recusar-troca-inbox, .btn-recusar-proposta-inbox').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const solId = btn.getAttribute('data-sol-id');
+        if (!solId) return;
+
+        try {
+          const res = await EscalaService.atualizarStatusSolicitacao(solId, 'recusado', 'Recusado pelo colega/consultor');
+          closeModal(true);
+          if (res.success) {
+            showCustomAlert('❌ Solicitação recusada.', 'Info');
+          }
+          window.dispatchEvent(new CustomEvent('paxflow:new-message'));
+        } catch (err: any) {
+          showCustomAlert(err.message || 'Erro ao recusar solicitação.', 'Erro');
         }
       });
     });

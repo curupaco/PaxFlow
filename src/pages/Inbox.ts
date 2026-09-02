@@ -386,9 +386,13 @@ export class InboxPage {
 
     const isUserAdmin = (this.perfil?.role || '').toLowerCase() === 'admin';
 
-    // 2. Filter by Consultant (Admin only)
+    // 2. Filter by Consultant (Admin dropdown)
     if (isUserAdmin && this.selectedConsultantFilter !== 'todos') {
-      result = result.filter(a => a.consultorId === this.selectedConsultantFilter || a.isReceivedByMe || a.isCreatedByMe || (a.type === 'escala_solicitacao' && !a.isSent));
+      result = result.filter(a => 
+        a.consultorId === this.selectedConsultantFilter || 
+        a.criadorId === this.selectedConsultantFilter || 
+        a.senderId === this.selectedConsultantFilter
+      );
     }
 
     // 2.5 Filter by Category (Summary Cards & Mobile Pills)
@@ -985,6 +989,12 @@ export class InboxPage {
                       } else if (a.type === 'pos-viagem-nps') {
                         badgeClass = 'bg-gradient-to-tr from-emerald-500 to-teal-600 dark:from-emerald-600 dark:to-teal-500';
                         badgeText = 'Pós-Viagem NPS ⭐';
+                      } else if (a.type === 'escala_solicitacao') {
+                        badgeClass = 'bg-gradient-to-tr from-violet-600 to-indigo-600 dark:from-violet-500 dark:to-indigo-500 text-white font-extrabold';
+                        badgeText = 'Escala 📅';
+                      } else if (a.type === 'direct_message') {
+                        badgeClass = 'bg-gradient-to-tr from-blue-500 to-indigo-600 dark:from-blue-600 dark:to-indigo-500 text-white font-extrabold';
+                        badgeText = 'Mensagem ✉️';
                       }
 
                       const isUnread = !a.arquivado && !readList.includes(a.id);
@@ -1360,6 +1370,14 @@ export class InboxPage {
                 badgeClass = 'bg-gradient-to-tr from-emerald-500 to-indigo-600';
                 badgeText = 'Campanha 🎯';
                 accentClass = 'bg-emerald-500';
+              } else if (a.type === 'escala_solicitacao') {
+                badgeClass = 'bg-gradient-to-tr from-violet-600 to-indigo-600 text-white font-extrabold';
+                badgeText = 'Escala 📅';
+                accentClass = 'bg-violet-500';
+              } else if (a.type === 'direct_message') {
+                badgeClass = 'bg-gradient-to-tr from-blue-500 to-indigo-600 text-white font-extrabold';
+                badgeText = 'Mensagem ✉️';
+                accentClass = 'bg-blue-500';
               } else if (a.type === 'manual') {
                 if (a.isCreatedByMe) {
                   badgeClass = 'bg-sky-600 text-white';
@@ -1485,6 +1503,14 @@ export class InboxPage {
                 badgeClass = 'bg-gradient-to-tr from-emerald-500 to-indigo-600';
                 badgeText = 'Campanha 🎯';
                 accentClass = 'bg-emerald-500';
+              } else if (a.type === 'escala_solicitacao') {
+                badgeClass = 'bg-gradient-to-tr from-violet-600 to-indigo-600 text-white font-extrabold';
+                badgeText = 'Escala 📅';
+                accentClass = 'bg-violet-500';
+              } else if (a.type === 'direct_message') {
+                badgeClass = 'bg-gradient-to-tr from-blue-500 to-indigo-600 text-white font-extrabold';
+                badgeText = 'Mensagem ✉️';
+                accentClass = 'bg-blue-500';
               } else if (a.type === 'manual') {
                 if (a.isCreatedByMe) {
                   badgeClass = 'bg-sky-600 text-white';

@@ -234,7 +234,7 @@ export class EscalaService {
       const { data, error } = await supabase
         .from('escala_banco_folgas')
         .select('detalhes_historico')
-        .eq('consultor_id', 'CONFIG_ORDEM_ESCALA')
+        .eq('consultor_nome', 'CONFIG_ORDEM_ESCALA')
         .maybeSingle();
 
       if (!error && data && data.detalhes_historico) {
@@ -254,8 +254,8 @@ export class EscalaService {
       const { error } = await supabase
         .from('escala_banco_folgas')
         .upsert({
-          id: 'CONFIG_ORDEM_ESCALA',
-          consultor_id: 'CONFIG_ORDEM_ESCALA',
+          id: '00000000-0000-0000-0000-000000000099',
+          consultor_id: '00000000-0000-0000-0000-000000000099',
           consultor_nome: 'CONFIG_ORDEM_ESCALA',
           equipe: 'Configuracao',
           saldo_dias: '0',

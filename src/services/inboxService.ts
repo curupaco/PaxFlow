@@ -994,9 +994,12 @@ export class InboxService {
           }
           // 1.2. Caso especial: Atendimento no Balcão (Co-Piloto) - Notificação Operacional
           else if (sol.tipo === 'atendimento_balcao') {
-            const isUserDestinatarioBalcao = sol.destinatario_id === user.id || (sol.destinatario_nome && perfil?.nome && isSameConsultantName(sol.destinatario_nome, perfil.nome));
-            if (isUserDestinatarioBalcao || isAdmin) {
+            const isUserDestinatarioBalcao = (sol.destinatario_id && String(sol.destinatario_id) === String(user.id)) || 
+              (sol.destinatario_nome && perfil?.nome && isSameConsultantName(sol.destinatario_nome, perfil.nome));
+            
+            if (isUserDestinatarioBalcao || isUserSolicitante) {
               shouldInclude = true;
+              if (isUserSolicitante && !isUserDestinatarioBalcao) isSentItem = true;
               cardTitle = '🤝 Atendimento no Balcão (Co-Piloto)';
               cardSender = sol.solicitante_nome || 'Consultor Co-Piloto';
               cardSubject = sol.motivo || `Seu cliente foi atendido presencialmente no balcão por ${sol.solicitante_nome}.`;
