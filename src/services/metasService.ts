@@ -91,11 +91,12 @@ export class MetasService {
     }
 
     try {
+      const tc = (periodo.tipo_calculo as string) === 'liquido' ? 'lucro' : periodo.tipo_calculo;
       const dbPeriodo = {
         nome: periodo.nome,
         data_inicio: periodo.data_inicio,
         data_fim: periodo.data_fim,
-        tipo_calculo: periodo.tipo_calculo,
+        tipo_calculo: tc,
         is_campanha: periodo.is_campanha,
         is_meta_loja: periodo.is_meta_loja || false,
         valor_meta: periodo.valor_meta || 0
@@ -200,7 +201,7 @@ export class MetasService {
         nome: periodo.nome,
         data_inicio: periodo.data_inicio,
         data_fim: periodo.data_fim,
-        tipo_calculo: periodo.tipo_calculo,
+        tipo_calculo: (periodo.tipo_calculo as string) === 'liquido' ? 'lucro' : periodo.tipo_calculo,
         is_campanha: periodo.is_campanha,
         is_meta_loja: periodo.is_meta_loja || false,
         valor_meta: periodo.valor_meta || 0,

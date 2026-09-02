@@ -722,7 +722,7 @@ export class CadastrosPage {
 
                         const tipoCalculoBadge = meta.tipo_calculo === 'bruto'
                           ? '<span class="inline-flex px-2 py-0.5 bg-blue-50 dark:bg-blue-950/45 text-blue-700 dark:text-blue-400 border border-blue-100 dark:border-blue-900/40 text-[9px] font-black uppercase rounded">Faturamento Bruto</span>'
-                          : '<span class="inline-flex px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/45 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/40 text-[9px] font-black uppercase rounded">Lucro Real</span>';
+                          : '<span class="inline-flex px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/45 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/40 text-[9px] font-black uppercase rounded">Rentabilidade</span>';
 
                         const tipoPeriodoBadge = meta.is_meta_loja
                           ? '<span class="inline-flex px-2 py-0.5 bg-teal-50 dark:bg-teal-950/45 text-teal-700 dark:text-teal-400 border border-teal-100 dark:border-teal-900/40 text-[9px] font-black uppercase rounded font-bold">Meta Loja</span>'
@@ -2429,7 +2429,7 @@ export class CadastrosPage {
               <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Cálculo baseado em *</label>
               <select id="select-meta-calculo" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800 dark:text-slate-100 font-semibold text-sm">
                 <option value="bruto" selected class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Faturamento Bruto (Total das Vendas)</option>
-                <option value="liquido" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Markup / Lucro Estimado</option>
+                <option value="lucro" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Rentabilidade</option>
               </select>
             </div>
 
@@ -2463,10 +2463,10 @@ export class CadastrosPage {
               <!-- Grid dinâmico de faixas -->
               <div class="grid grid-cols-12 gap-2 items-center bg-slate-50 dark:bg-slate-950/40 p-3 rounded-xl border border-slate-150/40 dark:border-slate-800/40 target-faixa-row">
                 <div class="col-span-3">
-                  <input type="text" placeholder="Nome Faixa" required class="input-faixa-nome w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg text-xs font-semibold text-slate-800 dark:text-slate-100" value="Bronze" />
+                  <input type="text" placeholder="Nome Faixa" class="input-faixa-nome w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg text-xs font-semibold text-slate-800 dark:text-slate-100" value="Bronze" />
                 </div>
                 <div class="col-span-3">
-                  <input type="text" placeholder="Valor Mín. (R$)" required class="input-faixa-valor w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg text-xs font-bold text-slate-800 dark:text-slate-100 text-right" value="10.000,00" />
+                  <input type="text" placeholder="Valor Mín. (R$)" class="input-faixa-valor w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg text-xs font-bold text-slate-800 dark:text-slate-100 text-right" value="10.000,00" />
                 </div>
                 <div class="col-span-4">
                   <input type="text" placeholder="Recompensa / Bônus" class="input-faixa-recompensa w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg text-xs font-medium text-slate-800 dark:text-slate-100" value="Recompensa Bronze" />
@@ -2526,10 +2526,10 @@ export class CadastrosPage {
       row.className = 'grid grid-cols-12 gap-2 items-center bg-slate-50 dark:bg-slate-950/40 p-3 rounded-xl border border-slate-150/40 dark:border-slate-800/40 target-faixa-row';
       row.innerHTML = `
         <div class="col-span-3">
-          <input type="text" placeholder="Nome Faixa" required class="input-faixa-nome w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg text-xs font-semibold text-slate-800 dark:text-slate-100" />
+          <input type="text" placeholder="Nome Faixa" class="input-faixa-nome w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg text-xs font-semibold text-slate-800 dark:text-slate-100" />
         </div>
         <div class="col-span-3">
-          <input type="text" placeholder="Valor Mín. (R$)" required class="input-faixa-valor w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg text-xs font-bold text-slate-800 dark:text-slate-100 text-right" value="0,00" />
+          <input type="text" placeholder="Valor Mín. (R$)" class="input-faixa-valor w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg text-xs font-bold text-slate-800 dark:text-slate-100 text-right" value="0,00" />
         </div>
         <div class="col-span-4">
           <input type="text" placeholder="Recompensa / Bônus" class="input-faixa-recompensa w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg text-xs font-medium text-slate-800 dark:text-slate-100" />
@@ -2726,7 +2726,7 @@ export class CadastrosPage {
               <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Cálculo baseado em *</label>
               <select id="select-meta-calculo" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800 dark:text-slate-100 font-semibold text-sm">
                 <option value="bruto" ${meta.tipo_calculo === 'bruto' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Faturamento Bruto (Total das Vendas)</option>
-                <option value="lucro" ${meta.tipo_calculo === 'lucro' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Markup / Lucro Estimado</option>
+                <option value="lucro" ${meta.tipo_calculo === 'lucro' || (meta.tipo_calculo as string) === 'liquido' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Rentabilidade</option>
               </select>
             </div>
 
