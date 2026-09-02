@@ -54,7 +54,7 @@ export class RelatoriosPage {
   private container: HTMLElement;
   private user: any = null;
   private perfil: PerfilConsultor | null = null;
-  private activeTab: 'desempenho' | 'prazos' | 'faturamento' | 'perdas' | 'previsoes' | 'fornecedores' | 'origens' | 'auditoria' | 'posvenda' | 'gamificacao' | 'embarques' | 'riscopreditivo' = 'desempenho';
+  private activeTab: 'desempenho' | 'prazos' | 'faturamento' | 'perdas' | 'previsoes' | 'origens' | 'auditoria' | 'posvenda' | 'gamificacao' | 'embarques' | 'riscopreditivo' = 'desempenho';
 
   // Controle de estado para grupos colapsáveis da barra lateral
   private collapsedGroups: { [key: string]: boolean } = {
@@ -508,9 +508,6 @@ export class RelatoriosPage {
                 <button data-tab="embarques" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 ${this.activeTab === 'embarques' ? 'report-tab-active' : 'text-slate-500'}">
                   ✈️ Relatório de Embarque
                 </button>
-                <button data-tab="fornecedores" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 ${this.activeTab === 'fornecedores' ? 'report-tab-active' : 'text-slate-500'}">
-                  🏢 Qualidade / Fornecedores
-                </button>
               </div>
             </div>
 
@@ -557,8 +554,6 @@ export class RelatoriosPage {
         return this.renderPerdas(data);
       case 'previsoes':
         return this.renderPrevisoes(data);
-      case 'fornecedores':
-        return this.renderFornecedores(data);
       case 'origens':
         return this.renderOrigens(data);
       case 'auditoria':
@@ -612,11 +607,13 @@ export class RelatoriosPage {
     });
     const tempoMedio = countDias > 0 ? Math.round(totalDias / countDias) : 0;
 
-    // Build SVG chart: Sales per consultant
+    // Build SVG chart: Sales per consultant (apenas usuários ativos)
     const consultantSales: Record<string, number> = {};
     data.viagens.forEach((v: any) => {
       const cId = v.consultor_id || v.consultorId || 'unknown';
-      const cNome = this.consultores.find(c => c.id === cId)?.nome || 'Outros';
+      const consultorObj = this.consultores.find(c => c.id === cId);
+      if (consultorObj && consultorObj.ativo === false) return; // Ignora inativos
+      const cNome = consultorObj?.nome || 'Outros';
       const vPayments = data.locPagamentos.filter((p: any) => 
         (p.viagem_id === v.id || p.viagemId === v.id) &&
         p.formas_recebimento &&
@@ -698,7 +695,7 @@ export class RelatoriosPage {
             </thead>
             <tbody>
               ${this.consultores
-                .filter(c => this.consultorIdFilter === 'todos' || c.id === this.consultorIdFilter)
+                .filter(c => c.ativo !== false && (this.consultorIdFilter === 'todos' || c.id === this.consultorIdFilter))
                 .map(c => {
                   const subOrc = data.orcamentos.filter((o: any) => (o.consultor_id || o.consultorId) === c.id);
                   const subVia = data.viagens.filter((v: any) => (v.consultor_id || v.consultorId) === c.id);
@@ -1191,139 +1188,7 @@ export class RelatoriosPage {
     `;
   }
 
-  // ==========================================
-  // VIEW: 6. QUALIDADE DE FORNECEDORES
-  // ==========================================
-  private renderFornecedores(data: any): string {
-    const totalReembolsos = data.reembolsos.length;
 
-    // Compile supplier stats from viagens & reembolsos
-    const supplierStats: Record<string, { totalSold: number, totalCusto: number, totalLucro: number, salesCount: number, refundCount: number, retentionTax: number }> = {};
-    
-    // Fill from viajes product suppliers
-    data.viagens.forEach((v: any) => {
-      if (v.produtos) {
-        v.produtos.forEach((p: any) => {
-          const supplier = p.fornecedor || 'Desconhecido';
-          if (!supplierStats[supplier]) {
-            supplierStats[supplier] = { totalSold: 0, totalCusto: 0, totalLucro: 0, salesCount: 0, refundCount: 0, retentionTax: 0 };
-          }
-          if (p.status !== 'cancelado') {
-            const venda = (p.valorVenda || 0);
-            const custo = (p.valorCusto || p.valor_custo || 0);
-            const comissao = (p.comissao || 0);
-            const markup = (p.markup || 0);
-            const rav = ((p.rav || 0) * 0.88);
-
-            supplierStats[supplier].totalSold += venda;
-            supplierStats[supplier].totalCusto += custo;
-            supplierStats[supplier].totalLucro += (comissao + markup + rav);
-            supplierStats[supplier].salesCount++;
-          }
-        });
-      }
-    });
-
-    // Fill refund statistics
-    data.reembolsos.forEach((r: any) => {
-      const supplier = r.produto?.fornecedor || 'Desconhecido';
-      if (!supplierStats[supplier]) {
-        supplierStats[supplier] = { totalSold: 0, totalCusto: 0, totalLucro: 0, salesCount: 0, refundCount: 0, retentionTax: 0 };
-      }
-      supplierStats[supplier].refundCount++;
-      supplierStats[supplier].retentionTax += (r.taxa_retencao || r.taxaRetencao || 0);
-    });
-
-    const tableRows = Object.entries(supplierStats).map(([fornecedor, stats]) => {
-      const refundRate = stats.salesCount > 0 ? Math.round((stats.refundCount / stats.salesCount) * 100) : 0;
-      const profitMargin = stats.totalSold > 0 ? Math.round((stats.totalLucro / stats.totalSold) * 100) : 0;
-      
-      // Determine risk score
-      let riskClass = 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30';
-      let riskLabel = 'Estável (OK)';
-      
-      if (refundRate > 25) {
-        riskClass = 'bg-rose-50 text-rose-600 dark:bg-rose-950/30';
-        riskLabel = 'Crítico (Alto Risco)';
-      } else if (refundRate > 10) {
-        riskClass = 'bg-amber-50 text-amber-600 dark:bg-amber-950/30';
-        riskLabel = 'Atenção (Alerta)';
-      }
-
-      return `
-        <tr class="border-b border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-300">
-          <td class="p-3 font-extrabold text-slate-800 dark:text-slate-100">${fornecedor}</td>
-          <td class="p-3 text-center">${stats.salesCount}</td>
-          <td class="p-3">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(stats.totalSold)}</td>
-          <td class="p-3">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(stats.totalCusto)}</td>
-          <td class="p-3 font-extrabold text-indigo-650">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(stats.totalLucro)}</td>
-          <td class="p-3 text-center font-extrabold text-indigo-600">${profitMargin}%</td>
-          <td class="p-3 text-center">${stats.refundCount}</td>
-          <td class="p-3 font-extrabold text-rose-500 text-center">${refundRate}%</td>
-          <td class="p-3">
-            <span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${riskClass}">
-              ${riskLabel}
-            </span>
-          </td>
-        </tr>
-      `;
-    }).join('');
-
-    return `
-      <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-3xl p-6 shadow-sm flex flex-col gap-6 print-full-width">
-        <h2 class="text-lg font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
-          <span>🏢 Qualidade dos Fornecedores e Cancelamentos</span>
-        </h2>
-
-        <!-- Metric Grid -->
-        <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 text-center">
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Ocorrências de Reembolsos</p>
-            <p class="text-lg font-black text-slate-700 dark:text-slate-200 mt-1">${totalReembolsos}</p>
-          </div>
-          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 text-center">
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Taxa de Ocorrência Global</p>
-            <p class="text-lg font-black text-rose-600 mt-1">${data.viagens.length > 0 ? Math.round((totalReembolsos / data.viagens.length) * 100) : 0}%</p>
-          </div>
-          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 text-center col-span-2 md:col-span-1">
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Prejuízo por Taxas de Retenção</p>
-            <p class="text-lg font-black text-rose-600 mt-1">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(
-              data.reembolsos.reduce((acc: number, r: any) => acc + (r.taxa_retencao || r.taxaRetencao || 0), 0)
-            )}</p>
-          </div>
-        </div>
-
-        <!-- Table suppliers -->
-        <div class="space-y-3">
-          <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider">Performance Operacional por Fornecedor</h3>
-          <div class="overflow-x-auto custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl">
-            <table class="w-full text-left border-collapse text-xs font-semibold">
-              <thead>
-                <tr class="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-widest font-black">
-                  <th class="p-3">Parceiro / Consolidador</th>
-                  <th class="p-3 text-center">Vendas</th>
-                  <th class="p-3">Faturamento</th>
-                  <th class="p-3">Custo</th>
-                  <th class="p-3">Lucro Líquido</th>
-                  <th class="p-3 text-center">Margem (%)</th>
-                  <th class="p-3 text-center">Reembolsos</th>
-                  <th class="p-3 text-center">Taxa Incidência</th>
-                  <th class="p-3">Grau de Risco</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${tableRows || `
-                  <tr>
-                    <td colspan="9" class="p-6 text-center text-slate-400 font-extrabold">Nenhum parceiro ou fornecedor cadastrado nas viagens ativas.</td>
-                  </tr>
-                `}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    `;
-  }
 
   // ==========================================
   // VIEW: 7. ORIGEM DE LEADS
@@ -2669,34 +2534,6 @@ export class RelatoriosPage {
       csvContent += `Solicitado;${values.solicitado};15%;${values.solicitado * 0.15}\n`;
       csvContent += `Em Andamento;${values.em_andamento};45%;${values.em_andamento * 0.45}\n`;
       csvContent += `Aguardando;${values.aguardando};75%;${values.aguardando * 0.75}\n`;
-    } else if (this.activeTab === 'fornecedores') {
-      csvContent += 'Fornecedor;Total Vendido (R$);Custo Total (R$);Lucro Liquido (R$);Margem Média (%);Reembolsos;Taxa Incidencia\n';
-      const stats: Record<string, { sold: number, custo: number, lucro: number, refCount: number, salesCount: number }> = {};
-      data.viagens.forEach((v: any) => {
-        if (v.produtos) {
-          v.produtos.forEach((p: any) => {
-            const supplier = p.fornecedor || 'Desconhecido';
-            if (!stats[supplier]) stats[supplier] = { sold: 0, custo: 0, lucro: 0, refCount: 0, salesCount: 0 };
-            if (p.status !== 'cancelado') {
-              stats[supplier].sold += (p.valorVenda || 0);
-              stats[supplier].custo += (p.valorCusto || p.valor_custo || 0);
-              stats[supplier].lucro += ((p.comissao || 0) + (p.markup || 0) + ((p.rav || 0) * 0.88));
-              stats[supplier].salesCount++;
-            }
-          });
-        }
-      });
-      data.reembolsos.forEach((r: any) => {
-        const supplier = r.produto?.fornecedor || 'Desconhecido';
-        if (!stats[supplier]) stats[supplier] = { sold: 0, custo: 0, lucro: 0, refCount: 0, salesCount: 0 };
-        stats[supplier].refCount++;
-      });
-
-      Object.entries(stats).forEach(([supp, item]) => {
-        const rate = item.salesCount > 0 ? Math.round((item.refCount / item.salesCount) * 100) : 0;
-        const margin = item.sold > 0 ? Math.round((item.lucro / item.sold) * 100) : 0;
-        csvContent += `"${supp}";${item.sold};${item.custo};${item.lucro};"${margin}%";${item.refCount};"${rate}%"\n`;
-      });
     } else if (this.activeTab === 'origens') {
       csvContent += 'Origem;Leads Criados;Leads Concluidos Ganhos;Taxa Conversao;Receita Realizada (R$);Tiquete Medio (R$)\n';
       const originStats: Record<string, { count: number, won: number, lost: number, revenue: number }> = {
@@ -2992,12 +2829,18 @@ export class RelatoriosPage {
 
       if (emRisco) {
         const consultor = this.consultores.find((c: any) => c.id === (o.consultor_id || o.consultorId));
+        const clienteObj = (data.clientes || []).find((cl: any) => cl.id === (o.cliente_id || o.clienteId));
+        const clienteNomeExibido = clienteObj?.nome || o.nome_cliente || o.nomeCliente || o.cliente_nome || o.clienteNome || 'Cliente sem nome';
+        const clienteTelExibido = clienteObj?.telefone || clienteObj?.contato || o.cliente_telefone || o.clienteTelefone || '';
+
         orcamentosEmRisco.push({
           ...o,
           diffHours,
           nivelRisco,
           motivoRisco,
           valor,
+          clienteNomeExibido,
+          clienteTelExibido,
           consultorNome: consultor?.nome || 'Consultor'
         });
       }
@@ -3120,7 +2963,7 @@ export class RelatoriosPage {
                   ${orcamentosEmRisco.map(o => `
                     <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition">
                       <td class="py-3 px-3">
-                        <span class="font-bold text-slate-800 dark:text-slate-100 block">${o.cliente_nome || o.clienteNome || 'Cliente'}</span>
+                        <span class="font-bold text-slate-800 dark:text-slate-100 block">${o.clienteNomeExibido}</span>
                         <span class="text-[10px] text-slate-400 font-mono">${o.codigo_ref || 'ORÇ'} • ${o.destino || 'Destino'}</span>
                       </td>
                       <td class="py-3 px-3">
@@ -3135,10 +2978,10 @@ export class RelatoriosPage {
                       <td class="py-3 px-3 text-slate-500">${o.consultorNome}</td>
                       <td class="py-3 px-3 text-right">
                         <div class="flex items-center justify-end gap-1.5">
-                          <button data-phone="${o.cliente_telefone || ''}" data-name="${o.cliente_nome || ''}" class="btn-risk-wa px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] rounded-lg transition shadow-sm" title="Disparar WhatsApp">
+                          <button data-phone="${o.clienteTelExibido}" data-name="${o.clienteNomeExibido}" class="btn-risk-wa px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] rounded-lg transition shadow-sm" title="Disparar WhatsApp">
                             💬 WhatsApp
                           </button>
-                          <button data-title="${o.cliente_nome || 'Orçamento'} - ${o.destino || ''}" data-consultor="${o.consultor_id}" class="btn-risk-remind px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[10px] rounded-lg transition shadow-sm" title="Criar Lembrete Urgente">
+                          <button data-title="${o.clienteNomeExibido} - ${o.destino || ''}" data-consultor="${o.consultor_id}" class="btn-risk-remind px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[10px] rounded-lg transition shadow-sm" title="Criar Lembrete Urgente">
                             ⏰ Lembrete
                           </button>
                         </div>
