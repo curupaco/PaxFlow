@@ -179,10 +179,44 @@ class App {
         this.renderAppShell();
         this.inicializarRealtimeProfile();
         this.router = new Router(document.getElementById('page-content')!);
-        const defaultPage = (this.perfil && this.perfil.role === 'admin') ? 'analytics' : 'inbox';
-        this.navigate(defaultPage);
+
+        // Detecção de rotas por hash na URL (ex: #inbox, #orcamentos, #inbox?extraId=xxx)
+        let initialPage = (this.perfil && this.perfil.role === 'admin') ? 'analytics' : 'inbox';
+        let initialExtraId: string | undefined = undefined;
+
+        const currentHash = window.location.hash;
+        if (currentHash && currentHash.length > 1) {
+          const hashClean = currentHash.substring(1);
+          const [pagePart, queryPart] = hashClean.split('?');
+          if (pagePart && ['analytics', 'inbox', 'orcamentos', 'next-trip', 'dashboard', 'clientes', 'reembolsos', 'relatorios', 'cadastros', 'configuracoes'].includes(pagePart)) {
+            initialPage = pagePart;
+          }
+          if (queryPart) {
+            const params = new URLSearchParams(queryPart);
+            initialExtraId = params.get('extraId') || params.get('alertId') || params.get('messageId') || params.get('id') || undefined;
+          }
+        }
+
+        this.navigate(initialPage, initialExtraId);
         this.checarNotificacoesCampanhaLogin();
         PushNotificationService.checkAndPromptAutoPermission(user.id);
+
+        // Escuta mudanças de Hash em tempo real quando o usuário clica numa notificação Push com o app já aberto
+        window.addEventListener('hashchange', () => {
+          const h = window.location.hash;
+          if (h && h.length > 1) {
+            const hClean = h.substring(1);
+            const [pPart, qPart] = hClean.split('?');
+            if (pPart && ['analytics', 'inbox', 'orcamentos', 'next-trip', 'dashboard', 'clientes', 'reembolsos', 'relatorios', 'cadastros', 'configuracoes'].includes(pPart)) {
+              let eId: string | undefined = undefined;
+              if (qPart) {
+                const params = new URLSearchParams(qPart);
+                eId = params.get('extraId') || params.get('alertId') || params.get('messageId') || params.get('id') || undefined;
+              }
+              this.navigate(pPart, eId);
+            }
+          }
+        });
       }
     } catch (err) {
       console.error('Erro ao inicializar app:', err);

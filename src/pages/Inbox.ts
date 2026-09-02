@@ -54,7 +54,7 @@ export class InboxPage {
   /**
    * Initializes the Inbox Cockpit page
    */
-  public async init(): Promise<void> {
+  public async init(extraId?: string): Promise<void> {
     try {
       // 1. Fetch current session and user profile
       const { user, perfil, error } = await getSessaoAtual();
@@ -87,6 +87,15 @@ export class InboxPage {
       this.render();
       this.setupEventListeners();
       this.setupGlobalEventListeners();
+
+      // 8. Se um ID de mensagem/alerta foi informado via notificação Push (deep link), abre o modal imediatamente
+      if (extraId) {
+        const targetAlert = this.alerts.find(a => a.id === extraId || a.id.endsWith(extraId) || a.targetId === extraId);
+        if (targetAlert) {
+          this.markAlertAsRead(targetAlert.id);
+          this.openEmailReaderModal(targetAlert);
+        }
+      }
 
     } catch (err: any) {
       console.error('Erro na inicialização da Caixa de Alertas:', err);
