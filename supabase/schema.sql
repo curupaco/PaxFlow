@@ -306,124 +306,106 @@ USING (
   )
 );
 
--- Políticas padrão de Clientes
-CREATE POLICY "Leitura de clientes para o próprio consultor ou admin" 
+CREATE POLICY "Leitura de clientes para todos autenticados" 
 ON public.clientes FOR SELECT TO authenticated 
-USING (
-  consultor_responsavel_id = auth.uid() 
-  OR EXISTS (
-    SELECT 1 FROM public.orcamentos 
-    WHERE orcamentos.cliente_id = clientes.id 
-    AND orcamentos.consultor_id = auth.uid()
-  )
-  OR EXISTS (
-    SELECT 1 FROM public.viagens 
-    WHERE viagens.cliente_id = clientes.id 
-    AND viagens.consultor_id = auth.uid()
-  )
-  OR (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin'
-);
+USING (true);
 
-CREATE POLICY "Inserir clientes para o próprio consultor ou admin" 
+CREATE POLICY "Inserir clientes para autenticados" 
 ON public.clientes FOR INSERT TO authenticated 
-WITH CHECK (auth.uid() = consultor_responsavel_id OR (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin');
+WITH CHECK (true);
 
-CREATE POLICY "Atualizar clientes para o próprio consultor ou admin" 
+CREATE POLICY "Atualizar clientes para autenticados" 
 ON public.clientes FOR UPDATE TO authenticated 
-USING (auth.uid() = consultor_responsavel_id OR (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin');
+USING (true);
 
 CREATE POLICY "Excluir clientes apenas por admins" 
 ON public.clientes FOR DELETE TO authenticated 
 USING ((SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin');
 
 -- Políticas padrão de Viagens
-CREATE POLICY "Leitura de viagens para o próprio consultor ou admin" 
+CREATE POLICY "Leitura de viagens para todos autenticados" 
 ON public.viagens FOR SELECT TO authenticated 
-USING (consultor_id = auth.uid() OR (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin');
+USING (true);
 
-CREATE POLICY "Inserir viagens para o próprio consultor ou admin" 
+CREATE POLICY "Inserir viagens para autenticados" 
 ON public.viagens FOR INSERT TO authenticated 
-WITH CHECK (auth.uid() = consultor_id OR (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin');
+WITH CHECK (true);
 
-CREATE POLICY "Atualizar viagens para o próprio consultor ou admin" 
+CREATE POLICY "Atualizar viagens para autenticados" 
 ON public.viagens FOR UPDATE TO authenticated 
-USING (auth.uid() = consultor_id OR (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin');
+USING (true);
 
 CREATE POLICY "Excluir viagens apenas por admins" 
 ON public.viagens FOR DELETE TO authenticated 
 USING ((SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin');
 
 -- Políticas padrão de Produtos de Viagem
-CREATE POLICY "Leitura de produtos para consultor da viagem ou admin" 
+CREATE POLICY "Leitura de produtos de viagem para todos autenticados" 
 ON public.produtos_viagem FOR SELECT TO authenticated 
-USING (EXISTS (SELECT 1 FROM public.viagens WHERE viagens.id = viagem_id AND (viagens.consultor_id = auth.uid() OR (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin')));
+USING (true);
 
-CREATE POLICY "Inserir produtos de viagens permitidas" 
+CREATE POLICY "Inserir produtos de viagem para autenticados" 
 ON public.produtos_viagem FOR INSERT TO authenticated 
-WITH CHECK (EXISTS (SELECT 1 FROM public.viagens WHERE viagens.id = viagem_id AND (viagens.consultor_id = auth.uid() OR (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin')));
+WITH CHECK (true);
 
-CREATE POLICY "Atualizar produtos de viagens permitidas" 
+CREATE POLICY "Atualizar produtos de viagem para autenticados" 
 ON public.produtos_viagem FOR UPDATE TO authenticated 
-USING (EXISTS (SELECT 1 FROM public.viagens WHERE viagens.id = viagem_id AND (viagens.consultor_id = auth.uid() OR (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin')));
+USING (true);
 
-CREATE POLICY "Excluir produtos de viagens permitidas" 
+CREATE POLICY "Excluir produtos de viagem para autenticados" 
 ON public.produtos_viagem FOR DELETE TO authenticated 
-USING (EXISTS (SELECT 1 FROM public.viagens WHERE viagens.id = viagem_id AND (viagens.consultor_id = auth.uid() OR (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin')));
+USING (true);
 
 -- Políticas padrão de Reembolsos
-CREATE POLICY "Leitura de reembolsos para consultor solicitante/viagem ou admin" 
+CREATE POLICY "Leitura de reembolsos para todos autenticados" 
 ON public.reembolsos FOR SELECT TO authenticated 
-USING (
-  consultor_solicitante_id = auth.uid() OR 
-  EXISTS (SELECT 1 FROM public.viagens WHERE viagens.id = viagem_id AND viagens.consultor_id = auth.uid()) OR
-  (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin'
-);
+USING (true);
 
-CREATE POLICY "Inserir reembolsos para o próprio consultor ou admin" 
+CREATE POLICY "Inserir reembolsos para autenticados" 
 ON public.reembolsos FOR INSERT TO authenticated 
-WITH CHECK (auth.uid() = consultor_solicitante_id OR (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin');
+WITH CHECK (true);
 
-CREATE POLICY "Atualizar reembolsos para o próprio consultor ou admin" 
+CREATE POLICY "Atualizar reembolsos para autenticados" 
 ON public.reembolsos FOR UPDATE TO authenticated 
-USING (auth.uid() = consultor_solicitante_id OR (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin');
+USING (true);
 
 CREATE POLICY "Excluir reembolsos apenas por admins" 
 ON public.reembolsos FOR DELETE TO authenticated 
 USING ((SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin');
 
--- Orçamentos, Lembretes, Todo
-CREATE POLICY "Leitura de orçamentos para o próprio consultor ou admin" 
+-- Orçamentos
+CREATE POLICY "Leitura de orçamentos para todos autenticados" 
 ON public.orcamentos FOR SELECT TO authenticated 
-USING (consultor_id = auth.uid() OR (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin');
+USING (true);
 
-CREATE POLICY "Inserir orçamentos para o próprio consultor ou admin" 
+CREATE POLICY "Inserir orçamentos para autenticados" 
 ON public.orcamentos FOR INSERT TO authenticated 
-WITH CHECK (auth.uid() = consultor_id OR (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin');
+WITH CHECK (true);
 
-CREATE POLICY "Atualizar orçamentos para o próprio consultor ou admin" 
+CREATE POLICY "Atualizar orçamentos para autenticados" 
 ON public.orcamentos FOR UPDATE TO authenticated 
-USING (auth.uid() = consultor_id OR (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin');
+USING (true);
 
 CREATE POLICY "Excluir orçamentos apenas por admins" 
 ON public.orcamentos FOR DELETE TO authenticated 
 USING ((SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin');
 
 -- Lembretes
-CREATE POLICY "Leitura de lembretes para o próprio consultor, criador ou admin" 
+CREATE POLICY "Leitura de lembretes para todos autenticados" 
 ON public.lembretes FOR SELECT TO authenticated 
-USING (consultor_id = auth.uid() OR criador_id = auth.uid() OR (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin');
+USING (true);
 
-CREATE POLICY "Inserir lembretes para o próprio consultor, criador ou admin" 
+CREATE POLICY "Inserir lembretes para autenticados" 
 ON public.lembretes FOR INSERT TO authenticated 
-WITH CHECK (auth.uid() = consultor_id OR auth.uid() = criador_id OR (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin');
+WITH CHECK (true);
 
-CREATE POLICY "Atualizar lembretes para o próprio consultor, criador ou admin" 
+CREATE POLICY "Atualizar lembretes para autenticados" 
 ON public.lembretes FOR UPDATE TO authenticated 
-USING (auth.uid() = consultor_id OR auth.uid() = criador_id OR (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin');
+USING (true);
 
-CREATE POLICY "Excluir lembretes para o próprio consultor, criador ou admin" 
+CREATE POLICY "Excluir lembretes para autenticados" 
 ON public.lembretes FOR DELETE TO authenticated 
-USING (auth.uid() = consultor_id OR auth.uid() = criador_id OR (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin');
+USING (true);
 
 -- Todo
 CREATE POLICY "Acesso total de colunas todo para autenticados" 

@@ -729,7 +729,7 @@ export class InboxService {
         }
 
         // Filter by consultant responsibility if not admin
-        if (perfil && perfil.role !== 'admin' && v.consultor_id !== user.id) {
+        if (perfil && perfil.role !== 'admin' && v.consultor_id !== user.id && v.consultor_responsavel_id !== user.id) {
           return;
         }
 

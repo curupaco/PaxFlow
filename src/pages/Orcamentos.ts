@@ -184,28 +184,9 @@ export class OrcamentosPage {
    */
   private async loadClientes(): Promise<void> {
     try {
-      if (this.isFallbackMode) {
-        this.loadClientesFromLocalStorage();
-        return;
-      }
       this.clientes = await OrcamentosService.loadClientes();
-      localStorage.setItem('paxflow-clientes-backup', JSON.stringify(this.clientes));
     } catch (err: any) {
-      console.warn('Erro ao carregar clientes para autocompletar (usando backup local):', err.message);
-      this.loadClientesFromLocalStorage();
-    }
-  }
-
-  private loadClientesFromLocalStorage(): void {
-    const saved = localStorage.getItem('paxflow-clientes-backup');
-    if (saved) {
-      try {
-        this.clientes = JSON.parse(saved);
-      } catch (e) {
-        console.error('Erro ao fazer parse dos clientes locais:', e);
-        this.clientes = [];
-      }
-    } else {
+      console.warn('Erro ao carregar clientes para autocompletar:', err.message);
       this.clientes = [];
     }
   }
