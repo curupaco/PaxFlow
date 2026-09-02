@@ -90,10 +90,23 @@ export class InboxPage {
 
       // 8. Se um ID de mensagem/alerta foi informado via notificação Push (deep link), abre o modal imediatamente
       if (extraId) {
-        const targetAlert = this.alerts.find(a => a.id === extraId || a.id.endsWith(extraId) || a.targetId === extraId);
+        const cleanId = extraId.trim();
+        const targetAlert = this.alerts.find(a => 
+          a.id === cleanId || 
+          a.id.includes(cleanId) || 
+          cleanId.includes(a.id) ||
+          a.targetId === cleanId
+        );
         if (targetAlert) {
           this.markAlertAsRead(targetAlert.id);
           this.openEmailReaderModal(targetAlert);
+        } else if (this.alerts.length > 0) {
+          // Fallback: abre a notificação mais recente do topo da lista
+          const firstMsg = this.alerts.find(a => a.type === 'direct_message' || a.type === 'mention') || this.alerts[0];
+          if (firstMsg) {
+            this.markAlertAsRead(firstMsg.id);
+            this.openEmailReaderModal(firstMsg);
+          }
         }
       }
 

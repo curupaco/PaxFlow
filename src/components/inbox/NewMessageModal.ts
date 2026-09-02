@@ -473,9 +473,10 @@ export class NewMessageModal {
           arquivada: false
         }));
 
-        const { error: notifErr } = await supabase
+        const { data: createdNotifs, error: notifErr } = await supabase
           .from('notificacoes')
-          .insert(notifInserts);
+          .insert(notifInserts)
+          .select();
 
         if (notifErr) throw notifErr;
 
@@ -483,10 +484,12 @@ export class NewMessageModal {
         const senderProfile = profiles.find(p => p.id === currentUser.id);
         const senderNome = senderProfile?.nome || 'Consultor';
         for (const recipientId of uniqueRecipients) {
+          const userNotif = (createdNotifs || []).find(n => n.user_id === recipientId);
+          const notifTargetId = userNotif ? `mention-${userNotif.id}` : msgData.id;
           PushSenderService.sendToUser(recipientId, {
             title: `💬 Nova Mensagem: ${assunto}`,
             body: `De: ${senderNome}`,
-            url: '/#inbox'
+            url: `/#inbox?extraId=${notifTargetId}`
           });
         }
 
