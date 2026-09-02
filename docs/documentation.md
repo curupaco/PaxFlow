@@ -598,7 +598,7 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 ### Por que Supabase?
 
 - **Substitui Firebase** com código aberto e PostgreSQL real
-- **RLS (Row Level Security)**: cada consultor vê apenas seus dados
+- **Modelo Agência Colaborativa & RLS (Row Level Security)**: permite leitura e edição colaborativa de registros no PostgreSQL entre usuários autenticados da agência, eliminando perdas de dados em joins relacionais. O controle de isolamento de privacidade por consultor é gerenciado na camada de aplicação (Software-Level RBAC), mantendo a navegação local privada e a Pesquisa Global (Modo Co-Piloto) totalmente funcional para atendimento colaborativo de balcão.
 - **Realtime nativo**: alterações refletem instantaneamente em todos os usuários
 - **Storage Buckets**: para armazenamento seguro de arquivos e imagens com suporte a links assinados seguros
 - **Custo previsível**: plano gratuito generoso; plano pago apenas quando escalar
@@ -608,8 +608,8 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 ## 6. Segurança e Conformidade
 
 - **Autenticação**: Supabase Auth com hash bcrypt, sessões JWT, recuperação de senha
-- **Autorização**: controle por role (admin/consultor) em toda a aplicação
-- **RLS (Row Level Security)**: políticas no PostgreSQL garantem que consultores acessem apenas registros permitidos
+- **Autorização & Governança**: controle por perfil (admin vs consultor) em toda a aplicação
+- **Modelo Agência Colaborativa & RLS (Row Level Security)**: políticas no PostgreSQL garantem acesso seguro para usuários autenticados da agência. A privacidade individual de cada consultor é gerenciada no nível de software (filtro por consultor por padrão nas telas locais), enquanto a Pesquisa Global Co-Piloto atua no suporte colaborativo em toda a base.
 - **Dados em trânsito**: todas as comunicações via HTTPS
 - **Armazenamento Seguro**: Supabase Storage com RLS restrito. Documentos e imagens do passageiro só podem ser acessados via links assinados (Signed URLs) expiráveis gerados sob demanda
 - **Modo offline**: dados sensíveis nunca saem do navegador sem criptografia; o fallback localStorage é temporário
@@ -730,7 +730,7 @@ O sistema foi projetado para uso online com Supabase. No entanto, os módulos de
 
 ### Os dados dos meus clientes estão seguros?
 
-Sim. A autenticação é feita por Supabase Auth (bcrypt + JWT). As permissões são controladas por Row Level Security diretamente no PostgreSQL. Documentos são armazenados de forma isolada e segura no Supabase Storage do próprio cliente, protegidos por RLS.
+Sim. A autenticação é feita por Supabase Auth (bcrypt + JWT). No banco de dados, o PaxFlow opera sob o Modelo Agência Colaborativa com RLS flexível para integridade no PostgreSQL e isolamento de privacidade gerenciado no nível de software (Software-Level RBAC). Documentos e fotos são armazenados no Supabase Storage e acessados de forma isolada através de links assinados (Signed URLs) expiráveis.
 
 ### Posso personalizar o PaxFlow?
 
