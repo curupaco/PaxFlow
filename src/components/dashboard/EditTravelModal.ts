@@ -2143,40 +2143,7 @@ export class EditTravelModal {
       }
     }
 
-    if (formasAtivas.length === 0) {
-      const savedFormas = localStorage.getItem('paxflow-formas-recebimento');
-      if (savedFormas) {
-        try {
-          formasAtivas = JSON.parse(savedFormas).filter((f: any) => f.ativo);
-          const nomesFormas = formasAtivas.map(f => (f.nome || '').trim().toUpperCase());
-          if (!nomesFormas.includes('DESCONTO')) {
-            formasAtivas.push({ id: 'forma-desconto', nome: 'DESCONTO', icone: '🏷️', ativo: true });
-          }
-          if (!nomesFormas.includes('PREJUÍZO') && !nomesFormas.includes('PREJUIZO')) {
-            formasAtivas.push({ id: 'forma-prejuizo', nome: 'PREJUÍZO', icone: '📉', ativo: true });
-          }
-        } catch (e) {}
-      } else {
-        formasAtivas = [
-          { id: 'forma-pix', nome: 'PIX', icone: '🏦', ativo: true },
-          { id: 'forma-credito', nome: 'Cartão de Crédito', icone: '💳', ativo: true },
-          { id: 'forma-dinheiro', nome: 'Dinheiro', icone: '💵', ativo: true },
-          { id: 'forma-boleto', nome: 'Boleto Bancário', icone: '🧾', ativo: true },
-          { id: 'forma-desconto', nome: 'DESCONTO', icone: '🏷️', ativo: true },
-          { id: 'forma-prejuizo', nome: 'PREJUÍZO', icone: '📉', ativo: true }
-        ];
-      }
-    }
-
-    const localPagamentosSaved = localStorage.getItem(`paxflow-loc-pagamentos-${tripId}`);
-    if (localPagamentosSaved) {
-      try {
-        const parsed = JSON.parse(localPagamentosSaved);
-        if (locPagamentos.length === 0) {
-          locPagamentos = parsed;
-        }
-      } catch (e) {}
-    }
+    // Formas de recebimento e locPagamentos são obtidos estritamente do banco de dados (Supabase)
 
     const localConferenciasSaved = localStorage.getItem(`paxflow-loc-conferencias-${tripId}`);
     if (localConferenciasSaved) {
@@ -2743,13 +2710,14 @@ export class EditTravelModal {
     locPagamentos: any[]
   ): void {
     // 1. Filtrar pagamentos temporários desse LOC
+    const temPagamentosSalvos = locPagamentos.some(lp => (lp.codigo_localizador || '').trim().toUpperCase() === locKey.toUpperCase());
     let tempPagamentos = locPagamentos
       .filter(lp => (lp.codigo_localizador || '').trim().toUpperCase() === locKey.toUpperCase())
       .map(lp => ({
         id: lp.id || 'local_' + Math.random().toString(),
         forma_recebimento_id: lp.forma_recebimento_id,
         valor: Number(lp.valor) || 0,
-        formas_recebimento: lp.formas_recebimento || formasAtivas.find(f => f.id === lp.forma_recebimento_id)
+        formas_recebimento: lp.formas_recebimento || formasAtivas.find(f => f.id === lp.forma_recebimento_id) || null
       }));
 
     // 2. Criar overlay do modal
@@ -2785,8 +2753,9 @@ export class EditTravelModal {
       }
 
       listContainer.innerHTML = tempPagamentos.map(tp => {
-        const nomeForma = tp.formas_recebimento?.nome || 'Forma Desconhecida';
-        const iconeForma = tp.formas_recebimento?.icone || '💰';
+        const formaObj = tp.formas_recebimento || formasAtivas.find(f => f.id === tp.forma_recebimento_id);
+        const nomeForma = formaObj?.nome || 'Forma Indefinida/Removida';
+        const iconeForma = formaObj?.icone || '⚠️';
         return `
           <div class="flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 rounded-xl">
             <div class="flex items-center gap-2">
@@ -2823,10 +2792,10 @@ export class EditTravelModal {
         }
       }
 
-      // Habilita salvar se o saldo pendente for zero OU se a lista de pagamentos estiver vazia (para permitir remover todos)
+      // Habilita SALVAR apenas se houver pelo menos 1 forma adicionada E pendente == 0
       const btnSalvar = document.getElementById('btn-pag-loc-salvar') as HTMLButtonElement;
       if (btnSalvar) {
-        btnSalvar.disabled = Math.abs(pendente) > 0.01 && tempPagamentos.length > 0;
+        btnSalvar.disabled = tempPagamentos.length === 0 || Math.abs(pendente) > 0.01;
       }
 
       // Sugere o saldo pendente como valor padrão no input
@@ -2890,7 +2859,12 @@ export class EditTravelModal {
         </div>
         
         <!-- Ações -->
-        <div class="flex gap-3 border-t border-slate-100 dark:border-slate-800 pt-4 font-sans">
+        <div class="flex flex-wrap gap-2.5 border-t border-slate-100 dark:border-slate-800 pt-4 font-sans">
+          ${temPagamentosSalvos ? `
+            <button id="btn-pag-loc-limpar" type="button" class="py-2.5 px-3 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 dark:hover:bg-rose-950/50 text-rose-600 dark:text-rose-400 font-extrabold text-[10px] tracking-wider rounded-lg transition uppercase border border-rose-200 dark:border-rose-900/40 shadow-sm" title="Remover todos os pagamentos salvos deste LOC">
+              🗑️ Limpar Todos
+            </button>
+          ` : ''}
           <button id="btn-pag-loc-salvar" type="button" disabled class="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-200 dark:disabled:bg-slate-800 disabled:text-slate-400 dark:disabled:text-slate-600 text-white font-extrabold text-[10px] tracking-wider rounded-lg shadow-sm transition uppercase">
             Salvar
           </button>
@@ -2908,6 +2882,35 @@ export class EditTravelModal {
 
     document.getElementById('btn-close-pagamentos-loc-modal')?.addEventListener('click', fecharModal);
     document.getElementById('btn-pag-loc-cancelar')?.addEventListener('click', fecharModal);
+
+    // Botão Limpar Todos os Pagamentos do LOC
+    if (temPagamentosSalvos) {
+      document.getElementById('btn-pag-loc-limpar')?.addEventListener('click', async () => {
+        const confirmResult = await showCustomConfirm(
+          `Deseja realmente remover todos os pagamentos salvos do LOC "${locKey}"? O LOC retornará ao estado "Sem Pagamento".`,
+          'Limpar Todos os Pagamentos',
+          { isDestructive: true, confirmText: 'Limpar Todos', cancelText: 'Cancelar' }
+        );
+        if (confirmResult) {
+          try {
+            if (!this.options.isFallbackMode) {
+              const { error } = await supabase
+                .from('loc_pagamentos')
+                .delete()
+                .eq('viagem_id', this.tripId)
+                .eq('codigo_localizador', locKey);
+              if (error) throw error;
+            }
+            this.options.showToast(`Pagamentos do LOC "${locKey}" removidos com sucesso!`, 'success');
+            fecharModal();
+            await this.loadAndRenderProdutosViagem(this.tripId);
+          } catch (err: any) {
+            console.error('Erro ao limpar pagamentos do LOC:', err);
+            this.options.showToast('Erro ao remover pagamentos do LOC.', 'error', err);
+          }
+        }
+      });
+    }
 
     // Máscara monetária pro input
     const valInput = document.getElementById('pag-loc-valor-input') as HTMLInputElement;
@@ -2964,11 +2967,12 @@ export class EditTravelModal {
       try {
         if (!this.options.isFallbackMode) {
           // Deleta antigos
-          await supabase
+          const { error: delErr } = await supabase
             .from('loc_pagamentos')
             .delete()
             .eq('viagem_id', this.tripId)
             .eq('codigo_localizador', locKey);
+          if (delErr) throw delErr;
 
           // Insere novos
           if (tempPagamentos.length > 0) {
@@ -2978,44 +2982,21 @@ export class EditTravelModal {
               forma_recebimento_id: tp.forma_recebimento_id,
               valor: tp.valor
             }));
-            const { error } = await supabase
+            const { error: insErr } = await supabase
               .from('loc_pagamentos')
               .insert(insertPayload);
 
-            if (error) throw error;
+            if (insErr) throw insErr;
           }
         }
 
-        // Salva localmente (fallback ou sincronização)
-        const localSavedKey = `paxflow-loc-pagamentos-${this.tripId}`;
-        const allSavedLocal = localStorage.getItem(localSavedKey);
-        let localList: any[] = [];
-        if (allSavedLocal) {
-          try { localList = JSON.parse(allSavedLocal); } catch (e) {}
-        }
-        // Remove os do LOC atual
-        localList = localList.filter(lp => (lp.codigo_localizador || '').trim().toUpperCase() !== locKey.toUpperCase());
-        // Adiciona os novos
-        tempPagamentos.forEach(tp => {
-          localList.push({
-            viagem_id: this.tripId,
-            codigo_localizador: locKey,
-            forma_recebimento_id: tp.forma_recebimento_id,
-            valor: tp.valor,
-            formas_recebimento: tp.formas_recebimento
-          });
-        });
-        localStorage.setItem(localSavedKey, JSON.stringify(localList));
-
         this.options.showToast('Formas de pagamento salvas com sucesso!', 'success');
         fecharModal();
-        // Recarrega a renderização dos produtos e grupos
         await this.loadAndRenderProdutosViagem(this.tripId);
       } catch (err: any) {
         console.error('Erro ao salvar formas de pagamento do LOC:', err);
-        this.options.showToast('Erro ao salvar formas de pagamento.', 'error', err);
-        btnSalvar.disabled = false;
-        btnSalvar.textContent = 'Salvar';
+        this.options.showToast('Erro ao salvar formas de pagamento no banco de dados.', 'error', err);
+        updateUI();
       }
     });
 

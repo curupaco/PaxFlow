@@ -314,7 +314,6 @@ export class ComercialDashboard {
             .select('*, formas_recebimento(*)');
           if (dataPags) {
             this.locPagamentos = dataPags;
-            localStorage.setItem('paxflow-loc-pagamentos-dashboard', JSON.stringify(this.locPagamentos));
           }
         } catch (err) {
           console.warn('Erro ao carregar pagamentos no dashboard:', err);
@@ -418,16 +417,7 @@ export class ComercialDashboard {
       ];
     }
 
-    const savedPags = localStorage.getItem('paxflow-loc-pagamentos-dashboard');
-    if (savedPags) {
-      try {
-        this.locPagamentos = JSON.parse(savedPags);
-      } catch (e) {
-        this.locPagamentos = [];
-      }
-    } else {
-      this.locPagamentos = [];
-    }
+    this.locPagamentos = [];
   }
 
   /**

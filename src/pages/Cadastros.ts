@@ -1293,50 +1293,16 @@ export class CadastrosPage {
         .order('nome', { ascending: true });
 
       if (error) {
-        console.warn('Erro ao carregar formas do Supabase, carregando local:', error);
-        this.loadFormasRecebimentoLocal();
+        console.error('Erro ao carregar formas de recebimento do Supabase:', error);
+        this.formasRecebimento = [];
+        this.showToast('Erro ao carregar formas de recebimento do servidor.', 'error');
       } else {
         this.formasRecebimento = data || [];
-        localStorage.setItem('paxflow-formas-recebimento', JSON.stringify(this.formasRecebimento));
       }
     } catch (err: any) {
-      console.warn('Erro ao buscar formas de recebimento, carregando local:', err);
-      this.loadFormasRecebimentoLocal();
-    }
-  }
-
-  private loadFormasRecebimentoLocal(): void {
-    const saved = localStorage.getItem('paxflow-formas-recebimento');
-    if (saved) {
-      try {
-        this.formasRecebimento = JSON.parse(saved);
-        // Garante que DESCONTO e PREJUÍZO estejam presentes no array do localStorage
-        const nomesFormas = this.formasRecebimento.map(f => (f.nome || '').trim().toUpperCase());
-        let alterou = false;
-        if (!nomesFormas.includes('DESCONTO')) {
-          this.formasRecebimento.push({ id: 'forma-desconto', nome: 'DESCONTO', icone: '🏷️', ativo: true });
-          alterou = true;
-        }
-        if (!nomesFormas.includes('PREJUÍZO') && !nomesFormas.includes('PREJUIZO')) {
-          this.formasRecebimento.push({ id: 'forma-prejuizo', nome: 'PREJUÍZO', icone: '📉', ativo: true });
-          alterou = true;
-        }
-        if (alterou) {
-          localStorage.setItem('paxflow-formas-recebimento', JSON.stringify(this.formasRecebimento));
-        }
-      } catch (e) {
-        this.formasRecebimento = [];
-      }
-    } else {
-      this.formasRecebimento = [
-        { id: 'forma-pix', nome: 'PIX', icone: '🏦', ativo: true },
-        { id: 'forma-credito', nome: 'Cartão de Crédito', icone: '💳', ativo: true },
-        { id: 'forma-dinheiro', nome: 'Dinheiro', icone: '💵', ativo: true },
-        { id: 'forma-boleto', nome: 'Boleto Bancário', icone: '🧾', ativo: true },
-        { id: 'forma-desconto', nome: 'DESCONTO', icone: '🏷️', ativo: true },
-        { id: 'forma-prejuizo', nome: 'PREJUÍZO', icone: '📉', ativo: true }
-      ];
-      localStorage.setItem('paxflow-formas-recebimento', JSON.stringify(this.formasRecebimento));
+      console.error('Erro ao buscar formas de recebimento:', err);
+      this.formasRecebimento = [];
+      this.showToast('Erro ao buscar formas de recebimento do servidor.', 'error');
     }
   }
 
@@ -1357,9 +1323,6 @@ export class CadastrosPage {
 
     try {
       if (this.editandoFormaId) {
-        if (this.editandoFormaId.startsWith('forma_local_') || this.formasRecebimento.find(f => f.id === this.editandoFormaId)?.id.startsWith('forma_local_')) {
-          throw new Error('Edição local apenas');
-        }
         const { error } = await supabase
           .from('formas_recebimento')
           .update(payload)
@@ -1382,33 +1345,8 @@ export class CadastrosPage {
       this.render();
       this.setupEventListeners();
     } catch (err: any) {
-      console.warn('Salvando forma localmente devido a falha ou ID local:', err);
-      let localFormas = [...this.formasRecebimento];
-      if (this.editandoFormaId) {
-        localFormas = localFormas.map(f => {
-          if (f.id === this.editandoFormaId) {
-            return { ...f, nome: nomeVal, icone: iconeVal };
-          }
-          return f;
-        });
-        this.showToast('Forma de recebimento atualizada localmente!', 'success');
-      } else {
-        const novaForma = {
-          id: 'forma_local_' + Date.now().toString(),
-          nome: nomeVal,
-          icone: iconeVal,
-          ativo: true
-        };
-        localFormas.push(novaForma);
-        this.showToast('Forma de recebimento cadastrada localmente!', 'success');
-      }
-      this.formasRecebimento = localFormas;
-      localStorage.setItem('paxflow-formas-recebimento', JSON.stringify(localFormas));
-
-      this.editandoFormaId = null;
-      this.selectedIconForma = '💵';
-      this.render();
-      this.setupEventListeners();
+      console.error('Erro ao salvar forma de recebimento no Supabase:', err);
+      this.showToast('Erro ao salvar forma de recebimento no banco de dados.', 'error', err);
     }
   }
 
@@ -1419,9 +1357,6 @@ export class CadastrosPage {
     }
     const novoStatus = !forma.ativo;
     try {
-      if (forma.id.startsWith('forma_local_')) {
-        throw new Error('Forma local');
-      }
       const { error } = await supabase
         .from('formas_recebimento')
         .update({ ativo: novoStatus })
@@ -1434,19 +1369,8 @@ export class CadastrosPage {
       this.render();
       this.setupEventListeners();
     } catch (err: any) {
-      console.warn('Erro ao atualizar no Supabase, alterando local:', err);
-      const localFormas = this.formasRecebimento.map(f => {
-        if (f.id === forma.id) {
-          return { ...f, ativo: novoStatus };
-        }
-        return f;
-      });
-      this.formasRecebimento = localFormas;
-      localStorage.setItem('paxflow-formas-recebimento', JSON.stringify(localFormas));
-      this.showToast(`Forma de recebimento ${novoStatus ? 'ativada' : 'desativada'} localmente!`, 'success');
-
-      this.render();
-      this.setupEventListeners();
+      console.error('Erro ao atualizar forma de recebimento no Supabase:', err);
+      this.showToast('Erro ao atualizar forma de recebimento no banco de dados.', 'error', err);
     }
   }
 
