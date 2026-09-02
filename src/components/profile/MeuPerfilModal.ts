@@ -124,20 +124,26 @@ export class MeuPerfilModal {
 
             <!-- Card de Notificações Push PWA -->
             <div class="border-t border-slate-100 dark:border-slate-800 pt-3.5">
-              <div class="p-3.5 bg-gradient-to-br from-indigo-50/60 to-purple-50/30 dark:from-indigo-950/20 dark:to-purple-950/10 border border-indigo-100 dark:border-indigo-900/30 rounded-xl flex items-center justify-between gap-3">
-                <div class="space-y-0.5">
-                  <span class="block text-xs font-black text-indigo-900 dark:text-indigo-300 flex items-center gap-1.5">📱 Notificações no Celular (PWA)</span>
-                  <p class="text-[11px] text-slate-500 dark:text-slate-400 font-medium leading-tight">Receba solicitações de escala e mensagens diretas na tela de bloqueio do celular.</p>
+              <div class="p-4 bg-gradient-to-br from-indigo-50/60 to-purple-50/30 dark:from-indigo-950/20 dark:to-purple-950/10 border border-indigo-100 dark:border-indigo-900/30 rounded-2xl space-y-3">
+                <div class="flex items-center justify-between gap-2">
+                  <div class="flex items-center gap-2.5">
+                    <span class="w-8 h-8 rounded-xl bg-indigo-600/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-sm font-bold border border-indigo-500/20 shrink-0">📱</span>
+                    <div>
+                      <span class="block text-xs font-black text-slate-800 dark:text-slate-100">Notificações no Celular (PWA)</span>
+                      <p class="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Alertas na tela de bloqueio do celular.</p>
+                    </div>
+                  </div>
+                  <span id="push-status-badge" class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-500 shrink-0">
+                    Desativado
+                  </span>
                 </div>
-                <div class="flex items-center gap-2 shrink-0 flex-wrap">
-                  <button type="button" id="btn-toggle-push-notifications" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-extrabold transition shrink-0 shadow-sm shadow-indigo-600/20">
-                    <span>Ativar</span>
+
+                <div class="pt-1 flex items-center gap-2">
+                  <button type="button" id="btn-toggle-push-notifications" class="flex-1 px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-extrabold transition shadow-sm shadow-indigo-600/20 text-center">
+                    Ativar Notificações
                   </button>
-                  <button type="button" id="btn-test-push-notification" class="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-xs font-black transition shrink-0 shadow-sm shadow-amber-600/20 flex items-center gap-1" title="Dispara uma notificação imediata no seu celular">
-                    <span>🧪 Testar Agora</span>
-                  </button>
-                  <button type="button" id="btn-test-delayed-push" class="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-xs font-black transition shrink-0 shadow-sm shadow-purple-600/20 flex items-center gap-1" title="Agenda um alerta para daqui a 8 segundos para dar tempo de fechar o app ou bloquear a tela">
-                    <span>⏱️ Disparar em 8s (App Fechado)</span>
+                  <button type="button" id="btn-test-push-notification" class="px-3.5 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-black transition shadow-sm shadow-amber-600/20 flex items-center gap-1.5 shrink-0" title="Dispara notificação de teste imediata">
+                    <span>🧪 Testar Alerta</span>
                   </button>
                 </div>
               </div>
@@ -513,26 +519,42 @@ export class MeuPerfilModal {
 
     // Lógica do botão de Notificações Push no Celular
     const pushBtn = overlay.querySelector('#btn-toggle-push-notifications') as HTMLButtonElement;
-    if (pushBtn) {
-      PushNotificationService.isSubscribed().then(isSub => {
-        if (isSub) {
-          pushBtn.className = 'px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-extrabold transition shrink-0 shadow-sm shadow-emerald-600/20';
-          pushBtn.innerHTML = '<span>Ativado ✓</span>';
-        }
-      });
+    const pushBadge = overlay.querySelector('#push-status-badge') as HTMLElement;
 
+    const updatePushState = (isSub: boolean) => {
+      if (pushBtn) {
+        if (isSub) {
+          pushBtn.className = 'flex-1 px-3 py-2 bg-rose-600/10 hover:bg-rose-600/20 text-rose-600 dark:text-rose-400 rounded-xl text-xs font-extrabold transition text-center border border-rose-200 dark:border-rose-900/40';
+          pushBtn.innerHTML = '<span>Desativar Notificações</span>';
+        } else {
+          pushBtn.className = 'flex-1 px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-extrabold transition shadow-sm shadow-indigo-600/20 text-center';
+          pushBtn.innerHTML = '<span>Ativar Notificações</span>';
+        }
+      }
+      if (pushBadge) {
+        if (isSub) {
+          pushBadge.className = 'px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/40';
+          pushBadge.textContent = 'Ativado ✓';
+        } else {
+          pushBadge.className = 'px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-500';
+          pushBadge.textContent = 'Desativado';
+        }
+      }
+    };
+
+    PushNotificationService.isSubscribed().then(updatePushState);
+
+    if (pushBtn) {
       pushBtn.addEventListener('click', async () => {
         const isSub = await PushNotificationService.isSubscribed();
         try {
           if (isSub) {
             await PushNotificationService.unsubscribeUser(perfil.id);
-            pushBtn.className = 'px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-extrabold transition shrink-0 shadow-sm shadow-indigo-600/20';
-            pushBtn.innerHTML = '<span>Ativar</span>';
+            updatePushState(false);
             options.showToast('Notificações no celular desativadas.', 'success');
           } else {
             await PushNotificationService.subscribeUser(perfil.id);
-            pushBtn.className = 'px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-extrabold transition shrink-0 shadow-sm shadow-emerald-600/20';
-            pushBtn.innerHTML = '<span>Ativado ✓</span>';
+            updatePushState(true);
             options.showToast('Notificações push ativadas para este celular!', 'success');
           }
         } catch (err: any) {
@@ -547,101 +569,48 @@ export class MeuPerfilModal {
       testPushBtn.addEventListener('click', async () => {
         const originalHtml = testPushBtn.innerHTML;
         testPushBtn.disabled = true;
-        testPushBtn.innerHTML = '<span>Disparando...</span>';
+        testPushBtn.innerHTML = '<span>Enviando...</span>';
 
-        try {
-          // 1. Dispara notificação push via backend/service para o próprio consultor
-          await PushSenderService.sendToUser(perfil.id, {
-            title: '🧪 Teste de Notificação PaxFlow',
-            body: `Olá, ${perfil.nome}! Se você recebeu isto na tela do celular, suas notificações em segundo plano estão 100% ativas!`,
-            url: '/#inbox'
-          });
-
-          // 2. Notificação local no navegador para teste imediato se app estiver em primeiro plano
-          if ('Notification' in window && Notification.permission === 'granted') {
-            try {
-              const reg = await navigator.serviceWorker.ready;
-              await reg.showNotification('🧪 Teste de Notificação PaxFlow', {
-                body: `Olá, ${perfil.nome}! Notificação enviada com sucesso para o seu aparelho.`,
-                icon: '/logo.svg',
-                vibrate: [100, 50, 100]
-              } as any);
-            } catch (e) {
-              new Notification('🧪 Teste de Notificação PaxFlow', {
-                body: `Olá, ${perfil.nome}! Notificação enviada com sucesso para o seu aparelho.`,
-                icon: '/logo.svg'
-              });
-            }
-          }
-
-          options.showToast('Disparado! Feche/minimize o aplicativo no celular para ver o alerta na tela de bloqueio.', 'success');
-        } catch (err: any) {
-          showCustomAlert('Falha ao disparar teste: ' + (err.message || 'Verifique se a função do Supabase está ativa.'), 'Erro de Teste');
-        } finally {
-          testPushBtn.disabled = false;
-          testPushBtn.innerHTML = originalHtml;
-        }
-      });
-    }
-
-    // Lógica do botão de Teste Agendado em 8s (para testar com App Fechado)
-    const delayedPushBtn = overlay.querySelector('#btn-test-delayed-push') as HTMLButtonElement;
-    if (delayedPushBtn) {
-      delayedPushBtn.addEventListener('click', async () => {
         try {
           const isSub = await PushNotificationService.isSubscribed();
           if (!isSub) {
             await PushNotificationService.subscribeUser(perfil.id);
-            if (pushBtn) {
-              pushBtn.className = 'px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-extrabold transition shrink-0 shadow-sm shadow-emerald-600/20';
-              pushBtn.innerHTML = '<span>Ativado ✓</span>';
-            }
+            updatePushState(true);
           }
 
-          options.showToast('⏱️ ALERTA AGENDADO! FECHE O APP OU BLOQUEIE A TELA DO CELULAR AGORA. DISPARANDO EM 8 SEGUNDOS...', 'success');
+          // Dispara notificação imediata via Service Worker / Native Notification API
+          if ('serviceWorker' in navigator) {
+            const reg = await navigator.serviceWorker.ready;
+            await reg.showNotification('🧪 Notificação PaxFlow Ativa!', {
+              body: `Olá, ${perfil.nome}! Seu celular está 100% pronto para receber notificações do PaxFlow na tela de bloqueio! 🎉`,
+              icon: '/logo.svg',
+              badge: '/logo.svg',
+              vibrate: [200, 100, 200],
+              tag: 'paxflow-test-push',
+              renotify: true,
+              data: { url: '/#inbox' },
+              actions: [{ action: 'open', title: 'Abrir no PaxFlow' }]
+            } as any);
+          } else if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification('🧪 Notificação PaxFlow Ativa!', {
+              body: `Olá, ${perfil.nome}! Seu celular está pronto para receber notificações do PaxFlow!`,
+              icon: '/logo.svg'
+            });
+          }
 
-          let countdown = 8;
-          delayedPushBtn.disabled = true;
-          const timerId = setInterval(() => {
-            countdown--;
-            if (countdown > 0) {
-              delayedPushBtn.innerHTML = `<span>⏳ Disparando em ${countdown}s...</span>`;
-            } else {
-              clearInterval(timerId);
-              delayedPushBtn.disabled = false;
-              delayedPushBtn.innerHTML = '<span>⏱️ Disparar em 8s (App Fechado)</span>';
-            }
-          }, 1000);
+          // Tenta também enviar via PushSenderService em background
+          PushSenderService.sendToUser(perfil.id, {
+            title: '🧪 Notificação PaxFlow Ativa!',
+            body: `Olá, ${perfil.nome}! Notificação de teste disparada com sucesso!`,
+            url: '/#inbox'
+          });
 
-          setTimeout(async () => {
-            try {
-              // 1. Envia push via backend/service
-              await PushSenderService.sendToUser(perfil.id, {
-                title: '📱 PaxFlow: Alerta de Teste (Segundo Plano)',
-                body: `Olá, ${perfil.nome}! Suas notificações em segundo plano / tela bloqueada estão 100% ativas! 🎉`,
-                url: '/#inbox'
-              });
-
-              // 2. Dispara via Service Worker para forçar o aviso nativo do Android OS na tela de bloqueio
-              if ('serviceWorker' in navigator) {
-                const reg = await navigator.serviceWorker.ready;
-                await reg.showNotification('📱 PaxFlow: Alerta em Segundo Plano', {
-                  body: `Olá, ${perfil.nome}! Suas notificações com o aplicativo fechado funcionaram perfeitamente! 🎉`,
-                  icon: '/logo.svg',
-                  badge: '/logo.svg',
-                  vibrate: [200, 100, 200, 100, 200],
-                  tag: 'paxflow-delayed-push',
-                  renotify: true,
-                  data: { url: '/#inbox' },
-                  actions: [{ action: 'open', title: 'Abrir no PaxFlow' }]
-                } as any);
-              }
-            } catch (e) {
-              console.warn('Erro ao disparar notificação agendada:', e);
-            }
-          }, 8000);
+          options.showToast('Notificação de teste disparada! Confira o topo do seu celular.', 'success');
         } catch (err: any) {
-          showCustomAlert('Erro ao agendar notificação: ' + (err.message || err), 'Notificações no Celular');
+          showCustomAlert('Falha ao disparar teste: ' + (err.message || 'Verifique as permissões de notificação do celular.'), 'Erro de Teste');
+        } finally {
+          testPushBtn.disabled = false;
+          testPushBtn.innerHTML = originalHtml;
         }
       });
     }

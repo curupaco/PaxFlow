@@ -2352,13 +2352,13 @@ export class InboxPage {
                 ` : ''}
               </div>
             </div>
-            <div class="p-2.5 space-y-1.5 overflow-x-auto custom-scrollbar">
-              <div class="flex items-center justify-between px-2.5 py-1 text-[10px] uppercase font-black text-slate-400 border-b border-slate-100 dark:border-slate-800 mb-1">
-                <span class="w-24 shrink-0">Consultor</span>
-                <div class="flex items-center gap-1.5 flex-1 justify-end">
+            <div class="p-2.5 space-y-1.5">
+              <div class="flex items-center justify-between px-2 py-0.5 text-[10px] uppercase font-black text-slate-400 border-b border-slate-100 dark:border-slate-800 mb-1">
+                <span class="w-[72px] shrink-0">Consultor</span>
+                <div class="grid grid-cols-3 gap-1 flex-1 text-center">
                   ${(this.feriadosPlantoesData || []).map(f => `
-                    <span class="w-16 text-center shrink-0" title="${f.nome}">
-                      <strong class="block text-slate-700 dark:text-slate-300 font-extrabold text-[11px]">${f.data}</strong>
+                    <span title="${f.nome}" class="truncate min-w-0">
+                      <strong class="block text-slate-700 dark:text-slate-300 font-extrabold text-[10px]">${f.data}</strong>
                       <span class="block text-[8px] font-semibold text-slate-400 truncate">${f.nomeCurto ? f.nomeCurto.split(' ').slice(1).join(' ') : f.nome.split(' ')[0]}</span>
                     </span>
                   `).join('')}
@@ -2368,20 +2368,20 @@ export class InboxPage {
                 const cNome = b.consultor_nome;
                 const primeiroNome = cNome.split(' ')[0];
                 return `
-                  <div class="rounded-xl border border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900/60 p-2.5 flex items-center justify-between gap-2 hover:border-indigo-500/30 transition">
-                    <strong class="text-slate-800 dark:text-slate-100 text-xs font-black truncate w-24 shrink-0" title="${cNome}">${primeiroNome}</strong>
-                    <div class="flex items-center gap-1.5 flex-1 justify-end shrink-0">
+                  <div class="rounded-xl border border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900/60 p-2 flex items-center justify-between gap-1.5 hover:border-indigo-500/30 transition">
+                    <strong class="text-slate-800 dark:text-slate-100 text-xs font-black truncate w-[72px] shrink-0" title="${cNome}">${primeiroNome}</strong>
+                    <div class="grid grid-cols-3 gap-1 flex-1">
                       ${(this.feriadosPlantoesData || []).map(f => {
                         const trabalhou = f.consultoresTrabalharam.some(n => isSameConsultantName(n, cNome));
                         return `
-                          <div class="w-16 text-center shrink-0">
+                          <div class="text-center min-w-0">
                             ${trabalhou ? `
-                              <span class="inline-flex items-center justify-center gap-0.5 w-full py-0.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200/50 text-[10px] font-black" title="Trabalhou no feriado ${f.nome}">
-                                🤓 Sim
+                              <span class="block py-0.5 px-1 rounded-md bg-emerald-100/80 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-black text-[10px] leading-tight truncate" title="Trabalhou no feriado ${f.nome}">
+                                Sim
                               </span>
                             ` : `
-                              <span class="inline-flex items-center justify-center gap-0.5 w-full py-0.5 rounded-lg bg-amber-50/60 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 border border-amber-200/40 text-[10px] font-bold" title="Folgou no feriado ${f.nome}">
-                                😎 Folga
+                              <span class="block py-0.5 px-1 rounded-md bg-amber-100/60 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 font-bold text-[10px] leading-tight truncate" title="Folgou no feriado ${f.nome}">
+                                Folga
                               </span>
                             `}
                           </div>
