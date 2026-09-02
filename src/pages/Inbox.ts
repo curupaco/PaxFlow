@@ -2316,10 +2316,10 @@ export class InboxPage {
                 ` : ''}
               </div>
             </div>
-            <div class="p-2 space-y-1">
+            <div class="p-2.5 space-y-1.5">
               ${this.bancoFolgasData.map((b, idx) => `
-                <div class="banco-folgas-accordion-item rounded-xl border border-slate-100 dark:border-slate-800/80 hover:border-indigo-500/30 transition overflow-hidden">
-                  <button type="button" class="btn-toggle-banco-row w-full flex items-center justify-between gap-2 p-2.5 bg-white dark:bg-slate-900/60 hover:bg-slate-50/80 dark:hover:bg-slate-800/40 text-left transition select-none" data-banco-row-idx="${idx}">
+                <div class="banco-folgas-accordion-item rounded-xl border border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900/60 hover:border-indigo-500/30 transition overflow-hidden">
+                  <button type="button" class="btn-toggle-banco-row w-full flex items-center justify-between gap-2 p-2.5 hover:bg-slate-50/80 dark:hover:bg-slate-800/40 text-left transition select-none" data-banco-row-idx="${idx}">
                     <strong class="text-slate-800 dark:text-slate-100 text-xs font-black truncate" title="${b.consultor_nome}">${b.consultor_nome.split(' ')[0]}</strong>
                     <div class="flex items-center gap-2 shrink-0">
                       <span class="escala-balance">${b.saldo_dias}</span>
@@ -2352,47 +2352,45 @@ export class InboxPage {
                 ` : ''}
               </div>
             </div>
-            <div class="overflow-x-auto p-2">
-              <table class="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr class="border-b border-slate-100 dark:border-slate-800 text-[10px] uppercase font-black text-slate-400">
-                    <th class="py-2 px-1">Consultor</th>
-                    ${(this.feriadosPlantoesData || []).map(f => `
-                      <th class="py-2 px-0.5 text-center" title="${f.nome}">
-                        <span class="block text-slate-700 dark:text-slate-300 font-extrabold">${f.data}</span>
-                        <span class="block text-[9px] font-semibold text-slate-400 truncate max-w-[65px] mx-auto">${f.nomeCurto ? f.nomeCurto.split(' ').slice(1).join(' ') : f.nome.split(' ')[0]}</span>
-                      </th>
-                    `).join('')}
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 font-semibold text-slate-700 dark:text-slate-200">
-                  ${this.bancoFolgasData.map(b => {
-                    const cNome = b.consultor_nome;
-                    const primeiroNome = cNome.split(' ')[0];
-                    return `
-                      <tr class="hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition">
-                        <td class="py-2 px-1 font-bold truncate max-w-[85px]" title="${cNome}">${primeiroNome}</td>
-                        ${(this.feriadosPlantoesData || []).map(f => {
-                          const trabalhou = f.consultoresTrabalharam.some(n => isSameConsultantName(n, cNome));
-                          return `
-                            <td class="py-2 px-0.5 text-center">
-                              ${trabalhou ? `
-                                <span class="inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/40 text-[10px] font-black" title="Trabalhou no feriado ${f.nome}">
-                                  🤓 Sim
-                                </span>
-                              ` : `
-                                <span class="inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-slate-50 dark:bg-slate-800/60 text-slate-400 border border-slate-200/30 text-[10px] font-bold" title="Folgou no feriado ${f.nome}">
-                                  😎 Folga
-                                </span>
-                              `}
-                            </td>
-                          `;
-                        }).join('')}
-                      </tr>
-                    `;
-                  }).join('')}
-                </tbody>
-              </table>
+            <div class="p-2.5 space-y-1.5 overflow-x-auto custom-scrollbar">
+              <div class="flex items-center justify-between px-2.5 py-1 text-[10px] uppercase font-black text-slate-400 border-b border-slate-100 dark:border-slate-800 mb-1">
+                <span class="w-24 shrink-0">Consultor</span>
+                <div class="flex items-center gap-1.5 flex-1 justify-end">
+                  ${(this.feriadosPlantoesData || []).map(f => `
+                    <span class="w-16 text-center shrink-0" title="${f.nome}">
+                      <strong class="block text-slate-700 dark:text-slate-300 font-extrabold text-[11px]">${f.data}</strong>
+                      <span class="block text-[8px] font-semibold text-slate-400 truncate">${f.nomeCurto ? f.nomeCurto.split(' ').slice(1).join(' ') : f.nome.split(' ')[0]}</span>
+                    </span>
+                  `).join('')}
+                </div>
+              </div>
+              ${this.bancoFolgasData.map(b => {
+                const cNome = b.consultor_nome;
+                const primeiroNome = cNome.split(' ')[0];
+                return `
+                  <div class="rounded-xl border border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900/60 p-2.5 flex items-center justify-between gap-2 hover:border-indigo-500/30 transition">
+                    <strong class="text-slate-800 dark:text-slate-100 text-xs font-black truncate w-24 shrink-0" title="${cNome}">${primeiroNome}</strong>
+                    <div class="flex items-center gap-1.5 flex-1 justify-end shrink-0">
+                      ${(this.feriadosPlantoesData || []).map(f => {
+                        const trabalhou = f.consultoresTrabalharam.some(n => isSameConsultantName(n, cNome));
+                        return `
+                          <div class="w-16 text-center shrink-0">
+                            ${trabalhou ? `
+                              <span class="inline-flex items-center justify-center gap-0.5 w-full py-0.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200/50 text-[10px] font-black" title="Trabalhou no feriado ${f.nome}">
+                                🤓 Sim
+                              </span>
+                            ` : `
+                              <span class="inline-flex items-center justify-center gap-0.5 w-full py-0.5 rounded-lg bg-amber-50/60 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 border border-amber-200/40 text-[10px] font-bold" title="Folgou no feriado ${f.nome}">
+                                😎 Folga
+                              </span>
+                            `}
+                          </div>
+                        `;
+                      }).join('')}
+                    </div>
+                  </div>
+                `;
+              }).join('')}
             </div>
           </section>
 
@@ -2412,7 +2410,7 @@ export class InboxPage {
                 ` : ''}
               </div>
             </div>
-            <div class="p-2 space-y-2">
+            <div class="p-2.5 space-y-1.5">
               ${(() => {
                 const mesStr = String(this.escalaMes).padStart(2, '0');
                 const eventosDoMes = (this.eventosEscalaData || []).filter(ev => {
@@ -2426,12 +2424,12 @@ export class InboxPage {
                 }
 
                 return eventosDoMes.map(ev => `
-                  <div class="escala-eventrow flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
+                  <div class="escala-eventrow flex items-center justify-between p-2.5 rounded-xl border border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900/60 hover:border-indigo-500/30 transition shadow-2xs">
                     <div class="flex items-center gap-2.5 flex-1 min-w-0 mr-2">
-                      <div class="escala-event-date shrink-0 font-black text-slate-800 dark:text-indigo-400 text-xs px-2 py-1 bg-slate-100 dark:bg-slate-800/80 rounded-lg border border-slate-200/50 dark:border-slate-700/50">${ev.data}</div>
+                      <div class="escala-event-date shrink-0 font-black text-indigo-700 dark:text-indigo-300 text-xs px-2.5 py-1 bg-indigo-50 dark:bg-indigo-950/50 rounded-lg border border-indigo-100 dark:border-indigo-900/40 font-mono">${ev.data}</div>
                       <div class="flex-1 min-w-0">
-                        <strong class="text-slate-800 dark:text-slate-100 text-xs font-bold block truncate">${ev.consultor_nome}</strong>
-                        <div class="text-xs text-slate-500 dark:text-slate-400 font-medium truncate">${ev.titulo}</div>
+                        <strong class="text-slate-800 dark:text-slate-100 text-xs font-black block truncate">${ev.consultor_nome}</strong>
+                        <div class="text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate">${ev.titulo}</div>
                       </div>
                     </div>
                     ${isAdmin ? `
