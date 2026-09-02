@@ -129,8 +129,8 @@ export class MeuPerfilModal {
                   <div class="flex items-center gap-2.5">
                     <span class="w-8 h-8 rounded-xl bg-indigo-600/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-sm font-bold border border-indigo-500/20 shrink-0">📱</span>
                     <div>
-                      <span class="block text-xs font-black text-slate-800 dark:text-slate-100">Notificações no Celular (PWA)</span>
-                      <p class="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Alertas na tela de bloqueio do celular.</p>
+                      <span class="block text-xs font-black text-slate-800 dark:text-slate-100">Notificações no Dispositivo (PWA / Web)</span>
+                      <p class="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Alertas na tela do seu computador ou celular.</p>
                     </div>
                   </div>
                   <span id="push-status-badge" class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-500 shrink-0">
@@ -578,11 +578,15 @@ export class MeuPerfilModal {
             updatePushState(true);
           }
 
+          const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+          const deviceLabel = isMobileDevice ? 'celular' : 'navegador';
+          const targetDesc = isMobileDevice ? 'o topo do seu celular' : 'a central de notificações do seu sistema';
+
           // Dispara notificação imediata via Service Worker / Native Notification API
           if ('serviceWorker' in navigator) {
             const reg = await navigator.serviceWorker.ready;
             await reg.showNotification('🧪 Notificação PaxFlow Ativa!', {
-              body: `Olá, ${perfil.nome}! Seu celular está 100% pronto para receber notificações do PaxFlow na tela de bloqueio! 🎉`,
+              body: `Olá, ${perfil.nome}! Seu ${deviceLabel} está 100% pronto para receber notificações do PaxFlow! 🎉`,
               icon: '/logo.svg',
               badge: '/logo.svg',
               vibrate: [200, 100, 200],
@@ -593,7 +597,7 @@ export class MeuPerfilModal {
             } as any);
           } else if ('Notification' in window && Notification.permission === 'granted') {
             new Notification('🧪 Notificação PaxFlow Ativa!', {
-              body: `Olá, ${perfil.nome}! Seu celular está pronto para receber notificações do PaxFlow!`,
+              body: `Olá, ${perfil.nome}! Seu ${deviceLabel} está pronto para receber notificações do PaxFlow!`,
               icon: '/logo.svg'
             });
           }
@@ -605,7 +609,7 @@ export class MeuPerfilModal {
             url: '/#inbox'
           });
 
-          options.showToast('Notificação de teste disparada! Confira o topo do seu celular.', 'success');
+          options.showToast(`Notificação de teste disparada! Confira ${targetDesc}.`, 'success');
         } catch (err: any) {
           showCustomAlert('Falha ao disparar teste: ' + (err.message || 'Verifique as permissões de notificação do celular.'), 'Erro de Teste');
         } finally {
