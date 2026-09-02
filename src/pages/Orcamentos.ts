@@ -733,8 +733,14 @@ export class OrcamentosPage {
    * Renderiza a estrutura da tela
    */
   private render(): void {
-    // Filtragem local baseada na busca em tempo real
+    // Filtragem local baseada na busca em tempo real e perfil de acesso
     const filtrados = this.orcamentos.filter(o => {
+      // Regra de Acesso por Software: Consultor vê por padrão apenas os seus orçamentos (exceto ao pesquisar no Co-Piloto)
+      if (!this.buscaTermo) {
+        if (this.perfil?.role !== 'admin') {
+          if (o.consultorId !== this.user?.id) return false;
+        }
+      }
       if (this.perfil?.role === 'admin' && this.selectedConsultantId !== 'todos') {
         if (o.consultorId !== this.selectedConsultantId) return false;
       }
