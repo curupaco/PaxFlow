@@ -1,7 +1,7 @@
 import { supabase } from './supabase';
 import { PerfilConsultor, AlertItem } from '../types';
 import { BADGE_DEFINITIONS } from './gamification';
-import { EscalaService } from './escalaService';
+import { EscalaService, isSameConsultantName } from './escalaService';
 import { formatTipoSolicitacaoEscala, formatStatusEscala, formatReembolsoStatus, formatarDataBR, formatarPeriodoDataBR } from '../utils/messageFormatter';
 
 export class InboxService {
@@ -382,7 +382,7 @@ export class InboxService {
 
       (clientesData || []).forEach((c: any) => {
         // Filter by consultant responsibility if not admin
-        if (perfil && perfil.role !== 'admin' && c.consultor_responsavel_id !== user.id) {
+        if (perfil && (perfil.role || '').toLowerCase() !== 'admin' && c.consultor_responsavel_id !== user.id) {
           return;
         }
 
@@ -432,7 +432,7 @@ export class InboxService {
         const consultorId = rem.viagem?.consultor_id || rem.consultor_solicitante_id;
 
         // Filter by consultant responsibility if not admin
-        if (perfil && perfil.role !== 'admin' && consultorId !== user.id) {
+        if (perfil && (perfil.role || '').toLowerCase() !== 'admin' && consultorId !== user.id) {
           return;
         }
 
@@ -500,7 +500,7 @@ export class InboxService {
         `)
         .order('created_at', { ascending: false });
 
-      if (perfil && perfil.role !== 'admin') {
+      if (perfil && (perfil.role || '').toLowerCase() !== 'admin') {
         queryNotificacoes = queryNotificacoes.eq('user_id', user.id);
       }
 
@@ -749,7 +749,7 @@ export class InboxService {
         }
 
         // Filter by consultant responsibility if not admin
-        if (perfil && perfil.role !== 'admin' && v.consultor_id !== user.id && v.consultor_responsavel_id !== user.id) {
+        if (perfil && (perfil.role || '').toLowerCase() !== 'admin' && v.consultor_id !== user.id && v.consultor_responsavel_id !== user.id) {
           return;
         }
 
@@ -904,8 +904,10 @@ export class InboxService {
 
         const solicitacoesEscala = await EscalaService.loadSolicitacoes();
         (solicitacoesEscala || []).forEach(sol => {
-          const isUserSolicitante = String(sol.solicitante_id) === String(user.id) || sol.solicitante_nome === perfil?.nome;
-          const isUserDestinatario = String(sol.destinatario_id) === String(user.id) || sol.destinatario_nome === perfil?.nome;
+          const isUserSolicitante = (sol.solicitante_id && String(sol.solicitante_id) === String(user.id)) ||
+            isSameConsultantName(sol.solicitante_nome || '', perfil?.nome || '');
+          const isUserDestinatario = (sol.destinatario_id && String(sol.destinatario_id) === String(user.id)) ||
+            isSameConsultantName(sol.destinatario_nome || '', perfil?.nome || '');
           const isAdmin = userIsAdmin;
 
           let shouldInclude = false;
@@ -950,9 +952,37 @@ export class InboxService {
               cardBody = `Você solicitou trocar seu turno de ${dataOrigemFmt} com o turno de ${dataDestinoFmt} de ${sol.destinatario_nome}.`;
             }
           } 
-          // 1. Caso especial: Atendimento no Balcão (Co-Piloto) - Notificação Operacional
-          if (sol.tipo === 'atendimento_balcao') {
-            const isUserDestinatarioBalcao = sol.destinatario_id === user.id || (sol.destinatario_nome && perfil?.nome && sol.destinatario_nome.trim().toLowerCase() === perfil.nome.trim().toLowerCase());
+          // 1.1. Proposta enviada pela Gestão pendente de aceite pelo consultor
+          else if (sol.status === 'pendente_consultor') {
+            const tipoInfo = formatTipoSolicitacaoEscala(sol.tipo);
+            if (isUserDestinatario) {
+              shouldInclude = true;
+              cardTitle = `Proposta da Gestão: ${tipoInfo.label}`;
+              cardSubject = `${sol.solicitante_nome} (Gestão) enviou uma proposta de ${tipoInfo.label.toLowerCase()} para você.`;
+              cardBody = `
+                <div class="space-y-2">
+                  <p><strong>Solicitante (Gestão):</strong> ${sol.solicitante_nome}</p>
+                  <p>• <strong>Período:</strong> ${rangeStr}</p>
+                  <p>• <strong>Motivo:</strong> ${sol.motivo || 'Sem observações'}</p>
+                  <div class="pt-2">
+                    <button class="btn-ver-na-escala inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-extrabold transition shadow-md shadow-indigo-950/20" data-sol-id="${sol.id}">
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                      <span>Ver na Escala</span>
+                    </button>
+                  </div>
+                </div>
+              `;
+            } else if (isUserSolicitante || isAdmin) {
+              shouldInclude = true;
+              isSentItem = true;
+              cardTitle = `${tipoInfo.title} Enviada ao Consultor`;
+              cardSubject = `Proposta de ${tipoInfo.label} para ${sol.destinatario_nome || 'Consultor'} aguarda aceite.`;
+              cardBody = `Você/Gestão enviou uma proposta de ${tipoInfo.label} para ${sol.destinatario_nome || 'o consultor'}.`;
+            }
+          }
+          // 1.2. Caso especial: Atendimento no Balcão (Co-Piloto) - Notificação Operacional
+          else if (sol.tipo === 'atendimento_balcao') {
+            const isUserDestinatarioBalcao = sol.destinatario_id === user.id || (sol.destinatario_nome && perfil?.nome && isSameConsultantName(sol.destinatario_nome, perfil.nome));
             if (isUserDestinatarioBalcao || isAdmin) {
               shouldInclude = true;
               cardTitle = '🤝 Atendimento no Balcão (Co-Piloto)';

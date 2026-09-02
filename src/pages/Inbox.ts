@@ -387,19 +387,21 @@ export class InboxPage {
   private applyFilters(): void {
     let result = [...this.alerts];
 
-    // 1. Filter by Active / Archived / All / Sent
+    // 1. Filter by Active / Archived / All / Sent / Escala
     if (this.activeTab === 'ativos') {
-      result = result.filter(a => !a.arquivado && !a.isSent);
+      result = result.filter(a => !a.arquivado && (!a.isSent || a.type === 'escala_solicitacao'));
     } else if (this.activeTab === 'arquivados') {
-      result = result.filter(a => a.arquivado && !a.isSent);
+      result = result.filter(a => a.arquivado);
     } else if (this.activeTab === 'enviadas') {
       result = result.filter(a => a.isSent);
     } else if (this.activeTab === 'todos') {
-      result = result.filter(a => !a.isSent);
+      result = result.filter(a => true);
+    } else if (this.activeTab === 'escala') {
+      result = result.filter(a => a.type === 'escala_solicitacao' && !a.arquivado);
     }
 
     // 2. Filter by Consultant (Admin only)
-    if (this.perfil?.role === 'admin' && this.selectedConsultantFilter !== 'todos') {
+    if ((this.perfil?.role || '').toLowerCase() === 'admin' && this.selectedConsultantFilter !== 'todos') {
       result = result.filter(a => a.consultorId === this.selectedConsultantFilter || a.isReceivedByMe || a.isCreatedByMe);
     }
 
@@ -539,14 +541,14 @@ export class InboxPage {
    private render(): void {
     // 1. Calculate counters for badges
     let baseAlertsForCounters = [...this.alerts];
-    if (this.perfil?.role === 'admin' && this.selectedConsultantFilter !== 'todos') {
+    if ((this.perfil?.role || '').toLowerCase() === 'admin' && this.selectedConsultantFilter !== 'todos') {
       baseAlertsForCounters = baseAlertsForCounters.filter(a => a.consultorId === this.selectedConsultantFilter || a.isReceivedByMe || a.isCreatedByMe);
     }
 
     const readList = this.readList;
 
     // Filter subsets for totals and unread counts
-    const activeAlerts = baseAlertsForCounters.filter(a => !a.arquivado && !a.isSent);
+    const activeAlerts = baseAlertsForCounters.filter(a => !a.arquivado && (!a.isSent || a.type === 'escala_solicitacao'));
     const totalAtivos = activeAlerts.length;
     const unreadAtivos = activeAlerts.filter(a => !readList.includes(a.id)).length;
 
@@ -564,11 +566,11 @@ export class InboxPage {
 
     const totalEnviadas = baseAlertsForCounters.filter(a => a.isSent).length;
 
-    const archivedAlerts = baseAlertsForCounters.filter(a => a.arquivado && !a.isSent);
+    const archivedAlerts = baseAlertsForCounters.filter(a => a.arquivado);
     const totalArquivados = archivedAlerts.length;
     const unreadArquivados = archivedAlerts.filter(a => !readList.includes(a.id)).length;
 
-    const allInboxAlerts = baseAlertsForCounters.filter(a => !a.isSent);
+    const allInboxAlerts = baseAlertsForCounters.filter(a => true);
     const totalGeral = allInboxAlerts.length;
     const unreadGeral = allInboxAlerts.filter(a => !readList.includes(a.id)).length;
 
@@ -3031,8 +3033,13 @@ export class InboxPage {
       const destinatarioNome = selectedOpt?.getAttribute('data-nome') || selectedOpt?.text || 'Colega';
 
       const solicitanteNome = this.perfil?.nome || 'Consultor';
-      const isUserAdmin = this.perfil?.role === 'admin';
-      const statusFinal = isUserAdmin ? 'pendente_consultor' : (tipo === 'troca' ? 'pendente_colega' : 'pendente_admin');
+      const isUserAdmin = (this.perfil?.role || '').toLowerCase() === 'admin';
+      let statusFinal: 'pendente_colega' | 'pendente_admin' | 'pendente_consultor' = 'pendente_admin';
+      if (isUserAdmin) {
+        statusFinal = (destinatarioId && destinatarioId !== this.user?.id) ? 'pendente_consultor' : 'pendente_admin';
+      } else {
+        statusFinal = tipo === 'troca' ? 'pendente_colega' : 'pendente_admin';
+      }
 
       try {
         await EscalaService.criarSolicitacao({

@@ -1320,7 +1320,32 @@ export class ComercialDashboard {
     const sortedFaixas = [...(currentMeta.faixas || [])].sort((a, b) => a.valor_minimo - b.valor_minimo);
 
     const renderProgressBar = (val: number) => {
-      if (sortedFaixas.length === 0) return '';
+      if (currentMeta.is_meta_loja || sortedFaixas.length === 0) {
+        const metaVal = currentMeta.valor_meta || 1;
+        const pct = Math.min((val / metaVal) * 100, 100);
+        const diffVal = Math.max(0, metaVal - val);
+
+        const progressDesc = diffVal > 0 
+          ? `Faltam <span class="font-extrabold text-indigo-600 dark:text-indigo-400">R$ ${diffVal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span> para o Alvo Global da Loja`
+          : `🎉 Parabéns! Meta Global da Loja Atingida!`;
+
+        return `
+          <div class="space-y-2.5">
+            <div class="flex justify-between items-end text-xs font-semibold">
+              <span class="text-slate-400 dark:text-slate-400">Alvo Global da Loja: <strong class="text-slate-700 dark:text-slate-200 uppercase">R$ ${(currentMeta.valor_meta || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong></span>
+              <span class="text-slate-700 dark:text-slate-200 font-extrabold">R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+            </div>
+
+            <div class="relative w-full h-3 bg-slate-100 dark:bg-slate-800/80 rounded-full overflow-hidden border border-slate-200/20">
+              <div class="h-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-550 rounded-full" style="width: ${pct}%"></div>
+            </div>
+
+            <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-2 font-medium">
+              ${progressDesc}
+            </div>
+          </div>
+        `;
+      }
       
       const maxVal = sortedFaixas[sortedFaixas.length - 1].valor_minimo * 1.1;
       const pct = Math.min((val / maxVal) * 100, 100);
