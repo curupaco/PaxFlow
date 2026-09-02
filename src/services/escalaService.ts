@@ -231,15 +231,30 @@ export class EscalaService {
 
   public static async loadOrdemConsultores(): Promise<string[]> {
     try {
+      // 1. Tentar primeiro na tabela escala_eventos (sem restrição de FK)
       const { data, error } = await supabase
+        .from('escala_eventos')
+        .select('consultor_nome')
+        .eq('titulo', 'CONFIG_ORDEM_ESCALA')
+        .maybeSingle();
+
+      if (!error && data && data.consultor_nome) {
+        try {
+          const parsed = JSON.parse(data.consultor_nome);
+          if (Array.isArray(parsed)) return parsed;
+        } catch (e) {}
+      }
+
+      // 2. Fallback para registros legados em escala_banco_folgas
+      const { data: fData } = await supabase
         .from('escala_banco_folgas')
         .select('detalhes_historico')
         .eq('consultor_nome', 'CONFIG_ORDEM_ESCALA')
         .maybeSingle();
 
-      if (!error && data && data.detalhes_historico) {
+      if (fData && fData.detalhes_historico) {
         try {
-          const parsed = JSON.parse(data.detalhes_historico);
+          const parsed = JSON.parse(fData.detalhes_historico);
           if (Array.isArray(parsed)) return parsed;
         } catch (e) {}
       }
@@ -251,16 +266,14 @@ export class EscalaService {
 
   public static async salvarOrdemConsultores(ordem: string[]): Promise<boolean> {
     try {
+      const configId = '00000000-0000-0000-0000-000000000099';
       const { error } = await supabase
-        .from('escala_banco_folgas')
+        .from('escala_eventos')
         .upsert({
-          id: '00000000-0000-0000-0000-000000000099',
-          consultor_id: '00000000-0000-0000-0000-000000000099',
-          consultor_nome: 'CONFIG_ORDEM_ESCALA',
-          equipe: 'Configuracao',
-          saldo_dias: '0',
-          detalhes_historico: JSON.stringify(ordem),
-          updated_at: new Date().toISOString()
+          id: configId,
+          data: '2026-01-01',
+          titulo: 'CONFIG_ORDEM_ESCALA',
+          consultor_nome: JSON.stringify(ordem)
         });
 
       if (error) {
