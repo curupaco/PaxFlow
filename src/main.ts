@@ -403,7 +403,7 @@ class App {
         <div id="mobile-menu-backdrop" class="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-40 transition-opacity duration-300 opacity-0 pointer-events-none md:hidden"></div>
         
         <!-- Sidebar Menu (Drawer no mobile, fixo na lateral no desktop) -->
-        <aside id="app-sidebar" class="fixed inset-y-0 left-0 h-screen w-64 md:${this.sidebarCollapsed ? 'w-20' : 'w-64'} bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 flex flex-col border-r border-slate-200 dark:border-slate-800/60 shadow-2xl md:shadow-xl z-50 md:z-50 transition-all duration-300 transform -translate-x-full md:translate-x-0 pt-safe pb-safe overflow-x-hidden">
+        <aside id="app-sidebar" class="fixed inset-y-0 left-0 h-screen w-64 md:${this.sidebarCollapsed ? 'w-20' : 'w-64'} bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 flex flex-col border-r border-slate-200 dark:border-slate-800/60 shadow-2xl md:shadow-xl z-50 md:z-50 transition-all duration-300 transform -translate-x-full md:translate-x-0 pt-safe pb-safe">
           
           <!-- Logo & Título -->
           <div id="sidebar-header" class="border-b border-slate-100 dark:border-slate-800 flex items-center gap-2.5 relative transition-all duration-200 ${this.sidebarCollapsed ? 'p-3.5 justify-center' : 'px-5 py-4'}">
