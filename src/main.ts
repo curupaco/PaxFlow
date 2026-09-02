@@ -188,7 +188,7 @@ class App {
         if (currentHash && currentHash.length > 1) {
           const hashClean = currentHash.substring(1);
           const [pagePart, queryPart] = hashClean.split('?');
-          if (pagePart && ['analytics', 'inbox', 'orcamentos', 'next-trip', 'dashboard', 'clientes', 'reembolsos', 'relatorios', 'cadastros', 'configuracoes'].includes(pagePart)) {
+          if (pagePart && ['analytics', 'inbox', 'orcamentos', 'dashboard', 'clientes', 'reembolsos', 'next-trip', 'relatorios', 'cadastros', 'configuracoes'].includes(pagePart)) {
             initialPage = pagePart;
           }
           if (queryPart) {
@@ -207,7 +207,7 @@ class App {
           if (h && h.length > 1) {
             const hClean = h.substring(1);
             const [pPart, qPart] = hClean.split('?');
-            if (pPart && ['analytics', 'inbox', 'orcamentos', 'next-trip', 'dashboard', 'clientes', 'reembolsos', 'relatorios', 'cadastros', 'configuracoes'].includes(pPart)) {
+            if (pPart && ['analytics', 'inbox', 'orcamentos', 'dashboard', 'clientes', 'reembolsos', 'next-trip', 'relatorios', 'cadastros', 'configuracoes'].includes(pPart)) {
               let eId: string | undefined = undefined;
               if (qPart) {
                 const params = new URLSearchParams(qPart);
@@ -446,16 +446,6 @@ class App {
                 <span class="${this.sidebarCollapsed ? 'md:hidden' : ''}">Orçamentos</span>
               </button>
 
-              <!-- Link: Next Trip Engine -->
-              <button id="nav-next-trip" class="w-full px-3 py-1.5 rounded-xl flex items-center ${this.sidebarCollapsed ? 'justify-center' : 'justify-start'} gap-2.5 font-semibold text-xs text-left transition select-none group">
-                <svg width="18" height="18" class="w-4.5 h-4.5 text-slate-400 group-hover:text-slate-600 dark:text-slate-400 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                  <circle cx="12" cy="12" r="9" />
-                  <circle cx="12" cy="12" r="5" />
-                  <circle cx="12" cy="12" r="1.5" fill="currentColor" />
-                </svg>
-                <span class="${this.sidebarCollapsed ? 'md:hidden' : ''}">Next Trip Engine</span>
-              </button>
-
               <!-- Link: Dashboard Kanban -->
               <button id="nav-dashboard" class="w-full px-3 py-1.5 rounded-xl flex items-center ${this.sidebarCollapsed ? 'justify-center' : 'justify-start'} gap-2.5 font-semibold text-xs text-left transition select-none group">
                 <svg width="18" height="18" class="w-4.5 h-4.5 text-slate-400 group-hover:text-slate-600 dark:text-slate-400 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
@@ -478,6 +468,16 @@ class App {
                   <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <span class="${this.sidebarCollapsed ? 'md:hidden' : ''}">Reembolsos</span>
+              </button>
+
+              <!-- Link: Next Trip Engine -->
+              <button id="nav-next-trip" class="w-full px-3 py-1.5 rounded-xl flex items-center ${this.sidebarCollapsed ? 'justify-center' : 'justify-start'} gap-2.5 font-semibold text-xs text-left transition select-none group">
+                <svg width="18" height="18" class="w-4.5 h-4.5 text-slate-400 group-hover:text-slate-600 dark:text-slate-400 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                  <circle cx="12" cy="12" r="9" />
+                  <circle cx="12" cy="12" r="5" />
+                  <circle cx="12" cy="12" r="1.5" fill="currentColor" />
+                </svg>
+                <span class="${this.sidebarCollapsed ? 'md:hidden' : ''}">Next Trip Engine</span>
               </button>
 
               <!-- Link: Relatórios -->
@@ -1090,7 +1090,7 @@ class App {
    * Associa eventos aos botões de navegação lateral
    */
   private setupNavigationListeners(): void {
-    const pages = ['analytics', 'inbox', 'orcamentos', 'next-trip', 'dashboard', 'clientes', 'reembolsos', 'relatorios', 'cadastros', 'configuracoes'];
+    const pages = ['analytics', 'inbox', 'orcamentos', 'dashboard', 'clientes', 'reembolsos', 'next-trip', 'relatorios', 'cadastros', 'configuracoes'];
 
     pages.forEach(page => {
       const btn = document.getElementById(`nav-${page}`);
@@ -1132,7 +1132,7 @@ class App {
     this.router.navigate(page, extraId);
 
     // Atualiza os estilos de botões ativos na Sidebar
-    const navButtons = ['analytics', 'inbox', 'orcamentos', 'next-trip', 'dashboard', 'clientes', 'reembolsos', 'relatorios', 'cadastros', 'configuracoes', 'ajuda'];
+    const navButtons = ['analytics', 'inbox', 'orcamentos', 'dashboard', 'clientes', 'reembolsos', 'next-trip', 'relatorios', 'cadastros', 'configuracoes', 'ajuda'];
     navButtons.forEach(p => {
       const btn = document.getElementById(`nav-${p}`);
       if (btn) {
