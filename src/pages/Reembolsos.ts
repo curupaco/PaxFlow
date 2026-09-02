@@ -118,9 +118,14 @@ export class ReembolsosPage {
 
       const rawData = data || [];
 
-      // Filtro de segurança (RLS local): Consultores normais só veem reembolsos de suas viagens
+      // Filtro de segurança (RLS de software): Consultores normais só veem reembolsos de suas viagens ou solicitações
       if (this.perfil && this.perfil.role !== 'admin') {
-        this.reembolsos = rawData.filter(r => r.viagem && r.viagem.consultor_id === this.user.id);
+        this.reembolsos = rawData.filter(r => {
+          const rSolicitanteId = r.consultor_solicitante_id || (r as any).consultorSolicitanteId;
+          const vConsultorId = r.viagem?.consultor_id || (r.viagem as any)?.consultorId;
+          const vRespId = r.viagem?.consultor_responsavel_id || (r.viagem as any)?.consultorResponsavelId;
+          return rSolicitanteId === this.user.id || vConsultorId === this.user.id || vRespId === this.user.id;
+        });
       } else {
         this.reembolsos = rawData;
       }

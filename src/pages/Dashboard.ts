@@ -1472,14 +1472,17 @@ export class Dashboard {
   private render(): void {
     // 1. Filtragem por consultor e Mês Corrente
     const totalPorConsultor = this.viagens.filter(v => {
-      if (!this.buscaTermo) {
-        if (this.perfil?.role !== 'admin') {
-          if (v.consultor_id !== this.user?.id && v.consultor_responsavel_id !== this.user?.id) return false;
-        }
-        if (this.viewModeMonth === 'current' && !this.isCurrentMonthTrip(v)) return false;
+      const vConsultorId = v.consultor_id || (v as any).consultorId;
+      const vRespId = v.consultor_responsavel_id || (v as any).consultorResponsavelId;
+
+      if (this.perfil?.role !== 'admin') {
+        if (vConsultorId !== this.user?.id && vRespId !== this.user?.id) return false;
+      } else if (this.selectedConsultantId !== 'todos') {
+        if (vConsultorId !== this.selectedConsultantId && vRespId !== this.selectedConsultantId) return false;
       }
-      if (this.perfil?.role === 'admin' && this.selectedConsultantId !== 'todos') {
-        return v.consultor_id === this.selectedConsultantId;
+
+      if (!this.buscaTermo) {
+        if (this.viewModeMonth === 'current' && !this.isCurrentMonthTrip(v)) return false;
       }
       return true;
     });

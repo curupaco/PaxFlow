@@ -735,16 +735,17 @@ export class OrcamentosPage {
   private render(): void {
     // Filtragem local baseada na busca em tempo real e perfil de acesso
     const filtrados = this.orcamentos.filter(o => {
+      const oConsultorId = o.consultorId || (o as any).consultor_id;
       // Regra de Acesso por Software: Consultor vê estritamente apenas os seus orçamentos nesta tela
       if (this.perfil?.role !== 'admin') {
-        if (o.consultorId !== this.user?.id) return false;
+        if (oConsultorId !== this.user?.id) return false;
       } else if (this.selectedConsultantId !== 'todos') {
-        if (o.consultorId !== this.selectedConsultantId) return false;
+        if (oConsultorId !== this.selectedConsultantId) return false;
       }
 
       if (!this.buscaTermo) return true;
       const q = this.buscaTermo.toLowerCase().trim();
-      const dono = this.consultores.find(c => c.id === o.consultorId);
+      const dono = this.consultores.find(c => c.id === oConsultorId);
       const donoNome = dono?.nome?.toLowerCase() || '';
 
       const nomeClienteVal = (o.nomeCliente || '').toLowerCase();
@@ -974,7 +975,8 @@ export class OrcamentosPage {
     };
 
     const tempClass = temperaturaClasses[o.temperatura] || temperaturaClasses.Normal;
-    const dono = this.consultores.find(c => c.id === o.consultorId);
+    const donoId = o.consultorId || (o as any).consultor_id;
+    const dono = this.consultores.find(c => c.id === donoId);
     const siglaDono = (dono?.nome || 'A').substring(0, 2).toUpperCase();
 
     // Data de criação e contadores
