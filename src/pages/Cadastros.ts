@@ -155,32 +155,37 @@ export class CadastrosPage {
           </div>
         </header>
 
-        <!-- Navegação de Abas Premium -->
-        <div class="px-6 bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800/80 flex gap-6 overflow-x-auto custom-scrollbar pb-1 transition-colors duration-200">
-          <button id="tab-tipos-servicos" class="shrink-0 px-4 py-3.5 text-xs font-bold uppercase tracking-wider border-b-2 transition-all ${this.activeTab === 'tipos' ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}">
-            📦 Tipos de Serviços
-          </button>
-          <button id="tab-gestao-destinos" class="shrink-0 px-4 py-3.5 text-xs font-bold uppercase tracking-wider border-b-2 transition-all ${this.activeTab === 'destinos' ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}">
-            📍 Gestão de Destinos
-          </button>
-          <button id="tab-formas-recebimento" class="shrink-0 px-4 py-3.5 text-xs font-bold uppercase tracking-wider border-b-2 transition-all ${this.activeTab === 'formas' ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}">
-            💰 Formas de Recebimento
-          </button>
-          <button id="tab-campanhas-btn" class="shrink-0 px-4 py-3.5 text-xs font-bold uppercase tracking-wider border-b-2 transition-all ${this.activeTab === 'campanhas' ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}">
-            🎯 Campanhas
-          </button>
-          <button id="tab-metas-btn" class="shrink-0 px-4 py-3.5 text-xs font-bold uppercase tracking-wider border-b-2 transition-all ${this.activeTab === 'metas' ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}">
-            🏆 Metas Financeiras
-          </button>
-          <button id="tab-templates-btn" class="shrink-0 px-4 py-3.5 text-xs font-bold uppercase tracking-wider border-b-2 transition-all ${this.activeTab === 'templates' ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}">
-            💬 Modelos de Mensagem
-          </button>
-        </div>
-
-        <!-- Grade Principal -->
-        <main class="flex-1 p-6 space-y-6 overflow-y-auto custom-scrollbar animate-fade-in">
+        <div class="flex-1 flex flex-col md:flex-row max-w-7xl mx-auto w-full p-6 gap-6 items-start">
           
-          ${this.activeTab === 'tipos' ? `
+          <!-- Barra Lateral de Navegação (Sidebar Cadastros) -->
+          <aside class="w-full md:w-64 lg:w-72 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-3 shadow-sm shrink-0">
+            <div class="px-3 py-2 text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Módulos de Cadastro</div>
+            <nav class="space-y-1.5 mt-1">
+              ${[
+                { tab: 'tipos', label: 'Tipos de Serviços', sub: 'Produtos, cores e campos extras', icon: '📦', id: 'tab-tipos-servicos' },
+                { tab: 'destinos', label: 'Gestão de Destinos', sub: 'Cidades, países e higienização', icon: '📍', id: 'tab-gestao-destinos' },
+                { tab: 'formas', label: 'Formas de Recebimento', sub: 'Pix, cartões e parcelamentos', icon: '💰', id: 'tab-formas-recebimento' },
+                { tab: 'campanhas', label: 'Campanhas de Vendas', sub: 'Incentivos, períodos e badges', icon: '🎯', id: 'tab-campanhas-btn' },
+                { tab: 'metas', label: 'Metas Financeiras', sub: 'Metas globais e rentabilidade', icon: '🏆', id: 'tab-metas-btn' },
+                { tab: 'templates', label: 'Modelos de Mensagem', sub: 'Templates WhatsApp e variáveis', icon: '💬', id: 'tab-templates-btn' }
+              ].map(t => {
+                const isActive = this.activeTab === t.tab;
+                return `
+                  <button id="${t.id}" class="w-full text-left p-3 rounded-xl transition flex items-start gap-3 select-none ${isActive ? 'bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 font-extrabold border border-indigo-200/70 dark:border-indigo-800/70 shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 font-semibold'}">
+                    <span class="text-xl shrink-0">${t.icon}</span>
+                    <div class="min-w-0">
+                      <strong class="block text-xs leading-none">${t.label}</strong>
+                      <span class="text-[10px] text-slate-400 dark:text-slate-500 font-normal block mt-1">${t.sub}</span>
+                    </div>
+                  </button>
+                `;
+              }).join('')}
+            </nav>
+          </aside>
+
+          <!-- Conteúdo Principal do Módulo Selecionado -->
+          <main class="flex-1 w-full min-w-0 animate-fade-in space-y-6">
+            ${this.activeTab === 'tipos' ? `
             <!-- ABA: TIPOS DE PRODUTOS E SERVIÇOS -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
               
