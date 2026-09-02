@@ -527,7 +527,9 @@ export class ClientesPage {
         vistos_informacoes: vistosVal || null,
         observacoes: obsVal || null,
         classificacoes: classificacoesVal,
-        consultor_responsavel_id: this.user.id
+        consultor_responsavel_id: (isEditing && this.clienteSelecionado) 
+          ? (this.clienteSelecionado.consultorResponsavelId || (this.clienteSelecionado as any).consultor_responsavel_id || this.user.id)
+          : this.user.id
       };
 
       try {

@@ -309,7 +309,20 @@ USING (
 -- Políticas padrão de Clientes
 CREATE POLICY "Leitura de clientes para o próprio consultor ou admin" 
 ON public.clientes FOR SELECT TO authenticated 
-USING (consultor_responsavel_id = auth.uid() OR (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin');
+USING (
+  consultor_responsavel_id = auth.uid() 
+  OR EXISTS (
+    SELECT 1 FROM public.orcamentos 
+    WHERE orcamentos.cliente_id = clientes.id 
+    AND orcamentos.consultor_id = auth.uid()
+  )
+  OR EXISTS (
+    SELECT 1 FROM public.viagens 
+    WHERE viagens.cliente_id = clientes.id 
+    AND viagens.consultor_id = auth.uid()
+  )
+  OR (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin'
+);
 
 CREATE POLICY "Inserir clientes para o próprio consultor ou admin" 
 ON public.clientes FOR INSERT TO authenticated 
