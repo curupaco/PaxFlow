@@ -587,23 +587,23 @@ html.dark .landing-page-wrapper .grid-bg {
 
 /* ================= LANDING V2 SCROLL REVEAL & PARALLAX ================= */
 
-/* Reveal on scroll (estado inicial ágil, ativado pelo IntersectionObserver) */
+/* Reveal on scroll (ultra-rápido, suave e responsivo) */
 .landing-v2 [data-reveal] {
-  opacity: 0.15;
-  transform: translateY(20px) scale(0.98);
+  opacity: 0.6;
+  transform: translateY(10px);
   transition:
-    opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1),
-    transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    opacity 0.22s ease-out,
+    transform 0.22s ease-out;
   will-change: opacity, transform;
   backface-visibility: hidden;
 }
 .landing-v2 [data-reveal].pf-revealed {
   opacity: 1;
-  transform: translateY(0) scale(1);
+  transform: translateY(0);
 }
-.landing-v2 [data-reveal="left"] { transform: translateX(-24px) scale(0.98); }
-.landing-v2 [data-reveal="right"] { transform: translateX(24px) scale(0.98); }
-.landing-v2 [data-reveal="zoom"] { transform: scale(0.94); }
+.landing-v2 [data-reveal="left"] { transform: translateX(-12px); }
+.landing-v2 [data-reveal="right"] { transform: translateX(12px); }
+.landing-v2 [data-reveal="zoom"] { transform: scale(0.97); }
 .landing-v2 [data-reveal="left"].pf-revealed,
 .landing-v2 [data-reveal="right"].pf-revealed,
 .landing-v2 [data-reveal="zoom"].pf-revealed {

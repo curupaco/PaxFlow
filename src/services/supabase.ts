@@ -113,8 +113,15 @@ const getMockDataForTable = (table: string): any[] => {
   const localData = localStorage.getItem(`sandbox-paxflow-${table}`);
   if (localData) {
     try { 
-      const parsed = JSON.parse(localData); 
-      if (table === 'viagens' && (!Array.isArray(parsed) || !parsed.some((v: any) => v.id === 'sandbox-viagem-nexttrip-1'))) {
+      const parsed = JSON.parse(localData);
+      const now = new Date();
+      const curYearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      if (
+        table === 'viagens' &&
+        (!Array.isArray(parsed) ||
+          !parsed.some((v: any) => v.id === 'sandbox-viagem-nexttrip-1') ||
+          !parsed.some((v: any) => (v.data_financeiro || v.dataFinanceiro || '').startsWith(curYearMonth)))
+      ) {
         localStorage.removeItem(`sandbox-paxflow-${table}`);
       } else if (table === 'clientes' && (!Array.isArray(parsed) || !parsed.some((c: any) => c.id === 'sandbox-cliente-4'))) {
         localStorage.removeItem(`sandbox-paxflow-${table}`);
