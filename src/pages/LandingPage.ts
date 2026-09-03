@@ -6,6 +6,9 @@ export class LandingPage {
   }
 
   public init(): void {
+    document.documentElement.classList.add('dark');
+    document.body.style.backgroundColor = '#06070f';
+    document.body.style.color = '#ffffff';
     this.setupMetaTags();
     this.render();
     this.setupEventListeners();
@@ -61,6 +64,7 @@ export class LandingPage {
     ];
 
     const isReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const isMobile = window.innerWidth <= 768;
 
     // Animação de contadores numéricos (subindo de 0 até o valor alvo)
     const animateCounterEl = (el: HTMLElement): void => {
@@ -85,57 +89,56 @@ export class LandingPage {
       requestAnimationFrame(step);
     };
 
-    const animateCountersInEl = (targetContainer: HTMLElement): void => {
-      if (targetContainer.hasAttribute('data-count')) {
-        animateCounterEl(targetContainer);
-      }
-      const counters = targetContainer.querySelectorAll<HTMLElement>('[data-count]');
-      counters.forEach(el => animateCounterEl(el));
-    };
-
-    // Observer exclusivo para acionar a contagem animada quando o contador entrar na tela
     const counterElements = Array.from(scope.querySelectorAll<HTMLElement>('[data-count]'));
-    if ('IntersectionObserver' in window) {
-      const counterObserver = new IntersectionObserver((entries, obs) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            const el = entry.target as HTMLElement;
-            animateCounterEl(el);
-            obs.unobserve(el);
-          }
-        });
-      }, {
-        threshold: 0.15,
-        rootMargin: '0px 0px -20px 0px'
-      });
 
-      counterElements.forEach(counter => counterObserver.observe(counter));
-    } else {
-      counterElements.forEach(counter => animateCounterEl(counter));
-    }
-
-    // Observer de alta performance para revelar elementos gerais da página
-    if ('IntersectionObserver' in window) {
-      const observer = new IntersectionObserver((entries, obs) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            const el = entry.target as HTMLElement;
-            el.classList.add('pf-revealed');
-            obs.unobserve(el);
-          }
-        });
-      }, {
-        root: null,
-        rootMargin: '450px 0px 200px 0px',
-        threshold: 0.01
-      });
-
-      revealItems.forEach(item => observer.observe(item));
-
-      // Revela antecipadamente os elementos do topo e primeiras seções
-      revealItems.slice(0, 10).forEach(item => item.classList.add('pf-revealed'));
-    } else {
+    // No mobile, revela todos os elementos de imediato para eliminar qualquer atraso na rolagem com o dedo
+    if (isMobile) {
       revealItems.forEach(item => item.classList.add('pf-revealed'));
+      counterElements.forEach(counter => animateCounterEl(counter));
+    } else {
+      // Observer exclusivo para acionar a contagem animada quando o contador entrar na tela
+      if ('IntersectionObserver' in window) {
+        const counterObserver = new IntersectionObserver((entries, obs) => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting) {
+              const el = entry.target as HTMLElement;
+              animateCounterEl(el);
+              obs.unobserve(el);
+            }
+          });
+        }, {
+          threshold: 0.15,
+          rootMargin: '100px 0px 0px 0px'
+        });
+
+        counterElements.forEach(counter => counterObserver.observe(counter));
+      } else {
+        counterElements.forEach(counter => animateCounterEl(counter));
+      }
+
+      // Observer de alta performance para revelar elementos gerais da página
+      if ('IntersectionObserver' in window) {
+        const observer = new IntersectionObserver((entries, obs) => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting) {
+              const el = entry.target as HTMLElement;
+              el.classList.add('pf-revealed');
+              obs.unobserve(el);
+            }
+          });
+        }, {
+          root: null,
+          rootMargin: '450px 0px 200px 0px',
+          threshold: 0.01
+        });
+
+        revealItems.forEach(item => observer.observe(item));
+
+        // Revela antecipadamente os elementos do topo e primeiras seções
+        revealItems.slice(0, 10).forEach(item => item.classList.add('pf-revealed'));
+      } else {
+        revealItems.forEach(item => item.classList.add('pf-revealed'));
+      }
     }
 
     // Scroll Progress Bar
@@ -147,7 +150,8 @@ export class LandingPage {
       bar.style.width = pct.toFixed(1) + '%';
     };
 
-    if (!isReduced) {
+    // Parallax executado SOMENTE no Desktop para evitar perda de frames no celular
+    if (!isReduced && !isMobile) {
       let ticking = false;
       const onScroll = (): void => {
         if (ticking) return;
@@ -174,6 +178,10 @@ export class LandingPage {
       window.addEventListener('scroll', onScroll, { passive: true });
       window.addEventListener('resize', onScroll, { passive: true });
       onScroll();
+    } else {
+      window.addEventListener('scroll', () => {
+        updateProgress(window.scrollY || 0);
+      }, { passive: true });
     }
 
     // Smooth Scroll para Links Internos (#)
@@ -407,17 +415,17 @@ export class LandingPage {
           </div>
 
           <div class="w-full mb-8">
-            <div class="flex flex-wrap justify-center gap-2 p-2 rounded-3xl bg-white/[0.04] border border-white/10 max-w-6xl mx-auto backdrop-blur-md">
+            <div class="flex flex-wrap justify-center gap-2 p-2.5 rounded-3xl bg-slate-900/90 border border-slate-700/80 max-w-6xl mx-auto backdrop-blur-md shadow-2xl">
               <button id="tab-btn-dashboard" class="px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 bg-gradient-to-r from-[#0052d4] to-[#00a8f5] text-white shadow-lg pf-glow">Painel Comercial</button>
-              <button id="tab-btn-risk" class="px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 text-slate-400 hover:text-emerald-300 hover:bg-white/5 transition">🛡️ Risk Score™</button>
-              <button id="tab-btn-nexttrip" class="px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 text-slate-400 hover:text-indigo-300 hover:bg-white/5 transition">🎯 Next Trip Engine™</button>
-              <button id="tab-btn-viagens" class="px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 text-slate-400 hover:text-[#00a8f5] hover:bg-white/5 transition">Viagens</button>
-              <button id="tab-btn-orcamentos" class="px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 text-slate-400 hover:text-[#00e5a3] hover:bg-white/5 transition">Orçamentos &amp; Upsell</button>
-              <button id="tab-btn-inbox" class="px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 text-slate-400 hover:text-rose-400 hover:bg-white/5 transition">Mensageria &amp; Decisões</button>
-              <button id="tab-btn-escala" class="px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 text-slate-400 hover:text-violet-400 hover:bg-white/5 transition">Escala da Equipe</button>
-              <button id="tab-btn-reembolsos" class="px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 text-slate-400 hover:text-amber-400 hover:bg-white/5 transition">Reembolsos</button>
-              <button id="tab-btn-relatorios" class="px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 text-slate-400 hover:text-indigo-400 hover:bg-white/5 transition">Relatórios</button>
-              <button id="tab-btn-publicas" class="px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 text-slate-400 hover:text-fuchsia-400 hover:bg-white/5 transition">Itinerários VIP</button>
+              <button id="tab-btn-risk" class="px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 bg-slate-800/90 text-slate-200 border border-slate-700 hover:text-emerald-300 hover:border-emerald-500/40 transition">🛡️ Risk Score™</button>
+              <button id="tab-btn-nexttrip" class="px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 bg-slate-800/90 text-slate-200 border border-slate-700 hover:text-indigo-300 hover:border-indigo-500/40 transition">🎯 Next Trip Engine™</button>
+              <button id="tab-btn-viagens" class="px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 bg-slate-800/90 text-slate-200 border border-slate-700 hover:text-[#00a8f5] hover:border-blue-500/40 transition">Viagens</button>
+              <button id="tab-btn-orcamentos" class="px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 bg-slate-800/90 text-slate-200 border border-slate-700 hover:text-[#00e5a3] hover:border-emerald-500/40 transition">Orçamentos &amp; Upsell</button>
+              <button id="tab-btn-inbox" class="px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 bg-slate-800/90 text-slate-200 border border-slate-700 hover:text-rose-400 hover:border-rose-500/40 transition">Mensageria &amp; Decisões</button>
+              <button id="tab-btn-escala" class="px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 bg-slate-800/90 text-slate-200 border border-slate-700 hover:text-violet-400 hover:border-violet-500/40 transition">Escala da Equipe</button>
+              <button id="tab-btn-reembolsos" class="px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 bg-slate-800/90 text-slate-200 border border-slate-700 hover:text-amber-400 hover:border-amber-500/40 transition">Reembolsos</button>
+              <button id="tab-btn-relatorios" class="px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 bg-slate-800/90 text-slate-200 border border-slate-700 hover:text-indigo-400 hover:border-indigo-500/40 transition">Relatórios</button>
+              <button id="tab-btn-publicas" class="px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 bg-slate-800/90 text-slate-200 border border-slate-700 hover:text-fuchsia-400 hover:border-fuchsia-500/40 transition">Itinerários VIP</button>
             </div>
           </div>
 
@@ -644,16 +652,23 @@ export class LandingPage {
               <p class="text-sm text-slate-400 font-medium">Sem curva de aprendizado longa: você vê, configura e começa a vender melhor no mesmo dia.</p>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <span class="absolute -top-5 -right-2 text-7xl font-black text-white/[0.05] select-none">02</span>
-                <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#00e5a3] to-teal-400 text-[#062a1f] flex items-center justify-center mb-5 text-2xl shadow-lg">🎨</div>
-                <h3 class="text-xl font-black text-white">Configure Sua Marca</h3>
-                <p class="text-sm text-slate-400 font-medium mt-2 leading-relaxed">Envie seu logotipo e escolha suas cores. Itinerários, vouchers e pesquisas NPS passam a carregar a identidade da <strong class="text-slate-100">sua agência</strong> automaticamente.</p>
+              <div data-reveal="left" class="relative p-7 rounded-3xl bg-slate-900/90 border border-slate-700/80 backdrop-blur-md overflow-hidden group hover:border-[#00a8f5]/40 transition shadow-xl">
+                <span class="absolute -top-5 -right-2 text-7xl font-black text-white/[0.08] select-none">01</span>
+                <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#0052d4] to-[#00a8f5] text-white flex items-center justify-center mb-5 text-2xl shadow-lg">👀</div>
+                <h3 class="text-xl font-black text-white">Conheça na Prática</h3>
+                <p class="text-sm text-slate-300 font-medium mt-2 leading-relaxed">Explore o <strong class="text-white">Modo Demonstração</strong>: um ambiente real e interativo com dados fictícios no mês corrente, sem precisar cadastrar nada.</p>
               </div>
-              <div data-reveal="right" style="transition-delay:.25s" class="relative p-7 rounded-3xl bg-white/[0.04] border border-white/10 backdrop-blur-md overflow-hidden group hover:border-[#f5af19]/40 transition">
-                <span class="absolute -top-5 -right-2 text-7xl font-black text-white/[0.05] select-none">03</span>
+              <div data-reveal="up" class="relative p-7 rounded-3xl bg-slate-900/90 border border-slate-700/80 backdrop-blur-md overflow-hidden group hover:border-[#00e5a3]/40 transition shadow-xl">
+                <span class="absolute -top-5 -right-2 text-7xl font-black text-white/[0.08] select-none">02</span>
+                <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#00e5a3] to-teal-400 text-slate-950 flex items-center justify-center mb-5 text-2xl shadow-lg font-black">🎨</div>
+                <h3 class="text-xl font-black text-white">Configure Sua Marca</h3>
+                <p class="text-sm text-slate-300 font-medium mt-2 leading-relaxed">Envie seu logotipo e escolha suas cores. Itinerários, vouchers e pesquisas NPS passam a carregar a identidade da <strong class="text-white">sua agência</strong> automaticamente.</p>
+              </div>
+              <div data-reveal="right" class="relative p-7 rounded-3xl bg-slate-900/90 border border-slate-700/80 backdrop-blur-md overflow-hidden group hover:border-[#f5af19]/40 transition shadow-xl">
+                <span class="absolute -top-5 -right-2 text-7xl font-black text-white/[0.08] select-none">03</span>
                 <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#f5af19] to-[#f12711] text-white flex items-center justify-center mb-5 text-2xl shadow-lg">🚀</div>
                 <h3 class="text-xl font-black text-white">Largue as Planilhas</h3>
-                <p class="text-sm text-slate-400 font-medium mt-2 leading-relaxed">Deixe o PaxFlow monitorar pós-vendas, reembolsos, passaportes e escalas 24/7 — e foque o seu tempo no que gera receita: <strong class="text-slate-100">vender mais</strong>.</p>
+                <p class="text-sm text-slate-300 font-medium mt-2 leading-relaxed">Deixe o PaxFlow monitorar pós-vendas, reembolsos, passaportes e escalas 24/7 — e foque o seu tempo no que gera receita: <strong class="text-white">vender mais</strong>.</p>
               </div>
             </div>
 
@@ -1004,63 +1019,63 @@ export class LandingPage {
             </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
               <!-- Plano Solo -->
-              <div data-reveal="up" class="p-7 rounded-3xl bg-white/[0.04] border border-white/10 hover:scale-[1.02] transition-transform flex flex-col justify-between">
+              <div data-reveal="up" class="p-7 rounded-3xl bg-slate-900/90 border border-slate-700/80 hover:scale-[1.02] transition-transform flex flex-col justify-between shadow-xl">
                 <div>
                   <h3 class="text-lg font-black text-white">Solo / Consultor</h3>
-                  <p class="text-sm text-slate-400 mt-1">Para consultores autônomos e agências de 1 pessoa</p>
+                  <p class="text-sm text-slate-300 mt-1 font-medium">Para consultores autônomos e agências de 1 pessoa</p>
                   <div class="mt-5 mb-6">
                     <span class="text-4xl font-black text-[#00a8f5]">R$ 199</span>
-                    <span class="text-sm text-slate-400">/mês</span>
+                    <span class="text-sm text-slate-300">/mês</span>
                   </div>
-                  <ul class="space-y-2.5 text-sm text-slate-300 font-medium">
-                    <li class="flex items-center gap-2"><span class="text-[#00e5a3]">✓</span>1 Consultor autônomo</li>
-                    <li class="flex items-center gap-2"><span class="text-[#00e5a3]">✓</span>Pipeline de orçamentos e viagens</li>
-                    <li class="flex items-center gap-2"><span class="text-[#00e5a3]">✓</span>Itinerários VIP com sua marca e cores</li>
-                    <li class="flex items-center gap-2"><span class="text-[#00e5a3]">✓</span>Alertas de passaporte, visto e SLA</li>
-                    <li class="flex items-center gap-2"><span class="text-[#00e5a3]">✓</span>App PWA no celular com Push</li>
+                  <ul class="space-y-2.5 text-sm text-slate-200 font-medium">
+                    <li class="flex items-center gap-2"><span class="text-[#00e5a3] font-black">✓</span>1 Consultor autônomo</li>
+                    <li class="flex items-center gap-2"><span class="text-[#00e5a3] font-black">✓</span>Pipeline de orçamentos e viagens</li>
+                    <li class="flex items-center gap-2"><span class="text-[#00e5a3] font-black">✓</span>Itinerários VIP com sua marca e cores</li>
+                    <li class="flex items-center gap-2"><span class="text-[#00e5a3] font-black">✓</span>Alertas de passaporte, visto e SLA</li>
+                    <li class="flex items-center gap-2"><span class="text-[#00e5a3] font-black">✓</span>App PWA no celular com Push</li>
                   </ul>
                 </div>
-                <button id="btn-plano-starter" class="mt-8 w-full py-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs uppercase transition">Testar no Modo Demo</button>
+                <button id="btn-plano-starter" class="mt-8 w-full py-3.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-extrabold text-xs uppercase border border-slate-600 transition shadow-md">Testar no Modo Demo</button>
               </div>
 
               <!-- Plano Agência Pro -->
               <div data-reveal="up" class="pf-glow relative p-7 rounded-3xl bg-gradient-to-br from-[#0052d4] via-[#00a8f5] to-[#00e5a3] shadow-2xl pf-animated-gradient scale-[1.03] flex flex-col justify-between">
-                <span class="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-[#f5af19] text-slate-900 text-[9px] font-black uppercase tracking-wider shadow-lg">Mais Popular</span>
+                <span class="absolute -top-3 left-1/2 -translate-x-1/2 px-3.5 py-1 rounded-full bg-[#f5af19] text-slate-950 text-[9px] font-black uppercase tracking-wider shadow-lg border border-amber-300">Mais Popular</span>
                 <div>
                   <h3 class="text-lg font-black text-white">Agência Pro</h3>
-                  <p class="text-sm text-white/85 mt-1">Para agências com equipe e em expansão</p>
+                  <p class="text-sm text-white/90 mt-1 font-medium">Para agências com equipe e em expansão</p>
                   <div class="mt-5 mb-6">
                     <span class="text-4xl font-black text-white">R$ 799</span>
-                    <span class="text-sm text-white/80">/mês</span>
+                    <span class="text-sm text-white/85">/mês</span>
                   </div>
-                  <ul class="space-y-2.5 text-sm text-white/95 font-medium">
-                    <li class="flex items-center gap-2"><span class="text-white">✓</span>Consultores e usuários ilimitados</li>
-                    <li class="flex items-center gap-2"><span class="text-white">✓</span>Gestão de Escalas &amp; Banco de Folgas</li>
-                    <li class="flex items-center gap-2"><span class="text-white">✓</span>PaxFlow Risk Score™ (Diagnóstico 0-100)</li>
-                    <li class="flex items-center gap-2"><span class="text-white">✓</span>Next Trip Engine™ &amp; Upsell Preditivo</li>
-                    <li class="flex items-center gap-2"><span class="text-white">✓</span>Relatórios Financeiros &amp; Markups</li>
-                    <li class="flex items-center gap-2"><span class="text-white">✓</span>Integração Digisac / WhatsApp</li>
+                  <ul class="space-y-2.5 text-sm text-white font-medium">
+                    <li class="flex items-center gap-2"><span class="text-white font-black">✓</span>Consultores e usuários ilimitados</li>
+                    <li class="flex items-center gap-2"><span class="text-white font-black">✓</span>Gestão de Escalas &amp; Banco de Folgas</li>
+                    <li class="flex items-center gap-2"><span class="text-white font-black">✓</span>PaxFlow Risk Score™ (Diagnóstico 0-100)</li>
+                    <li class="flex items-center gap-2"><span class="text-white font-black">✓</span>Next Trip Engine™ &amp; Upsell Preditivo</li>
+                    <li class="flex items-center gap-2"><span class="text-white font-black">✓</span>Relatórios Financeiros &amp; Markups</li>
+                    <li class="flex items-center gap-2"><span class="text-white font-black">✓</span>Integração Digisac / WhatsApp</li>
                   </ul>
                 </div>
-                <button id="btn-plano-profissional" class="mt-8 w-full py-3 rounded-2xl bg-white text-slate-900 hover:bg-slate-100 font-bold text-xs uppercase transition">Iniciar Demonstração</button>
+                <button id="btn-plano-profissional" class="mt-8 w-full py-3.5 rounded-2xl bg-white text-slate-950 hover:bg-slate-100 font-black text-xs uppercase transition shadow-xl">Iniciar Demonstração</button>
               </div>
 
               <!-- Plano Enterprise -->
-              <div data-reveal="up" class="p-7 rounded-3xl bg-white/[0.04] border border-white/10 hover:scale-[1.02] transition-transform flex flex-col justify-between">
+              <div data-reveal="up" class="p-7 rounded-3xl bg-slate-900/90 border border-slate-700/80 hover:scale-[1.02] transition-transform flex flex-col justify-between shadow-xl">
                 <div>
                   <h3 class="text-lg font-black text-white">Enterprise</h3>
-                  <p class="text-sm text-slate-400 mt-1">Para franquias, operadoras e grandes redes</p>
+                  <p class="text-sm text-slate-300 mt-1 font-medium">Para franquias, operadoras e grandes redes</p>
                   <div class="mt-5 mb-6">
                     <span class="text-4xl font-black text-[#f5af19]">Sob Consulta</span>
                   </div>
-                  <ul class="space-y-2.5 text-sm text-slate-300 font-medium">
-                    <li class="flex items-center gap-2"><span class="text-[#00e5a3]">✓</span>Gestão Multi-unidades / Filiais</li>
-                    <li class="flex items-center gap-2"><span class="text-[#00e5a3]">✓</span>Regras operacionais personalizadas</li>
-                    <li class="flex items-center gap-2"><span class="text-[#00e5a3]">✓</span>Gerente de conta e suporte VIP</li>
-                    <li class="flex items-center gap-2"><span class="text-[#00e5a3]">✓</span>Onboarding assistido e migração</li>
+                  <ul class="space-y-2.5 text-sm text-slate-200 font-medium">
+                    <li class="flex items-center gap-2"><span class="text-[#00e5a3] font-black">✓</span>Gestão Multi-unidades / Filiais</li>
+                    <li class="flex items-center gap-2"><span class="text-[#00e5a3] font-black">✓</span>Regras operacionais personalizadas</li>
+                    <li class="flex items-center gap-2"><span class="text-[#00e5a3] font-black">✓</span>Gerente de conta e suporte VIP</li>
+                    <li class="flex items-center gap-2"><span class="text-[#00e5a3] font-black">✓</span>Onboarding assistido e migração</li>
                   </ul>
                 </div>
-                <button id="btn-plano-enterprise" class="mt-8 w-full py-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs uppercase transition">Falar com Consultor</button>
+                <button id="btn-plano-enterprise" class="mt-8 w-full py-3.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-extrabold text-xs uppercase border border-slate-600 transition shadow-md">Falar com Consultor</button>
               </div>
             </div>
           </div>
@@ -1069,43 +1084,44 @@ export class LandingPage {
         <!-- ===== FAQ ===== -->
         <section id="faq" class="relative z-10 w-full py-20 px-6 border-t border-white/10">
           <div class="pf-zone max-w-4xl mx-auto space-y-10">
-            <div class="text-center space-y-2"><span class="px-3 py-1 rounded-full bg-white/[0.06] text-slate-300 border border-white/10 text-[10px] font-black uppercase tracking-widest">Tire suas dúvidas</span><h2 class="text-3xl md:text-4xl font-black tracking-tight text-white">Perguntas Frequentes</h2></div>
+            <div class="text-center space-y-2"><span class="px-3 py-1 rounded-full bg-slate-800 text-slate-200 border border-slate-700 text-[10px] font-black uppercase tracking-widest">Tire suas dúvidas</span><h2 class="text-3xl md:text-4xl font-black tracking-tight text-white">Perguntas Frequentes</h2></div>
             <div class="space-y-4">
-              <details data-reveal="up" class="group bg-white/[0.04] border border-white/10 rounded-2xl p-5 [&_summary::-webkit-details-marker]:hidden" open><summary class="flex items-center justify-between cursor-pointer focus:outline-none"><h3 class="text-sm font-extrabold text-white">Como funciona o Modo Demonstração?</h3><span class="ml-1.5 shrink-0 rounded-full bg-white/10 p-1.5 text-white transition group-open:-rotate-180"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg></span></summary><p class="mt-3 text-sm leading-relaxed text-slate-400 font-medium">É um ambiente de simulação completo e interativo, pré-populado com dados fictícios de clientes, viagens, reembolsos e escalas. Permite testar todas as telas e recursos em tempo real, sem cadastro prévio.</p></details>
-              <details data-reveal="up" class="group bg-white/[0.04] border border-white/10 rounded-2xl p-5 [&_summary::-webkit-details-marker]:hidden"><summary class="flex items-center justify-between cursor-pointer focus:outline-none"><h3 class="text-sm font-extrabold text-white">Posso controlar a escala de todos os funcionários?</h3><span class="ml-1.5 shrink-0 rounded-full bg-white/10 p-1.5 text-white transition group-open:-rotate-180"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg></span></summary><p class="mt-3 text-sm leading-relaxed text-slate-400 font-medium">Sim! O módulo de Central Administrativa permite atribuir turnos, controlar saldos no Banco de Folgas e aprovar solicitações de trocas.</p></details>
-              <details data-reveal="up" class="group bg-white/[0.04] border border-white/10 rounded-2xl p-5 [&_summary::-webkit-details-marker]:hidden"><summary class="flex items-center justify-between cursor-pointer focus:outline-none"><h3 class="text-sm font-extrabold text-white">Como funciona o alerta de passaportes e vistos?</h3><span class="ml-1.5 shrink-0 rounded-full bg-white/10 p-1.5 text-white transition group-open:-rotate-180"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg></span></summary><p class="mt-3 text-sm leading-relaxed text-slate-400 font-medium">O PaxFlow calcula a diferença entre a validade dos documentos e a data da viagem. Se a validade for inferior a 6 meses, gera alertas prioritários no Inbox.</p></details>
-              <details data-reveal="up" class="group bg-white/[0.04] border border-white/10 rounded-2xl p-5 [&_summary::-webkit-details-marker]:hidden"><summary class="flex items-center justify-between cursor-pointer focus:outline-none"><h3 class="text-sm font-extrabold text-white">Como a página do cliente assume as cores da minha agência?</h3><span class="ml-1.5 shrink-0 rounded-full bg-white/10 p-1.5 text-white transition group-open:-rotate-180"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg></span></summary><p class="mt-3 text-sm leading-relaxed text-slate-400 font-medium">Em Configurações, você envia sua logomarca e seleciona a cor primária. Todos os itinerários públicos passam a exibir seu logotipo e paleta automaticamente.</p></details>
-              <details data-reveal="up" class="group bg-white/[0.04] border border-white/10 rounded-2xl p-5 [&_summary::-webkit-details-marker]:hidden"><summary class="flex items-center justify-between cursor-pointer focus:outline-none"><h3 class="text-sm font-extrabold text-white">Preciso de fidelidade ou cartão de crédito para testar?</h3><span class="ml-1.5 shrink-0 rounded-full bg-white/10 p-1.5 text-white transition group-open:-rotate-180"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg></span></summary><p class="mt-3 text-sm leading-relaxed text-slate-400 font-medium">Não. Comece pelo Modo Demonstração — um ambiente completo e gratuito com dados fictícios. Se quiser seguir, é sem contrato de fidelidade: você pode cancelar quando quiser.</p></details>
-              <details data-reveal="up" class="group bg-white/[0.04] border border-white/10 rounded-2xl p-5 [&_summary::-webkit-details-marker]:hidden"><summary class="flex items-center justify-between cursor-pointer focus:outline-none"><h3 class="text-sm font-extrabold text-white">Como instalo o PaxFlow como aplicativo no celular (Android e iPhone)?</h3><span class="ml-1.5 shrink-0 rounded-full bg-white/10 p-1.5 text-white transition group-open:-rotate-180"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg></span></summary><p class="mt-3 text-sm leading-relaxed text-slate-400 font-medium">O PaxFlow é um aplicativo Web PWA. No <strong>iPhone (Safari)</strong>, toque em Compartilhar (⎋) ➔ <em>"Adicionar à Tela de Início"</em>. No <strong>Android (Chrome)</strong>, toque no aviso de instalação ou no menu de 3 pontinhos (⋮) ➔ <em>"Instalar aplicativo"</em>. Ele aparecerá na sua tela inicial como um app nativo, com notificações Push e velocidade total!</p></details>
-              <details data-reveal="up" class="group bg-white/[0.04] border border-white/10 rounded-2xl p-5 [&_summary::-webkit-details-marker]:hidden"><summary class="flex items-center justify-between cursor-pointer focus:outline-none"><h3 class="text-sm font-extrabold text-white">Minha agência já usa planilhas. Como funciona a migração?</h3><span class="ml-1.5 shrink-0 rounded-full bg-white/10 p-1.5 text-white transition group-open:-rotate-180"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg></span></summary><p class="mt-3 text-sm leading-relaxed text-slate-400 font-medium">Nada é perdido. Nossos planos contam com onboarding guiado para importar seus clientes, viagens e reembolsos para o PaxFlow, mantendo o histórico que já construiu.</p></details>
+              <details data-reveal="up" class="group bg-slate-900/90 border border-slate-700/80 rounded-2xl p-5 shadow-lg [&_summary::-webkit-details-marker]:hidden" open><summary class="flex items-center justify-between cursor-pointer focus:outline-none"><h3 class="text-sm font-extrabold text-white">Como funciona o Modo Demonstração?</h3><span class="ml-1.5 shrink-0 rounded-full bg-slate-800 p-1.5 text-white transition group-open:-rotate-180"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg></span></summary><p class="mt-3 text-sm leading-relaxed text-slate-200 font-medium">É um ambiente de simulação completo e interativo, pré-populado com dados fictícios no mês corrente de clientes, viagens, reembolsos e escalas. Permite testar todas as telas e recursos em tempo real, sem cadastro prévio.</p></details>
+              <details data-reveal="up" class="group bg-slate-900/90 border border-slate-700/80 rounded-2xl p-5 shadow-lg [&_summary::-webkit-details-marker]:hidden"><summary class="flex items-center justify-between cursor-pointer focus:outline-none"><h3 class="text-sm font-extrabold text-white">Posso controlar a escala de todos os funcionários?</h3><span class="ml-1.5 shrink-0 rounded-full bg-slate-800 p-1.5 text-white transition group-open:-rotate-180"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg></span></summary><p class="mt-3 text-sm leading-relaxed text-slate-200 font-medium">Sim! O módulo de Central Administrativa permite atribuir turnos, controlar saldos no Banco de Folgas e aprovar solicitações de trocas.</p></details>
+              <details data-reveal="up" class="group bg-slate-900/90 border border-slate-700/80 rounded-2xl p-5 shadow-lg [&_summary::-webkit-details-marker]:hidden"><summary class="flex items-center justify-between cursor-pointer focus:outline-none"><h3 class="text-sm font-extrabold text-white">Como funciona o alerta de passaportes e vistos?</h3><span class="ml-1.5 shrink-0 rounded-full bg-slate-800 p-1.5 text-white transition group-open:-rotate-180"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg></span></summary><p class="mt-3 text-sm leading-relaxed text-slate-200 font-medium">O PaxFlow calcula a diferença entre a validade dos documentos e a data da viagem. Se a validade for inferior a 6 meses, gera alertas prioritários no Inbox.</p></details>
+              <details data-reveal="up" class="group bg-slate-900/90 border border-slate-700/80 rounded-2xl p-5 shadow-lg [&_summary::-webkit-details-marker]:hidden"><summary class="flex items-center justify-between cursor-pointer focus:outline-none"><h3 class="text-sm font-extrabold text-white">Como a página do cliente assume as cores da minha agência?</h3><span class="ml-1.5 shrink-0 rounded-full bg-slate-800 p-1.5 text-white transition group-open:-rotate-180"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg></span></summary><p class="mt-3 text-sm leading-relaxed text-slate-200 font-medium">Em Configurações, você envia sua logomarca e seleciona a cor primária. Todos os itinerários públicos passam a exibir seu logotipo e paleta automaticamente.</p></details>
+              <details data-reveal="up" class="group bg-slate-900/90 border border-slate-700/80 rounded-2xl p-5 shadow-lg [&_summary::-webkit-details-marker]:hidden"><summary class="flex items-center justify-between cursor-pointer focus:outline-none"><h3 class="text-sm font-extrabold text-white">Preciso de fidelidade ou cartão de crédito para testar?</h3><span class="ml-1.5 shrink-0 rounded-full bg-slate-800 p-1.5 text-white transition group-open:-rotate-180"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg></span></summary><p class="mt-3 text-sm leading-relaxed text-slate-200 font-medium">Não. Comece pelo Modo Demonstração — um ambiente completo e gratuito com dados fictícios. Se quiser seguir, é sem contrato de fidelidade: você pode cancelar quando quiser.</p></details>
+              <details data-reveal="up" class="group bg-slate-900/90 border border-slate-700/80 rounded-2xl p-5 shadow-lg [&_summary::-webkit-details-marker]:hidden"><summary class="flex items-center justify-between cursor-pointer focus:outline-none"><h3 class="text-sm font-extrabold text-white">Como instalo o PaxFlow como aplicativo no celular (Android e iPhone)?</h3><span class="ml-1.5 shrink-0 rounded-full bg-slate-800 p-1.5 text-white transition group-open:-rotate-180"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg></span></summary><p class="mt-3 text-sm leading-relaxed text-slate-200 font-medium">O PaxFlow é um aplicativo Web PWA. No <strong>iPhone (Safari)</strong>, toque em Compartilhar (⎋) ➔ <em>"Adicionar à Tela de Início"</em>. No <strong>Android (Chrome)</strong>, toque no aviso de instalação ou no menu de 3 pontinhos (⋮) ➔ <em>"Instalar aplicativo"</em>. Ele aparecerá na sua tela inicial como um app nativo, com notificações Push e velocidade total!</p></details>
+              <details data-reveal="up" class="group bg-slate-900/90 border border-slate-700/80 rounded-2xl p-5 shadow-lg [&_summary::-webkit-details-marker]:hidden"><summary class="flex items-center justify-between cursor-pointer focus:outline-none"><h3 class="text-sm font-extrabold text-white">Minha agência já usa planilhas. Como funciona a migração?</h3><span class="ml-1.5 shrink-0 rounded-full bg-slate-800 p-1.5 text-white transition group-open:-rotate-180"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg></span></summary><p class="mt-3 text-sm leading-relaxed text-slate-200 font-medium">Nada é perdido. Nossos planos contam com onboarding guiado para importar seus clientes, viagens e reembolsos para o PaxFlow, mantendo o histórico que já construiu.</p></details>
             </div>
           </div>
         </section>
 
         <!-- ===== CTA FINAL ===== -->
         <section id="recursos" class="relative z-10 w-full py-20 px-6 border-t border-white/10 text-center overflow-hidden">
-          <div class="pf-beam"></div>          <div class="absolute inset-0 bg-gradient-to-br from-[#0052d4]/30 via-[#0a0d1f] to-[#f12711]/30 pf-animated-gradient opacity-60"></div>
+          <div class="pf-beam"></div>
+          <div class="absolute inset-0 bg-gradient-to-br from-[#0052d4]/30 via-[#0a0d1f] to-[#f12711]/30 pf-animated-gradient opacity-60"></div>
           <div class="pf-zone relative max-w-3xl mx-auto space-y-6">
             <span class="px-4 py-1.5 rounded-full bg-[#00e5a3]/20 text-[#00e5a3] border border-[#00e5a3]/30 text-[10px] font-black uppercase tracking-widest">Leve sua agência para o próximo nível</span>
             <p class="text-xl sm:text-3xl font-black tracking-tight bg-gradient-to-r from-[#00a8f5] via-[#00e5a3] to-[#f5af19] bg-clip-text text-transparent pf-animated-gradient">Da venda até a volta!</p>
             <h2 class="text-3xl sm:text-5xl font-black tracking-tight leading-tight text-white">Pronto para revolucionar a operação da sua agência?</h2>
-            <p class="text-sm sm:text-base text-slate-300 max-w-2xl mx-auto leading-relaxed">Assuma o controle total dos pós-vendas, reembolsos, SLAs de vistos e escalas da sua equipe.</p>
+            <p class="text-sm sm:text-base text-slate-200 max-w-2xl mx-auto leading-relaxed font-medium">Assuma o controle total dos pós-vendas, reembolsos, SLAs de vistos e escalas da sua equipe.</p>
             <div class="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
               <button id="btn-cta-demo-final" class="pf-shine pf-animated-gradient w-full sm:w-auto px-8 py-4 rounded-2xl text-white font-black text-xs tracking-wider uppercase flex items-center justify-center gap-2 bg-gradient-to-r from-[#0052d4] via-[#00a8f5] to-[#00e5a3] shadow-2xl hover:scale-[1.05] transition-transform">Modo Demonstração</button>
               <button id="btn-cta-whatsapp-final" class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs tracking-wider uppercase shadow-xl flex items-center justify-center gap-2 transition">Falar com Consultor</button>
-              <button id="btn-cta-login-final" class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-white/[0.08] hover:bg-white/[0.15] text-white font-black text-xs tracking-wider uppercase border border-white/15 transition">Acessar Sistema Real</button>
+              <button id="btn-cta-login-final" class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-extrabold text-xs tracking-wider uppercase border border-slate-600 transition shadow-md">Acessar Sistema Real</button>
             </div>
-            <p class="pt-6 text-xs text-slate-400 font-medium">🔒 Experimente sem compromisso · Sem cartão de crédito · Cancele quando quiser</p>
+            <p class="pt-6 text-xs text-slate-300 font-medium">🔒 Experimente sem compromisso · Sem cartão de crédito · Cancele quando quiser</p>
           </div>
         </section>
 
         <!-- ===== FOOTER ===== -->
-        <footer class="relative z-10 w-full border-t border-white/10 py-5 px-6 sm:px-10 text-xs text-slate-400 font-medium">
+        <footer class="relative z-10 w-full border-t border-white/10 py-6 px-6 sm:px-10 text-xs text-slate-300 font-medium bg-[#04050a]">
           <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
             
             <!-- Logo do PaxFlow à esquerda -->
             <a href="#topo" class="flex items-center gap-2.5 group pointer-events-auto shrink-0">
-              <span class="relative w-8 h-8 rounded-xl bg-white/10 p-1 shadow-md pf-pulse-ring shrink-0">
+              <span class="relative w-8 h-8 rounded-xl bg-slate-800 p-1 shadow-md pf-pulse-ring shrink-0 border border-slate-700">
                 <img src="/logo.svg" alt="PaxFlow" class="w-full h-full object-contain rounded-lg" />
               </span>
               <span class="text-base font-black tracking-tight text-white">Pax<span class="bg-gradient-to-r from-[#00a8f5] via-[#00e5a3] to-[#f5af19] bg-clip-text text-transparent">Flow</span></span>
@@ -1113,17 +1129,18 @@ export class LandingPage {
 
             <!-- Selos de segurança e copyright alinhados à direita -->
             <div class="flex flex-col sm:flex-row items-center gap-x-6 gap-y-2 text-center md:text-right">
-              <div class="flex flex-wrap items-center justify-center md:justify-end gap-x-4 gap-y-1 text-slate-400 text-[11px]">
+              <div class="flex flex-wrap items-center justify-center md:justify-end gap-x-4 gap-y-1 text-slate-300 text-[11px]">
                 <span class="flex items-center gap-1">🛡️ Dados protegidos</span>
                 <span class="flex items-center gap-1">🔐 Conformidade LGPD</span>
                 <span class="flex items-center gap-1">🔄 Atualizações constantes</span>
               </div>
               <span class="hidden sm:inline text-slate-600">|</span>
-              <p class="text-[11px] text-slate-400">© 2026 PaxFlow. Todos os direitos reservados. Sistema Especializado em CRM & Pós-Venda Turístico.</p>
+              <p class="text-[11px] text-slate-300">© 2026 PaxFlow. Todos os direitos reservados. Sistema Especializado em CRM & Pós-Venda Turístico.</p>
             </div>
 
           </div>
         </footer>
+
 
         <!-- Floating WhatsApp FAB -->
         <a id="btn-floating-whatsapp" href="https://wa.me/5511966989160?text=Ol%C3%A1!%20Gostaria%20de%20saber%20mais%20sobre%20o%20PaxFlow%20para%20minha%20ag%C3%AAncia." target="_blank" class="fixed bottom-6 right-6 z-50 px-4 py-3 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-extrabold text-xs rounded-full shadow-2xl border border-emerald-400/40 transition-all flex items-center gap-2.5 pf-glow">
@@ -1192,16 +1209,16 @@ export class LandingPage {
       publicas: 'PaxFlow - Itinerário Digital do Passageiro'
     };
 
-    const baseTab = "px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 text-slate-400 hover:bg-white/5 transition";
+    const baseTab = "px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 bg-slate-800/90 text-slate-200 border border-slate-700 hover:text-white hover:bg-slate-700 transition shadow-sm";
     const activeMap: Record<string, string> = {
       dashboard: "px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 bg-gradient-to-r from-[#0052d4] to-[#00a8f5] text-white shadow-lg pf-glow",
       risk: "px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-500 text-white shadow-lg pf-glow",
       nexttrip: "px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 bg-gradient-to-r from-indigo-600 via-purple-600 to-[#00a8f5] text-white shadow-lg pf-glow",
       viagens: "px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 bg-gradient-to-r from-[#00a8f5] to-cyan-500 text-white shadow-lg",
-      orcamentos: "px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 bg-gradient-to-r from-[#00e5a3] to-teal-400 text-[#062a1f] shadow-lg",
+      orcamentos: "px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 bg-gradient-to-r from-[#00e5a3] to-teal-400 text-slate-950 font-black shadow-lg",
       inbox: "px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 bg-gradient-to-r from-[#f12711] to-[#f5af19] text-white shadow-lg",
       escala: "px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 bg-gradient-to-r from-violet-600 to-fuchsia-500 text-white shadow-lg",
-      reembolsos: "px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 bg-gradient-to-r from-[#f5af19] to-amber-500 text-[#3d2c00] shadow-lg",
+      reembolsos: "px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 bg-gradient-to-r from-[#f5af19] to-amber-500 text-slate-950 font-black shadow-lg",
       relatorios: "px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-[#00a8f5] text-white shadow-lg",
       publicas: "px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 bg-gradient-to-r from-fuchsia-600 to-purple-500 text-white shadow-lg"
     };
@@ -1272,7 +1289,7 @@ export class LandingPage {
       nps: '03. Pesquisa NPS da Sua Marca',
       whatsapp: '04. Notificações WhatsApp com Assinatura'
     };
-    const brandBase = "w-full p-4 rounded-2xl text-left transition-all duration-200 flex items-start gap-3 bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 border border-white/10";
+    const brandBase = "w-full p-4 rounded-2xl text-left transition-all duration-200 flex items-start gap-3 bg-slate-800/80 hover:bg-slate-700 text-slate-200 border border-slate-700 shadow-sm";
     const brandActive = "w-full p-4 rounded-2xl text-left transition-all duration-200 flex items-start gap-3 bg-gradient-to-r from-[#0052d4] to-[#00a8f5] text-white shadow-xl pf-glow";
 
     let brandTabIndex = 0;

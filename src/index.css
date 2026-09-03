@@ -653,15 +653,15 @@ html.dark .landing-page-wrapper .grid-bg {
   transform: translateY(0);
 }
 
-@media (prefers-reduced-motion: reduce) {
+@media (max-width: 768px), (prefers-reduced-motion: reduce) {
   .landing-v2 [data-reveal],
   .landing-v2 .pf-slide-up,
   .landing-v2 .pf-slide-left,
   .landing-v2 .pf-slide-right,
   .landing-v2 .pf-zone {
-    opacity: 1;
-    transform: none;
-    transition: none;
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
   }
   .landing-v2 [data-parallax] {
     transform: none !important;
