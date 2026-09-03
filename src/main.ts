@@ -16,6 +16,7 @@ import { VersionChecker } from './services/versionChecker';
 import { VersionToast } from './components/VersionToast';
 
 import { PushNotificationService } from './services/pushNotificationService';
+import { isNextTripEnabled } from './utils/featureFlags';
 
 (window as any).traduzirErro = traduzirErro;
 
@@ -34,6 +35,7 @@ class App {
   private container: HTMLElement;
   private user: any = null;
   private perfil: PerfilConsultor | null = null;
+  private settings: any = null;
   private router!: Router;
   private theme: 'light' | 'dark' = 'light';
   private sidebarCollapsed: boolean = false;
@@ -176,7 +178,11 @@ class App {
     }
 
     try {
-      const { user, perfil, error } = await getSessaoAtual();
+      const [{ user, perfil, error }, { data: settingsData }] = await Promise.all([
+        getSessaoAtual(),
+        supabase.from('global_settings').select('*').limit(1).maybeSingle()
+      ]);
+      this.settings = settingsData || null;
 
       if (error || !user) {
         this.renderLogin();
@@ -340,9 +346,13 @@ class App {
    */
   private renderLogin(): void {
     const loginPage = new LoginPage(this.container, {
-      onLoginSuccess: (user, perfil) => {
+      onLoginSuccess: async (user, perfil) => {
         this.user = user;
         this.perfil = perfil;
+        try {
+          const { data: sData } = await supabase.from('global_settings').select('*').limit(1).maybeSingle();
+          this.settings = sData || null;
+        } catch (e) {}
         this.renderAppShell();
         this.router = new Router(document.getElementById('page-content')!);
         const defaultPage = (perfil && perfil.role === 'admin') ? 'analytics' : 'inbox';
@@ -478,14 +488,33 @@ class App {
               </button>
 
               <!-- Link: Next Trip Engine -->
-              <button id="nav-next-trip" class="w-full px-3 py-1.5 rounded-xl flex items-center ${this.sidebarCollapsed ? 'justify-center' : 'justify-start'} gap-2.5 font-semibold text-xs text-left transition select-none group">
-                <svg width="18" height="18" class="w-4.5 h-4.5 text-slate-400 group-hover:text-slate-600 dark:text-slate-400 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                  <circle cx="12" cy="12" r="9" />
-                  <circle cx="12" cy="12" r="5" />
-                  <circle cx="12" cy="12" r="1.5" fill="currentColor" />
-                </svg>
-                <span class="${this.sidebarCollapsed ? 'md:hidden' : ''}">Next Trip Engine</span>
-              </button>
+              ${(() => {
+                const nextTripActive = isNextTripEnabled(this.user, this.perfil, this.settings);
+                if (nextTripActive) {
+                  return `
+                    <button id="nav-next-trip" class="w-full px-3 py-1.5 rounded-xl flex items-center ${this.sidebarCollapsed ? 'justify-center' : 'justify-start'} gap-2.5 font-semibold text-xs text-left transition select-none group">
+                      <svg width="18" height="18" class="w-4.5 h-4.5 text-slate-400 group-hover:text-slate-600 dark:text-slate-400 dark:group-hover:text-slate-300 group-[.bg-indigo-600]:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <circle cx="12" cy="12" r="9" />
+                        <circle cx="12" cy="12" r="5" />
+                        <circle cx="12" cy="12" r="1.5" fill="currentColor" />
+                      </svg>
+                      <span class="${this.sidebarCollapsed ? 'md:hidden' : ''}">Next Trip Engine</span>
+                    </button>
+                  `;
+                } else {
+                  return `
+                    <button id="nav-next-trip" title="Recurso desativado nas configurações globais" class="w-full px-3 py-1.5 rounded-xl flex items-center ${this.sidebarCollapsed ? 'justify-center' : 'justify-start'} gap-2.5 font-semibold text-xs text-left opacity-40 cursor-not-allowed select-none group" disabled>
+                      <svg width="18" height="18" class="w-4.5 h-4.5 text-slate-400 dark:text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <circle cx="12" cy="12" r="9" />
+                        <circle cx="12" cy="12" r="5" />
+                        <circle cx="12" cy="12" r="1.5" fill="currentColor" />
+                      </svg>
+                      <span class="${this.sidebarCollapsed ? 'md:hidden' : ''}">Next Trip Engine</span>
+                      <span class="ml-auto text-[9px] px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-slate-500 font-bold uppercase ${this.sidebarCollapsed ? 'md:hidden' : ''}">Off</span>
+                    </button>
+                  `;
+                }
+              })()}
 
               <!-- Link: Relatórios -->
               <button id="nav-relatorios" class="w-full px-3 py-1.5 rounded-xl flex items-center ${this.sidebarCollapsed ? 'justify-center' : 'justify-start'} gap-2.5 font-semibold text-xs text-left transition select-none group">
@@ -1138,6 +1167,11 @@ class App {
    * Gerencia a navegação e o roteamento entre as diferentes páginas
    */
   private navigate(page: string, extraId?: string): void {
+    if (page === 'next-trip' && !isNextTripEnabled(this.user, this.perfil, this.settings)) {
+      this.showToast('O Next Trip Engine está desativado nas configurações globais.', 'error');
+      page = (this.perfil && this.perfil.role === 'admin') ? 'analytics' : 'inbox';
+    }
+
     this.router.navigate(page, extraId);
 
     // Atualiza os estilos de botões ativos na Sidebar

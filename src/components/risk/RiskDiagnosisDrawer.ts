@@ -5,6 +5,8 @@ import { showCustomAlert, showCustomConfirm, showCustomPrompt } from '../../serv
 import { registrarXp } from '../../services/gamification';
 import { showBadgeCelebrationModal } from '../../utils/celebrations';
 
+import { isRiskScoreEnabled } from '../../utils/featureFlags';
+
 function escapeHtml(str: string): string {
   if (!str) return '';
   return str
@@ -40,6 +42,11 @@ export class RiskDiagnosisDrawer {
       settings = sData || null;
     } catch (err) {
       console.warn('Erro ao carregar dados do Risk Score. Utilizando fallback local.', err);
+    }
+
+    if (!isRiskScoreEnabled(user, perfil, settings)) {
+      showCustomAlert('O recurso Risk Score™ encontra-se desativado nas configurações globais.', 'Recurso Desativado');
+      return;
     }
 
     if (!viagem) {

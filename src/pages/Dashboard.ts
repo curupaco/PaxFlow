@@ -27,7 +27,10 @@ import {
   renderLateralEditorPaneHTML
 } from '../components/dashboard/DashboardTemplates';
 
+import { isNextTripEnabled, isRiskScoreEnabled, isUpsellEnabled } from '../utils/featureFlags';
+
 // Injeta estilos premium e animações micro-interativas para SLAs diretamente no DOM
+
 if (typeof document !== 'undefined') {
   const style = document.createElement('style');
   style.textContent = `
@@ -1878,6 +1881,12 @@ export class Dashboard {
   private async renderNextTripEngineWidget(): Promise<void> {
     const mount = this.container.querySelector('#next-trip-engine-mount') as HTMLElement;
     if (!mount) return;
+
+    if (!isNextTripEnabled(this.user, this.perfil, this.settings)) {
+      mount.innerHTML = '';
+      mount.classList.add('hidden');
+      return;
+    }
 
     let oportunidades: any[] = [];
 

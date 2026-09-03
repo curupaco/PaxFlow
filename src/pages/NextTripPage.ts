@@ -4,6 +4,7 @@ import { NextTripOpportunity, PerfilConsultor } from '../types';
 import { SendTemplateMessageModal } from '../components/dashboard/SendTemplateMessageModal';
 import { renderHelpIcon } from '../utils/helpHelper';
 import { UpsellEngineService } from '../services/upsellEngineService';
+import { isNextTripEnabled } from '../utils/featureFlags';
 
 export class NextTripPage {
   private container: HTMLElement;
@@ -37,6 +38,12 @@ export class NextTripPage {
       this.perfil = perfil;
 
       await this.loadData();
+
+      if (!isNextTripEnabled(this.user, this.perfil, this.settings)) {
+        this.renderAuthError('O recurso Next Trip Engine encontra-se desativado nas configurações globais.');
+        return;
+      }
+
       this.render();
       this.setupEventListeners();
     } catch (err: any) {
