@@ -1758,6 +1758,7 @@ export class ConfiguracoesPage {
           </h2>
 
           <form id="form-senha-admin" class="space-y-4">
+            <input type="text" name="username" value="${this.perfil?.email || 'usuario'}" autocomplete="username" class="hidden" readonly aria-hidden="true" />
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Nova Senha de Acesso *</label>
