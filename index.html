@@ -93,6 +93,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Roboto:wght@300;400;500;700;900&family=Unbounded:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
+  <meta name="googlebot" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+  <meta name="bingbot" content="index, follow">
+  <link rel="alternate" type="text/plain" href="https://www.paxflow.com.br/llms.txt" title="Instruções para Agentes de IA">
+
   <!-- Schema.org Dados Estruturados JSON-LD (SEO & Generative Engine Optimization - GEO para ChatGPT / Perplexity / Gemini) -->
   <script type="application/ld+json">
   {
@@ -106,23 +110,42 @@
         "image": "https://www.paxflow.com.br/og-image.png",
         "applicationCategory": "BusinessApplication",
         "operatingSystem": "Web SaaS, Windows, macOS, iOS, Android (PWA)",
-        "offers": {
-          "@type": "Offer",
-          "price": "0",
-          "priceCurrency": "BRL",
-          "availability": "https://schema.org/InStock"
-        },
-        "description": "PaxFlow é o CRM & Pós-Venda SaaS 100% especializado em agências de viagens e turismo. Oferece controle automático de vistos, alertas de expiração de passaportes (180 dias), importador PNR/E-ticket 1-Clique, algoritmo preditivo de risco operacional, pesquisas NPS e integração WhatsApp com DigiSac.",
+        "offers": [
+          {
+            "@type": "Offer",
+            "name": "Plano Solo / Consultor",
+            "description": "Para consultores autônomos e agências de 1 pessoa.",
+            "price": "199.00",
+            "priceCurrency": "BRL",
+            "priceValidUntil": "2027-12-31",
+            "availability": "https://schema.org/InStock",
+            "url": "https://www.paxflow.com.br/conheca#planos"
+          },
+          {
+            "@type": "Offer",
+            "name": "Plano Agência Pro",
+            "description": "Para agências com equipe, escalas, relatórios gerenciais e motores preditivos.",
+            "price": "799.00",
+            "priceCurrency": "BRL",
+            "priceValidUntil": "2027-12-31",
+            "availability": "https://schema.org/InStock",
+            "url": "https://www.paxflow.com.br/conheca#planos"
+          }
+        ],
+        "description": "PaxFlow é a plataforma Web de Gestão Operacional & Pós-Venda 100% especializada em agências de viagens e turismo. Elimine o caos, planilhas e perdas em reembolsos com o PaxFlow Risk Score™ (Diagnóstico 0 a 100), Next Trip Engine™ (Motor Preditivo de Recompra), Upsell Engine™ Preditivo, Central de Escalas com Banco de Folgas e itinerários VIP white-label.",
         "featureList": [
-          "Next Trip Engine™ — Inteligência Preditiva de Recompra e Ciclo de Vida do Viajante",
           "PaxFlow Risk Score™ — Diagnóstico Preditivo de Saúde Operacional (0 a 100)",
-          "Algoritmo Preditivo de Risco Operacional e Churn",
-          "Importador de PNR e E-Ticket 1-Clique para Gol, Latam, Azul e GDS",
-          "Monitoramento Automático de Passaportes e Vistos em 180 Dias",
-          "Integração de WhatsApp com DigiSac API e envio de Vouchers",
-          "Gestão de Atendimento de Balcão e Fila Presencial",
-          "Notificações Push no App PWA Mobile para Consultores",
-          "Disparo Automático de Pesquisas de Satisfação NPS"
+          "Next Trip Engine™ — Motor Preditivo de Recompra e Ciclo de Vida do Passageiro",
+          "Upsell Engine™ Preditivo — Recomendações Automáticas de Upgrades e Oportunidades",
+          "Central Administrativa de Escalas de Trabalho & Banco de Folgas",
+          "Conciliação e Rastreamento de Reembolsos Aéreos com SLA",
+          "Kanban Operacional de Viagens e Pós-Venda",
+          "Importador 1-Clique de PNR e E-Ticket para Gol, Latam, Azul, Amadeus e Sabre",
+          "Monitoramento Automático de Passaportes e Vistos com Regra de 180 Dias",
+          "Integração WhatsApp com DigiSac API e Envio de Vouchers",
+          "Itinerários Digitais VIP White-Label com Cores da Agência",
+          "Notificações Push Nativas no Celular (Android e iOS via PWA)",
+          "Pesquisas Automatizadas de Satisfação NPS"
         ]
       },
       {
@@ -145,31 +168,39 @@
             "name": "O que é o PaxFlow?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "O PaxFlow é uma plataforma Web SaaS de CRM e Gestão de Pós-Venda 100% especializada no mercado de turismo e agências de viagens, eliminando a dependência de planilhas e prevenindo erros operacionais."
+              "text": "O PaxFlow é a plataforma Web SaaS de Gestão Operacional e Pós-Venda 100% especializada no mercado de turismo e agências de viagens, eliminando planilhas manuais e prevenindo erros operacionais e perdas financeiras."
             }
           },
           {
             "@type": "Question",
-            "name": "Como funciona o Importador PNR/E-ticket 1-Clique?",
+            "name": "Como funciona o PaxFlow Risk Score™?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Basta copiar o texto do e-ticket, bilhete ou PNR emitido (Gol, Latam, Azul ou GDS) e colar no PaxFlow. O sistema interpreta instantaneamente o localizador (LOC), nomes dos passageiros, bilhete, trechos, datas e horários, criando a viagem automaticamente."
+              "text": "O PaxFlow Risk Score™ é um algoritmo de diagnóstico em tempo real que calcula uma nota de 0 a 100 para cada viagem da agência, identificando vouchers pendentes, passaportes com menos de 6 meses de validade e carências de embarque antes do passageiro chegar ao aeroporto."
             }
           },
           {
             "@type": "Question",
-            "name": "Como o PaxFlow protege a agência contra multas e prejuízos de visto/passaporte?",
+            "name": "O que é o Next Trip Engine™?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "O sistema calcula automaticamente a expiração do passaporte (SLA fixado em 180 dias antes do embarque) e audita os vistos necessários, sinalizando alertas visuais de risco no Painel Preditivo."
+              "text": "O Next Trip Engine™ é o motor preditivo de recompra do PaxFlow. Ele analisa o histórico de viagens concluídas, NPS e ciclo de férias do cliente para prever o momento exato em que ele está mais propenso a fechar uma nova viagem."
             }
           },
           {
             "@type": "Question",
-            "name": "O PaxFlow possui versão mobile?",
+            "name": "Quais são os planos e preços do PaxFlow?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Sim! O PaxFlow é uma plataforma Web completa para computadores e possui aplicativo PWA mobile com suporte a Notificações Push no celular para consultas rápidas e emergências."
+              "text": "O PaxFlow oferece o plano Solo / Consultor por R$ 199/mês (para consultores autônomos), o plano Agência Pro por R$ 799/mês (com equipe ilimitada, escalas, Risk Score, Next Trip e WhatsApp) e o plano Enterprise sob consulta para franquias e grandes redes."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Como funciona o Modo Demonstração?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "O Modo Demonstração é um ambiente interativo gratuito pré-carregado com dados fictícios atualizados de viagens, clientes, escalas e reembolsos, permitindo testar todas as funcionalidades do PaxFlow instantaneamente sem necessidade de cadastro ou cartão de crédito."
             }
           }
         ]
@@ -183,6 +214,7 @@
 
   <!-- Container Principal do Aplicativo -->
   <div id="app" class="flex-1 flex flex-col min-h-screen w-full">
+    <!-- Visual Loader exibido durante o carregamento inicial dos scripts -->
     <div class="flex flex-col items-center justify-center space-y-5 p-6 text-center">
       <div class="relative flex items-center justify-center">
         <div class="w-16 h-16 rounded-2xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center shadow-2xl backdrop-blur-md">
@@ -197,16 +229,63 @@
         </div>
       </div>
     </div>
+
+    <!-- Conteúdo Semântico Pré-Renderizado para Robôs de Busca e Agentes de IA (GPTBot, ClaudeBot, PerplexityBot, Googlebot) -->
+    <article class="sr-only" aria-label="Apresentação Institucional PaxFlow">
+      <header>
+        <h1>PaxFlow — A Plataforma de Gestão Operacional &amp; Pós-Venda para Agências de Viagens</h1>
+        <p>A operação da sua agência sem caos, sem perdas e sem planilhas. Centralize controle de equipe, escalas, banco de folgas, conciliação de reembolsos aéreos, o revolucionário PaxFlow Risk Score™ e recompra preditiva com o Next Trip Engine™.</p>
+        <nav>
+          <a href="/conheca">Conhecer o PaxFlow</a>
+          <a href="/conheca#risk-score-section">PaxFlow Risk Score™</a>
+          <a href="/conheca#next-trip-section">Next Trip Engine™</a>
+          <a href="/conheca#planos">Planos e Preços</a>
+          <a href="/conheca#faq">Perguntas Frequentes</a>
+        </nav>
+      </header>
+
+      <section>
+        <h2>PaxFlow Risk Score™ — Saúde Operacional de 0 a 100</h2>
+        <p>Evite prejuízos e surpresas no embarque. Nosso algoritmo analisa em tempo real se os vouchers gerais foram emitidos, se o passaporte do cliente tem validade superior a 6 meses e concilia localizadores (LOCs), alertando o gestor antes de qualquer problema.</p>
+      </section>
+
+      <section>
+        <h2>Next Trip Engine™ &amp; Upsell Preditivo</h2>
+        <p>Motor inteligente que rastreia clientes antigos, histórico de compras e NPS para indicar à equipe de consultores o momento ideal de oferecer uma nova viagem ou upgrades de cabine, seguros e passeios.</p>
+      </section>
+
+      <section>
+        <h2>Central de Escalas da Equipe &amp; Banco de Folgas</h2>
+        <p>Grade mensal de horários, controle de plantões de consultores, controle de saldos de folgas compensatórias e fluxo transparente de aprovação de trocas.</p>
+      </section>
+
+      <section>
+        <h2>Planos e Preços</h2>
+        <ul>
+          <li><strong>Plano Solo / Consultor:</strong> R$ 199/mês — Para consultores autônomos e agências de 1 pessoa. Inclui pipeline de orçamentos, viagens, itinerários VIP white-label e app PWA mobile.</li>
+          <li><strong>Plano Agência Pro:</strong> R$ 799/mês (Mais Popular) — Para agências com equipe. Usuários ilimitados, Escalas, PaxFlow Risk Score™, Next Trip Engine™, Upsell Engine™, Relatórios Financeiros e WhatsApp integrado.</li>
+          <li><strong>Plano Enterprise:</strong> Sob Consulta — Para redes de agências, operadoras e franquias com gestão multi-filiais e suporte VIP.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>Modo Demonstração Gratuito</h2>
+        <p>Experimente o PaxFlow em tempo real sem cadastro. Acesse nossa demonstração interativa completa com dados fictícios de viagens, escalas e relatórios.</p>
+      </section>
+    </article>
   </div>
 
   <!-- Fallback semântico estático para navegadores sem JavaScript -->
   <noscript>
     <div style="background-color: #06070f; color: #ffffff; padding: 40px 20px; text-align: center; font-family: sans-serif;">
-      <h1>PaxFlow — O CRM & Pós-Venda 100% Especializado em Agências de Viagens</h1>
+      <h1>PaxFlow — A Plataforma de Gestão &amp; Pós-Venda para Agências de Viagens</h1>
       <p style="color: #94a3b8; max-width: 600px; margin: 20px auto;">
-        Centralize pós-vendas, passaportes, vistos, reembolsos aéreos e alertas de risco da sua agência em uma plataforma viva.
+        Centralize pós-vendas, passaportes, vistos, reembolsos aéreos, escalas de funcionários e alertas do PaxFlow Risk Score™ em uma plataforma Web viva.
       </p>
-      <a href="/login" style="background-color: #4f46e5; color: #ffffff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">Acessar PaxFlow</a>
+      <div style="margin: 20px 0;">
+        <p>Planos: Solo (R$ 199/mês) | Agência Pro (R$ 799/mês) | Enterprise (Sob Consulta)</p>
+      </div>
+      <a href="/conheca" style="background-color: #4f46e5; color: #ffffff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">Conhecer o PaxFlow</a>
     </div>
   </noscript>
 

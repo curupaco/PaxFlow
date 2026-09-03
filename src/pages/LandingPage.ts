@@ -1037,7 +1037,7 @@ export class LandingPage {
                   <h3 class="text-lg font-black text-white">Agência Pro</h3>
                   <p class="text-sm text-white/85 mt-1">Para agências com equipe e em expansão</p>
                   <div class="mt-5 mb-6">
-                    <span class="text-4xl font-black text-white">R$ 599</span>
+                    <span class="text-4xl font-black text-white">R$ 799</span>
                     <span class="text-sm text-white/80">/mês</span>
                   </div>
                   <ul class="space-y-2.5 text-sm text-white/95 font-medium">

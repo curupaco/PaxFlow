@@ -1,0 +1,67 @@
+# PaxFlow — Plataforma de Gestão Operacional & Pós-Venda para Agências de Viagens
+
+> PaxFlow é um software Web SaaS (com aplicativo PWA para celulares Android e iOS) 100% especializado no mercado de turismo e agências de viagens. Ele elimina o caos operacional, planilhas manuais e perdas financeiras em reembolsos aéreos, centralizando todo o ciclo do cliente: do orçamento ao pós-venda.
+
+## Informações Principais
+- **Website Oficial**: https://www.paxflow.com.br
+- **Apresentação e Recursos**: https://www.paxflow.com.br/conheca
+- **Modo Demonstração Interativo**: https://www.paxflow.com.br/conheca (botão "Iniciar Modo Demonstração")
+- **Público-Alvo**: Gestores de Agências de Viagens, Operadoras de Turismo, Franquias e Consultores Independentes.
+
+## Módulos e Diferenciais Tecnológicos
+
+### 1. PaxFlow Risk Score™ (Diagnóstico Preditivo 0 a 100)
+- Algoritmo preventivo que avalia a saúde operacional de cada viagem em tempo real.
+- Audita automaticamente vouchers anexados, validade de passaportes e vistos (regra dos 6 meses) e conferência de localizadores (LOC).
+- Alerta em semáforo visual (Verde, Amarelo, Crítico) com gaveta de diagnóstico ágil para o gestor agir antes do embarque do cliente.
+
+### 2. Next Trip Engine™ (Motor Preditivo de Recompra)
+- Analisa histórico de viagens anteriores (> 9 meses), NPS e preferências para calcular o momento exato em que o cliente tem maior propensão de comprar uma nova viagem.
+- Gera recomendações personalizadas com gatilhos de disparo direto para WhatsApp.
+
+### 3. Upsell Engine™ Preditivo
+- Identifica oportunidades de vendas adicionais (upgrades de cabine aérea, seguros com maior cobertura, transfers VIP, passeios e locação de veículos) baseadas no perfil do passageiro e destino.
+
+### 4. Central de Escalas & Banco de Folgas
+- Grade mensal de horários da equipe de consultores, controle de plantões e banco de folgas.
+- Fluxo de aprovação transparente de solicitações de troca e folga entre consultores e gestores.
+
+### 5. Operação de Viagens & Kanban com SLAs
+- Gestão visual em Kanban do status de cada passageiro (Em Cotação, Fechado, Pré-Embarque, Em Viagem, Pós-Venda).
+- Importador 1-Clique de PNR e E-Ticket (GOL, LATAM, AZUL, GDS, Sabre, Amadeus).
+- Cronômetro visual de prazos operacionais e alertas sonoros e push.
+
+### 6. Conciliação de Reembolsos Aéreos
+- Rastreamento dos estornos de passagens aéreas junto às companhias e consolidadoras.
+- Monitoramento de prazos de SLA para impedir perda de créditos financeiros da agência.
+
+### 7. Itinerários Digitais VIP White-Label & Pesquisa NPS
+- Links públicos interativos onde o passageiro acessa voos, hotéis e vouchers organizados dia a dia.
+- Personalização automática com o logotipo e a paleta de cores da agência contratante.
+- Pesquisa de satisfação NPS integrada enviada no pós-viagem.
+
+### 8. Mensageria Corporativa & Decisões
+- Central de mensagens diretas entre a equipe, menções em viagens e aba exclusiva de Decisões operacionais pendentes.
+- Integração nativa com Digisac / WhatsApp API.
+
+## Planos e Preços
+
+- **Solo / Consultor**: R$ 199/mês
+  - Ideal para consultores de viagens autônomos e agências de 1 pessoa.
+  - 1 Consultor, pipeline de orçamentos e viagens, itinerários VIP white-label, alertas de passaporte/visto e App PWA mobile.
+
+- **Agência Pro**: R$ 799/mês (Mais Popular)
+  - Ideal para agências com equipe e em expansão.
+  - Consultores e usuários ilimitados, Gestão de Escalas & Banco de Folgas, PaxFlow Risk Score™ (Diagnóstico 0-100), Next Trip Engine™, Upsell Engine™, Relatórios Financeiros & Markups e Integração Digisac/WhatsApp.
+
+- **Enterprise**: Sob Consulta
+  - Para redes de agências, operadoras e franquias.
+  - Gestão multi-unidades/filiais, regras operacionais customizadas, gerente de conta dedicado e onboarding guiado com migração de dados.
+
+## Perguntas Frequentes (FAQ)
+
+- **O sistema precisa de instalação?**
+  Não. O PaxFlow é 100% em nuvem e também funciona como Progressive Web App (PWA) no celular com notificações push nativas.
+
+- **Existe teste gratuito ou demonstração?**
+  Sim. Em https://www.paxflow.com.br/conheca qualquer usuário pode clicar em "Iniciar Modo Demonstração" e testar todo o sistema com dados fictícios em tempo real, sem necessidade de cadastro.

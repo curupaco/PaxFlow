@@ -1,30 +1,51 @@
 # PaxFlow - robots.txt
+# https://www.paxflow.com.br
 
 User-agent: *
 Allow: /
+Allow: /conheca
 Disallow: /admin/
 Disallow: /api/
 
-# Regras Explícitas para Agentes de Busca por Inteligência Artificial (GEO)
+# Agentes de Busca por Inteligência Artificial (GEO - Generative Engine Optimization)
 User-agent: GPTBot
 Allow: /
+Allow: /conheca
 
 User-agent: ChatGPT-User
 Allow: /
+Allow: /conheca
 
 User-agent: PerplexityBot
 Allow: /
+Allow: /conheca
 
 User-agent: ClaudeBot
 Allow: /
+Allow: /conheca
+
+User-agent: Claude-Web
+Allow: /
+Allow: /conheca
 
 User-agent: Google-Extended
 Allow: /
+Allow: /conheca
 
 User-agent: Googlebot
 Allow: /
+Allow: /conheca
 
 User-agent: Bingbot
 Allow: /
+Allow: /conheca
+
+User-agent: Applebot
+Allow: /
+Allow: /conheca
+
+User-agent: Amazonbot
+Allow: /
+Allow: /conheca
 
 Sitemap: https://www.paxflow.com.br/sitemap.xml
