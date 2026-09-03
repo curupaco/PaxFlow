@@ -439,6 +439,8 @@ export class EmailReaderModal {
             showCustomAlert('✅ Solicitação APROVADA com sucesso! A escala foi atualizada no banco de dados.', 'Sucesso');
           } else if (res.alreadyProcessed) {
             showCustomAlert(`⚠️ Esta solicitação já foi respondida anteriormente por ${res.respondidoPor || 'outro Administrador'}.`, 'Aviso');
+          } else {
+            showCustomAlert('⚠️ Não foi possível salvar a atualização no banco de dados.', 'Erro');
           }
           window.dispatchEvent(new CustomEvent('paxflow:new-message'));
         } catch (err: any) {
@@ -462,6 +464,8 @@ export class EmailReaderModal {
             showCustomAlert('❌ Solicitação RECUSADA.', 'Info');
           } else if (res.alreadyProcessed) {
             showCustomAlert(`⚠️ Esta solicitação já foi respondida anteriormente por ${res.respondidoPor || 'outro Administrador'}.`, 'Aviso');
+          } else {
+            showCustomAlert('⚠️ Não foi possível salvar a atualização no banco de dados.', 'Erro');
           }
           window.dispatchEvent(new CustomEvent('paxflow:new-message'));
         } catch (err: any) {
@@ -475,8 +479,8 @@ export class EmailReaderModal {
         e.preventDefault();
         e.stopPropagation();
         closeModal(true);
-        window.dispatchEvent(new CustomEvent('paxflow-navigate', {
-          detail: { page: 'inbox', activeTab: 'escala' }
+        window.dispatchEvent(new CustomEvent('paxflow-switch-inbox-tab', {
+          detail: { tab: 'escala' }
         }));
       });
     });

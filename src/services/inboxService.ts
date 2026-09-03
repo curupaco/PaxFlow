@@ -1051,7 +1051,8 @@ export class InboxService {
             const tipoInfo = formatTipoSolicitacaoEscala(sol.tipo);
             const statusInfo = formatStatusEscala(sol.status);
             const isUserEnvolvido = isUserSolicitante || (sol.tipo === 'troca' && isUserDestinatario);
-            const respPor = sol.respondido_por || 'um Administrador';
+            const adminMatch = (sol.resposta_admin || '').match(/\(por ([^)]+)\)/);
+            const respPor = sol.respondido_por || (adminMatch ? adminMatch[1] : 'um Administrador');
             const respEmStr = sol.respondido_em ? new Date(sol.respondido_em).toLocaleString('pt-BR') : '';
 
             if (isUserEnvolvido) {

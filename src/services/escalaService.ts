@@ -784,20 +784,24 @@ export class EscalaService {
       }
     }
 
+    const finalRespostaAdmin = adminNome 
+      ? (respostaAdmin && !respostaAdmin.includes(adminNome) ? `${respostaAdmin} (por ${adminNome})` : respostaAdmin || `Respondido por ${adminNome}`)
+      : respostaAdmin;
+
     try {
-      const updateData: any = {
-        status: novoStatus,
-        resposta_admin: respostaAdmin,
-        updated_at: nowIso
-      };
-      if (adminNome) {
-        updateData.respondido_por = adminNome;
-        updateData.respondido_em = nowIso;
-      }
-      await supabase
+      const { error: updateErr } = await supabase
         .from('escala_solicitacoes')
-        .update(updateData)
+        .update({
+          status: novoStatus,
+          resposta_admin: finalRespostaAdmin,
+          updated_at: nowIso
+        })
         .eq('id', solicitacaoId);
+
+      if (updateErr) {
+        console.error('Erro ao atualizar solicitação no Supabase:', updateErr.message);
+        return { success: false };
+      }
 
       const tipoLabel = target.tipo === 'troca' ? 'Troca de Turno' : target.tipo === 'folga' ? 'Folga Semanal' : target.tipo === 'ferias' ? 'Férias' : 'Atendimento no Balcão';
 

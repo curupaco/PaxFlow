@@ -1648,6 +1648,16 @@ export class InboxPage {
     };
     window.addEventListener('paxflow:new-message', (this as any)._onRealtimeInboxBound);
 
+    window.removeEventListener('paxflow-switch-inbox-tab', (this as any)._onSwitchInboxTabBound);
+    (this as any)._onSwitchInboxTabBound = (e: any) => {
+      if (e.detail?.tab) {
+        this.activeTab = e.detail.tab;
+        this.render();
+        this.setupEventListeners();
+      }
+    };
+    window.addEventListener('paxflow-switch-inbox-tab', (this as any)._onSwitchInboxTabBound);
+
     // 0. Top Header Tabs & Mobile Pills (Alternadores de Mensagens vs Escala)
     const topTabMensagens = document.getElementById('inbox-top-tab-mensagens');
     topTabMensagens?.addEventListener('click', () => {
@@ -1708,6 +1718,8 @@ export class InboxPage {
             this.showToast('✅ Solicitação APROVADA com sucesso! Escala atualizada no banco.', 'success');
           } else if (res.alreadyProcessed) {
             this.showToast(`⚠️ Esta solicitação já foi respondida anteriormente por ${res.respondidoPor || 'outro Administrador'}.`, 'error');
+          } else {
+            this.showToast('⚠️ Não foi possível atualizar o status no banco de dados.', 'error');
           }
           await this.loadAndBuildAlerts();
           await this.loadEscalaData();
@@ -1733,6 +1745,8 @@ export class InboxPage {
             this.showToast('❌ Solicitação RECUSADA.', 'error');
           } else if (res.alreadyProcessed) {
             this.showToast(`⚠️ Esta solicitação já foi respondida anteriormente por ${res.respondidoPor || 'outro Administrador'}.`, 'error');
+          } else {
+            this.showToast('⚠️ Não foi possível atualizar o status no banco de dados.', 'error');
           }
           await this.loadAndBuildAlerts();
           await this.loadEscalaData();
