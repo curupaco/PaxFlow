@@ -385,14 +385,24 @@ export class InboxPage {
     }
 
     const isUserAdmin = (this.perfil?.role || '').toLowerCase() === 'admin';
+    const isViewingOwnProfile = isUserAdmin && Boolean(this.perfil?.id) && this.selectedConsultantFilter === this.perfil?.id;
 
     // 2. Filter by Consultant (Admin dropdown)
     if (isUserAdmin && this.selectedConsultantFilter !== 'todos') {
-      result = result.filter(a => 
-        a.consultorId === this.selectedConsultantFilter || 
-        a.criadorId === this.selectedConsultantFilter || 
-        a.senderId === this.selectedConsultantFilter
-      );
+      if (isViewingOwnProfile) {
+        result = result.filter(a => 
+          a.consultorId === this.selectedConsultantFilter || 
+          a.criadorId === this.selectedConsultantFilter || 
+          a.senderId === this.selectedConsultantFilter ||
+          a.type === 'escala_solicitacao'
+        );
+      } else {
+        result = result.filter(a => 
+          a.consultorId === this.selectedConsultantFilter || 
+          a.criadorId === this.selectedConsultantFilter || 
+          a.senderId === this.selectedConsultantFilter
+        );
+      }
     }
 
     // 2.5 Filter by Category (Summary Cards & Mobile Pills)
@@ -531,12 +541,24 @@ export class InboxPage {
    private render(): void {
     // 1. Calculate counters for badges
     let baseAlertsForCounters = [...this.alerts];
-    if ((this.perfil?.role || '').toLowerCase() === 'admin' && this.selectedConsultantFilter !== 'todos') {
-      baseAlertsForCounters = baseAlertsForCounters.filter(a => 
-        a.consultorId === this.selectedConsultantFilter || 
-        a.criadorId === this.selectedConsultantFilter ||
-        a.senderId === this.selectedConsultantFilter
-      );
+    const isUserAdmin = (this.perfil?.role || '').toLowerCase() === 'admin';
+    const isViewingOwnProfile = isUserAdmin && Boolean(this.perfil?.id) && this.selectedConsultantFilter === this.perfil?.id;
+
+    if (isUserAdmin && this.selectedConsultantFilter !== 'todos') {
+      if (isViewingOwnProfile) {
+        baseAlertsForCounters = baseAlertsForCounters.filter(a => 
+          a.consultorId === this.selectedConsultantFilter || 
+          a.criadorId === this.selectedConsultantFilter ||
+          a.senderId === this.selectedConsultantFilter ||
+          a.type === 'escala_solicitacao'
+        );
+      } else {
+        baseAlertsForCounters = baseAlertsForCounters.filter(a => 
+          a.consultorId === this.selectedConsultantFilter || 
+          a.criadorId === this.selectedConsultantFilter ||
+          a.senderId === this.selectedConsultantFilter
+        );
+      }
     }
 
     const readList = this.readList;
@@ -634,13 +656,6 @@ export class InboxPage {
                 <span class="px-1.5 py-0.5 rounded text-[10px] font-black ${this.categoryFilter === 'todos' ? 'bg-white/20 text-white' : 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300'}">
                   ${unreadAtivos > 0 ? `${unreadAtivos}/${totalAtivos}` : `${totalAtivos}`}
                 </span>
-              </button>
-              <button data-filter-category="escala" class="px-3 py-2 rounded-xl ${
-                this.categoryFilter === 'escala' || this.activeTab === 'escala'
-                  ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-md font-black'
-                  : 'bg-violet-50 dark:bg-violet-950/40 border border-violet-200/50 dark:border-violet-900/40 text-violet-700 dark:text-violet-300 font-bold'
-              } flex items-center gap-1.5 shrink-0 text-xs select-none">
-                <span>📅 Escala</span>
               </button>
               <button data-filter-category="depois" class="px-3 py-2 rounded-xl ${this.categoryFilter === 'depois' ? 'bg-slate-700 text-white font-black' : 'bg-slate-100 dark:bg-slate-800/60 text-slate-700 dark:text-slate-200'} border border-slate-200/50 dark:border-slate-700/50 flex items-center gap-2 shrink-0 text-xs font-bold cursor-pointer">
                 <span>📌 Depois:</span>
