@@ -64,6 +64,9 @@ export class InboxPage {
       }
       this.user = user;
       this.perfil = perfil;
+      if (this.perfil?.id) {
+        this.selectedConsultantFilter = this.perfil.id;
+      }
 
       // 2. Fetch global settings for refund SLAs
       await this.loadGlobalSettings();
@@ -388,8 +391,7 @@ export class InboxPage {
       result = result.filter(a => 
         a.consultorId === this.selectedConsultantFilter || 
         a.criadorId === this.selectedConsultantFilter || 
-        a.senderId === this.selectedConsultantFilter ||
-        (a.type === 'escala_solicitacao' && !a.isSent)
+        a.senderId === this.selectedConsultantFilter
       );
     }
 
@@ -533,8 +535,7 @@ export class InboxPage {
       baseAlertsForCounters = baseAlertsForCounters.filter(a => 
         a.consultorId === this.selectedConsultantFilter || 
         a.criadorId === this.selectedConsultantFilter ||
-        a.senderId === this.selectedConsultantFilter ||
-        (a.type === 'escala_solicitacao' && !a.isSent)
+        a.senderId === this.selectedConsultantFilter
       );
     }
 
@@ -587,30 +588,27 @@ export class InboxPage {
           </div>
 
            <div class="flex flex-wrap items-center gap-3 w-full md:w-auto md:justify-end">
-            <!-- Barra de Abas de Topo (Alternador Mensagens vs Escala) -->
-            <div class="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800/60 p-1.5 rounded-2xl border border-slate-200/50 dark:border-slate-700/50 shrink-0">
-              <button id="inbox-top-tab-mensagens" class="px-3.5 py-2 rounded-xl text-xs font-black transition flex items-center gap-2 select-none ${
-                this.activeTab !== 'escala'
-                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
-                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
-              }">
-                <span>📨 Mensagens & Alertas</span>
-                <span class="px-2 py-0.5 rounded-md text-[10px] font-black ${
-                  this.activeTab !== 'escala' ? 'bg-white/20 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
-                }">${unreadAtivos > 0 ? `${unreadAtivos} / ${totalAtivos}` : `${totalAtivos}`}</span>
-              </button>
+             <!-- Barra de Abas de Topo (Alternador Mensagens vs Escala) -->
+             <div class="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800/60 p-1.5 rounded-2xl border border-slate-200/50 dark:border-slate-700/50 shrink-0 max-w-full overflow-x-auto custom-scrollbar">
+               <button id="inbox-top-tab-mensagens" class="px-2.5 sm:px-3.5 py-2 rounded-xl text-xs font-black transition flex items-center gap-2 select-none whitespace-nowrap shrink-0 ${
+                 this.activeTab !== 'escala'
+                   ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
+                   : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+               }">
+                 <span>📨 Mensagens & Alertas</span>
+                 <span class="px-2 py-0.5 rounded-md text-[10px] font-black ${
+                   this.activeTab !== 'escala' ? 'bg-white/20 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
+                 }">${unreadAtivos > 0 ? `${unreadAtivos} / ${totalAtivos}` : `${totalAtivos}`}</span>
+               </button>
 
-              <button id="inbox-top-tab-escala" class="px-3.5 py-2 rounded-xl text-xs font-black transition flex items-center gap-2 select-none ${
-                this.activeTab === 'escala'
-                  ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-md shadow-violet-600/20'
-                  : 'bg-violet-50 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300 hover:bg-violet-100 dark:hover:bg-violet-900/50 border border-violet-200/40 dark:border-violet-800/40'
-              }">
-                <span>📅 ESCALA DE FUNCIONÁRIOS</span>
-                <span class="px-1.5 py-0.5 rounded text-[9px] uppercase tracking-wider font-black ${
-                  this.activeTab === 'escala' ? 'bg-white/20 text-white' : 'bg-violet-200/60 dark:bg-violet-900/60 text-violet-800 dark:text-violet-200'
-                }">AGÊNCIA</span>
-              </button>
-            </div>
+               <button id="inbox-top-tab-escala" class="px-2.5 sm:px-3.5 py-2 rounded-xl text-xs font-black transition flex items-center gap-2 select-none whitespace-nowrap shrink-0 ${
+                 this.activeTab === 'escala'
+                   ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-md shadow-violet-600/20'
+                   : 'bg-violet-50 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300 hover:bg-violet-100 dark:hover:bg-violet-900/50 border border-violet-200/40 dark:border-violet-800/40'
+               }">
+                 <span>📅 Escala de Funcionários</span>
+               </button>
+             </div>
 
             <!-- Seletor de Consultores (Apenas para Admins) -->
             ${this.perfil?.role === 'admin' ? `
@@ -822,22 +820,6 @@ export class InboxPage {
                   </div>
                 </button>
 
-                <button id="folder-escala" class="w-full px-3 py-2.5 rounded-xl flex items-center justify-between text-xs font-bold transition select-none ${
-                  this.activeTab === 'escala' 
-                    ? 'bg-indigo-600/10 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400' 
-                    : 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800/40'
-                }">
-                  <span class="flex items-center gap-2.5 min-w-0 flex-1 truncate text-left">
-                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                      <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
-                      <line x1="16" y1="2" x2="16" y2="6"/>
-                      <line x1="8" y1="2" x2="8" y2="6"/>
-                      <line x1="3" y1="10" x2="21" y2="10"/>
-                    </svg>
-                    <span class="truncate">Escala</span>
-                  </span>
-                </button>
-
               </div>
 
             </div>
@@ -882,13 +864,6 @@ export class InboxPage {
                       : 'border-slate-200/60 dark:border-slate-800 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800/40'
                   } rounded-xl text-xs font-bold whitespace-nowrap transition flex items-center gap-1.5 focus:outline-none">
                     📋 Total (${totalGeral}${unreadGeral > 0 ? ` • ${unreadGeral} não lida(s)` : ''})
-                  </button>
-                  <button id="mobile-folder-escala" class="px-4 py-2.5 bg-white dark:bg-slate-900 border ${
-                    this.activeTab === 'escala' 
-                      ? 'border-indigo-600/50 text-indigo-600 bg-indigo-600/5 dark:border-indigo-500/50 dark:text-indigo-400 dark:bg-indigo-500/10' 
-                      : 'border-slate-200/60 dark:border-slate-800 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800/40'
-                  } rounded-xl text-xs font-bold whitespace-nowrap transition flex items-center gap-1.5 focus:outline-none">
-                    📅 Escala
                   </button>
                 </div>
               </div>
@@ -1830,13 +1805,6 @@ export class InboxPage {
       this.setupEventListeners();
     });
 
-    const folderEscala = document.getElementById('folder-escala');
-    folderEscala?.addEventListener('click', () => {
-      this.activeTab = 'escala';
-      this.render();
-      this.setupEventListeners();
-    });
-
     // Mobile folders click listeners
     const mobileFolderAtivos = document.getElementById('mobile-folder-ativos');
     mobileFolderAtivos?.addEventListener('click', () => {
@@ -1866,13 +1834,6 @@ export class InboxPage {
     mobileFolderTodos?.addEventListener('click', () => {
       this.activeTab = 'todos';
       this.applyFilters();
-      this.render();
-      this.setupEventListeners();
-    });
-
-    const mobileFolderEscala = document.getElementById('mobile-folder-escala');
-    mobileFolderEscala?.addEventListener('click', () => {
-      this.activeTab = 'escala';
       this.render();
       this.setupEventListeners();
     });
