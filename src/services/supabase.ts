@@ -134,6 +134,50 @@ const getMockDataForTable = (table: string): any[] => {
     else if (table === 'reembolsos') defaultData = MOCK_REEMBOLSOS;
     else if (table === 'tipos_produto') defaultData = MOCK_TIPOS_PRODUTO;
     else if (table === 'lembretes') defaultData = [];
+    else if (table === 'global_settings') {
+      defaultData = [{
+        id: 'sandbox-global-settings',
+        agency_name: 'PaxFlow Demo Travel',
+        agency_primary_color: '#4f46e5',
+        habilitar_next_trip_engine: true,
+        habilitarNextTripEngine: true,
+        habilitar_risk_score: true,
+        habilitarRiskScore: true,
+        habilitar_upsell_preditivo: true,
+        habilitarUpsellPreditivo: true,
+        sla_pre_embarque_dias: 7,
+        sla_pos_viagem_dias: 3,
+        prazo_reembolso_dias: 30,
+        copiloto_ativo: true,
+        permitir_consultor_criar_viagem: true
+      }];
+    }
+    else if (table === 'escalas_trabalho') {
+      defaultData = [
+        {
+          id: 'sandbox-escala-1',
+          consultor_id: 'sandbox-user-id',
+          data: new Date().toISOString().split('T')[0],
+          turno: 'integral',
+          tipo: 'plantao',
+          observacao: 'Plantão Demonstração'
+        }
+      ];
+    }
+    else if (table === 'escala_solicitacoes') {
+      defaultData = [
+        {
+          id: 'sandbox-sol-1',
+          solicitante_id: 'sandbox-consultor-juliana',
+          tipo: 'folga',
+          data_inicio: new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0],
+          data_fim: new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0],
+          status: 'pendente',
+          motivo: 'Compromisso pessoal agendado',
+          created_at: new Date().toISOString()
+        }
+      ];
+    }
     else if (table === 'notificacoes') {
       defaultData = MOCK_ALERTS.map((a, index) => ({
         id: a.id.replace('mention-', '').replace('passport-', '').replace('refund-', ''),

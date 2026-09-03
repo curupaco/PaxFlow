@@ -344,12 +344,12 @@ export class LandingPage {
 
           <h1 class="pf-hero-headline pf-rise-2 text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight mb-6 max-w-5xl">
             <span class="pf-shimmer-text">Pax</span><span class="bg-gradient-to-r from-[#00a8f5] via-[#00e5a3] to-[#f5af19] bg-clip-text text-transparent pf-animated-gradient">Flow</span>
-            <span class="block mt-5 text-xl sm:text-3xl md:text-4xl font-semibold text-slate-100">A operação da sua agência de viagens</span>
-            <span class="block mt-1.5 text-xl sm:text-3xl md:text-4xl font-semibold bg-gradient-to-r from-fuchsia-500 via-rose-500 to-amber-500 bg-clip-text text-transparent pf-animated-gradient">do orçamento ao pós-venda</span>
+            <span class="block mt-5 text-xl sm:text-3xl md:text-4xl font-semibold text-slate-100">A plataforma de gestão &amp; pós-venda</span>
+            <span class="block mt-1.5 text-xl sm:text-3xl md:text-4xl font-semibold bg-gradient-to-r from-fuchsia-500 via-rose-500 to-amber-500 bg-clip-text text-transparent pf-animated-gradient">sem caos, sem perdas e sem planilhas</span>
           </h1>
 
-          <p class="pf-rise-3 text-base md:text-xl text-slate-300 max-w-2xl mb-10 leading-relaxed font-medium">
-            Diga adeus à desorganização. Centralize pós-vendas, passaportes, vistos, reembolsos, escalas e relatórios gerenciais em uma plataforma completa — com suporte PWA no celular e notificações Push nativas em tempo real.
+          <p class="pf-rise-3 text-base md:text-xl text-slate-300 max-w-3xl mb-10 leading-relaxed font-medium">
+            Assuma o controle total da sua agência: gestão de escalas da equipe e banco de folgas, blindagem operacional com o <strong>PaxFlow Risk Score™</strong>, controle de reembolsos e recompra preditiva com o <strong>Next Trip Engine™</strong>.
           </p>
 
           <div class="pf-rise-4 flex flex-col sm:flex-row items-center gap-4 mb-14 w-full justify-center">
@@ -409,14 +409,15 @@ export class LandingPage {
           <div class="w-full mb-8">
             <div class="flex flex-wrap justify-center gap-2 p-2 rounded-3xl bg-white/[0.04] border border-white/10 max-w-6xl mx-auto backdrop-blur-md">
               <button id="tab-btn-dashboard" class="px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 bg-gradient-to-r from-[#0052d4] to-[#00a8f5] text-white shadow-lg pf-glow">Painel Comercial</button>
+              <button id="tab-btn-risk" class="px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 text-slate-400 hover:text-emerald-300 hover:bg-white/5 transition">🛡️ Risk Score™</button>
               <button id="tab-btn-nexttrip" class="px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 text-slate-400 hover:text-indigo-300 hover:bg-white/5 transition">🎯 Next Trip Engine™</button>
               <button id="tab-btn-viagens" class="px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 text-slate-400 hover:text-[#00a8f5] hover:bg-white/5 transition">Viagens</button>
-              <button id="tab-btn-orcamentos" class="px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 text-slate-400 hover:text-[#00e5a3] hover:bg-white/5 transition">Orçamentos</button>
-              <button id="tab-btn-inbox" class="px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 text-slate-400 hover:text-rose-400 hover:bg-white/5 transition">Alertas & SLAs</button>
+              <button id="tab-btn-orcamentos" class="px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 text-slate-400 hover:text-[#00e5a3] hover:bg-white/5 transition">Orçamentos &amp; Upsell</button>
+              <button id="tab-btn-inbox" class="px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 text-slate-400 hover:text-rose-400 hover:bg-white/5 transition">Mensageria &amp; Decisões</button>
               <button id="tab-btn-escala" class="px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 text-slate-400 hover:text-violet-400 hover:bg-white/5 transition">Escala da Equipe</button>
               <button id="tab-btn-reembolsos" class="px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 text-slate-400 hover:text-amber-400 hover:bg-white/5 transition">Reembolsos</button>
               <button id="tab-btn-relatorios" class="px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 text-slate-400 hover:text-indigo-400 hover:bg-white/5 transition">Relatórios</button>
-              <button id="tab-btn-publicas" class="px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 text-slate-400 hover:text-fuchsia-400 hover:bg-white/5 transition">Itinerários públicos</button>
+              <button id="tab-btn-publicas" class="px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 text-slate-400 hover:text-fuchsia-400 hover:bg-white/5 transition">Itinerários VIP</button>
             </div>
           </div>
 
@@ -452,6 +453,60 @@ export class LandingPage {
                     <div><div class="flex justify-between text-xs font-bold mb-1 text-slate-400"><span>Orçamentos Criados</span><span>120</span></div><div class="w-full bg-white/10 h-2 rounded-full overflow-hidden"><div class="pf-bar-fill bg-gradient-to-r from-[#0052d4] to-[#00a8f5] h-full rounded-full" data-bar="100"></div></div></div>
                     <div><div class="flex justify-between text-xs font-bold mb-1 text-slate-400"><span>Propostas Enviadas</span><span>75 (62%)</span></div><div class="w-full bg-white/10 h-2 rounded-full overflow-hidden"><div class="pf-bar-fill bg-gradient-to-r from-[#f12711] to-[#f5af19] h-full rounded-full" data-bar="62"></div></div></div>
                     <div><div class="flex justify-between text-xs font-bold mb-1 text-slate-400"><span>Negociações Fechadas</span><span>24 (20%)</span></div><div class="w-full bg-white/10 h-2 rounded-full overflow-hidden"><div class="pf-bar-fill bg-gradient-to-r from-[#00e5a3] to-teal-400 h-full rounded-full" data-bar="20"></div></div></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Painel Risk Score -->
+              <div id="panel-risk" class="space-y-4 tab-pane-transition hidden text-xs">
+                <div class="p-4 rounded-2xl bg-gradient-to-r from-emerald-950/80 via-slate-900 to-teal-950/80 border border-emerald-500/30 text-sm text-slate-200 flex items-center justify-between flex-wrap gap-2">
+                  <div class="flex items-center gap-2">
+                    <span class="text-xl">🛡️</span>
+                    <span><strong>PaxFlow Risk Score™ (Saúde Operacional 0 a 100):</strong> Diagnóstico preventivo em tempo real que monitora vouchers, localizadores, vistos e prazos de passaporte de cada viagem da sua equipe.</span>
+                  </div>
+                  <span class="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-black uppercase tracking-wider border border-emerald-500/30">
+                    🟢 Saúde: 92/100 (Operação Blindada)
+                  </span>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div class="bg-slate-900/90 border border-emerald-500/30 p-4 rounded-2xl space-y-3 shadow-xl">
+                    <div class="flex items-center justify-between">
+                      <span class="font-extrabold text-white text-sm">Paris &amp; Roma (VIP)</span>
+                      <span class="px-2 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[9px] font-black rounded-lg">Score 95</span>
+                    </div>
+                    <p class="text-slate-400 text-[11px]">Cliente: Mariana Costa • Embarque em 22 dias</p>
+                    <div class="space-y-1.5 text-[11px]">
+                      <div class="flex items-center gap-1.5 text-emerald-400 font-bold"><span>✓</span> Vouchers aéreos e hotel anexados</div>
+                      <div class="flex items-center gap-1.5 text-emerald-400 font-bold"><span>✓</span> Passaporte válido por 2 anos</div>
+                      <div class="flex items-center gap-1.5 text-emerald-400 font-bold"><span>✓</span> Localizadores (LOC) conferidos</div>
+                    </div>
+                    <span class="block w-full py-2 bg-emerald-600/20 text-emerald-300 border border-emerald-500/30 font-black rounded-xl text-center text-[10px] uppercase">Operação 100% Segura</span>
+                  </div>
+                  <div class="bg-slate-900/90 border border-amber-500/30 p-4 rounded-2xl space-y-3 shadow-xl">
+                    <div class="flex items-center justify-between">
+                      <span class="font-extrabold text-white text-sm">Orlando &amp; Disney Família</span>
+                      <span class="px-2 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[9px] font-black rounded-lg">Score 68</span>
+                    </div>
+                    <p class="text-slate-400 text-[11px]">Cliente: Família Alcantara • Embarque em 12 dias</p>
+                    <div class="space-y-1.5 text-[11px]">
+                      <div class="flex items-center gap-1.5 text-amber-400 font-bold"><span>⚠️</span> Voucher de ingressos pendente</div>
+                      <div class="flex items-center gap-1.5 text-emerald-400 font-bold"><span>✓</span> Vistos americanos confirmados</div>
+                      <div class="flex items-center gap-1.5 text-emerald-400 font-bold"><span>✓</span> Voos e seguro emitidos</div>
+                    </div>
+                    <span class="block w-full py-2 bg-amber-500/20 text-amber-300 border border-amber-500/30 font-black rounded-xl text-center text-[10px] uppercase">Alerta de Pendência</span>
+                  </div>
+                  <div class="bg-slate-900/90 border border-rose-500/30 p-4 rounded-2xl space-y-3 shadow-xl">
+                    <div class="flex items-center justify-between">
+                      <span class="font-extrabold text-white text-sm">Nova York &amp; Miami</span>
+                      <span class="px-2 py-0.5 bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[9px] font-black rounded-lg">Score 42</span>
+                    </div>
+                    <p class="text-slate-400 text-[11px]">Cliente: Roberto Fonseca • Embarque em 5 dias</p>
+                    <div class="space-y-1.5 text-[11px]">
+                      <div class="flex items-center gap-1.5 text-rose-400 font-bold"><span>🚨</span> Passaporte vence em menos de 6 meses</div>
+                      <div class="flex items-center gap-1.5 text-amber-400 font-bold"><span>⚠️</span> Confirmação de traslado pendente</div>
+                      <div class="flex items-center gap-1.5 text-emerald-400 font-bold"><span>✓</span> Bilhete aéreo emitido</div>
+                    </div>
+                    <span class="block w-full py-2 bg-rose-600/20 text-rose-300 border border-rose-500/30 font-black rounded-xl text-center text-[10px] uppercase">Ação Imediata Necessária</span>
                   </div>
                 </div>
               </div>
@@ -617,6 +672,58 @@ export class LandingPage {
                 <span class="px-4 py-2 rounded-full bg-white/[0.05] border border-white/10 text-sm font-semibold text-slate-200">Operadoras</span>
                 <span class="px-4 py-2 rounded-full bg-white/[0.05] border border-white/10 text-sm font-semibold text-slate-200">Franquias de Viagens</span>
                 <span class="px-4 py-2 rounded-full bg-white/[0.05] border border-white/10 text-sm font-semibold text-slate-200">Consultores de Viagem</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== NOVO: PAXFLOW RISK SCORE™ (Blindagem Operacional) ===== -->
+        <section id="risk-score-section" class="relative z-10 w-full py-20 px-6 border-t border-white/10 bg-gradient-to-b from-[#06070f] via-emerald-950/40 to-[#06070f]">
+          <div class="pf-zone max-w-6xl mx-auto space-y-12">
+            <div class="text-center max-w-3xl mx-auto space-y-4">
+              <span class="px-4 py-1.5 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-[10px] font-black uppercase tracking-widest">
+                🛡️ Blindagem Operacional Exclusiva
+              </span>
+              <h2 class="text-3xl md:text-5xl font-black tracking-tight leading-tight text-white">
+                PaxFlow Risk Score™<br />
+                <span class="bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-clip-text text-transparent pf-animated-gradient">
+                  Saúde Operacional da Viagem de 0 a 100
+                </span>
+              </h2>
+              <p class="text-sm text-slate-300 font-medium max-w-2xl mx-auto leading-relaxed">
+                Nunca mais seja surpreendido com clientes no aeroporto sem vouchers ou com passaportes vencidos. O algoritmo analisa continuamente de 0 a 100 o risco de cada viagem da sua agência e alerta a liderança antes que o problema aconteça.
+              </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div data-reveal="left" class="p-7 rounded-3xl bg-white/[0.04] border border-emerald-500/30 backdrop-blur-md space-y-4 hover:border-emerald-400/60 transition shadow-xl pf-glow">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-600/30 to-teal-600/30 text-emerald-300 border border-emerald-500/40 flex items-center justify-center text-2xl font-black">
+                  📋
+                </div>
+                <h3 class="text-xl font-extrabold text-white">Checklist Preventivo Inteligente</h3>
+                <p class="text-xs text-slate-300 leading-relaxed font-medium">
+                  Verificação automática de vouchers gerais anexados, conferência de localizadores (LOC), passaportes e vistos com menos de 6 meses e antecipação de embarques.
+                </p>
+              </div>
+
+              <div data-reveal="up" class="p-7 rounded-3xl bg-white/[0.04] border border-teal-500/30 backdrop-blur-md space-y-4 hover:border-teal-400/60 transition shadow-xl pf-glow">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-teal-600/30 to-cyan-600/30 text-teal-300 border border-teal-500/40 flex items-center justify-center text-2xl font-black">
+                  🚥
+                </div>
+                <h3 class="text-xl font-extrabold text-white">Diagnóstico em Semáforo Visual</h3>
+                <p class="text-xs text-slate-300 leading-relaxed font-medium">
+                  Classificação instantânea no Kanban: Verde (Normal), Amarelo (Atenção) e Vermelho (Risco Crítico) com janela de carência configurável pela agência.
+                </p>
+              </div>
+
+              <div data-reveal="right" class="p-7 rounded-3xl bg-white/[0.04] border border-cyan-500/30 backdrop-blur-md space-y-4 hover:border-cyan-400/60 transition shadow-xl pf-glow">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-600/30 to-blue-600/30 text-cyan-300 border border-cyan-500/40 flex items-center justify-center text-2xl font-black">
+                  ⚡
+                </div>
+                <h3 class="text-xl font-extrabold text-white">Gaveta de Ações em 1-Clique</h3>
+                <p class="text-xs text-slate-300 leading-relaxed font-medium">
+                  Permite anexar o voucher geral em lote, registrar justificativas de risco e acionar consultores co-pilotos sem atritos operacionais.
+                </p>
               </div>
             </div>
           </div>
@@ -898,13 +1005,70 @@ export class LandingPage {
         <section id="planos" class="relative z-10 w-full py-20 px-6 border-t border-white/10">
           <div class="pf-zone max-w-5xl mx-auto">
             <div class="text-center max-w-3xl mx-auto mb-14 space-y-3">
-              <span class="px-4 py-1.5 rounded-full bg-[#f5af19]/15 border border-[#f5af19]/30 text-[#f5af19] text-[10px] font-black uppercase tracking-widest">Planos</span>
-              <h2 class="text-3xl md:text-5xl font-black tracking-tight text-white">Escolha o plano ideal para a sua agência</h2>
+              <span class="px-4 py-1.5 rounded-full bg-[#f5af19]/15 border border-[#f5af19]/30 text-[#f5af19] text-[10px] font-black uppercase tracking-widest">Planos e Preços</span>
+              <h2 class="text-3xl md:text-5xl font-black tracking-tight text-white">Investimento claro, retorno imediato</h2>
+              <p class="text-sm text-slate-400 font-medium">Planos desenhados sob medida para consultores independentes e agências com equipe.</p>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div data-reveal="up" style="transition-delay:.05s" class="p-7 rounded-3xl bg-white/[0.04] border border-white/10 hover:scale-[1.02] transition-transform"><h3 class="text-lg font-black text-white">Starter</h3><p class="text-sm text-slate-400 mt-1">Para agências em início de profissionalização</p><div class="mt-5 mb-6"><span class="text-4xl font-black text-[#00a8f5]">R$ 399</span><span class="text-sm text-slate-400">/mês</span></div><ul class="space-y-2.5 text-sm text-slate-300 font-medium"><li class="flex items-center gap-2"><span class="text-[#00e5a3]">✓</span>Até 5 consultores</li><li class="flex items-center gap-2"><span class="text-[#00e5a3]">✓</span>Pipeline de orçamentos</li><li class="flex items-center gap-2"><span class="text-[#00e5a3]">✓</span>Alertas de passaporte e SLA</li></ul><button class="mt-6 w-full py-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs uppercase transition">Começar</button></div>
-              <div data-reveal="up" style="transition-delay:.15s" class="pf-glow relative p-7 rounded-3xl bg-gradient-to-br from-[#0052d4] via-[#00a8f5] to-[#00e5a3] shadow-2xl pf-animated-gradient scale-[1.03]"><span class="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-[#f5af19] text-slate-900 text-[9px] font-black uppercase tracking-wider shadow-lg">Mais Popular</span><h3 class="text-lg font-black text-white">Profissional</h3><p class="text-sm text-white/85 mt-1">Para agências em crescimento</p><div class="mt-5 mb-6"><span class="text-4xl font-black text-white">R$ 599</span><span class="text-sm text-white/80">/mês</span></div><ul class="space-y-2.5 text-sm text-white/95 font-medium"><li class="flex items-center gap-2"><span class="text-white">✓</span>Consultores ilimitados</li><li class="flex items-center gap-2"><span class="text-white">✓</span>Todos os módulos + Digisac</li><li class="flex items-center gap-2"><span class="text-white">✓</span>Relatórios e Analytics</li><li class="flex items-center gap-2"><span class="text-white">✓</span>Itinerários white-label</li></ul><button id="btn-plano-profissional" class="mt-6 w-full py-3 rounded-2xl bg-white text-slate-900 hover:bg-slate-100 font-bold text-xs uppercase transition">Começar agora</button></div>
-              <div data-reveal="up" style="transition-delay:.25s" class="p-7 rounded-3xl bg-white/[0.04] border border-white/10 hover:scale-[1.02] transition-transform"><h3 class="text-lg font-black text-white">Enterprise</h3><p class="text-sm text-slate-400 mt-1">Para franquias e grandes operações</p><div class="mt-5 mb-6"><span class="text-4xl font-black text-[#f5af19]">Sob consulta</span></div><ul class="space-y-2.5 text-sm text-slate-300 font-medium"><li class="flex items-center gap-2"><span class="text-[#00e5a3]">✓</span>Multi-franquia</li><li class="flex items-center gap-2"><span class="text-[#00e5a3]">✓</span>Suporte dedicado</li><li class="flex items-center gap-2"><span class="text-[#00e5a3]">✓</span>Onboarding guiado</li></ul><button id="btn-plano-enterprise" class="mt-6 w-full py-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs uppercase transition">Falar conosco</button></div>
+              <!-- Plano Solo -->
+              <div data-reveal="up" style="transition-delay:.05s" class="p-7 rounded-3xl bg-white/[0.04] border border-white/10 hover:scale-[1.02] transition-transform flex flex-col justify-between">
+                <div>
+                  <h3 class="text-lg font-black text-white">Solo / Consultor</h3>
+                  <p class="text-sm text-slate-400 mt-1">Para consultores autônomos e agências de 1 pessoa</p>
+                  <div class="mt-5 mb-6">
+                    <span class="text-4xl font-black text-[#00a8f5]">R$ 199</span>
+                    <span class="text-sm text-slate-400">/mês</span>
+                  </div>
+                  <ul class="space-y-2.5 text-sm text-slate-300 font-medium">
+                    <li class="flex items-center gap-2"><span class="text-[#00e5a3]">✓</span>1 Consultor autônomo</li>
+                    <li class="flex items-center gap-2"><span class="text-[#00e5a3]">✓</span>Pipeline de orçamentos e viagens</li>
+                    <li class="flex items-center gap-2"><span class="text-[#00e5a3]">✓</span>Itinerários VIP com sua marca e cores</li>
+                    <li class="flex items-center gap-2"><span class="text-[#00e5a3]">✓</span>Alertas de passaporte, visto e SLA</li>
+                    <li class="flex items-center gap-2"><span class="text-[#00e5a3]">✓</span>App PWA no celular com Push</li>
+                  </ul>
+                </div>
+                <button id="btn-plano-starter" class="mt-8 w-full py-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs uppercase transition">Testar no Modo Demo</button>
+              </div>
+
+              <!-- Plano Agência Pro -->
+              <div data-reveal="up" style="transition-delay:.15s" class="pf-glow relative p-7 rounded-3xl bg-gradient-to-br from-[#0052d4] via-[#00a8f5] to-[#00e5a3] shadow-2xl pf-animated-gradient scale-[1.03] flex flex-col justify-between">
+                <span class="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-[#f5af19] text-slate-900 text-[9px] font-black uppercase tracking-wider shadow-lg">Mais Popular</span>
+                <div>
+                  <h3 class="text-lg font-black text-white">Agência Pro</h3>
+                  <p class="text-sm text-white/85 mt-1">Para agências com equipe e em expansão</p>
+                  <div class="mt-5 mb-6">
+                    <span class="text-4xl font-black text-white">R$ 599</span>
+                    <span class="text-sm text-white/80">/mês</span>
+                  </div>
+                  <ul class="space-y-2.5 text-sm text-white/95 font-medium">
+                    <li class="flex items-center gap-2"><span class="text-white">✓</span>Consultores e usuários ilimitados</li>
+                    <li class="flex items-center gap-2"><span class="text-white">✓</span>Gestão de Escalas &amp; Banco de Folgas</li>
+                    <li class="flex items-center gap-2"><span class="text-white">✓</span>PaxFlow Risk Score™ (Diagnóstico 0-100)</li>
+                    <li class="flex items-center gap-2"><span class="text-white">✓</span>Next Trip Engine™ &amp; Upsell Preditivo</li>
+                    <li class="flex items-center gap-2"><span class="text-white">✓</span>Relatórios Financeiros &amp; Markups</li>
+                    <li class="flex items-center gap-2"><span class="text-white">✓</span>Integração Digisac / WhatsApp</li>
+                  </ul>
+                </div>
+                <button id="btn-plano-profissional" class="mt-8 w-full py-3 rounded-2xl bg-white text-slate-900 hover:bg-slate-100 font-bold text-xs uppercase transition">Iniciar Demonstração</button>
+              </div>
+
+              <!-- Plano Enterprise -->
+              <div data-reveal="up" style="transition-delay:.25s" class="p-7 rounded-3xl bg-white/[0.04] border border-white/10 hover:scale-[1.02] transition-transform flex flex-col justify-between">
+                <div>
+                  <h3 class="text-lg font-black text-white">Enterprise</h3>
+                  <p class="text-sm text-slate-400 mt-1">Para franquias, operadoras e grandes redes</p>
+                  <div class="mt-5 mb-6">
+                    <span class="text-4xl font-black text-[#f5af19]">Sob Consulta</span>
+                  </div>
+                  <ul class="space-y-2.5 text-sm text-slate-300 font-medium">
+                    <li class="flex items-center gap-2"><span class="text-[#00e5a3]">✓</span>Gestão Multi-unidades / Filiais</li>
+                    <li class="flex items-center gap-2"><span class="text-[#00e5a3]">✓</span>Regras operacionais personalizadas</li>
+                    <li class="flex items-center gap-2"><span class="text-[#00e5a3]">✓</span>Gerente de conta e suporte VIP</li>
+                    <li class="flex items-center gap-2"><span class="text-[#00e5a3]">✓</span>Onboarding assistido e migração</li>
+                  </ul>
+                </div>
+                <button id="btn-plano-enterprise" class="mt-8 w-full py-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs uppercase transition">Falar com Consultor</button>
+              </div>
             </div>
           </div>
         </section>
@@ -1017,25 +1181,28 @@ export class LandingPage {
     document.getElementById('btn-cta-login-final')?.addEventListener('click', handleAcessarReal);
     document.getElementById('btn-cta-whatsapp-final')?.addEventListener('click', handleWhatsApp);
     document.getElementById('btn-header-whatsapp')?.addEventListener('click', handleWhatsApp);
+    document.getElementById('btn-plano-starter')?.addEventListener('click', handleStartDemo);
     document.getElementById('btn-plano-profissional')?.addEventListener('click', handleStartDemo);
     document.getElementById('btn-plano-enterprise')?.addEventListener('click', handleWhatsApp);
 
-    const tabs = ['dashboard', 'nexttrip', 'viagens', 'orcamentos', 'inbox', 'escala', 'reembolsos', 'relatorios', 'publicas'];
+    const tabs = ['dashboard', 'risk', 'nexttrip', 'viagens', 'orcamentos', 'inbox', 'escala', 'reembolsos', 'relatorios', 'publicas'];
     const pathTexts: Record<string, string> = {
       dashboard: 'PaxFlow - Painel de Controle',
+      risk: 'PaxFlow - Risk Score™ (Diagnóstico de Saúde Operacional)',
       nexttrip: 'PaxFlow - Next Trip Engine™ (Motor Preditivo de Recompra)',
       viagens: 'PaxFlow - Operação de Viagens',
-      orcamentos: 'PaxFlow - Funil de Orçamentos',
-      inbox: 'PaxFlow - Central de Mensagens e Alertas',
+      orcamentos: 'PaxFlow - Funil de Orçamentos & Upsell',
+      inbox: 'PaxFlow - Central de Mensagens e Decisões',
       escala: 'PaxFlow - Controle de Escala da Equipe',
       reembolsos: 'PaxFlow - Gestão de Reembolsos',
-      relatorios: 'PaxFlow - Relatórios Gerenciais',
+      relatorios: 'PaxFlow - Relatórios Gerenciais & Financeiros',
       publicas: 'PaxFlow - Itinerário Digital do Passageiro'
     };
 
     const baseTab = "px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 text-slate-400 hover:bg-white/5 transition";
     const activeMap: Record<string, string> = {
       dashboard: "px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 bg-gradient-to-r from-[#0052d4] to-[#00a8f5] text-white shadow-lg pf-glow",
+      risk: "px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-500 text-white shadow-lg pf-glow",
       nexttrip: "px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 bg-gradient-to-r from-indigo-600 via-purple-600 to-[#00a8f5] text-white shadow-lg pf-glow",
       viagens: "px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 bg-gradient-to-r from-[#00a8f5] to-cyan-500 text-white shadow-lg",
       orcamentos: "px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 bg-gradient-to-r from-[#00e5a3] to-teal-400 text-[#062a1f] shadow-lg",

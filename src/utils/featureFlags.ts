@@ -4,6 +4,11 @@ import { PerfilConsultor } from '../types';
  * Verifica se o usuário atual é o usuário tscosta (via email, nome ou metadata de login)
  */
 export function isUserTsCosta(user: any, perfil?: PerfilConsultor | null): boolean {
+  // No Modo Demonstração (Sandbox), todos os recursos ficam liberados para teste do visitante
+  if (typeof window !== 'undefined' && (window as any).paxflowSandbox === true) {
+    return true;
+  }
+
   if (!user && !perfil) return false;
 
   const emailUser = (user?.email || '').toLowerCase();
