@@ -133,7 +133,7 @@ export class MeuPerfilModal {
                       <p class="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Alertas na tela do seu computador ou celular.</p>
                     </div>
                   </div>
-                  <span id="push-status-badge" class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-500 shrink-0">
+                  <span id="push-status-badge" class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-500 shrink-0 whitespace-nowrap">
                     Desativado
                   </span>
                 </div>
@@ -533,11 +533,11 @@ export class MeuPerfilModal {
       }
       if (pushBadge) {
         if (isSub) {
-          pushBadge.className = 'px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/40';
-          pushBadge.textContent = 'Ativado ✓';
+          pushBadge.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-300/80 dark:border-emerald-800/60 shrink-0 whitespace-nowrap shadow-xs';
+          pushBadge.innerHTML = '<span>Ativado</span><svg class="w-3 h-3 text-emerald-600 dark:text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>';
         } else {
-          pushBadge.className = 'px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-500';
-          pushBadge.textContent = 'Desativado';
+          pushBadge.className = 'inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-500 shrink-0 whitespace-nowrap';
+          pushBadge.innerHTML = '<span>Desativado</span>';
         }
       }
     };
