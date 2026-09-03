@@ -68,7 +68,7 @@ export class EmailReaderModal {
         <!-- Modal Top Bar / Fake email tools -->
         <div class="px-5 py-4 border-b border-slate-100 dark:border-slate-800/80 flex items-center justify-between bg-slate-50/40 dark:bg-slate-900/40">
           <div class="flex items-center gap-2">
-            <span class="px-2 py-0.5 rounded text-[8px] font-black text-white uppercase tracking-wider ${badgeClass}">
+            <span class="px-2.5 py-0.5 rounded text-[8px] font-black text-white uppercase tracking-wider shrink-0 whitespace-nowrap inline-flex items-center gap-1 ${badgeClass}">
               ${badgeText}
             </span>
             <span class="text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Leitor de Mensagem</span>

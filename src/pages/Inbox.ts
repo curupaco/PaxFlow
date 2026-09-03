@@ -1026,7 +1026,7 @@ export class InboxPage {
                             </div>
 
                             <h4 class="text-sm font-extrabold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                              <span class="px-2 py-0.5 rounded text-[8px] font-black text-white uppercase tracking-wider ${badgeClass}">
+                              <span class="px-2 py-0.5 rounded text-[8px] font-black text-white uppercase tracking-wider shrink-0 whitespace-nowrap inline-flex items-center gap-1 ${badgeClass}">
                                 ${badgeText}
                               </span>
                               <span class="truncate">${a.title}</span>
@@ -1418,7 +1418,7 @@ export class InboxPage {
                   <div class="absolute left-0 top-3.5 bottom-3.5 w-1 rounded-r ${accentClass}"></div>
                   
                   <div class="pl-2 flex items-center justify-between gap-1">
-                    <span class="px-1.5 py-0.5 rounded text-[8px] font-black text-white uppercase tracking-wider ${badgeClass}">
+                    <span class="px-1.5 py-0.5 rounded text-[8px] font-black text-white uppercase tracking-wider shrink-0 whitespace-nowrap inline-flex items-center gap-1 ${badgeClass}">
                       ${badgeText}
                     </span>
                     ${a.periodText ? `<span class="text-[8px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest bg-indigo-50 dark:bg-indigo-950/40 px-1.5 py-0.5 rounded">${a.periodText}</span>` : ''}
@@ -1563,7 +1563,7 @@ export class InboxPage {
                     </div>
 
                     <h5 class="text-sm font-extrabold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                      <span class="px-2 py-0.5 rounded text-[8px] font-black text-white uppercase tracking-wider ${badgeClass}">
+                      <span class="px-2 py-0.5 rounded text-[8px] font-black text-white uppercase tracking-wider shrink-0 whitespace-nowrap inline-flex items-center gap-1 ${badgeClass}">
                         ${badgeText}
                       </span>
                       <span class="truncate">${a.title}</span>
@@ -3299,20 +3299,25 @@ export class InboxPage {
             <button id="modal-evento-close" class="text-slate-400 hover:text-slate-600 text-lg font-bold">✕</button>
           </div>
 
-          <div class="space-y-3">
+          <div class="space-y-3.5">
             <div>
-              <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Data (Ex: 18/08)</label>
-              <input id="evento-data" type="text" placeholder="18/08" value="18/08" class="w-full text-xs font-semibold p-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Data do Evento *</label>
+              <input id="evento-data" type="date" value="${new Date().toISOString().split('T')[0]}" class="w-full text-xs font-semibold p-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer" />
             </div>
 
             <div>
-              <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Consultor / Responsável</label>
-              <input id="evento-consultor" type="text" placeholder="Ex: Eduardo ou Equipe" value="Eduardo" class="w-full text-xs font-semibold p-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Consultor / Responsável *</label>
+              <select id="evento-consultor" class="w-full text-xs font-semibold p-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <option value="Toda a Equipe" selected>Toda a Equipe</option>
+                <option value="Equipe Agaxtur">Equipe Agaxtur</option>
+                <option value="Gestão">Gestão da Agência</option>
+                ${(this.allConsultants || []).map(c => `<option value="${c.nome}">${c.nome}</option>`).join('')}
+              </select>
             </div>
 
             <div>
-              <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Título do Evento</label>
-              <input id="evento-titulo" type="text" placeholder="Ex: SACFLOW às 14:30" class="w-full text-xs font-semibold p-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Título do Evento / Treinamento *</label>
+              <input id="evento-titulo" type="text" placeholder="Ex: Treinamento Produtos Disney & Universal" class="w-full text-xs font-semibold p-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
             </div>
           </div>
 
@@ -3338,11 +3343,23 @@ export class InboxPage {
     cancelBtn.onclick = close;
 
     saveBtn.onclick = async () => {
-      const data = (document.getElementById('evento-data') as HTMLInputElement).value;
-      const consultor_nome = (document.getElementById('evento-consultor') as HTMLInputElement).value;
+      const rawData = (document.getElementById('evento-data') as HTMLInputElement).value;
+      const consultor_nome = (document.getElementById('evento-consultor') as HTMLSelectElement).value;
       const titulo = (document.getElementById('evento-titulo') as HTMLInputElement).value.trim();
 
-      if (!titulo) return;
+      if (!titulo) {
+        showCustomAlert('Por favor, informe o título do treinamento ou evento.', 'Campo Obrigatório');
+        return;
+      }
+
+      // Formata a data para exibir em formato BR (ex: 18/09)
+      let data = rawData;
+      if (rawData && rawData.includes('-')) {
+        const parts = rawData.split('-');
+        if (parts.length === 3) {
+          data = `${parts[2]}/${parts[1]}`;
+        }
+      }
 
       await EscalaService.adicionarEvento({ data, consultor_nome, titulo });
       await this.loadEscalaData();
