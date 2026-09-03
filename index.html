@@ -3,6 +3,48 @@
 
 <head>
   <meta charset="UTF-8">
+  <script>
+    // Recuperador automático de novos deploys de produção (Evita erro de script de módulo com hash alterado)
+    (function() {
+      function handleDeployMismatch(reason) {
+        var lastReload = sessionStorage.getItem('paxflow_deploy_reload');
+        var now = Date.now();
+        if (!lastReload || now - parseInt(lastReload, 10) > 4000) {
+          sessionStorage.setItem('paxflow_deploy_reload', String(now));
+          console.warn('[PaxFlow] Novo bundle implantado (' + reason + '). Recarregando a página silenciosamente...');
+          window.location.reload();
+        }
+      }
+
+      window.addEventListener('vite:preloadError', function(e) {
+        e.preventDefault();
+        handleDeployMismatch('vite:preloadError');
+      });
+
+      window.addEventListener('error', function(e) {
+        var msg = (e && e.message) ? String(e.message) : '';
+        var src = (e && e.filename) ? String(e.filename) : '';
+        if (
+          msg.indexOf('Failed to load module script') !== -1 ||
+          msg.indexOf('text/html') !== -1 ||
+          msg.indexOf('dynamically imported module') !== -1 ||
+          src.indexOf('main-') !== -1
+        ) {
+          handleDeployMismatch('script-error');
+        }
+      }, true);
+
+      window.addEventListener('unhandledrejection', function(e) {
+        var reason = (e && e.reason) ? String(e.reason) : '';
+        if (
+          reason.indexOf('Failed to fetch dynamically imported module') !== -1 ||
+          reason.indexOf('text/html') !== -1
+        ) {
+          handleDeployMismatch('unhandledrejection');
+        }
+      });
+    })();
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>PaxFlow - O CRM & Pós-Venda 100% Especializado em Turismo</title>
   <meta name="description" content="Centralize pós-vendas, passaportes, vistos, reembolsos aéreos, alertas preditivos de risco e escala de consultores da sua agência de viagens em uma plataforma Web viva.">
