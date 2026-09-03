@@ -54,7 +54,7 @@ export class RiskDiagnosisDrawer {
       return;
     }
 
-    const diagnosis = RiskScoreService.calculateTripRiskScore(viagem, cliente, produtos, settings);
+    const diagnosis = RiskScoreService.calculateTripRiskScore(viagem, cliente, produtos, settings, user, perfil);
 
     // 2. Criar HTML do Drawer
     const backdrop = document.createElement('div');

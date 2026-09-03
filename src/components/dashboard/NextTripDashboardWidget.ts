@@ -5,6 +5,8 @@ import { NextTripEngineService } from '../../services/nextTripEngineService';
 export class NextTripDashboardWidget {
   private container: HTMLElement;
   private oportunidades: NextTripOpportunity[];
+  private user?: any;
+  private perfil?: any;
   private onCriarOrcamento: (op: NextTripOpportunity) => void;
   private onDispararWhatsApp: (op: NextTripOpportunity) => void;
   private onUpdate: () => void;
@@ -12,12 +14,16 @@ export class NextTripDashboardWidget {
   constructor(options: {
     container: HTMLElement;
     oportunidades: NextTripOpportunity[];
+    user?: any;
+    perfil?: any;
     onCriarOrcamento: (op: NextTripOpportunity) => void;
     onDispararWhatsApp: (op: NextTripOpportunity) => void;
     onUpdate: () => void;
   }) {
     this.container = options.container;
     this.oportunidades = options.oportunidades.filter(op => op.statusAbordagem !== 'snoozed');
+    this.user = options.user;
+    this.perfil = options.perfil;
     this.onCriarOrcamento = options.onCriarOrcamento;
     this.onDispararWhatsApp = options.onDispararWhatsApp;
     this.onUpdate = options.onUpdate;
@@ -127,7 +133,7 @@ export class NextTripDashboardWidget {
           <div class="p-5 overflow-y-auto flex-1 space-y-4 custom-scrollbar">
             <div class="grid grid-cols-1 gap-4">
               ${exibicaoOps.map(op => {
-                const upsells = UpsellEngineService.calculateUpsellOpportunities([], op.destinoRecomendado, 2, 5000, null, null);
+                const upsells = UpsellEngineService.calculateUpsellOpportunities([], op.destinoRecomendado, 2, 5000, this.perfil, this.user, null);
                 
                 return `
                   <div class="bg-slate-50 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700/70 rounded-2xl p-4 flex flex-col justify-between gap-3 shadow-xs hover:border-indigo-400 dark:hover:border-indigo-500/60 transition space-y-2">

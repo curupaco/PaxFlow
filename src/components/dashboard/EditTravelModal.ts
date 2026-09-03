@@ -2,7 +2,8 @@ import { supabase } from '../../services/supabase';
 import { DestinosAutocomplete } from '../DestinosAutocomplete';
 import { CommentsService } from '../../services/comments';
 import { RiskScoreService } from '../../services/riskScoreService';
-import { isRiskScoreEnabled } from '../../utils/featureFlags';
+import { isRiskScoreEnabled, isUpsellEnabled } from '../../utils/featureFlags';
+import { UpsellEngineService } from '../../services/upsellEngineService';
 import { showCustomConfirm } from '../../services/dialog';
 import { SendTemplateMessageModal } from './SendTemplateMessageModal';
 import { renderHelpIcon } from '../../utils/helpHelper';
@@ -358,6 +359,17 @@ export class EditTravelModal {
     const risk = RiskScoreService.calculateTripRiskScore(v, v.cliente, v.produtos, this.globalSettings, this.options.user, this.options.perfil);
     const showRiskScore = isRiskScoreEnabled(this.options.user, this.options.perfil, this.globalSettings);
 
+    const showUpsell = isUpsellEnabled(this.options.user, this.options.perfil, this.globalSettings);
+    const upsellOps = showUpsell ? UpsellEngineService.calculateUpsellOpportunities(
+      v.produtos || [],
+      v.destino || '',
+      v.num_passageiros || v.total_passageiros || 2,
+      Number(v.valor_total) || 0,
+      this.options.perfil,
+      this.options.user,
+      this.globalSettings
+    ) : [];
+
     modalContent.innerHTML = `
       <div class="p-6">
         ${v._isCoPiloto ? `
@@ -623,6 +635,44 @@ export class EditTravelModal {
                 <p class="text-center text-xs text-slate-400 dark:text-slate-400 font-medium py-4">Buscando produtos...</p>
               </div>
             </div>
+
+            ${showUpsell && upsellOps.length > 0 ? `
+              <!-- BLOCO PREDIÇÃO PAXFLOW UPSELL ENGINE -->
+              <div class="p-4 bg-gradient-to-br from-indigo-950/80 via-slate-900 to-purple-950/80 border border-indigo-500/30 rounded-2xl text-white space-y-3 shadow-md">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span class="text-base">🚀</span>
+                    <div>
+                      <h4 class="text-xs font-black uppercase tracking-wider text-indigo-200 font-sans">PaxFlow Upsell Engine™ — Upgrades & Adicionais</h4>
+                      <p class="text-[10px] text-slate-300 font-medium">Oportunidades inteligentes para aumentar a margem e o conforto do cliente</p>
+                    </div>
+                  </div>
+                  <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 shrink-0 font-sans">Preditivo IA</span>
+                </div>
+
+                <div class="grid grid-cols-1 gap-2">
+                  ${upsellOps.map(u => `
+                    <div class="p-3 bg-white/5 hover:bg-white/10 rounded-xl border border-white/10 flex items-center justify-between gap-3 transition">
+                      <div class="space-y-0.5">
+                        <div class="flex items-center gap-2 flex-wrap">
+                          <span class="text-xs font-black text-indigo-100 font-sans">${u.titulo}</span>
+                          <span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${u.corBadge} font-sans">${u.badgeTexto}</span>
+                        </div>
+                        <p class="text-[11px] text-slate-300 font-medium leading-relaxed">${u.descricao}</p>
+                        <span class="text-[10px] text-emerald-300 font-extrabold block">+ R$ ${u.valorEstimado.toLocaleString('pt-BR')} &bull; Sugestão: ${u.produtoSugerido}</span>
+                      </div>
+                      <button type="button" 
+                        data-upsell-tipo="${u.categoriaProduto}" 
+                        data-upsell-desc="${u.produtoSugerido}" 
+                        data-upsell-valor="${u.valorEstimado}" 
+                        class="btn-quick-add-upsell px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[10px] font-black uppercase shrink-0 transition flex items-center gap-1 font-sans">
+                        <span>+ Incluir</span>
+                      </button>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            ` : ''}
 
             <!-- Formulário de Novo Produto (Inline) -->
             <div class="border-t border-slate-100 dark:border-slate-800 pt-4">
@@ -1378,6 +1428,58 @@ export class EditTravelModal {
 
       newRow.querySelector('.btn-remove-data-adicional')?.addEventListener('click', () => {
         newRow.remove();
+      });
+    });
+
+    // Inclusão rápida a partir do PaxFlow Upsell Engine
+    document.querySelectorAll('.btn-quick-add-upsell').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const cat = btn.getAttribute('data-upsell-tipo') || '';
+        const desc = btn.getAttribute('data-upsell-desc') || '';
+        const val = Number(btn.getAttribute('data-upsell-valor')) || 0;
+
+        const selectTipo = document.getElementById('prod-tipo') as HTMLSelectElement | null;
+        const inputDesc = document.getElementById('prod-descricao') as HTMLInputElement | null;
+        const inputVenda = document.getElementById('prod-venda') as HTMLInputElement | null;
+        const inputReserva = document.getElementById('prod-reserva') as HTMLInputElement | null;
+
+        if (selectTipo) {
+          const options = Array.from(selectTipo.options);
+          const matched = options.find(o => {
+            const txt = o.value.toLowerCase();
+            if (cat === 'seguro' && txt.includes('seguro')) return true;
+            if (cat === 'transfer' && (txt.includes('transfer') || txt.includes('traslado'))) return true;
+            if (cat === 'passeio' && (txt.includes('passeio') || txt.includes('ingresso') || txt.includes('tour') || txt.includes('experi'))) return true;
+            if (cat === 'hotel' && (txt.includes('hotel') || txt.includes('hospedagem'))) return true;
+            return false;
+          });
+          if (matched) {
+            selectTipo.value = matched.value;
+            selectTipo.dispatchEvent(new Event('change'));
+          }
+        }
+
+        if (inputDesc) {
+          inputDesc.value = desc;
+        }
+
+        if (inputVenda) {
+          inputVenda.value = formatCurrencyValue(val);
+          inputVenda.dispatchEvent(new Event('input'));
+        }
+
+        if (inputReserva && !inputReserva.value) {
+          inputReserva.value = (v.codigo_localizador || 'S/ LOC').toUpperCase();
+        }
+
+        const form = document.getElementById('form-novo-produto');
+        if (form) {
+          form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          form.classList.add('ring-2', 'ring-indigo-500', 'transition-all');
+          setTimeout(() => form.classList.remove('ring-2', 'ring-indigo-500'), 2000);
+        }
+
+        this.options.showToast(`Sugestão "${desc}" aplicada ao formulário!`, 'success');
       });
     });
 

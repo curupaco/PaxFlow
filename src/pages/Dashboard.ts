@@ -1916,6 +1916,8 @@ export class Dashboard {
     new NextTripDashboardWidget({
       container: mount,
       oportunidades,
+      user: this.user,
+      perfil: this.perfil,
       onCriarOrcamento: (op) => {
         this.openNovoOrcamentoPreditivo(op);
       },
@@ -2040,7 +2042,7 @@ export class Dashboard {
 Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : 'SLA Normal')}">
           <div class="flex items-center justify-center gap-2">
             <span class="text-base">${slaIcon}</span>
-            ${this.settings?.habilitar_risk_score !== false ? `
+            ${isRiskScoreEnabled(this.user, this.perfil, this.settings) ? `
               <button class="btn-open-risk-score px-2 py-0.5 rounded-lg text-[10px] font-black tracking-wider flex items-center gap-1 border shadow-xs transition transform hover:scale-105 ${risk.badgeClass}" data-trip-id="${v.id}" title="PaxFlow Risk Score™: ${risk.score}/100 (${risk.fraseStatus}) — Clique para abrir o diagnósticos">
                 <span>🛡️ ${risk.score}</span>
               </button>
@@ -2216,7 +2218,7 @@ Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : '
           </div>
 
           <div class="flex items-center gap-2">
-            ${this.settings?.habilitar_risk_score !== false ? `
+            ${isRiskScoreEnabled(this.user, this.perfil, this.settings) ? `
               <button class="btn-open-risk-score px-2 py-0.5 rounded-lg text-[9px] font-black tracking-wider flex items-center gap-1 border shadow-xs transition transform hover:scale-105 ${risk.badgeClass}" data-trip-id="${v.id}" title="PaxFlow Risk Score™: ${risk.score}/100 — Clique para abrir o diagnósticos">
                 <span>🛡️ ${risk.score}</span>
               </button>
