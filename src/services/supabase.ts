@@ -292,9 +292,21 @@ function triggerRealtimeCallbacks(event: string, table: string, record: any) {
   }
 }
 
+function isSandboxActive(): boolean {
+  if (typeof window === 'undefined') return false;
+  if ((window as any).paxflowSandbox === true) return true;
+  try {
+    if (sessionStorage.getItem('paxflowSandbox') === 'true') {
+      (window as any).paxflowSandbox = true;
+      return true;
+    }
+  } catch (e) {}
+  return false;
+}
+
 export const supabase = new Proxy(realSupabase, {
   get(target, prop, receiver) {
-    if (typeof window !== 'undefined' && (window as any).paxflowSandbox) {
+    if (isSandboxActive()) {
       if (prop === 'auth') {
         return {
           signInWithPassword: () => Promise.resolve({ data: { user: { id: 'sandbox-user-id' } }, error: null }),
@@ -352,6 +364,39 @@ export const supabase = new Proxy(realSupabase, {
               },
               range: (from: number, to: number) => {
                 return makeQueryBuilder(currentData.slice(from, to + 1));
+              },
+              limit: (count: number) => {
+                return makeQueryBuilder(currentData.slice(0, count));
+              },
+              in: (column: string, values: any[]) => {
+                const filtered = currentData.filter(item => {
+                  const val = item[column] !== undefined ? item[column] : item[toCamel(column)];
+                  return Array.isArray(values) && values.some(v => String(v) === String(val));
+                });
+                return makeQueryBuilder(filtered);
+              },
+              is: (column: string, value: any) => {
+                const filtered = currentData.filter(item => {
+                  const val = item[column] !== undefined ? item[column] : item[toCamel(column)];
+                  return val === value;
+                });
+                return makeQueryBuilder(filtered);
+              },
+              ilike: (column: string, pattern: string) => {
+                const clean = String(pattern).replace(/%/g, '').toLowerCase();
+                const filtered = currentData.filter(item => {
+                  const val = item[column] !== undefined ? item[column] : item[toCamel(column)];
+                  return String(val || '').toLowerCase().includes(clean);
+                });
+                return makeQueryBuilder(filtered);
+              },
+              like: (column: string, pattern: string) => {
+                const clean = String(pattern).replace(/%/g, '').toLowerCase();
+                const filtered = currentData.filter(item => {
+                  const val = item[column] !== undefined ? item[column] : item[toCamel(column)];
+                  return String(val || '').toLowerCase().includes(clean);
+                });
+                return makeQueryBuilder(filtered);
               },
               single: () => {
                 return Promise.resolve({ data: currentData[0] || null, error: currentData[0] ? null : new Error('Not found') });
@@ -541,14 +586,14 @@ if (typeof window !== 'undefined') {
   const originalRemoveItem = localStorage.removeItem;
 
   localStorage.getItem = function (key: string) {
-    if ((window as any).paxflowSandbox && !key.startsWith('sandbox-')) {
+    if (isSandboxActive() && !key.startsWith('sandbox-')) {
       return originalGetItem.call(localStorage, 'sandbox-' + key);
     }
     return originalGetItem.call(localStorage, key);
   };
 
   localStorage.setItem = function (key: string, value: string) {
-    if ((window as any).paxflowSandbox && !key.startsWith('sandbox-')) {
+    if (isSandboxActive() && !key.startsWith('sandbox-')) {
       originalSetItem.call(localStorage, 'sandbox-' + key, value);
       return;
     }
@@ -556,7 +601,7 @@ if (typeof window !== 'undefined') {
   };
 
   localStorage.removeItem = function (key: string) {
-    if ((window as any).paxflowSandbox && !key.startsWith('sandbox-')) {
+    if (isSandboxActive() && !key.startsWith('sandbox-')) {
       originalRemoveItem.call(localStorage, 'sandbox-' + key);
       return;
     }
@@ -677,7 +722,7 @@ export async function getSessaoAtual(): Promise<{
   perfil: PerfilConsultor | null;
   error: any;
 }> {
-  if (typeof window !== 'undefined' && (window as any).paxflowSandbox) {
+  if (isSandboxActive()) {
     return {
       user: { id: 'sandbox-user-id', email: 'consultor.fake@paxflowdemo.com' },
       perfil: {

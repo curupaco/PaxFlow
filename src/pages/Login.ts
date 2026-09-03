@@ -108,15 +108,6 @@ export class LoginPage {
                    <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                  </svg>
                </button>
-
-                <div class="pt-4 mt-2 border-t border-slate-200/60 dark:border-slate-800 flex items-center justify-between text-xs">
-                  <a href="/conheca" class="font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1">
-                    <span>🌟 Conhecer o PaxFlow</span>
-                  </a>
-                  <button type="button" id="btn-login-demo" class="font-extrabold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white transition flex items-center gap-1">
-                    <span>👀 Modo Demonstração</span>
-                  </button>
-                </div>
             </form>
           </div>
 
@@ -214,18 +205,6 @@ export class LoginPage {
         iconEyeHide?.classList.add('hidden');
         iconEyeShow?.classList.remove('hidden');
       }
-    });
-
-    // Acessar Modo Demonstração diretamente da tela de Login
-    document.getElementById('btn-login-demo')?.addEventListener('click', () => {
-      (window as any).paxflowSandbox = true;
-      sessionStorage.setItem('paxflowSandbox', 'true');
-      Object.keys(localStorage).forEach(key => {
-        if ((key.startsWith('sandbox-') || key.startsWith('paxflow-')) && key !== 'theme' && key !== 'paxflow-sidebar-collapsed') {
-          localStorage.removeItem(key);
-        }
-      });
-      window.location.href = '/';
     });
 
     // Submit de Recuperação de Senha
