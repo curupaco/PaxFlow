@@ -1051,6 +1051,8 @@ export class InboxService {
             const tipoInfo = formatTipoSolicitacaoEscala(sol.tipo);
             const statusInfo = formatStatusEscala(sol.status);
             const isUserEnvolvido = isUserSolicitante || (sol.tipo === 'troca' && isUserDestinatario);
+            const respPor = sol.respondido_por || 'um Administrador';
+            const respEmStr = sol.respondido_em ? new Date(sol.respondido_em).toLocaleString('pt-BR') : '';
 
             if (isUserEnvolvido) {
               shouldInclude = true;
@@ -1064,6 +1066,7 @@ export class InboxService {
                 <div class="space-y-2">
                   <p>A solicitação de <strong>${tipoInfo.label}</strong> referente a <strong>${rangeStr}</strong> foi finalizada.</p>
                   <p>• <strong>Status Final:</strong> <span class="${statusInfo.badgeClass}">${statusInfo.label}</span></p>
+                  <p>• <strong>Respondido Por:</strong> <strong>${respPor}</strong> ${respEmStr ? `em ${respEmStr}` : ''}</p>
                   <p>• <strong>Observações:</strong> ${sol.resposta_admin || 'Sem observações adicionais.'}</p>
                 </div>
               `;
@@ -1071,8 +1074,14 @@ export class InboxService {
               shouldInclude = true;
               isSentItem = true;
               cardTitle = `Decisão de Escala: ${tipoInfo.label} (${statusInfo.label})`;
-              cardSubject = `Decisão enviada para ${sol.solicitante_nome} (${rangeStr}).`;
-              cardBody = `Você definiu a solicitação de ${sol.solicitante_nome} como ${statusInfo.label}. Observação: ${sol.resposta_admin || 'Sem observação'}.`;
+              cardSubject = `Decisão por ${respPor} para ${sol.solicitante_nome} (${rangeStr}).`;
+              cardBody = `
+                <div class="space-y-2">
+                  <p>A solicitação de ${tipoInfo.label} de <strong>${sol.solicitante_nome}</strong> (${rangeStr}) foi definida como <span class="${statusInfo.badgeClass}">${statusInfo.label}</span>.</p>
+                  <p>• <strong>Respondido Por:</strong> <strong>${respPor}</strong> ${respEmStr ? `em ${respEmStr}` : ''}</p>
+                  <p>• <strong>Observação:</strong> ${sol.resposta_admin || 'Sem observação'}</p>
+                </div>
+              `;
             }
           }
 

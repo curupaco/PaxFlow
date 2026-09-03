@@ -123,6 +123,7 @@ export class PushNotificationService {
       }
 
       localStorage.setItem('paxflow_push_enabled', 'true');
+      localStorage.setItem('paxflow_push_user_id', userId);
       return true;
     } catch (err: any) {
       console.error('Erro ao inscrever para Web Push:', err);
@@ -149,6 +150,8 @@ export class PushNotificationService {
         await supabase.from('push_subscriptions').delete().eq('endpoint', endpoint);
       }
       localStorage.setItem('paxflow_push_enabled', 'false');
+      localStorage.removeItem('paxflow_push_user_id');
+      localStorage.removeItem('paxflow_auto_push_prompted');
       return true;
     } catch (err) {
       console.error('Erro ao cancelar notificação push:', err);
@@ -171,15 +174,21 @@ export class PushNotificationService {
   }
 
   /**
-   * Pede permissão de notificação automaticamente apenas na primeira vez no dispositivo (Android, iOS e Web)
+   * Pede permissão de notificação automaticamente e re-vincula o dispositivo caso o usuário logado tenha mudado
    */
   public static async checkAndPromptAutoPermission(userId: string): Promise<void> {
     if (!userId || !this.isSupported()) return;
 
+    const lastUser = localStorage.getItem('paxflow_push_user_id');
     const alreadyPrompted = localStorage.getItem('paxflow_auto_push_prompted');
-    if (alreadyPrompted === 'true') return;
 
-    // Marca imediatamente no localStorage para não repetir a solicitação automática
+    // Se o usuário logado mudou, resetamos a flag para garantir a sobrescrita do endpoint no Supabase com o novo user_id
+    if (lastUser && lastUser !== userId) {
+      localStorage.removeItem('paxflow_auto_push_prompted');
+    } else if (alreadyPrompted === 'true' && lastUser === userId) {
+      return;
+    }
+
     localStorage.setItem('paxflow_auto_push_prompted', 'true');
 
     try {

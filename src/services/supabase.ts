@@ -617,6 +617,10 @@ export async function loginConsultor(email: string, password: string): Promise<{
  */
 export async function logoutConsultor(): Promise<{ error: any }> {
   cachedSessionResult = null; // Limpa cache ao deslogar
+  try {
+    localStorage.removeItem('paxflow_push_user_id');
+    localStorage.removeItem('paxflow_auto_push_prompted');
+  } catch (e) {}
   const { error } = await supabase.auth.signOut();
   return { error };
 }

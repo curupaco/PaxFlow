@@ -1712,11 +1712,12 @@ export class InboxPage {
         if (!solId) return;
 
         try {
-          const res = await EscalaService.atualizarStatusSolicitacao(solId, 'aprovado', 'Aprovado via Caixa de Entrada');
+          const adminName = this.perfil?.nome || 'Admin';
+          const res = await EscalaService.atualizarStatusSolicitacao(solId, 'aprovado', 'Aprovado via Caixa de Entrada', adminName);
           if (res.success) {
             this.showToast('✅ Solicitação APROVADA com sucesso! Escala atualizada no banco.', 'success');
           } else if (res.alreadyProcessed) {
-            this.showToast('Esta solicitação já foi finalizada anteriormente.');
+            this.showToast(`⚠️ Esta solicitação já foi respondida anteriormente por ${res.respondidoPor || 'outro Administrador'}.`, 'error');
           }
           await this.loadAndBuildAlerts();
           await this.loadEscalaData();
@@ -1736,9 +1737,12 @@ export class InboxPage {
         if (!solId) return;
 
         try {
-          const res = await EscalaService.atualizarStatusSolicitacao(solId, 'recusado', 'Recusado pela Gestão via Caixa de Entrada');
+          const adminName = this.perfil?.nome || 'Admin';
+          const res = await EscalaService.atualizarStatusSolicitacao(solId, 'recusado', 'Recusado pela Gestão via Caixa de Entrada', adminName);
           if (res.success) {
             this.showToast('❌ Solicitação RECUSADA.', 'error');
+          } else if (res.alreadyProcessed) {
+            this.showToast(`⚠️ Esta solicitação já foi respondida anteriormente por ${res.respondidoPor || 'outro Administrador'}.`, 'error');
           }
           await this.loadAndBuildAlerts();
           await this.loadEscalaData();
@@ -2139,11 +2143,16 @@ export class InboxPage {
         if (!solId) return;
         (btn as HTMLButtonElement).disabled = true;
         (btn as HTMLButtonElement).textContent = 'Aprovando...';
-        await EscalaService.atualizarStatusSolicitacao(solId, 'aprovado', 'Aprovado via Inbox');
+        const adminName = this.perfil?.nome || 'Admin';
+        const res = await EscalaService.atualizarStatusSolicitacao(solId, 'aprovado', 'Aprovado via Inbox', adminName);
         await this.loadAndBuildAlerts();
         this.render();
         this.setupEventListeners();
-        showCustomAlert('Solicitação de escala aprovada com sucesso! A grade foi atualizada.', 'Escala Aprovada');
+        if (res.success) {
+          showCustomAlert('Solicitação de escala aprovada com sucesso! A grade foi atualizada.', 'Escala Aprovada');
+        } else if (res.alreadyProcessed) {
+          showCustomAlert(`Esta solicitação já foi respondida anteriormente por ${res.respondidoPor || 'outro Administrador'}.`, 'Aviso');
+        }
       });
     });
 
@@ -2154,11 +2163,16 @@ export class InboxPage {
         if (!solId) return;
         (btn as HTMLButtonElement).disabled = true;
         (btn as HTMLButtonElement).textContent = 'Recusando...';
-        await EscalaService.atualizarStatusSolicitacao(solId, 'recusado', 'Recusado via Inbox');
+        const adminName = this.perfil?.nome || 'Admin';
+        const res = await EscalaService.atualizarStatusSolicitacao(solId, 'recusado', 'Recusado via Inbox', adminName);
         await this.loadAndBuildAlerts();
         this.render();
         this.setupEventListeners();
-        showCustomAlert('Solicitação de escala recusada.', 'Escala Recusada');
+        if (res.success) {
+          showCustomAlert('Solicitação de escala recusada.', 'Escala Recusada');
+        } else if (res.alreadyProcessed) {
+          showCustomAlert(`Esta solicitação já foi respondida anteriormente por ${res.respondidoPor || 'outro Administrador'}.`, 'Aviso');
+        }
       });
     });
 

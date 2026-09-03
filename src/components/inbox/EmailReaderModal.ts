@@ -432,12 +432,13 @@ export class EmailReaderModal {
         if (!solId) return;
 
         try {
-          const res = await EscalaService.atualizarStatusSolicitacao(solId, 'aprovado', 'Aprovado via Leitor de Mensagem');
+          const adminName = options.perfil?.nome || 'Admin';
+          const res = await EscalaService.atualizarStatusSolicitacao(solId, 'aprovado', 'Aprovado via Leitor de Mensagem', adminName);
           closeModal(true);
           if (res.success) {
             showCustomAlert('✅ Solicitação APROVADA com sucesso! A escala foi atualizada no banco de dados.', 'Sucesso');
           } else if (res.alreadyProcessed) {
-            showCustomAlert('Esta solicitação já foi finalizada anteriormente.', 'Aviso');
+            showCustomAlert(`⚠️ Esta solicitação já foi respondida anteriormente por ${res.respondidoPor || 'outro Administrador'}.`, 'Aviso');
           }
           window.dispatchEvent(new CustomEvent('paxflow:new-message'));
         } catch (err: any) {
@@ -454,10 +455,13 @@ export class EmailReaderModal {
         if (!solId) return;
 
         try {
-          const res = await EscalaService.atualizarStatusSolicitacao(solId, 'recusado', 'Recusado pela Gestão via Leitor de Mensagem');
+          const adminName = options.perfil?.nome || 'Admin';
+          const res = await EscalaService.atualizarStatusSolicitacao(solId, 'recusado', 'Recusado pela Gestão via Leitor de Mensagem', adminName);
           closeModal(true);
           if (res.success) {
             showCustomAlert('❌ Solicitação RECUSADA.', 'Info');
+          } else if (res.alreadyProcessed) {
+            showCustomAlert(`⚠️ Esta solicitação já foi respondida anteriormente por ${res.respondidoPor || 'outro Administrador'}.`, 'Aviso');
           }
           window.dispatchEvent(new CustomEvent('paxflow:new-message'));
         } catch (err: any) {

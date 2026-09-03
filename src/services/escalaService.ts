@@ -712,8 +712,9 @@ export class EscalaService {
   public static async atualizarStatusSolicitacao(
     solicitacaoId: string,
     novoStatus: 'pendente_admin' | 'aprovado' | 'recusado',
-    respostaAdmin?: string
-  ): Promise<{ success: boolean; alreadyProcessed?: boolean; currentStatus?: string }> {
+    respostaAdmin?: string,
+    adminNome?: string
+  ): Promise<{ success: boolean; alreadyProcessed?: boolean; currentStatus?: string; respondidoPor?: string }> {
     let target: SolicitacaoEscala | null = null;
 
     // Checagem e busca em tempo real no banco de dados
@@ -730,7 +731,8 @@ export class EscalaService {
         return {
           success: false,
           alreadyProcessed: true,
-          currentStatus: dbCheck.status
+          currentStatus: dbCheck.status,
+          respondidoPor: dbCheck.respondido_por || dbCheck.resposta_admin || 'outro Administrador'
         };
       }
       target = dbCheck as SolicitacaoEscala;
@@ -740,9 +742,13 @@ export class EscalaService {
 
     if (!target) return { success: false };
 
+    const statusAnterior = target.status;
+    const nowIso = new Date().toISOString();
     target.status = novoStatus;
     if (respostaAdmin) target.resposta_admin = respostaAdmin;
-    target.updated_at = new Date().toISOString();
+    if (adminNome) target.respondido_por = adminNome;
+    target.respondido_em = nowIso;
+    target.updated_at = nowIso;
 
     if (novoStatus === 'aprovado') {
       if (target.tipo === 'troca' && target.destinatario_nome && target.data_destino) {
@@ -779,31 +785,70 @@ export class EscalaService {
     }
 
     try {
+      const updateData: any = {
+        status: novoStatus,
+        resposta_admin: respostaAdmin,
+        updated_at: nowIso
+      };
+      if (adminNome) {
+        updateData.respondido_por = adminNome;
+        updateData.respondido_em = nowIso;
+      }
       await supabase
         .from('escala_solicitacoes')
-        .update({ status: novoStatus, resposta_admin: respostaAdmin })
+        .update(updateData)
         .eq('id', solicitacaoId);
 
-      // 1. Notifica o solicitante direto via Web Push se houver
-      if (target.solicitante_id) {
-        const statusLabel = novoStatus === 'aprovado' ? 'Aprovada ✅' : novoStatus === 'recusado' ? 'Recusada ❌' : 'Atualizada';
-        PushSenderService.sendToUser(target.solicitante_id, {
-          title: `📅 Resposta da Escala: ${statusLabel}`,
-          body: `Sua solicitação de escala para ${formatarDataBR(target.data_origem)} foi ${statusLabel.toLowerCase()}.`,
-          url: '/#inbox'
-        });
+      const tipoLabel = target.tipo === 'troca' ? 'Troca de Turno' : target.tipo === 'folga' ? 'Folga Semanal' : target.tipo === 'ferias' ? 'Férias' : 'Atendimento no Balcão';
+
+      // 1. Cenário: Gestão aprova ou recusa uma solicitação criada pelo consultor (statusAnterior === 'pendente_admin')
+      if (statusAnterior === 'pendente_admin') {
+        if (target.solicitante_id) {
+          const statusLabel = novoStatus === 'aprovado' ? 'Aprovada ✅' : novoStatus === 'recusado' ? 'Recusada ❌' : 'Atualizada';
+          PushSenderService.sendToUser(target.solicitante_id, {
+            title: `📅 Resposta da Escala: ${statusLabel}`,
+            body: `Sua solicitação de ${tipoLabel.toLowerCase()} para ${formatarDataBR(target.data_origem)} foi ${statusLabel.toLowerCase()} pela gestão.`,
+            url: '/#inbox'
+          });
+        }
       }
+      // 2. Cenário: Consultor responde a uma proposta enviada pela gestão (statusAnterior === 'pendente_consultor')
+      else if (statusAnterior === 'pendente_consultor') {
+        const { data: allProfs } = await supabase.from('profiles').select('id, role');
+        const admins = (allProfs || []).filter(a => (a.role || '').toLowerCase() === 'admin');
+        if (admins && admins.length > 0) {
+          const consultorNome = target.destinatario_nome || target.solicitante_nome || 'Consultor';
+          const acaoLabel = novoStatus === 'aprovado' ? 'ACEITOU' : 'RECUSOU';
 
-      // 2. Notifica TODOS os Administradores da agência sobre o retorno do consultor via Web Push
-      const { data: allProfs } = await supabase.from('profiles').select('id, role');
-      const admins = (allProfs || []).filter(a => (a.role || '').toLowerCase() === 'admin');
-      if (admins && admins.length > 0) {
-        const consultorNome = target.destinatario_nome || target.solicitante_nome || 'Consultor';
-
-        for (const admin of admins) {
-          PushSenderService.sendToUser(admin.id, {
-            title: `🔄 Retorno da Escala: ${consultorNome}`,
-            body: `O consultor ${consultorNome} ${novoStatus === 'aprovado' ? 'APROVOU' : 'RECUSOU'} a proposta de escala (${formatarDataBR(target.data_origem)})`,
+          for (const admin of admins) {
+            PushSenderService.sendToUser(admin.id, {
+              title: `🔄 Retorno de Proposta: ${consultorNome}`,
+              body: `O consultor ${consultorNome} ${acaoLabel} a proposta de alteração de escala para ${formatarDataBR(target.data_origem)}.`,
+              url: '/#inbox'
+            });
+          }
+        }
+      }
+      // 3. Cenário: Colega responde solicitação de troca (statusAnterior === 'pendente_colega')
+      else if (statusAnterior === 'pendente_colega') {
+        if (novoStatus === 'pendente_admin') {
+          // Colega aceitou a troca -> notifica Admins para aprovação final da gestão
+          const { data: allProfs } = await supabase.from('profiles').select('id, role');
+          const admins = (allProfs || []).filter(a => (a.role || '').toLowerCase() === 'admin');
+          if (admins && admins.length > 0) {
+            for (const admin of admins) {
+              PushSenderService.sendToUser(admin.id, {
+                title: `📅 Troca de Escala Aceita pelo Colega`,
+                body: `${target.destinatario_nome || 'O colega'} aceitou trocar o turno com ${target.solicitante_nome} (${formatarDataBR(target.data_origem)}). Aguardando aprovação da gestão.`,
+                url: '/#inbox'
+              });
+            }
+          }
+        } else if (novoStatus === 'recusado' && target.solicitante_id) {
+          // Colega recusou a troca -> notifica o solicitante original
+          PushSenderService.sendToUser(target.solicitante_id, {
+            title: `📅 Troca de Turno Recusada`,
+            body: `${target.destinatario_nome || 'O colega'} recusou sua solicitação de troca de turno para ${formatarDataBR(target.data_origem)}.`,
             url: '/#inbox'
           });
         }

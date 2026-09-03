@@ -602,6 +602,8 @@ export interface SolicitacaoEscala {
   motivo?: string;
   status: 'pendente_colega' | 'pendente_admin' | 'pendente_consultor' | 'aprovado' | 'recusado';
   resposta_admin?: string;
+  respondido_por?: string;
+  respondido_em?: string;
   created_at: string;
   updated_at?: string;
 }
