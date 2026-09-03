@@ -632,16 +632,6 @@ export class EscalaService {
         if (admins && admins.length > 0) {
           const tipoLabel = newObj.tipo === 'troca' ? 'Troca de Turno' : newObj.tipo === 'folga' ? 'Folga Semanal' : newObj.tipo === 'ferias' ? 'Férias' : 'Atendimento no Balcão';
           for (const admin of admins) {
-            await supabase.from('lembretes').insert({
-              consultor_id: admin.id,
-              criador_id: safeSolicitanteId,
-              titulo: `Solicitação de Escala: ${tipoLabel}`,
-              descricao: `${newObj.solicitante_nome} solicitou ${tipoLabel} (${formatarDataBR(newObj.data_origem)}). Motivo: ${newObj.motivo || 'Sem justificativa'}`,
-              data_lembrete: newObj.data_origem,
-              prioridade: 'alta',
-              concluido: false,
-              created_at: newObj.created_at
-            });
             // Dispara Web Push no celular dos administradores
             PushSenderService.sendToUser(admin.id, {
               title: `📅 Solicitação de Escala: ${tipoLabel}`,
@@ -794,42 +784,23 @@ export class EscalaService {
         .update({ status: novoStatus, resposta_admin: respostaAdmin })
         .eq('id', solicitacaoId);
 
-      // 1. Notifica o solicitante direto se houver
+      // 1. Notifica o solicitante direto via Web Push se houver
       if (target.solicitante_id) {
-        const statusLabel = novoStatus === 'aprovado' ? 'Aprovada' : novoStatus === 'recusado' ? 'Recusada' : 'Atualizada';
-        await supabase.from('lembretes').insert({
-          consultor_id: target.solicitante_id,
-          criador_id: target.solicitante_id,
-          titulo: `Resposta da Escala: ${statusLabel}`,
-          descricao: `Sua solicitação de escala foi ${statusLabel}. Observação: ${respostaAdmin || 'Sem observações'}`,
-          data_lembrete: target.data_origem,
-          prioridade: 'alta',
-          concluido: false,
-          created_at: new Date().toISOString()
+        const statusLabel = novoStatus === 'aprovado' ? 'Aprovada ✅' : novoStatus === 'recusado' ? 'Recusada ❌' : 'Atualizada';
+        PushSenderService.sendToUser(target.solicitante_id, {
+          title: `📅 Resposta da Escala: ${statusLabel}`,
+          body: `Sua solicitação de escala para ${formatarDataBR(target.data_origem)} foi ${statusLabel.toLowerCase()}.`,
+          url: '/#inbox'
         });
       }
 
-      // 2. Notifica TODOS os Administradores da agência sobre o retorno do consultor
+      // 2. Notifica TODOS os Administradores da agência sobre o retorno do consultor via Web Push
       const { data: allProfs } = await supabase.from('profiles').select('id, role');
       const admins = (allProfs || []).filter(a => (a.role || '').toLowerCase() === 'admin');
       if (admins && admins.length > 0) {
         const consultorNome = target.destinatario_nome || target.solicitante_nome || 'Consultor';
-        const resText = novoStatus === 'aprovado' 
-          ? 'ACEITOU a proposta e a escala foi atualizada automaticamente!' 
-          : 'RECUSOU a proposta de troca de horário.';
 
         for (const admin of admins) {
-          await supabase.from('lembretes').insert({
-            consultor_id: admin.id,
-            criador_id: target.destinatario_id || target.solicitante_id || null,
-            titulo: `🔄 Retorno de Escala: ${consultorNome} ${novoStatus === 'aprovado' ? 'Aprovou ✅' : 'Recusou ❌'}`,
-            descricao: `O consultor ${consultorNome} ${resText} Data: ${formatarDataBR(target.data_origem)}. ${respostaAdmin ? `Observação: ${respostaAdmin}` : ''}`,
-            data_lembrete: target.data_origem,
-            prioridade: 'alta',
-            concluido: false,
-            created_at: new Date().toISOString()
-          });
-
           PushSenderService.sendToUser(admin.id, {
             title: `🔄 Retorno da Escala: ${consultorNome}`,
             body: `O consultor ${consultorNome} ${novoStatus === 'aprovado' ? 'APROVOU' : 'RECUSOU'} a proposta de escala (${formatarDataBR(target.data_origem)})`,

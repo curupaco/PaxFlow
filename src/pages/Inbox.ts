@@ -70,9 +70,6 @@ export class InboxPage {
 
       // 3. Fetch active consultants list
       await this.loadConsultants();
-      if (this.perfil?.role === 'admin') {
-        this.selectedConsultantFilter = this.user.id;
-      }
 
       // 4. Fetch all reminders and build unified alert list
       await this.loadAndBuildAlerts();
@@ -373,7 +370,7 @@ export class InboxPage {
 
     // 1. Filter by Active / Archived / All / Sent / Escala
     if (this.activeTab === 'ativos') {
-      result = result.filter(a => !a.arquivado && (!a.isSent || a.type === 'escala_solicitacao'));
+      result = result.filter(a => !a.arquivado && !a.isSent);
     } else if (this.activeTab === 'arquivados') {
       result = result.filter(a => a.arquivado);
     } else if (this.activeTab === 'enviadas') {
@@ -391,7 +388,8 @@ export class InboxPage {
       result = result.filter(a => 
         a.consultorId === this.selectedConsultantFilter || 
         a.criadorId === this.selectedConsultantFilter || 
-        a.senderId === this.selectedConsultantFilter
+        a.senderId === this.selectedConsultantFilter ||
+        (a.type === 'escala_solicitacao' && !a.isSent)
       );
     }
 
@@ -532,13 +530,18 @@ export class InboxPage {
     // 1. Calculate counters for badges
     let baseAlertsForCounters = [...this.alerts];
     if ((this.perfil?.role || '').toLowerCase() === 'admin' && this.selectedConsultantFilter !== 'todos') {
-      baseAlertsForCounters = baseAlertsForCounters.filter(a => a.consultorId === this.selectedConsultantFilter || a.isReceivedByMe || a.isCreatedByMe);
+      baseAlertsForCounters = baseAlertsForCounters.filter(a => 
+        a.consultorId === this.selectedConsultantFilter || 
+        a.criadorId === this.selectedConsultantFilter ||
+        a.senderId === this.selectedConsultantFilter ||
+        (a.type === 'escala_solicitacao' && !a.isSent)
+      );
     }
 
     const readList = this.readList;
 
     // Filter subsets for totals and unread counts
-    const activeAlerts = baseAlertsForCounters.filter(a => !a.arquivado && (!a.isSent || a.type === 'escala_solicitacao'));
+    const activeAlerts = baseAlertsForCounters.filter(a => !a.arquivado && !a.isSent);
     const totalAtivos = activeAlerts.length;
     const unreadAtivos = activeAlerts.filter(a => !readList.includes(a.id)).length;
 
@@ -1032,6 +1035,17 @@ export class InboxPage {
                             <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
                               ${a.subject}
                             </p>
+
+                            ${(a.type === 'escala_solicitacao' && !a.isSent) ? `
+                              <div class="flex flex-wrap items-center gap-2 pt-2" onclick="event.stopPropagation()">
+                                <button class="btn-aprovar-escala-inbox inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-extrabold transition shadow-xs" data-sol-id="${a.targetId}">
+                                  <span>✅ Aprovar</span>
+                                </button>
+                                <button class="btn-recusar-escala-inbox inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-extrabold transition shadow-xs" data-sol-id="${a.targetId}">
+                                  <span>❌ Recusar</span>
+                                </button>
+                              </div>
+                            ` : ''}
 
                             ${this.perfil?.role === 'admin' ? `
                               <div class="flex items-center gap-1.5 pt-1 text-[9px] font-extrabold text-slate-400 dark:text-slate-400 uppercase tracking-wider">
@@ -2117,6 +2131,101 @@ export class InboxPage {
       });
     });
 
+    // 10. Botões de Ação Direta nos Cards de Escala (1-Click Approval/Refusal)
+    this.container.querySelectorAll('.btn-aprovar-escala-inbox').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const solId = btn.getAttribute('data-sol-id');
+        if (!solId) return;
+        (btn as HTMLButtonElement).disabled = true;
+        (btn as HTMLButtonElement).textContent = 'Aprovando...';
+        await EscalaService.atualizarStatusSolicitacao(solId, 'aprovado', 'Aprovado via Inbox');
+        await this.loadAndBuildAlerts();
+        this.render();
+        this.setupEventListeners();
+        showCustomAlert('Solicitação de escala aprovada com sucesso! A grade foi atualizada.', 'Escala Aprovada');
+      });
+    });
+
+    this.container.querySelectorAll('.btn-recusar-escala-inbox').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const solId = btn.getAttribute('data-sol-id');
+        if (!solId) return;
+        (btn as HTMLButtonElement).disabled = true;
+        (btn as HTMLButtonElement).textContent = 'Recusando...';
+        await EscalaService.atualizarStatusSolicitacao(solId, 'recusado', 'Recusado via Inbox');
+        await this.loadAndBuildAlerts();
+        this.render();
+        this.setupEventListeners();
+        showCustomAlert('Solicitação de escala recusada.', 'Escala Recusada');
+      });
+    });
+
+    this.container.querySelectorAll('.btn-ver-na-escala').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.activeTab = 'escala';
+        this.render();
+        this.setupEventListeners();
+      });
+    });
+
+    this.container.querySelectorAll('.btn-aceitar-troca-inbox').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const solId = btn.getAttribute('data-sol-id');
+        if (!solId) return;
+        (btn as HTMLButtonElement).disabled = true;
+        await EscalaService.atualizarStatusSolicitacao(solId, 'pendente_admin', 'Aceito pelo colega');
+        await this.loadAndBuildAlerts();
+        this.render();
+        this.setupEventListeners();
+        showCustomAlert('Troca aceita! Encaminhada para aprovação da gestão.', 'Troca Aceita');
+      });
+    });
+
+    this.container.querySelectorAll('.btn-recusar-troca-inbox').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const solId = btn.getAttribute('data-sol-id');
+        if (!solId) return;
+        (btn as HTMLButtonElement).disabled = true;
+        await EscalaService.atualizarStatusSolicitacao(solId, 'recusado', 'Recusado pelo colega');
+        await this.loadAndBuildAlerts();
+        this.render();
+        this.setupEventListeners();
+        showCustomAlert('Troca recusada.', 'Troca Recusada');
+      });
+    });
+
+    this.container.querySelectorAll('.btn-aceitar-proposta-inbox').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const solId = btn.getAttribute('data-sol-id');
+        if (!solId) return;
+        (btn as HTMLButtonElement).disabled = true;
+        await EscalaService.atualizarStatusSolicitacao(solId, 'aprovado', 'Proposta da gestão aceita pelo consultor');
+        await this.loadAndBuildAlerts();
+        this.render();
+        this.setupEventListeners();
+        showCustomAlert('Proposta aceita! Sua escala foi atualizada.', 'Proposta Aceita');
+      });
+    });
+
+    this.container.querySelectorAll('.btn-recusar-proposta-inbox').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const solId = btn.getAttribute('data-sol-id');
+        if (!solId) return;
+        (btn as HTMLButtonElement).disabled = true;
+        await EscalaService.atualizarStatusSolicitacao(solId, 'recusado', 'Proposta da gestão recusada pelo consultor');
+        await this.loadAndBuildAlerts();
+        this.render();
+        this.setupEventListeners();
+        showCustomAlert('Proposta recusada.', 'Proposta Recusada');
+      });
+    });
   }
 
   /**
