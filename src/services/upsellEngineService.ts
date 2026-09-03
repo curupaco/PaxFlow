@@ -1,25 +1,22 @@
 import { UpsellOpportunity } from '../types';
+import { isUpsellEnabled } from '../utils/featureFlags';
 
 export class UpsellEngineService {
   /**
-   * Verifica se o PaxFlow Upsell Engine™ está habilitado globalmente nas configurações da agência.
-   * Retorna true por padrão a menos que explicitamente desativado nas configurações.
+   * Verifica se o PaxFlow Upsell Engine™ está habilitado para o usuário atual.
    */
-  public static isUpsellEnabled(settings?: any): boolean {
+  public static isUpsellEnabled(settings?: any, user?: any, perfil?: any): boolean {
     if (localStorage.getItem('paxflow_upsell_override') === 'false') return false;
     if (localStorage.getItem('paxflow_upsell_override') === 'true') return true;
     
-    if (settings && (settings.habilitar_upsell_preditivo === false || settings.habilitarUpsellPreditivo === false)) {
-      return false;
-    }
-    return true;
+    return isUpsellEnabled(user, perfil, settings);
   }
 
   /**
    * Alias de compatibilidade retroativa.
    */
   public static isUserThiagoCosta(perfil?: any, user?: any): boolean {
-    return this.isUpsellEnabled();
+    return this.isUpsellEnabled(null, user, perfil);
   }
 
   /**
@@ -34,8 +31,8 @@ export class UpsellEngineService {
     user?: any,
     settings?: any
   ): UpsellOpportunity[] {
-    // Liberação geral: verifica a chave de configuração global da agência
-    if (!this.isUpsellEnabled(settings || perfil)) {
+    // Verifica permissão e feature flag do Upsell Engine
+    if (!this.isUpsellEnabled(settings, user, perfil)) {
       return [];
     }
 

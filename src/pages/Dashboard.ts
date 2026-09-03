@@ -2026,7 +2026,7 @@ export class Dashboard {
     const valorVenda = Number(v.valor_total) || 0;
 
     // Calcular PaxFlow Risk Score™
-    const risk = RiskScoreService.calculateTripRiskScore(v, v.cliente, v.produtos, this.settings);
+    const risk = RiskScoreService.calculateTripRiskScore(v, v.cliente, v.produtos, this.settings, this.user, this.perfil);
 
     return `
       <tr class="${rowBg} transition-colors duration-200">
@@ -2190,7 +2190,7 @@ Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : '
     const valorVenda = Number(v.valor_total) || 0;
 
     // Calcular PaxFlow Risk Score™
-    const risk = RiskScoreService.calculateTripRiskScore(v, v.cliente, v.produtos, this.settings);
+    const risk = RiskScoreService.calculateTripRiskScore(v, v.cliente, v.produtos, this.settings, this.user, this.perfil);
 
     return `
       <div class="${cardBg} border border-slate-200/60 dark:border-slate-800 border-l-4 ${cardBorder} rounded-2xl p-5 shadow-sm space-y-4">

@@ -2,6 +2,7 @@ import { supabase } from '../../services/supabase';
 import { DestinosAutocomplete } from '../DestinosAutocomplete';
 import { CommentsService } from '../../services/comments';
 import { RiskScoreService } from '../../services/riskScoreService';
+import { isRiskScoreEnabled } from '../../utils/featureFlags';
 import { showCustomConfirm } from '../../services/dialog';
 import { SendTemplateMessageModal } from './SendTemplateMessageModal';
 import { renderHelpIcon } from '../../utils/helpHelper';
@@ -354,8 +355,8 @@ export class EditTravelModal {
     const viagemProcessoConferido = !!v.processo_conferido;
     const isAdmin = this.options.perfil?.role === 'admin';
 
-    const risk = RiskScoreService.calculateTripRiskScore(v, v.cliente, v.produtos, this.globalSettings);
-    const showRiskScore = this.globalSettings?.habilitar_risk_score !== false;
+    const risk = RiskScoreService.calculateTripRiskScore(v, v.cliente, v.produtos, this.globalSettings, this.options.user, this.options.perfil);
+    const showRiskScore = isRiskScoreEnabled(this.options.user, this.options.perfil, this.globalSettings);
 
     modalContent.innerHTML = `
       <div class="p-6">

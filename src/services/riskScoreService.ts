@@ -1,5 +1,6 @@
-import { Viagem, Cliente, GlobalSettings, RiskScoreResult, RiskItem, RiskTimelineEntry, ProdutoViagem } from '../types';
+import { Viagem, Cliente, GlobalSettings, RiskScoreResult, RiskItem, RiskTimelineEntry, ProdutoViagem, PerfilConsultor } from '../types';
 import { supabase } from './supabase';
+import { isRiskScoreEnabled } from '../utils/featureFlags';
 
 /**
  * Serviço responsável pela inteligência do PaxFlow Risk Score™
@@ -12,10 +13,12 @@ export class RiskScoreService {
     viagem: Viagem,
     cliente?: Cliente | null,
     produtos: ProdutoViagem[] = [],
-    settings?: GlobalSettings | null
+    settings?: GlobalSettings | null,
+    user?: any,
+    perfil?: PerfilConsultor | null
   ): RiskScoreResult {
-    // 0. Se o recurso estiver desativado globalmente, retorna status neutro desativado
-    if (settings && settings.habilitar_risk_score === false) {
+    // 0. Se o recurso estiver desativado para o usuário atual, retorna status neutro desativado
+    if (!isRiskScoreEnabled(user, perfil, settings)) {
       return {
         score: 100,
         nivel: 'verde',
