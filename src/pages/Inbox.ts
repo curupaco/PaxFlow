@@ -18,7 +18,7 @@ export class InboxPage {
   private filteredAlerts: AlertItem[] = [];
   
   // App state
-  private activeTab: 'ativos' | 'arquivados' | 'todos' | 'enviadas' | 'escala' = 'ativos';
+  private activeTab: 'ativos' | 'arquivados' | 'todos' | 'enviadas' | 'escala' | 'decisoes' = 'ativos';
   private selectedConsultantFilter: string = 'todos';
   private categoryFilter: string = 'todos';
   private selectedAlertIds: Set<string> = new Set();
@@ -371,13 +371,15 @@ export class InboxPage {
   private applyFilters(): void {
     let result = [...this.alerts];
 
-    // 1. Filter by Active / Archived / All / Sent / Escala
+    // 1. Filter by Active / Archived / All / Sent / Escala / Decisões
     if (this.activeTab === 'ativos') {
-      result = result.filter(a => !a.arquivado && !a.isSent);
+      result = result.filter(a => !a.arquivado && !a.isSent && !a.isDecision);
     } else if (this.activeTab === 'arquivados') {
       result = result.filter(a => a.arquivado);
     } else if (this.activeTab === 'enviadas') {
-      result = result.filter(a => a.isSent);
+      result = result.filter(a => a.isSent && !a.isDecision);
+    } else if (this.activeTab === 'decisoes') {
+      result = result.filter(a => a.isDecision || (a.type === 'escala_solicitacao' && a.isSent));
     } else if (this.activeTab === 'todos') {
       result = result.filter(a => true);
     } else if (this.activeTab === 'escala') {
@@ -564,7 +566,7 @@ export class InboxPage {
     const readList = this.readList;
 
     // Filter subsets for totals and unread counts
-    const activeAlerts = baseAlertsForCounters.filter(a => !a.arquivado && !a.isSent);
+    const activeAlerts = baseAlertsForCounters.filter(a => !a.arquivado && !a.isSent && !a.isDecision);
     const totalAtivos = activeAlerts.length;
     const unreadAtivos = activeAlerts.filter(a => !readList.includes(a.id)).length;
 
@@ -580,15 +582,19 @@ export class InboxPage {
     const totalRefund = refundAlerts.length;
     const unreadRefund = refundAlerts.filter(a => !readList.includes(a.id)).length;
 
-    const totalEnviadas = baseAlertsForCounters.filter(a => a.isSent).length;
+    const sentAlerts = baseAlertsForCounters.filter(a => a.isSent && !a.isDecision);
+    const totalEnviadas = sentAlerts.length;
+
+    const decisionAlerts = baseAlertsForCounters.filter(a => a.isDecision || (a.type === 'escala_solicitacao' && a.isSent));
+    const totalDecisoes = decisionAlerts.length;
 
     const archivedAlerts = baseAlertsForCounters.filter(a => a.arquivado);
     const totalArquivados = archivedAlerts.length;
-    const unreadArquivados = archivedAlerts.filter(a => !readList.includes(a.id)).length;
+    const unreadArquivados = archivedAlerts.filter(a => !a.isSent && !a.isDecision && !readList.includes(a.id)).length;
 
     const allInboxAlerts = baseAlertsForCounters.filter(a => true);
     const totalGeral = allInboxAlerts.length;
-    const unreadGeral = allInboxAlerts.filter(a => !readList.includes(a.id)).length;
+    const unreadGeral = allInboxAlerts.filter(a => !a.isSent && !a.isDecision && !readList.includes(a.id)).length;
 
     // 2. Build the main page container markup
     this.container.innerHTML = `
@@ -801,6 +807,20 @@ export class InboxPage {
                   <span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 whitespace-nowrap inline-flex items-center shrink-0 ml-2">${totalEnviadas}</span>
                 </button>
 
+                <button id="folder-decisoes" class="w-full px-3 py-2.5 rounded-xl flex items-center justify-between text-xs font-bold transition select-none ${
+                  this.activeTab === 'decisoes' 
+                    ? 'bg-indigo-600/10 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400' 
+                    : 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800/40'
+                }">
+                  <span class="flex items-center gap-2.5 min-w-0 flex-1 truncate text-left">
+                    <svg class="w-4 h-4 shrink-0 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span class="truncate">Decisões</span>
+                  </span>
+                  <span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 whitespace-nowrap inline-flex items-center shrink-0 ml-2">${totalDecisoes}</span>
+                </button>
+
                 <button id="folder-arquivados" class="w-full px-3 py-2.5 rounded-xl flex items-center justify-between text-xs font-bold transition select-none ${
                   this.activeTab === 'arquivados' 
                     ? 'bg-indigo-600/10 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400' 
@@ -865,6 +885,13 @@ export class InboxPage {
                       : 'border-slate-200/60 dark:border-slate-800 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800/40'
                   } rounded-xl text-xs font-bold whitespace-nowrap transition flex items-center gap-1.5 focus:outline-none">
                     📤 Enviadas (${totalEnviadas})
+                  </button>
+                  <button id="mobile-folder-decisoes" class="px-4 py-2.5 bg-white dark:bg-slate-900 border ${
+                    this.activeTab === 'decisoes' 
+                      ? 'border-indigo-600/50 text-indigo-600 bg-indigo-600/5 dark:border-indigo-500/50 dark:text-indigo-400 dark:bg-indigo-500/10' 
+                      : 'border-slate-200/60 dark:border-slate-800 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800/40'
+                  } rounded-xl text-xs font-bold whitespace-nowrap transition flex items-center gap-1.5 focus:outline-none">
+                    ✅ Decisões (${totalDecisoes})
                   </button>
                   <button id="mobile-folder-arquivados" class="px-4 py-2.5 bg-white dark:bg-slate-900 border ${
                     this.activeTab === 'arquivados' 
@@ -990,7 +1017,7 @@ export class InboxPage {
                         badgeText = 'Mensagem ✉️';
                       }
 
-                      const isUnread = !a.arquivado && !readList.includes(a.id);
+                      const isUnread = !a.arquivado && !a.isSent && !a.isDecision && !readList.includes(a.id);
 
                       return `
                         <div class="inbox-card inbox-glass p-5 rounded-2xl border ${isUnread ? 'border-indigo-200 dark:border-indigo-900/60 bg-indigo-50/5 dark:bg-indigo-950/5' : 'border-white/60 dark:border-slate-900/60'} shadow-sm flex items-start gap-3 cursor-pointer relative" data-alert-id="${a.id}">
@@ -1714,6 +1741,13 @@ export class InboxPage {
         try {
           const adminName = this.perfil?.nome || 'Admin';
           const res = await EscalaService.atualizarStatusSolicitacao(solId, 'aprovado', 'Aprovado via Caixa de Entrada', adminName);
+          if (this.user?.id) {
+            await InboxService.markAllAlertsAsRead(this.user.id, [
+              `escala-sol-${solId}-inbox`,
+              `escala-sol-${solId}-sent`,
+              `escala-sol-${solId}-decisao`
+            ]);
+          }
           if (res.success) {
             this.showToast('✅ Solicitação APROVADA com sucesso! Escala atualizada no banco.', 'success');
           } else if (res.alreadyProcessed) {
@@ -1741,6 +1775,13 @@ export class InboxPage {
         try {
           const adminName = this.perfil?.nome || 'Admin';
           const res = await EscalaService.atualizarStatusSolicitacao(solId, 'recusado', 'Recusado pela Gestão via Caixa de Entrada', adminName);
+          if (this.user?.id) {
+            await InboxService.markAllAlertsAsRead(this.user.id, [
+              `escala-sol-${solId}-inbox`,
+              `escala-sol-${solId}-sent`,
+              `escala-sol-${solId}-decisao`
+            ]);
+          }
           if (res.success) {
             this.showToast('❌ Solicitação RECUSADA.', 'error');
           } else if (res.alreadyProcessed) {
@@ -1813,6 +1854,14 @@ export class InboxPage {
       this.setupEventListeners();
     });
 
+    const folderDecisoes = document.getElementById('folder-decisoes');
+    folderDecisoes?.addEventListener('click', () => {
+      this.activeTab = 'decisoes';
+      this.applyFilters();
+      this.render();
+      this.setupEventListeners();
+    });
+
     const btnNovaMensagem = document.getElementById('btn-nova-mensagem');
     btnNovaMensagem?.addEventListener('click', () => {
       this.openNewMessageModal();
@@ -1846,6 +1895,14 @@ export class InboxPage {
     const mobileFolderEnviadas = document.getElementById('mobile-folder-enviadas');
     mobileFolderEnviadas?.addEventListener('click', () => {
       this.activeTab = 'enviadas';
+      this.applyFilters();
+      this.render();
+      this.setupEventListeners();
+    });
+
+    const mobileFolderDecisoes = document.getElementById('mobile-folder-decisoes');
+    mobileFolderDecisoes?.addEventListener('click', () => {
+      this.activeTab = 'decisoes';
       this.applyFilters();
       this.render();
       this.setupEventListeners();

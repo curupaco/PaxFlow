@@ -11,6 +11,7 @@ export interface EmailReaderModalOptions {
   onClose: () => void;
   onReply?: (item: AlertItem) => void;
   perfil: PerfilConsultor | null;
+  user?: any;
   onDelete?: (item: AlertItem) => Promise<void>;
   onMarkUnread?: (item: AlertItem) => Promise<void>;
 }
@@ -434,6 +435,14 @@ export class EmailReaderModal {
         try {
           const adminName = options.perfil?.nome || 'Admin';
           const res = await EscalaService.atualizarStatusSolicitacao(solId, 'aprovado', 'Aprovado via Leitor de Mensagem', adminName);
+          const userId = options.user?.id || options.perfil?.id;
+          if (userId) {
+            await InboxService.markAllAlertsAsRead(userId, [
+              `escala-sol-${solId}-inbox`,
+              `escala-sol-${solId}-sent`,
+              `escala-sol-${solId}-decisao`
+            ]);
+          }
           closeModal(true);
           if (res.success) {
             showCustomAlert('✅ Solicitação APROVADA com sucesso! A escala foi atualizada no banco de dados.', 'Sucesso');
@@ -443,6 +452,7 @@ export class EmailReaderModal {
             showCustomAlert('⚠️ Não foi possível salvar a atualização no banco de dados.', 'Erro');
           }
           window.dispatchEvent(new CustomEvent('paxflow:new-message'));
+          window.dispatchEvent(new CustomEvent('paxflow-inbox-updated'));
         } catch (err: any) {
           showCustomAlert(err.message || 'Erro ao aprovar solicitação.', 'Erro');
         }
@@ -459,6 +469,14 @@ export class EmailReaderModal {
         try {
           const adminName = options.perfil?.nome || 'Admin';
           const res = await EscalaService.atualizarStatusSolicitacao(solId, 'recusado', 'Recusado pela Gestão via Leitor de Mensagem', adminName);
+          const userId = options.user?.id || options.perfil?.id;
+          if (userId) {
+            await InboxService.markAllAlertsAsRead(userId, [
+              `escala-sol-${solId}-inbox`,
+              `escala-sol-${solId}-sent`,
+              `escala-sol-${solId}-decisao`
+            ]);
+          }
           closeModal(true);
           if (res.success) {
             showCustomAlert('❌ Solicitação RECUSADA.', 'Info');
@@ -468,6 +486,7 @@ export class EmailReaderModal {
             showCustomAlert('⚠️ Não foi possível salvar a atualização no banco de dados.', 'Erro');
           }
           window.dispatchEvent(new CustomEvent('paxflow:new-message'));
+          window.dispatchEvent(new CustomEvent('paxflow-inbox-updated'));
         } catch (err: any) {
           showCustomAlert(err.message || 'Erro ao recusar solicitação.', 'Erro');
         }

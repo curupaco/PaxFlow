@@ -500,9 +500,8 @@ export class InboxService {
         `)
         .order('created_at', { ascending: false });
 
-      if (perfil && (perfil.role || '').toLowerCase() !== 'admin') {
-        queryNotificacoes = queryNotificacoes.eq('user_id', user.id);
-      }
+      // Notificações sempre pertencem estritamente ao destinatário (user_id = user.id)
+      queryNotificacoes = queryNotificacoes.eq('user_id', user.id);
 
       const { data: notificacoesData, error: notificacoesErr } = await queryNotificacoes;
 
@@ -1087,7 +1086,8 @@ export class InboxService {
           }
 
           if (shouldInclude) {
-            const uniqueId = `escala-sol-${sol.id}-${isSentItem ? 'sent' : 'inbox'}`;
+            const isDecisionItem = Boolean(isAdmin && (sol.status === 'aprovado' || sol.status === 'recusado'));
+            const uniqueId = `escala-sol-${sol.id}-${isDecisionItem ? 'decisao' : (isSentItem ? 'sent' : 'inbox')}`;
             const isArchived = archivedList.includes(uniqueId);
 
             list.push({
@@ -1102,6 +1102,7 @@ export class InboxService {
               targetId: sol.id,
               arquivado: isArchived,
               isSent: isSentItem,
+              isDecision: isDecisionItem,
               consultorId: sol.solicitante_id,
               consultorNome: sol.solicitante_nome || 'Consultor',
               createdAt: sol.created_at,

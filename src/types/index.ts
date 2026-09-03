@@ -480,6 +480,7 @@ export interface AlertItem {
   eventDate: string; // Data alvo do evento (YYYY-MM-DD)
   recipientsHtml?: string; // HTML com lista de Para e Cc
   isSent?: boolean; // Se foi enviada pelo próprio usuário
+  isDecision?: boolean; // Se é um registro de decisão/aprovação finalizada pelo Admin
   criadorId?: string;
   isDelegated?: boolean;
   isCreatedByMe?: boolean;
