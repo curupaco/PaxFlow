@@ -487,6 +487,7 @@ export interface AlertItem {
   senderId?: string; // ID do remetente original
   parentId?: string;
   threadId?: string;
+  solicitacaoStatus?: 'pendente_colega' | 'pendente_admin' | 'pendente_consultor' | 'aprovado' | 'recusado';
 }
 
 /**

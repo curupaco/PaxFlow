@@ -1026,7 +1026,7 @@ export class InboxPage {
                               ${a.subject}
                             </p>
 
-                            ${(a.type === 'escala_solicitacao' && !a.isSent) ? `
+                            ${(this.perfil?.role === 'admin' && a.type === 'escala_solicitacao' && !a.isSent && a.solicitacaoStatus === 'pendente_admin') ? `
                               <div class="flex flex-wrap items-center gap-2 pt-2" onclick="event.stopPropagation()">
                                 <button class="btn-aprovar-escala-inbox inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-extrabold transition shadow-xs" data-sol-id="${a.targetId}">
                                   <span>✅ Aprovar</span>

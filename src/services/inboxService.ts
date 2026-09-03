@@ -1105,7 +1105,8 @@ export class InboxService {
               consultorId: sol.solicitante_id,
               consultorNome: sol.solicitante_nome || 'Consultor',
               createdAt: sol.created_at,
-              eventDate: sol.data_origem
+              eventDate: sol.data_origem,
+              solicitacaoStatus: sol.status
             });
           }
         });
