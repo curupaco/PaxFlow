@@ -1,7 +1,7 @@
 import { supabase, getSessaoAtual } from '../services/supabase';
 import { uploadDocumentoCliente } from '../services/googleDrive';
 import { getAvatarSvg } from '../services/avatars';
-import { Cliente, PerfilConsultor } from '../types';
+import { Cliente, ClientePassaporte, PerfilConsultor } from '../types';
 import { showCustomConfirm, showCustomPrompt } from '../services/dialog';
 
 import { registrarXp } from '../services/gamification';
@@ -15,6 +15,7 @@ import {
   setupFormValidation,
   getFormattedPhoneToDb,
   formatBrDateToIso,
+  formatIsoDateToBr,
   formatCpfCnpj
 } from '../utils/masks';
 import './Clientes.css';
@@ -25,10 +26,10 @@ export class ClientesPage {
   private perfil: PerfilConsultor | null = null;
   private clientes: Cliente[] = [];
   private clienteSelecionado: Cliente | null = null;
+  private passaportesEdicao: ClientePassaporte[] = [];
   private carregandoUpload: boolean = false;
   private buscaTermo: string = '';
   private mobileDetailOpen: boolean = false;
-
 
   // Variáveis para seleção em massa e limpeza de recursos
   private selectedClientIds: Set<string> = new Set();
@@ -128,6 +129,13 @@ export class ClientesPage {
         consultorResponsavelId: d.consultor_responsavel_id || d.consultorResponsavelId,
         passaporteNumero: d.passaporte_numero || d.passaporteNumero,
         passaporteValidade: d.passaporte_validade || d.passaporteValidade,
+        passaportes: (Array.isArray(d.passaportes) && d.passaportes.length > 0)
+          ? d.passaportes
+          : ((d.passaporte_numero || d.passaporteNumero) ? [{
+              nome: d.nome || 'Passageiro Titular',
+              numero: d.passaporte_numero || d.passaporteNumero,
+              validade: d.passaporte_validade || d.passaporteValidade || ''
+            }] : []),
         vistosInformacoes: d.vistos_informacoes || d.vistosInformacoes,
         googleDriveFolderUrl: d.google_drive_folder_url || d.googleDriveFolderUrl,
         classificacoes: d.classificacoes || [],
@@ -408,11 +416,24 @@ export class ClientesPage {
         consultorResponsavelId: this.user?.id || '',
         passaporteNumero: '',
         passaporteValidade: '',
+        passaportes: [{ nome: '', numero: '', validade: '' }],
         vistosInformacoes: '',
         googleDriveFolderUrl: ''
       };
+      this.passaportesEdicao = [{ nome: '', numero: '', validade: '' }];
     } else {
       this.clienteSelecionado = cliente;
+      if (cliente.passaportes && Array.isArray(cliente.passaportes) && cliente.passaportes.length > 0) {
+        this.passaportesEdicao = cliente.passaportes.map(p => ({ ...p }));
+      } else if (cliente.passaporteNumero) {
+        this.passaportesEdicao = [{
+          nome: cliente.nome || 'Passageiro Titular',
+          numero: cliente.passaporteNumero,
+          validade: cliente.passaporteValidade || ''
+        }];
+      } else {
+        this.passaportesEdicao = [{ nome: cliente.nome || '', numero: '', validade: '' }];
+      }
     }
     
     if (openMobile) {
@@ -425,6 +446,160 @@ export class ClientesPage {
     this.renderFichaDetalhada();
     this.setupFormEventListeners();
     this.updateMobileViewVisibility();
+  }
+
+  /**
+   * Renderiza os cards editáveis para cada passaporte cadastrado (Titular + Familiares)
+   */
+  private renderPassaportesCardsHTML(): string {
+    if (!this.passaportesEdicao || this.passaportesEdicao.length === 0) {
+      this.passaportesEdicao = [{
+        nome: this.clienteSelecionado?.nome || '',
+        numero: this.clienteSelecionado?.passaporteNumero || '',
+        validade: this.clienteSelecionado?.passaporteValidade || ''
+      }];
+    }
+
+    return this.passaportesEdicao.map((p, index) => {
+      const isTitular = index === 0;
+      const passSla = this.checkPassaporteSLA(p.validade);
+      const nomeExibicao = isTitular 
+        ? (p.nome || this.clienteSelecionado?.nome || '')
+        : (p.nome || '');
+
+      let slaBadge = '';
+      if (p.validade && passSla.status !== 'none') {
+        if (passSla.status === 'expired') {
+          slaBadge = `
+            <div class="px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-xs font-bold bg-rose-50 dark:bg-rose-950/45 text-rose-600 dark:text-rose-400 border border-rose-100 dark:border-rose-900/50">
+              <span>🚨</span>
+              <span>Passaporte Vencido (${passSla.days < 0 ? Math.abs(passSla.days) + ' dias atrás' : 'Vencido'})</span>
+            </div>
+          `;
+        } else if (passSla.status === 'warning') {
+          slaBadge = `
+            <div class="px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-xs font-bold bg-amber-50 dark:bg-amber-950/45 text-amber-600 dark:text-amber-400 border border-amber-100 dark:border-amber-900/50 animate-pulse">
+              <span>⚠️</span>
+              <span>Atenção: Expira em ${passSla.days} dias (&lt; 6 meses)</span>
+            </div>
+          `;
+        } else if (passSla.status === 'ok') {
+          slaBadge = `
+            <div class="px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/45 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/50">
+              <span>✅</span>
+              <span>Validade Regular (${passSla.days} dias restantes)</span>
+            </div>
+          `;
+        }
+      }
+
+      return `
+        <div class="bg-slate-50/70 dark:bg-slate-800/40 border border-slate-200/70 dark:border-slate-800/80 rounded-2xl p-4 transition-all" data-pass-card-index="${index}">
+          <div class="flex items-center justify-between pb-2.5 mb-3 border-b border-slate-200/50 dark:border-slate-800/60">
+            <div class="flex items-center gap-2">
+              <span class="text-sm">${isTitular ? '👤' : '👥'}</span>
+              <span class="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-200">
+                ${isTitular ? 'Passageiro Titular (Cliente Principal)' : `Familiar / Acompanhante #${index + 1}`}
+              </span>
+            </div>
+            ${!isTitular ? `
+              <button type="button" class="btn-remover-passaporte text-rose-500 hover:text-rose-700 dark:hover:text-rose-400 text-xs font-black flex items-center gap-1 transition px-2 py-1 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg" data-pass-index="${index}" title="Remover este passaporte">
+                <span>🗑️</span> Remover
+              </button>
+            ` : ''}
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-3.5 items-end">
+            <div class="md:col-span-5">
+              <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Nome Completo *</label>
+              <input 
+                type="text" 
+                id="pass-nome-${index}" 
+                data-pass-index="${index}" 
+                value="${nomeExibicao}" 
+                placeholder="${isTitular ? 'Nome do cliente titular' : 'Nome do familiar / acompanhante'}" 
+                class="pass-input-nome w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-xs" 
+              />
+            </div>
+
+            <div class="md:col-span-4">
+              <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Número do Passaporte</label>
+              <input 
+                type="text" 
+                id="pass-numero-${index}" 
+                data-pass-index="${index}" 
+                value="${p.numero || ''}" 
+                placeholder="ex: FP123456" 
+                class="pass-input-numero uppercase w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-xs tracking-wider" 
+              />
+            </div>
+
+            <div class="md:col-span-3">
+              <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Validade</label>
+              ${renderDateInputHTML(`pass-validade-${index}`, p.validade ? (p.validade.includes('-') ? formatIsoDateToBr(p.validade) : p.validade) : '', 'DD/MM/AAAA', false)}
+            </div>
+          </div>
+
+          ${slaBadge ? `<div class="mt-3">${slaBadge}</div>` : ''}
+        </div>
+      `;
+    }).join('');
+  }
+
+  private setupPassaportesEventListeners(): void {
+    // Sincroniza dados digitados com this.passaportesEdicao
+    this.syncPassaportesFromInputs();
+
+    // Botão Adicionar Passaporte Familiar
+    const btnAdd = document.getElementById('btn-add-passaporte-familiar');
+    btnAdd?.addEventListener('click', () => {
+      this.syncPassaportesFromInputs();
+      this.passaportesEdicao.push({ nome: '', numero: '', validade: '' });
+      this.refreshPassaportesCards();
+    });
+
+    // Botões Remover Passaporte
+    document.querySelectorAll('.btn-remover-passaporte').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const target = (e.currentTarget as HTMLElement);
+        const idx = Number(target.getAttribute('data-pass-index'));
+        if (!isNaN(idx) && idx > 0) {
+          this.syncPassaportesFromInputs();
+          this.passaportesEdicao.splice(idx, 1);
+          this.refreshPassaportesCards();
+        }
+      });
+    });
+
+    // Sincronização em tempo real do nome do Titular com o input #input-nome
+    const inputNomePrincipal = document.getElementById('input-nome') as HTMLInputElement | null;
+    inputNomePrincipal?.addEventListener('input', () => {
+      const pass0Nome = document.getElementById('pass-nome-0') as HTMLInputElement | null;
+      if (pass0Nome && this.passaportesEdicao.length > 0) {
+        pass0Nome.value = inputNomePrincipal.value;
+        this.passaportesEdicao[0].nome = inputNomePrincipal.value;
+      }
+    });
+  }
+
+  private syncPassaportesFromInputs(): void {
+    this.passaportesEdicao.forEach((p, index) => {
+      const nomeEl = document.getElementById(`pass-nome-${index}`) as HTMLInputElement | null;
+      const numEl = document.getElementById(`pass-numero-${index}`) as HTMLInputElement | null;
+      const valEl = document.getElementById(`pass-validade-${index}`) as HTMLInputElement | null;
+
+      if (nomeEl) p.nome = nomeEl.value.trim();
+      if (numEl) p.numero = numEl.value.trim().toUpperCase();
+      if (valEl) p.validade = valEl.value.trim();
+    });
+  }
+
+  private refreshPassaportesCards(): void {
+    const container = document.getElementById('container-passaportes-lista');
+    if (container) {
+      container.innerHTML = this.renderPassaportesCardsHTML();
+      this.setupPassaportesEventListeners();
+    }
   }
 
   /**
@@ -445,20 +620,11 @@ export class ClientesPage {
       { id: 'input-email', type: 'email' },
       { id: 'input-telefone', type: 'phone', required: false },
       { id: 'input-documento', type: 'cpf_cnpj', required: false },
-      { id: 'input-data-nasc', type: 'date', required: false },
-      { id: 'input-pass-validade', type: 'date', required: false }
+      { id: 'input-data-nasc', type: 'date', required: false }
     ]);
 
-    // Aplica classes de alerta visual para o passaporte caso esteja expirado/alerta
-    if (this.clienteSelecionado) {
-      const passSla = this.checkPassaporteSLA(this.clienteSelecionado.passaporteValidade);
-      const passValidadeInput = document.getElementById('input-pass-validade') as HTMLInputElement;
-      if (passValidadeInput && passSla.status !== 'none' && passSla.status !== 'ok') {
-        passValidadeInput.classList.add('passport-expired-alert');
-        if (passSla.status === 'expired') passValidadeInput.classList.add('text-rose-600', 'dark:text-rose-400');
-        if (passSla.status === 'warning') passValidadeInput.classList.add('text-amber-600', 'dark:text-amber-400');
-      }
-    }
+    // Configura ouvintes de passaportes da família
+    this.setupPassaportesEventListeners();
 
     form?.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -467,6 +633,8 @@ export class ClientesPage {
         this.showToast('Por favor, preencha todos os campos obrigatórios com valores válidos.', 'error');
         return;
       }
+
+      this.syncPassaportesFromInputs();
 
       const isEditing = !!(this.clienteSelecionado && this.clienteSelecionado.id);
       
@@ -477,9 +645,6 @@ export class ClientesPage {
       const dataNascVal = formatBrDateToIso((document.getElementById('input-data-nasc') as HTMLInputElement).value);
       const enderecoVal = (document.getElementById('input-endereco') as HTMLInputElement).value;
       const origemLeadVal = (document.getElementById('select-origem-lead') as HTMLSelectElement).value;
-      const passNumeroVal = (document.getElementById('input-pass-numero') as HTMLInputElement).value;
-      const passValidadeVal = formatBrDateToIso((document.getElementById('input-pass-validade') as HTMLInputElement).value);
-      const vistosVal = (document.getElementById('textarea-vistos') as HTMLTextAreaElement).value;
       const obsVal = (document.getElementById('textarea-observacoes') as HTMLTextAreaElement).value;
 
       let classificacoesVal: string[] = [];
@@ -494,19 +659,25 @@ export class ClientesPage {
         classificacoesVal = origemLeadVal ? [origemLeadVal] : [];
       }
 
-      // Validação de passaporte vencido no passado
-      if (passValidadeVal) {
-        const validadeDate = new Date(passValidadeVal);
+      // Validação de passaportes vencidos no passado para qualquer membro
+      const passaportesVencidos = this.passaportesEdicao.filter(p => {
+        if (!p.validade) return false;
+        const iso = p.validade.includes('/') ? formatBrDateToIso(p.validade) : p.validade;
+        if (!iso) return false;
+        const d = new Date(iso);
         const hoje = new Date();
         hoje.setHours(0, 0, 0, 0);
-        validadeDate.setHours(0, 0, 0, 0);
-        if (validadeDate.getTime() < hoje.getTime()) {
-          const confirmSave = await showCustomConfirm(
-            'A data de validade do passaporte informada está no passado (vencido). Tem certeza de que deseja salvar os dados do cliente mesmo assim?',
-            'Aviso de Passaporte Vencido'
-          );
-          if (!confirmSave) return;
-        }
+        d.setHours(0, 0, 0, 0);
+        return d.getTime() < hoje.getTime();
+      });
+
+      if (passaportesVencidos.length > 0) {
+        const nomesVencidos = passaportesVencidos.map(p => p.nome || 'Passageiro').join(', ');
+        const confirmSave = await showCustomConfirm(
+          `Atenção: O(s) passaporte(s) de [${nomesVencidos}] está(ão) com data de validade no passado (vencido). Deseja salvar os dados do cliente mesmo assim?`,
+          'Aviso de Passaporte Vencido'
+        );
+        if (!confirmSave) return;
       }
 
       // Verificação de duplicidade de CPF, E-mail e Telefone
@@ -520,6 +691,17 @@ export class ClientesPage {
         if (!prosseguir) return;
       }
 
+      // Processa passaportes da família
+      const passaportesFormatados = this.passaportesEdicao
+        .map(p => ({
+          nome: p.nome.trim(),
+          numero: p.numero.trim().toUpperCase(),
+          validade: p.validade ? (p.validade.includes('/') ? formatBrDateToIso(p.validade) : p.validade) : ''
+        }))
+        .filter(p => p.nome || p.numero || p.validade);
+
+      const titularPass = passaportesFormatados[0];
+
       const payload: any = {
         nome: nomeVal,
         email: emailVal,
@@ -527,9 +709,10 @@ export class ClientesPage {
         documento: documentoVal,
         data_nascimento: dataNascVal || null,
         endereco: enderecoVal || null,
-        passaporte_numero: passNumeroVal || null,
-        passaporte_validade: passValidadeVal || null,
-        vistos_informacoes: vistosVal || null,
+        passaporte_numero: titularPass?.numero || null,
+        passaporte_validade: titularPass?.validade || null,
+        passaportes: passaportesFormatados,
+        vistos_informacoes: null,
         observacoes: obsVal || null,
         classificacoes: classificacoesVal,
         consultor_responsavel_id: (isEditing && this.clienteSelecionado) 
@@ -610,6 +793,7 @@ export class ClientesPage {
               consultorResponsavelId: d.consultor_responsavel_id || d.consultorResponsavelId,
               passaporteNumero: d.passaporte_numero || d.passaporteNumero,
               passaporteValidade: d.passaporte_validade || d.passaporteValidade,
+              passaportes: d.passaportes || passaportesFormatados,
               vistosInformacoes: d.vistos_informacoes || d.vistosInformacoes,
               googleDriveFolderUrl: d.google_drive_folder_url || d.googleDriveFolderUrl,
               classificacoes: d.classificacoes || [],
@@ -918,7 +1102,12 @@ export class ClientesPage {
         
         <!-- Botão Voltar (Apenas Mobile) -->
         <div class="lg:hidden flex items-center mb-2">
-          <button id="btn-voltar-lista-mobile" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-black rounded-x        <!-- Topo da Ficha: Nome & Botão Google Drive -->
+          <button id="btn-voltar-lista-mobile" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-black rounded-xl flex items-center gap-1.5 transition">
+            <span>←</span> Voltar para a lista
+          </button>
+        </div>
+
+        <!-- Topo da Ficha: Nome & Botão Google Drive -->
         <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-5">
           <div class="flex items-start sm:items-center gap-3">
             <div class="w-12 h-12 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/40 text-indigo-600 dark:text-indigo-400 rounded-2xl flex items-center justify-center font-black text-base shadow-sm shrink-0">
@@ -1023,37 +1212,23 @@ export class ClientesPage {
             </div>
           </div>
 
-          <!-- Seção 2: Documentação Internacional (Passaporte & Vistos) -->
+          <!-- Seção 2: Documentação Internacional (Passaportes da Família) -->
           <div class="border-t border-slate-100 dark:border-slate-800 pt-5">
-            <h3 class="text-sm font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-4 border-b border-indigo-50/50 dark:border-slate-800 pb-1 flex items-center gap-1.5">
-              2. Documentação Internacional ${renderHelpIcon('alerta-passaporte-validade')}
-            </h3>
-
-            <!-- Alertas Visuais de SLA do Passaporte -->
-            ${passSla.status !== 'none' && passSla.status !== 'ok' ? `
-              <div class="mb-4 px-4 py-3 rounded-xl flex items-center gap-2 text-xs font-bold ${
-                passSla.status === 'expired' 
-                  ? 'bg-rose-50 dark:bg-rose-950/45 text-rose-600 dark:text-rose-400 border border-rose-100 dark:border-rose-900/50' 
-                  : 'bg-amber-50 dark:bg-amber-950/45 text-amber-600 dark:text-amber-400 border border-amber-100 dark:border-amber-900/50 animate-pulse'
-              }">
-                <span>${passSla.status === 'expired' ? '🚨' : '⚠️'}</span>
-                <p>${passSla.message}</p>
-              </div>
-            ` : ''}
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-indigo-50/50 dark:border-slate-800 pb-2 mb-4">
               <div>
-                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Número do Passaporte</label>
-                <input id="input-pass-numero" type="text" placeholder="ex: AB123456" value="${c.passaporteNumero || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium" />
+                <h3 class="text-sm font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
+                  2. Documentação Internacional / Passaportes ${renderHelpIcon('alerta-passaporte-validade')}
+                </h3>
+                <p class="text-[11px] text-slate-400 dark:text-slate-400 font-medium mt-0.5">Cadastre o passaporte do cliente titular e de seus familiares/acompanhantes.</p>
               </div>
-              <div>
-                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Validade do Passaporte</label>
-                ${renderDateInputHTML('input-pass-validade', c.passaporteValidade || '', 'DD/MM/AAAA', false)}
-              </div>
-              <div class="md:col-span-2">
-                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Vistos Ativos (Detalhes)</label>
-                <textarea id="textarea-vistos" placeholder="Informe os vistos que o cliente possui (ex: Americano B1/B2 válido até 12/2030, Canadense e-TA, etc.)" rows="2.5" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 text-sm font-medium">${c.vistosInformacoes || ''}</textarea>
-              </div>
+              <button type="button" id="btn-add-passaporte-familiar" class="self-start sm:self-auto px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/50 dark:hover:bg-indigo-900/60 text-indigo-600 dark:text-indigo-300 font-extrabold text-xs rounded-xl border border-indigo-200/80 dark:border-indigo-800/80 transition flex items-center gap-1.5 uppercase tracking-wide shadow-xs">
+                <span>➕</span> Adicionar Passaporte
+              </button>
+            </div>
+
+            <!-- Lista Dinâmica de Cards de Passaportes -->
+            <div id="container-passaportes-lista" class="space-y-4 mb-2">
+              ${this.renderPassaportesCardsHTML()}
             </div>
           </div>
 
@@ -1241,30 +1416,30 @@ export class ClientesPage {
     this.container.innerHTML = `
       <div class="w-full flex-1 flex flex-col overflow-hidden font-sans transition-colors duration-200">
         
-        <!-- Sub-cabeçalho da Tela de Clientes -->
-        <div class="px-6 py-3.5 bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800/80 flex items-center justify-between gap-4 shrink-0 shadow-xs">
-          <div class="flex items-center gap-2.5">
-            <span class="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-sm shadow-inner">👥</span>
-            <div>
-              <h1 class="text-base font-black text-slate-800 dark:text-slate-100 tracking-tight leading-none">Clientes</h1>
-              <p class="text-[10px] text-slate-400 dark:text-slate-400 font-semibold leading-none mt-1">Ficha Única & Documentação Corporativa</p>
-            </div>
-          </div>
-          
-          <button id="btn-novo-cliente" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-md shadow-indigo-600/20 flex items-center justify-center gap-1.5 transition transform hover:-translate-y-0.5 uppercase shrink-0">
-            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-            </svg>
-            <span>Novo Cliente</span>
-          </button>
-        </div>
-
         <!-- Corpo Principal com Duas Colunas -->
         <main class="flex-1 p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start overflow-y-auto custom-scrollbar">
           
           <!-- Coluna Esquerda: Lista de Clientes (Busca & Navegação) -->
           <div id="clientes-lista-col" class="lg:col-span-4 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-4 shadow-sm flex flex-col gap-4 lg:flex ${this.mobileDetailOpen ? 'hidden' : 'flex'}">
             
+            <!-- Topo da Listagem: Título e Botão Novo Cliente Integrado -->
+            <div class="flex items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800/80 pb-3">
+              <div class="flex items-center gap-2">
+                <span class="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-sm shadow-inner">👥</span>
+                <div>
+                  <h1 class="text-sm font-black text-slate-800 dark:text-slate-100 tracking-tight leading-tight">Clientes</h1>
+                  <p class="text-[10px] text-slate-400 dark:text-slate-400 font-semibold leading-none mt-0.5">Gestão de Passageiros</p>
+                </div>
+              </div>
+              
+              <button id="btn-novo-cliente" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-[11px] tracking-wider rounded-xl shadow-sm shadow-indigo-600/20 flex items-center justify-center gap-1 transition transform hover:-translate-y-0.5 uppercase shrink-0">
+                <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+                <span>Novo Cliente</span>
+              </button>
+            </div>
+
             <!-- Barra de Busca -->
             <div>
               <label class="block text-xs font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wide mb-1.5">Pesquisar Cliente</label>

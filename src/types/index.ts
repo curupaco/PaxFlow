@@ -185,6 +185,12 @@ export interface RiskScoreResult {
   itens: RiskItem[];
   historico: RiskTimelineEntry[];
 }
+export interface ClientePassaporte {
+  id?: string;
+  nome: string;
+  numero: string;
+  validade: string; // YYYY-MM-DD
+}
 
 /**
  * Representa um cliente (passageiro ou comprador) cadastrado no CRM.
@@ -199,8 +205,9 @@ export interface Cliente {
   endereco?: string;
   observacoes?: string;
   consultorResponsavelId: string; // ID do consultor que cadastrou/atende
-  passaporteNumero?: string; // Número do passaporte
+  passaporteNumero?: string; // Número do passaporte (titular / legado)
   passaporteValidade?: string; // Data de validade (YYYY-MM-DD)
+  passaportes?: ClientePassaporte[]; // Lista de passaportes da família/passageiros
   vistosInformacoes?: string; // Detalhes sobre vistos ativos do cliente
   googleDriveFolderUrl?: string; // URL da pasta dedicada criada no Google Drive da agência
   classificacoes?: string[];

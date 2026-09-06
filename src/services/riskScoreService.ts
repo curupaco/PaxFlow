@@ -83,25 +83,52 @@ export class RiskScoreService {
 
     // PILAR 1: Documental & Vistos (Peso 30%)
     if (!isNacional) {
-      if (cliente && cliente.passaporteValidade && dataVolta) {
-        const valPass = new Date(cliente.passaporteValidade);
-        const diffPass = Math.ceil((valPass.getTime() - dataVolta.getTime()) / (1000 * 60 * 60 * 24));
-        if (diffPass < 180) {
-          const pen = 30;
-          score -= pen;
-          itens.push({
-            id: 'p1-passaporte',
-            pilar: 1,
-            pilarNome: 'Documental & Vistos',
-            titulo: 'Passaporte com Validade Crítica',
-            descricaoHumana: `O passaporte de ${cliente.nome.split(' ')[0]} expira em menos de 180 dias da data de volta (${diffPass < 0 ? 'já vencido' : diffPass + ' dias de validade restante'}).`,
-            penalidadePontos: pen,
-            resolvido: false,
-            acaoTipo: 'preencher_passaporte',
-            acaoRotulo: '🛂 Atualizar Passaporte'
-          });
-        }
-      } else if (!cliente?.passaporteNumero && !isGracePeriod) {
+      // 1. Identificar quantidade de passageiros/pessoas da viagem internacional
+      // Agrupa os produtos aéreos ativos por data de serviço (ou data de ida) para saber quantas passagens foram emitidas no mesmo trecho (evitando duplicar ida e volta)
+      const produtosAereosAtivos = produtos.filter(p => 
+        p.status !== 'cancelado' && 
+        ((p.tipo || '').toLowerCase().includes('aéreo') || (p.tipo || '').toLowerCase().includes('voo'))
+      );
+
+      const contagemPorData = new Map<string, number>();
+      produtosAereosAtivos.forEach(p => {
+        const dataKey = p.dataServico || (p as any).data_servico || viagem.data_ida || 'data_embarque';
+        contagemPorData.set(dataKey, (contagemPorData.get(dataKey) || 0) + 1);
+      });
+
+      const maxPassagensMesmaData = contagemPorData.size > 0 ? Math.max(...Array.from(contagemPorData.values())) : 0;
+      const numPessoasViagem = Math.max(1, maxPassagensMesmaData);
+
+      // Lista de passaportes cadastrados no perfil do cliente
+      let passaportesCadastrados: { nome: string; numero: string; validade: string }[] = [];
+      if (cliente?.passaportes && Array.isArray(cliente.passaportes) && cliente.passaportes.length > 0) {
+        passaportesCadastrados = cliente.passaportes.filter(p => (p.numero && p.numero.trim() !== '') || (p.validade && p.validade.trim() !== ''));
+      } else if (cliente?.passaporteNumero) {
+        passaportesCadastrados = [{
+          nome: cliente.nome || 'Passageiro Titular',
+          numero: cliente.passaporteNumero,
+          validade: cliente.passaporteValidade || ''
+        }];
+      }
+
+      // Se a viagem tem múltiplas pessoas (> 1) e faltam passaportes cadastrados
+      if (numPessoasViagem > 1 && passaportesCadastrados.length < numPessoasViagem) {
+        const faltantes = numPessoasViagem - passaportesCadastrados.length;
+        const pen = 30;
+        score -= pen;
+        itens.push({
+          id: 'p1-passaportes-familia-faltantes',
+          pilar: 1,
+          pilarNome: 'Documental & Vistos',
+          titulo: 'Passaportes da Família / Grupo Incompletos',
+          descricaoHumana: `Viagem internacional para ${numPessoasViagem} pessoas com apenas ${passaportesCadastrados.length} passaporte(s) cadastrado(s) - faltam ${faltantes} passaporte(s) da família ou acompanhantes.`,
+          penalidadePontos: pen,
+          resolvido: false,
+          acaoTipo: 'preencher_passaporte',
+          acaoRotulo: '🛂 Completar Passaportes da Família'
+        });
+      } else if (passaportesCadastrados.length === 0 && !isGracePeriod) {
+        // Nenhuma informação de passaporte cadastrada
         const pen = 20;
         score -= pen;
         itens.push({
@@ -114,6 +141,35 @@ export class RiskScoreService {
           resolvido: false,
           acaoTipo: 'preencher_passaporte',
           acaoRotulo: '🛂 Preencher Passaporte'
+        });
+      }
+
+      // Verificação individual de SLA de validade de cada passaporte cadastrado
+      if (passaportesCadastrados.length > 0 && dataVolta) {
+        passaportesCadastrados.forEach((paxPass, idx) => {
+          if (!paxPass.validade) return;
+          const valPass = new Date(paxPass.validade);
+          if (isNaN(valPass.getTime())) return;
+          const diffPass = Math.ceil((valPass.getTime() - dataVolta.getTime()) / (1000 * 60 * 60 * 24));
+          if (diffPass < 180) {
+            const jaPenalizouValidade = itens.some(item => item.id.startsWith('p1-passaporte-critico-'));
+            const pen = jaPenalizouValidade ? 0 : 30;
+            if (pen > 0 && !itens.some(item => item.id === 'p1-passaportes-familia-faltantes')) {
+              score -= pen;
+            }
+            const nomeExibicao = (paxPass.nome && paxPass.nome.trim() !== '') ? paxPass.nome.split(' ')[0] : `Passageiro ${idx + 1}`;
+            itens.push({
+              id: `p1-passaporte-critico-${idx}`,
+              pilar: 1,
+              pilarNome: 'Documental & Vistos',
+              titulo: `Passaporte com Validade Crítica (${nomeExibicao})`,
+              descricaoHumana: `O passaporte de ${paxPass.nome || nomeExibicao} expira em menos de 180 dias da data de volta (${diffPass < 0 ? 'já vencido' : diffPass + ' dias de validade restante'}).`,
+              penalidadePontos: pen,
+              resolvido: false,
+              acaoTipo: 'preencher_passaporte',
+              acaoRotulo: '🛂 Atualizar Passaporte'
+            });
+          }
         });
       }
     }
