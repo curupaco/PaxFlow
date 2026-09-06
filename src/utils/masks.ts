@@ -88,18 +88,86 @@ export function parseDoubleBr(valStr: string | number): number {
 }
 
 /**
+ * Converte um texto colado ou inserido (como '1.234,56', 'R$ 1.234,56', '1234.56', '1500', '1,234.56')
+ * no valor numérico correspondente com segurança contra concatenações acidentais e erros de separador.
+ */
+export function parsePastedCurrency(text: string): number {
+  if (!text) return 0;
+  let clean = text.trim().replace(/R\$\s?/gi, '').replace(/\s+/g, '');
+  if (!clean) return 0;
+
+  // Se tiver concatenações acidentais decorrentes de colar com 0,00 pré-existente (ex: 1.234,560,00 ou 0,001.234,56)
+  if (clean.split(',').length > 2) {
+    if (clean.startsWith('0,00')) {
+      clean = clean.substring(4);
+    } else if (clean.endsWith('0,00') || clean.endsWith(',00')) {
+      clean = clean.replace(/0?,00$/, '');
+    }
+  }
+
+  // Se tiver vírgula E ponto (ex: 1.234,56 ou 1,234.56)
+  if (clean.includes(',') && clean.includes('.')) {
+    if (clean.lastIndexOf(',') > clean.lastIndexOf('.')) {
+      // Padrão brasileiro: 1.234,56
+      clean = clean.replace(/\./g, '').replace(',', '.');
+    } else {
+      // Padrão internacional: 1,234.56
+      clean = clean.replace(/,/g, '');
+    }
+    const num = parseFloat(clean);
+    return isNaN(num) ? 0 : num;
+  }
+
+  // Se só tem vírgula (ex: 1234,56 ou 0,50)
+  if (clean.includes(',')) {
+    clean = clean.replace(',', '.');
+    const num = parseFloat(clean);
+    return isNaN(num) ? 0 : num;
+  }
+
+  // Se só tem ponto (ex: 1234.56 ou 1.500)
+  if (clean.includes('.')) {
+    const parts = clean.split('.');
+    const lastPart = parts[parts.length - 1];
+    // Se a última parte tem 1 ou 2 dígitos (ex: 1234.5 ou 1234.56), é separador decimal
+    if (parts.length === 2 && (lastPart.length === 1 || lastPart.length === 2)) {
+      const num = parseFloat(clean);
+      return isNaN(num) ? 0 : num;
+    }
+    // Se tiver múltiplos pontos (ex: 1.234.567) ou última parte de 3 dígitos (ex: 1.500 ou 1.234), é milhar
+    if (parts.length > 2 || lastPart.length === 3) {
+      const num = parseFloat(clean.replace(/\./g, ''));
+      return isNaN(num) ? 0 : num;
+    }
+    const num = parseFloat(clean);
+    return isNaN(num) ? 0 : num;
+  }
+
+  // Número inteiro (ex: "1234" ou "1500")
+  const num = parseFloat(clean);
+  return isNaN(num) ? 0 : num;
+}
+
+/**
  * Formata um número ou string numérica para a máscara monetária brasileira 1.234,56
  */
 export function formatCurrencyValue(val: string | number): string {
   if (val === undefined || val === null || val === '') return '0,00';
   let num: number;
   if (typeof val === 'string') {
-    const digits = val.replace(/\D/g, '');
-    if (!digits) return '0,00';
-    num = parseInt(digits, 10) / 100;
+    num = parsePastedCurrency(val);
   } else {
-    num = val;
+    num = isNaN(val) ? 0 : val;
   }
+  return num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+/**
+ * Formata um valor numérico ou monetário garantindo estritamente 2 casas decimais no padrão brasileiro (1.234,56).
+ */
+export function formatMoney(val: number | string | null | undefined): string {
+  if (val === undefined || val === null || val === '') return '0,00';
+  const num = typeof val === 'number' ? (isNaN(val) ? 0 : val) : parseDoubleBr(val);
   return num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
@@ -311,7 +379,7 @@ export function renderCurrencyInputHTML(id: string, initialValue: number | strin
         <div class="px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-400 text-sm font-black select-none">
           R$
         </div>
-        <input id="${id}" type="text" ${readonlyAttr} ${required ? 'required' : ''} value="${formatted}" placeholder="${placeholder}" class="w-full px-3.5 py-2.5 bg-transparent outline-none focus:outline-none text-slate-800 dark:text-slate-100 font-semibold text-sm ${disabledClass}" autocomplete="off" />
+        <input id="${id}" data-mask="currency" type="text" ${readonlyAttr} ${required ? 'required' : ''} value="${formatted}" placeholder="${placeholder}" class="w-full px-3.5 py-2.5 bg-transparent outline-none focus:outline-none text-slate-800 dark:text-slate-100 font-semibold text-sm ${disabledClass}" autocomplete="off" />
       </div>
       <p id="${errorId}" class="hidden text-xs text-rose-500 font-bold mt-1.5"></p>
     </div>
@@ -738,25 +806,7 @@ export function setupFormValidation(
     }
 
     if (config.type === 'currency') {
-      inputEl.addEventListener('input', (e) => {
-        const target = e.target as HTMLInputElement;
-        let val = target.value;
-        let digits = val.replace(/\D/g, '');
-        
-        if (digits.length > 12) {
-          digits = digits.slice(0, 12);
-        }
-
-        if (!digits) {
-          target.value = '0,00';
-          validateField(config, false);
-          return;
-        }
-
-        const num = parseInt(digits, 10) / 100;
-        target.value = num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        target.setSelectionRange(target.value.length, target.value.length);
-        
+      attachCurrencyMask(inputEl as HTMLInputElement, () => {
         validateField(config, false);
       });
 
@@ -811,4 +861,92 @@ export function setupFormValidation(
   };
 
   return { validateAll };
+}
+
+/**
+ * Conecta o comportamento inteligente de moeda a um input HTML:
+ * - Seleciona todo o conteúdo ao focar para prevenir concatenação de zeros
+ * - Intercepta eventos de colar (paste) e arrastar (drop), parseando o valor inteligente (evita 123.456,00)
+ * - Suporta digitação progressiva caractere por caractere (estilo ATM)
+ * - Evita concatenação acidental de 0,00 existente
+ */
+export function attachCurrencyMask(inputEl: HTMLInputElement, onValueChange?: (val: number) => void): void {
+  if (!inputEl) return;
+
+  // Evita anexar múltiplos listeners no mesmo elemento
+  if (inputEl.dataset.hasCurrencyMaskAttached === 'true') return;
+  inputEl.dataset.hasCurrencyMaskAttached = 'true';
+
+  // 1. Ao focar, seleciona todo o texto para que digitar ou colar substitua o valor em vez de concatenar
+  inputEl.addEventListener('focus', () => {
+    setTimeout(() => {
+      try {
+        inputEl.select();
+      } catch (e) {}
+    }, 10);
+  });
+
+  // 2. Manipula o evento de colar (paste) de forma inteligente
+  inputEl.addEventListener('paste', (e: ClipboardEvent) => {
+    e.preventDefault();
+    const pastedText = e.clipboardData?.getData('text') || '';
+    if (!pastedText.trim()) return;
+
+    const num = parsePastedCurrency(pastedText);
+    inputEl.value = num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    if (onValueChange) onValueChange(num);
+    inputEl.dispatchEvent(new Event('input', { bubbles: true }));
+    inputEl.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+
+  // 3. Manipula o evento de arrastar e soltar (drop)
+  inputEl.addEventListener('drop', (e: DragEvent) => {
+    e.preventDefault();
+    const droppedText = e.dataTransfer?.getData('text') || '';
+    if (!droppedText.trim()) return;
+
+    const num = parsePastedCurrency(droppedText);
+    inputEl.value = num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    if (onValueChange) onValueChange(num);
+    inputEl.dispatchEvent(new Event('input', { bubbles: true }));
+    inputEl.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+
+  // 4. Digitação no teclado (estilo ATM) com proteção contra concatenação acidental
+  inputEl.addEventListener('input', () => {
+    let val = inputEl.value;
+
+    // Se detectou concatenação com múltiplos separadores (ex: 1.234,560,00 colado sem paste prevent)
+    if (val.split(',').length > 2 || (val.includes('.') && val.includes(',') && val.endsWith('0,00') && val.length > 7)) {
+      const cleanNum = parsePastedCurrency(val);
+      inputEl.value = cleanNum.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      if (onValueChange) onValueChange(cleanNum);
+      return;
+    }
+
+    let digits = val.replace(/\D/g, '');
+    if (digits.length > 12) {
+      digits = digits.slice(0, 12);
+    }
+
+    if (!digits) {
+      inputEl.value = '0,00';
+      if (onValueChange) onValueChange(0);
+      return;
+    }
+
+    const num = parseInt(digits, 10) / 100;
+    inputEl.value = num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    if (onValueChange) onValueChange(num);
+  });
+}
+
+/**
+ * Inicializa automaticamente a máscara e proteção de colar em todos os inputs de moeda presentes no container
+ */
+export function initCurrencyInputs(container: HTMLElement | Document = document): void {
+  const currencyInputs = container.querySelectorAll<HTMLInputElement>('.currency-field-wrapper input, input[data-mask="currency"]');
+  currencyInputs.forEach(input => {
+    attachCurrencyMask(input);
+  });
 }

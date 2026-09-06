@@ -784,7 +784,7 @@ export class Dashboard {
     const pendente = valorViagem - totalProdutos;
 
     if (Math.abs(pendente) > 0.01) {
-      this.showToast(`Não é possível avançar a viagem. Existe um saldo financeiro pendente de R$ ${pendente.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}. Adicione produtos na aba "Produtos e Serviços" para zerar este saldo.`, 'error');
+      this.showToast(`Não é possível avançar a viagem. Existe um saldo financeiro pendente de R$ ${pendente.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}. Adicione produtos na aba "Produtos e Serviços" para zerar este saldo.`, 'error');
       return false;
     }
 
@@ -862,7 +862,7 @@ export class Dashboard {
                 <option value="" disabled selected class="text-slate-400 dark:text-slate-400">Escolha um produto da viagem...</option>
                 ${produtos.map(p => `
                   <option value="${p.id}" data-valor="${p.valor_venda}" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">
-                    [${p.tipo.toUpperCase()}] ${p.fornecedor} - ${p.descricao} (Venda: R$ ${Number(p.valor_venda || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })})
+                    [${p.tipo.toUpperCase()}] ${p.fornecedor} - ${p.descricao} (Venda: R$ ${Number(p.valor_venda || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
                   </option>
                 `).join('')}
               </select>
@@ -2103,10 +2103,10 @@ Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : '
         <!-- Financeiro -->
         <td class="px-5 py-4 whitespace-nowrap">
           <div class="font-black text-indigo-600 dark:text-indigo-400">
-            R$ ${valorVenda.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+            R$ ${valorVenda.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
           <div class="text-[10px] text-emerald-600 dark:text-emerald-400 font-extrabold mt-0.5" title="Margem de Lucro (Venda - Custos de Fornecedor)">
-            Rent: R$ ${rentabilidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+            Rent: R$ ${rentabilidade.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
         </td>
 
@@ -2273,11 +2273,11 @@ Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : '
         <div class="flex items-center justify-between bg-slate-50 dark:bg-slate-900/40 p-3 rounded-xl border border-slate-100 dark:border-slate-800/60 text-xs">
           <div>
             <span class="block text-[8px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider">Valor Venda</span>
-            <span class="font-black text-indigo-600 dark:text-indigo-400 text-sm">R$ ${valorVenda.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+            <span class="font-black text-indigo-600 dark:text-indigo-400 text-sm">R$ ${valorVenda.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
           <div class="text-right">
             <span class="block text-[8px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider">Rentabilidade</span>
-            <span class="font-bold text-emerald-600 dark:text-emerald-400">R$ ${rentabilidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+            <span class="font-bold text-emerald-600 dark:text-emerald-400">R$ ${rentabilidade.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
         </div>
 

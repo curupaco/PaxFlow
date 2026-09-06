@@ -168,7 +168,7 @@ export class NextTripDashboardWidget {
                       <div class="p-3 bg-purple-50 dark:bg-gradient-to-r dark:from-purple-950/70 dark:to-indigo-950/70 border border-purple-200 dark:border-purple-500/40 rounded-xl text-slate-900 dark:text-white space-y-1">
                         <div class="flex items-center justify-between text-[10px] font-black uppercase text-purple-700 dark:text-purple-300">
                           <span>🚀 Upsell Recomendado</span>
-                          <span class="text-emerald-600 dark:text-emerald-400 font-extrabold text-xs">+ R$ ${upsells[0].valorEstimado.toLocaleString('pt-BR')}</span>
+                          <span class="text-emerald-600 dark:text-emerald-400 font-extrabold text-xs">+ R$ ${upsells[0].valorEstimado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                         </div>
                         <p class="text-xs font-bold text-slate-800 dark:text-slate-100">${upsells[0].titulo}</p>
                         <p class="text-[10px] text-slate-600 dark:text-slate-300 leading-tight">${upsells[0].descricao}</p>

@@ -318,7 +318,7 @@ export class NextTripPage {
                   <div class="p-2 bg-white/5 rounded-lg border border-white/10 space-y-0.5">
                     <div class="flex items-center justify-between text-xs font-bold text-slate-100">
                       <span>${u.titulo}</span>
-                      <span class="text-emerald-400 font-extrabold text-[11px]">+ R$ ${u.valorEstimado.toLocaleString('pt-BR')}</span>
+                      <span class="text-emerald-400 font-extrabold text-[11px]">+ R$ ${u.valorEstimado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </div>
                     <p class="text-[10px] text-slate-300 font-medium leading-tight">${u.descricao}</p>
                   </div>

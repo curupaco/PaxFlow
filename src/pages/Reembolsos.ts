@@ -374,8 +374,8 @@ export class ReembolsosPage {
       const motivo = r.motivo_cancelamento?.toLowerCase() || '';
       const status = r.status?.toLowerCase() || '';
 
-      const valorSolStr = Number(r.valor_solicitado || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 }).toLowerCase();
-      const valorAprovStr = r.valor_aprovado ? Number(r.valor_aprovado).toLocaleString('pt-BR', { minimumFractionDigits: 2 }).toLowerCase() : '';
+      const valorSolStr = Number(r.valor_solicitado || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).toLowerCase();
+      const valorAprovStr = r.valor_aprovado ? Number(r.valor_aprovado).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).toLowerCase() : '';
 
       return (
         cliNome.includes(q) ||
@@ -457,7 +457,7 @@ export class ReembolsosPage {
             <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-5 rounded-2xl shadow-xs flex items-center justify-between">
               <div>
                 <span class="block text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-1">Valor Pago (Aprovado)</span>
-                <span class="text-xl font-black text-indigo-600 dark:text-indigo-400">R$ ${somaTotalReembolsado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                <span class="text-xl font-black text-indigo-600 dark:text-indigo-400">R$ ${somaTotalReembolsado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
               <span class="w-10 h-10 bg-indigo-50 dark:bg-indigo-950/45 text-indigo-600 dark:text-indigo-400 rounded-xl text-base font-extrabold flex items-center justify-center shrink-0">💰</span>
             </div>
@@ -556,7 +556,7 @@ export class ReembolsosPage {
                           <!-- Valor -->
                           <td class="py-4.5 px-5">
                             <span class="text-indigo-600 dark:text-indigo-400 font-black">
-                              R$ ${Number(r.valor_solicitado || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                              R$ ${Number(r.valor_solicitado || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </span>
                           </td>
    
@@ -682,7 +682,7 @@ export class ReembolsosPage {
           <div>
             <span class="block text-[8px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider">Valor Solicitado</span>
             <span class="text-indigo-600 dark:text-indigo-400 font-black text-sm">
-              R$ ${Number(r.valor_solicitado || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              R$ ${Number(r.valor_solicitado || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
           </div>
         </div>

@@ -14,6 +14,8 @@ import {
   renderDateInputHTML,
   setupFormValidation,
   formatCurrencyValue,
+  formatMoney,
+  attachCurrencyMask,
   formatBrDateToIso,
   parseDoubleBr,
   formatDateBr,
@@ -659,7 +661,7 @@ export class EditTravelModal {
                           <span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${u.corBadge} font-sans">${u.badgeTexto}</span>
                         </div>
                         <p class="text-[11px] text-slate-300 font-medium leading-relaxed">${u.descricao}</p>
-                        <span class="text-[10px] text-emerald-300 font-extrabold block">+ R$ ${u.valorEstimado.toLocaleString('pt-BR')} &bull; Sugestão: ${u.produtoSugerido}</span>
+                        <span class="text-[10px] text-emerald-300 font-extrabold block">+ R$ ${u.valorEstimado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} &bull; Sugestão: ${u.produtoSugerido}</span>
                       </div>
                       <button type="button" 
                         data-upsell-tipo="${u.categoriaProduto}" 
@@ -1123,7 +1125,7 @@ export class EditTravelModal {
         const totalProdutos = produtos.reduce((sum, p) => sum + (Number(p.valor_venda) || 0), 0);
         const pendente = valor - totalProdutos;
         if (Math.abs(pendente) > 0.01) {
-          this.options.showToast(`Não é possível alterar o status para "${status.replace('_', ' ')}". Existe um saldo financeiro pendente de R$ ${pendente.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}. Adicione produtos na aba "Produtos e Serviços" para zerar este saldo.`, 'error');
+          this.options.showToast(`Não é possível alterar o status para "${status.replace('_', ' ')}". Existe um saldo financeiro pendente de R$ ${pendente.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}. Adicione produtos na aba "Produtos e Serviços" para zerar este saldo.`, 'error');
           return;
         }
 
@@ -1906,9 +1908,9 @@ export class EditTravelModal {
       const saldoPendVal = isNaN(saldoPend) ? 0 : saldoPend;
 
       editTarifaInput.value = formatCurrencyValue(tarifa);
-      totalDistEl.textContent = `R$ ${totalDistVal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
-      rentabilidadeEl.textContent = `R$ ${rentabilidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
-      saldoPendEl.textContent = `R$ ${saldoPendVal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+      totalDistEl.textContent = `R$ ${totalDistVal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      rentabilidadeEl.textContent = `R$ ${rentabilidade.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      saldoPendEl.textContent = `R$ ${saldoPendVal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
       if (rentabilidade >= 0) {
         rentabilidadeEl.className = 'font-black text-emerald-600 dark:text-emerald-400';
@@ -2254,13 +2256,13 @@ export class EditTravelModal {
     const finValorRentabilidade = document.getElementById('fin-valor-rentabilidade');
 
     if (finValorVenda) {
-      finValorVenda.textContent = `R$ ${valorTotalViagem.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+      finValorVenda.textContent = `R$ ${valorTotalViagem.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     }
     if (finValorProdutos) {
-      finValorProdutos.textContent = `R$ ${totalProdutos.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+      finValorProdutos.textContent = `R$ ${totalProdutos.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     }
     if (finValorPendente) {
-      finValorPendente.textContent = `R$ ${saldoPendente.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+      finValorPendente.textContent = `R$ ${saldoPendente.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
       if (Math.abs(saldoPendente) < 0.01) {
         finValorPendente.className = 'text-sm font-black text-emerald-600 dark:text-emerald-400';
       } else {
@@ -2268,7 +2270,7 @@ export class EditTravelModal {
       }
     }
     if (finValorRentabilidade) {
-      finValorRentabilidade.textContent = `R$ ${totalRentabilidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+      finValorRentabilidade.textContent = `R$ ${totalRentabilidade.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     }
 
     if (produtos.length === 0) {
@@ -2385,7 +2387,7 @@ export class EditTravelModal {
             
             <div class="flex items-center gap-3.5">
               <div class="text-right">
-                <span class="block text-xs font-black text-indigo-600 dark:text-indigo-400">R$ ${Number(p.valor_venda || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                <span class="block text-xs font-black text-indigo-600 dark:text-indigo-400">R$ ${Number(p.valor_venda || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
               <button data-comments-prod-id="${p.id}" data-comments-prod-name="${p.fornecedor} - ${p.descricao}" class="p-1.5 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-slate-300 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-md transition text-xs font-bold flex items-center gap-1" title="Notas e Comentários">
                 💬 <span class="text-[10px]">${commentsCount}</span>
@@ -2423,7 +2425,7 @@ export class EditTravelModal {
       if (pagamentosGrupo.length === 0) {
         statusPagamentoBadge = '';
       } else if (Math.abs(totalPagoGrupo - valorVendaTotal) > 0.01) {
-        statusPagamentoBadge = `<span class="px-1.5 py-0.5 text-[9px] font-black rounded bg-amber-500/10 text-amber-500 border border-amber-500/20">⚠️ Incompleto (R$ ${totalPagoGrupo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} / R$ ${valorVendaTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })})</span>`;
+        statusPagamentoBadge = `<span class="px-1.5 py-0.5 text-[9px] font-black rounded bg-amber-500/10 text-amber-500 border border-amber-500/20">⚠️ Incompleto (R$ ${totalPagoGrupo.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / R$ ${valorVendaTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})</span>`;
       } else {
         statusPagamentoBadge = '';
       }
@@ -2452,15 +2454,15 @@ export class EditTravelModal {
               </button>
 
               <span class="text-[10px] font-medium text-slate-400 dark:text-slate-400">
-                Venda: <span class="font-extrabold text-indigo-600 dark:text-indigo-400">R$ ${valorVendaTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                Venda: <span class="font-extrabold text-indigo-600 dark:text-indigo-400">R$ ${valorVendaTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </span>
               
               <span class="text-[10px] font-medium text-slate-400 dark:text-slate-400">
-                Taxas: <span class="font-extrabold text-slate-700 dark:text-slate-200">R$ ${valorTaxasTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                Taxas: <span class="font-extrabold text-slate-700 dark:text-slate-200">R$ ${valorTaxasTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </span>
               
               <span class="text-[10px] font-medium text-slate-400 dark:text-slate-400">
-                Rentabilidade: <span class="font-extrabold ${rentabilidadeColorClass}">R$ ${valorRentabilidadeTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                Rentabilidade: <span class="font-extrabold ${rentabilidadeColorClass}">R$ ${valorRentabilidadeTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </span>
               
               ${statusPagamentoBadge}
@@ -2845,7 +2847,7 @@ export class EditTravelModal {
               <span class="text-xs font-bold text-slate-700 dark:text-slate-300">${nomeForma}</span>
             </div>
             <div class="flex items-center gap-3">
-              <span class="text-xs font-black text-slate-800 dark:text-slate-100">R$ ${tp.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+              <span class="text-xs font-black text-slate-800 dark:text-slate-100">R$ ${tp.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               <button class="btn-remove-pag-loc text-slate-400 hover:text-rose-500 transition p-1" data-id="${tp.id}">🗑️</button>
             </div>
           </div>
@@ -2866,7 +2868,7 @@ export class EditTravelModal {
       const pendente = recalcularBalanco();
       const pendenteEl = document.getElementById('pag-loc-pendente-val');
       if (pendenteEl) {
-        pendenteEl.textContent = `R$ ${pendente.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+        pendenteEl.textContent = `R$ ${pendente.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
         if (pendente > 0) {
           pendenteEl.className = 'text-xs font-black text-rose-600 dark:text-rose-400';
         } else {
@@ -2904,7 +2906,7 @@ export class EditTravelModal {
         <div class="grid grid-cols-2 gap-4 bg-slate-50 dark:bg-slate-950 p-3.5 rounded-2xl border border-slate-200/40 dark:border-slate-800 mb-4 font-sans">
           <div>
             <span class="block text-[9px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wider leading-tight">Valor Total do LOC</span>
-            <strong class="text-xs font-black text-slate-800 dark:text-slate-100">R$ ${valorVendaTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
+            <strong class="text-xs font-black text-slate-800 dark:text-slate-100">R$ ${valorVendaTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
           </div>
           <div>
             <span class="block text-[9px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wider leading-tight">Pendente</span>
@@ -2994,22 +2996,11 @@ export class EditTravelModal {
       });
     }
 
-    // Máscara monetária pro input
+    // Máscara monetária pro input com suporte a colar inteligente
     const valInput = document.getElementById('pag-loc-valor-input') as HTMLInputElement;
-    valInput?.addEventListener('input', (e) => {
-      const target = e.target as HTMLInputElement;
-      let val = target.value;
-      let digits = val.replace(/\D/g, '');
-      if (digits.length > 12) {
-        digits = digits.slice(0, 12);
-      }
-      if (!digits) {
-        target.value = '0,00';
-        return;
-      }
-      const num = parseInt(digits, 10) / 100;
-      target.value = num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    });
+    if (valInput) {
+      attachCurrencyMask(valInput);
+    }
 
     // Evento para adicionar item
     document.getElementById('btn-pag-loc-add')?.addEventListener('click', () => {
@@ -3025,7 +3016,7 @@ export class EditTravelModal {
 
       const pendente = recalcularBalanco();
       if (valor > pendente + 0.01) {
-        this.options.showToast(`O valor inserido (R$ ${valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}) excede o saldo pendente do LOC (R$ ${pendente.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}).`, 'error');
+        this.options.showToast(`O valor inserido (R$ ${valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}) excede o saldo pendente do LOC (R$ ${pendente.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}).`, 'error');
         return;
       }
 

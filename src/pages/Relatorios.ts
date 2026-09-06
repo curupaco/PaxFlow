@@ -1428,7 +1428,7 @@ export class RelatoriosPage {
         pendencias.push({
           cliente: clienteNome,
           destino: destino,
-          motivo: `Recebimento Pendente: quitado R$ ${vPaidSum.toLocaleString('pt-BR')} de R$ ${vTotal.toLocaleString('pt-BR')} (Aberto: R$ ${(vTotal - vPaidSum).toLocaleString('pt-BR')})`,
+          motivo: `Recebimento Pendente: quitado R$ ${vPaidSum.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} de R$ ${vTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (Aberto: R$ ${(vTotal - vPaidSum).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`,
           gravidade: 'alta'
         });
       }
@@ -2601,7 +2601,7 @@ export class RelatoriosPage {
         const vTotal = v.valor_total || v.valorTotal || 0;
         
         if (vPaidSum < vTotal) {
-          csvContent += `"Pagamento Pendente";"${clienteNome}";"${destino}";"Pendente: R$ ${(vTotal - vPaidSum).toLocaleString('pt-BR')}"\n`;
+          csvContent += `"Pagamento Pendente";"${clienteNome}";"${destino}";"Pendente: R$ ${(vTotal - vPaidSum).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}"\n`;
         }
         if (!v.processo_conferido) {
           csvContent += `"Processo Pendente";"${clienteNome}";"${destino}";"Auditoria de Processo pendente"\n`;
@@ -2612,7 +2612,7 @@ export class RelatoriosPage {
             if (loc) {
               const conf = data.locConferencias.find((c: any) => (c.viagem_id === v.id || c.viagemId === v.id) && (c.codigo_localizador || '').trim().toUpperCase() === loc);
               if (!conf || !conf.conferido) {
-                csvContent += `"Conferência Financeira Pendente";"${clienteNome}";"${destino} (LOC ${loc})";"${p.fornecedor} - Venda: R$ ${p.valorVenda.toLocaleString('pt-BR')}"\n`;
+                csvContent += `"Conferência Financeira Pendente";"${clienteNome}";"${destino} (LOC ${loc})";"${p.fornecedor} - Venda: R$ ${p.valorVenda.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}"\n`;
               }
             }
           });
@@ -2907,7 +2907,7 @@ export class RelatoriosPage {
           <div class="flex items-center gap-4 shrink-0">
             <div class="text-right">
               <span class="block text-[10px] font-bold text-slate-400 uppercase">Ticket em Risco</span>
-              <span class="text-2xl font-black text-amber-400">R$ ${ticketRiscoTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+              <span class="text-2xl font-black text-amber-400">R$ ${ticketRiscoTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
           </div>
         </div>
@@ -2974,7 +2974,7 @@ export class RelatoriosPage {
                         </span>
                       </td>
                       <td class="py-3 px-3 text-slate-500 font-semibold">${o.motivoRisco}</td>
-                      <td class="py-3 px-3 font-bold text-slate-800 dark:text-slate-200">R$ ${o.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                      <td class="py-3 px-3 font-bold text-slate-800 dark:text-slate-200">R$ ${o.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                       <td class="py-3 px-3 text-slate-500">${o.consultorNome}</td>
                       <td class="py-3 px-3 text-right">
                         <div class="flex items-center justify-end gap-1.5">

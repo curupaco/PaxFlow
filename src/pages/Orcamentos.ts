@@ -17,6 +17,7 @@ import {
   renderCurrencyInputHTML,
   renderDocumentInputHTML,
   setupFormValidation,
+  attachCurrencyMask,
   getFormattedPhoneToDb,
   formatBrDateToIso,
   parseDoubleBr,
@@ -944,13 +945,13 @@ export class OrcamentosPage {
           ${o.status !== 'CONCLUIDO' && o.valorProposta !== undefined && o.valorProposta !== null ? `
             <div class="flex justify-between items-center text-[10px] font-semibold text-slate-500 dark:text-slate-400 border-t border-slate-200/50 dark:border-slate-800/50 pt-1.5 mt-0.5">
               <span class="text-indigo-600 dark:text-indigo-400 font-bold">Valor Proposta:</span>
-              <span class="font-black text-indigo-600 dark:text-indigo-400">R$ ${Number(o.valorProposta).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+              <span class="font-black text-indigo-600 dark:text-indigo-400">R$ ${Number(o.valorProposta).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
           ` : ''}
           ${o.status === 'CONCLUIDO' && o.subStatus === 'ACEITO' && o.valorViagem !== undefined && o.valorViagem !== null ? `
             <div class="flex justify-between items-center text-[10px] font-semibold text-slate-500 dark:text-slate-400 border-t border-slate-200/50 dark:border-slate-800/50 pt-1.5 mt-0.5">
               <span class="text-emerald-700 dark:text-emerald-400 font-bold">Valor da Viagem:</span>
-              <span class="font-black text-emerald-600 dark:text-emerald-400">R$ ${Number(o.valorViagem).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+              <span class="font-black text-emerald-600 dark:text-emerald-400">R$ ${Number(o.valorViagem).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
           ` : ''}
         </div>
@@ -1641,7 +1642,7 @@ export class OrcamentosPage {
                       <span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${u.corBadge}">${u.badgeTexto}</span>
                     </div>
                     <p class="text-[11px] text-slate-300 font-medium">${u.descricao}</p>
-                    <span class="text-[10px] text-indigo-300 font-bold block">+ R$ ${u.valorEstimado.toLocaleString('pt-BR')} (Sugestão: ${u.produtoSugerido})</span>
+                    <span class="text-[10px] text-indigo-300 font-bold block">+ R$ ${u.valorEstimado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (Sugestão: ${u.produtoSugerido})</span>
                   </div>
                   <button type="button" data-upsell-text="${u.produtoSugerido} - R$ ${u.valorEstimado}" class="btn-add-upsell-to-notes px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[10px] font-black uppercase shrink-0 transition">
                     + Incluir
@@ -2006,7 +2007,7 @@ export class OrcamentosPage {
                 <div id="viagem-existente-container" class="${defaultFluxo === 'existente' ? '' : 'hidden'} mt-2">
                   <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Selecione a Viagem Existente *</label>
                   <select id="select-viagem-existente" class="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm">
-                    ${activeTrips.map(v => `<option value="${v.id}" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">${v.destino} (LOC: ${v.codigo_localizador || 'Sem LOC'}) - R$ ${Number(v.valor_total).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</option>`).join('')}
+                    ${activeTrips.map(v => `<option value="${v.id}" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">${v.destino} (LOC: ${v.codigo_localizador || 'Sem LOC'}) - R$ ${Number(v.valor_total).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</option>`).join('')}
                   </select>
                 </div>
               </div>
@@ -2328,6 +2329,11 @@ export class OrcamentosPage {
     `;
 
     modalContent.innerHTML = html;
+
+    const editValorInput = document.getElementById('input-edit-valor') as HTMLInputElement | null;
+    if (editValorInput) {
+      attachCurrencyMask(editValorInput);
+    }
 
     const closeModal = () => this.closeModal();
     document.getElementById('btn-close-modal-x')?.addEventListener('click', closeModal);

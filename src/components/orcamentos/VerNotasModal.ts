@@ -125,8 +125,8 @@ export class VerNotasModal {
                   </div>
                 </span>
                 <span class="block">Data da Viagem: <strong class="text-slate-800 dark:text-slate-100">${options.formatarDataBr(orc.dataViagem)}</strong></span>
-                ${orc.valorProposta !== undefined && orc.valorProposta !== null ? `<span class="block">Valor da Proposta: <strong class="text-indigo-600 dark:text-indigo-400">R$ ${Number(orc.valorProposta).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong></span>` : ''}
-                ${orc.status === 'CONCLUIDO' && orc.subStatus === 'ACEITO' && orc.valorViagem !== undefined && orc.valorViagem !== null ? `<span class="block">Valor da Viagem: <strong class="text-emerald-600 dark:text-emerald-400">R$ ${Number(orc.valorViagem).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong></span>` : ''}
+                ${orc.valorProposta !== undefined && orc.valorProposta !== null ? `<span class="block">Valor da Proposta: <strong class="text-indigo-600 dark:text-indigo-400">R$ ${Number(orc.valorProposta).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></span>` : ''}
+                ${orc.status === 'CONCLUIDO' && orc.subStatus === 'ACEITO' && orc.valorViagem !== undefined && orc.valorViagem !== null ? `<span class="block">Valor da Viagem: <strong class="text-emerald-600 dark:text-emerald-400">R$ ${Number(orc.valorViagem).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></span>` : ''}
               </div>
             </div>
 

@@ -96,18 +96,18 @@ export function renderReembolsosTabHTML(reembolsos: any[]): string {
               </div>
               <div>
                 <span class="block text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase">Valor Solicitado:</span>
-                <strong class="text-slate-800 dark:text-slate-200">R$ ${Number(r.valor_solicitado || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
+                <strong class="text-slate-800 dark:text-slate-200">R$ ${Number(r.valor_solicitado || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
               </div>
               ${r.valor_aprovado ? `
                 <div>
                   <span class="block text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase">Valor Aprovado:</span>
-                  <strong class="text-emerald-600 dark:text-emerald-400 font-black">R$ ${Number(r.valor_aprovado).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
+                  <strong class="text-emerald-600 dark:text-emerald-400 font-black">R$ ${Number(r.valor_aprovado).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
                 </div>
               ` : ''}
               ${r.taxa_retencao ? `
                 <div>
                   <span class="block text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase">Taxa Retenção:</span>
-                  <strong class="text-rose-600 dark:text-rose-400 font-bold">R$ ${Number(r.taxa_retencao).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
+                  <strong class="text-rose-600 dark:text-rose-400 font-bold">R$ ${Number(r.taxa_retencao).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
                 </div>
               ` : ''}
               <div>

@@ -1326,14 +1326,14 @@ export class ComercialDashboard {
         const diffVal = Math.max(0, metaVal - val);
 
         const progressDesc = diffVal > 0 
-          ? `Faltam <span class="font-extrabold text-indigo-600 dark:text-indigo-400">R$ ${diffVal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span> para o Alvo Global da Loja`
+          ? `Faltam <span class="font-extrabold text-indigo-600 dark:text-indigo-400">R$ ${diffVal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span> para o Alvo Global da Loja`
           : `🎉 Parabéns! Meta Global da Loja Atingida!`;
 
         return `
           <div class="space-y-2.5">
             <div class="flex justify-between items-end text-xs font-semibold">
-              <span class="text-slate-400 dark:text-slate-400">Alvo Global da Loja: <strong class="text-slate-700 dark:text-slate-200 uppercase">R$ ${(currentMeta.valor_meta || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong></span>
-              <span class="text-slate-700 dark:text-slate-200 font-extrabold">R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+              <span class="text-slate-400 dark:text-slate-400">Alvo Global da Loja: <strong class="text-slate-700 dark:text-slate-200 uppercase">R$ ${(currentMeta.valor_meta || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></span>
+              <span class="text-slate-700 dark:text-slate-200 font-extrabold">R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
 
             <div class="relative w-full h-3 bg-slate-100 dark:bg-slate-800/80 rounded-full overflow-hidden border border-slate-200/20">
@@ -1366,14 +1366,14 @@ export class ComercialDashboard {
 
       const diffVal = nextFaixaVal > 0 ? nextFaixaVal - val : 0;
       const progressDesc = nextFaixaVal > 0 
-        ? `Faltam <span class="font-extrabold text-indigo-650 dark:text-indigo-400">R$ ${diffVal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span> para atingir a faixa <span class="font-extrabold uppercase text-indigo-500">${nextFaixaName}</span>`
+        ? `Faltam <span class="font-extrabold text-indigo-650 dark:text-indigo-400">R$ ${diffVal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span> para atingir a faixa <span class="font-extrabold uppercase text-indigo-500">${nextFaixaName}</span>`
         : `🎉 Parabéns! Você atingiu a faixa máxima: <span class="font-black text-emerald-600 dark:text-emerald-450 uppercase">${currentFaixaName}</span>!`;
 
       return `
         <div class="space-y-2.5">
           <div class="flex justify-between items-end text-xs font-semibold">
             <span class="text-slate-400 dark:text-slate-400">Faixa Atual: <strong class="text-slate-700 dark:text-slate-200 uppercase">${currentFaixaName}</strong></span>
-            <span class="text-slate-700 dark:text-slate-200 font-extrabold">R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+            <span class="text-slate-700 dark:text-slate-200 font-extrabold">R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
 
           <div class="relative w-full h-3 bg-slate-100 dark:bg-slate-800/80 rounded-full overflow-hidden border border-slate-200/20">
@@ -1536,10 +1536,10 @@ export class ComercialDashboard {
                   <div class="text-center w-full">
                     <span class="text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest block">Acumulado da Equipe ${renderHelpIcon('acumulado-equipe')}</span>
                     <span class="text-xl font-black text-slate-800 dark:text-slate-100 mt-1 block">
-                      R$ ${agencyTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      R$ ${agencyTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
                     ${currentMeta.is_meta_loja ? `
-                      <span class="text-[10px] text-slate-400 dark:text-slate-400 font-bold block mt-1.5">Alvo Loja: R$ ${(currentMeta.valor_meta || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                      <span class="text-[10px] text-slate-400 dark:text-slate-400 font-bold block mt-1.5">Alvo Loja: R$ ${(currentMeta.valor_meta || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     ` : ''}
                   </div>
                 </div>
@@ -1589,7 +1589,7 @@ export class ComercialDashboard {
                             ${badgeHTML}
                           </div>
                           <span class="font-extrabold text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
-                            R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             ${currentMeta.is_meta_loja ? `<span class="text-[10px] text-slate-400 dark:text-slate-400 font-bold">(${((val / maxVal) * 100).toFixed(0)}%)</span>` : ''}
                           </span>
                         </div>

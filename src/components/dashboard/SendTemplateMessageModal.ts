@@ -139,7 +139,7 @@ export class SendTemplateMessageModal {
       const valConsultor = options.consultorNome || consultorData?.nome || '';
       const valDataIda = options.dataIda || travelData?.data_ida || '';
       const valDataVolta = travelData?.data_volta || '';
-      const valValorTotal = travelData?.valor_total ? `R$ ${Number(travelData.valor_total).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '';
+      const valValorTotal = travelData?.valor_total ? `R$ ${Number(travelData.valor_total).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '';
       const valNomeAgencia = settings?.agencyName || settings?.agency_name || 'Nossa Agência';
       const valContatoConsultor = consultorData?.contato || '';
 

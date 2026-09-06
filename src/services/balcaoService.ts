@@ -164,7 +164,7 @@ export class BalcaoService {
             }
 
             const val = o.valor_proposta || o.valor_viagem;
-            const formattedValor = val ? `R$ ${Number(val).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'R$ 0,00';
+            const formattedValor = val ? `R$ ${Number(val).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'R$ 0,00';
             const refCodeStr = o.codigo_ref ? `[${o.codigo_ref}] ` : '';
 
             item.orcamentos.push({

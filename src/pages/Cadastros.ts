@@ -5,6 +5,7 @@ import { MetasService } from '../services/metasService';
 import { BADGE_DEFINITIONS } from '../services/gamification';
 import { parseBrFloat } from '../services/csvImporter';
 import { renderHelpIcon } from '../utils/helpHelper';
+import { attachCurrencyMask } from '../utils/masks';
 
 export class CadastrosPage {
   private container: HTMLElement;
@@ -2306,20 +2307,7 @@ export class CadastrosPage {
 
   private abrirModalNovaMeta(): void {
     const aplicarMascaraMonetaria = (inputEl: HTMLInputElement) => {
-      inputEl.addEventListener('input', (e) => {
-        const target = e.target as HTMLInputElement;
-        let val = target.value;
-        let digits = val.replace(/\D/g, '');
-        if (digits.length > 12) {
-          digits = digits.slice(0, 12);
-        }
-        if (!digits) {
-          target.value = '0,00';
-          return;
-        }
-        const num = parseInt(digits, 10) / 100;
-        target.value = num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-      });
+      attachCurrencyMask(inputEl);
     };
 
     const overlay = document.createElement('div');
@@ -2580,20 +2568,7 @@ export class CadastrosPage {
     }
 
     const aplicarMascaraMonetaria = (inputEl: HTMLInputElement) => {
-      inputEl.addEventListener('input', (e) => {
-        const target = e.target as HTMLInputElement;
-        let val = target.value;
-        let digits = val.replace(/\D/g, '');
-        if (digits.length > 12) {
-          digits = digits.slice(0, 12);
-        }
-        if (!digits) {
-          target.value = '0,00';
-          return;
-        }
-        const num = parseInt(digits, 10) / 100;
-        target.value = num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-      });
+      attachCurrencyMask(inputEl);
     };
 
     const overlay = document.createElement('div');
@@ -2601,7 +2576,7 @@ export class CadastrosPage {
     overlay.className = 'fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all duration-300 opacity-0';
 
     const renderFaixasHTML = (meta.faixas || []).map(f => {
-      const formattedMin = f.valor_minimo.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+      const formattedMin = f.valor_minimo.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       return `
         <div class="grid grid-cols-12 gap-2 items-center bg-slate-50 dark:bg-slate-950/40 p-3 rounded-xl border border-slate-150/40 dark:border-slate-800/40 target-faixa-row">
           <div class="col-span-3">
@@ -2677,7 +2652,7 @@ export class CadastrosPage {
 
           <div id="wrapper-meta-loja" class="${meta.is_meta_loja ? '' : 'hidden'}">
             <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Valor da Meta Global da Loja (R$) *</label>
-            <input id="input-meta-valor-loja" type="text" value="${(meta.valor_meta || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800 dark:text-slate-100 font-bold text-sm text-right" />
+            <input id="input-meta-valor-loja" type="text" value="${(meta.valor_meta || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800 dark:text-slate-100 font-bold text-sm text-right" />
           </div>
 
           <!-- Seção de Faixas de Premiação -->
