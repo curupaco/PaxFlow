@@ -159,6 +159,12 @@ export class ComercialDashboard {
           { event: '*', schema: 'public', table: 'orcamentos' },
           async (payload: any) => {
             console.log('[ComercialDashboard] Realtime update on orcamentos:', payload.eventType);
+            if (this.perfil?.role !== 'admin') {
+              const rowConsultorId = payload.new?.consultor_id || payload.old?.consultor_id;
+              if (rowConsultorId && this.user?.id && rowConsultorId !== this.user.id) {
+                return;
+              }
+            }
             await this.loadData();
             this.renderMetricsSection();
           }
@@ -168,6 +174,12 @@ export class ComercialDashboard {
           { event: '*', schema: 'public', table: 'viagens' },
           async (payload: any) => {
             console.log('[ComercialDashboard] Realtime update on viagens:', payload.eventType);
+            if (this.perfil?.role !== 'admin') {
+              const rowConsultorId = payload.new?.consultor_id || payload.old?.consultor_id;
+              if (rowConsultorId && this.user?.id && rowConsultorId !== this.user.id) {
+                return;
+              }
+            }
             await this.loadData();
             this.renderMetricsSection();
           }
@@ -247,6 +259,9 @@ export class ComercialDashboard {
     try {
       // 1. Carregar Orçamentos do banco
       let queryOrc = supabase.from('orcamentos').select('*');
+      if (this.perfil?.role !== 'admin' && this.user?.id) {
+        queryOrc = queryOrc.eq('consultor_id', this.user.id);
+      }
       const { data: dataOrc, error: errOrc } = await queryOrc;
       if (errOrc) throw errOrc;
 
@@ -271,6 +286,9 @@ export class ComercialDashboard {
 
       // 2. Carregar Viagens do banco para busca Co-Piloto e relatorios
       let queryVia = supabase.from('viagens').select('*, produtos:produtos_viagem(*)');
+      if (this.perfil?.role !== 'admin' && this.user?.id) {
+        queryVia = queryVia.eq('consultor_id', this.user.id);
+      }
       const { data: dataVia, error: errVia } = await queryVia;
       if (errVia) throw errVia;
 
@@ -326,10 +344,17 @@ export class ComercialDashboard {
     let tempOrc = this.orcamentos;
     let tempVia = this.viagens;
 
-    // Se admin, filtra pelo consultor selecionado no dropdown
-    if (this.perfil?.role === 'admin' && this.selectedConsultantId !== 'todos') {
-      tempOrc = tempOrc.filter(o => o.consultorId === this.selectedConsultantId);
-      tempVia = tempVia.filter(v => v.consultorId === this.selectedConsultantId);
+    if (this.perfil?.role === 'admin') {
+      // Se admin, filtra pelo consultor selecionado no dropdown
+      if (this.selectedConsultantId !== 'todos') {
+        tempOrc = tempOrc.filter(o => o.consultorId === this.selectedConsultantId);
+        tempVia = tempVia.filter(v => v.consultorId === this.selectedConsultantId);
+      }
+    } else {
+      // Se consultor (ou perfil não-admin), restringe estritamente aos registros do consultor logado
+      const currentUserId = this.user?.id;
+      tempOrc = tempOrc.filter(o => o.consultorId === currentUserId);
+      tempVia = tempVia.filter(v => (v.consultorId || (v as any).consultor_id) === currentUserId);
     }
 
     // 2. Filtragem por período temporal
@@ -1432,12 +1457,12 @@ export class ComercialDashboard {
             <!-- Pie Chart Column -->
             <div class="md:col-span-4 flex items-center justify-center">
               <div class="relative w-36 h-36">
-                ${this.renderGoalPieChart(myVal, currentMeta.faixas || [])}
+                ${this.renderGoalPieChart(myVal, currentMeta.faixas || [], currentMeta.is_meta_loja, currentMeta.valor_meta)}
                 <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
                   <span class="text-[9px] font-black uppercase text-slate-400 dark:text-slate-400 tracking-wider">Atingido</span>
                   <span class="text-base font-black text-slate-800 dark:text-slate-100">
                     ${(() => {
-                      const maxVal = sortedFaixas.length > 0 ? sortedFaixas[sortedFaixas.length - 1].valor_minimo : 1;
+                      const maxVal = currentMeta.is_meta_loja ? (currentMeta.valor_meta || 1) : (sortedFaixas.length > 0 ? sortedFaixas[sortedFaixas.length - 1].valor_minimo : 1);
                       return ((myVal / maxVal) * 100).toFixed(0);
                     })()}%
                   </span>
