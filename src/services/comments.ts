@@ -119,9 +119,9 @@ export class CommentsService {
               <div class="flex-1 min-w-0 bg-slate-50/10">
                 <div class="flex items-center justify-between gap-2 mb-1">
                   <span class="text-xs font-black text-slate-700 dark:text-slate-200 truncate leading-none">${autorNome}</span>
-                  <span class="text-[9px] text-slate-400 dark:text-slate-400 font-bold">${formatarDataHora(c.created_at)}</span>
+                  <span class="text-[9px] text-slate-400 dark:text-slate-400 font-bold shrink-0">${formatarDataHora(c.created_at)}</span>
                 </div>
-                <p class="text-xs text-slate-600 dark:text-slate-400 font-semibold whitespace-pre-wrap leading-relaxed break-words break-all">${textoFormatado}</p>
+                <p class="text-xs text-slate-600 dark:text-slate-400 font-semibold whitespace-pre-wrap leading-relaxed break-words [overflow-wrap:anywhere]">${textoFormatado}</p>
               </div>
               ${isOwner ? `
                 <button data-delete-comment-id="${c.id}" class="p-1 hover:bg-rose-50 dark:hover:bg-rose-950/20 text-slate-400 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-md transition text-[10px]" title="Excluir comentário">

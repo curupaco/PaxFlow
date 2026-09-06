@@ -132,7 +132,7 @@ export class VerNotasModal {
 
             <div>
               <h4 class="text-xs font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-2">Notas da Negociação</h4>
-              <div class="p-4 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-100 dark:border-slate-800 text-sm font-semibold text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed min-h-[120px]">
+              <div class="p-4 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-100 dark:border-slate-800 text-sm font-semibold text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed break-words [overflow-wrap:anywhere] min-h-[120px]">
                 ${converterLinks(orc.notasNegociacao || 'Nenhuma nota registrada.')}
               </div>
             </div>
