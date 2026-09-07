@@ -27,8 +27,12 @@ import { VersionToast } from './components/VersionToast';
 
 import { PushNotificationService } from './services/pushNotificationService';
 import { isNextTripEnabled } from './utils/featureFlags';
+import { initGlobalDateMask } from './utils/masks';
 
 (window as any).traduzirErro = traduzirErro;
+
+// Inicializa interceptador global de digitação direta para 100% dos campos de data
+initGlobalDateMask();
 
 // Trata desincronia de hash de pacotes JS ao publicar novas versões no servidor
 window.addEventListener('vite:preloadError', (event) => {

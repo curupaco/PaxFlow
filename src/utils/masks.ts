@@ -187,13 +187,43 @@ export function formatBrazilPhone(digits: string): string {
 }
 
 /**
+ * Aplica máscara de data brasileira inteligente (DD/MM/AAAA) com suporte a digitação direta e colocação automática de barras
+ * Exemplo: '09122027' -> '09/12/2027'
+ */
+export function applyDateMask(value: string, isDelete = false): string {
+  if (!value) return '';
+
+  // Se o valor for uma data ISO (YYYY-MM-DD), converte para formato brasileiro antes
+  if (/^\d{4}-\d{2}-\d{2}/.test(value.trim())) {
+    value = formatIsoDateToBr(value.trim());
+  }
+
+  let digits = value.replace(/\D/g, '');
+  if (digits.length > 8) digits = digits.slice(0, 8);
+  if (digits.length === 0) return '';
+
+  // Ao apagar, não força inserção de barra no final dos blocos
+  if (isDelete) {
+    if (digits.length <= 2) return digits;
+    if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+    return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+  }
+
+  // Durante a digitação normal (adicionando caracteres)
+  if (digits.length <= 1) return digits;
+  if (digits.length === 2) return `${digits}/`;
+  if (digits.length <= 4) {
+    if (digits.length === 4) return `${digits.slice(0, 2)}/${digits.slice(2)}/`;
+    return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+  }
+  return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+}
+
+/**
  * Formata dígitos para o formato de data brasileiro: DD/MM/AAAA
  */
 export function formatDateBr(digits: string): string {
-  if (digits.length === 0) return '';
-  if (digits.length <= 2) return digits;
-  if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
-  return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4, 8)}`;
+  return applyDateMask(digits);
 }
 
 /**
@@ -404,12 +434,12 @@ export function renderEmailInputHTML(id: string, initialValue: string, placehold
 }
 
 /**
- * Renderiza HTML para campo de data premium
+ * Renderiza HTML para campo de data premium com suporte a digitação direta
  */
 export function renderDateInputHTML(id: string, initialValue: string, placeholder = 'DD/MM/AAAA', required = true, readonly = false): string {
   const formatted = initialValue && initialValue.includes('-') 
     ? formatIsoDateToBr(initialValue) 
-    : initialValue;
+    : (initialValue ? applyDateMask(initialValue) : '');
     
   const containerId = `${id}-container`;
   const errorId = `${id}-error`;
@@ -418,7 +448,7 @@ export function renderDateInputHTML(id: string, initialValue: string, placeholde
 
   return `
     <div id="${containerId}" class="date-field-wrapper w-full">
-      <input id="${id}" type="text" ${readonlyAttr} ${required ? 'required' : ''} value="${formatted || ''}" placeholder="${placeholder}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition duration-155 ${disabledClass}" autocomplete="off" />
+      <input id="${id}" data-mask="date" inputmode="numeric" maxlength="10" type="text" ${readonlyAttr} ${required ? 'required' : ''} value="${formatted || ''}" placeholder="${placeholder}" class="date-input w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition duration-155 ${disabledClass}" autocomplete="off" />
       <p id="${errorId}" class="hidden text-xs text-rose-500 font-bold mt-1.5"></p>
     </div>
   `;
@@ -817,13 +847,7 @@ export function setupFormValidation(
 
     if (config.type === 'date') {
       inputEl.addEventListener('input', (e) => {
-        const target = e.target as HTMLInputElement;
-        let val = target.value;
-        let digits = val.replace(/\D/g, '');
-        if (digits.length > 8) {
-          digits = digits.slice(0, 8);
-        }
-        target.value = formatDateBr(digits);
+        handleDateInput(inputEl, e as InputEvent);
         validateField(config, false);
       });
 
@@ -950,3 +974,162 @@ export function initCurrencyInputs(container: HTMLElement | Document = document)
     attachCurrencyMask(input);
   });
 }
+
+/**
+ * Verifica se um elemento HTML é um campo de data no PaxFlow
+ */
+export function isDateField(el: any): el is HTMLInputElement {
+  if (!el || !(el instanceof HTMLInputElement)) return false;
+  if (el.readOnly || el.disabled) return false;
+  if (el.type === 'date') return false; // Campos nativos HTML5 não aceitam barras no valor DOM
+
+  if (el.getAttribute('data-mask') === 'date') return true;
+  if (el.closest('.date-field-wrapper')) return true;
+
+  const className = el.className || '';
+  if (
+    className.includes('date-input') ||
+    className.includes('trecho-data-ida') ||
+    className.includes('trecho-data-volta') ||
+    className.includes('prod-adicional-data') ||
+    className.includes('edit-prod-adicional-data')
+  ) {
+    return true;
+  }
+
+  const placeholder = el.placeholder || '';
+  if (/dd\/mm\/aaaa/i.test(placeholder)) return true;
+
+  const idOrName = (el.id || el.name || '').toLowerCase();
+  if (
+    idOrName.startsWith('pass-validade') ||
+    idOrName.includes('data-nasc') ||
+    idOrName.includes('cli-nascimento') ||
+    idOrName.includes('viagem-ida') ||
+    idOrName.includes('viagem-volta') ||
+    idOrName.includes('data-financeiro') ||
+    idOrName.includes('orc-data') ||
+    idOrName.includes('dataviagem') ||
+    idOrName.includes('filter-data') ||
+    idOrName.includes('filter-fin') ||
+    idOrName.includes('filter-ida') ||
+    idOrName.includes('filter-volta') ||
+    idOrName.includes('cam-inicio') ||
+    idOrName.includes('cam-fim') ||
+    idOrName.includes('meta-inicio') ||
+    idOrName.includes('meta-fim') ||
+    idOrName.includes('data-origem') ||
+    idOrName.includes('data-destino') ||
+    idOrName.includes('evento-data')
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Manipula a digitação direta em campos de data, posicionando o cursor suavemente
+ */
+export function handleDateInput(input: HTMLInputElement, e?: InputEvent): void {
+  const isDelete = e && (e.inputType === 'deleteContentBackward' || e.inputType === 'deleteContentForward');
+  const rawValue = input.value;
+  const selStart = input.selectionStart || 0;
+
+  // Conta a quantidade de dígitos numéricos existentes antes do cursor
+  const digitsBefore = rawValue.slice(0, selStart).replace(/\D/g, '').length;
+
+  const masked = applyDateMask(rawValue, !!isDelete);
+  if (input.value === masked) return;
+  input.value = masked;
+
+  // Reposiciona o cursor com precisão para não atrapalhar a digitação do usuário
+  if (isDelete) {
+    let newPos = 0;
+    let countedDigits = 0;
+    while (newPos < masked.length && countedDigits < digitsBefore) {
+      if (/\d/.test(masked[newPos])) countedDigits++;
+      newPos++;
+    }
+    input.setSelectionRange(newPos, newPos);
+  } else {
+    if (selStart >= rawValue.length - 1) {
+      input.setSelectionRange(masked.length, masked.length);
+    } else {
+      let newPos = 0;
+      let countedDigits = 0;
+      while (newPos < masked.length && countedDigits < digitsBefore) {
+        if (/\d/.test(masked[newPos])) countedDigits++;
+        newPos++;
+      }
+      input.setSelectionRange(newPos, newPos);
+    }
+  }
+}
+
+/**
+ * Trata o Backspace quando o cursor está posicionado imediatamente após uma barra ("09/|" ou "09/12/|")
+ */
+export function handleDateKeydown(input: HTMLInputElement, e: KeyboardEvent): void {
+  if (e.key === 'Backspace' && input.selectionStart === input.selectionEnd) {
+    const pos = input.selectionStart || 0;
+    if (pos === 3 || pos === 6) {
+      e.preventDefault();
+      const val = input.value;
+      const newVal = val.slice(0, pos - 2) + val.slice(pos);
+      input.value = applyDateMask(newVal, true);
+      const newPos = Math.max(0, pos - 2);
+      input.setSelectionRange(newPos, newPos);
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+  }
+}
+
+let globalDateMaskActive = false;
+
+/**
+ * Inicializador Global de Máscara de Data Reativa do PaxFlow
+ * Garante que 100% dos campos de data do sistema (atuais e dinâmicos) aceitem digitação direta instantânea.
+ */
+export function initGlobalDateMask(): void {
+  if (globalDateMaskActive) return;
+  globalDateMaskActive = true;
+
+  // Garante que todo campo de data receba teclado numérico e limite de caracteres ao ser focado
+  document.addEventListener('focusin', (e: Event) => {
+    const target = e.target as HTMLElement;
+    if (isDateField(target)) {
+      if (!target.hasAttribute('inputmode')) target.setAttribute('inputmode', 'numeric');
+      if (!target.hasAttribute('maxlength')) target.setAttribute('maxlength', '10');
+      if (!target.placeholder) target.placeholder = 'DD/MM/AAAA';
+    }
+  }, true);
+
+  // Intercepta digitação de qualquer input do DOM
+  document.addEventListener('input', (e: Event) => {
+    const target = e.target as HTMLElement;
+    if (isDateField(target)) {
+      handleDateInput(target, e as InputEvent);
+    }
+  }, true);
+
+  // Intercepta Backspace logo após a barra
+  document.addEventListener('keydown', (e: KeyboardEvent) => {
+    const target = e.target as HTMLElement;
+    if (isDateField(target)) {
+      handleDateKeydown(target, e);
+    }
+  }, true);
+
+  // Intercepta colagem de valores (Ctrl+V ou no celular)
+  document.addEventListener('paste', (e: ClipboardEvent) => {
+    const target = e.target as HTMLElement;
+    if (isDateField(target)) {
+      setTimeout(() => {
+        handleDateInput(target);
+        target.dispatchEvent(new Event('change', { bubbles: true }));
+      }, 0);
+    }
+  }, true);
+}
+

@@ -16,6 +16,7 @@ import {
   setupFormValidation,
   formatCurrencyValue,
   formatBrDateToIso,
+  formatIsoDateToBr,
   parseDoubleBr,
   formatDateBr,
   validateDate
@@ -1748,27 +1749,27 @@ export class Dashboard {
             <div class="space-y-2">
               <span class="text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider block">📅 Data Financeiro</span>
               <div class="flex items-center gap-2">
-                <input id="filter-fin-start" type="date" value="${this.dataFinStart}" class="w-full text-xs font-semibold px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                <input id="filter-fin-start" type="text" data-mask="date" inputmode="numeric" maxlength="10" placeholder="DD/MM/AAAA" value="${this.dataFinStart ? formatIsoDateToBr(this.dataFinStart) : ''}" class="date-input w-full text-xs font-semibold px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500" />
                 <span class="text-xs text-slate-400">a</span>
-                <input id="filter-fin-end" type="date" value="${this.dataFinEnd}" class="w-full text-xs font-semibold px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                <input id="filter-fin-end" type="text" data-mask="date" inputmode="numeric" maxlength="10" placeholder="DD/MM/AAAA" value="${this.dataFinEnd ? formatIsoDateToBr(this.dataFinEnd) : ''}" class="date-input w-full text-xs font-semibold px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500" />
               </div>
             </div>
             <!-- Embarque Ida -->
             <div class="space-y-2">
               <span class="text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider block">✈️ Data de Embarque (Ida)</span>
               <div class="flex items-center gap-2">
-                <input id="filter-ida-start" type="date" value="${this.dataIdaStart}" class="w-full text-xs font-semibold px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                <input id="filter-ida-start" type="text" data-mask="date" inputmode="numeric" maxlength="10" placeholder="DD/MM/AAAA" value="${this.dataIdaStart ? formatIsoDateToBr(this.dataIdaStart) : ''}" class="date-input w-full text-xs font-semibold px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500" />
                 <span class="text-xs text-slate-400">a</span>
-                <input id="filter-ida-end" type="date" value="${this.dataIdaEnd}" class="w-full text-xs font-semibold px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                <input id="filter-ida-end" type="text" data-mask="date" inputmode="numeric" maxlength="10" placeholder="DD/MM/AAAA" value="${this.dataIdaEnd ? formatIsoDateToBr(this.dataIdaEnd) : ''}" class="date-input w-full text-xs font-semibold px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500" />
               </div>
             </div>
             <!-- Embarque Volta -->
             <div class="space-y-2">
               <span class="text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider block">🚐 Data de Retorno (Volta)</span>
               <div class="flex items-center gap-2">
-                <input id="filter-volta-start" type="date" value="${this.dataVoltaStart}" class="w-full text-xs font-semibold px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                <input id="filter-volta-start" type="text" data-mask="date" inputmode="numeric" maxlength="10" placeholder="DD/MM/AAAA" value="${this.dataVoltaStart ? formatIsoDateToBr(this.dataVoltaStart) : ''}" class="date-input w-full text-xs font-semibold px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500" />
                 <span class="text-xs text-slate-400">a</span>
-                <input id="filter-volta-end" type="date" value="${this.dataVoltaEnd}" class="w-full text-xs font-semibold px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                <input id="filter-volta-end" type="text" data-mask="date" inputmode="numeric" maxlength="10" placeholder="DD/MM/AAAA" value="${this.dataVoltaEnd ? formatIsoDateToBr(this.dataVoltaEnd) : ''}" class="date-input w-full text-xs font-semibold px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500" />
               </div>
             </div>
           </div>
@@ -2361,7 +2362,8 @@ Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : '
     const bindDateFilter = (elementId: string, propertyName: string) => {
       const el = document.getElementById(elementId) as HTMLInputElement;
       el?.addEventListener('change', () => {
-        (this as any)[propertyName] = el.value;
+        const raw = el.value.trim();
+        (this as any)[propertyName] = raw ? (formatBrDateToIso(raw) || raw) : '';
         this.render();
       });
     };

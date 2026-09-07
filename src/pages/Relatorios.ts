@@ -1,7 +1,7 @@
 import { supabase, getSessaoAtual } from '../services/supabase';
 import { PerfilConsultor } from '../types';
 import { InboxService } from '../services/inboxService';
-import { formatBrDateToIso } from '../utils/masks';
+import { formatBrDateToIso, formatIsoDateToBr } from '../utils/masks';
 import { obterProgressoNivel, BADGE_DEFINITIONS } from '../services/gamification';
 import { EditTravelModal } from '../components/dashboard/EditTravelModal';
 import { CommentsService } from '../services/comments';
@@ -408,14 +408,14 @@ export class RelatoriosPage {
             <!-- Date range start -->
             <div class="space-y-1 flex-1">
               <label class="block text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest">Data Início</label>
-              <input id="filter-data-inicio" type="date" value="${this.dataInicio}" class="w-full text-xs font-bold px-3 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition duration-155" />
+              <input id="filter-data-inicio" type="text" data-mask="date" inputmode="numeric" maxlength="10" placeholder="DD/MM/AAAA" value="${this.dataInicio ? (this.dataInicio.includes('-') ? formatIsoDateToBr(this.dataInicio) : this.dataInicio) : ''}" class="date-input w-full text-xs font-bold px-3 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition duration-155" />
               <p id="filter-data-inicio-error" class="hidden text-xs text-rose-500 font-bold mt-1.5"></p>
             </div>
 
             <!-- Date range end -->
             <div class="space-y-1 flex-1">
               <label class="block text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest">Data Fim</label>
-              <input id="filter-data-fim" type="date" value="${this.dataFim}" class="w-full text-xs font-bold px-3 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition duration-155" />
+              <input id="filter-data-fim" type="text" data-mask="date" inputmode="numeric" maxlength="10" placeholder="DD/MM/AAAA" value="${this.dataFim ? (this.dataFim.includes('-') ? formatIsoDateToBr(this.dataFim) : this.dataFim) : ''}" class="date-input w-full text-xs font-bold px-3 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition duration-155" />
               <p id="filter-data-fim-error" class="hidden text-xs text-rose-500 font-bold mt-1.5"></p>
             </div>
 
@@ -2244,8 +2244,8 @@ export class RelatoriosPage {
       
       if (hasError) return;
       
-      this.dataInicio = valInicio;
-      this.dataFim = valFim;
+      this.dataInicio = formatBrDateToIso(valInicio) || valInicio;
+      this.dataFim = formatBrDateToIso(valFim) || valFim;
       if (selectConsultorVal) this.consultorIdFilter = selectConsultorVal;
       
       this.render();

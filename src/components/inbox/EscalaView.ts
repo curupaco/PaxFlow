@@ -3,6 +3,7 @@ import { PerfilConsultor, BancoFolgasItem, EventoEscalaItem, FeriadoPlantaoInfo,
 import { EscalaService, TURNO_PRESETS, isSameConsultantName } from '../../services/escalaService';
 import { showCustomConfirm, showCustomAlert } from '../../services/dialog';
 import { formatarDataBR } from '../../utils/messageFormatter';
+import { formatBrDateToIso, formatIsoDateToBr } from '../../utils/masks';
 
 export interface EscalaViewOptions {
   container?: HTMLElement;
@@ -979,7 +980,7 @@ export class EscalaView {
 
             <div>
               <label id="label-data-origem" class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Data de Início / Turno</label>
-              <input id="solicitar-data-origem" type="date" value="${dateStr}" class="w-full text-xs font-semibold p-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              <input id="solicitar-data-origem" type="text" data-mask="date" inputmode="numeric" maxlength="10" placeholder="DD/MM/AAAA" value="${dateStr ? (dateStr.includes('-') ? formatIsoDateToBr(dateStr) : dateStr) : ''}" class="date-input w-full text-xs font-semibold p-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
             </div>
 
             <div id="block-colega">
@@ -997,7 +998,7 @@ export class EscalaView {
 
             <div id="block-data-destino">
               <label id="label-data-destino" class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Data de Fim / Término</label>
-              <input id="solicitar-data-destino" type="date" value="${dateStr}" class="w-full text-xs font-semibold p-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              <input id="solicitar-data-destino" type="text" data-mask="date" inputmode="numeric" maxlength="10" placeholder="DD/MM/AAAA" value="${dateStr ? (dateStr.includes('-') ? formatIsoDateToBr(dateStr) : dateStr) : ''}" class="date-input w-full text-xs font-semibold p-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
             </div>
 
             <div>
@@ -1057,8 +1058,10 @@ export class EscalaView {
 
     submitBtn.onclick = async () => {
       const tipo = tipoSelect.value as 'troca' | 'folga' | 'ferias';
-      const dataOrigem = (document.getElementById('solicitar-data-origem') as HTMLInputElement).value;
-      const dataDestino = (document.getElementById('solicitar-data-destino') as HTMLInputElement)?.value;
+      const dataOrigemRaw = (document.getElementById('solicitar-data-origem') as HTMLInputElement).value.trim();
+      const dataDestinoRaw = (document.getElementById('solicitar-data-destino') as HTMLInputElement)?.value.trim() || '';
+      const dataOrigem = formatBrDateToIso(dataOrigemRaw) || dataOrigemRaw;
+      const dataDestino = dataDestinoRaw ? (formatBrDateToIso(dataDestinoRaw) || dataDestinoRaw) : undefined;
       const motivo = (document.getElementById('solicitar-motivo') as HTMLTextAreaElement).value.trim();
 
       const destSelect = document.getElementById('solicitar-destinatario') as HTMLSelectElement;
@@ -1124,7 +1127,7 @@ export class EscalaView {
           <div class="space-y-3.5">
             <div>
               <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Data do Evento *</label>
-              <input id="evento-data" type="date" value="${new Date().toISOString().split('T')[0]}" class="w-full text-xs font-semibold p-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer" />
+              <input id="evento-data" type="text" data-mask="date" inputmode="numeric" maxlength="10" placeholder="DD/MM/AAAA" value="${formatIsoDateToBr(new Date().toISOString().split('T')[0])}" class="date-input w-full text-xs font-semibold p-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
             </div>
 
             <div>
@@ -1175,7 +1178,12 @@ export class EscalaView {
       }
 
       let data = rawData;
-      if (rawData && rawData.includes('-')) {
+      if (rawData && rawData.includes('/')) {
+        const parts = rawData.split('/');
+        if (parts.length >= 2) {
+          data = `${parts[0]}/${parts[1]}`;
+        }
+      } else if (rawData && rawData.includes('-')) {
         const parts = rawData.split('-');
         if (parts.length === 3) {
           data = `${parts[2]}/${parts[1]}`;

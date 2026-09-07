@@ -5,7 +5,7 @@ import { MetasService } from '../services/metasService';
 import { BADGE_DEFINITIONS } from '../services/gamification';
 import { parseBrFloat } from '../services/csvImporter';
 import { renderHelpIcon } from '../utils/helpHelper';
-import { attachCurrencyMask } from '../utils/masks';
+import { attachCurrencyMask, formatBrDateToIso, formatIsoDateToBr } from '../utils/masks';
 
 export class CadastrosPage {
   private container: HTMLElement;
@@ -1995,12 +1995,12 @@ export class CadastrosPage {
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Data de Início *</label>
-              <input id="input-cam-inicio" type="date" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+              <input id="input-cam-inicio" type="text" data-mask="date" inputmode="numeric" maxlength="10" placeholder="DD/MM/AAAA" required class="date-input w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
             </div>
 
             <div>
               <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Data de Fim *</label>
-              <input id="input-cam-fim" type="date" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+              <input id="input-cam-fim" type="text" data-mask="date" inputmode="numeric" maxlength="10" placeholder="DD/MM/AAAA" required class="date-input w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
             </div>
           </div>
 
@@ -2084,8 +2084,8 @@ export class CadastrosPage {
           .insert({
             titulo,
             descricao,
-            data_inicio,
-            data_fim,
+            data_inicio: formatBrDateToIso(data_inicio) || data_inicio,
+            data_fim: formatBrDateToIso(data_fim) || data_fim,
             tipo_meta,
             meta_quantidade,
             badge_key,
@@ -2172,12 +2172,12 @@ export class CadastrosPage {
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Data de Início *</label>
-              <input id="input-edit-cam-inicio" type="date" required value="${cam.data_inicio || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+              <input id="input-edit-cam-inicio" type="text" data-mask="date" inputmode="numeric" maxlength="10" placeholder="DD/MM/AAAA" required value="${cam.data_inicio ? formatIsoDateToBr(cam.data_inicio) : ''}" class="date-input w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
             </div>
 
             <div>
               <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Data de Fim *</label>
-              <input id="input-edit-cam-fim" type="date" required value="${cam.data_fim || ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+              <input id="input-edit-cam-fim" type="text" data-mask="date" inputmode="numeric" maxlength="10" placeholder="DD/MM/AAAA" required value="${cam.data_fim ? formatIsoDateToBr(cam.data_fim) : ''}" class="date-input w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
             </div>
           </div>
 
@@ -2260,8 +2260,8 @@ export class CadastrosPage {
           .update({
             titulo,
             descricao,
-            data_inicio,
-            data_fim,
+            data_inicio: formatBrDateToIso(data_inicio) || data_inicio,
+            data_fim: formatBrDateToIso(data_fim) || data_fim,
             tipo_meta,
             meta_quantidade,
             badge_key
@@ -2336,12 +2336,12 @@ export class CadastrosPage {
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Data de Início *</label>
-              <input id="input-meta-inicio" type="date" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+              <input id="input-meta-inicio" type="text" data-mask="date" inputmode="numeric" maxlength="10" placeholder="DD/MM/AAAA" required class="date-input w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
             </div>
 
             <div>
               <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Data de Fim *</label>
-              <input id="input-meta-fim" type="date" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+              <input id="input-meta-fim" type="text" data-mask="date" inputmode="numeric" maxlength="10" placeholder="DD/MM/AAAA" required class="date-input w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
             </div>
           </div>
 
@@ -2483,8 +2483,10 @@ export class CadastrosPage {
 
       const submitBtn = document.getElementById('btn-meta-submit') as HTMLButtonElement;
       const nome = (document.getElementById('input-meta-nome') as HTMLInputElement).value;
-      const dataInicio = (document.getElementById('input-meta-inicio') as HTMLInputElement).value;
-      const dataFim = (document.getElementById('input-meta-fim') as HTMLInputElement).value;
+      const dataInicioRaw = (document.getElementById('input-meta-inicio') as HTMLInputElement).value.trim();
+      const dataFimRaw = (document.getElementById('input-meta-fim') as HTMLInputElement).value.trim();
+      const dataInicio = formatBrDateToIso(dataInicioRaw) || dataInicioRaw;
+      const dataFim = formatBrDateToIso(dataFimRaw) || dataFimRaw;
       const tipoCalculo = (document.getElementById('select-meta-calculo') as HTMLSelectElement).value as 'bruto' | 'lucro';
       const isCampanha = (document.getElementById('input-meta-campanha') as HTMLInputElement).checked;
       const isMetaLoja = (document.getElementById('input-meta-loja') as HTMLInputElement).checked;
@@ -2620,12 +2622,12 @@ export class CadastrosPage {
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Data de Início *</label>
-              <input id="input-meta-inicio" type="date" required value="${meta.data_inicio}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+              <input id="input-meta-inicio" type="text" data-mask="date" inputmode="numeric" maxlength="10" placeholder="DD/MM/AAAA" required value="${meta.data_inicio ? formatIsoDateToBr(meta.data_inicio) : ''}" class="date-input w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
             </div>
 
             <div>
               <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Data de Fim *</label>
-              <input id="input-meta-fim" type="date" required value="${meta.data_fim}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
+              <input id="input-meta-fim" type="text" data-mask="date" inputmode="numeric" maxlength="10" placeholder="DD/MM/AAAA" required value="${meta.data_fim ? formatIsoDateToBr(meta.data_fim) : ''}" class="date-input w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
             </div>
           </div>
 
@@ -2751,8 +2753,10 @@ export class CadastrosPage {
 
       const submitBtn = document.getElementById('btn-meta-submit') as HTMLButtonElement;
       const nome = (document.getElementById('input-meta-nome') as HTMLInputElement).value;
-      const dataInicio = (document.getElementById('input-meta-inicio') as HTMLInputElement).value;
-      const dataFim = (document.getElementById('input-meta-fim') as HTMLInputElement).value;
+      const dataInicioRaw = (document.getElementById('input-meta-inicio') as HTMLInputElement).value.trim();
+      const dataFimRaw = (document.getElementById('input-meta-fim') as HTMLInputElement).value.trim();
+      const dataInicio = formatBrDateToIso(dataInicioRaw) || dataInicioRaw;
+      const dataFim = formatBrDateToIso(dataFimRaw) || dataFimRaw;
       const tipoCalculo = (document.getElementById('select-meta-calculo') as HTMLSelectElement).value as 'bruto' | 'lucro';
       const isCampanha = (document.getElementById('input-meta-campanha') as HTMLInputElement).checked;
       const isMetaLoja = (document.getElementById('input-meta-loja') as HTMLInputElement).checked;
