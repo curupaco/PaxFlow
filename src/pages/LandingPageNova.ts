@@ -404,7 +404,7 @@ export class LandingPageNova {
           <div data-reveal="up" class="w-full max-w-4xl mx-auto mb-12 sm:mb-16 p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl bg-slate-900/90 border border-cyan-500/40 backdrop-blur-xl shadow-2xl pf-glow text-left relative overflow-hidden">
             <div class="absolute -right-20 -top-20 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
             
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 border-b border-white/10 pb-4 sm:pb-5 mb-5 sm:mb-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 border-b border-white/10 pb-4 sm:pb-5 mb-4 sm:mb-5">
               <div class="flex items-center gap-3">
                 <span class="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-emerald-400 animate-ping shrink-0"></span>
                 <div>
@@ -412,13 +412,38 @@ export class LandingPageNova {
                   <h3 class="text-sm sm:text-base md:text-lg font-black text-white">Painel de Decisões &amp; Ação Imediata</h3>
                 </div>
               </div>
-              <div class="flex items-center gap-2 sm:gap-3 self-start sm:self-auto">
-                <span class="text-[11px] sm:text-xs text-slate-300 font-medium">Saúde da Operação:</span>
-                <span class="px-2.5 sm:px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 font-black text-xs border border-emerald-500/40 flex items-center gap-1.5 shadow-sm">
-                  <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-                  87 / 100
-                </span>
+              <div class="flex flex-col sm:items-end gap-1 self-start sm:self-auto">
+                <div class="flex items-center gap-2">
+                  <span class="text-[11px] sm:text-xs text-slate-300 font-medium">PaxFlow Risk Score™:</span>
+                  <span class="px-2.5 sm:px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 font-black text-xs border border-emerald-500/40 flex items-center gap-1.5 shadow-sm">
+                    <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                    87 / 100
+                  </span>
+                </div>
+                <span class="text-[10px] text-emerald-400 font-bold">Saúde da Carteira: 42 seguras • 3 em atenção</span>
               </div>
+            </div>
+
+            <!-- Explicação Didática: O que é e o que faz o Risk Score -->
+            <div class="p-3 sm:p-3.5 mb-4 rounded-xl bg-white/[0.03] border border-white/10 text-xs text-slate-300 leading-relaxed flex items-start gap-2.5">
+              <span class="text-base select-none shrink-0">🛡️</span>
+              <p>
+                <strong class="text-white">O que é o Risk Score (0 a 100)?</strong> É o motor de auditoria contínua do PaxFlow: ele checa todas as viagens da sua agência em busca de falhas invisíveis (passaportes a vencer, vistos pendentes, vouchers não emitidos e pagamentos em aberto). Quanto mais próximo de <strong class="text-emerald-400">100</strong>, mais blindada está sua operação contra prejuízos e passageiros barrados.
+              </p>
+            </div>
+
+            <!-- Faixa de Alertas 100% Configuráveis -->
+            <div class="p-2.5 sm:p-3 mb-4 rounded-xl bg-gradient-to-r from-cyan-950/40 via-slate-900/60 to-indigo-950/40 border border-cyan-500/30 text-xs flex items-center justify-between flex-wrap gap-2">
+              <div class="flex items-center gap-2">
+                <span class="px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-black text-[9px] uppercase tracking-wider border border-cyan-500/40 flex items-center gap-1">
+                  <svg class="w-3 h-3 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
+                  Gatilhos 100% Configuráveis
+                </span>
+                <span class="text-slate-300 text-[11px] font-medium">Sua agência define as regras e prazos de antecedência para disparo de alertas <strong>apenas quando for realmente importante</strong>.</span>
+              </div>
+              <span class="text-[10px] text-cyan-300 font-bold hidden md:inline-flex items-center gap-1">
+                Disparos via WhatsApp, Push PWA &amp; Painel
+              </span>
             </div>
 
             <!-- Alertas Críticos do Dia -->
@@ -427,10 +452,10 @@ export class LandingPageNova {
               <div class="p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-rose-950/30 border border-rose-500/30 space-y-2 hover:border-rose-400 transition">
                 <div class="flex items-center justify-between">
                   <span class="px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 text-[9px] font-black uppercase tracking-wider">Passaporte &lt; 6m</span>
-                  <span class="text-[10px] text-rose-300 font-bold">Embarque 12d</span>
+                  <span class="text-[10px] text-rose-300 font-bold">Gatilho: Embarque 12d</span>
                 </div>
                 <h4 class="text-xs font-black text-white">Mariana Costa (Paris)</h4>
-                <p class="text-[11px] text-slate-300 leading-snug">Validade expira em 4 meses. Risco de recusa no check-in internacional.</p>
+                <p class="text-[11px] text-slate-300 leading-snug">Validade expira em 4 meses. Disparo configurado para evitar recusa no embarque internacional.</p>
                 <button class="w-full py-1.5 mt-1 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-[10px] font-extrabold uppercase transition shadow">Notificar no WhatsApp</button>
               </div>
 
@@ -438,10 +463,10 @@ export class LandingPageNova {
               <div class="p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-amber-950/30 border border-amber-500/30 space-y-2 hover:border-amber-400 transition">
                 <div class="flex items-center justify-between">
                   <span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[9px] font-black uppercase tracking-wider">Voucher Geral</span>
-                  <span class="text-[10px] text-amber-300 font-bold">Check-in 48h</span>
+                  <span class="text-[10px] text-amber-300 font-bold">Gatilho: Check-in 48h</span>
                 </div>
                 <h4 class="text-xs font-black text-white">Hotel Fasano (Família Lima)</h4>
-                <p class="text-[11px] text-slate-300 leading-snug">Voucher de hospedagem ainda não emitido pela operadora parceira.</p>
+                <p class="text-[11px] text-slate-300 leading-snug">Voucher não emitido. Disparo acionado 48h antes para cobrar a operadora parceira a tempo.</p>
                 <button class="w-full py-1.5 mt-1 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 text-[10px] font-black uppercase transition shadow">Cobrar Operadora</button>
               </div>
 
@@ -451,11 +476,11 @@ export class LandingPageNova {
                   <span class="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 text-[9px] font-black uppercase tracking-wider">Next Trip Radar</span>
                   <span class="text-[10px] text-indigo-300 font-bold flex items-center gap-1">
                     <svg class="w-2.5 h-2.5 text-amber-400 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-                    NPS 10
+                    Gatilho: 11 meses
                   </span>
                 </div>
-                <h4 class="text-xs font-black text-white">Dra. Camila (11m da viagem)</h4>
-                <p class="text-[11px] text-slate-300 leading-snug">Cliente fiel no período habitual de férias. Oportunidade de nova venda.</p>
+                <h4 class="text-xs font-black text-white">Dra. Camila (Recompra VIP)</h4>
+                <p class="text-[11px] text-slate-300 leading-snug">Cliente fiel no período habitual de férias. Disparo preditivo de oportunidade de venda na hora certa.</p>
                 <button class="w-full py-1.5 mt-1 rounded-xl bg-indigo-500 hover:bg-indigo-600 text-white text-[10px] font-extrabold uppercase transition shadow">Disparar Oferta VIP</button>
               </div>
             </div>
@@ -482,11 +507,12 @@ export class LandingPageNova {
               <span class="text-[9px] sm:text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block mt-0.5">Vistos &amp; Passaporte</span>
             </div>
             <div class="text-center p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-gradient-to-b from-emerald-600/20 to-transparent flex flex-col items-center justify-center">
-              <span class="block text-2xl sm:text-3xl font-black text-emerald-400">87/100</span>
+              <span class="block text-2xl sm:text-3xl font-black text-emerald-400">0 a 100</span>
               <span class="text-[9px] sm:text-[10px] font-extrabold text-slate-400 uppercase tracking-wider mt-0.5 flex items-center justify-center gap-1">
                 <svg class="w-3 h-3 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
                 Risk Score™
               </span>
+              <span class="text-[8px] text-emerald-300/80 font-semibold block mt-0.5">Índice de Saúde Operacional</span>
             </div>
             <div class="text-center p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-gradient-to-b from-fuchsia-600/20 to-transparent">
               <span class="block text-2xl sm:text-3xl font-black text-fuchsia-400">App PWA</span>
@@ -660,15 +686,23 @@ export class LandingPageNova {
                 </span>
                 <div>
                   <h3 class="text-base sm:text-xl font-black text-white mb-2">Auditoria &amp; Blindagem de Viagens</h3>
-                  <p class="text-xs text-slate-300 leading-relaxed font-medium mb-4 sm:mb-6">
-                    O <strong>PaxFlow Risk Score™</strong> audita passaportes, vistos e vouchers antes que a falha chegue ao aeroporto.
+                  <p class="text-xs text-slate-300 leading-relaxed font-medium mb-3">
+                    O <strong>PaxFlow Risk Score™</strong> calcula uma nota de <strong>0 a 100</strong> para cada viagem ativa, auditando automaticamente passaportes, vistos e vouchers antes que a falha chegue ao passageiro no aeroporto.
                   </p>
+
+                  <div class="p-2.5 sm:p-3 rounded-xl bg-cyan-950/40 border border-cyan-500/30 text-[11px] text-cyan-200 font-medium mb-4 flex items-start gap-2">
+                    <svg class="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    <span><strong>Disparos 100% Configuráveis:</strong> Sua agência define a antecedência dos avisos (ex: 180 dias para documentos, 48h para vouchers) e quem recebe os disparos via WhatsApp, Push ou Painel, agindo na hora certa.</span>
+                  </div>
 
                   <!-- Mockup Visual do Risk Score (87/100) -->
                   <div class="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-black/40 border border-white/10 space-y-2.5 sm:space-y-3 shadow-inner">
                     <div class="flex items-center justify-between border-b border-white/10 pb-2">
-                      <span class="text-[10px] sm:text-[11px] font-bold text-slate-300">Saúde da Carteira</span>
-                      <span class="px-2 sm:px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] sm:text-[11px] font-extrabold border border-emerald-500/40">87 / 100</span>
+                      <div>
+                        <span class="text-[10px] sm:text-[11px] font-bold text-slate-300 block">Diagnóstico de Saúde Operacional</span>
+                        <span class="text-[9px] text-slate-400">Auditoria contínua de 0 a 100</span>
+                      </div>
+                      <span class="px-2 sm:px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] sm:text-[11px] font-extrabold border border-emerald-500/40">87 / 100 (Segura)</span>
                     </div>
                     <div class="grid grid-cols-3 gap-1.5 sm:gap-2 text-center text-[9px] sm:text-[10px] font-bold">
                       <div class="p-1 sm:p-1.5 rounded-lg sm:rounded-xl bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 flex items-center justify-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0"></span>42 Seguras</div>
@@ -1328,7 +1362,7 @@ export class LandingPageNova {
                 </span>
               </h2>
               <p class="text-sm text-slate-300 font-medium max-w-2xl mx-auto leading-relaxed">
-                Nunca mais seja surpreendido com clientes no aeroporto sem vouchers ou com passaportes vencidos. O algoritmo analisa continuamente de 0 a 100 o risco de cada viagem da sua agência e alerta a liderança antes que o problema aconteça.
+                Nunca mais seja surpreendido com clientes no aeroporto sem vouchers ou com passaportes vencidos. O motor de auditoria analisa continuamente de 0 a 100 o risco de cada viagem da sua carteira e dispara alertas 100% configuráveis para você e sua equipe agirem exatamente quando for importante.
               </p>
             </div>
 
@@ -1347,9 +1381,9 @@ export class LandingPageNova {
                 <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-teal-600/20 to-cyan-600/20 text-teal-300 border border-teal-500/30 flex items-center justify-center shadow-inner">
                   <svg class="w-6 h-6 text-teal-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
                 </div>
-                <h3 class="text-xl font-extrabold text-white">Diagnóstico em Semáforo Visual</h3>
+                <h3 class="text-xl font-extrabold text-white">Semáforo &amp; Disparos Configuráveis</h3>
                 <p class="text-xs text-slate-300 leading-relaxed font-medium">
-                  Classificação instantânea no Kanban: Verde (Normal), Amarelo (Atenção) e Vermelho (Risco Crítico) com janela de carência configurável pela agência.
+                  Classificação instantânea: Verde (Normal), Amarelo (Atenção) e Vermelho (Risco Crítico). Sua agência personaliza os gatilhos de disparo (WhatsApp, Push ou Painel) com antecedência sob medida.
                 </p>
               </div>
 
