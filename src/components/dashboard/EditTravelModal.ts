@@ -1629,11 +1629,17 @@ export class EditTravelModal {
       };
 
       try {
-        const { error } = await supabase
+        const { data: novoProduto, error } = await supabase
           .from('produtos_viagem')
-          .insert(payload);
+          .insert(payload)
+          .select()
+          .single();
 
         if (error) throw error;
+
+        if (novoProduto && novoProduto.id) {
+          this.selectedProductId = novoProduto.id;
+        }
 
         this.options.showToast('Produto adicionado à viagem com sucesso!', 'success');
         formNovoProduto.reset();
@@ -1643,6 +1649,13 @@ export class EditTravelModal {
 
         await this.options.onUpdate();
         await this.open(v.id, 'produtos');
+
+        setTimeout(() => {
+          const editorPane = document.getElementById('selected-product-editor-pane');
+          if (editorPane) {
+            editorPane.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }, 150);
       } catch (err: any) {
         console.error('Erro ao adicionar produto:', err);
         this.options.showToast('Erro ao adicionar produto.', 'error', err);

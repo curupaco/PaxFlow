@@ -455,7 +455,14 @@ export const supabase = new Proxy(realSupabase, {
                   }
                 }
 
-                return Promise.resolve({ data: newItems, error: null });
+                const insertPromise: any = Promise.resolve({ data: newItems, error: null });
+                insertPromise.select = () => {
+                  const selectPromise: any = Promise.resolve({ data: newItems, error: null });
+                  selectPromise.single = () => Promise.resolve({ data: newItems[0] || null, error: null });
+                  selectPromise.maybeSingle = () => Promise.resolve({ data: newItems[0] || null, error: null });
+                  return selectPromise;
+                };
+                return insertPromise;
               },
               upsert: (payload: any, options?: any) => {
                 const arrayPayload = Array.isArray(payload) ? payload : [payload];
