@@ -20,7 +20,6 @@ import { showBadgeCelebrationModal, showLevelUpModal } from './utils/celebration
 import { traduzirErro } from './utils/errorTranslator';
 import { Router } from './router';
 import { LandingPage } from './pages/LandingPage';
-import { LandingPageNova } from './pages/LandingPageNova';
 import { GlobalHeaderSearch } from './components/GlobalHeaderSearch';
 import { RealtimeMessagingService } from './services/realtimeMessaging';
 import { VersionChecker } from './services/versionChecker';
@@ -304,9 +303,10 @@ class App {
   }
 
   /**
-   * Renderiza a Nova Landing Page comercial (/conheca_nova)
+   * Renderiza a Nova Landing Page comercial (/conheca_nova) com carregamento sob demanda
    */
-  private renderLandingPageNova(): void {
+  private async renderLandingPageNova(): Promise<void> {
+    const { LandingPageNova } = await import('./pages/LandingPageNova');
     const page = new LandingPageNova(this.container);
     page.init();
 

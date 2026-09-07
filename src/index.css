@@ -432,12 +432,13 @@ html.dark .landing-page-wrapper .grid-bg {
   -webkit-mask-image: radial-gradient(ellipse 80% 70% at 50% 0%, #000 55%, transparent 100%);
 }
 
-/* Prevenção de salto de rolagem ("dança") no mobile durante rotações de abas */
+/* Prevenção de travamento no scroll mobile */
 .landing-v2 {
-  overflow-anchor: none;
   overflow-x: hidden !important;
   max-width: 100vw;
   width: 100%;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
 }
 .landing-v2 #mockup-panels-container,
 .landing-v2 #brand-panels-container {
@@ -587,15 +588,13 @@ html.dark .landing-page-wrapper .grid-bg {
 
 /* ================= LANDING V2 SCROLL REVEAL & PARALLAX ================= */
 
-/* Reveal on scroll (ultra-rápido, suave e responsivo) */
+/* Reveal on scroll (desktop suave) */
 .landing-v2 [data-reveal] {
   opacity: 0.6;
   transform: translateY(10px);
   transition:
     opacity 0.22s ease-out,
     transform 0.22s ease-out;
-  will-change: opacity, transform;
-  backface-visibility: hidden;
 }
 .landing-v2 [data-reveal].pf-revealed {
   opacity: 1;
@@ -610,7 +609,7 @@ html.dark .landing-page-wrapper .grid-bg {
   transform: translateX(0) scale(1);
 }
 
-/* Slide-in para itens PEQUENOS (badges, chips, ícones) com stagger */
+/* Slide-in para itens PEQUENOS (badges, chips, ícones) */
 .landing-v2 .pf-slide-up,
 .landing-v2 .pf-slide-left,
 .landing-v2 .pf-slide-right {
@@ -618,8 +617,6 @@ html.dark .landing-page-wrapper .grid-bg {
   transition:
     opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1),
     transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-  will-change: opacity, transform;
-  backface-visibility: hidden;
 }
 .landing-v2 .pf-slide-up { transform: translateY(12px); }
 .landing-v2 .pf-slide-left { transform: translateX(-12px); }
@@ -634,8 +631,6 @@ html.dark .landing-page-wrapper .grid-bg {
 /* Parallax GPU acelerado */
 .landing-v2 [data-parallax] {
   transition: transform 0.15s ease-out;
-  will-change: transform;
-  backface-visibility: hidden;
 }
 
 /* Transição suave de zonas do site */
@@ -645,15 +640,51 @@ html.dark .landing-page-wrapper .grid-bg {
   transition:
     opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1),
     transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
-  will-change: opacity, transform;
-  backface-visibility: hidden;
 }
 .landing-v2 .pf-zone.pf-revealed {
   opacity: 1;
   transform: translateY(0);
 }
 
+/* Neutralização da regra global de transição em asterisco (*) para a landing page */
+.landing-v2,
+.landing-v2 * {
+  transition-property: none;
+}
+.landing-v2 a,
+.landing-v2 button,
+.landing-v2 summary,
+.landing-v2 input[type="range"] {
+  transition-property: color, background-color, border-color, opacity, transform;
+  transition-duration: 150ms;
+}
+
+/* OTIMIZAÇÃO TOTAL NO MOBILE: Rolar nativo liso como uma página comum */
 @media (max-width: 768px), (prefers-reduced-motion: reduce) {
+  /* Restaura o fluxo de rolagem 100% nativo do navegador no smartphone */
+  html, body {
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scroll-behavior: auto !important;
+    overscroll-behavior-y: auto !important;
+    height: auto !important;
+    min-height: 100% !important;
+  }
+
+  #app {
+    overflow: visible !important;
+    height: auto !important;
+    max-width: 100% !important;
+  }
+
+  .landing-v2 {
+    overflow: visible !important;
+    height: auto !important;
+    max-width: 100% !important;
+    position: static !important;
+  }
+
   .landing-v2 [data-reveal],
   .landing-v2 .pf-slide-up,
   .landing-v2 .pf-slide-left,
@@ -662,9 +693,51 @@ html.dark .landing-page-wrapper .grid-bg {
     opacity: 1 !important;
     transform: none !important;
     transition: none !important;
+    will-change: auto !important;
   }
+
   .landing-v2 [data-parallax] {
     transform: none !important;
+    transition: none !important;
+    will-change: auto !important;
+  }
+
+  /* Desativação de filtros de desfoque, sombras e transições que causam lag no celular */
+  .landing-v2 * {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    text-shadow: none !important;
+    transition: none !important;
+  }
+
+  /* Desativação total de animações contínuas de fundo no celular */
+  .landing-v2 .pf-marquee {
+    animation: none !important;
+    display: flex !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+  .landing-v2 .pf-marquee::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .landing-v2 .pf-spin,
+  .landing-v2 .pf-spin-rev,
+  .landing-v2 .pf-spin-slow,
+  .landing-v2 .pf-float,
+  .landing-v2 .pf-float-slow,
+  .landing-v2 .pf-float-delay,
+  .landing-v2 .pf-animated-gradient,
+  .landing-v2 .pf-animated-gradient-fast,
+  .landing-v2 .pf-pulse-ring::before,
+  .landing-v2 .pf-wave-line,
+  .landing-v2 .pf-tilt,
+  .landing-v2 .pf-glow,
+  .landing-v2 .pf-bounce,
+  .landing-v2 .pf-shine,
+  .landing-v2 .pf-shimmer-text {
+    animation: none !important;
+    box-shadow: none !important;
   }
 }
 

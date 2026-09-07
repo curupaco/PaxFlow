@@ -91,19 +91,18 @@ export class LandingPageNova {
 
     const counterElements = Array.from(scope.querySelectorAll<HTMLElement>('[data-count]'));
 
-    // No mobile, revela todos os elementos de imediato para eliminar qualquer atraso na rolagem com o dedo
+    // No mobile, revela todos os elementos de imediato para eliminar qualquer atraso na rolagem
     if (isMobile) {
       revealItems.forEach(item => item.classList.add('pf-revealed'));
       counterElements.forEach(counter => animateCounterEl(counter));
     } else {
-      // Observer exclusivo para acionar a contagem animada quando o contador entrar na tela
+      // Contadores com contagem animada ao entrar na tela (Desktop)
       if ('IntersectionObserver' in window) {
         const counterObserver = new IntersectionObserver((entries, obs) => {
           entries.forEach(entry => {
             if (entry.isIntersecting) {
-              const el = entry.target as HTMLElement;
-              animateCounterEl(el);
-              obs.unobserve(el);
+              animateCounterEl(entry.target as HTMLElement);
+              obs.unobserve(entry.target);
             }
           });
         }, {
@@ -116,7 +115,7 @@ export class LandingPageNova {
         counterElements.forEach(counter => animateCounterEl(counter));
       }
 
-      // Observer de alta performance para revelar elementos gerais da página
+      // Observer de alta performance para revelar elementos gerais da página no Desktop
       if ('IntersectionObserver' in window) {
         const observer = new IntersectionObserver((entries, obs) => {
           entries.forEach(entry => {
@@ -133,15 +132,13 @@ export class LandingPageNova {
         });
 
         revealItems.forEach(item => observer.observe(item));
-
-        // Revela antecipadamente os elementos do topo e primeiras seções
         revealItems.slice(0, 10).forEach(item => item.classList.add('pf-revealed'));
       } else {
         revealItems.forEach(item => item.classList.add('pf-revealed'));
       }
     }
 
-    // Scroll Progress Bar
+    // Scroll Progress Bar (Apenas no Desktop)
     const updateProgress = (sy: number): void => {
       const bar = scope.querySelector<HTMLElement>('#pf-scroll-progress');
       if (!bar) return;
@@ -165,7 +162,7 @@ export class LandingPageNova {
           const mid = vh / 2;
           for (const el of parallaxEls) {
             const rect = el.getBoundingClientRect();
-            if (rect.bottom < 0 || rect.top > vh) continue; // Pula elementos fora da tela
+            if (rect.bottom < 0 || rect.top > vh) continue;
             const amount = parseFloat(el.getAttribute('data-parallax') || '20');
             const center = rect.top + rect.height / 2;
             const travel = (center - mid) / vh;
@@ -178,10 +175,6 @@ export class LandingPageNova {
       window.addEventListener('scroll', onScroll, { passive: true });
       window.addEventListener('resize', onScroll, { passive: true });
       onScroll();
-    } else {
-      window.addEventListener('scroll', () => {
-        updateProgress(window.scrollY || 0);
-      }, { passive: true });
     }
 
     // Smooth Scroll para Links Internos (#)
@@ -203,9 +196,11 @@ export class LandingPageNova {
     if (!scope) return;
     const isReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    // Item 3: Toolbar sticky shrink
+    const isMobileDevice = window.innerWidth <= 768;
+
+    // Item 3: Toolbar sticky shrink (Apenas no Desktop para evitar reflows no celular)
     const topbar = scope.querySelector<HTMLElement>('#pf-topbar');
-    if (topbar) {
+    if (topbar && !isMobileDevice) {
       const onTbScroll = () => {
         topbar.classList.toggle('pf-topbar-scrolled', (window.scrollY || 0) > 24);
       };
@@ -213,9 +208,17 @@ export class LandingPageNova {
       onTbScroll();
     }
 
-    if (isReduced) return;
+    if (isReduced || isMobileDevice) {
+      // No mobile, preenche as barras diretamente sem escutas de scroll contínuas
+      const bars = scope.querySelectorAll<HTMLElement>('.pf-bar-fill');
+      bars.forEach(bar => {
+        bar.style.setProperty('--bar-w', (bar.getAttribute('data-bar') || '0') + '%');
+        bar.classList.add('pf-revealed');
+      });
+      return;
+    }
 
-    // Item 5: Cursor glow
+    // Item 5: Cursor glow (Apenas Desktop com mouse)
     const glow = scope.querySelector<HTMLElement>('#pf-cursor-glow');
     if (glow && window.matchMedia('(pointer: fine)').matches) {
       let rall = requestAnimationFrame(() => {});
@@ -244,7 +247,7 @@ export class LandingPageNova {
       });
     }
 
-    // Item 6: Tilt 3D nos cards .pf-tilt3d
+    // Item 6: Tilt 3D nos cards .pf-tilt3d (Apenas Desktop)
     const tiltCards = scope.querySelectorAll<HTMLElement>('.pf-tilt3d');
     tiltCards.forEach(card => {
       card.addEventListener('mousemove', (e) => {
@@ -260,7 +263,7 @@ export class LandingPageNova {
       });
     });
 
-    // Item 8: Barras de progresso (animam quando o painel dashboard está visível)
+    // Item 8: Barras de progresso (animam quando o painel dashboard está visível no Desktop)
     const bars = scope.querySelectorAll<HTMLElement>('.pf-bar-fill');
     const runBars = () => {
       const panel = scope.querySelector<HTMLElement>('#panel-dashboard');
@@ -281,8 +284,8 @@ export class LandingPageNova {
     this.container.innerHTML = `
       <div class="landing-v2 min-h-screen max-w-full w-full bg-[#06070f] text-white font-sans selection:bg-fuchsia-500 selection:text-white relative overflow-x-hidden flex flex-col">
 
-        <!-- ===== AMBIENT COLOR FIELD (muito movimento) ===== -->
-        <div class="pointer-events-none fixed inset-0 z-0 overflow-hidden max-w-full">
+        <!-- ===== AMBIENT COLOR FIELD (muito movimento no Desktop, limpo no Mobile) ===== -->
+        <div class="pointer-events-none fixed inset-0 z-0 overflow-hidden max-w-full hidden md:block">
           <div data-parallax="30" class="absolute top-[-15%] left-[-10%] w-[60vw] h-[60vw] rounded-full bg-gradient-to-br from-[#0052d4]/35 via-[#00a8f5]/20 to-transparent blur-3xl pf-float-slow"></div>
           <div data-parallax="-40" class="absolute top-[20%] right-[-15%] w-[55vw] h-[55vw] rounded-full bg-gradient-to-bl from-[#f12711]/30 via-[#f5af19]/20 to-transparent blur-3xl pf-float"></div>
           <div data-parallax="50" class="absolute bottom-[-10%] left-[15%] w-[50vw] h-[50vw] rounded-full bg-gradient-to-tr from-[#00e5a3]/25 via-teal-500/10 to-transparent blur-3xl pf-float-delay"></div>
@@ -290,13 +293,13 @@ export class LandingPageNova {
           <div class="absolute inset-0 opacity-[0.08] grid-bg"></div>
         </div>
 
-        <!-- ===== LOGO WATERMARK fixo gigante deslocado à direita (acompanha o scroll) ===== -->
-        <div class="pointer-events-none fixed inset-0 z-[1] flex items-center justify-end overflow-hidden max-w-full">
+        <!-- ===== LOGO WATERMARK fixo gigante deslocado à direita (Apenas Desktop) ===== -->
+        <div class="pointer-events-none fixed inset-0 z-[1] items-center justify-end overflow-hidden max-w-full hidden md:flex">
           <img data-parallax="95" src="/logo.svg" alt="" width="280" height="280" loading="eager" class="pf-logo-watermark max-w-[66vmin] max-h-[66vmin] w-[66vmin] h-[66vmin] object-contain opacity-[0.13] blur-[2px] mr-[-8vmin] saturate-150 drop-shadow-[0_0_40px_rgba(0,168,245,0.35)]" />
         </div>
 
-        <!-- ===== SCROLL PROGRESS BAR ===== -->
-        <div class="fixed top-0 left-0 z-[60] h-1 w-full bg-transparent"><div id="pf-scroll-progress" class="h-full w-0 bg-gradient-to-r from-[#00a8f5] via-[#00e5a3] to-[#f5af19]"></div></div>
+        <!-- ===== SCROLL PROGRESS BAR (Apenas Desktop) ===== -->
+        <div class="fixed top-0 left-0 z-[60] h-1 w-full bg-transparent hidden md:block"><div id="pf-scroll-progress" class="h-full w-0 bg-gradient-to-r from-[#00a8f5] via-[#00e5a3] to-[#f5af19]"></div></div>
 
         <!-- ===== CURSOR GLOW (desktop) ===== -->
         <div id="pf-cursor-glow" class="pf-cursor-glow hidden md:block" aria-hidden="true"></div>
@@ -526,12 +529,23 @@ export class LandingPageNova {
 
               <div class="p-3 sm:p-3.5 rounded-xl sm:rounded-2xl bg-white/[0.03] border border-white/5 flex items-center gap-3 hover:border-amber-500/30 transition">
                 <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-amber-500/15 text-amber-400 flex items-center justify-center shrink-0 border border-amber-500/30">
-          <!-- ===== SEÇÃO: O CENÁRIO REAL (CONTRASTE VISCERAL) ===== -->
-          <section id="cenario-real" class="w-full max-w-6xl mx-auto mb-14 sm:mb-24 text-left">
-            <div class="text-center max-w-3xl mx-auto mb-10 sm:mb-14 space-y-2.5 sm:space-y-3">
-              <span class="px-3.5 sm:px-4 py-1.5 rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-300 text-[10px] font-black uppercase tracking-widest">
-                A Realidade do Mercado de Turismo
-              </span>
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                </div>
+                <div>
+                  <strong class="text-xs font-bold text-white block">Notificações Push</strong>
+                  <span class="text-[10px] text-slate-400">App PWA Mobile</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
+
+        <!-- ===== SEÇÃO: O CENÁRIO REAL (CONTRASTE VISCERAL) ===== -->
+        <section id="cenario-real" class="w-full max-w-6xl mx-auto mb-14 sm:mb-24 px-4 sm:px-6 text-left">
+          <div class="text-center max-w-3xl mx-auto mb-10 sm:mb-14 space-y-2.5 sm:space-y-3">
+            <span class="px-3.5 sm:px-4 py-1.5 rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-300 text-[10px] font-black uppercase tracking-widest">
+              A Realidade do Mercado de Turismo
+            </span>
               <h2 class="text-2xl sm:text-4xl md:text-5xl font-black tracking-tight text-white leading-tight">
                 Você Sabe Quanto o Descontrole Custa à Sua Agência?
               </h2>
@@ -622,7 +636,7 @@ export class LandingPageNova {
           </section>
 
           <!-- ===== SEÇÃO: JORNADA OPERACIONAL CONTÍNUA ===== -->
-          <section id="jornada-paxflow" class="w-full max-w-6xl mx-auto mb-14 sm:mb-24 text-left">
+          <section id="jornada-paxflow" class="w-full max-w-6xl mx-auto mb-14 sm:mb-24 px-4 sm:px-6 text-left">
             <div class="text-center max-w-3xl mx-auto mb-10 sm:mb-14 space-y-2.5 sm:space-y-3">
               <span class="px-3.5 sm:px-4 py-1.5 rounded-full bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 text-[10px] font-black uppercase tracking-widest">
                 Jornada Operacional Contínua
@@ -795,7 +809,7 @@ export class LandingPageNova {
           </section>
 
           <!-- ===== SEÇÃO: UM DIA NA VIDA DA SUA AGÊNCIA COM PAXFLOW ===== -->
-          <section id="dia-na-vida" class="w-full max-w-6xl mx-auto mb-14 sm:mb-24 text-left">
+          <section id="dia-na-vida" class="w-full max-w-6xl mx-auto mb-14 sm:mb-24 px-4 sm:px-6 text-left">
             <div class="text-center max-w-3xl mx-auto mb-10 sm:mb-14 space-y-2.5 sm:space-y-3">
               <span class="px-3.5 sm:px-4 py-1.5 rounded-full bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 text-[10px] font-black uppercase tracking-widest">
                 A Nova Rotina Operacional
@@ -857,7 +871,7 @@ export class LandingPageNova {
           </section>
 
           <!-- ===== SEÇÃO: CALCULADORA INTERATIVA DE ROI ===== -->
-          <section id="calculadora-roi" class="w-full max-w-5xl mx-auto mb-14 sm:mb-24 text-left">
+          <section id="calculadora-roi" class="w-full max-w-5xl mx-auto mb-14 sm:mb-24 px-4 sm:px-6 text-left">
             <div class="p-4 sm:p-8 md:p-12 rounded-2xl sm:rounded-3xl bg-slate-900/90 border border-emerald-500/40 backdrop-blur-xl shadow-2xl pf-glow relative overflow-hidden">
               <div class="absolute -right-24 -bottom-24 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
@@ -928,11 +942,12 @@ export class LandingPageNova {
             </div>
           </section>
 
-          <!-- Module tour -->
-          <div class="w-full text-center mb-6 sm:mb-8">
-            <h2 class="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight text-white">Conheça os Módulos do PaxFlow</h2>
-            <p class="text-xs sm:text-sm text-slate-400 font-medium mt-1.5 sm:mt-2">Deslize as abas para visualizar as telas reais da nossa solução</p>
-          </div>
+          <!-- ===== SEÇÃO: MÓDULOS (TOUR COMPLETO) ===== -->
+          <section id="modulos" class="w-full max-w-6xl mx-auto mb-14 sm:mb-24 px-4 sm:px-6 text-left">
+            <div class="w-full text-center mb-6 sm:mb-8">
+              <h2 class="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight text-white">Conheça os Módulos do PaxFlow</h2>
+              <p class="text-xs sm:text-sm text-slate-400 font-medium mt-1.5 sm:mt-2">Deslize as abas para visualizar as telas reais da nossa solução</p>
+            </div>
 
           <div class="w-full mb-6 sm:mb-8">
             <div class="flex items-center overflow-x-auto no-scrollbar-mobile md:flex-wrap md:justify-center gap-1.5 sm:gap-2 p-1.5 sm:p-2.5 rounded-2xl sm:rounded-3xl bg-slate-900/90 border border-slate-700/80 max-w-6xl mx-auto backdrop-blur-md shadow-2xl">
@@ -1248,7 +1263,7 @@ export class LandingPageNova {
               </div>
             </div>
           </div>
-        </main>
+        </section>
 
         <!-- ===== COMO FUNCIONA (3 passos) ===== -->
         <section class="relative z-10 w-full py-20 px-6 border-t border-white/10">
@@ -2086,9 +2101,10 @@ export class LandingPageNova {
     ticketSlider?.addEventListener('input', atualizarROI);
     atualizarROI();
 
-    // Comportamento do Sticky Bar ao Rolar a Página
+    // Comportamento do Sticky Bar ao Rolar a Página (Apenas Desktop)
+    const isDesktop = window.innerWidth > 768;
     const stickyBar = document.getElementById('sticky-cta-bar');
-    if (stickyBar) {
+    if (stickyBar && isDesktop) {
       window.addEventListener('scroll', () => {
         if (window.scrollY > 450) {
           stickyBar.classList.remove('translate-y-full');
@@ -2155,7 +2171,7 @@ export class LandingPageNova {
     let isMockupVisible = true;
     let isBrandVisible = true;
 
-    if ('IntersectionObserver' in window) {
+    if (isDesktop && 'IntersectionObserver' in window) {
       const mockupEl = document.getElementById('mockup-panels-container');
       const brandEl = document.getElementById('brand-panels-container');
       const obs = new IntersectionObserver((entries) => {
@@ -2169,7 +2185,7 @@ export class LandingPageNova {
     }
 
     const startAutoRotate = () => {
-      if (autoTabTimer) return;
+      if (autoTabTimer || !isDesktop) return;
       const timer = () => {
         autoTabTimer = window.setTimeout(() => {
           if (isMockupVisible) {
@@ -2182,7 +2198,7 @@ export class LandingPageNova {
       };
       timer();
     };
-    startAutoRotate();
+    if (isDesktop) startAutoRotate();
 
     // Brand carousel
     const brandTabs = ['itinerario', 'voucher', 'nps', 'whatsapp'];
@@ -2220,11 +2236,13 @@ export class LandingPageNova {
       });
     });
 
-    brandAutoTimer = setInterval(() => {
-      if (isBrandVisible) {
-        brandTabIndex = (brandTabIndex + 1) % brandTabs.length;
-        switchBrandTab(brandTabs[brandTabIndex]);
-      }
-    }, 3400);
+    if (isDesktop) {
+      brandAutoTimer = setInterval(() => {
+        if (isBrandVisible) {
+          brandTabIndex = (brandTabIndex + 1) % brandTabs.length;
+          switchBrandTab(brandTabs[brandTabIndex]);
+        }
+      }, 3400);
+    }
   }
 }
