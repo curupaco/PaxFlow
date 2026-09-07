@@ -173,6 +173,48 @@ export class PublicViews {
   }
 
   /**
+   * Copia texto para a área de transferência com suporte universal infalível para iOS (Safari/WebKit)
+   */
+  private async copiarParaClipboard(texto: string): Promise<boolean> {
+    // 1. Tenta API moderna Clipboard se disponível em contexto seguro
+    if (navigator.clipboard && window.isSecureContext) {
+      try {
+        await navigator.clipboard.writeText(texto);
+        return true;
+      } catch (err) {
+        // Segue para o fallback caso o WebKit/Safari tenha bloqueado
+      }
+    }
+
+    // 2. Fallback universal infalível via textarea para iOS e navegadores antigos
+    try {
+      const textarea = document.createElement('textarea');
+      textarea.value = texto;
+      textarea.setAttribute('readonly', '');
+      textarea.style.position = 'fixed';
+      textarea.style.top = '0';
+      textarea.style.left = '0';
+      textarea.style.width = '2em';
+      textarea.style.height = '2em';
+      textarea.style.padding = '0';
+      textarea.style.border = 'none';
+      textarea.style.outline = 'none';
+      textarea.style.boxShadow = 'none';
+      textarea.style.background = 'transparent';
+      textarea.style.fontSize = '16px'; // Evita zoom automático no iOS Safari
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      textarea.setSelectionRange(0, 999999);
+      const copiado = document.execCommand('copy');
+      document.body.removeChild(textarea);
+      return copiado;
+    } catch (err) {
+      return false;
+    }
+  }
+
+  /**
    * Renderiza a página do itinerário de viagem
    */
   private renderItinerario(data: any, settings?: any): void {
@@ -233,8 +275,9 @@ export class PublicViews {
       return `${parts[2]}/${parts[1]}/${parts[0]}`;
     };
 
-    // Garante que showCustomAlert esteja disponível globalmente para handlers inline
+    // Garante que showCustomAlert e copiarTexto estejam disponíveis globalmente para handlers inline
     (window as any).showCustomAlert = showCustomAlert;
+    (window as any).copiarTexto = (texto: string) => this.copiarParaClipboard(texto);
 
     // Configuração oficial do canal de suporte do viajante
     const passageiro = data.cliente_nome || 'Passageiro';
@@ -301,7 +344,7 @@ export class PublicViews {
                   <div class="flex items-center gap-1.5 ml-auto">
                     <span class="text-[9px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wider">Localizador:</span>
                     <span id="loc-code-${idx}" class="text-xs font-black text-slate-800 dark:text-slate-300 font-mono tracking-wider bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md select-all">${p.codigo_reserva}</span>
-                    <button onclick="navigator.clipboard.writeText('${p.codigo_reserva}'); showCustomAlert('Código localizador copiado para a área de transferência!', 'Copiado');" class="p-1 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition" title="Copiar localizador">
+                    <button onclick="window.copiarTexto('${p.codigo_reserva}').then(() => showCustomAlert('Código localizador copiado para a área de transferência!', 'Copiado'));" class="p-1 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition" title="Copiar localizador">
                       <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 7.5V6.108c0-1.135.845-2.098 1.976-2.192.373-.03.748-.057 1.123-.08M15.75 18H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08M15.75 18.75v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5A3.375 3.375 0 006.375 7.5H5.25m11.9-3.664A2.251 2.251 0 0015 2.25h-1.5a2.251 2.251 0 00-2.15 1.586m5.8 0c.065.21.1.433.1.664v.75h-6V4.5c0-.231.035-.454.1-.664M6.75 7.5H4.875c-.621 0-1.125.504-1.125 1.125v12c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V16.5a9 9 0 00-9-9z"/></svg>
                     </button>
                   </div>
@@ -476,53 +519,59 @@ export class PublicViews {
       </div>
     `;
 
-    // Configuração do ouvinte para adicionar apontamento no calendário (.ics universal)
+    // Configuração do ouvinte para adicionar apontamento no calendário diretamente no aplicativo nativo
     const btnAddCalendar = this.container.querySelector('#btn-add-to-calendar') as HTMLButtonElement | null;
     if (btnAddCalendar) {
       btnAddCalendar.onclick = () => {
         try {
+          const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
           const dataInicioStr = data.data_ida.replace(/-/g, '');
           const dataFimObj = new Date(data.data_volta + 'T00:00:00');
           dataFimObj.setDate(dataFimObj.getDate() + 1);
           const dataFimStr = dataFimObj.toISOString().split('T')[0].replace(/-/g, '');
 
-          let descricaoIcs = `Viagem para ${data.destino}\\n`;
-          if (data.codigo_localizador) descricaoIcs += `Localizador Geral: ${data.codigo_localizador}\\n`;
-          if (data.consultor_nome) descricaoIcs += `Consultor de Viagens: ${data.consultor_nome} (WhatsApp: (11) 3090-7070)\\n`;
-          descricaoIcs += `Itinerário Online: ${window.location.href}\\n`;
+          let descricaoEvento = `Viagem para ${data.destino}\n`;
+          if (data.codigo_localizador) descricaoEvento += `Localizador Geral: ${data.codigo_localizador}\n`;
+          if (data.consultor_nome) descricaoEvento += `Consultor de Viagens: ${data.consultor_nome} (WhatsApp: (11) 3090-7070)\n`;
+          descricaoEvento += `Itinerário Online: ${window.location.href}\n`;
 
-          const icsContent = [
-            'BEGIN:VCALENDAR',
-            'VERSION:2.0',
-            'PRODID:-//PaxFlow//Itinerario de Viagem//PT-BR',
-            'CALSCALE:GREGORIAN',
-            'METHOD:PUBLISH',
-            'BEGIN:VEVENT',
-            `UID:paxflow-${data.id || Date.now()}@paxflow.com.br`,
-            `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').split('.')[0]}Z`,
-            `DTSTART;VALUE=DATE:${dataInicioStr}`,
-            `DTEND;VALUE=DATE:${dataFimStr}`,
-            `SUMMARY:✈️ Viagem: ${data.destino}`,
-            `DESCRIPTION:${descricaoIcs}`,
-            `LOCATION:${data.destino}`,
-            'STATUS:CONFIRMED',
-            'TRANSP:TRANSPARENT',
-            'END:VEVENT',
-            'END:VCALENDAR'
-          ].join('\r\n');
+          if (isIOS) {
+            // No iPhone / iPad / Mac: data URL iCal sem atributo download abre diretamente o app Calendário da Apple pré-preenchido
+            const icsLines = [
+              'BEGIN:VCALENDAR',
+              'VERSION:2.0',
+              'PRODID:-//PaxFlow//Itinerario//PT-BR',
+              'CALSCALE:GREGORIAN',
+              'METHOD:PUBLISH',
+              'BEGIN:VEVENT',
+              `UID:paxflow-${data.id || Date.now()}@paxflow.com.br`,
+              `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').split('.')[0]}Z`,
+              `DTSTART;VALUE=DATE:${dataInicioStr}`,
+              `DTEND;VALUE=DATE:${dataFimStr}`,
+              `SUMMARY:✈️ Viagem: ${data.destino}`,
+              `DESCRIPTION:${descricaoEvento.replace(/\n/g, '\\n')}`,
+              `LOCATION:${data.destino}`,
+              'STATUS:CONFIRMED',
+              'TRANSP:TRANSPARENT',
+              'END:VEVENT',
+              'END:VCALENDAR'
+            ].join('\r\n');
 
-          const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
-          const link = document.createElement('a');
-          link.href = URL.createObjectURL(blob);
-          link.setAttribute('download', `viagem-${data.destino.toLowerCase().replace(/[^a-z0-9]/g, '-')}.ics`);
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(link.href);
+            window.location.href = 'data:text/calendar;charset=utf-8,' + encodeURIComponent(icsLines);
+          } else {
+            // No Android e Desktop: abre direto o aplicativo Google Agenda com o evento já pré-preenchido
+            const tituloGoogle = encodeURIComponent(`✈️ Viagem: ${data.destino}`);
+            const datasGoogle = `${dataInicioStr}/${dataFimStr}`;
+            const detalhesGoogle = encodeURIComponent(descricaoEvento);
+            const localGoogle = encodeURIComponent(data.destino);
 
-          showCustomAlert('Apontamento gerado com sucesso! Salve o evento no seu aplicativo de agenda.', 'Agenda Sincronizada');
+            const googleCalendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${tituloGoogle}&dates=${datasGoogle}&details=${detalhesGoogle}&location=${localGoogle}`;
+
+            window.open(googleCalendarUrl, '_blank');
+          }
         } catch (err: any) {
-          showCustomAlert('Não foi possível gerar o arquivo de calendário no momento.', 'Atenção');
+          showCustomAlert('Não foi possível abrir o calendário no momento.', 'Atenção');
         }
       };
     }
@@ -540,22 +589,25 @@ export class PublicViews {
         if (navigator.share) {
           try {
             await navigator.share(shareData);
+            return;
           } catch (err) {
             // Se o usuário cancelou o compartilhamento nativo, não faz nada
+            return;
           }
+        }
+
+        const copiado = await this.copiarParaClipboard(window.location.href);
+        if (copiado) {
+          showCustomAlert('Link do itinerário copiado para a área de transferência!', 'Link Copiado');
         } else {
-          navigator.clipboard.writeText(window.location.href).then(() => {
-            showCustomAlert('Link do itinerário copiado para a área de transferência!', 'Link Copiado');
-          }).catch(() => {
-            showCustomAlert('Não foi possível copiar o link automaticamente.', 'Atenção');
-          });
+          showCustomAlert('Não foi possível copiar o link automaticamente.', 'Atenção');
         }
       };
     }
 
     const btnCopySummary = this.container.querySelector('#btn-copy-summary') as HTMLButtonElement | null;
     if (btnCopySummary) {
-      btnCopySummary.onclick = () => {
+      btnCopySummary.onclick = async () => {
         let resumo = `✈️ ITINERÁRIO DE VIAGEM: ${data.destino.toUpperCase()}\n` +
           `📅 Período: ${formatarDataAmigavel(data.data_ida)} a ${formatarDataAmigavel(data.data_volta)}\n` +
           (data.codigo_localizador ? `🔖 Localizador Geral: ${data.codigo_localizador}\n` : '') +
@@ -572,11 +624,12 @@ export class PublicViews {
 
         resumo += `\n🔗 Link completo do itinerário: ${window.location.href}`;
 
-        navigator.clipboard.writeText(resumo).then(() => {
+        const copiado = await this.copiarParaClipboard(resumo);
+        if (copiado) {
           showCustomAlert('Resumo da viagem copiado com sucesso para a sua área de transferência!', 'Resumo Copiado');
-        }).catch(() => {
+        } else {
           showCustomAlert('Não foi possível copiar o resumo automaticamente.', 'Atenção');
-        });
+        }
       };
     }
   }
