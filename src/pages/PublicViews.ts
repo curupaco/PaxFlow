@@ -190,24 +190,40 @@ export class PublicViews {
     let countdownHTML = '';
     if (diffDays > 0) {
       countdownHTML = `
-        <div class="public-glass p-5 rounded-3xl shadow-sm flex items-center gap-4 border border-slate-200 dark:border-slate-800 mb-6 animate-fade-in relative overflow-hidden">
+        <div class="public-glass p-5 rounded-3xl shadow-sm flex items-center justify-between gap-3 border border-slate-200 dark:border-slate-800 mb-6 animate-fade-in relative overflow-hidden flex-wrap">
           <div class="absolute top-0 left-0 bottom-0 w-1.5 bg-indigo-600 dark:bg-indigo-500"></div>
-          <span class="text-3xl shrink-0">⏳</span>
-          <div>
-            <h3 class="text-sm font-extrabold text-slate-800 dark:text-slate-200">Faltam ${diffDays} dias para o embarque!</h3>
-            <p class="text-[11px] text-slate-400 dark:text-slate-400 font-medium mt-0.5">Sua contagem regressiva para ${data.destino} começou.</p>
+          <div class="flex items-center gap-3.5 min-w-0">
+            <div class="w-10 h-10 rounded-2xl bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-100 dark:border-indigo-900/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 shadow-xs">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+            <div class="min-w-0">
+              <h3 class="text-sm font-extrabold text-slate-800 dark:text-slate-200 truncate">Faltam ${diffDays} dias para o embarque!</h3>
+              <p class="text-[11px] text-slate-400 dark:text-slate-400 font-medium mt-0.5">Sua contagem regressiva para ${data.destino} começou.</p>
+            </div>
           </div>
+          <button id="btn-add-to-calendar" class="shrink-0 py-2 px-3 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 rounded-xl text-xs font-bold border border-indigo-200/60 dark:border-indigo-800/60 flex items-center gap-1.5 transition transform active:scale-95 shadow-xs" title="Adicionar ao seu calendário">
+            <svg class="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5m-9-6h.008v.008H12v-.008zM12 15h.008v.008H12V15zm0 2.25h.008v.008H12v-.008zM9.75 15h.008v.008H9.75V15zm0 2.25h.008v.008H9.75v-.008zM7.5 15h.008v.008H7.5V15zm0 2.25h.008v.008H7.5v-.008zm6.75-4.5h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V15zm0 2.25h.008v.008h-.008v-.008zm2.25-4.5h.008v.008H16.5v-.008zm0 2.25h.008v.008H16.5V15z"/></svg>
+            <span>Adicionar à Agenda</span>
+          </button>
         </div>
       `;
     } else if (hoje >= dataIda && hoje <= dataVolta) {
       countdownHTML = `
-        <div class="public-glass p-5 rounded-3xl shadow-sm flex items-center gap-4 border border-slate-200 dark:border-slate-800 mb-6 animate-fade-in relative overflow-hidden">
+        <div class="public-glass p-5 rounded-3xl shadow-sm flex items-center justify-between gap-3 border border-slate-200 dark:border-slate-800 mb-6 animate-fade-in relative overflow-hidden flex-wrap">
           <div class="absolute top-0 left-0 bottom-0 w-1.5 bg-emerald-500"></div>
-          <span class="text-3xl shrink-0">✈️</span>
-          <div>
-            <h3 class="text-sm font-extrabold text-emerald-600 dark:text-emerald-400">Você está em viagem!</h3>
-            <p class="text-[11px] text-slate-400 dark:text-slate-400 font-medium mt-0.5">Aproveite ao máximo a sua estadia em ${data.destino}.</p>
+          <div class="flex items-center gap-3.5 min-w-0">
+            <div class="w-10 h-10 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-100 dark:border-emerald-900/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 shadow-xs">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"/></svg>
+            </div>
+            <div class="min-w-0">
+              <h3 class="text-sm font-extrabold text-emerald-600 dark:text-emerald-400 truncate">Você está em viagem!</h3>
+              <p class="text-[11px] text-slate-400 dark:text-slate-400 font-medium mt-0.5">Aproveite ao máximo a sua estadia em ${data.destino}.</p>
+            </div>
           </div>
+          <button id="btn-add-to-calendar" class="shrink-0 py-2 px-3 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 rounded-xl text-xs font-bold border border-emerald-200/60 dark:border-emerald-800/60 flex items-center gap-1.5 transition transform active:scale-95 shadow-xs" title="Adicionar ao seu calendário">
+            <svg class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5m-9-6h.008v.008H12v-.008zM12 15h.008v.008H12V15zm0 2.25h.008v.008H12v-.008zM9.75 15h.008v.008H9.75V15zm0 2.25h.008v.008H9.75v-.008zM7.5 15h.008v.008H7.5V15zm0 2.25h.008v.008H7.5v-.008zm6.75-4.5h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V15zm0 2.25h.008v.008h-.008v-.008zm2.25-4.5h.008v.008H16.5v-.008zm0 2.25h.008v.008H16.5V15z"/></svg>
+            <span>Salvar na Agenda</span>
+          </button>
         </div>
       `;
     }
@@ -229,25 +245,34 @@ export class PublicViews {
     const whatsappOficial = '551130907070';
     const whatsappUrl = `https://api.whatsapp.com/send?phone=${whatsappOficial}&text=${encodeURIComponent(msgWhatsApp)}`;
 
-    // Renderização dos produtos na linha do tempo com selo de serviço confirmado
+    // Renderização dos produtos na linha do tempo com ícones vetoriais profissionais
     let timelineHTML = '';
     if (data.produtos && data.produtos.length > 0) {
       timelineHTML = data.produtos.map((p: any, idx: number) => {
-        let icone = '📦';
-        if (p.tipo.toLowerCase().includes('voo') || p.tipo.toLowerCase().includes('aereo')) icone = '✈️';
-        else if (p.tipo.toLowerCase().includes('hotel') || p.tipo.toLowerCase().includes('hospedagem')) icone = '🏨';
-        else if (p.tipo.toLowerCase().includes('seguro')) icone = '🛡️';
-        else if (p.tipo.toLowerCase().includes('passeio') || p.tipo.toLowerCase().includes('ingresso') || p.tipo.toLowerCase().includes('tour')) icone = '🎟️';
-        else if (p.tipo.toLowerCase().includes('carro') || p.tipo.toLowerCase().includes('aluguel') || p.tipo.toLowerCase().includes('trans')) icone = '🚗';
+        let iconeSVG = `
+          <svg class="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"/></svg>
+        `;
+        const tipoLower = (p.tipo || '').toLowerCase();
+        if (tipoLower.includes('voo') || tipoLower.includes('aereo')) {
+          iconeSVG = `<svg class="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"/></svg>`;
+        } else if (tipoLower.includes('hotel') || tipoLower.includes('hospedagem')) {
+          iconeSVG = `<svg class="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.75a1.5 1.5 0 011.5-1.5h1.5a1.5 1.5 0 011.5 1.5V21"/></svg>`;
+        } else if (tipoLower.includes('seguro')) {
+          iconeSVG = `<svg class="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/></svg>`;
+        } else if (tipoLower.includes('passeio') || tipoLower.includes('ingresso') || tipoLower.includes('tour')) {
+          iconeSVG = `<svg class="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-5.25h5.25M7.5 15h3M3.375 5.25c-.621 0-1.125.504-1.125 1.125v3.026a2.999 2.999 0 010 5.198v3.026c0 .621.504 1.125 1.125 1.125h17.25c.621 0 1.125-.504 1.125-1.125v-3.026a2.999 2.999 0 010-5.198V6.375c0-.621-.504-1.125-1.125-1.125H3.375z"/></svg>`;
+        } else if (tipoLower.includes('carro') || tipoLower.includes('aluguel') || tipoLower.includes('trans')) {
+          iconeSVG = `<svg class="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.25V3.75m0 3.75H9.75m0 0l-1.8 4.5M9.75 7.5V3.75m-6 7.5h16.5"/></svg>`;
+        }
 
         return `
           <div class="relative pl-8 pb-8 last:pb-0">
             <!-- Linha vertical da timeline -->
             ${idx !== data.produtos.length - 1 ? '<div class="absolute left-3.5 top-7 bottom-0 w-0.5 bg-slate-200 dark:bg-slate-800"></div>' : ''}
             
-            <!-- Badge redondo -->
-            <div class="timeline-badge absolute left-0 top-0.5 w-7.5 h-7.5 rounded-full bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-900/60 flex items-center justify-center text-sm z-10 select-none">
-              ${icone}
+            <!-- Badge redondo com ícone SVG profissional -->
+            <div class="timeline-badge absolute left-0 top-0.5 w-7.5 h-7.5 rounded-full bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-900/60 flex items-center justify-center z-10 select-none shadow-xs">
+              ${iconeSVG}
             </div>
             
             <!-- Conteúdo do card -->
@@ -256,8 +281,9 @@ export class PublicViews {
                 <span class="inline-flex px-2.5 py-0.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 text-[9px] font-black uppercase rounded-md tracking-wider border border-indigo-100/30 dark:border-indigo-900/30">
                   ${p.tipo}
                 </span>
-                <span class="text-[10px] text-slate-400 dark:text-slate-400 font-bold">
-                  📅 ${formatarDataAmigavel(p.data_servico)}
+                <span class="text-[10px] text-slate-400 dark:text-slate-400 font-bold flex items-center gap-1">
+                  <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"/></svg>
+                  ${formatarDataAmigavel(p.data_servico)}
                 </span>
               </div>
               
@@ -293,7 +319,7 @@ export class PublicViews {
       `;
     }
 
-    // Card do consultor reformulado com número oficial e botão direto
+    // Card do consultor reformulado com número oficial e botões de contato
     let consultorHTML = '';
     if (data.consultor_nome) {
       const avatarSVG = data.consultor_avatar 
@@ -380,7 +406,9 @@ export class PublicViews {
           <!-- Orientações Pré-Embarque e Checklist -->
           <div class="public-glass p-5 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 mt-6">
             <div class="flex items-center gap-2.5 mb-3.5">
-              <span class="text-xl">📋</span>
+              <div class="w-7 h-7 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 border border-indigo-100 dark:border-indigo-900/40">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08M15.75 18.75v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5A3.375 3.375 0 006.375 7.5H5.25m11.9-3.664A2.251 2.251 0 0015 2.25h-1.5a2.251 2.251 0 00-2.15 1.586m5.8 0c.065.21.1.433.1.664v.75h-6V4.5c0-.231.035-.454.1-.664M6.75 7.5H4.875c-.621 0-1.125.504-1.125 1.125v12c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V16.5a9 9 0 00-9-9z"/></svg>
+              </div>
               <div>
                 <h3 class="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-slate-200">Orientações Pré-Embarque</h3>
                 <p class="text-[10px] text-slate-400 font-medium">Recomendações importantes para uma viagem tranquila</p>
@@ -389,7 +417,9 @@ export class PublicViews {
 
             <div class="grid grid-cols-1 gap-2.5">
               <div class="p-3 rounded-2xl bg-white/60 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800/80 flex items-start gap-3">
-                <span class="text-base shrink-0 mt-0.5">📄</span>
+                <div class="w-7 h-7 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 border border-indigo-100 dark:border-indigo-900/40 mt-0.5">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 9h3.75M15 12h3.75M15 15h3.75M4.5 19.5h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5zm6-10.125a1.875 1.875 0 11-3.75 0 1.875 1.875 0 013.75 0zm1.294 6.364a3.375 3.375 0 00-6.338 0"/></svg>
+                </div>
                 <div>
                   <h4 class="text-xs font-black text-slate-800 dark:text-slate-200">Documentação Obrigatória</h4>
                   <p class="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-0.5 leading-relaxed">
@@ -399,7 +429,9 @@ export class PublicViews {
               </div>
 
               <div class="p-3 rounded-2xl bg-white/60 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800/80 flex items-start gap-3">
-                <span class="text-base shrink-0 mt-0.5">⏰</span>
+                <div class="w-7 h-7 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 border border-indigo-100 dark:border-indigo-900/40 mt-0.5">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </div>
                 <div>
                   <h4 class="text-xs font-black text-slate-800 dark:text-slate-200">Antecedência no Aeroporto</h4>
                   <p class="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-0.5 leading-relaxed">
@@ -409,7 +441,9 @@ export class PublicViews {
               </div>
 
               <div class="p-3 rounded-2xl bg-white/60 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800/80 flex items-start gap-3">
-                <span class="text-base shrink-0 mt-0.5">🧳</span>
+                <div class="w-7 h-7 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 border border-indigo-100 dark:border-indigo-900/40 mt-0.5">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"/></svg>
+                </div>
                 <div>
                   <h4 class="text-xs font-black text-slate-800 dark:text-slate-200">Bagagem &amp; Normas de Bordo</h4>
                   <p class="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-0.5 leading-relaxed">
@@ -419,7 +453,9 @@ export class PublicViews {
               </div>
 
               <div class="p-3 rounded-2xl bg-white/60 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800/80 flex items-start gap-3">
-                <span class="text-base shrink-0 mt-0.5">🛡️</span>
+                <div class="w-7 h-7 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 border border-indigo-100 dark:border-indigo-900/40 mt-0.5">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/></svg>
+                </div>
                 <div>
                   <h4 class="text-xs font-black text-slate-800 dark:text-slate-200">Seguro &amp; Assistência Médica</h4>
                   <p class="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-0.5 leading-relaxed">
@@ -433,28 +469,63 @@ export class PublicViews {
           <!-- Card do Consultor -->
           ${consultorHTML}
 
-          <div class="mt-8 text-center text-[10px] text-slate-400 dark:text-slate-400 font-bold select-none pb-4">
+          <div class="mt-8 text-center text-[10px] text-slate-400 dark:text-slate-400 font-bold select-none pb-8">
             Gerado automaticamente por PaxFlow © 2026.
           </div>
         </main>
-
-        <!-- Barra Flutuante de Suporte ao Viajante (WhatsApp Oficial e Ligação) -->
-        <div class="fixed bottom-5 right-5 z-50 flex items-center p-1.5 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md rounded-full shadow-2xl border border-slate-200/80 dark:border-slate-800 gap-1.5">
-          <a href="${whatsappUrl}" target="_blank" rel="noopener noreferrer" class="flex items-center gap-2 px-3.5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-full text-xs font-black shadow-sm transition transform active:scale-95 group" title="Falar no WhatsApp">
-            <span class="relative flex h-2 w-2">
-              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-              <span class="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
-            </span>
-            <svg class="w-4 h-4 fill-current shrink-0" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.724-1.455L0 24zm6.59-4.846c1.6.95 3.197 1.451 4.777 1.451 5.51 0 9.997-4.493 10-10.008.002-2.673-1.037-5.186-2.93-7.079-1.892-1.893-4.401-2.934-7.078-2.934-5.518 0-10.007 4.493-10.01 10.01-.001 1.708.455 3.377 1.32 4.887L1.134 22.84l4.513-1.186zm11.23-7.925c-.297-.149-1.758-.868-2.03-.967-.273-.099-.471-.148-.669.149-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.568-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/></svg>
-            <span>WhatsApp</span>
-          </a>
-          <a href="tel:+551130907070" class="flex items-center gap-2 px-3.5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full text-xs font-black shadow-sm transition transform active:scale-95 group" title="Ligar para o consultor">
-            <svg class="w-4 h-4 fill-none stroke-current shrink-0" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z"/></svg>
-            <span>Ligar</span>
-          </a>
-        </div>
       </div>
     `;
+
+    // Configuração do ouvinte para adicionar apontamento no calendário (.ics universal)
+    const btnAddCalendar = this.container.querySelector('#btn-add-to-calendar') as HTMLButtonElement | null;
+    if (btnAddCalendar) {
+      btnAddCalendar.onclick = () => {
+        try {
+          const dataInicioStr = data.data_ida.replace(/-/g, '');
+          const dataFimObj = new Date(data.data_volta + 'T00:00:00');
+          dataFimObj.setDate(dataFimObj.getDate() + 1);
+          const dataFimStr = dataFimObj.toISOString().split('T')[0].replace(/-/g, '');
+
+          let descricaoIcs = `Viagem para ${data.destino}\\n`;
+          if (data.codigo_localizador) descricaoIcs += `Localizador Geral: ${data.codigo_localizador}\\n`;
+          if (data.consultor_nome) descricaoIcs += `Consultor de Viagens: ${data.consultor_nome} (WhatsApp: (11) 3090-7070)\\n`;
+          descricaoIcs += `Itinerário Online: ${window.location.href}\\n`;
+
+          const icsContent = [
+            'BEGIN:VCALENDAR',
+            'VERSION:2.0',
+            'PRODID:-//PaxFlow//Itinerario de Viagem//PT-BR',
+            'CALSCALE:GREGORIAN',
+            'METHOD:PUBLISH',
+            'BEGIN:VEVENT',
+            `UID:paxflow-${data.id || Date.now()}@paxflow.com.br`,
+            `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').split('.')[0]}Z`,
+            `DTSTART;VALUE=DATE:${dataInicioStr}`,
+            `DTEND;VALUE=DATE:${dataFimStr}`,
+            `SUMMARY:✈️ Viagem: ${data.destino}`,
+            `DESCRIPTION:${descricaoIcs}`,
+            `LOCATION:${data.destino}`,
+            'STATUS:CONFIRMED',
+            'TRANSP:TRANSPARENT',
+            'END:VEVENT',
+            'END:VCALENDAR'
+          ].join('\r\n');
+
+          const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+          const link = document.createElement('a');
+          link.href = URL.createObjectURL(blob);
+          link.setAttribute('download', `viagem-${data.destino.toLowerCase().replace(/[^a-z0-9]/g, '-')}.ics`);
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(link.href);
+
+          showCustomAlert('Apontamento gerado com sucesso! Salve o evento no seu aplicativo de agenda.', 'Agenda Sincronizada');
+        } catch (err: any) {
+          showCustomAlert('Não foi possível gerar o arquivo de calendário no momento.', 'Atenção');
+        }
+      };
+    }
 
     // Configuração dos ouvintes de eventos para botões de ação rápida
     const btnShare = this.container.querySelector('#btn-share-itinerary') as HTMLButtonElement | null;
