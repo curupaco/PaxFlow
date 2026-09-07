@@ -417,10 +417,10 @@ export class LandingPageNova {
                   <span class="text-[11px] sm:text-xs text-slate-300 font-medium">PaxFlow Risk Score™:</span>
                   <span class="px-2.5 sm:px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 font-black text-xs border border-emerald-500/40 flex items-center gap-1.5 shadow-sm">
                     <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-                    87 / 100
+                    98 / 100
                   </span>
                 </div>
-                <span class="text-[10px] text-emerald-400 font-bold">Saúde da Carteira: 42 seguras • 3 em atenção</span>
+                <span class="text-[10px] text-emerald-400 font-bold">Saúde da Carteira: 100% Blindada • Todas as Viagens Seguras</span>
               </div>
             </div>
 
@@ -428,7 +428,7 @@ export class LandingPageNova {
             <div class="p-3 sm:p-3.5 mb-4 rounded-xl bg-white/[0.03] border border-white/10 text-xs text-slate-300 leading-relaxed flex items-start gap-2.5">
               <span class="text-base select-none shrink-0">🛡️</span>
               <p>
-                <strong class="text-white">O que é o Risk Score (0 a 100)?</strong> É o motor de auditoria contínua do PaxFlow: ele checa todas as viagens da sua agência em busca de falhas invisíveis (passaportes a vencer, vistos pendentes, vouchers não emitidos e pagamentos em aberto). Quanto mais próximo de <strong class="text-emerald-400">100</strong>, mais blindada está sua operação contra prejuízos e passageiros barrados.
+                <strong class="text-white">O que é o Risk Score (0 a 100)?</strong> É o motor de auditoria contínua do PaxFlow: ele checa todas as viagens da sua agência em busca de falhas invisíveis (passaportes a vencer, vistos pendentes, vouchers não emitidos e pagamentos em aberto). Quanto mais próximo de <strong class="text-emerald-400">100</strong>, mais protegida está sua operação contra prejuízos e passageiros barrados.
               </p>
             </div>
 
@@ -446,42 +446,57 @@ export class LandingPageNova {
               </span>
             </div>
 
-            <!-- Alertas Críticos do Dia -->
+            <!-- Soluções em Ação (Só os Verdinhos) -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5 sm:gap-4 mb-5 sm:mb-6">
-              <!-- Alerta 1 -->
-              <div class="p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-rose-950/30 border border-rose-500/30 space-y-2 hover:border-rose-400 transition">
+              <!-- Solução 1 -->
+              <div class="p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-emerald-950/30 border border-emerald-500/30 space-y-2 hover:border-emerald-400 transition">
                 <div class="flex items-center justify-between">
-                  <span class="px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 text-[9px] font-black uppercase tracking-wider">Passaporte &lt; 6m</span>
-                  <span class="text-[10px] text-rose-300 font-bold">Gatilho: Embarque 12d</span>
+                  <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[9px] font-black uppercase tracking-wider flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Passaporte Validado
+                  </span>
+                  <span class="text-[10px] text-emerald-300 font-bold">Gatilho: Embarque 12d</span>
                 </div>
                 <h4 class="text-xs font-black text-white">Mariana Costa (Paris)</h4>
-                <p class="text-[11px] text-slate-300 leading-snug">Validade expira em 4 meses. Disparo configurado para evitar recusa no embarque internacional.</p>
-                <button class="w-full py-1.5 mt-1 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-[10px] font-extrabold uppercase transition shadow">Notificar no WhatsApp</button>
+                <p class="text-[11px] text-slate-300 leading-snug">Passaporte internacional conferido e orientações de viagem enviadas via WhatsApp. Embarque 100% liberado.</p>
+                <div class="w-full py-1.5 mt-1 rounded-xl bg-emerald-600/30 border border-emerald-500/40 text-emerald-200 text-[10px] font-extrabold uppercase text-center flex items-center justify-center gap-1">
+                  <svg class="w-3 h-3 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                  Embarque 100% Seguro
+                </div>
               </div>
 
-              <!-- Alerta 2 -->
-              <div class="p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-amber-950/30 border border-amber-500/30 space-y-2 hover:border-amber-400 transition">
+              <!-- Solução 2 -->
+              <div class="p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-emerald-950/30 border border-emerald-500/30 space-y-2 hover:border-emerald-400 transition">
                 <div class="flex items-center justify-between">
-                  <span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[9px] font-black uppercase tracking-wider">Voucher Geral</span>
-                  <span class="text-[10px] text-amber-300 font-bold">Gatilho: Check-in 48h</span>
+                  <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[9px] font-black uppercase tracking-wider flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Voucher no SLA
+                  </span>
+                  <span class="text-[10px] text-emerald-300 font-bold">Gatilho: Check-in 48h</span>
                 </div>
                 <h4 class="text-xs font-black text-white">Hotel Fasano (Família Lima)</h4>
-                <p class="text-[11px] text-slate-300 leading-snug">Voucher não emitido. Disparo acionado 48h antes para cobrar a operadora parceira a tempo.</p>
-                <button class="w-full py-1.5 mt-1 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 text-[10px] font-black uppercase transition shadow">Cobrar Operadora</button>
+                <p class="text-[11px] text-slate-300 leading-snug">Voucher de hospedagem confirmado pela operadora e anexado à pasta da viagem rigorosamente dentro do SLA.</p>
+                <div class="w-full py-1.5 mt-1 rounded-xl bg-emerald-600/30 border border-emerald-500/40 text-emerald-200 text-[10px] font-extrabold uppercase text-center flex items-center justify-center gap-1">
+                  <svg class="w-3 h-3 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                  Voucher Conferido &amp; Anexado
+                </div>
               </div>
 
-              <!-- Alerta 3 (Next Trip Oportunidade) -->
-              <div class="p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-indigo-950/30 border border-indigo-500/30 space-y-2 hover:border-indigo-400 transition">
+              <!-- Solução 3 -->
+              <div class="p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-emerald-950/30 border border-emerald-500/30 space-y-2 hover:border-emerald-400 transition">
                 <div class="flex items-center justify-between">
-                  <span class="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 text-[9px] font-black uppercase tracking-wider">Next Trip Radar</span>
-                  <span class="text-[10px] text-indigo-300 font-bold flex items-center gap-1">
+                  <span class="px-2 py-0.5 rounded bg-teal-500/20 text-teal-300 text-[9px] font-black uppercase tracking-wider flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-teal-400"></span> Recompra Disparada
+                  </span>
+                  <span class="text-[10px] text-teal-300 font-bold flex items-center gap-1">
                     <svg class="w-2.5 h-2.5 text-amber-400 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
                     Gatilho: 11 meses
                   </span>
                 </div>
                 <h4 class="text-xs font-black text-white">Dra. Camila (Recompra VIP)</h4>
-                <p class="text-[11px] text-slate-300 leading-snug">Cliente fiel no período habitual de férias. Disparo preditivo de oportunidade de venda na hora certa.</p>
-                <button class="w-full py-1.5 mt-1 rounded-xl bg-indigo-500 hover:bg-indigo-600 text-white text-[10px] font-extrabold uppercase transition shadow">Disparar Oferta VIP</button>
+                <p class="text-[11px] text-slate-300 leading-snug">Oportunidade preditiva disparada na janela ideal de férias da cliente. Proposta personalizada enviada com retorno imediato.</p>
+                <div class="w-full py-1.5 mt-1 rounded-xl bg-teal-600/30 border border-teal-500/40 text-teal-200 text-[10px] font-extrabold uppercase text-center flex items-center justify-center gap-1">
+                  <svg class="w-3 h-3 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                  Nova Venda em Andamento
+                </div>
               </div>
             </div>
 
@@ -538,8 +553,8 @@ export class LandingPageNova {
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 </div>
                 <div>
-                  <strong class="text-xs font-bold text-white block">SLAs Automáticos</strong>
-                  <span class="text-[10px] text-slate-400">Reembolsos aéreos</span>
+                  <strong class="text-xs font-bold text-white block">Múltiplos SLAs</strong>
+                  <span class="text-[10px] text-emerald-400 font-bold">100% Configuráveis</span>
                 </div>
               </div>
 
@@ -566,100 +581,100 @@ export class LandingPageNova {
           </div>
         </main>
 
-        <!-- ===== SEÇÃO: O CENÁRIO REAL (CONTRASTE VISCERAL) ===== -->
+        <!-- ===== SEÇÃO: EXCELÊNCIA OPERACIONAL (SÓ AS SOLUÇÕES) ===== -->
         <section id="cenario-real" class="w-full max-w-6xl mx-auto mb-14 sm:mb-24 px-4 sm:px-6 text-left">
           <div class="text-center max-w-3xl mx-auto mb-10 sm:mb-14 space-y-2.5 sm:space-y-3">
-            <span class="px-3.5 sm:px-4 py-1.5 rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-300 text-[10px] font-black uppercase tracking-widest">
+            <span class="px-3.5 sm:px-4 py-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-[10px] font-black uppercase tracking-widest">
               A Realidade do Mercado de Turismo
             </span>
-              <h2 class="text-2xl sm:text-4xl md:text-5xl font-black tracking-tight text-white leading-tight">
-                Você Sabe Quanto o Descontrole Custa à Sua Agência?
-              </h2>
-              <p class="text-xs sm:text-sm md:text-base text-slate-300 font-medium leading-relaxed">
-                Um único passageiro impedido de embarcar ou uma oportunidade de viagem esquecida custam mais caro do que um ano inteiro de PaxFlow.
-              </p>
+            <h2 class="text-2xl sm:text-4xl md:text-5xl font-black tracking-tight text-white leading-tight">
+              Apenas Soluções e Resultados para Sua Agência Voar Alto
+            </h2>
+            <p class="text-xs sm:text-sm md:text-base text-slate-300 font-medium leading-relaxed">
+              Processos blindados, equipes coordenadas e clientes fiéis. Veja como o PaxFlow entrega tranquilidade operacional e crescimento financeiro contínuo.
+            </p>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-8">
+            <!-- Coluna 1: Blindagem & Pós-Venda -->
+            <div data-reveal="left" class="p-4 sm:p-8 rounded-2xl sm:rounded-3xl bg-gradient-to-b from-emerald-950/30 via-slate-900/80 to-black/50 border border-emerald-500/40 backdrop-blur-md space-y-4 sm:space-y-6 shadow-2xl pf-glow relative overflow-hidden">
+              <div class="flex items-center justify-between border-b border-emerald-500/20 pb-3 sm:pb-4">
+                <div class="flex items-center gap-2.5 sm:gap-3">
+                  <span class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-black text-sm border border-emerald-500/30 shrink-0">
+                    <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                  </span>
+                  <h3 class="text-sm sm:text-lg font-black text-emerald-200">Blindagem Operacional &amp; Pós-Venda</h3>
+                </div>
+                <span class="text-[9px] sm:text-[10px] font-extrabold uppercase px-2 py-0.5 sm:px-2.5 sm:py-1 rounded bg-emerald-500/20 text-emerald-300">Segurança Total</span>
+              </div>
+              <ul class="space-y-3 sm:space-y-4 text-xs sm:text-sm text-slate-200 font-medium">
+                <li class="flex items-start gap-2.5 sm:gap-3">
+                  <span class="w-5 h-5 rounded-full bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5 border border-emerald-500/30">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                  </span>
+                  <span><strong>Blindagem com Risk Score™ (0 a 100):</strong> Auditoria contínua de passaportes, vistos e vouchers com ampla antecedência. Embarques 100% seguros.</span>
+                </li>
+                <li class="flex items-start gap-2.5 sm:gap-3">
+                  <span class="w-5 h-5 rounded-full bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5 border border-emerald-500/30">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                  </span>
+                  <span><strong>Múltiplos SLAs 100% Configuráveis:</strong> Sua agência monitora cronômetros personalizados para reembolsos aéreos, emissão de vouchers, quitação de LOCs e retorno de cotações a leads.</span>
+                </li>
+                <li class="flex items-start gap-2.5 sm:gap-3">
+                  <span class="w-5 h-5 rounded-full bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5 border border-emerald-500/30">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                  </span>
+                  <span><strong>Plantão na Palma da Mão (PWA):</strong> Escalas da equipe organizadas com transparência de folgas e notificações push em tempo real no celular do plantonista escalado.</span>
+                </li>
+                <li class="flex items-start gap-2.5 sm:gap-3">
+                  <span class="w-5 h-5 rounded-full bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5 border border-emerald-500/30">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                  </span>
+                  <span><strong>Pós-Venda Proativo &amp; WhatsApp:</strong> Pesquisas automáticas de satisfação (NPS) e mensagens de boas-vindas que encantam e fidelizam o passageiro.</span>
+                </li>
+              </ul>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-8">
-              <!-- Sem PaxFlow -->
-              <div data-reveal="left" class="p-4 sm:p-8 rounded-2xl sm:rounded-3xl bg-gradient-to-b from-rose-950/30 to-black/50 border border-rose-500/30 backdrop-blur-md space-y-4 sm:space-y-6 shadow-2xl relative overflow-hidden">
-                <div class="flex items-center justify-between border-b border-rose-500/20 pb-3 sm:pb-4">
-                  <div class="flex items-center gap-2.5 sm:gap-3">
-                    <span class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center font-black text-sm border border-rose-500/30 shrink-0">
-                      <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
-                    </span>
-                    <h3 class="text-sm sm:text-lg font-black text-rose-200">Sua Agência Sem o PaxFlow</h3>
-                  </div>
-                  <span class="text-[9px] sm:text-[10px] font-extrabold uppercase px-2 py-0.5 sm:px-2.5 sm:py-1 rounded bg-rose-500/20 text-rose-300">O Caos Diário</span>
+            <!-- Coluna 2: Vendas & Escala -->
+            <div data-reveal="right" class="p-4 sm:p-8 rounded-2xl sm:rounded-3xl bg-gradient-to-b from-[#0052d4]/20 via-teal-950/20 to-black/50 border border-teal-500/40 backdrop-blur-md space-y-4 sm:space-y-6 shadow-2xl pf-glow relative overflow-hidden">
+              <div class="flex items-center justify-between border-b border-teal-500/20 pb-3 sm:pb-4">
+                <div class="flex items-center gap-2.5 sm:gap-3">
+                  <span class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-teal-500/20 text-teal-300 flex items-center justify-center font-black text-sm border border-teal-500/30 shrink-0">
+                    <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                  </span>
+                  <h3 class="text-sm sm:text-lg font-black text-teal-200">Recompra Ativa &amp; Crescimento</h3>
                 </div>
-                <ul class="space-y-3 sm:space-y-4 text-xs sm:text-sm text-slate-300 font-medium">
-                  <li class="flex items-start gap-2.5 sm:gap-3">
-                    <span class="w-5 h-5 rounded-full bg-rose-500/15 text-rose-400 flex items-center justify-center shrink-0 mt-0.5 border border-rose-500/30">
-                      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
-                    </span>
-                    <span><strong>Pânico no embarque:</strong> Passageiro descobre passaporte com menos de 6 meses na fila da imigração. Resultado: multas de remarcação e danos à sua reputação.</span>
-                  </li>
-                  <li class="flex items-start gap-2.5 sm:gap-3">
-                    <span class="w-5 h-5 rounded-full bg-rose-500/15 text-rose-400 flex items-center justify-center shrink-0 mt-0.5 border border-rose-500/30">
-                      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
-                    </span>
-                    <span><strong>Plantão no escuro:</strong> Voo cancelado no sábado à noite e ninguém sabe quem está de plantão ou onde estão os contatos de emergência.</span>
-                  </li>
-                  <li class="flex items-start gap-2.5 sm:gap-3">
-                    <span class="w-5 h-5 rounded-full bg-rose-500/15 text-rose-400 flex items-center justify-center shrink-0 mt-0.5 border border-rose-500/30">
-                      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
-                    </span>
-                    <span><strong>Dinheiro esquecido na mesa:</strong> Clientes que gastaram R$ 25.000 ano passado nunca mais são contatados e compram a próxima viagem no concorrente.</span>
-                  </li>
-                  <li class="flex items-start gap-2.5 sm:gap-3">
-                    <span class="w-5 h-5 rounded-full bg-rose-500/15 text-rose-400 flex items-center justify-center shrink-0 mt-0.5 border border-rose-500/30">
-                      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
-                    </span>
-                    <span><strong>Fatura que castiga o crescimento:</strong> Softwares tradicionais cobram R$ 100 a R$ 200 por usuário. Ao contratar estagiários ou emissores, sua conta explode.</span>
-                  </li>
-                </ul>
+                <span class="text-[9px] sm:text-[10px] font-extrabold uppercase px-2 py-0.5 sm:px-2.5 sm:py-1 rounded bg-teal-500/20 text-teal-300">Mais Lucro</span>
               </div>
-
-              <!-- Com PaxFlow -->
-              <div data-reveal="right" class="p-4 sm:p-8 rounded-2xl sm:rounded-3xl bg-gradient-to-b from-[#0052d4]/20 via-emerald-950/20 to-black/50 border border-emerald-500/40 backdrop-blur-md space-y-4 sm:space-y-6 shadow-2xl pf-glow relative overflow-hidden">
-                <div class="flex items-center justify-between border-b border-emerald-500/20 pb-3 sm:pb-4">
-                  <div class="flex items-center gap-2.5 sm:gap-3">
-                    <span class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-black text-sm border border-emerald-500/30 shrink-0">
-                      <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
-                    </span>
-                    <h3 class="text-sm sm:text-lg font-black text-emerald-200">Sua Agência Com o PaxFlow</h3>
-                  </div>
-                  <span class="text-[9px] sm:text-[10px] font-extrabold uppercase px-2 py-0.5 sm:px-2.5 sm:py-1 rounded bg-emerald-500/20 text-emerald-300">Controle &amp; Lucro</span>
-                </div>
-                <ul class="space-y-3 sm:space-y-4 text-xs sm:text-sm text-slate-200 font-medium">
-                  <li class="flex items-start gap-2.5 sm:gap-3">
-                    <span class="w-5 h-5 rounded-full bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5 border border-emerald-500/30">
-                      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
-                    </span>
-                    <span><strong>Blindagem automática:</strong> O <em>PaxFlow Risk Score™</em> audita passaportes e vistos com 180 dias de antecedência. Zero passageiros barrados.</span>
-                  </li>
-                  <li class="flex items-start gap-2.5 sm:gap-3">
-                    <span class="w-5 h-5 rounded-full bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5 border border-emerald-500/30">
-                      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
-                    </span>
-                    <span><strong>Plantão na palma da mão:</strong> Escalas da equipe com banco de folgas transparente e notificações push no celular (iOS e Android) do consultor escalado.</span>
-                  </li>
-                  <li class="flex items-start gap-2.5 sm:gap-3">
-                    <span class="w-5 h-5 rounded-full bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5 border border-emerald-500/30">
-                      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
-                    </span>
-                    <span><strong>Máquina ativa de recompra:</strong> O <em>Next Trip Engine™</em> cruza periodicidade e NPS para avisar exatamente quem abordar para a próxima viagem.</span>
-                  </li>
-                  <li class="flex items-start gap-2.5 sm:gap-3">
-                    <span class="w-5 h-5 rounded-full bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5 border border-emerald-500/30">
-                      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
-                    </span>
-                    <span><strong>Previsibilidade absoluta:</strong> Plano Agência Pro com usuários ilimitados por R$ 799/mês. Traga todo mundo sem susto no fim do mês.</span>
-                  </li>
-                </ul>
-              </div>
+              <ul class="space-y-3 sm:space-y-4 text-xs sm:text-sm text-slate-200 font-medium">
+                <li class="flex items-start gap-2.5 sm:gap-3">
+                  <span class="w-5 h-5 rounded-full bg-teal-500/15 text-teal-300 flex items-center justify-center shrink-0 mt-0.5 border border-teal-500/30">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                  </span>
+                  <span><strong>Máquina de Recompra (Next Trip Engine™):</strong> Cruza histórico de compras, NPS e periodicidade habitual de viagens para avisar quem abordar para novas vendas.</span>
+                </li>
+                <li class="flex items-start gap-2.5 sm:gap-3">
+                  <span class="w-5 h-5 rounded-full bg-teal-500/15 text-teal-300 flex items-center justify-center shrink-0 mt-0.5 border border-teal-500/30">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                  </span>
+                  <span><strong>Disparos de Alertas Personalizados:</strong> Sua agência escolhe a antecedência exata (180d, 30d, 48h) e os canais de disparo para agir pontualmente no momento certo.</span>
+                </li>
+                <li class="flex items-start gap-2.5 sm:gap-3">
+                  <span class="w-5 h-5 rounded-full bg-teal-500/15 text-teal-300 flex items-center justify-center shrink-0 mt-0.5 border border-teal-500/30">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                  </span>
+                  <span><strong>Usuários Ilimitados no Plano Pro:</strong> Toda a sua equipe integrada (consultores, emissores e financeiro) por um valor fixo de R$ 799/mês, sem cobranças punitivas por usuário.</span>
+                </li>
+                <li class="flex items-start gap-2.5 sm:gap-3">
+                  <span class="w-5 h-5 rounded-full bg-teal-500/15 text-teal-300 flex items-center justify-center shrink-0 mt-0.5 border border-teal-500/30">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                  </span>
+                  <span><strong>Integração com Google Drive:</strong> Orçamentos ágeis, Kanban de viagens, conferência de localizadores e documentos organizados em pastas automáticas sem planilhas soltas.</span>
+                </li>
+              </ul>
             </div>
-          </section>
+          </div>
+        </section>
 
           <!-- ===== SEÇÃO: JORNADA OPERACIONAL CONTÍNUA ===== -->
           <section id="jornada-paxflow" class="w-full max-w-6xl mx-auto mb-14 sm:mb-24 px-4 sm:px-6 text-left">
@@ -695,35 +710,35 @@ export class LandingPageNova {
                     <span><strong>Disparos 100% Configuráveis:</strong> Sua agência define a antecedência dos avisos (ex: 180 dias para documentos, 48h para vouchers) e quem recebe os disparos via WhatsApp, Push ou Painel, agindo na hora certa.</span>
                   </div>
 
-                  <!-- Mockup Visual do Risk Score (87/100) -->
+                  <!-- Mockup Visual do Risk Score (Soluções em Ação) -->
                   <div class="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-black/40 border border-white/10 space-y-2.5 sm:space-y-3 shadow-inner">
                     <div class="flex items-center justify-between border-b border-white/10 pb-2">
                       <div>
                         <span class="text-[10px] sm:text-[11px] font-bold text-slate-300 block">Diagnóstico de Saúde Operacional</span>
-                        <span class="text-[9px] text-slate-400">Auditoria contínua de 0 a 100</span>
+                        <span class="text-[9px] text-emerald-400 font-semibold">Auditoria contínua de 0 a 100</span>
                       </div>
-                      <span class="px-2 sm:px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] sm:text-[11px] font-extrabold border border-emerald-500/40">87 / 100 (Segura)</span>
+                      <span class="px-2 sm:px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] sm:text-[11px] font-extrabold border border-emerald-500/40">98 / 100 (Blindada)</span>
                     </div>
                     <div class="grid grid-cols-3 gap-1.5 sm:gap-2 text-center text-[9px] sm:text-[10px] font-bold">
-                      <div class="p-1 sm:p-1.5 rounded-lg sm:rounded-xl bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 flex items-center justify-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0"></span>42 Seguras</div>
-                      <div class="p-1 sm:p-1.5 rounded-lg sm:rounded-xl bg-amber-500/10 text-amber-300 border border-amber-500/20 flex items-center justify-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0"></span>8 Pend.</div>
-                      <div class="p-1 sm:p-1.5 rounded-lg sm:rounded-xl bg-rose-500/10 text-rose-300 border border-rose-500/20 flex items-center justify-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse shrink-0"></span>3 Crít.</div>
+                      <div class="p-1 sm:p-1.5 rounded-lg sm:rounded-xl bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 flex items-center justify-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0"></span>45 Seguras</div>
+                      <div class="p-1 sm:p-1.5 rounded-lg sm:rounded-xl bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 flex items-center justify-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0"></span>SLAs em Dia</div>
+                      <div class="p-1 sm:p-1.5 rounded-lg sm:rounded-xl bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 flex items-center justify-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0"></span>0 Falhas</div>
                     </div>
-                    <!-- Alertas críticos em ação -->
+                    <!-- Soluções concluídas em ação (Verdinhos) -->
                     <div class="space-y-1.5 pt-1 text-[9px] sm:text-[10px]">
-                      <div class="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-rose-950/40 border border-rose-500/30 flex items-center justify-between text-rose-200">
+                      <div class="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-emerald-950/40 border border-emerald-500/30 flex items-center justify-between text-emerald-200">
                         <span class="flex items-center gap-1.5 truncate">
-                          <svg class="w-3 h-3 text-rose-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-                          Passaporte João S. (&lt; 6m)
+                          <svg class="w-3 h-3 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                          Passaporte Mariana C. — Validado com antecedência
                         </span>
-                        <span class="px-1.5 sm:px-2 py-0.5 rounded bg-rose-500/30 text-rose-100 font-black shrink-0 cursor-pointer hover:bg-rose-500/50 transition">Resolver</span>
+                        <span class="px-1.5 sm:px-2 py-0.5 rounded bg-emerald-500/30 text-emerald-100 font-black shrink-0">Liberado</span>
                       </div>
-                      <div class="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-rose-950/40 border border-rose-500/30 flex items-center justify-between text-rose-200">
+                      <div class="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-emerald-950/40 border border-emerald-500/30 flex items-center justify-between text-emerald-200">
                         <span class="flex items-center gap-1.5 truncate">
-                          <svg class="w-3 h-3 text-amber-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-                          Voucher Hotel Paris 48h
+                          <svg class="w-3 h-3 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                          Voucher Hotel Fasano — Anexado no prazo do SLA
                         </span>
-                        <span class="px-1.5 sm:px-2 py-0.5 rounded bg-rose-500/30 text-rose-100 font-black shrink-0 cursor-pointer hover:bg-rose-500/50 transition">Anexar</span>
+                        <span class="px-1.5 sm:px-2 py-0.5 rounded bg-emerald-500/30 text-emerald-100 font-black shrink-0">Entregue</span>
                       </div>
                     </div>
                   </div>
@@ -798,7 +813,7 @@ export class LandingPageNova {
                 <div>
                   <h3 class="text-base sm:text-xl font-black text-white mb-2">Fidelização &amp; Recompra Preditiva</h3>
                   <p class="text-xs text-slate-300 leading-relaxed font-medium mb-4 sm:mb-6">
-                    Concilie reembolsos aéreos no SLA, encante com pesquisa de NPS e ative o <strong>Next Trip Engine™</strong> para a próxima venda.
+                    Acompanhe <strong>múltiplos SLAs configuráveis</strong> (reembolsos aéreos, emissão de vouchers, quitação de LOCs e retorno a orçamentos), encante com pesquisa de NPS e ative o <strong>Next Trip Engine™</strong>.
                   </p>
 
                   <!-- Mockup Visual de NPS & Next Trip -->
@@ -814,12 +829,12 @@ export class LandingPageNova {
                       </span>
                       <span class="font-bold text-emerald-300 shrink-0">Promotor</span>
                     </div>
-                    <div class="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-amber-950/40 border border-amber-500/30 flex items-center justify-between text-[9px] sm:text-[10px] text-amber-200">
+                    <div class="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-emerald-950/40 border border-emerald-500/30 flex items-center justify-between text-[9px] sm:text-[10px] text-emerald-200">
                       <span class="flex items-center gap-1.5 truncate">
-                        <svg class="w-3 h-3 text-amber-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        SLA Reembolsos: Em dia
+                        <svg class="w-3 h-3 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        Múltiplos SLAs: 100% no Prazo
                       </span>
-                      <span class="font-bold text-amber-300 shrink-0">R$ 4.250</span>
+                      <span class="font-bold text-emerald-300 shrink-0">Reembolsos &amp; Vouchers</span>
                     </div>
                     <div class="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-indigo-950/40 border border-indigo-500/30 flex items-center justify-between text-[9px] sm:text-[10px] text-indigo-200">
                       <span class="flex items-center gap-1.5 truncate">
@@ -1742,12 +1757,12 @@ export class LandingPageNova {
                   </div>
                 </div>
 
-                <!-- Linha 6: Reembolsos Aéreos -->
+                <!-- Linha 6: Múltiplos SLAs Operacionais -->
                 <div class="grid grid-cols-3 text-xs md:text-sm items-center bg-white/[0.02]">
-                  <div class="p-4 px-5 font-bold text-white">Conciliação de Reembolsos</div>
-                  <div class="p-4 px-5 text-slate-400 text-center">Perda frequente de prazos com cias aéreas</div>
+                  <div class="p-4 px-5 font-bold text-white">Múltiplos SLAs Operacionais</div>
+                  <div class="p-4 px-5 text-slate-400 text-center">Perda de prazos com cias aéreas, vouchers e quitações</div>
                   <div class="p-4 px-5 text-slate-200 text-center bg-emerald-500/5">
-                    <span class="text-emerald-400">●</span> <strong>Cronômetro de SLA</strong> com avisos visuais
+                    <span class="text-emerald-400">●</span> <strong>Múltiplos SLAs 100% configuráveis</strong> (Reembolsos, Vouchers, LOCs e Leads)
                   </div>
                 </div>
 
@@ -1841,15 +1856,15 @@ export class LandingPageNova {
 
               <!-- Card 6 -->
               <div class="p-4 rounded-2xl bg-white/[0.03] border border-white/10 space-y-3">
-                <strong class="block text-sm font-black text-white">Conciliação de Reembolsos</strong>
+                <strong class="block text-sm font-black text-white">Múltiplos SLAs Operacionais</strong>
                 <div class="grid grid-cols-1 gap-2 text-xs">
                   <div class="p-2.5 rounded-xl bg-rose-950/20 border border-rose-500/20 text-rose-300">
                     <span class="text-[9px] uppercase font-black tracking-wider block text-rose-400 mb-0.5">✕ Sistemas Tradicionais</span>
-                    Perda constante de prazos e prejuízos com cias aéreas.
+                    Perda constante de prazos de reembolsos, emissão de vouchers e cotações de clientes.
                   </div>
                   <div class="p-2.5 rounded-xl bg-emerald-950/30 border border-emerald-500/30 text-emerald-200 font-medium">
                     <span class="text-[9px] uppercase font-black tracking-wider block text-emerald-400 mb-0.5">✓ No PaxFlow Pro</span>
-                    <strong>Cronômetro de SLA</strong> com semáforo visual e aviso antes de expirar.
+                    <strong>Múltiplos SLAs 100% configuráveis</strong> para reembolsos, vouchers, conferência de LOCs e retorno de leads.
                   </div>
                 </div>
               </div>
@@ -1974,7 +1989,7 @@ export class LandingPageNova {
             <span class="px-4 py-1.5 rounded-full bg-[#00e5a3]/20 text-[#00e5a3] border border-[#00e5a3]/30 text-[10px] font-black uppercase tracking-widest">Leve sua agência para o próximo nível</span>
             <p class="text-lg sm:text-3xl font-black tracking-tight bg-gradient-to-r from-[#00a8f5] via-[#00e5a3] to-[#f5af19] bg-clip-text text-transparent pf-animated-gradient">Da venda até a volta!</p>
             <h2 class="text-2xl sm:text-4xl md:text-5xl font-black tracking-tight leading-tight text-white">Pronto para revolucionar a operação da sua agência?</h2>
-            <p class="text-xs sm:text-base text-slate-200 max-w-2xl mx-auto leading-relaxed font-medium">Assuma o controle total dos pós-vendas, reembolsos, SLAs de vistos e escalas da sua equipe.</p>
+            <p class="text-xs sm:text-base text-slate-200 max-w-2xl mx-auto leading-relaxed font-medium">Assuma o controle total com múltiplos SLAs configuráveis (reembolsos, vouchers, LOCs e leads), auditoria preventiva de viagens e escalas da sua equipe.</p>
             <div class="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 pt-4">
               <button id="btn-cta-demo-final" class="pf-shine pf-animated-gradient w-full sm:w-auto px-6 sm:px-8 py-3.5 sm:py-4 rounded-2xl text-white font-black text-xs tracking-wider uppercase flex items-center justify-center gap-2 bg-gradient-to-r from-[#0052d4] via-[#00a8f5] to-[#00e5a3] shadow-2xl hover:scale-[1.05] transition-transform">Modo Demonstração</button>
               <button id="btn-cta-whatsapp-final" class="w-full sm:w-auto px-6 sm:px-8 py-3.5 sm:py-4 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs tracking-wider uppercase shadow-xl flex items-center justify-center gap-2 transition">Falar com Consultor</button>
