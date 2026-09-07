@@ -20,6 +20,7 @@ import { showBadgeCelebrationModal, showLevelUpModal } from './utils/celebration
 import { traduzirErro } from './utils/errorTranslator';
 import { Router } from './router';
 import { LandingPage } from './pages/LandingPage';
+import { LandingPageNova } from './pages/LandingPageNova';
 import { GlobalHeaderSearch } from './components/GlobalHeaderSearch';
 import { RealtimeMessagingService } from './services/realtimeMessaging';
 import { VersionChecker } from './services/versionChecker';
@@ -183,6 +184,19 @@ class App {
 
     const isSandbox = (window as any).paxflowSandbox === true;
 
+    // Rota dedicada para a Nova Landing Page (/conheca_nova)
+    const isConhecaNovaRoute =
+      !isSandbox && (
+        path.includes('/conheca_nova') ||
+        window.location.search.includes('conheca_nova') ||
+        window.location.hash.includes('conheca_nova')
+      );
+
+    if (isConhecaNovaRoute) {
+      this.renderLandingPageNova();
+      return;
+    }
+
     const isConhecaRoute =
       !isSandbox && (
         path.includes('/conheca') ||
@@ -272,6 +286,28 @@ class App {
    */
   private renderLandingPage(): void {
     const page = new LandingPage(this.container);
+    page.init();
+
+    // Escuta transição para o Modo Sandbox
+    window.addEventListener('paxflow-navigate-to-demo', () => {
+      if (window.location.pathname !== '/' || window.location.search || window.location.hash) {
+        window.location.href = '/';
+      } else {
+        window.location.reload();
+      }
+    }, { once: true });
+
+    // Escuta transição para a Tela de Login a partir da Landing Page
+    window.addEventListener('paxflow-navigate-to-login', () => {
+      this.renderLogin();
+    }, { once: true });
+  }
+
+  /**
+   * Renderiza a Nova Landing Page comercial (/conheca_nova)
+   */
+  private renderLandingPageNova(): void {
+    const page = new LandingPageNova(this.container);
     page.init();
 
     // Escuta transição para o Modo Sandbox
