@@ -2212,13 +2212,13 @@ export class OrcamentosPage {
           clienteId = convertRes.clienteId;
         } else {
           // Modo Offline (Fallback)
-          if (isNovaViagem) {
-            console.log('Modo Offline: Nova viagem mock criada no Kanban Operacional para', cNome);
-          } else {
+          if (!isNovaViagem) {
             const viagemId = (document.getElementById('select-viagem-existente') as HTMLSelectElement).value;
             const selectedTrip = activeTrips.find(v => v.id === viagemId);
             const novoTotal = (selectedTrip?.valor_total || 0) + vValor;
-            console.log(`Modo Offline: Somado R$ ${vValor} à viagem existente ID ${viagemId}. Novo total: R$ ${novoTotal}`);
+            if (selectedTrip) {
+              selectedTrip.valor_total = novoTotal;
+            }
           }
 
           orc.status = 'CONCLUIDO';

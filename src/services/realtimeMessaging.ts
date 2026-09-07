@@ -70,13 +70,11 @@ export class RealtimeMessagingService {
           { event: '*', schema: 'public', table: 'escala_diaria' },
           (payload: any) => this.handlePayload('escala_diaria', payload)
         )
-        .subscribe((status: string) => {
-          if (status === 'SUBSCRIBED') {
-            console.log('⚡ Realtime Messaging conectado com sucesso para o usuário:', userId);
-          }
+        .subscribe((_status: string) => {
+          // Conectado silenciosamente
         });
     } catch (err) {
-      console.warn('Aviso ao registrar canal de Realtime:', err);
+      console.error('Erro ao registrar canal de Realtime:', err);
     }
 
     // Heartbeat leve de 45 segundos para verificar conexão

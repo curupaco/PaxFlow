@@ -1,4 +1,14 @@
 import './index.css';
+
+// Em produção, silencia logs informativos e avisos para evitar poluição e vazamento de informações.
+// Apenas console.error é mantido para monitoramento de falhas reais.
+if (import.meta.env.PROD) {
+  console.log = () => {};
+  console.info = () => {};
+  console.debug = () => {};
+  console.warn = () => {};
+}
+
 import { getSessaoAtual, supabase, logoutConsultor } from './services/supabase';
 import { LoginPage } from './pages/Login';
 import { MeuPerfilModal } from './components/profile/MeuPerfilModal';

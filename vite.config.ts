@@ -33,6 +33,10 @@ export default defineConfig(({ mode }) => {
       'process.env.GOOGLE_CLIENT_SECRET': JSON.stringify(env.GOOGLE_CLIENT_SECRET),
       '__PAXFLOW_BUILD_TIME__': JSON.stringify(buildTime),
     },
+    esbuild: {
+      drop: mode === 'production' ? ['debugger'] : [],
+      pure: mode === 'production' ? ['console.log', 'console.info', 'console.debug', 'console.warn'] : [],
+    },
     build: {
       rollupOptions: {
         input: {

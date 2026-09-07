@@ -47,7 +47,6 @@ async function compressImageIfPossible(file: File): Promise<File> {
               type: 'image/jpeg',
               lastModified: Date.now()
             });
-            console.log(`[Storage Compression] Comprimido de ${(file.size / 1024).toFixed(1)}KB para ${(compressedFile.size / 1024).toFixed(1)}KB`);
             resolve(compressedFile);
           } else {
             resolve(file);
@@ -129,8 +128,6 @@ export async function uploadDocumentoCliente(
     // 4. Sanitizar o nome do arquivo e gerar o caminho único dentro do bucket
     const sanitizedFileName = finalFile.name.replace(/[^a-zA-Z0-9.-]/g, '_');
     const filePath = `${clienteId}/${Date.now()}_${sanitizedFileName}`;
-
-    console.log(`[Storage] Iniciando upload real para o bucket documentos-clientes: ${filePath}`);
 
     // 5. Executar o upload do arquivo para o Supabase Storage
     const { data, error: uploadErr } = await supabase.storage

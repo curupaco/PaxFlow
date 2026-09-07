@@ -158,7 +158,6 @@ export class ComercialDashboard {
           'postgres_changes',
           { event: '*', schema: 'public', table: 'orcamentos' },
           async (payload: any) => {
-            console.log('[ComercialDashboard] Realtime update on orcamentos:', payload.eventType);
             if (this.perfil?.role !== 'admin') {
               const rowConsultorId = payload.new?.consultor_id || payload.old?.consultor_id;
               if (rowConsultorId && this.user?.id && rowConsultorId !== this.user.id) {
@@ -173,7 +172,6 @@ export class ComercialDashboard {
           'postgres_changes',
           { event: '*', schema: 'public', table: 'viagens' },
           async (payload: any) => {
-            console.log('[ComercialDashboard] Realtime update on viagens:', payload.eventType);
             if (this.perfil?.role !== 'admin') {
               const rowConsultorId = payload.new?.consultor_id || payload.old?.consultor_id;
               if (rowConsultorId && this.user?.id && rowConsultorId !== this.user.id) {
@@ -199,7 +197,6 @@ export class ComercialDashboard {
     this.storageListener = (e: StorageEvent) => {
       const keyOrc = `paxflow-orcamentos-${this.user?.id || 'global'}`;
       if (e.key === keyOrc || e.key === 'paxflow-viagens-local') {
-        console.log('[ComercialDashboard] Update detected. Reloading...');
         this.loadData().then(() => this.renderMetricsSection());
       }
     };

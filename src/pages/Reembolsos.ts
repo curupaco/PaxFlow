@@ -212,7 +212,6 @@ export class ReembolsosPage {
             const reembolso = this.reembolsos.find(r => r.id === reembolsoId);
             if (reembolso && reembolso.viagem_id) {
               // Mantém na mesma coluna ou finaliza, o card no Kanban mudará de cor automaticamente
-              console.log('Sincronização de reembolso bem-sucedida!');
             }
           }
 

@@ -239,7 +239,6 @@ export class Dashboard {
           'postgres_changes',
           { event: '*', schema: 'public', table: 'viagens' },
           async (payload: any) => {
-            console.log('[Dashboard] Realtime update on viagens:', payload.eventType);
             await this.loadViagens();
             this.render();
             this.setupDragAndDrop();
@@ -259,7 +258,6 @@ export class Dashboard {
 
     this.storageListener = (e: StorageEvent) => {
       if (e.key === 'paxflow-viagens-local') {
-        console.log('[Dashboard] localStorage update detected for viagens. Reloading...');
         if (this.isFallbackMode) {
           this.loadViagensFromLocalStorage();
           this.render();

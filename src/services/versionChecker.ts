@@ -92,11 +92,6 @@ export class VersionChecker {
 
       // Detecta nova versão por buildTime superior ou se effectiveLocalBuild ainda não estiver gravado
       if (data && data.buildTime && (data.buildTime > (effectiveLocalBuild + 1000) || (effectiveLocalBuild === 0 && data.buildTime > 0))) {
-        console.log('[PaxFlow VersionChecker] 🚀 Nova versão detectada no servidor!', {
-          localEffective: effectiveLocalBuild,
-          remote: data.buildTime,
-          version: data.version
-        });
         this.notifyNewVersionAvailable(data);
         return true;
       }

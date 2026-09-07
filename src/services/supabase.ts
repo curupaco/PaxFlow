@@ -528,7 +528,6 @@ export const supabase = new Proxy(realSupabase, {
       }
       if (prop === 'rpc') {
         return (rpcName: string, params?: any) => {
-          console.log(`[Sandbox RPC] Calling RPC "${rpcName}" with params:`, params);
           if (rpcName === 'admin_create_user') {
             const newId = 'sandbox-user-id-' + Math.random().toString(36).substr(2, 9);
             const mockProfiles = getMockDataForTable('profiles');

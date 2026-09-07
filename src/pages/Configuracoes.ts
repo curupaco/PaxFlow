@@ -1206,7 +1206,6 @@ export class ConfiguracoesPage {
                 new_password: senhaVal
               });
               if (rpcErr) throw rpcErr;
-              console.log(`[Admin] Senha de ${c.email} atualizada com sucesso no Supabase Auth via RPC.`);
             }
           }
         }

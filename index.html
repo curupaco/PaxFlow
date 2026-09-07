@@ -305,8 +305,6 @@
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' })
           .then((reg) => {
-            console.log('Service Worker registrado com sucesso!', reg.scope);
-
             // Tenta verificar atualização a cada 1 minuto
             setInterval(() => {
               reg.update().catch(() => {});

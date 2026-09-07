@@ -470,12 +470,9 @@ export class CommentsService {
     currentUserId: string,
     profiles: PerfilConsultor[]
   ): Promise<void> {
-    console.log('[Mentions] processMentions iniciado.', { commentId, texto, currentUserId, profilesCount: profiles?.length });
     const otherProfiles = (profiles || []).filter(p => p.id !== currentUserId && p.ativo);
-    console.log('[Mentions] Consultores ativos (excluindo autor):', otherProfiles.map(p => p.nome));
 
     if (otherProfiles.length === 0) {
-      console.warn('[Mentions] Nenhum outro consultor ativo encontrado para notificar.');
       return;
     }
 
@@ -514,8 +511,6 @@ export class CommentsService {
       }
     }
 
-    console.log('[Mentions] Ranges casados:', matchedRanges.map(r => ({ nome: r.profile.nome, start: r.start, end: r.end })));
-
     // Filtra ranges sobrepostos (ex: se houver @fernanda ganem e @fernanda no mesmo local, mantém apenas o mais longo)
     const finalMentions = matchedRanges.filter(r1 => {
       const isSubRange = matchedRanges.some(r2 => 
@@ -533,10 +528,7 @@ export class CommentsService {
       .map(id => otherProfiles.find(p => p.id === id))
       .filter((p): p is PerfilConsultor => !!p);
 
-    console.log('[Mentions] Menções finais desduplicadas:', uniqueMentions.map(p => p.nome));
-
     if (uniqueMentions.length === 0) {
-      console.log('[Mentions] Nenhuma menção válida encontrada no texto.');
       return;
     }
 
@@ -551,8 +543,7 @@ export class CommentsService {
       arquivada: false
     }));
 
-    console.log('[Mentions] Inserindo notificações no Supabase:', notificationsPayload);
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('notificacoes')
       .insert(notificationsPayload)
       .select();
@@ -560,7 +551,6 @@ export class CommentsService {
     if (error) {
       console.error('[Mentions] Erro ao inserir notificações de menção:', error);
     } else {
-      console.log('[Mentions] Notificações inseridas com sucesso no banco:', data);
       // Dispara notificação Web Push no celular dos consultores mencionados
       for (const targetUser of uniqueMentions) {
         PushSenderService.sendToUser(targetUser.id, {
@@ -794,7 +784,6 @@ export class CommentsService {
       periodo: periodo,
       arquivado: false
     });
-    console.log('[Comments Auto Sched] Parse succeeded:', { targetConsultantId, dataLembrete, periodo });
   }
 
   /**

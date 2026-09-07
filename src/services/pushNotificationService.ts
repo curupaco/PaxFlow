@@ -196,8 +196,8 @@ export class PushNotificationService {
       if (permStatus === 'granted' || permStatus === 'default') {
         await this.subscribeUser(userId);
       }
-    } catch (err) {
-      console.info('Solicitação automática de notificação push finalizada:', err);
+    } catch {
+      // Falha silenciosa na solicitação automática
     }
   }
 }

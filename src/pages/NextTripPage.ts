@@ -409,7 +409,9 @@ export class NextTripPage {
             clienteTelefone: op.clienteTelefone || '',
             destino: op.destinoRecomendado,
             consultorNome: op.consultorNome,
-            showToast: (msg, type) => console.log(msg, type)
+            showToast: (msg, type) => {
+              if (type === 'error') console.error(msg);
+            }
           });
         }
       });
