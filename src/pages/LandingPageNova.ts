@@ -365,7 +365,7 @@ export class LandingPageNova {
           <h1 class="pf-hero-headline pf-rise-2 text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight mb-4 sm:mb-6 max-w-5xl break-words">
             <span class="pf-shimmer-text">Pax</span><span class="bg-gradient-to-r from-[#00a8f5] via-[#00e5a3] to-[#f5af19] bg-clip-text text-transparent pf-animated-gradient">Flow</span>
             <span class="block mt-3 sm:mt-5 text-lg sm:text-2xl md:text-4xl font-semibold text-slate-100 leading-tight">Da Emissão ao Próximo Embarque</span>
-            <span class="block mt-1 sm:mt-1.5 text-lg sm:text-2xl md:text-4xl font-semibold bg-gradient-to-r from-cyan-400 via-emerald-400 to-amber-400 bg-clip-text text-transparent pf-animated-gradient leading-tight">Zero Caos, Zero Prejuízo</span>
+            <span class="block mt-1 sm:mt-1.5 text-lg sm:text-2xl md:text-4xl font-semibold bg-gradient-to-r from-cyan-400 via-emerald-400 to-amber-400 bg-clip-text text-transparent pf-animated-gradient leading-tight">A Gestão Definitiva para Agências que Querem Escalar</span>
           </h1>
 
           <p class="pf-rise-3 text-sm sm:text-base md:text-xl text-slate-300 max-w-3xl mb-8 sm:mb-10 leading-relaxed font-medium">
