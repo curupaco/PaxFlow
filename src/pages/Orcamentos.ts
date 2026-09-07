@@ -1504,7 +1504,6 @@ export class OrcamentosPage {
               observacoes: 'Criado automaticamente (Offline)'
             };
             this.clientes.push(newLocalClient);
-            localStorage.setItem('paxflow-clientes-backup', JSON.stringify(this.clientes));
           }
         }
       }
@@ -1886,31 +1885,12 @@ export class OrcamentosPage {
             docVal = linkedClient.documento || docVal;
           }
         } else {
-          // Local fallback backup lookup
-          const savedCli = localStorage.getItem('paxflow-clientes-backup');
-          if (savedCli) {
-            const list = JSON.parse(savedCli);
-            const found = list.find((c: any) => c.id === cId);
-            if (found) {
-              linkedClient = found;
-              tVal = found.telefone || tVal;
-              eVal = found.email || eVal;
-              docVal = found.documento || docVal;
-            }
-          }
-          // Local fallback backup lookup for trips
-          const savedTrips = localStorage.getItem('paxflow-viagens-local');
-          if (savedTrips) {
-            try {
-              const allTrips = JSON.parse(savedTrips);
-              activeTrips = allTrips.filter((v: any) => 
-                (v.cliente_id === cId || v.clienteId === cId) && 
-                v.status !== 'cancelada' && 
-                v.status !== 'concluida'
-              );
-            } catch (errTrips) {
-              console.warn('Erro ao fazer parse das viagens locais:', errTrips);
-            }
+          const found = this.clientes.find((c: any) => c.id === cId);
+          if (found) {
+            linkedClient = found;
+            tVal = found.telefone || tVal;
+            eVal = found.email || eVal;
+            docVal = found.documento || docVal;
           }
         }
       } catch (err) {

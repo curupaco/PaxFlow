@@ -739,12 +739,8 @@ export class InboxService {
       const hoje = new Date();
 
       (viagensData || []).forEach((v: any) => {
-        // Fallback local para produtos em modo offline/sandbox
         if (!v.produtos) {
-          const saved = localStorage.getItem(`paxflow-produtos-viagem-${v.id}`);
-          if (saved) {
-            try { v.produtos = JSON.parse(saved); } catch (e) {}
-          }
+          v.produtos = [];
         }
 
         // Filter by consultant responsibility if not admin

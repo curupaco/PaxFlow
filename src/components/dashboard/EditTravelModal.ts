@@ -153,10 +153,7 @@ export class EditTravelModal {
       }
 
       if (viagem && !viagem.produtos) {
-        const cached = localStorage.getItem(`paxflow-produtos-viagem-${tripId}`);
-        if (cached) {
-          try { viagem.produtos = JSON.parse(cached); } catch (e) {}
-        }
+        viagem.produtos = [];
       }
 
       // Busca o consultor de forma separada
@@ -176,10 +173,7 @@ export class EditTravelModal {
       }
 
       if (viagem) {
-        const localProcessoSaved = localStorage.getItem(`paxflow-processo-conferido-${tripId}`);
-        if (localProcessoSaved !== null) {
-          viagem.processo_conferido = localProcessoSaved === 'true';
-        }
+        viagem.processo_conferido = !!viagem.processo_conferido;
       }
 
       // Verificação de Atendimento Presencial / Balcão (Modo Co-Piloto)
@@ -795,16 +789,12 @@ export class EditTravelModal {
 
         if (confirmResult) {
           try {
-            if (!this.options.isFallbackMode) {
-              const { error } = await supabase
-                .from('viagens')
-                .update({ processo_conferido: nextStatus })
-                .eq('id', this.tripId);
-              if (error) throw error;
-            }
-            
-            // Salva localmente
-            localStorage.setItem(`paxflow-processo-conferido-${this.tripId}`, String(nextStatus));
+            const { error } = await supabase
+              .from('viagens')
+              .update({ processo_conferido: nextStatus })
+              .eq('id', this.tripId);
+            if (error) throw error;
+            v.processo_conferido = nextStatus;
             
             this.options.showToast(
               nextStatus ? 'Viagem marcada como Processo Conferido!' : 'Conferência de processo da viagem removida!',
@@ -1117,10 +1107,7 @@ export class EditTravelModal {
           } catch (e) {}
         }
         if (produtos.length === 0) {
-          const saved = localStorage.getItem(`paxflow-produtos-viagem-${v.id}`);
-          if (saved) {
-            try { produtos = JSON.parse(saved); } catch (e) {}
-          }
+          produtos = v.produtos || [];
         }
         const totalProdutos = produtos.reduce((sum, p) => sum + (Number(p.valor_venda) || 0), 0);
         const pendente = valor - totalProdutos;
@@ -1642,22 +1629,11 @@ export class EditTravelModal {
       };
 
       try {
-        if (!this.options.isFallbackMode) {
-          const { error } = await supabase
-            .from('produtos_viagem')
-            .insert(payload);
+        const { error } = await supabase
+          .from('produtos_viagem')
+          .insert(payload);
 
-          if (error) throw error;
-        } else {
-          const saved = localStorage.getItem(`paxflow-produtos-viagem-${v.id}`);
-          const list = saved ? JSON.parse(saved) : [];
-          list.push({
-            ...payload,
-            id: 'prod-offline-' + Math.random().toString(36).substr(2, 9),
-            created_at: new Date().toISOString()
-          });
-          localStorage.setItem(`paxflow-produtos-viagem-${v.id}`, JSON.stringify(list));
-        }
+        if (error) throw error;
 
         this.options.showToast('Produto adicionado à viagem com sucesso!', 'success');
         formNovoProduto.reset();
@@ -2107,24 +2083,12 @@ export class EditTravelModal {
       };
 
       try {
-        if (!this.options.isFallbackMode) {
-          const { error } = await supabase
-            .from('produtos_viagem')
-            .update(payload)
-            .eq('id', prodId);
+        const { error } = await supabase
+          .from('produtos_viagem')
+          .update(payload)
+          .eq('id', prodId);
 
-          if (error) throw error;
-        } else {
-          const saved = localStorage.getItem(`paxflow-produtos-viagem-${v.id}`);
-          if (saved) {
-            const list = JSON.parse(saved);
-            const idx = list.findIndex((x: any) => x.id === prodId);
-            if (idx !== -1) {
-              list[idx] = { ...list[idx], ...payload };
-              localStorage.setItem(`paxflow-produtos-viagem-${v.id}`, JSON.stringify(list));
-            }
-          }
-        }
+        if (error) throw error;
 
         this.options.showToast('Produto atualizado com sucesso!', 'success');
         this.selectedProductId = prodId;
@@ -2145,29 +2109,22 @@ export class EditTravelModal {
     let produtos: any[] = [];
     let isError = false;
 
-    // 1. Tenta usar os produtos presentes na viagem ja carregada (por exemplo via RPC obter_viagem_co_piloto)
-    if (this.currentLoadedViagem && Array.isArray(this.currentLoadedViagem.produtos) && this.currentLoadedViagem.produtos.length > 0) {
-      produtos = this.currentLoadedViagem.produtos;
-    }
+    // 1. Consulta diretamente a tabela produtos_viagem no Supabase
+    try {
+      const { data, error } = await supabase
+        .from('produtos_viagem')
+        .select('*')
+        .eq('viagem_id', tripId)
+        .order('created_at', { ascending: true });
 
-    // 2. Se vazio, consulta a tabela produtos_viagem no Supabase
-    if (produtos.length === 0) {
-      try {
-        const { data, error } = await supabase
-          .from('produtos_viagem')
-          .select('*')
-          .eq('viagem_id', tripId)
-          .order('created_at', { ascending: true });
-
-        if (!error && data && data.length > 0) {
-          produtos = data;
-        }
-      } catch (err: any) {
-        console.warn('Busca direta de produtos falhou ou foi bloqueada por RLS:', err);
+      if (!error && data) {
+        produtos = data;
       }
+    } catch (err: any) {
+      console.warn('Busca direta de produtos falhou ou foi bloqueada por RLS:', err);
     }
 
-    // 3. Se ainda vazio, chama a RPC SECURITY DEFINER obter_produtos_co_piloto (bypasses RLS)
+    // 2. Se vazio e estiver em atendimento compartilhado (Co-Piloto), chama a RPC SECURITY DEFINER
     if (produtos.length === 0) {
       try {
         const { data: rpcProds, error: rpcErr } = await supabase.rpc('obter_produtos_co_piloto', { p_trip_id: tripId });
@@ -2179,20 +2136,9 @@ export class EditTravelModal {
       }
     }
 
-    // 4. Fallback final: localStorage
-    if (produtos.length === 0) {
-      const saved = localStorage.getItem(`paxflow-produtos-viagem-${tripId}`);
-      if (saved) {
-        try {
-          produtos = JSON.parse(saved);
-        } catch (e) {
-          produtos = [];
-        }
-      }
-    }
-
-    if (produtos.length > 0) {
-      localStorage.setItem(`paxflow-produtos-viagem-${tripId}`, JSON.stringify(produtos));
+    // Sincroniza o estado em memória da viagem carregada com os produtos reais
+    if (this.currentLoadedViagem) {
+      this.currentLoadedViagem.produtos = produtos;
     }
 
     let formasAtivas: any[] = [];
@@ -2225,20 +2171,6 @@ export class EditTravelModal {
       } catch (err) {
         console.warn('Erro ao carregar pagamentos/formas/conferencias do Supabase:', err);
       }
-    }
-
-    // Formas de recebimento e locPagamentos são obtidos estritamente do banco de dados (Supabase)
-
-    const localConferenciasSaved = localStorage.getItem(`paxflow-loc-conferencias-${tripId}`);
-    if (localConferenciasSaved) {
-      try {
-        const parsed = JSON.parse(localConferenciasSaved);
-        Object.keys(parsed).forEach(k => {
-          if (this.locConferenciasMap[k] === undefined) {
-            this.locConferenciasMap[k] = parsed[k];
-          }
-        });
-      } catch (e) {}
     }
 
     const viagem = this.options.viagens.find(x => x.id === tripId);
@@ -2535,38 +2467,25 @@ export class EditTravelModal {
         }
 
         try {
-          if (!this.options.isFallbackMode) {
-            await supabase
-              .from('loc_conferencias')
-              .delete()
-              .eq('viagem_id', this.tripId)
-              .eq('codigo_localizador', loc);
+          await supabase
+            .from('loc_conferencias')
+            .delete()
+            .eq('viagem_id', this.tripId)
+            .eq('codigo_localizador', loc);
 
-            if (nextStatus) {
-              const { error } = await supabase
-                .from('loc_conferencias')
-                .insert({
-                  viagem_id: this.tripId,
-                  codigo_localizador: loc,
-                  conferido: true
-                });
-              if (error) throw error;
-            }
-          }
-
-          // Atualiza localmente
-          const localKey = `paxflow-loc-conferencias-${this.tripId}`;
-          const savedLocal = localStorage.getItem(localKey);
-          let localMap: { [key: string]: boolean } = {};
-          if (savedLocal) {
-            try { localMap = JSON.parse(savedLocal); } catch (e) {}
-          }
           if (nextStatus) {
-            localMap[loc.toUpperCase()] = true;
+            const { error } = await supabase
+              .from('loc_conferencias')
+              .insert({
+                viagem_id: this.tripId,
+                codigo_localizador: loc,
+                conferido: true
+              });
+            if (error) throw error;
+            this.locConferenciasMap[loc.toUpperCase()] = true;
           } else {
-            delete localMap[loc.toUpperCase()];
+            delete this.locConferenciasMap[loc.toUpperCase()];
           }
-          localStorage.setItem(localKey, JSON.stringify(localMap));
 
           this.options.showToast(
             nextStatus 
@@ -2694,25 +2613,61 @@ export class EditTravelModal {
         );
         if (confirmResult) {
           try {
-            if (!this.options.isFallbackMode) {
+            const prodParaExcluir = (produtos || []).find((p: any) => p.id === prodId);
+            const locKey = (prodParaExcluir?.codigo_reserva || '').trim().toUpperCase();
+
+            // 1. Tenta exclusão direta no Supabase
+            let deleteSuccess = false;
+            try {
               const { error } = await supabase
                 .from('produtos_viagem')
                 .delete()
                 .eq('id', prodId);
 
-              if (error) throw error;
-            } else {
-              const saved = localStorage.getItem(`paxflow-produtos-viagem-${this.tripId}`);
-              if (saved) {
-                const list = JSON.parse(saved);
-                const updatedList = list.filter((p: any) => p.id !== prodId);
-                localStorage.setItem(`paxflow-produtos-viagem-${this.tripId}`, JSON.stringify(updatedList));
+              if (!error) {
+                deleteSuccess = true;
               }
+            } catch (errDirect) {
+              console.warn('Exclusão direta de produto falhou, tentando contingência RPC:', errDirect);
+            }
+
+            // 2. Se a exclusão direta falhou ou foi bloqueada por RLS, tenta RPC SECURITY DEFINER
+            if (!deleteSuccess) {
+              try {
+                const { data: rpcRes, error: rpcErr } = await supabase.rpc('deletar_produto_co_piloto', { p_prod_id: prodId });
+                if (!rpcErr && rpcRes) {
+                  deleteSuccess = true;
+                }
+              } catch (errRpc) {
+                console.warn('RPC deletar_produto_co_piloto falhou:', errRpc);
+              }
+            }
+
+            // 3. Se era o único produto deste LOC, limpa conferências e pagamentos do LOC órfão
+            if (locKey) {
+              const outrosComMesmoLoc = (produtos || []).filter((p: any) => p.id !== prodId && (p.codigo_reserva || '').trim().toUpperCase() === locKey);
+              if (outrosComMesmoLoc.length === 0) {
+                try {
+                  await supabase.from('loc_conferencias').delete().eq('viagem_id', this.tripId).eq('codigo_localizador', locKey);
+                  await supabase.from('loc_pagamentos').delete().eq('viagem_id', this.tripId).eq('codigo_localizador', locKey);
+                  delete this.locConferenciasMap[locKey];
+                } catch (eClean) {
+                  console.warn('Aviso ao limpar pagamentos/conferencias do LOC órfão:', eClean);
+                }
+              }
+            }
+
+            // 4. Atualiza o estado em memória imediatamente
+            if (this.currentLoadedViagem) {
+              this.currentLoadedViagem.produtos = (this.currentLoadedViagem.produtos || []).filter((p: any) => p.id !== prodId);
+            }
+            if (this.selectedProductId === prodId) {
+              this.selectedProductId = null;
             }
 
             this.options.showToast('Produto removido com sucesso!', 'success');
             await this.options.onUpdate();
-            await this.loadAndRenderProdutosViagem(this.tripId);
+            await this.open(this.tripId, 'produtos');
           } catch (err: any) {
             console.error('Erro ao remover produto:', err);
             this.options.showToast('Erro ao remover produto.', 'error', err);
@@ -3100,15 +3055,15 @@ export class EditTravelModal {
         }
       }
 
-      // Sincroniza localmente
-      const localKey = `paxflow-loc-conferencias-${this.tripId}`;
-      const localMap: { [key: string]: boolean } = {};
       if (conferir) {
         locKeys.forEach(k => {
-          localMap[k.toUpperCase()] = true;
+          this.locConferenciasMap[k.toUpperCase()] = true;
+        });
+      } else {
+        locKeys.forEach(k => {
+          delete this.locConferenciasMap[k.toUpperCase()];
         });
       }
-      localStorage.setItem(localKey, JSON.stringify(localMap));
 
       this.options.showToast(
         conferir 
@@ -3144,21 +3099,13 @@ export class EditTravelModal {
     }
 
     if (!viagem) {
-      // Fallback local
       viagem = this.options.viagens.find(item => item.id === this.tripId);
-      if (viagem) {
-        const saved = localStorage.getItem(`paxflow-produtos-viagem-${this.tripId}`);
-        if (saved) {
-          try { viagem.produtos = JSON.parse(saved); } catch (e) {}
-        }
-      }
     }
 
     if (!viagem || viagem.status !== 'fechado') return false;
 
     // 1. Validação de Processo
-    const localProcesso = localStorage.getItem(`paxflow-processo-conferido-${viagem.id}`);
-    const processoValido = localProcesso !== null ? localProcesso === 'true' : !!viagem.processo_conferido;
+    const processoValido = !!viagem.processo_conferido;
 
     if (!processoValido) return false;
 
@@ -3198,16 +3145,6 @@ export class EditTravelModal {
     locConfs.forEach(row => {
       locConfsMap[row.codigo_localizador.trim().toUpperCase()] = row.conferido;
     });
-    const localKey = `paxflow-loc-conferencias-${viagem.id}`;
-    const localSaved = localStorage.getItem(localKey);
-    if (localSaved) {
-      try {
-        const parsed = JSON.parse(localSaved);
-        Object.keys(parsed).forEach(k => {
-          if (locConfsMap[k] === undefined) locConfsMap[k] = parsed[k];
-        });
-      } catch (e) {}
-    }
 
     const locKeys = Array.from(new Set(produtos.map((p: any) => (p.codigo_reserva || 'SEM LOCALIZADOR').trim().toUpperCase())));
     const todosLocsConferidos = locKeys.length > 0 && locKeys.every((k: any) => !!locConfsMap[k]);

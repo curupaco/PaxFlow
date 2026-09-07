@@ -244,7 +244,7 @@ const getMockDataForTable = (table: string): any[] => {
         ...v,
         cliente: v.cliente || cli || null,
         cliente_nome: v.cliente_nome || (cli ? cli.nome : 'Cliente Sandbox'),
-        produtos: (v.produtos && v.produtos.length > 0) ? v.produtos : prods,
+        produtos: prods,
         reembolsos: (v.reembolsos && v.reembolsos.length > 0) ? v.reembolsos : reembs
       };
     });
@@ -512,6 +512,21 @@ export const supabase = new Proxy(realSupabase, {
                     const db = getData();
                     const nextDb = db.filter(item => String(item[column]) !== String(value));
                     saveData(nextDb);
+
+                    if (table === 'produtos_viagem' && column === 'id') {
+                      const viagensDb = getMockDataForTable('viagens');
+                      const updatedViagens = viagensDb.map((v: any) => {
+                        if (Array.isArray(v.produtos)) {
+                          return {
+                            ...v,
+                            produtos: v.produtos.filter((p: any) => String(p.id) !== String(value))
+                          };
+                        }
+                        return v;
+                      });
+                      saveMockDataForTable('viagens', updatedViagens);
+                    }
+
                     return Promise.resolve({ data: [], error: null });
                   }
                 };
@@ -528,6 +543,27 @@ export const supabase = new Proxy(realSupabase, {
       }
       if (prop === 'rpc') {
         return (rpcName: string, params?: any) => {
+          if (rpcName === 'deletar_produto_co_piloto') {
+            const prodId = params?.p_prod_id;
+            if (prodId) {
+              const prodsDb = getMockDataForTable('produtos_viagem');
+              const nextDb = prodsDb.filter(item => String(item.id) !== String(prodId));
+              saveMockDataForTable('produtos_viagem', nextDb);
+
+              const viagensDb = getMockDataForTable('viagens');
+              const updatedViagens = viagensDb.map((v: any) => {
+                if (Array.isArray(v.produtos)) {
+                  return {
+                    ...v,
+                    produtos: v.produtos.filter((p: any) => String(p.id) !== String(prodId))
+                  };
+                }
+                return v;
+              });
+              saveMockDataForTable('viagens', updatedViagens);
+            }
+            return Promise.resolve({ data: true, error: null });
+          }
           if (rpcName === 'admin_create_user') {
             const newId = 'sandbox-user-id-' + Math.random().toString(36).substr(2, 9);
             const mockProfiles = getMockDataForTable('profiles');

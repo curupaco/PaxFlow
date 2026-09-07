@@ -250,27 +250,8 @@ export class Dashboard {
     }
   }
 
-  /**
-   * Configura ouvinte para sincronização do localStorage de viagens entre abas
-   */
   private setupStorageListener(): void {
-    if (this.storageListener) return;
-
-    this.storageListener = (e: StorageEvent) => {
-      if (e.key === 'paxflow-viagens-local') {
-        if (this.isFallbackMode) {
-          this.loadViagensFromLocalStorage();
-          this.render();
-          this.setupDragAndDrop();
-        } else {
-          this.loadViagens().then(() => {
-            this.render();
-            this.setupDragAndDrop();
-          });
-        }
-      }
-    };
-    window.addEventListener('storage', this.storageListener);
+    // Sincronização via Supabase Realtime é a fonte de verdade
   }
 
   /**
@@ -536,31 +517,18 @@ export class Dashboard {
           isProcessoConferido: processoOk
         };
       });
-
-      this.saveViagensToLocalStorage();
     } catch (err: any) {
       this.isFallbackMode = true;
-      console.warn('Erro ao carregar viagens do banco. Ativando fallback offline:', err.message);
-      this.loadViagensFromLocalStorage();
+      console.warn('Erro ao carregar viagens do banco. Mantendo estado atual:', err.message);
     }
   }
 
   private saveViagensToLocalStorage(): void {
-    localStorage.setItem('paxflow-viagens-local', JSON.stringify(this.viagens));
+    // Operação em memória: viagens já gerenciadas pelo estado da aplicação
   }
 
   private loadViagensFromLocalStorage(): void {
-    const saved = localStorage.getItem('paxflow-viagens-local');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        this.viagens = parsed || [];
-      } catch (e) {
-        this.viagens = [];
-      }
-    } else {
-      this.viagens = [];
-    }
+    // Operação em memória
   }
 
   /**
@@ -766,14 +734,7 @@ export class Dashboard {
       }
     }
     if (produtos.length === 0) {
-      const saved = localStorage.getItem(`paxflow-produtos-viagem-${tripId}`);
-      if (saved) {
-        try {
-          produtos = JSON.parse(saved);
-        } catch (e) {
-          produtos = [];
-        }
-      }
+      produtos = viagem.produtos || [];
     }
 
     // 3. Validar saldo pendente (soma dos produtos deve bater com o total da viagem)

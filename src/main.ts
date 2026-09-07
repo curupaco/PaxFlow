@@ -41,6 +41,26 @@ window.addEventListener('vite:preloadError', (event) => {
 VersionChecker.getInstance().init();
 VersionToast.init();
 
+// Expurgo preventivo de resíduos legados de dados operacionais que possam ter ficado no localStorage
+try {
+  const chavesParaRemover: string[] = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k && (
+      k.startsWith('paxflow-produtos-viagem-') ||
+      k.startsWith('paxflow-processo-conferido-') ||
+      k.startsWith('paxflow-loc-conferencias-') ||
+      k === 'paxflow-viagens-local' ||
+      k === 'paxflow-clientes-backup'
+    )) {
+      chavesParaRemover.push(k);
+    }
+  }
+  chavesParaRemover.forEach(k => localStorage.removeItem(k));
+} catch (e) {
+  // Ignora se localStorage for restrito pelo navegador
+}
+
 class App {
   private container: HTMLElement;
   private user: any = null;
