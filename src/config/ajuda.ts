@@ -48,7 +48,7 @@ export const HELP_ITEMS: HelpItem[] = [
     modulo: 'onboarding',
     label: 'Fechando uma Venda e Criando a Viagem',
     description: 'Como formalizar a aprovação do orçamento e gerar o registro operacional da viagem.',
-    details: 'Quando o cliente aprova uma proposta:\n\n1. No card do orçamento (estágio "Aguardando"), clique em **Aceitar / Vender**.\n2. **Dados Cadastrais Obrigatórios**: O PaxFlow exige que o cliente tenha CPF ou CNPJ cadastrado e a Data de Nascimento preenchida. Se faltar, um modal abrirá para você preencher imediatamente.\n3. **Geração Automática**: Assim que você confirma, o orçamento é finalizado e o sistema cria automaticamente uma **Viagem** correspondente no menu operacional, importando os dados e notas da negociação. Você não precisa redigitar nada!'
+    details: 'Quando o cliente aprova uma proposta:\n\n1. No card do orçamento (estágio "Aguardando"), clique em **Aceitar / Vender**.\n2. **Dados Cadastrais Obrigatórios**: O PaxFlow exige que o cliente tenha CPF ou CNPJ cadastrado. Para pessoas físicas (CPF), a Data de Nascimento é obrigatória; já para pessoas jurídicas (CNPJ), o campo torna-se opcional. Se faltar algum dado, um modal abrirá para você preencher imediatamente.\n3. **Geração Automática**: Assim que você confirma, o orçamento é finalizado e o sistema cria automaticamente uma **Viagem** correspondente no menu operacional, importando os dados e notas da negociação. Você não precisa redigitar nada!'
   },
   {
     id: 'dicas-atalhos',

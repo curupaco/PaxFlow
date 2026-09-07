@@ -1910,6 +1910,11 @@ export class OrcamentosPage {
       }
     }
 
+    const initialDocDigits = (docVal || '').replace(/\D/g, '');
+    const isInitialCnpj = initialDocDigits.length > 11;
+    const hasExistingBirth = !!(linkedClient && (linkedClient.dataNascimento || linkedClient.data_nascimento));
+    const isBirthRequiredInitial = !isInitialCnpj && !hasExistingBirth;
+
     modalContent.innerHTML = `
       <div class="p-6 max-h-[85vh] overflow-y-auto custom-scrollbar">
         <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3 mb-5">
@@ -1949,8 +1954,10 @@ export class OrcamentosPage {
                 ${renderDocumentInputHTML('input-fechar-cli-doc', docVal, 'Digite o CPF ou CNPJ do cliente', true, !!(linkedClient && linkedClient.documento))}
               </div>
               <div>
-                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Data de Nascimento *</label>
-                ${renderDateInputHTML('input-fechar-cli-nascimento', linkedClient?.dataNascimento || linkedClient?.data_nascimento || '', 'DD/MM/AAAA', !(linkedClient && (linkedClient.dataNascimento || linkedClient.data_nascimento)), !!(linkedClient && (linkedClient.dataNascimento || linkedClient.data_nascimento)))}
+                <label id="label-fechar-cli-nascimento" class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">
+                  ${isBirthRequiredInitial ? 'Data de Nascimento *' : 'Data de Nascimento <span class="text-slate-400 font-normal lowercase">(opcional)</span>'}
+                </label>
+                ${renderDateInputHTML('input-fechar-cli-nascimento', linkedClient?.dataNascimento || linkedClient?.data_nascimento || '', 'DD/MM/AAAA', isBirthRequiredInitial, hasExistingBirth)}
               </div>
               <div>
                 <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Origem do Lead *</label>
@@ -2073,12 +2080,45 @@ export class OrcamentosPage {
       { id: 'input-fechar-cli-email', type: 'email', required: !(linkedClient && linkedClient.email) },
       { id: 'input-fechar-cli-telefone', type: 'phone', required: !(linkedClient && linkedClient.telefone) },
       { id: 'input-fechar-cli-doc', type: 'cpf_cnpj', required: !(linkedClient && linkedClient.documento) },
-      { id: 'input-fechar-cli-nascimento', type: 'date', required: !(linkedClient && (linkedClient.dataNascimento || linkedClient.data_nascimento)) },
+      { id: 'input-fechar-cli-nascimento', type: 'date', required: isBirthRequiredInitial },
       { id: 'input-fechar-via-ida', type: 'date', required: true },
       { id: 'input-fechar-via-volta', type: 'date', required: false },
       { id: 'input-fechar-via-data-financeiro', type: 'date', required: true },
       { id: 'input-fechar-via-valor', type: 'currency', required: true }
     ]);
+
+    // Listener para ajustar obrigatoriedade da data de nascimento de acordo com CPF/CNPJ
+    const docInputEl = document.getElementById('input-fechar-cli-doc') as HTMLInputElement;
+    const updateNascRequirement = () => {
+      const nascInput = document.getElementById('input-fechar-cli-nascimento') as HTMLInputElement;
+      const nascLbl = document.getElementById('label-fechar-cli-nascimento');
+      if (!docInputEl || !nascInput) return;
+
+      const docDigits = docInputEl.value.replace(/\D/g, '');
+      const isCnpj = docDigits.length > 11;
+      const hasBirth = !!(linkedClient && (linkedClient.dataNascimento || linkedClient.data_nascimento));
+
+      if (isCnpj) {
+        nascInput.removeAttribute('required');
+        if (nascLbl) {
+          nascLbl.innerHTML = 'Data de Nascimento <span class="text-slate-400 font-normal lowercase">(opcional)</span>';
+        }
+      } else {
+        if (!hasBirth) {
+          nascInput.setAttribute('required', 'true');
+          if (nascLbl) {
+            nascLbl.innerHTML = 'Data de Nascimento *';
+          }
+        }
+      }
+
+      if (validator) {
+        validator.validateAll();
+      }
+    };
+
+    docInputEl?.addEventListener('input', updateNascRequirement);
+    docInputEl?.addEventListener('change', updateNascRequirement);
 
     // Executa uma vez no início para ajustar os atributos required e a visibilidade
     updateFlowVisibility();
@@ -2117,8 +2157,14 @@ export class OrcamentosPage {
         const cDataNascimento = formatBrDateToIso(cNascRaw) || undefined;
         const origem = (document.getElementById('select-fechar-origem') as HTMLSelectElement).value;
 
-        if (!cDataNascimento) {
+        const isCnpj = cDoc.replace(/\D/g, '').length > 11;
+
+        if (!isCnpj && !cDataNascimento) {
           throw new Error('Por favor, informe a Data de Nascimento no formato correto DD/MM/AAAA.');
+        }
+
+        if (cNascRaw && !cDataNascimento) {
+          throw new Error('Data de Nascimento inválida. Use o formato correto DD/MM/AAAA.');
         }
 
         const isNovaViagem = radioNova ? radioNova.checked : true;
