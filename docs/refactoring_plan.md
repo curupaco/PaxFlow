@@ -15,12 +15,14 @@ Reduzir o acoplamento entre apresentação gráfica, estado reativo, regras de n
 A análise das páginas monolíticas do PaxFlow (ex: `Inbox.ts`, `Orcamentos.ts`, `Clientes.ts`, `main.ts`) identificou quatro sintomas superficiais e duas causas-raiz arquiteturais:
 
 ### Sintomas Superficiais
+
 1. **Estilos CSS Embutidos:** Centenas de linhas de CSS estático injetadas em blocos `<style>` contidos em template literals JS/TS.
 2. **Consultas diretas ao Banco:** Operações diretas ao Supabase (`insert`, `select`, `update`, `delete`) executadas dentro de métodos visuais.
 3. **HTML e Templating Acoplados:** Markup extenso e dinâmico concatenado dentro de métodos de renderização da classe da página.
 4. **Listeners Descentralizados:** Múltiplas chamadas `addEventListener` anexadas diretamente ao DOM sem controle de ciclo de vida ou delegação.
 
 ### Causas-Raiz Arquiteturais
+
 1. **Estado da Tela Centralizado na Renderização:** A classe da página (ex: `InboxPage`) é dona de todo o estado reativo da aplicação: dados carregados, filtros ativos, item selecionado, modais abertos, usuário atual, loading, paginação, calendário e SLAs.
 2. **Acoplamento Triplo (UI + Negócio + Infraestrutura):** Regras de negócio (ex: cálculo de SLA ou elegibilidade de reembolso), chamadas Supabase e atualizações visuais do DOM vivem dentro dos mesmos handlers de eventos.
 
@@ -71,7 +73,7 @@ graph TD
 
 ## 5. Estrutura de Diretórios Recomendada
 
-```
+```text
 src/
 ├── styles/
 │   ├── globals.css          # Reset e regras globais
@@ -113,74 +115,83 @@ src/
 Para garantir baixo consumo de tokens e estabilidade no ambiente de desenvolvimento, cada fase deve ser executada de forma independente, finalizando em um estado compilável e com teste de regressão.
 
 ### Fase 0: Baseline & Mapeamento de Dependências
-* **Objetivo:** Catalogar a estrutura existente antes de realizar qualquer alteração de código.
-* **Escopo:** Mapear tamanho dos arquivos, lista de imports, chamadas diretas ao Supabase, listeners registrados e dependências circulares.
-* **Risco de Regressão:** Nulo.
-* **Definition of Done (DoD):**
+
+- **Objetivo:** Catalogar a estrutura existente antes de realizar qualquer alteração de código.
+- **Escopo:** Mapear tamanho dos arquivos, lista de imports, chamadas diretas ao Supabase, listeners registrados e dependências circulares.
+- **Risco de Regressão:** Nulo.
+- **Definition of Done (DoD):**
   - [ ] Inventário de arquivos monolíticos documentado.
   - [ ] Mapeamento das queries Supabase ativas em cada página.
 
 ### Fase 1: Extração de Estilos (CSS Modular por Responsabilidade)
-* **Objetivo:** Mover os blocos de CSS estático embutido em string para arquivos `.css` dedicados, organizados na hierarquia `styles/`, `pages/` e `components/`.
-* **Escopo:** `main.ts`, `Inbox.ts`, `Orcamentos.ts`, `Clientes.ts`.
-* **Risco de Regressão:** Baixo (preservar especificidade e ordem de carregamento sem refatorar seletores).
-* **Definition of Done (DoD):**
+
+- **Objetivo:** Mover os blocos de CSS estático embutido em string para arquivos `.css` dedicados, organizados na hierarquia `styles/`, `pages/` e `components/`.
+- **Escopo:** `main.ts`, `Inbox.ts`, `Orcamentos.ts`, `Clientes.ts`.
+- **Risco de Regressão:** Baixo (preservar especificidade e ordem de carregamento sem refatorar seletores).
+- **Definition of Done (DoD):**
   - [ ] Zero blocos `<style>` em template literals nas páginas.
   - [ ] Arquivos `.css` criados e importados via ES Modules (`import './inbox.css'`).
   - [ ] Layout visual e responsividade mantidos idênticos ao original.
 
 ### Fase 2: Service Layer do Inbox & Alinhamento com AgencyContext
-* **Objetivo:** Criar `src/services/inboxService.ts` e isolar consultas de alertas, lembretes manuais, SLAs e menções.
-* **Escopo:** Separar a camada em Queries (leitura) e Commands (escrita), integrando a passagem de `agencia_id`.
-* **Risco de Regressão:** Baixo.
-* **Definition of Done (DoD):**
+
+- **Objetivo:** Criar `src/services/inboxService.ts` e isolar consultas de alertas, lembretes manuais, SLAs e menções.
+- **Escopo:** Separar a camada em Queries (leitura) e Commands (escrita), integrando a passagem de `agencia_id`.
+- **Risco de Regressão:** Baixo.
+- **Definition of Done (DoD):**
   - [ ] `Inbox.ts` não possui nenhum import de `@supabase/supabase-js`.
   - [ ] Todas as chamadas de banco do Inbox utilizam `inboxService.ts`.
   - [ ] Tipos explicitamente declarados em `src/types/inbox.ts`.
   - [ ] Integração com `AgencyContext` preservada.
 
 ### Fase 3: Service Layer de Orçamentos e Clientes
-* **Objetivo:** Criar `orcamentosService.ts` e `clientesService.ts` para isolar buscas de leads, mudanças de status e atribuição de consultores.
-* **Escopo:** Refatoração de `Orcamentos.ts` e `Clientes.ts`.
-* **Risco de Regressão:** Baixo.
-* **Definition of Done (DoD):**
+
+- **Objetivo:** Criar `orcamentosService.ts` e `clientesService.ts` para isolar buscas de leads, mudanças de status e atribuição de consultores.
+- **Escopo:** Refatoração de `Orcamentos.ts` e `Clientes.ts`.
+- **Risco de Regressão:** Baixo.
+- **Definition of Done (DoD):**
   - [ ] `Orcamentos.ts` e `Clientes.ts` desvinculados do cliente Supabase.
   - [ ] Tratamento de exceções e erros de rede padronizados.
 
 ### Fase 4: Componentização Funcional & Lifecycle de Modais
-* **Objetivo:** Extrair modais e blocos visuais extensos (`EmailReaderModal.ts`, `VerNotasModal.ts`, `CalendarGrid.ts`) para `src/components/`.
-* **Escopo:** Implementar contratos claros de entrada (Props), saída (Events) e ciclo de vida (`mount()` / `unmount()`).
-* **Risco de Regressão:** Médio.
-* **Definition of Done (DoD):**
+
+- **Objetivo:** Extrair modais e blocos visuais extensos (`EmailReaderModal.ts`, `VerNotasModal.ts`, `CalendarGrid.ts`) para `src/components/`.
+- **Escopo:** Implementar contratos claros de entrada (Props), saída (Events) e ciclo de vida (`mount()` / `unmount()`).
+- **Risco de Regressão:** Médio.
+- **Definition of Done (DoD):**
   - [ ] Modais extraídos em módulos isolados em `src/components/`.
   - [ ] Componentes sem acessos diretos ao Supabase.
   - [ ] Event listeners desanexados no encerramento (`unmount`).
 
 ### Fase 5: Application Shell & Bootstrapping
-* **Objetivo:** Reduzir `main.ts` a um ponto de entrada (bootstrap) enxuto e estruturado.
-* **Escopo:** Separar o roteamento (`router.ts`), fluxo de autenticação (`auth/`) e o modal global "Meu Perfil".
-* **Risco de Regressão:** Médio.
-* **Definition of Done (DoD):**
+
+- **Objetivo:** Reduzir `main.ts` a um ponto de entrada (bootstrap) enxuto e estruturado.
+- **Escopo:** Separar o roteamento (`router.ts`), fluxo de autenticação (`auth/`) e o modal global "Meu Perfil".
+- **Risco de Regressão:** Médio.
+- **Definition of Done (DoD):**
   - [ ] `main.ts` reduzido para < 100 linhas com responsabilidade exclusiva de bootstrapping.
   - [ ] Fluxo de autenticação isolado em módulo próprio.
 
 ### Fase 6: Camada de Estado & Controllers (Por Domínio)
-* **Objetivo:** Separar as regras de interação e estado reativo da rendering engine da página.
-* **Escopo:** Introduzir controllers leves (ex: `InboxController.ts`) para controlar filtros, ordenação e itens selecionados.
-* **Risco de Regressão:** Médio.
-* **Definition of Done (DoD):**
+
+- **Objetivo:** Separar as regras de interação e estado reativo da rendering engine da página.
+- **Escopo:** Introduzir controllers leves (ex: `InboxController.ts`) para controlar filtros, ordenação e itens selecionados.
+- **Risco de Regressão:** Médio.
+- **Definition of Done (DoD):**
   - [ ] Separação clara entre orquestração de DOM (`InboxPage`) e gerenciamento de estado (`InboxController`).
 
 ### Fase 7: Padronização Transversal & Limpeza Estrutural
-* **Objetivo:** Padronizar estados visuais de feedback (`loading`, `empty`, `error`) e eliminar código legado.
-* **Risco de Regressão:** Baixo.
-* **Definition of Done (DoD):**
+
+- **Objetivo:** Padronizar estados visuais de feedback (`loading`, `empty`, `error`) e eliminar código legado.
+- **Risco de Regressão:** Baixo.
+- **Definition of Done (DoD):**
   - [ ] Padrão de componentes feedback reutilizável em todas as páginas refatoradas.
   - [ ] Código morto e temporário removido.
 
 ### Fase 8: Validação Arquitetural & Anti-Regressão
-* **Objetivo:** Garantir a sustentabilidade da arquitetura e evitar o surgimento de novos "God Files".
-* **Definition of Done (DoD):**
+
+- **Objetivo:** Garantir a sustentabilidade da arquitetura e evitar o surgimento de novos "God Files".
+- **Definition of Done (DoD):**
   - [ ] Verificação: Nenhuma página em `src/pages/` importa diretamente o Supabase.
   - [ ] Nenhuma classe/arquivo ultrapassa os limites recomendados de responsabilidade.
   - [ ] Ausência de dependências circulares entre componentes e serviços.
@@ -190,5 +201,6 @@ Para garantir baixo consumo de tokens e estabilidade no ambiente de desenvolvime
 ## 7. Workflow de Execução das Fases
 
 Para executar qualquer uma das fases acima com o assistente Antigravity:
+
 1. Informe a **Fase** pretendida (ex: *"Executar a Fase 2 do refactoring_plan.md"*).
 2. O assistente iniciará pelo mapeamento da fase, efetuará as alterações com compilação e validação estática do TypeScript, concluindo com a validação visual/funcional.
