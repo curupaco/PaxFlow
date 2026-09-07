@@ -120,8 +120,12 @@ export class NextTripPage {
   private render(): void {
     const isAdmin = this.perfil?.role === 'admin';
     const filtradas = this.getFilteredOportunidades();
-    const altaProntidaoCount = this.oportunidades.filter(o => o.nivelProntidao === 'alto').length;
-    const mediaProntidaoCount = this.oportunidades.filter(o => o.nivelProntidao === 'medio').length;
+    const opsConsultor = this.filterConsultor === 'todos'
+      ? this.oportunidades
+      : this.oportunidades.filter(o => o.consultorId === this.filterConsultor);
+    const totalOps = opsConsultor.length;
+    const altaProntidaoCount = opsConsultor.filter(o => o.nivelProntidao === 'alto').length;
+    const mediaProntidaoCount = opsConsultor.filter(o => o.nivelProntidao === 'medio').length;
 
     this.container.innerHTML = `
       <div class="min-h-screen bg-slate-50/50 dark:bg-slate-950 flex flex-col font-sans transition-colors duration-200">
@@ -165,7 +169,7 @@ export class NextTripPage {
                   <circle cx="12" cy="12" r="1.5" fill="currentColor" />
                 </svg>
               </div>
-              <div class="text-2xl font-black text-slate-800 dark:text-white">${this.oportunidades.length}</div>
+              <div class="text-2xl font-black text-slate-800 dark:text-white">${totalOps}</div>
               <span class="text-[10px] text-slate-400 font-medium">Clientes monitorados na janela de recompra</span>
             </div>
 
@@ -236,7 +240,7 @@ export class NextTripPage {
             </div>
 
             <span class="text-xs font-extrabold text-slate-400 shrink-0">
-              Exibindo <strong class="text-indigo-600 dark:text-indigo-400 font-black">${filtradas.length}</strong> de ${this.oportunidades.length}
+              Exibindo <strong class="text-indigo-600 dark:text-indigo-400 font-black">${filtradas.length}</strong> de ${totalOps}
             </span>
           </div>
 

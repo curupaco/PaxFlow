@@ -344,14 +344,22 @@ export class ComercialDashboard {
     if (this.perfil?.role === 'admin') {
       // Se admin, filtra pelo consultor selecionado no dropdown
       if (this.selectedConsultantId !== 'todos') {
-        tempOrc = tempOrc.filter(o => o.consultorId === this.selectedConsultantId);
-        tempVia = tempVia.filter(v => v.consultorId === this.selectedConsultantId);
+        tempOrc = tempOrc.filter(o => (o.consultorId || (o as any).consultor_id) === this.selectedConsultantId);
+        tempVia = tempVia.filter(v => {
+          const vConsultorId = v.consultorId || (v as any).consultor_id;
+          const vRespId = (v as any).consultorResponsavelId || (v as any).consultor_responsavel_id;
+          return vConsultorId === this.selectedConsultantId || vRespId === this.selectedConsultantId;
+        });
       }
     } else {
       // Se consultor (ou perfil não-admin), restringe estritamente aos registros do consultor logado
       const currentUserId = this.user?.id;
-      tempOrc = tempOrc.filter(o => o.consultorId === currentUserId);
-      tempVia = tempVia.filter(v => (v.consultorId || (v as any).consultor_id) === currentUserId);
+      tempOrc = tempOrc.filter(o => (o.consultorId || (o as any).consultor_id) === currentUserId);
+      tempVia = tempVia.filter(v => {
+        const vConsultorId = v.consultorId || (v as any).consultor_id;
+        const vRespId = (v as any).consultorResponsavelId || (v as any).consultor_responsavel_id;
+        return vConsultorId === currentUserId || vRespId === currentUserId;
+      });
     }
 
     // 2. Filtragem por período temporal

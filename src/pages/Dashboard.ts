@@ -1500,14 +1500,19 @@ export class Dashboard {
 
     // 3. Aplicação completa de filtros: Busca textual + Mês Corrente + Aba ativa + Filtros de Data Avançados
     const filtrados = this.viagens.filter(v => {
-      // Filtro de Consultor e Mês Corrente (se não estiver buscando por texto no Co-Piloto)
+      const vConsultorId = v.consultor_id || (v as any).consultorId;
+      const vRespId = v.consultor_responsavel_id || (v as any).consultorResponsavelId;
+
+      // Filtro de Consultor (aplica-se sempre, com ou sem busca textual)
+      if (this.perfil?.role !== 'admin') {
+        if (vConsultorId !== this.user?.id && vRespId !== this.user?.id) return false;
+      } else if (this.selectedConsultantId !== 'todos') {
+        if (vConsultorId !== this.selectedConsultantId && vRespId !== this.selectedConsultantId) return false;
+      }
+
+      // Filtro de Mês Corrente (apenas quando não houver busca textual global)
       if (!this.buscaTermo) {
-        if (this.perfil?.role !== 'admin') {
-          if (v.consultor_id !== this.user?.id && v.consultor_responsavel_id !== this.user?.id) return false;
-        }
         if (this.viewModeMonth === 'current' && !this.isCurrentMonthTrip(v)) return false;
-      } else if (this.perfil?.role === 'admin' && this.selectedConsultantId !== 'todos') {
-        if (v.consultor_id !== this.selectedConsultantId) return false;
       }
 
       // Filtro de Aba de Status ativa
