@@ -587,6 +587,37 @@ export const supabase = new Proxy(realSupabase, {
             saveMockDataForTable('profiles', [...mockProfiles, newUser]);
             return Promise.resolve({ data: newId, error: null });
           }
+          if (rpcName === 'obter_itinerario_publico') {
+            const vId = params?.viagem_uuid;
+            const viagensDb = getMockDataForTable('viagens');
+            const v = viagensDb.find((item: any) => item.id === vId) || viagensDb[0];
+            if (v) {
+              const clientesDb = getMockDataForTable('clientes');
+              const cli = clientesDb.find((c: any) => c.id === (v.cliente_id || v.clienteId));
+              const profilesDb = getMockDataForTable('profiles');
+              const prof = profilesDb.find((p: any) => p.id === (v.consultor_id || v.consultorId));
+              const prodsDb = getMockDataForTable('produtos_viagem');
+              const prods = prodsDb.filter((p: any) => (p.viagem_id || p.viagemId) === v.id);
+
+              return Promise.resolve({
+                data: {
+                  destino: v.destino,
+                  data_ida: v.data_ida || v.dataIda,
+                  data_volta: v.data_volta || v.dataVolta,
+                  codigo_localizador: v.codigo_localizador || v.codigoLocalizador,
+                  codigo_ref: v.codigo_ref || v.codigoRef,
+                  cliente_nome: cli ? cli.nome : (v.cliente_nome || 'Passageiro'),
+                  cliente_id: cli ? cli.id : v.cliente_id,
+                  consultor_nome: prof ? prof.nome : 'Consultor PaxFlow',
+                  consultor_id: prof ? prof.id : v.consultor_id,
+                  consultor_avatar: prof ? prof.avatar_url : null,
+                  produtos: prods
+                },
+                error: null
+              });
+            }
+            return Promise.resolve({ data: null, error: new Error('Viagem não encontrada') });
+          }
           if (rpcName === 'admin_set_user_password') {
             return Promise.resolve({ data: null, error: null });
           }

@@ -217,7 +217,19 @@ export class PublicViews {
       return `${parts[2]}/${parts[1]}/${parts[0]}`;
     };
 
-    // Renderização dos produtos na linha do tempo
+    // Garante que showCustomAlert esteja disponível globalmente para handlers inline
+    (window as any).showCustomAlert = showCustomAlert;
+
+    // Configuração oficial do canal de suporte do viajante
+    const passageiro = data.cliente_nome || 'Passageiro';
+    const destino = data.destino || 'minha viagem';
+    const loc = data.codigo_localizador || 'S/N';
+    const consultor = data.consultor_nome || 'meu consultor';
+    const msgWhatsApp = `Olá! Sou ${passageiro} da viagem para ${destino} (Localizador: ${loc}). Gostaria de falar com meu consultor ${consultor}.`;
+    const whatsappOficial = '551130907070';
+    const whatsappUrl = `https://api.whatsapp.com/send?phone=${whatsappOficial}&text=${encodeURIComponent(msgWhatsApp)}`;
+
+    // Renderização dos produtos na linha do tempo com selo de serviço confirmado
     let timelineHTML = '';
     if (data.produtos && data.produtos.length > 0) {
       timelineHTML = data.produtos.map((p: any, idx: number) => {
@@ -240,7 +252,7 @@ export class PublicViews {
             
             <!-- Conteúdo do card -->
             <div class="public-glass p-5 rounded-2xl shadow-sm border border-slate-200/80 dark:border-slate-800 transition transform hover:scale-[1.01]">
-              <div class="flex items-center justify-between gap-2 flex-wrap">
+              <div class="flex items-center justify-between gap-2 flex-wrap mb-2">
                 <span class="inline-flex px-2.5 py-0.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 text-[9px] font-black uppercase rounded-md tracking-wider border border-indigo-100/30 dark:border-indigo-900/30">
                   ${p.tipo}
                 </span>
@@ -249,20 +261,26 @@ export class PublicViews {
                 </span>
               </div>
               
-              <h4 class="text-sm font-black text-slate-800 dark:text-slate-200 mt-2.5 tracking-tight">${p.fornecedor}</h4>
-              <p class="text-xs text-slate-400 dark:text-slate-400 font-semibold mt-1 leading-relaxed">${p.descricao}</p>
+              <h4 class="text-sm font-black text-slate-800 dark:text-slate-200 tracking-tight">${p.fornecedor}</h4>
+              <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold mt-1 leading-relaxed">${p.descricao}</p>
               
-              ${p.codigo_reserva ? `
-                <div class="mt-3.5 pt-3.5 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
-                  <span class="text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wider">Localizador/Reserva</span>
-                  <div class="flex items-center gap-1.5">
-                    <span id="loc-code-${idx}" class="text-xs font-black text-slate-800 dark:text-slate-300 font-mono tracking-wider bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-md select-all">${p.codigo_reserva}</span>
+              <!-- Selo de confirmação e emissão -->
+              <div class="mt-3 flex items-center justify-between flex-wrap gap-2 pt-2 border-t border-slate-100 dark:border-slate-800/80">
+                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-[10px] font-extrabold border border-emerald-500/20">
+                  <svg class="w-3 h-3 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+                  Serviço Confirmado &amp; Emitido
+                </span>
+
+                ${p.codigo_reserva ? `
+                  <div class="flex items-center gap-1.5 ml-auto">
+                    <span class="text-[9px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wider">Localizador:</span>
+                    <span id="loc-code-${idx}" class="text-xs font-black text-slate-800 dark:text-slate-300 font-mono tracking-wider bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md select-all">${p.codigo_reserva}</span>
                     <button onclick="navigator.clipboard.writeText('${p.codigo_reserva}'); showCustomAlert('Código localizador copiado para a área de transferência!', 'Copiado');" class="p-1 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition" title="Copiar localizador">
                       <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 7.5V6.108c0-1.135.845-2.098 1.976-2.192.373-.03.748-.057 1.123-.08M15.75 18H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08M15.75 18.75v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5A3.375 3.375 0 006.375 7.5H5.25m11.9-3.664A2.251 2.251 0 0015 2.25h-1.5a2.251 2.251 0 00-2.15 1.586m5.8 0c.065.21.1.433.1.664v.75h-6V4.5c0-.231.035-.454.1-.664M6.75 7.5H4.875c-.621 0-1.125.504-1.125 1.125v12c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V16.5a9 9 0 00-9-9z"/></svg>
                     </button>
                   </div>
-                </div>
-              ` : ''}
+                ` : ''}
+              </div>
             </div>
           </div>
         `;
@@ -275,7 +293,7 @@ export class PublicViews {
       `;
     }
 
-    // Geração do rodapé do consultor
+    // Card do consultor reformulado com número oficial e botão direto
     let consultorHTML = '';
     if (data.consultor_nome) {
       const avatarSVG = data.consultor_avatar 
@@ -283,21 +301,35 @@ export class PublicViews {
         : `<div class="w-12 h-12 rounded-full bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-100 dark:border-indigo-900/40 text-indigo-600 dark:text-indigo-400 font-bold flex items-center justify-center text-lg shrink-0 select-none">${data.consultor_nome.charAt(0)}</div>`;
 
       consultorHTML = `
-        <div class="public-glass p-5 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 flex items-center gap-4 mt-8">
-          ${avatarSVG}
-          <div class="flex-1 min-w-0">
-            <span class="text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wider block">Seu Consultor de Viagens</span>
-            <h4 class="text-sm font-black text-slate-800 dark:text-slate-200 truncate leading-snug">${data.consultor_nome}</h4>
+        <div class="public-glass p-5 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 mt-6 flex flex-col gap-4">
+          <div class="flex items-center gap-4">
+            ${avatarSVG}
+            <div class="flex-1 min-w-0">
+              <span class="text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wider block">Seu Consultor Dedicado</span>
+              <h4 class="text-sm font-black text-slate-800 dark:text-slate-200 truncate leading-snug">${data.consultor_nome}</h4>
+              <span class="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1.5 mt-0.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse"></span>
+                WhatsApp Oficial: (11) 3090-7070
+              </span>
+            </div>
           </div>
-          <a href="https://api.whatsapp.com/send?phone=&text=Olá, ${data.consultor_nome}! Estou com uma dúvida sobre meu itinerário para ${data.destino}." target="_blank" class="w-10 h-10 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 rounded-2xl flex items-center justify-center border border-emerald-100 dark:border-emerald-900/30 transition shrink-0 shadow-sm" title="Falar no WhatsApp">
-            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.724-1.455L0 24zm6.59-4.846c1.6.95 3.197 1.451 4.777 1.451 5.51 0 9.997-4.493 10-10.008.002-2.673-1.037-5.186-2.93-7.079-1.892-1.893-4.401-2.934-7.078-2.934-5.518 0-10.007 4.493-10.01 10.01-.001 1.708.455 3.377 1.32 4.887L1.134 22.84l4.513-1.186zm11.23-7.925c-.297-.149-1.758-.868-2.03-.967-.273-.099-.471-.148-.669.149-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.568-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/></svg>
-          </a>
+
+          <div class="grid grid-cols-2 gap-2.5">
+            <a href="${whatsappUrl}" target="_blank" rel="noopener noreferrer" class="py-3 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl flex items-center justify-center gap-2 font-bold text-xs shadow-md shadow-emerald-600/20 transition active:scale-[0.98]">
+              <svg class="w-4 h-4 fill-current shrink-0" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.724-1.455L0 24zm6.59-4.846c1.6.95 3.197 1.451 4.777 1.451 5.51 0 9.997-4.493 10-10.008.002-2.673-1.037-5.186-2.93-7.079-1.892-1.893-4.401-2.934-7.078-2.934-5.518 0-10.007 4.493-10.01 10.01-.001 1.708.455 3.377 1.32 4.887L1.134 22.84l4.513-1.186zm11.23-7.925c-.297-.149-1.758-.868-2.03-.967-.273-.099-.471-.148-.669.149-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.568-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/></svg>
+              <span>WhatsApp</span>
+            </a>
+            <a href="tel:+551130907070" class="py-3 px-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl flex items-center justify-center gap-2 font-bold text-xs shadow-md shadow-indigo-600/20 transition active:scale-[0.98]">
+              <svg class="w-4 h-4 fill-none stroke-current shrink-0" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z"/></svg>
+              <span>Ligar Agora</span>
+            </a>
+          </div>
         </div>
       `;
     }
 
     this.container.innerHTML = `
-      <div class="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors duration-200">
+      <div class="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors duration-200 pb-20">
         <!-- Banner Superior com Degradê e Glassmorphism -->
         <header class="relative bg-gradient-to-br from-indigo-700 via-indigo-800 to-purple-800 text-white py-10 px-6 overflow-hidden">
           <div class="absolute inset-0 bg-grid-white/[0.05] pointer-events-none"></div>
@@ -318,6 +350,18 @@ export class PublicViews {
                 LOC Geral: ${data.codigo_localizador}
               </span>
             ` : ''}
+
+            <!-- Botões de Ação Rápida no Topo -->
+            <div class="flex items-center justify-center gap-2 mt-5 w-full">
+              <button id="btn-share-itinerary" class="flex-1 py-2 px-3 bg-white/15 hover:bg-white/25 active:bg-white/30 text-white rounded-xl text-xs font-bold backdrop-blur-md border border-white/15 transition flex items-center justify-center gap-1.5 shadow-sm">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z"/></svg>
+                Compartilhar
+              </button>
+              <button id="btn-copy-summary" class="flex-1 py-2 px-3 bg-white/15 hover:bg-white/25 active:bg-white/30 text-white rounded-xl text-xs font-bold backdrop-blur-md border border-white/15 transition flex items-center justify-center gap-1.5 shadow-sm">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v2.25A2.25 2.25 0 0113.5 21.75h-7.5A2.25 2.25 0 013.75 19.5V8.25A2.25 2.25 0 016 6h2.25m3 3h7.5A2.25 2.25 0 0121 11.25v8.25A2.25 2.25 0 0118.75 21.75h-7.5A2.25 2.25 0 019 19.5V11.25A2.25 2.25 0 0111.25 9z"/></svg>
+                Copiar Resumo
+              </button>
+            </div>
           </div>
         </header>
 
@@ -333,15 +377,137 @@ export class PublicViews {
             ${timelineHTML}
           </div>
 
+          <!-- Orientações Pré-Embarque e Checklist -->
+          <div class="public-glass p-5 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 mt-6">
+            <div class="flex items-center gap-2.5 mb-3.5">
+              <span class="text-xl">📋</span>
+              <div>
+                <h3 class="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-slate-200">Orientações Pré-Embarque</h3>
+                <p class="text-[10px] text-slate-400 font-medium">Recomendações importantes para uma viagem tranquila</p>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 gap-2.5">
+              <div class="p-3 rounded-2xl bg-white/60 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800/80 flex items-start gap-3">
+                <span class="text-base shrink-0 mt-0.5">📄</span>
+                <div>
+                  <h4 class="text-xs font-black text-slate-800 dark:text-slate-200">Documentação Obrigatória</h4>
+                  <p class="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-0.5 leading-relaxed">
+                    Tenha em mãos seu documento oficial original com foto (RG recente com menos de 10 anos ou Passaporte válido). Verifique também eventuais vistos e vacinas necessárias.
+                  </p>
+                </div>
+              </div>
+
+              <div class="p-3 rounded-2xl bg-white/60 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800/80 flex items-start gap-3">
+                <span class="text-base shrink-0 mt-0.5">⏰</span>
+                <div>
+                  <h4 class="text-xs font-black text-slate-800 dark:text-slate-200">Antecedência no Aeroporto</h4>
+                  <p class="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-0.5 leading-relaxed">
+                    Apresente-se com no mínimo <strong>2 horas</strong> de antecedência para voos nacionais e <strong>3 horas</strong> para voos internacionais.
+                  </p>
+                </div>
+              </div>
+
+              <div class="p-3 rounded-2xl bg-white/60 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800/80 flex items-start gap-3">
+                <span class="text-base shrink-0 mt-0.5">🧳</span>
+                <div>
+                  <h4 class="text-xs font-black text-slate-800 dark:text-slate-200">Bagagem &amp; Normas de Bordo</h4>
+                  <p class="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-0.5 leading-relaxed">
+                    Respeite as dimensões e peso da bagagem contratada. Objetos cortantes e recipientes de líquidos acima de 100ml devem ser despachados em voos ao exterior.
+                  </p>
+                </div>
+              </div>
+
+              <div class="p-3 rounded-2xl bg-white/60 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800/80 flex items-start gap-3">
+                <span class="text-base shrink-0 mt-0.5">🛡️</span>
+                <div>
+                  <h4 class="text-xs font-black text-slate-800 dark:text-slate-200">Seguro &amp; Assistência Médica</h4>
+                  <p class="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-0.5 leading-relaxed">
+                    Mantenha o número da sua apólice e o contato da central de emergência 24h acessíveis no celular durante todo o período da viagem.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- Card do Consultor -->
           ${consultorHTML}
 
-          <div class="mt-8 text-center text-[10px] text-slate-400 dark:text-slate-400 font-bold select-none pb-8">
+          <div class="mt-8 text-center text-[10px] text-slate-400 dark:text-slate-400 font-bold select-none pb-4">
             Gerado automaticamente por PaxFlow © 2026.
           </div>
         </main>
+
+        <!-- Barra Flutuante de Suporte ao Viajante (WhatsApp Oficial e Ligação) -->
+        <div class="fixed bottom-5 right-5 z-50 flex items-center p-1.5 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md rounded-full shadow-2xl border border-slate-200/80 dark:border-slate-800 gap-1.5">
+          <a href="${whatsappUrl}" target="_blank" rel="noopener noreferrer" class="flex items-center gap-2 px-3.5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-full text-xs font-black shadow-sm transition transform active:scale-95 group" title="Falar no WhatsApp">
+            <span class="relative flex h-2 w-2">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+            </span>
+            <svg class="w-4 h-4 fill-current shrink-0" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.724-1.455L0 24zm6.59-4.846c1.6.95 3.197 1.451 4.777 1.451 5.51 0 9.997-4.493 10-10.008.002-2.673-1.037-5.186-2.93-7.079-1.892-1.893-4.401-2.934-7.078-2.934-5.518 0-10.007 4.493-10.01 10.01-.001 1.708.455 3.377 1.32 4.887L1.134 22.84l4.513-1.186zm11.23-7.925c-.297-.149-1.758-.868-2.03-.967-.273-.099-.471-.148-.669.149-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.568-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/></svg>
+            <span>WhatsApp</span>
+          </a>
+          <a href="tel:+551130907070" class="flex items-center gap-2 px-3.5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full text-xs font-black shadow-sm transition transform active:scale-95 group" title="Ligar para o consultor">
+            <svg class="w-4 h-4 fill-none stroke-current shrink-0" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z"/></svg>
+            <span>Ligar</span>
+          </a>
+        </div>
       </div>
     `;
+
+    // Configuração dos ouvintes de eventos para botões de ação rápida
+    const btnShare = this.container.querySelector('#btn-share-itinerary') as HTMLButtonElement | null;
+    if (btnShare) {
+      btnShare.onclick = async () => {
+        const shareData = {
+          title: `Itinerário de Viagem - ${data.destino}`,
+          text: `Confira o itinerário completo da viagem para ${data.destino}:`,
+          url: window.location.href,
+        };
+
+        if (navigator.share) {
+          try {
+            await navigator.share(shareData);
+          } catch (err) {
+            // Se o usuário cancelou o compartilhamento nativo, não faz nada
+          }
+        } else {
+          navigator.clipboard.writeText(window.location.href).then(() => {
+            showCustomAlert('Link do itinerário copiado para a área de transferência!', 'Link Copiado');
+          }).catch(() => {
+            showCustomAlert('Não foi possível copiar o link automaticamente.', 'Atenção');
+          });
+        }
+      };
+    }
+
+    const btnCopySummary = this.container.querySelector('#btn-copy-summary') as HTMLButtonElement | null;
+    if (btnCopySummary) {
+      btnCopySummary.onclick = () => {
+        let resumo = `✈️ ITINERÁRIO DE VIAGEM: ${data.destino.toUpperCase()}\n` +
+          `📅 Período: ${formatarDataAmigavel(data.data_ida)} a ${formatarDataAmigavel(data.data_volta)}\n` +
+          (data.codigo_localizador ? `🔖 Localizador Geral: ${data.codigo_localizador}\n` : '') +
+          (data.consultor_nome ? `👤 Consultor: ${data.consultor_nome} (WhatsApp: (11) 3090-7070)\n` : '') +
+          `\n📋 SERVIÇOS CONFIRMADOS:\n`;
+
+        if (data.produtos && data.produtos.length > 0) {
+          data.produtos.forEach((p: any, i: number) => {
+            resumo += `${i + 1}. [${p.tipo}] ${p.fornecedor} - ${formatarDataAmigavel(p.data_servico)}${p.codigo_reserva ? ` (Localizador: ${p.codigo_reserva})` : ''}\n`;
+          });
+        } else {
+          resumo += `Nenhum voucher detalhado cadastrado no momento.\n`;
+        }
+
+        resumo += `\n🔗 Link completo do itinerário: ${window.location.href}`;
+
+        navigator.clipboard.writeText(resumo).then(() => {
+          showCustomAlert('Resumo da viagem copiado com sucesso para a sua área de transferência!', 'Resumo Copiado');
+        }).catch(() => {
+          showCustomAlert('Não foi possível copiar o resumo automaticamente.', 'Atenção');
+        });
+      };
+    }
   }
 
   /**
