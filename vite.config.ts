@@ -35,7 +35,7 @@ export default defineConfig(({ mode }) => {
     },
     esbuild: {
       drop: mode === 'production' ? ['debugger'] : [],
-      pure: mode === 'production' ? ['console.log', 'console.info', 'console.debug', 'console.warn'] : [],
+      pure: mode === 'production' ? ['console.debug'] : [],
     },
     build: {
       rollupOptions: {

@@ -859,9 +859,9 @@ export class RelatoriosPage {
             if (!productTypes[tipo]) {
               productTypes[tipo] = { faturamento: 0, custo: 0, lucro: 0 };
             }
-            productTypes[tipo].faturamento += (p.valorVenda || 0);
-            productTypes[tipo].custo += (p.valorCusto || 0);
-            productTypes[tipo].lucro += ((p.comissao || 0) + (p.markup || 0) + ((p.rav || 0) * 0.88));
+            productTypes[tipo].faturamento += Number(p.valor_venda ?? p.valorVenda ?? 0);
+            productTypes[tipo].custo += Number(p.valor_custo ?? p.valorCusto ?? 0);
+            productTypes[tipo].lucro += ((Number(p.comissao) || 0) + (Number(p.markup) || 0) + ((Number(p.rav) || 0) * 0.88));
           }
         });
       }
@@ -2612,7 +2612,8 @@ export class RelatoriosPage {
             if (loc) {
               const conf = data.locConferencias.find((c: any) => (c.viagem_id === v.id || c.viagemId === v.id) && (c.codigo_localizador || '').trim().toUpperCase() === loc);
               if (!conf || !conf.conferido) {
-                csvContent += `"Conferência Financeira Pendente";"${clienteNome}";"${destino} (LOC ${loc})";"${p.fornecedor} - Venda: R$ ${p.valorVenda.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}"\n`;
+                const vVenda = Number(p.valor_venda ?? p.valorVenda ?? 0);
+                csvContent += `"Conferência Financeira Pendente";"${clienteNome}";"${destino} (LOC ${loc})";"${p.fornecedor} - Venda: R$ ${vVenda.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}"\n`;
               }
             }
           });

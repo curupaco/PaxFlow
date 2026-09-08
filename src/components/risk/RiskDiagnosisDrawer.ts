@@ -240,16 +240,27 @@ export class RiskDiagnosisDrawer {
         const action = btn.getAttribute('data-action');
         
         if (action === 'conferir_operacional') {
-          const jaConferido = viagem?.processo_conferido || viagem?.isProcessoConferido;
-          await supabase.from('viagens').update({ processo_conferido: true, isProcessoConferido: true }).eq('id', viagemId);
-          showCustomAlert('Conferência Operacional marcada como concluída!', 'Sucesso');
-          
-          if (!jaConferido && user && user.id) {
-            await registrarXp(user.id, 'CONFERENCIA_RISK_SCORE', 50);
-          }
+          try {
+            const jaConferido = !!viagem?.processo_conferido;
+            const { error: errConf } = await supabase
+              .from('viagens')
+              .update({ processo_conferido: true })
+              .eq('id', viagemId);
 
-          if (onUpdate) onUpdate();
-          RiskDiagnosisDrawer.open(viagemId, user, perfil, onUpdate);
+            if (errConf) throw errConf;
+
+            showCustomAlert('Conferência Operacional marcada como concluída!', 'Sucesso');
+            
+            if (!jaConferido && user && user.id) {
+              await registrarXp(user.id, 'CONFERENCIA_RISK_SCORE', 50);
+            }
+
+            if (onUpdate) onUpdate();
+            RiskDiagnosisDrawer.open(viagemId, user, perfil, onUpdate);
+          } catch (errConf: any) {
+            console.error('Erro ao atualizar conferência operacional:', errConf);
+            showCustomAlert('Falha ao registrar a conferência no servidor.', 'Erro');
+          }
         } else if (action === 'anexar_voucher' || action === 'anexar_voucher_geral') {
           uploadInput?.click();
         } else if (action === 'vincular_loc' || action === 'preencher_passaporte') {

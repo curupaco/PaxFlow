@@ -464,7 +464,7 @@ export class OrcamentosService {
           data_ida: vIda,
           data_volta: vVolta,
           data_financeiro: vDataFinanceiro || null,
-          status: vStatus || 'planejamento',
+          status: vStatus || 'fechado',
           observacoes: vObs || null,
           origem: origem || null
         })
@@ -474,6 +474,33 @@ export class OrcamentosService {
       if (errVia) throw errVia;
       if (newVia) {
         newViagemId = newVia.id;
+
+        // Inserir produto inicial correspondente para manter alocação zerada e destravar a viagem no Kanban
+        const prodTipoFinal = prodTipo || 'PACOTE';
+        const prodFornFinal = prodFornecedor || 'OPERADORA';
+        const prodDescFinal = prodDescricao || `Pacote ${vDestino || 'Viagem'}`;
+        try {
+          await supabase
+            .from('produtos_viagem')
+            .insert({
+              viagem_id: newVia.id,
+              tipo: prodTipoFinal,
+              fornecedor: prodFornFinal,
+              descricao: prodDescFinal,
+              codigo_reserva: vLoc || null,
+              valor_custo: 0,
+              valor_venda: vValor,
+              tarifa: vValor,
+              taxa: 0,
+              comissao: 0,
+              markup: 0,
+              rav: 0,
+              status: 'reservado',
+              data_servico: vIda || new Date().toISOString().split('T')[0]
+            });
+        } catch (errProd) {
+          console.warn('Aviso ao criar produto inicial da viagem convertida:', errProd);
+        }
       }
     } else {
       // FLUXO: ADICIONAR À VIAGEM EXISTENTE
@@ -490,6 +517,33 @@ export class OrcamentosService {
         .eq('id', viagemId);
 
       if (errUpdate) throw errUpdate;
+
+      // Inserir produto adicional na viagem existente
+      const prodTipoFinal = prodTipo || 'OUTROS';
+      const prodFornFinal = prodFornecedor || 'FORNECEDOR';
+      const prodDescFinal = prodDescricao || 'Item Adicional Orçamento';
+      try {
+        await supabase
+          .from('produtos_viagem')
+          .insert({
+            viagem_id: viagemId,
+            tipo: prodTipoFinal,
+            fornecedor: prodFornFinal,
+            descricao: prodDescFinal,
+            codigo_reserva: null,
+            valor_custo: 0,
+            valor_venda: vValor,
+            tarifa: vValor,
+            taxa: 0,
+            comissao: 0,
+            markup: 0,
+            rav: 0,
+            status: 'reservado',
+            data_servico: new Date().toISOString().split('T')[0]
+          });
+      } catch (errProd) {
+        console.warn('Aviso ao criar produto adicional na viagem existente:', errProd);
+      }
     }
 
     // 3. Atualizar Orçamento para CONCLUÍDO (ACEITO)

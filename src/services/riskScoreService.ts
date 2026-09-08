@@ -343,8 +343,15 @@ export class RiskScoreService {
         voucher_geral_anexado: true
       }).eq('id', viagemId);
 
-      if (error) throw error;
-      return true;
+      if (!error) return true;
+
+      // Fallback: se as colunas específicas não existirem, anexa com segurança nas observações
+      console.warn('Tentando salvar voucher nas observações da viagem:', error.message);
+      const { data: vData } = await supabase.from('viagens').select('observacoes').eq('id', viagemId).single();
+      const currentObs = vData?.observacoes || '';
+      const novoObs = `${currentObs}\n[VOUCHER_GERAL]: ${urlPdf}`.trim();
+      const { error: errObs } = await supabase.from('viagens').update({ observacoes: novoObs }).eq('id', viagemId);
+      return !errObs;
     } catch (err) {
       console.error('Erro ao salvar voucher geral:', err);
       return false;
@@ -362,8 +369,15 @@ export class RiskScoreService {
         risk_score_justificado_em: new Date().toISOString()
       }).eq('id', viagemId);
 
-      if (error) throw error;
-      return true;
+      if (!error) return true;
+
+      // Fallback: se as colunas específicas não existirem, anexa nas observações
+      console.warn('Tentando salvar justificativa de risco nas observações da viagem:', error.message);
+      const { data: vData } = await supabase.from('viagens').select('observacoes').eq('id', viagemId).single();
+      const currentObs = vData?.observacoes || '';
+      const novoObs = `${currentObs}\n[JUSTIFICATIVA_RISCO - ${autorNome}]: ${justificativa}`.trim();
+      const { error: errObs } = await supabase.from('viagens').update({ observacoes: novoObs }).eq('id', viagemId);
+      return !errObs;
     } catch (err) {
       console.error('Erro ao registrar justificativa de risco:', err);
       return false;

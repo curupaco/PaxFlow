@@ -604,10 +604,10 @@ export class EditTravelModal {
           <!-- COLUNA DO MEIO (Produtos e Serviços) -->
           <div id="tab-produtos-content" class="space-y-5 tab-pane-transition ${activeTab === 'detalhes' || (this.selectedProductId && activeTab === 'produtos') ? 'hidden' : ''} ${this.selectedProductId ? 'lg:col-span-4 lg:!block' : 'lg:col-span-7 lg:!block'} lg:!mt-0">
             
-            <!-- Painel Financeiro (Totalizadores e Saldo Pendente) -->
-            <div id="painel-financeiro-produtos" class="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3.5 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/50 dark:border-slate-800 mb-4">
+            <!-- Painel Financeiro (Totalizadores e Alocação dos Produtos) -->
+            <div id="painel-financeiro-produtos" class="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3.5 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/50 dark:border-slate-800 mb-2">
               <div>
-                <span class="block text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wider leading-tight">Valor da Venda</span>
+                <span class="block text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wider leading-tight">Valor da Viagem</span>
                 <strong id="fin-valor-venda" class="text-sm font-black text-slate-800 dark:text-slate-100">R$ 0,00</strong>
               </div>
               <div>
@@ -615,13 +615,24 @@ export class EditTravelModal {
                 <strong id="fin-valor-produtos" class="text-sm font-black text-slate-800 dark:text-slate-100 font-bold">R$ 0,00</strong>
               </div>
               <div>
-                <span class="block text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wider leading-tight">Saldo Pendente</span>
-                <strong id="fin-valor-pendente" class="text-sm font-black text-rose-600 dark:text-rose-400">R$ 0,00</strong>
+                <span id="fin-label-pendente" class="block text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wider leading-tight">Alocação de Produtos</span>
+                <strong id="fin-valor-pendente" class="text-sm font-black text-emerald-600 dark:text-emerald-400">R$ 0,00</strong>
               </div>
               <div>
                 <span class="block text-[10px] text-indigo-500 dark:text-indigo-400 font-bold uppercase tracking-wider leading-tight">Rentabilidade</span>
                 <strong id="fin-valor-rentabilidade" class="text-sm font-black text-indigo-600 dark:text-indigo-400">R$ 0,00</strong>
               </div>
+            </div>
+
+            <!-- Barra de Sincronização Inteligente (Aparece se houver diferença) -->
+            <div id="fin-sync-bar-container" class="hidden mb-4 p-3 bg-indigo-50/80 dark:bg-indigo-950/40 border border-indigo-200/80 dark:border-indigo-800/60 rounded-xl flex items-center justify-between gap-3 text-xs">
+              <div class="flex items-center gap-2 text-indigo-900 dark:text-indigo-200 font-semibold">
+                <span>⚡</span>
+                <span id="fin-sync-bar-text">A soma dos produtos difere do valor total da viagem.</span>
+              </div>
+              <button id="btn-sync-valor-viagem" type="button" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-[10px] uppercase tracking-wider rounded-lg transition shadow-sm whitespace-nowrap">
+                Sincronizar Total da Viagem
+              </button>
             </div>
             
             <!-- Lista de Produtos Existentes -->
@@ -1090,9 +1101,9 @@ export class EditTravelModal {
         }
       }
 
-      const valor = parseDoubleBr(valorRaw);
+      let valor = parseDoubleBr(valorRaw);
 
-      // Validação de saldo pendente
+      // Validação de alocação de produtos
       if (status !== v.status && status !== 'fechado') {
         let produtos: any[] = [];
         if (!this.options.isFallbackMode) {
@@ -1111,25 +1122,38 @@ export class EditTravelModal {
         }
         const totalProdutos = produtos.reduce((sum, p) => sum + (Number(p.valor_venda) || 0), 0);
         const pendente = valor - totalProdutos;
-        if (Math.abs(pendente) > 0.01) {
-          this.options.showToast(`Não é possível alterar o status para "${status.replace('_', ' ')}". Existe um saldo financeiro pendente de R$ ${pendente.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}. Adicione produtos na aba "Produtos e Serviços" para zerar este saldo.`, 'error');
-          return;
+
+        if (produtos.length > 0 && Math.abs(pendente) > 0.01) {
+          const confirmSync = await showCustomConfirm(
+            `O valor total da viagem (R$ ${valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}) difere da soma dos produtos (R$ ${totalProdutos.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}). Deseja sincronizar automaticamente o valor da viagem com os produtos e prosseguir?`,
+            'Sincronizar Valor da Viagem'
+          );
+          if (confirmSync) {
+            valor = totalProdutos;
+            const inputValor = document.getElementById('edit-viagem-valor') as HTMLInputElement;
+            if (inputValor) inputValor.value = totalProdutos.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          } else {
+            this.options.showToast(`Existe uma diferença de R$ ${Math.abs(pendente).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} entre a viagem e os produtos.`, 'error');
+            return;
+          }
         }
 
-        // Validação de detalhamento dos produtos
-        const produtoNaoDetalhado = produtos.find(p => {
-          const tarifa = Number(p.tarifa) || 0;
-          const taxa = Number(p.taxa) || 0;
-          const comissao = Number(p.comissao) || 0;
-          const markup = Number(p.markup) || 0;
-          const rav = Number(p.rav) || 0;
-          const totalDet = tarifa + taxa + comissao + markup + rav;
-          return Math.abs(Number(p.valor_venda || 0) - totalDet) > 0.01;
-        });
+        // Validação de detalhamento dos produtos ao avançar para Pós-Venda
+        if (status === 'pos_venda') {
+          const produtoNaoDetalhado = produtos.find(p => {
+            const tarifa = Number(p.tarifa) || 0;
+            const taxa = Number(p.taxa) || 0;
+            const comissao = Number(p.comissao) || 0;
+            const markup = Number(p.markup) || 0;
+            const rav = Number(p.rav) || 0;
+            const totalDet = tarifa + taxa + comissao + markup + rav;
+            return Math.abs(Number(p.valor_venda || 0) - totalDet) > 0.01;
+          });
 
-        if (produtoNaoDetalhado) {
-          this.options.showToast(`Não é possível alterar o status para "${status.replace('_', ' ')}". O produto "${produtoNaoDetalhado.fornecedor} - ${produtoNaoDetalhado.descricao}" não está com seus valores 100% detalhados (soma de Tarifa + Taxa + Comissão deve ser igual ao Valor de Venda do produto).`, 'error');
-          return;
+          if (produtoNaoDetalhado) {
+            this.options.showToast(`Não é possível alterar para Pós-Venda. O produto "${produtoNaoDetalhado.fornecedor} - ${produtoNaoDetalhado.descricao}" precisa estar 100% detalhado financeiramente (soma de Tarifa + Taxa + Comissão deve ser igual ao Valor de Venda).`, 'error');
+            return;
+          }
         }
       }
 
@@ -1622,6 +1646,11 @@ export class EditTravelModal {
         codigo_reserva: reserva || null,
         valor_custo: 0,
         valor_venda: venda,
+        tarifa: venda,
+        taxa: 0,
+        comissao: 0,
+        markup: 0,
+        rav: 0,
         status,
         data_servico: dataServico,
         datas_adicionais: datasAdicionais,
@@ -2198,7 +2227,11 @@ export class EditTravelModal {
     const finValorVenda = document.getElementById('fin-valor-venda');
     const finValorProdutos = document.getElementById('fin-valor-produtos');
     const finValorPendente = document.getElementById('fin-valor-pendente');
+    const finLabelPendente = document.getElementById('fin-label-pendente');
     const finValorRentabilidade = document.getElementById('fin-valor-rentabilidade');
+    const syncBar = document.getElementById('fin-sync-bar-container');
+    const syncText = document.getElementById('fin-sync-bar-text');
+    const btnSync = document.getElementById('btn-sync-valor-viagem');
 
     if (finValorVenda) {
       finValorVenda.textContent = `R$ ${valorTotalViagem.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -2207,12 +2240,54 @@ export class EditTravelModal {
       finValorProdutos.textContent = `R$ ${totalProdutos.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     }
     if (finValorPendente) {
-      finValorPendente.textContent = `R$ ${saldoPendente.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
       if (Math.abs(saldoPendente) < 0.01) {
+        finValorPendente.textContent = '100% Alocado (R$ 0,00)';
         finValorPendente.className = 'text-sm font-black text-emerald-600 dark:text-emerald-400';
+        if (finLabelPendente) finLabelPendente.textContent = 'Alocação de Produtos';
+        if (syncBar) syncBar.classList.add('hidden');
+      } else if (saldoPendente < 0) {
+        const excedente = Math.abs(saldoPendente);
+        finValorPendente.textContent = `+ R$ ${excedente.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        finValorPendente.className = 'text-sm font-black text-amber-600 dark:text-amber-400';
+        if (finLabelPendente) finLabelPendente.textContent = 'Excedente em Produtos';
+        if (syncBar) {
+          syncBar.classList.remove('hidden');
+          if (syncText) syncText.textContent = `Os produtos somam R$ ${totalProdutos.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (+ R$ ${excedente.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} acima do total estimado).`;
+        }
       } else {
-        finValorPendente.className = 'text-sm font-black text-rose-600 dark:text-rose-400';
+        finValorPendente.textContent = `Faltam R$ ${saldoPendente.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        finValorPendente.className = 'text-sm font-black text-blue-600 dark:text-blue-400';
+        if (finLabelPendente) finLabelPendente.textContent = 'Aguardando Alocação';
+        if (syncBar && produtos.length > 0) {
+          syncBar.classList.remove('hidden');
+          if (syncText) syncText.textContent = `Os produtos cadastrados somam R$ ${totalProdutos.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}. Deseja ajustar o total da viagem para este valor?`;
+        } else if (syncBar) {
+          syncBar.classList.add('hidden');
+        }
       }
+    }
+
+    if (btnSync && viagem) {
+      btnSync.onclick = async () => {
+        try {
+          btnSync.setAttribute('disabled', 'true');
+          btnSync.textContent = 'Sincronizando...';
+          const { error } = await supabase.from('viagens').update({ valor_total: totalProdutos }).eq('id', viagem.id);
+          if (error) throw error;
+          viagem.valor_total = totalProdutos;
+          const inputValor = document.getElementById('edit-viagem-valor') as HTMLInputElement;
+          if (inputValor) inputValor.value = totalProdutos.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          this.options.showToast('Valor total da viagem sincronizado com sucesso!', 'success');
+          await this.options.onUpdate();
+          await this.loadAndRenderProdutosViagem(viagem.id);
+        } catch (errSync: any) {
+          console.error('Erro ao sincronizar:', errSync);
+          this.options.showToast('Erro ao sincronizar valor da viagem.', 'error', errSync);
+        } finally {
+          btnSync.removeAttribute('disabled');
+          btnSync.textContent = 'Sincronizar Total da Viagem';
+        }
+      };
     }
     if (finValorRentabilidade) {
       finValorRentabilidade.textContent = `R$ ${totalRentabilidade.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -2844,10 +2919,10 @@ export class EditTravelModal {
         }
       }
 
-      // Habilita SALVAR apenas se houver pelo menos 1 forma adicionada E pendente == 0
+      // Habilita SALVAR se houver pelo menos 1 forma adicionada
       const btnSalvar = document.getElementById('btn-pag-loc-salvar') as HTMLButtonElement;
       if (btnSalvar) {
-        btnSalvar.disabled = tempPagamentos.length === 0 || Math.abs(pendente) > 0.01;
+        btnSalvar.disabled = tempPagamentos.length === 0;
       }
 
       // Sugere o saldo pendente como valor padrão no input

@@ -713,9 +713,9 @@ export class Dashboard {
       return false;
     }
 
-    // 1. Validação de data financeira
-    if (!viagem.data_financeiro) {
-      this.showToast('Não é possível alterar o status. A Data Financeiro é obrigatória para fases operacionais (como Pós-Venda). Por favor, defina a data abrindo os detalhes da viagem.', 'error');
+    // 1. Validação de data financeira (obrigatória para fases finais/operacionais como Pós-Venda)
+    if (newStatus === 'pos_venda' && !viagem.data_financeiro) {
+      this.showToast('Não é possível alterar para Pós-Venda. A Data Financeiro é obrigatória para esta fase. Por favor, defina a data abrindo os detalhes da viagem.', 'error');
       return false;
     }
 
@@ -738,30 +738,48 @@ export class Dashboard {
       produtos = viagem.produtos || [];
     }
 
-    // 3. Validar saldo pendente (soma dos produtos deve bater com o total da viagem)
+    // 3. Validar relação entre produtos e total da viagem
     const totalProdutos = produtos.reduce((sum, p) => sum + (Number(p.valor_venda) || 0), 0);
     const valorViagem = Number(viagem.valor_total) || 0;
     const pendente = valorViagem - totalProdutos;
 
-    if (Math.abs(pendente) > 0.01) {
-      this.showToast(`Não é possível avançar a viagem. Existe um saldo financeiro pendente de R$ ${pendente.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}. Adicione produtos na aba "Produtos e Serviços" para zerar este saldo.`, 'error');
+    if (produtos.length > 0 && Math.abs(pendente) > 0.01) {
+      const confirmSync = await showCustomConfirm(
+        `O valor total da viagem (R$ ${valorViagem.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}) difere da soma dos produtos (R$ ${totalProdutos.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}). Deseja sincronizar automaticamente o valor da viagem com a soma dos produtos para avançar?`,
+        'Sincronizar Valor da Viagem'
+      );
+      if (confirmSync) {
+        try {
+          await supabase.from('viagens').update({ valor_total: totalProdutos }).eq('id', tripId);
+          viagem.valor_total = totalProdutos;
+        } catch (syncErr) {
+          console.warn('Falha ao sincronizar valor total da viagem:', syncErr);
+        }
+      } else {
+        this.showToast(`Existe uma diferença de R$ ${Math.abs(pendente).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} entre a viagem e os produtos. Ajuste os produtos ou o valor da viagem para prosseguir.`, 'error');
+        return false;
+      }
+    } else if (produtos.length === 0 && valorViagem > 0) {
+      this.showToast('Esta viagem ainda não possui produtos cadastrados. Adicione ao menos um produto na aba "Produtos e Serviços" para avançar.', 'error');
       return false;
     }
 
-    // 4. Validar se todos os produtos cadastrados estão detalhados (Tarifa + Taxa + Comissão)
-    const produtoNaoDetalhado = produtos.find(p => {
-      const tarifa = Number(p.tarifa) || 0;
-      const taxa = Number(p.taxa) || 0;
-      const comissao = Number(p.comissao) || 0;
-      const markup = Number(p.markup) || 0;
-      const rav = Number(p.rav) || 0;
-      const totalDet = tarifa + taxa + comissao + markup + rav;
-      return Math.abs(Number(p.valor_venda || 0) - totalDet) > 0.01;
-    });
+    // 4. Validar se todos os produtos cadastrados estão detalhados ao avançar para Pós-Venda
+    if (newStatus === 'pos_venda') {
+      const produtoNaoDetalhado = produtos.find(p => {
+        const tarifa = Number(p.tarifa) || 0;
+        const taxa = Number(p.taxa) || 0;
+        const comissao = Number(p.comissao) || 0;
+        const markup = Number(p.markup) || 0;
+        const rav = Number(p.rav) || 0;
+        const totalDet = tarifa + taxa + comissao + markup + rav;
+        return Math.abs(Number(p.valor_venda || 0) - totalDet) > 0.01;
+      });
 
-    if (produtoNaoDetalhado) {
-      this.showToast(`Não é possível avançar a viagem. O produto "${produtoNaoDetalhado.fornecedor} - ${produtoNaoDetalhado.descricao}" não está com seus valores 100% detalhados (soma de Tarifa + Taxa + Comissão deve ser igual ao Valor de Venda do produto).`, 'error');
-      return false;
+      if (produtoNaoDetalhado) {
+        this.showToast(`Não é possível avançar para Pós-Venda. O produto "${produtoNaoDetalhado.fornecedor} - ${produtoNaoDetalhado.descricao}" não está com seus valores 100% detalhados (soma de Tarifa + Taxa + Comissão deve ser igual ao Valor de Venda do produto).`, 'error');
+        return false;
+      }
     }
 
     return true;
@@ -897,7 +915,7 @@ export class Dashboard {
               consultor_solicitante_id: this.user.id,
               valor_solicitado: valorReembolso,
               motivo_cancelamento: motivo,
-              status: 'Aguardando Fornecedor',
+              status: 'solicitado',
               data_solicitacao: new Date().toISOString().split('T')[0]
             });
 

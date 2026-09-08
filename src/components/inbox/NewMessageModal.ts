@@ -417,58 +417,48 @@ export class NewMessageModal {
 
       try {
         // 3. Database inserts
-        // Insert message
-        const { data: msgData, error: msgErr } = await supabase
-          .from('mensagens_diretas')
-          .insert({
-            remetente_id: currentUser.id,
-            assunto,
-            conteudo,
-            parent_id: options.replyTo?.messageId || null,
-            thread_id: options.replyTo?.threadId || null
-          })
-          .select()
-          .single();
-
-        if (msgErr) throw msgErr;
-        if (!msgData) throw new Error('Não foi possível registrar a mensagem.');
-
-        // If it's a new message (no parent threadId), set thread_id to its own ID
-        if (!options.replyTo || !options.replyTo.threadId) {
-          const { error: updateErr } = await supabase
-            .from('mensagens_diretas')
-            .update({ thread_id: msgData.id })
-            .eq('id', msgData.id);
-          if (updateErr) {
-            console.warn('Failed to set default thread_id:', updateErr);
-          } else {
-            msgData.thread_id = msgData.id;
-          }
+        const uniqueRecipients = Array.from(new Set([...paraSelected.map(p => p.id), ...ccSelected.map(p => p.id)]));
+        if (uniqueRecipients.length === 0) {
+          throw new Error('Selecione pelo menos um destinatário para enviar a mensagem.');
         }
 
-        // Insert recipients
-        const destInserts: any[] = [];
-        paraSelected.forEach(p => {
-          destInserts.push({ mensagem_id: msgData.id, destinatario_id: p.id, tipo: 'para' });
-        });
-        ccSelected.forEach(p => {
-          destInserts.push({ mensagem_id: msgData.id, destinatario_id: p.id, tipo: 'cc' });
-        });
+        // Criar registros de mensagem direta para os destinatários vinculados
+        const messagesToInsert = uniqueRecipients.map(recipientId => ({
+          remetente_id: currentUser.id,
+          destinatario_id: recipientId,
+          assunto,
+          conteudo,
+          parent_id: options.replyTo?.messageId || null,
+          thread_id: options.replyTo?.threadId || null
+        }));
 
-        const { error: destErr } = await supabase
-          .from('mensagem_destinatarios')
-          .insert(destInserts);
+        const { data: createdMsgs, error: msgErr } = await supabase
+          .from('mensagens_diretas')
+          .insert(messagesToInsert)
+          .select();
 
-        if (destErr) throw destErr;
+        if (msgErr) throw msgErr;
+        if (!createdMsgs || createdMsgs.length === 0) throw new Error('Não foi possível registrar a mensagem.');
 
-        // Insert notifications for all recipients (individual copies in user's inbox)
-        const uniqueRecipients = Array.from(new Set([...paraSelected.map(p => p.id), ...ccSelected.map(p => p.id)]));
-        const notifInserts = uniqueRecipients.map(recipientId => ({
-          user_id: recipientId,
+        const firstMsg = createdMsgs[0];
+        const commonThreadId = options.replyTo?.threadId || firstMsg.id;
+
+        // Se for nova thread, define thread_id igual ao ID da primeira mensagem
+        if (!options.replyTo || !options.replyTo.threadId) {
+          const idsToUpdate = createdMsgs.map(m => m.id);
+          await supabase
+            .from('mensagens_diretas')
+            .update({ thread_id: commonThreadId })
+            .in('id', idsToUpdate);
+        }
+
+        // Criar notificações individuais para cada destinatário
+        const notifInserts = createdMsgs.map(msg => ({
+          user_id: msg.destinatario_id,
           tipo_item: 'mensagem',
-          item_id: msgData.id,
-          parent_id: msgData.id,
-          mensagem_id: msgData.id,
+          item_id: msg.id,
+          parent_id: msg.id,
+          mensagem_id: msg.id,
           lida: false,
           arquivada: false
         }));
@@ -478,14 +468,16 @@ export class NewMessageModal {
           .insert(notifInserts)
           .select();
 
-        if (notifErr) throw notifErr;
+        if (notifErr) {
+          console.warn('Aviso ao registrar notificações no Inbox:', notifErr);
+        }
 
         // Dispara notificação Web Push no celular dos destinatários (mesmo com app fechado)
         const senderProfile = profiles.find(p => p.id === currentUser.id);
         const senderNome = senderProfile?.nome || 'Consultor';
         for (const recipientId of uniqueRecipients) {
           const userNotif = (createdNotifs || []).find(n => n.user_id === recipientId);
-          const notifTargetId = userNotif ? `mention-${userNotif.id}` : msgData.id;
+          const notifTargetId = userNotif ? `mention-${userNotif.id}` : firstMsg.id;
           PushSenderService.sendToUser(recipientId, {
             title: `💬 Nova Mensagem: ${assunto}`,
             body: `De: ${senderNome}`,
