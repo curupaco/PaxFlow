@@ -480,250 +480,288 @@ export class InboxService {
       });
 
       // --- PART 4: MENTION & DIRECT MESSAGE NOTIFICATIONS ---
-      let queryNotificacoes = supabase
-        .from('notificacoes')
-        .select(`
-          *,
-          comentario:comentarios (
+      let notificacoesData: any[] = [];
+      try {
+        let queryNotificacoes = supabase
+          .from('notificacoes')
+          .select(`
             *,
-            autor:profiles (*)
-          ),
-          mensagem:mensagens_diretas (
-            *,
-            remetente:profiles (*),
-            mensagem_destinatarios (
+            comentario:comentarios (
               *,
-              destinatario:profiles (*)
+              autor:profiles (*)
             )
-          ),
-          campaign:campaigns (*)
-        `)
-        .order('created_at', { ascending: false });
+          `)
+          .order('created_at', { ascending: false });
 
-      // Notificações sempre pertencem estritamente ao destinatário (user_id = user.id)
-      queryNotificacoes = queryNotificacoes.eq('user_id', user.id);
+        // Administradores carregam as notificações da equipe para permitir alternar no seletor
+        if (!userIsAdmin) {
+          queryNotificacoes = queryNotificacoes.eq('user_id', user.id);
+        }
 
-      const { data: notificacoesData, error: notificacoesErr } = await queryNotificacoes;
+        const { data, error } = await queryNotificacoes;
+        if (!error && data) {
+          notificacoesData = data;
+        } else {
+          // Fallback seguro caso haja problema com a relação autor no PostgREST
+          let fallbackQuery = supabase
+            .from('notificacoes')
+            .select(`
+              *,
+              comentario:comentarios (*)
+            `)
+            .order('created_at', { ascending: false });
 
-      if (notificacoesErr) {
-        console.error('Erro ao buscar notificações do banco:', notificacoesErr);
-      } else {
-        (notificacoesData || []).forEach((not: any) => {
-          const dataFormatada = new Date(not.created_at).toLocaleDateString('pt-BR');
-
-          if (not.tipo_item === 'campanha') {
-            if (!not.campaign) return; // Campanha deleted
-
-            let metaLabel = '';
-            if (not.campaign.tipo_meta === 'xp_acumulado') metaLabel = `${not.campaign.meta_quantidade} XP`;
-            else if (not.campaign.tipo_meta === 'cliente_criado') metaLabel = `${not.campaign.meta_quantidade} Clientes`;
-            else if (not.campaign.tipo_meta === 'orcamento_criado') metaLabel = `${not.campaign.meta_quantidade} Orç. Criados`;
-            else if (not.campaign.tipo_meta === 'orcamento_andamento') metaLabel = `${not.campaign.meta_quantidade} Orç. em Andamento`;
-            else if (not.campaign.tipo_meta === 'venda_aceita' || not.campaign.tipo_meta === 'orcamento_fechado') metaLabel = `${not.campaign.meta_quantidade} Orç. Fechados`;
-            else if (not.campaign.tipo_meta === 'lembrete_criado') metaLabel = `${not.campaign.meta_quantidade} Lembretes`;
-            else if (not.campaign.tipo_meta === 'reembolso_pago') metaLabel = `${not.campaign.meta_quantidade} Reembolsos`;
-            else if (not.campaign.tipo_meta === 'produto_detalhado') metaLabel = `${not.campaign.meta_quantidade} Produtos`;
-
-            const badgeObj = BADGE_DEFINITIONS.find((b: any) => b.key === not.campaign.badge_key);
-            const badgeEmoji = badgeObj ? badgeObj.emoji : '🏆';
-            const badgeNome = badgeObj ? badgeObj.nome : 'Medalha Especial';
-
-            const dataInicioFmt = not.campaign.data_inicio ? not.campaign.data_inicio.split('-').reverse().join('/') : '';
-            const dataFimFmt = not.campaign.data_fim ? not.campaign.data_fim.split('-').reverse().join('/') : '';
-
-            list.push({
-              id: `mention-${not.id}`,
-              type: 'campaign_notification',
-              title: `🎯 Campanha Ativa: ${not.campaign.titulo}`,
-              sender: 'PaxFlow Gamificação',
-              senderAvatar: 'paxflow',
-              dateStr: dataFormatada,
-              subject: `Meta: ${metaLabel}`,
-              body: `
-                <div class="space-y-4">
-                  <div class="p-4 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/50">
-                    <h3 class="text-sm font-black text-indigo-700 dark:text-indigo-300 mb-1 flex items-center gap-2">
-                      🎯 ${not.campaign.titulo}
-                    </h3>
-                    <p class="text-xs text-slate-700 dark:text-slate-300 font-semibold leading-relaxed">
-                      ${not.campaign.descricao || 'Sem descrição informada.'}
-                    </p>
-                  </div>
-
-                  <div class="grid grid-cols-2 gap-3 text-xs">
-                    <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-800">
-                      <span class="block text-[10px] uppercase tracking-wider font-extrabold text-slate-400">📅 Período de Vigência</span>
-                      <span class="font-bold text-slate-700 dark:text-slate-200">${dataInicioFmt} até ${dataFimFmt}</span>
-                    </div>
-                    <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-800">
-                      <span class="block text-[10px] uppercase tracking-wider font-extrabold text-slate-400">🏆 Recompensa (Badge)</span>
-                      <span class="font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-1 mt-0.5">
-                        <span>${badgeEmoji}</span>
-                        <span>${badgeNome}</span>
-                      </span>
-                    </div>
-                  </div>
-
-                  <div class="p-3.5 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/50 text-xs font-extrabold text-emerald-800 dark:text-emerald-300 flex items-center justify-between">
-                    <span>📊 Meta da Campanha:</span>
-                    <span class="text-sm font-black text-emerald-700 dark:text-emerald-400">${metaLabel}</span>
-                  </div>
-
-                  <p class="text-xs text-slate-400 font-medium">Acompanhe seu progresso dinâmico diretamente na barra lateral de Campanhas!</p>
-                </div>
-              `,
-              targetId: not.campaign.id,
-              arquivado: not.arquivada,
-              consultorId: not.user_id,
-              consultorNome: 'PaxFlow Gamificação',
-              createdAt: not.created_at,
-              eventDate: not.created_at.split('T')[0]
-            });
-            return;
+          if (!userIsAdmin) {
+            fallbackQuery = fallbackQuery.eq('user_id', user.id);
           }
+          const { data: fData, error: fError } = await fallbackQuery;
+          if (!fError && fData) {
+            notificacoesData = fData;
+          } else {
+            console.error('Erro ao buscar notificações do banco:', error || fError);
+          }
+        }
+      } catch (errNot) {
+        console.error('Exceção ao consultar notificações:', errNot);
+      }
 
-          if (not.tipo_item === 'mensagem') {
-            if (!not.mensagem) return; // Mensagem deleted
+      // Enriquecer campanhas se houver notificações de campanha
+      if (notificacoesData.some((n: any) => n.tipo_item === 'campanha' && n.campaign_id)) {
+        try {
+          const { data: camps } = await supabase.from('campaigns').select('*');
+          if (camps) {
+            notificacoesData.forEach((n: any) => {
+              if (n.tipo_item === 'campanha' && !n.campaign) {
+                n.campaign = camps.find((c: any) => c.id === n.campaign_id);
+              }
+            });
+          }
+        } catch (e) {}
+      }
 
-            const remetente = not.mensagem.remetente;
-            const senderName = remetente ? remetente.nome : 'Consultor';
-            const senderAvatar = remetente ? remetente.avatar_url : undefined;
-
-            // Formatar destinatários
-            const dests = not.mensagem.mensagem_destinatarios || [];
-            const paraList = dests.filter((d: any) => d.tipo === 'para').map((d: any) => d.destinatario?.nome || 'Consultor');
-            const ccList = dests.filter((d: any) => d.tipo === 'cc').map((d: any) => d.destinatario?.nome || 'Consultor');
-
-            let recipientsHtml = `Para: ${paraList.join(', ')}`;
-            if (ccList.length > 0) {
-              recipientsHtml += `<br>Cc: ${ccList.join(', ')}`;
+      // Enriquecer mensagens diretas se houver notificações de mensagem
+      if (notificacoesData.some((n: any) => n.tipo_item === 'mensagem')) {
+        try {
+          const msgIds = notificacoesData
+            .filter((n: any) => n.tipo_item === 'mensagem')
+            .map((n: any) => n.item_id || n.parent_id)
+            .filter(Boolean);
+          if (msgIds.length > 0) {
+            const { data: msgs } = await supabase
+              .from('mensagens_diretas')
+              .select('*, remetente:profiles!remetente_id(*), destinatario:profiles!destinatario_id(*)')
+              .in('id', msgIds);
+            if (msgs) {
+              notificacoesData.forEach((n: any) => {
+                if (n.tipo_item === 'mensagem' && !n.mensagem) {
+                  n.mensagem = msgs.find((m: any) => m.id === (n.item_id || n.parent_id));
+                }
+              });
             }
-
-            list.push({
-              id: `mention-${not.id}`, // Reusar o prefixo mention para herdar arquivamento individual na tabela notificacoes
-              type: 'direct_message',
-              title: not.mensagem.assunto,
-              sender: senderName,
-              senderAvatar: senderAvatar,
-              dateStr: dataFormatada,
-              subject: `De: ${senderName}`,
-              body: not.mensagem.conteudo,
-              targetId: not.mensagem.id,
-              arquivado: not.arquivada,
-              consultorId: not.user_id,
-              consultorNome: senderName,
-              createdAt: not.created_at,
-              eventDate: not.created_at.split('T')[0],
-              recipientsHtml,
-              isSent: false,
-              senderId: not.mensagem.remetente_id,
-              parentId: not.mensagem.parent_id,
-              threadId: not.mensagem.thread_id
-            });
-            return;
           }
+        } catch (e) {}
+      }
 
-          if (!not.comentario) return; // Comentário deleted
+      (notificacoesData || []).forEach((not: any) => {
+        const dataFormatada = new Date(not.created_at).toLocaleDateString('pt-BR');
 
-          const author = not.comentario.autor;
-          const authorName = author ? author.nome : 'Consultor';
-          const authorAvatar = author ? author.avatar_url : undefined;
+        if (not.tipo_item === 'campanha') {
+          if (!not.campaign) return; // Campanha deleted
 
-          let itemLabel = 'Item';
-          let linkAttr = '';
-          if (not.tipo_item === 'orcamento') {
-            itemLabel = 'Orçamento';
-            linkAttr = `data-orcamento-id="${not.parent_id}"`;
-          } else if (not.tipo_item === 'viagem') {
-            itemLabel = 'Viagem';
-            linkAttr = `data-viagem-id="${not.parent_id}"`;
-          } else if (not.tipo_item === 'produto') {
-            itemLabel = 'Produto';
-            linkAttr = `data-viagem-id="${not.parent_id}"`; // abre detalhes da viagem para ver o produto
-          }
+          let metaLabel = '';
+          if (not.campaign.tipo_meta === 'xp_acumulado') metaLabel = `${not.campaign.meta_quantidade} XP`;
+          else if (not.campaign.tipo_meta === 'cliente_criado') metaLabel = `${not.campaign.meta_quantidade} Clientes`;
+          else if (not.campaign.tipo_meta === 'orcamento_criado') metaLabel = `${not.campaign.meta_quantidade} Orç. Criados`;
+          else if (not.campaign.tipo_meta === 'orcamento_andamento') metaLabel = `${not.campaign.meta_quantidade} Orç. em Andamento`;
+          else if (not.campaign.tipo_meta === 'venda_aceita' || not.campaign.tipo_meta === 'orcamento_fechado') metaLabel = `${not.campaign.meta_quantidade} Orç. Fechados`;
+          else if (not.campaign.tipo_meta === 'lembrete_criado') metaLabel = `${not.campaign.meta_quantidade} Lembretes`;
+          else if (not.campaign.tipo_meta === 'reembolso_pago') metaLabel = `${not.campaign.meta_quantidade} Reembolsos`;
+          else if (not.campaign.tipo_meta === 'produto_detalhado') metaLabel = `${not.campaign.meta_quantidade} Produtos`;
+
+          const badgeObj = BADGE_DEFINITIONS.find((b: any) => b.key === not.campaign.badge_key);
+          const badgeEmoji = badgeObj ? badgeObj.emoji : '🏆';
+          const badgeNome = badgeObj ? badgeObj.nome : 'Medalha Especial';
+
+          const dataInicioFmt = not.campaign.data_inicio ? not.campaign.data_inicio.split('-').reverse().join('/') : '';
+          const dataFimFmt = not.campaign.data_fim ? not.campaign.data_fim.split('-').reverse().join('/') : '';
 
           list.push({
             id: `mention-${not.id}`,
-            type: 'mention',
-            title: `💬 Menção em ${itemLabel}`,
-            sender: authorName,
-            senderAvatar: authorAvatar,
+            type: 'campaign_notification',
+            title: `🎯 Campanha Ativa: ${not.campaign.titulo}`,
+            sender: 'PaxFlow Gamificação',
+            senderAvatar: 'paxflow',
             dateStr: dataFormatada,
-            subject: `Você foi mencionado(a) por ${authorName}.`,
-            body: `O consultor <strong>${authorName}</strong> mencionou você em um comentário no ${itemLabel}:<br><br>
-                   <div class="pl-3 border-l-4 border-indigo-500 italic text-slate-600 dark:text-slate-400 py-1.5 bg-slate-50 dark:bg-slate-800/40 rounded-r-lg my-3">
-                     "${not.comentario.texto}"
-                   </div>
-                   Clique no link abaixo para abrir e ver os detalhes:<br>
-                   <a href="#" class="inbox-deep-link font-extrabold text-indigo-600 dark:text-indigo-400 hover:underline" ${linkAttr}>
-                     [Ver Detalhes do(a) ${itemLabel}]
-                   </a>`,
-            targetId: not.parent_id,
+            subject: `Meta: ${metaLabel}`,
+            body: `
+              <div class="space-y-4">
+                <div class="p-4 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/50">
+                  <h3 class="text-sm font-black text-indigo-700 dark:text-indigo-300 mb-1 flex items-center gap-2">
+                    🎯 ${not.campaign.titulo}
+                  </h3>
+                  <p class="text-xs text-slate-700 dark:text-slate-300 font-semibold leading-relaxed">
+                    ${not.campaign.descricao || 'Sem descrição informada.'}
+                  </p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 text-xs">
+                  <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-800">
+                    <span class="block text-[10px] uppercase tracking-wider font-extrabold text-slate-400">📅 Período de Vigência</span>
+                    <span class="font-bold text-slate-700 dark:text-slate-200">${dataInicioFmt} até ${dataFimFmt}</span>
+                  </div>
+                  <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-800">
+                    <span class="block text-[10px] uppercase tracking-wider font-extrabold text-slate-400">🏆 Recompensa (Badge)</span>
+                    <span class="font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-1 mt-0.5">
+                      <span>${badgeEmoji}</span>
+                      <span>${badgeNome}</span>
+                    </span>
+                  </div>
+                </div>
+
+                <div class="p-3.5 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/50 text-xs font-extrabold text-emerald-800 dark:text-emerald-300 flex items-center justify-between">
+                  <span>📊 Meta da Campanha:</span>
+                  <span class="text-sm font-black text-emerald-700 dark:text-emerald-400">${metaLabel}</span>
+                </div>
+
+                <p class="text-xs text-slate-400 font-medium">Acompanhe seu progresso dinâmico diretamente na barra lateral de Campanhas!</p>
+              </div>
+            `,
+            targetId: not.campaign.id,
             arquivado: not.arquivada,
             consultorId: not.user_id,
-            consultorNome: authorName,
+            consultorNome: 'PaxFlow Gamificação',
             createdAt: not.created_at,
             eventDate: not.created_at.split('T')[0]
           });
-        });
-      }
+          return;
+        }
 
-      // --- PART 5: SENT DIRECT MESSAGES ---
-      let queryEnviadas = supabase
-        .from('mensagens_diretas')
-        .select(`
-          *,
-          remetente:profiles (*),
-          mensagem_destinatarios (
-            *,
-            destinatario:profiles (*)
-          )
-        `)
-        .eq('remetente_id', user.id)
-        .order('created_at', { ascending: false });
+        if (not.tipo_item === 'mensagem') {
+          if (!not.mensagem) return; // Mensagem deleted
 
-      const { data: enviadasData, error: enviadasErr } = await queryEnviadas;
-
-      if (enviadasErr) {
-        console.error('Erro ao buscar mensagens enviadas do banco:', enviadasErr);
-      } else {
-        (enviadasData || []).forEach((msg: any) => {
-          const dataFormatada = new Date(msg.created_at).toLocaleDateString('pt-BR');
-          const senderName = msg.remetente ? msg.remetente.nome : 'Consultor';
-          const senderAvatar = msg.remetente ? msg.remetente.avatar_url : undefined;
-
-          // Formatar destinatários
-          const dests = msg.mensagem_destinatarios || [];
-          const paraList = dests.filter((d: any) => d.tipo === 'para').map((d: any) => d.destinatario?.nome || 'Consultor');
-          const ccList = dests.filter((d: any) => d.tipo === 'cc').map((d: any) => d.destinatario?.nome || 'Consultor');
-
-          let recipientsHtml = `Para: ${paraList.join(', ')}`;
-          if (ccList.length > 0) {
-            recipientsHtml += `<br>Cc: ${ccList.join(', ')}`;
-          }
+          const remetente = not.mensagem.remetente || profilesList.find((p: any) => p.id === not.mensagem.remetente_id);
+          const senderName = remetente ? remetente.nome : 'Consultor';
+          const senderAvatar = remetente ? remetente.avatar_url : undefined;
+          const destinatario = not.mensagem.destinatario || profilesList.find((p: any) => p.id === not.user_id);
+          const recipientName = destinatario ? destinatario.nome : 'Você';
+          const recipientsHtml = `Para: ${recipientName}`;
 
           list.push({
-            id: `sent-${msg.id}`,
+            id: `mention-${not.id}`,
             type: 'direct_message',
-            title: msg.assunto,
-            sender: 'Você',
+            title: not.mensagem.assunto || 'Mensagem Direta',
+            sender: senderName,
             senderAvatar: senderAvatar,
             dateStr: dataFormatada,
-            subject: `Para: ${paraList.join(', ')}`,
-            body: msg.conteudo,
-            targetId: msg.id,
-            arquivado: false, // Mensagens enviadas não são arquivadas pelo remetente de forma padrão
-            consultorId: msg.remetente_id,
+            subject: `De: ${senderName}`,
+            body: not.mensagem.conteudo,
+            targetId: not.mensagem.id,
+            arquivado: not.arquivada,
+            consultorId: not.user_id,
             consultorNome: senderName,
-            createdAt: msg.created_at,
-            eventDate: msg.created_at.split('T')[0],
+            createdAt: not.created_at,
+            eventDate: not.created_at.split('T')[0],
             recipientsHtml,
-            isSent: true,
-            senderId: msg.remetente_id,
-            parentId: msg.parent_id,
-            threadId: msg.thread_id
+            isSent: false,
+            senderId: not.mensagem.remetente_id,
+            parentId: not.mensagem.parent_id,
+            threadId: not.mensagem.thread_id
           });
+          return;
+        }
+
+        if (!not.comentario) return; // Comentário deleted
+
+        const author = not.comentario.autor || profilesList.find((p: any) => p.id === not.comentario.user_id);
+        const authorName = author ? author.nome : 'Consultor';
+        const authorAvatar = author ? author.avatar_url : undefined;
+
+        let itemLabel = 'Item';
+        let linkAttr = '';
+        if (not.tipo_item === 'orcamento') {
+          itemLabel = 'Orçamento';
+          linkAttr = `data-orcamento-id="${not.parent_id}"`;
+        } else if (not.tipo_item === 'viagem') {
+          itemLabel = 'Viagem';
+          linkAttr = `data-viagem-id="${not.parent_id}"`;
+        } else if (not.tipo_item === 'produto') {
+          itemLabel = 'Produto';
+          linkAttr = `data-viagem-id="${not.parent_id}"`;
+        }
+
+        list.push({
+          id: `mention-${not.id}`,
+          type: 'mention',
+          title: `💬 Menção em ${itemLabel}`,
+          sender: authorName,
+          senderAvatar: authorAvatar,
+          dateStr: dataFormatada,
+          subject: `Você foi mencionado(a) por ${authorName}.`,
+          body: `O consultor <strong>${authorName}</strong> mencionou você em um comentário no ${itemLabel}:<br><br>
+                 <div class="pl-3 border-l-4 border-indigo-500 italic text-slate-600 dark:text-slate-400 py-1.5 bg-slate-50 dark:bg-slate-800/40 rounded-r-lg my-3">
+                   "${not.comentario.texto}"
+                 </div>
+                 Clique no link abaixo para abrir e ver os detalhes:<br>
+                 <a href="#" class="inbox-deep-link font-extrabold text-indigo-600 dark:text-indigo-400 hover:underline" ${linkAttr}>
+                   [Ver Detalhes do(a) ${itemLabel}]
+                 </a>`,
+          targetId: not.parent_id,
+          arquivado: not.arquivada,
+          consultorId: not.user_id,
+          consultorNome: authorName,
+          senderId: not.comentario.user_id,
+          createdAt: not.created_at,
+          eventDate: not.created_at.split('T')[0]
         });
+      });
+
+      // --- PART 5: SENT DIRECT MESSAGES ---
+      try {
+        let queryEnviadas = supabase
+          .from('mensagens_diretas')
+          .select(`
+            *,
+            remetente:profiles!remetente_id (*),
+            destinatario:profiles!destinatario_id (*)
+          `)
+          .eq('remetente_id', user.id)
+          .order('created_at', { ascending: false });
+
+        const { data: enviadasData, error: enviadasErr } = await queryEnviadas;
+
+        if (!enviadasErr && enviadasData) {
+          enviadasData.forEach((msg: any) => {
+            const dataFormatada = new Date(msg.created_at).toLocaleDateString('pt-BR');
+            const senderName = msg.remetente ? msg.remetente.nome : (profilesList.find((p: any) => p.id === msg.remetente_id)?.nome || 'Você');
+            const senderAvatar = msg.remetente ? msg.remetente.avatar_url : undefined;
+            const destinatarioName = msg.destinatario ? msg.destinatario.nome : (profilesList.find((p: any) => p.id === msg.destinatario_id)?.nome || 'Consultor');
+            const recipientsHtml = `Para: ${destinatarioName}`;
+
+            list.push({
+              id: `sent-${msg.id}`,
+              type: 'direct_message',
+              title: msg.assunto || 'Mensagem Direta',
+              sender: 'Você',
+              senderAvatar: senderAvatar,
+              dateStr: dataFormatada,
+              subject: `Para: ${destinatarioName}`,
+              body: msg.conteudo,
+              targetId: msg.id,
+              arquivado: false,
+              consultorId: msg.remetente_id,
+              consultorNome: senderName,
+              createdAt: msg.created_at,
+              eventDate: msg.created_at.split('T')[0],
+              recipientsHtml,
+              isSent: true,
+              senderId: msg.remetente_id,
+              parentId: msg.parent_id,
+              threadId: msg.thread_id
+            });
+          });
+        }
+      } catch (eEnv) {
+        console.warn('Aviso ao buscar mensagens enviadas:', eEnv);
       }
       // --- PART 6: PRÉ-EMBARQUE & PÓS-VIAGEM NPS ALERTS ---
       let viagensQuery = supabase
@@ -1127,11 +1165,8 @@ export class InboxService {
         .from('mensagens_diretas')
         .select(`
           *,
-          remetente:profiles (*),
-          mensagem_destinatarios (
-            *,
-            destinatario:profiles (*)
-          )
+          remetente:profiles!remetente_id (*),
+          destinatario:profiles!destinatario_id (*)
         `)
         .eq('thread_id', threadId)
         .order('created_at', { ascending: true });
