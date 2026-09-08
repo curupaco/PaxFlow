@@ -1361,13 +1361,26 @@ export class InboxPage {
               .delete()
               .eq('id', tableId);
             if (error) throw error;
-          } else {
+          } else if (clickedItem.type === 'escala_solicitacao' || clickedItem.type === 'atendimento_balcao') {
+            const tableId = clickedItem.targetId;
+            if (tableId) {
+              const { error } = await supabase
+                .from('escala_solicitacoes')
+                .delete()
+                .eq('id', tableId);
+              if (error) throw error;
+            }
+          } else if (clickedItem.id.startsWith('mention-') || clickedItem.type === 'campaign_notification' || clickedItem.type === 'mention') {
             const tableId = clickedItem.id.replace('mention-', '').replace('sent-', '');
             const { error } = await supabase
               .from('notificacoes')
               .delete()
               .eq('id', tableId);
             if (error) throw error;
+          } else {
+            // Alertas gerados pelo sistema (passport, refund, pre-embarque, pos-viagem-nps)
+            // Não são linhas físicas da tabela notificacoes; dispensar/arquivar
+            this.toggleLocalAlertArchive(clickedItem.id, true);
           }
 
           // Reload data and redraw page

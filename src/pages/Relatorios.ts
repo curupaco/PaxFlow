@@ -624,7 +624,7 @@ export class RelatoriosPage {
     });
 
     const entries = Object.entries(consultantSales);
-    const maxVal = entries.length > 0 ? Math.max(...entries.map(e => e[1])) : 1;
+    const maxVal = entries.length > 0 ? (Math.max(...entries.map(e => e[1])) || 1) : 1;
     
     let chartRows = '';
     entries.forEach(([nome, val], i) => {
@@ -1233,7 +1233,8 @@ export class RelatoriosPage {
     });
 
     // Build SVG bar chart data
-    const maxCount = Math.max(...Object.values(originStats).map(s => s.count)) || 1;
+    const originVals = Object.values(originStats).map(s => s.count);
+    const maxCount = originVals.length > 0 ? (Math.max(...originVals) || 1) : 1;
     let barChartHtml = '';
     const colors = ['#3b82f6', '#ec4899', '#10b981', '#f59e0b', '#6366f1', '#6b7280'];
     Object.entries(originStats).forEach(([orig, stats], idx) => {
@@ -1386,7 +1387,7 @@ export class RelatoriosPage {
     // Payments breakdown horizontal bars
     let paymentBreakdownHtml = '';
     const paymentEntries = Object.entries(paymentsGrouped);
-    const maxPayment = paymentEntries.length > 0 ? Math.max(...paymentEntries.map(e => Math.abs(e[1].valor))) : 1;
+    const maxPayment = paymentEntries.length > 0 ? (Math.max(...paymentEntries.map(e => Math.abs(e[1].valor))) || 1) : 1;
     paymentEntries.forEach(([nome, info]) => {
       const pct = Math.round((info.valor / (totalPago || 1)) * 100);
       const widthPct = Math.round((Math.abs(info.valor) / maxPayment) * 80) + 5;

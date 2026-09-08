@@ -307,14 +307,28 @@ export class OrcamentosService {
 
     // 1. Cadastrar/Obter/Atualizar Cliente no Supabase
     if (isMockClient) {
-      // Verificar se o cliente já existe por email ou telefone para evitar duplicidade
-      const { data: existingCli, error: errExist } = await supabase
-        .from('clientes')
-        .select('id')
-        .or(`email.eq.${cEmail},telefone.eq.${cTelefone}`)
-        .limit(1);
+      // Verificar se o cliente já existe por email, telefone ou documento para evitar duplicidade
+      let existingCli: any[] | null = null;
+      const conditions: string[] = [];
+      if (cEmail && cEmail.trim()) conditions.push(`email.eq.${cEmail.trim()}`);
+      if (cTelefone && cTelefone.trim()) conditions.push(`telefone.eq.${cTelefone.trim()}`);
+      if (cDoc && cDoc.trim()) conditions.push(`documento.eq.${cDoc.trim()}`);
 
-      if (errExist) throw errExist;
+      if (conditions.length > 0) {
+        let queryCli = supabase.from('clientes').select('id');
+        if (conditions.length === 1) {
+          const [field, val] = conditions[0].split('.eq.');
+          queryCli = queryCli.eq(field, val);
+        } else {
+          queryCli = queryCli.or(conditions.join(','));
+        }
+        const { data, error: errExist } = await queryCli.limit(1);
+        if (errExist) {
+          console.warn('Aviso ao verificar duplicidade de cliente no fechamento:', errExist.message);
+        } else {
+          existingCli = data;
+        }
+      }
 
       if (existingCli && existingCli.length > 0) {
         clienteId = existingCli[0].id;
