@@ -105,11 +105,14 @@ export class ClientesPage {
         .order('nome', { ascending: true })
         .range(this.paginaAtual * this.limitePagina, (this.paginaAtual + 1) * this.limitePagina - 1);
 
-      if (this.perfil && this.perfil.role !== 'admin' && this.user?.id) {
+      const temBusca = Boolean(this.buscaTermo && this.buscaTermo.trim());
+
+      // Na listagem padrão sem busca, consultor visualiza sua carteira. Se estiver buscando, pesquisa em toda a base da agência para evitar duplicidade.
+      if (!temBusca && this.perfil && this.perfil.role !== 'admin' && this.user?.id) {
         query = query.eq('consultor_responsavel_id', this.user.id);
       }
 
-      if (this.buscaTermo.trim()) {
+      if (temBusca) {
         const q = `%${this.buscaTermo.trim()}%`;
         query = query.or(`nome.ilike.${q},email.ilike.${q},documento.ilike.${q},telefone.ilike.${q},codigo_ref.ilike.${q}`);
       }
@@ -724,47 +727,13 @@ export class ClientesPage {
         let recemCriado: Cliente | null = null;
         if (isEditing && this.clienteSelecionado) {
           const newUpdatedAt = new Date().toISOString();
-          // Executa o update com verificação de bloqueio otimista
-          const { data: updateData, error } = await supabase
+          const { error } = await supabase
             .from('clientes')
             .update({ ...payload, updated_at: newUpdatedAt })
-            .eq('id', this.clienteSelecionado.id)
-            .eq('updated_at', this.clienteSelecionado.updatedAt)
-            .select();
+            .eq('id', this.clienteSelecionado.id);
 
           if (error) throw error;
-
-          if (!updateData || updateData.length === 0) {
-            // Divergência de concorrência detectada
-            const { data: dbData } = await supabase
-              .from('clientes')
-              .select('*')
-              .eq('id', this.clienteSelecionado.id)
-              .single();
-
-            const confirmOverwrite = await showCustomConfirm(
-              `Outro consultor modificou a ficha deste cliente enquanto você editava.\n\nDeseja sobrescrever as alterações dele com os seus dados ou cancelar e atualizar a tela com os dados novos?`,
-              'Divergência de Dados (Concorrência)'
-            );
-
-            if (confirmOverwrite) {
-              const { error: forceError } = await supabase
-                .from('clientes')
-                .update({ ...payload, updated_at: new Date().toISOString() })
-                .eq('id', this.clienteSelecionado.id);
-
-              if (forceError) throw forceError;
-              this.showToast('Alterações salvas forçadamente!', 'success');
-            } else {
-              this.showToast('Atualizando dados do cliente...', 'success');
-              await this.loadClientes();
-              const freshClient = this.clientes.find(c => c.id === this.clienteSelecionado?.id) || null;
-              this.selecionarCliente(freshClient);
-              return;
-            }
-          } else {
-            this.showToast('Ficha do cliente atualizada com sucesso!', 'success');
-          }
+          this.showToast('Ficha do cliente atualizada com sucesso!', 'success');
 
           await this.loadClientes();
           recemCriado = this.clientes.find(c => c.id === this.clienteSelecionado?.id) || null;
@@ -955,7 +924,7 @@ export class ClientesPage {
     try {
       let query = supabase
         .from('clientes')
-        .select('id, nome, email, telefone, documento, consultor_responsavel_id, profiles(nome)');
+        .select('id, nome, email, telefone, documento, consultor_responsavel_id, consultor:profiles!consultor_responsavel_id(nome)');
 
       if (this.clienteSelecionado && this.clienteSelecionado.id) {
         query = query.neq('id', this.clienteSelecionado.id);
@@ -999,7 +968,7 @@ export class ClientesPage {
         }
 
         if (colisoes.length > 0) {
-          const consultorNome = (row as any).profiles?.nome || 'Não definido';
+          const consultorNome = (row as any).consultor?.nome || (row as any).profiles?.nome || 'Não definido';
           duplicados.push(`- ${colisoes.join(', ')} já cadastrado(s) no cliente "${row.nome}" (Consultor: ${consultorNome})`);
         }
       }

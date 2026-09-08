@@ -34,37 +34,7 @@ export class OrcamentosService {
 
     const rawBudgets = data || [];
 
-    // --- AUTOMATION: Auto-desistência por inatividade ---
-    try {
-      let tempoDesistencia = 30;
-      const { data: settingsData } = await supabase
-        .from('global_settings')
-        .select('tempo_desistencia_orcamento_dias')
-        .maybeSingle();
-      if (settingsData && settingsData.tempo_desistencia_orcamento_dias !== undefined) {
-        tempoDesistencia = Number(settingsData.tempo_desistencia_orcamento_dias);
-      }
-
-      const thresholdDate = new Date();
-      thresholdDate.setDate(thresholdDate.getDate() - tempoDesistencia);
-
-      for (const d of rawBudgets) {
-        if (d.status === 'AGUARDANDO') {
-          const updatedAt = new Date(d.updated_at || d.created_at);
-          if (updatedAt < thresholdDate) {
-            await supabase
-              .from('orcamentos')
-              .update({ status: 'CONCLUIDO', sub_status: 'DESISTENCIA', updated_at: new Date().toISOString() })
-              .eq('id', d.id);
-            
-            d.status = 'CONCLUIDO';
-            d.sub_status = 'DESISTENCIA';
-          }
-        }
-      }
-    } catch (err) {
-      console.error('Erro na automação de auto-desistência de orçamentos:', err);
-    }
+    // Preserva integridade das propostas: nenhuma proposta é movida automaticamente para desistência sem ação do consultor
 
     return rawBudgets.map(d => ({
       id: d.id,

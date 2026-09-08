@@ -649,12 +649,9 @@ export class EscalaService {
         await supabase.from('lembretes').insert({
           consultor_id: newObj.destinatario_id,
           criador_id: newObj.solicitante_id || null,
-          titulo,
-          descricao: desc,
           data_lembrete: newObj.data_origem,
-          prioridade: 'alta',
-          concluido: false,
-          created_at: newObj.created_at
+          periodo: 'manha',
+          arquivado: false
         });
         // Dispara Web Push no celular do consultor/colega
         PushSenderService.sendToUser(newObj.destinatario_id, {
