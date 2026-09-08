@@ -543,7 +543,7 @@ export class CommentsService {
       arquivada: false
     }));
 
-    const { error } = await supabase
+    const { data: insertedNotifs, error } = await supabase
       .from('notificacoes')
       .insert(notificationsPayload)
       .select();
@@ -551,12 +551,19 @@ export class CommentsService {
     if (error) {
       console.error('[Mentions] Erro ao inserir notificações de menção:', error);
     } else {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('paxflow:new-message'));
+        window.dispatchEvent(new CustomEvent('paxflow-inbox-updated'));
+      }
+
       // Dispara notificação Web Push no celular dos consultores mencionados
       for (const targetUser of uniqueMentions) {
+        const userNotif = (insertedNotifs || []).find((n: any) => n.user_id === targetUser.id);
+        const targetExtraId = userNotif ? `mention-${userNotif.id}` : parentId;
         PushSenderService.sendToUser(targetUser.id, {
           title: '💬 Você foi mencionado(a)',
           body: `Você recebeu uma nova menção em um ${tipoItem} no PaxFlow.`,
-          url: '/#inbox'
+          url: `/#inbox?extraId=${targetExtraId}`
         });
       }
     }

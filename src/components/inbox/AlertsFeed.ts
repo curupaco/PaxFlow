@@ -146,6 +146,9 @@ export class AlertsFeed {
           } else if (a.type === 'pos-viagem-nps') {
             badgeClass = 'bg-gradient-to-tr from-emerald-500 to-teal-600 dark:from-emerald-600 dark:to-teal-500';
             badgeText = 'Pós-Viagem NPS ⭐';
+          } else if (a.type === 'atendimento_balcao') {
+            badgeClass = 'bg-gradient-to-tr from-amber-500 to-orange-600 dark:from-amber-600 dark:to-orange-500 text-white font-extrabold';
+            badgeText = 'Balcão 🤝';
           } else if (a.type === 'escala_solicitacao') {
             badgeClass = 'bg-gradient-to-tr from-violet-600 to-indigo-600 dark:from-violet-500 dark:to-indigo-500 text-white font-extrabold';
             badgeText = 'Escala 📅';

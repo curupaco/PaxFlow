@@ -248,9 +248,29 @@ export class InboxPage {
         };
       }
 
-      const channelName = `inbox-escala-realtime-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+      const channelName = `inbox-realtime-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
       this.realtimeChannel = supabase
         .channel(channelName)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'notificacoes' }, async () => {
+          await this.loadAndBuildAlerts();
+          this.render();
+          this.setupEventListeners();
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'mensagens_diretas' }, async () => {
+          await this.loadAndBuildAlerts();
+          this.render();
+          this.setupEventListeners();
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'comentarios' }, async () => {
+          await this.loadAndBuildAlerts();
+          this.render();
+          this.setupEventListeners();
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'lembretes' }, async () => {
+          await this.loadAndBuildAlerts();
+          this.render();
+          this.setupEventListeners();
+        })
         .on('postgres_changes', { event: '*', schema: 'public', table: 'escala_banco_folgas' }, async () => {
           await this.loadEscalaData();
           this.render();
@@ -262,6 +282,7 @@ export class InboxPage {
           this.setupEventListeners();
         })
         .on('postgres_changes', { event: '*', schema: 'public', table: 'escala_solicitacoes' }, async () => {
+          await this.loadAndBuildAlerts();
           await this.loadEscalaData();
           this.render();
           this.setupEventListeners();
@@ -273,7 +294,7 @@ export class InboxPage {
         })
         .subscribe();
     } catch (err) {
-      console.warn('Erro ao configurar realtime na escala:', err);
+      console.warn('Erro ao configurar realtime no inbox:', err);
     }
   }
 
@@ -393,7 +414,7 @@ export class InboxPage {
     // 2.5 Filter by Category (Summary Cards & Mobile Pills)
     if (this.categoryFilter !== 'todos') {
       if (this.categoryFilter === 'alertas') {
-        result = result.filter(a => a.type === 'passport' || a.type === 'refund' || a.type === 'pre-embarque' || a.type === 'pos-viagem-nps' || a.type === 'campaign_notification' || (isUserAdmin && a.type === 'escala_solicitacao' && !a.isSent));
+        result = result.filter(a => a.type === 'passport' || a.type === 'refund' || a.type === 'pre-embarque' || a.type === 'pos-viagem-nps' || a.type === 'campaign_notification' || a.type === 'atendimento_balcao' || (isUserAdmin && a.type === 'escala_solicitacao' && !a.isSent));
       } else if (this.categoryFilter === 'depois') {
         result = result.filter(a => a.type === 'manual');
       } else if (this.categoryFilter === 'passaporte') {
@@ -405,7 +426,7 @@ export class InboxPage {
       } else if (this.categoryFilter === 'escala') {
         result = result.filter(a => a.type === 'escala_solicitacao');
       } else if (this.categoryFilter === 'mention') {
-        result = result.filter(a => a.type === 'mention');
+        result = result.filter(a => a.type === 'mention' || a.type === 'atendimento_balcao');
       }
     }
 

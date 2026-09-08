@@ -32,7 +32,12 @@ export class EmailReaderModal {
       badgeText = 'Passaporte SLA';
     } else if (item.type === 'refund') {
       badgeClass = 'badge-gradient-rose';
-      badgeText = 'Reembolso SLA';
+    } else if (item.type === 'mention') {
+      badgeClass = 'bg-gradient-to-tr from-purple-500 to-indigo-600 dark:from-purple-600 dark:to-indigo-500 text-white font-extrabold';
+      badgeText = 'Menção @';
+    } else if (item.type === 'atendimento_balcao') {
+      badgeClass = 'bg-gradient-to-tr from-amber-500 to-orange-600 dark:from-amber-600 dark:to-orange-500 text-white font-extrabold';
+      badgeText = 'Balcão 🤝';
     } else if (item.type === 'direct_message') {
       badgeClass = 'bg-purple-600 text-white';
       badgeText = 'Mensagem Direta';
@@ -182,7 +187,7 @@ export class EmailReaderModal {
           
           <!-- Lado Esquerdo: Ações Primárias (Responder / Ações / Excluir) -->
           <div class="flex items-center gap-2 flex-wrap">
-            ${item.type === 'direct_message' && !item.isSent && options.onReply ? `
+            ${(item.type === 'direct_message' || item.type === 'mention') && !item.isSent && options.onReply ? `
               <button id="modal-reply-btn" class="flex-1 sm:flex-none px-4 py-2 text-xs font-extrabold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition shadow-md shadow-emerald-600/10 flex items-center justify-center gap-1.5">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
                   <path d="M3 10h10a8 8 0 0 1 8 8v2M3 10l6 6m-6-6l6-6"/>

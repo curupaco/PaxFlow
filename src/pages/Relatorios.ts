@@ -1992,7 +1992,7 @@ export class RelatoriosPage {
     });
 
     // Compute metrics
-    const mediaXp = Math.round(ranking.reduce((sum, c) => sum + c.xp, 0) / ranking.length);
+    const mediaXp = ranking.length > 0 ? Math.round(ranking.reduce((sum, c) => sum + c.xp, 0) / ranking.length) : 0;
     
     let topDecoratedName = 'Nenhum';
     let maxBadges = -1;
@@ -2080,7 +2080,7 @@ export class RelatoriosPage {
     const badgeRows = BADGE_DEFINITIONS.map(b => {
       const list = badgeUnlocks[b.key] || [];
       const count = list.length;
-      const rate = Math.round((count / totalConsultores) * 100);
+      const rate = totalConsultores > 0 ? Math.round((count / totalConsultores) * 100) : 0;
       const unlockedByText = count > 0 
         ? list.map(name => `<span class="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-[10px] rounded-lg font-bold">${name}</span>`).join(' ')
         : `<span class="text-slate-400 dark:text-slate-400 italic text-[11px]">Ninguém conquistou ainda</span>`;

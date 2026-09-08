@@ -471,7 +471,7 @@ export interface Notificacao {
  */
 export interface AlertItem {
   id: string; // Chave combinada única
-  type: 'manual' | 'passport' | 'refund' | 'mention' | 'direct_message' | 'campaign_notification' | 'pre-embarque' | 'pos-viagem-nps' | 'escala_solicitacao' | 'escala_lembrete';
+  type: 'manual' | 'passport' | 'refund' | 'mention' | 'direct_message' | 'campaign_notification' | 'pre-embarque' | 'pos-viagem-nps' | 'escala_solicitacao' | 'escala_lembrete' | 'atendimento_balcao';
   title: string;
   sender: string;
   senderAvatar?: string;

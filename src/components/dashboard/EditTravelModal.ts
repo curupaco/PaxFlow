@@ -198,7 +198,8 @@ export class EditTravelModal {
             viagem.cliente?.nome || 'Cliente',
             coPilotoNome,
             'viagem',
-            tripId
+            tripId,
+            currentUserId
           );
         }
         (viagem as any)._isCoPiloto = true;

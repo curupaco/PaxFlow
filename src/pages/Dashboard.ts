@@ -559,21 +559,47 @@ export class Dashboard {
         .eq('parent_id', tripId);
       if (errNotifs) console.warn('Aviso ao excluir notificações:', errNotifs.message);
 
-      // 3. Deletar reembolsos vinculados
+      // 3. Deletar pagamentos e conferências de localizadores
+      const { error: errPags } = await supabase
+        .from('loc_pagamentos')
+        .delete()
+        .eq('viagem_id', tripId);
+      if (errPags) console.warn('Aviso ao excluir loc_pagamentos:', errPags.message);
+
+      const { error: errConfs } = await supabase
+        .from('loc_conferencias')
+        .delete()
+        .eq('viagem_id', tripId);
+      if (errConfs) console.warn('Aviso ao excluir loc_conferencias:', errConfs.message);
+
+      // 4. Deletar tarefas e lembretes da viagem
+      try {
+        await supabase.from('tarefas').delete().eq('viagem_id', tripId);
+      } catch (e) {}
+
+      try {
+        await supabase.from('lembretes').delete().eq('viagem_id', tripId);
+      } catch (e) {}
+
+      try {
+        await supabase.from('feedbacks_nps').delete().eq('viagem_id', tripId);
+      } catch (e) {}
+
+      // 5. Deletar reembolsos vinculados
       const { error: errRefunds } = await supabase
         .from('reembolsos')
         .delete()
         .eq('viagem_id', tripId);
       if (errRefunds) console.warn('Aviso ao excluir reembolsos:', errRefunds.message);
 
-      // 4. Deletar produtos vinculados
+      // 6. Deletar produtos vinculados
       const { error: errProducts } = await supabase
         .from('produtos_viagem')
         .delete()
         .eq('viagem_id', tripId);
       if (errProducts) console.warn('Aviso ao excluir produtos:', errProducts.message);
 
-      // 5. Deletar a viagem em si
+      // 7. Deletar a viagem em si
       const { error: errTrip } = await supabase
         .from('viagens')
         .delete()

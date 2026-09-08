@@ -211,7 +211,8 @@ export class BalcaoService {
     clienteNome: string,
     consultorCoPilotoNome: string,
     tipoItem: string,
-    itemId: string
+    itemId: string,
+    coPilotoId?: string
   ): Promise<boolean> {
     try {
       const now = new Date();
@@ -220,7 +221,7 @@ export class BalcaoService {
 
       await EscalaService.criarSolicitacao({
         tipo: 'atendimento_balcao', // Modelo unificado de notificação de balcão
-        solicitante_id: titularId,
+        solicitante_id: coPilotoId || titularId,
         solicitante_nome: consultorCoPilotoNome,
         destinatario_id: titularId,
         destinatario_nome: titularNome,
@@ -229,6 +230,11 @@ export class BalcaoService {
         status: 'aprovado',
         resposta_admin: `Atendimento efetuado em ${dataStr} às ${horaStr}`
       });
+
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('paxflow:new-message'));
+        window.dispatchEvent(new CustomEvent('paxflow-inbox-updated'));
+      }
 
       return true;
     } catch (e) {

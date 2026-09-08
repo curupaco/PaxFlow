@@ -163,6 +163,28 @@ export class DocumentViewer {
           driveLink.href = signedData.signedUrl;
           driveLink.innerHTML = `<span>🌐</span> Abrir Original`;
         }
+      } else if (fileUrlOrId.startsWith('http://') || fileUrlOrId.startsWith('https://')) {
+        const isDrive = fileUrlOrId.includes('drive.google.com');
+        if (isDrive) {
+          throw new Error('Este documento foi salvo no Google Drive legado e a visualização direta está desativada. Por favor, clique no botão "Abrir Original" acima para acessar o arquivo diretamente na sua conta do Google Drive.');
+        }
+
+        const fileExt = fileUrlOrId.split('?')[0].split('.').pop()?.toLowerCase();
+        const isImage = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(fileExt || '') || targetMimeType.startsWith('image/');
+
+        if (isImage) {
+          contentEl.innerHTML = `<img src="${fileUrlOrId}" alt="${targetFileName}" class="max-w-full max-h-full object-contain rounded-lg shadow-md border border-slate-200/50 dark:border-slate-800" />`;
+        } else {
+          contentEl.innerHTML = `<iframe src="${fileUrlOrId}" class="w-full h-full border-0 rounded-lg shadow-sm"></iframe>`;
+        }
+
+        if (downloadBtn) {
+          downloadBtn.disabled = false;
+          downloadBtn.className = 'px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 font-extrabold text-[10px] uppercase tracking-wider rounded-lg border border-indigo-100/30 dark:border-indigo-900/30 transition flex items-center gap-1.5 shadow-sm cursor-pointer';
+          downloadBtn.addEventListener('click', () => {
+            window.open(fileUrlOrId, '_blank');
+          });
+        }
       } else {
         throw new Error('Este documento foi salvo no Google Drive legado e a visualização direta está desativada. Por favor, clique no botão "Abrir Original" acima para acessar o arquivo diretamente na sua conta do Google Drive.');
       }

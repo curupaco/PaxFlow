@@ -509,6 +509,10 @@ export class NewMessageModal {
 
         // 4. Success Flow
         closeModal();
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('paxflow:new-message'));
+          window.dispatchEvent(new CustomEvent('paxflow-inbox-updated'));
+        }
         options.onSent();
 
       } catch (err: any) {

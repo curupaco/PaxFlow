@@ -188,10 +188,11 @@ export class ReembolsosPage {
         if (!reembolsoId) return;
 
         try {
-          const payload: any = { status: novoStatus };
+          const statusFinal = novoStatus === 'Aguardando Fornecedor' ? 'solicitado' : novoStatus;
+          const payload: any = { status: statusFinal };
 
           // Se mudar para "pago" (Concluído), salva a data de conclusão
-          if (novoStatus === 'pago') {
+          if (statusFinal === 'pago') {
             payload.data_resolucao = new Date().toISOString().split('T')[0];
           } else {
             payload.data_resolucao = null;
@@ -581,7 +582,7 @@ export class ReembolsosPage {
                           <td class="py-4.5 px-6 text-center">
                             <div class="flex items-center justify-center gap-2.5 flex-wrap">
                               <select data-reembolso-id="${r.id}" class="select-status-reembolso h-8 px-3 py-1.5 border border-slate-200/80 dark:border-slate-700 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 cursor-pointer shadow-xs">
-                                <option value="Aguardando Fornecedor" ${r.status === 'Aguardando Fornecedor' || r.status === 'solicitado' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Aguardando Fornecedor</option>
+                                <option value="solicitado" ${r.status === 'solicitado' || r.status === 'Aguardando Fornecedor' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Aguardando Fornecedor</option>
                                 <option value="em_analise" ${r.status === 'em_analise' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Em Análise</option>
                                 <option value="aprovado" ${r.status === 'aprovado' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Aprovado</option>
                                 <option value="recusado" ${r.status === 'recusado' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Recusado</option>

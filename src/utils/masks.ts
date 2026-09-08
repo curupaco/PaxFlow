@@ -537,10 +537,14 @@ export function validateCpfCnpj(doc: string): ValidationResult {
   if (!clean) {
     return { isValid: false, message: 'Documento é obrigatório.' };
   }
-  if (clean.length <= 11) {
-    if (/[A-Z]/i.test(clean)) {
-      return { isValid: false, message: 'CPF inválido.' };
+  // Se contiver letras (Passaporte, RNE ou documento internacional)
+  if (/[A-Z]/i.test(clean)) {
+    if (clean.length >= 4 && clean.length <= 25) {
+      return { isValid: true, message: '' };
     }
+    return { isValid: false, message: 'Documento/Passaporte deve ter entre 4 e 25 caracteres.' };
+  }
+  if (clean.length <= 11) {
     const ok = validateCpf(clean);
     return {
       isValid: ok,
@@ -560,6 +564,9 @@ export function validateCpfCnpj(doc: string): ValidationResult {
  */
 export function formatCpfCnpj(digits: string): string {
   const clean = digits.replace(/[^0-9A-Za-z]/g, '').toUpperCase();
+  if (/[A-Z]/i.test(clean)) {
+    return clean; // Documentos internacionais mantêm seu formato original
+  }
   if (clean.length <= 11) {
     if (clean.length === 0) return '';
     if (clean.length <= 3) return clean;
@@ -587,8 +594,9 @@ export function renderDocumentInputHTML(id: string, value: string, placeholder =
   const readonlyAttr = readonly ? 'readonly' : '';
   const disabledClass = readonly ? 'bg-slate-50 dark:bg-slate-900 cursor-not-allowed text-slate-500 dark:text-slate-400' : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100';
 
-  const clean = value ? value.replace(/\D/g, '') : '';
-  const formatted = clean ? formatCpfCnpj(clean) : '';
+  const hasLetters = /[A-Za-z]/.test(value || '');
+  const clean = value ? (hasLetters ? value.trim() : value.replace(/\D/g, '')) : '';
+  const formatted = hasLetters ? clean : (clean ? formatCpfCnpj(clean) : '');
 
   return `
     <div id="${containerId}" class="document-field-wrapper w-full relative">
@@ -673,20 +681,30 @@ export function setupFormValidation(
     if (!inputEl) return true;
 
     const value = inputEl.value;
-    const required = config.required !== false && inputEl.hasAttribute('required');
+    const isExplicitlyNotRequired = config.required === false;
+    const isRequired = !isExplicitlyNotRequired && (config.required === true || inputEl.hasAttribute('required'));
 
-    // Se estiver vazio e não for obrigatório, é válido
-    if (!required && !value.trim()) {
-      if (config.type === 'phone') {
-        const val = value.trim();
-        if (!val || val === '(11)' || val === '(11) ' || val === '(' || val === '(1') {
-          setFieldError(config.id, true, '');
-          return true;
-        }
-      } else {
-        setFieldError(config.id, true, '');
-        return true;
+    // Verifica se o campo está vazio considerando máscaras parciais
+    let cleanVal = value.trim();
+    if (config.type === 'phone') {
+      const digits = cleanVal.replace(/\D/g, '');
+      if (digits.length === 0 || cleanVal === '(11)' || cleanVal === '(11) ' || cleanVal === '(' || cleanVal === '(1') {
+        cleanVal = '';
       }
+    } else if (config.type === 'date') {
+      if (cleanVal.replace(/\D/g, '').length === 0) {
+        cleanVal = '';
+      }
+    } else if (config.type === 'cpf_cnpj') {
+      if (cleanVal.replace(/[^0-9A-Za-z]/g, '').length === 0) {
+        cleanVal = '';
+      }
+    }
+
+    // Se estiver vazio e não for obrigatório, é 100% válido
+    if (!isRequired && !cleanVal) {
+      setFieldError(config.id, true, '');
+      return true;
     }
 
     if (config.type === 'phone') {
@@ -715,7 +733,7 @@ export function setupFormValidation(
     }
 
     if (config.type === 'currency') {
-      if (!required && (value === '0,00' || !value.trim() || parseDoubleBr(value) === 0)) {
+      if (!isRequired && (value === '0,00' || !value.trim() || parseDoubleBr(value) === 0)) {
         setFieldError(config.id, true, '');
         return true;
       }
@@ -741,12 +759,8 @@ export function setupFormValidation(
     }
 
     if (config.type === 'cpf_cnpj') {
-      if (!required && !value.trim()) {
-        setFieldError(config.id, true, '');
-        return true;
-      }
       const result = validateCpfCnpj(value);
-      const digitsLen = value.replace(/\D/g, '').length;
+      const digitsLen = value.replace(/[^0-9A-Za-z]/g, '').length;
       if (isBlur || digitsLen >= 11) {
         setFieldError(config.id, result.isValid, result.message);
       } else {

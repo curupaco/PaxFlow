@@ -760,6 +760,60 @@ export class InboxService {
             });
           });
         }
+
+        // 5.2. Notificações de comentários enviadas pelo usuário logado (Menções @)
+        const { data: notificacoesEnviadas, error: notifsEnvErr } = await supabase
+          .from('notificacoes')
+          .select(`
+            id,
+            user_id,
+            tipo_item,
+            parent_id,
+            created_at,
+            destinatario:profiles!user_id (id, nome, avatar_url),
+            comentario:comentarios!comentario_id (id, autor_id, texto, created_at)
+          `)
+          .not('comentario_id', 'is', null)
+          .order('created_at', { ascending: false });
+
+        if (!notifsEnvErr && notificacoesEnviadas) {
+          notificacoesEnviadas.forEach((not: any) => {
+            if (!not.comentario || not.comentario.autor_id !== user.id) return;
+            const dataFormatada = new Date(not.created_at).toLocaleDateString('pt-BR');
+            const destName = not.destinatario?.nome || 'Colega';
+            const itemLabel = not.tipo_item === 'orcamento' ? 'Orçamento' : (not.tipo_item === 'viagem' ? 'Viagem' : 'Produto');
+            let linkAttr = '';
+            if (not.tipo_item === 'orcamento') linkAttr = `data-orcamento-id="${not.parent_id}"`;
+            else linkAttr = `data-viagem-id="${not.parent_id}"`;
+
+            list.push({
+              id: `sent-mention-${not.id}`,
+              type: 'mention',
+              title: `💬 Menção Enviada em ${itemLabel}`,
+              sender: 'Você',
+              senderAvatar: undefined,
+              dateStr: dataFormatada,
+              subject: `Para: ${destName}`,
+              body: `Você mencionou <strong>${destName}</strong> em um comentário no ${itemLabel}:<br><br>
+                     <div class="pl-3 border-l-4 border-indigo-500 italic text-slate-600 dark:text-slate-400 py-1.5 bg-slate-50 dark:bg-slate-800/40 rounded-r-lg my-3">
+                       "${not.comentario.texto}"
+                     </div>
+                     Clique no link abaixo para abrir o item correspondente:<br>
+                     <a href="#" class="inbox-deep-link font-extrabold text-indigo-600 dark:text-indigo-400 hover:underline" ${linkAttr}>
+                       [Ver Detalhes do(a) ${itemLabel}]
+                     </a>`,
+              targetId: not.parent_id,
+              arquivado: false,
+              consultorId: user.id,
+              consultorNome: 'Você',
+              senderId: user.id,
+              createdAt: not.created_at,
+              eventDate: not.created_at.split('T')[0],
+              recipientsHtml: `Para: ${destName}`,
+              isSent: true
+            });
+          });
+        }
       } catch (eEnv) {
         console.warn('Aviso ao buscar mensagens enviadas:', eEnv);
       }
@@ -1029,17 +1083,26 @@ export class InboxService {
           else if (sol.tipo === 'atendimento_balcao') {
             const isUserDestinatarioBalcao = (sol.destinatario_id && String(sol.destinatario_id) === String(user.id)) || 
               (sol.destinatario_nome && perfil?.nome && isSameConsultantName(sol.destinatario_nome, perfil.nome));
-            
-            if (isUserDestinatarioBalcao || isUserSolicitante) {
+            const isUserQuemAtendeu = (sol.solicitante_id && String(sol.solicitante_id) === String(user.id)) ||
+              (sol.solicitante_nome && perfil?.nome && isSameConsultantName(sol.solicitante_nome, perfil.nome));
+
+            if (isUserDestinatarioBalcao || isUserQuemAtendeu || isAdmin) {
               shouldInclude = true;
-              if (isUserSolicitante && !isUserDestinatarioBalcao) isSentItem = true;
-              cardTitle = '🤝 Atendimento no Balcão (Co-Piloto)';
-              cardSender = sol.solicitante_nome || 'Consultor Co-Piloto';
-              cardSubject = sol.motivo || `Seu cliente foi atendido presencialmente no balcão por ${sol.solicitante_nome}.`;
+              if (isUserQuemAtendeu && !isUserDestinatarioBalcao) {
+                isSentItem = true;
+                cardTitle = '🤝 Atendimento Registrado no Balcão';
+                cardSender = 'Você';
+                cardSubject = `Para: ${sol.destinatario_nome || 'Consultor Titular'} • ${sol.motivo || 'Atendimento presencial'}`;
+              } else {
+                isSentItem = false;
+                cardTitle = '🤝 Atendimento no Balcão (Co-Piloto)';
+                cardSender = sol.solicitante_nome || 'Consultor Co-Piloto';
+                cardSubject = sol.motivo || `Seu cliente foi atendido presencialmente no balcão por ${sol.solicitante_nome}.`;
+              }
               cardBody = `
                 <div class="space-y-2">
                   <p>🤝 <strong>Atendimento Presencial Registrado</strong></p>
-                  <p>${sol.motivo || `Seu cliente foi atendido no balcão por ${sol.solicitante_nome}.`}</p>
+                  <p>${sol.motivo || `Cliente atendido no balcão por ${sol.solicitante_nome}.`}</p>
                   <p class="text-[11px] text-slate-400"><strong>Data e Hora:</strong> ${dataOrigemFmt}</p>
                 </div>
               `;
@@ -1120,13 +1183,14 @@ export class InboxService {
           }
 
           if (shouldInclude) {
-            const isDecisionItem = Boolean(isAdmin && (sol.status === 'aprovado' || sol.status === 'recusado'));
+            const isBalcao = sol.tipo === 'atendimento_balcao';
+            const isDecisionItem = !isBalcao && Boolean(isAdmin && (sol.status === 'aprovado' || sol.status === 'recusado'));
             const uniqueId = `escala-sol-${sol.id}-${isDecisionItem ? 'decisao' : (isSentItem ? 'sent' : 'inbox')}`;
             const isArchived = archivedList.includes(uniqueId);
 
             list.push({
               id: uniqueId,
-              type: 'escala_solicitacao',
+              type: isBalcao ? 'atendimento_balcao' : 'escala_solicitacao',
               title: cardTitle,
               sender: cardSender,
               senderAvatar: senderAvatarReal,
@@ -1137,7 +1201,7 @@ export class InboxService {
               arquivado: isArchived,
               isSent: isSentItem,
               isDecision: isDecisionItem,
-              consultorId: sol.solicitante_id,
+              consultorId: (isBalcao ? sol.destinatario_id : sol.solicitante_id) || '',
               consultorNome: sol.solicitante_nome || 'Consultor',
               createdAt: sol.created_at,
               eventDate: sol.data_origem,

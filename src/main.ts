@@ -115,12 +115,6 @@ class App {
     window.addEventListener('paxflow-inbox-updated', () => {
       this.atualizarInboxBadge();
     });
-
-    // Ouvinte para navegação global com suporte a parâmetros (deep linking)
-    window.addEventListener('paxflow-navigate', (e: any) => {
-      const { page, extraId } = e.detail;
-      this.navigate(page, extraId);
-    });
   }
 
   /**
@@ -1215,20 +1209,33 @@ class App {
     });
 
     // Suporte para rota por Hash (#next-trip, #orcamentos, etc)
+    let isInternalNavigating = false;
+
     window.addEventListener('hashchange', () => {
+      if (isInternalNavigating) {
+        isInternalNavigating = false;
+        return;
+      }
       const hashRaw = window.location.hash.replace('#', '');
-      const hashPage = hashRaw.split('?')[0];
+      const [hashPage, queryString] = hashRaw.split('?');
+      let extraId: string | undefined = undefined;
+      if (queryString) {
+        const params = new URLSearchParams(queryString);
+        extraId = params.get('extraId') || params.get('alertId') || params.get('messageId') || params.get('id') || undefined;
+      }
       if (hashPage && pages.includes(hashPage)) {
-        this.navigate(hashPage);
+        this.navigate(hashPage, extraId);
       }
     });
 
     // Suporte a disparos globais de navegação da SPA
     window.addEventListener('paxflow-navigate', (e: any) => {
       const page = e.detail?.page;
+      const extraId = e.detail?.extraId;
       if (page) {
-        window.location.hash = `#${page}`;
-        this.navigate(page, e.detail?.extraId);
+        isInternalNavigating = true;
+        window.location.hash = extraId ? `#${page}?extraId=${extraId}` : `#${page}`;
+        this.navigate(page, extraId);
       }
     });
   }

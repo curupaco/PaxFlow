@@ -2021,8 +2021,8 @@ export class OrcamentosPage {
                 ${renderDateInputHTML('input-fechar-via-volta', '', 'DD/MM/AAAA', false)}
               </div>
               <div>
-                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Data Financeiro (DD/MM/AAAA) *</label>
-                ${renderDateInputHTML('input-fechar-via-data-financeiro', '')}
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Data Financeiro (DD/MM/AAAA)</label>
+                ${renderDateInputHTML('input-fechar-via-data-financeiro', '', 'DD/MM/AAAA', false)}
               </div>
               <div>
                 <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Valor da Venda (R$) *</label>
@@ -2064,7 +2064,6 @@ export class OrcamentosPage {
         containerViagemExistente?.classList.add('hidden');
         document.getElementById('input-fechar-via-destino')?.setAttribute('required', 'true');
         document.getElementById('input-fechar-via-ida')?.setAttribute('required', 'true');
-        document.getElementById('input-fechar-via-data-financeiro')?.setAttribute('required', 'true');
         document.getElementById('input-fechar-via-valor')?.setAttribute('required', 'true');
       }
       if (validator) {
@@ -2083,7 +2082,7 @@ export class OrcamentosPage {
       { id: 'input-fechar-cli-nascimento', type: 'date', required: isBirthRequiredInitial },
       { id: 'input-fechar-via-ida', type: 'date', required: true },
       { id: 'input-fechar-via-volta', type: 'date', required: false },
-      { id: 'input-fechar-via-data-financeiro', type: 'date', required: true },
+      { id: 'input-fechar-via-data-financeiro', type: 'date', required: false },
       { id: 'input-fechar-via-valor', type: 'currency', required: true }
     ]);
 
@@ -2211,10 +2210,9 @@ export class OrcamentosPage {
 
             const vIda = formatBrDateToIso(vIdaRaw);
             const vVolta = vVoltaRaw ? formatBrDateToIso(vVoltaRaw) : null;
-            const vFin = formatBrDateToIso(vFinRaw);
+            const vFin = vFinRaw ? (formatBrDateToIso(vFinRaw) || new Date().toISOString().split('T')[0]) : new Date().toISOString().split('T')[0];
 
             if (!vIda) throw new Error('Por favor, informe a Data de Ida no formato correto DD/MM/AAAA.');
-            if (!vFin) throw new Error('Por favor, informe a Data Financeiro no formato correto DD/MM/AAAA.');
 
             options.vDestino = vDestino;
             options.vDestinoId = selectedDestinoId || undefined;
@@ -2581,7 +2579,8 @@ export class OrcamentosPage {
             orc.nomeCliente || 'Cliente',
             coPilotoNome,
             'orcamento',
-            id
+            id,
+            currentUserId
           );
         }
       }
