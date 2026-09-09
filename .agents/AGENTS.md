@@ -18,12 +18,18 @@
 - **CONEXÃO ESTÁVEL OBRIGATÓRIA**: Conexão estável com a internet é premissa mandatória da implantação do PaxFlow. Ninguém usa o sistema em deslocamento ou offline.
 - **SUPABASE É O ÚNICO RESPONSÁVEL PELA PERSISTÊNCIA**: Toda alteração de estado (arquivar, desarquivar, marcar lido, excluir, criar, editar) DEVE ser gravada, consultada e persistida diretamente nas tabelas do Supabase. Se não houver tabela ou coluna no banco, a tabela/coluna deve ser criada ou utilizada adequadamente, jamais simulada via localStorage.
 
-## 🧪 REGRA PARA GERAÇÃO DE TESTES (ECONOMIA DE TOKENS)
+## 🧪 REGRA PARA GERAÇÃO E EXECUÇÃO DE TESTES (ECONOMIA DE TOKENS E QUALIDADE)
 
 Sempre que eu pedir para testar um fluxo, atue como um Engenheiro de Testes Sênior focado em testes Subcutâneos.
 1. Use APENAS Vitest, MSW e chamadas diretas às funções/banco (Supabase).
 2. ZERO testes de interface (DOM).
-3. Não escreva explicações, introduções ou textos de markdown. Saída apenas em código.
+3. Não escreva explicações, introduções ou textos de markdown quando solicitado código de teste. Saída apenas em código.
 4. Estruture o teste em 3 blocos comentados: // Setup, // Action, // Assert.
 5. Mocke dependências externas (Google Drive, APIs) sempre retornando 200 OK.
+
+### ⚡ EXECUÇÃO AUTOMÁTICA OBRIGATÓRIA (NÃO PRECISA PEDIR)
+- **RODOU ALTERAÇÃO, RODOU TESTE**: Sempre que qualquer arquivo de serviço, regra ou componente de um módulo for alterado, o assistente DEVE executar proativamente os testes correspondentes (`npx vitest run tests/...`) antes de considerar a tarefa entregue.
+- **ATUALIZAÇÃO DE COBERTURA**: Se a alteração introduzir novo fluxo ou modificar comportamento de negócio, a suíte de testes subcutâneos do respectivo módulo DEVE ser atualizada ou expandida no mesmo ciclo.
+- **ENTREGA CONDICIONAL**: Uma tarefa só é dada por concluída se todos os testes passarem (100% verde) e o `npm run build` não apresentar erros impeditivos.
+
 
