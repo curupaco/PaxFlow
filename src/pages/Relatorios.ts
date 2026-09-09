@@ -112,10 +112,11 @@ export class RelatoriosPage {
       }
       this.user = user;
       this.perfil = perfil;
+      const isAdmin = (this.perfil?.role || '').toLowerCase() === 'admin';
 
-      // Restrict default filter if user is common consultant
-      if (this.perfil && this.perfil.role !== 'admin') {
-        this.consultorIdFilter = this.perfil.id;
+      // Restringe rigidamente o filtro padrão ao próprio consultor se não for admin
+      if (!isAdmin) {
+        this.consultorIdFilter = this.user.id;
       }
 
       await this.loadData();
@@ -135,66 +136,83 @@ export class RelatoriosPage {
    */
   private async loadData(): Promise<void> {
     try {
-      // 1. Get consultants
-      const { data: profilesData } = await supabase.from('profiles').select('*').order('nome');
-      this.consultores = profilesData || [];
+      const isAdmin = (this.perfil?.role || '').toLowerCase() === 'admin';
 
-      // 2. Get global settings
+      // 1. Obter consultores (Admin vê todos; consultor vê apenas a si mesmo)
+      if (isAdmin) {
+        const { data: profilesData } = await supabase.from('profiles').select('*').order('nome');
+        this.consultores = profilesData || [];
+      } else {
+        this.consultores = this.perfil ? [this.perfil] : [];
+      }
+
+      // 2. Obter configurações globais
       const { data: settingsData } = await supabase.from('global_settings').select('*');
       if (settingsData && settingsData.length > 0) {
         this.prazoReembolsoDias = settingsData[0].prazoReembolsoDias || 30;
       }
 
-      // 3. Load orcamentos
+      // 3. Carregar orcamentos (estritamente do usuário se não for admin)
       let orcQuery = supabase.from('orcamentos').select('*');
-      if (this.perfil?.role !== 'admin') {
+      if (!isAdmin) {
         orcQuery = orcQuery.eq('consultor_id', this.user.id);
       }
       const { data: orcData } = await orcQuery;
       this.orcamentos = orcData || [];
 
-      // 4. Load viagens
+      // 4. Carregar viagens (estritamente do usuário se não for admin)
       let viaQuery = supabase.from('viagens').select('*, cliente:clientes(*), reembolsos(*), produtos:produtos_viagem(*), destino_ref:destinos(*)');
-      if (this.perfil?.role !== 'admin') {
+      if (!isAdmin) {
         viaQuery = viaQuery.eq('consultor_id', this.user.id);
       }
       const { data: viaData } = await viaQuery;
       this.viagens = viaData || [];
 
-      // 5. Load reembolsos
+      // 5. Carregar reembolsos (estritamente das viagens ou solicitações do consultor se não for admin)
       let reemQuery = supabase.from('reembolsos').select('*, viagem:viagens(*), produto:produtos_viagem(*)');
       const { data: reemData } = await reemQuery;
       const rawReem = reemData || [];
-      if (this.perfil?.role !== 'admin') {
+      if (!isAdmin) {
         this.reembolsos = rawReem.filter((r: any) => r.viagem?.consultor_id === this.user.id || r.consultor_solicitante_id === this.user.id);
       } else {
         this.reembolsos = rawReem;
       }
 
-      // 6. Load alerts using InboxService
+      // 6. Carregar alertas via InboxService (já filtrado pelo serviço)
       this.alertas = await InboxService.loadAndBuildAlerts(this.user, this.perfil, this.prazoReembolsoDias);
 
-      // 7. Load loc_pagamentos
+      // 7. Carregar loc_pagamentos (apenas das viagens visíveis para o usuário)
+      const travelIds = new Set(this.viagens.map((v: any) => v.id));
       const { data: pagsData } = await supabase.from('loc_pagamentos').select('*, formas_recebimento(*)');
-      this.locPagamentos = pagsData || [];
+      const rawPags = pagsData || [];
+      this.locPagamentos = isAdmin ? rawPags : rawPags.filter((p: any) => travelIds.has(p.viagem_id || p.viagemId));
 
-      // 8. Load loc_conferencias
+      // 8. Carregar loc_conferencias (apenas das viagens visíveis para o usuário)
       const { data: confData } = await supabase.from('loc_conferencias').select('*');
-      this.locConferencias = confData || [];
+      const rawConf = confData || [];
+      this.locConferencias = isAdmin ? rawConf : rawConf.filter((c: any) => travelIds.has(c.viagem_id || c.viagemId));
 
-      // 9. Load formas_recebimento
+      // 9. Carregar formas_recebimento
       const { data: formasData } = await supabase.from('formas_recebimento').select('*');
       this.formasRecebimento = formasData || [];
 
-      // 10. Load profiles_badges
-      const { data: badgesData } = await supabase.from('profiles_badges').select('*');
+      // 10. Carregar profiles_badges (apenas do próprio consultor se não for admin)
+      let badgeQuery = supabase.from('profiles_badges').select('*');
+      if (!isAdmin) {
+        badgeQuery = badgeQuery.eq('profile_id', this.user.id);
+      }
+      const { data: badgesData } = await badgeQuery;
       this.consultoresBadges = badgesData || [];
 
-      // 11. Load lembretes
-      const { data: lembretesData } = await supabase.from('lembretes').select('*').eq('arquivado', false);
+      // 11. Carregar lembretes
+      let lembretesQuery = supabase.from('lembretes').select('*').eq('arquivado', false);
+      if (!isAdmin) {
+        lembretesQuery = lembretesQuery.eq('user_id', this.user.id);
+      }
+      const { data: lembretesData } = await lembretesQuery;
       this.lembretes = lembretesData || [];
 
-      // 12. Load tipos_produto
+      // 12. Carregar tipos_produto
       const { data: tiposData } = await supabase.from('tipos_produto').select('*').order('nome');
       this.tiposProduto = tiposData || [];
     } catch (err) {
@@ -318,6 +336,9 @@ export class RelatoriosPage {
    * Filters database records locally based on date ranges and consultant filters
    */
   private getFilteredData() {
+    const isAdmin = (this.perfil?.role || '').toLowerCase() === 'admin';
+    const effectiveConsultorFilter = isAdmin ? this.consultorIdFilter : (this.user?.id || '');
+
     const start = new Date(this.dataInicio + 'T00:00:00');
     const end = new Date(this.dataFim + 'T23:59:59');
 
@@ -328,10 +349,13 @@ export class RelatoriosPage {
       return cleanDate >= this.dataInicio && cleanDate <= this.dataFim;
     };
 
-    // Helper to check consultant filter
+    // Helper to check consultant filter: Não-admin NUNCA vê dados de outros consultores
     const matchConsultant = (id: string) => {
-      if (this.consultorIdFilter === 'todos') return true;
-      return id === this.consultorIdFilter;
+      if (!isAdmin) {
+        return id === effectiveConsultorFilter;
+      }
+      if (effectiveConsultorFilter === 'todos') return true;
+      return id === effectiveConsultorFilter;
     };
 
     const filteredViagens = this.viagens.filter(v => {
@@ -376,6 +400,7 @@ export class RelatoriosPage {
     }
 
     const data = this.getFilteredData();
+    const isAdmin = (this.perfil?.role || '').toLowerCase() === 'admin';
 
     this.container.innerHTML = `
       <div class="flex-grow flex flex-col overflow-y-auto custom-scrollbar p-6 max-w-7xl mx-auto w-full gap-6 print-full-width">
@@ -420,13 +445,23 @@ export class RelatoriosPage {
             </div>
 
             <!-- Team / Consultant filter -->
-            <div class="space-y-1 flex-1">
-              <label class="block text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest">Consultor / Equipe</label>
-              <select id="filter-consultores" class="w-full text-xs font-bold px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition duration-155" ${this.perfil?.role !== 'admin' ? 'disabled' : ''}>
-                <option value="todos" ${this.consultorIdFilter === 'todos' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Consolidado (Todos os Consultores)</option>
-                ${this.consultores.map(c => `<option value="${c.id}" ${this.consultorIdFilter === c.id ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">${c.nome}</option>`).join('')}
-              </select>
-            </div>
+            ${isAdmin ? `
+              <div class="space-y-1 flex-1">
+                <label class="block text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest">Consultor / Equipe</label>
+                <select id="filter-consultores" class="w-full text-xs font-bold px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition duration-155">
+                  <option value="todos" ${this.consultorIdFilter === 'todos' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Consolidado (Todos os Consultores)</option>
+                  ${this.consultores.map(c => `<option value="${c.id}" ${this.consultorIdFilter === c.id ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">${c.nome}</option>`).join('')}
+                </select>
+              </div>
+            ` : `
+              <div class="space-y-1 flex-1">
+                <label class="block text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest">Escopo dos Indicadores</label>
+                <div class="w-full text-xs font-black px-3.5 py-2.5 border border-indigo-200/80 dark:border-indigo-900/60 bg-indigo-50/50 dark:bg-indigo-950/40 rounded-xl text-indigo-700 dark:text-indigo-300 flex items-center gap-2 select-none shadow-sm h-[42px]">
+                  <span>👤</span>
+                  <span class="truncate">Seus Dados (${this.perfil?.nome || 'Consultor'})</span>
+                </div>
+              </div>
+            `}
           </div>
           
           <div class="flex items-center gap-2 flex-shrink-0">
@@ -647,6 +682,8 @@ export class RelatoriosPage {
       chartRows = '<p class="text-xs text-slate-400 font-bold py-6 text-center">Nenhum dado de vendas no período selecionado.</p>';
     }
 
+    const isAdmin = (this.perfil?.role || '').toLowerCase() === 'admin';
+
     return `
       <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-3xl p-6 shadow-sm flex flex-col gap-6 print-full-width">
         <h2 class="text-lg font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
@@ -673,60 +710,62 @@ export class RelatoriosPage {
           </div>
         </div>
 
-        <!-- Sales Chart Section -->
-        <div class="border border-slate-100 dark:border-slate-800 p-5 rounded-2xl gap-4 flex flex-col">
-          <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider">Ranking de Vendas por Consultor</h3>
-          <div class="space-y-4">
-            ${chartRows}
+        ${isAdmin ? `
+          <!-- Sales Chart Section (Visível apenas para Administradores) -->
+          <div class="border border-slate-100 dark:border-slate-800 p-5 rounded-2xl gap-4 flex flex-col">
+            <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider">Ranking de Vendas por Consultor</h3>
+            <div class="space-y-4">
+              ${chartRows}
+            </div>
           </div>
-        </div>
 
-        <!-- Table detailing data -->
-        <div class="overflow-x-auto custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl">
-          <table class="w-full text-left border-collapse text-xs font-semibold">
-            <thead>
-              <tr class="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-widest font-black">
-                <th class="p-3">Consultor</th>
-                <th class="p-3">Orçamentos</th>
-                <th class="p-3">Fechados (Sim)</th>
-                <th class="p-3">Taxa Conv.</th>
-                <th class="p-3">Total Vendido</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${this.consultores
-                .filter(c => c.ativo !== false && (this.consultorIdFilter === 'todos' || c.id === this.consultorIdFilter))
-                .map(c => {
-                  const subOrc = data.orcamentos.filter((o: any) => (o.consultor_id || o.consultorId) === c.id);
-                  const subVia = data.viagens.filter((v: any) => (v.consultor_id || v.consultorId) === c.id);
-                  
-                  const cAceito = subOrc.filter((o: any) => o.sub_status === 'ACEITO' || o.subStatus === 'ACEITO').length;
-                  const cRecuso = subOrc.filter((o: any) => o.sub_status === 'DESISTENCIA' || o.subStatus === 'DESISTENCIA').length;
-                  const cConv = (cAceito + cRecuso) > 0 ? Math.round((cAceito / (cAceito + cRecuso)) * 100) : 0;
-                  
-                  const cSales = subVia.reduce((sum: number, v: any) => {
-                    const vPayments = data.locPagamentos.filter((p: any) => 
-                      (p.viagem_id === v.id || p.viagemId === v.id) &&
-                      p.formas_recebimento &&
-                      ['DESCONTO', 'PREJUÍZO'].includes((p.formas_recebimento.nome || '').trim().toUpperCase())
-                    );
-                    const vSub = vPayments.reduce((s: number, p: any) => s + (Number(p.valor) || 0), 0);
-                    return sum + Math.max(0, (v.valor_total || v.valorTotal || 0) - vSub);
-                  }, 0);
-                  
-                  return `
-                  <tr class="border-b border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-300">
-                    <td class="p-3 font-extrabold text-slate-800 dark:text-slate-100">${c.nome}</td>
-                    <td class="p-3">${subOrc.length}</td>
-                    <td class="p-3">${cAceito}</td>
-                    <td class="p-3 font-extrabold text-emerald-600">${cConv}%</td>
-                    <td class="p-3 font-extrabold">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(cSales)}</td>
-                  </tr>
-                `;
-              }).join('')}
-            </tbody>
-          </table>
-        </div>
+          <!-- Table detailing data (Visível apenas para Administradores) -->
+          <div class="overflow-x-auto custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl">
+            <table class="w-full text-left border-collapse text-xs font-semibold">
+              <thead>
+                <tr class="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-widest font-black">
+                  <th class="p-3">Consultor</th>
+                  <th class="p-3">Orçamentos</th>
+                  <th class="p-3">Fechados (Sim)</th>
+                  <th class="p-3">Taxa Conv.</th>
+                  <th class="p-3">Total Vendido</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${this.consultores
+                  .filter(c => c.ativo !== false && (this.consultorIdFilter === 'todos' || c.id === this.consultorIdFilter))
+                  .map(c => {
+                    const subOrc = data.orcamentos.filter((o: any) => (o.consultor_id || o.consultorId) === c.id);
+                    const subVia = data.viagens.filter((v: any) => (v.consultor_id || v.consultorId) === c.id);
+                    
+                    const cAceito = subOrc.filter((o: any) => o.sub_status === 'ACEITO' || o.subStatus === 'ACEITO').length;
+                    const cRecuso = subOrc.filter((o: any) => o.sub_status === 'DESISTENCIA' || o.subStatus === 'DESISTENCIA').length;
+                    const cConv = (cAceito + cRecuso) > 0 ? Math.round((cAceito / (cAceito + cRecuso)) * 100) : 0;
+                    
+                    const cSales = subVia.reduce((sum: number, v: any) => {
+                      const vPayments = data.locPagamentos.filter((p: any) => 
+                        (p.viagem_id === v.id || p.viagemId === v.id) &&
+                        p.formas_recebimento &&
+                        ['DESCONTO', 'PREJUÍZO'].includes((p.formas_recebimento.nome || '').trim().toUpperCase())
+                      );
+                      const vSub = vPayments.reduce((s: number, p: any) => s + (Number(p.valor) || 0), 0);
+                      return sum + Math.max(0, (v.valor_total || v.valorTotal || 0) - vSub);
+                    }, 0);
+                    
+                    return `
+                    <tr class="border-b border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-300">
+                      <td class="p-3 font-extrabold text-slate-800 dark:text-slate-100">${c.nome}</td>
+                      <td class="p-3">${subOrc.length}</td>
+                      <td class="p-3">${cAceito}</td>
+                      <td class="p-3 font-extrabold text-emerald-600">${cConv}%</td>
+                      <td class="p-3 font-extrabold">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(cSales)}</td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+        ` : ''}
       </div>
     `;
   }
@@ -1079,9 +1118,13 @@ export class RelatoriosPage {
   // VIEW: 5. PREVISÕES PREDITIVAS
   // ==========================================
   private renderPrevisoes(data: any): string {
+    const isAdmin = (this.perfil?.role || '').toLowerCase() === 'admin';
+    const effectiveFilter = isAdmin ? this.consultorIdFilter : (this.user?.id || '');
+
     const matchConsultant = (id: string) => {
-      if (this.consultorIdFilter === 'todos') return true;
-      return id === this.consultorIdFilter;
+      if (!isAdmin) return id === effectiveFilter;
+      if (effectiveFilter === 'todos') return true;
+      return id === effectiveFilter;
     };
 
     // 1. Pipeline ativo
@@ -1977,6 +2020,105 @@ export class RelatoriosPage {
   // VIEW: 10. RELATÓRIO DE GAMIFICAÇÃO
   // ==========================================
   private renderGamificacao(data: any): string {
+    const isAdmin = (this.perfil?.role || '').toLowerCase() === 'admin';
+
+    // Se NÃO for administrador: exibe estritamente o progresso e conquistas individuais do consultor
+    if (!isAdmin) {
+      const meuPerfil = this.perfil || this.consultores.find(c => c.id === this.user?.id) || {
+        id: this.user?.id || '',
+        nome: 'Você',
+        email: this.user?.email || '',
+        xp: 0
+      };
+      const meuXp = (meuPerfil as any).xp || 0;
+      const prog = obterProgressoNivel(meuXp);
+      const minhasBadges = (data.consultoresBadges || [])
+        .filter((b: any) => (b.profile_id || b.profileId) === this.user?.id)
+        .map((b: any) => b.badge_key);
+
+      const badgesGrid = BADGE_DEFINITIONS.map(b => {
+        const conquistado = minhasBadges.includes(b.key);
+        return `
+          <div class="p-4 rounded-2xl border transition-all ${conquistado 
+            ? 'bg-emerald-50/60 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800/50 shadow-sm' 
+            : 'bg-slate-50/50 dark:bg-slate-900/40 border-slate-200/60 dark:border-slate-800/60 opacity-60'} flex flex-col justify-between gap-3">
+            <div class="flex items-start gap-3">
+              <span class="text-3xl p-2 bg-white dark:bg-slate-800 rounded-xl shadow-xs shrink-0">${b.emoji}</span>
+              <div class="space-y-1">
+                <div class="flex items-center gap-2">
+                  <h4 class="font-black text-xs text-slate-800 dark:text-slate-100">${b.nome}</h4>
+                  ${conquistado 
+                    ? `<span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[9px] font-black uppercase">Conquistada ✅</span>` 
+                    : `<span class="px-2 py-0.5 rounded-full bg-slate-200/60 dark:bg-slate-800 text-slate-500 text-[9px] font-black uppercase">Bloqueada 🔒</span>`}
+                </div>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400 font-medium leading-relaxed">${b.descricao}</p>
+              </div>
+            </div>
+            <div class="pt-2 border-t border-slate-200/40 dark:border-slate-800/40 flex justify-between items-center text-[10px] font-bold text-slate-400">
+              <span>${b.categoria}</span>
+              <span class="${conquistado ? 'text-emerald-600 dark:text-emerald-400 font-extrabold' : ''}">${conquistado ? 'Ativa no Perfil' : 'A Conquistar'}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      return `
+        <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-3xl p-6 shadow-sm flex flex-col gap-6 print-full-width">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-4">
+            <div>
+              <h2 class="text-lg font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                <span>🏆 Seu Progresso de Gamificação & Conquistas</span>
+              </h2>
+              <p class="text-xs text-slate-400 font-semibold mt-0.5">Acompanhe sua pontuação de experiência, patente e condecorações acumuladas.</p>
+            </div>
+            <span class="px-3 py-1 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-900/60 rounded-xl text-xs font-black">
+              ${minhasBadges.length} de ${BADGE_DEFINITIONS.length} Conquistas
+            </span>
+          </div>
+
+          <!-- Cards de Nível e XP -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 text-center">
+              <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Patente Atual</p>
+              <p class="text-lg font-black text-slate-800 dark:text-slate-100 mt-1 flex items-center justify-center gap-2">
+                <span class="text-2xl">${prog.patenteEmoji}</span>
+                <span>${prog.patente}</span>
+              </p>
+            </div>
+            <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 text-center">
+              <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Nível de Carreira</p>
+              <p class="text-lg font-black text-indigo-600 dark:text-indigo-400 mt-1">Nível ${prog.nivel}</p>
+            </div>
+            <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 text-center">
+              <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">XP Total Acumulado</p>
+              <p class="text-lg font-black text-emerald-600 dark:text-emerald-400 mt-1">${meuXp.toLocaleString('pt-BR')} XP</p>
+            </div>
+          </div>
+
+          <!-- Barra de Evolução até o próximo nível -->
+          <div class="p-5 bg-gradient-to-r from-indigo-50/50 via-white to-indigo-50/30 dark:from-indigo-950/20 dark:via-slate-900 dark:to-indigo-950/10 border border-indigo-100 dark:border-indigo-900/50 rounded-2xl space-y-3">
+            <div class="flex justify-between items-center text-xs font-black">
+              <span class="text-slate-700 dark:text-slate-200">Progresso para o Nível ${prog.nivel + 1}</span>
+              <span class="text-indigo-600 dark:text-indigo-400 font-extrabold">${prog.xpAtual} / ${prog.xpProximoNivel} XP (${Math.round(prog.percent)}%)</span>
+            </div>
+            <div class="w-full bg-slate-200/80 dark:bg-slate-800 h-3 rounded-full overflow-hidden">
+              <div class="bg-indigo-600 h-full rounded-full transition-all duration-500" style="width: ${Math.round(prog.percent)}%"></div>
+            </div>
+            <p class="text-[11px] text-slate-400 font-medium">Faltam <strong>${prog.xpProximoNivel - prog.xpAtual} XP</strong> para alcançar o próximo nível.</p>
+          </div>
+
+          <!-- Grid de Conquistas Pessoais -->
+          <div class="space-y-3">
+            <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider">Suas Conquistas e Medalhas</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              ${badgesGrid}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // Visão Completa de Administração
     const totalConsultores = this.consultores.length || 1;
     
     // Process each consultant's progress and badges
@@ -2253,9 +2395,14 @@ export class RelatoriosPage {
       
       if (hasError) return;
       
+      const isAdmin = (this.perfil?.role || '').toLowerCase() === 'admin';
       this.dataInicio = formatBrDateToIso(valInicio) || valInicio;
       this.dataFim = formatBrDateToIso(valFim) || valFim;
-      if (selectConsultorVal) this.consultorIdFilter = selectConsultorVal;
+      if (isAdmin && selectConsultorVal) {
+        this.consultorIdFilter = selectConsultorVal;
+      } else if (!isAdmin) {
+        this.consultorIdFilter = this.user?.id || '';
+      }
       
       this.render();
       this.setupEventListeners();
@@ -2267,9 +2414,10 @@ export class RelatoriosPage {
       const inicio = new Date();
       inicio.setDate(hoje.getDate() - 180);
       
+      const isAdmin = (this.perfil?.role || '').toLowerCase() === 'admin';
       this.dataInicio = inicio.toISOString().substring(0, 10);
       this.dataFim = hoje.toISOString().substring(0, 10);
-      this.consultorIdFilter = (this.perfil && this.perfil.role !== 'admin') ? this.perfil.id : 'todos';
+      this.consultorIdFilter = isAdmin ? 'todos' : (this.user?.id || '');
       
       this.render();
       this.setupEventListeners();
@@ -2526,9 +2674,13 @@ export class RelatoriosPage {
       });
     } else if (this.activeTab === 'previsoes') {
       csvContent += 'Fase;Valor Total;Probabilidade;Valor Ponderado\n';
+      const isAdmin = (this.perfil?.role || '').toLowerCase() === 'admin';
+      const effectiveFilter = isAdmin ? this.consultorIdFilter : (this.user?.id || '');
+
       const matchConsultant = (id: string) => {
-        if (this.consultorIdFilter === 'todos') return true;
-        return id === this.consultorIdFilter;
+        if (!isAdmin) return id === effectiveFilter;
+        if (effectiveFilter === 'todos') return true;
+        return id === effectiveFilter;
       };
       const pipelineOrc = this.orcamentos.filter((o: any) => o.status !== 'CONCLUIDO' && matchConsultant(o.consultor_id || o.consultorId));
       
