@@ -855,6 +855,7 @@ export class RelatoriosPage {
   // ==========================================
   private renderFaturamento(data: any): string {
     let faturamentoBruto = 0;
+    let taxasTotal = 0;
     let custoTotal = 0;
     let comissaoTotal = 0;
     let markupTotal = 0;
@@ -874,33 +875,43 @@ export class RelatoriosPage {
       if (v.produtos) {
         v.produtos.forEach((p: any) => {
           if (p.status !== 'cancelado') {
+            taxasTotal += (Number(p.taxa) || 0);
             custoTotal += (p.valorCusto || p.valor_custo || 0);
-            comissaoTotal += (p.comissao || 0);
-            markupTotal += (p.markup || 0);
-            ravTotal += ((p.rav || 0) * 0.88);
+            comissaoTotal += (Number(p.comissao) || 0);
+            markupTotal += (Number(p.markup) || 0);
+            ravTotal += ((Number(p.rav) || 0) * 0.88);
           }
         });
       }
     });
 
     faturamentoBruto = Math.max(0, faturamentoBruto - totalSubtrair);
-    const lucroBruto = Math.max(0, faturamentoBruto - custoTotal);
     const lucroLiquidoReal = Math.max(0, comissaoTotal + markupTotal + ravTotal - totalSubtrair);
     const margemMedia = faturamentoBruto > 0 ? Math.round((lucroLiquidoReal / faturamentoBruto) * 100) : 0;
 
-    // Grouping by product types
-    const productTypes: Record<string, { faturamento: number, custo: number, lucro: number }> = {};
+    // Agrupamento por tipo/categoria de produto
+    const productTypes: Record<string, { faturamento: number, taxas: number, comissao: number, markup: number, rav: number, lucro: number }> = {};
     data.viagens.forEach((v: any) => {
       if (v.produtos) {
         v.produtos.forEach((p: any) => {
           if (p.status !== 'cancelado') {
             const tipo = p.tipo || 'Outros';
             if (!productTypes[tipo]) {
-              productTypes[tipo] = { faturamento: 0, custo: 0, lucro: 0 };
+              productTypes[tipo] = { faturamento: 0, taxas: 0, comissao: 0, markup: 0, rav: 0, lucro: 0 };
             }
-            productTypes[tipo].faturamento += Number(p.valor_venda ?? p.valorVenda ?? 0);
-            productTypes[tipo].custo += Number(p.valor_custo ?? p.valorCusto ?? 0);
-            productTypes[tipo].lucro += ((Number(p.comissao) || 0) + (Number(p.markup) || 0) + ((Number(p.rav) || 0) * 0.88));
+            const pVenda = Number(p.valor_venda ?? p.valorVenda ?? 0);
+            const pTaxa = Number(p.taxa) || 0;
+            const pComissao = Number(p.comissao) || 0;
+            const pMarkup = Number(p.markup) || 0;
+            const pRav = (Number(p.rav) || 0) * 0.88;
+            const pLucro = pComissao + pMarkup + pRav;
+
+            productTypes[tipo].faturamento += pVenda;
+            productTypes[tipo].taxas += pTaxa;
+            productTypes[tipo].comissao += pComissao;
+            productTypes[tipo].markup += pMarkup;
+            productTypes[tipo].rav += pRav;
+            productTypes[tipo].lucro += pLucro;
           }
         });
       }
@@ -913,30 +924,34 @@ export class RelatoriosPage {
         </h2>
 
         <!-- Metric Grid -->
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 text-center">
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Faturamento Bruto</p>
-            <p class="text-base font-black text-slate-800 dark:text-slate-200 mt-1">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(faturamentoBruto)}</p>
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2.5">
+          <div class="bg-slate-50 dark:bg-slate-950 p-3.5 rounded-2xl border border-slate-100 dark:border-slate-800 text-center">
+            <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">FATURAMENTO VENDA</p>
+            <p class="text-sm sm:text-base font-black text-slate-800 dark:text-slate-200 mt-1">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(faturamentoBruto)}</p>
           </div>
-          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 text-center">
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Comissão</p>
-            <p class="text-base font-black text-indigo-600 dark:text-indigo-400 mt-1">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(comissaoTotal)}</p>
+          <div class="bg-slate-50 dark:bg-slate-950 p-3.5 rounded-2xl border border-slate-100 dark:border-slate-800 text-center">
+            <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">TAXAS</p>
+            <p class="text-sm sm:text-base font-black text-sky-600 dark:text-sky-400 mt-1">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(taxasTotal)}</p>
           </div>
-          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 text-center">
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Markup Coletado</p>
-            <p class="text-base font-black text-purple-600 dark:text-purple-400 mt-1">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(markupTotal)}</p>
+          <div class="bg-slate-50 dark:bg-slate-950 p-3.5 rounded-2xl border border-slate-100 dark:border-slate-800 text-center">
+            <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">COMISSÃO DA AGÊNCIA</p>
+            <p class="text-sm sm:text-base font-black text-indigo-600 dark:text-indigo-400 mt-1">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(comissaoTotal)}</p>
           </div>
-          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 text-center">
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">RAV Coletada</p>
-            <p class="text-base font-black text-amber-600 dark:text-amber-400 mt-1">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(ravTotal)}</p>
+          <div class="bg-slate-50 dark:bg-slate-950 p-3.5 rounded-2xl border border-slate-100 dark:border-slate-800 text-center">
+            <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">MARKUP</p>
+            <p class="text-sm sm:text-base font-black text-purple-600 dark:text-purple-400 mt-1">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(markupTotal)}</p>
           </div>
-          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 text-center">
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Lucro Líquido</p>
-            <p class="text-base font-black text-emerald-600 mt-1">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(lucroLiquidoReal)}</p>
+          <div class="bg-slate-50 dark:bg-slate-950 p-3.5 rounded-2xl border border-slate-100 dark:border-slate-800 text-center">
+            <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">RAV</p>
+            <p class="text-sm sm:text-base font-black text-amber-600 dark:text-amber-400 mt-1">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(ravTotal)}</p>
           </div>
-          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 text-center">
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Margem Média</p>
-            <p class="text-base font-black text-slate-700 dark:text-slate-200 mt-1">${margemMedia}%</p>
+          <div class="bg-slate-50 dark:bg-slate-950 p-3.5 rounded-2xl border border-slate-100 dark:border-slate-800 text-center">
+            <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">LUCRO LÍQUIDO</p>
+            <p class="text-sm sm:text-base font-black text-emerald-600 mt-1">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(lucroLiquidoReal)}</p>
+          </div>
+          <div class="bg-slate-50 dark:bg-slate-950 p-3.5 rounded-2xl border border-slate-100 dark:border-slate-800 text-center col-span-2 sm:col-span-1">
+            <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">MARGEM MÉDIA</p>
+            <p class="text-sm sm:text-base font-black text-slate-700 dark:text-slate-200 mt-1">${margemMedia}%</p>
           </div>
         </div>
 
@@ -949,8 +964,11 @@ export class RelatoriosPage {
                 <tr class="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-widest font-black">
                   <th class="p-3">Categoria</th>
                   <th class="p-3">Faturamento Venda</th>
-                  <th class="p-3">Custo Fornecedor</th>
-                  <th class="p-3">Lucro Realizado (Margem)</th>
+                  <th class="p-3">Taxas</th>
+                  <th class="p-3">Comissão da Agência</th>
+                  <th class="p-3">Markup</th>
+                  <th class="p-3">RAV</th>
+                  <th class="p-3">Lucro Líquido</th>
                   <th class="p-3">Margem (%)</th>
                 </tr>
               </thead>
@@ -960,15 +978,18 @@ export class RelatoriosPage {
                   return `
                     <tr class="border-b border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-300">
                       <td class="p-3 font-extrabold text-slate-800 dark:text-slate-100">${tipo}</td>
-                      <td class="p-3">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(vals.faturamento)}</td>
-                      <td class="p-3">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(vals.custo)}</td>
-                      <td class="p-3 font-extrabold text-indigo-600">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(vals.lucro)}</td>
+                      <td class="p-3 font-bold text-slate-800 dark:text-slate-200">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(vals.faturamento)}</td>
+                      <td class="p-3 text-sky-600 dark:text-sky-400">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(vals.taxas)}</td>
+                      <td class="p-3 text-indigo-600 dark:text-indigo-400">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(vals.comissao)}</td>
+                      <td class="p-3 text-purple-600 dark:text-purple-400">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(vals.markup)}</td>
+                      <td class="p-3 text-amber-600 dark:text-amber-400">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(vals.rav)}</td>
+                      <td class="p-3 font-extrabold text-emerald-600">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(vals.lucro)}</td>
                       <td class="p-3 font-extrabold">${mPct}%</td>
                     </tr>
                   `;
                 }).join('') || `
                   <tr>
-                    <td colspan="5" class="p-6 text-center text-slate-400 font-extrabold">Nenhum produto registrado ou faturado no período.</td>
+                    <td colspan="8" class="p-6 text-center text-slate-400 font-extrabold">Nenhum produto registrado ou faturado no período.</td>
                   </tr>
                 `}
               </tbody>
@@ -2637,10 +2658,12 @@ export class RelatoriosPage {
         csvContent += `"${a.title}";"${a.consultorNome}";"${a.dateStr}";"${a.arquivado ? 'Arquivado' : 'Ativo'}"\n`;
       });
     } else if (this.activeTab === 'faturamento') {
-      csvContent += 'Faturamento Bruto;Comissao Consolidada;Markup Coletado;RAV Coletada;Lucro Liquido\n';
+      csvContent += 'Categoria;Faturamento Venda;Taxas;Comissão da Agência;Markup;RAV;Lucro Líquido;Margem (%)\n';
       
-      let faturamentoBruto = 0, comissaoTotal = 0, markupTotal = 0, ravTotal = 0;
+      let faturamentoBruto = 0, taxasTotal = 0, comissaoTotal = 0, markupTotal = 0, ravTotal = 0;
       let totalSub = 0;
+      const catStats: Record<string, { faturamento: number, taxas: number, comissao: number, markup: number, rav: number, lucro: number }> = {};
+
       data.viagens.forEach((v: any) => {
         faturamentoBruto += (v.valor_total || v.valorTotal || 0);
         
@@ -2654,16 +2677,44 @@ export class RelatoriosPage {
         if (v.produtos) {
           v.produtos.forEach((p: any) => {
             if (p.status !== 'cancelado') {
-              comissaoTotal += (p.comissao || 0);
-              markupTotal += (p.markup || 0);
-              ravTotal += ((p.rav || 0) * 0.88);
+              const tipo = p.tipo || 'Outros';
+              if (!catStats[tipo]) {
+                catStats[tipo] = { faturamento: 0, taxas: 0, comissao: 0, markup: 0, rav: 0, lucro: 0 };
+              }
+              const pVenda = Number(p.valor_venda ?? p.valorVenda ?? 0);
+              const pTaxa = Number(p.taxa) || 0;
+              const pComissao = Number(p.comissao) || 0;
+              const pMarkup = Number(p.markup) || 0;
+              const pRav = (Number(p.rav) || 0) * 0.88;
+              const pLucro = pComissao + pMarkup + pRav;
+
+              taxasTotal += pTaxa;
+              comissaoTotal += pComissao;
+              markupTotal += pMarkup;
+              ravTotal += pRav;
+
+              catStats[tipo].faturamento += pVenda;
+              catStats[tipo].taxas += pTaxa;
+              catStats[tipo].comissao += pComissao;
+              catStats[tipo].markup += pMarkup;
+              catStats[tipo].rav += pRav;
+              catStats[tipo].lucro += pLucro;
             }
           });
         }
       });
       const netFaturamento = Math.max(0, faturamentoBruto - totalSub);
       const netLucro = Math.max(0, (comissaoTotal + markupTotal + ravTotal) - totalSub);
-      csvContent += `${netFaturamento};${comissaoTotal};${markupTotal};${ravTotal};${netLucro}\n`;
+      const totalMargem = netFaturamento > 0 ? Math.round((netLucro / netFaturamento) * 100) : 0;
+
+      // Linhas detalhadas por categoria
+      Object.entries(catStats).forEach(([tipo, c]) => {
+        const cMargem = c.faturamento > 0 ? Math.round((c.lucro / c.faturamento) * 100) : 0;
+        csvContent += `"${tipo}";${c.faturamento};${c.taxas};${c.comissao};${c.markup};${c.rav};${c.lucro};"${cMargem}%"\n`;
+      });
+
+      // Linha consolidada total
+      csvContent += `"CONSOLIDADO TOTAL";${netFaturamento};${taxasTotal};${comissaoTotal};${markupTotal};${ravTotal};${netLucro};"${totalMargem}%"\n`;
     } else if (this.activeTab === 'perdas') {
       csvContent += 'Cliente;Destino;Valor Cotacao;Motivo Desistencia\n';
       const perdidos = data.orcamentos.filter((o: any) => o.subStatus === 'DESISTENCIA' || o.sub_status === 'DESISTENCIA');
