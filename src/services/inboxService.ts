@@ -114,22 +114,15 @@ export class InboxService {
 
       const readIds = (notifRead || []).map(n => `mention-${n.id}`);
 
-      // Também verifica mensagens lidas diretamente na tabela mensagens_diretas
-      const { data: dmRead } = await supabase
-        .from('mensagens_diretas')
-        .select('id')
-        .eq('destinatario_id', userId)
-        .eq('lida', true);
-
-      if (dmRead) {
-        dmRead.forEach(d => {
-          readIds.push(`dm-direct-${d.id}`);
-          const matchedNotif = (notifRead || []).find(n => (n.item_id === d.id || n.parent_id === d.id));
-          if (matchedNotif) {
-            readIds.push(`mention-${matchedNotif.id}`);
-          }
-        });
-      }
+      // Mapear também IDs diretos de mensagens marcadas como lidas
+      (notifRead || []).forEach(n => {
+        if (n.item_id) {
+          readIds.push(`dm-direct-${n.item_id}`);
+        }
+        if (n.parent_id) {
+          readIds.push(`dm-direct-${n.parent_id}`);
+        }
+      });
 
       return Array.from(new Set(readIds));
     } catch (e) {
@@ -145,25 +138,18 @@ export class InboxService {
     try {
       if (alertId.startsWith('mention-')) {
         const notifId = alertId.replace('mention-', '');
-        const { data, error } = await supabase
+        const { error } = await supabase
           .from('notificacoes')
           .update({ lida: true })
-          .eq('id', notifId)
-          .select('item_id, tipo_item');
+          .eq('id', notifId);
         if (error) throw error;
-
-        if (data && data[0]?.tipo_item === 'mensagem' && data[0]?.item_id) {
-          await supabase
-            .from('mensagens_diretas')
-            .update({ lida: true })
-            .eq('id', data[0].item_id);
-        }
       } else if (alertId.startsWith('dm-direct-')) {
         const msgId = alertId.replace('dm-direct-', '');
         await supabase
-          .from('mensagens_diretas')
+          .from('notificacoes')
           .update({ lida: true })
-          .eq('id', msgId);
+          .eq('user_id', userId)
+          .eq('item_id', msgId);
       }
       window.dispatchEvent(new CustomEvent('paxflow-inbox-updated'));
     } catch (err) {
@@ -178,25 +164,18 @@ export class InboxService {
     try {
       if (alertId.startsWith('mention-')) {
         const notifId = alertId.replace('mention-', '');
-        const { data, error } = await supabase
+        const { error } = await supabase
           .from('notificacoes')
           .update({ lida: false })
-          .eq('id', notifId)
-          .select('item_id, tipo_item');
+          .eq('id', notifId);
         if (error) throw error;
-
-        if (data && data[0]?.tipo_item === 'mensagem' && data[0]?.item_id) {
-          await supabase
-            .from('mensagens_diretas')
-            .update({ lida: false })
-            .eq('id', data[0].item_id);
-        }
       } else if (alertId.startsWith('dm-direct-')) {
         const msgId = alertId.replace('dm-direct-', '');
         await supabase
-          .from('mensagens_diretas')
+          .from('notificacoes')
           .update({ lida: false })
-          .eq('id', msgId);
+          .eq('user_id', userId)
+          .eq('item_id', msgId);
       }
       window.dispatchEvent(new CustomEvent('paxflow-inbox-updated'));
     } catch (err) {
@@ -214,23 +193,11 @@ export class InboxService {
         .map(id => id.replace('mention-', ''));
 
       if (mentionIds.length > 0) {
-        const { data, error } = await supabase
+        const { error } = await supabase
           .from('notificacoes')
           .update({ lida: true })
-          .in('id', mentionIds)
-          .select('item_id, tipo_item');
+          .in('id', mentionIds);
         if (error) throw error;
-
-        const msgIds = (data || [])
-          .filter((n: any) => n.tipo_item === 'mensagem' && n.item_id)
-          .map((n: any) => n.item_id);
-
-        if (msgIds.length > 0) {
-          await supabase
-            .from('mensagens_diretas')
-            .update({ lida: true })
-            .in('id', msgIds);
-        }
       }
 
       const directIds = alertIds
@@ -239,9 +206,10 @@ export class InboxService {
 
       if (directIds.length > 0) {
         await supabase
-          .from('mensagens_diretas')
+          .from('notificacoes')
           .update({ lida: true })
-          .in('id', directIds);
+          .eq('user_id', userId)
+          .in('item_id', directIds);
       }
 
       window.dispatchEvent(new CustomEvent('paxflow-inbox-updated'));
@@ -622,7 +590,7 @@ export class InboxService {
           if (msgIds.length > 0) {
             const { data: msgs } = await supabase
               .from('mensagens_diretas')
-              .select('*, remetente:profiles!remetente_id(*), destinatario:profiles!destinatario_id(*)')
+              .select('*, remetente:profiles!remetente_id(*), destinatarios:mensagem_destinatarios(*, destinatario:profiles!destinatario_id(*))')
               .in('id', msgIds);
             if (msgs) {
               notificacoesData.forEach((n: any) => {
@@ -632,18 +600,33 @@ export class InboxService {
               });
             }
           }
-        } catch (e) {}
+        } catch (e) {
+          console.warn('Erro ao enriquecer notificações de mensagens:', e);
+        }
       }
 
       // 4.1 Carregar mensagens diretas recebidas diretamente da tabela para garantir que nenhuma mensagem seja perdida
       try {
+        let recipientMsgIds: string[] = [];
+        if (!userIsAdmin) {
+          const { data: destRows } = await supabase
+            .from('mensagem_destinatarios')
+            .select('mensagem_id')
+            .eq('destinatario_id', user.id);
+          recipientMsgIds = (destRows || []).map((d: any) => d.mensagem_id);
+        }
+
         let queryMensagensRecebidas = supabase
           .from('mensagens_diretas')
-          .select('*, remetente:profiles!remetente_id(*), destinatario:profiles!destinatario_id(*)')
+          .select('*, remetente:profiles!remetente_id(*), destinatarios:mensagem_destinatarios(*, destinatario:profiles!destinatario_id(*))')
           .order('created_at', { ascending: false });
 
         if (!userIsAdmin) {
-          queryMensagensRecebidas = queryMensagensRecebidas.eq('destinatario_id', user.id);
+          if (recipientMsgIds.length > 0) {
+            queryMensagensRecebidas = queryMensagensRecebidas.in('id', recipientMsgIds);
+          } else {
+            queryMensagensRecebidas = queryMensagensRecebidas.eq('id', '00000000-0000-0000-0000-000000000000');
+          }
         }
 
         const { data: msgsRecebidas } = await queryMensagensRecebidas;
@@ -658,11 +641,11 @@ export class InboxService {
             if (!existingNotifMsgIds.has(msg.id)) {
               notificacoesData.push({
                 id: `dm-direct-${msg.id}`,
-                user_id: msg.destinatario_id,
+                user_id: user.id,
                 tipo_item: 'mensagem',
                 item_id: msg.id,
                 parent_id: msg.id,
-                lida: Boolean(msg.lida),
+                lida: false,
                 arquivada: false,
                 created_at: msg.created_at,
                 mensagem: msg
@@ -754,8 +737,13 @@ export class InboxService {
           const remetente = not.mensagem.remetente || profilesList.find((p: any) => p.id === not.mensagem.remetente_id);
           const senderName = remetente ? remetente.nome : 'Consultor';
           const senderAvatar = remetente ? remetente.avatar_url : undefined;
-          const destinatario = not.mensagem.destinatario || profilesList.find((p: any) => p.id === not.user_id);
-          const recipientName = destinatario ? destinatario.nome : 'Você';
+
+          // Nomes dos destinatários
+          const destList = not.mensagem.destinatarios || [];
+          const destNames = destList
+            .map((d: any) => d.destinatario?.nome || profilesList.find((p: any) => p.id === d.destinatario_id)?.nome)
+            .filter(Boolean);
+          const recipientName = destNames.length > 0 ? destNames.join(', ') : 'Você';
           const recipientsHtml = `Para: ${recipientName}`;
 
           list.push({
@@ -777,7 +765,7 @@ export class InboxService {
             isSent: false,
             senderId: not.mensagem.remetente_id,
             parentId: not.mensagem.parent_id,
-            threadId: not.mensagem.thread_id
+            threadId: not.mensagem.thread_id || not.mensagem.id
           });
           return;
         }
@@ -834,7 +822,7 @@ export class InboxService {
           .select(`
             *,
             remetente:profiles!remetente_id (*),
-            destinatario:profiles!destinatario_id (*)
+            destinatarios:mensagem_destinatarios (*, destinatario:profiles!destinatario_id (*))
           `)
           .order('created_at', { ascending: false });
 
@@ -850,7 +838,12 @@ export class InboxService {
             const isSentByMe = msg.remetente_id === user.id;
             const senderName = isSentByMe ? 'Você' : (msg.remetente ? msg.remetente.nome : (profilesList.find((p: any) => p.id === msg.remetente_id)?.nome || 'Consultor'));
             const senderAvatar = msg.remetente ? msg.remetente.avatar_url : undefined;
-            const destinatarioName = msg.destinatario ? msg.destinatario.nome : (profilesList.find((p: any) => p.id === msg.destinatario_id)?.nome || 'Consultor');
+            
+            const destList = msg.destinatarios || [];
+            const destNames = destList
+              .map((d: any) => d.destinatario?.nome || profilesList.find((p: any) => p.id === d.destinatario_id)?.nome)
+              .filter(Boolean);
+            const destinatarioName = destNames.length > 0 ? destNames.join(', ') : 'Consultor';
             const recipientsHtml = `Para: ${destinatarioName}`;
 
             list.push({
@@ -872,7 +865,7 @@ export class InboxService {
               isSent: true,
               senderId: msg.remetente_id,
               parentId: msg.parent_id,
-              threadId: msg.thread_id
+              threadId: msg.thread_id || msg.id
             });
           });
         }
@@ -1346,7 +1339,7 @@ export class InboxService {
         .select(`
           *,
           remetente:profiles!remetente_id (*),
-          destinatario:profiles!destinatario_id (*)
+          destinatarios:mensagem_destinatarios (*, destinatario:profiles!destinatario_id (*))
         `)
         .eq('thread_id', threadId)
         .order('created_at', { ascending: true });

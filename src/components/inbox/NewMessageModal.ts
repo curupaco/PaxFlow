@@ -426,42 +426,55 @@ export class NewMessageModal {
           throw new Error('Selecione pelo menos um destinatário para enviar a mensagem.');
         }
 
-        // Criar registros de mensagem direta para os destinatários vinculados
-        const messagesToInsert = uniqueRecipients.map(recipientId => ({
+        // Criar registro da mensagem direta na tabela mensagens_diretas
+        const messagePayload: any = {
           remetente_id: currentUser.id,
-          destinatario_id: recipientId,
           assunto,
           conteudo,
           parent_id: options.replyTo?.messageId || null,
           thread_id: options.replyTo?.threadId || null
-        }));
+        };
 
-        const { data: createdMsgs, error: msgErr } = await supabase
+        const { data: createdMsg, error: msgErr } = await supabase
           .from('mensagens_diretas')
-          .insert(messagesToInsert)
-          .select();
+          .insert(messagePayload)
+          .select()
+          .single();
 
         if (msgErr) throw msgErr;
-        if (!createdMsgs || createdMsgs.length === 0) throw new Error('Não foi possível registrar a mensagem.');
+        if (!createdMsg) throw new Error('Não foi possível registrar a mensagem.');
 
-        const firstMsg = createdMsgs[0];
-        const commonThreadId = options.replyTo?.threadId || firstMsg.id;
+        const commonThreadId = options.replyTo?.threadId || createdMsg.id;
 
-        // Se for nova thread, define thread_id igual ao ID da primeira mensagem
-        if (!options.replyTo || !options.replyTo.threadId) {
-          const idsToUpdate = createdMsgs.map(m => m.id);
+        // Se for nova conversa (sem thread_id prévio), define thread_id igual ao ID da mensagem raiz
+        if (!options.replyTo?.threadId) {
           await supabase
             .from('mensagens_diretas')
             .update({ thread_id: commonThreadId })
-            .in('id', idsToUpdate);
+            .eq('id', createdMsg.id);
+        }
+
+        // Vincular destinatários na tabela mensagem_destinatarios
+        const recipientInserts = uniqueRecipients.map(recipientId => ({
+          mensagem_id: createdMsg.id,
+          destinatario_id: recipientId
+        }));
+
+        const { error: destErr } = await supabase
+          .from('mensagem_destinatarios')
+          .insert(recipientInserts);
+
+        if (destErr) {
+          console.warn('Aviso ao vincular mensagem_destinatarios:', destErr);
         }
 
         // Criar notificações individuais para cada destinatário
-        const notifInserts = createdMsgs.map(msg => ({
-          user_id: msg.destinatario_id,
+        const notifInserts = uniqueRecipients.map(recipientId => ({
+          user_id: recipientId,
           tipo_item: 'mensagem',
-          item_id: msg.id,
-          parent_id: msg.id,
+          item_id: createdMsg.id,
+          parent_id: createdMsg.id,
+          mensagem_id: createdMsg.id,
           lida: false,
           arquivada: false
         }));
@@ -480,7 +493,7 @@ export class NewMessageModal {
         const senderNome = senderProfile?.nome || 'Consultor';
         for (const recipientId of uniqueRecipients) {
           const userNotif = (createdNotifs || []).find(n => n.user_id === recipientId);
-          const notifTargetId = userNotif ? `mention-${userNotif.id}` : firstMsg.id;
+          const notifTargetId = userNotif ? `mention-${userNotif.id}` : createdMsg.id;
           PushSenderService.sendToUser(recipientId, {
             title: `💬 Nova Mensagem: ${assunto}`,
             body: `De: ${senderNome}`,
