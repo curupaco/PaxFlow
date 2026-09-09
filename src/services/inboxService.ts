@@ -29,6 +29,9 @@ export class InboxService {
   /**
    * Arquiva ou restaura um alerta persistindo diretamente no Supabase
    */
+  /**
+   * Arquiva ou restaura um alerta persistindo diretamente no Supabase
+   */
   static async archiveAlert(
     item: { id: string; type?: string },
     shouldArchive: boolean
@@ -48,6 +51,20 @@ export class InboxService {
           throw error;
         }
         return Boolean(data && data.length > 0);
+      }
+
+      if (alertId.startsWith('dm-direct-')) {
+        const msgId = alertId.replace('dm-direct-', '');
+        const { error } = await supabase
+          .from('notificacoes')
+          .upsert({
+            item_id: msgId,
+            parent_id: msgId,
+            tipo_item: 'mensagem',
+            arquivada: shouldArchive
+          });
+        if (error) console.warn('Aviso ao sincronizar arquivamento de mensagem:', error);
+        return true;
       }
 
       if (
@@ -80,22 +97,41 @@ export class InboxService {
   }
 
   /**
-   * Consulta os alertas lidos diretamente do Supabase (tabela notificacoes)
+   * Consulta os alertas lidos diretamente do Supabase (tabela notificacoes e mensagens_diretas)
    */
   static async getReadAlerts(userId: string): Promise<string[]> {
     if (!userId) return [];
     try {
       const { data: notifRead, error } = await supabase
         .from('notificacoes')
-        .select('id')
+        .select('id, item_id, parent_id')
         .eq('user_id', userId)
         .eq('lida', true);
 
       if (error) {
         console.warn('Erro ao consultar notificações lidas no Supabase:', error.message);
-        return [];
       }
-      return (notifRead || []).map(n => `mention-${n.id}`);
+
+      const readIds = (notifRead || []).map(n => `mention-${n.id}`);
+
+      // Também verifica mensagens lidas diretamente na tabela mensagens_diretas
+      const { data: dmRead } = await supabase
+        .from('mensagens_diretas')
+        .select('id')
+        .eq('destinatario_id', userId)
+        .eq('lida', true);
+
+      if (dmRead) {
+        dmRead.forEach(d => {
+          readIds.push(`dm-direct-${d.id}`);
+          const matchedNotif = (notifRead || []).find(n => (n.item_id === d.id || n.parent_id === d.id));
+          if (matchedNotif) {
+            readIds.push(`mention-${matchedNotif.id}`);
+          }
+        });
+      }
+
+      return Array.from(new Set(readIds));
     } catch (e) {
       console.error('Exceção ao buscar alertas lidos no Supabase:', e);
       return [];
@@ -109,11 +145,25 @@ export class InboxService {
     try {
       if (alertId.startsWith('mention-')) {
         const notifId = alertId.replace('mention-', '');
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('notificacoes')
           .update({ lida: true })
-          .eq('id', notifId);
+          .eq('id', notifId)
+          .select('item_id, tipo_item');
         if (error) throw error;
+
+        if (data && data[0]?.tipo_item === 'mensagem' && data[0]?.item_id) {
+          await supabase
+            .from('mensagens_diretas')
+            .update({ lida: true })
+            .eq('id', data[0].item_id);
+        }
+      } else if (alertId.startsWith('dm-direct-')) {
+        const msgId = alertId.replace('dm-direct-', '');
+        await supabase
+          .from('mensagens_diretas')
+          .update({ lida: true })
+          .eq('id', msgId);
       }
       window.dispatchEvent(new CustomEvent('paxflow-inbox-updated'));
     } catch (err) {
@@ -128,11 +178,25 @@ export class InboxService {
     try {
       if (alertId.startsWith('mention-')) {
         const notifId = alertId.replace('mention-', '');
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('notificacoes')
           .update({ lida: false })
-          .eq('id', notifId);
+          .eq('id', notifId)
+          .select('item_id, tipo_item');
         if (error) throw error;
+
+        if (data && data[0]?.tipo_item === 'mensagem' && data[0]?.item_id) {
+          await supabase
+            .from('mensagens_diretas')
+            .update({ lida: false })
+            .eq('id', data[0].item_id);
+        }
+      } else if (alertId.startsWith('dm-direct-')) {
+        const msgId = alertId.replace('dm-direct-', '');
+        await supabase
+          .from('mensagens_diretas')
+          .update({ lida: false })
+          .eq('id', msgId);
       }
       window.dispatchEvent(new CustomEvent('paxflow-inbox-updated'));
     } catch (err) {
@@ -150,12 +214,36 @@ export class InboxService {
         .map(id => id.replace('mention-', ''));
 
       if (mentionIds.length > 0) {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('notificacoes')
           .update({ lida: true })
-          .in('id', mentionIds);
+          .in('id', mentionIds)
+          .select('item_id, tipo_item');
         if (error) throw error;
+
+        const msgIds = (data || [])
+          .filter((n: any) => n.tipo_item === 'mensagem' && n.item_id)
+          .map((n: any) => n.item_id);
+
+        if (msgIds.length > 0) {
+          await supabase
+            .from('mensagens_diretas')
+            .update({ lida: true })
+            .in('id', msgIds);
+        }
       }
+
+      const directIds = alertIds
+        .filter(id => id.startsWith('dm-direct-'))
+        .map(id => id.replace('dm-direct-', ''));
+
+      if (directIds.length > 0) {
+        await supabase
+          .from('mensagens_diretas')
+          .update({ lida: true })
+          .in('id', directIds);
+      }
+
       window.dispatchEvent(new CustomEvent('paxflow-inbox-updated'));
     } catch (err) {
       console.error('Erro ao marcar alertas como lidos em massa no Supabase:', err);
@@ -547,6 +635,45 @@ export class InboxService {
         } catch (e) {}
       }
 
+      // 4.1 Carregar mensagens diretas recebidas diretamente da tabela para garantir que nenhuma mensagem seja perdida
+      try {
+        let queryMensagensRecebidas = supabase
+          .from('mensagens_diretas')
+          .select('*, remetente:profiles!remetente_id(*), destinatario:profiles!destinatario_id(*)')
+          .order('created_at', { ascending: false });
+
+        if (!userIsAdmin) {
+          queryMensagensRecebidas = queryMensagensRecebidas.eq('destinatario_id', user.id);
+        }
+
+        const { data: msgsRecebidas } = await queryMensagensRecebidas;
+        if (msgsRecebidas && msgsRecebidas.length > 0) {
+          const existingNotifMsgIds = new Set(
+            notificacoesData
+              .filter((n: any) => n.tipo_item === 'mensagem')
+              .map((n: any) => n.item_id || n.parent_id)
+          );
+
+          msgsRecebidas.forEach((msg: any) => {
+            if (!existingNotifMsgIds.has(msg.id)) {
+              notificacoesData.push({
+                id: `dm-direct-${msg.id}`,
+                user_id: msg.destinatario_id,
+                tipo_item: 'mensagem',
+                item_id: msg.id,
+                parent_id: msg.id,
+                lida: Boolean(msg.lida),
+                arquivada: false,
+                created_at: msg.created_at,
+                mensagem: msg
+              });
+            }
+          });
+        }
+      } catch (errDM) {
+        console.warn('Aviso ao sincronizar mensagens diretas recebidas:', errDM);
+      }
+
       (notificacoesData || []).forEach((not: any) => {
         const dataFormatada = new Date(not.created_at).toLocaleDateString('pt-BR');
 
@@ -709,15 +836,19 @@ export class InboxService {
             remetente:profiles!remetente_id (*),
             destinatario:profiles!destinatario_id (*)
           `)
-          .eq('remetente_id', user.id)
           .order('created_at', { ascending: false });
+
+        if (!userIsAdmin) {
+          queryEnviadas = queryEnviadas.eq('remetente_id', user.id);
+        }
 
         const { data: enviadasData, error: enviadasErr } = await queryEnviadas;
 
         if (!enviadasErr && enviadasData) {
           enviadasData.forEach((msg: any) => {
             const dataFormatada = new Date(msg.created_at).toLocaleDateString('pt-BR');
-            const senderName = msg.remetente ? msg.remetente.nome : (profilesList.find((p: any) => p.id === msg.remetente_id)?.nome || 'Você');
+            const isSentByMe = msg.remetente_id === user.id;
+            const senderName = isSentByMe ? 'Você' : (msg.remetente ? msg.remetente.nome : (profilesList.find((p: any) => p.id === msg.remetente_id)?.nome || 'Consultor'));
             const senderAvatar = msg.remetente ? msg.remetente.avatar_url : undefined;
             const destinatarioName = msg.destinatario ? msg.destinatario.nome : (profilesList.find((p: any) => p.id === msg.destinatario_id)?.nome || 'Consultor');
             const recipientsHtml = `Para: ${destinatarioName}`;
@@ -726,7 +857,7 @@ export class InboxService {
               id: `sent-${msg.id}`,
               type: 'direct_message',
               title: msg.assunto || 'Mensagem Direta',
-              sender: 'Você',
+              sender: senderName,
               senderAvatar: senderAvatar,
               dateStr: dataFormatada,
               subject: `Para: ${destinatarioName}`,
@@ -763,7 +894,8 @@ export class InboxService {
 
         if (!notifsEnvErr && notificacoesEnviadas) {
           notificacoesEnviadas.forEach((not: any) => {
-            if (!not.comentario || not.comentario.autor_id !== user.id) return;
+            if (!not.comentario) return;
+            if (!userIsAdmin && not.comentario.autor_id !== user.id) return;
             const dataFormatada = new Date(not.created_at).toLocaleDateString('pt-BR');
             const destName = not.destinatario?.nome || 'Colega';
             const itemLabel = not.tipo_item === 'orcamento' ? 'Orçamento' : (not.tipo_item === 'viagem' ? 'Viagem' : 'Produto');
@@ -771,15 +903,19 @@ export class InboxService {
             if (not.tipo_item === 'orcamento') linkAttr = `data-orcamento-id="${not.parent_id}"`;
             else linkAttr = `data-viagem-id="${not.parent_id}"`;
 
+            const isSentByMe = not.comentario.autor_id === user.id;
+            const authorProfile = profilesList.find((p: any) => p.id === not.comentario.autor_id);
+            const authorName = isSentByMe ? 'Você' : (authorProfile?.nome || 'Consultor');
+
             list.push({
               id: `sent-mention-${not.id}`,
               type: 'mention',
               title: `💬 Menção Enviada em ${itemLabel}`,
-              sender: 'Você',
-              senderAvatar: undefined,
+              sender: authorName,
+              senderAvatar: authorProfile?.avatar_url,
               dateStr: dataFormatada,
               subject: `Para: ${destName}`,
-              body: `Você mencionou <strong>${destName}</strong> em um comentário no ${itemLabel}:<br><br>
+              body: `${isSentByMe ? 'Você mencionou' : `${authorName} mencionou`} <strong>${destName}</strong> em um comentário no ${itemLabel}:<br><br>
                      <div class="pl-3 border-l-4 border-indigo-500 italic text-slate-600 dark:text-slate-400 py-1.5 bg-slate-50 dark:bg-slate-800/40 rounded-r-lg my-3">
                        "${not.comentario.texto}"
                      </div>
@@ -789,9 +925,9 @@ export class InboxService {
                      </a>`,
               targetId: not.parent_id,
               arquivado: false,
-              consultorId: user.id,
-              consultorNome: 'Você',
-              senderId: user.id,
+              consultorId: not.comentario.autor_id,
+              consultorNome: authorName,
+              senderId: not.comentario.autor_id,
               createdAt: not.created_at,
               eventDate: not.created_at.split('T')[0],
               recipientsHtml: `Para: ${destName}`,

@@ -462,7 +462,6 @@ export class NewMessageModal {
           tipo_item: 'mensagem',
           item_id: msg.id,
           parent_id: msg.id,
-          mensagem_id: msg.id,
           lida: false,
           arquivada: false
         }));

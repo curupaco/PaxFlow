@@ -400,20 +400,17 @@ export class InboxPage {
 
     // 2. Filter by Consultant (Admin dropdown)
     if (isUserAdmin && this.selectedConsultantFilter !== 'todos') {
-      if (isViewingOwnProfile) {
-        result = result.filter(a => 
-          a.consultorId === this.selectedConsultantFilter || 
-          a.criadorId === this.selectedConsultantFilter || 
-          a.senderId === this.selectedConsultantFilter ||
-          a.type === 'escala_solicitacao'
+      const filterId = this.selectedConsultantFilter;
+      result = result.filter(a => {
+        if (a.isSent) {
+          return a.consultorId === filterId || a.senderId === filterId;
+        }
+        return (
+          a.consultorId === filterId ||
+          (a.type === 'manual' && a.criadorId === filterId) ||
+          (isViewingOwnProfile && a.type === 'escala_solicitacao')
         );
-      } else {
-        result = result.filter(a => 
-          a.consultorId === this.selectedConsultantFilter || 
-          a.criadorId === this.selectedConsultantFilter || 
-          a.senderId === this.selectedConsultantFilter
-        );
-      }
+      });
     }
 
     // 2.5 Filter by Category (Summary Cards & Mobile Pills)
@@ -611,20 +608,17 @@ export class InboxPage {
     const isViewingOwnProfile = isUserAdmin && Boolean(this.perfil?.id) && this.selectedConsultantFilter === this.perfil?.id;
 
     if (isUserAdmin && this.selectedConsultantFilter !== 'todos') {
-      if (isViewingOwnProfile) {
-        baseAlertsForCounters = baseAlertsForCounters.filter(a => 
-          a.consultorId === this.selectedConsultantFilter || 
-          a.criadorId === this.selectedConsultantFilter ||
-          a.senderId === this.selectedConsultantFilter ||
-          a.type === 'escala_solicitacao'
+      const filterId = this.selectedConsultantFilter;
+      baseAlertsForCounters = baseAlertsForCounters.filter(a => {
+        if (a.isSent) {
+          return a.consultorId === filterId || a.senderId === filterId;
+        }
+        return (
+          a.consultorId === filterId ||
+          (a.type === 'manual' && a.criadorId === filterId) ||
+          (isViewingOwnProfile && a.type === 'escala_solicitacao')
         );
-      } else {
-        baseAlertsForCounters = baseAlertsForCounters.filter(a => 
-          a.consultorId === this.selectedConsultantFilter || 
-          a.criadorId === this.selectedConsultantFilter ||
-          a.senderId === this.selectedConsultantFilter
-        );
-      }
+      });
     }
 
     const readList = this.readList;
