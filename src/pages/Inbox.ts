@@ -379,84 +379,16 @@ export class InboxPage {
    * Applies the current active filters, search queries, category filters, and consultant filters
    */
   private applyFilters(): void {
-    let result = [...this.alerts];
+    this.filteredAlerts = InboxService.filterAlerts(this.alerts, {
+      activeTab: this.activeTab,
+      selectedConsultantFilter: this.selectedConsultantFilter,
+      categoryFilter: this.categoryFilter,
+      searchQuery: this.searchQuery,
+      onlyUnreadFilter: this.onlyUnreadFilter,
+      readList: this.readList,
+      perfil: this.perfil
+    });
 
-    // 1. Filter by Active / Archived / All / Sent / Escala / Decisões
-    if (this.activeTab === 'ativos') {
-      result = result.filter(a => !a.arquivado && !a.isSent && !a.isDecision);
-    } else if (this.activeTab === 'arquivados') {
-      result = result.filter(a => a.arquivado);
-    } else if (this.activeTab === 'enviadas') {
-      result = result.filter(a => a.isSent && !a.isDecision);
-    } else if (this.activeTab === 'decisoes') {
-      result = result.filter(a => a.isDecision || (a.type === 'escala_solicitacao' && a.isSent));
-    } else if (this.activeTab === 'todos') {
-      result = result.filter(a => true);
-    } else if (this.activeTab === 'escala') {
-      result = result.filter(a => a.type === 'escala_solicitacao' && !a.arquivado);
-    }
-
-    const isUserAdmin = (this.perfil?.role || '').toLowerCase() === 'admin';
-    const isViewingOwnProfile = isUserAdmin && Boolean(this.perfil?.id) && this.selectedConsultantFilter === this.perfil?.id;
-
-    // 2. Filter by Consultant (Admin dropdown)
-    if (isUserAdmin && this.selectedConsultantFilter !== 'todos') {
-      const filterId = this.selectedConsultantFilter;
-      result = result.filter(a => {
-        if (a.isSent) {
-          return a.consultorId === filterId || a.senderId === filterId;
-        }
-        return (
-          a.consultorId === filterId ||
-          (a.type === 'manual' && a.criadorId === filterId) ||
-          (isViewingOwnProfile && a.type === 'escala_solicitacao')
-        );
-      });
-    }
-
-    // 2.5 Filter by Category (Summary Cards & Mobile Pills)
-    if (this.categoryFilter !== 'todos') {
-      if (this.categoryFilter === 'alertas') {
-        result = result.filter(a => a.type === 'passport' || a.type === 'refund' || a.type === 'pre-embarque' || a.type === 'pos-viagem-nps' || a.type === 'campaign_notification' || a.type === 'atendimento_balcao' || (isUserAdmin && a.type === 'escala_solicitacao' && !a.isSent));
-      } else if (this.categoryFilter === 'depois') {
-        result = result.filter(a => a.type === 'manual');
-      } else if (this.categoryFilter === 'passaporte') {
-        result = result.filter(a => a.type === 'passport');
-      } else if (this.categoryFilter === 'refund') {
-        result = result.filter(a => a.type === 'refund');
-      } else if (this.categoryFilter === 'direct_message') {
-        result = result.filter(a => a.type === 'direct_message');
-      } else if (this.categoryFilter === 'escala') {
-        result = result.filter(a => a.type === 'escala_solicitacao');
-      } else if (this.categoryFilter === 'mention') {
-        result = result.filter(a => a.type === 'mention' || a.type === 'atendimento_balcao');
-      }
-    }
-
-    // 3. Search query filter
-    if (this.searchQuery.trim()) {
-      const q = this.searchQuery.toLowerCase().trim();
-      result = result.filter(a => 
-        (a.title?.toLowerCase() || '').includes(q) ||
-        (a.sender?.toLowerCase() || '').includes(q) ||
-        (a.subject?.toLowerCase() || '').includes(q) ||
-        (a.body?.toLowerCase() || '').includes(q) ||
-        (a.eventDate?.toLowerCase() || '').includes(q) ||
-        (a.dateStr?.toLowerCase() || '').includes(q) ||
-        (a.consultorNome?.toLowerCase() || '').includes(q) ||
-        (a.periodText?.toLowerCase() || '').includes(q)
-      );
-    }
-
-    // 3.5. Filtro de apenas não lidas
-    if (this.onlyUnreadFilter) {
-      result = result.filter(a => !this.readList.includes(a.id));
-    }
-
-    // Sort by creation date descending
-    result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-
-    this.filteredAlerts = result;
     this.calendarView?.updateAlerts(this.alerts, this.filteredAlerts, this.container);
     this.alertsFeed?.updateState(this.filteredAlerts, this.readList, this.selectedAlertIds, this.perfil, this.container);
   }
@@ -662,6 +594,15 @@ export class InboxPage {
     const allInboxAlerts = baseAlertsForCounters.filter(a => true);
     const totalGeral = allInboxAlerts.length;
     const unreadGeral = allInboxAlerts.filter(a => !a.isSent && !a.isDecision && !readList.includes(a.id)).length;
+
+    const folderInfoMap: Record<string, { label: string; icon: string; total: number; unread: number }> = {
+      ativos: { label: 'Caixa de Entrada', icon: '📥', total: totalAtivos, unread: unreadAtivos },
+      enviadas: { label: 'Mensagens Enviadas', icon: '📤', total: totalEnviadas, unread: 0 },
+      decisoes: { label: 'Decisões da Gestão', icon: '✅', total: totalDecisoes, unread: 0 },
+      arquivados: { label: 'Itens Arquivados', icon: '🗄️', total: totalArquivados, unread: unreadArquivados },
+      todos: { label: 'Todas as Mensagens', icon: '📋', total: totalGeral, unread: unreadGeral }
+    };
+    const currentFolderInfo = folderInfoMap[this.activeTab] || folderInfoMap.ativos;
 
     // 2. Build the main page container markup
     this.container.innerHTML = `
@@ -980,6 +921,56 @@ export class InboxPage {
               ${this.activeTab === 'escala' ? `
                 ${this.renderEscalaView()}
               ` : `
+                <!-- Content Workspace Header: Folder Title + Segmented View Switcher -->
+                <div class="inbox-glass p-3.5 sm:p-4 rounded-2xl shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 border border-slate-200/60 dark:border-slate-800/60">
+                  <div class="flex items-center gap-3">
+                    <span class="text-2xl select-none">${currentFolderInfo.icon}</span>
+                    <div>
+                      <div class="flex items-center gap-2 flex-wrap">
+                        <h2 class="text-base sm:text-lg font-black text-slate-800 dark:text-slate-100 tracking-tight leading-none">
+                          ${currentFolderInfo.label}
+                        </h2>
+                        <span class="px-2 py-0.5 rounded-md text-[11px] font-black bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                          ${currentFolderInfo.total}
+                        </span>
+                        ${currentFolderInfo.unread > 0 ? `
+                          <span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-rose-500 text-white animate-pulse">
+                            ${currentFolderInfo.unread} não lida(s)
+                          </span>
+                        ` : ''}
+                      </div>
+                      <p class="text-[11px] text-slate-400 dark:text-slate-400 font-semibold mt-1 hidden sm:block">
+                        ${this.currentView === 'list' ? 'Visualização em lista corrida com triagem rápida de alertas' : 'Visualização distribuída na grade temporal do calendário'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <!-- Segmented View Switcher (iOS / macOS Style) -->
+                  <div class="w-full sm:w-auto grid grid-cols-2 sm:flex items-center bg-slate-200/70 dark:bg-slate-800/80 p-1 rounded-xl border border-slate-300/40 dark:border-slate-700/50 shrink-0">
+                    <button id="view-list-btn" class="w-full sm:w-auto px-4 py-2 sm:py-1.5 rounded-lg text-xs font-black flex items-center justify-center gap-2 transition-all duration-200 select-none ${
+                      this.currentView === 'list' 
+                        ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm' 
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                    }" title="Alternar para visualização em Lista">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+                      </svg>
+                      <span>Lista</span>
+                    </button>
+                    <button id="view-calendar-btn" class="w-full sm:w-auto px-4 py-2 sm:py-1.5 rounded-lg text-xs font-black flex items-center justify-center gap-2 transition-all duration-200 select-none ${
+                      this.currentView === 'calendar' 
+                        ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm' 
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                    }" title="Alternar para visualização em Calendário">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2">
+                        <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+                        <path d="M16 2v4M8 2v4M3 10h18"/>
+                      </svg>
+                      <span>Calendário</span>
+                    </button>
+                  </div>
+                </div>
+
                 <!-- Search and filter summary bar -->
                 <div class="inbox-glass p-3 rounded-2xl shadow-sm flex flex-col sm:flex-row items-center gap-3">
                   <!-- Search -->
@@ -990,35 +981,25 @@ export class InboxPage {
                     <input id="inbox-search-input" type="text" placeholder="Buscar mensagens, passageiros ou destinos..." value="${this.searchQuery}" class="w-full text-xs font-semibold pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-700 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 transition" />
                   </div>
 
-                  <!-- Unread Filter Toggle Button -->
-                  <button id="toggle-unread-filter-btn" class="px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition border shrink-0 select-none ${
-                    this.onlyUnreadFilter 
-                      ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm shadow-indigo-600/20' 
-                      : 'bg-white dark:bg-slate-900 border-slate-200/80 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-                  }" title="Filtrar apenas mensagens não lidas">
-                    <svg class="w-3.5 h-3.5 ${this.onlyUnreadFilter ? 'text-white' : 'text-slate-400 dark:text-slate-400'}" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                      <rect width="20" height="16" x="2" y="4" rx="2" />
-                      <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
-                    </svg>
-                    <span>Apenas Não Lidas</span>
-                    ${unreadAtivos > 0 ? `<span class="px-1.5 py-0.5 rounded-full text-[9px] font-black ${this.onlyUnreadFilter ? 'bg-white/20 text-white' : 'bg-rose-500 text-white'}">${unreadAtivos}</span>` : ''}
-                  </button>
-                  
-                  <!-- Counter info -->
-                  <div class="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 whitespace-nowrap bg-slate-100 dark:bg-slate-900 px-3.5 py-2.5 rounded-xl border border-slate-200/40 dark:border-slate-800/40">
-                    Mostrando ${this.filteredAlerts.length} de ${this.alerts.length}
-                  </div>
-
-                  <!-- View Switcher Toggle Button Group -->
-                  <div class="flex bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200/40 dark:border-slate-800/40 flex-shrink-0">
-                    <button id="view-list-btn" class="px-3.5 py-1.5 rounded-lg text-xs font-extrabold flex items-center gap-1.5 transition ${this.currentView === 'list' ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}" title="Visualização em Lista">
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
-                      Lista
+                  <div class="flex items-center gap-2.5 w-full sm:w-auto justify-between sm:justify-end shrink-0">
+                    <!-- Unread Filter Toggle Button -->
+                    <button id="toggle-unread-filter-btn" class="flex-1 sm:flex-initial px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition border shrink-0 select-none ${
+                      this.onlyUnreadFilter 
+                        ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm shadow-indigo-600/20' 
+                        : 'bg-white dark:bg-slate-900 border-slate-200/80 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                    }" title="Filtrar apenas mensagens não lidas">
+                      <svg class="w-3.5 h-3.5 ${this.onlyUnreadFilter ? 'text-white' : 'text-slate-400 dark:text-slate-400'}" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <rect width="20" height="16" x="2" y="4" rx="2" />
+                        <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                      </svg>
+                      <span>Apenas Não Lidas</span>
+                      ${unreadAtivos > 0 ? `<span class="px-1.5 py-0.5 rounded-full text-[9px] font-black ${this.onlyUnreadFilter ? 'bg-white/20 text-white' : 'bg-rose-500 text-white'}">${unreadAtivos}</span>` : ''}
                     </button>
-                    <button id="view-calendar-btn" class="px-3.5 py-1.5 rounded-lg text-xs font-extrabold flex items-center gap-1.5 transition ${this.currentView === 'calendar' ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}" title="Visualização em Calendário">
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-                      Calendário
-                    </button>
+                    
+                    <!-- Counter info -->
+                    <div class="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 whitespace-nowrap bg-slate-100 dark:bg-slate-900 px-3.5 py-2.5 rounded-xl border border-slate-200/40 dark:border-slate-800/40">
+                      Mostrando ${this.filteredAlerts.length} de ${this.alerts.length}
+                    </div>
                   </div>
                 </div>
 

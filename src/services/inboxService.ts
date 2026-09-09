@@ -1405,4 +1405,108 @@ export class InboxService {
       return [];
     }
   }
+
+  /**
+   * Aplica regras de filtragem granular (pasta, categoria, consultor, busca e não lidas)
+   */
+  static filterAlerts(alerts: AlertItem[], options: FilterAlertsOptions = {}): AlertItem[] {
+    const {
+      activeTab = 'ativos',
+      selectedConsultantFilter = 'todos',
+      categoryFilter = 'todos',
+      searchQuery = '',
+      onlyUnreadFilter = false,
+      readList = [],
+      perfil = null
+    } = options;
+
+    let result = [...alerts];
+
+    // 1. Filtrar por Pasta
+    if (activeTab === 'ativos') {
+      result = result.filter(a => !a.arquivado && !a.isSent && !a.isDecision);
+    } else if (activeTab === 'arquivados') {
+      result = result.filter(a => a.arquivado);
+    } else if (activeTab === 'enviadas') {
+      result = result.filter(a => a.isSent && !a.isDecision);
+    } else if (activeTab === 'decisoes') {
+      result = result.filter(a => a.isDecision || (a.type === 'escala_solicitacao' && a.isSent));
+    } else if (activeTab === 'todos') {
+      result = result.filter(() => true);
+    } else if (activeTab === 'escala') {
+      result = result.filter(a => a.type === 'escala_solicitacao' && !a.arquivado);
+    }
+
+    const isUserAdmin = (perfil?.role || '').toLowerCase() === 'admin';
+    const isViewingOwnProfile = isUserAdmin && Boolean(perfil?.id) && selectedConsultantFilter === perfil?.id;
+
+    // 2. Filtrar por Consultor (Admin)
+    if (isUserAdmin && selectedConsultantFilter !== 'todos') {
+      const filterId = selectedConsultantFilter;
+      result = result.filter(a => {
+        if (a.isSent) {
+          return a.consultorId === filterId || a.senderId === filterId;
+        }
+        return (
+          a.consultorId === filterId ||
+          (a.type === 'manual' && a.criadorId === filterId) ||
+          (isViewingOwnProfile && a.type === 'escala_solicitacao')
+        );
+      });
+    }
+
+    // 3. Filtrar por Categoria
+    if (categoryFilter !== 'todos') {
+      if (categoryFilter === 'alertas') {
+        result = result.filter(a => a.type === 'passport' || a.type === 'refund' || a.type === 'pre-embarque' || a.type === 'pos-viagem-nps' || a.type === 'campaign_notification' || a.type === 'atendimento_balcao' || (isUserAdmin && a.type === 'escala_solicitacao' && !a.isSent));
+      } else if (categoryFilter === 'depois') {
+        result = result.filter(a => a.type === 'manual');
+      } else if (categoryFilter === 'passaporte') {
+        result = result.filter(a => a.type === 'passport');
+      } else if (categoryFilter === 'refund') {
+        result = result.filter(a => a.type === 'refund');
+      } else if (categoryFilter === 'direct_message') {
+        result = result.filter(a => a.type === 'direct_message');
+      } else if (categoryFilter === 'escala') {
+        result = result.filter(a => a.type === 'escala_solicitacao');
+      } else if (categoryFilter === 'mention') {
+        result = result.filter(a => a.type === 'mention' || a.type === 'atendimento_balcao');
+      }
+    }
+
+    // 4. Busca textual
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      result = result.filter(a => 
+        (a.title?.toLowerCase() || '').includes(q) ||
+        (a.sender?.toLowerCase() || '').includes(q) ||
+        (a.subject?.toLowerCase() || '').includes(q) ||
+        (a.body?.toLowerCase() || '').includes(q) ||
+        (a.eventDate?.toLowerCase() || '').includes(q) ||
+        (a.dateStr?.toLowerCase() || '').includes(q) ||
+        (a.consultorNome?.toLowerCase() || '').includes(q) ||
+        (a.periodText?.toLowerCase() || '').includes(q)
+      );
+    }
+
+    // 5. Apenas não lidas
+    if (onlyUnreadFilter) {
+      result = result.filter(a => !readList.includes(a.id));
+    }
+
+    // Ordenação decrescente de criação
+    result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    return result;
+  }
+}
+
+export interface FilterAlertsOptions {
+  activeTab?: string;
+  selectedConsultantFilter?: string;
+  categoryFilter?: string;
+  searchQuery?: string;
+  onlyUnreadFilter?: boolean;
+  readList?: string[];
+  perfil?: PerfilConsultor | null;
 }

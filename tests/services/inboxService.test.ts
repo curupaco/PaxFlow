@@ -386,4 +386,82 @@ describe('InboxService Subcutaneous Flow Tests', () => {
     expect(balcaoAlert?.sender).toBe('Marina');
     expect(balcaoAlert?.isSent).toBe(false);
   });
+
+  // ==========================================
+  // FLUXO 4: REGRAS DE FILTRAGEM (filterAlerts)
+  // ==========================================
+
+  it('deve filtrar apenas itens ativos na pasta ativos excluindo arquivados e enviados', () => {
+    // Setup
+    const mockList: any[] = [
+      { id: '1', arquivado: false, isSent: false, isDecision: false, createdAt: '2026-09-09T10:00:00Z' },
+      { id: '2', arquivado: true, isSent: false, isDecision: false, createdAt: '2026-09-09T11:00:00Z' },
+      { id: '3', arquivado: false, isSent: true, isDecision: false, createdAt: '2026-09-09T12:00:00Z' },
+      { id: '4', arquivado: false, isSent: false, isDecision: true, createdAt: '2026-09-09T13:00:00Z' }
+    ];
+
+    // Action
+    const result = InboxService.filterAlerts(mockList, { activeTab: 'ativos' });
+
+    // Assert
+    expect(result.length).toBe(1);
+    expect(result[0].id).toBe('1');
+  });
+
+  it('deve filtrar apenas alertas nao lidos quando onlyUnreadFilter for verdadeiro', () => {
+    // Setup
+    const mockList: any[] = [
+      { id: 'item-lido', arquivado: false, isSent: false, isDecision: false, createdAt: '2026-09-09T10:00:00Z' },
+      { id: 'item-pendente', arquivado: false, isSent: false, isDecision: false, createdAt: '2026-09-09T11:00:00Z' }
+    ];
+    const readList = ['item-lido'];
+
+    // Action
+    const result = InboxService.filterAlerts(mockList, {
+      activeTab: 'ativos',
+      onlyUnreadFilter: true,
+      readList
+    });
+
+    // Assert
+    expect(result.length).toBe(1);
+    expect(result[0].id).toBe('item-pendente');
+  });
+
+  it('deve filtrar alertas por termo de busca textual (assunto, remetente ou corpo)', () => {
+    // Setup
+    const mockList: any[] = [
+      { id: '1', title: 'Voo cancelado', subject: 'Passageiro João', sender: 'Latam', body: 'Detalhes voo', createdAt: '2026-09-09T10:00:00Z' },
+      { id: '2', title: 'Hotel reservado', subject: 'Passageiro Maria', sender: 'Booking', body: 'Reserva confirmada', createdAt: '2026-09-09T11:00:00Z' }
+    ];
+
+    // Action
+    const resultPorPassageiro = InboxService.filterAlerts(mockList, { activeTab: 'todos', searchQuery: 'joão' });
+    const resultPorFornecedor = InboxService.filterAlerts(mockList, { activeTab: 'todos', searchQuery: 'booking' });
+
+    // Assert
+    expect(resultPorPassageiro.length).toBe(1);
+    expect(resultPorPassageiro[0].id).toBe('1');
+    expect(resultPorFornecedor.length).toBe(1);
+    expect(resultPorFornecedor[0].id).toBe('2');
+  });
+
+  it('deve filtrar alertas por categoria especifica (passaportes ou reembolsos)', () => {
+    // Setup
+    const mockList: any[] = [
+      { id: 'p1', type: 'passport', createdAt: '2026-09-09T10:00:00Z' },
+      { id: 'r1', type: 'refund', createdAt: '2026-09-09T11:00:00Z' },
+      { id: 'm1', type: 'manual', createdAt: '2026-09-09T12:00:00Z' }
+    ];
+
+    // Action
+    const passaportes = InboxService.filterAlerts(mockList, { activeTab: 'todos', categoryFilter: 'passaporte' });
+    const reembolsos = InboxService.filterAlerts(mockList, { activeTab: 'todos', categoryFilter: 'refund' });
+
+    // Assert
+    expect(passaportes.length).toBe(1);
+    expect(passaportes[0].id).toBe('p1');
+    expect(reembolsos.length).toBe(1);
+    expect(reembolsos[0].id).toBe('r1');
+  });
 });
