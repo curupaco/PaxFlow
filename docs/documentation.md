@@ -114,7 +114,7 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
   - **Ação de Resposta (Reply) e Threading [NEW]**: Botão de resposta direta integrado ao leitor de e-mail. O PaxFlow agrupa automaticamente as mensagens diretas e suas respostas sob chaves relacionais (`parent_id` e `thread_id`) no banco de dados. Ao abrir qualquer e-mail/notificação que possua thread associada, o leitor exibe a linha do tempo completa do diálogo de forma cronológica em cartões individuais, facilitando o acompanhamento pela equipe e mantendo o contexto.
   - **Status e Contadores Reativos da Sidebar [NEW]**: O badge do menu lateral (`nav-inbox-badge`) reflete fielmente o volume de pendências ativas não lidas da Caixa de Entrada (`unreadAtivos`), desconsiderando decisões já finalizadas.
 - **Visualização em Calendário Interativo [NEW]**:
-  - **Alternador de Visualização (Toggle Switch)**: Um seletor de alta fidelidade visual (Lista / Calendário) no topo do painel. Todos os filtros da barra lateral (Ativos/Arquivados/Todos e consultores) e busca continuam 100% integrados e reativos no modo calendário.
+  - **Navegação de Topo Unificada [NEW]**: A alternância entre **Lista de Mensagens** e **Calendário** é integrada diretamente nas abas de topo do módulo (`[ 📨 Lista de Mensagens ]`, `[ 📅 Calendário ]` e `[ 👥 Escala de Funcionários ]`), eliminando controles dispersos pelo meio da tela e garantindo navegação com rolagem horizontal suave no mobile. Todos os filtros da barra lateral (Ativos/Arquivados/Todos e consultores), categorização e pesquisa continuam 100% integrados e reativos no modo calendário.
   - **Diferenciação por Cores (Sinalizadores de Atribuição)**:
     - *Verde / Ícone de Check*: Lembretes próprios normais.
     - *Âmbar / Laranja*: Lembretes delegados a você por outros consultores do time.
@@ -597,7 +597,16 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 | Realtime | Supabase Realtime (WebSocket) | Colaboração em tempo real entre consultores |
 | Armazenamento & Upload | Supabase Storage + Canvas API | Documentos seguros com compactação inteligente automática |
 | Drag-and-drop | SortableJS | UX intuitiva nos Kanbans |
+| Testes Automatizados | Vitest + MSW | Testes subcutâneos ultra-rápidos (~1s) com zero consumo indevido de tokens |
 | Hospedagem | Qualquer CDN (Cloudflare Pages, Vercel, Netlify) | Deploy em minutos |
+
+### 5.1 Engenharia de Testes Subcutâneos (Regra Formal)
+
+O PaxFlow adota testes **subcutâneos** rigorosos para garantir integridade contínua e economia de tokens:
+- **Tecnologia**: Vitest com MSW e mocks puros do banco de dados (Supabase).
+- **Zero DOM**: Não são executados testes de renderização de interface visual (DOM), concentrando a validação nas regras de negócio, persistência, cálculos de SLA, filtragens e fluxos de dados.
+- **Estrutura Padronizada**: Testes organizados nos blocos `// Setup`, `// Action` e `// Assert`.
+- **Regressão Zero**: Toda alteração de regras ou expansão de serviço possui cobertura imediata na pasta `tests/`.
 
 ### Por que Supabase?
 

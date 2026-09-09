@@ -2,17 +2,20 @@
 <html lang="pt-BR">
 
 <head>
-  <meta charset="UTF-8">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <script>
-    // Recuperador automático de novos deploys de produção (Evita erro de script de módulo com hash alterado)
+    // Recuperador automático de novos deploys de produção (Bypass de cache e evita erro de module script)
     (function() {
       function handleDeployMismatch(reason) {
         var lastReload = sessionStorage.getItem('paxflow_deploy_reload');
         var now = Date.now();
-        if (!lastReload || now - parseInt(lastReload, 10) > 4000) {
+        if (!lastReload || now - parseInt(lastReload, 10) > 3000) {
           sessionStorage.setItem('paxflow_deploy_reload', String(now));
-          console.warn('[PaxFlow] Novo bundle implantado (' + reason + '). Recarregando a página silenciosamente...');
-          window.location.reload();
+          console.warn('[PaxFlow] Novo bundle implantado (' + reason + '). Forçando atualização sem cache...');
+          var cleanUrl = window.location.origin + window.location.pathname + '?_v=' + now + window.location.hash;
+          window.location.replace(cleanUrl);
         }
       }
 
@@ -22,9 +25,13 @@
       });
 
       window.addEventListener('error', function(e) {
+        var target = e && e.target;
+        var isScriptTag = target && target.tagName === 'SCRIPT';
+        var src = (target && target.src) || (e && e.filename) || '';
         var msg = (e && e.message) ? String(e.message) : '';
-        var src = (e && e.filename) ? String(e.filename) : '';
+
         if (
+          (isScriptTag && src.indexOf('/assets/main-') !== -1) ||
           msg.indexOf('Failed to load module script') !== -1 ||
           msg.indexOf('text/html') !== -1 ||
           msg.indexOf('dynamically imported module') !== -1 ||
