@@ -136,7 +136,7 @@ export class NextTripEngineService {
 
       // Verificação de Snooze
       const snoozeKey = `next_trip_snooze_${cliente.id}`;
-      const snoozeUntilStr = localStorage.getItem(snoozeKey);
+      const snoozeUntilStr = typeof localStorage !== 'undefined' ? localStorage.getItem(snoozeKey) : null;
       let isSnoozed = false;
       if (snoozeUntilStr) {
         const snoozeUntil = new Date(snoozeUntilStr);

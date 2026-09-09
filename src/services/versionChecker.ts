@@ -17,7 +17,9 @@ export class VersionChecker {
       : 0;
 
     // Se já tivermos aceitado esta versão no localStorage, atualiza a referência local
-    const ackTime = parseInt(localStorage.getItem('paxflow_acknowledged_build_time') || '0', 10);
+    const ackTime = typeof localStorage !== 'undefined'
+      ? parseInt(localStorage.getItem('paxflow_acknowledged_build_time') || '0', 10)
+      : 0;
     if (ackTime > this.currentBuildTime) {
       this.currentBuildTime = ackTime;
     }
@@ -87,7 +89,9 @@ export class VersionChecker {
       const data: VersionInfo = await response.json();
       this.latestRemoteVersion = data;
 
-      const ackTime = parseInt(localStorage.getItem('paxflow_acknowledged_build_time') || '0', 10);
+      const ackTime = typeof localStorage !== 'undefined'
+        ? parseInt(localStorage.getItem('paxflow_acknowledged_build_time') || '0', 10)
+        : 0;
       const effectiveLocalBuild = Math.max(this.currentBuildTime, ackTime);
 
       // Detecta nova versão por buildTime superior ou se effectiveLocalBuild ainda não estiver gravado
@@ -106,27 +110,31 @@ export class VersionChecker {
     if (this.isUpdateAvailable) return;
     this.isUpdateAvailable = true;
 
-    window.dispatchEvent(
-      new CustomEvent('paxflow-new-version-available', {
-        detail: {
-          source: 'version-checker',
-          versionInfo
-        }
-      })
-    );
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('paxflow-new-version-available', {
+          detail: {
+            source: 'version-checker',
+            versionInfo
+          }
+        })
+      );
+    }
   }
 
   /**
    * Recarrega a página de forma limpa, gravando a nova versão aceita e atualizando Service Workers
    */
   public forceReload(): void {
-    if (this.latestRemoteVersion && this.latestRemoteVersion.buildTime) {
-      localStorage.setItem('paxflow_acknowledged_build_time', String(this.latestRemoteVersion.buildTime));
-    } else if (this.currentBuildTime) {
-      localStorage.setItem('paxflow_acknowledged_build_time', String(this.currentBuildTime));
+    if (typeof localStorage !== 'undefined') {
+      if (this.latestRemoteVersion && this.latestRemoteVersion.buildTime) {
+        localStorage.setItem('paxflow_acknowledged_build_time', String(this.latestRemoteVersion.buildTime));
+      } else if (this.currentBuildTime) {
+        localStorage.setItem('paxflow_acknowledged_build_time', String(this.currentBuildTime));
+      }
     }
 
-    if ('serviceWorker' in navigator) {
+    if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistrations().then((registrations) => {
         for (const registration of registrations) {
           if (registration.waiting) {
@@ -134,12 +142,14 @@ export class VersionChecker {
           }
         }
       }).finally(() => {
-        window.location.reload();
+        if (typeof window !== 'undefined') window.location.reload();
       });
     } else {
-      window.location.reload();
+      if (typeof window !== 'undefined') window.location.reload();
     }
   }
 }
 
-(window as any).VersionChecker = VersionChecker;
+if (typeof window !== 'undefined') {
+  (window as any).VersionChecker = VersionChecker;
+}

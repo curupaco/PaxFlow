@@ -3,7 +3,7 @@ import { MetaPeriodo, MetaFaixa } from '../types';
 
 export class MetasService {
   private static isSandbox(): boolean {
-    return (window as any).paxflowSandbox === true;
+    return typeof window !== 'undefined' && (window as any).paxflowSandbox === true;
   }
 
   /**

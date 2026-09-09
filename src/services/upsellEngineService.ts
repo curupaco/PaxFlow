@@ -6,8 +6,10 @@ export class UpsellEngineService {
    * Verifica se o PaxFlow Upsell Engine™ está habilitado para o usuário atual.
    */
   public static isUpsellEnabled(settings?: any, user?: any, perfil?: any): boolean {
-    if (localStorage.getItem('paxflow_upsell_override') === 'false') return false;
-    if (localStorage.getItem('paxflow_upsell_override') === 'true') return true;
+    if (typeof localStorage !== 'undefined') {
+      if (localStorage.getItem('paxflow_upsell_override') === 'false') return false;
+      if (localStorage.getItem('paxflow_upsell_override') === 'true') return true;
+    }
     
     return isUpsellEnabled(user, perfil, settings);
   }

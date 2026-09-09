@@ -607,6 +607,8 @@ O PaxFlow adota testes **subcutâneos** rigorosos para garantir integridade cont
 - **Zero DOM**: Não são executados testes de renderização de interface visual (DOM), concentrando a validação nas regras de negócio, persistência, cálculos de SLA, filtragens e fluxos de dados.
 - **Estrutura Padronizada**: Testes organizados nos blocos `// Setup`, `// Action` e `// Assert`.
 - **Regressão Zero & Execução Automática**: Toda alteração em componentes, regras de negócio ou serviços dispara obrigatoriamente a execução dos testes subcutâneos correspondentes via Vitest antes de ser considerada concluída. Nenhuma alteração é entregue sem validação automatizada prévia.
+- **Cobertura Integral (14 Módulos)**: 100% dos serviços de lógica de negócio e motores analíticos cobertos (`inbox`, `escala`, `orcamentos`, `balcao`, `riskScore`, `metas`, `gamification`, `nextTrip`, `comments`, `upsell`, `pushNotification`, `csvImporter`, `googleDrive` e `versionChecker`), totalizando 73 testes subcutâneos ultra-rápidos (~3s) e build 100% validado.
+
 
 ### Por que Supabase?
 
