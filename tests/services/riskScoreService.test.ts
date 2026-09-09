@@ -128,4 +128,137 @@ describe('RiskScoreService - Testes Subcutâneos', () => {
     expect(resultado.nivel).toBe('verde');
     expect(resultado.itens.filter((i) => i.nivel === 'vermelho')).toHaveLength(0);
   });
+
+  it('deve acumular penalidades de múltiplos pilares e garantir que o score nunca seja inferior a 0', () => {
+    // Setup
+    const dataProxima = new Date();
+    dataProxima.setDate(dataProxima.getDate() + 10);
+
+    const viagemCritica: any = {
+      id: 'v-critica',
+      destino: 'Paris',
+      data_ida: dataProxima.toISOString().split('T')[0],
+      data_volta: dataProxima.toISOString().split('T')[0],
+      processo_conferido: false,
+      status: 'confirmada',
+    };
+
+    // Cliente sem documentos, telefone ou email (Pilar 5: -10)
+    const clienteIncompleto: any = { id: 'c-critico', nome: 'Pendente' };
+
+    // Sem voucher geral, com voo sem LOC (Pilar 2: -15) e hotel sem voucher (Pilar 2: -15)
+    // Sem passaporte (Pilar 1: -30)
+    // Sem processo conferido (Pilar 3: -15)
+    // Sem seguro (Pilar 4: -10)
+    const produtos: any[] = [
+      { id: 'p1', tipo: 'Voo Internacional' },
+      { id: 'p2', tipo: 'Hotel Paris' },
+    ];
+
+    // Action
+    const resultado = RiskScoreService.calculateTripRiskScore(viagemCritica, clienteIncompleto, produtos);
+
+    // Assert
+    expect(resultado.score).toBeGreaterThanOrEqual(0);
+    expect(resultado.nivel).toBe('vermelho');
+    expect(resultado.itens.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it('deve aplicar bonificação de +25 pontos quando houver justificativa operacional aprovada', () => {
+    // Setup
+    const dataProxima = new Date();
+    dataProxima.setDate(dataProxima.getDate() + 10);
+
+    const viagemBase: any = {
+      id: 'v-justificada',
+      destino: 'São Paulo',
+      data_ida: dataProxima.toISOString().split('T')[0],
+      data_volta: dataProxima.toISOString().split('T')[0],
+      processo_conferido: false, // Perde 15 pontos
+      risk_score_justificativa: 'Aguardando confirmação formal de emissão da companhia aérea autorizada pelo gerente',
+    };
+
+    const clienteCompleto: any = {
+      id: 'c-ok',
+      nome: 'Silvia',
+      documento: '111',
+      telefone: '222',
+      email: 's@teste.com',
+    };
+
+    // Action
+    const resultado = RiskScoreService.calculateTripRiskScore(viagemBase, clienteCompleto, []);
+
+    // Assert
+    // Base: 100 - 15 = 85. Com justificativa: 85 + 25 = 110 -> limitado a 100
+    expect(resultado.score).toBe(100);
+    expect(resultado.nivel).toBe('verde');
+  });
+
+  it('deve penalizar passaporte com validade crítica menor que 180 dias da data de volta', () => {
+    // Setup
+    const dataIda = new Date();
+    dataIda.setDate(dataIda.getDate() + 10);
+    const dataVolta = new Date();
+    dataVolta.setDate(dataVolta.getDate() + 20);
+
+    // Passaporte vence apenas 60 dias após a volta (< 180 dias exigidos para internacional)
+    const validadeCritica = new Date(dataVolta);
+    validadeCritica.setDate(validadeCritica.getDate() + 60);
+
+    const viagemInternacional: any = {
+      id: 'v-pass-critico',
+      destino: 'Roma',
+      data_ida: dataIda.toISOString().split('T')[0],
+      data_volta: dataVolta.toISOString().split('T')[0],
+      processo_conferido: true,
+      voucher_geral_anexado: true,
+    };
+
+    const clienteComPassaporteQuaseVencido: any = {
+      id: 'c-pass-1',
+      nome: 'Lucas Lima',
+      documento: '123',
+      telefone: '123',
+      email: 'l@teste.com',
+      passaporteNumero: 'FP123456',
+      passaporteValidade: validadeCritica.toISOString().split('T')[0],
+    };
+
+    const produtos: any[] = [{ tipo: 'Aéreo Internacional', dataServico: dataIda.toISOString().split('T')[0] }];
+
+    // Action
+    const resultado = RiskScoreService.calculateTripRiskScore(viagemInternacional, clienteComPassaporteQuaseVencido, produtos);
+
+    // Assert
+    const itemValidade = resultado.itens.find((i) => i.titulo.includes('Validade Crítica'));
+    expect(itemValidade).toBeDefined();
+    expect(resultado.score).toBeLessThan(100);
+  });
+
+  it('deve conceder isenção inteligente de voucher de hospedagem para viagens bate-volta', () => {
+    // Setup
+    const hoje = new Date();
+    hoje.setDate(hoje.getDate() + 10);
+    const mesmoDia = hoje.toISOString().split('T')[0];
+
+    const viagemBateVolta: any = {
+      id: 'v-bate-volta',
+      destino: 'Rio de Janeiro',
+      data_ida: mesmoDia,
+      data_volta: mesmoDia, // Bate-volta (1 dia)
+      processo_conferido: true,
+      voucher_geral_anexado: false,
+    };
+
+    const cliente: any = { id: 'c1', nome: 'Ana', documento: '1', telefone: '2', email: 'e@teste.com' };
+
+    // Action
+    const resultado = RiskScoreService.calculateTripRiskScore(viagemBateVolta, cliente, []);
+
+    // Assert
+    const itemGapHotel = resultado.itens.find((i) => i.id === 'p2-voucher-hotel');
+    expect(itemGapHotel).toBeUndefined(); // Isento de hotel
+    expect(resultado.score).toBe(100);
+  });
 });

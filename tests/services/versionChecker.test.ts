@@ -67,4 +67,29 @@ describe('VersionChecker - Testes Subcutâneos', () => {
     // Assert
     expect(updateAvailable).toBe(false);
   });
+
+  it('deve ignorar variações insignificantes de buildTime inferiores a 1000ms', async () => {
+    // Setup - buildTime remoto apenas 500ms à frente (abaixo do limiar de 1000ms)
+    const checker = VersionChecker.getInstance();
+    const currentBuild = Date.now();
+    (checker as any).currentBuildTime = currentBuild;
+    (checker as any).isUpdateAvailable = false;
+
+    const remoteVersionSemNovidade = {
+      version: '1.0.2',
+      buildTime: currentBuild + 500, // < 1000ms de diferença
+      timestamp: new Date().toISOString(),
+    };
+
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue(remoteVersionSemNovidade),
+    } as any);
+
+    // Action
+    const updateAvailable = await checker.checkForUpdates(true);
+
+    // Assert
+    expect(updateAvailable).toBe(false);
+  });
 });

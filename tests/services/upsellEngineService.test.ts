@@ -68,4 +68,32 @@ describe('UpsellEngineService - Testes Subcutâneos', () => {
     expect(opTransfer).toBeDefined();
     expect(opTransfer?.tipo).toBe('transfer_privativo');
   });
+
+  it('deve respeitar piso mínimo de valor estimado para seguro saúde de 1 passageiro', () => {
+    // Setup - 1 passageiro (1 * 290 = 290, mas piso mínimo é 380)
+    const produtos = [{ tipo: 'Aéreo Internacional', nome: 'Voo SP - Lisboa' }];
+
+    // Action
+    const oportunidades = UpsellEngineService.calculateUpsellOpportunities(produtos, 'Lisboa', 1, 4000);
+
+    // Assert
+    const opSeguro = oportunidades.find((o) => o.id === 'upsell-seguro-saude');
+    expect(opSeguro).toBeDefined();
+    expect(opSeguro?.valorEstimado).toBe(380); // Piso de R$ 380
+  });
+
+  it('deve disparar múltiplos gatilhos simultâneos para pacote internacional completo sem adicionais', () => {
+    // Setup - 4 passageiros para Orlando apenas com hotel
+    const produtos = [{ tipo: 'Hotel', nome: 'Hotel Disney' }];
+
+    // Action
+    const oportunidades = UpsellEngineService.calculateUpsellOpportunities(produtos, 'Orlando', 4, 25000);
+
+    // Assert
+    expect(oportunidades.length).toBeGreaterThanOrEqual(3);
+    const tipos = oportunidades.map((o) => o.tipo);
+    expect(tipos).toContain('seguro_saude');
+    expect(tipos).toContain('passes_experiencias');
+    expect(tipos).toContain('transfer_privativo');
+  });
 });

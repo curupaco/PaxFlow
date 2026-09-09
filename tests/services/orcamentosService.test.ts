@@ -308,4 +308,58 @@ describe('OrcamentosService - Testes Subcutâneos', () => {
     expect(updateOrc).toHaveBeenCalledWith(expect.objectContaining({ status: 'CONCLUIDO', sub_status: 'ACEITO' }));
     expect(registrarXp).toHaveBeenCalledWith('consultor-1', 'venda_aceita_uuid-orc-aprovado-1', 100);
   });
+
+  it('deve realizar retry automático removendo colunas extras se o banco retornar erro 42703', async () => {
+    // Setup
+    const erroColunaInexistente = { code: '42703', message: 'column valor_proposta does not exist' };
+    const insertComErro = vi.fn().mockResolvedValueOnce({ error: erroColunaInexistente });
+    const insertComSucesso = vi.fn().mockResolvedValueOnce({ error: null });
+
+    const insertMock = vi.fn()
+      .mockImplementationOnce(insertComErro)
+      .mockImplementationOnce(insertComSucesso);
+
+    vi.mocked(supabase.from).mockReturnValue({ insert: insertMock } as any);
+
+    const orcamentoComColunasExtras: any = {
+      id: 'orc-novo-99',
+      consultorId: 'c-1',
+      nomeCliente: 'Marina',
+      valorProposta: 10000,
+      valorViagem: 11000,
+    };
+
+    // Action
+    const res = await OrcamentosService.persistOrcamento(orcamentoComColunasExtras);
+
+    // Assert
+    expect(res.success).toBe(true);
+    expect(insertMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('deve utilizar a RPC atualizar_orcamento_co_piloto caso ocorra bloqueio de RLS no update direto', async () => {
+    // Setup
+    const erroRls = { code: '42501', message: 'new row violates row-level security policy' };
+    const eqMock = vi.fn().mockResolvedValue({ error: erroRls });
+    const updateMock = vi.fn().mockReturnValue({ eq: eqMock });
+    vi.mocked(supabase.from).mockReturnValue({ update: updateMock } as any);
+
+    vi.mocked(supabase.rpc).mockResolvedValue({ error: null } as any);
+
+    const orcamentoCoPiloto: any = {
+      id: 'uuid-orc-copiloto',
+      consultorId: 'outro-consultor',
+      nomeCliente: 'Cliente Compartilhado',
+    };
+
+    // Action
+    const res = await OrcamentosService.persistOrcamento(orcamentoCoPiloto);
+
+    // Assert
+    expect(res.success).toBe(true);
+    expect(supabase.rpc).toHaveBeenCalledWith('atualizar_orcamento_co_piloto', {
+      p_orc_id: 'uuid-orc-copiloto',
+      p_payload: expect.any(Object),
+    });
+  });
 });

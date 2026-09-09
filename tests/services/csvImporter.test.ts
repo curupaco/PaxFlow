@@ -61,4 +61,42 @@ describe('csvImporter - Testes Subcutâneos', () => {
     expect(supabase.from).toHaveBeenCalledWith('orcamentos');
     expect(insertMock).toHaveBeenCalledWith(orcamentos);
   });
+
+  it('deve processar campos que contenham quebras de linha legítimas dentro de aspas duplas', () => {
+    // Setup - Campo "Observações" com texto em múltiplos parágrafos
+    const csvComQuebra = 'Nome;Observacao\n"Cliente 1";"Primeira linha da nota\nSegunda linha da nota"\n"Cliente 2";"Nota simples"';
+
+    // Action
+    const linhas = parseCSV(csvComQuebra);
+
+    // Assert
+    expect(linhas).toHaveLength(3);
+    expect(linhas[1][1]).toBe('Primeira linha da nota\nSegunda linha da nota');
+    expect(linhas[2][0]).toBe('Cliente 2');
+  });
+
+  it('deve realizar fallback resiliente limpando campos opcionais se o Supabase acusar coluna inexistente no batch insert', async () => {
+    // Setup
+    const erroColuna = { code: '42703', message: 'column valor_proposta does not exist' };
+    const insertComErro = vi.fn().mockResolvedValueOnce({ error: erroColuna });
+    const insertComSucesso = vi.fn().mockResolvedValueOnce({ data: null, error: null });
+
+    const insertMock = vi.fn()
+      .mockImplementationOnce(insertComErro)
+      .mockImplementationOnce(insertComSucesso);
+
+    vi.mocked(supabase.from).mockReturnValue({ insert: insertMock } as any);
+
+    const orcamentosComCamposNovos = [
+      { nome_cliente: 'Cliente A', valor_proposta: 5000, destino: 'Santiago' },
+    ];
+
+    // Action
+    const resultado = await batchInsertOrcamentos(orcamentosComCamposNovos, 'user-1', false);
+
+    // Assert
+    expect(resultado.success).toBe(true);
+    expect(resultado.count).toBe(1);
+    expect(insertMock).toHaveBeenCalledTimes(2);
+  });
 });

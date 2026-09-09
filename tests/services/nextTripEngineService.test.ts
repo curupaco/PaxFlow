@@ -105,4 +105,63 @@ describe('NextTripEngineService - Testes Subcutâneos', () => {
     expect(oportunidades[0].clienteNome).toBe('Camila Pitanga');
     expect(oportunidades[0].scoreProntidao).toBeGreaterThan(0);
   });
+
+  it('deve penalizar pilar de conformidade caso o cliente tenha reembolso pendente não concluído', () => {
+    // Setup
+    const seisMesesAtras = new Date();
+    seisMesesAtras.setMonth(seisMesesAtras.getMonth() - 6);
+    const dataStr = seisMesesAtras.toISOString().split('T')[0];
+
+    const clientes = [{ id: 'c-reembolso', nome: 'Rogério' }];
+    const viagensComReembolsoPendente = [
+      {
+        id: 'v-reemb',
+        cliente_id: 'c-reembolso',
+        destino: 'Paris',
+        data_volta: dataStr,
+        nps: 9,
+        reembolsos: [{ id: 'reemb-1', status: 'pendente' }],
+      },
+    ];
+
+    const viagensSemReembolso = [
+      {
+        id: 'v-ok',
+        cliente_id: 'c-reembolso',
+        destino: 'Paris',
+        data_volta: dataStr,
+        nps: 9,
+        reembolsos: [{ id: 'reemb-1', status: 'pago' }],
+      },
+    ];
+
+    // Action
+    const opComReembolsoPendente = NextTripEngineService.calculateOpportunities(clientes, viagensComReembolsoPendente, []);
+    const opSemReembolso = NextTripEngineService.calculateOpportunities(clientes, viagensSemReembolso, []);
+
+    // Assert
+    // O cliente com reembolso pendente deve ter score menor por perder 10 pontos de conformidade
+    expect(opComReembolsoPendente[0].scoreProntidao).toBeLessThan(opSemReembolso[0].scoreProntidao);
+  });
+
+  it('deve conceder bônus sazonal máximo de 15 pontos se o mês da viagem anterior coincidir com o mês atual', () => {
+    // Setup
+    const agora = new Date();
+    // Viagem realizada exatamente há 1 ano (mesmo mês)
+    const umAnoAtrasMesmoMes = new Date(agora.getFullYear() - 1, agora.getMonth(), 15);
+    // Viagem realizada há 1 ano mas em mês bem distante (+5 meses)
+    const umAnoAtrasMesDistante = new Date(agora.getFullYear() - 1, (agora.getMonth() + 5) % 12, 15);
+
+    const clientes = [{ id: 'c-sazonal', nome: 'Helena' }];
+    const viagemMesmoMes = [{ id: 'v1', cliente_id: 'c-sazonal', destino: 'Roma', data_volta: umAnoAtrasMesmoMes.toISOString(), nps: 9 }];
+    const viagemMesDistante = [{ id: 'v2', cliente_id: 'c-sazonal', destino: 'Roma', data_volta: umAnoAtrasMesDistante.toISOString(), nps: 9 }];
+
+    // Action
+    const opMesmoMes = NextTripEngineService.calculateOpportunities(clientes, viagemMesmoMes, []);
+    const opMesDistante = NextTripEngineService.calculateOpportunities(clientes, viagemMesDistante, []);
+
+    // Assert
+    expect(opMesmoMes[0].motivoSugestao).toContain('Período habitual de férias');
+    expect(opMesmoMes[0].scoreProntidao).toBeGreaterThan(opMesDistante[0].scoreProntidao);
+  });
 });

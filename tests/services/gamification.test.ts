@@ -110,4 +110,53 @@ describe('Gamificação - Testes Subcutâneos', () => {
     expect(resultadoNovo).toBe(true);
     expect(resultadoDuplicado).toBe(false);
   });
+
+  it('deve calcular corretamente todas as fronteiras e limites matemáticos de nível', () => {
+    // Setup & Action
+    const p249 = obterProgressoNivel(249); // Limite superior Nível 1
+    const p250 = obterProgressoNivel(250); // Início Nível 2
+    const p749 = obterProgressoNivel(749); // Fim Nível 2
+    const p750 = obterProgressoNivel(750); // Início Nível 3
+    const p1499 = obterProgressoNivel(1499); // Fim Nível 3
+    const p1500 = obterProgressoNivel(1500); // Início Nível 4
+    const p2499 = obterProgressoNivel(2499); // Fim Nível 4
+    const p2500 = obterProgressoNivel(2500); // Início Nível 5
+    const p3500 = obterProgressoNivel(3500); // Nível 6 (+1000 XP)
+
+    // Assert
+    expect(p249.nivel).toBe(1);
+    expect(p249.xpAtual).toBe(249);
+    expect(p249.xpProximoNivel).toBe(250);
+
+    expect(p250.nivel).toBe(2);
+    expect(p250.xpAtual).toBe(0);
+    expect(p250.xpProximoNivel).toBe(500);
+
+    expect(p749.nivel).toBe(2);
+    expect(p750.nivel).toBe(3);
+    expect(p750.xpAtual).toBe(0);
+    expect(p750.xpProximoNivel).toBe(750);
+
+    expect(p1499.nivel).toBe(3);
+    expect(p1500.nivel).toBe(4);
+    expect(p1500.xpAtual).toBe(0);
+    expect(p1500.xpProximoNivel).toBe(1000);
+
+    expect(p2499.nivel).toBe(4);
+    expect(p2500.nivel).toBe(5);
+    expect(p2500.xpAtual).toBe(0);
+
+    expect(p3500.nivel).toBe(6);
+    expect(p3500.xpAtual).toBe(0);
+  });
+
+  it('deve concluir silenciosamente sem travar fluxo quando o Supabase acusar ação de XP já pontuada (código 23505)', async () => {
+    // Setup
+    const insertDuplicado = vi.fn().mockResolvedValue({ error: { code: '23505', message: 'duplicate key' } });
+    vi.mocked(supabase.from).mockReturnValue({ insert: insertDuplicado } as any);
+
+    // Action & Assert
+    await expect(registrarXp('user-1', 'acao_ja_pontuada', 25)).resolves.not.toThrow();
+    expect(supabase.from).toHaveBeenCalledWith('profiles_xp_logs');
+  });
 });

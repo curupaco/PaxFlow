@@ -161,4 +161,52 @@ describe('BalcaoService - Testes Subcutâneos (Co-Piloto & Balcão)', () => {
       })
     );
   });
+
+  it('deve localizar cliente por CPF mesmo quando o usuário digitar máscara com pontos e traços', async () => {
+    // Setup
+    vi.mocked(supabase.rpc).mockResolvedValue({ data: null, error: null } as any);
+
+    const clientesMock = [
+      { id: 'cli-cpf-1', nome: 'Márcio Souza', cpf: '98765432100', documento: '98765432100' },
+    ];
+
+    vi.mocked(supabase.from).mockImplementation((table: string) => {
+      if (table === 'clientes') return { select: vi.fn().mockResolvedValue({ data: clientesMock }) } as any;
+      return { select: vi.fn().mockResolvedValue({ data: [] }) } as any;
+    });
+
+    // Action - Busca digitada com máscara completa
+    const resultado = await BalcaoService.buscarMulticriterio('987.654.321-00');
+
+    // Assert
+    expect(resultado).toHaveLength(1);
+    expect(resultado[0].cliente.id).toBe('cli-cpf-1');
+    expect(resultado[0].cliente.nome).toBe('Márcio Souza');
+  });
+
+  it('deve deduplicar viagens e orçamentos de um mesmo cliente em um único registro consolidado', async () => {
+    // Setup
+    vi.mocked(supabase.rpc).mockResolvedValue({ data: null, error: null } as any);
+
+    const clientesMock = [{ id: 'cli-multi', nome: 'Camila Ferreira' }];
+    // Duas referências com o mesmo ID para simular duplicata de join
+    const viagensMock = [
+      { id: 'v-dup-1', cliente_id: 'cli-multi', destino: 'Madri', status: 'ativa' },
+      { id: 'v-dup-1', cliente_id: 'cli-multi', destino: 'Madri', status: 'ativa' },
+    ];
+
+    vi.mocked(supabase.from).mockImplementation((table: string) => {
+      if (table === 'clientes') return { select: vi.fn().mockResolvedValue({ data: clientesMock }) } as any;
+      if (table === 'viagens') return { select: vi.fn().mockResolvedValue({ data: viagensMock }) } as any;
+      return { select: vi.fn().mockResolvedValue({ data: [] }) } as any;
+    });
+
+    // Action
+    const resultado = await BalcaoService.buscarMulticriterio('Camila');
+
+    // Assert
+    expect(resultado).toHaveLength(1);
+    expect(resultado[0].viagens).toHaveLength(1); // Deduplicado por ID
+    expect(resultado[0].viagens[0].id).toBe('v-dup-1');
+  });
 });
