@@ -624,25 +624,35 @@ export class InboxPage {
           </div>
 
            <div class="flex flex-wrap items-center gap-3 w-full md:w-auto md:justify-end">
-             <!-- Barra de Abas de Topo (Alternador Mensagens vs Escala) -->
+             <!-- Barra de Abas de Topo (Navegação Principal Unificada do Inbox) -->
              <div class="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800/60 p-1.5 rounded-2xl border border-slate-200/50 dark:border-slate-700/50 shrink-0 max-w-full overflow-x-auto custom-scrollbar">
-               <button id="inbox-top-tab-mensagens" class="px-2.5 sm:px-3.5 py-2 rounded-xl text-xs font-black transition flex items-center gap-2 select-none whitespace-nowrap shrink-0 ${
-                 this.activeTab !== 'escala'
+               <button id="inbox-top-tab-lista" class="px-2.5 sm:px-3.5 py-2 rounded-xl text-xs font-black transition flex items-center gap-2 select-none whitespace-nowrap shrink-0 ${
+                 this.activeTab !== 'escala' && this.currentView === 'list'
                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
-                   : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
-               }">
-                 <span>📨 Mensagens & Alertas</span>
+                   : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-slate-700/50'
+               }" title="Visualização em Lista">
+                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                 <span>Lista de Mensagens</span>
                  <span class="px-2 py-0.5 rounded-md text-[10px] font-black ${
-                   this.activeTab !== 'escala' ? 'bg-white/20 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
+                   this.activeTab !== 'escala' && this.currentView === 'list' ? 'bg-white/20 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
                  }">${unreadAtivos > 0 ? `${unreadAtivos} / ${totalAtivos}` : `${totalAtivos}`}</span>
+               </button>
+
+               <button id="inbox-top-tab-calendario" class="px-2.5 sm:px-3.5 py-2 rounded-xl text-xs font-black transition flex items-center gap-2 select-none whitespace-nowrap shrink-0 ${
+                 this.activeTab !== 'escala' && this.currentView === 'calendar'
+                   ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
+                   : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-slate-700/50'
+               }" title="Visualização em Calendário">
+                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                 <span>Calendário</span>
                </button>
 
                <button id="inbox-top-tab-escala" class="px-2.5 sm:px-3.5 py-2 rounded-xl text-xs font-black transition flex items-center gap-2 select-none whitespace-nowrap shrink-0 ${
                  this.activeTab === 'escala'
                    ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-md shadow-violet-600/20'
                    : 'bg-violet-50 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300 hover:bg-violet-100 dark:hover:bg-violet-900/50 border border-violet-200/40 dark:border-violet-800/40'
-               }">
-                 <span>📅 Escala de Funcionários</span>
+               }" title="Escala de Funcionários">
+                 <span>👥 Escala de Funcionários</span>
                </button>
              </div>
 
@@ -939,35 +949,10 @@ export class InboxPage {
                           </span>
                         ` : ''}
                       </div>
-                      <p class="text-[11px] text-slate-400 dark:text-slate-400 font-semibold mt-1 hidden sm:block">
-                        ${this.currentView === 'list' ? 'Visualização em lista corrida com triagem rápida de alertas' : 'Visualização distribuída na grade temporal do calendário'}
+                      <p class="text-[11px] text-slate-400 dark:text-slate-400 font-semibold mt-1">
+                        ${this.currentView === 'list' ? 'Exibição em lista corrida com triagem rápida de alertas' : 'Exibição distribuída na grade temporal do calendário'}
                       </p>
                     </div>
-                  </div>
-
-                  <!-- Segmented View Switcher (iOS / macOS Style) -->
-                  <div class="w-full sm:w-auto grid grid-cols-2 sm:flex items-center bg-slate-200/70 dark:bg-slate-800/80 p-1 rounded-xl border border-slate-300/40 dark:border-slate-700/50 shrink-0">
-                    <button id="view-list-btn" class="w-full sm:w-auto px-4 py-2 sm:py-1.5 rounded-lg text-xs font-black flex items-center justify-center gap-2 transition-all duration-200 select-none ${
-                      this.currentView === 'list' 
-                        ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm' 
-                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                    }" title="Alternar para visualização em Lista">
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
-                      </svg>
-                      <span>Lista</span>
-                    </button>
-                    <button id="view-calendar-btn" class="w-full sm:w-auto px-4 py-2 sm:py-1.5 rounded-lg text-xs font-black flex items-center justify-center gap-2 transition-all duration-200 select-none ${
-                      this.currentView === 'calendar' 
-                        ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm' 
-                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                    }" title="Alternar para visualização em Calendário">
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2">
-                        <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
-                        <path d="M16 2v4M8 2v4M3 10h18"/>
-                      </svg>
-                      <span>Calendário</span>
-                    </button>
                   </div>
                 </div>
 
@@ -1064,10 +1049,20 @@ export class InboxPage {
     };
     window.addEventListener('paxflow-switch-inbox-tab', (this as any)._onSwitchInboxTabBound);
 
-    // 0. Top Header Tabs & Mobile Pills (Alternadores de Mensagens vs Escala)
-    const topTabMensagens = document.getElementById('inbox-top-tab-mensagens');
-    topTabMensagens?.addEventListener('click', () => {
-      this.activeTab = 'ativos';
+    // 0. Top Header Tabs & Mobile Pills (Navegação Principal do Inbox)
+    const topTabLista = document.getElementById('inbox-top-tab-lista');
+    topTabLista?.addEventListener('click', () => {
+      if (this.activeTab === 'escala') this.activeTab = 'ativos';
+      this.currentView = 'list';
+      this.applyFilters();
+      this.render();
+      this.setupEventListeners();
+    });
+
+    const topTabCalendario = document.getElementById('inbox-top-tab-calendario');
+    topTabCalendario?.addEventListener('click', () => {
+      if (this.activeTab === 'escala') this.activeTab = 'ativos';
+      this.currentView = 'calendar';
       this.applyFilters();
       this.render();
       this.setupEventListeners();
