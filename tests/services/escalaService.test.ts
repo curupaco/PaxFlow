@@ -355,4 +355,54 @@ describe('EscalaService Subcutaneous Tests', () => {
       })
     );
   });
+
+  it('deve carregar comentários e observações customizadas da escala_diaria', async () => {
+    // Setup
+    const mockRows = [
+      { consultor_nome: 'Thiago Costa', data: '2026-09-05', observacao_custom: 'Entrada às 11h' },
+      { consultor_nome: 'Carlos Consultor', data: '2026-09-12', observacao_custom: 'Reunião comercial' }
+    ];
+
+    (supabase.from as any).mockImplementation((table: string) => {
+      if (table === 'escala_diaria') {
+        return createQueryMock(mockRows);
+      }
+      return createQueryMock([]);
+    });
+
+    // Action
+    const obsMap = await EscalaService.loadEscalaComentarios(2026, 9);
+
+    // Assert
+    expect(obsMap['Thiago Costa']).toBeDefined();
+    expect(obsMap['Thiago Costa'][4]).toBe('Entrada às 11h'); // Dia 5 -> índice 4
+    expect(obsMap['Carlos Consultor']).toBeDefined();
+    expect(obsMap['Carlos Consultor'][11]).toBe('Reunião comercial'); // Dia 12 -> índice 11
+  });
+
+  it('deve persistir a ordenação customizada de consultores no Supabase', async () => {
+    // Setup
+    const novaOrdem = ['Marina Gestora', 'Thiago Costa', 'Carlos Consultor'];
+    const mockUpsert = vi.fn().mockResolvedValue({ error: null });
+
+    (supabase.from as any).mockImplementation((table: string) => {
+      if (table === 'escala_eventos') {
+        return {
+          upsert: mockUpsert
+        };
+      }
+      return createQueryMock([]);
+    });
+
+    // Action
+    const sucesso = await EscalaService.salvarOrdemConsultores(novaOrdem);
+
+    // Assert
+    expect(sucesso).toBe(true);
+    expect(mockUpsert).toHaveBeenCalledWith(expect.objectContaining({
+      titulo: 'CONFIG_ORDEM_ESCALA',
+      consultor_nome: JSON.stringify(novaOrdem)
+    }));
+  });
 });
+

@@ -7,7 +7,10 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "test": "vitest run"
+    "typecheck": "tsc --noEmit",
+    "check": "tsc --noEmit && vitest run",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
   },
   "keywords": [],
   "author": "",
@@ -19,6 +22,7 @@
   "devDependencies": {
     "@types/node": "^25.9.1",
     "@types/sortablejs": "^1.15.9",
+    "@vitest/coverage-v8": "^2.1.9",
     "autoprefixer": "^10.5.0",
     "msw": "^2.15.0",
     "pg": "^8.21.0",

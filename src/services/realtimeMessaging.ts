@@ -132,7 +132,9 @@ export class RealtimeMessagingService {
       }
 
       // Disparar evento no DOM global para que main.ts e InboxPage.ts reajam dinamicamente
-      window.dispatchEvent(new CustomEvent('paxflow:new-message', { detail }));
+      if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+        window.dispatchEvent(new CustomEvent('paxflow:new-message', { detail }));
+      }
 
       if (this.onMessageCallback) {
         this.onMessageCallback(detail);

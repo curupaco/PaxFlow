@@ -130,6 +130,113 @@ describe('MetasService - Testes Subcutâneos', () => {
     expect(insertFaixas).toHaveBeenCalled();
   });
 
+  it('deve atualizar período de metas e substituir faixas de premiação', async () => {
+    // Setup
+    const periodoAtualizadoMock = {
+      id: 'p-1',
+      nome: 'Meta Atualizada',
+      data_inicio: '2026-10-01',
+      data_fim: '2026-10-31',
+      tipo_calculo: 'lucro',
+      is_campanha: false,
+      is_meta_loja: false,
+      valor_meta: 80000,
+      updated_at: new Date().toISOString()
+    };
+
+    const singleUpdate = vi.fn().mockResolvedValue({ data: periodoAtualizadoMock, error: null });
+    const selectUpdate = vi.fn().mockReturnValue({ single: singleUpdate });
+    const eqUpdate = vi.fn().mockReturnValue({ select: selectUpdate });
+    const updatePeriodo = vi.fn().mockReturnValue({ eq: eqUpdate });
+
+    const deleteFaixasEq = vi.fn().mockResolvedValue({ error: null });
+    const deleteFaixas = vi.fn().mockReturnValue({ eq: deleteFaixasEq });
+
+    const novasFaixasMock = [
+      { id: 'f-nova-1', periodo_id: 'p-1', nome: 'Diamante', valor_minimo: 80000, bonus_xp: 500, cor: '#6366f1' }
+    ];
+    const selectFaixas = vi.fn().mockResolvedValue({ data: novasFaixasMock, error: null });
+    const insertFaixas = vi.fn().mockReturnValue({ select: selectFaixas });
+
+    vi.mocked(supabase.from).mockImplementation((table: string) => {
+      if (table === 'meta_periodos') return { update: updatePeriodo } as any;
+      if (table === 'meta_faixas') return { delete: deleteFaixas, insert: insertFaixas } as any;
+      return {} as any;
+    });
+
+    // Action
+    const res = await MetasService.atualizarMetaPeriodo(
+      'p-1',
+      {
+        nome: 'Meta Atualizada',
+        data_inicio: '2026-10-01',
+        data_fim: '2026-10-31',
+        tipo_calculo: 'liquido' as any, // deve normalizar para 'lucro'
+        is_campanha: false,
+        is_meta_loja: false,
+        valor_meta: 80000
+      },
+      [
+        { nome: 'Diamante', valor_minimo: 80000, bonus_xp: 500, recompensa: 'Viagem', cor: '#6366f1' }
+      ]
+    );
+
+    // Assert
+    expect(res.id).toBe('p-1');
+    expect(updatePeriodo).toHaveBeenCalledWith(expect.objectContaining({ tipo_calculo: 'lucro' }));
+    expect(deleteFaixasEq).toHaveBeenCalledWith('periodo_id', 'p-1');
+    expect(insertFaixas).toHaveBeenCalled();
+  });
+
+  it('deve atualizar meta exclusiva de loja sem criar faixas', async () => {
+    // Setup
+    const periodoLojaMock = {
+      id: 'p-loja-1',
+      nome: 'Meta Geral da Loja',
+      data_inicio: '2026-10-01',
+      data_fim: '2026-10-31',
+      tipo_calculo: 'bruto',
+      is_campanha: false,
+      is_meta_loja: true,
+      valor_meta: 200000,
+      updated_at: new Date().toISOString()
+    };
+
+    const singleUpdate = vi.fn().mockResolvedValue({ data: periodoLojaMock, error: null });
+    const selectUpdate = vi.fn().mockReturnValue({ single: singleUpdate });
+    const eqUpdate = vi.fn().mockReturnValue({ select: selectUpdate });
+    const updatePeriodo = vi.fn().mockReturnValue({ eq: eqUpdate });
+
+    const deleteFaixasEq = vi.fn().mockResolvedValue({ error: null });
+    const deleteFaixas = vi.fn().mockReturnValue({ eq: deleteFaixasEq });
+
+    vi.mocked(supabase.from).mockImplementation((table: string) => {
+      if (table === 'meta_periodos') return { update: updatePeriodo } as any;
+      if (table === 'meta_faixas') return { delete: deleteFaixas } as any;
+      return {} as any;
+    });
+
+    // Action
+    const res = await MetasService.atualizarMetaPeriodo(
+      'p-loja-1',
+      {
+        nome: 'Meta Geral da Loja',
+        data_inicio: '2026-10-01',
+        data_fim: '2026-10-31',
+        tipo_calculo: 'bruto',
+        is_campanha: false,
+        is_meta_loja: true,
+        valor_meta: 200000
+      },
+      []
+    );
+
+    // Assert
+    expect(res.id).toBe('p-loja-1');
+    expect(res.faixas).toHaveLength(0);
+    expect(res.is_meta_loja).toBe(true);
+  });
+
   it('deve excluir período de meta diretamente no banco de dados', async () => {
     // Setup
     const deletePeriodoEq = vi.fn().mockResolvedValue({ error: null });

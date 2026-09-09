@@ -21,7 +21,7 @@ let cachedPrivateKey: CryptoKey | null = null;
 async function getVapidPrivateKey(): Promise<CryptoKey | null> {
   if (cachedPrivateKey) return cachedPrivateKey;
   try {
-    const cryptoObj = window.crypto || (globalThis as any).crypto;
+    const cryptoObj = typeof window !== 'undefined' ? window.crypto : (globalThis as any).crypto;
     if (!cryptoObj || !cryptoObj.subtle) return null;
 
     cachedPrivateKey = await cryptoObj.subtle.importKey(
@@ -68,7 +68,7 @@ async function generateVapidHeader(endpointUrl: string): Promise<string | null> 
     if (!key) return null;
 
     const encoder = new TextEncoder();
-    const cryptoObj = window.crypto || (globalThis as any).crypto;
+    const cryptoObj = typeof window !== 'undefined' ? window.crypto : (globalThis as any).crypto;
 
     const sigBuffer = await cryptoObj.subtle.sign(
       { name: 'ECDSA', hash: { name: 'SHA-256' } },
