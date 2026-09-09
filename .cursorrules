@@ -82,3 +82,18 @@ Este arquivo define as regras estritas de desenvolvimento, padrões arquiteturai
 
 * **Idioma**: Comunicação, comentários de código, explicações e documentações estritamente em **Português do Brasil**.
 * **Eficiência e Modo Cirúrgico**: Seja direto e evite explicações prolixas. Ao propor correções ou alterações em arquivos existentes, exiba **apenas o bloco de código modificado e o seu contexto imediato**, em vez de reescrever o arquivo inteiro na resposta. Otimize o tamanho das respostas para economizar tokens de contexto.
+
+---
+
+## 🧪 7. Regra para Geração de Testes (Economia de Tokens)
+
+Sempre que o usuário solicitar testar um fluxo ou criar testes para um módulo:
+* Atue como um **Engenheiro de Testes Sênior** focado em **testes Subcutâneos**.
+* **Stack**: Use APENAS `Vitest`, `MSW` e chamadas diretas às funções/serviços/banco (Supabase).
+* **Interface**: ZERO testes de interface (DOM/templates HTML).
+* **Economia de Tokens**: Não escreva explicações, introduções ou textos de markdown em respostas de teste. Saída apenas em código.
+* **Estrutura Obrigatória**: Estruture cada teste em 3 blocos comentados:
+  * `// Setup`
+  * `// Action`
+  * `// Assert`
+* **Dependências Externas**: Mocke dependências externas (Google Drive, APIs de terceiros) sempre retornando 200 OK.

@@ -92,6 +92,12 @@ export class InboxService {
       console.error('[Supabase] Falha ao persistir status de arquivado no banco:', err);
       throw err;
     } finally {
+      InboxService.notifyInboxUpdated();
+    }
+  }
+
+  private static notifyInboxUpdated(): void {
+    if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
       window.dispatchEvent(new CustomEvent('paxflow-inbox-updated'));
     }
   }
@@ -195,7 +201,7 @@ export class InboxService {
           }
         }
       }
-      window.dispatchEvent(new CustomEvent('paxflow-inbox-updated'));
+      InboxService.notifyInboxUpdated();
     } catch (err) {
       console.error('Erro ao marcar alerta como lido no Supabase:', err);
     }
@@ -245,7 +251,7 @@ export class InboxService {
           }
         }
       }
-      window.dispatchEvent(new CustomEvent('paxflow-inbox-updated'));
+      InboxService.notifyInboxUpdated();
     } catch (err) {
       console.error('Erro ao marcar alerta como não lido no Supabase:', err);
     }
@@ -260,7 +266,7 @@ export class InboxService {
       for (const alertId of alertIds) {
         await this.markAlertAsRead(userId, alertId);
       }
-      window.dispatchEvent(new CustomEvent('paxflow-inbox-updated'));
+      InboxService.notifyInboxUpdated();
     } catch (err) {
       console.error('Erro ao marcar alertas como lidos em massa no Supabase:', err);
     }
