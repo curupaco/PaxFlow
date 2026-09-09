@@ -27,150 +27,138 @@ export class InboxService {
   }
 
   /**
-   * Retrieves list of locally archived auto-alert IDs from localStorage
+   * Arquiva ou restaura um alerta persistindo diretamente no Supabase
    */
-  private static getArchivedLocalAlerts(): string[] {
+  static async archiveAlert(
+    item: { id: string; type?: string },
+    shouldArchive: boolean
+  ): Promise<boolean> {
+    const alertId = item.id;
     try {
-      const val = localStorage.getItem('paxflow_archived_alerts');
-      return val ? JSON.parse(val) : [];
-    } catch {
+      if (item.type === 'manual' || alertId.startsWith('manual-')) {
+        const tableId = alertId.replace('manual-', '');
+        const { data, error } = await supabase
+          .from('lembretes')
+          .update({ arquivado: shouldArchive })
+          .eq('id', tableId)
+          .select();
+
+        if (error) {
+          console.error('[Supabase] Erro ao atualizar arquivamento de lembrete:', error);
+          throw error;
+        }
+        return Boolean(data && data.length > 0);
+      }
+
+      if (
+        alertId.startsWith('mention-') ||
+        item.type === 'mention' ||
+        item.type === 'campaign_notification' ||
+        item.type === 'direct_message'
+      ) {
+        const tableId = alertId.replace('mention-', '');
+        const { data, error } = await supabase
+          .from('notificacoes')
+          .update({ arquivada: shouldArchive })
+          .eq('id', tableId)
+          .select();
+
+        if (error) {
+          console.error('[Supabase] Erro ao atualizar arquivamento de notificação:', error);
+          throw error;
+        }
+        return Boolean(data && data.length > 0);
+      }
+
+      return true;
+    } catch (err) {
+      console.error('[Supabase] Falha ao persistir status de arquivado no banco:', err);
+      throw err;
+    } finally {
+      window.dispatchEvent(new CustomEvent('paxflow-inbox-updated'));
+    }
+  }
+
+  /**
+   * Consulta os alertas lidos diretamente do Supabase (tabela notificacoes)
+   */
+  static async getReadAlerts(userId: string): Promise<string[]> {
+    if (!userId) return [];
+    try {
+      const { data: notifRead, error } = await supabase
+        .from('notificacoes')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('lida', true);
+
+      if (error) {
+        console.warn('Erro ao consultar notificações lidas no Supabase:', error.message);
+        return [];
+      }
+      return (notifRead || []).map(n => `mention-${n.id}`);
+    } catch (e) {
+      console.error('Exceção ao buscar alertas lidos no Supabase:', e);
       return [];
     }
   }
 
   /**
-   * Retrieves list of read alert IDs for a specific user from Supabase and LocalStorage
-   */
-  static async getReadAlerts(userId: string): Promise<string[]> {
-    const readSet = new Set<string>();
-
-    try {
-      if (userId) {
-        const userVal = localStorage.getItem(`paxflow_read_alerts_${userId}`);
-        const userList: string[] = userVal ? JSON.parse(userVal) : [];
-        userList.forEach(id => readSet.add(id));
-      }
-      const legacyVal = localStorage.getItem('paxflow_read_alerts');
-      const legacyList: string[] = legacyVal ? JSON.parse(legacyVal) : [];
-      legacyList.forEach(id => readSet.add(id));
-    } catch (e) {
-      console.warn('Erro ao carregar alertas lidos locais:', e);
-    }
-
-    if (userId) {
-      try {
-        const { data: notifRead } = await supabase
-          .from('notificacoes')
-          .select('id')
-          .eq('user_id', userId)
-          .eq('lida', true);
-
-        if (notifRead && Array.isArray(notifRead)) {
-          notifRead.forEach(n => readSet.add(`mention-${n.id}`));
-        }
-      } catch (e) {}
-    }
-
-    return Array.from(readSet);
-  }
-
-  /**
-   * Marks a specific alert as read in DB and LocalStorage
+   * Marca um alerta como lido diretamente no Supabase
    */
   static async markAlertAsRead(userId: string, alertId: string): Promise<void> {
     try {
-      const readList = await this.getReadAlerts(userId);
-      if (!readList.includes(alertId)) {
-        readList.push(alertId);
-        if (userId) localStorage.setItem(`paxflow_read_alerts_${userId}`, JSON.stringify(readList));
-        localStorage.setItem('paxflow_read_alerts', JSON.stringify(readList));
-      }
-
       if (alertId.startsWith('mention-')) {
         const notifId = alertId.replace('mention-', '');
-        await supabase
+        const { error } = await supabase
           .from('notificacoes')
           .update({ lida: true })
           .eq('id', notifId);
+        if (error) throw error;
       }
-
       window.dispatchEvent(new CustomEvent('paxflow-inbox-updated'));
     } catch (err) {
-      console.error('Erro ao marcar alerta como lido no serviço:', err);
+      console.error('Erro ao marcar alerta como lido no Supabase:', err);
     }
   }
 
   /**
-   * Marks a specific alert as unread in DB and LocalStorage
+   * Marca um alerta como não lido diretamente no Supabase
    */
   static async markAlertAsUnread(userId: string, alertId: string): Promise<void> {
     try {
-      let readList = await this.getReadAlerts(userId);
-      readList = readList.filter(id => id !== alertId);
-      if (userId) localStorage.setItem(`paxflow_read_alerts_${userId}`, JSON.stringify(readList));
-      localStorage.setItem('paxflow_read_alerts', JSON.stringify(readList));
-
       if (alertId.startsWith('mention-')) {
         const notifId = alertId.replace('mention-', '');
-        await supabase
+        const { error } = await supabase
           .from('notificacoes')
           .update({ lida: false })
           .eq('id', notifId);
+        if (error) throw error;
       }
-
-      if (userId) {
-        try {
-          await supabase
-            .from('inbox_read_items')
-            .delete()
-            .eq('user_id', userId)
-            .eq('alert_id', alertId);
-        } catch (e) {}
-      }
-
       window.dispatchEvent(new CustomEvent('paxflow-inbox-updated'));
     } catch (err) {
-      console.error('Erro ao marcar alerta como não lido no serviço:', err);
+      console.error('Erro ao marcar alerta como não lido no Supabase:', err);
     }
   }
 
   /**
-   * Marks multiple alert IDs as read
+   * Marca múltiplos alertas como lidos em massa diretamente no Supabase
    */
   static async markAllAlertsAsRead(userId: string, alertIds: string[]): Promise<void> {
     try {
-      const readList = await this.getReadAlerts(userId);
-      const updatedSet = new Set([...readList, ...alertIds]);
-      const updatedList = Array.from(updatedSet);
-
-      if (userId) localStorage.setItem(`paxflow_read_alerts_${userId}`, JSON.stringify(updatedList));
-      localStorage.setItem('paxflow_read_alerts', JSON.stringify(updatedList));
-
       const mentionIds = alertIds
         .filter(id => id.startsWith('mention-'))
         .map(id => id.replace('mention-', ''));
 
       if (mentionIds.length > 0) {
-        await supabase
+        const { error } = await supabase
           .from('notificacoes')
           .update({ lida: true })
           .in('id', mentionIds);
+        if (error) throw error;
       }
-
-      if (userId && alertIds.length > 0) {
-        try {
-          const rows = alertIds.map(alert_id => ({
-            user_id: userId,
-            alert_id,
-            read_at: new Date().toISOString()
-          }));
-          await supabase.from('inbox_read_items').upsert(rows);
-        } catch (e) {}
-      }
-
       window.dispatchEvent(new CustomEvent('paxflow-inbox-updated'));
     } catch (err) {
-      console.error('Erro ao marcar alertas como lidos em massa:', err);
+      console.error('Erro ao marcar alertas como lidos em massa no Supabase:', err);
     }
   }
 
@@ -183,7 +171,6 @@ export class InboxService {
     prazoReembolsoDias: number
   ): Promise<AlertItem[]> {
     const list: AlertItem[] = [];
-    const archivedList = this.getArchivedLocalAlerts();
 
     if (!user) {
       return list;
@@ -363,7 +350,7 @@ export class InboxService {
           subject: subject,
           body: body,
           targetId: targetId,
-          arquivado: lem.arquivado,
+          arquivado: Boolean(lem.arquivado),
           consultorId: lem.consultor_id,
           consultorNome: lem.consultor?.nome || 'Consultor',
           createdAt: lem.created_at,
@@ -392,7 +379,6 @@ export class InboxService {
         const passSla = this.checkPassaporteSLA(validade);
         if (passSla.status === 'warning' || passSla.status === 'expired') {
           const uniqueId = `passport-${c.id}`;
-          const isArchived = archivedList.includes(uniqueId);
 
           list.push({
             id: uniqueId,
@@ -404,7 +390,7 @@ export class InboxService {
             subject: `O passaporte do passageiro ${c.nome} está ${passSla.status === 'expired' ? 'expirado' : 'perto de vencer'}.`,
             body: `O passaporte do passageiro <strong>${c.nome}</strong> está ${passSla.status === 'expired' ? '<strong class="text-rose-500">expirado!</strong>' : `próximo ao vencimento (${passSla.days} dias restantes).`}<br><br><strong>Detalhes do Cliente:</strong><br>• E-mail: ${c.email || 'Não cadastrado'}<br>• Telefone: ${c.telefone || 'Não cadastrado'}<br>• Passaporte: ${c.passaporte_numero || 'S/N'}<br>• Vencimento: ${new Date(validade).toLocaleDateString('pt-BR')}<br><br>Recomenda-se contatar o cliente para providenciar a emissão de um novo passaporte para viagens internacionais.`,
             targetId: c.id,
-            arquivado: isArchived,
+            arquivado: false,
             consultorId: c.consultor_responsavel_id || '',
             consultorNome: 'PaxFlow Automático',
             createdAt: c.created_at || new Date().toISOString(),
@@ -446,7 +432,6 @@ export class InboxService {
           const isAtrasado = diasAbertos >= prazoReembolsoDias;
           const isVencendoHoje = diasAbertos === prazoReembolsoDias;
           const uniqueId = `refund-${rem.id}`;
-          const isArchived = archivedList.includes(uniqueId);
           const clienteNome = rem.viagem?.cliente?.nome || 'Passageiro';
           const destino = rem.viagem?.destino || 'Destino';
 
@@ -470,7 +455,7 @@ export class InboxService {
             subject: `Reembolso de ${clienteNome} (${destino}) - ${isAtrasado ? 'PRAZO EXCEDIDO' : 'PRESTES A VENCER'}`,
             body: `O processo de reembolso referente à viagem de <strong>${clienteNome}</strong> para <strong>${destino}</strong> exige atenção da equipe financeira.<br><br>• <strong>Prazo da Agência:</strong> ${prazoReembolsoDias} dias.<br>• <strong>Tempo Decorrido:</strong> ${diasAbertos} dias (${isAtrasado ? `<span class="text-rose-600 font-extrabold">${diasAbertos - prazoReembolsoDias} dias de atraso</span>` : 'Prestes a vencer'}).<br>• <strong>Status Atual:</strong> ${statusText}<br>• <strong>Valor Solicitado:</strong> R$ ${Number(rem.valor_solicitado || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}<br><br><strong>Ação Exigida:</strong> Favor verificar junto ao financeiro ou fornecedor para efetuar a devolução ao cliente e evitar disputas.`,
             targetId: rem.id,
-            arquivado: isArchived,
+            arquivado: false,
             consultorId: consultorId || '',
             consultorNome: 'PaxFlow Automático',
             createdAt: rem.created_at,
@@ -627,7 +612,7 @@ export class InboxService {
               </div>
             `,
             targetId: not.campaign.id,
-            arquivado: not.arquivada,
+            arquivado: Boolean(not.arquivada),
             consultorId: not.user_id,
             consultorNome: 'PaxFlow Gamificação',
             createdAt: not.created_at,
@@ -656,7 +641,7 @@ export class InboxService {
             subject: `De: ${senderName}`,
             body: not.mensagem.conteudo,
             targetId: not.mensagem.id,
-            arquivado: not.arquivada,
+            arquivado: Boolean(not.arquivada),
             consultorId: not.user_id,
             consultorNome: senderName,
             createdAt: not.created_at,
@@ -672,7 +657,7 @@ export class InboxService {
 
         if (!not.comentario) return; // Comentário deleted
 
-        const author = not.comentario.autor || profilesList.find((p: any) => p.id === not.comentario.user_id);
+        const author = not.comentario.autor || profilesList.find((p: any) => p.id === (not.comentario.autor_id || not.comentario.user_id));
         const authorName = author ? author.nome : 'Consultor';
         const authorAvatar = author ? author.avatar_url : undefined;
 
@@ -706,10 +691,10 @@ export class InboxService {
                    [Ver Detalhes do(a) ${itemLabel}]
                  </a>`,
           targetId: not.parent_id,
-          arquivado: not.arquivada,
+          arquivado: Boolean(not.arquivada),
           consultorId: not.user_id,
           consultorNome: authorName,
-          senderId: not.comentario.user_id,
+          senderId: not.comentario.autor_id || not.comentario.user_id || not.comentario.autor?.id,
           createdAt: not.created_at,
           eventDate: not.created_at.split('T')[0]
         });
@@ -853,7 +838,6 @@ export class InboxService {
           if (horasAteIda > -24 && horasAteIda <= 168) {
             const isUrgente = horasAteIda <= 48;
             const uniqueId = `pre-embarque-${v.id}`;
-            const isArchived = archivedList.includes(uniqueId);
             const diasRestantes = Math.max(0, Math.ceil(horasAteIda / 24));
 
             list.push({
@@ -868,7 +852,7 @@ export class InboxService {
                 : `Pré-Embarque: ${clienteNome} viaja para ${destino} em ${diasRestantes} dia(s).`,
               body: `A viagem de <strong>${clienteNome}</strong> com destino a <strong>${destino}</strong> está agendada para <strong>${dataIda.toLocaleDateString('pt-BR')}</strong> (${diasRestantes} dia(s) restante(s)).<br><br>• <strong>Data de Ida:</strong> ${dataIda.toLocaleDateString('pt-BR')}<br>• <strong>Localizador (LOC):</strong> ${v.codigo_localizador || 'Não informado'}<br><br><strong>Checklist de Segurança Operacional:</strong><br>1. Confirmar emissão e envio de todos os vouchers.<br>2. Auxiliar o cliente com o check-in online das companhias aéreas.<br>3. Conferir validade do passaporte, vistos e vacinas em mãos.`,
               targetId: v.id,
-              arquivado: isArchived,
+              arquivado: false,
               consultorId: v.consultor_id || '',
               consultorNome: 'PaxFlow Automático',
               createdAt: v.created_at || new Date().toISOString(),
@@ -890,7 +874,6 @@ export class InboxService {
 
                   if (horasAteIda > 0 && horasAteIda <= 48) {
                     const uniqueId = `pre-embarque-trecho-ida-${v.id}-${p.id}-${idx}`;
-                    const isArchived = archivedList.includes(uniqueId);
 
                     list.push({
                       id: uniqueId,
@@ -902,7 +885,7 @@ export class InboxService {
                       subject: `Embarque de ${clienteNome}: ${labelTrecho} em breve!`,
                       body: `A ida do trecho aéreo <strong>${labelTrecho}</strong> do passageiro <strong>${clienteNome}</strong> está agendada para iniciar em menos de 48 horas.<br><br>• <strong>Data de Ida do Trecho:</strong> ${dataIda.toLocaleDateString('pt-BR')}<br>• <strong>Localizador (LOC):</strong> ${p.codigo_reserva || 'Não informado'}<br><br><strong>Ações recomendadas:</strong><br>1. Enviar os vouchers de voo correspondentes.<br>2. Auxiliar o cliente com o check-in online na companhia aérea.<br>3. Confirmar se a documentação necessária de embarque está em mãos.`,
                       targetId: v.id,
-                      arquivado: isArchived,
+                      arquivado: false,
                       consultorId: v.consultor_id || '',
                       consultorNome: 'PaxFlow Automático',
                       createdAt: v.created_at || new Date().toISOString(),
@@ -919,7 +902,6 @@ export class InboxService {
 
                   if (horasAteVolta > 0 && horasAteVolta <= 48) {
                     const uniqueId = `pre-embarque-trecho-volta-${v.id}-${p.id}-${idx}`;
-                    const isArchived = archivedList.includes(uniqueId);
 
                     list.push({
                       id: uniqueId,
@@ -931,7 +913,7 @@ export class InboxService {
                       subject: `Retorno de ${clienteNome}: ${labelTrecho} em breve!`,
                       body: `O retorno do trecho aéreo <strong>${labelTrecho}</strong> do passageiro <strong>${clienteNome}</strong> está agendado para iniciar em menos de 48 horas.<br><br>• <strong>Data de Volta do Trecho:</strong> ${dataVolta.toLocaleDateString('pt-BR')}<br>• <strong>Localizador (LOC):</strong> ${p.codigo_reserva || 'Não informado'}<br><br><strong>Ações recomendadas:</strong><br>1. Enviar os vouchers de voo correspondentes.<br>2. Auxiliar o cliente com o check-in online na companhia aérea.<br>3. Confirmar se a documentação necessária de embarque está em mãos.`,
                       targetId: v.id,
-                      arquivado: isArchived,
+                      arquivado: false,
                       consultorId: v.consultor_id || '',
                       consultorNome: 'PaxFlow Automático',
                       createdAt: v.created_at || new Date().toISOString(),
@@ -958,7 +940,6 @@ export class InboxService {
           // Disparar se já se passaram 24h da volta e estamos dentro de 7 dias pós-volta
           if (diasAposVolta >= 0 && diasAposVolta <= 7) {
             const uniqueId = `pos-viagem-nps-${v.id}`;
-            const isArchived = archivedList.includes(uniqueId);
 
             list.push({
               id: uniqueId,
@@ -970,7 +951,7 @@ export class InboxService {
               subject: `Coletar NPS do cliente ${clienteNome} pós-retorno de ${destino}`,
               body: `O passageiro <strong>${clienteNome}</strong> retornou de sua viagem para <strong>${destino}</strong>.<br><br>• <strong>Data de Retorno:</strong> ${dataVolta.toLocaleDateString('pt-BR')}<br><br>Esta é a hora de ouro para medir a satisfação do cliente! Envie a pesquisa NPS para entender como foi a experiência e fortalecer o relacionamento.`,
               targetId: v.id,
-              arquivado: isArchived,
+              arquivado: false,
               consultorId: v.consultor_id || '',
               consultorNome: 'PaxFlow Automático',
               createdAt: v.created_at || new Date().toISOString(),
@@ -1186,7 +1167,6 @@ export class InboxService {
             const isBalcao = sol.tipo === 'atendimento_balcao';
             const isDecisionItem = !isBalcao && Boolean(isAdmin && (sol.status === 'aprovado' || sol.status === 'recusado'));
             const uniqueId = `escala-sol-${sol.id}-${isDecisionItem ? 'decisao' : (isSentItem ? 'sent' : 'inbox')}`;
-            const isArchived = archivedList.includes(uniqueId);
 
             list.push({
               id: uniqueId,
@@ -1198,7 +1178,7 @@ export class InboxService {
               subject: cardSubject,
               body: cardBody,
               targetId: sol.id,
-              arquivado: isArchived,
+              arquivado: false,
               isSent: isSentItem,
               isDecision: isDecisionItem,
               consultorId: (isBalcao ? sol.destinatario_id : sol.solicitante_id) || '',

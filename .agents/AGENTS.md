@@ -11,3 +11,10 @@
 
 - **IDIOMA EXCLUSIVO (PT-BR)**: O assistente DEVE responder **ESTRITAMENTE EM PORTUGUÊS DO BRASIL** em 100% das suas mensagens.
 - **PROIBIÇÃO DE INGLÊS**: NUNCA usar inglês, nem misturar nomes de variáveis em inglês no texto explicativo. Toda a comunicação deve ser em português claro, natural e direto.
+
+## Premissa Arquitetural: Banco de Dados é a Única Fonte da Verdade
+
+- **PROIBIÇÃO TOTAL DE LOCALSTORAGE PARA DADOS DE NEGÓCIO**: NUNCA utilizar `localStorage` para persistir, mascarar ou cachear estados de entidades, mensagens, alertas, status de lido/não lido, status de arquivado ou regras de negócio.
+- **CONEXÃO ESTÁVEL OBRIGATÓRIA**: Conexão estável com a internet é premissa mandatória da implantação do PaxFlow. Ninguém usa o sistema em deslocamento ou offline.
+- **SUPABASE É O ÚNICO RESPONSÁVEL PELA PERSISTÊNCIA**: Toda alteração de estado (arquivar, desarquivar, marcar lido, excluir, criar, editar) DEVE ser gravada, consultada e persistida diretamente nas tabelas do Supabase. Se não houver tabela ou coluna no banco, a tabela/coluna deve ser criada ou utilizada adequadamente, jamais simulada via localStorage.
+

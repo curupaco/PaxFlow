@@ -57,8 +57,12 @@ export class NewMessageModal {
 
     // Pre-populate if reply
     if (options.replyTo) {
-      const originalSender = profiles.find(p => p.id === options.replyTo?.senderId);
-      if (originalSender) {
+      let originalSender = profiles.find(p => p.id === options.replyTo?.senderId);
+      if (!originalSender && options.replyTo.senderNome) {
+        const cleanName = options.replyTo.senderNome.trim().toLowerCase();
+        originalSender = profiles.find(p => p.nome.trim().toLowerCase() === cleanName);
+      }
+      if (originalSender && originalSender.id !== currentUser.id) {
         paraSelected.push(originalSender);
       }
     }

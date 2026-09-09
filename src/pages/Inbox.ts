@@ -126,7 +126,12 @@ export class InboxPage {
       },
       onBulkArchive: async () => {
         const ids = Array.from(this.selectedAlertIds);
-        ids.forEach(id => this.toggleLocalAlertArchive(id, true));
+        for (const id of ids) {
+          const alert = this.filteredAlerts.find(a => a.id === id) || this.alerts.find(a => a.id === id);
+          if (alert) {
+            await InboxService.archiveAlert(alert, true);
+          }
+        }
         this.selectedAlertIds.clear();
         this.showToast(`${ids.length} mensagem(ns) arquivada(s).`, 'success');
         await this.loadAndBuildAlerts();
@@ -454,36 +459,6 @@ export class InboxPage {
   }
 
   /**
-   * Retrieves list of archived alert IDs
-   */
-  private getArchivedLocalAlerts(): string[] {
-    try {
-      const val = localStorage.getItem('paxflow_archived_alerts');
-      return val ? JSON.parse(val) : [];
-    } catch {
-      return [];
-    }
-  }
-
-  /**
-   * Archives or unarchives a local alert item ID
-   */
-  private toggleLocalAlertArchive(id: string, shouldArchive: boolean): void {
-    try {
-      const list = this.getArchivedLocalAlerts();
-      if (shouldArchive) {
-        if (!list.includes(id)) list.push(id);
-      } else {
-        const index = list.indexOf(id);
-        if (index > -1) list.splice(index, 1);
-      }
-      localStorage.setItem('paxflow_archived_alerts', JSON.stringify(list));
-    } catch (err) {
-      console.error('Erro ao gerenciar arquivo local:', err);
-    }
-  }
-
-  /**
    * Marks a specific alert ID as read
    */
   private async markAlertAsRead(id: string): Promise<void> {
@@ -522,30 +497,13 @@ export class InboxPage {
    */
   private async handleQuickArchive(alertItem: AlertItem): Promise<void> {
     try {
-      if (alertItem.type === 'manual') {
-        const tableId = alertItem.id.replace('manual-', '');
-        const { error } = await supabase
-          .from('lembretes')
-          .update({ arquivado: !alertItem.arquivado })
-          .eq('id', tableId);
-
-        if (error) throw error;
-      } else if ((alertItem.type === 'mention' || alertItem.type === 'campaign_notification' || alertItem.type === 'direct_message') && alertItem.id.startsWith('mention-')) {
-        const tableId = alertItem.id.replace('mention-', '');
-        const { error } = await supabase
-          .from('notificacoes')
-          .update({ arquivada: !alertItem.arquivado })
-          .eq('id', tableId);
-
-        if (error) throw error;
-      } else {
-        this.toggleLocalAlertArchive(alertItem.id, !alertItem.arquivado);
-      }
+      const shouldArchive = !alertItem.arquivado;
+      await InboxService.archiveAlert(alertItem, shouldArchive);
 
       await this.loadAndBuildAlerts();
       this.render();
       this.setupEventListeners();
-      this.showToast(alertItem.arquivado ? 'Mensagem restaurada!' : 'Mensagem arquivada com sucesso!', 'success');
+      this.showToast(shouldArchive ? 'Mensagem arquivada com sucesso!' : 'Mensagem restaurada!', 'success');
     } catch (err: any) {
       console.error('Erro ao atualizar mensagem:', err);
       this.showToast('Erro ao atualizar mensagem.', 'error', err);
@@ -1302,37 +1260,21 @@ export class InboxPage {
   private openEmailReaderModal(item: AlertItem): void {
     EmailReaderModal.open(item, {
       perfil: this.perfil,
+      user: this.user,
       onMarkUnread: async (clickedItem: AlertItem) => {
         await this.markAlertAsUnread(clickedItem.id);
       },
       onArchive: async (clickedItem) => {
         try {
-          if (clickedItem.type === 'manual') {
-            const tableId = clickedItem.id.replace('manual-', '');
-            const { error } = await supabase
-              .from('lembretes')
-              .update({ arquivado: !clickedItem.arquivado })
-              .eq('id', tableId);
-
-            if (error) throw error;
-          } else if ((clickedItem.type === 'mention' || clickedItem.type === 'direct_message' || clickedItem.type === 'campaign_notification') && clickedItem.id.startsWith('mention-')) {
-            const tableId = clickedItem.id.replace('mention-', '');
-            const { error } = await supabase
-              .from('notificacoes')
-              .update({ arquivada: !clickedItem.arquivado })
-              .eq('id', tableId);
-
-            if (error) throw error;
-          } else {
-            this.toggleLocalAlertArchive(clickedItem.id, !clickedItem.arquivado);
-          }
+          const shouldArchive = !clickedItem.arquivado;
+          await InboxService.archiveAlert(clickedItem, shouldArchive);
 
           // Reload data and redraw page
           await this.loadAndBuildAlerts();
           this.render();
           this.setupEventListeners();
 
-          this.showToast(clickedItem.arquivado ? 'Mensagem restaurada!' : 'Mensagem arquivada!', 'success');
+          this.showToast(shouldArchive ? 'Mensagem arquivada!' : 'Mensagem restaurada!', 'success');
         } catch (err: any) {
           console.error('Erro ao arquivar/restaurar mensagem:', err);
           this.showToast('Erro ao atualizar status de arquivamento da mensagem.', 'error', err);
@@ -1379,8 +1321,7 @@ export class InboxPage {
             if (error) throw error;
           } else {
             // Alertas gerados pelo sistema (passport, refund, pre-embarque, pos-viagem-nps)
-            // Não são linhas físicas da tabela notificacoes; dispensar/arquivar
-            this.toggleLocalAlertArchive(clickedItem.id, true);
+            await InboxService.archiveAlert(clickedItem, true);
           }
 
           // Reload data and redraw page
@@ -1400,15 +1341,24 @@ export class InboxPage {
         this.setupEventListeners();
       },
       onReply: (replyItem) => {
-        if (replyItem.senderId) {
-          this.openNewMessageModal({
-            senderId: replyItem.senderId,
-            senderNome: replyItem.sender,
-            assunto: replyItem.title,
-            messageId: replyItem.targetId,
-            threadId: replyItem.threadId
-          });
+        let targetSenderId = replyItem.senderId;
+        if (!targetSenderId && replyItem.sender) {
+          const cleanSenderName = replyItem.sender.trim().toLowerCase();
+          const matchedProfile = (this.allConsultants || this.consultants || []).find(c => 
+            c.nome.trim().toLowerCase() === cleanSenderName
+          );
+          if (matchedProfile) {
+            targetSenderId = matchedProfile.id;
+          }
         }
+
+        this.openNewMessageModal({
+          senderId: targetSenderId || '',
+          senderNome: replyItem.sender || 'Consultor',
+          assunto: replyItem.title || 'Mensagem Direta',
+          messageId: replyItem.targetId,
+          threadId: replyItem.threadId
+        });
       }
     });
   }

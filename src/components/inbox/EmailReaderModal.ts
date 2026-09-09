@@ -286,28 +286,59 @@ export class EmailReaderModal {
     });
 
     // Reply handler
-    document.getElementById('modal-reply-btn')?.addEventListener('click', () => {
-      closeModal(true);
+    document.getElementById('modal-reply-btn')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      let replyPartnerId = item.senderId;
+      let replyPartnerName = item.sender;
+      let replyTitle = item.title;
+      let replyTargetId = item.targetId;
+      let replyThreadId = item.threadId;
+
+      const currentUserId = options.user?.id || (options.perfil as any)?.id;
+
+      if (threadMessages && threadMessages.length > 0) {
+        // Encontra a mensagem mais recente enviada pela OUTRA pessoa (não pelo usuário logado)
+        const partnerMsg = [...threadMessages].reverse().find(m => m.remetente_id && m.remetente_id !== currentUserId) || threadMessages[0];
+        if (partnerMsg) {
+          replyPartnerId = (partnerMsg.remetente_id !== currentUserId) ? partnerMsg.remetente_id : item.senderId;
+          replyPartnerName = partnerMsg.remetente?.nome || item.sender;
+          replyTitle = partnerMsg.assunto || item.title;
+          replyTargetId = partnerMsg.id;
+          replyThreadId = partnerMsg.thread_id || item.threadId;
+        }
+      }
+
+      // Fecha o leitor imediatamente para não sobrepor transições
+      modalOverlay.remove();
+
       if (options.onReply) {
-        if (lastMessage) {
+        try {
           options.onReply({
             ...item,
-            targetId: lastMessage.id, // parent message id
-            senderId: lastMessage.remetente_id,
-            sender: lastMessage.remetente?.nome || item.sender,
-            title: lastMessage.assunto || item.title
+            targetId: replyTargetId,
+            senderId: replyPartnerId,
+            sender: replyPartnerName,
+            title: replyTitle,
+            threadId: replyThreadId
           });
-        } else {
-          options.onReply(item);
+        } catch (err) {
+          console.error('Erro ao abrir resposta da mensagem:', err);
         }
       }
     });
 
     // Archive handlers
-    const handleArchiveClick = async () => {
+    const handleArchiveClick = async (e?: Event) => {
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
       try {
-        await options.onArchive(item);
-        closeModal(true); // Don't trigger standard onClose callback since parent will reload/redraw itself
+        const itemCopy = { ...item };
+        modalOverlay.remove();
+        await options.onArchive(itemCopy);
       } catch (err: any) {
         showCustomAlert(`Erro ao arquivar mensagem:\n\n${err.message || err}`, 'Erro de Ação');
       }
