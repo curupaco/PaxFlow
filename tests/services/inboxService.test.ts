@@ -11,30 +11,46 @@ vi.mock('../../src/services/supabase', () => {
   };
 });
 
-describe('InboxService Subcutaneous Tests', () => {
+function createQueryMock(data: any = [], error: any = null) {
+  const result = { data, error };
+  const mock: any = {
+    select: vi.fn(() => mock),
+    order: vi.fn(() => mock),
+    not: vi.fn(() => mock),
+    eq: vi.fn(() => mock),
+    or: vi.fn(() => mock),
+    maybeSingle: vi.fn(() => Promise.resolve(result)),
+    insert: vi.fn(() => Promise.resolve(result)),
+    update: vi.fn(() => mock),
+    upsert: vi.fn(() => Promise.resolve(result)),
+    then(onFulfilled: any, onRejected: any) {
+      return Promise.resolve(result).then(onFulfilled, onRejected);
+    }
+  };
+  return mock;
+}
+
+describe('InboxService Subcutaneous Flow Tests', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
+
+  // ==========================================
+  // FLUXO 1: LEITURA E PERSISTÊNCIA DE ALERTAS
+  // ==========================================
 
   it('deve mapear corretamente variantes de IDs de alertas lidos a partir de notificacoes', async () => {
     // Setup
     const userId = 'user-uuid-1234';
     const targetItemId = 'c112f72b-5bde-4559-95b2-2a484ce10289';
-    const mockSelect = vi.fn().mockReturnThis();
-    const mockEqUser = vi.fn().mockReturnThis();
-    const mockEqLida = vi.fn().mockResolvedValue({
-      data: [
-        { id: 'notif-uuid-999', item_id: targetItemId, parent_id: targetItemId }
-      ],
-      error: null
-    });
 
-    (supabase.from as any).mockReturnValue({
-      select: mockSelect,
-      eq: vi.fn((col, val) => {
-        if (col === 'user_id') return { eq: mockEqLida };
-        return mockEqLida;
-      })
+    (supabase.from as any).mockImplementation((table: string) => {
+      if (table === 'notificacoes') {
+        return createQueryMock([
+          { id: 'notif-uuid-999', item_id: targetItemId, parent_id: targetItemId }
+        ]);
+      }
+      return createQueryMock([]);
     });
 
     // Action
@@ -46,23 +62,22 @@ describe('InboxService Subcutaneous Tests', () => {
     expect(readIds).toContain(`escala-sol-${targetItemId}-decisao`);
     expect(readIds).toContain(`dm-direct-${targetItemId}`);
     expect(readIds).toContain(`manual-${targetItemId}`);
+    expect(readIds).toContain(`passport-${targetItemId}`);
+    expect(readIds).toContain(`refund-${targetItemId}`);
   });
 
-  it('deve inserir notificacao de leitura quando alerta de escala for lido pela primeira vez', async () => {
+  it('deve inserir notificacao de leitura no Supabase para alerta de escala sem registro previo', async () => {
     // Setup
     const userId = 'd11433e1-06c5-4002-be7e-0e2c44bc5782';
     const targetItemId = 'c112f72b-5bde-4559-95b2-2a484ce10289';
     const alertId = `escala-sol-${targetItemId}-inbox`;
 
     const mockInsert = vi.fn().mockResolvedValue({ data: null, error: null });
-    const mockMaybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
+    const queryMock = createQueryMock(null);
+    queryMock.maybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
+    queryMock.insert = mockInsert;
 
-    (supabase.from as any).mockReturnValue({
-      select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      maybeSingle: mockMaybeSingle,
-      insert: mockInsert
-    });
+    (supabase.from as any).mockReturnValue(queryMock);
 
     // Action
     await InboxService.markAlertAsRead(userId, alertId);
@@ -72,12 +87,13 @@ describe('InboxService Subcutaneous Tests', () => {
       expect.objectContaining({
         user_id: userId,
         item_id: targetItemId,
-        lida: true
+        lida: true,
+        arquivada: false
       })
     );
   });
 
-  it('deve atualizar notificacao existente para lida = false ao marcar como nao lida', async () => {
+  it('deve atualizar notificacao para lida = false ao marcar como nao lido', async () => {
     // Setup
     const userId = 'd11433e1-06c5-4002-be7e-0e2c44bc5782';
     const targetItemId = '55d071a9-8210-45db-9637-6877a4d3f9fa';
@@ -87,17 +103,14 @@ describe('InboxService Subcutaneous Tests', () => {
     const mockEqId = vi.fn().mockResolvedValue({ data: null, error: null });
     mockUpdate.mockReturnValue({ eq: mockEqId });
 
-    const mockMaybeSingle = vi.fn().mockResolvedValue({
+    const queryMock = createQueryMock(null);
+    queryMock.maybeSingle = vi.fn().mockResolvedValue({
       data: { id: 'existing-notif-uuid' },
       error: null
     });
+    queryMock.update = mockUpdate;
 
-    (supabase.from as any).mockReturnValue({
-      select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      maybeSingle: mockMaybeSingle,
-      update: mockUpdate
-    });
+    (supabase.from as any).mockReturnValue(queryMock);
 
     // Action
     await InboxService.markAlertAsUnread(userId, alertId);
@@ -108,6 +121,7 @@ describe('InboxService Subcutaneous Tests', () => {
         lida: false
       })
     );
+    expect(mockEqId).toHaveBeenCalledWith('id', 'existing-notif-uuid');
   });
 
   it('deve processar marcacao em lote para multiplos alertas de tipos distintos', async () => {
@@ -127,5 +141,249 @@ describe('InboxService Subcutaneous Tests', () => {
     expect(markSingleSpy).toHaveBeenCalledTimes(2);
     expect(markSingleSpy).toHaveBeenCalledWith(userId, ids[0]);
     expect(markSingleSpy).toHaveBeenCalledWith(userId, ids[1]);
+  });
+
+  // ==========================================
+  // FLUXO 2: ARQUIVAMENTO E DESARQUIVAMENTO
+  // ==========================================
+
+  it('deve arquivar lembrete manual persistindo na tabela lembretes', async () => {
+    // Setup
+    const reminderUUID = '88888888-4444-4444-4444-121212121212';
+    const mockUpdate = vi.fn().mockReturnThis();
+    const mockEq = vi.fn().mockReturnThis();
+    const mockSelect = vi.fn().mockResolvedValue({ data: [{ id: reminderUUID }], error: null });
+
+    (supabase.from as any).mockImplementation((table: string) => {
+      if (table === 'lembretes') {
+        return {
+          update: mockUpdate,
+          eq: mockEq,
+          select: mockSelect
+        };
+      }
+      return createQueryMock([]);
+    });
+
+    // Action
+    const result = await InboxService.archiveAlert({ id: `manual-${reminderUUID}`, type: 'manual' }, true);
+
+    // Assert
+    expect(mockUpdate).toHaveBeenCalledWith({ arquivado: true });
+    expect(mockEq).toHaveBeenCalledWith('id', reminderUUID);
+    expect(result).toBe(true);
+  });
+
+  it('deve arquivar notificacao de mencao persistindo na tabela notificacoes', async () => {
+    // Setup
+    const notifUUID = '77777777-3333-3333-3333-111111111111';
+    const mockUpdate = vi.fn().mockReturnThis();
+    const mockEq = vi.fn().mockReturnThis();
+    const mockSelect = vi.fn().mockResolvedValue({ data: [{ id: notifUUID }], error: null });
+
+    (supabase.from as any).mockImplementation((table: string) => {
+      if (table === 'notificacoes') {
+        return {
+          update: mockUpdate,
+          eq: mockEq,
+          select: mockSelect
+        };
+      }
+      return createQueryMock([]);
+    });
+
+    // Action
+    const result = await InboxService.archiveAlert({ id: `mention-${notifUUID}`, type: 'mention' }, true);
+
+    // Assert
+    expect(mockUpdate).toHaveBeenCalledWith({ arquivada: true });
+    expect(mockEq).toHaveBeenCalledWith('id', notifUUID);
+    expect(result).toBe(true);
+  });
+
+  it('deve sincronizar arquivamento de mensagem direta via upsert em notificacoes', async () => {
+    // Setup
+    const msgUUID = '66666666-2222-2222-2222-000000000000';
+    const mockUpsert = vi.fn().mockResolvedValue({ error: null });
+
+    (supabase.from as any).mockImplementation((table: string) => {
+      if (table === 'notificacoes') {
+        return { upsert: mockUpsert };
+      }
+      return createQueryMock([]);
+    });
+
+    // Action
+    const result = await InboxService.archiveAlert({ id: `dm-direct-${msgUUID}` }, true);
+
+    // Assert
+    expect(mockUpsert).toHaveBeenCalledWith({
+      item_id: msgUUID,
+      parent_id: msgUUID,
+      tipo_item: 'mensagem',
+      arquivada: true
+    });
+    expect(result).toBe(true);
+  });
+
+  // ==========================================
+  // FLUXO 3: COMPILAÇÃO E CARGA DE ALERTAS
+  // ==========================================
+
+  it('deve retornar lista vazia se usuario nao for fornecido em loadAndBuildAlerts', async () => {
+    // Setup
+    const user = null;
+    const perfil = null;
+
+    // Action
+    const alerts = await InboxService.loadAndBuildAlerts(user, perfil, 15);
+
+    // Assert
+    expect(alerts).toEqual([]);
+  });
+
+  it('deve compilar alertas de SLA de passaporte (expirado e proximo ao vencimento)', async () => {
+    // Setup
+    const user = { id: 'admin-user-id' };
+    const perfil = { id: 'admin-user-id', role: 'admin', nome: 'Administrador' } as any;
+
+    const dataOntem = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const dataEm30Dias = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+
+    (supabase.from as any).mockImplementation((table: string) => {
+      if (table === 'clientes') {
+        return createQueryMock([
+          {
+            id: 'cli-expired-1',
+            nome: 'Passageiro Vencido',
+            passaporte_validade: dataOntem,
+            consultor_responsavel_id: 'admin-user-id'
+          },
+          {
+            id: 'cli-warning-2',
+            nome: 'Passageiro Alerta',
+            passaporte_validade: dataEm30Dias,
+            consultor_responsavel_id: 'admin-user-id'
+          }
+        ]);
+      }
+      return createQueryMock([]);
+    });
+
+    // Action
+    const alerts = await InboxService.loadAndBuildAlerts(user, perfil, 15);
+    const passAlerts = alerts.filter(a => a.type === 'passport');
+
+    // Assert
+    expect(passAlerts.length).toBe(2);
+    expect(passAlerts[0].subject).toContain('expirado');
+    expect(passAlerts[1].subject).toContain('perto de vencer');
+  });
+
+  it('deve compilar alertas de SLA de reembolso respeitando o prazo configurado', async () => {
+    // Setup
+    const user = { id: 'consultor-user-id' };
+    const perfil = { id: 'consultor-user-id', role: 'consultor', nome: 'Consultor Teste' } as any;
+    const prazoDias = 10;
+    const dataCriacaoAtrasado = new Date(Date.now() - 12 * 24 * 60 * 60 * 1000).toISOString();
+
+    (supabase.from as any).mockImplementation((table: string) => {
+      if (table === 'reembolsos') {
+        return createQueryMock([
+          {
+            id: 'rem-uuid-1',
+            created_at: dataCriacaoAtrasado,
+            status: 'solicitado',
+            valor_solicitado: 1500,
+            consultor_solicitante_id: 'consultor-user-id',
+            viagem: {
+              consultor_id: 'consultor-user-id',
+              destino: 'Paris',
+              cliente: { nome: 'Maria Silva' }
+            }
+          }
+        ]);
+      }
+      return createQueryMock([]);
+    });
+
+    // Action
+    const alerts = await InboxService.loadAndBuildAlerts(user, perfil, prazoDias);
+    const refundAlert = alerts.find(a => a.type === 'refund');
+
+    // Assert
+    expect(refundAlert).toBeDefined();
+    expect(refundAlert?.title).toContain('CRÍTICO - Reembolso VENCIDO!');
+    expect(refundAlert?.targetId).toBe('rem-uuid-1');
+  });
+
+  it('deve compilar solicitacoes de escala pendentes para aprovacao do administrador', async () => {
+    // Setup
+    const user = { id: 'admin-id' };
+    const perfil = { id: 'admin-id', role: 'admin', nome: 'Admin Chefe' } as any;
+
+    (supabase.from as any).mockImplementation((table: string) => {
+      if (table === 'escala_solicitacoes') {
+        return createQueryMock([
+          {
+            id: 'sol-escala-uuid-1',
+            tipo: 'folga',
+            status: 'pendente_admin',
+            solicitante_id: 'consultor-carlos-id',
+            solicitante_nome: 'Carlos',
+            motivo: 'Compromisso pessoal',
+            data_origem: '2026-09-20',
+            created_at: new Date().toISOString()
+          }
+        ]);
+      }
+      return createQueryMock([]);
+    });
+
+    // Action
+    const alerts = await InboxService.loadAndBuildAlerts(user, perfil, 15);
+    const escalaAlert = alerts.find(a => a.id === 'escala-sol-sol-escala-uuid-1-inbox');
+
+    // Assert
+    expect(escalaAlert).toBeDefined();
+    expect(escalaAlert?.type).toBe('escala_solicitacao');
+    expect(escalaAlert?.title).toContain('Aprovação de Escala: Folga');
+    expect(escalaAlert?.isDecision).toBe(false);
+  });
+
+  it('deve compilar notificacoes de atendimento presencial de balcao (co-piloto)', async () => {
+    // Setup
+    const user = { id: 'consultor-titular-id' };
+    const perfil = { id: 'consultor-titular-id', role: 'consultor', nome: 'Thiago Costa' } as any;
+
+    (supabase.from as any).mockImplementation((table: string) => {
+      if (table === 'escala_solicitacoes') {
+        return createQueryMock([
+          {
+            id: 'sol-balcao-uuid-2',
+            tipo: 'atendimento_balcao',
+            status: 'aprovado',
+            solicitante_id: 'outro-consultor-id',
+            solicitante_nome: 'Marina',
+            destinatario_id: 'consultor-titular-id',
+            destinatario_nome: 'Thiago Costa',
+            motivo: 'Atendimento presencial ao cliente Marcelo',
+            data_origem: '2026-09-09',
+            created_at: new Date().toISOString()
+          }
+        ]);
+      }
+      return createQueryMock([]);
+    });
+
+    // Action
+    const alerts = await InboxService.loadAndBuildAlerts(user, perfil, 15);
+    const balcaoAlert = alerts.find(a => a.type === 'atendimento_balcao');
+
+    // Assert
+    expect(balcaoAlert).toBeDefined();
+    expect(balcaoAlert?.title).toContain('Atendimento no Balcão (Co-Piloto)');
+    expect(balcaoAlert?.sender).toBe('Marina');
+    expect(balcaoAlert?.isSent).toBe(false);
   });
 });
