@@ -96,6 +96,11 @@ export class InboxService {
     }
   }
 
+  private static extractUUIDFromAlertId(alertId: string): string | null {
+    const match = alertId.match(/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})/);
+    return match ? match[1] : null;
+  }
+
   /**
    * Consulta os alertas lidos diretamente do Supabase (tabela notificacoes e mensagens_diretas)
    */
@@ -112,19 +117,34 @@ export class InboxService {
         console.warn('Erro ao consultar notificações lidas no Supabase:', error.message);
       }
 
-      const readIds = (notifRead || []).map(n => `mention-${n.id}`);
+      const readIds = new Set<string>();
 
-      // Mapear também IDs diretos de mensagens marcadas como lidas
       (notifRead || []).forEach(n => {
+        if (n.id) {
+          readIds.add(`mention-${n.id}`);
+        }
         if (n.item_id) {
-          readIds.push(`dm-direct-${n.item_id}`);
+          readIds.add(`dm-direct-${n.item_id}`);
+          readIds.add(`mention-dm-direct-${n.item_id}`);
+          readIds.add(`escala-sol-${n.item_id}-inbox`);
+          readIds.add(`escala-sol-${n.item_id}-sent`);
+          readIds.add(`escala-sol-${n.item_id}-decisao`);
+          readIds.add(`passport-${n.item_id}`);
+          readIds.add(`refund-${n.item_id}`);
+          readIds.add(`manual-${n.item_id}`);
+          readIds.add(`pre-embarque-${n.item_id}`);
+          readIds.add(`pos-viagem-nps-${n.item_id}`);
         }
         if (n.parent_id) {
-          readIds.push(`dm-direct-${n.parent_id}`);
+          readIds.add(`dm-direct-${n.parent_id}`);
+          readIds.add(`mention-dm-direct-${n.parent_id}`);
+          readIds.add(`escala-sol-${n.parent_id}-inbox`);
+          readIds.add(`escala-sol-${n.parent_id}-sent`);
+          readIds.add(`escala-sol-${n.parent_id}-decisao`);
         }
       });
 
-      return Array.from(new Set(readIds));
+      return Array.from(readIds);
     } catch (e) {
       console.error('Exceção ao buscar alertas lidos no Supabase:', e);
       return [];
@@ -135,21 +155,45 @@ export class InboxService {
    * Marca um alerta como lido diretamente no Supabase
    */
   static async markAlertAsRead(userId: string, alertId: string): Promise<void> {
+    if (!userId || !alertId) return;
     try {
-      if (alertId.startsWith('mention-')) {
+      if (alertId.startsWith('mention-') && !alertId.startsWith('mention-dm-direct-')) {
         const notifId = alertId.replace('mention-', '');
-        const { error } = await supabase
-          .from('notificacoes')
-          .update({ lida: true })
-          .eq('id', notifId);
-        if (error) throw error;
-      } else if (alertId.startsWith('dm-direct-')) {
-        const msgId = alertId.replace('dm-direct-', '');
-        await supabase
-          .from('notificacoes')
-          .update({ lida: true })
-          .eq('user_id', userId)
-          .eq('item_id', msgId);
+        if (this.extractUUIDFromAlertId(notifId)) {
+          const { error } = await supabase
+            .from('notificacoes')
+            .update({ lida: true })
+            .eq('id', notifId);
+          if (error) throw error;
+        }
+      } else {
+        const targetUUID = this.extractUUIDFromAlertId(alertId);
+        if (targetUUID) {
+          const { data: existing } = await supabase
+            .from('notificacoes')
+            .select('id')
+            .eq('user_id', userId)
+            .eq('item_id', targetUUID)
+            .maybeSingle();
+
+          if (existing?.id) {
+            await supabase
+              .from('notificacoes')
+              .update({ lida: true })
+              .eq('id', existing.id);
+          } else {
+            await supabase
+              .from('notificacoes')
+              .insert({
+                user_id: userId,
+                tipo_item: 'mensagem',
+                item_id: targetUUID,
+                parent_id: targetUUID,
+                lida: true,
+                arquivada: false
+              });
+          }
+        }
       }
       window.dispatchEvent(new CustomEvent('paxflow-inbox-updated'));
     } catch (err) {
@@ -161,21 +205,45 @@ export class InboxService {
    * Marca um alerta como não lido diretamente no Supabase
    */
   static async markAlertAsUnread(userId: string, alertId: string): Promise<void> {
+    if (!userId || !alertId) return;
     try {
-      if (alertId.startsWith('mention-')) {
+      if (alertId.startsWith('mention-') && !alertId.startsWith('mention-dm-direct-')) {
         const notifId = alertId.replace('mention-', '');
-        const { error } = await supabase
-          .from('notificacoes')
-          .update({ lida: false })
-          .eq('id', notifId);
-        if (error) throw error;
-      } else if (alertId.startsWith('dm-direct-')) {
-        const msgId = alertId.replace('dm-direct-', '');
-        await supabase
-          .from('notificacoes')
-          .update({ lida: false })
-          .eq('user_id', userId)
-          .eq('item_id', msgId);
+        if (this.extractUUIDFromAlertId(notifId)) {
+          const { error } = await supabase
+            .from('notificacoes')
+            .update({ lida: false })
+            .eq('id', notifId);
+          if (error) throw error;
+        }
+      } else {
+        const targetUUID = this.extractUUIDFromAlertId(alertId);
+        if (targetUUID) {
+          const { data: existing } = await supabase
+            .from('notificacoes')
+            .select('id')
+            .eq('user_id', userId)
+            .eq('item_id', targetUUID)
+            .maybeSingle();
+
+          if (existing?.id) {
+            await supabase
+              .from('notificacoes')
+              .update({ lida: false })
+              .eq('id', existing.id);
+          } else {
+            await supabase
+              .from('notificacoes')
+              .insert({
+                user_id: userId,
+                tipo_item: 'mensagem',
+                item_id: targetUUID,
+                parent_id: targetUUID,
+                lida: false,
+                arquivada: false
+              });
+          }
+        }
       }
       window.dispatchEvent(new CustomEvent('paxflow-inbox-updated'));
     } catch (err) {
@@ -187,31 +255,11 @@ export class InboxService {
    * Marca múltiplos alertas como lidos em massa diretamente no Supabase
    */
   static async markAllAlertsAsRead(userId: string, alertIds: string[]): Promise<void> {
+    if (!userId || !alertIds || alertIds.length === 0) return;
     try {
-      const mentionIds = alertIds
-        .filter(id => id.startsWith('mention-'))
-        .map(id => id.replace('mention-', ''));
-
-      if (mentionIds.length > 0) {
-        const { error } = await supabase
-          .from('notificacoes')
-          .update({ lida: true })
-          .in('id', mentionIds);
-        if (error) throw error;
+      for (const alertId of alertIds) {
+        await this.markAlertAsRead(userId, alertId);
       }
-
-      const directIds = alertIds
-        .filter(id => id.startsWith('dm-direct-'))
-        .map(id => id.replace('dm-direct-', ''));
-
-      if (directIds.length > 0) {
-        await supabase
-          .from('notificacoes')
-          .update({ lida: true })
-          .eq('user_id', userId)
-          .in('item_id', directIds);
-      }
-
       window.dispatchEvent(new CustomEvent('paxflow-inbox-updated'));
     } catch (err) {
       console.error('Erro ao marcar alertas como lidos em massa no Supabase:', err);
@@ -747,7 +795,7 @@ export class InboxService {
           const recipientsHtml = `Para: ${recipientName}`;
 
           list.push({
-            id: `mention-${not.id}`,
+            id: String(not.id).startsWith('dm-direct-') ? not.id : (String(not.id).startsWith('mention-') ? not.id : `mention-${not.id}`),
             type: 'direct_message',
             title: not.mensagem.assunto || 'Mensagem Direta',
             sender: senderName,

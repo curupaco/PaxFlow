@@ -24,6 +24,7 @@ export class InboxPage {
   private activeTab: 'ativos' | 'arquivados' | 'todos' | 'enviadas' | 'escala' | 'decisoes' = 'ativos';
   private selectedConsultantFilter: string = 'todos';
   private categoryFilter: string = 'todos';
+  private onlyUnreadFilter: boolean = false;
   private selectedAlertIds: Set<string> = new Set();
   private readList: string[] = [];
   private searchQuery: string = '';
@@ -447,6 +448,11 @@ export class InboxPage {
       );
     }
 
+    // 3.5. Filtro de apenas não lidas
+    if (this.onlyUnreadFilter) {
+      result = result.filter(a => !this.readList.includes(a.id));
+    }
+
     // Sort by creation date descending
     result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
@@ -462,6 +468,9 @@ export class InboxPage {
     if (!this.user?.id) return;
     await InboxService.markAlertAsRead(this.user.id, id);
     this.readList = await InboxService.getReadAlerts(this.user.id);
+    this.applyFilters();
+    this.render();
+    this.setupEventListeners();
   }
 
   /**
@@ -980,10 +989,24 @@ export class InboxPage {
                     </span>
                     <input id="inbox-search-input" type="text" placeholder="Buscar mensagens, passageiros ou destinos..." value="${this.searchQuery}" class="w-full text-xs font-semibold pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-700 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 transition" />
                   </div>
+
+                  <!-- Unread Filter Toggle Button -->
+                  <button id="toggle-unread-filter-btn" class="px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition border shrink-0 select-none ${
+                    this.onlyUnreadFilter 
+                      ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm shadow-indigo-600/20' 
+                      : 'bg-white dark:bg-slate-900 border-slate-200/80 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                  }" title="Filtrar apenas mensagens não lidas">
+                    <svg class="w-3.5 h-3.5 ${this.onlyUnreadFilter ? 'text-white' : 'text-slate-400 dark:text-slate-400'}" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                      <rect width="20" height="16" x="2" y="4" rx="2" />
+                      <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                    </svg>
+                    <span>Apenas Não Lidas</span>
+                    ${unreadAtivos > 0 ? `<span class="px-1.5 py-0.5 rounded-full text-[9px] font-black ${this.onlyUnreadFilter ? 'bg-white/20 text-white' : 'bg-rose-500 text-white'}">${unreadAtivos}</span>` : ''}
+                  </button>
                   
                   <!-- Counter info -->
                   <div class="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 whitespace-nowrap bg-slate-100 dark:bg-slate-900 px-3.5 py-2.5 rounded-xl border border-slate-200/40 dark:border-slate-800/40">
-                    Mostrando ${this.filteredAlerts.length} de ${this.alerts.length} alertas
+                    Mostrando ${this.filteredAlerts.length} de ${this.alerts.length}
                   </div>
 
                   <!-- View Switcher Toggle Button Group -->
@@ -1206,6 +1229,12 @@ export class InboxPage {
     });
 
     // 4. View Switcher Toggle listeners
+    document.getElementById('toggle-unread-filter-btn')?.addEventListener('click', () => {
+      this.onlyUnreadFilter = !this.onlyUnreadFilter;
+      this.applyFilters();
+      this.render();
+      this.setupEventListeners();
+    });
     document.getElementById('view-list-btn')?.addEventListener('click', () => {
       this.currentView = 'list';
       this.render();

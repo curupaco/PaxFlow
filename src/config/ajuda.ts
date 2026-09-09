@@ -137,7 +137,14 @@ export const HELP_ITEMS: HelpItem[] = [
     modulo: 'geral',
     label: 'Inbox e Alertas de Pós-Venda',
     description: 'Central de notificações e tarefas operacionais automatizadas.',
-    details: 'O Inbox do PaxFlow avisa o consultor em momentos críticos do ciclo da viagem:\n\n1. Envio de vouchers antes do embarque.\n2. Verificação de check-in pendente.\n3. Disparo automático de NPS após o retorno.\n4. Alertas de aniversários e reembolsos atrasados.'
+    details: 'O Inbox do PaxFlow centraliza a operação e avisa o consultor em momentos críticos do ciclo da viagem:\n\n1. Envio de vouchers antes do embarque (Pré-embarque).\n2. Verificação de validade de passaporte e SLAs de reembolso.\n3. Disparo automático de NPS pós-viagem.\n4. Atendimentos presenciais de balcão e solicitações de escala.\n5. Mensagens diretas e menções (@) entre a equipe.'
+  },
+  {
+    id: 'inbox-filtros-leitura',
+    modulo: 'geral',
+    label: 'Filtros da Caixa de Entrada, Leitura e Contadores',
+    description: 'Como utilizar o filtro de não lidas, ações de leitura e o badge da sidebar.',
+    details: 'A interface do Inbox foi projetada para produtividade máxima no gerenciamento de mensagens:\n\n- **Botão "Apenas Não Lidas"**: Localizado na barra de ferramentas superior junto à busca e visualizadores (Lista/Calendário), permite filtrar com 1 clique apenas os itens pendentes de leitura na pasta atual.\n- **Contador Dinâmico**: Exibe a proporção exata de mensagens filtradas no formato "Mostrando xx de yy".\n- **Persistência em Nuvem (Supabase)**: Ao abrir qualquer mensagem, solicitação de escala, atendimento de balcão ou alerta operacional, o status de lido é gravado diretamente no banco de dados, sincronizando em tempo real com todos os seus dispositivos.\n- **Badge do Menu Lateral**: O contador vermelho na sidebar (ao lado de "Inbox & Escala") reflete com exatidão as pendências não lidas ativas da sua Caixa de Entrada principal, ignorando decisões já concluídas para evitar contagens divergentes.'
   },
   {
     id: 'comentarios-mencoes',

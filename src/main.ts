@@ -1282,10 +1282,21 @@ class App {
       const currentPerfil = this.perfil;
       let filteredAlerts = alerts;
       if (currentPerfil && currentPerfil.role === 'admin') {
-        filteredAlerts = alerts.filter(a => a.consultorId === currentPerfil.id || a.isReceivedByMe || a.isCreatedByMe);
+        const filterId = currentPerfil.id;
+        filteredAlerts = alerts.filter(a => {
+          if (a.isSent) {
+            return a.consultorId === filterId || a.senderId === filterId;
+          }
+          return (
+            a.consultorId === filterId ||
+            (a.type === 'manual' && a.criadorId === filterId) ||
+            a.type === 'escala_solicitacao'
+          );
+        });
       }
       
-      const unreadCount = filteredAlerts.filter(a => !a.arquivado && !readList.includes(a.id) && !a.isSent).length;
+      // Contar estritamente mensagens ativas da Caixa de Entrada que não foram lidas
+      const unreadCount = filteredAlerts.filter(a => !a.arquivado && !a.isSent && !a.isDecision && !readList.includes(a.id)).length;
       
       const badge = document.getElementById('nav-inbox-badge');
       if (badge) {

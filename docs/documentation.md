@@ -101,14 +101,18 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 - **Lembretes manuais ("Me Lembre Depois")**: agendados a partir do pipeline de orçamentos, com data e período (manhã/tarde/noite) (mapeados no calendário na data agendada).
 - **Busca e Filtros Omnipresentes**:
   - Filtro por consultor (admin), por tipo de alerta, ativos/arquivados/todos.
-  - **Pesquisa em tempo real de alta precisão (client-side)**: O filtro textual da caixa de entrada foi ampliado para cobrir perfeitamente todos os campos e datas, incluindo a data alvo do evento (`eventDate`), data amigável formatada (`dateStr`), período do lembrete (`periodText`) e o nome amigável do consultor responsável na visualização administrativa.
-- **Leitor de mensagens corporativo**: modal com visual estilo e-mail profissional, integrado com deep-linking interativo e arquivamento em tempo real.
+  - **Filtro Rápido "Apenas Não Lidas" [NEW]**: Botão toggle contextual na barra superior de ferramentas do Inbox, permitindo focar instantaneamente nas pendências de leitura com badge numérico em tempo real.
+  - **Contador Dinâmico de Exibição**: Indicador limpo no formato `Mostrando xx de yy`, sincronizado com todos os filtros textuais e de categoria.
+  - **Pesquisa em tempo real de alta precisão (client-side)**: O filtro textual da caixa de entrada cobre perfeitamente todos os campos e datas, incluindo a data alvo do evento (`eventDate`), data amigável formatada (`dateStr`), período do lembrete (`periodText`) e o nome amigável do consultor responsável na visualização administrativa.
+- **Leitor de mensagens corporativo & Persistência Universal**:
+  - Modal com visual estilo e-mail profissional, integrado com deep-linking interativo e arquivamento em tempo real.
+  - **Persistência de Leitura no Supabase [NEW]**: Qualquer mensagem aberta (mensagens diretas, solicitações de escala, atendimentos presenciais de balcão e alertas operacionais) tem seu status de leitura gravado diretamente no banco de dados na tabela `public.notificacoes`, mantendo o status sincronizado em qualquer dispositivo.
 - **Sistema de Mensagens Diretas Internas (P2P)**:
   - Permite o envio de mensagens diretas no estilo e-mail (com destinatários "Para" e "Cc" múltiplos) entre consultores da agência.
   - **Autocomplete de Contatos**: Interface de seleção de destinatários utilizando tags/badges interativos com remoção instantânea.
   - **Pasta de Enviadas**: Uma gaveta dedicada para acompanhamento de todas as correspondências autoradas pelo consultor logado.
   - **Ação de Resposta (Reply) e Threading [NEW]**: Botão de resposta direta integrado ao leitor de e-mail. O PaxFlow agrupa automaticamente as mensagens diretas e suas respostas sob chaves relacionais (`parent_id` e `thread_id`) no banco de dados. Ao abrir qualquer e-mail/notificação que possua thread associada, o leitor exibe a linha do tempo completa do diálogo de forma cronológica em cartões individuais, facilitando o acompanhamento pela equipe e mantendo o contexto.
-  - **Status e Contadores Reativos**: Contagem individual de alertas não lidos integrada reativamente com a Sidebar principal.
+  - **Status e Contadores Reativos da Sidebar [NEW]**: O badge do menu lateral (`nav-inbox-badge`) reflete fielmente o volume de pendências ativas não lidas da Caixa de Entrada (`unreadAtivos`), desconsiderando decisões já finalizadas.
 - **Visualização em Calendário Interativo [NEW]**:
   - **Alternador de Visualização (Toggle Switch)**: Um seletor de alta fidelidade visual (Lista / Calendário) no topo do painel. Todos os filtros da barra lateral (Ativos/Arquivados/Todos e consultores) e busca continuam 100% integrados e reativos no modo calendário.
   - **Diferenciação por Cores (Sinalizadores de Atribuição)**:
