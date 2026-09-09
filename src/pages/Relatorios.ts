@@ -874,22 +874,30 @@ export class RelatoriosPage {
         </h2>
 
         <!-- Metric Grid -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
           <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 text-center">
             <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Faturamento Bruto</p>
-            <p class="text-lg font-black text-slate-800 dark:text-slate-200 mt-1">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(faturamentoBruto)}</p>
+            <p class="text-base font-black text-slate-800 dark:text-slate-200 mt-1">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(faturamentoBruto)}</p>
           </div>
           <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 text-center">
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Comissão Realizada</p>
-            <p class="text-lg font-black text-indigo-600 dark:text-indigo-400 mt-1">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(comissaoTotal)}</p>
+            <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Comissão</p>
+            <p class="text-base font-black text-indigo-600 dark:text-indigo-400 mt-1">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(comissaoTotal)}</p>
+          </div>
+          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 text-center">
+            <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Markup Coletado</p>
+            <p class="text-base font-black text-purple-600 dark:text-purple-400 mt-1">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(markupTotal)}</p>
+          </div>
+          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 text-center">
+            <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">RAV Coletada</p>
+            <p class="text-base font-black text-amber-600 dark:text-amber-400 mt-1">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(ravTotal)}</p>
           </div>
           <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 text-center">
             <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Lucro Líquido</p>
-            <p class="text-lg font-black text-emerald-600 mt-1">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(lucroLiquidoReal)}</p>
+            <p class="text-base font-black text-emerald-600 mt-1">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(lucroLiquidoReal)}</p>
           </div>
           <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 text-center">
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Margem de Lucro</p>
-            <p class="text-lg font-black text-slate-700 dark:text-slate-200 mt-1">${margemMedia}%</p>
+            <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Margem Média</p>
+            <p class="text-base font-black text-slate-700 dark:text-slate-200 mt-1">${margemMedia}%</p>
           </div>
         </div>
 
@@ -2481,7 +2489,7 @@ export class RelatoriosPage {
         csvContent += `"${a.title}";"${a.consultorNome}";"${a.dateStr}";"${a.arquivado ? 'Arquivado' : 'Ativo'}"\n`;
       });
     } else if (this.activeTab === 'faturamento') {
-      csvContent += 'Faturamento Bruto;Comissao Consolidada;Markup Coletado;Lucro Liquido\n';
+      csvContent += 'Faturamento Bruto;Comissao Consolidada;Markup Coletado;RAV Coletada;Lucro Liquido\n';
       
       let faturamentoBruto = 0, comissaoTotal = 0, markupTotal = 0, ravTotal = 0;
       let totalSub = 0;
@@ -2507,7 +2515,7 @@ export class RelatoriosPage {
       });
       const netFaturamento = Math.max(0, faturamentoBruto - totalSub);
       const netLucro = Math.max(0, (comissaoTotal + markupTotal + ravTotal) - totalSub);
-      csvContent += `${netFaturamento};${comissaoTotal};${markupTotal};${netLucro}\n`;
+      csvContent += `${netFaturamento};${comissaoTotal};${markupTotal};${ravTotal};${netLucro}\n`;
     } else if (this.activeTab === 'perdas') {
       csvContent += 'Cliente;Destino;Valor Cotacao;Motivo Desistencia\n';
       const perdidos = data.orcamentos.filter((o: any) => o.subStatus === 'DESISTENCIA' || o.sub_status === 'DESISTENCIA');

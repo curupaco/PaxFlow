@@ -622,6 +622,7 @@ export class EditTravelModal {
               <div>
                 <span class="block text-[10px] text-indigo-500 dark:text-indigo-400 font-bold uppercase tracking-wider leading-tight">Rentabilidade</span>
                 <strong id="fin-valor-rentabilidade" class="text-sm font-black text-indigo-600 dark:text-indigo-400">R$ 0,00</strong>
+                <span id="fin-valor-mkp-rav" class="block text-[9px] font-bold text-slate-500 dark:text-slate-400 mt-0.5 whitespace-nowrap hidden"></span>
               </div>
             </div>
 
@@ -2220,6 +2221,8 @@ export class EditTravelModal {
     const valorTotalViagem = viagem ? (Number(viagem.valor_total) || 0) : 0;
     const totalProdutos = produtos.reduce((sum, p) => sum + (Number(p.valor_venda) || 0), 0);
     const totalRentabilidade = produtos.reduce((sum, p) => sum + (Number(p.comissao) || 0) + (Number(p.markup) || 0) + ((Number(p.rav) || 0) * 0.88), 0);
+    const totalMarkup = produtos.reduce((sum, p) => sum + (Number(p.markup) || 0), 0);
+    const totalRav = produtos.reduce((sum, p) => sum + (Number(p.rav) || 0), 0);
     let saldoPendente = valorTotalViagem - totalProdutos;
     if (Math.abs(saldoPendente) < 0.01) {
       saldoPendente = 0;
@@ -2293,6 +2296,16 @@ export class EditTravelModal {
     if (finValorRentabilidade) {
       finValorRentabilidade.textContent = `R$ ${totalRentabilidade.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     }
+    const finValorMkpRav = document.getElementById('fin-valor-mkp-rav');
+    if (finValorMkpRav) {
+      if (totalMarkup > 0 || totalRav > 0) {
+        finValorMkpRav.textContent = `MKP: R$ ${totalMarkup.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} | RAV: R$ ${totalRav.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        finValorMkpRav.classList.remove('hidden');
+      } else {
+        finValorMkpRav.textContent = '';
+        finValorMkpRav.classList.add('hidden');
+      }
+    }
 
     if (produtos.length === 0) {
       container.innerHTML = `
@@ -2342,6 +2355,8 @@ export class EditTravelModal {
         valorVendaTotal: number;
         valorTaxasTotal: number;
         valorRentabilidadeTotal: number;
+        valorMarkupTotal: number;
+        valorRavTotal: number;
         isGroupDetalhado: boolean;
       }
     } = {};
@@ -2355,6 +2370,8 @@ export class EditTravelModal {
           valorVendaTotal: 0,
           valorTaxasTotal: 0,
           valorRentabilidadeTotal: 0,
+          valorMarkupTotal: 0,
+          valorRavTotal: 0,
           isGroupDetalhado: true
         };
       }
@@ -2372,6 +2389,8 @@ export class EditTravelModal {
       
       produtosAgrupados[locKey].valorTaxasTotal += taxa;
       produtosAgrupados[locKey].valorRentabilidadeTotal += comissao + markup + (rav * 0.88);
+      produtosAgrupados[locKey].valorMarkupTotal += markup;
+      produtosAgrupados[locKey].valorRavTotal += rav;
 
       if (!isProdDetalhado) {
         produtosAgrupados[locKey].isGroupDetalhado = false;
@@ -2485,6 +2504,11 @@ export class EditTravelModal {
               <span class="text-[10px] font-medium text-slate-400 dark:text-slate-400">
                 Rentabilidade: <span class="font-extrabold ${rentabilidadeColorClass}">R$ ${valorRentabilidadeTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </span>
+              ${(grupo.valorMarkupTotal > 0 || grupo.valorRavTotal > 0) ? `
+                <span class="text-[9px] font-bold text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                  (MKP: R$ ${grupo.valorMarkupTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} | RAV: R$ ${grupo.valorRavTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
+                </span>
+              ` : ''}
               
               ${statusPagamentoBadge}
               ${!isGroupDetalhado ? `<span class="px-1.5 py-0.5 text-[9px] font-black rounded bg-amber-500/10 text-amber-500 border border-amber-500/20 animate-pulse">⚠️ Detalhamento Pendente</span>` : ''}

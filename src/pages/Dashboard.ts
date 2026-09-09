@@ -2027,11 +2027,18 @@ export class Dashboard {
       return `${parts[2]}/${parts[1]}/${parts[0]}`;
     };
 
-    // Calcular Rentabilidade (Comissão + Markup + RAV * 0.88)
+    // Calcular Rentabilidade (Comissão + Markup + RAV * 0.88), Markup e RAV brutos
     let rentabilidade = 0;
+    let totalMarkup = 0;
+    let totalRav = 0;
     if (v.produtos && Array.isArray(v.produtos)) {
       v.produtos.forEach((p: any) => {
-        rentabilidade += (Number(p.comissao) || 0) + (Number(p.markup) || 0) + ((Number(p.rav) || 0) * 0.88);
+        const comissao = Number(p.comissao) || 0;
+        const markup = Number(p.markup) || 0;
+        const rav = Number(p.rav) || 0;
+        totalMarkup += markup;
+        totalRav += rav;
+        rentabilidade += comissao + markup + (rav * 0.88);
       });
     }
     const valorVenda = Number(v.valor_total) || 0;
@@ -2117,6 +2124,11 @@ Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : '
           <div class="text-[10px] text-emerald-600 dark:text-emerald-400 font-extrabold mt-0.5" title="Margem de Lucro (Venda - Custos de Fornecedor)">
             Rent: R$ ${rentabilidade.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
+          ${(totalMarkup > 0 || totalRav > 0) ? `
+            <div class="text-[9px] font-bold text-slate-500 dark:text-slate-400 mt-0.5 whitespace-nowrap">
+              MKP: R$ ${totalMarkup.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} | RAV: R$ ${totalRav.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </div>
+          ` : ''}
         </td>
 
         <!-- Consultor -->
@@ -2193,9 +2205,16 @@ Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : '
     };
 
     let rentabilidade = 0;
+    let totalMarkup = 0;
+    let totalRav = 0;
     if (v.produtos && Array.isArray(v.produtos)) {
       v.produtos.forEach((p: any) => {
-        rentabilidade += (Number(p.comissao) || 0) + (Number(p.markup) || 0) + ((Number(p.rav) || 0) * 0.88);
+        const comissao = Number(p.comissao) || 0;
+        const markup = Number(p.markup) || 0;
+        const rav = Number(p.rav) || 0;
+        totalMarkup += markup;
+        totalRav += rav;
+        rentabilidade += comissao + markup + (rav * 0.88);
       });
     }
     const valorVenda = Number(v.valor_total) || 0;
@@ -2287,6 +2306,11 @@ Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : '
           <div class="text-right">
             <span class="block text-[8px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider">Rentabilidade</span>
             <span class="font-bold text-emerald-600 dark:text-emerald-400">R$ ${rentabilidade.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            ${(totalMarkup > 0 || totalRav > 0) ? `
+              <span class="block text-[9px] font-bold text-slate-500 dark:text-slate-400 mt-0.5 whitespace-nowrap">
+                MKP: R$ ${totalMarkup.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} | RAV: R$ ${totalRav.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
+            ` : ''}
           </div>
         </div>
 
