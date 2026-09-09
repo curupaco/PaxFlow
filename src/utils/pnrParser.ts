@@ -63,8 +63,8 @@ export function parsePnrText(rawText: string): ParsedPNR {
   // 3. Extração de Nomes de Passageiros
   // Padrões: "Passageiro: SOBRENOME/NOME", "Pax: NOME SOBRENOME", "1. SOBRENOME/NOME"
   const paxRegexes = [
-    /(?:passageiro|pax|passageiros|nome do passageiro)\s*[:#-]?\s*([A-Za-z\s\/]{3,40})/gi,
-    /\b\d\.\s*([A-Z\s\/]{3,40})/g
+    /(?:passageiro|pax|passageiros|nome do passageiro)\s*[:#-]?\s*([A-Za-z \t\/]{3,40})/gi,
+    /\b\d\.\s*([A-Z \t\/]{3,40})/g
   ];
 
   for (const regex of paxRegexes) {
