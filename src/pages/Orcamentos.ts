@@ -1623,27 +1623,27 @@ export class OrcamentosPage {
 
         ${upsellOps.length > 0 ? `
           <!-- BLOCO PREDIÇÃO PAXFLOW UPSELL ENGINE -->
-          <div class="p-4 bg-gradient-to-br from-indigo-950/60 via-slate-900 to-purple-950/60 border border-indigo-500/30 rounded-2xl mb-5 text-white space-y-3 shadow-lg">
+          <div class="p-4 bg-gradient-to-br from-indigo-50/90 via-purple-50/60 to-slate-50 border border-indigo-200/80 dark:from-indigo-950/60 dark:via-slate-900 dark:to-purple-950/60 dark:border-indigo-500/30 rounded-2xl mb-5 text-slate-800 dark:text-white space-y-3 shadow-xs dark:shadow-lg">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-2">
                 <span class="text-base">💡</span>
-                <h4 class="text-xs font-black uppercase tracking-wider text-indigo-200">PaxFlow Upsell Engine™ — Upgrades & Experiências Recomendadas</h4>
+                <h4 class="text-xs font-black uppercase tracking-wider text-indigo-900 dark:text-indigo-200">PaxFlow Upsell Engine™ — Upgrades & Experiências Recomendadas</h4>
               </div>
-              <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">Preditivo IA</span>
+              <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase bg-indigo-100 text-indigo-700 border border-indigo-200 dark:bg-indigo-500/20 dark:text-indigo-300 dark:border-indigo-500/30">Preditivo IA</span>
             </div>
 
             <div class="grid grid-cols-1 gap-2.5">
               ${upsellOps.map(u => `
-                <div class="p-3 bg-white/5 rounded-xl border border-white/10 flex items-center justify-between gap-3">
+                <div class="p-3 bg-white/90 hover:bg-white dark:bg-white/5 rounded-xl border border-indigo-100/80 dark:border-white/10 shadow-xs dark:shadow-none flex items-center justify-between gap-3 transition">
                   <div class="space-y-0.5">
                     <div class="flex items-center gap-2">
-                      <span class="text-xs font-black text-indigo-100">${u.titulo}</span>
+                      <span class="text-xs font-black text-slate-900 dark:text-indigo-100">${u.titulo}</span>
                       <span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${u.corBadge}">${u.badgeTexto}</span>
                     </div>
-                    <p class="text-[11px] text-slate-300 font-medium">${u.descricao}</p>
-                    <span class="text-[10px] text-indigo-300 font-bold block">+ R$ ${u.valorEstimado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (Sugestão: ${u.produtoSugerido})</span>
+                    <p class="text-[11px] text-slate-600 dark:text-slate-300 font-medium">${u.descricao}</p>
+                    <span class="text-[10px] text-emerald-700 dark:text-emerald-300 font-bold block">+ R$ ${u.valorEstimado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (Sugestão: ${u.produtoSugerido})</span>
                   </div>
-                  <button type="button" data-upsell-text="${u.produtoSugerido} - R$ ${u.valorEstimado}" class="btn-add-upsell-to-notes px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[10px] font-black uppercase shrink-0 transition">
+                  <button type="button" data-upsell-text="${u.produtoSugerido} - R$ ${u.valorEstimado}" class="btn-add-upsell-to-notes px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 dark:hover:bg-indigo-500 text-white rounded-lg text-[10px] font-black uppercase shrink-0 transition shadow-xs">
                     + Incluir
                   </button>
                 </div>

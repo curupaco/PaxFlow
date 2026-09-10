@@ -647,34 +647,34 @@ export class EditTravelModal {
 
             ${showUpsell && upsellOps.length > 0 ? `
               <!-- BLOCO PREDIÇÃO PAXFLOW UPSELL ENGINE -->
-              <div class="p-4 bg-gradient-to-br from-indigo-950/80 via-slate-900 to-purple-950/80 border border-indigo-500/30 rounded-2xl text-white space-y-3 shadow-md">
+              <div class="p-4 bg-gradient-to-br from-indigo-50/90 via-purple-50/60 to-slate-50 border border-indigo-200/80 dark:from-indigo-950/80 dark:via-slate-900 dark:to-purple-950/80 dark:border-indigo-500/30 rounded-2xl text-slate-800 dark:text-white space-y-3 shadow-xs dark:shadow-md">
                 <div class="flex items-center justify-between">
                   <div class="flex items-center gap-2">
                     <span class="text-base">🚀</span>
                     <div>
-                      <h4 class="text-xs font-black uppercase tracking-wider text-indigo-200 font-sans">PaxFlow Upsell Engine™ — Upgrades & Adicionais</h4>
-                      <p class="text-[10px] text-slate-300 font-medium">Oportunidades inteligentes para aumentar a margem e o conforto do cliente</p>
+                      <h4 class="text-xs font-black uppercase tracking-wider text-indigo-900 dark:text-indigo-200 font-sans">PaxFlow Upsell Engine™ — Upgrades & Adicionais</h4>
+                      <p class="text-[10px] text-slate-600 dark:text-slate-300 font-medium">Oportunidades inteligentes para aumentar a margem e o conforto do cliente</p>
                     </div>
                   </div>
-                  <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 shrink-0 font-sans">Preditivo IA</span>
+                  <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase bg-indigo-100 text-indigo-700 border border-indigo-200 dark:bg-indigo-500/20 dark:text-indigo-300 dark:border-indigo-500/30 shrink-0 font-sans">Preditivo IA</span>
                 </div>
 
                 <div class="grid grid-cols-1 gap-2">
                   ${upsellOps.map(u => `
-                    <div class="p-3 bg-white/5 hover:bg-white/10 rounded-xl border border-white/10 flex items-center justify-between gap-3 transition">
+                    <div class="p-3 bg-white/90 hover:bg-white dark:bg-white/5 dark:hover:bg-white/10 rounded-xl border border-indigo-100/80 dark:border-white/10 shadow-xs dark:shadow-none flex items-center justify-between gap-3 transition">
                       <div class="space-y-0.5">
                         <div class="flex items-center gap-2 flex-wrap">
-                          <span class="text-xs font-black text-indigo-100 font-sans">${u.titulo}</span>
+                          <span class="text-xs font-black text-slate-900 dark:text-indigo-100 font-sans">${u.titulo}</span>
                           <span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${u.corBadge} font-sans">${u.badgeTexto}</span>
                         </div>
-                        <p class="text-[11px] text-slate-300 font-medium leading-relaxed">${u.descricao}</p>
-                        <span class="text-[10px] text-emerald-300 font-extrabold block">+ R$ ${u.valorEstimado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} &bull; Sugestão: ${u.produtoSugerido}</span>
+                        <p class="text-[11px] text-slate-600 dark:text-slate-300 font-medium leading-relaxed">${u.descricao}</p>
+                        <span class="text-[10px] text-emerald-700 dark:text-emerald-300 font-extrabold block">+ R$ ${u.valorEstimado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} &bull; Sugestão: ${u.produtoSugerido}</span>
                       </div>
                       <button type="button" 
                         data-upsell-tipo="${u.categoriaProduto}" 
                         data-upsell-desc="${u.produtoSugerido}" 
                         data-upsell-valor="${u.valorEstimado}" 
-                        class="btn-quick-add-upsell px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[10px] font-black uppercase shrink-0 transition flex items-center gap-1 font-sans">
+                        class="btn-quick-add-upsell px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 dark:hover:bg-indigo-500 text-white rounded-lg text-[10px] font-black uppercase shrink-0 transition flex items-center gap-1 font-sans shadow-xs">
                         <span>+ Incluir</span>
                       </button>
                     </div>
