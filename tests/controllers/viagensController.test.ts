@@ -74,9 +74,9 @@ describe('ViagensController - Máquina de Estados e Motor Financeiro de Viagens'
   it('deve calcular rentabilidade, lucro bruto, margem e markup com precisão monetária', () => {
     // Setup
     const produtos: ProdutoViagem[] = [
-      { id: '1', viagem_id: 'v1', tipo: 'aereo', descricao: 'Voo SP-Paris', valor_custo: 4000, valor_venda: 5000, status: 'confirmado' },
-      { id: '2', viagem_id: 'v1', tipo: 'hotel', descricao: 'Hotel Paris', valor_custo: 3000, valor_venda: 4500, status: 'confirmado' },
-      { id: '3', viagem_id: 'v1', tipo: 'seguro', descricao: 'Seguro GTA', valor_custo: 500, valor_venda: 500, status: 'cancelado' } // cancelado é ignorado
+      { id: '1', viagemId: 'v1', viagem_id: 'v1', tipo: 'aereo', fornecedor: 'Air France', descricao: 'Voo SP-Paris', valorCusto: 4000, valor_custo: 4000, valorVenda: 5000, valor_venda: 5000, status: 'emitido', dataServico: '2026-10-01' },
+      { id: '2', viagemId: 'v1', viagem_id: 'v1', tipo: 'hotel', fornecedor: 'Accor', descricao: 'Hotel Paris', valorCusto: 3000, valor_custo: 3000, valorVenda: 4500, valor_venda: 4500, status: 'emitido', dataServico: '2026-10-01' },
+      { id: '3', viagemId: 'v1', viagem_id: 'v1', tipo: 'seguro', fornecedor: 'GTA', descricao: 'Seguro GTA', valorCusto: 500, valor_custo: 500, valorVenda: 500, valor_venda: 500, status: 'cancelado', dataServico: '2026-10-01' } // cancelado é ignorado
     ];
 
     // Action
@@ -100,8 +100,8 @@ describe('ViagensController - Máquina de Estados e Motor Financeiro de Viagens'
     const viagemConsistente = { valor_total: 9500 };
     const viagemDivergente = { valor_total: 10000 };
     const produtos: ProdutoViagem[] = [
-      { id: '1', viagem_id: 'v1', tipo: 'aereo', valor_venda: 5000, status: 'confirmado' },
-      { id: '2', viagem_id: 'v1', tipo: 'hotel', valor_venda: 4500, status: 'confirmado' },
+      { id: '1', viagemId: 'v1', viagem_id: 'v1', tipo: 'aereo', fornecedor: 'Gol', descricao: 'Voo', valorCusto: 4000, valorVenda: 5000, valor_venda: 5000, status: 'emitido', dataServico: '2026-10-01' },
+      { id: '2', viagemId: 'v1', viagem_id: 'v1', tipo: 'hotel', fornecedor: 'Ibis', descricao: 'Hotel', valorCusto: 3000, valorVenda: 4500, valor_venda: 4500, status: 'emitido', dataServico: '2026-10-01' },
     ];
 
     // Action
@@ -143,16 +143,16 @@ describe('ViagensController - Máquina de Estados e Motor Financeiro de Viagens'
   it('deve recalcular rentabilidade e manter consistência financeira ao incorporar produtos de upsell', () => {
     // Setup - Pacote original: Aéreo (margem baixa) + Hotel. Adicionado: Seguro e Transfer (alta margem) via Upsell
     const produtosBase: ProdutoViagem[] = [
-      { id: 'p1', viagem_id: 'v-up', tipo: 'aereo', valor_venda: 6000, valor_custo: 5700, status: 'confirmado' },
-      { id: 'p2', viagem_id: 'v-up', tipo: 'hotel', valor_venda: 4000, valor_custo: 3400, status: 'confirmado' },
+      { id: 'p1', viagemId: 'v-up', viagem_id: 'v-up', tipo: 'aereo', fornecedor: 'Latam', descricao: 'Voo GRU-JFK', valorCusto: 5700, valor_custo: 5700, valorVenda: 6000, valor_venda: 6000, status: 'emitido', dataServico: '2026-11-01' },
+      { id: 'p2', viagemId: 'v-up', viagem_id: 'v-up', tipo: 'hotel', fornecedor: 'Hilton', descricao: 'Hotel NY', valorCusto: 3400, valor_custo: 3400, valorVenda: 4000, valor_venda: 4000, status: 'emitido', dataServico: '2026-11-01' },
     ];
     const rentabilidadeOriginal = calcularRentabilidadeViagem(produtosBase); // Lucro bruto = 300 + 600 = 900 (9%)
 
     // Adição de produtos oriundos do PaxFlow Upsell Engine
     const produtosComUpsell: ProdutoViagem[] = [
       ...produtosBase,
-      { id: 'p3', viagem_id: 'v-up', tipo: 'seguro', valor_venda: 580, valor_custo: 320, status: 'confirmado' }, // Lucro = 260 (~45%)
-      { id: 'p4', viagem_id: 'v-up', tipo: 'transfer', valor_venda: 360, valor_custo: 200, status: 'confirmado' }, // Lucro = 160 (~44%)
+      { id: 'p3', viagemId: 'v-up', viagem_id: 'v-up', tipo: 'seguro', fornecedor: 'Universal', descricao: 'Seguro US$ 60k', valorCusto: 320, valor_custo: 320, valorVenda: 580, valor_venda: 580, status: 'emitido', dataServico: '2026-11-01' }, // Lucro = 260 (~45%)
+      { id: 'p4', viagemId: 'v-up', viagem_id: 'v-up', tipo: 'transfer', fornecedor: 'Receptivo VIP', descricao: 'Transfer In/Out', valorCusto: 200, valor_custo: 200, valorVenda: 360, valor_venda: 360, status: 'emitido', dataServico: '2026-11-01' }, // Lucro = 160 (~44%)
     ];
 
     const viagemAtualizada = { valor_total: 10940 }; // 6000 + 4000 + 580 + 360
