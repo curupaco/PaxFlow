@@ -135,12 +135,17 @@ export class UpsellEngineService {
     const upsellConfig = settings?.upsell_config || settings?.upsellConfig || {};
     const isRuleEnabled = (key: string) => upsellConfig[key] !== false;
 
+    totalPax = Math.max(1, totalPax);
+    valorTotal = Math.max(0, valorTotal);
+
     const oportunidades: UpsellOpportunity[] = [];
-    const prodTipos = (produtos || []).map(p => (p.tipo || p.categoria || '').toLowerCase());
-    const prodNomes = (produtos || []).map(p => (p.nome || p.titulo || p.produto || p.descricao || '').toLowerCase());
+    const safeProdutos = (produtos || []).filter(p => p && typeof p === 'object');
+    const prodTipos = safeProdutos.map(p => (p.tipo || p.categoria || '').toLowerCase());
+    const prodNomes = safeProdutos.map(p => (p.nome || p.titulo || p.produto || p.descricao || '').toLowerCase());
     const dest = (destino || '').toLowerCase();
     const destDisplay = destino ? destino.trim() : 'o destino';
-    const primeiroNome = clienteNome ? clienteNome.trim().split(' ')[0] : 'Cliente';
+    const trimmedNome = (clienteNome || '').trim();
+    const primeiroNome = trimmedNome ? trimmedNome.split(' ')[0] : 'Cliente';
 
     const isInternacional = this.isDestinoInternacional(dest, destinosCadastrados);
 

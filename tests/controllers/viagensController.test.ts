@@ -139,4 +139,34 @@ describe('ViagensController - Máquina de Estados e Motor Financeiro de Viagens'
     expect(kanban.concluido).toHaveLength(1);
     expect(kanban.cancelado).toHaveLength(1);
   });
+
+  it('deve recalcular rentabilidade e manter consistência financeira ao incorporar produtos de upsell', () => {
+    // Setup - Pacote original: Aéreo (margem baixa) + Hotel. Adicionado: Seguro e Transfer (alta margem) via Upsell
+    const produtosBase: ProdutoViagem[] = [
+      { id: 'p1', viagem_id: 'v-up', tipo: 'aereo', valor_venda: 6000, valor_custo: 5700, status: 'confirmado' },
+      { id: 'p2', viagem_id: 'v-up', tipo: 'hotel', valor_venda: 4000, valor_custo: 3400, status: 'confirmado' },
+    ];
+    const rentabilidadeOriginal = calcularRentabilidadeViagem(produtosBase); // Lucro bruto = 300 + 600 = 900 (9%)
+
+    // Adição de produtos oriundos do PaxFlow Upsell Engine
+    const produtosComUpsell: ProdutoViagem[] = [
+      ...produtosBase,
+      { id: 'p3', viagem_id: 'v-up', tipo: 'seguro', valor_venda: 580, valor_custo: 320, status: 'confirmado' }, // Lucro = 260 (~45%)
+      { id: 'p4', viagem_id: 'v-up', tipo: 'transfer', valor_venda: 360, valor_custo: 200, status: 'confirmado' }, // Lucro = 160 (~44%)
+    ];
+
+    const viagemAtualizada = { valor_total: 10940 }; // 6000 + 4000 + 580 + 360
+
+    // Action
+    const rentabilidadeFinal = calcularRentabilidadeViagem(produtosComUpsell);
+    const consistencia = validarConsistenciaFinanceiraViagem(viagemAtualizada, produtosComUpsell);
+
+    // Assert
+    expect(consistencia.consistente).toBe(true);
+    expect(consistencia.diferenca).toBe(0);
+    expect(rentabilidadeFinal.lucroBruto).toBe(1320); // 900 + 260 + 160
+    expect(rentabilidadeFinal.lucroBruto).toBeGreaterThan(rentabilidadeOriginal.lucroBruto);
+    expect(rentabilidadeFinal.margemPercentual).toBeGreaterThan(rentabilidadeOriginal.margemPercentual);
+  });
 });
+

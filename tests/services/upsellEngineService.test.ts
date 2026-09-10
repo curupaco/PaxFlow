@@ -242,4 +242,124 @@ describe('UpsellEngineService - Testes Subcutâneos', () => {
     // Assert
     expect(habilitado).toBe(true);
   });
+
+  // ==========================================================================
+  // NOVOS TESTES: Resiliência, Edge Cases e Ciclo Integrado Subcutâneo
+  // ==========================================================================
+
+  it('deve lidar de forma resiliente com falha de rede ou erro de RLS do Supabase ao dispensar', async () => {
+    // Setup - Simulação de erro de permissão ou rede no Supabase
+    const mockSelect = vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
+        single: vi.fn().mockResolvedValue({ data: null, error: { message: 'Database connection failed / RLS policy violation' } })
+      })
+    });
+
+    vi.mocked(supabase.from).mockImplementation((table: string) => {
+      if (table === 'viagens') {
+        return { select: mockSelect } as any;
+      }
+      return {} as any;
+    });
+
+    // Action
+    const res = await UpsellEngineService.dismissOpportunity('v-falha', 'upsell-seguro-saude');
+
+    // Assert
+    expect(res.success).toBe(false);
+    expect(res.error).toContain('Database connection failed');
+  });
+
+  it('deve garantir deduplicação estrita se uma oportunidade já foi dispensada anteriormente', async () => {
+    // Setup - Viagem já possui 'upsell-esim-internacional' na lista de dispensados
+    const mockViagem = { id: 'v-dedup', upsell_dispensados: ['upsell-esim-internacional'] };
+    const mockSelect = vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
+        single: vi.fn().mockResolvedValue({ data: mockViagem, error: null })
+      })
+    });
+    const mockUpdate = vi.fn();
+
+    vi.mocked(supabase.from).mockImplementation((table: string) => {
+      if (table === 'viagens') {
+        return { select: mockSelect, update: mockUpdate } as any;
+      }
+      return {} as any;
+    });
+
+    // Action - Tentar dispensar novamente a mesma oportunidade
+    const res = await UpsellEngineService.dismissOpportunity('v-dedup', 'upsell-esim-internacional');
+
+    // Assert - Sucesso imediato e update não deve ser disparado em vão
+    expect(res.success).toBe(true);
+    expect(mockUpdate).not.toHaveBeenCalled();
+  });
+
+  it('deve demonstrar tolerância robusta a dados corrompidos, nulos, pax negativo e caracteres de escape', () => {
+    // Setup - Destino com espaços/tabs/quebras, passageiros negativos, produtos corrompidos
+    const produtosCorrompidos: any[] = [
+      null,
+      undefined,
+      {},
+      { nome: null, tipo: undefined },
+      { nome: 'Voo Internacional', categoria: 'aéreo' }
+    ];
+
+    // Action
+    const oportunidades = UpsellEngineService.calculateUpsellOpportunities({
+      produtos: produtosCorrompidos,
+      destino: '   \n\t  TOKYO - JAPÃO !!!   ',
+      totalPax: -3, // Pax inválido deve sofrer fallback para no mínimo 1
+      valorTotal: -500, // Valor negativo deve ser tratado como 0
+      clienteNome: '   '
+    });
+
+    // Assert
+    expect(Array.isArray(oportunidades)).toBe(true);
+    expect(oportunidades.length).toBeGreaterThan(0);
+
+    // Oportunidades internacionais devem ser geradas (Japão identificado)
+    const opEsim = oportunidades.find((o) => o.id === 'upsell-esim-internacional');
+    expect(opEsim).toBeDefined();
+    expect(opEsim?.valorEstimado).toBe(190); // 1 pax mínimo * 190
+    expect(opEsim?.mensagemWhatsApp).toContain('Cliente'); // Fallback gracioso para cliente sem nome
+  });
+
+  it('deve simular o ciclo completo de transição: Lead -> Orçamento com Upsell -> Inclusão de Produto -> Supressão Automática', () => {
+    // 1. Setup Fase 1: Orçamento inicial (Voo para Paris sem seguro)
+    const produtosEtapa1 = [{ tipo: 'aereo', nome: 'Voo Guarulhos - Charles de Gaulle' }];
+    
+    // 2. Action Fase 1: Calcular oportunidades para o orçamento
+    const opsEtapa1 = UpsellEngineService.calculateUpsellOpportunities(
+      produtosEtapa1,
+      'Paris',
+      2,
+      9000
+    );
+
+    // Assert Fase 1: Seguro saúde e chip eSIM devem ser sugeridos
+    expect(opsEtapa1.some(o => o.id === 'upsell-seguro-saude')).toBe(true);
+    expect(opsEtapa1.some(o => o.id === 'upsell-esim-internacional')).toBe(true);
+
+    // 3. Setup Fase 2: Consultor inclui Seguro Saúde no pacote (Venda Fechada)
+    const produtosEtapa2 = [
+      ...produtosEtapa1,
+      { tipo: 'seguro', nome: 'Seguro Viagem Internacional Cobertura US$ 60k', valor: 580 }
+    ];
+
+    // 4. Action Fase 2: Viagem agora possui seguro, consultor dispensou o eSIM
+    const opsEtapa2 = UpsellEngineService.calculateUpsellOpportunities({
+      produtos: produtosEtapa2,
+      destino: 'Paris',
+      totalPax: 2,
+      valorTotal: 9580,
+      dispensados: ['upsell-esim-internacional']
+    });
+
+    // Assert Fase 2: Seguro Saúde e eSIM foram ambos eliminados (um por compra, outro por dispensa)
+    expect(opsEtapa2.some(o => o.id === 'upsell-seguro-saude')).toBe(false);
+    expect(opsEtapa2.some(o => o.id === 'upsell-esim-internacional')).toBe(false);
+    // Mas oportunidades remanescentes (ex: Passeios/Transfer) continuam disponíveis
+    expect(opsEtapa2.some(o => o.id === 'upsell-passes-experiencias')).toBe(true);
+  });
 });
