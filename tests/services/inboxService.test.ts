@@ -201,29 +201,157 @@ describe('InboxService Subcutaneous Flow Tests', () => {
     expect(result).toBe(true);
   });
 
-  it('deve sincronizar arquivamento de mensagem direta via upsert em notificacoes', async () => {
+  it('deve arquivar mensagem direta sintetica inserindo registro em notificacoes com user_id', async () => {
     // Setup
+    const userId = 'user-guto-uuid-1234';
     const msgUUID = '66666666-2222-2222-2222-000000000000';
-    const mockUpsert = vi.fn().mockResolvedValue({ error: null });
+    const mockInsert = vi.fn().mockResolvedValue({ data: null, error: null });
+    const mockMaybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
+
+    const queryMock = createQueryMock(null);
+    queryMock.maybeSingle = mockMaybeSingle;
+    queryMock.insert = mockInsert;
 
     (supabase.from as any).mockImplementation((table: string) => {
       if (table === 'notificacoes') {
-        return { upsert: mockUpsert };
+        return queryMock;
       }
       return createQueryMock([]);
     });
 
     // Action
-    const result = await InboxService.archiveAlert({ id: `dm-direct-${msgUUID}` }, true);
+    const result = await InboxService.archiveAlert({ id: `dm-direct-${msgUUID}` }, true, userId);
 
     // Assert
-    expect(mockUpsert).toHaveBeenCalledWith({
+    expect(mockInsert).toHaveBeenCalledWith({
+      user_id: userId,
       item_id: msgUUID,
       parent_id: msgUUID,
       tipo_item: 'mensagem',
+      lida: false,
       arquivada: true
     });
     expect(result).toBe(true);
+  });
+
+  it('deve arquivar alerta de sistema (passaporte ou reembolso) criando registro em notificacoes com user_id', async () => {
+    // Setup
+    const userId = 'user-guto-uuid-1234';
+    const passUUID = '99999999-5555-5555-5555-000000000000';
+    const mockInsert = vi.fn().mockResolvedValue({ data: null, error: null });
+    const mockMaybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
+
+    const queryMock = createQueryMock(null);
+    queryMock.maybeSingle = mockMaybeSingle;
+    queryMock.insert = mockInsert;
+
+    (supabase.from as any).mockImplementation((table: string) => {
+      if (table === 'notificacoes') {
+        return queryMock;
+      }
+      return createQueryMock([]);
+    });
+
+    // Action
+    const result = await InboxService.archiveAlert({ id: `passport-${passUUID}` }, true, userId);
+
+    // Assert
+    expect(mockInsert).toHaveBeenCalledWith({
+      user_id: userId,
+      item_id: passUUID,
+      parent_id: passUUID,
+      tipo_item: 'mensagem',
+      lida: false,
+      arquivada: true
+    });
+    expect(result).toBe(true);
+  });
+
+  it('deve lancar erro imediatamente (Fail-Fast) se o Supabase falhar no arquivamento', async () => {
+    // Setup
+    const userId = 'user-guto-uuid-1234';
+    const msgUUID = '66666666-2222-2222-2222-000000000000';
+    const dbError = new Error('Database connection failed');
+    const mockInsert = vi.fn().mockResolvedValue({ data: null, error: dbError });
+    const mockMaybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
+
+    const queryMock = createQueryMock(null);
+    queryMock.maybeSingle = mockMaybeSingle;
+    queryMock.insert = mockInsert;
+
+    (supabase.from as any).mockImplementation((table: string) => {
+      if (table === 'notificacoes') {
+        return queryMock;
+      }
+      return createQueryMock([]);
+    });
+
+    // Action & Assert
+    await expect(
+      InboxService.archiveAlert({ id: `dm-direct-${msgUUID}` }, true, userId)
+    ).rejects.toThrow('Database connection failed');
+  });
+
+  it('deve mapear corretamente variantes de IDs de alertas arquivados a partir de notificacoes', async () => {
+    // Setup
+    const userId = 'user-uuid-1234';
+    const targetItemId = 'c112f72b-5bde-4559-95b2-2a484ce10289';
+
+    (supabase.from as any).mockImplementation((table: string) => {
+      if (table === 'notificacoes') {
+        return createQueryMock([
+          { id: 'notif-uuid-888', item_id: targetItemId, parent_id: targetItemId }
+        ]);
+      }
+      return createQueryMock([]);
+    });
+
+    // Action
+    const archivedIds = await InboxService.getArchivedAlerts(userId);
+
+    // Assert
+    expect(archivedIds).toContain('mention-notif-uuid-888');
+    expect(archivedIds).toContain(`dm-direct-${targetItemId}`);
+    expect(archivedIds).toContain(`passport-${targetItemId}`);
+    expect(archivedIds).toContain(`refund-${targetItemId}`);
+    expect(archivedIds).toContain(`pre-embarque-${targetItemId}`);
+    expect(archivedIds).toContain(`pos-viagem-nps-${targetItemId}`);
+    expect(archivedIds).toContain(`escala-sol-${targetItemId}-inbox`);
+    expect(archivedIds).toContain(`sent-${targetItemId}`);
+  });
+
+  it('deve arquivar pessoalmente mensagem direta recebida quando o destinatario clica em excluir', async () => {
+    // Setup
+    const recipientUserId = 'user-destinatario-id';
+    const senderUserId = 'user-remetente-id';
+    const msgUUID = '11112222-3333-4444-5555-666677778888';
+
+    const mockDelete = vi.fn().mockResolvedValue({ error: null });
+    const archiveSpy = vi.spyOn(InboxService, 'archiveAlert').mockResolvedValue(true);
+
+    (supabase.from as any).mockImplementation((table: string) => {
+      if (table === 'mensagens_diretas') {
+        return { delete: mockDelete };
+      }
+      return createQueryMock([]);
+    });
+
+    const clickedItem: any = {
+      id: `dm-direct-${msgUUID}`,
+      type: 'direct_message',
+      targetId: msgUUID,
+      senderId: senderUserId
+    };
+
+    // Action
+    const result = await InboxService.deleteAlert(clickedItem, recipientUserId);
+
+    // Assert
+    expect(mockDelete).not.toHaveBeenCalled();
+    expect(archiveSpy).toHaveBeenCalledWith(clickedItem, true, recipientUserId);
+    expect(result).toBe(true);
+
+    archiveSpy.mockRestore();
   });
 
   // ==========================================
@@ -552,5 +680,133 @@ describe('InboxService Subcutaneous Flow Tests', () => {
     expect(mensagens).toHaveLength(2);
     expect(mockEq).toHaveBeenCalledWith('thread_id', 'th-1');
     expect(mockOrder).toHaveBeenCalledWith('created_at', { ascending: true });
+  });
+
+  it('deve desarquivar alerta atualizando arquivada para false no registro existente em notificacoes', async () => {
+    // Setup
+    const userId = 'user-guto-uuid-1234';
+    const msgUUID = '66666666-2222-2222-2222-000000000000';
+
+    const queryMock = createQueryMock(null);
+    queryMock.maybeSingle = vi.fn().mockResolvedValue({ data: { id: 'notif-existente-123' }, error: null });
+    const mockUpdate = vi.fn().mockReturnValue(queryMock);
+    queryMock.update = mockUpdate;
+
+    (supabase.from as any).mockImplementation((table: string) => {
+      if (table === 'notificacoes') {
+        return queryMock;
+      }
+      return createQueryMock([]);
+    });
+
+    // Action
+    const result = await InboxService.archiveAlert({ id: `dm-direct-${msgUUID}` }, false, userId);
+
+    // Assert
+    expect(mockUpdate).toHaveBeenCalledWith({ arquivada: false });
+    expect(result).toBe(true);
+  });
+
+  it('deve excluir mensagem direta fisicamente quando o usuario atual e o remetente', async () => {
+    // Setup
+    const senderUserId = 'user-remetente-123';
+    const msgUUID = '55554444-3333-2222-1111-000000000000';
+    const mockDelete = vi.fn().mockReturnThis();
+    const mockEq = vi.fn().mockResolvedValue({ error: null });
+
+    (supabase.from as any).mockImplementation((table: string) => {
+      if (table === 'mensagens_diretas') {
+        return {
+          delete: mockDelete,
+          eq: mockEq
+        };
+      }
+      return createQueryMock([]);
+    });
+
+    const clickedItem: any = {
+      id: `dm-direct-${msgUUID}`,
+      type: 'direct_message',
+      targetId: msgUUID,
+      senderId: senderUserId
+    };
+
+    // Action
+    const result = await InboxService.deleteAlert(clickedItem, senderUserId);
+
+    // Assert
+    expect(mockDelete).toHaveBeenCalled();
+    expect(mockEq).toHaveBeenCalledWith('id', msgUUID);
+    expect(result).toBe(true);
+  });
+
+  it('deve manter isolamento multiusuario garantindo que arquivamento do usuario A nao afete o usuario B', async () => {
+    // Setup
+    const userA = 'user-consultor-a';
+    const userB = 'user-consultor-b';
+    const sharedAlertItemId = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
+
+    (supabase.from as any).mockImplementation((table: string) => {
+      if (table === 'notificacoes') {
+        return {
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn((col: string, val: string) => {
+            if (col === 'user_id' && val === userA) {
+              return {
+                eq: vi.fn(() => Promise.resolve({
+                  data: [{ id: 'notif-a', item_id: sharedAlertItemId, parent_id: sharedAlertItemId }],
+                  error: null
+                }))
+              };
+            }
+            return {
+              eq: vi.fn(() => Promise.resolve({ data: [], error: null }))
+            };
+          })
+        };
+      }
+      return createQueryMock([]);
+    });
+
+    // Action
+    const archivedForA = await InboxService.getArchivedAlerts(userA);
+    const archivedForB = await InboxService.getArchivedAlerts(userB);
+
+    // Assert
+    expect(archivedForA).toContain(`passport-${sharedAlertItemId}`);
+    expect(archivedForB).not.toContain(`passport-${sharedAlertItemId}`);
+  });
+
+  it('deve marcar propriedade arquivado como true em loadAndBuildAlerts para alertas presentes em getArchivedAlerts', async () => {
+    // Setup
+    const user = { id: 'consultor-guto-id' };
+    const perfil = { id: 'consultor-guto-id', role: 'consultor', nome: 'Guto' } as any;
+    const passportItemId = 'pass-cli-1234';
+
+    const getArchivedSpy = vi.spyOn(InboxService, 'getArchivedAlerts').mockResolvedValue([`passport-${passportItemId}`]);
+
+    (supabase.from as any).mockImplementation((table: string) => {
+      if (table === 'clientes') {
+        return createQueryMock([
+          {
+            id: passportItemId,
+            nome: 'Cliente Arquivado Teste',
+            passaporte_validade: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+            consultor_responsavel_id: 'consultor-guto-id'
+          }
+        ]);
+      }
+      return createQueryMock([]);
+    });
+
+    // Action
+    const alerts = await InboxService.loadAndBuildAlerts(user, perfil, 15);
+    const passAlert = alerts.find(a => a.id === `passport-${passportItemId}`);
+
+    // Assert
+    expect(passAlert).toBeDefined();
+    expect(passAlert?.arquivado).toBe(true);
+
+    getArchivedSpy.mockRestore();
   });
 });

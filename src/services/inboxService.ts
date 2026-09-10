@@ -33,11 +33,22 @@ export class InboxService {
    * Arquiva ou restaura um alerta persistindo diretamente no Supabase
    */
   static async archiveAlert(
-    item: { id: string; type?: string },
-    shouldArchive: boolean
+    item: { id: string; type?: string; consultorId?: string },
+    shouldArchive: boolean,
+    userId?: string
   ): Promise<boolean> {
     const alertId = item.id;
     try {
+      // 1. Resolver userId com fallback seguro para a sessão autenticada
+      let resolvedUserId = userId || item.consultorId;
+      if (!resolvedUserId) {
+        try {
+          const { data: authData } = await supabase.auth.getUser();
+          resolvedUserId = authData?.user?.id;
+        } catch (_) {}
+      }
+
+      // 2. Lembretes manuais
       if (item.type === 'manual' || alertId.startsWith('manual-')) {
         const tableId = alertId.replace('manual-', '');
         const { data, error } = await supabase
@@ -53,43 +64,147 @@ export class InboxService {
         return Boolean(data && data.length > 0);
       }
 
-      if (alertId.startsWith('dm-direct-')) {
-        const msgId = alertId.replace('dm-direct-', '');
-        const { error } = await supabase
-          .from('notificacoes')
-          .upsert({
-            item_id: msgId,
-            parent_id: msgId,
-            tipo_item: 'mensagem',
-            arquivada: shouldArchive
-          });
-        if (error) console.warn('Aviso ao sincronizar arquivamento de mensagem:', error);
-        return true;
+      // 3. Notificação existente por ID na tabela 'notificacoes' (ex: mention-<id>)
+      if (alertId.startsWith('mention-') && !alertId.startsWith('mention-dm-direct-')) {
+        const notifId = alertId.replace('mention-', '');
+        if (notifId) {
+          const { data, error } = await supabase
+            .from('notificacoes')
+            .update({ arquivada: shouldArchive })
+            .eq('id', notifId)
+            .select();
+
+          if (error) {
+            console.error('[Supabase] Erro ao atualizar arquivamento de notificação por ID:', error);
+            throw error;
+          }
+          if (data && data.length > 0) {
+            return true;
+          }
+        }
       }
 
-      if (
-        alertId.startsWith('mention-') ||
-        item.type === 'mention' ||
-        item.type === 'campaign_notification' ||
-        item.type === 'direct_message'
-      ) {
-        const tableId = alertId.replace('mention-', '');
-        const { data, error } = await supabase
+      // 4. Para todos os outros tipos ou alertas derivados/sintéticos:
+      // Persistir em 'notificacoes' vinculado ao (user_id, item_id)
+      const targetUUID = this.extractUUIDFromAlertId(alertId);
+      if (targetUUID && resolvedUserId) {
+        const { data: existing, error: selectErr } = await supabase
           .from('notificacoes')
-          .update({ arquivada: shouldArchive })
-          .eq('id', tableId)
-          .select();
+          .select('id')
+          .eq('user_id', resolvedUserId)
+          .eq('item_id', targetUUID)
+          .maybeSingle();
 
-        if (error) {
-          console.error('[Supabase] Erro ao atualizar arquivamento de notificação:', error);
-          throw error;
+        if (selectErr) {
+          console.error('[Supabase] Erro ao verificar notificação para arquivamento:', selectErr);
+          throw selectErr;
         }
-        return Boolean(data && data.length > 0);
+
+        if (existing?.id) {
+          const { error: updateErr } = await supabase
+            .from('notificacoes')
+            .update({ arquivada: shouldArchive })
+            .eq('id', existing.id);
+
+          if (updateErr) {
+            console.error('[Supabase] Erro ao atualizar status de arquivada:', updateErr);
+            throw updateErr;
+          }
+        } else {
+          const { error: insertErr } = await supabase
+            .from('notificacoes')
+            .insert({
+              user_id: resolvedUserId,
+              tipo_item: 'mensagem',
+              item_id: targetUUID,
+              parent_id: targetUUID,
+              lida: false,
+              arquivada: shouldArchive
+            });
+
+          if (insertErr) {
+            console.error('[Supabase] Erro ao inserir registro de arquivamento:', insertErr);
+            throw insertErr;
+          }
+        }
+        return true;
       }
 
       return true;
     } catch (err) {
       console.error('[Supabase] Falha ao persistir status de arquivado no banco:', err);
+      throw err;
+    } finally {
+      InboxService.notifyInboxUpdated();
+    }
+  }
+
+  /**
+   * Exclui ou desvincula um alerta de forma segura e centralizada
+   */
+  static async deleteAlert(
+    item: AlertItem,
+    userId?: string
+  ): Promise<boolean> {
+    try {
+      let resolvedUserId: string | undefined = userId || item.consultorId;
+      if (!resolvedUserId) {
+        try {
+          const { data: authData } = await supabase.auth.getUser();
+          resolvedUserId = authData?.user?.id;
+        } catch (_) {}
+      }
+
+      if (item.type === 'direct_message') {
+        const isSender = Boolean(item.senderId && resolvedUserId && item.senderId === resolvedUserId);
+        if (isSender) {
+          if (item.threadId) {
+            const { error } = await supabase
+              .from('mensagens_diretas')
+              .delete()
+              .eq('thread_id', item.threadId);
+            if (error) throw error;
+          } else if (item.targetId) {
+            const { error } = await supabase
+              .from('mensagens_diretas')
+              .delete()
+              .eq('id', item.targetId);
+            if (error) throw error;
+          }
+        } else {
+          // Destinatário excluindo: arquiva pessoalmente na tabela notificacoes
+          await this.archiveAlert(item, true, resolvedUserId);
+        }
+      } else if (item.type === 'manual') {
+        const tableId = item.id.replace('manual-', '');
+        const { error } = await supabase
+          .from('lembretes')
+          .delete()
+          .eq('id', tableId);
+        if (error) throw error;
+      } else if (item.type === 'escala_solicitacao' || item.type === 'atendimento_balcao') {
+        const tableId = item.targetId;
+        if (tableId) {
+          const { error } = await supabase
+            .from('escala_solicitacoes')
+            .delete()
+            .eq('id', tableId);
+          if (error) throw error;
+        }
+      } else if (item.id.startsWith('mention-') || item.type === 'campaign_notification' || item.type === 'mention') {
+        const tableId = item.id.replace('mention-', '').replace('sent-', '');
+        const { error } = await supabase
+          .from('notificacoes')
+          .delete()
+          .eq('id', tableId);
+        if (error) throw error;
+      } else {
+        await this.archiveAlert(item, true, resolvedUserId);
+      }
+
+      return true;
+    } catch (err) {
+      console.error('[Supabase] Erro ao excluir alerta:', err);
       throw err;
     } finally {
       InboxService.notifyInboxUpdated();
@@ -153,6 +268,62 @@ export class InboxService {
       return Array.from(readIds);
     } catch (e) {
       console.error('Exceção ao buscar alertas lidos no Supabase:', e);
+      return [];
+    }
+  }
+
+  /**
+   * Consulta os alertas arquivados diretamente do Supabase (tabela notificacoes)
+   */
+  static async getArchivedAlerts(userId: string): Promise<string[]> {
+    if (!userId) return [];
+    try {
+      const { data: notifArchived, error } = await supabase
+        .from('notificacoes')
+        .select('id, item_id, parent_id')
+        .eq('user_id', userId)
+        .eq('arquivada', true);
+
+      if (error) {
+        console.warn('Erro ao consultar notificações arquivadas no Supabase:', error.message);
+      }
+
+      const archivedIds = new Set<string>();
+
+      (notifArchived || []).forEach(n => {
+        if (n.id) {
+          archivedIds.add(`mention-${n.id}`);
+        }
+        if (n.item_id) {
+          archivedIds.add(`dm-direct-${n.item_id}`);
+          archivedIds.add(`mention-dm-direct-${n.item_id}`);
+          archivedIds.add(`escala-sol-${n.item_id}-inbox`);
+          archivedIds.add(`escala-sol-${n.item_id}-sent`);
+          archivedIds.add(`escala-sol-${n.item_id}-decisao`);
+          archivedIds.add(`passport-${n.item_id}`);
+          archivedIds.add(`refund-${n.item_id}`);
+          archivedIds.add(`manual-${n.item_id}`);
+          archivedIds.add(`pre-embarque-${n.item_id}`);
+          archivedIds.add(`pos-viagem-nps-${n.item_id}`);
+          archivedIds.add(`atendimento-balcao-${n.item_id}`);
+          archivedIds.add(`sent-${n.item_id}`);
+          archivedIds.add(`sent-mention-${n.item_id}`);
+        }
+        if (n.parent_id) {
+          archivedIds.add(`dm-direct-${n.parent_id}`);
+          archivedIds.add(`mention-dm-direct-${n.parent_id}`);
+          archivedIds.add(`escala-sol-${n.parent_id}-inbox`);
+          archivedIds.add(`escala-sol-${n.parent_id}-sent`);
+          archivedIds.add(`escala-sol-${n.parent_id}-decisao`);
+          archivedIds.add(`sent-${n.parent_id}`);
+          archivedIds.add(`pre-embarque-${n.parent_id}`);
+          archivedIds.add(`pos-viagem-nps-${n.parent_id}`);
+        }
+      });
+
+      return Array.from(archivedIds);
+    } catch (e) {
+      console.error('Exceção ao buscar alertas arquivados no Supabase:', e);
       return [];
     }
   }
@@ -287,6 +458,8 @@ export class InboxService {
     }
 
     const userIsAdmin = (perfil?.role || '').toLowerCase() === 'admin';
+    const archivedList = await InboxService.getArchivedAlerts(user.id);
+    const archivedSet = new Set(archivedList);
 
     // --- PART 1: MANUAL REMINDERS ("Me Lembre Depois") ---
     try {
@@ -460,7 +633,7 @@ export class InboxService {
           subject: subject,
           body: body,
           targetId: targetId,
-          arquivado: Boolean(lem.arquivado),
+          arquivado: Boolean(lem.arquivado) || archivedSet.has(`manual-${lem.id}`),
           consultorId: lem.consultor_id,
           consultorNome: lem.consultor?.nome || 'Consultor',
           createdAt: lem.created_at,
@@ -500,7 +673,7 @@ export class InboxService {
             subject: `O passaporte do passageiro ${c.nome} está ${passSla.status === 'expired' ? 'expirado' : 'perto de vencer'}.`,
             body: `O passaporte do passageiro <strong>${c.nome}</strong> está ${passSla.status === 'expired' ? '<strong class="text-rose-500">expirado!</strong>' : `próximo ao vencimento (${passSla.days} dias restantes).`}<br><br><strong>Detalhes do Cliente:</strong><br>• E-mail: ${c.email || 'Não cadastrado'}<br>• Telefone: ${c.telefone || 'Não cadastrado'}<br>• Passaporte: ${c.passaporte_numero || 'S/N'}<br>• Vencimento: ${new Date(validade).toLocaleDateString('pt-BR')}<br><br>Recomenda-se contatar o cliente para providenciar a emissão de um novo passaporte para viagens internacionais.`,
             targetId: c.id,
-            arquivado: false,
+            arquivado: archivedSet.has(uniqueId),
             consultorId: c.consultor_responsavel_id || '',
             consultorNome: 'PaxFlow Automático',
             createdAt: c.created_at || new Date().toISOString(),
@@ -565,7 +738,7 @@ export class InboxService {
             subject: `Reembolso de ${clienteNome} (${destino}) - ${isAtrasado ? 'PRAZO EXCEDIDO' : 'PRESTES A VENCER'}`,
             body: `O processo de reembolso referente à viagem de <strong>${clienteNome}</strong> para <strong>${destino}</strong> exige atenção da equipe financeira.<br><br>• <strong>Prazo da Agência:</strong> ${prazoReembolsoDias} dias.<br>• <strong>Tempo Decorrido:</strong> ${diasAbertos} dias (${isAtrasado ? `<span class="text-rose-600 font-extrabold">${diasAbertos - prazoReembolsoDias} dias de atraso</span>` : 'Prestes a vencer'}).<br>• <strong>Status Atual:</strong> ${statusText}<br>• <strong>Valor Solicitado:</strong> R$ ${Number(rem.valor_solicitado || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}<br><br><strong>Ação Exigida:</strong> Favor verificar junto ao financeiro ou fornecedor para efetuar a devolução ao cliente e evitar disputas.`,
             targetId: rem.id,
-            arquivado: false,
+            arquivado: archivedSet.has(uniqueId),
             consultorId: consultorId || '',
             consultorNome: 'PaxFlow Automático',
             createdAt: rem.created_at,
@@ -776,7 +949,7 @@ export class InboxService {
               </div>
             `,
             targetId: not.campaign.id,
-            arquivado: Boolean(not.arquivada),
+            arquivado: Boolean(not.arquivada) || archivedSet.has(`mention-${not.id}`),
             consultorId: not.user_id,
             consultorNome: 'PaxFlow Gamificação',
             createdAt: not.created_at,
@@ -810,7 +983,7 @@ export class InboxService {
             subject: `De: ${senderName}`,
             body: not.mensagem.conteudo,
             targetId: not.mensagem.id,
-            arquivado: Boolean(not.arquivada),
+            arquivado: Boolean(not.arquivada) || archivedSet.has(String(not.id).startsWith('dm-direct-') ? not.id : (String(not.id).startsWith('mention-') ? not.id : `mention-${not.id}`)) || (not.mensagem?.id ? (archivedSet.has(`dm-direct-${not.mensagem.id}`) || archivedSet.has(`mention-dm-direct-${not.mensagem.id}`)) : false),
             consultorId: not.user_id,
             consultorNome: senderName,
             createdAt: not.created_at,
@@ -860,7 +1033,7 @@ export class InboxService {
                    [Ver Detalhes do(a) ${itemLabel}]
                  </a>`,
           targetId: not.parent_id,
-          arquivado: Boolean(not.arquivada),
+          arquivado: Boolean(not.arquivada) || archivedSet.has(`mention-${not.id}`),
           consultorId: not.user_id,
           consultorNome: authorName,
           senderId: not.comentario.autor_id || not.comentario.user_id || not.comentario.autor?.id,
@@ -910,7 +1083,7 @@ export class InboxService {
               subject: `Para: ${destinatarioName}`,
               body: msg.conteudo,
               targetId: msg.id,
-              arquivado: false,
+              arquivado: archivedSet.has(`sent-${msg.id}`) || archivedSet.has(`dm-direct-${msg.id}`),
               consultorId: msg.remetente_id,
               consultorNome: senderName,
               createdAt: msg.created_at,
@@ -971,7 +1144,7 @@ export class InboxService {
                        [Ver Detalhes do(a) ${itemLabel}]
                      </a>`,
               targetId: not.parent_id,
-              arquivado: false,
+              arquivado: archivedSet.has(`sent-mention-${not.id}`) || archivedSet.has(`mention-${not.id}`),
               consultorId: not.comentario.autor_id,
               consultorNome: authorName,
               senderId: not.comentario.autor_id,
@@ -1035,7 +1208,7 @@ export class InboxService {
                 : `Pré-Embarque: ${clienteNome} viaja para ${destino} em ${diasRestantes} dia(s).`,
               body: `A viagem de <strong>${clienteNome}</strong> com destino a <strong>${destino}</strong> está agendada para <strong>${dataIda.toLocaleDateString('pt-BR')}</strong> (${diasRestantes} dia(s) restante(s)).<br><br>• <strong>Data de Ida:</strong> ${dataIda.toLocaleDateString('pt-BR')}<br>• <strong>Localizador (LOC):</strong> ${v.codigo_localizador || 'Não informado'}<br><br><strong>Checklist de Segurança Operacional:</strong><br>1. Confirmar emissão e envio de todos os vouchers.<br>2. Auxiliar o cliente com o check-in online das companhias aéreas.<br>3. Conferir validade do passaporte, vistos e vacinas em mãos.`,
               targetId: v.id,
-              arquivado: false,
+              arquivado: archivedSet.has(uniqueId),
               consultorId: v.consultor_id || '',
               consultorNome: 'PaxFlow Automático',
               createdAt: v.created_at || new Date().toISOString(),
@@ -1068,7 +1241,7 @@ export class InboxService {
                       subject: `Embarque de ${clienteNome}: ${labelTrecho} em breve!`,
                       body: `A ida do trecho aéreo <strong>${labelTrecho}</strong> do passageiro <strong>${clienteNome}</strong> está agendada para iniciar em menos de 48 horas.<br><br>• <strong>Data de Ida do Trecho:</strong> ${dataIda.toLocaleDateString('pt-BR')}<br>• <strong>Localizador (LOC):</strong> ${p.codigo_reserva || 'Não informado'}<br><br><strong>Ações recomendadas:</strong><br>1. Enviar os vouchers de voo correspondentes.<br>2. Auxiliar o cliente com o check-in online na companhia aérea.<br>3. Confirmar se a documentação necessária de embarque está em mãos.`,
                       targetId: v.id,
-                      arquivado: false,
+                      arquivado: archivedSet.has(uniqueId) || archivedSet.has(`pre-embarque-${v.id}`),
                       consultorId: v.consultor_id || '',
                       consultorNome: 'PaxFlow Automático',
                       createdAt: v.created_at || new Date().toISOString(),
@@ -1096,7 +1269,7 @@ export class InboxService {
                       subject: `Retorno de ${clienteNome}: ${labelTrecho} em breve!`,
                       body: `O retorno do trecho aéreo <strong>${labelTrecho}</strong> do passageiro <strong>${clienteNome}</strong> está agendado para iniciar em menos de 48 horas.<br><br>• <strong>Data de Volta do Trecho:</strong> ${dataVolta.toLocaleDateString('pt-BR')}<br>• <strong>Localizador (LOC):</strong> ${p.codigo_reserva || 'Não informado'}<br><br><strong>Ações recomendadas:</strong><br>1. Enviar os vouchers de voo correspondentes.<br>2. Auxiliar o cliente com o check-in online na companhia aérea.<br>3. Confirmar se a documentação necessária de embarque está em mãos.`,
                       targetId: v.id,
-                      arquivado: false,
+                      arquivado: archivedSet.has(uniqueId) || archivedSet.has(`pre-embarque-${v.id}`),
                       consultorId: v.consultor_id || '',
                       consultorNome: 'PaxFlow Automático',
                       createdAt: v.created_at || new Date().toISOString(),
@@ -1134,7 +1307,7 @@ export class InboxService {
               subject: `Coletar NPS do cliente ${clienteNome} pós-retorno de ${destino}`,
               body: `O passageiro <strong>${clienteNome}</strong> retornou de sua viagem para <strong>${destino}</strong>.<br><br>• <strong>Data de Retorno:</strong> ${dataVolta.toLocaleDateString('pt-BR')}<br><br>Esta é a hora de ouro para medir a satisfação do cliente! Envie a pesquisa NPS para entender como foi a experiência e fortalecer o relacionamento.`,
               targetId: v.id,
-              arquivado: false,
+              arquivado: archivedSet.has(uniqueId),
               consultorId: v.consultor_id || '',
               consultorNome: 'PaxFlow Automático',
               createdAt: v.created_at || new Date().toISOString(),
@@ -1361,7 +1534,7 @@ export class InboxService {
               subject: cardSubject,
               body: cardBody,
               targetId: sol.id,
-              arquivado: false,
+              arquivado: archivedSet.has(uniqueId) || (isBalcao ? archivedSet.has(`atendimento-balcao-${sol.id}`) : false),
               isSent: isSentItem,
               isDecision: isDecisionItem,
               consultorId: (isBalcao ? sol.destinatario_id : sol.solicitante_id) || '',

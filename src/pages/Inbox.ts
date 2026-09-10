@@ -26,6 +26,7 @@ export class InboxPage {
   private categoryFilter: string = 'todos';
   private onlyUnreadFilter: boolean = false;
   private selectedAlertIds: Set<string> = new Set();
+  private processingAlertIds: Set<string> = new Set();
   private readList: string[] = [];
   private searchQuery: string = '';
   private consultants: PerfilConsultor[] = [];
@@ -130,7 +131,7 @@ export class InboxPage {
         for (const id of ids) {
           const alert = this.filteredAlerts.find(a => a.id === id) || this.alerts.find(a => a.id === id);
           if (alert) {
-            await InboxService.archiveAlert(alert, true);
+            await InboxService.archiveAlert(alert, true, this.user?.id);
           }
         }
         this.selectedAlertIds.clear();
@@ -431,20 +432,37 @@ export class InboxPage {
   }
 
   /**
-   * Executa arquivamento/desarquivamento rápido de um alerta
+   * Executa arquivamento/desarquivamento rápido de um alerta com atualização em memória e rollback seguro
    */
   private async handleQuickArchive(alertItem: AlertItem): Promise<void> {
-    try {
-      const shouldArchive = !alertItem.arquivado;
-      await InboxService.archiveAlert(alertItem, shouldArchive);
+    if (this.processingAlertIds.has(alertItem.id)) return;
+    this.processingAlertIds.add(alertItem.id);
 
-      await this.loadAndBuildAlerts();
+    const previousState = alertItem.arquivado;
+    const shouldArchive = !previousState;
+
+    try {
+      // 1. Resposta instantânea em memória (ZERO localStorage!)
+      alertItem.arquivado = shouldArchive;
+      this.applyFilters();
       this.render();
       this.setupEventListeners();
+
+      // 2. Persistência real no Supabase com repasse do userId
+      await InboxService.archiveAlert(alertItem, shouldArchive, this.user?.id);
+
       this.showToast(shouldArchive ? 'Mensagem arquivada com sucesso!' : 'Mensagem restaurada!', 'success');
     } catch (err: any) {
-      console.error('Erro ao atualizar mensagem:', err);
-      this.showToast('Erro ao atualizar mensagem.', 'error', err);
+      // 3. Rollback imediato em memória se o Supabase falhar
+      alertItem.arquivado = previousState;
+      this.applyFilters();
+      this.render();
+      this.setupEventListeners();
+
+      console.error('Erro ao atualizar mensagem no Supabase:', err);
+      this.showToast('Erro ao atualizar status da mensagem no banco de dados.', 'error', err);
+    } finally {
+      this.processingAlertIds.delete(alertItem.id);
     }
   }
 
@@ -1266,7 +1284,7 @@ export class InboxPage {
       onArchive: async (clickedItem) => {
         try {
           const shouldArchive = !clickedItem.arquivado;
-          await InboxService.archiveAlert(clickedItem, shouldArchive);
+          await InboxService.archiveAlert(clickedItem, shouldArchive, this.user?.id);
 
           // Reload data and redraw page
           await this.loadAndBuildAlerts();
@@ -1281,47 +1299,7 @@ export class InboxPage {
       },
       onDelete: async (clickedItem) => {
         try {
-          if (clickedItem.type === 'direct_message') {
-            if (clickedItem.threadId) {
-              const { error } = await supabase
-                .from('mensagens_diretas')
-                .delete()
-                .eq('thread_id', clickedItem.threadId);
-              if (error) throw error;
-            } else if (clickedItem.targetId) {
-              const { error } = await supabase
-                .from('mensagens_diretas')
-                .delete()
-                .eq('id', clickedItem.targetId);
-              if (error) throw error;
-            }
-          } else if (clickedItem.type === 'manual') {
-            const tableId = clickedItem.id.replace('manual-', '');
-            const { error } = await supabase
-              .from('lembretes')
-              .delete()
-              .eq('id', tableId);
-            if (error) throw error;
-          } else if (clickedItem.type === 'escala_solicitacao' || clickedItem.type === 'atendimento_balcao') {
-            const tableId = clickedItem.targetId;
-            if (tableId) {
-              const { error } = await supabase
-                .from('escala_solicitacoes')
-                .delete()
-                .eq('id', tableId);
-              if (error) throw error;
-            }
-          } else if (clickedItem.id.startsWith('mention-') || clickedItem.type === 'campaign_notification' || clickedItem.type === 'mention') {
-            const tableId = clickedItem.id.replace('mention-', '').replace('sent-', '');
-            const { error } = await supabase
-              .from('notificacoes')
-              .delete()
-              .eq('id', tableId);
-            if (error) throw error;
-          } else {
-            // Alertas gerados pelo sistema (passport, refund, pre-embarque, pos-viagem-nps)
-            await InboxService.archiveAlert(clickedItem, true);
-          }
+          await InboxService.deleteAlert(clickedItem, this.user?.id);
 
           // Reload data and redraw page
           await this.loadAndBuildAlerts();
