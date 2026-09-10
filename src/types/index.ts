@@ -214,6 +214,8 @@ export interface Cliente {
   vistosInformacoes?: string; // Detalhes sobre vistos ativos do cliente
   googleDriveFolderUrl?: string; // URL da pasta dedicada criada no Google Drive da agência
   classificacoes?: string[];
+  next_trip_snooze_until?: string | null;
+  nextTripSnoozeUntil?: string | null;
   codigo_ref?: string;
   codigoRef?: string;
   createdAt?: string;

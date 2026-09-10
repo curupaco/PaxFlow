@@ -1,4 +1,5 @@
 import { GlobalSettings, NextTripOpportunity } from '../types';
+import { supabase } from './supabase';
 
 export class NextTripEngineService {
   /**
@@ -134,16 +135,15 @@ export class NextTripEngineService {
         return;
       }
 
-      // Verificação de Snooze
-      const snoozeKey = `next_trip_snooze_${cliente.id}`;
-      const snoozeUntilStr = typeof localStorage !== 'undefined' ? localStorage.getItem(snoozeKey) : null;
+      // Verificação de Snooze (Zero LocalStorage: Fonte da Verdade é o Supabase)
+      const rawSnooze = cliente.next_trip_snooze_until || cliente.nextTripSnoozeUntil;
       let isSnoozed = false;
-      if (snoozeUntilStr) {
-        const snoozeUntil = new Date(snoozeUntilStr);
-        if (snoozeUntil.getTime() > agora.getTime()) {
+      let snoozeUntilStr: string | null = null;
+      if (rawSnooze) {
+        const snoozeUntil = NextTripEngineService.parseDataSegura(rawSnooze);
+        if (snoozeUntil && snoozeUntil.getTime() > agora.getTime()) {
           isSnoozed = true;
-        } else {
-          localStorage.removeItem(snoozeKey);
+          snoozeUntilStr = snoozeUntil.toISOString();
         }
       }
 
@@ -271,11 +271,24 @@ export class NextTripEngineService {
   }
 
   /**
-   * Aplica snooze de N dias para a oportunidade de recompra de um cliente
+   * Aplica snooze de N dias para a oportunidade de recompra de um cliente diretamente no Supabase.
+   * Respeita rigorosamente a premissa de Zero LocalStorage para dados de negócio.
    */
-  public static aplicarSnoozeAbordagem(clienteId: string, dias: number = 30): void {
+  public static async aplicarSnoozeAbordagem(clienteId: string, dias: number = 30): Promise<string> {
     const dataLimite = new Date();
     dataLimite.setDate(dataLimite.getDate() + dias);
-    localStorage.setItem(`next_trip_snooze_${clienteId}`, dataLimite.toISOString());
+    const isoString = dataLimite.toISOString();
+
+    const { error } = await supabase
+      .from('clientes')
+      .update({ next_trip_snooze_until: isoString })
+      .eq('id', clienteId);
+
+    if (error) {
+      console.error('Erro ao salvar snooze do cliente no Supabase:', error);
+      throw error;
+    }
+
+    return isoString;
   }
 }

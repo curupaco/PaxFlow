@@ -390,24 +390,32 @@ export class NextTripPage {
 
     // Eventos dos cards
     this.container.querySelectorAll('.btn-next-trip-orc').forEach(btn => {
-      btn.addEventListener('click', (e) => {
+      btn.addEventListener('click', async (e) => {
         e.stopPropagation();
         const cId = btn.getAttribute('data-cliente-id');
         const op = this.oportunidades.find(o => o.clienteId === cId);
         if (op) {
-          NextTripEngineService.aplicarSnoozeAbordagem(op.clienteId, 30);
+          try {
+            await NextTripEngineService.aplicarSnoozeAbordagem(op.clienteId, 30);
+          } catch (err) {
+            console.error('Falha ao registrar snooze de orçamento:', err);
+          }
           window.location.hash = `#orcamentos?novo=true&cliente_id=${op.clienteId}&destino=${encodeURIComponent(op.destinoRecomendado)}`;
         }
       });
     });
 
     this.container.querySelectorAll('.btn-next-trip-wsp').forEach(btn => {
-      btn.addEventListener('click', (e) => {
+      btn.addEventListener('click', async (e) => {
         e.stopPropagation();
         const cId = btn.getAttribute('data-cliente-id');
         const op = this.oportunidades.find(o => o.clienteId === cId);
         if (op) {
-          NextTripEngineService.aplicarSnoozeAbordagem(op.clienteId, 30);
+          try {
+            await NextTripEngineService.aplicarSnoozeAbordagem(op.clienteId, 30);
+          } catch (err) {
+            console.error('Falha ao registrar snooze de whatsapp:', err);
+          }
           SendTemplateMessageModal.open({
             clienteNome: op.clienteNome,
             clienteTelefone: op.clienteTelefone || '',
@@ -422,14 +430,22 @@ export class NextTripPage {
     });
 
     this.container.querySelectorAll('.btn-next-trip-snooze').forEach(btn => {
-      btn.addEventListener('click', (e) => {
+      btn.addEventListener('click', async (e) => {
         e.stopPropagation();
         const cId = btn.getAttribute('data-cliente-id');
         if (cId) {
-          NextTripEngineService.aplicarSnoozeAbordagem(cId, 30);
-          this.calcularOportunidades();
-          this.render();
-          this.setupEventListeners();
+          try {
+            const snoozeIso = await NextTripEngineService.aplicarSnoozeAbordagem(cId, 30);
+            const cli = this.clientes.find(c => c.id === cId);
+            if (cli) {
+              cli.next_trip_snooze_until = snoozeIso;
+            }
+            this.calcularOportunidades();
+            this.render();
+            this.setupEventListeners();
+          } catch (err) {
+            console.error('Falha ao aplicar snooze:', err);
+          }
         }
       });
     });
@@ -442,5 +458,16 @@ export class NextTripPage {
         <h2 class="text-lg font-black text-slate-800 dark:text-slate-100 uppercase">${msg}</h2>
       </div>
     `;
+  }
+
+  /**
+   * Destrutor da página para limpeza de referências e eventos ao transicionar rotas
+   */
+  public destroy(): void {
+    this.oportunidades = [];
+    this.clientes = [];
+    this.viagens = [];
+    this.orcamentos = [];
+    this.consultores = [];
   }
 }

@@ -1,9 +1,26 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NextTripEngineService } from '../../src/services/nextTripEngineService';
+import { supabase } from '../../src/services/supabase';
+
+vi.mock('../../src/services/supabase', () => ({
+  supabase: {
+    from: vi.fn(),
+  },
+}));
 
 describe('NextTripEngineService - Testes Subcutâneos', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(supabase.from).mockImplementation((table: string) => {
+      if (table === 'clientes') {
+        return {
+          update: vi.fn().mockReturnValue({
+            eq: vi.fn().mockResolvedValue({ error: null }),
+          }),
+        } as any;
+      }
+      return {} as any;
+    });
   });
 
   it('deve fazer parse correto de datas brasileiras e formatos ISO com tolerância a falhas', () => {
@@ -222,32 +239,80 @@ describe('NextTripEngineService - Testes Subcutâneos', () => {
     expect(opAdmin[0].clienteId).toBe('c-privado');
   });
 
-  it('deve aplicar snooze e marcar status da oportunidade como snoozed', () => {
+  it('deve aplicar snooze persistindo no Supabase e marcar status da oportunidade como snoozed via banco', async () => {
     // Setup
-    const storageMap = new Map<string, string>();
-    (globalThis as any).localStorage = {
-      getItem: (key: string) => storageMap.get(key) || null,
-      setItem: (key: string, val: string) => storageMap.set(key, String(val)),
-      removeItem: (key: string) => storageMap.delete(key),
-      clear: () => storageMap.clear(),
-    };
-
     const seisMesesAtras = new Date();
     seisMesesAtras.setMonth(seisMesesAtras.getMonth() - 6);
 
-    const clientes = [{ id: 'c-snooze', nome: 'Snoozed Client' }];
-    const viagens = [{ id: 'v1', cliente_id: 'c-snooze', destino: 'Cruzeiro MSC', data_volta: seisMesesAtras.toISOString(), nps: 9 }];
+    const agora = new Date();
+    const dataSnoozeFutura = new Date();
+    dataSnoozeFutura.setDate(agora.getDate() + 15);
 
-    // Action
-    NextTripEngineService.aplicarSnoozeAbordagem('c-snooze', 15);
+    const clientes = [
+      {
+        id: 'c-snooze',
+        nome: 'Snoozed Client',
+        next_trip_snooze_until: dataSnoozeFutura.toISOString(),
+      },
+    ];
+    const viagens = [
+      {
+        id: 'v1',
+        cliente_id: 'c-snooze',
+        destino: 'Cruzeiro MSC',
+        data_volta: seisMesesAtras.toISOString(),
+        nps: 9,
+      },
+    ];
+
+    // Action 1: Validar reconhecimento de snooze vindo do Supabase
     const oportunidades = NextTripEngineService.calculateOpportunities(clientes, viagens, []);
 
-    // Assert
+    // Assert 1
     expect(oportunidades).toHaveLength(1);
     expect(oportunidades[0].statusAbordagem).toBe('snoozed');
     expect(oportunidades[0].categoriaDestino).toBe('cruzeiro');
     expect(oportunidades[0].destinoRecomendado).toBe('Cruzeiro Marítimo');
 
-    delete (globalThis as any).localStorage;
+    // Action 2: Invocar aplicação de snooze direto no Supabase
+    const resIso = await NextTripEngineService.aplicarSnoozeAbordagem('c-snooze', 30);
+
+    // Assert 2
+    expect(resIso).toBeDefined();
+    const dataCalculada = new Date(resIso);
+    expect(dataCalculada.getTime()).toBeGreaterThan(agora.getTime());
+  });
+
+  it('deve marcar status como pendente quando o snooze do banco já expirou', () => {
+    // Setup
+    const seisMesesAtras = new Date();
+    seisMesesAtras.setMonth(seisMesesAtras.getMonth() - 6);
+
+    const snoozeExpirado = new Date();
+    snoozeExpirado.setDate(snoozeExpirado.getDate() - 2); // Expirou há 2 dias
+
+    const clientes = [
+      {
+        id: 'c-expirado',
+        nome: 'Cliente Reativado',
+        next_trip_snooze_until: snoozeExpirado.toISOString(),
+      },
+    ];
+    const viagens = [
+      {
+        id: 'v-exp',
+        cliente_id: 'c-expirado',
+        destino: 'Paris',
+        data_volta: seisMesesAtras.toISOString(),
+        nps: 9,
+      },
+    ];
+
+    // Action
+    const oportunidades = NextTripEngineService.calculateOpportunities(clientes, viagens, []);
+
+    // Assert
+    expect(oportunidades).toHaveLength(1);
+    expect(oportunidades[0].statusAbordagem).toBe('pendente');
   });
 });

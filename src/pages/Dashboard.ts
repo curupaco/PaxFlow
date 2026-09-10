@@ -262,7 +262,9 @@ export class Dashboard {
     this.sortables.forEach(s => s.destroy());
     this.sortables = [];
     if (this.realtimeChannel) {
-      this.realtimeChannel.unsubscribe();
+      try {
+        supabase.removeChannel(this.realtimeChannel);
+      } catch (e) {}
       this.realtimeChannel = null;
     }
     if (this.storageListener) {
@@ -572,11 +574,7 @@ export class Dashboard {
         .eq('viagem_id', tripId);
       if (errConfs) console.warn('Aviso ao excluir loc_conferencias:', errConfs.message);
 
-      // 4. Deletar tarefas e lembretes da viagem
-      try {
-        await supabase.from('tarefas').delete().eq('viagem_id', tripId);
-      } catch (e) {}
-
+      // 4. Deletar lembretes e NPS da viagem
       try {
         await supabase.from('lembretes').delete().eq('viagem_id', tripId);
       } catch (e) {}

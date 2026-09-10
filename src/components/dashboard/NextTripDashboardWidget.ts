@@ -221,11 +221,15 @@ export class NextTripDashboardWidget {
 
     // Listeners de Ações dentro do Drawer
     portal.querySelectorAll('.btn-drawer-orc').forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         const cId = btn.getAttribute('data-cliente-id');
         const op = this.oportunidades.find(o => o.clienteId === cId);
         if (op) {
-          NextTripEngineService.aplicarSnoozeAbordagem(op.clienteId, 30);
+          try {
+            await NextTripEngineService.aplicarSnoozeAbordagem(op.clienteId, 30);
+          } catch (err) {
+            console.error('Erro ao aplicar snooze no drawer:', err);
+          }
           closeDrawer();
           this.onCriarOrcamento(op);
           this.onUpdate();
@@ -234,11 +238,15 @@ export class NextTripDashboardWidget {
     });
 
     portal.querySelectorAll('.btn-drawer-wsp').forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         const cId = btn.getAttribute('data-cliente-id');
         const op = this.oportunidades.find(o => o.clienteId === cId);
         if (op) {
-          NextTripEngineService.aplicarSnoozeAbordagem(op.clienteId, 30);
+          try {
+            await NextTripEngineService.aplicarSnoozeAbordagem(op.clienteId, 30);
+          } catch (err) {
+            console.error('Erro ao aplicar snooze no drawer:', err);
+          }
           closeDrawer();
           this.onDispararWhatsApp(op);
           this.onUpdate();
@@ -247,10 +255,14 @@ export class NextTripDashboardWidget {
     });
 
     portal.querySelectorAll('.btn-drawer-snooze').forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         const cId = btn.getAttribute('data-cliente-id');
         if (cId) {
-          NextTripEngineService.aplicarSnoozeAbordagem(cId, 30);
+          try {
+            await NextTripEngineService.aplicarSnoozeAbordagem(cId, 30);
+          } catch (err) {
+            console.error('Erro ao aplicar snooze no drawer:', err);
+          }
           closeDrawer();
           this.onUpdate();
         }
