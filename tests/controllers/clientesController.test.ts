@@ -57,6 +57,18 @@ describe('ClientesController - Testes Subcutâneos', () => {
     expect(verificarAlertaValidadePassaporte(dataSegura2Anos, refDate)).toBe('valido');
   });
 
+  it('deve testar os limites de fronteira exatos de 180 e 181 dias para validade de passaporte', () => {
+    // Setup
+    const refDate = new Date('2026-09-10T12:00:00.000Z').getTime();
+    const exatos180Dias = new Date(refDate + 180 * 86400 * 1000).toISOString().split('T')[0];
+    const maisDe180Dias = new Date(refDate + 185 * 86400 * 1000).toISOString().split('T')[0];
+
+    // Action & Assert
+    expect(verificarAlertaValidadePassaporte(exatos180Dias, refDate)).toBe('expirando_em_breve');
+    expect(verificarAlertaValidadePassaporte(maisDe180Dias, refDate)).toBe('valido');
+    expect(verificarAlertaValidadePassaporte('', refDate)).toBe('valido'); // Vazio é seguro
+  });
+
   it('deve filtrar carteira de clientes preservando privacidade sem busca e ampliando durante pesquisa', () => {
     // Setup
     const baseClientes = [
@@ -78,6 +90,21 @@ describe('ClientesController - Testes Subcutâneos', () => {
     expect(thiagoSemBusca.map(c => c.id)).toEqual(['1', '3']);
     expect(thiagoComBusca).toHaveLength(3);
     expect(adminSemBusca).toHaveLength(3);
+  });
+
+  it('deve reconhecer propriedade consultorResponsavelId em formato camelCase', () => {
+    // Setup
+    const baseClientesCamel = [
+      { id: '1', nome: 'Cliente A', consultorResponsavelId: 'user-1' },
+      { id: '2', nome: 'Cliente B', consultorResponsavelId: 'user-2' },
+    ];
+
+    // Action
+    const resultado = filtrarClientesCarteira(baseClientesCamel, 'user-1', 'consultor', false);
+
+    // Assert
+    expect(resultado).toHaveLength(1);
+    expect(resultado[0].id).toBe('1');
   });
 
   it('deve gerenciar seleção em lote (toggle, selecionar todos e limpar)', () => {

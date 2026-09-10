@@ -50,6 +50,19 @@ describe('DashboardController - Testes Subcutâneos', () => {
     expect(calcularUrgenciaEmbarque(data40Horas, 'pos_viagem', refDate)).toBe('normal');
   });
 
+  it('deve avaliar com precisão os limites de 48h e ausência de data de início', () => {
+    // Setup
+    const refDate = new Date('2026-09-10T12:00:00.000Z').getTime();
+    const exatas48Horas = new Date(refDate + 48 * 3600 * 1000).toISOString();
+    const exatas49Horas = new Date(refDate + 49 * 3600 * 1000).toISOString();
+
+    // Action & Assert
+    expect(calcularUrgenciaEmbarque(exatas48Horas, 'planejamento', refDate)).toBe('urgente');
+    expect(calcularUrgenciaEmbarque(exatas49Horas, 'planejamento', refDate)).toBe('alerta');
+    expect(calcularUrgenciaEmbarque(undefined, 'planejamento', refDate)).toBe('normal');
+    expect(calcularUrgenciaEmbarque('', 'planejamento', refDate)).toBe('normal');
+  });
+
   it('deve filtrar viagens por consultor, texto de busca e status de atividade', () => {
     // Setup
     const viagens: ViagemMock[] = [
@@ -69,5 +82,26 @@ describe('DashboardController - Testes Subcutâneos', () => {
     expect(apenasAtivasC1[0].id).toBe('1');
     expect(buscaRoma).toHaveLength(1);
     expect(buscaRoma[0].id).toBe('2');
+  });
+
+  it('deve aplicar filtro composto com consultor, texto e apenas ativas simultaneamente', () => {
+    // Setup
+    const viagens: ViagemMock[] = [
+      { id: '1', consultor_id: 'c1', status: 'planejamento', cliente: { nome: 'João Lima' }, destino: 'Paris' },
+      { id: '2', consultor_id: 'c1', status: 'planejamento', cliente: { nome: 'Carlos Lima' }, destino: 'Roma' },
+      { id: '3', consultor_id: 'c1', status: 'pos_viagem', cliente: { nome: 'João Lima' }, destino: 'Paris' },
+      { id: '4', consultor_id: 'c2', status: 'planejamento', cliente: { nome: 'João Lima' }, destino: 'Paris' },
+    ];
+
+    // Action - Consultor c1 + Busca "joão" + Apenas Ativas
+    const resultado = filtrarViagensOperacionais(viagens, {
+      consultorId: 'c1',
+      busca: 'joão',
+      apenasAtivas: true
+    });
+
+    // Assert - Apenas id 1 atende a todos os 3 critérios simultâneos
+    expect(resultado).toHaveLength(1);
+    expect(resultado[0].id).toBe('1');
   });
 });

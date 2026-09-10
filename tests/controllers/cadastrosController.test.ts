@@ -15,6 +15,18 @@ describe('CadastrosController - Gestão e Consistência Cadastral de Fornecedore
     expect(normalizarTipoProduto('qualquer_outro')).toBe('OUTROS');
   });
 
+  it('deve normalizar produtos compostos e variações comuns de mercado', () => {
+    // Setup & Action & Assert
+    expect(normalizarTipoProduto('Voo Regular Doméstico')).toBe('AEREO');
+    expect(normalizarTipoProduto('Resort All Inclusive')).toBe('HOTEL');
+    expect(normalizarTipoProduto('Navio MSC Grandiosa')).toBe('CRUZEIRO');
+    expect(normalizarTipoProduto('Traslado In/Out Privativo')).toBe('TRANSFER');
+    expect(normalizarTipoProduto('Seguro Viagem Internacional')).toBe('SEGURO');
+    expect(normalizarTipoProduto('City Tour com Guia')).toBe('PASSEIO');
+    expect(normalizarTipoProduto('')).toBe('OUTROS');
+    expect(normalizarTipoProduto(null as any)).toBe('OUTROS');
+  });
+
   it('deve sanitizar cadastro de fornecedor formatando CNPJ e validando e-mail e comissão', () => {
     // Setup
     const fornecedorBruto = {
@@ -34,6 +46,20 @@ describe('CadastrosController - Gestão e Consistência Cadastral de Fornecedore
     expect(sanitizado.comissaoPadrao).toBe(12.5);
   });
 
+  it('deve travar comissões exorbitantes acima de 100% no teto de 100%', () => {
+    // Setup - fornecedor com comissão cadastrada como 150%
+    const fornecedorTeto = {
+      nome: 'Operadora Luxo',
+      comissao_padrao: 150,
+    };
+
+    // Action
+    const sanitizado = sanitizarCadastroFornecedor(fornecedorTeto);
+
+    // Assert
+    expect(sanitizado.comissaoPadrao).toBe(100);
+  });
+
   it('deve descartar CNPJ e e-mail inválidos preservando a integridade do registro', () => {
     // Setup
     const fornecedorInvalido = {
@@ -50,6 +76,20 @@ describe('CadastrosController - Gestão e Consistência Cadastral de Fornecedore
     expect(sanitizado.cnpj).toBeNull();
     expect(sanitizado.email).toBeNull();
     expect(sanitizado.comissaoPadrao).toBe(0);
+  });
+
+  it('deve fornecer fallback seguro para fornecedor com nome vazio ou nulo', () => {
+    // Setup
+    const fornecedorSemNome = {
+      nome: '   ',
+      cnpj: '11222333000199',
+    };
+
+    // Action
+    const sanitizado = sanitizarCadastroFornecedor(fornecedorSemNome);
+
+    // Assert
+    expect(sanitizado.nome).toBe('Fornecedor Não Identificado');
   });
 
   it('deve identificar duplicidade por CNPJ ou por Nome idêntico ignorando maiúsculas', () => {

@@ -25,6 +25,20 @@ describe('ReembolsosController - Testes Subcutâneos', () => {
     expect(visaoConsultorC1.map(r => r.id)).toEqual(['1', '3']);
   });
 
+  it('deve suportar mapeamento camelCase de consultores na regra de permissão', () => {
+    // Setup - dados em formato camelCase
+    const mockReembolsosCamel = [
+      { id: '1', consultorSolicitanteId: 'u10', viagem: { consultorId: 'u20' } },
+      { id: '2', consultorSolicitanteId: 'u99', viagem: { consultorResponsavelId: 'u10' } },
+    ];
+
+    // Action
+    const resultado = filterReembolsosByPermission(mockReembolsosCamel, 'u10', 'consultor');
+
+    // Assert
+    expect(resultado).toHaveLength(2);
+  });
+
   it('deve calcular o tempo de SLA decorrido com precisão', () => {
     // Setup
     const fixedNow = new Date('2026-09-09T17:00:00.000Z').getTime();
@@ -67,6 +81,18 @@ describe('ReembolsosController - Testes Subcutâneos', () => {
     expect(payloadAnalise.data_resolucao).toBeNull();
   });
 
+  it('deve preencher data de resolução automaticamente com a data de hoje quando omitida no status pago', () => {
+    // Setup
+    const hojeIso = new Date().toISOString().split('T')[0];
+
+    // Action
+    const payload = prepareReembolsoStatusPayload('pago');
+
+    // Assert
+    expect(payload.status).toBe('pago');
+    expect(payload.data_resolucao).toBe(hojeIso);
+  });
+
   it('deve filtrar reembolsos por termo de busca no cliente, viagem ou motivo', () => {
     // Setup
     const reembolsos = [
@@ -85,5 +111,19 @@ describe('ReembolsosController - Testes Subcutâneos', () => {
     expect(buscaCodigo).toHaveLength(1);
     expect(buscaCodigo[0].id).toBe('2');
     expect(buscaInexistente).toHaveLength(0);
+  });
+
+  it('deve retornar lista completa se termo de busca for vazio ou apenas espaços em branco', () => {
+    // Setup
+    const reembolsos = [
+      { id: '1', motivo: 'Voo', viagem: null },
+      { id: '2', motivo: 'Hotel', viagem: null }
+    ];
+
+    // Action
+    const resVazio = filterReembolsosByTerm(reembolsos, '   ');
+
+    // Assert
+    expect(resVazio).toHaveLength(2);
   });
 });

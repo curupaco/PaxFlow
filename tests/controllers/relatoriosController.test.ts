@@ -11,6 +11,7 @@ describe('RelatoriosController - Métricas Comerciais e Desempenho da Agência',
     // Setup & Action & Assert
     expect(calcularTaxaConversao(10, 4)).toBe(40.0);
     expect(calcularTaxaConversao(25, 8)).toBe(32.0);
+    expect(calcularTaxaConversao(7, 3)).toBe(42.9); // Arredondamento com 1 casa decimal
     expect(calcularTaxaConversao(0, 0)).toBe(0);
     expect(calcularTaxaConversao(-5, 2)).toBe(0);
   });
@@ -33,14 +34,23 @@ describe('RelatoriosController - Métricas Comerciais e Desempenho da Agência',
     expect(resultado.ticketMedioPax).toBe(6000);
   });
 
+  it('deve retornar ticket médio zerado para lista vazia de viagens', () => {
+    // Setup & Action
+    const res = calcularTicketMedioPax([]);
+
+    // Assert
+    expect(res.ticketMedioViagem).toBe(0);
+    expect(res.ticketMedioPax).toBe(0);
+  });
+
   it('deve agrupar faturamento por categoria de produto ignorando itens cancelados', () => {
     // Setup
     const produtos = [
-      { tipo: 'Aéreo Internacional', valor_venda: 5000, status: 'confirmado' },
-      { tipo: 'Hotel Resort', valor_venda: 4000, status: 'confirmado' },
-      { tipo: 'Seguro Viagem', valor_venda: 500, status: 'confirmado' },
-      { tipo: 'Cruzeiro MSC', valor_venda: 6000, status: 'confirmado' },
-      { tipo: 'Passeio Ingresso', valor_venda: 800, status: 'confirmado' }, // Outros
+      { tipo: 'Aéreo Internacional', valor_venda: 5000, status: 'emitido' },
+      { tipo: 'Hotel Resort', valor_venda: 4000, status: 'emitido' },
+      { tipo: 'Seguro Viagem', valor_venda: 500, status: 'emitido' },
+      { tipo: 'Cruzeiro MSC', valor_venda: 6000, status: 'emitido' },
+      { tipo: 'Passeio Ingresso', valor_venda: 800, status: 'emitido' }, // Outros
       { tipo: 'Aéreo Cancelado', valor_venda: 3000, status: 'cancelado' }, // Não deve somar
     ];
 
@@ -54,6 +64,18 @@ describe('RelatoriosController - Métricas Comerciais e Desempenho da Agência',
     expect(categorias.Cruzeiro.totalValor).toBe(6000);
     expect(categorias.Outros.totalValor).toBe(800);
     expect(categorias.Aereo.quantidade).toBe(1);
+  });
+
+  it('deve lidar com produtos nulos ou vazios no agrupamento de vendas por categoria', () => {
+    // Setup & Action
+    const categorias = agruparVendasPorCategoriaProduto(null as any);
+
+    // Assert
+    expect(categorias.Aereo.totalValor).toBe(0);
+    expect(categorias.Hospedagem.totalValor).toBe(0);
+    expect(categorias.Cruzeiro.totalValor).toBe(0);
+    expect(categorias.Seguro.totalValor).toBe(0);
+    expect(categorias.Outros.totalValor).toBe(0);
   });
 
   it('deve gerar ranking de consultores ordenado decrescentemente por faturamento total', () => {
@@ -78,5 +100,21 @@ describe('RelatoriosController - Métricas Comerciais e Desempenho da Agência',
     // 2º lugar: Guto (80k)
     expect(ranking[1].consultorNome).toBe('Guto Brassaroto');
     expect(ranking[1].totalVendas).toBe(80000);
+  });
+
+  it('deve agrupar vendas sem consultor atribuído sob a agência geral', () => {
+    // Setup - Vendas sem consultor
+    const vendasAgencia = [
+      { valor_total: 15000, status: 'fechado' } // consultor_id omitido
+    ];
+
+    // Action
+    const ranking = gerarRankingConsultores(vendasAgencia);
+
+    // Assert
+    expect(ranking).toHaveLength(1);
+    expect(ranking[0].consultorId).toBe('agencia');
+    expect(ranking[0].consultorNome).toBe('Consultor Não Identificado');
+    expect(ranking[0].totalVendas).toBe(15000);
   });
 });
