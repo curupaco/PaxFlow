@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { EscalaService, isSameConsultantName } from '../../src/services/escalaService';
 import { supabase } from '../../src/services/supabase';
 import { PushSenderService } from '../../src/services/pushSenderService';
+import { createSupabaseQueryMock as createQueryMock } from '../mocks/supabaseMock';
 
 vi.mock('../../src/services/supabase', () => {
   const mockFrom = vi.fn();
@@ -19,27 +20,6 @@ vi.mock('../../src/services/pushSenderService', () => {
     }
   };
 });
-
-function createQueryMock(data: any = [], error: any = null) {
-  const result = { data, error };
-  const mock: any = {
-    select: vi.fn(() => mock),
-    order: vi.fn(() => mock),
-    not: vi.fn(() => mock),
-    eq: vi.fn(() => mock),
-    gte: vi.fn(() => mock),
-    lte: vi.fn(() => mock),
-    delete: vi.fn(() => mock),
-    maybeSingle: vi.fn(() => Promise.resolve(result)),
-    insert: vi.fn(() => Promise.resolve(result)),
-    update: vi.fn(() => mock),
-    upsert: vi.fn(() => Promise.resolve(result)),
-    then(onFulfilled: any, onRejected: any) {
-      return Promise.resolve(result).then(onFulfilled, onRejected);
-    }
-  };
-  return mock;
-}
 
 describe('EscalaService Subcutaneous Tests', () => {
   beforeEach(() => {

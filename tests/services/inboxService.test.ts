@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { InboxService } from '../../src/services/inboxService';
 import { supabase } from '../../src/services/supabase';
+import { createSupabaseQueryMock as createQueryMock } from '../mocks/supabaseMock';
 
 vi.mock('../../src/services/supabase', () => {
   const mockFrom = vi.fn();
@@ -10,25 +11,6 @@ vi.mock('../../src/services/supabase', () => {
     }
   };
 });
-
-function createQueryMock(data: any = [], error: any = null) {
-  const result = { data, error };
-  const mock: any = {
-    select: vi.fn(() => mock),
-    order: vi.fn(() => mock),
-    not: vi.fn(() => mock),
-    eq: vi.fn(() => mock),
-    or: vi.fn(() => mock),
-    maybeSingle: vi.fn(() => Promise.resolve(result)),
-    insert: vi.fn(() => Promise.resolve(result)),
-    update: vi.fn(() => mock),
-    upsert: vi.fn(() => Promise.resolve(result)),
-    then(onFulfilled: any, onRejected: any) {
-      return Promise.resolve(result).then(onFulfilled, onRejected);
-    }
-  };
-  return mock;
-}
 
 describe('InboxService Subcutaneous Flow Tests', () => {
   beforeEach(() => {

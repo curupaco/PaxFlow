@@ -1,60 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { InboxMessage } from '../../src/types';
-
-// Funções puras que refletem a lógica de controle da página Inbox sem acoplamento ao DOM
-export function filtrarMensagensInbox(
-  mensagens: InboxMessage[],
-  abaAtiva: 'todas' | 'nao_lidas' | 'arquivadas' | 'minhas',
-  apenasNaoLidasBotao: boolean,
-  termoBusca: string,
-  currentUserId: string
-): InboxMessage[] {
-  let lista = [...mensagens];
-
-  // 1. Filtro de abas
-  if (abaAtiva === 'arquivadas') {
-    lista = lista.filter((m) => m.arquivado === true);
-  } else {
-    lista = lista.filter((m) => m.arquivado !== true);
-  }
-
-  if (abaAtiva === 'nao_lidas' || apenasNaoLidasBotao) {
-    lista = lista.filter((m) => !m.lido);
-  }
-
-  if (abaAtiva === 'minhas') {
-    lista = lista.filter((m) => m.destinatario_id === currentUserId || m.solicitante_id === currentUserId);
-  }
-
-  // 2. Filtro por termo de busca
-  if (termoBusca && termoBusca.trim().length > 0) {
-    const q = termoBusca.toLowerCase().trim();
-    lista = lista.filter((m) => {
-      const tit = (m.titulo || '').toLowerCase();
-      const cli = (m.cliente_nome || '').toLowerCase();
-      const rem = (m.remetente_nome || m.solicitante_nome || '').toLowerCase();
-      const mot = (m.motivo || '').toLowerCase();
-      return tit.includes(q) || cli.includes(q) || rem.includes(q) || mot.includes(q);
-    });
-  }
-
-  return lista;
-}
-
-export function calcularBadgesInbox(mensagens: InboxMessage[]): { naoLidasTotal: number; arquivadasTotal: number } {
-  let naoLidasTotal = 0;
-  let arquivadasTotal = 0;
-
-  mensagens.forEach((m) => {
-    if (m.arquivado) {
-      arquivadasTotal++;
-    } else {
-      if (!m.lido) naoLidasTotal++;
-    }
-  });
-
-  return { naoLidasTotal, arquivadasTotal };
-}
+import {
+  filtrarMensagensInbox,
+  calcularBadgesInbox
+} from '../../src/controllers/inboxController';
 
 describe('InboxController - Lógica Subcutânea de Página', () => {
   const mensagensExemplo: any[] = [

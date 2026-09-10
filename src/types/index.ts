@@ -310,7 +310,10 @@ export interface ProdutoViagem {
   descricao: string; // Detalhes (ex: Voo GRU-MCO, Hotel XYZ Quarto Luxo)
   codigoReserva?: string; // Código de reserva ou bilhete individual
   valorCusto: number; // Valor pago ao fornecedor
+  valor_custo?: number;
   valorVenda: number; // Valor vendido ao cliente
+  valor_venda?: number;
+  viagem_id?: string;
   status: 'reservado' | 'emitido' | 'cancelado' | 'reembolsado';
   dataServico: string; // Data da prestação do serviço
   datasAdicionais?: { data: string; rotulo: string }[];
@@ -324,6 +327,23 @@ export interface ProdutoViagem {
   rav?: number;
   createdAt?: string;
   updatedAt?: string;
+}
+
+/**
+ * Interface representativa de mensagem/item na Caixa de Entrada
+ */
+export interface InboxMessage {
+  id: string;
+  titulo?: string;
+  cliente_nome?: string;
+  remetente_nome?: string;
+  solicitante_nome?: string;
+  destinatario_id?: string;
+  solicitante_id?: string;
+  motivo?: string;
+  lido?: boolean;
+  arquivado?: boolean;
+  createdAt?: string;
 }
 
 /**
