@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { RiskScoreService } from '../../src/services/riskScoreService';
 import { Viagem, Cliente, ProdutoViagem } from '../../src/types';
+import { supabase } from '../../src/services/supabase';
 
 vi.mock('../../src/services/supabase', () => ({
   supabase: {
@@ -260,5 +261,90 @@ describe('RiskScoreService - Testes Subcutâneos', () => {
     const itemGapHotel = resultado.itens.find((i) => i.id === 'p2-voucher-hotel');
     expect(itemGapHotel).toBeUndefined(); // Isento de hotel
     expect(resultado.score).toBe(100);
+  });
+
+  it('deve persistir voucher geral do pacote diretamente na tabela viagens', async () => {
+    // Setup
+    const updateEqMock = vi.fn().mockResolvedValue({ error: null });
+    const updateMock = vi.fn().mockReturnValue({ eq: updateEqMock });
+
+    vi.mocked(supabase.from).mockReturnValue({ update: updateMock } as any);
+
+    // Action
+    const sucesso = await RiskScoreService.salvarVoucherGeralPacote('v-pacote-10', 'https://storage/voucher.pdf');
+
+    // Assert
+    expect(sucesso).toBe(true);
+    expect(updateMock).toHaveBeenCalledWith({
+      voucher_geral_pacote: 'https://storage/voucher.pdf',
+      voucher_geral_anexado: true,
+    });
+    expect(updateEqMock).toHaveBeenCalledWith('id', 'v-pacote-10');
+  });
+
+  it('deve utilizar fallback nas observações se as colunas de voucher geral não existirem', async () => {
+    // Setup
+    let updateCallCount = 0;
+    const updateEqMock = vi.fn().mockImplementation(() => {
+      updateCallCount++;
+      if (updateCallCount === 1) {
+        return Promise.resolve({ error: { message: 'column voucher_geral_pacote does not exist' } });
+      }
+      return Promise.resolve({ error: null });
+    });
+    const updateMock = vi.fn().mockReturnValue({ eq: updateEqMock });
+
+    const selectSingle = vi.fn().mockResolvedValue({ data: { observacoes: 'Notas prévias' }, error: null });
+    const selectEq = vi.fn().mockReturnValue({ single: selectSingle });
+    const selectMock = vi.fn().mockReturnValue({ eq: selectEq });
+
+    vi.mocked(supabase.from).mockReturnValue({
+      update: updateMock,
+      select: selectMock,
+    } as any);
+
+    // Action
+    const sucesso = await RiskScoreService.salvarVoucherGeralPacote('v-fallback-1', 'https://storage/voucher.pdf');
+
+    // Assert
+    expect(sucesso).toBe(true);
+    expect(updateEqMock).toHaveBeenCalledTimes(2);
+    expect(updateMock).toHaveBeenLastCalledWith({
+      observacoes: 'Notas prévias\n[VOUCHER_GERAL]: https://storage/voucher.pdf',
+    });
+  });
+
+  it('deve persistir justificativa de risco na tabela viagens', async () => {
+    // Setup
+    const updateEqMock = vi.fn().mockResolvedValue({ error: null });
+    const updateMock = vi.fn().mockReturnValue({ eq: updateEqMock });
+
+    vi.mocked(supabase.from).mockReturnValue({ update: updateMock } as any);
+
+    // Action
+    const sucesso = await RiskScoreService.registrarJustificativaRisco('v-risco-1', 'Voo já reconfirmado com a Gol', 'Thiago Costa');
+
+    // Assert
+    expect(sucesso).toBe(true);
+    expect(updateMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        risk_score_justificativa: 'Voo já reconfirmado com a Gol',
+        risk_score_justificado_por: 'Thiago Costa',
+      })
+    );
+    expect(updateEqMock).toHaveBeenCalledWith('id', 'v-risco-1');
+  });
+
+  it('deve retornar false caso ocorra falha de rede/exceção não tratada ao salvar justificativa', async () => {
+    // Setup
+    vi.mocked(supabase.from).mockImplementation(() => {
+      throw new Error('Falha catastrófica de rede');
+    });
+
+    // Action
+    const sucesso = await RiskScoreService.registrarJustificativaRisco('v-erro-1', 'Justificativa', 'Consultor');
+
+    // Assert
+    expect(sucesso).toBe(false);
   });
 });

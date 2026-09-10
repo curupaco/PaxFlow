@@ -254,4 +254,54 @@ describe('MetasService - Testes Subcutâneos', () => {
     expect(supabase.from).toHaveBeenCalledWith('meta_periodos');
     expect(deletePeriodoEq).toHaveBeenCalledWith('id', 'p-del-1');
   });
+
+  it('deve executar reversão atômica (delete) do período caso a inserção de faixas falhe', async () => {
+    // Setup
+    const periodoCriadoMock = {
+      id: 'p-falha-1',
+      nome: 'Período Instável',
+      data_inicio: '2026-11-01',
+      data_fim: '2026-11-30',
+      tipo_calculo: 'lucro',
+      is_campanha: false,
+      is_meta_loja: false,
+      valor_meta: 10000,
+    };
+
+    const singlePeriodo = vi.fn().mockResolvedValue({ data: periodoCriadoMock, error: null });
+    const selectPeriodo = vi.fn().mockReturnValue({ single: singlePeriodo });
+    const insertPeriodo = vi.fn().mockReturnValue({ select: selectPeriodo });
+
+    const deletePeriodoEq = vi.fn().mockResolvedValue({ error: null });
+    const deletePeriodo = vi.fn().mockReturnValue({ eq: deletePeriodoEq });
+
+    const insertFaixas = vi.fn().mockReturnValue({
+      select: vi.fn().mockResolvedValue({ data: null, error: new Error('Erro de conexão no banco') })
+    });
+
+    vi.mocked(supabase.from).mockImplementation((table: string) => {
+      if (table === 'meta_periodos') return { insert: insertPeriodo, delete: deletePeriodo } as any;
+      if (table === 'meta_faixas') return { insert: insertFaixas } as any;
+      return {} as any;
+    });
+
+    // Action & Assert
+    await expect(
+      MetasService.criarMetaPeriodo(
+        {
+          nome: 'Período Instável',
+          data_inicio: '2026-11-01',
+          data_fim: '2026-11-30',
+          tipo_calculo: 'lucro',
+          is_campanha: false,
+          is_meta_loja: false,
+          valor_meta: 10000,
+        },
+        [{ nome: 'Faixa 1', valor_minimo: 5000, bonus_xp: 10, recompensa: 'Kit', cor: '#fff' }]
+      )
+    ).rejects.toThrow();
+
+    // Assert: Deve ter deletado o período para manter consistência atômica
+    expect(deletePeriodoEq).toHaveBeenCalledWith('id', 'p-falha-1');
+  });
 });

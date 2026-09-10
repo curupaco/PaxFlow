@@ -404,5 +404,160 @@ describe('EscalaService Subcutaneous Tests', () => {
       consultor_nome: JSON.stringify(novaOrdem)
     }));
   });
+
+  it('deve impedir atualização concorrente se a solicitação já foi aprovada ou recusada por outro admin', async () => {
+    // Setup
+    const solicitacaoJaProcessada = {
+      id: 'sol-concorrente-1',
+      status: 'aprovado',
+      respondido_por: 'Admin Primário',
+      resposta_admin: 'Aprovado mais cedo',
+    };
+
+    (supabase.from as any).mockImplementation((table: string) => {
+      if (table === 'escala_solicitacoes') {
+        return createQueryMock(solicitacaoJaProcessada);
+      }
+      return createQueryMock([]);
+    });
+
+    // Action
+    const resultado = await EscalaService.atualizarStatusSolicitacao(
+      'sol-concorrente-1',
+      'recusado',
+      'Tentando recusar depois',
+      'Admin Secundário'
+    );
+
+    // Assert
+    expect(resultado.success).toBe(false);
+    expect(resultado.alreadyProcessed).toBe(true);
+    expect(resultado.currentStatus).toBe('aprovado');
+    expect(resultado.respondidoPor).toBe('Admin Primário');
+  });
+
+  it('deve processar recusa de solicitação e notificar o consultor solicitante via push', async () => {
+    // Setup
+    const solPendente = {
+      id: 'sol-recusar-1',
+      status: 'pendente_admin',
+      tipo: 'folga',
+      solicitante_id: 'user-consultor-123',
+      solicitante_nome: 'Consultor Pedinte',
+      data_origem: '2026-10-15',
+    };
+
+    const mockUpdate = vi.fn(() => ({
+      eq: vi.fn().mockResolvedValue({ error: null })
+    }));
+
+    (supabase.from as any).mockImplementation((table: string) => {
+      if (table === 'escala_solicitacoes') {
+        const queryMock = createQueryMock(solPendente);
+        queryMock.update = mockUpdate;
+        return queryMock;
+      }
+      return createQueryMock([]);
+    });
+
+    // Action
+    const resultado = await EscalaService.atualizarStatusSolicitacao(
+      'sol-recusar-1',
+      'recusado',
+      'Limite de folgas diárias atingido',
+      'Gestor Malta'
+    );
+
+    // Assert
+    expect(resultado.success).toBe(true);
+    expect(mockUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 'recusado',
+        resposta_admin: expect.stringContaining('Limite de folgas diárias atingido'),
+      })
+    );
+    expect(PushSenderService.sendToUser).toHaveBeenCalledWith(
+      'user-consultor-123',
+      expect.objectContaining({
+        title: expect.stringContaining('Resposta da Escala: Recusada ❌'),
+        body: expect.stringContaining('foi recusada ❌ pela gestão'),
+      })
+    );
+  });
+
+  it('deve permitir cancelamento de solicitação pendente pelo próprio solicitante', async () => {
+    // Setup
+    const solPendente = {
+      id: 'sol-cancelar-1',
+      status: 'pendente_colega',
+      solicitante_id: 'user-autor-1',
+    };
+
+    const mockUpdateEq = vi.fn().mockResolvedValue({ error: null });
+    const mockUpdate = vi.fn().mockReturnValue({ eq: mockUpdateEq });
+
+    (supabase.from as any).mockImplementation((table: string) => {
+      if (table === 'escala_solicitacoes') {
+        const queryMock = createQueryMock(solPendente);
+        queryMock.update = mockUpdate;
+        return queryMock;
+      }
+      return createQueryMock([]);
+    });
+
+    // Action
+    const cancelado = await EscalaService.cancelarSolicitacao('sol-cancelar-1', 'user-autor-1');
+
+    // Assert
+    expect(cancelado).toBe(true);
+    expect(mockUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 'recusado',
+        resposta_admin: 'Cancelada pelo próprio solicitante',
+      })
+    );
+  });
+
+  it('não deve permitir cancelamento se a solicitação já estiver concluída ou aprovada', async () => {
+    // Setup
+    const solConcluida = {
+      id: 'sol-aprovada-antiga',
+      status: 'aprovado',
+      solicitante_id: 'user-autor-1',
+    };
+
+    (supabase.from as any).mockImplementation((table: string) => {
+      if (table === 'escala_solicitacoes') {
+        return createQueryMock(solConcluida);
+      }
+      return createQueryMock([]);
+    });
+
+    // Action
+    const cancelado = await EscalaService.cancelarSolicitacao('sol-aprovada-antiga', 'user-autor-1');
+
+    // Assert
+    expect(cancelado).toBe(false);
+  });
+
+  it('deve excluir evento de escala da tabela escala_eventos', async () => {
+    // Setup
+    const mockDeleteEq = vi.fn().mockResolvedValue({ error: null });
+    const mockDelete = vi.fn().mockReturnValue({ eq: mockDeleteEq });
+
+    (supabase.from as any).mockImplementation((table: string) => {
+      if (table === 'escala_eventos') {
+        return { delete: mockDelete };
+      }
+      return createQueryMock([]);
+    });
+
+    // Action
+    const sucesso = await EscalaService.deletarEvento('evt-12345');
+
+    // Assert
+    expect(sucesso).toBe(true);
+    expect(mockDeleteEq).toHaveBeenCalledWith('id', 'evt-12345');
+  });
 });
 

@@ -164,4 +164,90 @@ describe('NextTripEngineService - Testes Subcutâneos', () => {
     expect(opMesmoMes[0].motivoSugestao).toContain('Período habitual de férias');
     expect(opMesmoMes[0].scoreProntidao).toBeGreaterThan(opMesDistante[0].scoreProntidao);
   });
+
+  it('deve ignorar cliente se ele já tiver uma viagem futura agendada', () => {
+    // Setup
+    const dataPassada = new Date();
+    dataPassada.setMonth(dataPassada.getMonth() - 8);
+
+    const dataFutura = new Date();
+    dataFutura.setMonth(dataFutura.getMonth() + 2);
+
+    const clientes = [{ id: 'c-futura', nome: 'Eduarda' }];
+    const viagens = [
+      { id: 'v-antiga', cliente_id: 'c-futura', destino: 'Natal', data_volta: dataPassada.toISOString() },
+      { id: 'v-marcada', cliente_id: 'c-futura', destino: 'Madri', data_ida: dataFutura.toISOString() },
+    ];
+
+    // Action
+    const oportunidades = NextTripEngineService.calculateOpportunities(clientes, viagens, []);
+
+    // Assert
+    expect(oportunidades).toHaveLength(0);
+  });
+
+  it('deve restringir visualização para consultor titular mas permitir acesso total a administradores', () => {
+    // Setup
+    const seisMesesAtras = new Date();
+    seisMesesAtras.setMonth(seisMesesAtras.getMonth() - 6);
+
+    const clientes = [{ id: 'c-privado', nome: 'Cliente do Consultor 1' }];
+    const viagens = [
+      { id: 'v1', cliente_id: 'c-privado', consultor_id: 'consultor-1', data_volta: seisMesesAtras.toISOString(), nps: 10 },
+    ];
+
+    // Action
+    // Consultor 2 tentando ver
+    const opConsultorOutro = NextTripEngineService.calculateOpportunities(
+      clientes,
+      viagens,
+      [],
+      undefined,
+      'consultor-2',
+      'consultor'
+    );
+    // Administrador vendo
+    const opAdmin = NextTripEngineService.calculateOpportunities(
+      clientes,
+      viagens,
+      [],
+      undefined,
+      'admin-1',
+      'admin'
+    );
+
+    // Assert
+    expect(opConsultorOutro).toHaveLength(0);
+    expect(opAdmin).toHaveLength(1);
+    expect(opAdmin[0].clienteId).toBe('c-privado');
+  });
+
+  it('deve aplicar snooze e marcar status da oportunidade como snoozed', () => {
+    // Setup
+    const storageMap = new Map<string, string>();
+    (globalThis as any).localStorage = {
+      getItem: (key: string) => storageMap.get(key) || null,
+      setItem: (key: string, val: string) => storageMap.set(key, String(val)),
+      removeItem: (key: string) => storageMap.delete(key),
+      clear: () => storageMap.clear(),
+    };
+
+    const seisMesesAtras = new Date();
+    seisMesesAtras.setMonth(seisMesesAtras.getMonth() - 6);
+
+    const clientes = [{ id: 'c-snooze', nome: 'Snoozed Client' }];
+    const viagens = [{ id: 'v1', cliente_id: 'c-snooze', destino: 'Cruzeiro MSC', data_volta: seisMesesAtras.toISOString(), nps: 9 }];
+
+    // Action
+    NextTripEngineService.aplicarSnoozeAbordagem('c-snooze', 15);
+    const oportunidades = NextTripEngineService.calculateOpportunities(clientes, viagens, []);
+
+    // Assert
+    expect(oportunidades).toHaveLength(1);
+    expect(oportunidades[0].statusAbordagem).toBe('snoozed');
+    expect(oportunidades[0].categoriaDestino).toBe('cruzeiro');
+    expect(oportunidades[0].destinoRecomendado).toBe('Cruzeiro Marítimo');
+
+    delete (globalThis as any).localStorage;
+  });
 });

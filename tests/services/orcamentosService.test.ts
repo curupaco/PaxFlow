@@ -362,4 +362,79 @@ describe('OrcamentosService - Testes Subcutâneos', () => {
       p_payload: expect.any(Object),
     });
   });
+
+  it('deve anexar produto a uma viagem existente recalculando valor total e atualizando origem', async () => {
+    // Setup
+    const orcMock: any = {
+      id: 'uuid-orc-anexo-1',
+      cliente_id: 'cli-existente-1',
+      nomeCliente: 'Carlos Viajante',
+    };
+
+    const optionsMock: any = {
+      isNovaViagem: false,
+      viagemId: 'viagem-existente-999',
+      existingTripValorTotal: 5000,
+      existingTripDataIda: '2026-12-20',
+      vValor: 2500,
+      vIda: '2026-12-10',
+      vVolta: '2026-12-25',
+      prodTipo: 'HOTEL',
+      prodFornecedor: 'Hotel Resort',
+      prodDescricao: 'Quarto Luxo Vista Mar',
+      comissaoTotalReceber: 300,
+      comissaoConsultorTotal: 150,
+      comissaoAgenciaTotal: 150,
+      consultorId: 'consultor-1',
+      origem: 'Google Ads',
+    };
+
+    const updateViagemEq = vi.fn().mockResolvedValue({ error: null });
+    const updateViagem = vi.fn().mockReturnValue({ eq: updateViagemEq });
+
+    const updateCliEq = vi.fn().mockResolvedValue({ error: null });
+    const updateCli = vi.fn().mockReturnValue({ eq: updateCliEq });
+    const selectCliSingle = vi.fn().mockResolvedValue({ data: { classificacoes: ['Instagram'] }, error: null });
+    const selectCliEq = vi.fn().mockReturnValue({ single: selectCliSingle });
+    const selectCli = vi.fn().mockReturnValue({ eq: selectCliEq });
+
+    const insertProduto = vi.fn().mockResolvedValue({ error: null });
+    const updateOrcEq = vi.fn().mockResolvedValue({ error: null });
+    const updateOrc = vi.fn().mockReturnValue({ eq: updateOrcEq });
+
+    vi.mocked(supabase.from).mockImplementation((table: string) => {
+      if (table === 'clientes') {
+        return {
+          select: selectCli,
+          update: updateCli,
+        } as any;
+      }
+      if (table === 'viagens') return { update: updateViagem } as any;
+      if (table === 'produtos_viagem') return { insert: insertProduto } as any;
+      if (table === 'orcamentos') return { update: updateOrc } as any;
+      return {} as any;
+    });
+
+    // Action
+    const resultado = await OrcamentosService.convertToTrip(orcMock, optionsMock);
+
+    // Assert
+    expect(resultado.clienteId).toBe('cli-existente-1');
+    expect(resultado.newViagemId).toBeUndefined();
+    expect(updateViagem).toHaveBeenCalledWith(
+      expect.objectContaining({
+        valor_total: 7500,
+        origem: 'Google Ads',
+      })
+    );
+    expect(updateViagemEq).toHaveBeenCalledWith('id', 'viagem-existente-999');
+    expect(insertProduto).toHaveBeenCalledWith(
+      expect.objectContaining({
+        viagem_id: 'viagem-existente-999',
+        tipo: 'HOTEL',
+        valor_venda: 2500,
+      })
+    );
+    expect(updateOrc).toHaveBeenCalledWith(expect.objectContaining({ status: 'CONCLUIDO' }));
+  });
 });

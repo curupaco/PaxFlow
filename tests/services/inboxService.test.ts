@@ -464,4 +464,93 @@ describe('InboxService Subcutaneous Flow Tests', () => {
     expect(reembolsos.length).toBe(1);
     expect(reembolsos[0].id).toBe('r1');
   });
+
+  it('deve arquivar e desarquivar lembrete manual persistindo na tabela lembretes', async () => {
+    // Setup
+    const mockUpdate = vi.fn(() => ({
+      eq: vi.fn(() => ({
+        select: vi.fn().mockResolvedValue({ data: [{ id: 'lembrete-123', arquivado: true }], error: null })
+      }))
+    }));
+
+    (supabase.from as any).mockImplementation((table: string) => {
+      if (table === 'lembretes') {
+        return { update: mockUpdate };
+      }
+      return createQueryMock([]);
+    });
+
+    // Action
+    const arquivado = await InboxService.archiveAlert({ id: 'manual-lembrete-123' }, true);
+
+    // Assert
+    expect(arquivado).toBe(true);
+    expect(mockUpdate).toHaveBeenCalledWith({ arquivado: true });
+  });
+
+  it('deve arquivar notificacao de mencao persistindo na tabela notificacoes', async () => {
+    // Setup
+    const mockUpdate = vi.fn(() => ({
+      eq: vi.fn(() => ({
+        select: vi.fn().mockResolvedValue({ data: [{ id: 'notif-456', arquivada: true }], error: null })
+      }))
+    }));
+
+    (supabase.from as any).mockImplementation((table: string) => {
+      if (table === 'notificacoes') {
+        return { update: mockUpdate };
+      }
+      return createQueryMock([]);
+    });
+
+    // Action
+    const arquivado = await InboxService.archiveAlert({ id: 'mention-notif-456', type: 'mention' }, true);
+
+    // Assert
+    expect(arquivado).toBe(true);
+    expect(mockUpdate).toHaveBeenCalledWith({ arquivada: true });
+  });
+
+  it('deve marcar multiplos alertas como lidos em massa chamando o banco', async () => {
+    // Setup
+    const spyMark = vi.spyOn(InboxService, 'markAlertAsRead').mockResolvedValue(undefined as any);
+
+    // Action
+    await InboxService.markAllAlertsAsRead('user-1', ['alert-1', 'alert-2', 'alert-3']);
+
+    // Assert
+    expect(spyMark).toHaveBeenCalledTimes(3);
+    expect(spyMark).toHaveBeenCalledWith('user-1', 'alert-1');
+    expect(spyMark).toHaveBeenCalledWith('user-1', 'alert-2');
+    expect(spyMark).toHaveBeenCalledWith('user-1', 'alert-3');
+
+    spyMark.mockRestore();
+  });
+
+  it('deve carregar mensagens de uma conversa por thread_id ordenadas cronologicamente', async () => {
+    // Setup
+    const mockMensagens = [
+      { id: 'm1', thread_id: 'th-1', conteudo: 'Olá', created_at: '2026-09-09T10:00:00Z' },
+      { id: 'm2', thread_id: 'th-1', conteudo: 'Tudo bem?', created_at: '2026-09-09T10:01:00Z' },
+    ];
+
+    const mockOrder = vi.fn().mockResolvedValue({ data: mockMensagens, error: null });
+    const mockEq = vi.fn().mockReturnValue({ order: mockOrder });
+    const mockSelect = vi.fn().mockReturnValue({ eq: mockEq });
+
+    (supabase.from as any).mockImplementation((table: string) => {
+      if (table === 'mensagens_diretas') {
+        return { select: mockSelect };
+      }
+      return createQueryMock([]);
+    });
+
+    // Action
+    const mensagens = await InboxService.getThreadMessages('th-1');
+
+    // Assert
+    expect(mensagens).toHaveLength(2);
+    expect(mockEq).toHaveBeenCalledWith('thread_id', 'th-1');
+    expect(mockOrder).toHaveBeenCalledWith('created_at', { ascending: true });
+  });
 });

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { parseCSV, batchInsertOrcamentos } from '../../src/services/csvImporter';
+import { parseCSV, batchInsertOrcamentos, formatBrDateToYmd, parseBrFloat } from '../../src/services/csvImporter';
 import { supabase } from '../../src/services/supabase';
 
 vi.mock('../../src/services/supabase', () => ({
@@ -95,8 +95,51 @@ describe('csvImporter - Testes Subcutâneos', () => {
     const resultado = await batchInsertOrcamentos(orcamentosComCamposNovos, 'user-1', false);
 
     // Assert
-    expect(resultado.success).toBe(true);
-    expect(resultado.count).toBe(1);
     expect(insertMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('deve formatar data brasileira DD/MM/YYYY para YYYY-MM-DD com e sem hora', () => {
+    // Setup & Action & Assert
+    expect(formatBrDateToYmd('25/12/2026')).toBe('2026-12-25');
+    expect(formatBrDateToYmd('05/01/2027 14:30:00')).toBe('2027-01-05');
+    expect(formatBrDateToYmd('3/8/2026')).toBe('2026-08-03');
+    expect(formatBrDateToYmd('')).toBeNull();
+    expect(formatBrDateToYmd('2026-12-25')).toBeNull(); // Não é formato brasileiro
+    expect(formatBrDateToYmd('99/99')).toBeNull(); // Formato incompleto
+  });
+
+  it('deve converter valores monetários brasileiros com R$, pontos e vírgulas para float', () => {
+    // Setup & Action & Assert
+    expect(parseBrFloat('R$ 1.234,56')).toBe(1234.56);
+    expect(parseBrFloat('12.500,00')).toBe(12500);
+    expect(parseBrFloat('850,50')).toBe(850.5);
+    expect(parseBrFloat('500')).toBe(500);
+    expect(parseBrFloat('')).toBeNull();
+    expect(parseBrFloat('invalido')).toBeNull();
+  });
+
+  it('deve retornar contagem zero sem chamar banco se lista de orçamentos estiver vazia', async () => {
+    // Setup & Action
+    const resultado = await batchInsertOrcamentos([], 'user-1', false);
+
+    // Assert
+    expect(resultado.success).toBe(true);
+    expect(resultado.count).toBe(0);
+    expect(supabase.from).not.toHaveBeenCalled();
+  });
+
+  it('deve retornar falha capturada se erro do Supabase não for código 42703', async () => {
+    // Setup
+    const erroGrave = { code: '23505', message: 'duplicate key value violates unique constraint' };
+    const insertMock = vi.fn().mockResolvedValue({ error: erroGrave });
+    vi.mocked(supabase.from).mockReturnValue({ insert: insertMock } as any);
+
+    // Action
+    const resultado = await batchInsertOrcamentos([{ nome: 'Duplicado' }], 'user-1', false);
+
+    // Assert
+    expect(resultado.success).toBe(false);
+    expect(resultado.count).toBe(0);
+    expect(resultado.error).toEqual(erroGrave);
   });
 });

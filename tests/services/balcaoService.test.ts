@@ -209,4 +209,75 @@ describe('BalcaoService - Testes Subcutâneos (Co-Piloto & Balcão)', () => {
     expect(resultado[0].viagens).toHaveLength(1); // Deduplicado por ID
     expect(resultado[0].viagens[0].id).toBe('v-dup-1');
   });
+
+  it('deve localizar cliente por telefone mesmo com máscara de parênteses e traços', async () => {
+    // Setup
+    vi.mocked(supabase.rpc).mockResolvedValue({ data: null, error: null } as any);
+
+    const clientesMock = [
+      { id: 'cli-tel-1', nome: 'Rogério Ceni', telefone: '11987654321', email: 'rogerio@teste.com' },
+    ];
+
+    vi.mocked(supabase.from).mockImplementation((table: string) => {
+      if (table === 'clientes') return { select: vi.fn().mockResolvedValue({ data: clientesMock }) } as any;
+      return { select: vi.fn().mockResolvedValue({ data: [] }) } as any;
+    });
+
+    // Action
+    const resultado = await BalcaoService.buscarMulticriterio('(11) 98765-4321');
+
+    // Assert
+    expect(resultado).toHaveLength(1);
+    expect(resultado[0].cliente.id).toBe('cli-tel-1');
+    expect(resultado[0].cliente.nome).toBe('Rogério Ceni');
+  });
+
+  it('deve localizar orçamento diretamente pelo código de referência', async () => {
+    // Setup
+    vi.mocked(supabase.rpc).mockResolvedValue({ data: null, error: null } as any);
+
+    const orcamentosMock = [
+      {
+        id: 'orc-ref-55',
+        cliente_id: null,
+        nome_cliente: 'Cliente Orçamento Ref',
+        codigo_ref: 'ORC-2026-99',
+        destino: 'Cancún',
+        valor_proposta: 14000,
+        created_at: '2026-09-08',
+      },
+    ];
+
+    vi.mocked(supabase.from).mockImplementation((table: string) => {
+      if (table === 'orcamentos') return { select: vi.fn().mockResolvedValue({ data: orcamentosMock }) } as any;
+      return { select: vi.fn().mockResolvedValue({ data: [] }) } as any;
+    });
+
+    // Action
+    const resultado = await BalcaoService.buscarMulticriterio('ORC-2026-99');
+
+    // Assert
+    expect(resultado).toHaveLength(1);
+    expect(resultado[0].cliente.nome).toBe('Cliente Orçamento Ref');
+    expect(resultado[0].orcamentos).toHaveLength(1);
+    expect(resultado[0].orcamentos[0].titulo).toContain('[ORC-2026-99]');
+  });
+
+  it('deve capturar erro e retornar false se a criação do alerta de balcão falhar', async () => {
+    // Setup
+    vi.mocked(EscalaService.criarSolicitacao).mockRejectedValueOnce(new Error('Erro de conexão Supabase'));
+
+    // Action
+    const sucesso = await BalcaoService.gerarAlertaAtendimentoBalcao(
+      'titular-x',
+      'Titular',
+      'Cliente Falha',
+      'CoPiloto',
+      'viagem',
+      'v-falha'
+    );
+
+    // Assert
+    expect(sucesso).toBe(false);
+  });
 });

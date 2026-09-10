@@ -96,4 +96,56 @@ describe('UpsellEngineService - Testes Subcutâneos', () => {
     expect(tipos).toContain('passes_experiencias');
     expect(tipos).toContain('transfer_privativo');
   });
+
+  it('deve sugerir upgrade de hotel para all-inclusive/luxo quando houver hospedagem padrão', () => {
+    // Setup - Viagem nacional com hotel padrão
+    const produtos = [{ tipo: 'Hotel', nome: 'Hotel Pousada das Águas' }];
+
+    // Action
+    const oportunidades = UpsellEngineService.calculateUpsellOpportunities(produtos, 'Gramado', 2, 5000);
+
+    // Assert
+    const opUpgrade = oportunidades.find((o) => o.id === 'upsell-upgrade-hotel');
+    expect(opUpgrade).toBeDefined();
+    expect(opUpgrade?.categoriaProduto).toBe('hotel');
+    expect(opUpgrade?.valorEstimado).toBe(Math.max(600, Math.round(5000 * 0.18)));
+  });
+
+  it('deve sugerir garantia de cancelamento flexível para orçamentos acima de R$ 10.000', () => {
+    // Setup
+    const produtos = [{ tipo: 'Pacote', nome: 'Pacote Família 15 Dias' }];
+
+    // Action
+    const oportunidades = UpsellEngineService.calculateUpsellOpportunities(produtos, 'Fortaleza', 4, 15000);
+
+    // Assert
+    const opCancel = oportunidades.find((o) => o.id === 'upsell-cancel-flex');
+    expect(opCancel).toBeDefined();
+    expect(opCancel?.tipo).toBe('cancel_flex');
+    expect(opCancel?.valorEstimado).toBe(Math.round(15000 * 0.06)); // 6% de 15000 = 900
+  });
+
+  it('deve sugerir seguro viagem nacional e transfer receptivo para viagens pelo Brasil', () => {
+    // Setup - Viagem para Florianópolis sem seguro ou transfer
+    const produtos = [{ tipo: 'Hospedagem', nome: 'Pousada Praia da Joaquina' }];
+
+    // Action
+    const oportunidades = UpsellEngineService.calculateUpsellOpportunities(produtos, 'Florianópolis', 2, 3500);
+
+    // Assert
+    const opSeguroNac = oportunidades.find((o) => o.id === 'upsell-seguro-nacional');
+    const opTransferNac = oportunidades.find((o) => o.id === 'upsell-transfer-nacional');
+    expect(opSeguroNac).toBeDefined();
+    expect(opTransferNac).toBeDefined();
+    expect(opSeguroNac?.valorEstimado).toBe(220);
+    expect(opTransferNac?.valorEstimado).toBe(380);
+  });
+
+  it('deve validar alias retroativo isUserThiagoCosta chamando isUpsellEnabled', () => {
+    // Setup & Action
+    const habilitado = UpsellEngineService.isUserThiagoCosta({ id: 'u1' }, { id: 'u1' });
+
+    // Assert
+    expect(habilitado).toBe(true);
+  });
 });
