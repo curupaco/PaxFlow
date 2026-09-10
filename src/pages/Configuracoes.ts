@@ -238,7 +238,9 @@ export class ConfiguracoesPage {
           next_trip_snooze_dias: data.next_trip_snooze_dias !== undefined ? data.next_trip_snooze_dias : 30,
           nextTripSnoozeDias: data.next_trip_snooze_dias !== undefined ? data.next_trip_snooze_dias : 30,
           habilitarUpsellPreditivo: data.habilitar_upsell_preditivo !== false,
-          habilitar_upsell_preditivo: data.habilitar_upsell_preditivo !== false
+          habilitar_upsell_preditivo: data.habilitar_upsell_preditivo !== false,
+          upsell_config: data.upsell_config || {},
+          upsellConfig: data.upsell_config || {}
         };
       } else {
         const initialPayload = {
@@ -265,7 +267,18 @@ export class ConfiguracoesPage {
           digisac_enable_webhooks: true,
           tempo_desistencia_orcamento_dias: 30,
           permitir_consultor_criar_viagem: false,
-          habilitar_upsell_preditivo: true
+          habilitar_upsell_preditivo: true,
+          upsell_config: {
+            esim: true,
+            sala_vip: true,
+            locacao_veiculo: true,
+            bagagem_assento: true,
+            seguro_saude: true,
+            passes_experiencias: true,
+            transfer_privativo: true,
+            upgrade_hotel: true,
+            cancel_flex: true
+          }
         };
 
         const { data: inserted, error: insertError } = await supabase
@@ -1919,6 +1932,40 @@ export class ConfiguracoesPage {
                   <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:after:border-slate-600 peer-checked:bg-purple-600"></div>
                 </label>
               </div>
+
+              <!-- Regras Granulares de Ativação Preditiva -->
+              <div id="container-upsell-regras-granulares" class="p-4 bg-slate-50/80 dark:bg-slate-800/40 rounded-xl border border-slate-200/60 dark:border-slate-700/60 space-y-3 ${this.settings.habilitar_upsell_preditivo === false ? 'hidden' : ''}">
+                <div class="flex items-center justify-between pb-2 border-b border-slate-200/60 dark:border-slate-700/60">
+                  <span class="text-[11px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 font-sans">Gatilhos Granulares Ativos</span>
+                  <span class="text-[10px] text-slate-400 font-medium">Habilite ou desative regras específicas conforme o perfil da agência</span>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                  ${[
+                    { id: 'esim', label: '📶 eSIM / Chip Internacional 5G', desc: 'Dados no exterior' },
+                    { id: 'sala_vip', label: '☕ Sala VIP & Lounge Pass', desc: 'Conforto em aeroportos' },
+                    { id: 'locacao_veiculo', label: '🚗 Locação de Carro (Rent a Car)', desc: 'Destinos rodoviários' },
+                    { id: 'bagagem_assento', label: '🧳 Bagagem & Assento Conforto', desc: 'Voo com franquia zero' },
+                    { id: 'seguro_saude', label: '🛡️ Seguro Saúde Obrigatório', desc: 'Exigência internacional' },
+                    { id: 'passes_experiencias', label: '🎟️ Passes & Ingressos VIPs', desc: 'Disney, Europa e tours' },
+                    { id: 'transfer_privativo', label: '🚘 Transfer Privativo Receptivo', desc: 'Desembarque VIP' },
+                    { id: 'upgrade_hotel', label: '🏨 Upgrade Quarto / All-Inclusive', desc: 'Elevação de acomodação' },
+                    { id: 'cancel_flex', label: '📋 Garantia Cancel Flex (100%)', desc: 'Fechamento de alto ticket' }
+                  ].map(rule => {
+                    const cfg = this.settings?.upsell_config || this.settings?.upsellConfig || {};
+                    const isChecked = cfg[rule.id] !== false;
+                    return `
+                      <label class="flex items-start gap-2.5 p-2.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 cursor-pointer hover:border-purple-300 dark:hover:border-purple-600 transition shadow-2xs">
+                        <input id="input-upsell-rule-${rule.id}" type="checkbox" ${isChecked ? 'checked' : ''} class="w-4 h-4 mt-0.5 text-purple-600 focus:ring-purple-500 border-slate-300 dark:border-slate-700 rounded cursor-pointer shrink-0">
+                        <div class="min-w-0">
+                          <span class="text-xs font-bold text-slate-800 dark:text-slate-100 block truncate font-sans">${rule.label}</span>
+                          <span class="text-[10px] text-slate-400 block font-medium">${rule.desc}</span>
+                        </div>
+                      </label>
+                    `;
+                  }).join('')}
+                </div>
+              </div>
             </div>
 
             <!-- Reembolsos & NPS -->
@@ -2382,6 +2429,18 @@ export class ConfiguracoesPage {
   }
 
   private setupAutomacoesEvents(): void {
+    const toggleUpsellMaster = document.getElementById('input-habilitar-upsell-preditivo') as HTMLInputElement | null;
+    const containerRegras = document.getElementById('container-upsell-regras-granulares');
+    toggleUpsellMaster?.addEventListener('change', () => {
+      if (containerRegras) {
+        if (toggleUpsellMaster.checked) {
+          containerRegras.classList.remove('hidden');
+        } else {
+          containerRegras.classList.add('hidden');
+        }
+      }
+    });
+
     const form = document.getElementById('form-automacoes') as HTMLFormElement;
     form?.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -2419,6 +2478,16 @@ export class ConfiguracoesPage {
       const habilitarUpsellInput = document.getElementById('input-habilitar-upsell-preditivo') as HTMLInputElement;
       const habilitarUpsellVal = habilitarUpsellInput ? habilitarUpsellInput.checked : (this.settings.habilitar_upsell_preditivo !== false);
 
+      const upsellRuleKeys = ['esim', 'sala_vip', 'locacao_veiculo', 'bagagem_assento', 'seguro_saude', 'passes_experiencias', 'transfer_privativo', 'upgrade_hotel', 'cancel_flex'];
+      const currentUpsellConfig = this.settings.upsell_config || this.settings.upsellConfig || {};
+      const newUpsellConfig: Record<string, boolean> = { ...currentUpsellConfig };
+      for (const k of upsellRuleKeys) {
+        const el = document.getElementById(`input-upsell-rule-${k}`) as HTMLInputElement | null;
+        if (el) {
+          newUpsellConfig[k] = el.checked;
+        }
+      }
+
       const payload = {
         tempo_desistencia_orcamento_dias: tempoDesistenciaVal,
         sla_pre_embarque_dias: slaPreVal,
@@ -2432,7 +2501,8 @@ export class ConfiguracoesPage {
         habilitar_next_trip_engine: habilitarNextTripVal,
         next_trip_corte_prontidao_alta: corteScoreNextTripVal,
         next_trip_snooze_dias: snoozeDiasNextTripVal,
-        habilitar_upsell_preditivo: habilitarUpsellVal
+        habilitar_upsell_preditivo: habilitarUpsellVal,
+        upsell_config: newUpsellConfig
       };
 
       try {

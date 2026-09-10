@@ -97,6 +97,8 @@ export interface GlobalSettings {
   nextTripSnoozeDias?: number;
   habilitar_upsell_preditivo?: boolean;
   habilitarUpsellPreditivo?: boolean;
+  upsell_config?: Record<string, boolean>;
+  upsellConfig?: Record<string, boolean>;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -129,14 +131,15 @@ export interface NextTripOpportunity {
  */
 export interface UpsellOpportunity {
   id: string;
-  tipo: 'seguro_saude' | 'passes_experiencias' | 'transfer_privativo' | 'upgrade_hotel' | 'cancel_flex';
+  tipo: 'seguro_saude' | 'passes_experiencias' | 'transfer_privativo' | 'upgrade_hotel' | 'cancel_flex' | 'esim_internacional' | 'sala_vip' | 'locacao_veiculo' | 'bagagem_assento';
   titulo: string;
   descricao: string;
   produtoSugerido: string;
-  categoriaProduto: 'seguro' | 'transfer' | 'passeio' | 'hotel' | 'outro';
+  categoriaProduto: 'seguro' | 'transfer' | 'passeio' | 'hotel' | 'esim' | 'sala_vip' | 'carro' | 'aereo' | 'outro';
   valorEstimado: number;
   badgeTexto: string;
   corBadge: string;
+  mensagemWhatsApp?: string;
 }
 
 /**
@@ -267,6 +270,8 @@ export interface Viagem {
   nps_respondido?: boolean;
   nps_respondido_em?: string;
   pos_contato_concluido?: boolean;
+  upsell_dispensados?: string[];
+  upsellDispensados?: string[];
 }
 
 /**

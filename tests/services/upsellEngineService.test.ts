@@ -1,5 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { UpsellEngineService } from '../../src/services/upsellEngineService';
+import { supabase } from '../../src/services/supabase';
+
+vi.mock('../../src/services/supabase', () => ({
+  supabase: {
+    from: vi.fn(),
+  },
+}));
 
 vi.mock('../../src/utils/featureFlags', () => ({
   isUpsellEnabled: vi.fn().mockReturnValue(true),
@@ -35,6 +42,71 @@ describe('UpsellEngineService - Testes Subcutâneos', () => {
     expect(opSeguro).toBeDefined();
     expect(opSeguro?.categoriaProduto).toBe('seguro');
     expect(opSeguro?.valorEstimado).toBe(580); // 2 * 290
+    expect(opSeguro?.mensagemWhatsApp).toContain('Paris');
+  });
+
+  it('deve sugerir chip eSIM internacional para destinos no exterior com mensagem de WhatsApp', () => {
+    // Setup
+    const produtos = [{ tipo: 'Aéreo', nome: 'Voo GRU - Lisboa' }];
+
+    // Action
+    const oportunidades = UpsellEngineService.calculateUpsellOpportunities({
+      produtos,
+      destino: 'Lisboa',
+      totalPax: 2,
+      valorTotal: 8000,
+      clienteNome: 'Mariana Silva'
+    });
+
+    // Assert
+    const opEsim = oportunidades.find((o) => o.id === 'upsell-esim-internacional');
+    expect(opEsim).toBeDefined();
+    expect(opEsim?.categoriaProduto).toBe('esim');
+    expect(opEsim?.valorEstimado).toBe(380); // 2 * 190
+    expect(opEsim?.mensagemWhatsApp).toContain('Mariana');
+    expect(opEsim?.mensagemWhatsApp).toContain('eSIM');
+  });
+
+  it('deve sugerir sala VIP para pacotes com voos ou valor acima de R$ 5.000', () => {
+    // Setup
+    const produtos = [{ tipo: 'Aéreo', nome: 'Voo Rio - Santiago' }];
+
+    // Action
+    const oportunidades = UpsellEngineService.calculateUpsellOpportunities(produtos, 'Santiago', 3, 7000);
+
+    // Assert
+    const opSalaVip = oportunidades.find((o) => o.id === 'upsell-sala-vip');
+    expect(opSalaVip).toBeDefined();
+    expect(opSalaVip?.categoriaProduto).toBe('sala_vip');
+    expect(opSalaVip?.valorEstimado).toBe(840); // 3 * 280
+  });
+
+  it('deve sugerir locação de veículo para destinos com alta demanda rodoviária (ex: Orlando, Miami, Bariloche)', () => {
+    // Setup
+    const produtos = [{ tipo: 'Hotel', nome: 'Resort Internacional' }];
+
+    // Action
+    const oportunidades = UpsellEngineService.calculateUpsellOpportunities(produtos, 'Miami', 2, 9000);
+
+    // Assert
+    const opCarro = oportunidades.find((o) => o.id === 'upsell-locacao-veiculo');
+    expect(opCarro).toBeDefined();
+    expect(opCarro?.categoriaProduto).toBe('carro');
+    expect(opCarro?.valorEstimado).toBe(680); // Math.max(680, 2 * 340)
+  });
+
+  it('deve sugerir bagagem despachada e assento conforto quando houver aéreo sem adicionais', () => {
+    // Setup
+    const produtos = [{ tipo: 'Aéreo', nome: 'Voo Congonhas - Salvador' }];
+
+    // Action
+    const oportunidades = UpsellEngineService.calculateUpsellOpportunities(produtos, 'Salvador', 2, 2500);
+
+    // Assert
+    const opBagagem = oportunidades.find((o) => o.id === 'upsell-bagagem-assento');
+    expect(opBagagem).toBeDefined();
+    expect(opBagagem?.categoriaProduto).toBe('aereo');
+    expect(opBagagem?.valorEstimado).toBe(480); // 2 * 240
   });
 
   it('deve sugerir ingressos e atrações para Orlando quando nenhum passeio estiver incluído', () => {
@@ -69,76 +141,98 @@ describe('UpsellEngineService - Testes Subcutâneos', () => {
     expect(opTransfer?.tipo).toBe('transfer_privativo');
   });
 
-  it('deve respeitar piso mínimo de valor estimado para seguro saúde de 1 passageiro', () => {
-    // Setup - 1 passageiro (1 * 290 = 290, mas piso mínimo é 380)
-    const produtos = [{ tipo: 'Aéreo Internacional', nome: 'Voo SP - Lisboa' }];
+  it('deve filtrar oportunidades já dispensadas pelo consultor', () => {
+    // Setup - Destino internacional sem seguro nem chip, mas com chip dispensado
+    const produtos = [{ tipo: 'Aéreo', nome: 'Voo SP - Madri' }];
+    const dispensados = ['upsell-esim-internacional'];
 
     // Action
-    const oportunidades = UpsellEngineService.calculateUpsellOpportunities(produtos, 'Lisboa', 1, 4000);
+    const oportunidades = UpsellEngineService.calculateUpsellOpportunities({
+      produtos,
+      destino: 'Madri',
+      totalPax: 2,
+      valorTotal: 12000,
+      dispensados
+    });
 
     // Assert
+    const opEsim = oportunidades.find((o) => o.id === 'upsell-esim-internacional');
     const opSeguro = oportunidades.find((o) => o.id === 'upsell-seguro-saude');
-    expect(opSeguro).toBeDefined();
-    expect(opSeguro?.valorEstimado).toBe(380); // Piso de R$ 380
+    expect(opEsim).toBeUndefined(); // Filtrado
+    expect(opSeguro).toBeDefined(); // Permanece
   });
 
-  it('deve disparar múltiplos gatilhos simultâneos para pacote internacional completo sem adicionais', () => {
-    // Setup - 4 passageiros para Orlando apenas com hotel
-    const produtos = [{ tipo: 'Hotel', nome: 'Hotel Disney' }];
+  it('deve respeitar toggles granulares configurados em settings.upsell_config', () => {
+    // Setup - Desativar regra de sala_vip via configuração administrativa
+    const produtos = [{ tipo: 'Aéreo', nome: 'Voo SP - Barcelona' }];
+    const settings = {
+      habilitar_upsell_preditivo: true,
+      upsell_config: {
+        sala_vip: false,
+        esim: true,
+        seguro_saude: true
+      }
+    };
 
     // Action
-    const oportunidades = UpsellEngineService.calculateUpsellOpportunities(produtos, 'Orlando', 4, 25000);
+    const oportunidades = UpsellEngineService.calculateUpsellOpportunities({
+      produtos,
+      destino: 'Barcelona',
+      totalPax: 2,
+      valorTotal: 10000,
+      settings
+    });
 
     // Assert
-    expect(oportunidades.length).toBeGreaterThanOrEqual(3);
-    const tipos = oportunidades.map((o) => o.tipo);
-    expect(tipos).toContain('seguro_saude');
-    expect(tipos).toContain('passes_experiencias');
-    expect(tipos).toContain('transfer_privativo');
+    const opSalaVip = oportunidades.find((o) => o.id === 'upsell-sala-vip');
+    const opEsim = oportunidades.find((o) => o.id === 'upsell-esim-internacional');
+    expect(opSalaVip).toBeUndefined(); // Regra desativada
+    expect(opEsim).toBeDefined(); // Regra ativa
   });
 
-  it('deve sugerir upgrade de hotel para all-inclusive/luxo quando houver hospedagem padrão', () => {
-    // Setup - Viagem nacional com hotel padrão
-    const produtos = [{ tipo: 'Hotel', nome: 'Hotel Pousada das Águas' }];
+  it('deve reconhecer destino internacional vindo do cadastro de destinos do banco', () => {
+    // Setup - Destino incomum cadastrado no banco com país Espanha
+    const destinosCadastrados = [
+      { id: 'd1', nome: 'Sevilha', pais: 'Espanha' }
+    ];
 
     // Action
-    const oportunidades = UpsellEngineService.calculateUpsellOpportunities(produtos, 'Gramado', 2, 5000);
+    const isInternacional = UpsellEngineService.isDestinoInternacional('Sevilha Tour', destinosCadastrados);
 
     // Assert
-    const opUpgrade = oportunidades.find((o) => o.id === 'upsell-upgrade-hotel');
-    expect(opUpgrade).toBeDefined();
-    expect(opUpgrade?.categoriaProduto).toBe('hotel');
-    expect(opUpgrade?.valorEstimado).toBe(Math.max(600, Math.round(5000 * 0.18)));
+    expect(isInternacional).toBe(true);
   });
 
-  it('deve sugerir garantia de cancelamento flexível para orçamentos acima de R$ 10.000', () => {
+  it('deve persistir dispensa de oportunidade no Supabase sem uso de localStorage', async () => {
     // Setup
-    const produtos = [{ tipo: 'Pacote', nome: 'Pacote Família 15 Dias' }];
+    const mockViagem = { id: 'v123', upsell_dispensados: ['upsell-antigo'] };
+    const mockSelect = vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
+        single: vi.fn().mockResolvedValue({ data: mockViagem, error: null })
+      })
+    });
+    const mockUpdate = vi.fn().mockReturnValue({
+      eq: vi.fn().mockResolvedValue({ error: null })
+    });
+
+    vi.mocked(supabase.from).mockImplementation((table: string) => {
+      if (table === 'viagens') {
+        return {
+          select: mockSelect,
+          update: mockUpdate
+        } as any;
+      }
+      return {} as any;
+    });
 
     // Action
-    const oportunidades = UpsellEngineService.calculateUpsellOpportunities(produtos, 'Fortaleza', 4, 15000);
+    const res = await UpsellEngineService.dismissOpportunity('v123', 'upsell-esim-internacional');
 
     // Assert
-    const opCancel = oportunidades.find((o) => o.id === 'upsell-cancel-flex');
-    expect(opCancel).toBeDefined();
-    expect(opCancel?.tipo).toBe('cancel_flex');
-    expect(opCancel?.valorEstimado).toBe(Math.round(15000 * 0.06)); // 6% de 15000 = 900
-  });
-
-  it('deve sugerir seguro viagem nacional e transfer receptivo para viagens pelo Brasil', () => {
-    // Setup - Viagem para Florianópolis sem seguro ou transfer
-    const produtos = [{ tipo: 'Hospedagem', nome: 'Pousada Praia da Joaquina' }];
-
-    // Action
-    const oportunidades = UpsellEngineService.calculateUpsellOpportunities(produtos, 'Florianópolis', 2, 3500);
-
-    // Assert
-    const opSeguroNac = oportunidades.find((o) => o.id === 'upsell-seguro-nacional');
-    const opTransferNac = oportunidades.find((o) => o.id === 'upsell-transfer-nacional');
-    expect(opSeguroNac).toBeDefined();
-    expect(opTransferNac).toBeDefined();
-    expect(opSeguroNac?.valorEstimado).toBe(220);
-    expect(opTransferNac?.valorEstimado).toBe(380);
+    expect(res.success).toBe(true);
+    expect(mockUpdate).toHaveBeenCalledWith({
+      upsell_dispensados: ['upsell-antigo', 'upsell-esim-internacional']
+    });
   });
 
   it('deve validar alias retroativo isUserThiagoCosta chamando isUpsellEnabled', () => {

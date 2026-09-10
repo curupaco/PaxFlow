@@ -357,15 +357,17 @@ export class EditTravelModal {
     const showRiskScore = isRiskScoreEnabled(this.options.user, this.options.perfil, this.globalSettings);
 
     const showUpsell = isUpsellEnabled(this.options.user, this.options.perfil, this.globalSettings);
-    const upsellOps = showUpsell ? UpsellEngineService.calculateUpsellOpportunities(
-      v.produtos || [],
-      v.destino || '',
-      v.num_passageiros || v.total_passageiros || 2,
-      Number(v.valor_total) || 0,
-      this.options.perfil,
-      this.options.user,
-      this.globalSettings
-    ) : [];
+    const upsellOps = showUpsell ? UpsellEngineService.calculateUpsellOpportunities({
+      produtos: v.produtos || [],
+      destino: v.destino || '',
+      totalPax: v.num_passageiros || v.total_passageiros || 2,
+      valorTotal: Number(v.valor_total) || 0,
+      clienteNome: v.cliente?.nome || '',
+      dispensados: v.upsell_dispensados || [],
+      perfil: this.options.perfil,
+      user: this.options.user,
+      settings: this.globalSettings
+    }) : [];
 
     modalContent.innerHTML = `
       <div class="p-6">
@@ -647,7 +649,7 @@ export class EditTravelModal {
 
             ${showUpsell && upsellOps.length > 0 ? `
               <!-- BLOCO PREDIÇÃO PAXFLOW UPSELL ENGINE -->
-              <div class="p-4 bg-gradient-to-br from-indigo-50/90 via-purple-50/60 to-slate-50 border border-indigo-200/80 dark:from-indigo-950/80 dark:via-slate-900 dark:to-purple-950/80 dark:border-indigo-500/30 rounded-2xl text-slate-800 dark:text-white space-y-3 shadow-xs dark:shadow-md">
+              <div id="paxflow-upsell-container" class="p-4 bg-gradient-to-br from-indigo-50/90 via-purple-50/60 to-slate-50 border border-indigo-200/80 dark:from-indigo-950/80 dark:via-slate-900 dark:to-purple-950/80 dark:border-indigo-500/30 rounded-2xl text-slate-800 dark:text-white space-y-3 shadow-xs dark:shadow-md">
                 <div class="flex items-center justify-between">
                   <div class="flex items-center gap-2">
                     <span class="text-base">🚀</span>
@@ -659,10 +661,10 @@ export class EditTravelModal {
                   <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase bg-indigo-100 text-indigo-700 border border-indigo-200 dark:bg-indigo-500/20 dark:text-indigo-300 dark:border-indigo-500/30 shrink-0 font-sans">Preditivo IA</span>
                 </div>
 
-                <div class="grid grid-cols-1 gap-2">
+                <div id="paxflow-upsell-cards-list" class="grid grid-cols-1 gap-2">
                   ${upsellOps.map(u => `
-                    <div class="p-3 bg-white/90 hover:bg-white dark:bg-white/5 dark:hover:bg-white/10 rounded-xl border border-indigo-100/80 dark:border-white/10 shadow-xs dark:shadow-none flex items-center justify-between gap-3 transition">
-                      <div class="space-y-0.5">
+                    <div id="upsell-card-${u.id}" class="p-3 bg-white/90 hover:bg-white dark:bg-white/5 dark:hover:bg-white/10 rounded-xl border border-indigo-100/80 dark:border-white/10 shadow-xs dark:shadow-none flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all duration-300">
+                      <div class="space-y-0.5 flex-1 min-w-0">
                         <div class="flex items-center gap-2 flex-wrap">
                           <span class="text-xs font-black text-slate-900 dark:text-indigo-100 font-sans">${u.titulo}</span>
                           <span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${u.corBadge} font-sans">${u.badgeTexto}</span>
@@ -670,13 +672,31 @@ export class EditTravelModal {
                         <p class="text-[11px] text-slate-600 dark:text-slate-300 font-medium leading-relaxed">${u.descricao}</p>
                         <span class="text-[10px] text-emerald-700 dark:text-emerald-300 font-extrabold block">+ R$ ${u.valorEstimado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} &bull; Sugestão: ${u.produtoSugerido}</span>
                       </div>
-                      <button type="button" 
-                        data-upsell-tipo="${u.categoriaProduto}" 
-                        data-upsell-desc="${u.produtoSugerido}" 
-                        data-upsell-valor="${u.valorEstimado}" 
-                        class="btn-quick-add-upsell px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 dark:hover:bg-indigo-500 text-white rounded-lg text-[10px] font-black uppercase shrink-0 transition flex items-center gap-1 font-sans shadow-xs">
-                        <span>+ Incluir</span>
-                      </button>
+                      <div class="flex items-center gap-1.5 shrink-0 self-end sm:self-center">
+                        ${u.mensagemWhatsApp ? `
+                          <button type="button" 
+                            data-upsell-wa="${encodeURIComponent(u.mensagemWhatsApp)}" 
+                            class="btn-whatsapp-upsell px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/30 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 border border-emerald-300/50 dark:border-emerald-700/50 rounded-lg text-[10px] font-black uppercase transition flex items-center gap-1 font-sans shadow-xs cursor-pointer" 
+                            title="Enviar proposta comercial pré-formatada via WhatsApp">
+                            <span>📲 WhatsApp</span>
+                          </button>
+                        ` : ''}
+                        <button type="button" 
+                          data-upsell-tipo="${u.categoriaProduto}" 
+                          data-upsell-desc="${u.produtoSugerido}" 
+                          data-upsell-valor="${u.valorEstimado}" 
+                          class="btn-quick-add-upsell px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 dark:hover:bg-indigo-500 text-white rounded-lg text-[10px] font-black uppercase shrink-0 transition flex items-center gap-1 font-sans shadow-xs cursor-pointer"
+                          title="Preencher automaticamente formulário de novo produto">
+                          <span>+ Incluir</span>
+                        </button>
+                        <button type="button"
+                          data-upsell-id="${u.id}"
+                          data-viagem-id="${v.id}"
+                          class="btn-dismiss-upsell p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg text-xs font-bold transition cursor-pointer"
+                          title="Dispensar sugestão para esta viagem">
+                          ✕
+                        </button>
+                      </div>
                     </div>
                   `).join('')}
                 </div>
@@ -1495,6 +1515,76 @@ export class EditTravelModal {
         }
 
         this.options.showToast(`Sugestão "${desc}" aplicada ao formulário!`, 'success');
+      });
+    });
+
+    // Envio comercial via WhatsApp a partir do PaxFlow Upsell Engine
+    document.querySelectorAll('.btn-whatsapp-upsell').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const rawMsg = btn.getAttribute('data-upsell-wa') || '';
+        const msg = decodeURIComponent(rawMsg);
+        const rawTelefone = (v.cliente?.telefone || '').replace(/\D/g, '');
+
+        try {
+          if (navigator.clipboard) {
+            await navigator.clipboard.writeText(msg);
+          }
+        } catch (_) {}
+
+        let url = 'https://wa.me/?text=' + encodeURIComponent(msg);
+        if (rawTelefone) {
+          const numFinal = rawTelefone.startsWith('55') ? rawTelefone : `55${rawTelefone}`;
+          url = `https://wa.me/${numFinal}?text=` + encodeURIComponent(msg);
+        }
+
+        window.open(url, '_blank');
+        this.options.showToast('Mensagem comercial copiada e WhatsApp aberto!', 'success');
+      });
+    });
+
+    // Dispensa de oportunidade no PaxFlow Upsell Engine (Persistência no Supabase - Zero localStorage)
+    document.querySelectorAll('.btn-dismiss-upsell').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const oppId = btn.getAttribute('data-upsell-id') || '';
+        const viagemId = btn.getAttribute('data-viagem-id') || v.id;
+
+        if (!oppId || !viagemId) return;
+
+        // Feedback visual imediato no card
+        const card = document.getElementById(`upsell-card-${oppId}`);
+        if (card) {
+          card.style.opacity = '0.4';
+          card.style.pointerEvents = 'none';
+        }
+
+        const res = await UpsellEngineService.dismissOpportunity(viagemId, oppId);
+
+        if (res.success) {
+          v.upsell_dispensados = [...(v.upsell_dispensados || []), oppId];
+          if (card) {
+            card.style.transition = 'all 0.3s ease';
+            card.style.height = `${card.offsetHeight}px`;
+            requestAnimationFrame(() => {
+              card.style.opacity = '0';
+              card.style.transform = 'translateY(-10px)';
+              setTimeout(() => {
+                card.remove();
+                const containerList = document.getElementById('paxflow-upsell-cards-list');
+                if (containerList && containerList.children.length === 0) {
+                  const mainContainer = document.getElementById('paxflow-upsell-container');
+                  if (mainContainer) mainContainer.remove();
+                }
+              }, 300);
+            });
+          }
+          this.options.showToast('Oportunidade dispensada para esta viagem.', 'success');
+        } else {
+          if (card) {
+            card.style.opacity = '1';
+            card.style.pointerEvents = 'auto';
+          }
+          this.options.showToast(res.error || 'Erro ao dispensar oportunidade.', 'error');
+        }
       });
     });
 

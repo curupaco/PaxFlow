@@ -1598,15 +1598,16 @@ export class OrcamentosPage {
       } catch (_) {}
     }
 
-    const upsellOps = UpsellEngineService.calculateUpsellOpportunities(
-      [],
-      orc.destino,
-      2,
-      orc.valorProposta || 0,
-      this.perfil,
-      this.user,
-      this.settings
-    );
+    const upsellOps = UpsellEngineService.calculateUpsellOpportunities({
+      produtos: [],
+      destino: orc.destino,
+      totalPax: 2,
+      valorTotal: orc.valorProposta || 0,
+      clienteNome: orc.nomeCliente,
+      perfil: this.perfil,
+      user: this.user,
+      settings: this.settings
+    });
 
     modalContent.innerHTML = `
       <div class="p-6">
@@ -1634,18 +1635,28 @@ export class OrcamentosPage {
 
             <div class="grid grid-cols-1 gap-2.5">
               ${upsellOps.map(u => `
-                <div class="p-3 bg-white/90 hover:bg-white dark:bg-white/5 rounded-xl border border-indigo-100/80 dark:border-white/10 shadow-xs dark:shadow-none flex items-center justify-between gap-3 transition">
-                  <div class="space-y-0.5">
-                    <div class="flex items-center gap-2">
+                <div class="p-3 bg-white/90 hover:bg-white dark:bg-white/5 rounded-xl border border-indigo-100/80 dark:border-white/10 shadow-xs dark:shadow-none flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition">
+                  <div class="space-y-0.5 flex-1 min-w-0">
+                    <div class="flex items-center gap-2 flex-wrap">
                       <span class="text-xs font-black text-slate-900 dark:text-indigo-100">${u.titulo}</span>
                       <span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${u.corBadge}">${u.badgeTexto}</span>
                     </div>
                     <p class="text-[11px] text-slate-600 dark:text-slate-300 font-medium">${u.descricao}</p>
                     <span class="text-[10px] text-emerald-700 dark:text-emerald-300 font-bold block">+ R$ ${u.valorEstimado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (Sugestão: ${u.produtoSugerido})</span>
                   </div>
-                  <button type="button" data-upsell-text="${u.produtoSugerido} - R$ ${u.valorEstimado}" class="btn-add-upsell-to-notes px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 dark:hover:bg-indigo-500 text-white rounded-lg text-[10px] font-black uppercase shrink-0 transition shadow-xs">
-                    + Incluir
-                  </button>
+                  <div class="flex items-center gap-1.5 shrink-0 self-end sm:self-center">
+                    ${u.mensagemWhatsApp ? `
+                      <button type="button" 
+                        data-upsell-wa="${encodeURIComponent(u.mensagemWhatsApp)}" 
+                        class="btn-orc-whatsapp-upsell px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/30 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 border border-emerald-300/50 dark:border-emerald-700/50 rounded-lg text-[10px] font-black uppercase transition flex items-center gap-1 shadow-xs cursor-pointer" 
+                        title="Enviar proposta comercial pré-formatada via WhatsApp">
+                        <span>📲 WhatsApp</span>
+                      </button>
+                    ` : ''}
+                    <button type="button" data-upsell-text="${u.produtoSugerido} - R$ ${u.valorEstimado}" class="btn-add-upsell-to-notes px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 dark:hover:bg-indigo-500 text-white rounded-lg text-[10px] font-black uppercase shrink-0 transition shadow-xs cursor-pointer">
+                      + Incluir
+                    </button>
+                  </div>
                 </div>
               `).join('')}
             </div>
@@ -1725,6 +1736,30 @@ export class OrcamentosPage {
           target.innerText = '✅ Adicionado';
           target.classList.replace('bg-indigo-600', 'bg-emerald-600');
         }
+      });
+    });
+
+    // Event Listener de WhatsApp do PaxFlow Upsell Engine™ em Orçamentos
+    modalContent.querySelectorAll('.btn-orc-whatsapp-upsell').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const rawMsg = btn.getAttribute('data-upsell-wa') || '';
+        const msg = decodeURIComponent(rawMsg);
+        const rawTelefone = (orc.contato || '').replace(/\D/g, '');
+
+        try {
+          if (navigator.clipboard) {
+            await navigator.clipboard.writeText(msg);
+          }
+        } catch (_) {}
+
+        let url = 'https://wa.me/?text=' + encodeURIComponent(msg);
+        if (rawTelefone) {
+          const numFinal = rawTelefone.startsWith('55') ? rawTelefone : `55${rawTelefone}`;
+          url = `https://wa.me/${numFinal}?text=` + encodeURIComponent(msg);
+        }
+
+        window.open(url, '_blank');
+        this.showToast('Mensagem comercial copiada e WhatsApp aberto!', 'success');
       });
     });
 
