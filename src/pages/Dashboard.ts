@@ -1855,7 +1855,7 @@ export class Dashboard {
                   <thead>
                     <tr class="bg-slate-50 dark:bg-slate-900 text-[10px] font-black uppercase text-slate-400 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10 shadow-xs">
                       <th class="px-5 py-4 w-[80px] text-center">${this.renderSortHeader('SLA', 'sla')}</th>
-                      <th class="px-5 py-4">${this.renderSortHeader('Cliente / LOC', 'cliente')}</th>
+                      <th class="px-5 py-4">${this.renderSortHeader('Cliente', 'cliente')}</th>
                       <th class="px-5 py-4">${this.renderSortHeader('Destino / Produtos', 'destino')}</th>
                       <th class="px-5 py-4">${this.renderSortHeader('Data Fin.', 'data_financeiro')}</th>
                       <th class="px-5 py-4">${this.renderSortHeader('Financeiro', 'financeiro')}</th>
@@ -2064,19 +2064,16 @@ Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : '
           </div>
         </td>
 
-        <!-- Cliente / LOC -->
+        <!-- Cliente -->
         <td class="px-5 py-4 min-w-[200px]">
           <div class="font-black text-slate-800 dark:text-slate-100">${v.cliente?.nome || 'Cliente Desconhecido'}</div>
-          <div class="flex flex-wrap items-center gap-1.5 mt-1">
-            ${v.codigoRef ? `
+          ${v.codigoRef ? `
+            <div class="flex flex-wrap items-center gap-1.5 mt-1">
               <span class="px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-655 dark:text-indigo-400 font-mono font-bold text-[9px] rounded tracking-wider border border-indigo-200/40 dark:border-indigo-850 uppercase">
                 ${v.codigoRef}
               </span>
-            ` : ''}
-            <span class="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-extrabold text-[9px] rounded tracking-wider border border-slate-200/40 dark:border-slate-700/50 uppercase">
-              ${v.codigo_localizador || 'S/ LOC'}
-            </span>
-          </div>
+            </div>
+          ` : ''}
         </td>
 
         <!-- Destino / Produtos -->
@@ -2232,9 +2229,6 @@ Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : '
                   REF: ${v.codigoRef}
                 </span>
               ` : ''}
-              <span class="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-extrabold text-[9px] rounded tracking-wider border border-slate-200/40 dark:border-slate-700/50 uppercase">
-                LOC: ${v.codigo_localizador || 'S/ LOC'}
-              </span>
               ${this.perfil?.role === 'admin' ? `
                 <span class="text-[9px] text-slate-400 font-bold bg-slate-100/50 dark:bg-slate-800/50 px-1.5 py-0.5 rounded border border-slate-200/20 dark:border-slate-700/20">
                   👤 ${v.consultor_id === this.user.id ? 'Você' : (this.consultores.find(c => c.id === v.consultor_id)?.nome?.split(' ')[0] || 'Outro')}
