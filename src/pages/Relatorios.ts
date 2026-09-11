@@ -6,6 +6,7 @@ import { obterProgressoNivel, BADGE_DEFINITIONS } from '../services/gamification
 import { EditTravelModal } from '../components/dashboard/EditTravelModal';
 import { CommentsService } from '../services/comments';
 import { SendTemplateMessageModal } from '../components/dashboard/SendTemplateMessageModal';
+import { ContatosEmbarqueService } from '../services/contatosEmbarqueService';
 import { confirmUnsavedChanges } from '../components/common/UnsavedChangesModal';
 
 if (typeof document !== 'undefined') {
@@ -1888,12 +1889,13 @@ export class RelatoriosPage {
 
       const clientName = v.cliente?.nome || 'Passageiro';
       const consultorName = this.consultores.find(c => c.id === v.consultor_id)?.nome || 'Consultor';
+      const contatosViagem = ContatosEmbarqueService.extrairContatos(v);
 
       // 1. Ida da Viagem Principal
       if (v.data_ida && v.data_ida >= start && v.data_ida <= end) {
         const hasAlert = this.lembretes.some((l: any) => l.viagem_id === v.id && l.data_lembrete === v.data_ida);
         const trechoKey = 'viagem-ida';
-        const contatoRegistro = v.contatos_embarque?.[trechoKey];
+        const contatoRegistro = contatosViagem[trechoKey];
         const contatoFeito = Boolean(contatoRegistro?.feito);
 
         list.push({
@@ -1917,7 +1919,7 @@ export class RelatoriosPage {
       if (v.data_volta && v.data_volta >= start && v.data_volta <= end) {
         const hasAlert = this.lembretes.some((l: any) => l.viagem_id === v.id && l.data_lembrete === v.data_volta);
         const trechoKey = 'viagem-volta';
-        const contatoRegistro = v.contatos_embarque?.[trechoKey];
+        const contatoRegistro = contatosViagem[trechoKey];
         const contatoFeito = Boolean(contatoRegistro?.feito);
 
         list.push({
@@ -1950,7 +1952,7 @@ export class RelatoriosPage {
                 if (t.dataIda && t.dataIda >= start && t.dataIda <= end) {
                   const hasAlert = this.lembretes.some((l: any) => l.viagem_id === v.id && l.data_lembrete === t.dataIda);
                   const trechoKey = `seg-ida-${prodId}-${idx}`;
-                  const contatoRegistro = v.contatos_embarque?.[trechoKey];
+                  const contatoRegistro = contatosViagem[trechoKey];
                   const contatoFeito = Boolean(contatoRegistro?.feito);
 
                   list.push({
@@ -1973,7 +1975,7 @@ export class RelatoriosPage {
                 if (t.dataVolta && t.dataVolta >= start && t.dataVolta <= end) {
                   const hasAlert = this.lembretes.some((l: any) => l.viagem_id === v.id && l.data_lembrete === t.dataVolta);
                   const trechoKey = `seg-volta-${prodId}-${idx}`;
-                  const contatoRegistro = v.contatos_embarque?.[trechoKey];
+                  const contatoRegistro = contatosViagem[trechoKey];
                   const contatoFeito = Boolean(contatoRegistro?.feito);
 
                   list.push({
@@ -2566,7 +2568,7 @@ export class RelatoriosPage {
           const viagem = this.viagens.find(v => v.id === tripId);
           if (!viagem) return;
 
-          const contatos = { ...(viagem.contatos_embarque || {}) };
+          const contatos = { ...ContatosEmbarqueService.extrairContatos(viagem) };
           const jaFeito = Boolean(contatos[trechoKey]?.feito);
           const novoStatus = !jaFeito;
 
@@ -2587,15 +2589,7 @@ export class RelatoriosPage {
           }
 
           try {
-            const { error } = await supabase
-              .from('viagens')
-              .update({
-                contatos_embarque: contatos,
-                updated_at: new Date().toISOString()
-              })
-              .eq('id', tripId);
-
-            if (error) throw error;
+            await ContatosEmbarqueService.salvarContatos(tripId, contatos);
 
             viagem.contatos_embarque = contatos;
             this.showToast(
@@ -3062,10 +3056,11 @@ export class RelatoriosPage {
       this.viagens.forEach((v: any) => {
         const clientName = v.cliente?.nome || 'Passageiro';
         const consultorName = this.consultores.find(c => c.id === v.consultor_id)?.nome || 'Consultor';
+        const contatosViagem = ContatosEmbarqueService.extrairContatos(v);
 
         if (v.data_ida && v.data_ida >= start && v.data_ida <= end) {
           const hasAlert = this.lembretes.some((l: any) => l.viagem_id === v.id && l.data_lembrete === v.data_ida);
-          const contatoFeito = Boolean(v.contatos_embarque?.['viagem-ida']?.feito);
+          const contatoFeito = Boolean(contatosViagem['viagem-ida']?.feito);
           list.push({
             data: v.data_ida,
             cliente: clientName,
@@ -3080,7 +3075,7 @@ export class RelatoriosPage {
 
         if (v.data_volta && v.data_volta >= start && v.data_volta <= end) {
           const hasAlert = this.lembretes.some((l: any) => l.viagem_id === v.id && l.data_lembrete === v.data_volta);
-          const contatoFeito = Boolean(v.contatos_embarque?.['viagem-volta']?.feito);
+          const contatoFeito = Boolean(contatosViagem['viagem-volta']?.feito);
           list.push({
             data: v.data_volta,
             cliente: clientName,
@@ -3102,7 +3097,7 @@ export class RelatoriosPage {
                   const prodId = p.id || '';
                   if (t.dataIda && t.dataIda >= start && t.dataIda <= end) {
                     const hasAlert = this.lembretes.some((l: any) => l.viagem_id === v.id && l.data_lembrete === t.dataIda);
-                    const contatoFeito = Boolean(v.contatos_embarque?.[`seg-ida-${prodId}-${idx}`]?.feito);
+                    const contatoFeito = Boolean(contatosViagem[`seg-ida-${prodId}-${idx}`]?.feito);
                     list.push({
                       data: t.dataIda,
                       cliente: clientName,
@@ -3116,7 +3111,7 @@ export class RelatoriosPage {
                   }
                   if (t.dataVolta && t.dataVolta >= start && t.dataVolta <= end) {
                     const hasAlert = this.lembretes.some((l: any) => l.viagem_id === v.id && l.data_lembrete === t.dataVolta);
-                    const contatoFeito = Boolean(v.contatos_embarque?.[`seg-volta-${prodId}-${idx}`]?.feito);
+                    const contatoFeito = Boolean(contatosViagem[`seg-volta-${prodId}-${idx}`]?.feito);
                     list.push({
                       data: t.dataVolta,
                       cliente: clientName,

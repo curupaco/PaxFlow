@@ -1,4 +1,5 @@
 import { supabase } from '../../services/supabase';
+import { ContatosEmbarqueService } from '../../services/contatosEmbarqueService';
 import { DestinosAutocomplete } from '../DestinosAutocomplete';
 import { CommentsService } from '../../services/comments';
 import { RiskScoreService } from '../../services/riskScoreService';
@@ -506,7 +507,7 @@ export class EditTravelModal {
               }
 
               todosEmbarquesViagem.sort((a, b) => a.dataStr.localeCompare(b.dataStr));
-              const contatosViagem = v.contatos_embarque || {};
+              const contatosViagem = ContatosEmbarqueService.extrairContatos(v);
               const proximoPendente = todosEmbarquesViagem.find(emb => !contatosViagem[emb.chave]?.feito);
               const todosFeitos = todosEmbarquesViagem.length > 0 && !proximoPendente;
 
@@ -835,7 +836,7 @@ export class EditTravelModal {
         });
       }
       todosEmbarquesViagem.sort((a, b) => a.dataStr.localeCompare(b.dataStr));
-      const contatos = v.contatos_embarque || {};
+      const contatos = ContatosEmbarqueService.extrairContatos(v);
       const proximoPendente = todosEmbarquesViagem.find(emb => !contatos[emb.chave]?.feito);
       const trechoAlvo = proximoPendente ? proximoPendente.chave : 'viagem-ida';
 
@@ -850,7 +851,7 @@ export class EditTravelModal {
         showToast: this.options.showToast,
         initialTemplateType: 'pre_embarque',
         onMessageSent: async () => {
-          const novoContatos = { ...(v.contatos_embarque || {}) };
+          const novoContatos = { ...ContatosEmbarqueService.extrairContatos(v) };
           novoContatos[trechoAlvo] = {
             feito: true,
             data_contato: new Date().toISOString(),
@@ -858,7 +859,7 @@ export class EditTravelModal {
             consultor_nome: this.options.perfil?.nome || this.options.user?.email || 'Consultor'
           };
           try {
-            await supabase.from('viagens').update({ contatos_embarque: novoContatos, updated_at: new Date().toISOString() }).eq('id', v.id);
+            await ContatosEmbarqueService.salvarContatos(v.id, novoContatos);
             v.contatos_embarque = novoContatos;
             this.options.showToast('Contato pré-embarque registrado com sucesso!', 'success');
             await this.options.onUpdate();

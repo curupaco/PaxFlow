@@ -263,6 +263,7 @@ CREATE TABLE IF NOT EXISTS public.viagens (
     data_financeiro DATE,
     origem TEXT,
     processo_conferido BOOLEAN DEFAULT FALSE NOT NULL,
+    contatos_embarque JSONB DEFAULT '{}'::jsonb,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );

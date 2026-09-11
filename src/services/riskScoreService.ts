@@ -1,6 +1,7 @@
 import { Viagem, Cliente, GlobalSettings, RiskScoreResult, RiskItem, RiskTimelineEntry, ProdutoViagem, PerfilConsultor } from '../types';
 import { supabase } from './supabase';
 import { isRiskScoreEnabled } from '../utils/featureFlags';
+import { ContatosEmbarqueService } from './contatosEmbarqueService';
 
 /**
  * Serviço responsável pela inteligência do PaxFlow Risk Score™
@@ -235,7 +236,7 @@ export class RiskScoreService {
     }
 
     // Checagem de Contato Pré-Embarque Crítico (< 24h)
-    const contatosEmbarque = viagem.contatos_embarque || {};
+    const contatosEmbarque = ContatosEmbarqueService.extrairContatos(viagem);
     const embarquesViagem: { chave: string; rotulo: string; dataStr: string; horaStr?: string }[] = [];
 
     if (viagem.data_ida) {
