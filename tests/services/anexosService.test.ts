@@ -22,6 +22,7 @@ vi.mock('../../src/services/supabase', () => ({
     storage: {
       from: vi.fn().mockReturnValue({
         upload: vi.fn().mockResolvedValue({ data: { path: 'test/path' }, error: null }),
+        list: vi.fn().mockResolvedValue({ data: [], error: null }),
         remove: vi.fn().mockResolvedValue({ data: [], error: null })
       })
     }
@@ -31,6 +32,11 @@ vi.mock('../../src/services/supabase', () => ({
 describe('AnexosService - Testes Subcutâneos com Múltiplos Anexos e Resiliência a Drift', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    (supabase.storage.from as any).mockReturnValue({
+      upload: vi.fn().mockResolvedValue({ data: { path: 'test/path' }, error: null }),
+      list: vi.fn().mockResolvedValue({ data: [], error: null }),
+      remove: vi.fn().mockResolvedValue({ data: [], error: null })
+    });
   });
 
   it('deve realizar upload e salvar metadados do documento com categoria e identificador no banco', async () => {
@@ -119,10 +125,10 @@ describe('AnexosService - Testes Subcutâneos com Múltiplos Anexos e Resiliênc
     expect(resultado[1].rotulo).toBe('Passaporte Maria');
   });
 
-  it('deve ativar fallback resiliente sem travar ao receber erro 42P01 (tabela inexistente) ou 42703', async () => {
+  it('deve ativar fallback resiliente persistindo em viagens.observacoes ao receber erro 42P01', async () => {
     // Setup
     const mockFile = new File(['passaporte data'], 'passaporte.jpg', { type: 'image/jpeg' });
-    const fallbackDb = new Map<string, any>();
+    let obsGravada = '';
 
     const mockFrom = vi.fn().mockImplementation((tabela: string) => {
       if (tabela === 'documentos_anexos') {
@@ -140,22 +146,22 @@ describe('AnexosService - Testes Subcutâneos com Múltiplos Anexos e Resiliênc
           })
         };
       }
-      if (tabela === 'global_settings') {
+      if (tabela === 'viagens') {
         return {
           select: vi.fn().mockReturnValue({
             eq: vi.fn().mockReturnValue({
-              maybeSingle: vi.fn().mockImplementation(async () => {
-                return {
-                  data: fallbackDb.get('anexos_storage_cache_drift') || null,
-                  error: null
-                };
+              single: vi.fn().mockResolvedValue({
+                data: { observacoes: obsGravada },
+                error: null
               })
             })
           }),
-          upsert: vi.fn().mockImplementation(async (payload: any) => {
-            fallbackDb.set(payload.key, payload);
-            return { error: null };
-          })
+          update: vi.fn().mockImplementation((payload: any) => ({
+            eq: vi.fn().mockImplementation(async () => {
+              obsGravada = payload.observacoes;
+              return { error: null };
+            })
+          }))
         };
       }
       return {};
@@ -174,7 +180,55 @@ describe('AnexosService - Testes Subcutâneos com Múltiplos Anexos e Resiliênc
     expect(resultado).toBeDefined();
     expect(resultado.rotulo).toBe('Passaporte Titular');
     expect(resultado.tipo_documento).toBe('PASSAPORTE');
-    expect(mockFrom).toHaveBeenCalledWith('global_settings');
+    expect(mockFrom).toHaveBeenCalledWith('viagens');
+    expect(obsGravada).toContain('PAXFLOW_ANEXOS');
+  });
+
+  it('deve listar arquivos existentes no Supabase Storage mesmo com tabela do banco ausente', async () => {
+    const mockFrom = vi.fn().mockImplementation((table: string) => {
+      if (table === 'viagens') {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              single: vi.fn().mockResolvedValue({ data: { observacoes: '' }, error: null })
+            })
+          })
+        };
+      }
+      return {
+        select: vi.fn().mockReturnValue({
+          order: vi.fn().mockReturnValue({
+            eq: vi.fn().mockResolvedValue({
+              data: null,
+              error: { code: '42P01', message: 'relation does not exist' }
+            })
+          })
+        })
+      };
+    });
+    (supabase.from as any) = mockFrom;
+
+    (supabase.storage.from as any) = vi.fn().mockReturnValue({
+      list: vi.fn().mockResolvedValue({
+        data: [
+          {
+            name: '1741123456_voucher_hotel_fasano.pdf',
+            id: 'file-storage-1',
+            metadata: { size: 54321, mimetype: 'application/pdf' },
+            created_at: '2026-09-11T20:00:00Z'
+          }
+        ],
+        error: null
+      })
+    });
+
+    // Action
+    const resultado = await AnexosService.listarAnexos('viagem-fernanda');
+
+    // Assert
+    expect(resultado.length).toBeGreaterThan(0);
+    expect(resultado[0].nome_original).toContain('voucher_hotel_fasano.pdf');
+    expect(resultado[0].tipo_documento).toBe('VOUCHER_HOTEL');
   });
 
   it('deve excluir anexo com sucesso e solicitar remoção do Supabase Storage', async () => {

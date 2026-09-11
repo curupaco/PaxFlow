@@ -180,10 +180,14 @@ export class AnexosService {
 
   /**
    * Lista os anexos vinculados a uma viagem e ao seu cliente/passageiro.
+   * Consulta a tabela documentos_anexos, faz fallback em viagens.observacoes e
+   * inspeciona o Supabase Storage diretamente para nunca perder nenhum arquivo enviado.
    */
   public static async listarAnexos(viagemId?: string, clienteId?: string): Promise<DocumentoAnexo[]> {
     const listaFinal: DocumentoAnexo[] = [];
+    let tabelaExiste = true;
 
+    // 1. Consulta a tabela oficial documentos_anexos
     try {
       let query = supabase.from(this.TABELA).select('*').order('created_at', { ascending: false });
 
@@ -204,24 +208,91 @@ export class AnexosService {
         (error.code === '42P01' ||
           error.code === '42703' ||
           error.code === 'PGRST204' ||
-          error.code === 'PGRST200')
+          error.code === 'PGRST200' ||
+          error.message?.includes('does not exist'))
       ) {
-        const fallbacks = await this.listarFallbackDrift();
-        const filtrados = fallbacks.filter(
-          item =>
-            (viagemId && item.viagem_id === viagemId) ||
-            (clienteId && item.cliente_id === clienteId)
-        );
-        listaFinal.push(...filtrados);
+        tabelaExiste = false;
       }
     } catch {
-      const fallbacks = await this.listarFallbackDrift();
-      const filtrados = fallbacks.filter(
-        item =>
-          (viagemId && item.viagem_id === viagemId) ||
-          (clienteId && item.cliente_id === clienteId)
-      );
-      listaFinal.push(...filtrados);
+      tabelaExiste = false;
+    }
+
+    // 2. Se a tabela ainda não tiver sido criada no Supabase, recupera de viagens.observacoes
+    if (!tabelaExiste && viagemId) {
+      try {
+        const { data: vData } = await supabase
+          .from('viagens')
+          .select('observacoes')
+          .eq('id', viagemId)
+          .single();
+
+        if (vData?.observacoes) {
+          const match = vData.observacoes.match(/<!-- PAXFLOW_ANEXOS:(.*?) -->/);
+          if (match && match[1]) {
+            const parsed = JSON.parse(match[1]);
+            if (Array.isArray(parsed)) {
+              for (const item of parsed) {
+                if (!listaFinal.some(a => a.id === item.id || a.storage_path === item.storage_path)) {
+                  listaFinal.push(item);
+                }
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('[AnexosService] Aviso ao recuperar fallback em viagens.observacoes:', err);
+      }
+    }
+
+    // 3. Consulta direta ao Supabase Storage (FONTE DA VERDADE DO ARMAZENAMENTO)
+    // Garante que nenhum arquivo recém-subido desapareça caso a tabela do banco ainda não tenha sido migrada
+    const pastasParaBuscar = [viagemId, clienteId].filter(Boolean) as string[];
+
+    for (const pasta of pastasParaBuscar) {
+      if (supabase && supabase.storage) {
+        try {
+          const { data: storageFiles, error: storageErr } = await supabase.storage
+            .from(this.BUCKET)
+            .list(pasta, { limit: 100, sortBy: { column: 'created_at', order: 'desc' } });
+
+          if (!storageErr && storageFiles && storageFiles.length > 0) {
+            for (const f of storageFiles) {
+              // Ignora pastas internas do storage
+              if (!f.name || f.name.startsWith('.')) continue;
+
+              const pathCompleto = `supabase-storage://${pasta}/${f.name}`;
+              const jaExiste = listaFinal.some(item => item.storage_path === pathCompleto);
+
+              if (!jaExiste) {
+                const nomeLegivel = f.name.replace(/^\d+_/, '');
+                let tipoInferido: TipoDocumentoAnexo = 'OUTROS';
+                const lower = nomeLegivel.toLowerCase();
+                if (lower.includes('passaporte')) tipoInferido = 'PASSAPORTE';
+                else if (lower.includes('visto')) tipoInferido = 'VISTO';
+                else if (lower.includes('voo') || lower.includes('bilhete') || lower.includes('aereo')) tipoInferido = 'VOUCHER_AEREO';
+                else if (lower.includes('hotel') || lower.includes('resort')) tipoInferido = 'VOUCHER_HOTEL';
+                else if (lower.includes('seguro')) tipoInferido = 'SEGURO';
+                else if (lower.includes('contrato')) tipoInferido = 'CONTRATO';
+
+                listaFinal.push({
+                  id: f.id || `storage-${pasta}-${f.name}`,
+                  viagem_id: pasta === viagemId ? viagemId : undefined,
+                  cliente_id: pasta === clienteId ? clienteId : undefined,
+                  rotulo: nomeLegivel,
+                  tipo_documento: tipoInferido,
+                  nome_original: nomeLegivel,
+                  storage_path: pathCompleto,
+                  mime_type: (f.metadata as any)?.mimetype || 'application/pdf',
+                  tamanho_bytes: (f.metadata as any)?.size || 0,
+                  created_at: f.created_at || new Date().toISOString()
+                });
+              }
+            }
+          }
+        } catch (stErr) {
+          console.warn(`[AnexosService] Aviso ao inspecionar arquivos na pasta ${pasta} do Storage:`, stErr);
+        }
+      }
     }
 
     return listaFinal;
@@ -232,27 +303,19 @@ export class AnexosService {
    */
   public static async excluirAnexo(anexoId: string, storagePath?: string): Promise<boolean> {
     try {
-      // 1. Tenta deletar no banco de dados
+      // 1. Tenta deletar na tabela oficial do banco de dados
       const { error: dbErr } = await supabase
         .from(this.TABELA)
         .delete()
         .eq('id', anexoId);
 
-      if (
-        dbErr &&
-        (dbErr.code === '42P01' ||
-          dbErr.code === '42703' ||
-          dbErr.code === 'PGRST204' ||
-          dbErr.code === 'PGRST200')
-      ) {
-        await this.excluirFallbackDrift(anexoId);
-      }
-
       // 2. Remove do Supabase Storage se tiver caminho
       if (storagePath && storagePath.startsWith('supabase-storage://')) {
         const pathNoBucket = storagePath.replace('supabase-storage://', '');
         try {
-          await supabase.storage.from(this.BUCKET).remove([pathNoBucket]);
+          if (supabase && supabase.storage) {
+            await supabase.storage.from(this.BUCKET).remove([pathNoBucket]);
+          }
         } catch (stErr) {
           console.warn('[AnexosService] Aviso ao remover arquivo do bucket:', stErr);
         }
@@ -267,7 +330,7 @@ export class AnexosService {
 
   // ==========================================================================
   // FALLBACK SEGURO DE CONTINGÊNCIA (Zero-Break Pattern)
-  // Persistido estruturadamente no Supabase (global_settings) - ZERO localStorage
+  // Persistido em viagens.observacoes no Supabase - ZERO localStorage
   // ==========================================================================
 
   private static gerarIdSeguro(): string {
@@ -277,65 +340,49 @@ export class AnexosService {
     return `anexo-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
   }
 
-  private static async obterListaContingencia(): Promise<DocumentoAnexo[]> {
-    try {
-      const { data } = await supabase
-        .from(this.TABELA_SETTINGS)
-        .select('value')
-        .eq('key', this.CHAVE_FALLBACK)
-        .maybeSingle();
-
-      if (data && data.value && Array.isArray(data.value)) {
-        return data.value as DocumentoAnexo[];
-      }
-      return [];
-    } catch {
-      return [];
-    }
-  }
-
   private static async salvarFallbackDrift(anexo: DocumentoAnexo): Promise<DocumentoAnexo> {
-    const lista = await this.obterListaContingencia();
     const itemNormalizado: DocumentoAnexo = {
       ...anexo,
       id: anexo.id || this.gerarIdSeguro(),
       created_at: anexo.created_at || new Date().toISOString()
     };
 
-    lista.unshift(itemNormalizado);
+    if (itemNormalizado.viagem_id) {
+      try {
+        const { data: vData } = await supabase
+          .from('viagens')
+          .select('observacoes')
+          .eq('id', itemNormalizado.viagem_id)
+          .single();
 
-    try {
-      await supabase
-        .from(this.TABELA_SETTINGS)
-        .upsert({
-          key: this.CHAVE_FALLBACK,
-          value: lista,
-          description: 'Documentos Anexos - Fallback resiliente para schema drift'
-        });
-    } catch (err) {
-      console.warn('[AnexosService] Falha ao persistir em global_settings:', err);
+        let obs = vData?.observacoes || '';
+        let listaAnexosViagem: DocumentoAnexo[] = [];
+        const match = obs.match(/<!-- PAXFLOW_ANEXOS:(.*?) -->/);
+        if (match && match[1]) {
+          try {
+            listaAnexosViagem = JSON.parse(match[1]);
+          } catch {}
+        }
+
+        listaAnexosViagem = listaAnexosViagem.filter(item => item.id !== itemNormalizado.id);
+        listaAnexosViagem.unshift(itemNormalizado);
+
+        const blocoJson = `<!-- PAXFLOW_ANEXOS:${JSON.stringify(listaAnexosViagem)} -->`;
+        if (match) {
+          obs = obs.replace(/<!-- PAXFLOW_ANEXOS:(.*?) -->/, blocoJson);
+        } else {
+          obs = obs ? `${obs}\n${blocoJson}` : blocoJson;
+        }
+
+        await supabase
+          .from('viagens')
+          .update({ observacoes: obs })
+          .eq('id', itemNormalizado.viagem_id);
+      } catch (err) {
+        console.warn('[AnexosService] Falha ao persistir anexo em viagens.observacoes:', err);
+      }
     }
 
     return itemNormalizado;
-  }
-
-  private static async listarFallbackDrift(): Promise<DocumentoAnexo[]> {
-    return await this.obterListaContingencia();
-  }
-
-  private static async excluirFallbackDrift(anexoId: string): Promise<void> {
-    const lista = await this.obterListaContingencia();
-    const novaLista = lista.filter(item => item.id !== anexoId);
-    try {
-      await supabase
-        .from(this.TABELA_SETTINGS)
-        .upsert({
-          key: this.CHAVE_FALLBACK,
-          value: novaLista,
-          description: 'Documentos Anexos - Fallback resiliente para schema drift'
-        });
-    } catch {
-      // silencioso
-    }
   }
 }
