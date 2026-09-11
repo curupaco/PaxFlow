@@ -32,4 +32,20 @@ Sempre que eu pedir para testar um fluxo, atue como um Engenheiro de Testes Sên
 - **ATUALIZAÇÃO DE COBERTURA**: Se a alteração introduzir novo fluxo ou modificar comportamento de negócio, a suíte de testes subcutâneos do respectivo módulo DEVE ser atualizada ou expandida no mesmo ciclo.
 - **ENTREGA CONDICIONAL**: Uma tarefa só é dada por concluída se todos os testes passarem (100% verde) e o `npm run build` não apresentar erros impeditivos.
 
+---
+
+## 🚨 PROTOCOLO MANDATÓRIO DE BANCO DE DADOS (DDL, MIGRAÇÕES E SCHEMA DRIFT)
+
+1. **ALERTA DE DDL OBRIGATÓRIO NO TOPO DA RESPOSTA**:
+   - Se qualquer desenvolvimento demandar criação ou alteração de coluna, tabela, índice, enum ou trigger no Supabase, é **ESTRITAMENTE PROIBIDO** declarar a tarefa como entregue ou pronta para produção sem exibir no início da resposta o bloco SQL completo e mastigado para ser executado no SQL Editor do Supabase.
+   - O assistente DEVE alertar explicitamente o usuário sobre a necessidade de rodar o script no banco antes de considerar o fluxo liberado para a agência.
+
+2. **RESILIÊNCIA OBRIGATÓRIA A SCHEMA DRIFT (PADRÃO ZERO-BREAK)**:
+   - Todo serviço que gravar em colunas novas DEVE implementar tratamento nativo de fallback para erro `42703` (coluna inexistente).
+   - A agência não pode parar: se a aplicação for atualizada antes da migração ser rodada no Supabase, o sistema DEVE persistir os dados de forma segura (ex: em campo estruturado existente como `observacoes`) e continuar operando normalmente, sem toasts vermelhos nem travamentos.
+
+3. **COBERTURA DE TESTES PARA ERROS DE SCHEMA**:
+   - Os testes subcutâneos de serviços que introduzem colunas novas DEVEM incluir obrigatoriamente um teste simulando o erro `42703`, comprovando que o fallback de banco funciona e a aplicação não quebra em produção.
+
+
 
