@@ -41,7 +41,7 @@ export class ContatosEmbarqueService {
   /**
    * Salva os contatos de pré-embarque no Supabase.
    * Tenta primeiro a coluna nativa 'contatos_embarque'. Se ela não existir
-   * no schema remoto do Supabase (schema drift 42703), persiste com segurança
+   * no schema remoto do Supabase (schema drift 42703 ou PGRST204), persiste com segurança
    * no campo 'observacoes' da viagem no banco.
    */
   public static async salvarContatos(
@@ -49,27 +49,31 @@ export class ContatosEmbarqueService {
     contatos: Record<string, ContatoEmbarqueRegistro>
   ): Promise<boolean> {
     try {
-      // 1. Tentar salvar diretamente na coluna nativa contatos_embarque
+      // 1. Tentar salvar diretamente na coluna nativa contatos_embarque (sem updated_at, pois a tabela viagens não possui esse campo)
       const { error } = await supabase
         .from('viagens')
         .update({
-          contatos_embarque: contatos,
-          updated_at: new Date().toISOString()
+          contatos_embarque: contatos
         })
         .eq('id', viagemId);
 
       if (!error) return true;
 
-      // 2. Se a coluna contatos_embarque não existir (erro 42703 ou mensagem 'does not exist'), aplica fallback em observações
+      // 2. Se a coluna contatos_embarque não existir (erro 42703, PGRST204 ou mensagem de schema cache / does not exist)
+      const errCode = (error as any).code;
+      const errMsg = error.message || '';
       const isMissingColumn =
-        (error as any).code === '42703' ||
-        (error.message && error.message.includes('column') && error.message.includes('does not exist')) ||
-        (error.message && error.message.includes('contatos_embarque'));
+        errCode === '42703' ||
+        errCode === 'PGRST204' ||
+        errMsg.includes('schema cache') ||
+        errMsg.includes('column') ||
+        errMsg.includes('does not exist') ||
+        errMsg.includes('contatos_embarque');
 
       if (isMissingColumn) {
         console.warn(
           'Coluna contatos_embarque não encontrada no banco Supabase. Salvando com segurança em observações da viagem:',
-          error.message
+          errMsg
         );
 
         const { data: vData } = await supabase
@@ -85,8 +89,7 @@ export class ContatosEmbarqueService {
         const { error: errObs } = await supabase
           .from('viagens')
           .update({
-            observacoes: novoObs,
-            updated_at: new Date().toISOString()
+            observacoes: novoObs
           })
           .eq('id', viagemId);
 

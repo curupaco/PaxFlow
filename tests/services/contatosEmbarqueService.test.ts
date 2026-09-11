@@ -134,4 +134,60 @@ describe('ContatosEmbarqueService (Subcutâneo)', () => {
       })
     );
   });
+
+  it('deve aplicar fallback seguro em observações quando a coluna contatos_embarque não existir (erro PGRST204 do schema cache)', async () => {
+    // Setup
+    const updateError = {
+      code: 'PGRST204',
+      message: "Could not find the 'contatos_embarque' column of 'viagens' in the schema cache"
+    };
+    const updateMock = vi.fn().mockReturnValue({
+      eq: vi.fn().mockResolvedValue({ error: updateError })
+    });
+    const selectSingleMock = vi.fn().mockResolvedValue({
+      data: { observacoes: 'Observacao original' },
+      error: null
+    });
+    const selectMock = vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
+        single: selectSingleMock
+      })
+    });
+    const updateFallbackMock = vi.fn().mockReturnValue({
+      eq: vi.fn().mockResolvedValue({ error: null })
+    });
+
+    vi.mocked(supabase.from).mockImplementation((table: string) => {
+      if (table === 'viagens') {
+        return {
+          update: vi.fn().mockImplementation((payload: any) => {
+            if (payload.contatos_embarque !== undefined) {
+              return updateMock();
+            }
+            return updateFallbackMock(payload);
+          }),
+          select: selectMock
+        } as any;
+      }
+      return {} as any;
+    });
+
+    const contatos = {
+      'viagem-volta': {
+        feito: true,
+        data_contato: '2026-09-11T15:00:00Z',
+        consultor_id: 'user-2',
+        consultor_nome: 'Consultor Dois'
+      }
+    };
+
+    // Action
+    const sucesso = await ContatosEmbarqueService.salvarContatos('trip-789', contatos);
+
+    // Assert
+    expect(sucesso).toBe(true);
+    expect(updateFallbackMock).toHaveBeenCalledWith({
+      observacoes: expect.stringContaining('[CONTATOS_EMBARQUE]:')
+    });
+  });
 });
