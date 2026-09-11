@@ -76,7 +76,7 @@ describe('BalcaoService - Testes Subcutâneos (Co-Piloto & Balcão)', () => {
       if (table === 'clientes') return { select: vi.fn().mockResolvedValue({ data: clientesMock }) } as any;
       if (table === 'viagens') return { select: vi.fn().mockResolvedValue({ data: viagensMock }) } as any;
       if (table === 'orcamentos') return { select: vi.fn().mockResolvedValue({ data: orcamentosMock }) } as any;
-      return {} as any;
+      return { select: vi.fn().mockResolvedValue({ data: [] }) } as any;
     });
 
     // Action
@@ -113,7 +113,7 @@ describe('BalcaoService - Testes Subcutâneos (Co-Piloto & Balcão)', () => {
       if (table === 'clientes') return { select: vi.fn().mockResolvedValue({ data: [] }) } as any;
       if (table === 'viagens') return { select: vi.fn().mockResolvedValue({ data: viagensMock }) } as any;
       if (table === 'orcamentos') return { select: vi.fn().mockResolvedValue({ data: [] }) } as any;
-      return {} as any;
+      return { select: vi.fn().mockResolvedValue({ data: [] }) } as any;
     });
 
     // Action
@@ -279,5 +279,53 @@ describe('BalcaoService - Testes Subcutâneos (Co-Piloto & Balcão)', () => {
 
     // Assert
     expect(sucesso).toBe(false);
+  });
+
+  it('deve localizar viagem e cliente através do localizador de produto (codigo_reserva = 590285)', async () => {
+    // Setup
+    vi.mocked(supabase.rpc).mockResolvedValue({ data: null, error: null } as any);
+
+    const clientesMock = [
+      { id: 'cli-vip', nome: 'Mariana Silva', telefone: '11977773333', email: 'mariana@vip.com' }
+    ];
+    const viagensMock = [
+      {
+        id: 'trip-999',
+        cliente_id: 'cli-vip',
+        destino: 'Paris & Roma',
+        consultor_id: 'c-1',
+        status: 'fechado'
+      }
+    ];
+    const produtosMock = [
+      {
+        id: 'prod-88',
+        viagem_id: 'trip-999',
+        tipo: 'AÉREO',
+        fornecedor: 'Air France',
+        codigo_reserva: '590285',
+        descricao: 'Voo GRU - CDG'
+      }
+    ];
+
+    vi.mocked(supabase.from).mockImplementation((table: string) => {
+      if (table === 'profiles') return { select: vi.fn().mockResolvedValue({ data: [{ id: 'c-1', nome: 'Consultor Carlos' }] }) } as any;
+      if (table === 'clientes') return { select: vi.fn().mockResolvedValue({ data: clientesMock }) } as any;
+      if (table === 'produtos_viagem') return { select: vi.fn().mockResolvedValue({ data: produtosMock }) } as any;
+      if (table === 'viagens') return { select: vi.fn().mockResolvedValue({ data: viagensMock }) } as any;
+      if (table === 'orcamentos') return { select: vi.fn().mockResolvedValue({ data: [] }) } as any;
+      return { select: vi.fn().mockResolvedValue({ data: [] }) } as any;
+    });
+
+    // Action
+    const resultado = await BalcaoService.buscarMulticriterio('590285');
+
+    // Assert
+    expect(resultado).toHaveLength(1);
+    expect(resultado[0].cliente.nome).toBe('Mariana Silva');
+    expect(resultado[0].viagens).toHaveLength(1);
+    expect(resultado[0].viagens[0].id).toBe('trip-999');
+    expect(resultado[0].viagens[0].titulo).toContain('[LOC 590285]');
+    expect(resultado[0].viagens[0].titulo).toContain('AÉREO');
   });
 });

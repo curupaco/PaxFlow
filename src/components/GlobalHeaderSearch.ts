@@ -156,7 +156,7 @@ export class GlobalHeaderSearch {
           <div class="text-3xl">🔎</div>
           <h4 class="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-wide">Nenhum registro encontrado para "${query}"</h4>
           <p class="text-[11px] text-slate-400 max-w-sm mx-auto leading-relaxed">
-            Pesquisado em toda a agência nas tabelas <strong>clientes</strong> (nome, cpf, email, tel), <strong>viagens</strong> (titulo, loc, titular) e <strong>orcamentos</strong>.
+            Pesquisado em toda a agência nas tabelas <strong>clientes</strong> (nome, cpf, email, tel), <strong>viagens</strong> (destino, loc da viagem, produtos, aéreos, hotéis) e <strong>orçamentos</strong>.
           </p>
         </div>
       `;

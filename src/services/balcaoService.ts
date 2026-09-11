@@ -84,7 +84,39 @@ export class BalcaoService {
       console.warn('Erro ao buscar clientes via Supabase:', e);
     }
 
-    // 2. Busca Viagens correspondentes
+    // 2. Busca Produtos de Viagem correspondentes (por codigo_reserva, fornecedor, descricao ou dados_adicionais)
+    const produtosPorViagemMap = new Map<string, Array<any>>();
+    try {
+      const { data: produtosData } = await supabase
+        .from('produtos_viagem')
+        .select('id, viagem_id, tipo, fornecedor, descricao, codigo_reserva, dados_adicionais');
+
+      if (produtosData && produtosData.length > 0) {
+        produtosData.forEach((p: any) => {
+          const pLoc = (p.codigo_reserva || '').toLowerCase();
+          const pDesc = (p.descricao || '').toLowerCase();
+          const pForn = (p.fornecedor || '').toLowerCase();
+          const pDadosStr = p.dados_adicionais ? JSON.stringify(p.dados_adicionais).toLowerCase() : '';
+
+          const matchLoc = pLoc.includes(rawQuery);
+          const matchDesc = pDesc.includes(rawQuery);
+          const matchForn = pForn.includes(rawQuery);
+          const matchDados = pDadosStr.includes(rawQuery);
+
+          if (matchLoc || matchDesc || matchForn || matchDados) {
+            if (p.viagem_id) {
+              const lista = produtosPorViagemMap.get(p.viagem_id) || [];
+              lista.push(p);
+              produtosPorViagemMap.set(p.viagem_id, lista);
+            }
+          }
+        });
+      }
+    } catch (errProd) {
+      console.warn('Erro ao buscar produtos_viagem via Supabase:', errProd);
+    }
+
+    // 3. Busca Viagens correspondentes
     try {
       const { data: viagensData } = await supabase.from('viagens').select('*');
       if (viagensData && viagensData.length > 0) {
@@ -97,7 +129,10 @@ export class BalcaoService {
           const matchLoc = vLoc.includes(rawQuery);
           const matchCodRef = vCodRef.includes(rawQuery);
 
-          if ((cId && resultadosMap.has(cId)) || matchDestino || matchLoc || matchCodRef) {
+          const produtosMatches = produtosPorViagemMap.get(v.id) || [];
+          const hasProdutoMatch = produtosMatches.length > 0;
+
+          if ((cId && resultadosMap.has(cId)) || matchDestino || matchLoc || matchCodRef || hasProdutoMatch) {
             const cliInfo = cId ? clientesCacheMap.get(cId) : null;
             const key = cId || `viagem-${v.id}`;
 
@@ -106,7 +141,10 @@ export class BalcaoService {
               item = {
                 cliente: {
                   id: key,
-                  nome: cliInfo?.nome || v.nome_cliente || 'Cliente'
+                  nome: cliInfo?.nome || v.nome_cliente || 'Cliente',
+                  cpf: cliInfo?.documento || cliInfo?.cpf,
+                  telefone: cliInfo?.telefone,
+                  email: cliInfo?.email
                 },
                 orcamentos: [],
                 viagens: [],
@@ -115,7 +153,14 @@ export class BalcaoService {
               resultadosMap.set(key, item);
             }
 
-            const refCodeStr = v.codigo_ref ? `[${v.codigo_ref}] ` : (v.codigo_localizador ? `[LOC ${v.codigo_localizador}] ` : '');
+            let refCodeStr = v.codigo_ref ? `[${v.codigo_ref}] ` : (v.codigo_localizador ? `[LOC ${v.codigo_localizador}] ` : '');
+            if (hasProdutoMatch) {
+              const pMatch = produtosMatches[0];
+              const pLoc = pMatch.codigo_reserva ? `[LOC ${pMatch.codigo_reserva}] ` : '';
+              const pTipo = pMatch.tipo ? `${pMatch.tipo}: ` : '';
+              refCodeStr = `${pLoc}${pTipo}`;
+            }
+
             item.viagens.push({
               id: v.id,
               titulo: `${refCodeStr}Viagem para ${v.destino || 'Destino'}`,
