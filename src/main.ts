@@ -131,35 +131,39 @@ class App {
       window.location.search.includes('conheca/old') ||
       window.location.hash.includes('conheca/old');
 
-    // Detecção de rotas públicas (Itinerário e NPS/Feedback)
+    // Detecção de rotas públicas (Itinerário, Proposta Studio e NPS/Feedback)
     const isPublicItineraryRoute = window.location.hash.includes('itinerario');
+    const isPublicPropostaRoute = window.location.hash.includes('proposta') || window.location.search.includes('proposta');
     const isPublicFeedbackRoute = window.location.hash.includes('feedback') || window.location.hash.includes('nps');
 
-    if (isPublicItineraryRoute || isPublicFeedbackRoute) {
+    if (isPublicItineraryRoute || isPublicFeedbackRoute || isPublicPropostaRoute) {
       try {
         const { PublicViews } = await import('./pages/PublicViews');
         const views = new PublicViews(this.container);
         
         const hash = window.location.hash;
-        const params = new URLSearchParams(hash.substring(hash.indexOf('?')));
-        const viagemId = params.get('id');
+        const queryIndex = hash.indexOf('?');
+        const params = new URLSearchParams(queryIndex >= 0 ? hash.substring(queryIndex) : window.location.search);
+        const entityId = params.get('id') || params.get('propostaId') || hash.replace('#proposta/', '').replace('#proposta', '');
 
-        if (!viagemId) {
+        if (!entityId) {
           this.container.innerHTML = `
             <div class="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-6 text-center">
               <div class="bg-white dark:bg-slate-900 p-8 rounded-3xl max-w-md w-full border border-slate-200 dark:border-slate-800 shadow-xl">
                 <span class="text-3xl">⚠️</span>
-                <h3 class="text-md font-extrabold text-slate-800 dark:text-slate-200 mt-3">Código de viagem ausente na URL.</h3>
+                <h3 class="text-md font-extrabold text-slate-800 dark:text-slate-200 mt-3">Identificador ausente na URL.</h3>
               </div>
             </div>
           `;
           return;
         }
 
-        if (isPublicItineraryRoute) {
-          await views.initItinerario(viagemId);
+        if (isPublicPropostaRoute) {
+          await views.initPropostaStudio(entityId);
+        } else if (isPublicItineraryRoute) {
+          await views.initItinerario(entityId);
         } else {
-          await views.initNps(viagemId);
+          await views.initNps(entityId);
         }
         return;
       } catch (err: any) {
@@ -525,6 +529,15 @@ class App {
                   <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                 </svg>
                 <span class="${this.sidebarCollapsed ? 'md:hidden' : ''}">Orçamentos</span>
+              </button>
+
+              <!-- Link: PaxFlow Studio™ -->
+              <button id="nav-studio" class="w-full px-3 py-1.5 rounded-xl flex items-center ${this.sidebarCollapsed ? 'justify-center' : 'justify-start'} gap-2.5 font-semibold text-xs text-left transition select-none group relative">
+                <svg width="18" height="18" class="w-4.5 h-4.5 text-indigo-400 group-hover:text-indigo-600 dark:text-indigo-400 dark:group-hover:text-indigo-300 group-[.bg-indigo-600]:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                </svg>
+                <span class="${this.sidebarCollapsed ? 'md:hidden' : ''}">PaxFlow Studio</span>
+                <span class="ml-auto px-1.5 py-0.5 rounded text-[8px] font-black bg-gradient-to-r from-amber-500 to-indigo-600 text-white shadow-xs ${this.sidebarCollapsed ? 'md:hidden' : ''}">PRO</span>
               </button>
 
               <!-- Link: Dashboard Kanban -->
@@ -1192,7 +1205,7 @@ class App {
    * Associa eventos aos botões de navegação lateral
    */
   private setupNavigationListeners(): void {
-    const pages = ['analytics', 'inbox', 'orcamentos', 'dashboard', 'reembolsos', 'clientes', 'next-trip', 'relatorios', 'cadastros', 'configuracoes'];
+    const pages = ['analytics', 'inbox', 'orcamentos', 'studio', 'dashboard', 'reembolsos', 'clientes', 'next-trip', 'relatorios', 'cadastros', 'configuracoes'];
 
     pages.forEach(page => {
       const btn = document.getElementById(`nav-${page}`);
@@ -1252,7 +1265,7 @@ class App {
     this.router.navigate(page, extraId);
 
     // Atualiza os estilos de botões ativos na Sidebar
-    const navButtons = ['analytics', 'inbox', 'orcamentos', 'dashboard', 'reembolsos', 'clientes', 'next-trip', 'relatorios', 'cadastros', 'configuracoes', 'ajuda'];
+    const navButtons = ['analytics', 'inbox', 'orcamentos', 'studio', 'dashboard', 'reembolsos', 'clientes', 'next-trip', 'relatorios', 'cadastros', 'configuracoes', 'ajuda'];
     navButtons.forEach(p => {
       const btn = document.getElementById(`nav-${p}`);
       if (btn) {

@@ -805,6 +805,320 @@ export class PublicViews {
   }
 
   /**
+   * Inicializa a visualização pública de uma proposta de viagem criada no PaxFlow Studio™
+   */
+  public async initPropostaStudio(propostaId: string): Promise<void> {
+    this.renderLoading('Carregando sua proposta de viagem...');
+
+    try {
+      const { StudioPropostasService } = await import('../services/studioPropostasService');
+      const proposta = await StudioPropostasService.buscarPorId(propostaId);
+
+      if (!proposta) {
+        throw new Error('Proposta de viagem não localizada ou link expirado.');
+      }
+
+      this.renderPropostaStudio(proposta);
+    } catch (err: any) {
+      console.error('Erro ao abrir proposta pública do Studio:', err);
+      this.renderError('Não foi possível carregar a proposta de viagem solicitada.', err.message);
+    }
+  }
+
+  /**
+   * Renderiza a interface pública responsiva da proposta interativa do PaxFlow Studio™
+   */
+  private renderPropostaStudio(proposta: any): void {
+    const formatarMoeda = (val: number) => {
+      return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: proposta.moeda || 'BRL' }).format(val || 0);
+    };
+
+    const formatarData = (dStr?: string) => {
+      if (!dStr) return '';
+      const p = dStr.split('-');
+      if (p.length === 3) return `${p[2]}/${p[1]}/${p[0]}`;
+      return dStr;
+    };
+
+    const capaUrl = proposta.foto_capa_url || 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=1200&q=80';
+    const isAprovada = proposta.status === 'APROVADO' || proposta.status === 'EFETIVADA';
+
+    this.container.innerHTML = `
+      <div class="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 antialiased pb-20">
+        <!-- HERO BANNER CINEMATOGRÁFICO -->
+        <div class="relative h-80 md:h-96 w-full overflow-hidden flex flex-col justify-between p-6 md:p-12 text-white bg-slate-900">
+          <img src="${capaUrl}" alt="${proposta.destino}" class="absolute inset-0 w-full h-full object-cover opacity-60 filter brightness-75 scale-105 transition-transform duration-700 hover:scale-100" />
+          <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent"></div>
+
+          <!-- TOP BAR BRAND -->
+          <div class="relative z-10 flex items-center justify-between">
+            <span class="px-3 py-1 rounded-full text-xs font-black tracking-wider uppercase bg-white/20 backdrop-blur-md border border-white/30 text-white">
+              Proposta Exclusiva
+            </span>
+            <span class="text-xs font-bold tracking-wide uppercase opacity-90">
+              ${proposta.consultor_nome ? `Consultor: ${proposta.consultor_nome}` : 'Sua Agência de Viagens'}
+            </span>
+          </div>
+
+          <!-- HERO TITLE & DATES -->
+          <div class="relative z-10 max-w-3xl">
+            <h1 class="text-3xl md:text-5xl font-black tracking-tight drop-shadow-md">
+              ${proposta.destino}
+            </h1>
+            <p class="text-base md:text-lg font-medium text-slate-200 mt-2">
+              Planejado com exclusividade para <strong>${proposta.cliente_nome}</strong>
+            </p>
+            <div class="flex flex-wrap items-center gap-4 mt-4 text-xs font-semibold text-slate-300">
+              <span class="flex items-center gap-1.5">
+                📅 ${formatarData(proposta.data_ida)} a ${formatarData(proposta.data_volta) || 'A definir'}
+              </span>
+              <span class="flex items-center gap-1.5">
+                💰 Investimento: <strong class="text-white font-bold">${formatarMoeda(proposta.valor_total)}</strong>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- CONTEÚDO PRINCIPAL -->
+        <div class="max-w-4xl mx-auto px-4 -mt-8 relative z-20 space-y-6">
+          <!-- CARD DE STATUS / ACEITE FORMAL -->
+          <div class="public-glass p-6 rounded-2xl shadow-xl border border-slate-200/80 dark:border-slate-800/80">
+            ${isAprovada ? `
+              <div class="flex items-start gap-4 text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 p-4 rounded-xl border border-emerald-200 dark:border-emerald-800/60">
+                <div class="text-2xl">✅</div>
+                <div>
+                  <div class="font-extrabold text-sm">Proposta Aprovada Formalmente pelo Passageiro</div>
+                  <div class="text-xs mt-1 text-slate-600 dark:text-slate-400">
+                    Aceite registrado em: <strong>${new Date(proposta.aceite_formal?.data_aceite || proposta.updated_at || Date.now()).toLocaleString('pt-BR')}</strong><br>
+                    Titular: <strong>${proposta.aceite_formal?.cliente_nome || proposta.cliente_nome}</strong> ${proposta.aceite_formal?.documento ? `(Doc: ${proposta.aceite_formal.documento})` : ''}
+                  </div>
+                </div>
+              </div>
+            ` : `
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <h2 class="text-base font-bold text-slate-900 dark:text-white">Gostou deste roteiro?</h2>
+                  <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    Revise todos os itens e confirme sua viagem em poucos cliques.
+                  </p>
+                </div>
+                <button id="btn-aprovar-proposta-publica" class="px-6 py-3 rounded-xl font-black text-xs text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-lg shadow-emerald-600/30 transition transform active:scale-95 flex items-center justify-center gap-2">
+                  <span>✍️</span> Aprovar Proposta Formalmente
+                </button>
+              </div>
+            `}
+          </div>
+
+          <!-- RESUMO DE SERVIÇOS & VOUCHERS -->
+          ${proposta.dados_extraidos?.voos && proposta.dados_extraidos.voos.length > 0 ? `
+            <div class="public-glass p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-md">
+              <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-3">
+                <span>✈️</span> Passagens Aéreas Confirmadas
+              </h3>
+              <div class="space-y-3">
+                ${proposta.dados_extraidos.voos.map((v: any) => `
+                  <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                    <div>
+                      <div class="font-bold text-slate-800 dark:text-slate-200">${v.companhia} · Voo ${v.voo}</div>
+                      <div class="text-slate-500 mt-0.5">${v.origem} ➔ ${v.destino} · Ida: ${formatarData(v.dataIda)} às ${v.horaIda || '10:00'}</div>
+                    </div>
+                    ${v.localizador ? `
+                      <div class="self-start sm:self-auto px-2.5 py-1 rounded-md bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-extrabold text-[11px] border border-indigo-200 dark:border-indigo-800">
+                        LOC: ${v.localizador}
+                      </div>
+                    ` : ''}
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          ` : ''}
+
+          ${proposta.dados_extraidos?.hospedagens && proposta.dados_extraidos.hospedagens.length > 0 ? `
+            <div class="public-glass p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-md">
+              <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-3">
+                <span>🏨</span> Hospedagem Selecionada
+              </h3>
+              <div class="space-y-3">
+                ${proposta.dados_extraidos.hospedagens.map((h: any) => `
+                  <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                    <div>
+                      <div class="font-bold text-slate-800 dark:text-slate-200">${h.hotel}</div>
+                      <div class="text-slate-500 mt-0.5">Check-in: ${formatarData(h.checkIn)} | Check-out: ${formatarData(h.checkOut)}</div>
+                      <div class="text-[11px] text-slate-400 mt-0.5">${h.quarto || 'Quarto Casal'} · ${h.regime || 'Café da manhã'}</div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <a href="https://maps.google.com/?q=${encodeURIComponent(h.hotel)}" target="_blank" class="px-2.5 py-1 rounded-md bg-white dark:bg-slate-800 text-indigo-600 font-bold text-[11px] border border-slate-200 dark:border-slate-700 hover:underline">
+                        📍 Ver Mapa
+                      </a>
+                      ${h.voucher ? `
+                        <div class="px-2.5 py-1 rounded-md bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-extrabold text-[11px] border border-indigo-200 dark:border-indigo-800">
+                          VOUCHER: ${h.voucher}
+                        </div>
+                      ` : ''}
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          ` : ''}
+
+          <!-- LINHA DO TEMPO DIA A DIA -->
+          <div class="public-glass p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-md">
+            <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-6">
+              <span>📅</span> Itinerário Programado
+            </h3>
+
+            <div class="space-y-6">
+              ${proposta.itinerario_dias && proposta.itinerario_dias.length > 0 ? proposta.itinerario_dias.map((dia: any) => `
+                <div class="relative pl-6 border-l-2 border-indigo-200 dark:border-indigo-900 space-y-3">
+                  <div class="absolute -left-2 top-0 w-4 h-4 rounded-full bg-indigo-600 border-2 border-white dark:border-slate-950"></div>
+                  <div>
+                    <span class="text-[10px] font-black uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
+                      Dia ${dia.diaNumero} · ${formatarData(dia.dataStr || dia.data)}
+                    </span>
+                    <h4 class="text-sm font-bold text-slate-800 dark:text-slate-200">${dia.tituloDia}</h4>
+                  </div>
+
+                  <div class="space-y-2">
+                    ${dia.itens.map((item: any) => `
+                      <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200/60 dark:border-slate-800/60 text-xs">
+                        <div class="font-bold text-slate-800 dark:text-slate-200 flex items-center justify-between">
+                          <span>${item.titulo}</span>
+                          ${item.horario ? `<span class="text-[11px] text-slate-400 font-normal">${item.horario}</span>` : ''}
+                        </div>
+                        ${item.subtitulo ? `<div class="text-slate-500 mt-1">${item.subtitulo}</div>` : ''}
+                        ${item.observacoes ? `<div class="text-slate-400 italic mt-1 text-[11px]">💡 ${item.observacoes}</div>` : ''}
+                        ${item.linkMaps ? `
+                          <div class="mt-2">
+                            <a href="${item.linkMaps}" target="_blank" class="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-600 hover:underline">
+                              📍 Abrir Localização no Google Maps
+                            </a>
+                          </div>
+                        ` : ''}
+                      </div>
+                    `).join('')}
+                  </div>
+                </div>
+              `).join('') : `
+                <p class="text-xs text-slate-400 italic">Programação livre para descanso e lazer.</p>
+              `}
+            </div>
+          </div>
+
+          <!-- FOOTER -->
+          <div class="text-center text-xs text-slate-400 py-6">
+            Proposta gerada através do <strong>PaxFlow Studio™</strong> · Todos os direitos reservados.
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Modal de Aceite Formal
+    const btnAprovar = this.container.querySelector('#btn-aprovar-proposta-publica');
+    btnAprovar?.addEventListener('click', () => {
+      this.abrirModalAceiteFormal(proposta);
+    });
+  }
+
+  /**
+   * Abre o modal com consentimento jurídico e rastreamento de IP/timestamp
+   */
+  private abrirModalAceiteFormal(proposta: any): void {
+    const modalEl = document.createElement('div');
+    modalEl.id = 'modal-aceite-formal';
+    modalEl.className = 'fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in';
+
+    modalEl.innerHTML = `
+      <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 md:p-8 max-w-lg w-full border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4 text-left">
+        <div class="flex items-center justify-between">
+          <h3 class="text-lg font-black text-slate-900 dark:text-white">Aprovação Formal da Viagem</h3>
+          <button id="btn-fechar-modal-aceite" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+        </div>
+
+        <p class="text-xs text-slate-500 dark:text-slate-400">
+          Ao confirmar abaixo, você valida os serviços, voos, hospedagens e valores descritos na proposta para <strong>${proposta.destino}</strong>.
+        </p>
+
+        <div class="space-y-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Nome Completo do Titular *</label>
+            <input type="text" id="aceite-nome" value="${proposta.cliente_nome}" class="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:border-indigo-500" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">CPF ou Documento de Identificação *</label>
+            <input type="text" id="aceite-documento" placeholder="000.000.000-00" class="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:border-indigo-500" />
+          </div>
+
+          <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-[11px] text-slate-500 space-y-1">
+            <div class="font-bold text-slate-700 dark:text-slate-300">Rastreabilidade Eletrônica:</div>
+            <div>• Registro de Data/Hora: <strong>${new Date().toLocaleString('pt-BR')}</strong></div>
+            <div>• Identificação do Dispositivo: <strong>${navigator.userAgent.slice(0, 60)}...</strong></div>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-2">
+          <button id="btn-cancelar-aceite" class="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 rounded-xl transition">
+            Cancelar
+          </button>
+          <button id="btn-confirmar-aceite" class="px-5 py-2.5 text-xs font-black text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-md transition">
+            Confirmar e Aprovar Viagem
+          </button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(modalEl);
+
+    modalEl.querySelector('#btn-fechar-modal-aceite')?.addEventListener('click', () => modalEl.remove());
+    modalEl.querySelector('#btn-cancelar-aceite')?.addEventListener('click', () => modalEl.remove());
+
+    modalEl.querySelector('#btn-confirmar-aceite')?.addEventListener('click', async () => {
+      const nomeInput = (modalEl.querySelector('#aceite-nome') as HTMLInputElement)?.value.trim();
+      const docInput = (modalEl.querySelector('#aceite-documento') as HTMLInputElement)?.value.trim();
+
+      if (!nomeInput || !docInput) {
+        alert('Por favor, preencha seu nome completo e documento para validar o aceite.');
+        return;
+      }
+
+      const btnConfirmar = modalEl.querySelector('#btn-confirmar-aceite') as HTMLButtonElement;
+      btnConfirmar.disabled = true;
+      btnConfirmar.textContent = 'Gravando Aceite...';
+
+      try {
+        let ipCliente = '127.0.0.1';
+        try {
+          const ipResp = await fetch('https://api.ipify.org?format=json', { signal: AbortSignal.timeout(3000) });
+          if (ipResp.ok) {
+            const ipData = await ipResp.json();
+            ipCliente = ipData.ip;
+          }
+        } catch {
+          // fallback silencioso
+        }
+
+        const { StudioPropostasService } = await import('../services/studioPropostasService');
+        await StudioPropostasService.registrarAceite(proposta.id, {
+          data_aceite: new Date().toISOString(),
+          cliente_nome: nomeInput,
+          documento: docInput,
+          ip: ipCliente,
+          dispositivo: navigator.userAgent
+        });
+
+        modalEl.remove();
+        alert('Viagem aprovada com sucesso! Muito obrigado pela confirmação.');
+        await this.initPropostaStudio(proposta.id);
+      } catch (err: any) {
+        alert('Erro ao registrar aprovação: ' + err.message);
+        btnConfirmar.disabled = false;
+        btnConfirmar.textContent = 'Confirmar e Aprovar Viagem';
+      }
+    });
+  }
+
+  /**
    * Renderiza a tela de obrigado após preenchimento do NPS
    */
   private renderObrigado(data: any): void {
@@ -830,3 +1144,4 @@ export class PublicViews {
     `;
   }
 }
+

@@ -694,6 +694,105 @@ export interface FeriadoPlantaoInfo {
   updated_at?: string;
 }
 
+// ============================================================================
+// PAXFLOW STUDIO™ - TIPOS DE PROPOSTAS, CADERNOS E EXTRAÇÃO DE PDFs
+// ============================================================================
 
+export interface StudioItemItinerario {
+  id: string;
+  tipo: 'voo' | 'hotel' | 'passeio' | 'seguro' | 'transfer' | 'nota';
+  titulo: string;
+  subtitulo?: string;
+  horario?: string;
+  dataInicio?: string;
+  dataFim?: string;
+  horaInicio?: string;
+  horaFim?: string;
+  origem?: string;
+  destino?: string;
+  status?: 'confirmado' | 'pendente' | 'solicitado';
+  localizador?: string;
+  fornecedor?: string;
+  endereco?: string;
+  linkMaps?: string;
+  linkAcao?: string;
+  rotuloLink?: string;
+  observacoes?: string;
+  valor?: number;
+}
 
+export interface StudioDiaItinerario {
+  diaNumero: number;
+  dataStr: string; // YYYY-MM-DD
+  data?: string; // alias para dataStr
+  tituloDia: string;
+  itens: StudioItemItinerario[];
+}
 
+export interface StudioAceiteFormal {
+  data_aceite: string; // ISO
+  ip?: string;
+  cliente_nome: string;
+  documento?: string;
+  dispositivo?: string;
+  termos_versao?: string;
+}
+
+export interface StudioDadosExtraidos {
+  arquivosProcessados?: string[];
+  voos?: Array<{
+    companhia: string;
+    voo: string;
+    origem: string;
+    destino: string;
+    dataIda: string;
+    horaIda?: string;
+    dataVolta?: string;
+    horaVolta?: string;
+    localizador?: string;
+  }>;
+  hospedagens?: Array<{
+    hotel: string;
+    cidade?: string;
+    checkIn: string;
+    checkOut: string;
+    noites?: number;
+    quarto?: string;
+    regime?: string;
+    voucher?: string;
+  }>;
+  servicos?: Array<{
+    tipo: string;
+    descricao: string;
+    data?: string;
+    fornecedor?: string;
+    voucher?: string;
+  }>;
+  valores?: {
+    total: number;
+    moeda: string;
+    condicoesPagamento?: string;
+  };
+}
+
+export interface StudioProposta {
+  id: string;
+  agencia_id?: string;
+  consultor_id?: string;
+  consultor_nome?: string;
+  cliente_nome: string;
+  cliente_whatsapp?: string;
+  cliente_email?: string;
+  destino: string;
+  data_ida?: string;
+  data_volta?: string;
+  valor_total: number;
+  moeda: string;
+  foto_capa_url?: string;
+  dados_extraidos?: StudioDadosExtraidos;
+  itinerario_dias: StudioDiaItinerario[];
+  status: 'RASCUNHO' | 'ENVIADO' | 'APROVADO' | 'EFETIVADO' | 'EFETIVADA';
+  aceite_formal?: StudioAceiteFormal | null;
+  created_at?: string;
+  updated_at?: string;
+}
