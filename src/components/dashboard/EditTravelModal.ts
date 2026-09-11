@@ -624,30 +624,29 @@ export class EditTravelModal {
               </div>
             </form>
 
-            <!-- Seção de Documentos do Cliente -->
+            <!-- Seção de Documentos e Vouchers da Viagem -->
             <div class="mt-6 border-t border-slate-100 dark:border-slate-800/80 pt-4">
               <div class="flex items-center justify-between mb-3">
-                <h4 class="text-xs font-black text-slate-400 dark:text-slate-400 uppercase tracking-wide flex items-center gap-1.5">
-                  📁 Documentos do Passageiro
-                </h4>
+                <div>
+                  <h4 class="text-xs font-black text-slate-400 dark:text-slate-400 uppercase tracking-wide flex items-center gap-1.5">
+                    📁 Documentos &amp; Vouchers da Viagem
+                  </h4>
+                  <span class="text-[10px] text-slate-400 font-medium">Passaportes, vistos, bilhetes e reservas anexadas</span>
+                </div>
                 <div>
                   <input type="file" id="input-viagem-upload-doc" class="hidden" accept="application/pdf,image/*" />
-                  <button id="btn-viagem-upload-doc" type="button" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-[10px] tracking-wider rounded-lg shadow-sm transition uppercase">
-                    Anexar Arquivo
+                  <button id="btn-viagem-upload-doc" type="button" class="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-[10px] tracking-wider rounded-lg shadow-sm transition uppercase flex items-center gap-1.5">
+                    <span>➕</span> Anexar Arquivo
                   </button>
                 </div>
               </div>
-              <div id="viagem-doc-container">
-                ${v.cliente?.google_drive_folder_url || v.cliente?.googleDriveFolderUrl ? `
-                  <div class="flex items-center justify-between p-3.5 bg-indigo-50/50 hover:bg-indigo-100 dark:bg-indigo-950/20 dark:hover:bg-indigo-900/30 rounded-xl border border-indigo-200/30 dark:border-indigo-900/30 transition">
-                    <span class="text-xs font-bold text-slate-700 dark:text-slate-200">📄 Passaporte / Documento do Cliente</span>
-                    <button id="btn-viagem-view-doc" type="button" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-[10px] tracking-wider rounded-lg shadow-sm transition uppercase">
-                      Visualizar
-                    </button>
-                  </div>
-                ` : `
-                  <p class="text-xs text-slate-400 dark:text-slate-400 italic">Nenhum documento anexado para este passageiro.</p>
-                `}
+              
+              <!-- Container de Múltiplos Documentos -->
+              <div id="viagem-doc-container" class="space-y-2">
+                <div class="flex items-center gap-2 p-3 text-xs text-slate-400 italic">
+                  <div class="w-3.5 h-3.5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                  <span>Carregando documentos anexados...</span>
+                </div>
               </div>
               <div id="viagem-upload-status" class="mt-2 hidden"></div>
             </div>
@@ -999,11 +998,9 @@ export class EditTravelModal {
       }
     });
 
-    // Documentos da Viagem / Passageiro
+    // Documentos e Vouchers da Viagem (Múltiplos Anexos com Identificador)
     const btnViagemUpload = document.getElementById('btn-viagem-upload-doc') as HTMLButtonElement;
     const inputViagemUpload = document.getElementById('input-viagem-upload-doc') as HTMLInputElement;
-    const viagemUploadStatus = document.getElementById('viagem-upload-status') as HTMLElement;
-    const viagemDocContainer = document.getElementById('viagem-doc-container') as HTMLElement;
 
     btnViagemUpload?.addEventListener('click', () => inputViagemUpload.click());
 
@@ -1011,98 +1008,13 @@ export class EditTravelModal {
       const file = inputViagemUpload.files?.[0];
       if (!file) return;
 
-      btnViagemUpload.disabled = true;
-      if (viagemUploadStatus) {
-        viagemUploadStatus.classList.remove('hidden');
-        viagemUploadStatus.innerHTML = `
-          <div class="flex items-center gap-2 py-1.5 text-xs font-bold text-slate-500 animate-pulse">
-            <div class="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-            <span>Enviando arquivo (${file.name})...</span>
-          </div>
-        `;
-      }
-
-      try {
-        const { uploadDocumentoCliente } = await import('../../services/googleDrive');
-        const clientEmail = v.cliente?.email || 'cliente@paxflow.com';
-        const clientTelefone = v.cliente?.telefone || '(11) 99999-9999';
-
-        const result = await uploadDocumentoCliente(
-          v.cliente_id,
-          v.cliente?.nome || 'Cliente',
-          clientEmail,
-          clientTelefone,
-          file
-        );
-
-        if (result.success && result.googleDriveFolderUrl) {
-          const { error } = await supabase
-            .from('clientes')
-            .update({ google_drive_folder_url: result.googleDriveFolderUrl })
-            .eq('id', v.cliente_id);
-
-          if (error) throw error;
-
-          this.options.showToast('Documento anexado ao cliente com sucesso!', 'success');
-
-          if (v.cliente) {
-            v.cliente.google_drive_folder_url = result.googleDriveFolderUrl;
-            v.cliente.googleDriveFolderUrl = result.googleDriveFolderUrl;
-          }
-
-          if (viagemDocContainer) {
-            viagemDocContainer.innerHTML = `
-              <div class="flex items-center justify-between p-3.5 bg-indigo-50/50 hover:bg-indigo-100 dark:bg-indigo-950/20 dark:hover:bg-indigo-900/30 rounded-xl border border-indigo-200/30 dark:border-indigo-900/30 transition">
-                <span class="text-xs font-bold text-slate-700 dark:text-slate-200">📄 Passaporte / Documento do Cliente</span>
-                <button id="btn-viagem-view-doc" type="button" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-[10px] tracking-wider rounded-lg shadow-sm transition uppercase">
-                  Visualizar
-                </button>
-              </div>
-            `;
-            
-            document.getElementById('btn-viagem-view-doc')?.addEventListener('click', async () => {
-              const { DocumentViewer } = await import('../../services/documentViewer');
-              DocumentViewer.open(
-                `Passaporte - ${v.cliente?.nome || 'Cliente'}.pdf`,
-                result.googleDriveFolderUrl,
-                'application/pdf',
-                v.cliente
-              );
-            });
-          }
-
-          await this.options.onUpdate();
-        } else {
-          throw new Error(result.error || 'Erro no upload.');
-        }
-      } catch (err: any) {
-        console.error('Erro ao fazer upload do passaporte:', err);
-        this.options.showToast('Erro no upload.', 'error', err);
-      } finally {
-        btnViagemUpload.disabled = false;
-        if (viagemUploadStatus) {
-          viagemUploadStatus.classList.add('hidden');
-          viagemUploadStatus.innerHTML = '';
-        }
-        inputViagemUpload.value = '';
-      }
+      // Abre modal para categorização e rótulo identificador antes do upload
+      this.abrirModalIdentificacaoAnexo(file, v.id, v.cliente_id, v.passageiro || v.cliente?.nome);
+      inputViagemUpload.value = '';
     });
 
-    const bindViagemViewDoc = () => {
-      const docUrl = v.cliente?.google_drive_folder_url || v.cliente?.googleDriveFolderUrl;
-      if (docUrl) {
-        document.getElementById('btn-viagem-view-doc')?.addEventListener('click', async () => {
-          const { DocumentViewer } = await import('../../services/documentViewer');
-          DocumentViewer.open(
-            `Passaporte - ${v.cliente?.nome || 'Cliente'}.pdf`,
-            docUrl,
-            'application/pdf',
-            v.cliente
-          );
-        });
-      }
-    };
-    bindViagemViewDoc();
+    // Carrega e renderiza os múltiplos anexos já salvos para a viagem e cliente
+    this.atualizarListaDocumentosViagem(v.id, v.cliente_id);
 
     // Inicializar comentários da viagem
     const commentsContainer = document.getElementById('viagem-comments-container');
@@ -3560,6 +3472,281 @@ export class EditTravelModal {
     const rows = container.querySelectorAll('.trecho-item-row');
     rows.forEach((row, idx) => {
       row.setAttribute('data-index', String(idx));
+    });
+  }
+
+  /**
+   * Atualiza a listagem dinâmica de documentos e vouchers da viagem e cliente
+   */
+  private async atualizarListaDocumentosViagem(viagemId: string, clienteId?: string): Promise<void> {
+    const container = document.getElementById('viagem-doc-container');
+    if (!container) return;
+
+    try {
+      const { AnexosService } = await import('../../services/anexosService');
+      const anexos = await AnexosService.listarAnexos(viagemId, clienteId);
+
+      // Compatibilidade retroativa com clientes.google_drive_folder_url legado
+      const urlLegada = this.currentLoadedViagem?.cliente?.google_drive_folder_url || (this.currentLoadedViagem?.cliente as any)?.googleDriveFolderUrl;
+      if (urlLegada && !anexos.some(a => a.storage_path === urlLegada)) {
+        anexos.push({
+          id: 'legado-cliente',
+          cliente_id: clienteId,
+          rotulo: 'Passaporte / Documento Geral do Cliente',
+          tipo_documento: 'PASSAPORTE',
+          nome_original: 'Documento Cadastrado',
+          storage_path: urlLegada
+        });
+      }
+
+      if (anexos.length === 0) {
+        container.innerHTML = `
+          <div class="p-4 rounded-xl border border-dashed border-slate-200 dark:border-slate-800 text-center text-xs text-slate-400 dark:text-slate-400">
+            Nenhum documento anexado ainda para esta viagem. Clique em "+ Anexar Arquivo".
+          </div>
+        `;
+        return;
+      }
+
+      const obterIcone = (tipo: string) => {
+        switch (tipo) {
+          case 'PASSAPORTE': return '🛂';
+          case 'VISTO': return '📄';
+          case 'VOUCHER_AEREO': return '✈️';
+          case 'VOUCHER_HOTEL': return '🏨';
+          case 'SEGURO': return '🛡️';
+          case 'CONTRATO': return '📝';
+          default: return '📎';
+        }
+      };
+
+      const obterBadge = (tipo: string) => {
+        switch (tipo) {
+          case 'PASSAPORTE': return 'Passaporte';
+          case 'VISTO': return 'Visto';
+          case 'VOUCHER_AEREO': return 'Voo';
+          case 'VOUCHER_HOTEL': return 'Hotel';
+          case 'SEGURO': return 'Seguro';
+          case 'CONTRATO': return 'Contrato';
+          default: return 'Geral';
+        }
+      };
+
+      container.innerHTML = anexos.map(anexo => `
+        <div class="flex items-center justify-between p-3 bg-slate-50/80 hover:bg-slate-100 dark:bg-slate-800/40 dark:hover:bg-slate-800/70 rounded-xl border border-slate-200/60 dark:border-slate-800/80 transition gap-2">
+          <div class="flex items-center gap-2.5 overflow-hidden">
+            <span class="text-base p-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xs flex-shrink-0">
+              ${obterIcone(anexo.tipo_documento)}
+            </span>
+            <div class="overflow-hidden">
+              <div class="flex items-center gap-1.5">
+                <strong class="text-xs font-bold text-slate-800 dark:text-slate-200 truncate leading-tight">
+                  ${anexo.rotulo}
+                </strong>
+                <span class="px-1.5 py-0.2 rounded text-[9px] font-extrabold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                  ${obterBadge(anexo.tipo_documento)}
+                </span>
+              </div>
+              <p class="text-[10px] text-slate-400 truncate mt-0.5">
+                ${anexo.nome_original} ${anexo.tamanho_bytes ? `· ${(anexo.tamanho_bytes / 1024).toFixed(0)} KB` : ''}
+              </p>
+            </div>
+          </div>
+          <div class="flex items-center gap-1.5 flex-shrink-0">
+            <button type="button" class="btn-ver-anexo px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-[10px] tracking-wider rounded-lg shadow-sm transition uppercase" data-path="${anexo.storage_path}" data-nome="${anexo.rotulo}" data-mime="${anexo.mime_type || 'application/pdf'}">
+              Visualizar
+            </button>
+            ${anexo.id !== 'legado-cliente' ? `
+              <button type="button" class="btn-excluir-anexo p-1 text-slate-400 hover:text-rose-500 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 transition text-xs" data-id="${anexo.id}" data-path="${anexo.storage_path}" title="Excluir anexo">
+                🗑️
+              </button>
+            ` : ''}
+          </div>
+        </div>
+      `).join('');
+
+      // Listeners de Visualização no Lightbox
+      container.querySelectorAll('.btn-ver-anexo').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const path = btn.getAttribute('data-path') || '';
+          const nome = btn.getAttribute('data-nome') || 'Documento';
+          const mime = btn.getAttribute('data-mime') || 'application/pdf';
+          const { DocumentViewer } = await import('../../services/documentViewer');
+          DocumentViewer.open(nome, path, mime);
+        });
+      });
+
+      // Listeners de Exclusão com confirmação segura
+      container.querySelectorAll('.btn-excluir-anexo').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const id = btn.getAttribute('data-id');
+          const path = btn.getAttribute('data-path');
+          if (!id) return;
+          if (confirm('Tem certeza de que deseja excluir este anexo? O arquivo será removido do sistema.')) {
+            const { AnexosService } = await import('../../services/anexosService');
+            await AnexosService.excluirAnexo(id, path || undefined);
+            this.options.showToast('Documento removido com sucesso.', 'success');
+            await this.atualizarListaDocumentosViagem(viagemId, clienteId);
+          }
+        });
+      });
+    } catch (err: any) {
+      console.error('[EditTravelModal] Erro ao carregar lista de anexos:', err);
+      container.innerHTML = `<p class="text-xs text-rose-500">Erro ao carregar documentos: ${err.message}</p>`;
+    }
+  }
+
+  /**
+   * Abre o modal para categorização e rótulo identificador antes do upload
+   */
+  private abrirModalIdentificacaoAnexo(
+    file: File,
+    viagemId: string,
+    clienteId?: string,
+    passageiroNome?: string
+  ): void {
+    const modalEl = document.createElement('div');
+    modalEl.id = 'modal-identificar-anexo';
+    modalEl.className = 'fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-fade-in';
+
+    // Sugestão inteligente de categoria e rótulo baseada no nome do arquivo
+    const fileNameLower = file.name.toLowerCase();
+    let categoriaSugerida = 'OUTROS';
+    let rotuloSugerido = file.name.replace(/\.[^/.]+$/, '');
+
+    if (fileNameLower.includes('passaporte') || fileNameLower.includes('passport')) {
+      categoriaSugerida = 'PASSAPORTE';
+      rotuloSugerido = `Passaporte ${passageiroNome || ''}`.trim();
+    } else if (fileNameLower.includes('visto') || fileNameLower.includes('visa')) {
+      categoriaSugerida = 'VISTO';
+      rotuloSugerido = `Visto ${passageiroNome || ''}`.trim();
+    } else if (fileNameLower.includes('voo') || fileNameLower.includes('aereo') || fileNameLower.includes('ticket') || fileNameLower.includes('bilhete')) {
+      categoriaSugerida = 'VOUCHER_AEREO';
+      rotuloSugerido = `Bilhete Aéreo - ${this.currentLoadedViagem?.destino || ''}`.trim();
+    } else if (fileNameLower.includes('hotel') || fileNameLower.includes('hospedagem') || fileNameLower.includes('resort')) {
+      categoriaSugerida = 'VOUCHER_HOTEL';
+      rotuloSugerido = `Voucher Hospedagem - ${this.currentLoadedViagem?.destino || ''}`.trim();
+    } else if (fileNameLower.includes('seguro') || fileNameLower.includes('apolice') || fileNameLower.includes('assist')) {
+      categoriaSugerida = 'SEGURO';
+      rotuloSugerido = `Apólice de Seguro Viagem`.trim();
+    } else if (fileNameLower.includes('contrato') || fileNameLower.includes('termo')) {
+      categoriaSugerida = 'CONTRATO';
+      rotuloSugerido = `Contrato de Viagem`.trim();
+    }
+
+    modalEl.innerHTML = `
+      <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 max-w-md w-full border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4 text-left">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="text-xl">📎</span>
+            <h3 class="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight">Identificar Anexo</h3>
+          </div>
+          <button id="btn-fechar-modal-ident" class="text-slate-400 hover:text-slate-600 text-lg font-bold">&times;</button>
+        </div>
+
+        <div class="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700 text-xs">
+          <div class="text-slate-500 dark:text-slate-400">Arquivo selecionado:</div>
+          <div class="font-bold text-slate-800 dark:text-slate-200 truncate mt-0.5">${file.name}</div>
+          <div class="text-[10px] text-slate-400 mt-0.5">${(file.size / 1024).toFixed(1)} KB · ${file.type || 'Documento'}</div>
+        </div>
+
+        <div class="space-y-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Categoria do Documento *</label>
+            <select id="select-categoria-anexo" class="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:border-indigo-500 font-medium">
+              <option value="VOUCHER_AEREO" ${categoriaSugerida === 'VOUCHER_AEREO' ? 'selected' : ''}>✈️ Passagem Aérea / Bilhete</option>
+              <option value="VOUCHER_HOTEL" ${categoriaSugerida === 'VOUCHER_HOTEL' ? 'selected' : ''}>🏨 Voucher de Hotel / Hospedagem</option>
+              <option value="PASSAPORTE" ${categoriaSugerida === 'PASSAPORTE' ? 'selected' : ''}>🛂 Passaporte do Passageiro</option>
+              <option value="VISTO" ${categoriaSugerida === 'VISTO' ? 'selected' : ''}>📄 Visto de Entrada</option>
+              <option value="SEGURO" ${categoriaSugerida === 'SEGURO' ? 'selected' : ''}>🛡️ Apólice de Seguro Viagem</option>
+              <option value="CONTRATO" ${categoriaSugerida === 'CONTRATO' ? 'selected' : ''}>📝 Contrato de Prestação de Serviços</option>
+              <option value="OUTROS" ${categoriaSugerida === 'OUTROS' ? 'selected' : ''}>📎 Outros Documentos</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Identificador / Rótulo do Arquivo *</label>
+            <input type="text" id="input-rotulo-anexo" value="${rotuloSugerido}" placeholder="Ex: Voucher Fasano Rio, Passaporte João" class="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:border-indigo-500 font-bold" />
+            <span class="text-[10px] text-slate-400 mt-1 block">Este nome aparecerá em destaque para a equipe e no histórico.</span>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+          <button id="btn-cancelar-ident" class="px-3.5 py-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition">
+            Cancelar
+          </button>
+          <button id="btn-confirmar-upload-anexo" class="px-4 py-2 text-xs font-black text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-md transition flex items-center gap-1.5">
+            <span>💾</span> Salvar Anexo
+          </button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(modalEl);
+
+    const inputRotulo = modalEl.querySelector('#input-rotulo-anexo') as HTMLInputElement;
+    inputRotulo?.focus();
+
+    const fechar = () => modalEl.remove();
+    modalEl.querySelector('#btn-fechar-modal-ident')?.addEventListener('click', fechar);
+    modalEl.querySelector('#btn-cancelar-ident')?.addEventListener('click', fechar);
+
+    modalEl.querySelector('#btn-confirmar-upload-anexo')?.addEventListener('click', async () => {
+      const rotuloFinal = inputRotulo?.value.trim();
+      const categoriaFinal = (modalEl.querySelector('#select-categoria-anexo') as HTMLSelectElement)?.value as any;
+
+      if (!rotuloFinal) {
+        alert('Por favor, informe um identificador para o arquivo.');
+        return;
+      }
+
+      fechar();
+
+      const viagemUploadStatus = document.getElementById('viagem-upload-status');
+      if (viagemUploadStatus) {
+        viagemUploadStatus.classList.remove('hidden');
+        viagemUploadStatus.innerHTML = `
+          <div class="flex items-center gap-2 py-2 text-xs font-bold text-indigo-600 dark:text-indigo-400 animate-pulse">
+            <div class="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+            <span>Enviando "${rotuloFinal}" para o armazenamento seguro...</span>
+          </div>
+        `;
+      }
+
+      try {
+        const { AnexosService } = await import('../../services/anexosService');
+        const salvo = await AnexosService.uploadAnexo({
+          file,
+          rotulo: rotuloFinal,
+          tipo_documento: categoriaFinal,
+          viagem_id: viagemId,
+          cliente_id: clienteId
+        });
+
+        // Se for passaporte e tiver cliente, atualiza retrocompatibilidade na tabela clientes
+        if (categoriaFinal === 'PASSAPORTE' && clienteId) {
+          try {
+            await supabase
+              .from('clientes')
+              .update({ google_drive_folder_url: salvo.storage_path })
+              .eq('id', clienteId);
+          } catch {
+            // retrocompatível
+          }
+        }
+
+        this.options.showToast(`Documento "${rotuloFinal}" anexado com sucesso!`, 'success');
+        await this.atualizarListaDocumentosViagem(viagemId, clienteId);
+        await this.options.onUpdate();
+      } catch (err: any) {
+        console.error('[EditTravelModal] Erro no upload de anexo:', err);
+        this.options.showToast(`Erro ao anexar arquivo: ${err.message}`, 'error');
+      } finally {
+        if (viagemUploadStatus) {
+          viagemUploadStatus.classList.add('hidden');
+          viagemUploadStatus.innerHTML = '';
+        }
+      }
     });
   }
 

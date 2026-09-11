@@ -796,3 +796,32 @@ export interface StudioProposta {
   created_at?: string;
   updated_at?: string;
 }
+
+// ============================================================================
+// DOCUMENTOS E ANEXOS (MÚLTIPLOS ANEXOS COM IDENTIFICADOR)
+// ============================================================================
+
+export type TipoDocumentoAnexo =
+  | 'PASSAPORTE'
+  | 'VISTO'
+  | 'VOUCHER_AEREO'
+  | 'VOUCHER_HOTEL'
+  | 'SEGURO'
+  | 'CONTRATO'
+  | 'OUTROS';
+
+export interface DocumentoAnexo {
+  id: string;
+  agencia_id?: string;
+  viagem_id?: string;
+  cliente_id?: string;
+  rotulo: string; // Ex: "Passaporte João", "Voucher Fasano"
+  tipo_documento: TipoDocumentoAnexo;
+  nome_original: string;
+  storage_path: string;
+  mime_type?: string;
+  tamanho_bytes?: number;
+  created_at?: string;
+  created_by?: string;
+}
+
