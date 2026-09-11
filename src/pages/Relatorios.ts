@@ -81,6 +81,7 @@ export class RelatoriosPage {
   private dataInicio: string = '';
   private dataFim: string = '';
   private consultorIdFilter: string = 'todos';
+  private filtroContatoEmbarque: 'todos' | 'feitos' | 'pendentes' = 'todos';
   
   private loading: boolean = false;
   private prazoReembolsoDias: number = 30;
@@ -1891,6 +1892,10 @@ export class RelatoriosPage {
       // 1. Ida da Viagem Principal
       if (v.data_ida && v.data_ida >= start && v.data_ida <= end) {
         const hasAlert = this.lembretes.some((l: any) => l.viagem_id === v.id && l.data_lembrete === v.data_ida);
+        const trechoKey = 'viagem-ida';
+        const contatoRegistro = v.contatos_embarque?.[trechoKey];
+        const contatoFeito = Boolean(contatoRegistro?.feito);
+
         list.push({
           data: v.data_ida,
           cliente: clientName,
@@ -1901,13 +1906,20 @@ export class RelatoriosPage {
           hasAlert,
           tripId: v.id,
           productId: '',
-          tipoEmbarque: 'viagem-ida'
+          tipoEmbarque: 'viagem-ida',
+          trechoKey,
+          contatoRegistro,
+          contatoFeito
         });
       }
 
       // 2. Volta da Viagem Principal
       if (v.data_volta && v.data_volta >= start && v.data_volta <= end) {
         const hasAlert = this.lembretes.some((l: any) => l.viagem_id === v.id && l.data_lembrete === v.data_volta);
+        const trechoKey = 'viagem-volta';
+        const contatoRegistro = v.contatos_embarque?.[trechoKey];
+        const contatoFeito = Boolean(contatoRegistro?.feito);
+
         list.push({
           data: v.data_volta,
           cliente: clientName,
@@ -1918,7 +1930,10 @@ export class RelatoriosPage {
           hasAlert,
           tripId: v.id,
           productId: '',
-          tipoEmbarque: 'viagem-volta'
+          tipoEmbarque: 'viagem-volta',
+          trechoKey,
+          contatoRegistro,
+          contatoFeito
         });
       }
 
@@ -1930,9 +1945,14 @@ export class RelatoriosPage {
             if (p.dados_adicionais && Array.isArray(p.dados_adicionais.trechos)) {
               p.dados_adicionais.trechos.forEach((t: any, idx: number) => {
                 const labelBase = `${t.origem} ➔ ${t.destino}`;
+                const prodId = p.id || '';
 
                 if (t.dataIda && t.dataIda >= start && t.dataIda <= end) {
                   const hasAlert = this.lembretes.some((l: any) => l.viagem_id === v.id && l.data_lembrete === t.dataIda);
+                  const trechoKey = `seg-ida-${prodId}-${idx}`;
+                  const contatoRegistro = v.contatos_embarque?.[trechoKey];
+                  const contatoFeito = Boolean(contatoRegistro?.feito);
+
                   list.push({
                     data: t.dataIda,
                     cliente: clientName,
@@ -1943,12 +1963,19 @@ export class RelatoriosPage {
                     hasAlert,
                     tripId: v.id,
                     productId: p.id,
-                    tipoEmbarque: 'segmento-ida'
+                    tipoEmbarque: 'segmento-ida',
+                    trechoKey,
+                    contatoRegistro,
+                    contatoFeito
                   });
                 }
 
                 if (t.dataVolta && t.dataVolta >= start && t.dataVolta <= end) {
                   const hasAlert = this.lembretes.some((l: any) => l.viagem_id === v.id && l.data_lembrete === t.dataVolta);
+                  const trechoKey = `seg-volta-${prodId}-${idx}`;
+                  const contatoRegistro = v.contatos_embarque?.[trechoKey];
+                  const contatoFeito = Boolean(contatoRegistro?.feito);
+
                   list.push({
                     data: t.dataVolta,
                     cliente: clientName,
@@ -1959,7 +1986,10 @@ export class RelatoriosPage {
                     hasAlert,
                     tripId: v.id,
                     productId: p.id,
-                    tipoEmbarque: 'segmento-volta'
+                    tipoEmbarque: 'segmento-volta',
+                    trechoKey,
+                    contatoRegistro,
+                    contatoFeito
                   });
                 }
               });
@@ -1971,7 +2001,15 @@ export class RelatoriosPage {
 
     list.sort((a, b) => a.data.localeCompare(b.data));
 
-    const rowsHtml = list.map((item, idx) => {
+    // Filtragem por status de contato
+    let filteredList = list;
+    if (this.filtroContatoEmbarque === 'feitos') {
+      filteredList = list.filter(item => item.contatoFeito);
+    } else if (this.filtroContatoEmbarque === 'pendentes') {
+      filteredList = list.filter(item => !item.contatoFeito);
+    }
+
+    const rowsHtml = filteredList.map((item) => {
       const alertBadge = item.hasAlert 
         ? `<div class="flex items-center justify-center gap-1.5">
              <span class="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 text-[10px] font-black uppercase tracking-wider rounded-md">SIM</span>
@@ -1982,6 +2020,39 @@ export class RelatoriosPage {
              <button class="btn-alerta-viagem text-[10px] font-extrabold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-350 underline focus:outline-none" data-trip-id="${item.tripId}" data-product-id="${item.productId}" data-type="${item.tipoEmbarque}">Criar</button>
            </div>`;
 
+      let contatoBadge = '';
+      if (item.contatoFeito) {
+        const dHora = item.contatoRegistro?.data_contato 
+          ? new Date(item.contatoRegistro.data_contato).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
+          : '';
+        const quem = item.contatoRegistro?.consultor_nome || 'Consultor';
+        const tooltip = `Contato realizado por ${quem} em ${dHora}. Clique para desmarcar se necessário.`;
+
+        contatoBadge = `
+          <button class="btn-toggle-contato px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-800/60 rounded-lg text-[10px] font-black uppercase tracking-wider transition flex items-center gap-1 mx-auto shadow-xs" 
+            data-trip-id="${item.tripId}" 
+            data-trecho-key="${item.trechoKey}" 
+            title="${tooltip}">
+            <svg class="w-3 h-3 text-emerald-600 dark:text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+            </svg>
+            <span>Feito</span>
+          </button>
+        `;
+      } else {
+        contatoBadge = `
+          <button class="btn-toggle-contato px-2.5 py-1 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/30 dark:hover:bg-amber-900/40 text-amber-700 dark:text-amber-400 border border-amber-200/80 dark:border-amber-800/60 rounded-lg text-[10px] font-black uppercase tracking-wider transition flex items-center gap-1 mx-auto shadow-xs" 
+            data-trip-id="${item.tripId}" 
+            data-trecho-key="${item.trechoKey}" 
+            title="Contato pré-embarque pendente. Clique para marcar como realizado.">
+            <svg class="w-3 h-3 text-amber-600 dark:text-amber-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>Pendente</span>
+          </button>
+        `;
+      }
+
       return `
         <tr class="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50/40 dark:hover:bg-slate-800/20 text-slate-600 dark:text-slate-300 transition-colors">
           <td class="p-3 font-extrabold text-slate-800 dark:text-slate-100">${formatarDataBr(item.data)}</td>
@@ -1991,6 +2062,7 @@ export class RelatoriosPage {
           <td class="p-3 font-mono font-bold text-[10px] tracking-wider uppercase">${item.loc}</td>
           <td class="p-3 font-semibold">${item.consultor}</td>
           <td class="p-3 text-center">${alertBadge}</td>
+          <td class="p-3 text-center">${contatoBadge}</td>
           <td class="p-3 text-center">
             <button class="btn-detalhes-viagem px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/30 dark:hover:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 text-[10px] font-black rounded-lg transition uppercase tracking-wider flex items-center gap-1 mx-auto" data-trip-id="${item.tripId}">
               🔍 Detalhes
@@ -2002,11 +2074,24 @@ export class RelatoriosPage {
 
     return `
       <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-3xl p-6 shadow-sm flex flex-col gap-6 print-full-width">
-        <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
-          <h2 class="text-lg font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
-            <span>✈️ Relatório de Embarque e Trechos de Voo</span>
-          </h2>
-          <span class="px-2.5 py-1 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-xl text-[10px] font-black uppercase tracking-wider">${list.length} embarques localizados</span>
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4 gap-3">
+          <div>
+            <h2 class="text-lg font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
+              <span>✈️ Relatório de Embarque e Trechos de Voo</span>
+            </h2>
+            <p class="text-xs text-slate-400 font-semibold mt-0.5">Controle preventivo e auditoria de contatos pré-embarque de passageiros.</p>
+          </div>
+          <div class="flex items-center gap-3 flex-wrap">
+            <div class="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/70 border border-slate-200/80 dark:border-slate-700 px-3 py-1.5 rounded-xl">
+              <label for="filtro-contato-embarque" class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Filtrar Contato:</label>
+              <select id="filtro-contato-embarque" class="bg-transparent text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none cursor-pointer">
+                <option value="todos" class="bg-white dark:bg-slate-900" ${this.filtroContatoEmbarque === 'todos' ? 'selected' : ''}>Todos os Embarques</option>
+                <option value="feitos" class="bg-white dark:bg-slate-900" ${this.filtroContatoEmbarque === 'feitos' ? 'selected' : ''}>✅ Contato Feito</option>
+                <option value="pendentes" class="bg-white dark:bg-slate-900" ${this.filtroContatoEmbarque === 'pendentes' ? 'selected' : ''}>⏳ Contato Pendente</option>
+              </select>
+            </div>
+            <span class="px-2.5 py-1.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-xl text-[10px] font-black uppercase tracking-wider">${filteredList.length} de ${list.length} embarques</span>
+          </div>
         </div>
 
         <!-- Embarques Table -->
@@ -2021,13 +2106,14 @@ export class RelatoriosPage {
                 <th class="p-3">Código (LOC)</th>
                 <th class="p-3">Consultor</th>
                 <th class="p-3 text-center">Alerta</th>
+                <th class="p-3 text-center">Contato</th>
                 <th class="p-3 text-center">Ações</th>
               </tr>
             </thead>
             <tbody>
               ${rowsHtml || `
                 <tr>
-                  <td colspan="8" class="p-8 text-center text-slate-400 font-extrabold italic">🎉 Nenhum embarque ou trecho de voo programado para o período selecionado.</td>
+                  <td colspan="9" class="p-8 text-center text-slate-400 font-extrabold italic">🎉 Nenhum embarque ou trecho de voo programado para o período ou filtro selecionado.</td>
                 </tr>
               `}
             </tbody>
@@ -2456,6 +2542,82 @@ export class RelatoriosPage {
 
     // 6. Listeners para os botões do Relatório de Embarque
     if (this.activeTab === 'embarques') {
+      // Filtro de Contato Pré-Embarque
+      const selectFiltroContato = document.getElementById('filtro-contato-embarque') as HTMLSelectElement;
+      if (selectFiltroContato) {
+        selectFiltroContato.addEventListener('change', () => {
+          this.filtroContatoEmbarque = (selectFiltroContato.value as any) || 'todos';
+          const container = document.getElementById('report-view-container');
+          if (container) {
+            container.innerHTML = this.renderEmbarques({});
+            this.setupEventListeners();
+          }
+        });
+      }
+
+      // Alternância de Contato Feito / Pendente
+      document.querySelectorAll('.btn-toggle-contato').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const tripId = btn.getAttribute('data-trip-id');
+          const trechoKey = btn.getAttribute('data-trecho-key');
+          if (!tripId || !trechoKey) return;
+
+          const viagem = this.viagens.find(v => v.id === tripId);
+          if (!viagem) return;
+
+          const contatos = { ...(viagem.contatos_embarque || {}) };
+          const jaFeito = Boolean(contatos[trechoKey]?.feito);
+          const novoStatus = !jaFeito;
+
+          if (novoStatus) {
+            contatos[trechoKey] = {
+              feito: true,
+              data_contato: new Date().toISOString(),
+              consultor_id: this.user?.id || '',
+              consultor_nome: this.perfil?.nome || this.user?.email || 'Consultor'
+            };
+          } else {
+            contatos[trechoKey] = {
+              feito: false,
+              data_contato: undefined,
+              consultor_id: undefined,
+              consultor_nome: undefined
+            };
+          }
+
+          try {
+            const { error } = await supabase
+              .from('viagens')
+              .update({
+                contatos_embarque: contatos,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', tripId);
+
+            if (error) throw error;
+
+            viagem.contatos_embarque = contatos;
+            this.showToast(
+              novoStatus 
+                ? 'Contato de pré-embarque marcado como concluído!' 
+                : 'Marcação de contato desfeita.', 
+              'success'
+            );
+
+            // Re-renderizar o painel de embarques
+            const container = document.getElementById('report-view-container');
+            if (container) {
+              container.innerHTML = this.renderEmbarques({});
+              this.setupEventListeners();
+            }
+          } catch (err: any) {
+            console.error('Erro ao atualizar contato de pré-embarque:', err);
+            this.showToast('Erro ao salvar marcação de contato no banco de dados.', 'error');
+          }
+        });
+      });
+
       // Detalhes da Viagem
       document.querySelectorAll('.btn-detalhes-viagem').forEach(btn => {
         btn.addEventListener('click', async (e) => {
@@ -2892,7 +3054,7 @@ export class RelatoriosPage {
         }
       });
     } else if (this.activeTab === 'embarques') {
-      csvContent += 'Data de Embarque;Cliente/Passageiro;Destino/Trecho;Tipo;Código (LOC);Consultor;Tem Alerta\n';
+      csvContent += 'Data de Embarque;Cliente/Passageiro;Destino/Trecho;Tipo;Código (LOC);Consultor;Tem Alerta;Contato Pré-Embarque\n';
       const start = this.dataInicio;
       const end = this.dataFim;
       
@@ -2903,6 +3065,7 @@ export class RelatoriosPage {
 
         if (v.data_ida && v.data_ida >= start && v.data_ida <= end) {
           const hasAlert = this.lembretes.some((l: any) => l.viagem_id === v.id && l.data_lembrete === v.data_ida);
+          const contatoFeito = Boolean(v.contatos_embarque?.['viagem-ida']?.feito);
           list.push({
             data: v.data_ida,
             cliente: clientName,
@@ -2910,12 +3073,14 @@ export class RelatoriosPage {
             tipo: 'Viagem (Ida)',
             loc: v.codigo_localizador || 'S/ LOC',
             consultor: consultorName,
-            hasAlert
+            hasAlert,
+            contatoFeito
           });
         }
 
         if (v.data_volta && v.data_volta >= start && v.data_volta <= end) {
           const hasAlert = this.lembretes.some((l: any) => l.viagem_id === v.id && l.data_lembrete === v.data_volta);
+          const contatoFeito = Boolean(v.contatos_embarque?.['viagem-volta']?.feito);
           list.push({
             data: v.data_volta,
             cliente: clientName,
@@ -2923,7 +3088,8 @@ export class RelatoriosPage {
             tipo: 'Viagem (Volta)',
             loc: v.codigo_localizador || 'S/ LOC',
             consultor: consultorName,
-            hasAlert
+            hasAlert,
+            contatoFeito
           });
         }
 
@@ -2933,8 +3099,10 @@ export class RelatoriosPage {
             if (pTipoUpper === 'AÉREO OPERADORA' || pTipoUpper === 'AÉREO FACIAL') {
               if (p.dados_adicionais && Array.isArray(p.dados_adicionais.trechos)) {
                 p.dados_adicionais.trechos.forEach((t: any, idx: number) => {
+                  const prodId = p.id || '';
                   if (t.dataIda && t.dataIda >= start && t.dataIda <= end) {
                     const hasAlert = this.lembretes.some((l: any) => l.viagem_id === v.id && l.data_lembrete === t.dataIda);
+                    const contatoFeito = Boolean(v.contatos_embarque?.[`seg-ida-${prodId}-${idx}`]?.feito);
                     list.push({
                       data: t.dataIda,
                       cliente: clientName,
@@ -2942,11 +3110,13 @@ export class RelatoriosPage {
                       tipo: `Voo (Ida) - ${p.fornecedor}`,
                       loc: p.codigo_reserva || 'S/ LOC',
                       consultor: consultorName,
-                      hasAlert
+                      hasAlert,
+                      contatoFeito
                     });
                   }
                   if (t.dataVolta && t.dataVolta >= start && t.dataVolta <= end) {
                     const hasAlert = this.lembretes.some((l: any) => l.viagem_id === v.id && l.data_lembrete === t.dataVolta);
+                    const contatoFeito = Boolean(v.contatos_embarque?.[`seg-volta-${prodId}-${idx}`]?.feito);
                     list.push({
                       data: t.dataVolta,
                       cliente: clientName,
@@ -2954,7 +3124,8 @@ export class RelatoriosPage {
                       tipo: `Voo (Volta) - ${p.fornecedor}`,
                       loc: p.codigo_reserva || 'S/ LOC',
                       consultor: consultorName,
-                      hasAlert
+                      hasAlert,
+                      contatoFeito
                     });
                   }
                 });
@@ -2968,7 +3139,7 @@ export class RelatoriosPage {
 
       list.forEach((item: any) => {
         const dateFormatted = item.data.split('-').reverse().join('/');
-        csvContent += `"${dateFormatted}";"${item.cliente}";"${item.destino}";"${item.tipo}";"${item.loc}";"${item.consultor}";"${item.hasAlert ? 'Sim' : 'Não'}"\n`;
+        csvContent += `"${dateFormatted}";"${item.cliente}";"${item.destino}";"${item.tipo}";"${item.loc}";"${item.consultor}";"${item.hasAlert ? 'Sim' : 'Não'}";"${item.contatoFeito ? 'Feito' : 'Pendente'}"\n`;
       });
     } else if (this.activeTab === 'gamificacao') {
       csvContent += 'Posição;Consultor;Nível;Patente;XP Total;Conquistas\n';

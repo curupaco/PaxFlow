@@ -9,6 +9,9 @@ export interface SendTemplateMessageModalOptions {
   viagemId?: string;
   consultorNome: string;
   showToast: (msg: string, type: 'success' | 'error') => void;
+  initialTemplateType?: 'pre_embarque' | string;
+  focusChatHistory?: boolean;
+  onMessageSent?: () => Promise<void> | void;
 }
 
 export class SendTemplateMessageModal {
@@ -41,6 +44,11 @@ export class SendTemplateMessageModal {
       if (!templates || templates.length === 0) {
         templates = [
           {
+            id: 'tpl-native-pre-embarque',
+            titulo: '✈️ Orientações de Pré-Embarque',
+            conteudo: 'Olá {{cliente}}! Sua viagem para {{destino}} está chegando (Embarque: {{data_ida}})! Seguem suas orientações e documentação de viagem. Localizador: {{localizador}}. Conte conosco para uma experiência incrível!'
+          },
+          {
             id: 'tpl-native-1',
             titulo: '🎂 Aniversário de Viagem (~12 meses)',
             conteudo: 'Olá {{cliente}}! Faz quase 1 ano da sua viagem para {{destino}}. Já iniciamos o planejamento para as próximas temporadas! Que tal conversarmos sobre suas próximas férias?'
@@ -71,6 +79,20 @@ export class SendTemplateMessageModal {
             conteudo: 'Olá {{cliente}}! Recomendamos reforçar a cobertura médica da sua viagem para {{destino}} com nossa apólice VIP de Cancelamento Flexível e Assistência 24h.'
           }
         ];
+      } else {
+        // Se houver templates cadastrados mas nenhum de pré-embarque, garante template nativo disponível
+        const hasPreEmbarque = templates.some(t => 
+          (t.titulo || '').toLowerCase().includes('pré-embarque') || 
+          (t.titulo || '').toLowerCase().includes('pre-embarque') || 
+          (t.titulo || '').toLowerCase().includes('embarque')
+        );
+        if (!hasPreEmbarque) {
+          templates.unshift({
+            id: 'tpl-native-pre-embarque',
+            titulo: '✈️ Orientações de Pré-Embarque',
+            conteudo: 'Olá {{cliente}}! Sua viagem para {{destino}} está chegando (Embarque: {{data_ida}})! Seguem suas orientações e documentação de viagem. Localizador: {{localizador}}. Conte conosco para qualquer dúvida!'
+          });
+        }
       }
 
       // Buscar dados completos da viagem e consultor responsável, se houver viagemId
@@ -116,6 +138,16 @@ export class SendTemplateMessageModal {
 
     // Estado da mensagem selecionada
     let selectedTemplateId = templates[0].id;
+    if (options.initialTemplateType === 'pre_embarque') {
+      const tplPre = templates.find(t => 
+        (t.titulo || '').toLowerCase().includes('pré-embarque') || 
+        (t.titulo || '').toLowerCase().includes('pre-embarque') || 
+        (t.titulo || '').toLowerCase().includes('embarque')
+      );
+      if (tplPre) {
+        selectedTemplateId = tplPre.id;
+      }
+    }
     let customPhone = options.clienteTelefone || '';
 
     // Limpar o número do telefone (deixar apenas dígitos)
@@ -203,7 +235,7 @@ export class SendTemplateMessageModal {
             <div>
               <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Escolha o Modelo de Mensagem *</label>
               <select id="select-message-template" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm">
-                ${templates.map(t => `<option value="${t.id}" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">${t.titulo}</option>`).join('')}
+                ${templates.map(t => `<option value="${t.id}" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100" ${t.id === selectedTemplateId ? 'selected' : ''}>${t.titulo}</option>`).join('')}
               </select>
             </div>
 
@@ -427,7 +459,14 @@ export class SendTemplateMessageModal {
       setTimeout(() => {
         carregarHistoricoDigisac();
         document.getElementById('btn-atualizar-chat')?.addEventListener('click', carregarHistoricoDigisac);
+        if (options.focusChatHistory) {
+          const chatContainer = document.getElementById('digisac-chat-history-container');
+          chatContainer?.classList.add('ring-2', 'ring-emerald-500');
+          setTimeout(() => chatContainer?.classList.remove('ring-2', 'ring-emerald-500'), 2500);
+        }
       }, 50);
+    } else if (options.focusChatHistory) {
+      options.showToast('Histórico do Digisac não está habilitado nas configurações da agência.', 'error');
     }
 
     if (hasDigisac) {
@@ -447,6 +486,9 @@ export class SendTemplateMessageModal {
         const whatsappUrl = `https://api.whatsapp.com/send?phone=${finalPhone}&text=${textEscaped}`;
 
         await concederXp();
+        if (options.onMessageSent) {
+          try { await options.onMessageSent(); } catch (err) { console.error(err); }
+        }
         window.open(whatsappUrl, '_blank');
         fechar();
         options.showToast('Mensagem preparada e aberta no WhatsApp!', 'success');
@@ -507,6 +549,9 @@ export class SendTemplateMessageModal {
           }
 
           await concederXp();
+          if (options.onMessageSent) {
+            try { await options.onMessageSent(); } catch (err) { console.error(err); }
+          }
           options.showToast('Mensagem disparada com sucesso via Digisac! 🚀', 'success');
           
           // Se o chat estiver ativo, recarrega o histórico para mostrar a mensagem enviada
@@ -542,6 +587,9 @@ export class SendTemplateMessageModal {
         const whatsappUrl = `https://api.whatsapp.com/send?phone=${finalPhone}&text=${textEscaped}`;
 
         await concederXp();
+        if (options.onMessageSent) {
+          try { await options.onMessageSent(); } catch (err) { console.error(err); }
+        }
         window.open(whatsappUrl, '_blank');
         fechar();
         options.showToast('Mensagem preparada e aberta no WhatsApp!', 'success');

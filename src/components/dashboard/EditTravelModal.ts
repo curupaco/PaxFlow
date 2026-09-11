@@ -476,13 +476,67 @@ export class EditTravelModal {
               </div>
             </div>
 
-            <!-- Atalhos de Comunicação -->
-            <div class="flex items-center gap-2 p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/50 dark:border-slate-800 mt-2 flex-wrap">
-              <span class="text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider font-sans">Comunicação:</span>
-              <button id="btn-modal-whatsapp" type="button" class="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/40 rounded-lg text-xs font-bold transition">
-                <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.724-1.455L0 24zm6.59-4.846c1.6.95 3.197 1.451 4.777 1.451 5.51 0 9.997-4.493 10-10.008.002-2.673-1.037-5.186-2.93-7.079-1.892-1.893-4.401-2.934-7.078-2.934-5.518 0-10.007 4.493-10.01 10.01-.001 1.708.455 3.377 1.32 4.887L1.134 22.84l4.513-1.186zm11.23-7.925c-.297-.149-1.758-.868-2.03-.967-.273-.099-.471-.148-.669.149-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.568-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/></svg>
-                WhatsApp
-              </button>
+            <!-- Identificação do Próximo Embarque e Contato -->
+            ${(() => {
+              const todosEmbarquesViagem: { chave: string; rotulo: string; dataStr: string }[] = [];
+              if (v.data_ida) {
+                todosEmbarquesViagem.push({ chave: 'viagem-ida', rotulo: `Ida (${v.destino || 'Viagem'})`, dataStr: v.data_ida });
+              }
+              if (v.data_volta) {
+                todosEmbarquesViagem.push({ chave: 'viagem-volta', rotulo: `Volta (${v.destino || 'Retorno'})`, dataStr: v.data_volta });
+              }
+              if (v.produtos && Array.isArray(v.produtos)) {
+                v.produtos.forEach((p: any) => {
+                  const pTipoUpper = (p.tipo || '').trim().toUpperCase();
+                  if (pTipoUpper.includes('AÉREO') || pTipoUpper.includes('VOO')) {
+                    if (p.dados_adicionais && Array.isArray(p.dados_adicionais.trechos)) {
+                      p.dados_adicionais.trechos.forEach((t: any, idx: number) => {
+                        const trechoNome = t.origem && t.destino ? `${t.origem} ➔ ${t.destino}` : `Voo trecho ${idx + 1}`;
+                        const prodId = p.id || '';
+                        if (t.dataIda) {
+                          todosEmbarquesViagem.push({ chave: `seg-ida-${prodId}-${idx}`, rotulo: `${trechoNome} (Ida)`, dataStr: t.dataIda });
+                        }
+                        if (t.dataVolta) {
+                          todosEmbarquesViagem.push({ chave: `seg-volta-${prodId}-${idx}`, rotulo: `${trechoNome} (Volta)`, dataStr: t.dataVolta });
+                        }
+                      });
+                    }
+                  }
+                });
+              }
+
+              todosEmbarquesViagem.sort((a, b) => a.dataStr.localeCompare(b.dataStr));
+              const contatosViagem = v.contatos_embarque || {};
+              const proximoPendente = todosEmbarquesViagem.find(emb => !contatosViagem[emb.chave]?.feito);
+              const todosFeitos = todosEmbarquesViagem.length > 0 && !proximoPendente;
+
+              return `
+                <!-- Atalhos de Comunicação -->
+                <div class="flex items-center gap-2 p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/50 dark:border-slate-800 mt-2 flex-wrap">
+                  <span class="text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider font-sans">Comunicação:</span>
+                  <button id="btn-modal-whatsapp" type="button" class="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/40 rounded-lg text-xs font-bold transition">
+                    <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.724-1.455L0 24zm6.59-4.846c1.6.95 3.197 1.451 4.777 1.451 5.51 0 9.997-4.493 10-10.008.002-2.673-1.037-5.186-2.93-7.079-1.892-1.893-4.401-2.934-7.078-2.934-5.518 0-10.007 4.493-10.01 10.01-.001 1.708.455 3.377 1.32 4.887L1.134 22.84l4.513-1.186zm11.23-7.925c-.297-.149-1.758-.868-2.03-.967-.273-.099-.471-.148-.669.149-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.568-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/></svg>
+                    WhatsApp
+                  </button>
+
+                  <!-- Marcador de Contato Pré-Embarque -->
+                  ${todosFeitos ? `
+                    <button id="btn-modal-historico-digisac" type="button" class="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-900/40 rounded-lg text-xs font-bold transition font-sans" title="Todos os contatos de embarque foram realizados. Clique para abrir o histórico de conversa do Digisac.">
+                      <svg class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                      </svg>
+                      <span>Pré-Embarque: Feito ✅ (Digisac)</span>
+                    </button>
+                  ` : `
+                    <button id="btn-modal-pre-embarque" type="button" class="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/20 dark:hover:bg-amber-950/30 text-amber-700 dark:text-amber-400 border border-amber-200/80 dark:border-amber-900/40 rounded-lg text-xs font-bold transition font-sans" title="Contato pré-embarque pendente (${proximoPendente ? proximoPendente.rotulo : 'Próximo voo'}). Clique para disparar mensagem pré-selecionada.">
+                      <svg class="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span>Pré-Embarque: Pendente ⏳</span>
+                    </button>
+                  `}
+              `;
+            })()}
               ${(v.pos_contato_concluido || v.nps_respondido || v.nps_nota !== undefined || v.npsNota !== undefined || v.status === 'concluida') ? `
                 <span class="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/40 font-sans flex items-center gap-1">
                   ✅ Pós-Contato Concluído ${v.nps_nota !== undefined && v.nps_nota !== null ? `(NPS: ${v.nps_nota}/10)` : ''}
@@ -757,6 +811,77 @@ export class EditTravelModal {
         viagemId: v.id,
         consultorNome: this.options.consultores.find(c => c.id === v.consultor_id)?.nome || this.options.perfil?.nome || 'Consultor',
         showToast: this.options.showToast
+      });
+    });
+
+    // Atalho Inteligente: Disparar Pré-Embarque (quando pendente)
+    document.getElementById('btn-modal-pre-embarque')?.addEventListener('click', () => {
+      const todosEmbarquesViagem: { chave: string; rotulo: string; dataStr: string }[] = [];
+      if (v.data_ida) todosEmbarquesViagem.push({ chave: 'viagem-ida', rotulo: `Ida (${v.destino || 'Viagem'})`, dataStr: v.data_ida });
+      if (v.data_volta) todosEmbarquesViagem.push({ chave: 'viagem-volta', rotulo: `Volta (${v.destino || 'Retorno'})`, dataStr: v.data_volta });
+      if (v.produtos && Array.isArray(v.produtos)) {
+        v.produtos.forEach((p: any) => {
+          const pTipoUpper = (p.tipo || '').trim().toUpperCase();
+          if (pTipoUpper.includes('AÉREO') || pTipoUpper.includes('VOO')) {
+            if (p.dados_adicionais && Array.isArray(p.dados_adicionais.trechos)) {
+              p.dados_adicionais.trechos.forEach((t: any, idx: number) => {
+                const trechoNome = t.origem && t.destino ? `${t.origem} ➔ ${t.destino}` : `Voo trecho ${idx + 1}`;
+                const prodId = p.id || '';
+                if (t.dataIda) todosEmbarquesViagem.push({ chave: `seg-ida-${prodId}-${idx}`, rotulo: `${trechoNome} (Ida)`, dataStr: t.dataIda });
+                if (t.dataVolta) todosEmbarquesViagem.push({ chave: `seg-volta-${prodId}-${idx}`, rotulo: `${trechoNome} (Volta)`, dataStr: t.dataVolta });
+              });
+            }
+          }
+        });
+      }
+      todosEmbarquesViagem.sort((a, b) => a.dataStr.localeCompare(b.dataStr));
+      const contatos = v.contatos_embarque || {};
+      const proximoPendente = todosEmbarquesViagem.find(emb => !contatos[emb.chave]?.feito);
+      const trechoAlvo = proximoPendente ? proximoPendente.chave : 'viagem-ida';
+
+      SendTemplateMessageModal.open({
+        clienteNome: v.cliente?.nome || '',
+        clienteTelefone: v.cliente?.telefone || '',
+        destino: v.destino,
+        localizador: v.codigo_localizador,
+        dataIda: proximoPendente?.dataStr || v.data_ida,
+        viagemId: v.id,
+        consultorNome: this.options.consultores.find(c => c.id === v.consultor_id)?.nome || this.options.perfil?.nome || 'Consultor',
+        showToast: this.options.showToast,
+        initialTemplateType: 'pre_embarque',
+        onMessageSent: async () => {
+          const novoContatos = { ...(v.contatos_embarque || {}) };
+          novoContatos[trechoAlvo] = {
+            feito: true,
+            data_contato: new Date().toISOString(),
+            consultor_id: this.options.user?.id || '',
+            consultor_nome: this.options.perfil?.nome || this.options.user?.email || 'Consultor'
+          };
+          try {
+            await supabase.from('viagens').update({ contatos_embarque: novoContatos, updated_at: new Date().toISOString() }).eq('id', v.id);
+            v.contatos_embarque = novoContatos;
+            this.options.showToast('Contato pré-embarque registrado com sucesso!', 'success');
+            await this.options.onUpdate();
+            await this.open(v.id, 'detalhes');
+          } catch (err) {
+            console.error('Erro ao salvar contato pré-embarque:', err);
+          }
+        }
+      });
+    });
+
+    // Atalho Inteligente: Abrir Histórico Digisac (quando feito)
+    document.getElementById('btn-modal-historico-digisac')?.addEventListener('click', () => {
+      SendTemplateMessageModal.open({
+        clienteNome: v.cliente?.nome || '',
+        clienteTelefone: v.cliente?.telefone || '',
+        destino: v.destino,
+        localizador: v.codigo_localizador,
+        dataIda: v.data_ida,
+        viagemId: v.id,
+        consultorNome: this.options.consultores.find(c => c.id === v.consultor_id)?.nome || this.options.perfil?.nome || 'Consultor',
+        showToast: this.options.showToast,
+        focusChatHistory: true
       });
     });
 

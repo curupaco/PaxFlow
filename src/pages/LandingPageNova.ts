@@ -1386,9 +1386,9 @@ export class LandingPageNova {
                 <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-600/20 to-teal-600/20 text-emerald-300 border border-emerald-500/30 flex items-center justify-center shadow-inner">
                   <svg class="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
                 </div>
-                <h3 class="text-xl font-extrabold text-white">Checklist Preventivo Inteligente</h3>
+                <h3 class="text-xl font-extrabold text-white">Checklist Preventivo &amp; Pré-Embarque</h3>
                 <p class="text-xs text-slate-300 leading-relaxed font-medium">
-                  Verificação automática de vouchers gerais anexados, conferência de localizadores (LOC), passaportes e vistos com menos de 6 meses e antecipação de embarques.
+                  Verificação automática de vouchers, conferência de localizadores (LOC), passaportes com menos de 6 meses e auditoria obrigatória de <strong>contato pré-embarque a menos de 24h</strong> de cada voo.
                 </p>
               </div>
 
@@ -1396,9 +1396,9 @@ export class LandingPageNova {
                 <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-teal-600/20 to-cyan-600/20 text-teal-300 border border-teal-500/30 flex items-center justify-center shadow-inner">
                   <svg class="w-6 h-6 text-teal-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
                 </div>
-                <h3 class="text-xl font-extrabold text-white">Semáforo &amp; Disparos Configuráveis</h3>
+                <h3 class="text-xl font-extrabold text-white">Semáforo &amp; Relatório de Embarque</h3>
                 <p class="text-xs text-slate-300 leading-relaxed font-medium">
-                  Classificação instantânea: Verde (Normal), Amarelo (Atenção) e Vermelho (Risco Crítico). Sua agência personaliza os gatilhos de disparo (WhatsApp, Push ou Painel) com antecedência sob medida.
+                  Controle central de partidas com alternância em 1-clique (Pendente / Feito), filtro de contatos e semáforo preditivo que aplica penalidade imediata se houver passageiro sem contato a menos de 24h.
                 </p>
               </div>
 
@@ -1406,9 +1406,9 @@ export class LandingPageNova {
                 <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-600/20 to-blue-600/20 text-cyan-300 border border-cyan-500/30 flex items-center justify-center shadow-inner">
                   <svg class="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
                 </div>
-                <h3 class="text-xl font-extrabold text-white">Gaveta de Ações em 1-Clique</h3>
+                <h3 class="text-xl font-extrabold text-white">Gaveta de Ações &amp; WhatsApp Rápido</h3>
                 <p class="text-xs text-slate-300 leading-relaxed font-medium">
-                  Permite anexar o voucher geral em lote, registrar justificativas de risco e acionar consultores co-pilotos sem atritos operacionais.
+                  Disparo ágil com modelo de pré-embarque pré-selecionado, acesso imediato ao histórico de conversas no Digisac e auditoria com registro do consultor responsável e horário.
                 </p>
               </div>
             </div>

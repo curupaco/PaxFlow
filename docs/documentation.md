@@ -508,21 +508,49 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 **Motor de inteligência preditiva de auditoria operacional** que calcula e monitora 24/7 a saúde operacional de cada viagem cadastrada na agência.
 
 - **Pontuação Dinâmica de 0 a 100**: Toda viagem é inicializada com nota 100 (Saúde Operacional Total). O algoritmo varre continuamente o dossiê da viagem e aplica penalidades parametrizadas no score conforme encontra inconformidades operacionais.
-- **Os 4 Pilares da Auditoria de Risco**:
+- **Os 5 Pilares da Auditoria de Risco**:
   1. **Documental & Vistos (Peso 30%)**: Valida se o cliente possui número e validade de passaporte cadastrados e se a data de expiração possui no mínimo **180 dias de validade** a partir da data de desembarque/retorno da viagem internacional.
-  2. **Financeiro & LOCs (Peso 30%)**: Audita se os valores dos produtos foram 100% quitados através das Formas de Recebimento cadastradas e se o código de reserva (LOC) passou pelo processo de Conferência Financeira administrativa.
-  3. **Logística & Vouchers (Peso 20%)**: Audita a anexação dos vouchers e comprovantes oficiais emitidos pelos fornecedores (voos, hotéis, receptivos) e a presença de códigos de reserva nos produtos.
-  4. **SLAs Temporais (Peso 20%)**: Audita o status da viagem em relação à data de embarque na janela de carência.
+  2. **Vouchers & Fornecedores (Peso 25%)**: Audita a anexação dos vouchers e comprovantes oficiais emitidos pelos fornecedores (voos, hotéis, receptivos) e a presença de códigos de reserva nos produtos.
+  3. **Governança & Financeiro (Peso 20%)**: Audita a conferência operacional do processo e a confirmação de **Contato Pré-Embarque em viagens com partida nas próximas 24 horas**. Se faltarem < 24h e o contato estiver pendente, aplica penalidade crítica de **25 pontos** (`p3-contato-pre-embarque-24h`), recuperada instantaneamente assim que o contato é marcado como feito.
+  4. **Cobertura de Roteiro (Peso 15%)**: Audita gaps de hospedagem em viagens superiores a 2 dias e a contratação obrigatória de seguro viagem internacional.
+  5. **Qualidade Cadastral (Peso 10%)**: Valida a completude do perfil do cliente (CPF/documento, e-mail e telefone de contato).
 - **Isenções Inteligentes**: O algoritmo detecta a categoria e destino da viagem, aplicando isenções automáticas para não penalizar indevidamente a agência:
   - **Viagens Nacionais**: Isentas de passaporte e visto.
   - **Passeios / Bate-Volta (duração <= 1 dia)**: Isentos de exigência de vouchers de hospedagem.
   - **Vouchers Unificados**: Reconhecimento automático de vouchers gerais de pacote anexados à viagem.
 - **Gaveta Lateral de Diagnóstico (`RiskDiagnosisDrawer.ts`)**:
-  - Ao clicar no badge 🛡️ da viagem, abre-se uma gaveta lateral animada detalhando o diagnóstico, os pontos perdidos por pilar e botões de ação rápida de 1-Clique para resolver cada pendência (ex: *🛂 Preencher Passaporte*, *💳 Conferir Recebimentos*, *📎 Anexar Voucher*).
+  - Ao clicar no badge 🛡️ da viagem, abre-se uma gaveta lateral animada detalhando o diagnóstico, os pontos perdidos por pilar e botões de ação rápida de 1-Clique para resolver cada pendência (ex: *🛂 Preencher Passaporte*, *💳 Conferir Recebimentos*, *📎 Anexar Voucher*, *✈️ Realizar Contato Pré-Embarque*).
 - **Visibilidade Unificada**:
   - Exibido nos cards do Kanban do Dashboard, na tabela do Dashboard e no topo do modal **Gerenciar Viagem** (`EditTravelModal.ts`).
 - **Controle Administrativo Global**:
   - Administradores podem ativar/desativar o recurso (`habilitar_risk_score`), ajustar a janela de carência pré-embarque (padrão 60 dias) e o limite crítico de risco (padrão < 50 pontos) na aba *Automações* das Configurações.
+
+---
+
+### 3.29 Relatório de Embarque e Rastreamento de Contato Pré-Embarque [NEW]
+
+**Módulo operacional e analítico de controle de partidas e embarques**, desenhado para garantir que 100% dos passageiros recebam atendimento pré-embarque antes de se dirigirem ao aeroporto ou embarque rodoviário.
+
+- **Granularidade por Trecho Individual**:
+  - Cada viagem pode conter múltiplos eventos de partida: ida da viagem principal, volta e conexões/trechos aéreos individuais cadastrados nos produtos. O sistema audita cada trecho de forma independente no banco de dados (`viagens.contatos_embarque`).
+- **Coluna CONTATO com Botão Toggle em 1-Clique**:
+  - Posicionada entre as colunas **Alerta** e **Ações**, exibe botões visuais interativos:
+    - `⏳ Pendente`: estilo âmbar com ícone de relógio indicando pendência de contato.
+    - `✅ Feito`: estilo esmeralda com ícone de confirmação.
+  - Permite alternância livre (marcar ou desmarcar em caso de clique acidental), salvando imediatamente no Supabase em tempo real.
+- **Auditoria Transparente (Tooltip em Hover)**:
+  - Ao passar o mouse sobre o botão `Feito`, um tooltip exibe quem realizou o contato e a data/hora exata (ex: *Contato realizado por Thiago em 11/09 às 15:45*).
+- **Filtro Rápido no Cabeçalho**:
+  - Seletor suspenso no topo da tabela permitindo filtrar por:
+    - *Todos os Embarques*
+    - *✅ Contato Feito*
+    - *⏳ Contato Pendente*
+- **Exportação CSV Completa**:
+  - O arquivo CSV gerado pelo botão *Exportar CSV* inclui a coluna `Contato Pré-Embarque`, refletindo o status real da auditoria para relatórios de diretoria.
+- **Integração no Modal Gerenciar Viagem (`EditTravelModal.ts`)**:
+  - Na linha de **Comunicação:** ao lado do botão WhatsApp:
+    - Se houver embarque pendente: exibe `Pré-Embarque: Pendente ⏳` que abre o modal de mensagens com modelo de Pré-Embarque já selecionado. Ao enviar, marca o contato automaticamente como feito.
+    - Se todos os embarques estiverem feitos: exibe `Pré-Embarque: Feito ✅ (Digisac)` que abre o painel focado no histórico de conversa do Digisac.
 
 ---
 

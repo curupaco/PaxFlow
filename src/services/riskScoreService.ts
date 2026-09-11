@@ -234,6 +234,113 @@ export class RiskScoreService {
       });
     }
 
+    // Checagem de Contato Pré-Embarque Crítico (< 24h)
+    const contatosEmbarque = viagem.contatos_embarque || {};
+    const embarquesViagem: { chave: string; rotulo: string; dataStr: string; horaStr?: string }[] = [];
+
+    if (viagem.data_ida) {
+      embarquesViagem.push({
+        chave: 'viagem-ida',
+        rotulo: `Ida da viagem para ${viagem.destino || 'o destino'}`,
+        dataStr: viagem.data_ida
+      });
+    }
+
+    if (viagem.data_volta) {
+      embarquesViagem.push({
+        chave: 'viagem-volta',
+        rotulo: `Volta da viagem (${viagem.destino || 'retorno'})`,
+        dataStr: viagem.data_volta
+      });
+    }
+
+    if (produtos && Array.isArray(produtos)) {
+      produtos.forEach((p: any) => {
+        const pTipoUpper = (p.tipo || '').trim().toUpperCase();
+        if (pTipoUpper.includes('AÉREO') || pTipoUpper.includes('VOO')) {
+          if (p.dados_adicionais && Array.isArray(p.dados_adicionais.trechos)) {
+            p.dados_adicionais.trechos.forEach((t: any, idx: number) => {
+              const trechoNome = t.origem && t.destino ? `${t.origem} ➔ ${t.destino}` : `Voo trecho ${idx + 1}`;
+              const prodId = p.id || '';
+              if (t.dataIda) {
+                embarquesViagem.push({
+                  chave: `seg-ida-${prodId}-${idx}`,
+                  rotulo: `${trechoNome} (Ida)`,
+                  dataStr: t.dataIda,
+                  horaStr: t.horarioIda || t.horaIda
+                });
+              }
+              if (t.dataVolta) {
+                embarquesViagem.push({
+                  chave: `seg-volta-${prodId}-${idx}`,
+                  rotulo: `${trechoNome} (Volta)`,
+                  dataStr: t.dataVolta,
+                  horaStr: t.horarioVolta || t.horaVolta
+                });
+              }
+            });
+          }
+        }
+      });
+    }
+
+    const agora = new Date();
+    const hojeAno = agora.getFullYear();
+    const hojeMes = String(agora.getMonth() + 1).padStart(2, '0');
+    const hojeDia = String(agora.getDate()).padStart(2, '0');
+    const hojeDataIso = `${hojeAno}-${hojeMes}-${hojeDia}`;
+
+    const dataAmanha = new Date(agora);
+    dataAmanha.setDate(dataAmanha.getDate() + 1);
+    const amanhaAno = dataAmanha.getFullYear();
+    const amanhaMes = String(dataAmanha.getMonth() + 1).padStart(2, '0');
+    const amanhaDia = String(dataAmanha.getDate()).padStart(2, '0');
+    const amanhaDataIso = `${amanhaAno}-${amanhaMes}-${amanhaDia}`;
+
+    let embarqueUrgenteSemContato: { chave: string; rotulo: string; dataStr: string } | null = null;
+
+    for (const emb of embarquesViagem) {
+      const contatoFeito = contatosEmbarque[emb.chave]?.feito === true;
+      if (contatoFeito) continue;
+
+      let isMenos24h = false;
+      if (emb.horaStr && /^\d{2}:\d{2}/.test(emb.horaStr)) {
+        const dataHoraObj = new Date(`${emb.dataStr}T${emb.horaStr}:00`);
+        if (!isNaN(dataHoraObj.getTime())) {
+          const diffMs = dataHoraObj.getTime() - agora.getTime();
+          if (diffMs > -2 * 60 * 60 * 1000 && diffMs <= 24 * 60 * 60 * 1000) {
+            isMenos24h = true;
+          }
+        }
+      } else {
+        if (emb.dataStr === hojeDataIso || emb.dataStr === amanhaDataIso) {
+          isMenos24h = true;
+        }
+      }
+
+      if (isMenos24h) {
+        embarqueUrgenteSemContato = emb;
+        break;
+      }
+    }
+
+    if (embarqueUrgenteSemContato) {
+      const pen = 25;
+      score -= pen;
+      itens.push({
+        id: 'p3-contato-pre-embarque-24h',
+        pilar: 3,
+        pilarNome: 'Governança & Financeiro',
+        titulo: 'Contato Pré-Embarque Urgente (< 24h)',
+        descricaoHumana: `Embarque em menos de 24h (${embarqueUrgenteSemContato.rotulo}) sem contato de pré-embarque confirmado com o passageiro.`,
+        penalidadePontos: pen,
+        resolvido: false,
+        acaoTipo: 'abrir_pre_embarque',
+        acaoRotulo: '✈️ Realizar Contato Pré-Embarque'
+      });
+    }
+
+
     // PILAR 4: Cobertura Inteligente de Roteiro (Peso 15%)
     if (!temVoucherGeral && !isGracePeriod) {
       const hoteis = produtos.filter(p => (p.tipo || '').toLowerCase().includes('hotel') || (p.tipo || '').toLowerCase().includes('hospedagem'));

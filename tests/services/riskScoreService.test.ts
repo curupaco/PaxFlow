@@ -347,4 +347,130 @@ describe('RiskScoreService - Testes Subcutâneos', () => {
     // Assert
     expect(sucesso).toBe(false);
   });
+
+  it('deve penalizar em 25 pontos viagem com embarque em menos de 24h sem contato pré-embarque', () => {
+    // Setup
+    const hoje = new Date();
+    const hojeIso = hoje.toISOString().split('T')[0];
+
+    const viagemMock: any = {
+      id: 'v-urgente-1',
+      destino: 'Rio de Janeiro',
+      data_ida: hojeIso,
+      data_volta: hojeIso,
+      processo_conferido: true,
+      contatos_embarque: {},
+    };
+
+    // Action
+    const resultado = RiskScoreService.calculateTripRiskScore(viagemMock, null, [], {
+      risk_score_janela_carencia_dias: 60,
+    } as any);
+
+    // Assert
+    expect(resultado.score).toBe(75); // 100 - 25
+    expect(resultado.itens).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'p3-contato-pre-embarque-24h',
+          penalidadePontos: 25,
+          acaoTipo: 'abrir_pre_embarque',
+        }),
+      ])
+    );
+  });
+
+  it('não deve penalizar viagem com embarque em menos de 24h se o contato pré-embarque estiver marcado como feito', () => {
+    // Setup
+    const hoje = new Date();
+    const hojeIso = hoje.toISOString().split('T')[0];
+
+    const viagemMock: any = {
+      id: 'v-urgente-2',
+      destino: 'Rio de Janeiro',
+      data_ida: hojeIso,
+      data_volta: hojeIso,
+      processo_conferido: true,
+      contatos_embarque: {
+        'viagem-ida': { feito: true, data_contato: new Date().toISOString(), consultor_nome: 'Thiago' },
+        'viagem-volta': { feito: true, data_contato: new Date().toISOString(), consultor_nome: 'Thiago' },
+      },
+    };
+
+    // Action
+    const resultado = RiskScoreService.calculateTripRiskScore(viagemMock, null, [], {
+      risk_score_janela_carencia_dias: 60,
+    } as any);
+
+    // Assert
+    expect(resultado.score).toBe(100);
+    expect(resultado.itens.some(i => i.id === 'p3-contato-pre-embarque-24h')).toBe(false);
+  });
+
+  it('não deve aplicar penalidade de 24h para viagem com embarque além da janela crítica', () => {
+    // Setup
+    const dataFutura = new Date();
+    dataFutura.setDate(dataFutura.getDate() + 10);
+    const dataFuturaIso = dataFutura.toISOString().split('T')[0];
+
+    const viagemMock: any = {
+      id: 'v-distante-1',
+      destino: 'Gramado',
+      data_ida: dataFuturaIso,
+      data_volta: dataFuturaIso,
+      processo_conferido: true,
+      contatos_embarque: {},
+    };
+
+    // Action
+    const resultado = RiskScoreService.calculateTripRiskScore(viagemMock, null, [], {
+      risk_score_janela_carencia_dias: 60,
+    } as any);
+
+    // Assert
+    expect(resultado.itens.some(i => i.id === 'p3-contato-pre-embarque-24h')).toBe(false);
+  });
+
+  it('deve penalizar trecho aéreo iminente nas próximas 24h se o contato daquele trecho específico estiver pendente', () => {
+    // Setup
+    const hoje = new Date();
+    const hojeIso = hoje.toISOString().split('T')[0];
+
+    const viagemMock: any = {
+      id: 'v-aereo-1',
+      destino: 'São Paulo',
+      data_ida: '2026-12-01', // ida distante
+      data_volta: '2026-12-10',
+      processo_conferido: true,
+      contatos_embarque: {
+        'viagem-ida': { feito: true },
+      },
+    };
+
+    const produtosMock: any = [
+      {
+        id: 'prod-aereo-1',
+        tipo: 'AÉREO OPERADORA',
+        dados_adicionais: {
+          trechos: [
+            {
+              origem: 'BSB',
+              destino: 'CGH',
+              dataIda: hojeIso, // trecho acontecendo hoje
+            },
+          ],
+        },
+      },
+    ];
+
+    // Action
+    const resultado = RiskScoreService.calculateTripRiskScore(viagemMock, null, produtosMock, {
+      risk_score_janela_carencia_dias: 60,
+    } as any);
+
+    // Assert
+    expect(resultado.score).toBe(75);
+    expect(resultado.itens.some(i => i.id === 'p3-contato-pre-embarque-24h')).toBe(true);
+  });
 });
+

@@ -168,7 +168,7 @@ export interface RiskItem {
   descricaoHumana: string;
   penalidadePontos: number;
   resolvido: boolean;
-  acaoTipo: 'anexar_voucher' | 'anexar_voucher_geral' | 'preencher_passaporte' | 'preencher_visto' | 'vincular_loc' | 'conferir_operacional' | 'notificar_consultor' | 'justificar_risco';
+  acaoTipo: 'anexar_voucher' | 'anexar_voucher_geral' | 'preencher_passaporte' | 'preencher_visto' | 'vincular_loc' | 'conferir_operacional' | 'notificar_consultor' | 'justificar_risco' | 'abrir_pre_embarque';
   acaoRotulo: string;
   produtoId?: string;
   justificativa?: string;
@@ -272,9 +272,21 @@ export interface Viagem {
   nps_respondido?: boolean;
   nps_respondido_em?: string;
   pos_contato_concluido?: boolean;
+  contatos_embarque?: Record<string, ContatoEmbarqueRegistro>;
   upsell_dispensados?: string[];
   upsellDispensados?: string[];
 }
+
+/**
+ * Registro de contato pré-embarque por trecho/embarque específico.
+ */
+export interface ContatoEmbarqueRegistro {
+  feito: boolean;
+  data_contato?: string;
+  consultor_id?: string;
+  consultor_nome?: string;
+}
+
 
 /**
  * Representa um destino cadastrado no PaxFlow.
