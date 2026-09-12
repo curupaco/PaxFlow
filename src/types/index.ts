@@ -710,6 +710,12 @@ export interface StudioItemItinerario {
   horaFim?: string;
   origem?: string;
   destino?: string;
+  companhia?: string;
+  numeroVoo?: string;
+  quarto?: string;
+  regime?: string;
+  terminal?: string;
+  bagagem?: string;
   status?: 'confirmado' | 'pendente' | 'solicitado';
   localizador?: string;
   fornecedor?: string;

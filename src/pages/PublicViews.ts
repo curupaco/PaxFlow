@@ -910,57 +910,106 @@ export class PublicViews {
           </div>
 
           <!-- RESUMO DE SERVIÇOS & VOUCHERS -->
-          ${proposta.dados_extraidos?.voos && proposta.dados_extraidos.voos.length > 0 ? `
-            <div class="public-glass p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-md">
-              <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-3">
-                <span>✈️</span> Passagens Aéreas Confirmadas
-              </h3>
-              <div class="space-y-3">
-                ${proposta.dados_extraidos.voos.map((v: any) => `
-                  <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
-                    <div>
-                      <div class="font-bold text-slate-800 dark:text-slate-200">${v.companhia} · Voo ${v.voo}</div>
-                      <div class="text-slate-500 mt-0.5">${v.origem} ➔ ${v.destino} · Ida: ${formatarData(v.dataIda)} às ${v.horaIda || '10:00'}</div>
-                    </div>
-                    ${v.localizador ? `
-                      <div class="self-start sm:self-auto px-2.5 py-1 rounded-md bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-extrabold text-[11px] border border-indigo-200 dark:border-indigo-800">
-                        LOC: ${v.localizador}
-                      </div>
-                    ` : ''}
-                  </div>
-                `).join('')}
-              </div>
-            </div>
-          ` : ''}
+          ${(() => {
+            const voosItinerario: any[] = [];
+            if (proposta.itinerario_dias) {
+              proposta.itinerario_dias.forEach((d: any) => {
+                d.itens?.filter((i: any) => i.tipo === 'voo').forEach((i: any) => {
+                  voosItinerario.push({
+                    companhia: i.companhia || i.fornecedor || 'Companhia Aérea',
+                    voo: i.numeroVoo || 'Voo Confirmado',
+                    origem: i.origem,
+                    destino: i.destino,
+                    dataIda: i.dataInicio || d.dataStr || d.data,
+                    horaIda: i.horaInicio || i.horario,
+                    localizador: i.localizador
+                  });
+                });
+              });
+            }
+            const voosFinais = voosItinerario.length > 0 ? voosItinerario : (proposta.dados_extraidos?.voos || []);
+            if (voosFinais.length === 0) return '';
 
-          ${proposta.dados_extraidos?.hospedagens && proposta.dados_extraidos.hospedagens.length > 0 ? `
-            <div class="public-glass p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-md">
-              <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-3">
-                <span>🏨</span> Hospedagem Selecionada
-              </h3>
-              <div class="space-y-3">
-                ${proposta.dados_extraidos.hospedagens.map((h: any) => `
-                  <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
-                    <div>
-                      <div class="font-bold text-slate-800 dark:text-slate-200">${h.hotel}</div>
-                      <div class="text-slate-500 mt-0.5">Check-in: ${formatarData(h.checkIn)} | Check-out: ${formatarData(h.checkOut)}</div>
-                      <div class="text-[11px] text-slate-400 mt-0.5">${h.quarto || 'Quarto Casal'} · ${h.regime || 'Café da manhã'}</div>
-                    </div>
-                    <div class="flex items-center gap-2">
-                      <a href="https://maps.google.com/?q=${encodeURIComponent(h.hotel)}" target="_blank" class="px-2.5 py-1 rounded-md bg-white dark:bg-slate-800 text-indigo-600 font-bold text-[11px] border border-slate-200 dark:border-slate-700 hover:underline">
-                        📍 Ver Mapa
-                      </a>
-                      ${h.voucher ? `
-                        <div class="px-2.5 py-1 rounded-md bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-extrabold text-[11px] border border-indigo-200 dark:border-indigo-800">
-                          VOUCHER: ${h.voucher}
+            return `
+              <div class="public-glass p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-md">
+                <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-3">
+                  <span>✈️</span> Passagens Aéreas Confirmadas
+                </h3>
+                <div class="space-y-3">
+                  ${voosFinais.map((v: any) => `
+                    <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                      <div>
+                        <div class="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2 flex-wrap">
+                          <span class="px-2 py-0.5 rounded text-[10px] font-black bg-indigo-100 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300">
+                            ✈️ ${v.companhia}
+                          </span>
+                          ${v.voo && v.voo !== 'Voo Confirmado' ? `<span>· Voo <strong>${v.voo}</strong></span>` : ''}
+                        </div>
+                        <div class="text-slate-500 mt-1">
+                          ${v.origem && v.destino ? `<strong>${v.origem} ➔ ${v.destino}</strong> · ` : ''}
+                          Ida: ${formatarData(v.dataIda)}${v.horaIda ? ` às ${v.horaIda}` : ''}
+                        </div>
+                      </div>
+                      ${v.localizador ? `
+                        <div class="self-start sm:self-auto px-2.5 py-1 rounded-md bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-mono font-black text-[11px] border border-indigo-200 dark:border-indigo-800">
+                          LOC: ${v.localizador}
                         </div>
                       ` : ''}
                     </div>
-                  </div>
-                `).join('')}
+                  `).join('')}
+                </div>
               </div>
-            </div>
-          ` : ''}
+            `;
+          })()}
+
+          ${(() => {
+            const hoteisItinerario: any[] = [];
+            if (proposta.itinerario_dias) {
+              proposta.itinerario_dias.forEach((d: any) => {
+                d.itens?.filter((i: any) => i.tipo === 'hotel').forEach((i: any) => {
+                  hoteisItinerario.push({
+                    hotel: i.titulo,
+                    checkIn: i.dataInicio || d.dataStr || d.data,
+                    checkOut: i.dataFim,
+                    quarto: i.quarto,
+                    regime: i.regime,
+                    voucher: i.localizador
+                  });
+                });
+              });
+            }
+            const hoteisFinais = hoteisItinerario.length > 0 ? hoteisItinerario : (proposta.dados_extraidos?.hospedagens || []);
+            if (hoteisFinais.length === 0) return '';
+
+            return `
+              <div class="public-glass p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-md">
+                <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-3">
+                  <span>🏨</span> Hospedagem Selecionada
+                </h3>
+                <div class="space-y-3">
+                  ${hoteisFinais.map((h: any) => `
+                    <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                      <div>
+                        <div class="font-bold text-slate-800 dark:text-slate-200">${h.hotel}</div>
+                        <div class="text-slate-500 mt-0.5">Check-in: ${formatarData(h.checkIn)}${h.checkOut ? ` | Check-out: ${formatarData(h.checkOut)}` : ''}</div>
+                        <div class="text-[11px] text-slate-400 mt-0.5">${h.quarto || 'Quarto Casal'} · ${h.regime || 'Café da manhã'}</div>
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <a href="https://maps.google.com/?q=${encodeURIComponent(h.hotel)}" target="_blank" class="px-2.5 py-1 rounded-md bg-white dark:bg-slate-800 text-indigo-600 font-bold text-[11px] border border-slate-200 dark:border-slate-700 hover:underline">
+                          📍 Ver Mapa
+                        </a>
+                        ${h.voucher ? `
+                          <div class="px-2.5 py-1 rounded-md bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-mono font-extrabold text-[11px] border border-emerald-200 dark:border-emerald-800">
+                            VOUCHER: ${h.voucher}
+                          </div>
+                        ` : ''}
+                      </div>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            `;
+          })()}
 
           <!-- LINHA DO TEMPO DIA A DIA -->
           <div class="public-glass p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-md">
@@ -982,9 +1031,23 @@ export class PublicViews {
                   <div class="space-y-2">
                     ${dia.itens.map((item: any) => `
                       <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200/60 dark:border-slate-800/60 text-xs">
-                        <div class="font-bold text-slate-800 dark:text-slate-200 flex items-center justify-between">
-                          <span>${item.titulo}</span>
-                          ${item.horario ? `<span class="text-[11px] text-slate-400 font-normal">${item.horario}</span>` : ''}
+                        <div class="font-bold text-slate-800 dark:text-slate-200 flex items-center justify-between gap-2">
+                          <div class="flex items-center gap-2 flex-wrap">
+                            <span>${item.titulo}</span>
+                            ${item.companhia ? `
+                              <span class="px-2 py-0.5 rounded text-[10px] font-black bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300">
+                                ✈️ ${item.companhia}
+                              </span>
+                            ` : ''}
+                          </div>
+                          <div class="flex items-center gap-1.5 shrink-0">
+                            ${item.localizador ? `
+                              <span class="px-2 py-0.5 rounded text-[10px] font-mono font-black bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200">
+                                LOC: ${item.localizador}
+                              </span>
+                            ` : ''}
+                            ${item.horario ? `<span class="text-[11px] text-slate-400 font-normal">${item.horario}</span>` : ''}
+                          </div>
                         </div>
                         ${item.subtitulo ? `<div class="text-slate-500 mt-1">${item.subtitulo}</div>` : ''}
                         ${item.observacoes ? `<div class="text-slate-400 italic mt-1 text-[11px]">💡 ${item.observacoes}</div>` : ''}

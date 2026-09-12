@@ -296,34 +296,115 @@ export class StudioPdfGenerator {
             <span>✈️ Vouchers e Reservas Confirmadas</span>
           </div>
 
-          ${proposta.dados_extraidos?.voos && proposta.dados_extraidos.voos.length > 0 ? `
-            <div class="card-resumo">
-              <div class="card-header-flex">
-                <div class="card-titulo">Passagens Aéreas Confirmadas</div>
-                ${proposta.dados_extraidos.voos[0].localizador ? `<span class="loc-badge">LOC: ${proposta.dados_extraidos.voos[0].localizador}</span>` : ''}
-              </div>
-              ${proposta.dados_extraidos.voos.map(v => `
-                <div style="margin-top: 6px; font-size: 10pt;">
-                  <strong>${v.companhia} (${v.voo})</strong>: ${v.origem} ➔ ${v.destino} · Ida: ${formatarData(v.dataIda)} às ${v.horaIda || 'Horário a confirmar'}
-                </div>
-              `).join('')}
-            </div>
-          ` : ''}
+          ${(() => {
+            // Extrai voos priorizando os itens revisados pelo usuário no itinerário
+            const voosItinerario: Array<{
+              companhia: string;
+              voo: string;
+              origem?: string;
+              destino?: string;
+              dataIda?: string;
+              horaIda?: string;
+              horaVolta?: string;
+              localizador?: string;
+            }> = [];
 
-          ${proposta.dados_extraidos?.hospedagens && proposta.dados_extraidos.hospedagens.length > 0 ? `
-            <div class="card-resumo">
-              <div class="card-header-flex">
-                <div class="card-titulo">Hospedagem &amp; Conforto</div>
-                ${proposta.dados_extraidos.hospedagens[0].voucher ? `<span class="loc-badge">VOUCHER: ${proposta.dados_extraidos.hospedagens[0].voucher}</span>` : ''}
-              </div>
-              ${proposta.dados_extraidos.hospedagens.map(h => `
-                <div style="margin-top: 6px; font-size: 10pt;">
-                  <strong>${h.hotel}</strong> · Check-in: ${formatarData(h.checkIn)} | Check-out: ${formatarData(h.checkOut)}<br>
-                  <span style="color: #64748b;">${h.quarto || 'Quarto Standard'} · ${h.regime || 'Café da manhã incluso'}</span>
+            if (proposta.itinerario_dias) {
+              proposta.itinerario_dias.forEach(d => {
+                d.itens.filter(i => i.tipo === 'voo').forEach(i => {
+                  voosItinerario.push({
+                    companhia: i.companhia || i.fornecedor || 'Companhia Aérea',
+                    voo: i.numeroVoo || 'Voo Confirmado',
+                    origem: i.origem,
+                    destino: i.destino,
+                    dataIda: i.dataInicio || d.dataStr || d.data,
+                    horaIda: i.horaInicio || i.horario,
+                    horaVolta: i.horaFim,
+                    localizador: i.localizador
+                  });
+                });
+              });
+            }
+
+            const voosFinais = voosItinerario.length > 0 ? voosItinerario : (proposta.dados_extraidos?.voos || []);
+            if (voosFinais.length === 0) return '';
+
+            return `
+              <div class="card-resumo">
+                <div class="card-header-flex">
+                  <div class="card-titulo">Passagens Aéreas Confirmadas</div>
+                  ${voosFinais[0].localizador ? `<span class="loc-badge">LOC: ${voosFinais[0].localizador}</span>` : ''}
                 </div>
-              `).join('')}
-            </div>
-          ` : ''}
+                ${voosFinais.map(v => `
+                  <div style="margin-top: 8px; padding-bottom: 6px; border-bottom: 1px dashed #cbd5e1; font-size: 10pt;">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                      <span>
+                        <strong style="color: #4f46e5;">✈️ ${v.companhia}</strong>
+                        ${v.voo && v.voo !== 'Voo Confirmado' ? `· Voo <strong>${v.voo}</strong>` : ''}
+                      </span>
+                      ${v.localizador ? `<span style="font-family: monospace; font-weight: 700; background: #e0e7ff; color: #3730a3; padding: 2px 6px; border-radius: 4px; font-size: 8.5pt;">LOC: ${v.localizador}</span>` : ''}
+                    </div>
+                    <div style="margin-top: 3px; color: #334155;">
+                      ${v.origem && v.destino ? `Trecho: <strong>${v.origem} ➔ ${v.destino}</strong> · ` : ''}
+                      Data: <strong>${formatarData(v.dataIda)}</strong>
+                      ${v.horaIda ? ` às <strong>${v.horaIda}</strong>` : ''}
+                      ${v.horaVolta ? ` (Chegada: ${v.horaVolta})` : ''}
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            `;
+          })()}
+
+          ${(() => {
+            // Extrai hotéis priorizando itens revisados pelo usuário
+            const hoteisItinerario: Array<{
+              hotel: string;
+              checkIn?: string;
+              checkOut?: string;
+              quarto?: string;
+              regime?: string;
+              voucher?: string;
+            }> = [];
+
+            if (proposta.itinerario_dias) {
+              proposta.itinerario_dias.forEach(d => {
+                d.itens.filter(i => i.tipo === 'hotel').forEach(i => {
+                  hoteisItinerario.push({
+                    hotel: i.titulo,
+                    checkIn: i.dataInicio || d.dataStr || d.data,
+                    checkOut: i.dataFim,
+                    quarto: i.quarto,
+                    regime: i.regime,
+                    voucher: i.localizador
+                  });
+                });
+              });
+            }
+
+            const hoteisFinais = hoteisItinerario.length > 0 ? hoteisItinerario : (proposta.dados_extraidos?.hospedagens || []);
+            if (hoteisFinais.length === 0) return '';
+
+            return `
+              <div class="card-resumo">
+                <div class="card-header-flex">
+                  <div class="card-titulo">Hospedagem &amp; Conforto</div>
+                  ${hoteisFinais[0].voucher ? `<span class="loc-badge">VOUCHER: ${hoteisFinais[0].voucher}</span>` : ''}
+                </div>
+                ${hoteisFinais.map(h => `
+                  <div style="margin-top: 8px; font-size: 10pt;">
+                    <strong>🏨 ${h.hotel}</strong>
+                    ${h.voucher ? ` · <span style="font-family: monospace; font-weight: 700; color: #047857;">Voucher: ${h.voucher}</span>` : ''}
+                    <br>
+                    <span style="color: #475569;">
+                      Check-in: ${formatarData(h.checkIn)} | Check-out: ${formatarData(h.checkOut) || 'Conforme Roteiro'} · 
+                      <em>${h.quarto || 'Acomodação'} · ${h.regime || 'Hospedagem'}</em>
+                    </span>
+                  </div>
+                `).join('')}
+              </div>
+            `;
+          })()}
 
           ${proposta.dados_extraidos?.servicos && proposta.dados_extraidos.servicos.length > 0 ? `
             <div class="card-resumo">
@@ -333,6 +414,7 @@ export class StudioPdfGenerator {
               ${proposta.dados_extraidos.servicos.map(s => `
                 <div style="margin-top: 6px; font-size: 10pt;">
                   <strong>${s.tipo}</strong>: ${s.descricao} (${s.fornecedor || 'Parceiro Homologado'})
+                  ${s.voucher ? ` · <span style="font-family: monospace; font-weight: 700;">Ref: ${s.voucher}</span>` : ''}
                 </div>
               `).join('')}
             </div>
@@ -351,8 +433,13 @@ export class StudioPdfGenerator {
               </div>
               ${dia.itens.map(item => `
                 <div class="atividade-card">
-                  ${item.horario ? `<div class="atividade-hora">${item.horario}</div>` : ''}
-                  <div class="atividade-titulo">${item.titulo}</div>
+                  <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 8px;">
+                    <div>
+                      ${item.horario || item.horaInicio ? `<span class="atividade-hora">${item.horario || item.horaInicio}</span> · ` : ''}
+                      <span class="atividade-titulo">${item.titulo}</span>
+                    </div>
+                    ${item.localizador ? `<span class="loc-badge" style="font-size: 8pt; padding: 2px 6px;">LOC: ${item.localizador}</span>` : ''}
+                  </div>
                   ${item.subtitulo ? `<div class="atividade-desc">${item.subtitulo}</div>` : ''}
                   ${item.observacoes ? `<div class="atividade-desc" style="font-style: italic; color: #64748b;">Obs: ${item.observacoes}</div>` : ''}
                 </div>

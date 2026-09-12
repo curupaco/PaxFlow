@@ -103,4 +103,51 @@ describe('StudioExtractionService - Testes Subcutâneos de Extração e Linha do
     expect(dias[2].data).toBe('2026-10-17');
     expect(dias[2].itens.some(i => i.id === '3')).toBe(true);
   });
+
+  it('NÃO deve trocar nem alucinar companhia aérea com palavras soltas como LA ou AD (Tolerância Zero a Falsos Positivos)', async () => {
+    // Setup: bilhete com indicador de adulto "1 ADT" e cidade "LA PAZ", sem ser Azul nem LATAM
+    const textoSemCia = `
+      CONFIRMAÇÃO DE RESERVA DE VOO
+      Passageiro: 1 ADT
+      Voo: 7890
+      Trecho: VVI -> LPB (La Paz)
+      Data: 20/11/2026 14:00
+      Localizador: BOL999
+    `;
+
+    // Action
+    const resultado = await StudioExtractionService.extrairDados(textoSemCia, 'voo_lapaz.txt');
+
+    // Assert: NÃO deve ser identificado como LATAM nem AZUL
+    const voo = resultado.itens[0];
+    expect(voo).toBeDefined();
+    expect(voo.companhia).not.toBe('LATAM Airlines');
+    expect(voo.companhia).not.toBe('Azul Linhas Aéreas');
+    // Fidelidade: como não havia cia oficial no texto, mantém vazio para escolha pelo agente
+    expect(voo.companhia).toBe('');
+  });
+
+  it('deve extrair com precisão companhias internacionais (ex: Air France, Turkish) e campos estruturados', async () => {
+    // Setup
+    const textoAirFrance = `
+      BILHETE ELETRÔNICO - AIR FRANCE
+      Voo AF 443
+      Origem: GIG
+      Destino: CDG
+      Data: 10/12/2026 21:55
+      Localizador: AFR888
+    `;
+
+    // Action
+    const resultado = await StudioExtractionService.processarTextoColado(textoAirFrance);
+
+    // Assert
+    expect(resultado.itens.length).toBe(1);
+    const item = resultado.itens[0];
+    expect(item.companhia).toBe('Air France');
+    expect(item.numeroVoo).toContain('AF 443');
+    expect(item.origem).toBe('GIG');
+    expect(item.destino).toBe('CDG');
+    expect(item.localizador).toBe('AFR888');
+  });
 });

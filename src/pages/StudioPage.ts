@@ -1,4 +1,4 @@
-import { StudioExtractionService } from '../services/studioExtractionService';
+import { StudioExtractionService, CATALOGO_CIAS_AEREAS } from '../services/studioExtractionService';
 import { StudioPropostasService } from '../services/studioPropostasService';
 import { StudioPdfGenerator } from '../components/studio/StudioPdfGenerator';
 import { StudioProposta, StudioDiaItinerario, StudioItemItinerario } from '../types';
@@ -15,6 +15,7 @@ export class StudioPage {
   };
   private propostasSalvas: StudioProposta[] = [];
   private processandoArquivo: boolean = false;
+  private itensExpandidos: Set<string> = new Set();
 
   // Fotos de capa sugeridas por destino
   private static FOTOS_CAPA = [
@@ -58,10 +59,6 @@ export class StudioPage {
   }
 
   private render(): void {
-    const formatarMoeda = (val?: number) => {
-      return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: this.propostaAtual.moeda || 'BRL' }).format(val || 0);
-    };
-
     this.container.innerHTML = `
       <div class="min-h-full pb-16 space-y-6">
         <!-- HEADER DA PÁGINA COM BADGE STUDIO PRO -->
@@ -103,13 +100,18 @@ export class StudioPage {
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
           <!-- COLUNA ESQUERDA: INGESTÃO E DADOS GERAIS (5 cols) -->
           <div class="lg:col-span-5 space-y-6">
-            <!-- DROPZONE MULTI-PDF -->
+            <!-- DROPZONE MULTI-PDF E COLAR TEXTO -->
             <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-              <h2 class="text-sm font-bold text-slate-900 dark:text-white mb-2 flex items-center gap-2">
-                <span>📥</span> Ingestão Inteligente de Documentos
-              </h2>
+              <div class="flex items-center justify-between mb-2">
+                <h2 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <span>📥</span> Ingestão de Documentos
+                </h2>
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                  Fidelidade Estrita
+                </span>
+              </div>
               <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">
-                Arraste ou selecione 1 ou mais PDFs de fornecedores (LATAM, Azul, CVC, Trend, E-HTL, Coris, etc.). O sistema detectará automaticamente voos, hotéis e valores.
+                Arraste PDFs de consolidadoras ou cole mensagens de WhatsApp e e-mails de reserva. Suas companhias aéreas e vouchers são preservados com precisão documental.
               </p>
 
               <div id="dropzone-pdf" class="border-2 border-dashed border-indigo-300 dark:border-indigo-900 hover:border-indigo-500 bg-indigo-50/40 dark:bg-indigo-950/20 rounded-2xl p-6 text-center cursor-pointer transition flex flex-col items-center justify-center gap-2">
@@ -120,13 +122,18 @@ export class StudioPage {
                 <div class="text-xs font-bold text-slate-800 dark:text-slate-200">
                   Clique ou arraste seus PDFs aqui
                 </div>
-                <span class="text-[11px] text-slate-500">Aceita múltiplos arquivos de uma só vez</span>
+                <span class="text-[11px] text-slate-500">LATAM, Gol, Azul, TAP, Air France, CVC, Trend, Coris...</span>
               </div>
+
+              <!-- BOTÃO COLAR TEXTO DE RESERVA -->
+              <button id="btn-abrir-modal-colar" type="button" class="w-full mt-3 px-3 py-2 text-xs font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 border border-indigo-200 dark:border-indigo-800 rounded-xl transition flex items-center justify-center gap-2">
+                <span>📋</span> Colar Texto da Reserva / E-mail / WhatsApp
+              </button>
 
               <!-- FEEDBACK DE PROCESSAMENTO -->
               <div id="status-processamento" class="mt-3 hidden">
                 <div class="flex items-center gap-2 text-xs font-bold text-indigo-600 dark:text-indigo-400 animate-pulse">
-                  <span class="animate-spin">🔄</span> Extraindo voos, vouchers e valores...
+                  <span class="animate-spin">🔄</span> Processando documentos com fidelidade estrita...
                 </div>
               </div>
 
@@ -216,22 +223,29 @@ export class StudioPage {
             </div>
           </div>
 
-          <!-- COLUNA DIREITA: PREVIEW DA LINHA DO TEMPO & EDITOR (7 cols) -->
+          <!-- COLUNA DIREITA: PREVIEW DA LINHA DO TEMPO & REVISÃO EDITÁVEL (7 cols) -->
           <div class="lg:col-span-7 space-y-6">
             <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-              <div class="flex items-center justify-between mb-4">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
                 <div>
                   <h2 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                    <span>📅</span> Roteiro &amp; Linha do Tempo Interativa
+                    <span>📅</span> Roteiro &amp; Revisão da Linha do Tempo
                   </h2>
-                  <p class="text-xs text-slate-500">Organize os dias, botões de ação e notas para o cliente.</p>
+                  <p class="text-xs text-slate-500">
+                    Clique em <strong class="text-indigo-600">Revisar Detalhes</strong> para alterar qualquer voo, companhia, hotel ou voucher.
+                  </p>
                 </div>
-                <button id="btn-adicionar-dia" class="px-3 py-1.5 text-xs font-bold text-indigo-600 bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 rounded-lg transition">
-                  + Adicionar Dia
-                </button>
+                <div class="flex items-center gap-2">
+                  <button id="btn-toggle-todos" class="px-2.5 py-1.5 text-xs font-bold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 rounded-lg transition">
+                    Expandir / Recolher Tudo
+                  </button>
+                  <button id="btn-adicionar-dia" class="px-3 py-1.5 text-xs font-bold text-indigo-600 bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 rounded-lg transition">
+                    + Adicionar Dia
+                  </button>
+                </div>
               </div>
 
-              <!-- LISTA DE DIAS -->
+              <!-- LISTA DE DIAS E ITENS EXPANSÍVEIS -->
               <div id="container-dias-itinerario" class="space-y-4">
                 ${this.renderDiasItinerario()}
               </div>
@@ -247,6 +261,47 @@ export class StudioPage {
           </div>
         </div>
       </div>
+
+      <!-- DATALIST COM COMPANHIAS AÉREAS OFICIAIS -->
+      <datalist id="lista-cias-aereas">
+        ${CATALOGO_CIAS_AEREAS.map(c => `<option value="${c.nome}">${c.nome}</option>`).join('')}
+        <option value="GOL Linhas Aéreas">G3 - GOL</option>
+        <option value="LATAM Airlines">LA - LATAM</option>
+        <option value="Azul Linhas Aéreas">AD - Azul</option>
+        <option value="TAP Air Portugal">TP - TAP</option>
+        <option value="Air France">AF - Air France</option>
+        <option value="KLM">KL - KLM</option>
+        <option value="Emirates">EK - Emirates</option>
+        <option value="Qatar Airways">QR - Qatar Airways</option>
+        <option value="American Airlines">AA - American Airlines</option>
+        <option value="Delta Air Lines">DL - Delta</option>
+        <option value="United Airlines">UA - United</option>
+        <option value="Turkish Airlines">TK - Turkish</option>
+      </datalist>
+
+      <!-- MODAL PARA COLAR TEXTO DA RESERVA -->
+      <div id="modal-colar-texto" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 max-w-lg w-full p-6 shadow-2xl space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
+              <span>📋</span> Colar Texto de Reserva / Voo / Hotel
+            </h3>
+            <button id="btn-fechar-modal-colar" class="text-slate-400 hover:text-slate-600 text-sm font-bold">✕</button>
+          </div>
+          <p class="text-xs text-slate-500 dark:text-slate-400">
+            Cole aqui a confirmação copiada de e-mail, WhatsApp ou GDS (Sabre, Amadeus). O sistema extrairá os voos, trechos e hotéis com estrita fidelidade.
+          </p>
+          <textarea id="textarea-texto-colado" rows="8" placeholder="Ex: Bilhete Eletrônico LATAM Airlines, Voo LA3421, GRU para MIA, Localizador: LAX99Z..." class="w-full px-3 py-2 text-xs font-mono rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:border-indigo-500"></textarea>
+          <div class="flex justify-end gap-2">
+            <button id="btn-cancelar-colar" type="button" class="px-3 py-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition">
+              Cancelar
+            </button>
+            <button id="btn-confirmar-colar" type="button" class="px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition flex items-center gap-1.5">
+              <span>⚡</span> Extrair Informações
+            </button>
+          </div>
+        </div>
+      </div>
     `;
 
     this.setupListeners();
@@ -257,7 +312,7 @@ export class StudioPage {
     if (dias.length === 0) {
       return `
         <div class="text-center py-8 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl p-4 text-xs text-slate-400">
-          Nenhum dia cadastrado ainda. Arraste PDFs de fornecedores ao lado ou clique em "+ Adicionar Dia".
+          Nenhum dia cadastrado ainda. Arraste PDFs ao lado, cole texto de reservas ou clique em "+ Adicionar Dia".
         </div>
       `;
     }
@@ -267,8 +322,8 @@ export class StudioPage {
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2">
             <span class="px-2 py-0.5 rounded text-[10px] font-black bg-indigo-600 text-white">DIA ${dia.diaNumero}</span>
-            <input type="text" class="input-titulo-dia text-xs font-bold bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 focus:outline-none px-1 text-slate-800 dark:text-slate-100" value="${dia.tituloDia}" />
-            <span class="text-[11px] text-slate-400">(${dia.dataStr || dia.data || 'Data livre'})</span>
+            <input type="text" class="input-titulo-dia text-xs font-bold bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 focus:outline-none px-1 text-slate-800 dark:text-slate-100" value="${dia.tituloDia}" data-dia-idx="${dIdx}" />
+            <input type="date" class="input-data-dia text-[11px] text-slate-500 dark:text-slate-400 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 focus:outline-none px-1" value="${dia.dataStr || dia.data || ''}" data-dia-idx="${dIdx}" />
           </div>
           <div class="flex items-center gap-2">
             <button type="button" class="btn-add-atividade text-[11px] font-bold text-indigo-600 hover:text-indigo-700" data-dia-idx="${dIdx}">
@@ -280,30 +335,199 @@ export class StudioPage {
           </div>
         </div>
 
-        <!-- ATIVIDADES DO DIA -->
-        <div class="space-y-2 pl-2 border-l-2 border-indigo-200 dark:border-indigo-900">
-          ${dia.itens.map((item, iIdx) => `
-            <div class="bg-white dark:bg-slate-800 p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs flex items-start justify-between gap-2 shadow-xs">
-              <div class="flex-1 space-y-1">
-                <div class="flex items-center gap-2">
-                  <span class="text-sm">${this.obterIconeTipo(item.tipo)}</span>
-                  <input type="text" class="input-item-titulo font-bold text-slate-800 dark:text-slate-100 bg-transparent border-b border-transparent focus:border-indigo-500 focus:outline-none w-full" value="${item.titulo}" data-dia-idx="${dIdx}" data-item-idx="${iIdx}" />
-                </div>
-                <input type="text" class="input-item-subtitulo text-[11px] text-slate-500 dark:text-slate-400 bg-transparent border-b border-transparent focus:border-indigo-500 focus:outline-none w-full" value="${item.subtitulo || ''}" placeholder="Detalhes, horários, observações..." data-dia-idx="${dIdx}" data-item-idx="${iIdx}" />
-                ${item.linkMaps ? `
-                  <a href="${item.linkMaps}" target="_blank" class="inline-flex items-center gap-1 text-[10px] text-indigo-600 font-bold hover:underline">
-                    📍 Ver no Google Maps
-                  </a>
-                ` : ''}
-              </div>
-              <button type="button" class="btn-remover-item text-slate-400 hover:text-rose-500 text-xs" data-dia-idx="${dIdx}" data-item-idx="${iIdx}">
-                ✕
-              </button>
-            </div>
-          `).join('')}
+        <!-- LISTA DE ITENS DO DIA COM REVISÃO EXPANSÍVEL -->
+        <div class="space-y-3 pl-2 border-l-2 border-indigo-200 dark:border-indigo-900">
+          ${dia.itens.map((item, iIdx) => this.renderCardItem(item, dIdx, iIdx)).join('')}
         </div>
       </div>
     `).join('');
+  }
+
+  private renderCardItem(item: StudioItemItinerario, dIdx: number, iIdx: number): string {
+    const itemChave = `${dIdx}-${iIdx}`;
+    const estaExpandido = this.itensExpandidos.has(itemChave);
+
+    const badgeTipo = (tipo: string) => {
+      switch (tipo) {
+        case 'voo':
+          return `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300">Voo</span>`;
+        case 'hotel':
+          return `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">Hotel</span>`;
+        case 'transfer':
+          return `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300">Transfer</span>`;
+        case 'seguro':
+          return `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">Seguro</span>`;
+        default:
+          return `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300">Passeio</span>`;
+      }
+    };
+
+    return `
+      <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-xs shadow-xs overflow-hidden transition" data-dia-idx="${dIdx}" data-item-idx="${iIdx}">
+        <!-- CABEÇALHO / VISUAL RESUMO DO ITEM -->
+        <div class="p-3 flex items-start justify-between gap-2">
+          <div class="flex items-start gap-2.5 flex-1 min-w-0">
+            <span class="text-base flex-shrink-0 mt-0.5">${this.obterIconeTipo(item.tipo)}</span>
+            <div class="space-y-1 min-w-0 flex-1">
+              <div class="flex flex-wrap items-center gap-1.5">
+                ${badgeTipo(item.tipo)}
+                ${item.companhia ? `
+                  <span class="px-2 py-0.5 rounded text-[10px] font-black bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                    ✈️ ${item.companhia}
+                  </span>
+                ` : ''}
+                ${item.localizador ? `
+                  <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
+                    LOC: ${item.localizador}
+                  </span>
+                ` : ''}
+                ${item.horario || item.horaInicio ? `
+                  <span class="text-[10px] text-slate-500 font-bold">
+                    ⏰ ${item.horario || item.horaInicio}
+                  </span>
+                ` : ''}
+              </div>
+
+              <div class="font-bold text-slate-800 dark:text-slate-100 truncate text-xs">
+                ${item.titulo || 'Item sem título'}
+              </div>
+
+              <div class="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                ${item.subtitulo || item.observacoes || 'Clique em Revisar Detalhes para preencher.'}
+              </div>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-1 flex-shrink-0">
+            <button type="button" class="btn-toggle-revisao px-2 py-1 text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 rounded-lg transition" data-chave="${itemChave}">
+              ${estaExpandido ? '▲ Recolher' : '✏️ Revisar Detalhes'}
+            </button>
+            <button type="button" class="btn-remover-item text-slate-400 hover:text-rose-500 p-1 text-xs" data-dia-idx="${dIdx}" data-item-idx="${iIdx}" title="Excluir Item">
+              ✕
+            </button>
+          </div>
+        </div>
+
+        <!-- FORMULÁRIO COMPLETO DE REVISÃO E ALTERAÇÃO DO ITEM (EXPANSÍVEL) -->
+        <div id="form-revisao-${itemChave}" class="border-t border-slate-100 dark:border-slate-700/80 bg-slate-50/60 dark:bg-slate-900/40 p-3.5 space-y-3 ${estaExpandido ? '' : 'hidden'}">
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] font-black uppercase tracking-wider text-slate-500">
+              Configurações &amp; Dados Estruturados do Documento
+            </span>
+            <div class="flex items-center gap-1.5">
+              <label class="text-[10px] text-slate-500 font-bold">Tipo:</label>
+              <select class="input-item-campo px-2 py-0.5 rounded text-[11px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold" data-dia-idx="${dIdx}" data-item-idx="${iIdx}" data-campo="tipo">
+                <option value="voo" ${item.tipo === 'voo' ? 'selected' : ''}>✈️ Voo</option>
+                <option value="hotel" ${item.tipo === 'hotel' ? 'selected' : ''}>🏨 Hotel</option>
+                <option value="passeio" ${item.tipo === 'passeio' ? 'selected' : ''}>🗺️ Passeio</option>
+                <option value="transfer" ${item.tipo === 'transfer' ? 'selected' : ''}>🚐 Transfer</option>
+                <option value="seguro" ${item.tipo === 'seguro' ? 'selected' : ''}>🛡️ Seguro</option>
+                <option value="nota" ${item.tipo === 'nota' ? 'selected' : ''}>📌 Nota / Dica</option>
+              </select>
+            </div>
+          </div>
+
+          ${item.tipo === 'voo' ? `
+            <!-- CAMPOS ESPECÍFICOS DE VOO -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+              <div>
+                <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-300 mb-0.5">Companhia Aérea *</label>
+                <input type="text" list="lista-cias-aereas" class="input-item-campo input-sync-voo w-full px-2.5 py-1.5 text-xs rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-indigo-700 dark:text-indigo-300" value="${item.companhia || ''}" placeholder="Ex: LATAM Airlines" data-dia-idx="${dIdx}" data-item-idx="${iIdx}" data-campo="companhia" />
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-300 mb-0.5">Número do Voo</label>
+                <input type="text" class="input-item-campo input-sync-voo w-full px-2.5 py-1.5 text-xs rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono" value="${item.numeroVoo || ''}" placeholder="Ex: LA 3421, AF 443" data-dia-idx="${dIdx}" data-item-idx="${iIdx}" data-campo="numeroVoo" />
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-300 mb-0.5">Localizador (LOC / PNR)</label>
+                <input type="text" class="input-item-campo w-full px-2.5 py-1.5 text-xs rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono font-bold" value="${item.localizador || ''}" placeholder="Ex: LAX99Z" data-dia-idx="${dIdx}" data-item-idx="${iIdx}" data-campo="localizador" />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-2.5">
+              <div>
+                <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-300 mb-0.5">Origem (IATA / Cidade)</label>
+                <input type="text" class="input-item-campo input-sync-voo w-full px-2.5 py-1.5 text-xs rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 uppercase" value="${item.origem || ''}" placeholder="GRU" data-dia-idx="${dIdx}" data-item-idx="${iIdx}" data-campo="origem" />
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-300 mb-0.5">Destino (IATA / Cidade)</label>
+                <input type="text" class="input-item-campo input-sync-voo w-full px-2.5 py-1.5 text-xs rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 uppercase" value="${item.destino || ''}" placeholder="MIA" data-dia-idx="${dIdx}" data-item-idx="${iIdx}" data-campo="destino" />
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-300 mb-0.5">Horário de Embarque</label>
+                <input type="text" class="input-item-campo w-full px-2.5 py-1.5 text-xs rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700" value="${item.horaInicio || item.horario || ''}" placeholder="22:15" data-dia-idx="${dIdx}" data-item-idx="${iIdx}" data-campo="horaInicio" />
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-300 mb-0.5">Horário de Chegada</label>
+                <input type="text" class="input-item-campo w-full px-2.5 py-1.5 text-xs rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700" value="${item.horaFim || ''}" placeholder="06:30" data-dia-idx="${dIdx}" data-item-idx="${iIdx}" data-campo="horaFim" />
+              </div>
+            </div>
+          ` : item.tipo === 'hotel' ? `
+            <!-- CAMPOS ESPECÍFICOS DE HOTEL -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+              <div class="md:col-span-2">
+                <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-300 mb-0.5">Nome do Hotel / Pousada *</label>
+                <input type="text" class="input-item-campo input-sync-hotel w-full px-2.5 py-1.5 text-xs rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold" value="${item.titulo || ''}" placeholder="Ex: Hotel Fasano Rio de Janeiro" data-dia-idx="${dIdx}" data-item-idx="${iIdx}" data-campo="titulo" />
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-300 mb-0.5">Voucher / Confirmação</label>
+                <input type="text" class="input-item-campo w-full px-2.5 py-1.5 text-xs rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono font-bold" value="${item.localizador || ''}" placeholder="Ex: BK-88412" data-dia-idx="${dIdx}" data-item-idx="${iIdx}" data-campo="localizador" />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+              <div>
+                <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-300 mb-0.5">Tipo de Quarto / Acomodação</label>
+                <input type="text" class="input-item-campo input-sync-hotel w-full px-2.5 py-1.5 text-xs rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700" value="${item.quarto || ''}" placeholder="Ex: Suíte Deluxe Vista Mar" data-dia-idx="${dIdx}" data-item-idx="${iIdx}" data-campo="quarto" />
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-300 mb-0.5">Regime de Alimentação</label>
+                <input type="text" class="input-item-campo input-sync-hotel w-full px-2.5 py-1.5 text-xs rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700" value="${item.regime || ''}" placeholder="Ex: Café da Manhã Incluso, All Inclusive" data-dia-idx="${dIdx}" data-item-idx="${iIdx}" data-campo="regime" />
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-300 mb-0.5">Link Google Maps / Endereço</label>
+                <input type="text" class="input-item-campo w-full px-2.5 py-1.5 text-xs rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700" value="${item.linkMaps || item.endereco || ''}" placeholder="https://maps.google.com/..." data-dia-idx="${dIdx}" data-item-idx="${iIdx}" data-campo="linkMaps" />
+              </div>
+            </div>
+          ` : `
+            <!-- CAMPOS PARA SERVIÇO / PASSEIO / SEGURO / TRANSFER -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+              <div class="md:col-span-2">
+                <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-300 mb-0.5">Nome do Serviço / Passeio *</label>
+                <input type="text" class="input-item-campo w-full px-2.5 py-1.5 text-xs rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold" value="${item.titulo || ''}" placeholder="Ex: Transfer Receptivo Privativo" data-dia-idx="${dIdx}" data-item-idx="${iIdx}" data-campo="titulo" />
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-300 mb-0.5">Fornecedor / Operadora</label>
+                <input type="text" class="input-item-campo w-full px-2.5 py-1.5 text-xs rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700" value="${item.fornecedor || ''}" placeholder="Ex: Coris, GTA, Operadora..." data-dia-idx="${dIdx}" data-item-idx="${iIdx}" data-campo="fornecedor" />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+              <div>
+                <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-300 mb-0.5">Localizador / Apólice / Voucher</label>
+                <input type="text" class="input-item-campo w-full px-2.5 py-1.5 text-xs rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono font-bold" value="${item.localizador || ''}" placeholder="Ex: AP-99412" data-dia-idx="${dIdx}" data-item-idx="${iIdx}" data-campo="localizador" />
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-300 mb-0.5">Horário Programado</label>
+                <input type="text" class="input-item-campo w-full px-2.5 py-1.5 text-xs rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700" value="${item.horario || item.horaInicio || ''}" placeholder="Ex: 09:30" data-dia-idx="${dIdx}" data-item-idx="${iIdx}" data-campo="horario" />
+              </div>
+            </div>
+          `}
+
+          <!-- CAMPOS GERAIS DE TEXTO (TÍTULO E SUBTÍTULO LIVRES) -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 pt-1 border-t border-slate-200/50 dark:border-slate-700/50">
+            <div>
+              <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-300 mb-0.5">Título no PDF / Link Público</label>
+              <input type="text" class="input-item-campo input-item-titulo w-full px-2.5 py-1.5 text-xs rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold" value="${item.titulo}" data-dia-idx="${dIdx}" data-item-idx="${iIdx}" data-campo="titulo" />
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-300 mb-0.5">Subtítulo / Instruções para o Passageiro</label>
+              <input type="text" class="input-item-campo input-item-subtitulo w-full px-2.5 py-1.5 text-xs rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300" value="${item.subtitulo || ''}" placeholder="Ex: Check-in online 48h antes / Apresentar voucher na recepção" data-dia-idx="${dIdx}" data-item-idx="${iIdx}" data-campo="subtitulo" />
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
   }
 
   private renderTabelaPropostas(): string {
@@ -402,7 +626,37 @@ export class StudioPage {
       }
     });
 
-    // 2. Seletor de fotos de capa
+    // 2. Modal de Colar Texto de Reserva
+    const modalColar = this.container.querySelector('#modal-colar-texto');
+    const btnAbrirColar = this.container.querySelector('#btn-abrir-modal-colar');
+    const btnFecharColar = this.container.querySelector('#btn-fechar-modal-colar');
+    const btnCancelarColar = this.container.querySelector('#btn-cancelar-colar');
+    const btnConfirmarColar = this.container.querySelector('#btn-confirmar-colar');
+    const textareaColar = this.container.querySelector('#textarea-texto-colado') as HTMLTextAreaElement;
+
+    btnAbrirColar?.addEventListener('click', () => {
+      modalColar?.classList.remove('hidden');
+      if (textareaColar) {
+        textareaColar.value = '';
+        textareaColar.focus();
+      }
+    });
+
+    const fecharModal = () => modalColar?.classList.add('hidden');
+    btnFecharColar?.addEventListener('click', fecharModal);
+    btnCancelarColar?.addEventListener('click', fecharModal);
+
+    btnConfirmarColar?.addEventListener('click', async () => {
+      const texto = textareaColar?.value.trim();
+      if (!texto) {
+        alert('Por favor, cole o texto do bilhete ou reserva.');
+        return;
+      }
+      fecharModal();
+      await this.processarTextoColado(texto);
+    });
+
+    // 3. Seletor de fotos de capa
     this.container.querySelectorAll('.btn-selecionar-capa').forEach(btn => {
       btn.addEventListener('click', () => {
         const url = btn.getAttribute('data-url');
@@ -416,7 +670,7 @@ export class StudioPage {
       });
     });
 
-    // 3. Botão Nova Proposta
+    // 4. Botão Nova Proposta
     this.container.querySelector('#btn-nova-proposta')?.addEventListener('click', () => {
       this.propostaAtual = {
         cliente_nome: '',
@@ -426,21 +680,22 @@ export class StudioPage {
         status: 'RASCUNHO',
         itinerario_dias: []
       };
+      this.itensExpandidos.clear();
       this.render();
     });
 
-    // 4. Salvar Proposta
+    // 5. Salvar Proposta
     this.container.querySelector('#btn-salvar-proposta')?.addEventListener('click', async () => {
       await this.salvarPropostaAtual();
     });
 
-    // 5. Imprimir Caderno PDF
+    // 6. Imprimir Caderno PDF
     this.container.querySelector('#btn-imprimir-pdf')?.addEventListener('click', () => {
       this.atualizarDadosDoFormulario();
       StudioPdfGenerator.imprimirOuSalvarPdf(this.propostaAtual as StudioProposta);
     });
 
-    // 6. Link Público / Copiar Link
+    // 7. Link Público / Copiar Link
     this.container.querySelector('#btn-link-publico')?.addEventListener('click', async () => {
       await this.salvarPropostaAtual();
       if (this.propostaAtual.id) {
@@ -450,7 +705,7 @@ export class StudioPage {
       }
     });
 
-    // 7. Efetivar em Viagem
+    // 8. Efetivar em Viagem
     this.container.querySelector('#btn-efetivar-viagem')?.addEventListener('click', async () => {
       if (!this.propostaAtual.id) return;
       if (confirm('Deseja converter esta proposta em uma viagem confirmada no PaxFlow?')) {
@@ -464,8 +719,9 @@ export class StudioPage {
       }
     });
 
-    // 8. Adicionar Dia
+    // 9. Adicionar Dia
     this.container.querySelector('#btn-adicionar-dia')?.addEventListener('click', () => {
+      this.atualizarDadosDoFormulario();
       if (!this.propostaAtual.itinerario_dias) this.propostaAtual.itinerario_dias = [];
       const novoNum = this.propostaAtual.itinerario_dias.length + 1;
       this.propostaAtual.itinerario_dias.push({
@@ -484,7 +740,132 @@ export class StudioPage {
       this.render();
     });
 
-    // 9. Ações na tabela
+    // 10. Expandir / Recolher Todos os Cards
+    this.container.querySelector('#btn-toggle-todos')?.addEventListener('click', () => {
+      const totalItens = (this.propostaAtual.itinerario_dias || []).reduce((acc, d) => acc + d.itens.length, 0);
+      if (this.itensExpandidos.size >= totalItens) {
+        this.itensExpandidos.clear();
+      } else {
+        this.propostaAtual.itinerario_dias?.forEach((dia, dIdx) => {
+          dia.itens.forEach((_, iIdx) => {
+            this.itensExpandidos.add(`${dIdx}-${iIdx}`);
+          });
+        });
+      }
+      this.atualizarDadosDoFormulario();
+      this.render();
+    });
+
+    // 11. Toggle individual de revisão do item
+    this.container.querySelectorAll('.btn-toggle-revisao').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const chave = btn.getAttribute('data-chave');
+        if (chave) {
+          if (this.itensExpandidos.has(chave)) {
+            this.itensExpandidos.delete(chave);
+          } else {
+            this.itensExpandidos.add(chave);
+          }
+          this.atualizarDadosDoFormulario();
+          this.render();
+        }
+      });
+    });
+
+    // 12. Adicionar atividade no dia
+    this.container.querySelectorAll('.btn-add-atividade').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const dIdx = parseInt(btn.getAttribute('data-dia-idx') || '0', 10);
+        this.atualizarDadosDoFormulario();
+        if (this.propostaAtual.itinerario_dias?.[dIdx]) {
+          const novoItem: StudioItemItinerario = {
+            id: `item-${Date.now()}`,
+            tipo: 'voo',
+            titulo: 'Novo Voo',
+            subtitulo: 'Horário a definir',
+            companhia: '',
+            status: 'confirmado'
+          };
+          this.propostaAtual.itinerario_dias[dIdx].itens.push(novoItem);
+          const novoIdx = this.propostaAtual.itinerario_dias[dIdx].itens.length - 1;
+          this.itensExpandidos.add(`${dIdx}-${novoIdx}`);
+          this.render();
+        }
+      });
+    });
+
+    // 13. Remover dia
+    this.container.querySelectorAll('.btn-remover-dia').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const dIdx = parseInt(btn.getAttribute('data-dia-idx') || '0', 10);
+        this.atualizarDadosDoFormulario();
+        if (this.propostaAtual.itinerario_dias && confirm(`Deseja excluir o Dia ${dIdx + 1} e todos os seus itens?`)) {
+          this.propostaAtual.itinerario_dias.splice(dIdx, 1);
+          // Renumera dias
+          this.propostaAtual.itinerario_dias.forEach((d, idx) => d.diaNumero = idx + 1);
+          this.itensExpandidos.clear();
+          this.render();
+        }
+      });
+    });
+
+    // 14. Remover item
+    this.container.querySelectorAll('.btn-remover-item').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const dIdx = parseInt(btn.getAttribute('data-dia-idx') || '0', 10);
+        const iIdx = parseInt(btn.getAttribute('data-item-idx') || '0', 10);
+        this.atualizarDadosDoFormulario();
+        if (this.propostaAtual.itinerario_dias?.[dIdx]?.itens) {
+          this.propostaAtual.itinerario_dias[dIdx].itens.splice(iIdx, 1);
+          this.itensExpandidos.delete(`${dIdx}-${iIdx}`);
+          this.render();
+        }
+      });
+    });
+
+    // 15. Sincronização inteligente e captura de alterações inline
+    this.container.querySelectorAll('.input-item-campo').forEach(el => {
+      el.addEventListener('input', (e: any) => {
+        const dIdx = parseInt(el.getAttribute('data-dia-idx') || '0', 10);
+        const iIdx = parseInt(el.getAttribute('data-item-idx') || '0', 10);
+        const campo = el.getAttribute('data-campo');
+        const valor = e.target.value;
+
+        if (this.propostaAtual.itinerario_dias?.[dIdx]?.itens?.[iIdx] && campo) {
+          (this.propostaAtual.itinerario_dias[dIdx].itens[iIdx] as any)[campo] = valor;
+
+          // Sincronização inteligente para Voos: Cia, Voo, Origem e Destino atualizam título
+          const item = this.propostaAtual.itinerario_dias[dIdx].itens[iIdx];
+          if (item.tipo === 'voo' && (campo === 'companhia' || campo === 'numeroVoo' || campo === 'origem' || campo === 'destino')) {
+            const formContainer = this.container.querySelector(`#form-revisao-${dIdx}-${iIdx}`);
+            const inputTitulo = formContainer?.querySelector('.input-item-titulo') as HTMLInputElement;
+            const inputSubtitulo = formContainer?.querySelector('.input-item-subtitulo') as HTMLInputElement;
+
+            const novoTitulo = item.companhia
+              ? `Voo ${item.companhia} (${item.origem || 'Origem'} ➔ ${item.destino || 'Destino'})`
+              : `Voo ${item.numeroVoo || ''} (${item.origem || 'Origem'} ➔ ${item.destino || 'Destino'})`.replace(/\s+/g, ' ').trim();
+
+            const novoSubtitulo = item.numeroVoo ? `Voo ${item.numeroVoo} · Embarque Previsto` : item.subtitulo;
+
+            if (inputTitulo && (!inputTitulo.value || inputTitulo.value.startsWith('Voo '))) {
+              inputTitulo.value = novoTitulo;
+              item.titulo = novoTitulo;
+            }
+            if (inputSubtitulo && novoSubtitulo) {
+              inputSubtitulo.value = novoSubtitulo;
+              item.subtitulo = novoSubtitulo;
+            }
+          }
+
+          // Se mudou o tipo do item, re-renderiza o card para ajustar os campos
+          if (campo === 'tipo') {
+            this.render();
+          }
+        }
+      });
+    });
+
+    // 16. Ações na tabela
     this.container.querySelectorAll('.btn-carregar-proposta').forEach(btn => {
       btn.addEventListener('click', async () => {
         const id = btn.getAttribute('data-id');
@@ -492,6 +873,7 @@ export class StudioPage {
           const p = this.propostasSalvas.find(item => item.id === id);
           if (p) {
             this.propostaAtual = { ...p };
+            this.itensExpandidos.clear();
             this.render();
           }
         }
@@ -515,34 +897,60 @@ export class StudioPage {
 
     try {
       const extraidos = await StudioExtractionService.processarArquivos(files);
-      
-      this.propostaAtual.dados_extraidos = extraidos;
-
-      // Auto-preenche valores e dados se vazios
-      if (extraidos.valores && extraidos.valores.total > 0 && (!this.propostaAtual.valor_total || this.propostaAtual.valor_total === 0)) {
-        this.propostaAtual.valor_total = extraidos.valores.total;
-      }
-
-      // Sugere destino a partir do primeiro voo ou hotel
-      if (!this.propostaAtual.destino || this.propostaAtual.destino === 'Destino a definir') {
-        if (extraidos.voos && extraidos.voos.length > 0 && extraidos.voos[0].destino) {
-          this.propostaAtual.destino = extraidos.voos[0].destino;
-        } else if (extraidos.hospedagens && extraidos.hospedagens.length > 0) {
-          this.propostaAtual.destino = extraidos.hospedagens[0].hotel;
-        }
-      }
-
-      // Se ainda não houver itinerário, gera automaticamente a linha do tempo inicial
-      if (!this.propostaAtual.itinerario_dias || this.propostaAtual.itinerario_dias.length === 0) {
-        this.propostaAtual.itinerario_dias = StudioExtractionService.gerarItinerarioDias(extraidos);
-      }
-
-      this.render();
+      this.aplicarDadosExtraidos(extraidos);
     } catch (err: any) {
       alert('Erro na extração dos arquivos: ' + err.message);
     } finally {
       if (statusEl) statusEl.classList.add('hidden');
     }
+  }
+
+  private async processarTextoColado(texto: string): Promise<void> {
+    const statusEl = this.container.querySelector('#status-processamento');
+    if (statusEl) statusEl.classList.remove('hidden');
+
+    try {
+      const extraidos = await StudioExtractionService.processarTextoColado(texto);
+      this.aplicarDadosExtraidos(extraidos.dadosBrutos, extraidos.itens);
+    } catch (err: any) {
+      alert('Erro ao processar texto colado: ' + err.message);
+    } finally {
+      if (statusEl) statusEl.classList.add('hidden');
+    }
+  }
+
+  private aplicarDadosExtraidos(extraidos: any, itensDiretos?: StudioItemItinerario[]): void {
+    this.propostaAtual.dados_extraidos = extraidos;
+
+    // Auto-preenche valores e dados se vazios
+    if (extraidos.valores && extraidos.valores.total > 0 && (!this.propostaAtual.valor_total || this.propostaAtual.valor_total === 0)) {
+      this.propostaAtual.valor_total = extraidos.valores.total;
+    }
+
+    // Sugere destino a partir do primeiro voo ou hotel
+    if (!this.propostaAtual.destino || this.propostaAtual.destino === 'Destino a definir') {
+      if (extraidos.voos && extraidos.voos.length > 0 && extraidos.voos[0].destino) {
+        this.propostaAtual.destino = extraidos.voos[0].destino;
+      } else if (extraidos.hospedagens && extraidos.hospedagens.length > 0) {
+        this.propostaAtual.destino = extraidos.hospedagens[0].hotel;
+      }
+    }
+
+    // Se vieram itens diretos (ex: texto colado)
+    if (itensDiretos && itensDiretos.length > 0) {
+      const novosDias = StudioExtractionService.gerarItinerarioDiaADia(itensDiretos);
+      this.propostaAtual.itinerario_dias = novosDias;
+    } else if (!this.propostaAtual.itinerario_dias || this.propostaAtual.itinerario_dias.length === 0) {
+      this.propostaAtual.itinerario_dias = StudioExtractionService.gerarItinerarioDias(extraidos);
+    }
+
+    // Abre os primeiros cards para o usuário revisar imediatamente
+    this.itensExpandidos.clear();
+    this.propostaAtual.itinerario_dias?.forEach((_, dIdx) => {
+      this.itensExpandidos.add(`${dIdx}-0`);
+    });
+
+    this.render();
   }
 
   private atualizarDadosDoFormulario(): void {
@@ -557,6 +965,34 @@ export class StudioPage {
     this.propostaAtual.valor_total = parseFloat(getVal('campo-valor-total')) || 0;
     this.propostaAtual.moeda = getVal('campo-moeda') || 'BRL';
     this.propostaAtual.foto_capa_url = getVal('campo-foto-custom') || this.propostaAtual.foto_capa_url;
+
+    // Varrer todos os inputs de dias e itens para persistência 100% fiel
+    this.container.querySelectorAll('.input-titulo-dia').forEach(el => {
+      const dIdx = parseInt(el.getAttribute('data-dia-idx') || '0', 10);
+      const val = (el as HTMLInputElement).value;
+      if (this.propostaAtual.itinerario_dias?.[dIdx]) {
+        this.propostaAtual.itinerario_dias[dIdx].tituloDia = val;
+      }
+    });
+
+    this.container.querySelectorAll('.input-data-dia').forEach(el => {
+      const dIdx = parseInt(el.getAttribute('data-dia-idx') || '0', 10);
+      const val = (el as HTMLInputElement).value;
+      if (this.propostaAtual.itinerario_dias?.[dIdx]) {
+        this.propostaAtual.itinerario_dias[dIdx].dataStr = val;
+        this.propostaAtual.itinerario_dias[dIdx].data = val;
+      }
+    });
+
+    this.container.querySelectorAll('.input-item-campo').forEach(el => {
+      const dIdx = parseInt(el.getAttribute('data-dia-idx') || '0', 10);
+      const iIdx = parseInt(el.getAttribute('data-item-idx') || '0', 10);
+      const campo = el.getAttribute('data-campo');
+      const val = (el as HTMLInputElement).value;
+      if (this.propostaAtual.itinerario_dias?.[dIdx]?.itens?.[iIdx] && campo) {
+        (this.propostaAtual.itinerario_dias[dIdx].itens[iIdx] as any)[campo] = val;
+      }
+    });
   }
 
   private async salvarPropostaAtual(): Promise<void> {

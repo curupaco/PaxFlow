@@ -4,6 +4,141 @@ import { StudioDadosExtraidos, StudioDiaItinerario, StudioItemItinerario } from 
  * Serviço de inteligência para extração de dados e conversão de múltiplos PDFs
  * de operadoras e consolidadoras em cadernos e propostas de viagem unificadas.
  */
+// Catálogo Oficial IATA de Companhias Aéreas com detecção contextual
+export interface CatalogoCiaAerea {
+  nome: string;
+  padraoVoo: RegExp; // Match contextual exigindo código e número de voo (3 a 4 dígitos)
+  padraoNome: RegExp; // Match do nome oficial por extenso
+}
+
+export const CATALOGO_CIAS_AEREAS: CatalogoCiaAerea[] = [
+  {
+    nome: 'LATAM Airlines',
+    padraoVoo: /\b(?:LA|JJ|LATAM)\s*([0-9]{3,4})\b/i,
+    padraoNome: /\b(?:LATAM(?:\s+AIRLINES)?)\b/i
+  },
+  {
+    nome: 'GOL Linhas Aéreas',
+    padraoVoo: /\b(?:G3|GOL)\s*([0-9]{3,4})\b/i,
+    padraoNome: /\b(?:GOL(?:\s+LINHAS\s+A[ÉE]REAS)?)\b/i
+  },
+  {
+    nome: 'Azul Linhas Aéreas',
+    padraoVoo: /\b(?:AD|AZUL)\s*([0-9]{3,4})\b/i,
+    padraoNome: /\b(?:AZUL(?:\s+LINHAS\s+A[ÉE]REAS)?)\b/i
+  },
+  {
+    nome: 'TAP Air Portugal',
+    padraoVoo: /\b(?:TP|TAP)\s*([0-9]{3,4})\b/i,
+    padraoNome: /\b(?:TAP(?:\s+AIR\s+PORTUGAL)?)\b/i
+  },
+  {
+    nome: 'Air France',
+    padraoVoo: /\b(?:AF)\s*([0-9]{3,4})\b/i,
+    padraoNome: /\b(?:AIR\s*FRANCE)\b/i
+  },
+  {
+    nome: 'KLM',
+    padraoVoo: /\b(?:KL)\s*([0-9]{3,4})\b/i,
+    padraoNome: /\b(?:KLM(?:\s+ROYAL\s+DUTCH\s+AIRLINES)?)\b/i
+  },
+  {
+    nome: 'Emirates',
+    padraoVoo: /\b(?:EK)\s*([0-9]{3,4})\b/i,
+    padraoNome: /\b(?:EMIRATES)\b/i
+  },
+  {
+    nome: 'Qatar Airways',
+    padraoVoo: /\b(?:QR)\s*([0-9]{3,4})\b/i,
+    padraoNome: /\b(?:QATAR\s*AIRWAYS)\b/i
+  },
+  {
+    nome: 'American Airlines',
+    padraoVoo: /\b(?:AA)\s*([0-9]{3,4})\b/i,
+    padraoNome: /\b(?:AMERICAN\s*AIRLINES)\b/i
+  },
+  {
+    nome: 'Delta Air Lines',
+    padraoVoo: /\b(?:DL)\s*([0-9]{3,4})\b/i,
+    padraoNome: /\b(?:DELTA(?:\s+AIR\s*LINES)?)\b/i
+  },
+  {
+    nome: 'United Airlines',
+    padraoVoo: /\b(?:UA)\s*([0-9]{3,4})\b/i,
+    padraoNome: /\b(?:UNITED(?:\s+AIRLINES)?)\b/i
+  },
+  {
+    nome: 'British Airways',
+    padraoVoo: /\b(?:BA)\s*([0-9]{3,4})\b/i,
+    padraoNome: /\b(?:BRITISH\s*AIRWAYS)\b/i
+  },
+  {
+    nome: 'Iberia',
+    padraoVoo: /\b(?:IB)\s*([0-9]{3,4})\b/i,
+    padraoNome: /\b(?:IBERIA)\b/i
+  },
+  {
+    nome: 'Copa Airlines',
+    padraoVoo: /\b(?:CM)\s*([0-9]{3,4})\b/i,
+    padraoNome: /\b(?:COPA(?:\s*AIRLINES)?)\b/i
+  },
+  {
+    nome: 'Avianca',
+    padraoVoo: /\b(?:AV)\s*([0-9]{3,4})\b/i,
+    padraoNome: /\b(?:AVIANCA)\b/i
+  },
+  {
+    nome: 'Lufthansa',
+    padraoVoo: /\b(?:LH)\s*([0-9]{3,4})\b/i,
+    padraoNome: /\b(?:LUFTHANSA)\b/i
+  },
+  {
+    nome: 'SWISS',
+    padraoVoo: /\b(?:LX)\s*([0-9]{3,4})\b/i,
+    padraoNome: /\b(?:SWISS(?:\s+INTERNATIONAL\s+AIR\s+LINES)?)\b/i
+  },
+  {
+    nome: 'Turkish Airlines',
+    padraoVoo: /\b(?:TK)\s*([0-9]{3,4})\b/i,
+    padraoNome: /\b(?:TURKISH(?:\s+AIRLINES)?)\b/i
+  },
+  {
+    nome: 'Aerolíneas Argentinas',
+    padraoVoo: /\b(?:AR)\s*([0-9]{3,4})\b/i,
+    padraoNome: /\b(?:AEROL[IÍ]NEAS\s+ARGENTINAS)\b/i
+  },
+  {
+    nome: 'Air Europa',
+    padraoVoo: /\b(?:UX)\s*([0-9]{3,4})\b/i,
+    padraoNome: /\b(?:AIR\s*EUROPA)\b/i
+  },
+  {
+    nome: 'ITA Airways',
+    padraoVoo: /\b(?:AZ)\s*([0-9]{3,4})\b/i,
+    padraoNome: /\b(?:ITA\s*AIRWAYS)\b/i
+  },
+  {
+    nome: 'Ethiopian Airlines',
+    padraoVoo: /\b(?:ET)\s*([0-9]{3,4})\b/i,
+    padraoNome: /\b(?:ETHIOPIAN(?:\s+AIRLINES)?)\b/i
+  },
+  {
+    nome: 'Sky Airline',
+    padraoVoo: /\b(?:H2)\s*([0-9]{3,4})\b/i,
+    padraoNome: /\b(?:SKY\s*AIRLINE)\b/i
+  },
+  {
+    nome: 'JetSmart',
+    padraoVoo: /\b(?:JA)\s*([0-9]{3,4})\b/i,
+    padraoNome: /\b(?:JETSMART)\b/i
+  },
+  {
+    nome: 'Voepass',
+    padraoVoo: /\b(?:2Z)\s*([0-9]{3,4})\b/i,
+    padraoNome: /\b(?:VOEPASS|PASSAREDO)\b/i
+  }
+];
+
 export class StudioExtractionService {
   /**
    * Extrai texto de um arquivo File (PDF ou TXT) no navegador.
@@ -43,6 +178,20 @@ export class StudioExtractionService {
   }
 
   /**
+   * Processa texto colado diretamente pelo usuário (e-mail, WhatsApp, GDS).
+   */
+  public static async processarTextoColado(texto: string): Promise<{
+    tipoDetectado: 'voo' | 'hotel' | 'servico' | 'misto';
+    fornecedor?: string;
+    loc?: string;
+    valorTotal: number;
+    itens: StudioItemItinerario[];
+    dadosBrutos: StudioDadosExtraidos;
+  }> {
+    return this.extrairDados(texto, 'texto_colado.txt');
+  }
+
+  /**
    * Extrai e estrutura dados a partir de uma string de texto, identificando entidades de viagem.
    */
   public static async extrairDados(texto: string, nomeArquivo: string = ''): Promise<{
@@ -62,19 +211,25 @@ export class StudioExtractionService {
       for (const v of brutos.voos) {
         fornecedor = fornecedor || v.companhia;
         loc = loc || v.localizador || '';
+        const tituloVoo = v.companhia
+          ? `Voo ${v.companhia} (${v.origem} ➔ ${v.destino})`
+          : `Voo ${v.voo && v.voo !== 'Voo Confirmado' ? v.voo + ' ' : ''}(${v.origem} ➔ ${v.destino})`.replace(/\s+/g, ' ').trim();
+
         itens.push({
           id: `voo-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
           tipo: 'voo',
-          titulo: `Voo ${v.companhia} (${v.origem} ➔ ${v.destino})`,
+          titulo: tituloVoo,
           subtitulo: `Voo ${v.voo} · Embarque Previsto`,
           origem: v.origem,
           destino: v.destino,
+          companhia: v.companhia || '',
+          numeroVoo: v.voo || '',
           dataInicio: v.dataIda,
           dataFim: v.dataVolta || v.dataIda,
           horaInicio: v.horaIda,
           horario: v.horaIda,
           localizador: v.localizador,
-          fornecedor: v.companhia,
+          fornecedor: v.companhia || '',
           status: 'confirmado',
           rotuloLink: 'Fazer Check-in',
           linkAcao: 'https://www.google.com/travel/flights'
@@ -91,6 +246,8 @@ export class StudioExtractionService {
           tipo: 'hotel',
           titulo: h.hotel,
           subtitulo: `${h.quarto || 'Acomodação'} · ${h.regime || 'Hospedagem'}`,
+          quarto: h.quarto || 'Apartamento',
+          regime: h.regime || 'Hospedagem',
           dataInicio: h.checkIn,
           dataFim: h.checkOut,
           status: 'confirmado',
@@ -211,31 +368,59 @@ export class StudioExtractionService {
     // 1. Extração de Localizador Geral / Código de Reserva
     const locDetectado = this.extrairLocalizador(texto);
 
-    // 2. Extração de Voos (ex: GOL, LATAM, AZUL, TAP, AIR FRANCE, AMERICAN, etc.)
-    const ciasConhecidas = [
-      { nome: 'GOL', padrao: /\b(GOL|G3)\b/i },
-      { nome: 'LATAM', padrao: /\b(LATAM|LA|JJ)\b/i },
-      { nome: 'AZUL', padrao: /\b(AZUL|AD)\b/i },
-      { nome: 'TAP', padrao: /\b(TAP|TP)\b/i },
-      { nome: 'AIR FRANCE', padrao: /\b(AIR\s*FRANCE|AF)\b/i },
-      { nome: 'EMIRATES', padrao: /\b(EMIRATES|EK)\b/i },
-      { nome: 'AMERICAN AIRLINES', padrao: /\b(AMERICAN\s*AIRLINES|AA)\b/i },
-      { nome: 'COPA AIRLINES', padrao: /\b(COPA|CM)\b/i }
-    ];
+    // 2. Extração de Companhia Aérea e Número do Voo com Fidelidade Estrita
+    let ciaDetectada = '';
+    let vooDetectado = '';
 
-    const ciaDetectada = ciasConhecidas.find(c => c.padrao.test(texto))?.nome || 'Companhia Aérea';
+    // Prioridade 1: Match por código de voo IATA contextual (ex: LA3456, G3 1500, AF 443, TP 012)
+    for (const itemCia of CATALOGO_CIAS_AEREAS) {
+      const matchVoo = itemCia.padraoVoo.exec(texto);
+      if (matchVoo) {
+        ciaDetectada = itemCia.nome;
+        vooDetectado = matchVoo[0].trim();
+        break;
+      }
+    }
+
+    // Prioridade 2: Nome por extenso da companhia no documento (ex: "Air France", "LATAM Airlines", "Iberia")
+    if (!ciaDetectada) {
+      for (const itemCia of CATALOGO_CIAS_AEREAS) {
+        if (itemCia.padraoNome.test(texto)) {
+          ciaDetectada = itemCia.nome;
+          break;
+        }
+      }
+    }
+
+    // Prioridade 3: Rótulo textual explícito do bilhete (ex: "Companhia: ...", "Operadora Aérea: ...")
+    if (!ciaDetectada) {
+      const ciaRotuloMatch = texto.match(/(?:companhia(?:\s+a[ée]rea)?|cia(?:\s+a[ée]rea)?|airline|operadora\s+a[ée]rea)\s*[:\-]\s*([A-Za-z0-9À-ÿ\s]{3,35})/i);
+      if (ciaRotuloMatch && ciaRotuloMatch[1]) {
+        ciaDetectada = ciaRotuloMatch[1].trim();
+      }
+    }
+
+    // Se ainda não achou número de voo, busca padrão genérico de voo
+    if (!vooDetectado) {
+      const vooGenericoMatch = textoUpper.match(/\b(?:VOO|FLIGHT)\s*[:\-]?\s*([A-Z0-9]{2,8})\b/i);
+      if (vooGenericoMatch) {
+        vooDetectado = vooGenericoMatch[0].trim();
+      }
+    }
 
     // Detecção de aeroportos / trechos (IATA 3 letras, ex: GRU, GIG, MCO, MIA, CDG, LIS, JFK, BPS, SSA)
     const iataMatches = textoUpper.match(/\b([A-Z]{3})\s*(?:➔|->|-|\/|para|to)\s*([A-Z]{3})\b/i);
     const origemMatch = textoUpper.match(/(?:origem|partida|sa[ií]da)\s*[:\-]?\s*([A-Z]{3})\b/i);
     const destinoMatch = textoUpper.match(/(?:destino|chegada)\s*[:\-]?\s*([A-Z]{3})\b/i);
     const deParaMatch = textoUpper.match(/\bde\s+([A-Z]{3})\s+(?:para|a|até)\s+([A-Z]{3})\b/i);
-    const vooNumMatch = textoUpper.match(/\b(?:VOO|FLIGHT|G3|LA|AD|TP|AF|AA|CM)\s*([0-9]{3,4})\b/i);
 
     // Datas potenciais no documento
     const datasDetectadas = this.extrairDatas(texto);
 
+    // Regra de Tolerância Zero: apenas cria registro de voo se houver indício real de trecho ou bilhete
     if (
+      ciaDetectada ||
+      vooDetectado ||
       textoLower.includes('voo') ||
       textoLower.includes('aéreo') ||
       textoLower.includes('embarque') ||
@@ -247,8 +432,8 @@ export class StudioExtractionService {
       const aeroportoDestino = (destinoMatch ? destinoMatch[1] : (iataMatches ? iataMatches[2] : (deParaMatch ? deParaMatch[2] : 'Destino'))).toUpperCase();
 
       resultado.voos?.push({
-        companhia: ciaDetectada,
-        voo: vooNumMatch ? vooNumMatch[1] : 'Voo Confirmado',
+        companhia: ciaDetectada || '',
+        voo: vooDetectado || 'Voo Confirmado',
         origem: aeroportoOrigem,
         destino: aeroportoDestino,
         dataIda: datasDetectadas[0] || new Date().toISOString().split('T')[0],
