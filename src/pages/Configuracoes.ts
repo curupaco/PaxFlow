@@ -240,7 +240,15 @@ export class ConfiguracoesPage {
           habilitarUpsellPreditivo: data.habilitar_upsell_preditivo !== false,
           habilitar_upsell_preditivo: data.habilitar_upsell_preditivo !== false,
           upsell_config: data.upsell_config || {},
-          upsellConfig: data.upsell_config || {}
+          upsellConfig: data.upsell_config || {},
+          habilitar_studio_pro: data.habilitar_studio_pro !== false,
+          habilitarStudioPro: data.habilitar_studio_pro !== false,
+          studio_moeda_padrao: data.studio_moeda_padrao || 'BRL',
+          studioMoedaPadrao: data.studio_moeda_padrao || 'BRL',
+          studio_validade_dias: data.studio_validade_dias !== undefined ? data.studio_validade_dias : 7,
+          studioValidadeDias: data.studio_validade_dias !== undefined ? data.studio_validade_dias : 7,
+          studio_permitir_aceite_formal: data.studio_permitir_aceite_formal !== false,
+          studioPermitirAceiteFormal: data.studio_permitir_aceite_formal !== false
         };
       } else {
         const initialPayload = {
@@ -278,7 +286,11 @@ export class ConfiguracoesPage {
             transfer_privativo: true,
             upgrade_hotel: true,
             cancel_flex: true
-          }
+          },
+          habilitar_studio_pro: true,
+          studio_moeda_padrao: 'BRL',
+          studio_validade_dias: 7,
+          studio_permitir_aceite_formal: true
         };
 
         const { data: inserted, error: insertError } = await supabase
@@ -1917,6 +1929,52 @@ export class ConfiguracoesPage {
               </div>
             </div>
 
+            <!-- PaxFlow Studio Configuration Card -->
+            <div class="border-t border-slate-100 dark:border-slate-800 pt-5 space-y-4">
+              <div class="flex items-center justify-between gap-4">
+                <div>
+                  <h3 class="text-xs font-black text-amber-500 dark:text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <span>✨</span> PaxFlow Studio™ — Roteiros & Propostas Digitais ${renderHelpIcon('studio-propostas')}
+                  </h3>
+                  <p class="text-[10px] text-slate-400 mt-0.5">Criação ágil de roteiros interativos, lâminas em PDF de alta resolução e links públicos de aprovação.</p>
+                </div>
+                
+                <label class="relative inline-flex items-center cursor-pointer shrink-0">
+                  <input id="input-habilitar-studio-pro" type="checkbox" ${this.settings.habilitar_studio_pro !== false ? 'checked' : ''} class="sr-only peer">
+                  <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:after:border-slate-600 peer-checked:bg-amber-500"></div>
+                </label>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
+                <div>
+                  <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Moeda Padrão de Apresentação</label>
+                  <select id="input-studio-moeda-padrao" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 text-slate-800 dark:text-slate-100 font-bold">
+                    <option value="BRL" ${this.settings.studio_moeda_padrao === 'BRL' ? 'selected' : ''}>BRL (R$ - Real)</option>
+                    <option value="USD" ${this.settings.studio_moeda_padrao === 'USD' ? 'selected' : ''}>USD ($ - Dólar)</option>
+                    <option value="EUR" ${this.settings.studio_moeda_padrao === 'EUR' ? 'selected' : ''}>EUR (€ - Euro)</option>
+                  </select>
+                  <p class="text-[10px] text-slate-400 mt-1">Moeda padrão aplicada nos novos roteiros e orçamentos criados no Studio.</p>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Validade Padrão da Proposta (Dias) *</label>
+                  <input id="input-studio-validade-dias" type="number" min="1" max="90" required value="${this.settings.studio_validade_dias || 7}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 text-slate-800 dark:text-slate-100 font-bold" />
+                  <p class="text-[10px] text-slate-400 mt-1">Prazo padrão de expiração do link interativo gerado para o passageiro.</p>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Aceite Formal Online</label>
+                  <div class="pt-2">
+                    <label class="inline-flex items-center gap-2 cursor-pointer">
+                      <input id="input-studio-aceite-formal" type="checkbox" ${this.settings.studio_permitir_aceite_formal !== false ? 'checked' : ''} class="w-4 h-4 text-amber-500 rounded border-slate-300 focus:ring-amber-400 dark:bg-slate-800">
+                      <span class="text-xs font-semibold text-slate-700 dark:text-slate-300">Permitir aprovação pelo cliente</span>
+                    </label>
+                  </div>
+                  <p class="text-[10px] text-slate-400 mt-1">Exibe botão de aceite com assinatura digital básica no link interativo da proposta.</p>
+                </div>
+              </div>
+            </div>
+
             <!-- PaxFlow Upsell Engine Configuration Card -->
             <div class="border-t border-slate-100 dark:border-slate-800 pt-5 space-y-4">
               <div class="flex items-center justify-between gap-4">
@@ -2475,6 +2533,16 @@ export class ConfiguracoesPage {
       const corteScoreNextTripVal = corteScoreNextTripInput ? Number(corteScoreNextTripInput.value) : (this.settings.next_trip_corte_prontidao_alta || 75);
       const snoozeDiasNextTripVal = snoozeDiasNextTripInput ? Number(snoozeDiasNextTripInput.value) : (this.settings.next_trip_snooze_dias || 30);
 
+      const habilitarStudioInput = document.getElementById('input-habilitar-studio-pro') as HTMLInputElement | null;
+      const moedaStudioInput = document.getElementById('input-studio-moeda-padrao') as HTMLSelectElement | null;
+      const validadeStudioInput = document.getElementById('input-studio-validade-dias') as HTMLInputElement | null;
+      const aceiteStudioInput = document.getElementById('input-studio-aceite-formal') as HTMLInputElement | null;
+
+      const habilitarStudioVal = habilitarStudioInput ? habilitarStudioInput.checked : (this.settings.habilitar_studio_pro !== false);
+      const moedaStudioVal = moedaStudioInput ? moedaStudioInput.value : (this.settings.studio_moeda_padrao || 'BRL');
+      const validadeStudioVal = validadeStudioInput ? Number(validadeStudioInput.value) : (this.settings.studio_validade_dias || 7);
+      const aceiteStudioVal = aceiteStudioInput ? aceiteStudioInput.checked : (this.settings.studio_permitir_aceite_formal !== false);
+
       const habilitarUpsellInput = document.getElementById('input-habilitar-upsell-preditivo') as HTMLInputElement;
       const habilitarUpsellVal = habilitarUpsellInput ? habilitarUpsellInput.checked : (this.settings.habilitar_upsell_preditivo !== false);
 
@@ -2488,7 +2556,7 @@ export class ConfiguracoesPage {
         }
       }
 
-      const payload = {
+      const payload: Record<string, any> = {
         tempo_desistencia_orcamento_dias: tempoDesistenciaVal,
         sla_pre_embarque_dias: slaPreVal,
         sla_pos_viagem_dias: slaPosVal,
@@ -2502,16 +2570,40 @@ export class ConfiguracoesPage {
         next_trip_corte_prontidao_alta: corteScoreNextTripVal,
         next_trip_snooze_dias: snoozeDiasNextTripVal,
         habilitar_upsell_preditivo: habilitarUpsellVal,
-        upsell_config: newUpsellConfig
+        upsell_config: newUpsellConfig,
+        habilitar_studio_pro: habilitarStudioVal,
+        studio_moeda_padrao: moedaStudioVal,
+        studio_validade_dias: validadeStudioVal,
+        studio_permitir_aceite_formal: aceiteStudioVal
       };
 
       try {
-        const { error } = await supabase
+        let updateError: any = null;
+        const res = await supabase
           .from('global_settings')
           .update(payload)
           .eq('id', this.settings.id);
 
-        if (error) throw error;
+        updateError = res.error;
+
+        // Resiliência mandatória a Schema Drift (código 42703 - coluna inexistente)
+        if (updateError && updateError.code === '42703') {
+          console.warn('[Configuracoes] Schema drift detectado ao salvar Studio em global_settings (código 42703). Aplicando fallback seguro...');
+          const fallbackPayload = { ...payload };
+          delete fallbackPayload.habilitar_studio_pro;
+          delete fallbackPayload.studio_moeda_padrao;
+          delete fallbackPayload.studio_validade_dias;
+          delete fallbackPayload.studio_permitir_aceite_formal;
+
+          const retryRes = await supabase
+            .from('global_settings')
+            .update(fallbackPayload)
+            .eq('id', this.settings.id);
+
+          updateError = retryRes.error;
+        }
+
+        if (updateError) throw updateError;
 
         this.showToast('Automações salvas com sucesso!', 'success');
         await this.loadSettings();

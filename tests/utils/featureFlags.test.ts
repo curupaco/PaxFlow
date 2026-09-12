@@ -4,6 +4,7 @@ import {
   isNextTripEnabled,
   isRiskScoreEnabled,
   isUpsellEnabled,
+  isStudioEnabled,
 } from '../../src/utils/featureFlags';
 
 describe('FeatureFlags - Testes Subcutâneos de Permissão e Acesso', () => {
@@ -146,5 +147,44 @@ describe('FeatureFlags - Testes Subcutâneos de Permissão e Acesso', () => {
 
     // Assert
     expect(resultado).toBe(false);
+  });
+
+  it('deve manter o PaxFlow Studio sempre habilitado para tscosta mesmo se desativado nas settings', () => {
+    // Setup
+    const tscostaUser = { id: 'u1', email: 'tscosta@gmail.com' };
+    const settingsDesativadas = { habilitar_studio_pro: false };
+
+    // Action
+    const resultado = isStudioEnabled(tscostaUser, null, settingsDesativadas);
+
+    // Assert
+    expect(resultado).toBe(true);
+  });
+
+  it('deve respeitar a desativação do PaxFlow Studio nas configurações para consultores comuns', () => {
+    // Setup
+    const consultorUser = { id: 'c1', email: 'consultor@agencia.com' };
+    const settingsDesativadas = { habilitar_studio_pro: false };
+    const settingsAtivadas = { habilitar_studio_pro: true };
+
+    // Action
+    const resDesativado = isStudioEnabled(consultorUser, null, settingsDesativadas);
+    const resAtivado = isStudioEnabled(consultorUser, null, settingsAtivadas);
+
+    // Assert
+    expect(resDesativado).toBe(false);
+    expect(resAtivado).toBe(true);
+  });
+
+  it('deve manter o Studio habilitado por padrão caso a coluna ainda não exista nas settings', () => {
+    // Setup
+    const consultorUser = { id: 'c1', email: 'consultor@agencia.com' };
+    const settingsVazias = {};
+
+    // Action
+    const resultado = isStudioEnabled(consultorUser, null, settingsVazias);
+
+    // Assert
+    expect(resultado).toBe(true);
   });
 });

@@ -26,7 +26,7 @@ import { VersionChecker } from './services/versionChecker';
 import { VersionToast } from './components/VersionToast';
 
 import { PushNotificationService } from './services/pushNotificationService';
-import { isNextTripEnabled } from './utils/featureFlags';
+import { isNextTripEnabled, isStudioEnabled } from './utils/featureFlags';
 import { initGlobalDateMask } from './utils/masks';
 
 (window as any).traduzirErro = traduzirErro;
@@ -532,13 +532,30 @@ class App {
               </button>
 
               <!-- Link: PaxFlow Studio™ -->
-              <button id="nav-studio" class="w-full px-3 py-1.5 rounded-xl flex items-center ${this.sidebarCollapsed ? 'justify-center' : 'justify-start'} gap-2.5 font-semibold text-xs text-left transition select-none group relative">
-                <svg width="18" height="18" class="w-4.5 h-4.5 text-indigo-400 group-hover:text-indigo-600 dark:text-indigo-400 dark:group-hover:text-indigo-300 group-[.bg-indigo-600]:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                </svg>
-                <span class="${this.sidebarCollapsed ? 'md:hidden' : ''}">PaxFlow Studio</span>
-                <span class="ml-auto px-1.5 py-0.5 rounded text-[8px] font-black bg-gradient-to-r from-amber-500 to-indigo-600 text-white shadow-xs ${this.sidebarCollapsed ? 'md:hidden' : ''}">PRO</span>
-              </button>
+              ${(() => {
+                const studioActive = isStudioEnabled(this.user, this.perfil, this.settings);
+                if (studioActive) {
+                  return `
+                    <button id="nav-studio" class="w-full px-3 py-1.5 rounded-xl flex items-center ${this.sidebarCollapsed ? 'justify-center' : 'justify-start'} gap-2.5 font-semibold text-xs text-left transition select-none group relative">
+                      <svg width="18" height="18" class="w-4.5 h-4.5 text-indigo-400 group-hover:text-indigo-600 dark:text-indigo-400 dark:group-hover:text-indigo-300 group-[.bg-indigo-600]:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                      </svg>
+                      <span class="${this.sidebarCollapsed ? 'md:hidden' : ''}">PaxFlow Studio</span>
+                      <span class="ml-auto px-1.5 py-0.5 rounded text-[8px] font-black bg-gradient-to-r from-amber-500 to-indigo-600 text-white shadow-xs ${this.sidebarCollapsed ? 'md:hidden' : ''}">PRO</span>
+                    </button>
+                  `;
+                } else {
+                  return `
+                    <button id="nav-studio" title="Recurso desativado nas configurações globais" class="w-full px-3 py-1.5 rounded-xl flex items-center ${this.sidebarCollapsed ? 'justify-center' : 'justify-start'} gap-2.5 font-semibold text-xs text-left opacity-40 cursor-not-allowed select-none group relative" disabled>
+                      <svg width="18" height="18" class="w-4.5 h-4.5 text-slate-400 dark:text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                      </svg>
+                      <span class="${this.sidebarCollapsed ? 'md:hidden' : ''}">PaxFlow Studio</span>
+                      <span class="ml-auto text-[9px] px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-slate-500 font-bold uppercase ${this.sidebarCollapsed ? 'md:hidden' : ''}">Off</span>
+                    </button>
+                  `;
+                }
+              })()}
 
               <!-- Link: Dashboard Kanban -->
               <button id="nav-dashboard" class="w-full px-3 py-1.5 rounded-xl flex items-center ${this.sidebarCollapsed ? 'justify-center' : 'justify-start'} gap-2.5 font-semibold text-xs text-left transition select-none group">
@@ -1259,6 +1276,11 @@ class App {
   private navigate(page: string, extraId?: string): void {
     if (page === 'next-trip' && !isNextTripEnabled(this.user, this.perfil, this.settings)) {
       this.showToast('O Next Trip Engine está desativado nas configurações globais.', 'error');
+      page = (this.perfil && this.perfil.role === 'admin') ? 'analytics' : 'inbox';
+    }
+
+    if (page === 'studio' && !isStudioEnabled(this.user, this.perfil, this.settings)) {
+      this.showToast('O PaxFlow Studio está desativado nas configurações globais.', 'error');
       page = (this.perfil && this.perfil.role === 'admin') ? 'analytics' : 'inbox';
     }
 

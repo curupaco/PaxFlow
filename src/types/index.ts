@@ -99,6 +99,14 @@ export interface GlobalSettings {
   habilitarUpsellPreditivo?: boolean;
   upsell_config?: Record<string, boolean>;
   upsellConfig?: Record<string, boolean>;
+  habilitar_studio_pro?: boolean;
+  habilitarStudioPro?: boolean;
+  studio_moeda_padrao?: string;
+  studioMoedaPadrao?: string;
+  studio_validade_dias?: number;
+  studioValidadeDias?: number;
+  studio_permitir_aceite_formal?: boolean;
+  studioPermitirAceiteFormal?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }

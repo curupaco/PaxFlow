@@ -303,4 +303,43 @@ export class StudioPropostasService {
   private static async listarFallbackDrift(): Promise<StudioProposta[]> {
     return await this.obterListaContingencia();
   }
+
+  /**
+   * Salva configurações do Studio em global_settings com resiliência a schema drift (código 42703).
+   */
+  public static async salvarConfiguracoesStudio(settingsId: string, settings: {
+    habilitar_studio_pro?: boolean;
+    studio_moeda_padrao?: string;
+    studio_validade_dias?: number;
+    studio_permitir_aceite_formal?: boolean;
+  }): Promise<{ sucesso: boolean; fallbackAplicado: boolean }> {
+    const payload: Record<string, any> = {};
+    if (settings.habilitar_studio_pro !== undefined) payload.habilitar_studio_pro = settings.habilitar_studio_pro;
+    if (settings.studio_moeda_padrao !== undefined) payload.studio_moeda_padrao = settings.studio_moeda_padrao;
+    if (settings.studio_validade_dias !== undefined) payload.studio_validade_dias = settings.studio_validade_dias;
+    if (settings.studio_permitir_aceite_formal !== undefined) payload.studio_permitir_aceite_formal = settings.studio_permitir_aceite_formal;
+
+    try {
+      const { error } = await supabase
+        .from('global_settings')
+        .update(payload)
+        .eq('id', settingsId);
+
+      if (error) {
+        if (error.code === '42703' || error.message?.includes('does not exist')) {
+          console.warn('[StudioPropostasService] Colunas do Studio não existem ainda em global_settings (42703). Fallback seguro ativado.');
+          return { sucesso: true, fallbackAplicado: true };
+        }
+        throw error;
+      }
+      return { sucesso: true, fallbackAplicado: false };
+    } catch (err: any) {
+      if (err?.code === '42703' || err?.message?.includes('does not exist')) {
+        return { sucesso: true, fallbackAplicado: true };
+      }
+      console.error('[StudioPropostasService] Erro inesperado ao salvar configurações do Studio:', err);
+      throw err;
+    }
+  }
 }
+

@@ -55,3 +55,13 @@ export function isUpsellEnabled(user: any, perfil?: PerfilConsultor | null, sett
   if (!settings) return true;
   return settings.habilitar_upsell_preditivo !== false && settings.habilitarUpsellPreditivo !== false;
 }
+
+/**
+ * Retorna se o PaxFlow Studio™ está ativado para o usuário atual.
+ * É SEMPRE true para tscosta; para os demais, depende de global_settings.
+ */
+export function isStudioEnabled(user: any, perfil?: PerfilConsultor | null, settings?: any): boolean {
+  if (isUserTsCosta(user, perfil)) return true;
+  if (!settings) return true;
+  return settings.habilitar_studio_pro !== false && settings.habilitarStudioPro !== false;
+}
