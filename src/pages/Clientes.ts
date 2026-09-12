@@ -3,6 +3,7 @@ import { uploadDocumentoCliente } from '../services/googleDrive';
 import { getAvatarSvg } from '../services/avatars';
 import { Cliente, ClientePassaporte, PerfilConsultor } from '../types';
 import { showCustomConfirm, showCustomPrompt } from '../services/dialog';
+import { ClienteSearchService } from '../services/clienteSearchService';
 
 import { registrarXp } from '../services/gamification';
 import { SendTemplateMessageModal } from '../components/dashboard/SendTemplateMessageModal';
@@ -99,26 +100,13 @@ export class ClientesPage {
     }
     this.carregandoMais = true;
     try {
-      let query = supabase
-        .from('clientes')
-        .select('*', { count: 'exact' })
-        .order('nome', { ascending: true })
-        .range(this.paginaAtual * this.limitePagina, (this.paginaAtual + 1) * this.limitePagina - 1);
-
-      const temBusca = Boolean(this.buscaTermo && this.buscaTermo.trim());
-
-      // Na listagem padrão sem busca, consultor visualiza sua carteira. Se estiver buscando, pesquisa em toda a base da agência para evitar duplicidade.
-      if (!temBusca && this.perfil && this.perfil.role !== 'admin' && this.user?.id) {
-        query = query.eq('consultor_responsavel_id', this.user.id);
-      }
-
-      if (temBusca) {
-        const q = `%${this.buscaTermo.trim()}%`;
-        query = query.or(`nome.ilike.${q},email.ilike.${q},documento.ilike.${q},telefone.ilike.${q},codigo_ref.ilike.${q}`);
-      }
-
-      const { data, error, count } = await query;
-      if (error) throw error;
+      const { data, count } = await ClienteSearchService.buscarClientes({
+        termo: this.buscaTermo,
+        paginaAtual: this.paginaAtual,
+        limitePagina: this.limitePagina,
+        consultorId: this.user?.id,
+        isAdmin: this.perfil?.role === 'admin'
+      });
 
       const mapped = (data || []).map(d => ({
         id: d.id,
@@ -144,6 +132,8 @@ export class ClientesPage {
         classificacoes: d.classificacoes || [],
         codigo_ref: d.codigo_ref,
         codigoRef: d.codigo_ref,
+        documento_limpo: d.documento_limpo,
+        telefone_limpo: d.telefone_limpo,
         createdAt: d.created_at,
         updatedAt: d.updated_at
       }));

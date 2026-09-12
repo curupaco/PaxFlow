@@ -224,8 +224,10 @@ export interface Cliente {
   classificacoes?: string[];
   next_trip_snooze_until?: string | null;
   nextTripSnoozeUntil?: string | null;
-  codigo_ref?: string;
+    codigo_ref?: string;
   codigoRef?: string;
+  documento_limpo?: string;
+  telefone_limpo?: string;
   createdAt?: string;
   updatedAt?: string;
 }

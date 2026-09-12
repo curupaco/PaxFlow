@@ -1443,7 +1443,13 @@ export class OrcamentosPage {
             try {
               let orQuery: string[] = [];
               if (emailVal) orQuery.push(`email.eq.${emailVal}`);
-              if (telVal) orQuery.push(`telefone.eq.${telVal}`);
+              if (telVal) {
+                orQuery.push(`telefone.eq.${telVal}`);
+                const cleanTel = telVal.replace(/\D/g, '');
+                if (cleanTel.length >= 8) {
+                  orQuery.push(`telefone.ilike.%${cleanTel.slice(-8)}%`);
+                }
+              }
               if (nomeVal) orQuery.push(`nome.eq.${nomeVal}`);
               
               let existingCli: any[] = [];
