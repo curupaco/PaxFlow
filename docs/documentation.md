@@ -39,6 +39,7 @@
    - 3.26 [PaxFlow Risk Score™ (Diagnóstico Preditivo de Saúde Operacional 0 a 100)](#326-paxflow-risk-score-diagnóstico-preditivo-de-saúde-operacional-0-a-100)
    - 3.27 [Next Trip Engine™ (Motor Preditivo de Recompra & Ciclo de Vida do Viajante)](#327-next-trip-engine-motor-preditivo-de-recompra--ciclo-de-vida-do-viajante)
    - 3.28 [PaxFlow Upsell Engine™ (Motor Preditivo de Oportunidades & Ticket Médio)](#328-paxflow-upsell-engine-motor-preditivo-de-oportunidades--ticket-médio)
+   - 3.29 [PaxFlow Studio™ (Criação de Propostas Digitais de Luxo & Cadernos de Viagem)](#329-paxflow-studio-criação-de-propostas-digitais-de-luxo--cadernos-de-viagem)
 4. [Diferenciais Competitivos](#4-diferenciais-competitivos)
 5. [Arquitetura Tecnológica](#5-arquitetura-tecnológica)
 6. [Segurança e Conformidade](#6-segurança-e-conformidade)
@@ -594,6 +595,29 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
   - Administradores podem ajustar os parâmetros de sensibilidade (Janela de Sazonalidade, Nota mínima de NPS, Corte de Score e Dias de Snooze) na aba *Configurações -> Automações*.
 - **4 Modelos Padrão Nativos de WhatsApp**:
   - Modelos nativos pré-carregados para *Aniversário de Viagem 12m*, *Resorts de Verão*, *Disney & Família* e *Recompra VIP Promotor NPS*.
+
+---
+
+### 3.29 PaxFlow Studio™ (Criação de Propostas Digitais de Luxo & Cadernos de Viagem) [NEW]
+
+Módulo avançado de orquestração visual e documental da agência, permitindo consolidar múltiplos vouchers, bilhetes e cotações em propostas visuais cinematográficas e cadernos de viagem prontos para impressão.
+
+- **Arquitetura Split Screen (Tela Dividida)**:
+  - **Coluna da Esquerda (Editor Estruturado)**:
+    - **1. Ingestão de Documentos**: Dropzone de PDFs de consolidadoras e botão de colar texto livre de WhatsApp/e-mail com motor de extração documental com fidelidade estrita. Recolhível automaticamente para maximizar espaço.
+    - **2. Dados do Passageiro & Capa**: Identificação completa do cliente, cotação financeira em BRL/USD/EUR e galeria de fotos de capa cinematográficas em alta resolução.
+    - **3. Roteiro & Atividades**: Lista de dias sequenciais com cartões compactos de atividades (voos, hotéis, transfers, passeios e seguros) com badges visuais de localizador, companhia aérea e horários.
+  - **Coluna da Direita (Live Preview em Tempo Real)**:
+    - Prévia fidedigna da proposta de luxo com renderização instantânea a cada caractere digitado pelo consultor.
+    - Seletores de visualização `Desktop` (largura total) e `Mobile` (simulador realista de smartphone).
+- **Barra Inferior Fixa de Salvamento & Aplicação**:
+  - Posicionada permanentemente na base da tela com indicador reativo de status (`Modificações pendentes` com alerta âmbar pulsante vs `Todas as alterações salvas no banco` com selo verde de conformidade).
+  - Botão de ação em destaque `Salvar Proposta`, com atalho de teclado global **`Ctrl+S`** / **`Cmd+S`**.
+  - Ações de saída em 1-clique: Impressão do Caderno de Viagem em PDF A4 de alta resolução, Link do Cliente para aprovação online e conversão direta da proposta aprovada em Viagem confirmada no Kanban.
+- **Gaveta Lateral de Propostas (Drawer)**:
+  - Painel lateral deslizante aberto pelo botão `📂 Minhas Propostas`, contendo campo de busca em tempo real por cliente ou destino, status da proposta e botões de carregamento e emissão de PDF. Mantém a bancada de trabalho 100% desobstruída.
+- **Modal Focado de Atividades**:
+  - Permite configurar detalhes profundos de voos (origem, destino, cia aérea via catálogo oficial, número de voo, PNR), hospedagens (quarto, regime, voucher, mapa) e serviços de forma espaçosa e focada, com botão explícito `Aplicar ao Roteiro`.
 
 ---
 

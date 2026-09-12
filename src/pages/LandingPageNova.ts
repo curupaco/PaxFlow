@@ -1009,6 +1009,10 @@ export class LandingPageNova {
                 <svg class="w-3.5 h-3.5 text-indigo-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
                 Next Trip Engine™
               </button>
+              <button id="tab-btn-studio" class="shrink-0 whitespace-nowrap px-3.5 sm:px-4 py-2 sm:py-2.5 text-[10px] font-black tracking-wider uppercase rounded-xl sm:rounded-2xl flex items-center gap-1.5 sm:gap-2 bg-slate-800/90 text-slate-200 border border-slate-700 hover:text-amber-300 hover:border-amber-500/40 transition">
+                <span class="text-xs">✨</span>
+                PaxFlow Studio™
+              </button>
               <button id="tab-btn-viagens" class="shrink-0 whitespace-nowrap px-3.5 sm:px-4 py-2 sm:py-2.5 text-[10px] font-black tracking-wider uppercase rounded-xl sm:rounded-2xl flex items-center gap-1.5 sm:gap-2 bg-slate-800/90 text-slate-200 border border-slate-700 hover:text-[#00a8f5] hover:border-blue-500/40 transition">Viagens</button>
               <button id="tab-btn-orcamentos" class="shrink-0 whitespace-nowrap px-3.5 sm:px-4 py-2 sm:py-2.5 text-[10px] font-black tracking-wider uppercase rounded-xl sm:rounded-2xl flex items-center gap-1.5 sm:gap-2 bg-slate-800/90 text-slate-200 border border-slate-700 hover:text-[#00e5a3] hover:border-emerald-500/40 transition">Orçamentos &amp; Upsell</button>
               <button id="tab-btn-inbox" class="shrink-0 whitespace-nowrap px-3.5 sm:px-4 py-2 sm:py-2.5 text-[10px] font-black tracking-wider uppercase rounded-xl sm:rounded-2xl flex items-center gap-1.5 sm:gap-2 bg-slate-800/90 text-slate-200 border border-slate-700 hover:text-rose-400 hover:border-rose-500/40 transition">Mensageria &amp; Decisões</button>
@@ -1309,6 +1313,38 @@ export class LandingPageNova {
                   <span><strong>Itinerários Digitais VIP &amp; Pesquisa NPS:</strong> Links públicos de viagem com as cores da sua agência. O cliente acessa vouchers e responde à avaliação NPS no celular.</span>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4"><div class="bg-white/[0.03] border border-white/10 p-4 rounded-2xl"><span class="text-[8px] font-bold text-fuchsia-400 uppercase tracking-wider block">Itinerário Digital do Cliente</span><p class="text-slate-400 leading-normal mt-1">O passageiro acompanha voos, hotéis, traslados e vouchers, organizados por dia com contagem regressiva.</p></div><div class="bg-white/[0.03] border border-white/10 p-4 rounded-2xl"><span class="text-[8px] font-bold text-[#00e5a3] uppercase tracking-wider block">Pesquisa de Satisfação NPS</span><p class="text-slate-400 leading-normal mt-1">Pesquisa pós-viagem amigável que alimenta as estatísticas do painel de controle.</p></div></div>
+              </div>
+
+              <!-- Painel PaxFlow Studio™ -->
+              <div id="panel-studio" class="space-y-4 tab-pane-transition hidden text-xs">
+                <div class="p-4 rounded-2xl bg-gradient-to-r from-amber-500/20 via-indigo-950/60 to-purple-950/40 border border-amber-500/30 text-sm text-slate-200 flex items-center justify-between flex-wrap gap-2">
+                  <div class="flex items-center gap-2.5">
+                    <div class="w-7 h-7 rounded-xl bg-amber-500/20 text-amber-300 flex items-center justify-center shrink-0 text-base">
+                      ✨
+                    </div>
+                    <span><strong>PaxFlow Studio™ (Propostas de Luxo &amp; Live Preview):</strong> Editor em Split Screen que transforma PDFs de fornecedores em propostas visuais cinematográficas com atualização em tempo real e atalho [Ctrl+S].</span>
+                  </div>
+                  <span class="px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-black uppercase tracking-wider border border-amber-500/30 flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span> Live Preview Ativo
+                  </span>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div class="bg-slate-900/90 border border-amber-500/30 p-4 rounded-2xl space-y-2 shadow-xl">
+                    <span class="text-[9px] font-black uppercase tracking-wider text-amber-400 block">Tela Dividida (Split Screen)</span>
+                    <p class="text-slate-300 text-xs font-bold">Edição limpa e focada à esquerda com Live Preview instantâneo à direita.</p>
+                    <p class="text-slate-400 text-[11px]">Qualquer alteração em passageiro, datas ou atividades reflete na hora na prévia da proposta.</p>
+                  </div>
+                  <div class="bg-slate-900/90 border border-indigo-500/30 p-4 rounded-2xl space-y-2 shadow-xl">
+                    <span class="text-[9px] font-black uppercase tracking-wider text-indigo-400 block">Ingestão &amp; Fidelidade Estrita</span>
+                    <p class="text-slate-300 text-xs font-bold">Arraste múltiplos PDFs ou cole textos de WhatsApp e reservas.</p>
+                    <p class="text-slate-400 text-[11px]">Extrai voos, companhias aéreas, hotéis e localizadores preservando a precisão documental.</p>
+                  </div>
+                  <div class="bg-slate-900/90 border border-emerald-500/30 p-4 rounded-2xl space-y-2 shadow-xl">
+                    <span class="text-[9px] font-black uppercase tracking-wider text-emerald-400 block">Saídas Multicanal em 1-Clique</span>
+                    <p class="text-slate-300 text-xs font-bold">Caderno PDF A4, Link Web Responsivo ou Conversão em Viagem.</p>
+                    <p class="text-slate-400 text-[11px]">Envie o link de aprovação com visual luxuoso ou imprima o caderno de viagem da agência.</p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -2163,11 +2199,12 @@ export class LandingPageNova {
       }, { passive: true });
     }
 
-    const tabs = ['dashboard', 'risk', 'nexttrip', 'viagens', 'orcamentos', 'inbox', 'escala', 'reembolsos', 'relatorios', 'publicas'];
+    const tabs = ['dashboard', 'risk', 'nexttrip', 'studio', 'viagens', 'orcamentos', 'inbox', 'escala', 'reembolsos', 'relatorios', 'publicas'];
     const pathTexts: Record<string, string> = {
       dashboard: 'PaxFlow - Painel de Controle',
       risk: 'PaxFlow - Risk Score™ (Diagnóstico de Saúde Operacional)',
       nexttrip: 'PaxFlow - Next Trip Engine™ (Motor Preditivo de Recompra)',
+      studio: 'PaxFlow Studio™ - Propostas de Luxo & Live Preview',
       viagens: 'PaxFlow - Operação de Viagens',
       orcamentos: 'PaxFlow - Funil de Orçamentos & Upsell',
       inbox: 'PaxFlow - Central de Mensagens e Decisões',
@@ -2182,6 +2219,7 @@ export class LandingPageNova {
       dashboard: "shrink-0 whitespace-nowrap px-3.5 sm:px-4 py-2 sm:py-2.5 text-[10px] font-black tracking-wider uppercase rounded-xl sm:rounded-2xl flex items-center gap-1.5 sm:gap-2 bg-gradient-to-r from-[#0052d4] to-[#00a8f5] text-white shadow-lg pf-glow",
       risk: "shrink-0 whitespace-nowrap px-3.5 sm:px-4 py-2 sm:py-2.5 text-[10px] font-black tracking-wider uppercase rounded-xl sm:rounded-2xl flex items-center gap-1.5 sm:gap-2 bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-500 text-white shadow-lg pf-glow",
       nexttrip: "shrink-0 whitespace-nowrap px-3.5 sm:px-4 py-2 sm:py-2.5 text-[10px] font-black tracking-wider uppercase rounded-xl sm:rounded-2xl flex items-center gap-1.5 sm:gap-2 bg-gradient-to-r from-indigo-600 via-purple-600 to-[#00a8f5] text-white shadow-lg pf-glow",
+      studio: "shrink-0 whitespace-nowrap px-3.5 sm:px-4 py-2 sm:py-2.5 text-[10px] font-black tracking-wider uppercase rounded-xl sm:rounded-2xl flex items-center gap-1.5 sm:gap-2 bg-gradient-to-r from-amber-500 to-indigo-600 text-white shadow-lg pf-glow",
       viagens: "shrink-0 whitespace-nowrap px-3.5 sm:px-4 py-2 sm:py-2.5 text-[10px] font-black tracking-wider uppercase rounded-xl sm:rounded-2xl flex items-center gap-1.5 sm:gap-2 bg-gradient-to-r from-[#00a8f5] to-cyan-500 text-white shadow-lg",
       orcamentos: "shrink-0 whitespace-nowrap px-3.5 sm:px-4 py-2 sm:py-2.5 text-[10px] font-black tracking-wider uppercase rounded-xl sm:rounded-2xl flex items-center gap-1.5 sm:gap-2 bg-gradient-to-r from-[#00e5a3] to-teal-400 text-slate-950 font-black shadow-lg",
       inbox: "shrink-0 whitespace-nowrap px-3.5 sm:px-4 py-2 sm:py-2.5 text-[10px] font-black tracking-wider uppercase rounded-xl sm:rounded-2xl flex items-center gap-1.5 sm:gap-2 bg-gradient-to-r from-[#f12711] to-[#f5af19] text-white shadow-lg",
