@@ -371,28 +371,24 @@ export class StudioPage {
             <div class="space-y-1 min-w-0 flex-1">
               <div class="flex flex-wrap items-center gap-1.5">
                 ${badgeTipo(item.tipo)}
-                ${item.companhia ? `
-                  <span class="px-2 py-0.5 rounded text-[10px] font-black bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
-                    ✈️ ${item.companhia}
-                  </span>
-                ` : ''}
-                ${item.localizador ? `
-                  <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
-                    LOC: ${item.localizador}
-                  </span>
-                ` : ''}
+                <span class="card-item-badge-cia px-2 py-0.5 rounded text-[10px] font-black bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 ${item.companhia ? '' : 'hidden'}">
+                  ✈️ ${item.companhia || ''}
+                </span>
+                <span class="card-item-badge-loc px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 ${item.localizador ? '' : 'hidden'}">
+                  LOC: ${item.localizador || ''}
+                </span>
                 ${item.horario || item.horaInicio ? `
-                  <span class="text-[10px] text-slate-500 font-bold">
+                  <span class="card-item-horario-resumo text-[10px] text-slate-500 font-bold">
                     ⏰ ${item.horario || item.horaInicio}
                   </span>
                 ` : ''}
               </div>
 
-              <div class="font-bold text-slate-800 dark:text-slate-100 truncate text-xs">
+              <div class="card-item-titulo-resumo font-bold text-slate-800 dark:text-slate-100 truncate text-xs">
                 ${item.titulo || 'Item sem título'}
               </div>
 
-              <div class="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+              <div class="card-item-subtitulo-resumo text-[11px] text-slate-500 dark:text-slate-400 truncate">
                 ${item.subtitulo || item.observacoes || 'Clique em Revisar Detalhes para preencher.'}
               </div>
             </div>
@@ -742,32 +738,44 @@ export class StudioPage {
 
     // 10. Expandir / Recolher Todos os Cards
     this.container.querySelector('#btn-toggle-todos')?.addEventListener('click', () => {
-      const totalItens = (this.propostaAtual.itinerario_dias || []).reduce((acc, d) => acc + d.itens.length, 0);
-      if (this.itensExpandidos.size >= totalItens) {
-        this.itensExpandidos.clear();
-      } else {
-        this.propostaAtual.itinerario_dias?.forEach((dia, dIdx) => {
-          dia.itens.forEach((_, iIdx) => {
-            this.itensExpandidos.add(`${dIdx}-${iIdx}`);
-          });
-        });
-      }
-      this.atualizarDadosDoFormulario();
-      this.render();
+      const todosForms = this.container.querySelectorAll('[id^="form-revisao-"]');
+      const algumOculto = Array.from(todosForms).some(f => f.classList.contains('hidden'));
+
+      todosForms.forEach(form => {
+        const id = form.getAttribute('id') || '';
+        const chave = id.replace('form-revisao-', '');
+        const btnToggle = this.container.querySelector(`button[data-chave="${chave}"]`);
+
+        if (algumOculto) {
+          form.classList.remove('hidden');
+          if (btnToggle) btnToggle.textContent = '▲ Recolher';
+          this.itensExpandidos.add(chave);
+        } else {
+          form.classList.add('hidden');
+          if (btnToggle) btnToggle.textContent = '✏️ Revisar Detalhes';
+          this.itensExpandidos.delete(chave);
+        }
+      });
     });
 
-    // 11. Toggle individual de revisão do item
+    // 11. Toggle individual de revisão do item (suave no DOM)
     this.container.querySelectorAll('.btn-toggle-revisao').forEach(btn => {
       btn.addEventListener('click', () => {
         const chave = btn.getAttribute('data-chave');
         if (chave) {
-          if (this.itensExpandidos.has(chave)) {
-            this.itensExpandidos.delete(chave);
-          } else {
-            this.itensExpandidos.add(chave);
+          const form = this.container.querySelector(`#form-revisao-${chave}`);
+          if (form) {
+            const estaOculto = form.classList.contains('hidden');
+            if (estaOculto) {
+              form.classList.remove('hidden');
+              btn.textContent = '▲ Recolher';
+              this.itensExpandidos.add(chave);
+            } else {
+              form.classList.add('hidden');
+              btn.textContent = '✏️ Revisar Detalhes';
+              this.itensExpandidos.delete(chave);
+            }
           }
-          this.atualizarDadosDoFormulario();
-          this.render();
         }
       });
     });
@@ -823,7 +831,7 @@ export class StudioPage {
       });
     });
 
-    // 15. Sincronização inteligente e captura de alterações inline
+    // 15. Sincronização inteligente e captura de alterações inline em tempo real
     this.container.querySelectorAll('.input-item-campo').forEach(el => {
       el.addEventListener('input', (e: any) => {
         const dIdx = parseInt(el.getAttribute('data-dia-idx') || '0', 10);
@@ -834,10 +842,12 @@ export class StudioPage {
         if (this.propostaAtual.itinerario_dias?.[dIdx]?.itens?.[iIdx] && campo) {
           (this.propostaAtual.itinerario_dias[dIdx].itens[iIdx] as any)[campo] = valor;
 
-          // Sincronização inteligente para Voos: Cia, Voo, Origem e Destino atualizam título
           const item = this.propostaAtual.itinerario_dias[dIdx].itens[iIdx];
+          const cardContainer = this.container.querySelector(`div[data-dia-idx="${dIdx}"][data-item-idx="${iIdx}"]`);
+          const formContainer = this.container.querySelector(`#form-revisao-${dIdx}-${iIdx}`);
+
+          // Sincronização inteligente para Voos: Cia, Voo, Origem e Destino
           if (item.tipo === 'voo' && (campo === 'companhia' || campo === 'numeroVoo' || campo === 'origem' || campo === 'destino')) {
-            const formContainer = this.container.querySelector(`#form-revisao-${dIdx}-${iIdx}`);
             const inputTitulo = formContainer?.querySelector('.input-item-titulo') as HTMLInputElement;
             const inputSubtitulo = formContainer?.querySelector('.input-item-subtitulo') as HTMLInputElement;
 
@@ -857,8 +867,48 @@ export class StudioPage {
             }
           }
 
-          // Se mudou o tipo do item, re-renderiza o card para ajustar os campos
+          // Sincronização inteligente para Hotéis: Quarto, Regime e Título
+          if (item.tipo === 'hotel' && (campo === 'titulo' || campo === 'quarto' || campo === 'regime')) {
+            const inputSubtitulo = formContainer?.querySelector('.input-item-subtitulo') as HTMLInputElement;
+            const novoSubtitulo = `${item.quarto || 'Acomodação'} · ${item.regime || 'Hospedagem'}`;
+            if (inputSubtitulo) {
+              inputSubtitulo.value = novoSubtitulo;
+              item.subtitulo = novoSubtitulo;
+            }
+          }
+
+          // Atualiza cabeçalho resumido do card visual instantaneamente
+          if (cardContainer) {
+            const elTituloResumo = cardContainer.querySelector('.card-item-titulo-resumo');
+            const elSubtituloResumo = cardContainer.querySelector('.card-item-subtitulo-resumo');
+            const elBadgeCia = cardContainer.querySelector('.card-item-badge-cia');
+            const elBadgeLoc = cardContainer.querySelector('.card-item-badge-loc');
+
+            if (elTituloResumo) elTituloResumo.textContent = item.titulo || 'Item sem título';
+            if (elSubtituloResumo) elSubtituloResumo.textContent = item.subtitulo || item.observacoes || 'Clique em Revisar Detalhes para preencher.';
+
+            if (elBadgeCia) {
+              if (item.companhia) {
+                elBadgeCia.textContent = `✈️ ${item.companhia}`;
+                elBadgeCia.classList.remove('hidden');
+              } else {
+                elBadgeCia.classList.add('hidden');
+              }
+            }
+
+            if (elBadgeLoc) {
+              if (item.localizador) {
+                elBadgeLoc.textContent = `LOC: ${item.localizador}`;
+                elBadgeLoc.classList.remove('hidden');
+              } else {
+                elBadgeLoc.classList.add('hidden');
+              }
+            }
+          }
+
+          // Se mudou o tipo do item, salva o estado atual e re-renderiza o card
           if (campo === 'tipo') {
+            this.atualizarDadosDoFormulario();
             this.render();
           }
         }
