@@ -40,11 +40,8 @@ export class StudioPage {
     if (propostaId) {
       const encontrada = await StudioPropostasService.buscarPorId(propostaId);
       if (encontrada) {
-        this.propostaAtual = encontrada;
+        this.propostaAtual = { ...encontrada };
       }
-    } else if (this.propostasSalvas.length > 0 && !this.propostaAtual.id) {
-      // Carrega a mais recente como rascunho base se o usuário quiser editar
-      this.propostaAtual = { ...this.propostasSalvas[0] };
     }
 
     this.render();
@@ -96,6 +93,26 @@ export class StudioPage {
             ` : ''}
           </div>
         </div>
+
+        <!-- BANNER DE STATUS DO MODO DE EDIÇÃO -->
+        ${this.propostaAtual.id ? `
+          <div id="banner-modo-edicao" class="bg-indigo-50/90 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-800/80 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-xs animate-fadeIn">
+            <div class="flex items-center gap-3">
+              <span class="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center text-base font-bold shadow-xs shrink-0">✏️</span>
+              <div>
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="font-black text-indigo-950 dark:text-indigo-200 uppercase tracking-wider text-[11px]">Editando Proposta Salva:</span>
+                  <span class="font-black text-indigo-700 dark:text-indigo-400 text-sm">${this.propostaAtual.cliente_nome || 'Cliente'}</span>
+                  <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-200/70 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-300 uppercase">${this.propostaAtual.status || 'RASCUNHO'}</span>
+                </div>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Destino: <strong>${this.propostaAtual.destino || 'A definir'}</strong> • Valor Total: <strong>${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: this.propostaAtual.moeda || 'BRL' }).format(this.propostaAtual.valor_total || 0)}</strong></p>
+              </div>
+            </div>
+            <button id="btn-cancelar-edicao-banner" type="button" class="px-3.5 py-2 text-xs font-bold text-indigo-700 dark:text-indigo-300 bg-white dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/50 border border-indigo-200 dark:border-indigo-700 rounded-xl transition flex items-center justify-center gap-1.5 shadow-xs shrink-0 cursor-pointer">
+              <span>➕</span> Criar Nova Proposta em Branco
+            </button>
+          </div>
+        ` : ''}
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
           <!-- COLUNA ESQUERDA: INGESTÃO E DADOS GERAIS (5 cols) -->
@@ -565,12 +582,12 @@ export class StudioPage {
                   ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: p.moeda || 'BRL' }).format(p.valor_total || 0)}
                 </td>
                 <td class="py-2.5">${badgeStatus(p.status)}</td>
-                <td class="py-2.5 text-right space-x-1">
-                  <button class="btn-carregar-proposta px-2 py-1 bg-indigo-50 text-indigo-600 rounded font-bold hover:bg-indigo-100" data-id="${p.id}">
-                    Editar
+                <td class="py-2.5 text-right space-x-1 whitespace-nowrap">
+                  <button type="button" class="btn-carregar-proposta px-2.5 py-1.5 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 rounded-lg font-bold hover:bg-indigo-600 hover:text-white dark:hover:bg-indigo-600 dark:hover:text-white transition cursor-pointer" data-id="${p.id}">
+                    ✏️ Editar
                   </button>
-                  <button class="btn-imprimir-tabela px-2 py-1 bg-slate-100 text-slate-700 rounded font-bold hover:bg-slate-200" data-id="${p.id}">
-                    PDF
+                  <button type="button" class="btn-imprimir-tabela px-2.5 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition cursor-pointer" data-id="${p.id}">
+                    📄 PDF
                   </button>
                 </td>
               </tr>
@@ -678,6 +695,12 @@ export class StudioPage {
       };
       this.itensExpandidos.clear();
       this.render();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      setTimeout(() => {
+        const inputCliente = this.container.querySelector('#campo-cliente') as HTMLInputElement | null;
+        inputCliente?.focus();
+      }, 100);
+      this.showToast('Novo rascunho de proposta iniciado.', 'success');
     });
 
     // 5. Salvar Proposta
@@ -915,29 +938,82 @@ export class StudioPage {
       });
     });
 
-    // 16. Ações na tabela
+    // 16. Ações na tabela e modo de edição
+    const carregarPropostaParaEdicao = async (id: string) => {
+      console.log('[StudioPage] Carregando proposta para edição:', id);
+      let p = this.propostasSalvas.find(item => String(item.id) === String(id));
+      if (!p) {
+        p = (await StudioPropostasService.buscarPorId(id)) || undefined;
+      }
+
+      if (p) {
+        this.propostaAtual = JSON.parse(JSON.stringify(p));
+        this.itensExpandidos.clear();
+        // Expande os primeiros itens para que o usuário possa revisar imediatamente
+        this.propostaAtual.itinerario_dias?.forEach((_, dIdx) => {
+          this.itensExpandidos.add(`${dIdx}-0`);
+        });
+
+        this.render();
+
+        // Rola suavemente até o topo da tela onde o formulário está carregado
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        // Foco e destaque visual com pulse no campo do cliente
+        setTimeout(() => {
+          const inputCliente = this.container.querySelector('#campo-cliente') as HTMLInputElement | null;
+          if (inputCliente) {
+            inputCliente.focus();
+            inputCliente.classList.add('ring-2', 'ring-indigo-500', 'bg-indigo-50/40');
+            setTimeout(() => {
+              inputCliente.classList.remove('ring-2', 'ring-indigo-500', 'bg-indigo-50/40');
+            }, 1800);
+          }
+        }, 120);
+
+        this.showToast(`Proposta de "${p.cliente_nome || 'Cliente'}" carregada para edição!`, 'success');
+      } else {
+        this.showToast('Proposta não encontrada no banco da agência.', 'error');
+      }
+    };
+
     this.container.querySelectorAll('.btn-carregar-proposta').forEach(btn => {
-      btn.addEventListener('click', async () => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
         const id = btn.getAttribute('data-id');
         if (id) {
-          const p = this.propostasSalvas.find(item => item.id === id);
-          if (p) {
-            this.propostaAtual = { ...p };
-            this.itensExpandidos.clear();
-            this.render();
-          }
+          carregarPropostaParaEdicao(id);
         }
       });
     });
 
     this.container.querySelectorAll('.btn-imprimir-tabela').forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
         const id = btn.getAttribute('data-id');
-        const p = this.propostasSalvas.find(item => item.id === id);
+        const p = this.propostasSalvas.find(item => String(item.id) === String(id));
         if (p) {
           StudioPdfGenerator.imprimirOuSalvarPdf(p);
         }
       });
+    });
+
+    // 17. Botão Cancelar Edição no Banner
+    this.container.querySelector('#btn-cancelar-edicao-banner')?.addEventListener('click', () => {
+      this.propostaAtual = {
+        cliente_nome: '',
+        destino: '',
+        valor_total: 0,
+        moeda: 'BRL',
+        status: 'RASCUNHO',
+        itinerario_dias: []
+      };
+      this.itensExpandidos.clear();
+      this.render();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      this.showToast('Novo rascunho de proposta iniciado.', 'success');
     });
   }
 
@@ -1049,7 +1125,9 @@ export class StudioPage {
     this.atualizarDadosDoFormulario();
 
     if (!this.propostaAtual.cliente_nome) {
-      alert('Por favor, informe o nome do cliente antes de salvar.');
+      this.showToast('Por favor, informe o nome do cliente antes de salvar.', 'error');
+      const inputCliente = this.container.querySelector('#campo-cliente') as HTMLInputElement | null;
+      inputCliente?.focus();
       return;
     }
 
@@ -1057,10 +1135,34 @@ export class StudioPage {
       const salva = await StudioPropostasService.salvarProposta(this.propostaAtual);
       this.propostaAtual = salva;
       await this.carregarPropostas();
-      alert('Proposta salva com sucesso no PaxFlow Studio!');
       this.render();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      this.showToast('Proposta salva com sucesso no PaxFlow Studio!', 'success');
     } catch (err: any) {
-      alert('Erro ao salvar proposta: ' + err.message);
+      this.showToast('Erro ao salvar proposta: ' + (err.message || err), 'error');
     }
+  }
+
+  /**
+   * Exibe mensagens flutuantes (Toasts) elegantes e modernas
+   */
+  private showToast(message: string, type: 'success' | 'error' = 'success'): void {
+    const toastId = 'paxflow-toast';
+    let toast = document.getElementById(toastId);
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = toastId;
+      document.body.appendChild(toast);
+    }
+    const isSuccess = type === 'success';
+    toast.className = `fixed bottom-5 right-5 px-5 py-3.5 rounded-xl shadow-2xl text-white font-semibold text-sm z-50 transition-all duration-300 transform translate-y-0 opacity-100 flex items-center gap-2 ${
+      isSuccess ? 'bg-emerald-600 shadow-emerald-600/20' : 'bg-rose-600 shadow-rose-600/20'
+    }`;
+    toast.innerHTML = `<span>${isSuccess ? '✅' : '⚠️'}</span> <span>${message}</span>`;
+    setTimeout(() => {
+      if (toast) {
+        toast.className = toast.className.replace('translate-y-0 opacity-100', 'translate-y-10 opacity-0');
+      }
+    }, 4000);
   }
 }
