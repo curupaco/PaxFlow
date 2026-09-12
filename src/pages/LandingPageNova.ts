@@ -314,6 +314,7 @@ export class LandingPageNova {
           </a>
           <nav class="hidden lg:flex items-center gap-8 text-sm font-bold text-slate-300">
             <a href="#recursos" class="hover:text-[#00e5a3] transition">Recursos</a>
+            <a href="#studio-section" class="hover:text-amber-400 transition flex items-center gap-1"><span class="text-xs">✨</span>Studio™</a>
             <a href="#mobile-pwa" class="hover:text-cyan-400 transition flex items-center gap-1.5"><svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>App Mobile</a>
             <a href="#marcas" class="hover:text-[#00a8f5] transition">Sua Marca</a>
             <a href="#integracao" class="hover:text-[#f5af19] transition">Integrações</a>
@@ -1497,6 +1498,58 @@ export class LandingPageNova {
                 <h3 class="text-xl font-extrabold text-white">Ações de 1-Clique</h3>
                 <p class="text-xs text-slate-300 leading-relaxed font-medium">
                   Dispare um WhatsApp personalizado pré-preenchido ou crie um Orçamento Preditivo direto pelo painel, ativando carência automática de 30 dias após a abordagem.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== PAXFLOW STUDIO™ (Destaque Exclusivo) ===== -->
+        <section id="studio-section" class="relative z-10 w-full py-20 px-6 border-t border-white/10 bg-gradient-to-b from-[#06070f] via-[#140b28]/80 to-[#06070f]">
+          <div class="pf-zone max-w-6xl mx-auto space-y-12">
+            <div class="text-center max-w-3xl mx-auto space-y-4">
+              <span class="px-4 py-1.5 rounded-full bg-gradient-to-r from-amber-500/20 to-indigo-500/20 border border-amber-500/40 text-amber-300 text-[10px] font-black uppercase tracking-widest">
+                ✨ Lançamento Exclusivo PaxFlow Studio™
+              </span>
+              <h2 class="text-3xl md:text-5xl font-black tracking-tight leading-tight text-white">
+                PaxFlow Studio™<br />
+                <span class="bg-gradient-to-r from-amber-400 via-rose-400 to-indigo-400 bg-clip-text text-transparent pf-animated-gradient">
+                  Propostas de Luxo com Live Preview em Tempo Real
+                </span>
+              </h2>
+              <p class="text-sm text-slate-300 font-medium max-w-2xl mx-auto leading-relaxed">
+                Chega de propostas manuais em Word ou PDFs sem padronização. Transforme vouchers de consolidadoras e mensagens de WhatsApp em <strong>experiências visuais de cinema</strong> que encantam o cliente e aceleram o fechamento.
+              </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div data-reveal="left" class="p-7 rounded-3xl bg-white/[0.04] border border-amber-500/30 backdrop-blur-md space-y-4 hover:border-amber-400/60 transition shadow-xl pf-glow">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-600/30 to-rose-600/30 text-amber-300 border border-amber-500/40 flex items-center justify-center text-2xl font-black">
+                  🖥️
+                </div>
+                <h3 class="text-xl font-extrabold text-white">Split Screen &amp; Live Preview</h3>
+                <p class="text-xs text-slate-300 leading-relaxed font-medium">
+                  Edição estruturada à esquerda e prévia visual em tempo real à direita. Veja como a proposta fica a cada caractere digitado, com simulador para Desktop e Mobile.
+                </p>
+              </div>
+
+              <div data-reveal="up" class="p-7 rounded-3xl bg-white/[0.04] border border-indigo-500/30 backdrop-blur-md space-y-4 hover:border-indigo-400/60 transition shadow-xl pf-glow">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-600/30 to-purple-600/30 text-indigo-300 border border-indigo-500/40 flex items-center justify-center text-2xl font-black">
+                  📥
+                </div>
+                <h3 class="text-xl font-extrabold text-white">Fidelidade Estrita a Documentos</h3>
+                <p class="text-xs text-slate-300 leading-relaxed font-medium">
+                  Arraste bilhetes aéreos, vouchers de hotel ou cole textos do Amadeus/Sabre e WhatsApp. Extração automática de trechos, voos e códigos localizadores (LOC).
+                </p>
+              </div>
+
+              <div data-reveal="right" class="p-7 rounded-3xl bg-white/[0.04] border border-emerald-500/30 backdrop-blur-md space-y-4 hover:border-emerald-400/60 transition shadow-xl pf-glow">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-600/30 to-teal-600/30 text-emerald-300 border border-emerald-500/40 flex items-center justify-center text-2xl font-black">
+                  📄
+                </div>
+                <h3 class="text-xl font-extrabold text-white">Caderno PDF &amp; Link Online</h3>
+                <p class="text-xs text-slate-300 leading-relaxed font-medium">
+                  Gere cadernos de viagem diagramados para impressão em alta definição, links públicos interativos com aceite formal ou converta a proposta direto em Viagem confirmada.
                 </p>
               </div>
             </div>

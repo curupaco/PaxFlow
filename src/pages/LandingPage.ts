@@ -311,6 +311,7 @@ export class LandingPage {
           </a>
           <nav class="hidden lg:flex items-center gap-8 text-sm font-bold text-slate-300">
             <a href="#recursos" class="hover:text-[#00e5a3] transition">Recursos</a>
+            <a href="#studio-section" class="hover:text-amber-400 transition flex items-center gap-1"><span class="text-xs">✨</span>Studio™</a>
             <a href="#mobile-pwa" class="hover:text-cyan-400 transition flex items-center gap-1.5"><span class="text-xs">📱</span>App Mobile</a>
             <a href="#marcas" class="hover:text-[#00a8f5] transition">Sua Marca</a>
             <a href="#integracao" class="hover:text-[#f5af19] transition">Integrações</a>
@@ -389,6 +390,7 @@ export class LandingPage {
           <!-- Marquee de diferenciais -->
           <div class="w-full max-w-5xl mb-16 rounded-3xl overflow-hidden border border-white/10 bg-white/[0.03] pf-marquee-wrap">
             <div class="pf-marquee gap-12 py-4 px-6 text-sm font-bold">
+              <span class="flex items-center gap-2 text-amber-400">✨ PaxFlow Studio™ (Propostas de Luxo &amp; Live Preview)</span>
               <span class="flex items-center gap-2 text-purple-400">🚀 PaxFlow Upsell Engine™ (Oportunidades &amp; Upgrades)</span>
               <span class="flex items-center gap-2 text-indigo-400">🎯 Next Trip Engine™ (Motor Preditivo de Recompra)</span>
               <span class="flex items-center gap-2 text-emerald-400">🛡️ PaxFlow Risk Score™ (Diagnóstico Preditivo 0-100)</span>
@@ -396,6 +398,7 @@ export class LandingPage {
               <span class="flex items-center gap-2 text-amber-400">🔔 Push Notifications no iOS &amp; Android</span>
               <span class="flex items-center gap-2 text-[#00e5a3]">✦ Alertas de passaporte e visto em 180 dias</span>
               <span class="flex items-center gap-2 text-[#00a8f5]">✦ Reembolsos com cronômetro SLA</span>
+              <span class="flex items-center gap-2 text-amber-400">✨ PaxFlow Studio™ (Propostas de Luxo &amp; Live Preview)</span>
               <span class="flex items-center gap-2 text-purple-400">🚀 PaxFlow Upsell Engine™ (Oportunidades &amp; Upgrades)</span>
               <span class="flex items-center gap-2 text-indigo-400">🎯 Next Trip Engine™ (Motor Preditivo de Recompra)</span>
               <span class="flex items-center gap-2 text-[#f5af19]">✦ Escala de funcionários e banco de folgas</span>
@@ -419,6 +422,7 @@ export class LandingPage {
               <button id="tab-btn-dashboard" class="px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 bg-gradient-to-r from-[#0052d4] to-[#00a8f5] text-white shadow-lg pf-glow">Painel Comercial</button>
               <button id="tab-btn-risk" class="px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 bg-slate-800/90 text-slate-200 border border-slate-700 hover:text-emerald-300 hover:border-emerald-500/40 transition">🛡️ Risk Score™</button>
               <button id="tab-btn-nexttrip" class="px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 bg-slate-800/90 text-slate-200 border border-slate-700 hover:text-indigo-300 hover:border-indigo-500/40 transition">🎯 Next Trip Engine™</button>
+              <button id="tab-btn-studio" class="px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 bg-slate-800/90 text-slate-200 border border-slate-700 hover:text-amber-300 hover:border-amber-500/40 transition"><span>✨</span> PaxFlow Studio™</button>
               <button id="tab-btn-viagens" class="px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 bg-slate-800/90 text-slate-200 border border-slate-700 hover:text-[#00a8f5] hover:border-blue-500/40 transition">Viagens</button>
               <button id="tab-btn-orcamentos" class="px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 bg-slate-800/90 text-slate-200 border border-slate-700 hover:text-[#00e5a3] hover:border-emerald-500/40 transition">Orçamentos &amp; Upsell</button>
               <button id="tab-btn-inbox" class="px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 bg-slate-800/90 text-slate-200 border border-slate-700 hover:text-rose-400 hover:border-rose-500/40 transition">Mensageria &amp; Decisões</button>
@@ -639,6 +643,36 @@ export class LandingPage {
                 <div class="p-4 rounded-2xl bg-gradient-to-r from-fuchsia-600/25 to-purple-500/10 border border-fuchsia-500/25 text-sm text-slate-200 flex items-center gap-2"><span class="text-lg">🌟</span><span><strong>Itinerários Digitais VIP & Pesquisa NPS:</strong> Links públicos de viagem com as cores da sua agência. O cliente acessa vouchers e responde à avaliação NPS no celular.</span></div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4"><div class="bg-white/[0.03] border border-white/10 p-4 rounded-2xl"><span class="text-[8px] font-bold text-fuchsia-400 uppercase tracking-wider block">Itinerário Digital do Cliente</span><p class="text-slate-400 leading-normal mt-1">O passageiro acompanha voos, hotéis, traslados e vouchers, organizados por dia com contagem regressiva.</p></div><div class="bg-white/[0.03] border border-white/10 p-4 rounded-2xl"><span class="text-[8px] font-bold text-[#00e5a3] uppercase tracking-wider block">Pesquisa de Satisfação NPS</span><p class="text-slate-400 leading-normal mt-1">Pesquisa pós-viagem amigável que alimenta as estatísticas do painel de controle.</p></div></div>
               </div>
+
+              <!-- Painel PaxFlow Studio™ -->
+              <div id="panel-studio" class="space-y-4 tab-pane-transition hidden text-xs">
+                <div class="p-4 rounded-2xl bg-gradient-to-r from-amber-500/25 via-indigo-950/70 to-purple-950/50 border border-amber-500/40 text-sm text-slate-200 flex items-center justify-between flex-wrap gap-2">
+                  <div class="flex items-center gap-2">
+                    <span class="text-xl">✨</span>
+                    <span><strong>PaxFlow Studio™ (Criação de Propostas de Luxo &amp; Live Preview):</strong> Editor em Split Screen com atualização instantânea na tela, ingestão de múltiplos PDFs e emissão de Cadernos de Viagem em PDF de alta resolução.</span>
+                  </div>
+                  <span class="px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-black uppercase tracking-wider border border-amber-500/30">
+                    ⚡ Live Preview Ativo
+                  </span>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div class="bg-slate-900/90 border border-amber-500/30 p-4 rounded-2xl space-y-2 shadow-xl">
+                    <span class="text-[9px] font-black uppercase tracking-wider text-amber-400 block">Tela Dividida (Split Screen)</span>
+                    <p class="text-slate-300 text-xs font-bold">Edição estruturada à esquerda e Live Preview da proposta à direita.</p>
+                    <p class="text-slate-400 text-[11px]">Altere passageiro, destinos, valores ou capas e veja o resultado na hora sem recarregar a tela.</p>
+                  </div>
+                  <div class="bg-slate-900/90 border border-indigo-500/30 p-4 rounded-2xl space-y-2 shadow-xl">
+                    <span class="text-[9px] font-black uppercase tracking-wider text-indigo-400 block">Ingestão &amp; Fidelidade Estrita</span>
+                    <p class="text-slate-300 text-xs font-bold">PDFs de consolidadoras ou textos colados de WhatsApp e e-mail.</p>
+                    <p class="text-slate-400 text-[11px]">Extração com precisão documental de voos, cias aéreas, hotéis, quartos e vouchers.</p>
+                  </div>
+                  <div class="bg-slate-900/90 border border-emerald-500/30 p-4 rounded-2xl space-y-2 shadow-xl">
+                    <span class="text-[9px] font-black uppercase tracking-wider text-emerald-400 block">Barra Fixa com [Ctrl+S] &amp; Saídas</span>
+                    <p class="text-slate-300 text-xs font-bold">Status nítido de salvamento e exportação multicanal em 1-clique.</p>
+                    <p class="text-slate-400 text-[11px]">Imprima o Caderno PDF A4 de luxo, copie o Link de Aprovação do Cliente ou efetive em Viagem confirmada.</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </main>
@@ -783,6 +817,58 @@ export class LandingPage {
                 <h3 class="text-xl font-extrabold text-white">Ações de 1-Clique</h3>
                 <p class="text-xs text-slate-300 leading-relaxed font-medium">
                   Dispare um WhatsApp personalizado pré-preenchido ou crie um Orçamento Preditivo direto pelo painel, ativando carência automática de 30 dias após a abordagem.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== PAXFLOW STUDIO™ (Destaque Exclusivo) ===== -->
+        <section id="studio-section" class="relative z-10 w-full py-20 px-6 border-t border-white/10 bg-gradient-to-b from-[#06070f] via-[#140b28]/80 to-[#06070f]">
+          <div class="pf-zone max-w-6xl mx-auto space-y-12">
+            <div class="text-center max-w-3xl mx-auto space-y-4">
+              <span class="px-4 py-1.5 rounded-full bg-gradient-to-r from-amber-500/20 to-indigo-500/20 border border-amber-500/40 text-amber-300 text-[10px] font-black uppercase tracking-widest">
+                ✨ Lançamento Exclusivo PaxFlow Studio™
+              </span>
+              <h2 class="text-3xl md:text-5xl font-black tracking-tight leading-tight text-white">
+                PaxFlow Studio™<br />
+                <span class="bg-gradient-to-r from-amber-400 via-rose-400 to-indigo-400 bg-clip-text text-transparent pf-animated-gradient">
+                  Propostas de Luxo com Live Preview em Tempo Real
+                </span>
+              </h2>
+              <p class="text-sm text-slate-300 font-medium max-w-2xl mx-auto leading-relaxed">
+                Chega de propostas manuais em Word ou PDFs sem padronização. Transforme vouchers de consolidadoras e mensagens de WhatsApp em <strong>experiências visuais de cinema</strong> que encantam o cliente e aceleram o fechamento.
+              </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div data-reveal="left" class="p-7 rounded-3xl bg-white/[0.04] border border-amber-500/30 backdrop-blur-md space-y-4 hover:border-amber-400/60 transition shadow-xl pf-glow">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-600/30 to-rose-600/30 text-amber-300 border border-amber-500/40 flex items-center justify-center text-2xl font-black">
+                  🖥️
+                </div>
+                <h3 class="text-xl font-extrabold text-white">Split Screen &amp; Live Preview</h3>
+                <p class="text-xs text-slate-300 leading-relaxed font-medium">
+                  Edição estruturada à esquerda e prévia visual em tempo real à direita. Veja como a proposta fica a cada caractere digitado, com simulador para Desktop e Mobile.
+                </p>
+              </div>
+
+              <div data-reveal="up" class="p-7 rounded-3xl bg-white/[0.04] border border-indigo-500/30 backdrop-blur-md space-y-4 hover:border-indigo-400/60 transition shadow-xl pf-glow">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-600/30 to-purple-600/30 text-indigo-300 border border-indigo-500/40 flex items-center justify-center text-2xl font-black">
+                  📥
+                </div>
+                <h3 class="text-xl font-extrabold text-white">Fidelidade Estrita a Documentos</h3>
+                <p class="text-xs text-slate-300 leading-relaxed font-medium">
+                  Arraste bilhetes aéreos, vouchers de hotel ou cole textos do Amadeus/Sabre e WhatsApp. Extração automática de trechos, voos e códigos localizadores (LOC).
+                </p>
+              </div>
+
+              <div data-reveal="right" class="p-7 rounded-3xl bg-white/[0.04] border border-emerald-500/30 backdrop-blur-md space-y-4 hover:border-emerald-400/60 transition shadow-xl pf-glow">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-600/30 to-teal-600/30 text-emerald-300 border border-emerald-500/40 flex items-center justify-center text-2xl font-black">
+                  📄
+                </div>
+                <h3 class="text-xl font-extrabold text-white">Caderno PDF &amp; Link Online</h3>
+                <p class="text-xs text-slate-300 leading-relaxed font-medium">
+                  Gere cadernos de viagem diagramados para impressão em alta definição, links públicos interativos com aceite formal ou converta a proposta direto em Viagem confirmada.
                 </p>
               </div>
             </div>
@@ -1195,11 +1281,12 @@ export class LandingPage {
     document.getElementById('btn-plano-profissional')?.addEventListener('click', handleStartDemo);
     document.getElementById('btn-plano-enterprise')?.addEventListener('click', handleWhatsApp);
 
-    const tabs = ['dashboard', 'risk', 'nexttrip', 'viagens', 'orcamentos', 'inbox', 'escala', 'reembolsos', 'relatorios', 'publicas'];
+    const tabs = ['dashboard', 'risk', 'nexttrip', 'studio', 'viagens', 'orcamentos', 'inbox', 'escala', 'reembolsos', 'relatorios', 'publicas'];
     const pathTexts: Record<string, string> = {
       dashboard: 'PaxFlow - Painel de Controle',
       risk: 'PaxFlow - Risk Score™ (Diagnóstico de Saúde Operacional)',
       nexttrip: 'PaxFlow - Next Trip Engine™ (Motor Preditivo de Recompra)',
+      studio: 'PaxFlow Studio™ - Propostas de Luxo & Live Preview',
       viagens: 'PaxFlow - Operação de Viagens',
       orcamentos: 'PaxFlow - Funil de Orçamentos & Upsell',
       inbox: 'PaxFlow - Central de Mensagens e Decisões',
@@ -1214,6 +1301,7 @@ export class LandingPage {
       dashboard: "px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 bg-gradient-to-r from-[#0052d4] to-[#00a8f5] text-white shadow-lg pf-glow",
       risk: "px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-500 text-white shadow-lg pf-glow",
       nexttrip: "px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 bg-gradient-to-r from-indigo-600 via-purple-600 to-[#00a8f5] text-white shadow-lg pf-glow",
+      studio: "px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 bg-gradient-to-r from-amber-500 to-indigo-600 text-white shadow-lg pf-glow",
       viagens: "px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 bg-gradient-to-r from-[#00a8f5] to-cyan-500 text-white shadow-lg",
       orcamentos: "px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 bg-gradient-to-r from-[#00e5a3] to-teal-400 text-slate-950 font-black shadow-lg",
       inbox: "px-4 py-2.5 text-[10px] font-black tracking-wider uppercase rounded-2xl flex items-center gap-2 bg-gradient-to-r from-[#f12711] to-[#f5af19] text-white shadow-lg",
