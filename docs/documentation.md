@@ -40,6 +40,7 @@
    - 3.27 [Next Trip Engine™ (Motor Preditivo de Recompra & Ciclo de Vida do Viajante)](#327-next-trip-engine-motor-preditivo-de-recompra--ciclo-de-vida-do-viajante)
    - 3.28 [PaxFlow Upsell Engine™ (Motor Preditivo de Oportunidades & Ticket Médio)](#328-paxflow-upsell-engine-motor-preditivo-de-oportunidades--ticket-médio)
    - 3.29 [PaxFlow Studio™ (Criação de Propostas Digitais de Luxo & Cadernos de Viagem)](#329-paxflow-studio-criação-de-propostas-digitais-de-luxo--cadernos-de-viagem)
+   - 3.30 [Gestão Inteligente de Anexos e Documentos (Clientes e Viagens)](#330-gestão-inteligente-de-anexos-e-documentos-clientes-e-viagens)
 4. [Diferenciais Competitivos](#4-diferenciais-competitivos)
 5. [Arquitetura Tecnológica](#5-arquitetura-tecnológica)
 6. [Segurança e Conformidade](#6-segurança-e-conformidade)
@@ -618,6 +619,52 @@ Módulo avançado de orquestração visual e documental da agência, permitindo 
   - Painel lateral deslizante aberto pelo botão `📂 Minhas Propostas`, contendo campo de busca em tempo real por cliente ou destino, status da proposta e botões de carregamento e emissão de PDF. Mantém a bancada de trabalho 100% desobstruída.
 - **Modal Focado de Atividades**:
   - Permite configurar detalhes profundos de voos (origem, destino, cia aérea via catálogo oficial, número de voo, PNR), hospedagens (quarto, regime, voucher, mapa) e serviços de forma espaçosa e focada, com botão explícito `Aplicar ao Roteiro`.
+
+---
+
+### 3.30 Gestão Inteligente de Anexos e Documentos (Clientes e Viagens) [NEW]
+
+Módulo unificado de governança e custódia documental para agências de viagem, eliminando a fragilidade de rotular cegamente qualquer anexo como passaporte. Estrutura a gestão de arquivos em duas frentes complementares: **documentos pessoais de identificação do passageiro** e **vouchers/contratos operacionais vinculados à viagem**.
+
+- **Taxonomia Universal de 12 Categorias**:
+  - **Identificação Pessoal**:
+    - `PASSAPORTE` (Passaporte Internacional)
+    - `RG` (Carteira de Identidade)
+    - `CNH` (Carteira Nacional de Habilitação)
+    - `VISTO` (Visto Consular / ETA)
+  - **Vouchers & Logística**:
+    - `VOUCHER_AEREO` (Bilhete / Passagem Aérea)
+    - `VOUCHER_HOTEL` (Reserva de Hospedagem)
+    - `INGRESSO` (Ingressos & Atrações)
+    - `VOUCHER_TRANSPORTE` (Transfer / Locação de Veículo / Trem)
+    - `SEGURO` (Apólice de Seguro Viagem)
+  - **Governança & Roteiro**:
+    - `CONTRATO` (Contrato de Intermediação e Termos)
+    - `ROTEIRO` (Caderno / Programa de Viagem)
+    - `OUTROS` (Comprovantes Gerais)
+
+- **Upload em Lote com Inferência Inteligente (`UploadAnexoModal.ts`)**:
+  - Área de arrastar e soltar (drag-and-drop) ou clique permitindo o envio simultâneo de múltiplos arquivos (PDFs, JPEGs, PNGs).
+  - **Detecção Automática por Nome**: Analisa o nome original de cada arquivo por expressões regulares contextuais e pré-seleciona a categoria mais adequada (ex: `cnh_joao.pdf` ➔ `CNH`, `voucher_resort_cancun.pdf` ➔ `VOUCHER_HOTEL`, `passagem_voo_latam.pdf` ➔ `VOUCHER_AEREO`, `transfer_hotel.pdf` ➔ `VOUCHER_TRANSPORTE`).
+  - **Edição Inline de Metadados**: Permite ajustar o rótulo amigável, o número do documento (`numero_documento`) e a data de validade (`data_validade`) antes de confirmar o envio.
+  - **Seletor de Passageiros em Viagens em Grupo**: Permite atribuir cada voucher ou comprovante a um passageiro específico cadastrado na viagem (titular ou acompanhantes), organizando a pasta do grupo com total clareza.
+
+- **Sincronização Inteligente entre Viagem e Ficha do Passageiro**:
+  - Ao anexar documentos pessoais (`PASSAPORTE`, `RG`, `CNH`) dentro do modal de uma viagem ou na ficha do cliente, o serviço (`AnexosService`) sincroniza automaticamente as informações no cadastro do cliente (`clientes`), preenchendo número do documento e validade caso estejam pendentes.
+
+- **Galeria Visual de Documentos e Ações Rápidas**:
+  - Renderização em cards modernos com badges coloridos, data de envio, autor do upload e identificação do passageiro vinculado.
+  - **Visualização Inline (Lightbox)**: Abertura imediata de PDFs e imagens com controles de ampliação e rotação sem sair da aplicação.
+  - **Download Seguro**: Acesso direto ao arquivo original armazenado no Supabase Storage.
+  - **Compartilhamento WhatsApp com 1-Clique**: Gera mensagem profissional pré-formatada contendo o nome do passageiro, a descrição do documento e o link seguro de visualização para envio ao cliente.
+  - **Controle de Exclusão com Auditoria**: Apenas administradores ou o consultor autor do envio possuem autorização para excluir documentos anexados.
+
+- **Integração com PaxFlow Risk Score™**:
+  - Anexos categorizados como `VOUCHER_HOTEL`, `VOUCHER_AEREO`, `VOUCHER_TRANSPORTE` ou `SEGURO` abatem automaticamente pendências do pilar de Vouchers e Logística da viagem.
+  - Documentos de identidade (`RG`, `CNH`) comprovados nos anexos do passageiro validam sua conformidade documental em viagens nacionais e destinos Mercosul, impedindo penalidades indevidas por ausência de passaporte internacional.
+
+- **Resiliência a Schema Drift (Padrão Zero-Break)**:
+  - O serviço `AnexosService` conta com tratamento nativo para erros de colunas inexistentes (`42703`), retrocedendo para o schema base sem travar a interface nem gerar mensagens de erro ao usuário caso a migração DDL ainda esteja em processo de aplicação no banco de dados.
 
 ---
 

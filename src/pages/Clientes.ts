@@ -1,5 +1,7 @@
 import { supabase, getSessaoAtual } from '../services/supabase';
 import { uploadDocumentoCliente } from '../services/googleDrive';
+import { AnexosService } from '../services/anexosService';
+import { UploadAnexoModal } from '../components/common/UploadAnexoModal';
 import { getAvatarSvg } from '../services/avatars';
 import { Cliente, ClientePassaporte, PerfilConsultor } from '../types';
 import { showCustomConfirm, showCustomPrompt } from '../services/dialog';
@@ -439,6 +441,10 @@ export class ClientesPage {
     this.renderFichaDetalhada();
     this.setupFormEventListeners();
     this.updateMobileViewVisibility();
+
+    if (this.clienteSelecionado?.id) {
+      this.carregarEDesenharDocumentosCliente(this.clienteSelecionado.id);
+    }
   }
 
   /**
@@ -787,9 +793,14 @@ export class ClientesPage {
       }
     });
 
-    // Configuração de Drag & Drop para Documentos
+    // Configuração de Drag & Drop e Upload para Documentos
     const uploadEl = document.getElementById('upload-dropzone');
     const fileInput = document.getElementById('file-input-documento') as HTMLInputElement;
+    const btnAbrirAnexo = document.getElementById('btn-abrir-anexo-cliente');
+
+    if (btnAbrirAnexo && fileInput) {
+      btnAbrirAnexo.addEventListener('click', () => fileInput.click());
+    }
 
     if (uploadEl && fileInput && this.clienteSelecionado) {
       const activeClass = 'upload-zone-active';
@@ -812,20 +823,21 @@ export class ClientesPage {
         }, false);
       });
 
-      // Captura o arquivo ao soltar (drop)
+      // Captura múltiplos arquivos ao soltar (drop)
       uploadEl.addEventListener('drop', (e) => {
         const dt = e.dataTransfer;
         const files = dt?.files;
         if (files && files.length > 0) {
-          this.handleFileSelected(files[0]);
+          this.abrirModalUploadAnexo(Array.from(files));
         }
       });
 
-      // Captura o arquivo ao selecionar pela caixa padrão
+      // Captura múltiplos arquivos ao selecionar pela caixa padrão
       fileInput.addEventListener('change', () => {
         const files = fileInput.files;
         if (files && files.length > 0) {
-          this.handleFileSelected(files[0]);
+          this.abrirModalUploadAnexo(Array.from(files));
+          fileInput.value = ''; // Limpa para permitir reenvio do mesmo arquivo se necessário
         }
       });
     }
@@ -976,41 +988,214 @@ export class ClientesPage {
   /**
    * Processa o upload do arquivo selecionado chamando o serviço do Google Drive
    */
-  private async handleFileSelected(file: File): Promise<void> {
-    if (!this.clienteSelecionado || this.carregandoUpload) return;
+  /**
+   * Abre o modal inteligente de identificação e upload de anexos
+   */
+  private abrirModalUploadAnexo(files: File[]): void {
+    if (!this.clienteSelecionado?.id || files.length === 0) return;
 
-    this.carregandoUpload = true;
-    this.renderUploadState(true, file.name);
+    const modal = new UploadAnexoModal({
+      arquivos: files,
+      clienteId: this.clienteSelecionado.id,
+      usuarioId: this.user?.id,
+      showToast: (msg, tipo) => this.showToast(msg, tipo === 'error' ? 'error' : 'success'),
+      onSuccess: async () => {
+        if (this.clienteSelecionado?.id) {
+          await this.carregarEDesenharDocumentosCliente(this.clienteSelecionado.id);
+          await this.loadClientes();
+          const atualizado = this.clientes.find(c => c.id === this.clienteSelecionado?.id) || null;
+          if (atualizado) {
+            this.clienteSelecionado = atualizado;
+          }
+        }
+      }
+    });
+
+    modal.open();
+  }
+
+  /**
+   * Carrega e desenha a galeria de documentos anexados do cliente
+   */
+  private async carregarEDesenharDocumentosCliente(clienteId: string): Promise<void> {
+    const container = document.getElementById('container-documentos-cliente');
+    if (!container) return;
 
     try {
-      const result = await uploadDocumentoCliente(
-        this.clienteSelecionado.id,
-        this.clienteSelecionado.nome,
-        this.clienteSelecionado.email,
-        this.clienteSelecionado.telefone,
-        file
-      );
+      const anexos = await AnexosService.listarAnexos(undefined, clienteId);
 
-      if (result.success && result.googleDriveFolderUrl) {
-        this.showToast('Documento carregado no Google Drive com sucesso!', 'success');
-        
-        // Atualiza o objeto do cliente localmente
-        this.clienteSelecionado.googleDriveFolderUrl = result.googleDriveFolderUrl;
-        
-        // Recarrega todos os clientes e atualiza a exibição da ficha
-        await this.loadClientes();
-        const atualizado = this.clientes.find(c => c.id === this.clienteSelecionado?.id) || null;
-        this.selecionarCliente(atualizado);
-      } else {
-        throw new Error(result.error || 'Erro desconhecido no servidor.');
+      if (!anexos || anexos.length === 0) {
+        container.innerHTML = `
+          <div class="p-6 bg-slate-50/60 dark:bg-slate-800/30 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700/80 text-center space-y-2">
+            <span class="text-2xl">📁</span>
+            <p class="text-xs font-bold text-slate-700 dark:text-slate-300">Nenhum documento anexado ainda</p>
+            <p class="text-[11px] text-slate-400 font-medium">Anexe Passaportes, RGs, CNHs ou Vistos abaixo para arquivamento e consulta imediata.</p>
+          </div>
+        `;
+        return;
       }
 
-    } catch (err: any) {
-      console.error('Falha no upload do passaporte:', err);
-      this.showToast('Erro no upload do passaporte.', 'error', err);
-      this.renderUploadState(false);
-    } finally {
-      this.carregandoUpload = false;
+      const getBadgeEstilo = (tipo: string) => {
+        switch (tipo) {
+          case 'PASSAPORTE':
+            return { icon: '🛂', label: 'Passaporte', cls: 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800' };
+          case 'RG':
+            return { icon: '🪪', label: 'Identidade (RG)', cls: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800' };
+          case 'CNH':
+            return { icon: '🚗', label: 'CNH Habilitação', cls: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800' };
+          case 'VISTO':
+            return { icon: '📄', label: 'Visto Consular', cls: 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800' };
+          case 'VOUCHER_AEREO':
+            return { icon: '✈️', label: 'Bilhete Aéreo', cls: 'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-800' };
+          case 'VOUCHER_HOTEL':
+            return { icon: '🏨', label: 'Hospedagem', cls: 'bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950/40 dark:text-teal-300 dark:border-teal-800' };
+          case 'INGRESSO':
+            return { icon: '🎫', label: 'Ingresso / Atração', cls: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800' };
+          case 'SEGURO':
+            return { icon: '🛡️', label: 'Seguro Viagem', cls: 'bg-cyan-50 text-cyan-700 border-cyan-200 dark:bg-cyan-950/40 dark:text-cyan-300 dark:border-cyan-800' };
+          case 'CONTRATO':
+            return { icon: '📝', label: 'Contrato', cls: 'bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700' };
+          default:
+            return { icon: '📎', label: 'Documento', cls: 'bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700' };
+        }
+      };
+
+      container.innerHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          ${anexos.map((doc) => {
+            const badge = getBadgeEstilo(doc.tipo_documento);
+            const tamanhoKb = doc.tamanho_bytes ? (doc.tamanho_bytes / 1024).toFixed(1) + ' KB' : '';
+            const podeExcluir = AnexosService.podeExcluirAnexo(doc, this.user?.id, this.perfil?.role);
+
+            // Validação de SLA de validade se houver data
+            let validadeBadge = '';
+            if (doc.data_validade) {
+              const dtVal = new Date(doc.data_validade);
+              const hoje = new Date();
+              const dias = Math.ceil((dtVal.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+              if (dias < 0) {
+                validadeBadge = `<span class="px-2 py-0.5 rounded text-[9px] font-black bg-rose-500/10 text-rose-600 border border-rose-500/20 uppercase">Vencido (${new Date(doc.data_validade).toLocaleDateString('pt-BR')})</span>`;
+              } else if (dias <= 180) {
+                validadeBadge = `<span class="px-2 py-0.5 rounded text-[9px] font-black bg-amber-500/10 text-amber-600 border border-amber-500/20 uppercase">Vence em ${dias}d</span>`;
+              } else {
+                validadeBadge = `<span class="px-2 py-0.5 rounded text-[9px] font-bold text-slate-400">Validade: ${new Date(doc.data_validade).toLocaleDateString('pt-BR')}</span>`;
+              }
+            }
+
+            return `
+              <div class="p-3.5 bg-white dark:bg-slate-800/80 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm flex flex-col justify-between gap-3 hover:border-indigo-400/60 transition group">
+                <div class="space-y-1.5">
+                  <div class="flex items-center justify-between gap-2">
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-extrabold uppercase tracking-wider border ${badge.cls}">
+                      <span>${badge.icon}</span> ${badge.label}
+                    </span>
+                    ${tamanhoKb ? `<span class="text-[10px] font-bold text-slate-400">${tamanhoKb}</span>` : ''}
+                  </div>
+
+                  <h4 class="text-xs font-black text-slate-900 dark:text-slate-100 truncate" title="${doc.rotulo}">
+                    ${doc.rotulo}
+                  </h4>
+
+                  ${doc.numero_documento || validadeBadge ? `
+                    <div class="flex flex-wrap items-center gap-1.5 pt-0.5 text-[10px]">
+                      ${doc.numero_documento ? `<span class="font-mono font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700/60 px-1.5 py-0.5 rounded">Nº ${doc.numero_documento}</span>` : ''}
+                      ${validadeBadge}
+                    </div>
+                  ` : ''}
+                </div>
+
+                <!-- Ações do Documento -->
+                <div class="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-700/60 gap-1.5">
+                  <div class="flex items-center gap-1.5">
+                    <button type="button" class="btn-visualizar-doc px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 font-extrabold text-[10px] rounded-lg transition uppercase flex items-center gap-1" data-id="${doc.id}" data-rotulo="${doc.rotulo}" data-path="${doc.storage_path}" data-mime="${doc.mime_type || ''}">
+                      <span>👁️</span> Ver
+                    </button>
+                    <a href="${doc.storage_path.startsWith('http') ? doc.storage_path : '#'}" target="_blank" class="btn-baixar-doc px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-extrabold text-[10px] rounded-lg transition uppercase flex items-center gap-1" data-id="${doc.id}" data-path="${doc.storage_path}">
+                      <span>📥</span> Baixar
+                    </a>
+                    ${this.clienteSelecionado?.telefone ? `
+                      <button type="button" class="btn-whatsapp-doc px-2 py-1.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400 font-extrabold text-[10px] rounded-lg transition uppercase flex items-center gap-1" data-id="${doc.id}">
+                        <span>💬</span>
+                      </button>
+                    ` : ''}
+                  </div>
+
+                  ${podeExcluir ? `
+                    <button type="button" class="btn-excluir-doc p-1.5 text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 transition rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30" title="Excluir documento" data-id="${doc.id}" data-path="${doc.storage_path}" data-rotulo="${doc.rotulo}">
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    </button>
+                  ` : ''}
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+
+      // Eventos de Ações nos cards
+      container.querySelectorAll('.btn-visualizar-doc').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const rotulo = btn.getAttribute('data-rotulo') || 'Documento';
+          const path = btn.getAttribute('data-path') || '';
+          const mime = btn.getAttribute('data-mime') || 'application/pdf';
+          const { DocumentViewer } = await import('../services/documentViewer');
+          DocumentViewer.open(rotulo, path, mime, this.clienteSelecionado);
+        });
+      });
+
+      container.querySelectorAll('.btn-baixar-doc').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          const path = btn.getAttribute('data-path') || '';
+          if (path.startsWith('supabase-storage://')) {
+            e.preventDefault();
+            const { DocumentViewer } = await import('../services/documentViewer');
+            DocumentViewer.open('Download de Documento', path, 'application/pdf', this.clienteSelecionado);
+          }
+        });
+      });
+
+      container.querySelectorAll('.btn-whatsapp-doc').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const docId = btn.getAttribute('data-id');
+          const anexo = anexos.find(a => a.id === docId);
+          if (anexo && this.clienteSelecionado?.telefone) {
+            const telLimpo = this.clienteSelecionado.telefone.replace(/\D/g, '');
+            const msgEncoded = AnexosService.montarMensagemWhatsApp(anexo, this.clienteSelecionado.nome);
+            window.open(`https://api.whatsapp.com/send?phone=55${telLimpo}&text=${msgEncoded}`, '_blank');
+          }
+        });
+      });
+
+      container.querySelectorAll('.btn-excluir-doc').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const docId = btn.getAttribute('data-id');
+          const path = btn.getAttribute('data-path') || '';
+          const rotulo = btn.getAttribute('data-rotulo') || 'este documento';
+
+          const confirmar = await showCustomConfirm(
+            `Deseja realmente remover o documento "${rotulo}"? Esta ação não pode ser desfeita.`,
+            'Remover Documento'
+          );
+
+          if (confirmar && docId) {
+            const excluiu = await AnexosService.excluirAnexo(docId, path || undefined);
+            if (excluiu) {
+              this.showToast('Documento removido com sucesso!', 'success');
+              await this.carregarEDesenharDocumentosCliente(clienteId);
+            } else {
+              this.showToast('Erro ao remover documento.', 'error');
+            }
+          }
+        });
+      });
+
+    } catch (err) {
+      console.error('[ClientesPage] Erro ao carregar documentos do cliente:', err);
+      container.innerHTML = `
+        <div class="p-4 bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/40 rounded-xl text-xs text-rose-600 dark:text-rose-400">
+          Não foi possível carregar os documentos anexados no momento.
+        </div>
+      `;
     }
   }
 
@@ -1192,22 +1377,37 @@ export class ClientesPage {
             </div>
           </div>
 
-          <!-- Seção 3: Anexos e Upload Google Drive (Exibida apenas para clientes existentes) -->
+          <!-- Seção 3: Documentos & Identificações do Passageiro (Exibida apenas para clientes existentes) -->
           ${isNew ? '' : `
             <div class="border-t border-slate-100 dark:border-slate-800 pt-5">
-              <h3 class="text-sm font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-3 border-b border-indigo-50/50 dark:border-slate-800 pb-1 flex items-center gap-1.5">
-                3. Upload Seguro de Documentos (Google Drive Agência) ${renderHelpIcon('upload-google-drive')}
-              </h3>
-              <p class="text-xs text-slate-400 dark:text-slate-400 mb-3.5 font-medium">Os arquivos anexados serão inseridos automaticamente em uma pasta estruturada do Google Drive central da agência, sem vinculação com contas pessoais.</p>
+              <div class="flex items-center justify-between mb-3 border-b border-indigo-50/50 dark:border-slate-800 pb-1.5 flex-wrap gap-2">
+                <h3 class="text-sm font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
+                  3. Documentos &amp; Identificações do Passageiro ${renderHelpIcon('upload-google-drive')}
+                </h3>
+                <button type="button" id="btn-abrir-anexo-cliente" class="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-[11px] tracking-wide rounded-xl shadow-sm transition flex items-center gap-1.5 uppercase shrink-0">
+                  <span>➕</span> Anexar Documentos
+                </button>
+              </div>
+              <p class="text-xs text-slate-400 dark:text-slate-400 mb-3.5 font-medium">
+                Passaportes, RGs, CNHs, Vistos e outros documentos oficiais com armazenamento seguro na nuvem e sincronização automática com viagens.
+              </p>
               
-              <!-- Componente de Upload Drag & Drop -->
+              <!-- Galeria de Documentos Anexados do Passageiro -->
+              <div id="container-documentos-cliente" class="space-y-2 mb-4">
+                <div class="flex items-center gap-2 p-4 text-xs text-slate-400 italic bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-200/60 dark:border-slate-800">
+                  <div class="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                  <span>Carregando documentos cadastrados...</span>
+                </div>
+              </div>
+
+              <!-- Componente de Upload Drag & Drop (Suporte a Lote) -->
               <div class="relative">
-                <input type="file" id="file-input-documento" accept="image/*,application/pdf" class="hidden" />
-                <div id="upload-dropzone" class="border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-indigo-400/80 bg-slate-50/30 dark:bg-slate-800/10 hover:bg-slate-50 dark:hover:bg-slate-800/40 rounded-2xl p-6 text-center cursor-pointer transition transform hover:-translate-y-0.5 flex flex-col items-center justify-center space-y-2 group">
-                  <div id="upload-zone-visual" class="flex flex-col items-center justify-center space-y-2">
-                    <span class="text-3xl filter group-hover:scale-110 transition duration-300">📤</span>
-                    <p class="text-sm text-slate-700 dark:text-slate-300 font-extrabold">Arraste e solte arquivos aqui</p>
-                    <p class="text-xs text-slate-400 dark:text-slate-400 font-semibold">Ou clique para selecionar (PDF, JPEG, PNG - Máx. 10MB)</p>
+                <input type="file" id="file-input-documento" accept="image/*,application/pdf" multiple class="hidden" />
+                <div id="upload-dropzone" class="border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-indigo-400/80 bg-slate-50/30 dark:bg-slate-800/10 hover:bg-slate-50 dark:hover:bg-slate-800/40 rounded-2xl p-5 text-center cursor-pointer transition transform hover:-translate-y-0.5 flex flex-col items-center justify-center space-y-1.5 group">
+                  <div id="upload-zone-visual" class="flex flex-col items-center justify-center space-y-1.5">
+                    <span class="text-2xl filter group-hover:scale-110 transition duration-300">📤</span>
+                    <p class="text-xs text-slate-700 dark:text-slate-300 font-extrabold">Arraste e solte múltiplos arquivos aqui</p>
+                    <p class="text-[11px] text-slate-400 dark:text-slate-400 font-semibold">Ou clique para selecionar (PDF, JPEG, PNG - Máx. 25MB)</p>
                   </div>
                 </div>
               </div>

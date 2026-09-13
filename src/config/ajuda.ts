@@ -383,16 +383,30 @@ export const HELP_ITEMS: HelpItem[] = [
   {
     id: 'upload-compressao-canvas',
     modulo: 'clientes',
-    label: 'Upload e Compactação de Documentos de Clientes',
-    description: 'Como funciona o envio de fotos de passaporte e vouchers de forma eficiente.',
-    details: 'Ao anexar imagens (JPEG/PNG) na ficha do cliente ou nas viagens, o PaxFlow realiza um pré-processamento via Canvas API no navegador. Ele redimensiona a imagem para resoluções ideais e a compacta, reduzindo arquivos pesados de celulares de ~5MB para blobs levíssimos de <50KB antes de subir ao Supabase Storage. Isso garante economia de espaço e carregamento rápido.'
+    label: 'Upload e Compactação de Documentos de Clientes e Viagens',
+    description: 'Como funciona o envio de fotos de passaporte, CNH, RG e vouchers com otimização automática.',
+    details: 'Ao anexar imagens (JPEG/PNG) na ficha do cliente ou nas viagens, o PaxFlow realiza um pré-processamento via Canvas API no navegador. Ele redimensiona a imagem para resoluções ideais e a compacta, reduzindo arquivos pesados de celulares de ~5MB para blobs levíssimos de <50KB antes de subir ao Supabase Storage. Isso garante economia drástica de espaço, uploads instantâneos e carregamento ultra-rápido na galeria de documentos.'
+  },
+  {
+    id: 'upload-multiplos-anexos-lote',
+    modulo: 'clientes',
+    label: '📎 Envio de Múltiplos Arquivos em Lote (UploadAnexoModal)',
+    description: 'Como enviar vários documentos de uma só vez com inferência automática de categoria.',
+    details: 'O PaxFlow conta com um modal moderno de envio em lote:\n\n1. **Seleção Múltipla ou Arrastar**: Na seção de documentos do cliente ou da viagem, clique em "+ Novo Documento" ou arraste vários arquivos simultaneamente para a área indicada.\n2. **Detecção Inteligente do Tipo**: O sistema lê o nome de cada arquivo e pré-seleciona a categoria correta (ex: arquivos com "cnh" viram CNH, "resort" ou "hotel" viram Voucher Hotel, "transfer" viram Voucher Transporte).\n3. **Ajuste de Metadados**: Você pode renomear o rótulo, informar o número do documento ou a data de validade diretamente na lista antes do envio.\n4. **Associação por Passageiro**: Em viagens com múltiplos viajantes, use o seletor para indicar a qual passageiro aquele voucher pertence.\n5. **Envio Unificado**: Clique em "Salvar Todos os Documentos" para processar e enviar todos os arquivos de forma consolidada ao Supabase Storage.'
+  },
+  {
+    id: 'taxonomia-documentos-categorias',
+    modulo: 'clientes',
+    label: '📋 Taxonomia das 12 Categorias de Documentos do PaxFlow',
+    description: 'Conheça a classificação oficial de identificações pessoais e vouchers operacionais.',
+    details: 'Para acabar com a limitação de tratar todo arquivo como passaporte, o PaxFlow adota 12 categorias universais:\n\n**Identificação Pessoal do Passageiro:**\n- 🛂 **Passaporte**: Documento para viagens internacionais com monitoramento de SLA de 180 dias.\n- 🪪 **RG**: Carteira de Identidade oficial para voos e viagens nacionais.\n- 🚗 **CNH**: Carteira Nacional de Habilitação aceita em embarques nacionais e locação de veículos.\n- 📋 **Visto Consular**: Visto de turismo/negócios ou autorização eletrônica (ETA).\n\n**Vouchers & Logística da Viagem:**\n- ✈️ **Voucher Aéreo**: Bilhetes emitidos, e-tickets e confirmações de voo.\n- 🏨 **Voucher Hotel**: Confirmações de reserva, vouchers de hospedagem e resorts.\n- 🎟️ **Ingressos**: Entradas para parques temáticos, shows e atrações turísticas.\n- 🚐 **Voucher Transporte**: Traslados (transfers), vouchers de locação de automóveis ou bilhetes de trem.\n- 🛡️ **Seguro Viagem**: Apólices e certificados de assistência médica internacional/nacional.\n\n**Governança & Roteiro:**\n- 📑 **Contrato**: Termos de intermediação e contratos de prestação de serviços assinados.\n- 🗺️ **Roteiro**: Programação detalhada dia a dia e cadernos de viagem.\n- 📎 **Outros**: Demais comprovantes financeiros ou operacionais.'
   },
   {
     id: 'lightbox-documentos',
     modulo: 'clientes',
     label: 'Visualizador de Documentos Incorporado (Lightbox)',
-    description: 'Leitura inline de passaportes e propostas comerciais sem sair da tela.',
-    details: 'Documentos em PDF ou imagem anexados podem ser visualizados diretamente na interface do PaxFlow com o modal glassmorphic de Lightbox. Para links legados do Google Drive, o sistema dispõe de um botão de redirecionamento imediato.'
+    description: 'Leitura inline de passaportes, CNHs, vouchers e PDFs sem sair da tela.',
+    details: 'Documentos em PDF ou imagem anexados podem ser visualizados diretamente na interface do PaxFlow com o modal glassmorphic de Lightbox. O visualizador conta com rotação de páginas, zoom e download direto, sem abrir novas abas desnecessárias no navegador. Para links legados do Google Drive, o sistema dispõe de botão de redirecionamento imediato.'
   },
   {
     id: 'identidade-visual-branding',
@@ -573,6 +587,20 @@ export const HELP_ITEMS: HelpItem[] = [
     label: '⚡ Importador de PNR e E-mails de Emissão (1-Clique)',
     description: 'Como importar reservas de voos e hotéis colando o e-mail de confirmação da cia aérea ou GDS.',
     details: 'No formulário de inclusão de novos produtos da viagem, clique no botão "⚡ Importar PNR / E-mail". Cole o texto completo da confirmação recebida (Gol, Azul, LATAM, Amadeus, Sabre) e clique em "Processar Dados". O PaxFlow fará a leitura inteligente do Localizador (LOC), Fornecedor e trechos do voo, preenchendo os campos automaticamente sem digitação manual.'
+  },
+  {
+    id: 'documentos-nacionais-risk-score',
+    modulo: 'viagens',
+    label: '🛡️ Documentos Nacionais (RG/CNH) e Abatimento no Risk Score™',
+    description: 'Como os anexos de vouchers e identidades impactam a nota de saúde operacional da viagem.',
+    details: 'O PaxFlow Risk Score™ avalia a conformidade documental e logística da viagem em tempo real:\n\n- **Viagens Nacionais e Mercosul**: Passageiros que apresentarem RG ou CNH anexados têm sua conformidade documental validada, sem sofrer penalidades por ausência de passaporte internacional.\n- **Abatimento Automático de Pendências**: Ao anexar vouchers de hotéis, passagens aéreas ou apólices de seguro, o sistema reconhece automaticamente os comprovantes e remove os alertas de pendência de voucher, elevando a nota de saúde operacional da viagem rumo aos 100 pontos.'
+  },
+  {
+    id: 'compartilhamento-whatsapp-documentos',
+    modulo: 'viagens',
+    label: '💬 Compartilhamento de Vouchers e Ingressos via WhatsApp',
+    description: 'Como enviar links seguros de vouchers e bilhetes para o passageiro com 1 clique.',
+    details: 'Em cada card de documento anexado na viagem ou no passageiro, você encontra o botão com o ícone do **WhatsApp**:\n\n1. Clique no botão de WhatsApp do documento desejado.\n2. O PaxFlow gera uma mensagem educada e personalizada com o nome do passageiro, a identificação do voucher/ingresso e o link seguro de acesso.\n3. O WhatsApp Web (ou o app no celular) é aberto automaticamente com a conversa pronta para envio com apenas um "Enter".'
   },
   {
     id: 'painel-preditivo-risco',

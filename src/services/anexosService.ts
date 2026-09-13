@@ -68,14 +68,100 @@ export class AnexosService {
   /**
    * Envia um novo documento para o Supabase Storage e registra na tabela documentos_anexos.
    */
+  /**
+   * Inferência inteligente de tipo e rótulo baseado no nome do arquivo
+   */
+  public static inferirTipoPorNome(nomeArquivo: string, nomePassageiro?: string): { tipo: TipoDocumentoAnexo; rotulo: string } {
+    const lower = nomeArquivo.toLowerCase();
+    const nomeBase = nomeArquivo.replace(/\.[^/.]+$/, '').trim();
+
+    if (lower.includes('passaporte') || lower.includes('passport')) {
+      return {
+        tipo: 'PASSAPORTE',
+        rotulo: nomePassageiro ? `Passaporte - ${nomePassageiro}` : (nomeBase || 'Passaporte')
+      };
+    }
+    if (lower.includes('cnh') || lower.includes('habilitacao') || lower.includes('motorista')) {
+      return {
+        tipo: 'CNH',
+        rotulo: nomePassageiro ? `CNH - ${nomePassageiro}` : (nomeBase || 'CNH Habilitação')
+      };
+    }
+    if (lower.includes('rg') || lower.includes('identidade')) {
+      return {
+        tipo: 'RG',
+        rotulo: nomePassageiro ? `RG - ${nomePassageiro}` : (nomeBase || 'Documento de Identidade RG')
+      };
+    }
+    if (lower.includes('visto') || lower.includes('visa')) {
+      return {
+        tipo: 'VISTO',
+        rotulo: nomePassageiro ? `Visto - ${nomePassageiro}` : (nomeBase || 'Visto Consular')
+      };
+    }
+    if (lower.includes('voo') || lower.includes('bilhete') || lower.includes('aereo') || lower.includes('passagem') || lower.includes('ticket')) {
+      return {
+        tipo: 'VOUCHER_AEREO',
+        rotulo: nomeBase || 'Bilhete Aéreo'
+      };
+    }
+    if (lower.includes('transfer') || lower.includes('traslado') || lower.includes('carro') || lower.includes('locacao') || lower.includes('veiculo')) {
+      return {
+        tipo: 'VOUCHER_TRANSPORTE',
+        rotulo: nomeBase || 'Voucher Transfer / Locação'
+      };
+    }
+    if (lower.includes('hotel') || lower.includes('resort') || lower.includes('pousada') || lower.includes('hospedagem')) {
+      return {
+        tipo: 'VOUCHER_HOTEL',
+        rotulo: nomeBase || 'Voucher Hospedagem'
+      };
+    }
+    if (lower.includes('ingresso') || lower.includes('parque') || lower.includes('show') || lower.includes('atracao') || lower.includes('tour')) {
+      return {
+        tipo: 'INGRESSO',
+        rotulo: nomeBase || 'Ingresso / Atração'
+      };
+    }
+    if (lower.includes('seguro') || lower.includes('apolice') || lower.includes('assist')) {
+      return {
+        tipo: 'SEGURO',
+        rotulo: nomeBase || 'Apólice de Seguro Viagem'
+      };
+    }
+    if (lower.includes('contrato') || lower.includes('termo')) {
+      return {
+        tipo: 'CONTRATO',
+        rotulo: nomeBase || 'Contrato de Viagem'
+      };
+    }
+    if (lower.includes('roteiro') || lower.includes('itinerario') || lower.includes('guia')) {
+      return {
+        tipo: 'ROTEIRO',
+        rotulo: nomeBase || 'Roteiro de Viagem'
+      };
+    }
+
+    return {
+      tipo: 'OUTROS',
+      rotulo: nomeBase || 'Documento Anexo'
+    };
+  }
+
+  /**
+   * Envia um novo documento para o Supabase Storage e registra na tabela documentos_anexos.
+   */
   public static async uploadAnexo(params: {
     file: File;
     rotulo: string;
     tipo_documento: TipoDocumentoAnexo;
+    numero_documento?: string;
+    data_validade?: string;
     viagem_id?: string;
     cliente_id?: string;
+    user_id?: string;
   }): Promise<DocumentoAnexo> {
-    const { file, rotulo, tipo_documento, viagem_id, cliente_id } = params;
+    const { file, rotulo, tipo_documento, numero_documento, data_validade, viagem_id, cliente_id, user_id } = params;
 
     // 1. Obter limite de tamanho
     let maxMb = 25;
@@ -132,12 +218,17 @@ export class AnexosService {
       cliente_id: cliente_id || undefined,
       rotulo: rotulo.trim() || finalFile.name,
       tipo_documento: tipo_documento || 'OUTROS',
+      numero_documento: numero_documento?.trim() || undefined,
+      data_validade: data_validade?.trim() || undefined,
       nome_original: finalFile.name,
       storage_path: storagePathCompleto,
       mime_type: finalFile.type || 'application/octet-stream',
       tamanho_bytes: finalFile.size,
+      created_by: user_id || undefined,
       created_at: new Date().toISOString()
     };
+
+    let documentoSalvo: DocumentoAnexo;
 
     try {
       const { data, error: dbErr } = await supabase
@@ -147,22 +238,39 @@ export class AnexosService {
         .single();
 
       if (dbErr) {
-        // Fallback Zero-Break para schema drift (42P01 / 42703 / PGRST204)
-        if (
+        // Fallback para schema drift em colunas novas (42703)
+        if (dbErr.code === '42703') {
+          console.warn('[AnexosService] Colunas adicionais inexistentes (42703). Tentando payload base.');
+          const payloadBase = { ...payload };
+          delete payloadBase.numero_documento;
+          delete payloadBase.data_validade;
+
+          const { data: dataBase, error: errBase } = await supabase
+            .from(this.TABELA)
+            .insert(payloadBase)
+            .select()
+            .single();
+
+          if (errBase) {
+            documentoSalvo = await this.salvarFallbackDrift(payload as DocumentoAnexo);
+          } else {
+            documentoSalvo = { ...dataBase, ...payload } as DocumentoAnexo;
+          }
+        } else if (
           dbErr.code === '42P01' ||
-          dbErr.code === '42703' ||
           dbErr.code === 'PGRST204' ||
           dbErr.code === 'PGRST200' ||
           dbErr.message?.includes('does not exist') ||
           dbErr.message?.includes('schema cache')
         ) {
           console.warn('[AnexosService] Schema drift detectado em documentos_anexos. Ativando fallback resiliente.');
-          return await this.salvarFallbackDrift(payload as DocumentoAnexo);
+          documentoSalvo = await this.salvarFallbackDrift(payload as DocumentoAnexo);
+        } else {
+          throw dbErr;
         }
-        throw dbErr;
+      } else {
+        documentoSalvo = data as DocumentoAnexo;
       }
-
-      return data as DocumentoAnexo;
     } catch (err: any) {
       if (
         err?.code === '42P01' ||
@@ -172,10 +280,38 @@ export class AnexosService {
         err?.message?.includes('does not exist') ||
         err?.message?.includes('schema cache')
       ) {
-        return await this.salvarFallbackDrift(payload as DocumentoAnexo);
+        documentoSalvo = await this.salvarFallbackDrift(payload as DocumentoAnexo);
+      } else {
+        throw err;
       }
-      throw err;
     }
+
+    // 6. Sincronização retrocompatível com a ficha do cliente
+    if (cliente_id) {
+      try {
+        const updateCliente: Record<string, any> = {};
+
+        if (tipo_documento === 'PASSAPORTE') {
+          updateCliente.google_drive_folder_url = storagePathCompleto;
+          if (numero_documento?.trim()) updateCliente.passaporte_numero = numero_documento.trim();
+          if (data_validade?.trim()) updateCliente.passaporte_validade = data_validade.trim();
+        } else if ((tipo_documento === 'RG' || tipo_documento === 'CNH') && numero_documento?.trim()) {
+          // Atualiza documento principal se ainda não houver
+          const { data: cData } = await supabase.from('clientes').select('documento').eq('id', cliente_id).maybeSingle();
+          if (!cData?.documento) {
+            updateCliente.documento = numero_documento.trim();
+          }
+        }
+
+        if (Object.keys(updateCliente).length > 0) {
+          await supabase.from('clientes').update(updateCliente).eq('id', cliente_id);
+        }
+      } catch (clienteSyncErr) {
+        console.warn('[AnexosService] Aviso ao sincronizar metadados com tabela clientes:', clienteSyncErr);
+      }
+    }
+
+    return documentoSalvo;
   }
 
   /**
@@ -187,16 +323,31 @@ export class AnexosService {
     const listaFinal: DocumentoAnexo[] = [];
     let tabelaExiste = true;
 
+    // Se forneceu apenas viagemId, busca o clienteId titular da viagem para sincronização bidirecional
+    let clienteIdEfetivo = clienteId;
+    if (viagemId && !clienteIdEfetivo) {
+      try {
+        const { data: vInfo } = await supabase
+          .from('viagens')
+          .select('cliente_id')
+          .eq('id', viagemId)
+          .maybeSingle();
+        if (vInfo?.cliente_id) {
+          clienteIdEfetivo = vInfo.cliente_id;
+        }
+      } catch {}
+    }
+
     // 1. Consulta a tabela oficial documentos_anexos
     try {
       let query = supabase.from(this.TABELA).select('*').order('created_at', { ascending: false });
 
-      if (viagemId && clienteId) {
-        query = query.or(`viagem_id.eq.${viagemId},cliente_id.eq.${clienteId}`);
+      if (viagemId && clienteIdEfetivo) {
+        query = query.or(`viagem_id.eq.${viagemId},cliente_id.eq.${clienteIdEfetivo}`);
       } else if (viagemId) {
         query = query.eq('viagem_id', viagemId);
-      } else if (clienteId) {
-        query = query.eq('cliente_id', clienteId);
+      } else if (clienteIdEfetivo) {
+        query = query.eq('cliente_id', clienteIdEfetivo);
       }
 
       const { data, error } = await query;
@@ -245,8 +396,7 @@ export class AnexosService {
     }
 
     // 3. Consulta direta ao Supabase Storage (FONTE DA VERDADE DO ARMAZENAMENTO)
-    // Garante que nenhum arquivo recém-subido desapareça caso a tabela do banco ainda não tenha sido migrada
-    const pastasParaBuscar = [viagemId, clienteId].filter(Boolean) as string[];
+    const pastasParaBuscar = [viagemId, clienteIdEfetivo].filter(Boolean) as string[];
 
     for (const pasta of pastasParaBuscar) {
       if (supabase && supabase.storage) {
@@ -257,7 +407,6 @@ export class AnexosService {
 
           if (!storageErr && storageFiles && storageFiles.length > 0) {
             for (const f of storageFiles) {
-              // Ignora pastas internas do storage
               if (!f.name || f.name.startsWith('.')) continue;
 
               const pathCompleto = `supabase-storage://${pasta}/${f.name}`;
@@ -265,20 +414,13 @@ export class AnexosService {
 
               if (!jaExiste) {
                 const nomeLegivel = f.name.replace(/^\d+_/, '');
-                let tipoInferido: TipoDocumentoAnexo = 'OUTROS';
-                const lower = nomeLegivel.toLowerCase();
-                if (lower.includes('passaporte')) tipoInferido = 'PASSAPORTE';
-                else if (lower.includes('visto')) tipoInferido = 'VISTO';
-                else if (lower.includes('voo') || lower.includes('bilhete') || lower.includes('aereo')) tipoInferido = 'VOUCHER_AEREO';
-                else if (lower.includes('hotel') || lower.includes('resort')) tipoInferido = 'VOUCHER_HOTEL';
-                else if (lower.includes('seguro')) tipoInferido = 'SEGURO';
-                else if (lower.includes('contrato')) tipoInferido = 'CONTRATO';
+                const { tipo: tipoInferido, rotulo: rotuloInferido } = this.inferirTipoPorNome(nomeLegivel);
 
                 listaFinal.push({
                   id: f.id || `storage-${pasta}-${f.name}`,
                   viagem_id: pasta === viagemId ? viagemId : undefined,
-                  cliente_id: pasta === clienteId ? clienteId : undefined,
-                  rotulo: nomeLegivel,
+                  cliente_id: pasta === clienteIdEfetivo ? clienteIdEfetivo : undefined,
+                  rotulo: rotuloInferido,
                   tipo_documento: tipoInferido,
                   nome_original: nomeLegivel,
                   storage_path: pathCompleto,
@@ -295,7 +437,49 @@ export class AnexosService {
       }
     }
 
+    // 4. Se o cliente possui google_drive_folder_url legado que ainda não conste na lista, inclui
+    if (clienteIdEfetivo) {
+      try {
+        const { data: cData } = await supabase
+          .from('clientes')
+          .select('google_drive_folder_url, nome, passaporte_numero, passaporte_validade')
+          .eq('id', clienteIdEfetivo)
+          .maybeSingle();
+
+        if (cData?.google_drive_folder_url) {
+          const jaExisteUrl = listaFinal.some(item => item.storage_path === cData.google_drive_folder_url);
+          if (!jaExisteUrl) {
+            listaFinal.push({
+              id: `legado-cliente-${clienteIdEfetivo}`,
+              cliente_id: clienteIdEfetivo,
+              rotulo: cData.passaporte_numero ? `Passaporte ${cData.passaporte_numero}` : `Documento de ${cData.nome || 'Cliente'}`,
+              tipo_documento: 'PASSAPORTE',
+              numero_documento: cData.passaporte_numero || undefined,
+              data_validade: cData.passaporte_validade || undefined,
+              nome_original: 'Documento Cadastrado',
+              storage_path: cData.google_drive_folder_url,
+              mime_type: 'application/pdf',
+              tamanho_bytes: 0,
+              created_at: new Date().toISOString()
+            });
+          }
+        }
+      } catch (errLegado) {
+        console.warn('[AnexosService] Aviso ao verificar documentos legados do cliente:', errLegado);
+      }
+    }
+
     return listaFinal;
+  }
+
+  /**
+   * Verifica se o usuário tem permissão para excluir o documento (autor ou admin)
+   */
+  public static podeExcluirAnexo(anexo: DocumentoAnexo, usuarioId?: string, usuarioRole?: string): boolean {
+    if (usuarioRole === 'admin') return true;
+    if (!anexo.created_by) return true; // legados sem autor podem ser gerenciados
+    if (usuarioId && anexo.created_by === usuarioId) return true;
+    return false;
   }
 
   /**
@@ -304,7 +488,7 @@ export class AnexosService {
   public static async excluirAnexo(anexoId: string, storagePath?: string): Promise<boolean> {
     try {
       // 1. Tenta deletar na tabela oficial do banco de dados
-      const { error: dbErr } = await supabase
+      await supabase
         .from(this.TABELA)
         .delete()
         .eq('id', anexoId);
@@ -326,6 +510,34 @@ export class AnexosService {
       console.error('[AnexosService] Erro ao excluir anexo:', err);
       return false;
     }
+  }
+
+  /**
+   * Gera texto formatado para envio no WhatsApp do cliente com o link/detalhes do documento
+   */
+  public static montarMensagemWhatsApp(anexo: DocumentoAnexo, nomeCliente?: string, destinoViagem?: string): string {
+    const saudacao = nomeCliente ? `Olá, *${nomeCliente}*!` : 'Olá!';
+    const contexto = destinoViagem ? ` referente à sua viagem para *${destinoViagem}*` : '';
+    
+    let tipoNome = 'seu documento';
+    if (anexo.tipo_documento === 'PASSAPORTE') tipoNome = 'seu Passaporte';
+    else if (anexo.tipo_documento === 'VOUCHER_AEREO') tipoNome = 'sua Passagem Aérea / Bilhete';
+    else if (anexo.tipo_documento === 'VOUCHER_HOTEL') tipoNome = 'seu Voucher de Hospedagem';
+    else if (anexo.tipo_documento === 'INGRESSO') tipoNome = 'seus Ingressos';
+    else if (anexo.tipo_documento === 'SEGURO') tipoNome = 'sua Apólice de Seguro Viagem';
+    else if (anexo.tipo_documento === 'CONTRATO') tipoNome = 'seu Contrato de Viagem';
+    else if (anexo.tipo_documento === 'ROTEIRO') tipoNome = 'seu Roteiro de Viagem';
+
+    let msg = `${saudacao}\n\nSegue em anexo ${tipoNome}${contexto}:\n📎 *${anexo.rotulo}*`;
+    if (anexo.numero_documento) {
+      msg += `\n🔢 Número/Localizador: *${anexo.numero_documento}*`;
+    }
+    if (anexo.data_validade) {
+      msg += `\n📅 Validade: *${new Date(anexo.data_validade).toLocaleDateString('pt-BR')}*`;
+    }
+    msg += `\n\nQualquer dúvida, nossa equipe está à disposição! ✈️`;
+
+    return encodeURIComponent(msg);
   }
 
   // ==========================================================================

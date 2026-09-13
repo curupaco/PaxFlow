@@ -819,11 +819,16 @@ export interface StudioProposta {
 
 export type TipoDocumentoAnexo =
   | 'PASSAPORTE'
+  | 'RG'
+  | 'CNH'
   | 'VISTO'
   | 'VOUCHER_AEREO'
   | 'VOUCHER_HOTEL'
+  | 'INGRESSO'
+  | 'VOUCHER_TRANSPORTE'
   | 'SEGURO'
   | 'CONTRATO'
+  | 'ROTEIRO'
   | 'OUTROS';
 
 export interface DocumentoAnexo {
@@ -831,8 +836,10 @@ export interface DocumentoAnexo {
   agencia_id?: string;
   viagem_id?: string;
   cliente_id?: string;
-  rotulo: string; // Ex: "Passaporte João", "Voucher Fasano"
+  rotulo: string; // Ex: "Passaporte João", "Voucher Fasano", "CNH Titular"
   tipo_documento: TipoDocumentoAnexo;
+  numero_documento?: string;
+  data_validade?: string;
   nome_original: string;
   storage_path: string;
   mime_type?: string;

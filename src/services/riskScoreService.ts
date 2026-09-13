@@ -77,8 +77,26 @@ export class RiskScoreService {
     }
     const isBateVolta = tripDays <= 1;
 
-    // Checagem de Voucher Geral Unificado da Operadora
+    // Checagem de Voucher Geral Unificado da Operadora e Anexos Categorizados
     const temVoucherGeral = Boolean(viagem.voucher_geral_anexado || viagem.voucher_geral_pacote);
+
+    // Extração e normalização de múltiplos anexos vinculados à viagem
+    let anexosViagem: any[] = Array.isArray((viagem as any).anexos) ? (viagem as any).anexos : [];
+    if (anexosViagem.length === 0 && viagem.observacoes) {
+      const matchAnexos = viagem.observacoes.match(/<!-- PAXFLOW_ANEXOS:(.*?) -->/);
+      if (matchAnexos && matchAnexos[1]) {
+        try {
+          const parsed = JSON.parse(matchAnexos[1]);
+          if (Array.isArray(parsed)) anexosViagem = parsed;
+        } catch {}
+      }
+    }
+
+    const temAnexoAereo = anexosViagem.some(a => a.tipo_documento === 'VOUCHER_AEREO');
+    const temAnexoHotel = anexosViagem.some(a => a.tipo_documento === 'VOUCHER_HOTEL');
+    const temAnexoSeguro = anexosViagem.some(a => a.tipo_documento === 'SEGURO');
+    const temAnexoPassaporte = anexosViagem.some(a => a.tipo_documento === 'PASSAPORTE');
+    const temAnexoDocNacional = anexosViagem.some(a => a.tipo_documento === 'RG' || a.tipo_documento === 'CNH');
 
     let score = 100;
 
@@ -100,7 +118,7 @@ export class RiskScoreService {
       const maxPassagensMesmaData = contagemPorData.size > 0 ? Math.max(...Array.from(contagemPorData.values())) : 0;
       const numPessoasViagem = Math.max(1, maxPassagensMesmaData);
 
-      // Lista de passaportes cadastrados no perfil do cliente
+      // Lista de passaportes cadastrados no perfil do cliente ou anexados
       let passaportesCadastrados: { nome: string; numero: string; validade: string }[] = [];
       if (cliente?.passaportes && Array.isArray(cliente.passaportes) && cliente.passaportes.length > 0) {
         passaportesCadastrados = cliente.passaportes.filter(p => (p.numero && p.numero.trim() !== '') || (p.validade && p.validade.trim() !== ''));
@@ -109,6 +127,12 @@ export class RiskScoreService {
           nome: cliente.nome || 'Passageiro Titular',
           numero: cliente.passaporteNumero,
           validade: cliente.passaporteValidade || ''
+        }];
+      } else if (temAnexoPassaporte) {
+        passaportesCadastrados = [{
+          nome: cliente?.nome || 'Passageiro Titular',
+          numero: 'Anexo Salvo',
+          validade: ''
         }];
       }
 
@@ -177,9 +201,12 @@ export class RiskScoreService {
 
     // PILAR 2: Vouchers & Confirmações de Fornecedores (Peso 25%)
     if (!temVoucherGeral && !isGracePeriod) {
-      // Check hoteis
+      // Check hoteis (se houver anexo de hotel, considera o voucher fornecido)
       const hoteis = produtos.filter(p => (p.tipo || '').toLowerCase().includes('hotel') || (p.tipo || '').toLowerCase().includes('hospedagem'));
-      const hoteisSemVoucher = hoteis.filter(h => !h.codigoReserva && !h.dados_adicionais?.voucher_url && !h.dadosAdicionais?.voucher_url);
+      const hoteisSemVoucher = temAnexoHotel 
+        ? [] 
+        : hoteis.filter(h => !h.codigoReserva && !h.dados_adicionais?.voucher_url && !h.dadosAdicionais?.voucher_url);
+
       if (hoteisSemVoucher.length > 0 && !isBateVolta) {
         const pen = 15;
         score -= pen;
@@ -196,10 +223,13 @@ export class RiskScoreService {
         });
       }
 
-      // Check voos
+      // Check voos (se houver anexo aéreo, considera o bilhete/voucher emitido)
       if (temVoo) {
         const voos = produtos.filter(p => (p.tipo || '').toLowerCase().includes('voo') || (p.tipo || '').toLowerCase().includes('aéreo'));
-        const voosSemLoc = voos.filter(v => !v.codigoReserva && !viagem.codigo_localizador);
+        const voosSemLoc = temAnexoAereo
+          ? []
+          : voos.filter(v => !v.codigoReserva && !viagem.codigo_localizador);
+
         if (voosSemLoc.length > 0) {
           const pen = 15;
           score -= pen;
@@ -361,7 +391,7 @@ export class RiskScoreService {
         });
       }
 
-      const temSeguro = produtos.some(p => (p.tipo || '').toLowerCase().includes('seguro'));
+      const temSeguro = temAnexoSeguro || produtos.some(p => (p.tipo || '').toLowerCase().includes('seguro'));
       if (!isNacional && !temSeguro) {
         const pen = 10;
         score -= pen;
@@ -380,7 +410,8 @@ export class RiskScoreService {
     }
 
     // PILAR 5: Qualidade Cadastral do Cliente (Peso 10%)
-    if (cliente && (!cliente.documento || !cliente.telefone || !cliente.email)) {
+    const temDocumentoValido = Boolean(cliente?.documento || temAnexoDocNacional || temAnexoPassaporte);
+    if (cliente && (!temDocumentoValido || !cliente.telefone || !cliente.email)) {
       const pen = 10;
       score -= pen;
       itens.push({
@@ -388,7 +419,7 @@ export class RiskScoreService {
         pilar: 5,
         pilarNome: 'Qualidade Cadastral',
         titulo: 'Dados Cadastrais Incompletos',
-        descricaoHumana: 'Perfil do cliente sem CPF/RG, telefone de contato ou e-mail cadastrado.',
+        descricaoHumana: 'Perfil do cliente sem CPF/RG/Passaporte anexado, telefone de contato ou e-mail cadastrado.',
         penalidadePontos: pen,
         resolvido: false,
         acaoTipo: 'preencher_passaporte',

@@ -104,15 +104,32 @@ describe('AnexosService - Testes Subcutâneos com Múltiplos Anexos e Resiliênc
       }
     ];
 
-    const mockFrom = vi.fn().mockReturnValue({
-      select: vi.fn().mockReturnValue({
-        order: vi.fn().mockReturnValue({
-          or: vi.fn().mockResolvedValue({
-            data: mockLista,
-            error: null
+    const mockFrom = vi.fn().mockImplementation((tabela: string) => {
+      if (tabela === 'documentos_anexos') {
+        return {
+          select: vi.fn().mockReturnValue({
+            order: vi.fn().mockReturnValue({
+              or: vi.fn().mockResolvedValue({
+                data: mockLista,
+                error: null
+              })
+            })
           })
-        })
-      })
+        };
+      }
+      if (tabela === 'clientes') {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              maybeSingle: vi.fn().mockResolvedValue({
+                data: null,
+                error: null
+              })
+            })
+          })
+        };
+      }
+      return {};
     });
     (supabase.from as any) = mockFrom;
 
@@ -250,4 +267,238 @@ describe('AnexosService - Testes Subcutâneos com Múltiplos Anexos e Resiliênc
     expect(mockFrom).toHaveBeenCalledWith('documentos_anexos');
     expect(supabase.storage.from).toHaveBeenCalledWith('documentos-clientes');
   });
+
+  it('deve realizar upload de CNH com número e validade opcionais e sincronizar documento do cliente', async () => {
+    // Setup
+    const mockFile = new File(['conteudo cnh'], 'cnh_motorista.pdf', { type: 'application/pdf' });
+    const mockDocRetornado = {
+      id: 'doc-cnh-1',
+      cliente_id: 'cliente-cnh-123',
+      rotulo: 'CNH do Passageiro',
+      tipo_documento: 'CNH',
+      numero_documento: '12345678900',
+      data_validade: '2030-05-15',
+      nome_original: 'cnh_motorista.pdf',
+      storage_path: 'supabase-storage://cliente-cnh-123/123_cnh_motorista.pdf',
+      mime_type: 'application/pdf',
+      tamanho_bytes: 2048
+    };
+
+    const mockUpdate = vi.fn().mockReturnValue({
+      eq: vi.fn().mockResolvedValue({ error: null })
+    });
+
+    const mockFrom = vi.fn().mockImplementation((table: string) => {
+      if (table === 'clientes') {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              maybeSingle: vi.fn().mockResolvedValue({ data: { documento: '' }, error: null })
+            })
+          }),
+          update: mockUpdate
+        };
+      }
+      return {
+        select: vi.fn().mockReturnValue({
+          maybeSingle: vi.fn().mockResolvedValue({ data: { limite_upload_mb: 25 }, error: null })
+        }),
+        insert: vi.fn().mockReturnValue({
+          select: vi.fn().mockReturnValue({
+            single: vi.fn().mockResolvedValue({ data: mockDocRetornado, error: null })
+          })
+        })
+      };
+    });
+    (supabase.from as any) = mockFrom;
+
+    // Action
+    const resultado = await AnexosService.uploadAnexo({
+      file: mockFile,
+      rotulo: 'CNH do Passageiro',
+      tipo_documento: 'CNH',
+      numero_documento: '12345678900',
+      data_validade: '2030-05-15',
+      cliente_id: 'cliente-cnh-123'
+    });
+
+    // Assert
+    expect(resultado.tipo_documento).toBe('CNH');
+    expect(resultado.numero_documento).toBe('12345678900');
+    expect(resultado.data_validade).toBe('2030-05-15');
+    expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining({ documento: '12345678900' }));
+  });
+
+  it('deve lidar com erro de schema drift 42703 (coluna inexistente) fazendo fallback sem quebrar', async () => {
+    // Setup
+    const mockFile = new File(['dummy'], 'rg_passageiro.pdf', { type: 'application/pdf' });
+    const mockDocRetornadoBase = {
+      id: 'doc-rg-base',
+      rotulo: 'RG Titular',
+      tipo_documento: 'RG',
+      nome_original: 'rg_passageiro.pdf',
+      storage_path: 'supabase-storage://geral/rg.pdf'
+    };
+
+    let tentativa = 0;
+    const mockFrom = vi.fn().mockImplementation((table: string) => {
+      if (table === 'global_settings') {
+        return {
+          select: vi.fn().mockReturnValue({
+            maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null })
+          })
+        };
+      }
+      return {
+        insert: vi.fn().mockImplementation((payload: any) => {
+          tentativa++;
+          if (tentativa === 1) {
+            // Simula erro 42703 (coluna numero_documento não existe no banco)
+            return {
+              select: vi.fn().mockReturnValue({
+                single: vi.fn().mockResolvedValue({
+                  data: null,
+                  error: { code: '42703', message: 'column numero_documento does not exist' }
+                })
+              })
+            };
+          }
+          // Segunda tentativa: insere com sucesso sem as novas colunas
+          return {
+            select: vi.fn().mockReturnValue({
+              single: vi.fn().mockResolvedValue({
+                data: mockDocRetornadoBase,
+                error: null
+              })
+            })
+          };
+        })
+      };
+    });
+    (supabase.from as any) = mockFrom;
+
+    // Action
+    const resultado = await AnexosService.uploadAnexo({
+      file: mockFile,
+      rotulo: 'RG Titular',
+      tipo_documento: 'RG',
+      numero_documento: 'MG-12.345.678'
+    });
+
+    // Assert
+    expect(resultado.id).toBe('doc-rg-base');
+    expect(resultado.tipo_documento).toBe('RG');
+    expect(tentativa).toBe(2);
+  });
+
+  it('deve inferir tipos e rótulos inteligentes baseados no nome do arquivo', () => {
+    // Setup & Action
+    const resPassaporte = AnexosService.inferirTipoPorNome('passaporte_joao_silva.pdf');
+    const resCnh = AnexosService.inferirTipoPorNome('minha_cnh_digital.jpg');
+    const resRg = AnexosService.inferirTipoPorNome('rg_frente_verso.pdf');
+    const resIngresso = AnexosService.inferirTipoPorNome('ingresso_disney_magic_kingdom.pdf');
+    const resTransfer = AnexosService.inferirTipoPorNome('transfer_in_out_resort.pdf');
+
+    // Assert
+    expect(resPassaporte.tipo).toBe('PASSAPORTE');
+    expect(resCnh.tipo).toBe('CNH');
+    expect(resRg.tipo).toBe('RG');
+    expect(resIngresso.tipo).toBe('INGRESSO');
+    expect(resTransfer.tipo).toBe('VOUCHER_TRANSPORTE');
+  });
+
+  it('deve controlar permissão de exclusão permitindo ao autor ou admin e bloqueando outros consultores', () => {
+    // Setup
+    const anexoCriadoPorUser1: any = { id: 'a1', created_by: 'user-1' };
+    const anexoLegadoSemAutor: any = { id: 'a2' };
+
+    // Action & Assert
+    // Admin pode sempre
+    expect(AnexosService.podeExcluirAnexo(anexoCriadoPorUser1, 'user-999', 'admin')).toBe(true);
+    // Autor pode
+    expect(AnexosService.podeExcluirAnexo(anexoCriadoPorUser1, 'user-1', 'consultor')).toBe(true);
+    // Outro consultor NÃO pode
+    expect(AnexosService.podeExcluirAnexo(anexoCriadoPorUser1, 'user-2', 'consultor')).toBe(false);
+    // Anexo legado sem autor pode
+    expect(AnexosService.podeExcluirAnexo(anexoLegadoSemAutor, 'user-2', 'consultor')).toBe(true);
+  });
+
+  it('deve montar mensagem formatada para WhatsApp com variáveis dinâmicas e URL codificada', () => {
+    // Setup
+    const anexo: any = {
+      id: 'doc-hotel-1',
+      rotulo: 'Voucher Grand Palladium Imbassaí',
+      tipo_documento: 'VOUCHER_HOTEL',
+      numero_documento: 'RES-998822',
+      data_validade: '2026-12-31'
+    };
+
+    // Action
+    const msgEncoded = AnexosService.montarMensagemWhatsApp(anexo, 'Carlos Alberto', 'Bahia');
+    const msgDecoded = decodeURIComponent(msgEncoded);
+
+    // Assert
+    expect(msgDecoded).toContain('Olá, *Carlos Alberto*!');
+    expect(msgDecoded).toContain('referente à sua viagem para *Bahia*');
+    expect(msgDecoded).toContain('seu Voucher de Hospedagem');
+    expect(msgDecoded).toContain('Voucher Grand Palladium Imbassaí');
+    expect(msgDecoded).toContain('Número/Localizador: *RES-998822*');
+    expect(msgDecoded).toContain('Validade:');
+    expect(msgDecoded).toContain('Qualquer dúvida, nossa equipe está à disposição! ✈️');
+  });
+
+  it('deve inferir corretamente categorias adicionais como CONTRATO, ROTEIRO, SEGURO, HOTEL e AÉREO', () => {
+    // Setup & Action
+    const resContrato = AnexosService.inferirTipoPorNome('contrato_viagem_assinado.pdf');
+    const resRoteiro = AnexosService.inferirTipoPorNome('roteiro_dia_a_dia_paris.pdf');
+    const resSeguro = AnexosService.inferirTipoPorNome('apolice_seguro_assistencia.pdf');
+    const resHotel = AnexosService.inferirTipoPorNome('voucher_reserva_hotel_copacabana.pdf');
+    const resAereo = AnexosService.inferirTipoPorNome('bilhete_passagem_aerea_azul.pdf');
+
+    // Assert
+    expect(resContrato.tipo).toBe('CONTRATO');
+    expect(resRoteiro.tipo).toBe('ROTEIRO');
+    expect(resSeguro.tipo).toBe('SEGURO');
+    expect(resHotel.tipo).toBe('VOUCHER_HOTEL');
+    expect(resAereo.tipo).toBe('VOUCHER_AEREO');
+  });
+
+  it('deve persistir cliente_id no upload quando vinculado a passageiro de viagem em grupo', async () => {
+    // Setup
+    const mockFile = new File(['conteudo voucher'], 'voucher_ingresso.pdf', { type: 'application/pdf' });
+    let payloadInserido: any = null;
+
+    const mockFrom = vi.fn().mockImplementation((tabela: string) => {
+      return {
+        insert: vi.fn().mockImplementation((payload: any) => {
+          payloadInserido = payload;
+          return {
+            select: vi.fn().mockReturnValue({
+              single: vi.fn().mockResolvedValue({
+                data: { id: 'doc-ingresso-1', ...payload },
+                error: null
+              })
+            })
+          };
+        })
+      };
+    });
+    (supabase.from as any) = mockFrom;
+
+    // Action
+    const resultado = await AnexosService.uploadAnexo({
+      file: mockFile,
+      viagem_id: 'viagem-grupo-10',
+      cliente_id: 'cliente-pedro-123',
+      rotulo: 'Ingresso Magic Kingdom - Pedro',
+      tipo_documento: 'INGRESSO'
+    });
+
+    // Assert
+    expect(resultado.id).toBe('doc-ingresso-1');
+    expect(payloadInserido.viagem_id).toBe('viagem-grupo-10');
+    expect(payloadInserido.cliente_id).toBe('cliente-pedro-123');
+    expect(payloadInserido.tipo_documento).toBe('INGRESSO');
+  });
 });
+
