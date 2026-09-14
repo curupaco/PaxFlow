@@ -395,6 +395,13 @@ export const HELP_ITEMS: HelpItem[] = [
     details: 'O PaxFlow conta com um modal moderno de envio em lote:\n\n1. **Seleção Múltipla ou Arrastar**: Na seção de documentos do cliente ou da viagem, clique em "+ Novo Documento" ou arraste vários arquivos simultaneamente para a área indicada.\n2. **Detecção Inteligente do Tipo**: O sistema lê o nome de cada arquivo e pré-seleciona a categoria correta (ex: arquivos com "cnh" viram CNH, "resort" ou "hotel" viram Voucher Hotel, "transfer" viram Voucher Transporte).\n3. **Ajuste de Metadados**: Você pode renomear o rótulo, informar o número do documento ou a data de validade diretamente na lista antes do envio.\n4. **Associação por Passageiro**: Em viagens com múltiplos viajantes, use o seletor para indicar a qual passageiro aquele voucher pertence.\n5. **Envio Unificado**: Clique em "Salvar Todos os Documentos" para processar e enviar todos os arquivos de forma consolidada ao Supabase Storage.'
   },
   {
+    id: 'otimizacao-automatica-pdf-pesado',
+    modulo: 'clientes',
+    label: '📄 Otimização Automática de PDFs Pesados (> 25MB)',
+    description: 'Como o PaxFlow comprime e adequa automaticamente PDFs pesados ou escaneados ao limite do sistema.',
+    details: 'Para documentos extensos ou digitalizações de alta resolução que ultrapassam o limite de 25MB (como contratos, passaportes escaneados e vouchers pesados de 50MB a 100MB+):\n\n1. **Identificação Instantânea**: Ao selecionar ou arrastar o arquivo, o sistema identifica se o PDF tem mais de 25MB e exibe a etiqueta "⚡ Otimização Automática" na lista de anexos.\n2. **Processamento no Próprio Navegador**: O documento é otimizado diretamente no seu navegador antes do envio. Isso evita o tráfego de arquivos pesados pela internet e impede erros de tempo limite de conexão.\n3. **Rasterização em Alta Resolução (150 DPI)**: Cada página é renderizada em resolução nítida de 150 DPI com compressão visual balanceada, mantendo assinaturas, carimbos e textos perfeitamente legíveis para impressão e auditoria.\n4. **Acompanhamento em Tempo Real**: Durante o envio, você acompanha o progresso página por página ("Otimizando documento: Página X de Y...").\n5. **Documentos Muito Extensos**: Se mesmo após a compressão o PDF ainda superar 25MB (como catálogos de centenas de páginas), o sistema informará o tamanho alcançado e sugerirá o desmembramento do arquivo.'
+  },
+  {
     id: 'taxonomia-documentos-categorias',
     modulo: 'clientes',
     label: '📋 Taxonomia das 12 Categorias de Documentos do PaxFlow',

@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { DocumentoAnexo, TipoDocumentoAnexo } from '../types';
+import { PdfCompressorService } from './pdfCompressorService';
 
 /**
  * Serviço completo para gerenciamento de múltiplos documentos e anexos no Supabase Storage.
@@ -160,8 +161,9 @@ export class AnexosService {
     viagem_id?: string;
     cliente_id?: string;
     user_id?: string;
+    onProgress?: (mensagem: string) => void;
   }): Promise<DocumentoAnexo> {
-    const { file, rotulo, tipo_documento, numero_documento, data_validade, viagem_id, cliente_id, user_id } = params;
+    const { file, rotulo, tipo_documento, numero_documento, data_validade, viagem_id, cliente_id, user_id, onProgress } = params;
 
     // 1. Obter limite de tamanho
     let maxMb = 25;
@@ -177,12 +179,18 @@ export class AnexosService {
       // mantém 25MB
     }
 
-    // 2. Compactação se imagem
+    // 2. Otimização de imagens ou PDFs que excedam o limite
     let finalFile = file;
     try {
       finalFile = await this.compactarImagemSePossivel(file);
     } catch {
       // prossegue com o original
+    }
+
+    if (PdfCompressorService.precisaComprimir(finalFile, maxMb)) {
+      finalFile = await PdfCompressorService.comprimirPdfSeNecessario(finalFile, maxMb, (prog) => {
+        if (onProgress) onProgress(prog.mensagem);
+      });
     }
 
     const sizeInMb = finalFile.size / (1024 * 1024);

@@ -17,6 +17,8 @@
   "license": "ISC",
   "dependencies": {
     "@supabase/supabase-js": "^2.106.2",
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^6.3.289",
     "sortablejs": "^1.15.7"
   },
   "devDependencies": {

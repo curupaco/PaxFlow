@@ -1,4 +1,5 @@
 import { AnexosService } from '../../services/anexosService';
+import { PdfCompressorService } from '../../services/pdfCompressorService';
 import { TipoDocumentoAnexo } from '../../types';
 
 export interface PassageiroOpcao {
@@ -123,22 +124,31 @@ export class UploadAnexoModal {
         <div class="p-5 space-y-4 overflow-y-auto flex-1 custom-scrollbar">
           ${this.itens.map((item, index) => {
             const isPessoal = ['PASSAPORTE', 'RG', 'CNH', 'VISTO'].includes(item.tipo);
-            const tamanhoKb = (item.file.size / 1024).toFixed(1);
+            const sizeInMb = item.file.size / (1024 * 1024);
+            const tamanhoFormatado = sizeInMb >= 1.0 ? `${sizeInMb.toFixed(1)} MB` : `${(item.file.size / 1024).toFixed(1)} KB`;
+            const precisaOtimizar = PdfCompressorService.precisaComprimir(item.file);
 
             return `
               <div class="p-4 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 space-y-3.5" data-item-id="${item.id}">
                 
                 <!-- Informações do Arquivo Original -->
-                <div class="flex items-center justify-between gap-3 border-b border-slate-200/60 dark:border-slate-700/60 pb-2.5">
-                  <div class="flex items-center gap-2 overflow-hidden">
-                    <span class="text-base">📄</span>
+                <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200/60 dark:border-slate-700/60 pb-2.5">
+                  <div class="flex items-center gap-2 overflow-hidden min-w-0">
+                    <span class="text-base shrink-0">📄</span>
                     <strong class="text-xs font-bold text-slate-800 dark:text-slate-200 truncate" title="${item.file.name}">
                       ${item.file.name}
                     </strong>
                   </div>
-                  <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider shrink-0">
-                    ${tamanhoKb} KB
-                  </span>
+                  <div class="flex items-center gap-2 shrink-0">
+                    ${precisaOtimizar ? `
+                      <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20" title="Este PDF excede 25MB e será otimizado visualmente no navegador antes do envio.">
+                        ⚡ Otimização Automática
+                      </span>
+                    ` : ''}
+                    <span class="text-[10px] font-bold ${precisaOtimizar ? 'text-amber-600 dark:text-amber-400' : 'text-slate-400'} uppercase tracking-wider">
+                      ${tamanhoFormatado}
+                    </span>
+                  </div>
                 </div>
 
                 <!-- Campos de Classificação -->
@@ -321,7 +331,12 @@ export class UploadAnexoModal {
           data_validade: item.dataValidade.trim() || undefined,
           viagem_id: this.options.viagemId,
           cliente_id: item.clienteIdVinculado || this.options.clienteId,
-          user_id: this.options.usuarioId
+          user_id: this.options.usuarioId,
+          onProgress: (mensagem) => {
+            if (statusText) {
+              statusText.textContent = mensagem;
+            }
+          }
         });
 
         enviados++;

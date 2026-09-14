@@ -663,6 +663,13 @@ Módulo unificado de governança e custódia documental para agências de viagem
   - Anexos categorizados como `VOUCHER_HOTEL`, `VOUCHER_AEREO`, `VOUCHER_TRANSPORTE` ou `SEGURO` abatem automaticamente pendências do pilar de Vouchers e Logística da viagem.
   - Documentos de identidade (`RG`, `CNH`) comprovados nos anexos do passageiro validam sua conformidade documental em viagens nacionais e destinos Mercosul, impedindo penalidades indevidas por ausência de passaporte internacional.
 
+- **Compressão Inteligente Client-Side de PDFs Acima de 25MB (`PdfCompressorService.ts`)**:
+  - **Gatilho Estrito**: O motor só entra em ação quando o arquivo for do tipo PDF e seu tamanho ultrapassar 25MB (limite operacional do sistema). Documentos com até 25MB ou em formatos de imagem são processados instantaneamente sem acionar o módulo.
+  - **Arquitetura de Lazy Loading**: As bibliotecas de manipulação e renderização gráfica (`pdfjs-dist` e `pdf-lib`) são carregadas sob demanda via importação dinâmica exclusivamente na máquina do usuário quando o gatilho é disparado, garantindo **zero impacto** no tempo de carregamento da aplicação no dia a dia.
+  - **Metodologia de Rasterização Visual (150 DPI)**: Cada página do PDF é renderizada em canvas gráfico em escala proporcional a 150 DPI e convertida para JPEG balanceado (qualidade 0.75 a 0.80), preservando com total nitidez assinaturas, carimbos e textos para impressão e leitura. Em seguida, um novo documento limpo e leve é remontado em memória via `pdf-lib`.
+  - **Experiência do Usuário (UX)**: A modal `UploadAnexoModal` exibe badge visual ("⚡ Otimização Automática") e transmite feedback em tempo real página a página ("Otimizando documento: Página X de Y...") antes da gravação no Supabase Storage.
+  - **Tratamento de Exceção e Fallback**: Se mesmo após a compressão a 150 DPI o documento continuar acima de 25MB (como catálogos de centenas de páginas), o sistema emite alerta amigável detalhando o tamanho reduzido atingido e orienta o usuário a desmembrar o arquivo.
+
 - **Resiliência a Schema Drift (Padrão Zero-Break)**:
   - O serviço `AnexosService` conta com tratamento nativo para erros de colunas inexistentes (`42703`), retrocedendo para o schema base sem travar a interface nem gerar mensagens de erro ao usuário caso a migração DDL ainda esteja em processo de aplicação no banco de dados.
 

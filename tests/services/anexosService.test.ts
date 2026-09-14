@@ -9,7 +9,7 @@ class MockFile {
   constructor(parts: any[], name: string, options?: { type?: string }) {
     this.name = name;
     this.type = options?.type || 'application/octet-stream';
-    this.size = parts.reduce((acc, p) => acc + (typeof p === 'string' ? p.length : 100), 0);
+    this.size = parts.reduce((acc, p) => acc + (typeof p === 'string' ? p.length : (p?.byteLength ?? p?.length ?? 100)), 0);
   }
 }
 if (typeof globalThis.File === 'undefined') {
@@ -500,5 +500,56 @@ describe('AnexosService - Testes Subcutâneos com Múltiplos Anexos e Resiliênc
     expect(payloadInserido.cliente_id).toBe('cliente-pedro-123');
     expect(payloadInserido.tipo_documento).toBe('INGRESSO');
   });
+
+  it('deve orquestrar a compressão inteligente do PDF quando o tamanho exceder o limite de upload antes de persistir no Storage', async () => {
+    // Setup
+    const tamanho103Mb = 103 * 1024 * 1024;
+    const mockPdf103Mb = new File([new Uint8Array(tamanho103Mb)], 'contrato_pesado.pdf', {
+      type: 'application/pdf'
+    });
+    const mockPdfComprimido = new File([new Uint8Array(6 * 1024 * 1024)], 'contrato_pesado.pdf', {
+      type: 'application/pdf'
+    });
+
+    const spyCompress = vi.spyOn(
+      (await import('../../src/services/pdfCompressorService')).PdfCompressorService,
+      'comprimirPdfSeNecessario'
+    ).mockResolvedValue(mockPdfComprimido);
+
+    const mockFrom = vi.fn().mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        maybeSingle: vi.fn().mockResolvedValue({ data: { limite_upload_mb: 25 }, error: null })
+      }),
+      insert: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          single: vi.fn().mockResolvedValue({
+            data: {
+              id: 'doc-pdf-comprimido-1',
+              nome_original: 'contrato_pesado.pdf',
+              tamanho_bytes: 6 * 1024 * 1024
+            },
+            error: null
+          })
+        })
+      })
+    });
+    (supabase.from as any) = mockFrom;
+
+    const progressoMensagens: string[] = [];
+
+    // Action
+    const resultado = await AnexosService.uploadAnexo({
+      file: mockPdf103Mb,
+      rotulo: 'Contrato Pesado',
+      tipo_documento: 'CONTRATO',
+      onProgress: (msg) => progressoMensagens.push(msg)
+    });
+
+    // Assert
+    expect(spyCompress).toHaveBeenCalledWith(mockPdf103Mb, 25, expect.any(Function));
+    expect(resultado.id).toBe('doc-pdf-comprimido-1');
+    expect(supabase.storage.from).toHaveBeenCalledWith('documentos-clientes');
+  });
 });
+
 
