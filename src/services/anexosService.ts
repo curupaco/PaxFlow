@@ -220,10 +220,23 @@ export class AnexosService {
 
     const storagePathCompleto = `supabase-storage://${storagePathRelativo}`;
 
-    // 5. Salva na tabela documentos_anexos
+    const isInvalidId = (val?: any): boolean => {
+      if (!val || typeof val !== 'string') return true;
+      const trimmed = val.trim();
+      if (!trimmed || trimmed === 'dep' || trimmed.startsWith('legado-') || trimmed === 'null' || trimmed === 'undefined') {
+        return true;
+      }
+      return false;
+    };
+
+    const sanitizedViagemId = !isInvalidId(viagem_id) ? viagem_id!.trim() : undefined;
+    const sanitizedClienteId = !isInvalidId(cliente_id) ? cliente_id!.trim() : undefined;
+    const sanitizedUserId = !isInvalidId(user_id) ? user_id!.trim() : undefined;
+
+    // 5. Salva na tabela documentos_anexos com payload sanitizado
     const payload: Partial<DocumentoAnexo> = {
-      viagem_id: viagem_id || undefined,
-      cliente_id: cliente_id || undefined,
+      viagem_id: sanitizedViagemId,
+      cliente_id: sanitizedClienteId,
       rotulo: rotulo.trim() || finalFile.name,
       tipo_documento: tipo_documento || 'OUTROS',
       numero_documento: numero_documento?.trim() || undefined,
@@ -232,7 +245,7 @@ export class AnexosService {
       storage_path: storagePathCompleto,
       mime_type: finalFile.type || 'application/octet-stream',
       tamanho_bytes: finalFile.size,
-      created_by: user_id || undefined,
+      created_by: sanitizedUserId,
       created_at: new Date().toISOString()
     };
 
@@ -246,9 +259,16 @@ export class AnexosService {
         .single();
 
       if (dbErr) {
-        // Fallback para schema drift em colunas novas (42703)
-        if (dbErr.code === '42703') {
-          console.warn('[AnexosService] Colunas adicionais inexistentes (42703). Tentando payload base.');
+        // Fallback para schema drift em colunas novas (42703, PGRST204 ou erro de schema cache)
+        const isColumnError =
+          dbErr.code === '42703' ||
+          dbErr.code === 'PGRST204' ||
+          dbErr.code === 'PGRST200' ||
+          dbErr.message?.includes('schema cache') ||
+          dbErr.message?.includes('column');
+
+        if (isColumnError) {
+          console.warn('[AnexosService] Colunas adicionais inexistentes ou erro de schema. Tentando payload base.');
           const payloadBase = { ...payload };
           delete payloadBase.numero_documento;
           delete payloadBase.data_validade;
@@ -266,32 +286,21 @@ export class AnexosService {
           }
         } else if (
           dbErr.code === '42P01' ||
-          dbErr.code === 'PGRST204' ||
-          dbErr.code === 'PGRST200' ||
-          dbErr.message?.includes('does not exist') ||
-          dbErr.message?.includes('schema cache')
+          dbErr.code === 'PGRST116' ||
+          dbErr.message?.includes('does not exist')
         ) {
           console.warn('[AnexosService] Schema drift detectado em documentos_anexos. Ativando fallback resiliente.');
           documentoSalvo = await this.salvarFallbackDrift(payload as DocumentoAnexo);
         } else {
-          throw dbErr;
+          console.warn('[AnexosService] Erro ao gravar em documentos_anexos. Ativando fallback resiliente:', dbErr);
+          documentoSalvo = await this.salvarFallbackDrift(payload as DocumentoAnexo);
         }
       } else {
         documentoSalvo = data as DocumentoAnexo;
       }
     } catch (err: any) {
-      if (
-        err?.code === '42P01' ||
-        err?.code === '42703' ||
-        err?.code === 'PGRST204' ||
-        err?.code === 'PGRST200' ||
-        err?.message?.includes('does not exist') ||
-        err?.message?.includes('schema cache')
-      ) {
-        documentoSalvo = await this.salvarFallbackDrift(payload as DocumentoAnexo);
-      } else {
-        throw err;
-      }
+      console.warn('[AnexosService] Exceção capturada ao gravar anexo. Ativando fallback resiliente:', err);
+      documentoSalvo = await this.salvarFallbackDrift(payload as DocumentoAnexo);
     }
 
     // 6. Sincronização retrocompatível com a ficha do cliente

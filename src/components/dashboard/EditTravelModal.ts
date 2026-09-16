@@ -3713,7 +3713,7 @@ export class EditTravelModal {
     if (this.currentLoadedViagem?.cliente?.passaportes && Array.isArray(this.currentLoadedViagem.cliente.passaportes)) {
       this.currentLoadedViagem.cliente.passaportes.forEach((p: any) => {
         if (p.nome && p.nome !== passageiroNome) {
-          listaPassageiros.push({ id: clienteId || 'dep', nome: p.nome });
+          listaPassageiros.push({ id: clienteId || '', nome: p.nome });
         }
       });
     }
