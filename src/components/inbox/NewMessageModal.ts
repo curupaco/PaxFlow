@@ -143,19 +143,40 @@ export class NewMessageModal {
             </div>
 
             <!-- Colapsível de Agendamento -->
-            <div id="agendar-lembrete-fields" class="hidden grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-              <div class="space-y-1">
-                <label class="block text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest">Data do Agendamento *</label>
-                <input id="msg-lembrete-data" type="text" placeholder="DD/MM/YYYY" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs animate-fadeIn" />
+            <div id="agendar-lembrete-fields" class="hidden space-y-3 pt-2 animate-fadeIn">
+              <!-- Pills de Agendamento Rápido de 1-Toque -->
+              <div>
+                <label class="block text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest mb-1.5">Atalhos de Agendamento Rápido</label>
+                <div class="flex flex-wrap gap-1.5">
+                  <button type="button" class="btn-quick-schedule px-2.5 py-1 text-[11px] font-black rounded-lg bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200/50 dark:border-indigo-800/50 transition cursor-pointer" data-quick="hoje-17h">
+                    ⚡ Hoje 17h
+                  </button>
+                  <button type="button" class="btn-quick-schedule px-2.5 py-1 text-[11px] font-black rounded-lg bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200/50 dark:border-indigo-800/50 transition cursor-pointer" data-quick="amanha-09h">
+                    ☀️ Amanhã 09h
+                  </button>
+                  <button type="button" class="btn-quick-schedule px-2.5 py-1 text-[11px] font-black rounded-lg bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200/50 dark:border-indigo-800/50 transition cursor-pointer" data-quick="em-3-dias">
+                    🗓️ Em 3 dias
+                  </button>
+                  <button type="button" class="btn-quick-schedule px-2.5 py-1 text-[11px] font-black rounded-lg bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200/50 dark:border-indigo-800/50 transition cursor-pointer" data-quick="prox-segunda">
+                    💼 Próx. Segunda
+                  </button>
+                </div>
               </div>
 
-              <div class="space-y-1">
-                <label class="block text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest">Período *</label>
-                <select id="msg-lembrete-periodo" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs">
-                  <option value="manha" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">🌅 Manhã</option>
-                  <option value="tarde" selected class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">☀️ Tarde</option>
-                  <option value="noite" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">🌙 Noite</option>
-                </select>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="space-y-1">
+                  <label class="block text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest">Data do Agendamento *</label>
+                  <input id="msg-lembrete-data" type="text" placeholder="DD/MM/YYYY" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs animate-fadeIn" />
+                </div>
+
+                <div class="space-y-1">
+                  <label class="block text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest">Período *</label>
+                  <select id="msg-lembrete-periodo" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs">
+                    <option value="manha" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">🌅 Manhã</option>
+                    <option value="tarde" selected class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">☀️ Tarde</option>
+                    <option value="noite" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">🌙 Noite</option>
+                  </select>
+                </div>
               </div>
 
               <div class="space-y-1 sm:col-span-2">
@@ -367,6 +388,39 @@ export class NewMessageModal {
       } else {
         dataInput.value = v;
       }
+    });
+
+    // Atalhos Rápidos de Agendamento (1-Toque)
+    const periodoSelect = modalOverlay.querySelector('#msg-lembrete-periodo') as HTMLSelectElement;
+    modalOverlay.querySelectorAll('.btn-quick-schedule').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const quick = btn.getAttribute('data-quick');
+        const now = new Date();
+        let targetDate = new Date();
+
+        if (quick === 'hoje-17h') {
+          targetDate = new Date();
+          if (periodoSelect) periodoSelect.value = 'tarde';
+        } else if (quick === 'amanha-09h') {
+          targetDate.setDate(now.getDate() + 1);
+          if (periodoSelect) periodoSelect.value = 'manha';
+        } else if (quick === 'em-3-dias') {
+          targetDate.setDate(now.getDate() + 3);
+          if (periodoSelect) periodoSelect.value = 'manha';
+        } else if (quick === 'prox-segunda') {
+          const dayOfWeek = now.getDay(); // 0 = Domingo, 1 = Segunda, ...
+          const daysUntilMonday = ((8 - dayOfWeek) % 7) || 7;
+          targetDate.setDate(now.getDate() + daysUntilMonday);
+          if (periodoSelect) periodoSelect.value = 'manha';
+        }
+
+        const dd = String(targetDate.getDate()).padStart(2, '0');
+        const mm = String(targetDate.getMonth() + 1).padStart(2, '0');
+        const yyyy = targetDate.getFullYear();
+        if (dataInput) {
+          dataInput.value = `${dd}/${mm}/${yyyy}`;
+        }
+      });
     });
 
     // --- SEND ACTION ---

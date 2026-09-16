@@ -42,6 +42,7 @@
    - 3.29 [PaxFlow Upsell Engine™ (Motor Preditivo de Oportunidades & Ticket Médio)](#329-paxflow-upsell-engine-motor-preditivo-de-oportunidades--ticket-médio)
    - 3.30 [PaxFlow Studio™ (Criação de Propostas Digitais de Luxo & Cadernos de Viagem)](#330-paxflow-studio-criação-de-propostas-digitais-de-luxo--cadernos-de-viagem)
    - 3.31 [Gestão Inteligente de Anexos e Documentos (Clientes e Viagens)](#331-gestão-inteligente-de-anexos-e-documentos-clientes-e-viagens)
+   - 3.32 [Melhorias de Usabilidade, Produtividade e Feedback Visual de UX (Plano 1)](#332-melhorias-de-usabilidade-produtividade-e-feedback-visual-de-ux-plano-1)
 4. [Diferenciais Competitivos](#4-diferenciais-competitivos)
 5. [Arquitetura Tecnológica](#5-arquitetura-tecnológica)
 6. [Segurança e Conformidade](#6-segurança-e-conformidade)
@@ -706,6 +707,37 @@ Módulo unificado de governança e custódia documental para agências de viagem
 
 - **Resiliência a Schema Drift (Padrão Zero-Break)**:
   - O serviço `AnexosService` conta com tratamento nativo para erros de colunas inexistentes (`42703`), retrocedendo para o schema base sem travar a interface nem gerar mensagens de erro ao usuário caso a migração DDL ainda esteja em processo de aplicação no banco de dados.
+
+---
+
+### 3.32 Melhorias de Usabilidade, Produtividade e Feedback Visual de UX (Plano 1)
+
+Pacote de micro-interações, transparência de estado e aceleração de produtividade operacional desenvolvido para otimizar o fluxo diário dos consultores e administradores da agência:
+
+1. **Barra de Chips de Filtros Ativos no Dashboard**:
+   - **Feedback Visual Imediato**: Renderiza tags (chips) arredondadas elegantes abaixo das abas de status sempre que qualquer critério de filtragem estiver ativo (termo de busca, períodos de datas financeiro/ida/volta, equipe/consultor, conferências financeiras/processo ou fase de venda).
+   - **Desativação Granular em 1-Clique**: Cada chip possui botão de remoção individual (`✕`) para que o usuário possa desativar um critério específico sem perder a configuração dos demais.
+   - **Ação Rápida de Limpeza Total**: O botão `Limpar Todos` restaura a visualização global de forma instantânea.
+
+2. **Search Highlighting Inteligente (Realce Visual em Amarelo)**:
+   - Utilitário puro e de alta performance (`highlightMatch` em `src/utils/textHelper.ts`) com escape seguro de caracteres especiais de Regex.
+   - Aplica realce com tag `<mark>` estilizada em âmbar nos resultados pesquisados em tempo real nos módulos de **Dashboard / Viagens** (cliente, código de referência, destino), **Orçamentos** (cliente, código de referência, destino, contato) e **Central de Reembolsos** (cliente, código de referência, destino, fornecedor, localizador).
+
+3. **Pills de Agendamento Rápido no Inbox (1-Toque)**:
+   - Botões de seleção rápida integrados à seção de agendamento de lembretes no modal de Nova Mensagem Direta (`NewMessageModal.ts`):
+     - `⚡ Hoje 17h`: Preenche a data de hoje no turno da tarde.
+     - `☀️ Amanhã 09h`: Define o dia seguinte no turno da manhã.
+     - `🗓️ Em 3 dias`: Pula 3 dias no calendário no turno da manhã.
+     - `💼 Próx. Segunda`: Calcula e seleciona automaticamente a próxima segunda-feira útil.
+   - Reduz drasticamente o tempo necessário para criar follow-ups e tarefas para a equipe.
+
+4. **Calculadora Reativa & Barra de Status de Detalhamento Financeiro de Produtos**:
+   - Barra visual de status em tempo real integrada ao painel de edição de produtos da viagem (`EditTravelModal.ts` / `DashboardTemplates.ts`).
+   - Calcula em tempo real o percentual de conciliação entre o **Valor de Venda** e o rateio de custos (**Tarifa + Taxas + Comissão + Markup + RAV**).
+   - Exibe indicador visual dinâmico (`✅ 100% OK (Totalmente Detalhado)` em verde ou `⏳ X% Detalhado` em âmbar com indicação do saldo pendente).
+
+5. **Feedback Visual Inline no Botão Salvar**:
+   - Ao salvar alterações no cadastro de viagens ou na edição de produtos, o botão de ação principal transiciona suavemente seu estado e cor para `✅ Salvo com Sucesso!` em verde esmeralda com sombra brilhante antes do recarregamento dos dados, fornecendo confirmação tátil e inequívoca da persistência no banco.
 
 ---
 

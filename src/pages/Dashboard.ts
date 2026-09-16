@@ -29,6 +29,7 @@ import {
 } from '../components/dashboard/DashboardTemplates';
 
 import { isNextTripEnabled, isRiskScoreEnabled, isUpsellEnabled } from '../utils/featureFlags';
+import { highlightMatch } from '../utils/textHelper';
 
 // Injeta estilos premium e animações micro-interativas para SLAs diretamente no DOM
 
@@ -1914,6 +1915,8 @@ export class Dashboard {
           </div>
         </div>
 
+        ${this.renderActiveFilterChipsHTML()}
+
         <!-- CONTEÚDO PRINCIPAL (LISTA / TABELA) -->
         <main class="flex-1 p-6 flex flex-col min-h-0 bg-slate-50/50 dark:bg-slate-950 overflow-y-auto custom-scrollbar">
           <div id="next-trip-engine-mount"></div>
@@ -2040,6 +2043,78 @@ export class Dashboard {
   }
 
   /**
+   * Renderiza a barra de chips com os filtros ativos para feedback visual imediato e desativação rápida em 1 clique
+   */
+  private renderActiveFilterChipsHTML(): string {
+    const chips: { key: string; label: string; icon: string }[] = [];
+
+    if (this.buscaTermo && this.buscaTermo.trim()) {
+      chips.push({ key: 'busca', label: `Busca: "${this.buscaTermo.trim()}"`, icon: '🔍' });
+    }
+
+    if (this.dataFinStart || this.dataFinEnd) {
+      const startBr = this.dataFinStart ? formatIsoDateToBr(this.dataFinStart) : '...';
+      const endBr = this.dataFinEnd ? formatIsoDateToBr(this.dataFinEnd) : '...';
+      chips.push({ key: 'dataFin', label: `Data Fin: ${startBr} a ${endBr}`, icon: '📅' });
+    }
+
+    if (this.dataIdaStart || this.dataIdaEnd) {
+      const startBr = this.dataIdaStart ? formatIsoDateToBr(this.dataIdaStart) : '...';
+      const endBr = this.dataIdaEnd ? formatIsoDateToBr(this.dataIdaEnd) : '...';
+      chips.push({ key: 'dataIda', label: `Embarque: ${startBr} a ${endBr}`, icon: '✈️' });
+    }
+
+    if (this.dataVoltaStart || this.dataVoltaEnd) {
+      const startBr = this.dataVoltaStart ? formatIsoDateToBr(this.dataVoltaStart) : '...';
+      const endBr = this.dataVoltaEnd ? formatIsoDateToBr(this.dataVoltaEnd) : '...';
+      chips.push({ key: 'dataVolta', label: `Retorno: ${startBr} a ${endBr}`, icon: '🚐' });
+    }
+
+    if (this.selectedConsultantId !== 'todos') {
+      const consultorNome = this.consultores.find(c => c.id === this.selectedConsultantId)?.nome || 'Consultor';
+      chips.push({ key: 'consultor', label: `Consultor: ${consultorNome}`, icon: '👤' });
+    }
+
+    if (this.confFilters.finPendente) chips.push({ key: 'conf-fin-pendente', label: 'Fin. Pendente', icon: '⏳' });
+    if (this.confFilters.finOk) chips.push({ key: 'conf-fin-ok', label: 'Fin. OK', icon: '✅' });
+    if (this.confFilters.procPendente) chips.push({ key: 'conf-proc-pendente', label: 'Proc. Pendente', icon: '⏳' });
+    if (this.confFilters.procOk) chips.push({ key: 'conf-proc-ok', label: 'Proc. OK', icon: '✅' });
+
+    if (this.activeStatusTab !== 'todos') {
+      const statusLabels: Record<string, string> = {
+        fechado: 'Fechado',
+        pos_venda: 'Pós-Venda',
+        pre_embarque: 'Pré-Embarque',
+        pos_viagem: 'Pós-Viagem',
+        reembolso_solicitado: 'Reembolso Solicitado'
+      };
+      chips.push({ key: 'status', label: `Status: ${statusLabels[this.activeStatusTab] || this.activeStatusTab}`, icon: '🏷️' });
+    }
+
+    if (chips.length === 0) return '';
+
+    return `
+      <div id="active-filter-chips-bar" class="px-6 py-2.5 bg-slate-100/60 dark:bg-slate-900/40 border-b border-slate-200/60 dark:border-slate-800/60 flex flex-wrap items-center gap-2 animate-fadeIn">
+        <span class="text-[10px] font-black uppercase text-slate-400 dark:text-slate-400 tracking-wider select-none flex items-center gap-1">
+          <span>🎯 Filtros Ativos:</span>
+        </span>
+        ${chips.map(chip => `
+          <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 shadow-xs text-xs font-bold text-slate-700 dark:text-slate-200 group transition hover:border-indigo-400">
+            <span>${chip.icon}</span>
+            <span>${chip.label}</span>
+            <button type="button" class="btn-remove-filter-chip text-slate-400 hover:text-rose-500 transition p-0.5 ml-0.5 cursor-pointer" data-clear-filter="${chip.key}" title="Remover este filtro">
+              ✕
+            </button>
+          </span>
+        `).join('')}
+        <button id="btn-clear-all-chips" type="button" class="text-[10px] font-extrabold text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 uppercase tracking-wider px-2 py-1 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition cursor-pointer ml-1">
+          Limpar Todos
+        </button>
+      </div>
+    `;
+  }
+
+  /**
    * Renderiza uma aba de status individual com contador
    */
   private renderStatusTab(label: string, statusKey: string, count: number): string {
@@ -2148,11 +2223,11 @@ Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : '
 
         <!-- Cliente -->
         <td class="px-5 py-4 min-w-[200px]">
-          <div class="font-black text-slate-800 dark:text-slate-100">${v.cliente?.nome || 'Cliente Desconhecido'}</div>
+          <div class="font-black text-slate-800 dark:text-slate-100">${highlightMatch(v.cliente?.nome || 'Cliente Desconhecido', this.buscaTermo)}</div>
           ${v.codigoRef ? `
             <div class="flex flex-wrap items-center gap-1.5 mt-1">
               <span class="px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-655 dark:text-indigo-400 font-mono font-bold text-[9px] rounded tracking-wider border border-indigo-200/40 dark:border-indigo-850 uppercase">
-                ${v.codigoRef}
+                ${highlightMatch(v.codigoRef, this.buscaTermo)}
               </span>
             </div>
           ` : ''}
@@ -2161,7 +2236,7 @@ Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : '
         <!-- Destino / Produtos -->
         <td class="px-5 py-4">
           <div class="font-extrabold text-slate-800 dark:text-slate-200 flex items-center gap-1">
-            ✈️ ${v.destino}
+            ✈️ ${highlightMatch(v.destino, this.buscaTermo)}
           </div>
           <!-- Ícones dos Produtos -->
           ${v.produtos && v.produtos.length > 0 ? `
@@ -2304,11 +2379,11 @@ Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : '
         <!-- Header: SLA + Risk Score + Cliente + LOC -->
         <div class="flex items-start justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
           <div class="space-y-1">
-            <div class="font-black text-sm text-slate-800 dark:text-slate-100">${v.cliente?.nome || 'Cliente Desconhecido'}</div>
+            <div class="font-black text-sm text-slate-800 dark:text-slate-100">${highlightMatch(v.cliente?.nome || 'Cliente Desconhecido', this.buscaTermo)}</div>
             <div class="flex flex-wrap items-center gap-1.5">
               ${v.codigoRef ? `
                 <span class="px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-655 dark:text-indigo-400 font-mono font-bold text-[9px] rounded tracking-wider border border-indigo-200/40 dark:border-indigo-850 uppercase">
-                  REF: ${v.codigoRef}
+                  REF: ${highlightMatch(v.codigoRef, this.buscaTermo)}
                 </span>
               ` : ''}
               ${this.perfil?.role === 'admin' ? `
@@ -2337,7 +2412,7 @@ Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : '
           <div class="space-y-1">
             <span class="block text-[9px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider">Destino & Viagem</span>
             <div class="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1">
-              ✈️ ${v.destino}
+              ✈️ ${highlightMatch(v.destino, this.buscaTermo)}
             </div>
             <!-- Ícones dos Produtos -->
             ${v.produtos && v.produtos.length > 0 ? `
@@ -2525,6 +2600,76 @@ Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : '
       this.dataIdaEnd = '';
       this.dataVoltaStart = '';
       this.dataVoltaEnd = '';
+      this.render();
+    });
+
+    // 4.1. Listeners dos Chips de Filtros Ativos
+    this.container.querySelectorAll('[data-clear-filter]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const filterKey = btn.getAttribute('data-clear-filter');
+        if (filterKey === 'busca') {
+          this.buscaTermo = '';
+          const searchInput = document.getElementById('input-busca-viagem') as HTMLInputElement;
+          if (searchInput) searchInput.value = '';
+          const globalInput = document.getElementById('global-header-search-input') as HTMLInputElement;
+          if (globalInput) {
+            globalInput.value = '';
+            const clearBtn = document.getElementById('btn-clear-global-search');
+            if (clearBtn) clearBtn.classList.add('hidden');
+          }
+          this.balcaoResultados = [];
+        } else if (filterKey === 'dataFin') {
+          this.dataFinStart = '';
+          this.dataFinEnd = '';
+        } else if (filterKey === 'dataIda') {
+          this.dataIdaStart = '';
+          this.dataIdaEnd = '';
+        } else if (filterKey === 'dataVolta') {
+          this.dataVoltaStart = '';
+          this.dataVoltaEnd = '';
+        } else if (filterKey === 'consultor') {
+          this.selectedConsultantId = 'todos';
+        } else if (filterKey === 'conf-fin-pendente') {
+          this.confFilters.finPendente = false;
+        } else if (filterKey === 'conf-fin-ok') {
+          this.confFilters.finOk = false;
+        } else if (filterKey === 'conf-proc-pendente') {
+          this.confFilters.procPendente = false;
+        } else if (filterKey === 'conf-proc-ok') {
+          this.confFilters.procOk = false;
+        } else if (filterKey === 'status') {
+          this.activeStatusTab = 'todos';
+        }
+        this.render();
+      });
+    });
+
+    document.getElementById('btn-clear-all-chips')?.addEventListener('click', () => {
+      this.buscaTermo = '';
+      const searchInput = document.getElementById('input-busca-viagem') as HTMLInputElement;
+      if (searchInput) searchInput.value = '';
+      const globalInput = document.getElementById('global-header-search-input') as HTMLInputElement;
+      if (globalInput) {
+        globalInput.value = '';
+        const clearBtn = document.getElementById('btn-clear-global-search');
+        if (clearBtn) clearBtn.classList.add('hidden');
+      }
+      this.balcaoResultados = [];
+      this.dataFinStart = '';
+      this.dataFinEnd = '';
+      this.dataIdaStart = '';
+      this.dataIdaEnd = '';
+      this.dataVoltaStart = '';
+      this.dataVoltaEnd = '';
+      this.selectedConsultantId = 'todos';
+      this.confFilters = {
+        finPendente: false,
+        finOk: false,
+        procPendente: false,
+        procOk: false
+      };
+      this.activeStatusTab = 'todos';
       this.render();
     });
 

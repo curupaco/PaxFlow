@@ -379,6 +379,17 @@ export function renderLateralEditorPaneHTML(
                     <span class="font-bold text-slate-400 dark:text-slate-400 uppercase text-[9px] tracking-wider">Saldo Pendente:</span>
                     <strong id="edit-det-saldo-pendente-${selectedProduct.id}" class="font-black text-rose-600 dark:text-rose-400">R$ 0,00</strong>
                   </div>
+
+                  <!-- Barra de Progresso Reativa de Detalhamento -->
+                  <div class="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-1">
+                    <div class="flex justify-between items-center text-[10px] font-bold">
+                      <span class="text-slate-500 dark:text-slate-400 uppercase text-[8px] tracking-wider">Status do Detalhamento:</span>
+                      <span id="edit-det-progresso-percent-${selectedProduct.id}" class="text-[10px] font-black text-indigo-600 dark:text-indigo-400">100% OK</span>
+                    </div>
+                    <div class="w-full bg-slate-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
+                      <div id="edit-det-progresso-bar-${selectedProduct.id}" class="h-full bg-emerald-500 rounded-full transition-all duration-300" style="width: 100%"></div>
+                    </div>
+                  </div>
                 </div>
               </div>
 

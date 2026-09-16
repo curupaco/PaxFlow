@@ -1285,9 +1285,19 @@ export class EditTravelModal {
           };
         }
 
+        const submitBtn = formEditar.querySelector('button[type="submit"]') as HTMLButtonElement;
+        if (submitBtn) {
+          const originalBtnHtml = submitBtn.innerHTML;
+          submitBtn.innerHTML = `<span>✅ Salvo com Sucesso!</span>`;
+          submitBtn.className = submitBtn.className.replace(/bg-indigo-600 hover:bg-indigo-700/g, 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/30');
+        }
+
         this.options.showToast('Viagem atualizada com sucesso!', 'success');
         await this.options.onUpdate();
-        await this.open(v.id, 'detalhes');
+        
+        setTimeout(async () => {
+          await this.open(v.id, 'detalhes');
+        }, 500);
       } catch (err: any) {
         console.error('Erro ao editar viagem:', err);
         this.options.showToast('Erro ao editar viagem.', 'error', err);
@@ -2086,6 +2096,29 @@ export class EditTravelModal {
       } else {
         saldoPendEl.className = 'font-black text-emerald-600 dark:text-emerald-400';
       }
+
+      // Atualiza a barra de status de detalhamento visual
+      const progressoPercentEl = document.getElementById(`edit-det-progresso-percent-${prodId}`);
+      const progressoBarEl = document.getElementById(`edit-det-progresso-bar-${prodId}`);
+      if (progressoPercentEl && progressoBarEl) {
+        if (venda <= 0) {
+          progressoPercentEl.textContent = 'Sem Valor de Venda';
+          progressoPercentEl.className = 'text-[10px] font-bold text-slate-400';
+          progressoBarEl.style.width = '0%';
+          progressoBarEl.className = 'h-full bg-slate-300 dark:bg-slate-700 rounded-full transition-all duration-300';
+        } else if (Math.abs(saldoPend) <= 0.01) {
+          progressoPercentEl.textContent = '✅ 100% OK (Totalmente Detalhado)';
+          progressoPercentEl.className = 'text-[10px] font-black text-emerald-600 dark:text-emerald-400';
+          progressoBarEl.style.width = '100%';
+          progressoBarEl.className = 'h-full bg-emerald-500 rounded-full transition-all duration-300';
+        } else {
+          const percent = Math.max(0, Math.min(100, Math.round((totalDist / venda) * 100)));
+          progressoPercentEl.textContent = `⏳ ${percent}% Detalhado`;
+          progressoPercentEl.className = 'text-[10px] font-black text-amber-600 dark:text-amber-400';
+          progressoBarEl.style.width = `${percent}%`;
+          progressoBarEl.className = 'h-full bg-amber-500 rounded-full transition-all duration-300';
+        }
+      }
     };
 
     if (editVendaInput) {
@@ -2275,13 +2308,20 @@ export class EditTravelModal {
           .update(payload)
           .eq('id', prodId);
 
-        if (error) throw error;
+        const submitBtn = formEditProd.querySelector('button[type="submit"]') as HTMLButtonElement;
+        if (submitBtn) {
+          submitBtn.innerHTML = `<span>✅ Salvo com Sucesso!</span>`;
+          submitBtn.className = submitBtn.className.replace(/bg-indigo-600 hover:bg-indigo-700/g, 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/30');
+        }
 
         this.options.showToast('Produto atualizado com sucesso!', 'success');
         this.selectedProductId = prodId;
 
         await this.options.onUpdate();
-        await this.open(v.id, 'produtos');
+        
+        setTimeout(async () => {
+          await this.open(v.id, 'produtos');
+        }, 500);
       } catch (err: any) {
         console.error('Erro ao editar produto lateral:', err);
         this.options.showToast('Erro ao editar produto.', 'error', err);

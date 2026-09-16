@@ -23,6 +23,7 @@ import {
   parseDoubleBr,
   parsePhoneValue
 } from '../utils/masks';
+import { highlightMatch } from '../utils/textHelper';
 import './Orcamentos.css';
 
 export class OrcamentosPage {
@@ -904,11 +905,11 @@ export class OrcamentosPage {
         <div class="flex items-start justify-between gap-2.5">
           <div class="overflow-hidden flex-1">
             <h4 class="text-xs font-black text-slate-800 dark:text-slate-100 leading-snug truncate">
-              ${o.codigoRef ? `<span class="text-[9px] font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded mr-1.5">${o.codigoRef}</span>` : ''}
-              ${o.nomeCliente}
+              ${o.codigoRef ? `<span class="text-[9px] font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded mr-1.5">${highlightMatch(o.codigoRef, this.buscaTermo)}</span>` : ''}
+              ${highlightMatch(o.nomeCliente, this.buscaTermo)}
             </h4>
             <div class="flex items-center gap-1.5 mt-0.5">
-              <span class="text-[10px] text-slate-400 dark:text-slate-400 font-semibold truncate max-w-[150px]" title="${o.contato}">${o.contato}</span>
+              <span class="text-[10px] text-slate-400 dark:text-slate-400 font-semibold truncate max-w-[150px]" title="${o.contato}">${highlightMatch(o.contato, this.buscaTermo)}</span>
               ${o.contato ? `
                 <button data-action="copiar-telefone" data-contato="${o.contato}" title="Copiar Telefone" class="p-0.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded transition flex items-center justify-center shrink-0">
                   <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -945,7 +946,7 @@ export class OrcamentosPage {
         <div class="flex flex-col gap-1.5 bg-slate-50/50 dark:bg-slate-800/20 p-2.5 rounded-lg border border-slate-100 dark:border-slate-800/50">
           <div class="flex justify-between items-center text-[10px] font-semibold text-slate-500 dark:text-slate-400">
             <span>Destino:</span>
-            <span class="font-extrabold text-slate-700 dark:text-slate-300">${o.destino}</span>
+            <span class="font-extrabold text-slate-700 dark:text-slate-300">${highlightMatch(o.destino, this.buscaTermo)}</span>
           </div>
           <div class="flex justify-between items-center text-[10px] font-semibold text-slate-500 dark:text-slate-400">
             <span>Data Viagem:</span>

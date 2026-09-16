@@ -246,6 +246,34 @@ export const HELP_ITEMS: HelpItem[] = [
     description: 'Menu popover no cabeçalho do Dashboard para auditoria e filtragem de pendências.',
     details: 'O botão `Conf.` no cabeçalho permite aos administradores auditar viagens de forma combinada e precisa:\n\n- **Financeiro (`Fin. Pendente` / `Fin. OK`)**: Filtra viagens onde os produtos ainda não estão quitados/detalhados ou que já estão 100% conciliadas.\n- **Processo (`Proc. Pendente` / `Proc. OK`)**: Filtra viagens com conferência de processo pendente ou confirmada.\n- **Atalhos Rápidos**: Botões `✨ 100% OK` e `⏳ Nenhum OK` para aplicar filtros comuns com 1 clique.\n- **Interseção Lógica**: Permite combinar múltiplos pills (ex: buscar viagens com Financeiro Pendente e Processo OK ao mesmo tempo).'
   },
+  {
+    id: 'chips-filtros-ativos',
+    modulo: 'dashboard',
+    label: 'Barra de Chips de Filtros Ativos e Limpeza Rápida',
+    description: 'Visualização instantânea de todos os filtros ativos com remoção individual ou geral em 1 clique.',
+    details: 'Sempre que você aplica uma busca por texto, filtro de datas, consultor, conferência ou status, uma barra de tags (chips) elegantes aparece abaixo das abas.\n\n- **Remoção Individual**: Clique no `✕` de qualquer chip para desativar apenas aquele critério sem perder os demais filtros.\n- **Limpar Todos**: O botão `Limpar Todos` restaura a visualização padrão instantaneamente.\n- **Total Transparência**: Você nunca mais terá dúvidas sobre o motivo de uma viagem não aparecer na lista.'
+  },
+  {
+    id: 'search-highlighting',
+    modulo: 'geral',
+    label: 'Realce Visual de Busca (Search Highlighting)',
+    description: 'Destaque em amarelo dos termos pesquisados nas listagens de Viagens, Orçamentos e Reembolsos.',
+    details: 'Ao digitar qualquer termo na caixa de busca global ou nos filtros de tela, o PaxFlow realça automaticamente as correspondências encontradas com uma marcação visual destacada. Isso permite bater o olho instantaneamente no motivo pelo qual o card ou linha foi retornado, seja pelo nome do passageiro, código localizador, destino ou fornecedor.'
+  },
+  {
+    id: 'agendamento-rapido-inbox',
+    modulo: 'realtime',
+    label: 'Atalhos Rápidos de Agendamento no Inbox (1-Toque)',
+    description: 'Pills inteligentes para definir lembretes e tarefas no calendário sem digitação manual.',
+    details: 'Ao compor uma mensagem com lembrete no Inbox, você conta com botões de 1-toque:\n\n- **⚡ Hoje 17h**: Preenche a data de hoje no turno da tarde.\n- **☀️ Amanhã 09h**: Define o próximo dia útil no turno da manhã.\n- **🗓️ Em 3 dias**: Salta automaticamente 3 dias no calendário.\n- **💼 Próx. Segunda**: Identifica a próxima segunda-feira útil para início de semana comercial.'
+  },
+  {
+    id: 'calculadora-reativa-produtos',
+    modulo: 'viagens',
+    label: 'Calculadora Reativa & Barra de Status do Detalhamento Financeiro',
+    description: 'Barra visual em tempo real para conferência de Tarifa, Taxas, Comissão, Markup e RAV.',
+    details: 'Ao editar os valores de um produto ou serviço na viagem, a calculadora reativa atualiza instantaneamente:\n\n- **Total Distribuído vs Valor de Venda**: Comparativo automático entre o valor cobrado do cliente e o rateio de custos.\n- **Barra de Status do Detalhamento**: Exibe percentual de progresso (ex: `100% OK` em verde quando totalmente conciliado ou `⏳ 80% Detalhado` em âmbar com o saldo pendente restante).\n- **Feedback Visual no Botão Salvar**: O botão transiciona temporariamente para `✅ Salvo com Sucesso!` com fundo esmeralda para confirmar a persistência sem ambiguidades.'
+  },
 
   // ==================== 4. Gestão de Viagens ====================
   {

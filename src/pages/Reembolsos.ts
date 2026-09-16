@@ -3,6 +3,7 @@ import { PerfilConsultor, Reembolso } from '../types';
 import { getAvatarSvg } from '../services/avatars';
 import { showCustomConfirm } from '../services/dialog';
 import { renderHelpIcon } from '../utils/helpHelper';
+import { highlightMatch } from '../utils/textHelper';
 
 // Injeta estilos premium e customizações para a Central de Reembolsos no DOM
 if (typeof document !== 'undefined') {
@@ -547,23 +548,23 @@ export class ReembolsosPage {
                           <!-- Cliente -->
                           <td class="py-4.5 px-5">
                             <span class="block text-slate-800 dark:text-slate-200 font-bold">
-                              ${(r.codigo_ref || r.codigoRef) ? `<span class="mr-1 text-[10px] font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-1 py-0.5 rounded border border-slate-200/50 dark:border-slate-800">${r.codigo_ref || r.codigoRef}</span>` : ''}
-                              ${r.viagem?.cliente?.nome || 'Cliente Desconhecido'}
+                              ${(r.codigo_ref || r.codigoRef) ? `<span class="mr-1 text-[10px] font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-1 py-0.5 rounded border border-slate-200/50 dark:border-slate-800">${highlightMatch(r.codigo_ref || r.codigoRef, this.buscaTermo)}</span>` : ''}
+                              ${highlightMatch(r.viagem?.cliente?.nome || 'Cliente Desconhecido', this.buscaTermo)}
                             </span>
                             <span class="block text-[10px] text-slate-400 dark:text-slate-400 font-semibold">${r.viagem?.cliente?.email || 'Sem e-mail'}</span>
                           </td>
                           
                           <!-- Viagem / Localizador -->
                           <td class="py-4.5 px-5">
-                            <span class="block text-slate-800 dark:text-slate-200 font-bold">✈️ ${r.viagem?.destino || 'Sem Destino'}</span>
+                            <span class="block text-slate-800 dark:text-slate-200 font-bold">✈️ ${highlightMatch(r.viagem?.destino || 'Sem Destino', this.buscaTermo)}</span>
                             <div class="flex items-center gap-1.5 mt-0.5">
                               ${(r.viagem?.codigo_ref || r.viagem?.codigoRef) ? `
                                 <span class="inline-block px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-650 dark:text-indigo-400 font-mono font-bold text-[9px] rounded uppercase border border-indigo-200/40 dark:border-indigo-850">
-                                  ${r.viagem?.codigo_ref || r.viagem?.codigoRef}
+                                  ${highlightMatch(r.viagem?.codigo_ref || r.viagem?.codigoRef, this.buscaTermo)}
                                 </span>
                               ` : ''}
                               <span class="inline-block px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-extrabold text-[9px] rounded uppercase border border-slate-200/50 dark:border-slate-800">
-                                LOC: ${r.viagem?.codigo_localizador || 'S/ LOC'}
+                                LOC: ${highlightMatch(r.viagem?.codigo_localizador || 'S/ LOC', this.buscaTermo)}
                               </span>
                             </div>
                           </td>
@@ -571,12 +572,12 @@ export class ReembolsosPage {
                           <!-- Produto Cancelado -->
                           <td class="py-4.5 px-5">
                             <span class="block text-slate-700 dark:text-slate-300 font-bold">[${(r.produto?.tipo || 'outro').toUpperCase()}]</span>
-                            <span class="block text-[11px] text-slate-400 dark:text-slate-400 font-medium truncate max-w-[160px]">${r.produto?.descricao || 'Sem descrição'}</span>
+                            <span class="block text-[11px] text-slate-400 dark:text-slate-400 font-medium truncate max-w-[160px]">${highlightMatch(r.produto?.descricao || 'Sem descrição', this.buscaTermo)}</span>
                           </td>
    
                           <!-- Fornecedor -->
                           <td class="py-4.5 px-5">
-                            <span class="text-slate-600 dark:text-slate-400 font-bold">${r.produto?.fornecedor || 'Fornecedor n/d'}</span>
+                            <span class="text-slate-600 dark:text-slate-400 font-bold">${highlightMatch(r.produto?.fornecedor || 'Fornecedor n/d', this.buscaTermo)}</span>
                           </td>
    
                           <!-- Valor -->
@@ -658,8 +659,8 @@ export class ReembolsosPage {
         <div class="flex items-start justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
           <div class="space-y-1">
             <span class="block text-slate-800 dark:text-slate-200 font-bold">
-              ${(r.codigo_ref || r.codigoRef) ? `<span class="mr-1 text-[10px] font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-1 py-0.5 rounded border border-slate-200/50 dark:border-slate-800">${r.codigo_ref || r.codigoRef}</span>` : ''}
-              ${r.viagem?.cliente?.nome || 'Cliente Desconhecido'}
+              ${(r.codigo_ref || r.codigoRef) ? `<span class="mr-1 text-[10px] font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-1 py-0.5 rounded border border-slate-200/50 dark:border-slate-800">${highlightMatch(r.codigo_ref || r.codigoRef, this.buscaTermo)}</span>` : ''}
+              ${highlightMatch(r.viagem?.cliente?.nome || 'Cliente Desconhecido', this.buscaTermo)}
             </span>
             <span class="block text-[10px] text-slate-400 dark:text-slate-400 font-semibold">${r.viagem?.cliente?.email || 'Sem e-mail'}</span>
           </div>
@@ -680,15 +681,15 @@ export class ReembolsosPage {
         <div class="grid grid-cols-2 gap-4 text-xs">
           <div class="space-y-1">
             <span class="block text-[8px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider">Viagem & LOC</span>
-            <span class="block text-slate-800 dark:text-slate-200 font-bold">✈️ ${r.viagem?.destino || 'Sem Destino'}</span>
+            <span class="block text-slate-800 dark:text-slate-200 font-bold">✈️ ${highlightMatch(r.viagem?.destino || 'Sem Destino', this.buscaTermo)}</span>
             <div class="flex items-center gap-1.5 mt-0.5">
               ${(r.viagem?.codigo_ref || r.viagem?.codigoRef) ? `
                 <span class="inline-block px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-650 dark:text-indigo-400 font-mono font-bold text-[9px] rounded uppercase border border-indigo-200/40 dark:border-indigo-850">
-                  ${r.viagem?.codigo_ref || r.viagem?.codigoRef}
+                  ${highlightMatch(r.viagem?.codigo_ref || r.viagem?.codigoRef, this.buscaTermo)}
                 </span>
               ` : ''}
               <span class="inline-block px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-extrabold text-[9px] rounded uppercase border border-slate-200/50 dark:border-slate-800">
-                LOC: ${r.viagem?.codigo_localizador || 'S/ LOC'}
+                LOC: ${highlightMatch(r.viagem?.codigo_localizador || 'S/ LOC', this.buscaTermo)}
               </span>
             </div>
           </div>
