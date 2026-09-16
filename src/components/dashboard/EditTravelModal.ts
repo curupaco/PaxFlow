@@ -3632,7 +3632,7 @@ export class EditTravelModal {
                 Visualizar
               </button>
               ${telefoneCliente ? `
-                <button type="button" class="btn-whatsapp-anexo px-2 py-1 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-extrabold text-[10px] rounded-lg transition" title="Enviar comprovante via WhatsApp" data-id="${anexo.id}">
+                <button type="button" class="btn-whatsapp-anexo px-2 py-1 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-extrabold text-[10px] rounded-lg transition" title="Enviar documento via WhatsApp" data-id="${anexo.id}">
                   💬
                 </button>
               ` : ''}

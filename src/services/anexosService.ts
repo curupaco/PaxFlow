@@ -440,6 +440,7 @@ export class AnexosService {
 
     // 3. Consulta direta ao Supabase Storage (FONTE DA VERDADE DO ARMAZENAMENTO)
     const pastasParaBuscar = [viagemId, clienteIdEfetivo].filter(Boolean) as string[];
+    const storageFilesMap = new Map<string, { size: number; mimetype: string; name: string }>();
 
     for (const pasta of pastasParaBuscar) {
       if (supabase && supabase.storage) {
@@ -453,6 +454,15 @@ export class AnexosService {
               if (!f.name || f.name.startsWith('.')) continue;
 
               const pathCompleto = `supabase-storage://${pasta}/${f.name}`;
+              const pathSemEsquema = `${pasta}/${f.name}`;
+              const size = (f.metadata as any)?.size || 0;
+              const mimetype = (f.metadata as any)?.mimetype || 'application/pdf';
+
+              storageFilesMap.set(pathCompleto, { size, mimetype, name: f.name });
+              storageFilesMap.set(pathSemEsquema, { size, mimetype, name: f.name });
+              storageFilesMap.set(f.name, { size, mimetype, name: f.name });
+              storageFilesMap.set(f.name.replace(/^\d+_/, ''), { size, mimetype, name: f.name });
+
               const jaExiste = listaFinal.some(item => item.storage_path === pathCompleto);
 
               if (!jaExiste) {
@@ -467,8 +477,8 @@ export class AnexosService {
                   tipo_documento: tipoInferido,
                   nome_original: nomeLegivel,
                   storage_path: pathCompleto,
-                  mime_type: (f.metadata as any)?.mimetype || 'application/pdf',
-                  tamanho_bytes: (f.metadata as any)?.size || 0,
+                  mime_type: mimetype,
+                  tamanho_bytes: size,
                   created_at: f.created_at || new Date().toISOString()
                 });
               }
@@ -492,23 +502,69 @@ export class AnexosService {
         if (cData?.google_drive_folder_url) {
           const jaExisteUrl = listaFinal.some(item => item.storage_path === cData.google_drive_folder_url);
           if (!jaExisteUrl) {
+            let tamanhoBytes = 0;
+            let mimeType = 'application/pdf';
+            let nomeOriginal = 'Passaporte Cadastrado';
+
+            const matchMeta = storageFilesMap.get(cData.google_drive_folder_url) ||
+              storageFilesMap.get(cData.google_drive_folder_url.replace('supabase-storage://', ''));
+
+            if (matchMeta && matchMeta.size > 0) {
+              tamanhoBytes = matchMeta.size;
+              mimeType = matchMeta.mimetype;
+              nomeOriginal = matchMeta.name.replace(/^\d+_/, '');
+            } else if (cData.google_drive_folder_url.startsWith('supabase-storage://') || !cData.google_drive_folder_url.startsWith('http')) {
+              const cleanPath = cData.google_drive_folder_url.replace('supabase-storage://', '');
+              const parts = cleanPath.split('/');
+              if (parts.length >= 2) {
+                const folder = parts[0];
+                const fileName = parts.slice(1).join('/');
+                nomeOriginal = fileName.replace(/^\d+_/, '');
+                try {
+                  const { data: stFiles } = await supabase.storage
+                    .from(this.BUCKET)
+                    .list(folder, { search: fileName });
+                  const matchFile = stFiles?.find(f => f.name === fileName);
+                  if (matchFile && (matchFile.metadata as any)?.size) {
+                    tamanhoBytes = (matchFile.metadata as any).size;
+                    mimeType = (matchFile.metadata as any).mimetype || mimeType;
+                  }
+                } catch {}
+              }
+            }
+
             listaFinal.push({
               id: `legado-cliente-${clienteIdEfetivo}`,
               cliente_id: clienteIdEfetivo,
-              rotulo: cData.passaporte_numero ? `Passaporte ${cData.passaporte_numero}` : `Documento de ${cData.nome || 'Cliente'}`,
+              rotulo: cData.passaporte_numero ? `Passaporte ${cData.passaporte_numero}` : `Passaporte de ${cData.nome || 'Cliente'}`,
               tipo_documento: 'PASSAPORTE',
               numero_documento: cData.passaporte_numero || undefined,
               data_validade: cData.passaporte_validade || undefined,
-              nome_original: 'Documento Cadastrado',
+              nome_original: nomeOriginal,
               storage_path: cData.google_drive_folder_url,
-              mime_type: 'application/pdf',
-              tamanho_bytes: 0,
+              mime_type: mimeType,
+              tamanho_bytes: tamanhoBytes,
               created_at: new Date().toISOString()
             });
           }
         }
       } catch (errLegado) {
         console.warn('[AnexosService] Aviso ao verificar documentos legados do cliente:', errLegado);
+      }
+    }
+
+    // 5. Enriquecimento final: se algum anexo na lista estiver com tamanho_bytes zerado ou ausente, busca no mapa de arquivos
+    for (const anexo of listaFinal) {
+      if (!anexo.tamanho_bytes || anexo.tamanho_bytes === 0) {
+        const match = storageFilesMap.get(anexo.storage_path) ||
+          storageFilesMap.get(anexo.storage_path.replace('supabase-storage://', '')) ||
+          storageFilesMap.get(anexo.nome_original);
+        if (match && match.size > 0) {
+          anexo.tamanho_bytes = match.size;
+          if (!anexo.mime_type || anexo.mime_type === 'application/pdf') {
+            anexo.mime_type = match.mimetype;
+          }
+        }
       }
     }
 
@@ -600,7 +656,7 @@ export class AnexosService {
   }
 
   /**
-   * Gera texto formatado para envio no WhatsApp do cliente com o link/detalhes do documento
+   * Gera texto formatado para envio no WhatsApp do cliente com os detalhes do documento
    */
   public static montarMensagemWhatsApp(anexo: DocumentoAnexo, nomeCliente?: string, destinoViagem?: string): string {
     const saudacao = nomeCliente ? `Olá, *${nomeCliente}*!` : 'Olá!';
@@ -608,16 +664,20 @@ export class AnexosService {
     
     let tipoNome = 'seu documento';
     if (anexo.tipo_documento === 'PASSAPORTE') tipoNome = 'seu Passaporte';
+    else if (anexo.tipo_documento === 'RG') tipoNome = 'seu RG';
+    else if (anexo.tipo_documento === 'CNH') tipoNome = 'sua CNH';
+    else if (anexo.tipo_documento === 'VISTO') tipoNome = 'seu Visto Consular';
     else if (anexo.tipo_documento === 'VOUCHER_AEREO') tipoNome = 'sua Passagem Aérea / Bilhete';
     else if (anexo.tipo_documento === 'VOUCHER_HOTEL') tipoNome = 'seu Voucher de Hospedagem';
     else if (anexo.tipo_documento === 'INGRESSO') tipoNome = 'seus Ingressos';
     else if (anexo.tipo_documento === 'SEGURO') tipoNome = 'sua Apólice de Seguro Viagem';
     else if (anexo.tipo_documento === 'CONTRATO') tipoNome = 'seu Contrato de Viagem';
     else if (anexo.tipo_documento === 'ROTEIRO') tipoNome = 'seu Roteiro de Viagem';
+    else if (anexo.tipo_documento === 'VOUCHER_TRANSPORTE') tipoNome = 'seu Voucher de Transporte/Transfer';
 
     let msg = `${saudacao}\n\nSegue em anexo ${tipoNome}${contexto}:\n📎 *${anexo.rotulo}*`;
     if (anexo.numero_documento) {
-      msg += `\n🔢 Número/Localizador: *${anexo.numero_documento}*`;
+      msg += `\n🔢 Número/Identificador: *${anexo.numero_documento}*`;
     }
     if (anexo.data_validade) {
       msg += `\n📅 Validade: *${new Date(anexo.data_validade).toLocaleDateString('pt-BR')}*`;

@@ -461,7 +461,7 @@ describe('AnexosService - Testes Subcutâneos com Múltiplos Anexos e Resiliênc
 
   it('deve montar mensagem formatada para WhatsApp com variáveis dinâmicas e URL codificada', () => {
     // Setup
-    const anexo: any = {
+    const anexoHotel: any = {
       id: 'doc-hotel-1',
       rotulo: 'Voucher Grand Palladium Imbassaí',
       tipo_documento: 'VOUCHER_HOTEL',
@@ -469,18 +469,31 @@ describe('AnexosService - Testes Subcutâneos com Múltiplos Anexos e Resiliênc
       data_validade: '2026-12-31'
     };
 
+    const anexoPassaporte: any = {
+      id: 'doc-pass-1',
+      rotulo: 'Passaporte FP998877',
+      tipo_documento: 'PASSAPORTE',
+      numero_documento: 'FP998877',
+      data_validade: '2030-05-15'
+    };
+
     // Action
-    const msgEncoded = AnexosService.montarMensagemWhatsApp(anexo, 'Carlos Alberto', 'Bahia');
-    const msgDecoded = decodeURIComponent(msgEncoded);
+    const msgHotel = decodeURIComponent(AnexosService.montarMensagemWhatsApp(anexoHotel, 'Carlos Alberto', 'Bahia'));
+    const msgPass = decodeURIComponent(AnexosService.montarMensagemWhatsApp(anexoPassaporte, 'Marina Lima'));
 
     // Assert
-    expect(msgDecoded).toContain('Olá, *Carlos Alberto*!');
-    expect(msgDecoded).toContain('referente à sua viagem para *Bahia*');
-    expect(msgDecoded).toContain('seu Voucher de Hospedagem');
-    expect(msgDecoded).toContain('Voucher Grand Palladium Imbassaí');
-    expect(msgDecoded).toContain('Número/Localizador: *RES-998822*');
-    expect(msgDecoded).toContain('Validade:');
-    expect(msgDecoded).toContain('Qualquer dúvida, nossa equipe está à disposição! ✈️');
+    expect(msgHotel).toContain('Olá, *Carlos Alberto*!');
+    expect(msgHotel).toContain('referente à sua viagem para *Bahia*');
+    expect(msgHotel).toContain('seu Voucher de Hospedagem');
+    expect(msgHotel).toContain('Voucher Grand Palladium Imbassaí');
+    expect(msgHotel).toContain('Número/Identificador: *RES-998822*');
+    expect(msgHotel).toContain('Validade:');
+    expect(msgHotel).toContain('Qualquer dúvida, nossa equipe está à disposição! ✈️');
+
+    expect(msgPass).toContain('Olá, *Marina Lima*!');
+    expect(msgPass).toContain('seu Passaporte');
+    expect(msgPass).toContain('Número/Identificador: *FP998877*');
+    expect(msgPass).not.toContain('comprovante');
   });
 
   it('deve inferir corretamente categorias adicionais como CONTRATO, ROTEIRO, SEGURO, HOTEL e AÉREO', () => {
@@ -611,6 +624,62 @@ describe('AnexosService - Testes Subcutâneos com Múltiplos Anexos e Resiliênc
     // Arquivo pequeno (5 KB = 5120 bytes)
     const tamanho5Kb = 5 * 1024;
     expect(AnexosService.formatarTamanho(tamanho5Kb)).toContain('5.0 KB');
+  });
+
+  it('deve listar passaporte legado do cliente enriquecendo tamanho_bytes a partir do Storage', async () => {
+    // Setup
+    const mockStorageFiles = [
+      {
+        name: '1700000000000_passaporte_titular.pdf',
+        metadata: { size: 3145728, mimetype: 'application/pdf' },
+        created_at: new Date().toISOString()
+      }
+    ];
+
+    (supabase.storage.from as any).mockReturnValue({
+      list: vi.fn().mockResolvedValue({ data: mockStorageFiles, error: null })
+    });
+
+    const mockFrom = vi.fn().mockImplementation((tabela: string) => {
+      if (tabela === 'documentos_anexos') {
+        return {
+          select: vi.fn().mockReturnValue({
+            order: vi.fn().mockReturnValue({
+              eq: vi.fn().mockResolvedValue({ data: [], error: null })
+            })
+          })
+        };
+      }
+      if (tabela === 'clientes') {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              maybeSingle: vi.fn().mockResolvedValue({
+                data: {
+                  google_drive_folder_url: 'supabase-storage://cliente-abc/1700000000000_passaporte_titular.pdf',
+                  nome: 'Renata Vasconcellos',
+                  passaporte_numero: 'FP123456',
+                  passaporte_validade: '2029-10-10'
+                },
+                error: null
+              })
+            })
+          })
+        };
+      }
+      return {};
+    });
+    (supabase.from as any) = mockFrom;
+
+    // Action
+    const anexos = await AnexosService.listarAnexos(undefined, 'cliente-abc');
+
+    // Assert
+    expect(anexos.length).toBeGreaterThanOrEqual(1);
+    const passaporte = anexos.find(a => a.tipo_documento === 'PASSAPORTE');
+    expect(passaporte).toBeDefined();
+    expect(passaporte?.tamanho_bytes).toBe(3145728);
+    expect(AnexosService.formatarTamanho(passaporte?.tamanho_bytes)).toContain('3.0 MB');
   });
 });
 

@@ -1114,7 +1114,7 @@ export class ClientesPage {
                       <span>📥</span> Baixar
                     </a>
                     ${this.clienteSelecionado?.telefone ? `
-                      <button type="button" class="btn-whatsapp-doc px-2 py-1.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400 font-extrabold text-[10px] rounded-lg transition uppercase flex items-center gap-1" data-id="${doc.id}">
+                      <button type="button" class="btn-whatsapp-doc px-2 py-1.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400 font-extrabold text-[10px] rounded-lg transition uppercase flex items-center gap-1" data-id="${doc.id}" title="Enviar documento via WhatsApp">
                         <span>💬</span>
                       </button>
                     ` : ''}
