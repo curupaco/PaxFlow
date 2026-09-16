@@ -117,7 +117,16 @@ export class OrcamentosPage {
       // 5. Configurar Canal Realtime do Supabase
       this.setupRealtimeChannel();
 
-      // 6. Deep linking from Inbox / Busca Co-Piloto
+      // 6. Ouvinte de Busca Global (Header)
+      if (!this.globalSearchListener) {
+        this.globalSearchListener = (e: any) => {
+          const termo = e.detail?.termo !== undefined ? e.detail.termo : '';
+          this.aplicarBuscaGlobal(termo);
+        };
+        window.addEventListener('paxflow-global-search-submit', this.globalSearchListener);
+      }
+
+      // 7. Deep linking from Inbox / Busca Co-Piloto
       if (targetId) {
         await this.openVerNotasModal(targetId);
       }
@@ -2766,6 +2775,8 @@ export class OrcamentosPage {
     }
   }
 
+  private globalSearchListener: ((e: any) => void) | null = null;
+
   /**
    * Limpeza de listeners e conexões realtime ao fechar ou transicionar a página
    */
@@ -2775,6 +2786,22 @@ export class OrcamentosPage {
         supabase.removeChannel(this.realtimeChannel);
       } catch (e) {}
       this.realtimeChannel = null;
+    }
+    if (this.globalSearchListener) {
+      window.removeEventListener('paxflow-global-search-submit', this.globalSearchListener);
+      this.globalSearchListener = null;
+    }
+  }
+
+  /**
+   * Aplica termo de busca submetido via Caixa de Pesquisa Global
+   */
+  public aplicarBuscaGlobal(termo: string): void {
+    this.buscaTermo = termo;
+    this.render();
+    const searchInput = document.getElementById('input-busca-orcamento') as HTMLInputElement;
+    if (searchInput) {
+      searchInput.value = termo;
     }
   }
 

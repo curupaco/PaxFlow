@@ -79,11 +79,22 @@ export class ReembolsosPage {
       // 5. Configurar ouvintes de eventos da página
       this.setupEventListeners();
 
+      // 6. Ouvinte de Busca Global (Header)
+      if (!this.globalSearchListener) {
+        this.globalSearchListener = (e: any) => {
+          const termo = e.detail?.termo !== undefined ? e.detail.termo : '';
+          this.aplicarBuscaGlobal(termo);
+        };
+        window.addEventListener('paxflow-global-search-submit', this.globalSearchListener);
+      }
+
     } catch (err: any) {
       console.error('Erro na inicialização da Central de Reembolsos:', err);
       this.renderAuthError(`Erro interno: ${err.message}`);
     }
   }
+
+  private globalSearchListener: ((e: any) => void) | null = null;
 
   /**
    * Destrói instâncias ativas (limpa o cronômetro para evitar vazamento de memória)
@@ -93,7 +104,22 @@ export class ReembolsosPage {
       clearInterval(this.timerId);
       this.timerId = null;
     }
+    if (this.globalSearchListener) {
+      window.removeEventListener('paxflow-global-search-submit', this.globalSearchListener);
+      this.globalSearchListener = null;
+    }
+  }
 
+  /**
+   * Aplica termo de busca submetido via Caixa de Pesquisa Global
+   */
+  public aplicarBuscaGlobal(termo: string): void {
+    this.buscaTermo = termo;
+    this.render();
+    const searchInput = document.getElementById('input-busca-reembolso') as HTMLInputElement;
+    if (searchInput) {
+      searchInput.value = termo;
+    }
   }
 
   /**

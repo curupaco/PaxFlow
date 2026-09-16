@@ -104,4 +104,21 @@ describe('DashboardController - Testes Subcutâneos', () => {
     expect(resultado).toHaveLength(1);
     expect(resultado[0].id).toBe('1');
   });
+
+  it('deve filtrar viagens por termo de busca global ignorando restrições de período de mês corrente', () => {
+    // Setup - Viagem de outro mês / ano encontrada pelo termo global
+    const viagens: ViagemMock[] = [
+      { id: '1', status: 'planejamento', cliente: { nome: 'Beatriz Santos' }, destino: 'Cancún', codigo: 'TRIP-CAN-1' },
+      { id: '2', status: 'planejamento', cliente: { nome: 'Rodrigo Alves' }, destino: 'Santiago', codigo: 'TRIP-SAN-2' },
+    ];
+
+    // Action
+    const resultado = filtrarViagensOperacionais(viagens, { busca: 'cancún' });
+
+    // Assert
+    expect(resultado).toHaveLength(1);
+    expect(resultado[0].id).toBe('1');
+    expect(resultado[0].destino).toBe('Cancún');
+  });
 });
+

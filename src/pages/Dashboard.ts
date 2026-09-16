@@ -209,7 +209,16 @@ export class Dashboard {
       // 7. Configurar Drag & Drop com SortableJS
       this.setupDragAndDrop();
 
-      // 8. Deep linking para abrir viagem específica
+      // 8. Ouvinte de Busca Global (Header)
+      if (!this.globalSearchListener) {
+        this.globalSearchListener = (e: any) => {
+          const termo = e.detail?.termo !== undefined ? e.detail.termo : '';
+          this.aplicarBuscaGlobal(termo);
+        };
+        window.addEventListener('paxflow-global-search-submit', this.globalSearchListener);
+      }
+
+      // 9. Deep linking para abrir viagem específica
       if (targetId) {
         await this.openEdicaoEProdutosModal(targetId);
       }
@@ -255,6 +264,8 @@ export class Dashboard {
     // Sincronização via Supabase Realtime é a fonte de verdade
   }
 
+  private globalSearchListener: ((e: any) => void) | null = null;
+
   /**
    * Destrutor da página para limpar listeners globais e sortables
    */
@@ -271,6 +282,19 @@ export class Dashboard {
       window.removeEventListener('storage', this.storageListener);
       this.storageListener = null;
     }
+    if (this.globalSearchListener) {
+      window.removeEventListener('paxflow-global-search-submit', this.globalSearchListener);
+      this.globalSearchListener = null;
+    }
+  }
+
+  /**
+   * Aplica termo de busca submetido via Caixa de Pesquisa Global
+   */
+  public aplicarBuscaGlobal(termo: string): void {
+    this.buscaTermo = termo;
+    this.balcaoResultados = [];
+    this.render();
   }
 
   /**

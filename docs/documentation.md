@@ -286,6 +286,9 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 
 - **Pesquisa Global Unificada & Modo Co-Piloto (Balcão) [UPDATED]**:
   - Campo de busca global ultra-rápido no topo da tela com atalho de teclado (`/`) e debounce inteligente de 250ms.
+  - **Filtro Direto em Tela (Enter ou Clique na Lupa)**: Quando o usuário estiver nas telas de **Viagens (Dashboard)**, **Orçamentos** ou **Reembolsos**, pressionar `ENTER` no campo de busca ou clicar no botão da **Lupa** aplica o filtro imediatamente na listagem/quadro da tela atual, sincronizando os campos locais e ocultando o dropdown de sugestões.
+  - **Suspensão Inteligente de Mês Corrente**: Durante a busca ativa via filtro, a restrição de mês corrente é automaticamente suspensa para encontrar registros em qualquer período do histórico da agência, sendo restaurada assim que a busca é limpa.
+  - **Limpeza Sincronizada (✕)**: Clicar no botão limpar da busca global remove o filtro da tela atual e restaura a visualização completa de dados.
   - **Pesquisa Multicritério em Tempo Real**: Consulta instantaneamente tabelas de `clientes` (nome, CPF, telefone, e-mail), `viagens` (código de referência `VIA-...`, localizador da viagem, produtos de voo, hotel, cruzeiro e transfers) e `orcamentos` (código de referência `ORC-...`, destino, propostas e contatos).
   - **Agrupamento Inteligente Condensado (Acordeão)**: Os resultados são consolidados por cliente em cards compactos com contadores (`✈️ X Viagens · 📋 Y Orçamentos`). Para buscas com múltiplos resultados, os grupos iniciam colapsados para economizar espaço em tela.
   - **Alternador Global de Expansão**: Botão `[Expandir Todos / Recolher Todos]` no cabeçalho dos resultados para alternar a visualização completa com 1 clique.

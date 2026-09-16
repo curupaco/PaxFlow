@@ -30,11 +30,11 @@ export class GlobalHeaderSearch {
       <header id="global-header-bar" class="min-h-12 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 px-4 md:px-6 md:pt-safe py-2 flex items-center justify-between gap-4 shrink-0 z-40 w-full max-w-full">
         <div class="relative flex-1 max-w-xl">
           <div class="relative">
-            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+            <button id="btn-global-search-icon" type="button" class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition cursor-pointer" title="Filtrar resultados na tela">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
-            </div>
+            </button>
             <input id="global-search-input" type="text" placeholder="Pesquisar em toda a agência..." class="w-full text-xs font-semibold pl-10 pr-12 py-2 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 text-slate-800 dark:text-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition shadow-inner" />
             <kbd class="hidden sm:inline-flex items-center px-1.5 py-0.5 text-[9px] bg-slate-200/70 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-mono rounded border border-slate-300/60 dark:border-slate-700/60 absolute right-8 top-1/2 -translate-y-1/2 pointer-events-none select-none font-bold">/</kbd>
             <button id="btn-clear-global-search" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 hidden text-xs font-bold">✕</button>
@@ -64,6 +64,26 @@ export class GlobalHeaderSearch {
     if (!this.inputEl || !this.dropdownEl) return;
 
     const clearBtn = this.container?.querySelector('#btn-clear-global-search') as HTMLElement;
+    const lupaBtn = this.container?.querySelector('#btn-global-search-icon') as HTMLElement;
+
+    const submitSearch = () => {
+      const q = (this.inputEl?.value || '').trim();
+      clearTimeout(this.searchTimeout);
+
+      // Dispara evento global para telas operacionais (Viagens, Orçamentos, Reembolsos)
+      window.dispatchEvent(new CustomEvent('paxflow-global-search-submit', { detail: { termo: q } }));
+
+      // Se a tela atual possuir elemento de busca local suportado, fecha o dropdown Co-Piloto
+      const hasLocalFilter = !!(
+        document.getElementById('input-busca-viagem') ||
+        document.getElementById('input-busca-orcamento') ||
+        document.getElementById('input-busca-reembolso')
+      );
+
+      if (hasLocalFilter && this.dropdownEl) {
+        this.dropdownEl.classList.add('hidden');
+      }
+    };
 
     this.inputEl.addEventListener('input', (e) => {
       const q = (e.target as HTMLInputElement).value;
@@ -92,6 +112,18 @@ export class GlobalHeaderSearch {
       }, 250);
     });
 
+    this.inputEl.addEventListener('keydown', (e: KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        submitSearch();
+      }
+    });
+
+    lupaBtn?.addEventListener('click', (e) => {
+      e.preventDefault();
+      submitSearch();
+    });
+
     clearBtn?.addEventListener('click', () => {
       if (this.inputEl) {
         this.inputEl.value = '';
@@ -99,6 +131,9 @@ export class GlobalHeaderSearch {
       }
       if (clearBtn) clearBtn.classList.add('hidden');
       if (this.dropdownEl) this.dropdownEl.classList.add('hidden');
+
+      // Limpa também o filtro na tela atual (Viagens, Orçamentos, Reembolsos)
+      window.dispatchEvent(new CustomEvent('paxflow-global-search-submit', { detail: { termo: '' } }));
     });
 
     // Atalho de teclado '/' para focar no campo de busca global

@@ -189,6 +189,13 @@ export const HELP_ITEMS: HelpItem[] = [
     details: 'O PaxFlow adota o Modelo Agência Colaborativa com Controle de Acesso por Software (Role-Based Access Control):\n\n- **Consultor**: Por padrão na navegação local das telas (Orçamentos, Viagens, Clientes e Reembolsos), enxerga apenas seus próprios registros. Quando precisa apoiar um colega de equipe ou atuar em regime de balcão (Modo Co-Piloto), pode utilizar a Pesquisa Global no topo (`/`) para consultar a base inteira da agência de forma ágil e segura, sem bloqueios indevidos de banco de dados (RLS flexível no PostgreSQL).\n- **Administrador**: Tem visão consolidada e completa da agência, gerencia cadastros dinâmicos, configurações de equipe, auditorias financeiras e é o único autorizado a realizar exclusões permanentes no sistema.'
   },
   {
+    id: 'busca-global-header',
+    modulo: 'geral',
+    label: 'Caixa de Pesquisa Global (Atalho /)',
+    description: 'Localização rápida em toda a base da agência e filtro direto em tela.',
+    details: 'A Caixa de Pesquisa Global no topo permite:\n\n- **Modo Co-Piloto Instantâneo**: Ao digitar, abre dropdown com resultados de clientes, orçamentos e viagens de toda a agência em tempo real.\n- **Filtro Direto na Tela (Enter ou Lupa)**: Estando nas telas de **Viagens**, **Orçamentos** ou **Reembolsos**, pressionar `ENTER` ou clicar na **Lupa** aplica o filtro imediatamente na listagem/quadro abaixo, sincronizando os campos locais e fechando o dropdown suspenso.\n- **Limpeza Sincronizada (✕)**: Clicar no botão limpar restaura instantaneamente a visão completa dos dados da tela atual.'
+  },
+  {
     id: 'traducao-erros',
     modulo: 'geral',
     label: 'Tradução Automática de Erros do Sistema (I18n)',
