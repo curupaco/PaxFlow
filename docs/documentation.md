@@ -17,19 +17,19 @@
    - 3.4 [Clientes](#34-clientes)
    - 3.5 [Reembolsos](#35-reembolsos)
    - 3.6 [Configurações](#36-configurações)
-   - 3.7 [Quadro de Planejamento Interno (Todo Kanban)](#37-quadro-de-planejamento-interno---cockpit)
-   - 3.8 [Navegação e UI Shell Premium (Global UI)](#38-navegação-e-ui-shell-premium)
-   - 3.9 [Sistema de Gamificação e Perfis (Gamificacao)](#39-sistema-de-gamificação-e-perfis)
-   - 3.10 [Módulo de Cadastros (Cadastros)](#310-módulo-de-cadastros)
-   - 3.11 [Localização de Erros e Tradutor Global (I18n)](#311-localização-de-erros-e-tradutor-global)
+   - 3.7 [Quadro de Planejamento Interno (Todo Kanban)](#37-quadro-de-planejamento-interno-todo-kanban)
+   - 3.8 [Navegação e UI Shell Premium](#38-navegação-e-ui-shell-premium)
+   - 3.9 [Sistema de Gamificação e Perfis](#39-sistema-de-gamificação-e-perfis)
+   - 3.10 [Módulo de Cadastros](#310-módulo-de-cadastros)
+   - 3.11 [Localização de Erros e Tradutor Global (I18n)](#311-localização-de-erros-e-tradutor-global-i18n)
    - 3.12 [Dashboard de Resultados (Analytics) e Relatórios Gerenciais](#312-dashboard-de-resultados-analytics-e-relatórios-gerenciais)
-   - 3.13 [Sistema de Comentários, Notas, Menções (@) e Agendamento Automático](#313-sistema-de-comentários-notas-menções-e-agendamento-automático)
+   - 3.13 [Sistema de Comentários, Notas, Menções e Agendamento Automático](#313-sistema-de-comentários-notas-menções-e-agendamento-automático)
    - 3.14 [Exclusão Administrativa e Políticas de Delegação (RBAC)](#314-exclusão-administrativa-e-políticas-de-delegação-rbac)
    - 3.15 [Itinerário Digital Interativo Público](#315-itinerário-digital-interativo-público)
    - 3.16 [Pesquisa NPS Pós-Viagem Pública](#316-pesquisa-nps-pós-viagem-pública)
    - 3.17 [Hub de Modelos de Mensagens (WhatsApp)](#317-hub-de-modelos-de-mensagens-whatsapp)
    - 3.18 [Campanhas de Vendas & Leaderboard](#318-campanhas-de-vendas--leaderboard)
-   - 3.19 [Códigos de Referência Internos Sequenciais (ORC, VIA, RBS, CLI)](#319-códigos-de-referência-internos-sequenciais)
+   - 3.19 [Códigos de Referência Internos Sequenciais (ORC, VIA, RBS, CLI)](#319-códigos-de-referência-internos-sequenciais-orc-via-rbs-cli)
    - 3.20 [Validação Automatizada de Viagens e Conferência de Processos](#320-validação-automatizada-de-viagens-e-conferência-de-processos)
    - 3.21 [Configurações de Identidade Visual (White-Label Branding)](#321-configurações-de-identidade-visual-white-label-branding)
    - 3.22 [Alertas Automatizados de Pré-Embarque e Pós-Viagem NPS](#322-alertas-automatizados-de-pré-embarque-e-pós-viagem-nps)
@@ -37,10 +37,11 @@
    - 3.24 [Central Administrativa de Escala de Funcionários](#324-central-administrativa-de-escala-de-funcionários)
    - 3.25 [Redesenho de Usabilidade Mobile da Gestão de Viagens](#325-redesenho-de-usabilidade-mobile-da-gestão-de-viagens)
    - 3.26 [PaxFlow Risk Score™ (Diagnóstico Preditivo de Saúde Operacional 0 a 100)](#326-paxflow-risk-score-diagnóstico-preditivo-de-saúde-operacional-0-a-100)
-   - 3.27 [Next Trip Engine™ (Motor Preditivo de Recompra & Ciclo de Vida do Viajante)](#327-next-trip-engine-motor-preditivo-de-recompra--ciclo-de-vida-do-viajante)
-   - 3.28 [PaxFlow Upsell Engine™ (Motor Preditivo de Oportunidades & Ticket Médio)](#328-paxflow-upsell-engine-motor-preditivo-de-oportunidades--ticket-médio)
-   - 3.29 [PaxFlow Studio™ (Criação de Propostas Digitais de Luxo & Cadernos de Viagem)](#329-paxflow-studio-criação-de-propostas-digitais-de-luxo--cadernos-de-viagem)
-   - 3.30 [Gestão Inteligente de Anexos e Documentos (Clientes e Viagens)](#330-gestão-inteligente-de-anexos-e-documentos-clientes-e-viagens)
+   - 3.27 [Relatório de Embarque e Rastreamento de Contato Pré-Embarque](#327-relatório-de-embarque-e-rastreamento-de-contato-pré-embarque)
+   - 3.28 [Next Trip Engine™ (Motor Preditivo de Recompra & Ciclo de Vida do Viajante)](#328-next-trip-engine-motor-preditivo-de-recompra--ciclo-de-vida-do-viajante)
+   - 3.29 [PaxFlow Upsell Engine™ (Motor Preditivo de Oportunidades & Ticket Médio)](#329-paxflow-upsell-engine-motor-preditivo-de-oportunidades--ticket-médio)
+   - 3.30 [PaxFlow Studio™ (Criação de Propostas Digitais de Luxo & Cadernos de Viagem)](#330-paxflow-studio-criação-de-propostas-digitais-de-luxo--cadernos-de-viagem)
+   - 3.31 [Gestão Inteligente de Anexos e Documentos (Clientes e Viagens)](#331-gestão-inteligente-de-anexos-e-documentos-clientes-e-viagens)
 4. [Diferenciais Competitivos](#4-diferenciais-competitivos)
 5. [Arquitetura Tecnológica](#5-arquitetura-tecnológica)
 6. [Segurança e Conformidade](#6-segurança-e-conformidade)
@@ -58,7 +59,7 @@ O **PaxFlow** é uma plataforma SaaS de CRM e gestão operacional projetada espe
 ### Por que agências de viagem precisam do PaxFlow?
 
 | Problema | Solução PaxFlow |
-|---|---|
+| --- | --- |
 | Perda de prazos de passaporte/visto | Alertas SLA automáticos com 180 dias de antecedência |
 | Reembolsos parados sem visibilidade | Central de reembolsos com cronômetro SLA em tempo real |
 | Orçamentos esquecidos no e-mail | Pipeline Kanban com lembretes agendados ("Me Lembre Depois") |
@@ -118,16 +119,16 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 - **Visualização em Calendário Interativo [NEW]**:
   - **Navegação de Topo Unificada [NEW]**: A alternância entre **Lista de Mensagens** e **Calendário** é integrada diretamente nas abas de topo do módulo (`[ 📨 Lista de Mensagens ]`, `[ 📅 Calendário ]` e `[ 👥 Escala de Funcionários ]`), eliminando controles dispersos pelo meio da tela e garantindo navegação com rolagem horizontal suave no mobile. Todos os filtros da barra lateral (Ativos/Arquivados/Todos e consultores), categorização e pesquisa continuam 100% integrados e reativos no modo calendário.
   - **Diferenciação por Cores (Sinalizadores de Atribuição)**:
-    - *Verde / Ícone de Check*: Lembretes próprios normais.
-    - *Âmbar / Laranja*: Lembretes delegados a você por outros consultores do time.
-    - *Azul / Slate*: Lembretes criados por você e atribuídos (delegados) a terceiros.
+    - _Verde / Ícone de Check_: Lembretes próprios normais.
+    - _Âmbar / Laranja_: Lembretes delegados a você por outros consultores do time.
+    - _Azul / Slate_: Lembretes criados por você e atribuídos (delegados) a terceiros.
   - **Rastreamento de Conclusão (Line-Through & Opacidade)**: Se um lembrete delegado por você for arquivado (concluído) pelo destinatário no Inbox dele, o evento aparecerá em seu calendário com estilo riscado (`line-through`) e opacidade reduzida a 50%, fornecendo controle gerencial instantâneo.
   - **Agendamento via Nova Mensagem**: Checkbox integrado na criação de mensagens diretas que permite cadastrar lembretes/tarefas na agenda dos destinatários, com seleção de data, período (manhã/tarde/noite) e vínculo opcional a orçamentos ativos ou viagens em andamento.
   - **Três Visões Operacionais**:
     - **MÊS**: Grade proporcional de 35 a 42 dias com eventos exibidos como pílulas horizontais arredondadas (estilo Google Agenda).
     - **SEMANA**: Grade horizontal moderna de 7 colunas (Domingo a Sábado), empilhando cards de atividades de forma vertical com demarcação do período (Manhã, Tarde, Noite).
     - **AGENDA**: Linha do tempo (Timeline) vertical corrida e minimalista, agrupada exclusivamente por datas com eventos pendentes, exibindo avatares de remetente e atalhos rápidos.
-  - **Sumarização Dinâmica via Regex**: O calendário resume automaticamente os títulos longos e genéricos das notificações (ex: extrai o nome do passageiro e destino de forma compacta, como *"João Silva - Orlando"* em vez de *"Lembrete cadastrado - Orçamento"*).
+  - **Sumarização Dinâmica via Regex**: O calendário resume automaticamente os títulos longos e genéricos das notificações (ex: extrai o nome do passageiro e destino de forma compacta, como _"João Silva - Orlando"_ em vez de _"Lembrete cadastrado - Orçamento"_).
   - **Saliência Estética e Alinhamento**: As colunas e células possuem travamento rígido proporcional de largura (`minmax(0, 1fr)` e `min-width: 0`) para evitar qualquer distorção visual. Inclui hover tridimensional (`translateY`) e anel brilhante animado no dia atual ("Hoje").
   - **Legenda de Cores Tooltip**: Um círculo flutuante **"?"** no topo direito do cabeçalho que exibe instantaneamente, via hover com popover puramente em CSS Tailwind, a legenda de cores e mapeamento de tipos de eventos (Lembretes = Índigo, Passaportes = Âmbar, Reembolsos = Rose).
   - **Ação com Reuso de Modal**: Clicar em qualquer evento do calendário abre instantaneamente o leitor corporativo de e-mail existente, mantendo links funcionais e re-renderizando a tela sob arquivamento.
@@ -139,7 +140,7 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 **5 Fases de Venda / Status:**
 
 | Fase | Descrição | SLA |
-|---|---|---|
+| --- | --- | --- |
 | Fechado | Venda concluída, aguardando emissão | — |
 | Pós-Venda | Documentação, passaportes, vistos | — |
 | Pré-Embarque | Próximo ao embarque | Indicador de atenção ⚠️ se < N dias |
@@ -158,6 +159,7 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
   - **Aba Dinâmica '💸 Histórico de Reembolsos'**: Fica visível apenas para cartões de viagem que possuam reembolsos associados no banco de dados. Exibe de forma organizada a listagem detalhada de cada solicitação vinculada: Produto afetado, Valor Solicitado, Valor Aprovado, Taxa de Retenção, Data de Solicitação e data de encerramento, Justificativa do Cancelamento e o Status do Reembolso com badges HSL temáticos.
 - **Produtos, Detalhamento de Valores e Rentabilidade (Novo Nível de Cadastro)**:
   - Permite gerenciar itens de viagem (voo, hotel, seguro, passeio, outro) preenchendo fornecedor, descrição, data do serviço, valor de venda, status e o **Código de Reserva (LOC)**.
+  - **Cópia Rápida de LOC em 1-Clique (📋) [NEW]**: Todos os códigos de reserva (LOC) exibidos no cabeçalho da viagem, nos agrupamentos de LOC, nos cards de produtos individuais e no formulário de edição lateral possuem botões com ícone `📋` para cópia instantânea para a área de transferência com feedback visual e toast de confirmação, agilizando consultas em sistemas de cias aéreas e fornecedores.
   - **Código de Reserva (LOC) Obrigatório**: O campo LOC do produto é obrigatório (máximo 20 caracteres, código único sem espaços, barras ou delimitadores textuais).
   - **Quitação Financeira por LOC [NEW]**: Cada LOC exige a alocação de formas de recebimento. O usuário pode fracionar o total da venda em múltiplas formas de pagamento cadastradas. O salvamento só é permitido se a soma dos pagamentos corresponder exatamente ao valor total do LOC, ou se o usuário remover todos os pagamentos para resetar o LOC para "Sem Pagamento". O cabeçalho de cada LOC apresenta badges indicativos (`⚠️ Sem Pagamento`, `⚠️ Incompleto`, ou `✅ Pago`).
   - **Detalhamento de Valores**: Após salvar o produto na viagem, ao clicar no item listado na aba "Produtos e Serviços", abre-se um modal de detalhamento que permite fracionar o valor de venda nas categorias: **Tarifa (Valor Líquido)**, **Taxa** e **Comissão**.
@@ -187,7 +189,7 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 **4 Estágios do Pipeline:**
 
 | Estágio | Ações Disponíveis |
-|---|---|
+| --- | --- |
 | Solicitado | Iniciar → move para "Em Andamento" |
 | Em Andamento | Enviar Proposta → abre modal com notas e upload de documentos |
 | Aguardando | Alterar (volta para Solicitado), Desistir (vai para Concluído), Aceitar/Vender (vai para Concluído) |
@@ -265,7 +267,7 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
   - SLAs operacionais de pré-embarque e pós-viagem
   - Automação de disparo eletrônico de pesquisas NPS e prazos de reembolsos
 
-### 3.7 Quadro de Planejamento Interno — Cockpit
+### 3.7 Quadro de Planejamento Interno (Todo Kanban)
 
 **Standalone Kanban** (acessível via `todo.html`) para gestão de tarefas internas da equipe.
 
@@ -282,6 +284,13 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 
 **Experiência visual e navegação avançada** em toda a interface do sistema.
 
+- **Pesquisa Global Unificada & Modo Co-Piloto (Balcão) [UPDATED]**:
+  - Campo de busca global ultra-rápido no topo da tela com atalho de teclado (`/`) e debounce inteligente de 250ms.
+  - **Pesquisa Multicritério em Tempo Real**: Consulta instantaneamente tabelas de `clientes` (nome, CPF, telefone, e-mail), `viagens` (código de referência `VIA-...`, localizador da viagem, produtos de voo, hotel, cruzeiro e transfers) e `orcamentos` (código de referência `ORC-...`, destino, propostas e contatos).
+  - **Agrupamento Inteligente Condensado (Acordeão)**: Os resultados são consolidados por cliente em cards compactos com contadores (`✈️ X Viagens · 📋 Y Orçamentos`). Para buscas com múltiplos resultados, os grupos iniciam colapsados para economizar espaço em tela.
+  - **Alternador Global de Expansão**: Botão `[Expandir Todos / Recolher Todos]` no cabeçalho dos resultados para alternar a visualização completa com 1 clique.
+  - **Desambiguação Visual por Datas**: Cada viagem exibe o período formatado (`🗓️ 15/10/2026 a 25/10/2026` ou `🗓️ Ida: 15/10/2026`) junto ao status e consultor responsável; cada orçamento exibe a data de cadastro (`📅 12/09/2026`) com o valor total (`R$ ...`).
+  - **Atendimento de Balcão em 1-Clique**: Botão `Atender 🤝` abre a ficha instantaneamente e dispara notificação automática no Inbox do consultor titular (`EscalaService`).
 - **Barra Lateral (Sidebar) Colapsável**:
   - Permite ocultar rótulos textuais e encolher a barra lateral para uma coluna estreita de ícones (`md:w-20`), ampliando significativamente a área de trabalho útil para visualização das colunas Kanban e tabelas de dados.
   - **Persistência de Estado**: O estado colapsado é salvo automaticamente em `localStorage` (`"paxflow-sidebar-collapsed"`), garantindo que a preferência do consultor seja mantida em futuros acessos.
@@ -319,7 +328,7 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 
 - **Definição de Tipos Customizados**: Possibilita criar registros dinâmicos de produtos (ex: "Passagem Aérea", "Cruzeiro", "Seguro Viagem", "Aluguel de Carro") determinando cores de exibição, ícones visuais estilizados e metadados.
 - **Campos Extras Dinâmicos**: Permite associar campos adicionais personalizados a cada tipo de produto, que aparecem automaticamente na tela de detalhes da viagem quando esse produto é adicionado.
-- **Gestão Centralizada de Destinos [NEW]**: Aba administrativa dedicada a cadastrar e padronizar os destinos de viagem (cidade/país). 
+- **Gestão Centralizada de Destinos [NEW]**: Aba administrativa dedicada a cadastrar e padronizar os destinos de viagem (cidade/país).
   - Restrito a administradores (RLS no Supabase).
   - Listagem com paginação e busca rápida.
   - Carga inicial automatizada de 188 destinos turísticos pré-higienizados.
@@ -341,13 +350,14 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 
 **Painel consolidado de inteligência de negócios e auditoria de equipe** (`src/pages/ComercialDashboard.ts` e `src/pages/Relatorios.ts`) focado em fornecer métricas financeiras, taxa de conversão, auditoria de fornecedores e acompanhamento de equipe de forma visual, reativa e offline.
 
-- **Painel Geral de Relatórios (6 Abas de Auditoria)**:
+- **Painel Geral de Relatórios (Abas Estratégicas de Auditoria)**:
   - **1. Desempenho e Produtividade**: Rastreia orçamentos abertos, aceitos, taxa de conversão e tempo de fechamento médio. Exibe ranking de consultores em gráfico de barras SVG.
   - **2. Prazos e SLAs**: Cronologia operacional de conformidade de SLA de documentos e reembolsos.
   - **3. Faturamento e Lucratividade**: Exibe faturamento bruto, markup, comissões de produtos e lucro líquido real distribuídos por tipo de serviço (voo, hotel, etc.).
-  - **4. Fuga de Receita e Perdas**: Donut chart SVG dinâmico exibindo perdas percentuais classificadas por motivos de desistência (preço, concorrência, etc.).
-  - **5. Previsão de Fechamentos (Weighted Pipeline)**: Cálculo estatístico local que pondera o faturamento previsto do pipeline em aberto (solicitado = 15%, andamento = 45%, aguardando = 75%) e estima embarques iminentes.
-  - **6. Qualidade de Fornecedores e Incidentes**: Tabulação de reembolsos, volume vendido e score de risco por fornecedor.
+  - **4. Recebimentos & Auditoria Operacional [NEW]**: Auditoria analítica de quitação por Localizador (LOC) e meios de pagamento cadastrados (Pix, Cartão, Boleto, etc.). Conta com **Drilldown Interativo em 1-Clique** nas barras de meios de pagamento e botão **Extrato Completo ↗**, abrindo o modal analítico de extrato detalhado com mapeamento de produtos vinculados aos LOCs, filtros dinâmicos por consultor e busca em tempo real, além de exportação completa para planilha CSV.
+  - **5. Fuga de Receita e Perdas**: Donut chart SVG dinâmico exibindo perdas percentuais classificadas por motivos de desistência (preço, concorrência, etc.).
+  - **6. Previsão de Fechamentos (Weighted Pipeline)**: Cálculo estatístico local que pondera o faturamento previsto do pipeline em aberto (solicitado = 15%, andamento = 45%, aguardando = 75%) e estima embarques iminentes.
+  - **7. Qualidade de Fornecedores e Incidentes**: Tabulação de reembolsos, volume vendido e score de risco por fornecedor.
 - **Segurança de Acesso (RLS local)**: Consultores comuns têm visão bloqueada a seu próprio ID (o filtro é desativado). Apenas administradores auditam o consolidado e selecionam qualquer consultor da agência.
 - **Exportação e PDF**: Geração de arquivo **CSV** Excel compatível e folha de estilos de impressão `@media print` que esconde barras de navegação e filtros, permitindo salvar relatórios como PDFs corporativos limpos.
 - **KPIs Financeiros de Caixa**:
@@ -364,7 +374,7 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
   - **Tratamento de Timezone**: O motor de datas analisa strings date-only (`YYYY-MM-DD`) em fuso horário local (`T00:00:00`), eliminando distorções causadas pelo desvio UTC que anteriormente moviam vendas criadas no início do mês para o mês anterior.
   - **Sincronização em Tempo Real Inter-Abas**: O ouvinte de sincronização local (`StorageEvent`) agora escuta a chave `paxflow-viagens-local`. Ao adicionar ou editar uma viagem na aba de Viagens, o Dashboard Comercial se atualiza instantaneamente no navegador (mesmo sem recarregamento manual).
 
-### 3.13 Sistema de Comentários, Notas, Menções (@) e Agendamento Automático
+### 3.13 Sistema de Comentários, Notas, Menções e Agendamento Automático
 
 **Mecanismo colaborativo integrado** (`src/services/comments.ts`) que permite a comunicação contextualizada entre consultores dentro de orçamentos, viagens e produtos.
 
@@ -372,8 +382,14 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
   - Inserção de anotações e feedback rústico com formatação e data/hora.
   - CRUD de comentários onde o autor possui direito de remoção nativa.
 - **Agendamento Integrado (Visual e Texto)**:
-  - **Painel Visual**: Checkbox e gaveta colapsável de agendamento na caixa de comentários, permitindo selecionar Data, Período e Consultor responsável para registrar tarefas na agenda.
-  - **Comments Text Parser (Regex)**: Scanner de linguagem natural que varre os comentários em busca de menções a consultores (`@Amanda`) seguidos por data (`20/08/2026`) e período opcional (`noite`). Ao identificar o padrão, cria o lembrete no calendário automaticamente, eliminando burocracia.
+  - **Painel Visual e Rodapé Unificado**: O painel de agendamento fica posicionado organicamente entre o campo de texto e o rodapé de ações, evitando desconexão visual. O botão de ação altera dinamicamente entre `Enviar Nota` e `Enviar Nota e Agendar`.
+  - **Parser Inteligente de Datas (`parseSmartDate`)**: Aceita entradas de data flexíveis, eliminando descarte silencioso:
+    - Entrada por dia simples (ex: `27`): normaliza automaticamente para o mês e ano correntes.
+    - Entrada por dia e mês (ex: `27/09`): completa com o ano corrente.
+    - Formato completo brasileiro (`27/09/2026`) ou ISO (`2026-09-27`), com validação rigorosa de dias válidos no calendário e seletor nativo de calendário embutido.
+  - **Agendamento Autônomo (Nota Opcional)**: Se o consultor abre o painel de agendamento e submete sem digitar uma nota, o sistema gera automaticamente uma nota descritiva (`📅 Lembrete agendado para [Nome] em [DD/MM/AAAA] ([Período])`), preservando o histórico cronológico do item.
+  - **Comments Text Parser (Regex)**: Scanner de linguagem natural que varre os comentários em busca de menções a consultores (`@Amanda`) seguidos por data (`20/08/2026`, `27/09` ou `dia 27`) e período opcional (`tarde`, `manha`, `noite`). Ao identificar o padrão, cria o lembrete no calendário e Inbox automaticamente.
+  - **Sincronização em Tempo Real e Feedback Visual**: Ao gravar o agendamento no Supabase, despacha os eventos `paxflow-inbox-updated` e `paxflow-reminders-updated`, atualizando o Inbox e o Calendário sem necessidade de reload, além de exibir feedback via Toast e destacar notas agendadas com a tag `📅 Lembrete Agendado`.
 - **Autocomplete de Menções com `@`**:
   - Dropdown dinâmico que filtra a lista de consultores ativos à medida que o usuário digita `@`.
   - Inserção amigável do nome selecionado e destaque estilizado em badges HSL/Tailwind no texto.
@@ -411,7 +427,7 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 - **Segurança e Privacidade**: Protegido por políticas RLS no banco de dados que admitem inserção pública e anônima mas bloqueiam qualquer consulta externa às avaliações de outros clientes.
 - **Armazenamento Centralizado**: As notas alimentam a tabela `feedbacks_nps`, permitindo futuras análises estatísticas automáticas.
 
-### 3.17 Hub de Modelos de Mensagens (WhatsApp) — Módulo Cadastros
+### 3.17 Hub de Modelos de Mensagens (WhatsApp)
 
 **Central de automação de correspondências de WhatsApp**, acessível pela aba "Modelos de Mensagem" dentro do menu **Cadastros**, permitindo que consultores enviem mensagens padronizadas em segundos com dados reativos.
 
@@ -420,7 +436,7 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 - **Atalhos Rápidos na Interface**: Botões de WhatsApp incorporados diretamente na linha de viagens do Dashboard, nos perfis de clientes e nos cards do Kanban de Orçamentos, permitindo inicializar o contato instantaneamente.
 - **Gamificação Integrada**: O envio de uma mensagem utilizando o hub de templates recompensa o consultor ativo com **+10 XP** no sistema de patentes.
 
-### 3.18 Campanhas de Vendas & Leaderboard — Módulo Cadastros
+### 3.18 Campanhas de Vendas & Leaderboard
 
 **Mecanismo de engajamento interno**, acessível pela aba "Campanhas & Metas" dentro do menu **Cadastros**, projetado para motivar a equipe de consultores através de competição saudável por ranking de performance.
 
@@ -492,7 +508,7 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
   - Painel com saldos de folgas compensatórias por consultor e histórico de justificativas.
   - Agenda de reuniões corporativas, coffees e treinamentos da franquia por data e responsável.
 
-### 3.25 Redesenho de Usabilidade Mobile da Gestão de Viagens [NEW]
+### 3.25 Redesenho de Usabilidade Mobile da Gestão de Viagens
 
 **Experiência mobile-first de padrão aplicativo nativo** para acompanhamento operacional de viagens em smartphones Android e iOS.
 
@@ -505,7 +521,7 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 - **Gavetas Inferiores (Bottom Sheets)**:
   - Estilos de transição e backdrop com desfoque (`.pf-bottom-sheet-content`) para interações rápidas no celular sem distorções horizontais.
 
-### 3.26 PaxFlow Risk Score™ (Diagnóstico Preditivo de Saúde Operacional 0 a 100) [NEW]
+### 3.26 PaxFlow Risk Score™ (Diagnóstico Preditivo de Saúde Operacional 0 a 100)
 
 **Motor de inteligência preditiva de auditoria operacional** que calcula e monitora 24/7 a saúde operacional de cada viagem cadastrada na agência.
 
@@ -521,15 +537,15 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
   - **Passeios / Bate-Volta (duração <= 1 dia)**: Isentos de exigência de vouchers de hospedagem.
   - **Vouchers Unificados**: Reconhecimento automático de vouchers gerais de pacote anexados à viagem.
 - **Gaveta Lateral de Diagnóstico (`RiskDiagnosisDrawer.ts`)**:
-  - Ao clicar no badge 🛡️ da viagem, abre-se uma gaveta lateral animada detalhando o diagnóstico, os pontos perdidos por pilar e botões de ação rápida de 1-Clique para resolver cada pendência (ex: *🛂 Preencher Passaporte*, *💳 Conferir Recebimentos*, *📎 Anexar Voucher*, *✈️ Realizar Contato Pré-Embarque*).
+  - Ao clicar no badge 🛡️ da viagem, abre-se uma gaveta lateral animada detalhando o diagnóstico, os pontos perdidos por pilar e botões de ação rápida de 1-Clique para resolver cada pendência (ex: _🛂 Preencher Passaporte_, _💳 Conferir Recebimentos_, _📎 Anexar Voucher_, _✈️ Realizar Contato Pré-Embarque_).
 - **Visibilidade Unificada**:
   - Exibido nos cards do Kanban do Dashboard, na tabela do Dashboard e no topo do modal **Gerenciar Viagem** (`EditTravelModal.ts`).
 - **Controle Administrativo Global**:
-  - Administradores podem ativar/desativar o recurso (`habilitar_risk_score`), ajustar a janela de carência pré-embarque (padrão 60 dias) e o limite crítico de risco (padrão < 50 pontos) na aba *Automações* das Configurações.
+  - Administradores podem ativar/desativar o recurso (`habilitar_risk_score`), ajustar a janela de carência pré-embarque (padrão 60 dias) e o limite crítico de risco (padrão < 50 pontos) na aba _Automações_ das Configurações.
 
 ---
 
-### 3.29 Relatório de Embarque e Rastreamento de Contato Pré-Embarque [NEW]
+### 3.27 Relatório de Embarque e Rastreamento de Contato Pré-Embarque
 
 **Módulo operacional e analítico de controle de partidas e embarques**, desenhado para garantir que 100% dos passageiros recebam atendimento pré-embarque antes de se dirigirem ao aeroporto ou embarque rodoviário.
 
@@ -541,14 +557,14 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
     - `✅ Feito`: estilo esmeralda com ícone de confirmação.
   - Permite alternância livre (marcar ou desmarcar em caso de clique acidental), salvando imediatamente no Supabase em tempo real.
 - **Auditoria Transparente (Tooltip em Hover)**:
-  - Ao passar o mouse sobre o botão `Feito`, um tooltip exibe quem realizou o contato e a data/hora exata (ex: *Contato realizado por Thiago em 11/09 às 15:45*).
+  - Ao passar o mouse sobre o botão `Feito`, um tooltip exibe quem realizou o contato e a data/hora exata (ex: _Contato realizado por Thiago em 11/09 às 15:45_).
 - **Filtro Rápido no Cabeçalho**:
   - Seletor suspenso no topo da tabela permitindo filtrar por:
-    - *Todos os Embarques*
-    - *✅ Contato Feito*
-    - *⏳ Contato Pendente*
+    - _Todos os Embarques_
+    - _✅ Contato Feito_
+    - _⏳ Contato Pendente_
 - **Exportação CSV Completa**:
-  - O arquivo CSV gerado pelo botão *Exportar CSV* inclui a coluna `Contato Pré-Embarque`, refletindo o status real da auditoria para relatórios de diretoria.
+  - O arquivo CSV gerado pelo botão _Exportar CSV_ inclui a coluna `Contato Pré-Embarque`, refletindo o status real da auditoria para relatórios de diretoria.
 - **Integração no Modal Gerenciar Viagem (`EditTravelModal.ts`)**:
   - Na linha de **Comunicação:** ao lado do botão WhatsApp:
     - Se houver embarque pendente: exibe `Pré-Embarque: Pendente ⏳` que abre o modal de mensagens com modelo de Pré-Embarque já selecionado. Ao enviar, marca o contato automaticamente como feito.
@@ -556,9 +572,9 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 
 ---
 
-### 3.27 Next Trip Engine™ (Motor Preditivo de Recompra & Ciclo de Vida do Viajante)
+### 3.28 Next Trip Engine™ (Motor Preditivo de Recompra & Ciclo de Vida do Viajante)
 
-**Motor de inteligência comercial preditiva** que analisa o histórico transacional do cliente (*quem viajou, para onde, quando, com quem, quanto gastou, notas de NPS e preferências*) para responder dinamicamente: *"Quais clientes da agência estão no momento ideal para comprar uma nova viagem?"*. Acessível na tela dedicada **🎯 Next Trip Engine** no menu lateral (`#next-trip`) e em versão compacta nos Dashboards.
+**Motor de inteligência comercial preditiva** que analisa o histórico transacional do cliente (_quem viajou, para onde, quando, com quem, quanto gastou, notas de NPS e preferências_) para responder dinamicamente: _"Quais clientes da agência estão no momento ideal para comprar uma nova viagem?"_. Acessível na tela dedicada **🎯 Next Trip Engine** no menu lateral (`#next-trip`) e em versão compacta nos Dashboards.
 
 - **Score de Potencial de Recompra (0 a 100)**: Avaliação em tempo real combinando 5 vetores essenciais:
   1. **Sazonalidade Temporal (30%)**: Ciclicidade decorrida desde o último retorno (> 90 dias pós-retorno).
@@ -570,16 +586,16 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
   - Exibido na tela dedicada (`#next-trip`) com filtros por **Alto Potencial (>= 75)**, **Médio Potencial**, Categoria de Destino, Busca por Cliente/Destino e Filtro por Consultor Titular.
   - Exibição de badge dinâmico (`🔥 Potencial: 88/100`) e estatísticas agregadas da carteira.
 - **Ações Rápidas de 1-Clique**:
-  - `🎯 Criar Orçamento Preditivo`: Abre o formulário de novo orçamento com Cliente, Destino Recomendado e Temperatura *🔥 Quente* pré-carregados.
+  - `🎯 Criar Orçamento Preditivo`: Abre o formulário de novo orçamento com Cliente, Destino Recomendado e Temperatura _🔥 Quente_ pré-carregados.
   - `💬 Disparar WhatsApp Personalizado`: Abre o modal de mensagens com variáveis dinâmicas (`{primeiro_nome}`, `{ultimo_destino}`, `{proximo_ano}`) para envio instantâneo via DigiSac/WhatsApp Web.
 - **Gestão de Abordagem & Snooze de 30 Dias**:
-  - Ao atuar sobre a oportunidade (disparo de WhatsApp ou criação de orçamento), o status muda para *"Em Abordagem"* e entra em carência automática por 30 dias para evitar abordagens repetitivas. Se um novo orçamento for fechado, o ciclo de ciclo de vida é resetado para o novo embarque.
+  - Ao atuar sobre a oportunidade (disparo de WhatsApp ou criação de orçamento), o status muda para _"Em Abordagem"_ e entra em carência automática por 30 dias para evitar abordagens repetitivas. Se um novo orçamento for fechado, o ciclo de ciclo de vida é resetado para o novo embarque.
 - **Agrupamento Familiar**:
-  - Viagens anteriores com múltiplos passageiros (casais, famílias) são consolidadas no nome do **Titular/Comprador Principal** (*Família Silva — 4 passageiros*), evitando duplicidade de abordagens no mesmo núcleo familiar.
+  - Viagens anteriores com múltiplos passageiros (casais, famílias) são consolidadas no nome do **Titular/Comprador Principal** (_Família Silva — 4 passageiros_), evitando duplicidade de abordagens no mesmo núcleo familiar.
 - **Governança & Parâmetros Administrativos**:
   - Consultores visualizam e atuam sobre as oportunidades dos seus próprios clientes titulares; Administradores possuem visão global de toda a agência.
 
-### 3.28 PaxFlow Upsell Engine™ (Motor Preditivo de Oportunidades & Ticket Médio) [NEW]
+### 3.29 PaxFlow Upsell Engine™ (Motor Preditivo de Oportunidades & Ticket Médio)
 
 **Algoritmo preditivo de recomendação de adicionais e upgrades em tempo real**, desenhado para elevar a margem de contribuição e o ticket médio de cotações de orçamentos e oportunidades de recompra.
 
@@ -593,13 +609,13 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
   - No modal de envio de proposta, o consultor pode clicar em `+ Incluir` para injetar o texto da sugestão diretamente na proposta comercial.
 - **Controle de Ativação Global**:
   - Pode ser ativado ou desativado em tempo real por administradores na aba **Automações** das Configurações (`global_settings_table.habilitar_upsell_preditivo`).
-  - Administradores podem ajustar os parâmetros de sensibilidade (Janela de Sazonalidade, Nota mínima de NPS, Corte de Score e Dias de Snooze) na aba *Configurações -> Automações*.
+  - Administradores podem ajustar os parâmetros de sensibilidade (Janela de Sazonalidade, Nota mínima de NPS, Corte de Score e Dias de Snooze) na aba _Configurações -> Automações_.
 - **4 Modelos Padrão Nativos de WhatsApp**:
-  - Modelos nativos pré-carregados para *Aniversário de Viagem 12m*, *Resorts de Verão*, *Disney & Família* e *Recompra VIP Promotor NPS*.
+  - Modelos nativos pré-carregados para _Aniversário de Viagem 12m_, _Resorts de Verão_, _Disney & Família_ e _Recompra VIP Promotor NPS_.
 
 ---
 
-### 3.29 PaxFlow Studio™ (Criação de Propostas Digitais de Luxo & Cadernos de Viagem) [NEW]
+### 3.30 PaxFlow Studio™ (Criação de Propostas Digitais de Luxo & Cadernos de Viagem)
 
 Módulo avançado de orquestração visual e documental da agência, permitindo consolidar múltiplos vouchers, bilhetes e cotações em propostas visuais cinematográficas e cadernos de viagem prontos para impressão.
 
@@ -622,7 +638,7 @@ Módulo avançado de orquestração visual e documental da agência, permitindo 
 
 ---
 
-### 3.30 Gestão Inteligente de Anexos e Documentos (Clientes e Viagens) [NEW]
+### 3.31 Gestão Inteligente de Anexos e Documentos (Clientes e Viagens)
 
 Módulo unificado de governança e custódia documental para agências de viagem, eliminando a fragilidade de rotular cegamente qualquer anexo como passaporte. Estrutura a gestão de arquivos em duas frentes complementares: **documentos pessoais de identificação do passageiro** e **vouchers/contratos operacionais vinculados à viagem**.
 
@@ -670,6 +686,12 @@ Módulo unificado de governança e custódia documental para agências de viagem
   - **Experiência do Usuário (UX)**: A modal `UploadAnexoModal` exibe badge visual ("⚡ Otimização Automática") e transmite feedback em tempo real página a página ("Otimizando documento: Página X de Y...") antes da gravação no Supabase Storage.
   - **Tratamento de Exceção e Fallback**: Se mesmo após a compressão a 150 DPI o documento continuar acima de 25MB (como catálogos de centenas de páginas), o sistema emite alerta amigável detalhando o tamanho reduzido atingido e orienta o usuário a desmembrar o arquivo.
 
+- **Exclusão Resiliente de Anexos Oficiais e Legados**:
+  - O método `AnexosService.excluirAnexo` opera com detecção inteligente de tipo de identificador:
+    - **Anexos Oficiais (`documentos_anexos`)**: Identificados por UUID, removidos da tabela relacional e desvinculados do Storage.
+    - **Documentos Legados da Ficha do Cliente (`legado-cliente-{id}`)**: Não disparam queries `DELETE` com strings não-UUID na tabela `documentos_anexos` (evitando erros 400 do PostgreSQL). Atualizam a tabela `clientes` limpando `google_drive_folder_url`, `passaporte_numero` e `passaporte_validade`, além de purgar o arquivo físico correspondente do Supabase Storage.
+  - Sincroniza em tempo real a interface da Ficha do Cliente e do Gerenciador de Viagens, impedindo a exibição de documentos fantasmas ou links órfãos.
+
 - **Resiliência a Schema Drift (Padrão Zero-Break)**:
   - O serviço `AnexosService` conta com tratamento nativo para erros de colunas inexistentes (`42703`), retrocedendo para o schema base sem travar a interface nem gerar mensagens de erro ao usuário caso a migração DDL ainda esteja em processo de aplicação no banco de dados.
 
@@ -678,7 +700,7 @@ Módulo unificado de governança e custódia documental para agências de viagem
 ## 4. Diferenciais Competitivos
 
 | Característica | PaxFlow | CRM Genérico | Planilha |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | SLA de passaporte | Nativo, com alertas visuais | Não possui | Manual |
 | Pipeline de orçamentos com lembretes | Integrado com Inbox | Requer configuração | Frágil |
 | Kanban de viagens com produtos | Por cliente/viagem | Genérico | Inexistente |
@@ -695,7 +717,7 @@ Módulo unificado de governança e custódia documental para agências de viagem
 ### Stack
 
 | Camada | Tecnologia | Benefício para o Cliente |
-|---|---|---|
+| --- | --- | --- |
 | Frontend | TypeScript + Vite | Aplicação rápida, SPA sem recarregamento |
 | Estilo | Tailwind CSS 3 | Design moderno, responsivo, tema claro/escuro |
 | Backend/Database | Supabase (PostgreSQL) | Escalável, seguro, sem servidor para gerenciar |
@@ -709,12 +731,12 @@ Módulo unificado de governança e custódia documental para agências de viagem
 ### 5.1 Engenharia de Testes Subcutâneos (Regra Formal)
 
 O PaxFlow adota testes **subcutâneos** rigorosos para garantir integridade contínua e economia de tokens:
+
 - **Tecnologia**: Vitest com MSW e mocks puros do banco de dados (Supabase).
 - **Zero DOM**: Não são executados testes de renderização de interface visual (DOM), concentrando a validação nas regras de negócio, persistência, cálculos de SLA, filtragens e fluxos de dados.
 - **Estrutura Padronizada**: Testes organizados nos blocos `// Setup`, `// Action` e `// Assert`.
 - **Regressão Zero & Execução Automática**: Toda alteração em componentes, regras de negócio ou serviços dispara obrigatoriamente a execução dos testes subcutâneos correspondentes via Vitest antes de ser considerada concluída. Nenhuma alteração é entregue sem validação automatizada prévia.
 - **Cobertura Integral (14 Módulos)**: 100% dos serviços de lógica de negócio e motores analíticos cobertos (`inbox`, `escala`, `orcamentos`, `balcao`, `riskScore`, `metas`, `gamification`, `nextTrip`, `comments`, `upsell`, `pushNotification`, `csvImporter`, `googleDrive` e `versionChecker`), totalizando 90 testes subcutâneos de alta confiabilidade (~5s) cobrindo casos de borda, resiliência de schema do Supabase e build 100% validado.
-
 
 ### Por que Supabase?
 
@@ -743,7 +765,7 @@ O PaxFlow adota testes **subcutâneos** rigorosos para garantir integridade cont
 ### Disponíveis
 
 | Integração | Tipo | Descrição |
-|---|---|---|
+| --- | --- | --- |
 | Supabase Storage | Unidirecional | Armazenamento de passaportes, comprovantes e propostas. Os arquivos de imagem são comprimidos no client-side para economia de cota e performance. |
 | Supabase Auth | Autenticação | Login, recuperação de senha, gerenciamento de consultores. |
 | Supabase Realtime | WebSocket | Sincronização ao vivo de orçamentos, viagens e Cockpit Kanban. |
@@ -806,7 +828,7 @@ O PaxFlow adota testes **subcutâneos** rigorosos para garantir integridade cont
 3. Configuração de autenticação e criação dos consultores no Supabase Auth
 4. Criação dos Buckets de Storage e respectivas políticas de RLS restritas no painel do Supabase
 5. Deploy do frontend (Cloudflare Pages ou similar)
-6. *(Opcional)* Limpeza resiliente de dados transacionais e de teste em lote utilizando o script [clean_db.sql](../supabase/clean_db.sql) para inicialização limpa da produção.
+6. _(Opcional)_ Limpeza resiliente de dados transacionais e de teste em lote utilizando o script [clean_db.sql](../supabase/clean_db.sql) para inicialização limpa da produção.
 
 ### Fase 3: Migração de Dados (2-5 dias)
 

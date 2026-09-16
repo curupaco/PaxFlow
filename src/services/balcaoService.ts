@@ -9,9 +9,52 @@ export interface ResultadoBuscaBalcao {
     telefone?: string;
     email?: string;
   };
-  orcamentos: Array<{ id: string; titulo: string; consultorNome: string; consultorId: string; data: string; total: string }>;
-  viagens: Array<{ id: string; titulo: string; consultorNome: string; consultorId: string; destino: string; status: string }>;
+  orcamentos: Array<{
+    id: string;
+    titulo: string;
+    consultorNome: string;
+    consultorId: string;
+    data: string;
+    dataFormatada?: string;
+    total: string;
+  }>;
+  viagens: Array<{
+    id: string;
+    titulo: string;
+    consultorNome: string;
+    consultorId: string;
+    destino: string;
+    status: string;
+    dataIda?: string;
+    dataVolta?: string;
+    periodoFormatado?: string;
+  }>;
   reembolsos: Array<{ id: string; titulo: string; consultorNome: string; consultorId: string; valor: string; status: string }>;
+}
+
+function formatarDataSimplesBR(dataStr?: string): string {
+  if (!dataStr) return '';
+  try {
+    const raw = dataStr.includes('T') ? dataStr.split('T')[0] : dataStr;
+    const partes = raw.split('-');
+    if (partes.length === 3) {
+      return `${partes[2]}/${partes[1]}/${partes[0]}`;
+    }
+    const d = new Date(dataStr);
+    if (!isNaN(d.getTime())) {
+      return d.toLocaleDateString('pt-BR');
+    }
+  } catch (e) {}
+  return dataStr;
+}
+
+function formatarPeriodoViagem(dataIda?: string, dataVolta?: string): string {
+  const dIda = formatarDataSimplesBR(dataIda);
+  const dVolta = formatarDataSimplesBR(dataVolta);
+  if (dIda && dVolta) return `${dIda} a ${dVolta}`;
+  if (dIda) return `Ida: ${dIda}`;
+  if (dVolta) return `Volta: ${dVolta}`;
+  return 'Data a definir';
 }
 
 export class BalcaoService {
@@ -28,7 +71,17 @@ export class BalcaoService {
     try {
       const { data: rpcData, error: rpcErr } = await supabase.rpc('buscar_balcao_co_piloto', { query_text: query });
       if (!rpcErr && rpcData && Array.isArray(rpcData) && rpcData.length > 0) {
-        return rpcData as ResultadoBuscaBalcao[];
+        return (rpcData as ResultadoBuscaBalcao[]).map(res => ({
+          ...res,
+          viagens: (res.viagens || []).map(v => ({
+            ...v,
+            periodoFormatado: v.periodoFormatado || formatarPeriodoViagem(v.dataIda, v.dataVolta)
+          })),
+          orcamentos: (res.orcamentos || []).map(o => ({
+            ...o,
+            dataFormatada: o.dataFormatada || formatarDataSimplesBR(o.data)
+          }))
+        }));
       }
     } catch (e) {
       console.warn('RPC buscar_balcao_co_piloto não disponível, usando fallback cliente:', e);
@@ -161,20 +214,26 @@ export class BalcaoService {
               refCodeStr = `${pLoc}${pTipo}`;
             }
 
+            const dataIda = v.data_ida || v.data_viagem || '';
+            const dataVolta = v.data_volta || '';
+
             item.viagens.push({
               id: v.id,
               titulo: `${refCodeStr}Viagem para ${v.destino || 'Destino'}`,
               consultorNome: consultoresMap.get(v.consultor_id) || 'Agência',
               consultorId: v.consultor_id || '',
               destino: v.destino || 'Destino',
-              status: v.status || 'ativa'
+              status: v.status || 'ativa',
+              dataIda,
+              dataVolta,
+              periodoFormatado: formatarPeriodoViagem(dataIda, dataVolta)
             });
           }
         });
       }
     } catch (e) {}
 
-    // 3. Busca Orçamentos correspondentes
+    // 4. Busca Orçamentos correspondentes
     try {
       const { data: orcData } = await supabase.from('orcamentos').select('*');
       if (orcData && orcData.length > 0) {
@@ -211,13 +270,15 @@ export class BalcaoService {
             const val = o.valor_proposta || o.valor_viagem;
             const formattedValor = val ? `R$ ${Number(val).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'R$ 0,00';
             const refCodeStr = o.codigo_ref ? `[${o.codigo_ref}] ` : '';
+            const dataOrigem = o.created_at || o.data || '';
 
             item.orcamentos.push({
               id: o.id,
               titulo: `${refCodeStr}Orçamento ${o.destino || o.nome_cliente || ''}`,
               consultorNome: consultoresMap.get(o.consultor_id) || 'Agência',
               consultorId: o.consultor_id || '',
-              data: o.created_at || '',
+              data: dataOrigem,
+              dataFormatada: formatarDataSimplesBR(dataOrigem),
               total: formattedValor
             });
           }

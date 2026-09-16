@@ -163,59 +163,163 @@ export class GlobalHeaderSearch {
       return;
     }
 
+    // Se houver apenas 1 cliente, auto-expandir por padrão; se houver múltiplos, iniciar colapsado
+    const autoExpand = resultadosSanitizados.length === 1;
+
     let html = `
-      <div class="p-2 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-800/40 rounded-xl mb-2">
-        <span class="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">🤝 Resultados do Co-Piloto (${totalItens} localizado(s))</span>
-        <span class="text-[10px] text-slate-400 font-bold">Clique para abrir no balcão</span>
+      <div class="p-2 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-800/40 rounded-xl mb-2 gap-2">
+        <span class="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider truncate">
+          🤝 Balcão (${resultadosSanitizados.length} cliente${resultadosSanitizados.length > 1 ? 's' : ''} · ${totalViagens} viagem${totalViagens > 1 ? 'ns' : ''} · ${totalOrcamentos} orç.)
+        </span>
+        ${resultadosSanitizados.length > 1 ? `
+          <button id="btn-toggle-all-search-groups" class="shrink-0 text-[10px] font-black text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 px-2 py-0.5 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800/60 rounded-md transition shadow-xs">
+            ${autoExpand ? 'Recolher Todos ▴' : 'Expandir Todos ▾'}
+          </button>
+        ` : ''}
       </div>
-      <div class="space-y-3">
+      <div class="space-y-2.5" id="search-results-groups">
     `;
 
-    resultadosSanitizados.forEach(res => {
+    resultadosSanitizados.forEach((res, idx) => {
+      const isExpanded = autoExpand;
+      const countViagens = res.viagens.length;
+      const countOrcs = res.orcamentos.length;
+
       html += `
-        <div class="bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/60 rounded-xl p-3 space-y-2">
-          <div class="flex items-center justify-between gap-2 border-b border-slate-200/40 dark:border-slate-700/40 pb-1.5">
-            <div class="truncate">
-              <span class="font-black text-xs text-slate-800 dark:text-slate-100 block truncate">👥 ${res.cliente.nome}</span>
-              <span class="text-[10px] text-slate-400 font-mono">
-                ${res.cliente.cpf ? `CPF: ${res.cliente.cpf}` : ''} 
-                ${res.cliente.telefone ? `· Tel: ${res.cliente.telefone}` : ''}
-              </span>
+        <div class="client-search-card bg-slate-50/80 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/60 rounded-xl p-2.5 transition">
+          <!-- Cabeçalho do Cliente (Acordeão) -->
+          <div class="client-search-header flex items-center justify-between gap-2 cursor-pointer select-none rounded-lg p-1 hover:bg-slate-200/40 dark:hover:bg-slate-700/40 transition" data-client-card-idx="${idx}">
+            <div class="flex items-center gap-2 truncate">
+              <span class="chevron-icon text-slate-400 text-xs font-black transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}">▶</span>
+              <div class="truncate">
+                <span class="font-black text-xs text-slate-800 dark:text-slate-100 block truncate">👤 ${res.cliente.nome}</span>
+                <span class="text-[10px] text-slate-400 font-mono">
+                  ${res.cliente.cpf ? `CPF: ${res.cliente.cpf}` : ''} 
+                  ${res.cliente.telefone ? `· Tel: ${res.cliente.telefone}` : ''}
+                  ${res.cliente.email ? `· ${res.cliente.email}` : ''}
+                </span>
+              </div>
             </div>
-            <span class="px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[9px] font-extrabold border border-indigo-500/20 shrink-0">Cliente</span>
+            
+            <div class="flex items-center gap-1.5 shrink-0">
+              ${countViagens > 0 ? `
+                <span class="px-2 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[9px] font-extrabold border border-blue-500/20">
+                  ✈️ ${countViagens}
+                </span>
+              ` : ''}
+              ${countOrcs > 0 ? `
+                <span class="px-2 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[9px] font-extrabold border border-amber-500/20">
+                  📋 ${countOrcs}
+                </span>
+              ` : ''}
+            </div>
           </div>
 
-          <!-- Viagens do Cliente -->
-          ${res.viagens.map(v => `
-            <div class="flex items-center justify-between gap-2 bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200 dark:border-slate-700 text-xs">
-              <div class="truncate">
-                <span class="block font-bold text-slate-800 dark:text-slate-100 truncate">✈️ ${v.titulo}</span>
-                <span class="block text-[10px] text-indigo-500 font-semibold">Consultor: ${v.consultorNome}</span>
-              </div>
-              <button class="global-open-trip shrink-0 px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md text-[10px] font-black uppercase transition shadow-sm" data-trip-id="${v.id}">
-                Atender 🤝
-              </button>
-            </div>
-          `).join('')}
+          <!-- Conteúdo Colapsável com Viagens e Orçamentos -->
+          <div class="client-search-body space-y-2 pt-2 border-t border-slate-200/50 dark:border-slate-700/50 mt-2 ${isExpanded ? '' : 'hidden'}">
+            ${countViagens === 0 && countOrcs === 0 ? `
+              <div class="text-[11px] text-slate-400 italic px-2 py-1">Nenhuma viagem ou orçamento vinculado no momento.</div>
+            ` : ''}
 
-          <!-- Orçamentos do Cliente -->
-          ${res.orcamentos.map(o => `
-            <div class="flex items-center justify-between gap-2 bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200 dark:border-slate-700 text-xs">
-              <div class="truncate">
-                <span class="block font-bold text-slate-800 dark:text-slate-100 truncate">📋 ${o.titulo}</span>
-                <span class="block text-[10px] text-amber-500 font-semibold">Consultor: ${o.consultorNome} · ${o.total}</span>
+            <!-- Viagens do Cliente -->
+            ${res.viagens.map(v => `
+              <div class="flex items-center justify-between gap-3 bg-white dark:bg-slate-900 p-2.5 rounded-lg border border-slate-200/90 dark:border-slate-700/90 text-xs shadow-xs hover:border-indigo-300 dark:hover:border-indigo-700 transition">
+                <div class="truncate space-y-0.5 flex-1 min-w-0">
+                  <div class="flex items-center gap-1.5 flex-wrap">
+                    <span class="font-bold text-slate-800 dark:text-slate-100 truncate">✈️ ${v.titulo}</span>
+                    <span class="px-1.5 py-0.2 rounded text-[9px] font-black uppercase ${
+                      v.status === 'confirmada' || v.status === 'concluida' 
+                        ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                        : 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20'
+                    }">
+                      ${v.status}
+                    </span>
+                  </div>
+                  <div class="flex items-center gap-2 flex-wrap text-[10px]">
+                    <span class="inline-flex items-center font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700">
+                      🗓️ ${v.periodoFormatado || 'Data a definir'}
+                    </span>
+                    <span class="text-indigo-500 font-semibold">Consultor: ${v.consultorNome}</span>
+                  </div>
+                </div>
+                <button class="global-open-trip shrink-0 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[10px] font-black uppercase transition shadow-sm" data-trip-id="${v.id}">
+                  Atender 🤝
+                </button>
               </div>
-              <button class="global-open-orc shrink-0 px-3 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-md text-[10px] font-black uppercase transition shadow-sm" data-orc-id="${o.id}">
-                Atender 🤝
-              </button>
-            </div>
-          `).join('')}
+            `).join('')}
+
+            <!-- Orçamentos do Cliente -->
+            ${res.orcamentos.map(o => `
+              <div class="flex items-center justify-between gap-3 bg-white dark:bg-slate-900 p-2.5 rounded-lg border border-slate-200/90 dark:border-slate-700/90 text-xs shadow-xs hover:border-amber-300 dark:hover:border-amber-700 transition">
+                <div class="truncate space-y-0.5 flex-1 min-w-0">
+                  <span class="block font-bold text-slate-800 dark:text-slate-100 truncate">📋 ${o.titulo}</span>
+                  <div class="flex items-center gap-2 flex-wrap text-[10px]">
+                    <span class="inline-flex items-center font-semibold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/50 px-1.5 py-0.5 rounded border border-amber-200/80 dark:border-amber-800/50">
+                      📅 ${o.dataFormatada || o.data || 'Sem data'}
+                    </span>
+                    <span class="font-extrabold text-slate-700 dark:text-slate-200">${o.total}</span>
+                    <span class="text-slate-400">· Consultor: ${o.consultorNome}</span>
+                  </div>
+                </div>
+                <button class="global-open-orc shrink-0 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-[10px] font-black uppercase transition shadow-sm" data-orc-id="${o.id}">
+                  Atender 🤝
+                </button>
+              </div>
+            `).join('')}
+          </div>
         </div>
       `;
     });
 
     html += `</div>`;
     this.dropdownEl.innerHTML = html;
+
+    // Toggle individual de cada cliente (Acordeão)
+    this.dropdownEl.querySelectorAll('.client-search-header').forEach(header => {
+      header.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const card = header.closest('.client-search-card');
+        if (!card) return;
+        const body = card.querySelector('.client-search-body');
+        const chevron = header.querySelector('.chevron-icon');
+        if (body) {
+          const isHidden = body.classList.toggle('hidden');
+          if (chevron) {
+            chevron.classList.toggle('rotate-90', !isHidden);
+          }
+        }
+      });
+    });
+
+    // Botão Expandir Todos / Recolher Todos
+    const toggleAllBtn = this.dropdownEl.querySelector('#btn-toggle-all-search-groups');
+    if (toggleAllBtn) {
+      toggleAllBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const allBodies = this.dropdownEl!.querySelectorAll('.client-search-body');
+        const allChevrons = this.dropdownEl!.querySelectorAll('.chevron-icon');
+        
+        const isAnyHidden = Array.from(allBodies).some(b => b.classList.contains('hidden'));
+
+        allBodies.forEach(b => {
+          if (isAnyHidden) {
+            b.classList.remove('hidden');
+          } else {
+            b.classList.add('hidden');
+          }
+        });
+
+        allChevrons.forEach(c => {
+          if (isAnyHidden) {
+            c.classList.add('rotate-90');
+          } else {
+            c.classList.remove('rotate-90');
+          }
+        });
+
+        toggleAllBtn.textContent = isAnyHidden ? 'Recolher Todos ▴' : 'Expandir Todos ▾';
+      });
+    }
 
     // Vincula cliques para resgate instantâneo
     this.dropdownEl.querySelectorAll('.global-open-trip').forEach(btn => {

@@ -43,7 +43,7 @@ describe('BalcaoService - Testes Subcutâneos (Co-Piloto & Balcão)', () => {
       {
         cliente: { id: 'cli-10', nome: 'Eduardo Costa', cpf: '12345678900' },
         orcamentos: [],
-        viagens: [{ id: 'v-10', titulo: 'Viagem para Lisboa', consultorNome: 'Mariana', consultorId: 'u2', destino: 'Lisboa', status: 'ativa' }],
+        viagens: [{ id: 'v-10', titulo: 'Viagem para Lisboa', consultorNome: 'Mariana', consultorId: 'u2', destino: 'Lisboa', status: 'ativa', periodoFormatado: '10/10/2026 a 20/10/2026' }],
         reembolsos: [],
       },
     ];
@@ -327,5 +327,75 @@ describe('BalcaoService - Testes Subcutâneos (Co-Piloto & Balcão)', () => {
     expect(resultado[0].viagens[0].id).toBe('trip-999');
     expect(resultado[0].viagens[0].titulo).toContain('[LOC 590285]');
     expect(resultado[0].viagens[0].titulo).toContain('AÉREO');
+  });
+
+  it('deve formatar corretamente períodos em viagens com ida e volta e com apenas ida', async () => {
+    // Setup
+    vi.mocked(supabase.rpc).mockResolvedValue({ data: null, error: null } as any);
+
+    const clientesMock = [{ id: 'cli-datas', nome: 'Renata Vasconcellos' }];
+    const viagensMock = [
+      {
+        id: 'v-datas-1',
+        cliente_id: 'cli-datas',
+        destino: 'Tóquio',
+        data_ida: '2026-10-15',
+        data_volta: '2026-10-25',
+        status: 'confirmada'
+      },
+      {
+        id: 'v-datas-2',
+        cliente_id: 'cli-datas',
+        destino: 'Kyoto',
+        data_ida: '2026-11-01',
+        status: 'ativa'
+      }
+    ];
+
+    vi.mocked(supabase.from).mockImplementation((table: string) => {
+      if (table === 'clientes') return { select: vi.fn().mockResolvedValue({ data: clientesMock }) } as any;
+      if (table === 'viagens') return { select: vi.fn().mockResolvedValue({ data: viagensMock }) } as any;
+      return { select: vi.fn().mockResolvedValue({ data: [] }) } as any;
+    });
+
+    // Action
+    const resultado = await BalcaoService.buscarMulticriterio('Renata');
+
+    // Assert
+    expect(resultado).toHaveLength(1);
+    expect(resultado[0].viagens).toHaveLength(2);
+    expect(resultado[0].viagens[0].periodoFormatado).toBe('15/10/2026 a 25/10/2026');
+    expect(resultado[0].viagens[1].periodoFormatado).toBe('Ida: 01/11/2026');
+  });
+
+  it('deve formatar corretamente datas de criação em orçamentos', async () => {
+    // Setup
+    vi.mocked(supabase.rpc).mockResolvedValue({ data: null, error: null } as any);
+
+    const clientesMock = [{ id: 'cli-orc-data', nome: 'Marcos Mion' }];
+    const orcamentosMock = [
+      {
+        id: 'orc-data-1',
+        cliente_id: 'cli-orc-data',
+        destino: 'Miami',
+        valor_proposta: 15400,
+        created_at: '2026-09-12T14:30:00.000Z'
+      }
+    ];
+
+    vi.mocked(supabase.from).mockImplementation((table: string) => {
+      if (table === 'clientes') return { select: vi.fn().mockResolvedValue({ data: clientesMock }) } as any;
+      if (table === 'orcamentos') return { select: vi.fn().mockResolvedValue({ data: orcamentosMock }) } as any;
+      return { select: vi.fn().mockResolvedValue({ data: [] }) } as any;
+    });
+
+    // Action
+    const resultado = await BalcaoService.buscarMulticriterio('Mion');
+
+    // Assert
+    expect(resultado).toHaveLength(1);
+    expect(resultado[0].orcamentos).toHaveLength(1);
+    expect(resultado[0].orcamentos[0].dataFormatada).toBe('12/09/2026');
+    expect(resultado[0].orcamentos[0].total).toContain('15.400,00');
   });
 });

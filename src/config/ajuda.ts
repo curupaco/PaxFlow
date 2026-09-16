@@ -60,18 +60,18 @@ export const HELP_ITEMS: HelpItem[] = [
   {
     id: 'busca-global-header',
     modulo: 'onboarding',
-    label: 'Busca Global Rápida (Atalho por Código, Nome, CPF ou LOC)',
-    description: 'Como localizar qualquer registro do sistema instantaneamente pelo cabeçalho superior.',
-    details: 'No topo da barra de navegação, o PaxFlow fornece um campo de busca unificado que lê todo o banco de dados em milissegundos:\n\n- **Busca por Código Sequencial**: Digite `CLI-0012`, `ORC-0402`, `VIA-0118` ou `RBS-0091` para ir direto para a ficha correspondente.\n- **Busca por Localizador (LOC)**: Digite o código da reserva da cia aérea/fornecedor (ex: `PAX-8840` ou `AF443`) para filtrar as viagens.\n- **Busca por Dados do Cliente**: Digite o nome, e-mail ou CPF do cliente. O PaxFlow agrupa e exibe os resultados separados por categoria.'
+    label: 'Busca Global Rápida & Modo Balcão (Atalho por Código, Nome, CPF, LOC e Datas)',
+    description: 'Como localizar qualquer registro do sistema instantaneamente pelo cabeçalho superior e operar no modo balcão.',
+    details: 'No topo da barra de navegação, o PaxFlow fornece um campo de busca unificado que lê todo o banco de dados em milissegundos:\n\n- **Busca por Código Sequencial**: Digite `CLI-0012`, `ORC-0402`, `VIA-0118` ou `RBS-0091` para ir direto para a ficha correspondente.\n- **Busca por Localizador (LOC)**: Digite o código da reserva da cia aérea ou fornecedor (ex: `PAX-8840` ou `590285`) para filtrar as viagens.\n- **Busca por Dados do Cliente**: Digite o nome, e-mail, telefone ou CPF do cliente. O PaxFlow agrupa e exibe os resultados organizados em formato compacto (acordeão) por cliente.\n- **Agrupamento Inteligente & Acordeão**: Quando a busca retorna múltiplos clientes, cada card inicia colapsado com contadores de viagens e orçamentos para economizar espaço. Basta clicar no nome do cliente para abrir ou utilizar o botão superior `[Expandir Todos / Recolher Todos]`.\n- **Desambiguação por Datas**: Cada viagem exibe o período formatado (`🗓️ 15/10/2026 a 25/10/2026` ou `🗓️ Ida: 15/10/2026`) e cada orçamento exibe a data de criação (`📅 12/09/2026`), permitindo identificar com precisão o registro correto.\n- **Atendimento Instantâneo 🤝**: Clicar no botão "Atender 🤝" abre imediatamente o registro no dashboard/orçamentos e notifica o consultor titular no Inbox.'
   },
 
   // ==================== 1. Fluxos de Trabalho & SLAs ====================
   {
     id: 'conferencia-loc',
     modulo: 'processos',
-    label: 'Processo de Quitação e Conferência de LOC',
-    description: 'Como funciona a validação financeira de reservas e o bloqueio de segurança.',
-    details: 'Para garantir a segurança financeira das vendas, o PaxFlow adota a conferência por Localizador (LOC):\n\n1. **Detalhamento Financeiro**: Cada produto ou serviço (voo, hotel, etc.) inserido em uma viagem exige que seu valor total de venda seja quitado por meio de formas de recebimento cadastradas (dinheiro, pix, cartão, etc.). O sistema valida se a soma dos pagamentos fecha exatamente com o total do produto.\n2. **Conferência Financeira**: Uma vez que os pagamentos estejam corretos, um **administrador** pode clicar em `Conferir` no cabeçalho do LOC.\n3. **Bloqueio de Segurança**: A conferência do LOC trava todas as edições, adições, exclusões e modificações financeiras daquele produto específico. Apenas a inserção de notas operacionais permanece aberta.'
+    label: 'Processo de Quitação, Conferência e Cópia Rápida de LOC',
+    description: 'Como funciona a gestão, cópia operacional e validação financeira de reservas por Localizador.',
+    details: 'Para garantir a agilidade operacional e a segurança financeira das vendas, o PaxFlow estrutura os serviços por Localizador (LOC):\n\n1. **Cópia Rápida em 1-Clique (📋)**: Todos os códigos de reserva (LOC) exibidos nos detalhes da viagem (no cabeçalho geral, nos grupos de produtos, nos cards de serviços e no formulário de edição) possuem botões de cópia instantânea. Um clique copia o código diretamente para a área de transferência do computador ou celular, com confirmação visual e toast.\n2. **Detalhamento Financeiro**: Cada produto ou serviço (voo, hotel, etc.) inserido em uma viagem exige que seu valor total de venda seja quitado por meio de formas de recebimento cadastradas (dinheiro, pix, cartão, etc.). O sistema valida se a soma dos pagamentos fecha exatamente com o total do produto.\n3. **Conferência Financeira**: Uma vez que os pagamentos estejam corretos, um **administrador** pode clicar em `Conferir` no cabeçalho do LOC.\n4. **Bloqueio de Segurança**: A conferência do LOC trava todas as edições, adições, exclusões e modificações financeiras daquele produto específico. Apenas a inserção de notas operacionais permanece aberta.'
   },
   {
     id: 'conferencia-viagem',
@@ -170,9 +170,9 @@ export const HELP_ITEMS: HelpItem[] = [
   {
     id: 'comentarios-mencoes',
     modulo: 'geral',
-    label: 'Comentários, Menções (@) e Agendamentos Automáticos por Texto',
-    description: 'Como colaborar com colegas e delegar lembretes digitando na caixa de texto.',
-    details: 'Dentro de qualquer orçamento ou viagem, você pode colaborar usando anotações. A ferramenta possui um motor inteligente de texto:\n\n- **Menções (@)**: Ao digitar `@`, o sistema exibe um menu para escolher um colega de equipe, que será notificado por e-mail e receberá um alerta no Inbox.\n- **Agendamento Inteligente (Regex)**: Se você digitar uma menção seguida por uma data e período no comentário, o PaxFlow agenda o lembrete automaticamente no calendário do colega!\n  * Exemplo: `@Amanda favor verificar reservas em 25/08/2026 tarde`.'
+    label: 'Comentários, Anotações e Agendamento Integrado (Visual e Texto)',
+    description: 'Como colaborar com colegas, registrar notas e agendar lembretes com datas inteligentes.',
+    details: 'Dentro de qualquer orçamento, viagem ou produto, você pode colaborar através de anotações e agendamentos inteligentes:\n\n- **Agendamento Visual Integrado**: Clique no botão "📅 Agendar Alerta / Lembrete" abaixo da nota para abrir o painel de agendamento. O botão de ação no rodapé se ajusta dinamicamente para "Enviar Nota e Agendar".\n- **Datas Inteligentes e Flexíveis**: Você pode selecionar a data pelo calendário integrado ou digitar abreviado:\n  * Apenas o dia (ex: `27`): O sistema completa automaticamente com o mês e ano correntes.\n  * Dia e mês (ex: `27/09`): O sistema completa com o ano corrente.\n  * Data completa (ex: `27/09/2026`).\n- **Agendamento com Nota Opcional**: Se você preencher o agendador e não digitar uma mensagem na caixa de texto, o PaxFlow cria automaticamente uma nota descritiva para documentar o agendamento no histórico do item.\n- **Agendamento Automático por Texto**: Digite uma menção (`@Nome`) com a data e período no comentário (ex: `@Fernanda verificar passagens para o dia 27 tarde`) para agendar automaticamente na agenda do colega.\n- **Sincronização em Tempo Real e Badges**: O agendamento é sincronizado instantaneamente com o Inbox e a Central de Alertas/Calendário da agência, e as notas com lembrete exibem uma etiqueta destacada ("📅 Lembrete Agendado").'
   },
   {
     id: 'codigo-sequencial',
@@ -416,6 +416,13 @@ export const HELP_ITEMS: HelpItem[] = [
     details: 'Documentos em PDF ou imagem anexados podem ser visualizados diretamente na interface do PaxFlow com o modal glassmorphic de Lightbox. O visualizador conta com rotação de páginas, zoom e download direto, sem abrir novas abas desnecessárias no navegador. Para links legados do Google Drive, o sistema dispõe de botão de redirecionamento imediato.'
   },
   {
+    id: 'exclusao-documentos-anexos',
+    modulo: 'clientes',
+    label: '🗑️ Exclusão e Gerenciamento de Documentos e Passaportes',
+    description: 'Como remover documentos anexados, passaportes únicos e arquivos legados com segurança.',
+    details: 'Você pode remover anexos e documentos cadastrados diretamente na ficha do cliente ou no modal de gerenciamento de viagem:\n\n1. **Permissão de Exclusão**: Apenas o consultor que enviou o arquivo ou usuários com perfil de Administrador podem excluir documentos.\n2. **Exclusão Segura**: Ao clicar no ícone de lixeira, uma janela de confirmação é exibida para evitar cliques acidentais.\n3. **Passaportes e Documentos Legados**: O sistema remove de forma unificada tanto arquivos novos do Supabase quanto passaportes legados vinculados à ficha do passageiro, limpando a referência no cadastro e liberando o espaço no Storage imediatamente.\n4. **Atualização Imediata**: A galeria de documentos anexados e a ficha detalhada do cliente se atualizam instantaneamente na tela após a exclusão.'
+  },
+  {
     id: 'identidade-visual-branding',
     modulo: 'clientes',
     label: 'Configurações de Marca da Agência (White-Label & Open Graph)',
@@ -428,6 +435,13 @@ export const HELP_ITEMS: HelpItem[] = [
     label: 'Exportação de Relatórios Financeiros e Comerciais (Excel, CSV e PDF)',
     description: 'Como extrair dados de vendas, faturamento e comissões para auditoria externa.',
     details: 'No menu **Relatórios**, administradores e consultores (com permissão) podem filtrar a produção da agência por intervalo de datas, consultor responsável e tipo de serviço:\n\n1. **Filtros Avançados**: Selecione o período de competência e a visão desejada (Vendas Concluídas, Reembolsos ou Funil de Orçamentos).\n2. **Exportação com 1 Clique**: Utilize os botões `Baixar Excel / CSV` para gerar relatórios tabulares compatíveis com softwares contábeis ou de BI.\n3. **Impressão de Dossiê**: É possível gerar versões em PDF com o logotipo da agência para envio a clientes corporativos.'
+  },
+  {
+    id: 'auditoria-extrato-recebimentos',
+    modulo: 'clientes',
+    label: '🪙 Extrato Detalhado de Recebimentos por Meio de Pagamento & Drilldown',
+    description: 'Como auditar detalhadamente quais viagens e produtos foram recebidos em cada meio de pagamento.',
+    details: 'Na aba **Recebimentos & Auditoria** (menu Relatórios -> Grupo 2: Financeiro & Auditoria):\n\n1. **Drilldown em 1-Clique nas Barras**: Cada barra do card "Entradas por Meio de Pagamento" (Pix, Cartão, Boleto, etc.) é interativa. Clicar sobre ela abre o modal analítico com o extrato específico daquela modalidade financeira.\n2. **Botão "Extrato Completo ↗"**: No topo do card de entradas, permite visualizar de forma consolidada todos os lançamentos financeiros de todos os meios de uma só vez.\n3. **Mapeamento de Produtos por LOC**: Cada lançamento exibe o cliente, a viagem de destino, o Localizador (LOC copiável 📋) e a lista dos produtos/serviços específicos cobertos por aquele recebimento (ex: Voo, Hotel, Transfer) com seus respectivos valores.\n4. **Filtros e Busca em Tempo Real**: Permite filtrar por consultor titular, alternar a forma de recebimento e buscar por cliente, destino ou fornecedor diretamente no modal.\n5. **Exportação de Planilha CSV**: Gera um arquivo CSV (.csv compatível com Excel com acentuação UTF-8) com todas as colunas de auditoria contábil e conciliação bancária.'
   },
   {
     id: 'auto-status-em-andamento',

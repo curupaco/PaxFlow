@@ -268,6 +268,42 @@ describe('AnexosService - Testes Subcutâneos com Múltiplos Anexos e Resiliênc
     expect(supabase.storage.from).toHaveBeenCalledWith('documentos-clientes');
   });
 
+  it('deve excluir documento de passaporte legado do cliente sem erro de UUID na tabela documentos_anexos', async () => {
+    // Setup
+    const clienteId = 'ca760007-d4ce-4c31-b371-6aaa9d916b66';
+    const anexoIdLegado = `legado-cliente-${clienteId}`;
+    const storagePath = `supabase-storage://${clienteId}/passaporte.pdf`;
+
+    const updateMock = vi.fn().mockReturnValue({
+      eq: vi.fn().mockResolvedValue({ error: null })
+    });
+    const deleteMock = vi.fn().mockReturnValue({
+      eq: vi.fn().mockResolvedValue({ error: null })
+    });
+
+    const mockFrom = vi.fn().mockImplementation((tabela: string) => {
+      if (tabela === 'clientes') {
+        return { update: updateMock };
+      }
+      return { delete: deleteMock };
+    });
+    (supabase.from as any) = mockFrom;
+
+    // Action
+    const sucesso = await AnexosService.excluirAnexo(anexoIdLegado, storagePath);
+
+    // Assert
+    expect(sucesso).toBe(true);
+    expect(mockFrom).toHaveBeenCalledWith('clientes');
+    expect(mockFrom).not.toHaveBeenCalledWith('documentos_anexos');
+    expect(updateMock).toHaveBeenCalledWith({
+      google_drive_folder_url: null,
+      passaporte_numero: null,
+      passaporte_validade: null
+    });
+    expect(supabase.storage.from).toHaveBeenCalledWith('documentos-clientes');
+  });
+
   it('deve realizar upload de CNH com número e validade opcionais e sincronizar documento do cliente', async () => {
     // Setup
     const mockFile = new File(['conteudo cnh'], 'cnh_motorista.pdf', { type: 'application/pdf' });

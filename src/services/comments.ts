@@ -1,8 +1,9 @@
 import { supabase } from './supabase';
 import { getAvatarSvg } from './avatars';
-import { showCustomConfirm } from './dialog';
+import { showCustomConfirm, showCustomAlert, showPaxFlowToast } from './dialog';
 import { Comentario, PerfilConsultor } from '../types';
 import { PushSenderService } from './pushSenderService';
+import { parseSmartDate } from '../utils/masks';
 
 function converterLinks(texto: string): string {
   if (!texto) return '';
@@ -113,6 +114,8 @@ export class CommentsService {
             });
           }
 
+          const isReminder = c.texto.startsWith('📅') || c.texto.toLowerCase().includes('lembrete agendado');
+
           return `
             <div class="flex items-start gap-2.5 p-2.5 bg-slate-50/50 dark:bg-slate-800/10 border border-slate-100 dark:border-slate-800 rounded-xl">
               <div class="shrink-0 mt-0.5">${autorAvatar}</div>
@@ -122,6 +125,12 @@ export class CommentsService {
                   <span class="text-[9px] text-slate-400 dark:text-slate-400 font-bold shrink-0">${formatarDataHora(c.created_at)}</span>
                 </div>
                 <p class="text-xs text-slate-600 dark:text-slate-400 font-semibold whitespace-pre-wrap leading-relaxed break-words [overflow-wrap:anywhere]">${textoFormatado}</p>
+                ${isReminder ? `
+                  <div class="inline-flex items-center gap-1.5 px-2 py-0.5 mt-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 text-[10px] font-black border border-indigo-200/50 dark:border-indigo-800/40">
+                    <span>📅</span>
+                    <span>Lembrete Agendado</span>
+                  </div>
+                ` : ''}
               </div>
               ${isOwner ? `
                 <button data-delete-comment-id="${c.id}" class="p-1 hover:bg-rose-50 dark:hover:bg-rose-950/20 text-slate-400 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-md transition text-[10px]" title="Excluir comentário">
@@ -142,44 +151,55 @@ export class CommentsService {
         </div>
 
         <!-- Área de Input -->
-        <div class="relative mt-2 border-t border-slate-100 dark:border-slate-800/80 pt-3">
-          <textarea id="comment-textarea-${itemId}" rows="2" placeholder="Escreva uma nota... Use @ para mencionar alguém" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 text-xs font-medium resize-none custom-scrollbar"></textarea>
+        <div class="relative mt-2 border-t border-slate-100 dark:border-slate-800/80 pt-3 space-y-2.5">
+          <textarea id="comment-textarea-${itemId}" rows="2" placeholder="Escreva uma nota... Use @ para mencionar colegas" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 text-xs font-medium resize-none custom-scrollbar"></textarea>
           
           <!-- Dropdown Autocomplete de Menções -->
           <div id="mentions-dropdown-${itemId}" class="hidden absolute z-50 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl max-h-40 overflow-y-auto p-1.5 min-w-[200px] text-xs font-semibold"></div>
 
-          <!-- Botões de Ação -->
-          <div class="flex items-center justify-between mt-2 flex-wrap gap-2">
-            <button id="btn-toggle-sched-${itemId}" type="button" class="text-[10px] text-indigo-600 dark:text-indigo-400 hover:underline font-extrabold flex items-center gap-1.5">
-              📅 Agendar Alerta / Lembrete
-            </button>
-            <button id="btn-submit-comment-${itemId}" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-[10px] tracking-wider rounded-lg shadow-sm transition uppercase">
-              Enviar Nota
-            </button>
-          </div>
+          <!-- Painel colapsado do Agendador (Posicionado ACIMA dos botões de ação) -->
+          <div id="sched-panel-${itemId}" class="hidden border border-indigo-100 dark:border-indigo-900/40 rounded-xl p-3 bg-indigo-50/30 dark:bg-slate-900/30 space-y-2.5 transition-all duration-200">
+            <div class="flex items-center justify-between flex-wrap gap-1">
+              <span class="text-[10px] font-black uppercase tracking-wider text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
+                <span>📅</span> Agendar Lembrete na Agenda e Inbox
+              </span>
+              <span class="text-[9px] text-slate-400 dark:text-slate-400 font-medium">💡 Aceita dia "27", "27/09" ou DD/MM/AAAA</span>
+            </div>
 
-          <!-- Painel colapsado do Agendador -->
-          <div id="sched-panel-${itemId}" class="hidden border border-slate-200 dark:border-slate-800 rounded-xl p-3 bg-slate-50/50 dark:bg-slate-900/10 mt-3 space-y-2.5">
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
               <div class="space-y-1">
-                <label class="block text-[8px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest">Data do Alerta</label>
-                <input id="sched-date-${itemId}" type="text" placeholder="DD/MM/YYYY" class="w-full px-2 py-1.5 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 text-xs font-semibold" />
+                <label class="block text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Data do Lembrete *</label>
+                <div class="relative flex items-center">
+                  <input id="sched-date-${itemId}" type="text" placeholder="Ex: 27 ou DD/MM/AAAA" class="w-full pl-2.5 pr-8 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 text-xs font-bold tracking-tight" />
+                  <input id="sched-native-date-${itemId}" type="date" class="absolute right-1 w-6 h-6 opacity-0 cursor-pointer" title="Escolher no calendário" />
+                  <span class="absolute right-2 text-xs pointer-events-none text-slate-400">🗓️</span>
+                </div>
               </div>
               <div class="space-y-1">
-                <label class="block text-[8px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest">Período</label>
-                <select id="sched-period-${itemId}" class="w-full px-2 py-1.5 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 text-xs font-semibold">
+                <label class="block text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Período *</label>
+                <select id="sched-period-${itemId}" class="w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 text-xs font-semibold">
                   <option value="manha">🌅 Manhã</option>
                   <option value="tarde" selected>☀️ Tarde</option>
                   <option value="noite">🌙 Noite</option>
                 </select>
               </div>
               <div class="space-y-1">
-                <label class="block text-[8px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest">Para quem?</label>
-                <select id="sched-user-${itemId}" class="w-full px-2 py-1.5 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 text-xs font-semibold">
-                  ${consultoresAtivos.map(p => `<option value="${p.id}" ${p.id === currentUserId ? 'selected' : ''}>${p.nome}</option>`).join('')}
+                <label class="block text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Para quem? *</label>
+                <select id="sched-user-${itemId}" class="w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 text-xs font-semibold">
+                  ${consultoresAtivos.map(p => `<option value="${p.id}" ${p.id === currentUserId ? 'selected' : ''}>${p.id === currentUserId ? `Para mim (${p.nome})` : p.nome}</option>`).join('')}
                 </select>
               </div>
             </div>
+          </div>
+
+          <!-- Barra de Rodapé com Botões de Ação (Posicionada SEMPRE abaixo de todos os campos) -->
+          <div class="flex items-center justify-between pt-1 flex-wrap gap-2">
+            <button id="btn-toggle-sched-${itemId}" type="button" class="text-[11px] text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-extrabold flex items-center gap-1.5 py-1 px-2 rounded-lg hover:bg-indigo-50/50 dark:hover:bg-indigo-950/20 transition duration-150">
+              📅 Agendar Alerta / Lembrete
+            </button>
+            <button id="btn-submit-comment-${itemId}" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-[11px] tracking-wider rounded-xl shadow-md shadow-indigo-600/15 transition uppercase active:scale-95 flex items-center gap-1.5">
+              Enviar Nota
+            </button>
           </div>
         </div>
       </div>
@@ -208,31 +228,62 @@ export class CommentsService {
     const btnToggle = container.querySelector(`#btn-toggle-sched-${itemId}`) as HTMLButtonElement;
     const schedPanel = container.querySelector(`#sched-panel-${itemId}`) as HTMLDivElement;
     const schedDateInput = container.querySelector(`#sched-date-${itemId}`) as HTMLInputElement;
+    const schedNativeDateInput = container.querySelector(`#sched-native-date-${itemId}`) as HTMLInputElement;
     const schedPeriodSelect = container.querySelector(`#sched-period-${itemId}`) as HTMLSelectElement;
     const schedUserSelect = container.querySelector(`#sched-user-${itemId}`) as HTMLSelectElement;
+
+    const updateSubmitBtnText = () => {
+      const isSchedOpen = schedPanel && !schedPanel.classList.contains('hidden');
+      if (isSchedOpen) {
+        btnSubmit.innerHTML = `<span>📅</span> Enviar Nota e Agendar`;
+        btnToggle.innerHTML = `<span>✕</span> Ocultar Agendador`;
+        btnToggle.className = 'text-[11px] text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 font-extrabold flex items-center gap-1.5 py-1 px-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition duration-150';
+      } else {
+        btnSubmit.innerHTML = `Enviar Nota`;
+        btnToggle.innerHTML = `<span>📅</span> Agendar Alerta / Lembrete`;
+        btnToggle.className = 'text-[11px] text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-extrabold flex items-center gap-1.5 py-1 px-2 rounded-lg hover:bg-indigo-50/50 dark:hover:bg-indigo-950/20 transition duration-150';
+      }
+    };
 
     btnToggle?.addEventListener('click', (e) => {
       e.preventDefault();
       if (schedPanel.classList.contains('hidden')) {
         schedPanel.classList.remove('hidden');
+        updateSubmitBtnText();
         schedDateInput.focus();
       } else {
         schedPanel.classList.add('hidden');
         schedDateInput.value = '';
+        updateSubmitBtnText();
       }
     });
 
-    // Auto-mask for date field (DD/MM/YYYY)
-    schedDateInput?.addEventListener('input', () => {
-      let v = schedDateInput.value.replace(/\D/g, '');
-      if (v.length > 8) v = v.slice(0, 8);
-      if (v.length > 4) {
-        schedDateInput.value = `${v.slice(0, 2)}/${v.slice(2, 4)}/${v.slice(4)}`;
-      } else if (v.length > 2) {
-        schedDateInput.value = `${v.slice(0, 2)}/${v.slice(2)}`;
-      } else {
-        schedDateInput.value = v;
+    // Seletor nativo de calendário
+    schedNativeDateInput?.addEventListener('change', () => {
+      if (schedNativeDateInput.value) {
+        const parsed = parseSmartDate(schedNativeDateInput.value);
+        if (parsed) {
+          schedDateInput.value = parsed.dataBr;
+        }
       }
+    });
+
+    // Normalização no blur do campo de data
+    schedDateInput?.addEventListener('blur', () => {
+      const val = schedDateInput.value.trim();
+      if (val) {
+        const parsed = parseSmartDate(val);
+        if (parsed) {
+          schedDateInput.value = parsed.dataBr;
+        }
+      }
+    });
+
+    // Auto-mask suave para DD/MM/AAAA ao digitar mais de 2 números
+    schedDateInput?.addEventListener('input', () => {
+      let v = schedDateInput.value.replace(/[^\d/]/g, '');
+      if (v.length > 10) v = v.slice(0, 10);
+      schedDateInput.value = v;
     });
 
     let isMentioning = false;
@@ -357,8 +408,41 @@ export class CommentsService {
 
     // Enviar comentário ao clicar no botão
     btnSubmit.addEventListener('click', async () => {
-      const text = textarea.value.trim();
-      if (!text) return;
+      const isSchedActive = schedPanel && !schedPanel.classList.contains('hidden');
+      let text = textarea.value.trim();
+
+      let parsedDate: { dataIso: string; dataBr: string } | null = null;
+      let periodo = schedPeriodSelect ? schedPeriodSelect.value : 'tarde';
+      let targetUser = schedUserSelect ? schedUserSelect.value : currentUserId;
+
+      if (isSchedActive) {
+        const rawDate = schedDateInput.value.trim();
+        if (!rawDate) {
+          await showCustomAlert('Por favor, informe a data do lembrete (ex: 27, 27/09 ou 27/09/2026).', 'Data Obrigatória');
+          schedDateInput.focus();
+          return;
+        }
+
+        parsedDate = parseSmartDate(rawDate);
+        if (!parsedDate) {
+          await showCustomAlert('A data informada é inválida. Digite no formato dia (ex: 27), dia/mês (ex: 27/09) ou dia/mês/ano.', 'Data Inválida');
+          schedDateInput.focus();
+          return;
+        }
+
+        schedDateInput.value = parsedDate.dataBr;
+
+        // Se a nota estiver vazia, gera nota descritiva automática para manter o histórico
+        if (!text) {
+          const targetProfile = profiles.find(p => p.id === targetUser);
+          const targetNome = targetProfile ? (targetProfile.id === currentUserId ? 'você' : targetProfile.nome) : 'Consultor';
+          const periodoMap: Record<string, string> = { manha: 'Manhã', tarde: 'Tarde', noite: 'Noite' };
+          const periodoLabel = periodoMap[periodo] || 'Tarde';
+          text = `📅 Lembrete agendado para ${targetNome} em ${parsedDate.dataBr} (${periodoLabel})`;
+        }
+      } else {
+        if (!text) return;
+      }
 
       btnSubmit.disabled = true;
       btnSubmit.textContent = 'Enviando...';
@@ -383,51 +467,60 @@ export class CommentsService {
 
         // 2.5. Processar agendamento (visual ou automático por texto)
         let visualScheduled = false;
-        if (schedPanel && !schedPanel.classList.contains('hidden') && schedDateInput.value.trim()) {
-          const rawDate = schedDateInput.value.trim();
-          const regexData = /^\d{2}\/\d{2}\/\d{4}$/;
-          if (regexData.test(rawDate)) {
-            const parts = rawDate.split('/');
-            const dataLembrete = `${parts[2]}-${parts[1]}-${parts[0]}`;
-            const periodo = schedPeriodSelect.value;
-            const targetUser = schedUserSelect.value;
+        if (isSchedActive && parsedDate) {
+          let orcamentoId: string | null = null;
+          let viagemId: string | null = null;
 
-            let orcamentoId: string | null = null;
-            let viagemId: string | null = null;
-
-            if (tipoItem === 'orcamento') orcamentoId = itemId;
-            else if (tipoItem === 'viagem') viagemId = itemId;
-            else if (tipoItem === 'produto') {
-              try {
-                const { data: pData } = await supabase.from('produtos_viagem').select('viagem_id').eq('id', itemId).single();
-                if (pData) viagemId = pData.viagem_id || null;
-              } catch (e) {}
-            }
-
-            await supabase.from('lembretes').insert({
-              orcamento_id: orcamentoId,
-              viagem_id: viagemId,
-              consultor_id: targetUser,
-              criador_id: currentUserId,
-              data_lembrete: dataLembrete,
-              periodo: periodo,
-              arquivado: false
-            });
-            visualScheduled = true;
+          if (tipoItem === 'orcamento') orcamentoId = itemId;
+          else if (tipoItem === 'viagem') viagemId = itemId;
+          else if (tipoItem === 'produto') {
+            try {
+              const { data: pData } = await supabase.from('produtos_viagem').select('viagem_id').eq('id', itemId).single();
+              if (pData) viagemId = pData.viagem_id || null;
+            } catch (e) {}
           }
+
+          const { error: errLembrete } = await supabase.from('lembretes').insert({
+            orcamento_id: orcamentoId,
+            viagem_id: viagemId,
+            consultor_id: targetUser,
+            criador_id: currentUserId,
+            data_lembrete: parsedDate.dataIso,
+            periodo: periodo,
+            arquivado: false
+          });
+
+          if (errLembrete) {
+            console.error('Erro ao gravar lembrete no Supabase:', errLembrete);
+            throw errLembrete;
+          }
+
+          visualScheduled = true;
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('paxflow-inbox-updated'));
+            window.dispatchEvent(new CustomEvent('paxflow-reminders-updated'));
+            window.dispatchEvent(new CustomEvent('paxflow:new-message'));
+          }
+          showPaxFlowToast(`Lembrete agendado com sucesso para ${parsedDate.dataBr}!`, 'success');
         }
 
         if (!visualScheduled) {
-          await this.checkAndParseCommentSchedule(text, tipoItem, itemId, currentUserId, profiles);
+          const autoScheduled = await this.checkAndParseCommentSchedule(text, tipoItem, itemId, currentUserId, profiles);
+          if (autoScheduled) {
+            showPaxFlowToast('Nota enviada e lembrete agendado com sucesso!', 'success');
+          } else {
+            showPaxFlowToast('Nota adicionada com sucesso!', 'success');
+          }
         }
 
         // 3. Limpar campo e re-renderizar
         textarea.value = '';
         this.renderCommentsSection(container, tipoItem, itemId, parentId, currentUserId, profiles);
-      } catch (err) {
+      } catch (err: any) {
         console.error('Erro ao enviar comentário:', err);
+        showCustomAlert(`Ocorreu um erro ao salvar: ${err.message || err}`, 'Erro de Envio');
         btnSubmit.disabled = false;
-        btnSubmit.textContent = 'Enviar Nota';
+        updateSubmitBtnText();
       }
     });
   }
@@ -715,23 +808,39 @@ export class CommentsService {
   }
 
   /**
-   * Scans comment text for a mention (@Name) and a valid date (DD/MM/YYYY)
-   * to automatically schedule a reminder in the calendar.
+   * Analisa o texto do comentário em busca de menção (@Nome) e data válida
+   * (suporta formatos completos como 27/09/2026, 27/09 ou "dia 27")
+   * para agendar automaticamente um lembrete no calendário e Inbox.
    */
-  private static async checkAndParseCommentSchedule(
+  public static async checkAndParseCommentSchedule(
     texto: string,
     tipoItem: 'orcamento' | 'viagem' | 'produto',
     itemId: string,
     currentUserId: string,
     profiles: PerfilConsultor[]
-  ): Promise<void> {
-    const dateRegex = /\b(\d{2})\/(\d{2})\/(\d{4})\b/;
-    const dateMatch = texto.match(dateRegex);
-    if (!dateMatch) return; // No date found
+  ): Promise<boolean> {
+    if (!texto) return false;
 
-    const dataLembrete = `${dateMatch[3]}-${dateMatch[2]}-${dateMatch[1]}`;
+    // 1. Detecção de Data Inteligente
+    let dataParsed: { dataIso: string; dataBr: string } | null = null;
 
-    // Period extraction
+    // Tentar padrão explícito com barra DD/MM/YYYY ou DD/MM
+    const dateMatch = texto.match(/\b(\d{1,2}\/\d{1,2}(?:\/\d{2,4})?)\b/);
+    if (dateMatch) {
+      dataParsed = parseSmartDate(dateMatch[1]);
+    }
+
+    // Se não encontrou por barra, tentar menções como "dia 27" ou "em 27"
+    if (!dataParsed) {
+      const dayMatch = texto.match(/(?:dia|em|data)\s+(\d{1,2})\b/i);
+      if (dayMatch) {
+        dataParsed = parseSmartDate(dayMatch[1]);
+      }
+    }
+
+    if (!dataParsed) return false;
+
+    // 2. Extração de Período
     const periodRegex = /\b(manha|manhã|tarde|noite)\b/i;
     let periodo: 'manha' | 'tarde' | 'noite' = 'tarde';
     const periodMatch = texto.match(periodRegex);
@@ -741,7 +850,7 @@ export class CommentsService {
       else if (pStr === 'noite') periodo = 'noite';
     }
 
-    // Mention extraction
+    // 3. Extração de Menção de Consultor
     const activeProfiles = (profiles || []).filter(p => p.ativo);
     let targetConsultantId: string | null = null;
 
@@ -759,11 +868,11 @@ export class CommentsService {
     }
 
     if (!targetConsultantId) {
-      // If no other user mentioned but date found, assign to self
+      // Se não houver outro usuário mencionado mas tiver data, atribui a si próprio
       targetConsultantId = currentUserId;
     }
 
-    // Resolve IDs
+    // 4. Resolução de IDs
     let orcamentoId: string | null = null;
     let viagemId: string | null = null;
 
@@ -782,15 +891,28 @@ export class CommentsService {
       }
     }
 
-    await supabase.from('lembretes').insert({
+    const { error: errLembrete } = await supabase.from('lembretes').insert({
       orcamento_id: orcamentoId,
       viagem_id: viagemId,
       consultor_id: targetConsultantId,
       criador_id: currentUserId,
-      data_lembrete: dataLembrete,
+      data_lembrete: dataParsed.dataIso,
       periodo: periodo,
       arquivado: false
     });
+
+    if (errLembrete) {
+      console.error('Erro ao registrar agendamento automático por texto:', errLembrete);
+      return false;
+    }
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('paxflow-inbox-updated'));
+      window.dispatchEvent(new CustomEvent('paxflow-reminders-updated'));
+      window.dispatchEvent(new CustomEvent('paxflow:new-message'));
+    }
+
+    return true;
   }
 
   /**

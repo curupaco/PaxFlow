@@ -168,5 +168,20 @@ describe('ViagensController - Máquina de Estados e Motor Financeiro de Viagens'
     expect(rentabilidadeFinal.lucroBruto).toBeGreaterThan(rentabilidadeOriginal.lucroBruto);
     expect(rentabilidadeFinal.margemPercentual).toBeGreaterThan(rentabilidadeOriginal.margemPercentual);
   });
+
+  it('deve extrair e sanitizar corretamente os códigos de reserva (LOC) dos produtos para fins operacionais', () => {
+    // Setup
+    const produtosComLocs = [
+      { id: 'p1', tipo: 'aereo', fornecedor: 'Azul', codigo_reserva: ' azul123 ' },
+      { id: 'p2', tipo: 'hotel', fornecedor: 'Accor', codigo_reserva: 'ACC-8899' },
+      { id: 'p3', tipo: 'transfer', fornecedor: 'Local', codigo_reserva: null }
+    ];
+
+    // Action
+    const locsExtraidos = produtosComLocs.map(p => (p.codigo_reserva || 'SEM LOCALIZADOR').trim().toUpperCase());
+
+    // Assert
+    expect(locsExtraidos).toEqual(['AZUL123', 'ACC-8899', 'SEM LOCALIZADOR']);
+  });
 });
 

@@ -8,6 +8,8 @@ import { CommentsService } from '../services/comments';
 import { SendTemplateMessageModal } from '../components/dashboard/SendTemplateMessageModal';
 import { ContatosEmbarqueService } from '../services/contatosEmbarqueService';
 import { confirmUnsavedChanges } from '../components/common/UnsavedChangesModal';
+import { ExtratoRecebimentosModal } from '../components/relatorios/ExtratoRecebimentosModal';
+import { processarExtratoRecebimentos } from '../controllers/relatoriosController';
 
 if (typeof document !== 'undefined') {
   const style = document.createElement('style');
@@ -1472,12 +1474,18 @@ export class RelatoriosPage {
       }
 
       paymentBreakdownHtml += `
-        <div class="space-y-1.5">
-          <div class="flex justify-between text-xs font-bold text-slate-600 dark:text-slate-400">
-            <span class="flex items-center gap-1.5"><span>${info.icone}</span> <span>${nome}</span></span>
-            <span>${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(info.valor)} (${pct}%)</span>
+        <div class="btn-forma-recebimento-item p-2 rounded-xl border border-transparent hover:border-indigo-200 dark:hover:border-indigo-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition cursor-pointer group select-none" data-forma="${nome}" title="Clique para ver o extrato detalhado de ${nome}">
+          <div class="flex justify-between items-center text-xs font-bold text-slate-600 dark:text-slate-400">
+            <span class="flex items-center gap-1.5 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition">
+              <span>${info.icone}</span> 
+              <span class="font-extrabold text-slate-700 dark:text-slate-200">${nome}</span>
+            </span>
+            <div class="flex items-center gap-2">
+              <span>${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(info.valor)} (${pct}%)</span>
+              <span class="text-[10px] font-black text-indigo-500 opacity-0 group-hover:opacity-100 transition">Ver Detalhes ➔</span>
+            </div>
           </div>
-          <div class="w-full bg-slate-100 dark:bg-slate-800 h-4 rounded-lg overflow-hidden flex">
+          <div class="w-full bg-slate-100 dark:bg-slate-800 h-3.5 rounded-lg overflow-hidden flex mt-1.5 shadow-inner">
             <div class="${barColorClass} h-full rounded-lg transition-all duration-500" style="width: ${widthPct}%"></div>
           </div>
         </div>
@@ -1584,8 +1592,13 @@ export class RelatoriosPage {
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <!-- Payment breakdown -->
           <div class="border border-slate-100 dark:border-slate-800 p-5 rounded-2xl gap-4 flex flex-col">
-            <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider">Entradas por Meio de Pagamento</h3>
-            <div class="space-y-4">
+            <div class="flex items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-2">
+              <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider">Entradas por Meio de Pagamento</h3>
+              <button id="btn-abrir-extrato-geral" class="text-[10px] font-black text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800/60 transition shadow-xs flex items-center gap-1.5 cursor-pointer">
+                <span>📄</span> Extrato Completo ↗
+              </button>
+            </div>
+            <div class="space-y-2">
               ${paymentBreakdownHtml}
             </div>
           </div>
@@ -2746,6 +2759,54 @@ export class RelatoriosPage {
           });
           await editModal.open(tripId, 'detalhes');
         }
+      });
+    });
+
+    // Ouvintes para Extrato de Recebimentos por Meio de Pagamento
+    const abrirExtratoRecebimentos = (formaInicial: string = 'TODAS') => {
+      const dataRelatorio = this.getFilteredData();
+      const itensExtrato = processarExtratoRecebimentos(
+        dataRelatorio.viagens,
+        dataRelatorio.locPagamentos,
+        this.consultores
+      );
+
+      ExtratoRecebimentosModal.open({
+        itens: itensExtrato,
+        formaInicial,
+        consultores: this.consultores,
+        formasDisponiveis: this.formasRecebimento,
+        onAbrirViagem: async (tripId) => {
+          const editModal = new EditTravelModal({
+            perfil: this.perfil,
+            consultores: this.consultores,
+            tiposProduto: this.tiposProduto,
+            viagens: this.viagens,
+            isFallbackMode: false,
+            user: this.user,
+            onUpdate: async () => {
+              await this.loadData();
+              this.render();
+              this.setupEventListeners();
+            },
+            showToast: (m, t, err) => this.showToast(m, t, err),
+            checkSLA: () => ({ alert: false, type: null, text: '' })
+          });
+          await editModal.open(tripId, 'detalhes');
+        }
+      });
+    };
+
+    document.getElementById('btn-abrir-extrato-geral')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      abrirExtratoRecebimentos('TODAS');
+    });
+
+    document.querySelectorAll('.btn-forma-recebimento-item').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const forma = btn.getAttribute('data-forma') || 'TODAS';
+        abrirExtratoRecebimentos(forma);
       });
     });
   }

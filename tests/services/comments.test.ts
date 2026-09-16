@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CommentsService } from '../../src/services/comments';
 import { supabase } from '../../src/services/supabase';
+import { parseSmartDate } from '../../src/utils/masks';
 
 vi.mock('../../src/services/supabase', () => ({
   supabase: {
@@ -130,5 +131,136 @@ describe('CommentsService - Testes Subcutâneos', () => {
 
     // Assert
     expect(resultado).toBe(false);
+  });
+
+  describe('parseSmartDate - Parser Inteligente de Datas de Agendamento', () => {
+    const dataReferencia = new Date(2026, 8, 15); // 15 de setembro de 2026
+
+    it('deve normalizar entrada contendo apenas o número do dia ("27")', () => {
+      // Setup
+      const raw = '27';
+
+      // Action
+      const parsed = parseSmartDate(raw, dataReferencia);
+
+      // Assert
+      expect(parsed).not.toBeNull();
+      expect(parsed?.dataIso).toBe('2026-09-27');
+      expect(parsed?.dataBr).toBe('27/09/2026');
+    });
+
+    it('deve normalizar entrada contendo dia e mês ("27/09")', () => {
+      // Setup
+      const raw = '27/09';
+
+      // Action
+      const parsed = parseSmartDate(raw, dataReferencia);
+
+      // Assert
+      expect(parsed).not.toBeNull();
+      expect(parsed?.dataIso).toBe('2026-09-27');
+      expect(parsed?.dataBr).toBe('27/09/2026');
+    });
+
+    it('deve normalizar data completa no padrão brasileiro ("27/09/2026")', () => {
+      // Setup
+      const raw = '27/09/2026';
+
+      // Action
+      const parsed = parseSmartDate(raw, dataReferencia);
+
+      // Assert
+      expect(parsed).not.toBeNull();
+      expect(parsed?.dataIso).toBe('2026-09-27');
+      expect(parsed?.dataBr).toBe('27/09/2026');
+    });
+
+    it('deve normalizar data ISO nativa ("2026-09-27")', () => {
+      // Setup
+      const raw = '2026-09-27';
+
+      // Action
+      const parsed = parseSmartDate(raw, dataReferencia);
+
+      // Assert
+      expect(parsed).not.toBeNull();
+      expect(parsed?.dataIso).toBe('2026-09-27');
+      expect(parsed?.dataBr).toBe('27/09/2026');
+    });
+
+    it('deve rejeitar dias inválidos como 32 de janeiro ou 31 de abril', () => {
+      // Setup & Action
+      const invalido1 = parseSmartDate('32/01/2026', dataReferencia);
+      const invalido2 = parseSmartDate('31/04/2026', dataReferencia);
+      const invalido3 = parseSmartDate('dia-errado', dataReferencia);
+
+      // Assert
+      expect(invalido1).toBeNull();
+      expect(invalido2).toBeNull();
+      expect(invalido3).toBeNull();
+    });
+  });
+
+  describe('checkAndParseCommentSchedule - Agendamento Inteligente por Texto', () => {
+    it('deve identificar menção @Fernanda com data "dia 27" e criar lembrete na tabela lembretes', async () => {
+      // Setup
+      const insertMock = vi.fn().mockResolvedValue({ error: null });
+      vi.mocked(supabase.from).mockReturnValue({ insert: insertMock } as any);
+
+      const perfis = [
+        { id: 'user-fernanda-id', nome: 'Fernanda Oliveira', ativo: true }
+      ] as any[];
+
+      // Action
+      const agendou = await CommentsService.checkAndParseCommentSchedule(
+        '@Fernanda favor verificar reservas para o dia 27 tarde',
+        'orcamento',
+        'orc-777',
+        'user-criador-id',
+        perfis
+      );
+
+      // Assert
+      expect(agendou).toBe(true);
+      expect(supabase.from).toHaveBeenCalledWith('lembretes');
+      expect(insertMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          orcamento_id: 'orc-777',
+          consultor_id: 'user-fernanda-id',
+          criador_id: 'user-criador-id',
+          periodo: 'tarde',
+          arquivado: false,
+          data_lembrete: expect.stringMatching(/^\d{4}-\d{2}-27$/)
+        })
+      );
+    });
+
+    it('deve atribuir lembrete a si mesmo se houver data mas nenhuma outra menção', async () => {
+      // Setup
+      const insertMock = vi.fn().mockResolvedValue({ error: null });
+      vi.mocked(supabase.from).mockReturnValue({ insert: insertMock } as any);
+
+      // Action
+      const agendou = await CommentsService.checkAndParseCommentSchedule(
+        'lembrete pessoal para 28/09/2026 manha',
+        'viagem',
+        'viagem-444',
+        'user-eu-mesmo',
+        []
+      );
+
+      // Assert
+      expect(agendou).toBe(true);
+      expect(supabase.from).toHaveBeenCalledWith('lembretes');
+      expect(insertMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          viagem_id: 'viagem-444',
+          consultor_id: 'user-eu-mesmo',
+          criador_id: 'user-eu-mesmo',
+          periodo: 'manha',
+          data_lembrete: '2026-09-28'
+        })
+      );
+    });
   });
 });

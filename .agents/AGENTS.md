@@ -47,5 +47,12 @@ Sempre que eu pedir para testar um fluxo, atue como um Engenheiro de Testes Sên
 3. **COBERTURA DE TESTES PARA ERROS DE SCHEMA**:
    - Os testes subcutâneos de serviços que introduzem colunas novas DEVEM incluir obrigatoriamente um teste simulando o erro `42703`, comprovando que o fallback de banco funciona e a aplicação não quebra em produção.
 
+---
 
+## 📚 PROTOCOLO MANDATÓRIO DE DOCUMENTAÇÃO E SINCRONIZAÇÃO TOTAL (SEMPRE)
 
+Sempre que fizermos novas features ou alterações relevantes na usabilidade, regras de negócio, interface ou fluxo, o assistente DEVE obrigatoriamente atualizar no mesmo ciclo de entrega:
+1. **Cenários de Teste**: Criar e/ou expandir testes subcutâneos (Vitest) cobrindo todos os novos caminhos e edge-cases da alteração.
+2. **README (`README.md`)**: Atualizar a descrição de recursos e módulos do sistema com as novidades implementadas.
+3. **Módulo de Ajuda (`src/config/ajuda.ts`)**: Atualizar ou incluir os tópicos e instruções operacionais da central de ajuda interna do sistema.
+4. **Documentação Oficial (`docs/documentation.md`)**: Atualizar detalhadamente a arquitetura, regras de negócio, fluxos e especificações das telas modificadas.

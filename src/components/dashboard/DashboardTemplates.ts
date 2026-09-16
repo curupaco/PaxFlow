@@ -283,8 +283,22 @@ export function renderLateralEditorPaneHTML(
                 </div>
 
                 <div>
-                  <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase mb-0.5">Código (LOC) *</label>
-                  <input id="edit-prod-reserva-${selectedProduct.id}" type="text" required maxlength="20" ${disabledAttr} value="${selectedProduct.codigo_reserva || ''}" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs uppercase transition duration-155" />
+                  <div class="flex items-center justify-between mb-0.5">
+                    <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase">Código (LOC) *</label>
+                    ${selectedProduct.codigo_reserva ? `
+                      <button type="button" class="btn-copy-loc text-[9px] font-black text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 flex items-center gap-1 transition" data-copy-loc="${selectedProduct.codigo_reserva}" title="Copiar Localizador">
+                        <span class="copy-icon">📋</span> Copiar LOC
+                      </button>
+                    ` : ''}
+                  </div>
+                  <div class="relative">
+                    <input id="edit-prod-reserva-${selectedProduct.id}" type="text" required maxlength="20" ${disabledAttr} value="${selectedProduct.codigo_reserva || ''}" class="w-full px-3 py-2 pr-8 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs uppercase transition duration-155 font-mono" />
+                    ${selectedProduct.codigo_reserva ? `
+                      <button type="button" class="btn-copy-loc absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded transition" data-copy-loc="${selectedProduct.codigo_reserva}" title="Copiar Localizador">
+                        <span class="copy-icon text-xs">📋</span>
+                      </button>
+                    ` : ''}
+                  </div>
                 </div>
 
                 <!-- Container para Campos Dinâmicos (dados_adicionais) -->

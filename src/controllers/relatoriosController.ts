@@ -77,3 +77,113 @@ export function gerarRankingConsultores(viagens: any[]): Array<{ consultorId: st
 
   return Array.from(consultoresMap.values()).sort((a, b) => b.totalVendas - a.totalVendas);
 }
+
+export interface ItemExtratoRecebimento {
+  id: string;
+  viagemId: string;
+  viagemCodigoRef: string;
+  clienteNome: string;
+  destino: string;
+  codigoLocalizador: string;
+  formaRecebimentoNome: string;
+  formaRecebimentoIcone: string;
+  valor: number;
+  data: string;
+  dataFormatada: string;
+  consultorId: string;
+  consultorNome: string;
+  produtosVinculados: Array<{
+    id: string;
+    tipo: string;
+    fornecedor: string;
+    descricao: string;
+    valorVenda: number;
+  }>;
+}
+
+export function formatarDataSimplesBR(dataStr?: string): string {
+  if (!dataStr) return '';
+  try {
+    const raw = dataStr.includes('T') ? dataStr.split('T')[0] : dataStr;
+    const partes = raw.split('-');
+    if (partes.length === 3) {
+      return `${partes[2]}/${partes[1]}/${partes[0]}`;
+    }
+    const d = new Date(dataStr);
+    if (!isNaN(d.getTime())) {
+      return d.toLocaleDateString('pt-BR');
+    }
+  } catch (e) {}
+  return dataStr;
+}
+
+export function processarExtratoRecebimentos(
+  viagens: any[],
+  locPagamentos: any[],
+  consultores: any[] = []
+): ItemExtratoRecebimento[] {
+  const viagensMap = new Map<string, any>();
+  (viagens || []).forEach(v => {
+    if (v && v.id) viagensMap.set(v.id, v);
+  });
+
+  const consultoresMap = new Map<string, string>();
+  (consultores || []).forEach(c => {
+    if (c && c.id) consultoresMap.set(c.id, c.nome || c.email || 'Consultor');
+  });
+
+  const itens: ItemExtratoRecebimento[] = [];
+
+  (locPagamentos || []).forEach(p => {
+    const vId = p.viagem_id || p.viagemId;
+    const v = viagensMap.get(vId);
+    if (!v || v.status === 'cancelada') return;
+
+    const locUpper = (p.codigo_localizador || '').trim().toUpperCase();
+    const formaNome = p.formas_recebimento?.nome || p.forma_nome || 'Outros';
+    const formaIcone = p.formas_recebimento?.icone || p.forma_icone || '💰';
+    const valor = Number(p.valor) || 0;
+    const dataCriacao = p.created_at || p.data || v.created_at || '';
+
+    // Localiza os produtos da viagem vinculados a este localizador (LOC)
+    const produtosViagem = v.produtos || [];
+    const produtosVinculados = produtosViagem
+      .filter((prod: any) => {
+        const prodLoc = (prod.codigo_reserva || prod.codigoReserva || prod.codigo_localizador || '').trim().toUpperCase();
+        if (!locUpper || locUpper === 'SEM LOCALIZADOR') {
+          return !prodLoc || prodLoc === 'SEM LOCALIZADOR';
+        }
+        return prodLoc === locUpper;
+      })
+      .map((prod: any) => ({
+        id: prod.id || '',
+        tipo: prod.tipo || 'Serviço',
+        fornecedor: prod.fornecedor || 'Fornecedor',
+        descricao: prod.descricao || '',
+        valorVenda: Number(prod.valor_venda || prod.valorVenda || 0)
+      }));
+
+    const cId = v.consultor_id || v.consultorId || '';
+    const cNome = consultoresMap.get(cId) || v.consultor_nome || v.consultorNome || 'Agência';
+
+    itens.push({
+      id: p.id || `pag-${Math.random().toString(36).substr(2, 9)}`,
+      viagemId: v.id,
+      viagemCodigoRef: v.codigo_ref || v.codigoRef || '',
+      clienteNome: v.cliente?.nome || v.nome_cliente || v.passageiro || 'Cliente não informado',
+      destino: v.destino || 'Destino não informado',
+      codigoLocalizador: locUpper || 'SEM LOCALIZADOR',
+      formaRecebimentoNome: formaNome,
+      formaRecebimentoIcone: formaIcone,
+      valor,
+      data: dataCriacao,
+      dataFormatada: formatarDataSimplesBR(dataCriacao),
+      consultorId: cId,
+      consultorNome: cNome,
+      produtosVinculados
+    });
+  });
+
+  return itens.sort((a, b) => b.data.localeCompare(a.data));
+}
+

@@ -66,6 +66,92 @@ export function formatIsoDateToBr(isoStr: string): string {
 }
 
 /**
+ * Converte entradas flexíveis de data de agendamento (ex: '27', '27/09', '27/09/2026', '2026-09-27')
+ * para representação canônica ISO (YYYY-MM-DD) e Brasileira (DD/MM/AAAA).
+ * 
+ * - Se fornecido apenas o dia (ex: '27'), completa com mês e ano correntes.
+ * - Se fornecido dia e mês (ex: '27/09'), completa com o ano corrente.
+ * - Valida dias válidos (ex: dia 31 em mês de 30 dias ou ano bissexto).
+ */
+export function parseSmartDate(
+  rawInput: string,
+  referenceDate: Date = new Date()
+): { dataIso: string; dataBr: string } | null {
+  if (!rawInput) return null;
+  const trimmed = rawInput.trim();
+  if (!trimmed) return null;
+
+  // 1. Formato ISO YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    const [y, m, d] = trimmed.split('-').map(n => parseInt(n, 10));
+    const dt = new Date(y, m - 1, d);
+    if (dt.getFullYear() === y && dt.getMonth() === m - 1 && dt.getDate() === d) {
+      const dayStr = String(d).padStart(2, '0');
+      const monthStr = String(m).padStart(2, '0');
+      return { dataIso: trimmed, dataBr: `${dayStr}/${monthStr}/${y}` };
+    }
+    return null;
+  }
+
+  // 2. Formato com barras ou hífens (DD/MM/YYYY ou DD/MM ou D)
+  const cleanSeparators = trimmed.replace(/-/g, '/');
+  const parts = cleanSeparators.split('/').filter(p => p.length > 0);
+
+  const currentYear = referenceDate.getFullYear();
+  const currentMonth = referenceDate.getMonth() + 1;
+
+  let day: number;
+  let month: number;
+  let year: number;
+
+  if (parts.length === 1) {
+    // Apenas número do dia (ex: '27' ou '7')
+    if (!/^\d{1,2}$/.test(parts[0])) return null;
+    day = parseInt(parts[0], 10);
+    month = currentMonth;
+    year = currentYear;
+  } else if (parts.length === 2) {
+    // Dia e mês (ex: '27/09' ou '7/9')
+    if (!/^\d{1,2}$/.test(parts[0]) || !/^\d{1,2}$/.test(parts[1])) return null;
+    day = parseInt(parts[0], 10);
+    month = parseInt(parts[1], 10);
+    year = currentYear;
+  } else if (parts.length === 3) {
+    // Dia, mês e ano (ex: '27/09/2026' ou '27/9/26')
+    if (!/^\d{1,2}$/.test(parts[0]) || !/^\d{1,2}$/.test(parts[1]) || !/^\d{2,4}$/.test(parts[2])) return null;
+    day = parseInt(parts[0], 10);
+    month = parseInt(parts[1], 10);
+    let yStr = parts[2];
+    if (yStr.length === 2) {
+      yStr = `20${yStr}`;
+    }
+    year = parseInt(yStr, 10);
+  } else {
+    return null;
+  }
+
+  // Validação estrita de calendário
+  if (month < 1 || month > 12) return null;
+  if (day < 1 || day > 31) return null;
+
+  const checkDate = new Date(year, month - 1, day);
+  if (
+    checkDate.getFullYear() !== year ||
+    checkDate.getMonth() !== month - 1 ||
+    checkDate.getDate() !== day
+  ) {
+    return null;
+  }
+
+  const dayPad = String(day).padStart(2, '0');
+  const monthPad = String(month).padStart(2, '0');
+  const dataIso = `${year}-${monthPad}-${dayPad}`;
+  const dataBr = `${dayPad}/${monthPad}/${year}`;
+
+  return { dataIso, dataBr };
+}
+
+/**
  * Converte representações monetárias brasileiras (ex: R$ 1.234,56 ou 1.234,56) para float padrão
  */
 export function parseDoubleBr(valStr: string | number): number {

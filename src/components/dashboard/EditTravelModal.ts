@@ -397,7 +397,19 @@ export class EditTravelModal {
                 </button>
               ` : ''}
             </h3>
-            <p class="text-xs text-slate-400 dark:text-slate-400 font-semibold">Destino: <span class="font-bold text-slate-600 dark:text-slate-300">${v.destino}</span> &bull; Loc: <span class="font-bold text-slate-600 dark:text-slate-300">${v.codigo_localizador || 'Sem LOC'}</span></p>
+            <p class="text-xs text-slate-400 dark:text-slate-400 font-semibold flex items-center flex-wrap gap-1">
+              <span>Destino: <span class="font-bold text-slate-600 dark:text-slate-300">${v.destino}</span></span>
+              <span>&bull;</span>
+              <span class="flex items-center gap-1">
+                <span>Loc:</span>
+                ${v.codigo_localizador ? `
+                  <button type="button" class="btn-copy-loc inline-flex items-center gap-1 font-bold text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-400 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700 transition font-mono text-[11px] cursor-pointer active:scale-95" data-copy-loc="${v.codigo_localizador}" title="Clique para copiar o Localizador">
+                    <span>${v.codigo_localizador}</span>
+                    <span class="copy-icon text-[10px]">📋</span>
+                  </button>
+                ` : '<span class="font-bold text-slate-600 dark:text-slate-300">Sem LOC</span>'}
+              </span>
+            </p>
           </div>
           <div class="flex items-center justify-between sm:justify-end gap-2 flex-wrap">
             <!-- Botão de Processo -->
@@ -1825,6 +1837,9 @@ export class EditTravelModal {
     if (selectedProduct) {
       this.setupProductEditor(selectedProduct, v);
     }
+
+    // Inicializa os botões de copiar LOC
+    this.setupCopyLocListeners();
   }
 
   private setupProductEditor(selectedProduct: any, v: any): void {
@@ -2546,10 +2561,16 @@ export class EditTravelModal {
           <div class="product-card-clickable flex items-center justify-between gap-3 p-3 ${selectedBorderClass} border rounded-xl transition cursor-pointer" data-product-id="${p.id}">
             <div class="flex items-start gap-2.5 overflow-hidden w-full">
               <span class="text-lg p-1 bg-white dark:bg-slate-700 border border-slate-100 dark:border-slate-700 rounded-lg shadow-sm flex items-center justify-center">${tipoIcon}</span>
-              <div class="overflow-hidden flex-1 self-center text-left">
+              <div class="overflow-hidden flex-1 self-center text-left space-y-0.5">
                 <span class="block text-xs font-black text-slate-700 dark:text-slate-200 truncate leading-tight">
                   ${p.tipo}
                 </span>
+                ${p.codigo_reserva ? `
+                  <button type="button" class="btn-copy-loc inline-flex items-center gap-1 text-[9px] font-mono font-black text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 px-1.5 py-0.5 rounded border border-indigo-200/50 dark:border-indigo-800/40 transition cursor-pointer" data-copy-loc="${p.codigo_reserva}" title="Copiar LOC ${p.codigo_reserva}">
+                    <span>LOC: ${p.codigo_reserva}</span>
+                    <span class="copy-icon text-[9px]">📋</span>
+                  </button>
+                ` : ''}
               </div>
             </div>
             
@@ -2605,7 +2626,10 @@ export class EditTravelModal {
           <div class="loc-header flex items-center justify-between p-2.5 bg-slate-100/50 dark:bg-slate-800/40 cursor-pointer hover:bg-slate-200/50 dark:hover:bg-slate-800/80 transition select-none" data-loc-key="${locKey}">
             <div class="flex items-center flex-wrap gap-2.5">
               <span class="loc-chevron inline-block transition-transform duration-200 text-xs text-slate-400 dark:text-slate-400" style="transform: rotate(90deg);">▶</span>
-              <span class="px-2 py-0.5 text-[10px] font-black tracking-wider rounded bg-indigo-100 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 uppercase">${locKey}</span>
+              <button type="button" class="btn-copy-loc inline-flex items-center gap-1.5 px-2.5 py-0.5 text-[10px] font-black tracking-wider rounded-lg bg-indigo-100 hover:bg-indigo-200 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 uppercase border border-indigo-200/80 dark:border-indigo-800/60 transition cursor-pointer active:scale-95 shadow-xs" data-copy-loc="${locKey}" title="Clique para copiar o LOC ${locKey}">
+                <span class="loc-text">${locKey}</span>
+                <span class="copy-icon text-[11px]">📋</span>
+              </button>
               
               ${isAdmin ? `
                 <button class="btn-conferir-loc p-1 rounded-lg border text-[9px] font-bold flex items-center justify-center gap-1 shadow-sm transition font-sans ${isConferido ? 'text-emerald-600 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/40' : 'text-slate-400 bg-slate-50 dark:text-slate-400 dark:bg-slate-800 border-slate-200 dark:border-slate-700'}" data-loc="${locKey}">
@@ -2927,6 +2951,57 @@ export class EditTravelModal {
         if (prod) {
           this.selectedProductId = prod.id;
           this.open(this.tripId, 'produtos');
+        }
+      });
+    });
+
+    // Configura botões de cópia de LOC no container de produtos
+    this.setupCopyLocListeners(container);
+  }
+
+  /**
+   * Registra ouvintes para botões copiáveis de Localizador (LOC) com feedback visual e toast
+   */
+  private setupCopyLocListeners(root?: HTMLElement | Element | null): void {
+    const modalContainer = document.getElementById('modal-editar-viagem');
+    const context = root || modalContainer || document;
+    context.querySelectorAll('.btn-copy-loc, [data-copy-loc]').forEach((btn: Element) => {
+      if (btn.hasAttribute('data-copy-loc-initialized')) return;
+      btn.setAttribute('data-copy-loc-initialized', 'true');
+
+      btn.addEventListener('click', async (e: Event) => {
+        e.stopPropagation();
+        e.preventDefault();
+        const loc = (btn.getAttribute('data-copy-loc') || (btn as HTMLElement).innerText || '').trim();
+        if (!loc || loc === 'SEM LOCALIZADOR' || loc === 'Sem LOC') return;
+
+        try {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(loc);
+          } else {
+            const textArea = document.createElement('textarea');
+            textArea.value = loc;
+            textArea.style.position = 'fixed';
+            textArea.style.opacity = '0';
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+          }
+
+          const copyIcon = btn.querySelector('.copy-icon');
+          if (copyIcon) {
+            const originalIcon = copyIcon.innerHTML;
+            copyIcon.innerHTML = '✅';
+            setTimeout(() => {
+              copyIcon.innerHTML = originalIcon;
+            }, 1200);
+          }
+
+          this.options.showToast(`Localizador "${loc}" copiado!`, 'success');
+        } catch (err) {
+          console.error('Erro ao copiar LOC:', err);
+          this.options.showToast('Erro ao copiar localizador.', 'error');
         }
       });
     });
@@ -3561,7 +3636,7 @@ export class EditTravelModal {
                   💬
                 </button>
               ` : ''}
-              ${podeExcluir && !anexo.id.startsWith('legado-') ? `
+              ${podeExcluir ? `
                 <button type="button" class="btn-excluir-anexo p-1 text-slate-400 hover:text-rose-500 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 transition text-xs" data-id="${anexo.id}" data-path="${anexo.storage_path}" title="Excluir anexo">
                   🗑️
                 </button>

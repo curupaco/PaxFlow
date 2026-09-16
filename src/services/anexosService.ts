@@ -492,16 +492,60 @@ export class AnexosService {
 
   /**
    * Exclui um documento anexo do banco e do Storage.
+   * Trata de forma resiliente anexos oficiais da tabela documentos_anexos,
+   * anexos legados vinculados à tabela clientes (legado-cliente-{id})
+   * e remoção física no Supabase Storage.
    */
   public static async excluirAnexo(anexoId: string, storagePath?: string): Promise<boolean> {
     try {
-      // 1. Tenta deletar na tabela oficial do banco de dados
-      await supabase
-        .from(this.TABELA)
-        .delete()
-        .eq('id', anexoId);
+      // 1. Trata documentos legados originados da coluna google_drive_folder_url de clientes
+      if (anexoId && anexoId.startsWith('legado-cliente-')) {
+        const clienteId = anexoId.replace('legado-cliente-', '');
+        if (clienteId) {
+          const { error: errCli } = await supabase
+            .from('clientes')
+            .update({
+              google_drive_folder_url: null,
+              passaporte_numero: null,
+              passaporte_validade: null
+            })
+            .eq('id', clienteId);
 
-      // 2. Remove do Supabase Storage se tiver caminho
+          if (errCli) {
+            console.warn('[AnexosService] Erro ao limpar documento legado da tabela clientes:', errCli);
+          }
+        }
+      } else {
+        // 2. Tenta deletar na tabela oficial de documentos_anexos
+        const { error: errDel } = await supabase
+          .from(this.TABELA)
+          .delete()
+          .eq('id', anexoId);
+
+        if (errDel) {
+          console.warn('[AnexosService] Aviso ao deletar de documentos_anexos:', errDel);
+        }
+
+        // Se o arquivo deletado estiver espelhado no google_drive_folder_url de algum cliente, desvincula
+        if (storagePath) {
+          try {
+            const cliQuery = supabase.from('clientes');
+            if (cliQuery && typeof cliQuery.update === 'function') {
+              await cliQuery
+                .update({
+                  google_drive_folder_url: null,
+                  passaporte_numero: null,
+                  passaporte_validade: null
+                })
+                .eq('google_drive_folder_url', storagePath);
+            }
+          } catch (cErr) {
+            console.warn('[AnexosService] Aviso ao desvincular documento do cliente:', cErr);
+          }
+        }
+      }
+
+      // 3. Remove do Supabase Storage se tiver caminho
       if (storagePath && storagePath.startsWith('supabase-storage://')) {
         const pathNoBucket = storagePath.replace('supabase-storage://', '');
         try {

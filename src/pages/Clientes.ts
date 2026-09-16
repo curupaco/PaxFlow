@@ -1181,6 +1181,15 @@ export class ClientesPage {
             const excluiu = await AnexosService.excluirAnexo(docId, path || undefined);
             if (excluiu) {
               this.showToast('Documento removido com sucesso!', 'success');
+              if (this.clienteSelecionado && this.clienteSelecionado.id === clienteId) {
+                if (docId.startsWith('legado-cliente-') || path === this.clienteSelecionado.googleDriveFolderUrl) {
+                  this.clienteSelecionado.googleDriveFolderUrl = undefined;
+                  this.clienteSelecionado.passaporteNumero = undefined;
+                  this.clienteSelecionado.passaporteValidade = undefined;
+                  this.clienteSelecionado.passaportes = [];
+                  this.renderFichaDetalhada();
+                }
+              }
               await this.carregarEDesenharDocumentosCliente(clienteId);
             } else {
               this.showToast('Erro ao remover documento.', 'error');

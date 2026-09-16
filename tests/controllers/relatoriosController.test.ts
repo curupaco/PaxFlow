@@ -3,7 +3,8 @@ import {
   calcularTaxaConversao,
   calcularTicketMedioPax,
   agruparVendasPorCategoriaProduto,
-  gerarRankingConsultores
+  gerarRankingConsultores,
+  processarExtratoRecebimentos
 } from '../../src/controllers/relatoriosController';
 
 describe('RelatoriosController - Métricas Comerciais e Desempenho da Agência', () => {
@@ -116,5 +117,83 @@ describe('RelatoriosController - Métricas Comerciais e Desempenho da Agência',
     expect(ranking[0].consultorId).toBe('agencia');
     expect(ranking[0].consultorNome).toBe('Consultor Não Identificado');
     expect(ranking[0].totalVendas).toBe(15000);
+  });
+
+  it('deve processar extrato de recebimentos correlacionando produtos vinculados ao localizador (LOC)', () => {
+    // Setup
+    const viagens = [
+      {
+        id: 'v-100',
+        codigo_ref: 'VIA-0100',
+        destino: 'Paris',
+        cliente: { nome: 'Carlos Drummond' },
+        consultor_id: 'c-1',
+        status: 'fechado',
+        produtos: [
+          { id: 'p-1', tipo: 'AÉREO', fornecedor: 'Air France', descricao: 'Voo GRU-CDG', codigo_reserva: 'AF9988', valor_venda: 5000 },
+          { id: 'p-2', tipo: 'HOTEL', fornecedor: 'Accor', descricao: 'Hotel Paris', codigo_reserva: 'AF9988', valor_venda: 3500 },
+          { id: 'p-3', tipo: 'TRANSFER', fornecedor: 'Receptivo VIP', descricao: 'Transfer CDG', codigo_reserva: 'TRF123', valor_venda: 600 }
+        ]
+      },
+      {
+        id: 'v-cancel',
+        destino: 'Miami',
+        status: 'cancelada',
+        produtos: []
+      }
+    ];
+
+    const locPagamentos = [
+      {
+        id: 'pag-1',
+        viagem_id: 'v-100',
+        codigo_localizador: 'AF9988',
+        valor: 8500,
+        created_at: '2026-09-12T10:00:00.000Z',
+        formas_recebimento: { nome: 'Pix', icone: '⚡' }
+      },
+      {
+        id: 'pag-2',
+        viagem_id: 'v-100',
+        codigo_localizador: 'TRF123',
+        valor: 600,
+        created_at: '2026-09-12T11:00:00.000Z',
+        formas_recebimento: { nome: 'Cartão de Crédito', icone: '💳' }
+      },
+      {
+        id: 'pag-cancel',
+        viagem_id: 'v-cancel',
+        codigo_localizador: 'LOC-CANC',
+        valor: 2000
+      }
+    ];
+
+    const consultores = [{ id: 'c-1', nome: 'Amanda Silva' }];
+
+    // Action
+    const extrato = processarExtratoRecebimentos(viagens, locPagamentos, consultores);
+
+    // Assert
+    // Deve ignorar viagem cancelada
+    expect(extrato).toHaveLength(2);
+
+    // Item 2 (pag-2): TRF123
+    const itemTrf = extrato.find(i => i.codigoLocalizador === 'TRF123');
+    expect(itemTrf).toBeDefined();
+    expect(itemTrf?.clienteNome).toBe('Carlos Drummond');
+    expect(itemTrf?.formaRecebimentoNome).toBe('Cartão de Crédito');
+    expect(itemTrf?.valor).toBe(600);
+    expect(itemTrf?.produtosVinculados).toHaveLength(1);
+    expect(itemTrf?.produtosVinculados[0].fornecedor).toBe('Receptivo VIP');
+
+    // Item 1 (pag-1): AF9988 com 2 produtos vinculados
+    const itemAf = extrato.find(i => i.codigoLocalizador === 'AF9988');
+    expect(itemAf).toBeDefined();
+    expect(itemAf?.formaRecebimentoNome).toBe('Pix');
+    expect(itemAf?.valor).toBe(8500);
+    expect(itemAf?.produtosVinculados).toHaveLength(2);
+    expect(itemAf?.produtosVinculados[0].tipo).toBe('AÉREO');
+    expect(itemAf?.produtosVinculados[1].tipo).toBe('HOTEL');
+    expect(itemAf?.dataFormatada).toBe('12/09/2026');
   });
 });
