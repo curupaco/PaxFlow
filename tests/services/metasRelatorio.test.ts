@@ -190,18 +190,45 @@ describe('MetasService & Relatório de Metas e Campanhas - Testes Subcutâneos',
     expect(MetasService.getStatusTemporal(metaFutura)).toBe('futura');
   });
 
-  it('deve tratar erro 42703 (coluna inexistente / schema drift) de forma resiliente', async () => {
+  it('deve carregar campanhas da tabela campaigns e convertê-las para MetaPeriodo', async () => {
     // Setup
-    const erroSchemaDrift = { code: '42703', message: 'column "coluna_inexistente" does not exist' };
-    const selectMock = vi.fn().mockReturnValue({
-      order: vi.fn().mockResolvedValue({ data: null, error: erroSchemaDrift })
+    const campanhaMock = {
+      id: 'camp-boa-viagem-id',
+      titulo: 'Boa viagem!',
+      descricao: 'Campanha de 40 orçamentos',
+      tipo_meta: 'orcamento_criado',
+      meta_quantidade: 40,
+      data_inicio: '2026-09-01',
+      data_fim: '2026-09-30',
+      badge_key: 'NEGOCIADOR_IMPLACAVEL',
+      ativa: true,
+      created_at: '2026-09-01T00:00:00Z'
+    };
+
+    (supabase.from as any).mockImplementation((table: string) => {
+      if (table === 'campaigns') {
+        return {
+          select: vi.fn().mockReturnValue({
+            order: vi.fn().mockResolvedValue({ data: [campanhaMock], error: null })
+          })
+        };
+      }
+      return {
+        select: vi.fn().mockReturnValue({
+          order: vi.fn().mockResolvedValue({ data: [], error: null })
+        })
+      };
     });
-    (supabase.from as any).mockReturnValue({ select: selectMock });
 
     // Action
-    const result = await MetasService.obterMetaPeriodos();
+    const metas = await MetasService.obterMetaPeriodos();
 
     // Assert
-    expect(Array.isArray(result)).toBe(true);
+    const campCarregada = metas.find(m => m.id === 'camp-boa-viagem-id');
+    expect(campCarregada).toBeDefined();
+    expect(campCarregada?.nome).toBe('Boa viagem!');
+    expect(campCarregada?.tipo_calculo).toBe('orcamentos');
+    expect(campCarregada?.is_campanha).toBe(true);
+    expect(campCarregada?.valor_meta).toBe(40);
   });
 });

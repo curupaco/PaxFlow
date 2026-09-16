@@ -15,63 +15,130 @@ export class MetasService {
     }
 
     try {
+      // 1. Buscar Períodos de Metas Financeiras
       const { data: periodos, error: errPeriodos } = await supabase
         .from('meta_periodos')
         .select('*')
         .order('data_inicio', { ascending: false });
 
-      if (errPeriodos) throw errPeriodos;
+      let listaPeriodos: MetaPeriodo[] = [];
 
-      if (!periodos || periodos.length === 0) {
-        return [];
+      if (!errPeriodos && periodos && periodos.length > 0) {
+        const { data: faixas } = await supabase
+          .from('meta_faixas')
+          .select('*')
+          .order('valor_minimo', { ascending: true });
+
+        listaPeriodos = periodos.map((p: any) => {
+          const faixasPeriodo = (faixas || [])
+            .filter((f: any) => f.periodo_id === p.id)
+            .map((f: any) => ({
+              id: f.id,
+              periodo_id: f.periodo_id,
+              periodoId: f.periodo_id,
+              nome: f.nome,
+              valor_minimo: Number(f.valor_minimo) || 0,
+              valorMinimo: Number(f.valor_minimo) || 0,
+              bonus_xp: Number(f.bonus_xp) || 0,
+              bonusXp: Number(f.bonus_xp) || 0,
+              recompensa: f.recompensa,
+              cor: f.cor || '#6366f1',
+              corHex: f.cor || '#6366f1',
+              created_at: f.created_at
+            }));
+
+          return {
+            id: p.id,
+            nome: p.nome,
+            data_inicio: p.data_inicio,
+            dataInicio: p.data_inicio,
+            data_fim: p.data_fim,
+            dataFim: p.data_fim,
+            tipo_calculo: p.tipo_calculo,
+            tipoCalculo: p.tipo_calculo,
+            is_campanha: p.is_campanha,
+            isCampanha: p.is_campanha,
+            is_meta_loja: p.is_meta_loja,
+            isMetaLoja: p.is_meta_loja,
+            valor_meta: Number(p.valor_meta) || 0,
+            valorMeta: Number(p.valor_meta) || 0,
+            created_at: p.created_at,
+            updated_at: p.updated_at,
+            faixas: faixasPeriodo
+          };
+        });
       }
 
-      const { data: faixas, error: errFaixas } = await supabase
-        .from('meta_faixas')
-        .select('*')
-        .order('valor_minimo', { ascending: true });
+      // 2. Buscar Campanhas Internas de Vendas e Incentivo da tabela 'campaigns'
+      try {
+        const { data: campanhas, error: errCamp } = await supabase
+          .from('campaigns')
+          .select('*')
+          .order('created_at', { ascending: false });
 
-      if (errFaixas) throw errFaixas;
+        if (!errCamp && campanhas && campanhas.length > 0) {
+          const campanhasFormatadas: MetaPeriodo[] = campanhas.map((c: any) => {
+            let tipoCalc = 'orcamentos';
+            if (c.tipo_meta === 'xp_acumulado') tipoCalc = 'xp';
+            else if (c.tipo_meta === 'cliente_criado') tipoCalc = 'clientes';
+            else if (c.tipo_meta === 'orcamento_criado') tipoCalc = 'orcamentos';
+            else if (c.tipo_meta === 'orcamento_andamento') tipoCalc = 'orcamentos_andamento';
+            else if (c.tipo_meta === 'venda_aceita' || c.tipo_meta === 'orcamento_fechado') tipoCalc = 'vendas';
+            else if (c.tipo_meta === 'lembrete_criado') tipoCalc = 'lembretes';
+            else if (c.tipo_meta === 'reembolso_pago') tipoCalc = 'reembolsos';
+            else tipoCalc = c.tipo_meta || 'orcamentos';
 
-      // Agrupar faixas por periodo_id
-      return periodos.map((p: any) => {
-        const faixasPeriodo = (faixas || [])
-          .filter((f: any) => f.periodo_id === p.id)
-          .map((f: any) => ({
-            id: f.id,
-            periodo_id: f.periodo_id,
-            periodoId: f.periodo_id,
-            nome: f.nome,
-            valor_minimo: Number(f.valor_minimo) || 0,
-            valorMinimo: Number(f.valor_minimo) || 0,
-            bonus_xp: Number(f.bonus_xp) || 0,
-            bonusXp: Number(f.bonus_xp) || 0,
-            recompensa: f.recompensa,
-            cor: f.cor || '#6366f1',
-            corHex: f.cor || '#6366f1',
-            created_at: f.created_at
-          }));
+            const metaQtd = Number(c.meta_quantidade) || 0;
+            const faixas: MetaFaixa[] = [
+              {
+                id: `faixa-${c.id}`,
+                periodo_id: c.id,
+                periodoId: c.id,
+                nome: c.badge_key ? `Medalha ${c.badge_key}` : 'Objetivo da Campanha',
+                valor_minimo: metaQtd,
+                valorMinimo: metaQtd,
+                bonus_xp: 500,
+                bonusXp: 500,
+                recompensa: c.badge_key || 'Meta Concluída',
+                cor: '#10b981',
+                corHex: '#10b981',
+                created_at: c.created_at
+              }
+            ];
 
-        return {
-          id: p.id,
-          nome: p.nome,
-          data_inicio: p.data_inicio,
-          dataInicio: p.data_inicio,
-          data_fim: p.data_fim,
-          dataFim: p.data_fim,
-          tipo_calculo: p.tipo_calculo,
-          tipoCalculo: p.tipo_calculo,
-          is_campanha: p.is_campanha,
-          isCampanha: p.is_campanha,
-          is_meta_loja: p.is_meta_loja,
-          isMetaLoja: p.is_meta_loja,
-          valor_meta: Number(p.valor_meta) || 0,
-          valorMeta: Number(p.valor_meta) || 0,
-          created_at: p.created_at,
-          updated_at: p.updated_at,
-          faixas: faixasPeriodo
-        };
-      });
+            return {
+              id: c.id,
+              nome: c.titulo,
+              data_inicio: c.data_inicio,
+              dataInicio: c.data_inicio,
+              data_fim: c.data_fim,
+              dataFim: c.data_fim,
+              tipo_calculo: tipoCalc,
+              tipoCalculo: tipoCalc,
+              is_campanha: true,
+              isCampanha: true,
+              is_meta_loja: false,
+              isMetaLoja: false,
+              valor_meta: metaQtd,
+              valorMeta: metaQtd,
+              created_at: c.created_at,
+              updated_at: c.updated_at,
+              faixas
+            };
+          });
+
+          // Unir campanhas e metas de período
+          listaPeriodos = [...listaPeriodos, ...campanhasFormatadas];
+        }
+      } catch (e) {
+        console.warn('Tabela campaigns não encontrada ou inacessível:', e);
+      }
+
+      if (listaPeriodos.length > 0) {
+        return listaPeriodos;
+      }
+
+      return this.obterMetasLocal();
 
     } catch (err) {
       console.warn('Erro ao carregar metas do banco, usando fallback local:', err);
@@ -516,7 +583,9 @@ export class MetasService {
     consultorId: string,
     orcamentos: any[],
     viagens: any[],
-    locPagamentos: any[] = []
+    locPagamentos: any[] = [],
+    clientes: any[] = [],
+    reembolsos: any[] = []
   ): {
     totalAtingido: number;
     itensAuditados: any[];
@@ -528,7 +597,7 @@ export class MetasService {
     let totalAtingido = 0;
     let itensAuditados: any[] = [];
 
-    if (tipo === 'orcamentos' || tipo === 'qtd_orcamentos') {
+    if (tipo === 'orcamentos' || tipo === 'qtd_orcamentos' || tipo === 'orcamento_criado') {
       itensAuditados = orcamentos.filter(o => {
         const dono = o.consultor_id === consultorId || o.consultorId === consultorId;
         const data = o.created_at || o.createdAt || o.data_criacao;
@@ -536,12 +605,39 @@ export class MetasService {
       });
       totalAtingido = itensAuditados.length;
 
-    } else if (tipo === 'vendas' || tipo === 'qtd_vendas') {
+    } else if (tipo === 'orcamentos_andamento') {
+      itensAuditados = orcamentos.filter(o => {
+        const dono = o.consultor_id === consultorId || o.consultorId === consultorId;
+        const st = (o.status || '').toUpperCase();
+        const emAndamento = st === 'EM_ANDAMENTO' || st === 'AGUARDANDO' || st === 'SOLICITADO';
+        const data = o.updated_at || o.updatedAt || o.created_at || o.createdAt;
+        return dono && emAndamento && this.isDataNoPeriodo(data, meta.data_inicio, meta.data_fim);
+      });
+      totalAtingido = itensAuditados.length;
+
+    } else if (tipo === 'vendas' || tipo === 'qtd_vendas' || tipo === 'venda_aceita' || tipo === 'orcamento_fechado') {
       itensAuditados = viagens.filter(v => {
         const dono = v.consultor_id === consultorId || v.consultorId === consultorId;
         const naoCancelada = v.status !== 'cancelada';
         const data = v.data_financeiro || v.dataFinanceiro || v.created_at || v.createdAt;
         return dono && naoCancelada && this.isDataNoPeriodo(data, meta.data_inicio, meta.data_fim);
+      });
+      totalAtingido = itensAuditados.length;
+
+    } else if (tipo === 'clientes' || tipo === 'cliente_criado') {
+      itensAuditados = clientes.filter(c => {
+        const dono = c.consultor_responsavel_id === consultorId || c.consultor_id === consultorId || c.consultorResponsavelId === consultorId;
+        const data = c.created_at || c.createdAt;
+        return dono && this.isDataNoPeriodo(data, meta.data_inicio, meta.data_fim);
+      });
+      totalAtingido = itensAuditados.length;
+
+    } else if (tipo === 'reembolsos' || tipo === 'reembolso_pago') {
+      itensAuditados = reembolsos.filter(r => {
+        const dono = r.consultor_solicitante_id === consultorId || r.consultor_id === consultorId;
+        const pago = (r.status || '').toLowerCase() === 'pago';
+        const data = r.updated_at || r.data_pagamento || r.created_at;
+        return dono && pago && this.isDataNoPeriodo(data, meta.data_inicio, meta.data_fim);
       });
       totalAtingido = itensAuditados.length;
 
@@ -625,7 +721,9 @@ export class MetasService {
     consultores: any[],
     orcamentos: any[],
     viagens: any[],
-    locPagamentos: any[] = []
+    locPagamentos: any[] = [],
+    clientes: any[] = [],
+    reembolsos: any[] = []
   ): {
     totalAgencia: number;
     rankingConsultores: Array<{
@@ -639,7 +737,7 @@ export class MetasService {
   } {
     let totalAgencia = 0;
     const ranking = consultores.map(c => {
-      const prog = this.calcularProgressoConsultor(meta, c.id, orcamentos, viagens, locPagamentos);
+      const prog = this.calcularProgressoConsultor(meta, c.id, orcamentos, viagens, locPagamentos, clientes, reembolsos);
       totalAgencia += prog.totalAtingido;
       return {
         consultor: c,

@@ -74,6 +74,7 @@ export class RelatoriosPage {
   // Data stores
   private orcamentos: any[] = [];
   private viagens: any[] = [];
+  private clientes: any[] = [];
   private reembolsos: any[] = [];
   private alertas: any[] = [];
   private consultores: any[] = [];
@@ -175,6 +176,14 @@ export class RelatoriosPage {
       }
       const { data: viaData } = await viaQuery;
       this.viagens = viaData || [];
+
+      // 4.1 Carregar clientes
+      let cliQuery = supabase.from('clientes').select('*');
+      if (!isAdmin) {
+        cliQuery = cliQuery.eq('consultor_responsavel_id', this.user.id);
+      }
+      const { data: cliData } = await cliQuery;
+      this.clientes = cliData || [];
 
       // 5. Carregar reembolsos (estritamente das viagens ou solicitações do consultor se não for admin)
       let reemQuery = supabase.from('reembolsos').select('*, viagem:viagens(*), produto:produtos_viagem(*)');
@@ -2496,8 +2505,20 @@ export class RelatoriosPage {
 
     const statusTemporal = MetasService.getStatusTemporal(metaAtual);
     const tipoCalculo = (metaAtual.tipo_calculo || 'bruto').toLowerCase();
-    const isMetricaNumerica = tipoCalculo === 'orcamentos' || tipoCalculo === 'qtd_orcamentos' || tipoCalculo === 'vendas' || tipoCalculo === 'qtd_vendas';
-    const unidadeSufixo = (tipoCalculo === 'orcamentos' || tipoCalculo === 'qtd_orcamentos') ? 'orçamentos' : (isMetricaNumerica ? 'vendas' : 'R$');
+    const isMetricaNumerica = [
+      'orcamentos', 'qtd_orcamentos', 'orcamento_criado', 'orcamentos_andamento',
+      'vendas', 'qtd_vendas', 'venda_aceita', 'orcamento_fechado',
+      'clientes', 'cliente_criado',
+      'reembolsos', 'reembolso_pago',
+      'xp', 'xp_acumulado'
+    ].includes(tipoCalculo);
+
+    let unidadeSufixo = 'R$';
+    if (tipoCalculo.includes('orcamento')) unidadeSufixo = 'orçamentos';
+    else if (tipoCalculo.includes('venda')) unidadeSufixo = 'vendas';
+    else if (tipoCalculo.includes('cliente')) unidadeSufixo = 'clientes';
+    else if (tipoCalculo.includes('reembolso')) unidadeSufixo = 'reembolsos';
+    else if (tipoCalculo.includes('xp')) unidadeSufixo = 'XP';
 
     const formatarValorMetrica = (val: number): string => {
       if (isMetricaNumerica) {
@@ -2512,7 +2533,9 @@ export class RelatoriosPage {
       this.consultores,
       this.orcamentos,
       this.viagens,
-      this.locPagamentos
+      this.locPagamentos,
+      this.clientes,
+      this.reembolsos
     );
 
     // Agrupamento de metas para o select
@@ -2532,14 +2555,22 @@ export class RelatoriosPage {
 
     // Tipo de cálculo badge
     let tipoCalculoBadge = '';
-    if (tipoCalculo === 'orcamentos' || tipoCalculo === 'qtd_orcamentos') {
+    if (tipoCalculo === 'orcamentos' || tipoCalculo === 'qtd_orcamentos' || tipoCalculo === 'orcamento_criado') {
       tipoCalculoBadge = '<span class="inline-flex px-2 py-0.5 bg-amber-50 dark:bg-amber-950/45 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-900/40 text-[10px] font-black uppercase rounded-lg">Qtd. Orçamentos Cadastrados</span>';
-    } else if (tipoCalculo === 'vendas' || tipoCalculo === 'qtd_vendas') {
+    } else if (tipoCalculo === 'orcamentos_andamento') {
+      tipoCalculoBadge = '<span class="inline-flex px-2 py-0.5 bg-amber-50 dark:bg-amber-950/45 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-900/40 text-[10px] font-black uppercase rounded-lg">Orçamentos em Andamento</span>';
+    } else if (tipoCalculo === 'vendas' || tipoCalculo === 'qtd_vendas' || tipoCalculo === 'venda_aceita' || tipoCalculo === 'orcamento_fechado') {
       tipoCalculoBadge = '<span class="inline-flex px-2 py-0.5 bg-sky-50 dark:bg-sky-950/45 text-sky-700 dark:text-sky-400 border border-sky-200 dark:border-sky-900/40 text-[10px] font-black uppercase rounded-lg">Qtd. Vendas Fechadas</span>';
+    } else if (tipoCalculo === 'clientes' || tipoCalculo === 'cliente_criado') {
+      tipoCalculoBadge = '<span class="inline-flex px-2 py-0.5 bg-indigo-50 dark:bg-indigo-950/45 text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-900/40 text-[10px] font-black uppercase rounded-lg">Qtd. Clientes Cadastrados</span>';
+    } else if (tipoCalculo === 'reembolsos' || tipoCalculo === 'reembolso_pago') {
+      tipoCalculoBadge = '<span class="inline-flex px-2 py-0.5 bg-purple-50 dark:bg-purple-950/45 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-900/40 text-[10px] font-black uppercase rounded-lg">Qtd. Reembolsos Pagos</span>';
+    } else if (tipoCalculo === 'xp' || tipoCalculo === 'xp_acumulado') {
+      tipoCalculoBadge = '<span class="inline-flex px-2 py-0.5 bg-yellow-50 dark:bg-yellow-950/45 text-yellow-700 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-900/40 text-[10px] font-black uppercase rounded-lg">XP Acumulado</span>';
     } else if (tipoCalculo === 'bruto') {
       tipoCalculoBadge = '<span class="inline-flex px-2 py-0.5 bg-blue-50 dark:bg-blue-950/45 text-blue-700 dark:text-blue-400 border border-blue-100 dark:border-blue-900/40 text-[10px] font-black uppercase rounded-lg">Faturamento Bruto</span>';
     } else {
-      tipoCalculoBadge = '<span class="inline-flex px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/45 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/40 text-[10px] font-black uppercase rounded-lg">Rentabilidade</span>';
+      tipoCalculoBadge = '<span class="inline-flex px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/45 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/40 text-[10px] font-black uppercase rounded-lg">Rentabilidade Líquida</span>';
     }
 
     // Alvo global / maior faixa
@@ -2556,7 +2587,7 @@ export class RelatoriosPage {
           <div class="space-y-1">
             <div class="flex items-center gap-2 flex-wrap">
               <h2 class="text-lg font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                <span>🏆</span> ${metaAtual.nome}
+                <span>${metaAtual.is_campanha ? '🎯' : '🏆'}</span> ${metaAtual.nome}
               </h2>
               ${statusBadge}
               ${metaAtual.is_campanha ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">Campanha</span>' : ''}
@@ -2568,22 +2599,22 @@ export class RelatoriosPage {
           </div>
 
           <!-- Seletor de Meta / Campanha -->
-          <div class="w-full lg:w-72">
+          <div class="w-full lg:w-80">
             <label for="select-relatorio-meta" class="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Selecionar Campanha / Meta:</label>
             <select id="select-relatorio-meta" class="w-full px-3.5 py-2 text-xs font-bold border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100">
               ${metasAtivas.length > 0 ? `
                 <optgroup label="🟢 Ativas / Em Andamento" class="bg-white dark:bg-slate-900 font-bold">
-                  ${metasAtivas.map(m => `<option value="${m.id}" ${m.id === metaAtual.id ? 'selected' : ''}>${m.nome} ${m.is_campanha ? '(Campanha)' : ''}</option>`).join('')}
+                  ${metasAtivas.map(m => `<option value="${m.id}" ${m.id === metaAtual.id ? 'selected' : ''}>${m.is_campanha ? '🎯 [Campanha]' : '🏆 [Meta]'} ${m.nome}</option>`).join('')}
                 </optgroup>
               ` : ''}
               ${metasPassadas.length > 0 ? `
                 <optgroup label="⏳ Encerradas / Histórico" class="bg-white dark:bg-slate-900 font-bold">
-                  ${metasPassadas.map(m => `<option value="${m.id}" ${m.id === metaAtual.id ? 'selected' : ''}>${m.nome} ${m.is_campanha ? '(Campanha)' : ''}</option>`).join('')}
+                  ${metasPassadas.map(m => `<option value="${m.id}" ${m.id === metaAtual.id ? 'selected' : ''}>${m.is_campanha ? '🎯 [Campanha]' : '🏆 [Meta]'} ${m.nome}</option>`).join('')}
                 </optgroup>
               ` : ''}
               ${metasFuturas.length > 0 ? `
                 <optgroup label="📅 Futuras / Programadas" class="bg-white dark:bg-slate-900 font-bold">
-                  ${metasFuturas.map(m => `<option value="${m.id}" ${m.id === metaAtual.id ? 'selected' : ''}>${m.nome}</option>`).join('')}
+                  ${metasFuturas.map(m => `<option value="${m.id}" ${m.id === metaAtual.id ? 'selected' : ''}>${m.is_campanha ? '🎯 [Campanha]' : '🏆 [Meta]'} ${m.nome}</option>`).join('')}
                 </optgroup>
               ` : ''}
             </select>
@@ -2720,8 +2751,10 @@ export class RelatoriosPage {
     if (!meta) return;
 
     const tipo = (meta.tipo_calculo || 'bruto').toLowerCase();
-    const isOrcamento = tipo === 'orcamentos' || tipo === 'qtd_orcamentos';
-    const prog = MetasService.calcularProgressoConsultor(meta, consultorId, this.orcamentos, this.viagens, this.locPagamentos);
+    const isOrcamento = tipo.includes('orcamento');
+    const isCliente = tipo.includes('cliente');
+    const isReembolso = tipo.includes('reembolso');
+    const prog = MetasService.calcularProgressoConsultor(meta, consultorId, this.orcamentos, this.viagens, this.locPagamentos, this.clientes, this.reembolsos);
 
     const overlay = document.createElement('div');
     overlay.id = 'modal-overlay-auditoria-meta';
@@ -2747,7 +2780,7 @@ export class RelatoriosPage {
               </h3>
             </div>
             <p class="text-xs text-slate-400 font-semibold mt-0.5">
-              Meta: <strong>${meta.nome}</strong> (${formatDataLocal(meta.data_inicio)} a ${formatDataLocal(meta.data_fim)}) • <strong>${prog.itensAuditados.length}</strong> registros computados
+              Meta/Campanha: <strong>${meta.nome}</strong> (${formatDataLocal(meta.data_inicio)} a ${formatDataLocal(meta.data_fim)}) • <strong>${prog.itensAuditados.length}</strong> registros computados
             </p>
           </div>
           <button id="btn-close-auditoria-meta" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-rose-50 hover:text-rose-600 dark:bg-slate-800 dark:hover:bg-rose-950/40 text-slate-400 flex items-center justify-center font-bold text-sm transition">
@@ -2759,7 +2792,7 @@ export class RelatoriosPage {
         <div class="flex-1 overflow-y-auto custom-scrollbar p-6">
           ${prog.itensAuditados.length === 0 ? `
             <div class="p-8 text-center text-slate-400 text-xs font-semibold">
-              Nenhum registro computado para este consultor no período da meta.
+              Nenhum registro computado para este consultor no período da meta/campanha.
             </div>
           ` : `
             <div class="overflow-x-auto border border-slate-100 dark:border-slate-800 rounded-2xl">
@@ -2767,28 +2800,41 @@ export class RelatoriosPage {
                 <thead>
                   <tr class="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-widest font-black">
                     <th class="p-3">Data</th>
-                    <th class="p-3">${isOrcamento ? 'Cliente / Lead' : 'Passageiro'}</th>
-                    <th class="p-3">Destino</th>
-                    <th class="p-3">${isOrcamento ? 'Status / Proposta' : 'Valor Total'}</th>
+                    <th class="p-3">${isCliente ? 'Nome do Cliente' : isOrcamento ? 'Cliente / Lead' : isReembolso ? 'Titular / Passageiro' : 'Passageiro'}</th>
+                    <th class="p-3">${isCliente ? 'Contato / Documento' : isReembolso ? 'Fornecedor' : 'Destino'}</th>
+                    <th class="p-3">${isCliente ? 'Tipo' : isOrcamento ? 'Status / Proposta' : isReembolso ? 'Valor Reembolso' : 'Valor Total'}</th>
                     <th class="p-3 text-right">Referência</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
                   ${prog.itensAuditados.map((item: any) => {
-                    const dataFormatada = formatDataLocal(item.data_financeiro || item.created_at || item.createdAt);
-                    const clienteNome = item.nome_cliente || item.nomeCliente || item.cliente?.nome || item.cliente_nome || 'Cliente';
-                    const destino = item.destino || 'Não especificado';
-                    const valorStr = isOrcamento 
-                      ? (item.valor_proposta ? 'R$ ' + Number(item.valor_proposta).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : (item.status || 'Orçamento'))
-                      : 'R$ ' + (Number(item.valor_total || item.valorTotal) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-                    const refCod = item.codigo_ref || item.codigo_localizador || (isOrcamento ? 'ORÇ' : 'VIA');
+                    const dataFormatada = formatDataLocal(item.data_financeiro || item.data_pagamento || item.created_at || item.createdAt);
+                    const clienteNome = item.nome || item.nome_cliente || item.nomeCliente || item.cliente?.nome || item.cliente_nome || 'Cliente';
+                    const col2 = isCliente 
+                      ? (item.cpf || item.cnpj || item.email || item.telefone || 'Sem contato')
+                      : isReembolso 
+                        ? (item.fornecedor || 'Fornecedor')
+                        : (item.destino || 'Não especificado');
+                    
+                    let col3 = '';
+                    if (isCliente) {
+                      col3 = item.tipo_pessoa === 'PJ' ? 'Pessoa Jurídica' : 'Pessoa Física';
+                    } else if (isOrcamento) {
+                      col3 = item.valor_proposta ? 'R$ ' + Number(item.valor_proposta).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : (item.status || 'Orçamento');
+                    } else if (isReembolso) {
+                      col3 = 'R$ ' + (Number(item.valor_reembolso || item.valor) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+                    } else {
+                      col3 = 'R$ ' + (Number(item.valor_total || item.valorTotal) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+                    }
+
+                    const refCod = item.codigo_ref || item.codigo_localizador || (isOrcamento ? 'ORÇ' : isCliente ? 'CLI' : isReembolso ? 'RBS' : 'VIA');
 
                     return `
                       <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition">
                         <td class="p-3 font-mono text-[11px] text-slate-500">${dataFormatada}</td>
                         <td class="p-3 font-bold text-slate-800 dark:text-slate-100">${clienteNome}</td>
-                        <td class="p-3 text-slate-600 dark:text-slate-300">${destino}</td>
-                        <td class="p-3 font-black text-slate-800 dark:text-slate-100">${valorStr}</td>
+                        <td class="p-3 text-slate-600 dark:text-slate-300">${col2}</td>
+                        <td class="p-3 font-black text-slate-800 dark:text-slate-100">${col3}</td>
                         <td class="p-3 text-right font-mono text-[10px] text-slate-400">${refCod}</td>
                       </tr>
                     `;
