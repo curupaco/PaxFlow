@@ -3596,7 +3596,7 @@ export class EditTravelModal {
 
       container.innerHTML = anexos.map(anexo => {
         const info = obterIconeEBadge(anexo.tipo_documento);
-        const tamanhoKb = anexo.tamanho_bytes ? (anexo.tamanho_bytes / 1024).toFixed(0) + ' KB' : '';
+        const tamanhoFormatado = AnexosService.formatarTamanho(anexo.tamanho_bytes);
         const podeExcluir = AnexosService.podeExcluirAnexo(anexo, this.options.user?.id, this.options.user?.role);
         const vinculadoAoPassageiro = anexo.cliente_id && anexo.cliente_id === clienteId;
 
@@ -3623,7 +3623,7 @@ export class EditTravelModal {
                 <div class="flex items-center gap-2 text-[10px] text-slate-400 truncate mt-0.5">
                   ${anexo.numero_documento ? `<span>Nº <strong>${anexo.numero_documento}</strong></span> &bull;` : ''}
                   ${anexo.data_validade ? `<span>Val: <strong>${new Date(anexo.data_validade).toLocaleDateString('pt-BR')}</strong></span> &bull;` : ''}
-                  <span>${anexo.nome_original} ${tamanhoKb ? `· ${tamanhoKb}` : ''}</span>
+                  <span>${anexo.nome_original} ${tamanhoFormatado ? `· ${tamanhoFormatado}` : ''}</span>
                 </div>
               </div>
             </div>

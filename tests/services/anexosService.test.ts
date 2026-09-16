@@ -586,6 +586,32 @@ describe('AnexosService - Testes Subcutâneos com Múltiplos Anexos e Resiliênc
     expect(resultado.id).toBe('doc-pdf-comprimido-1');
     expect(supabase.storage.from).toHaveBeenCalledWith('documentos-clientes');
   });
+
+  it('deve formatar tamanho de arquivo em formato legível exibindo KB e MB em conjunto', () => {
+    // Setup & Action & Assert
+    // Arquivo nulo ou zerado
+    expect(AnexosService.formatarTamanho(0)).toBe('');
+    expect(AnexosService.formatarTamanho(undefined)).toBe('');
+
+    // Arquivo de 100 MB (104.857.600 bytes)
+    const tamanho100Mb = 100 * 1024 * 1024;
+    expect(AnexosService.formatarTamanho(tamanho100Mb)).toContain('100.0 MB');
+    expect(AnexosService.formatarTamanho(tamanho100Mb)).toContain('102.400 KB');
+
+    // Arquivo de 2.5 MB (2.621.440 bytes)
+    const tamanho2_5Mb = 2.5 * 1024 * 1024;
+    expect(AnexosService.formatarTamanho(tamanho2_5Mb)).toContain('2.5 MB');
+    expect(AnexosService.formatarTamanho(tamanho2_5Mb)).toContain('2.560 KB');
+
+    // Arquivo de 450 KB (460.800 bytes)
+    const tamanho450Kb = 450 * 1024;
+    expect(AnexosService.formatarTamanho(tamanho450Kb)).toContain('450 KB');
+    expect(AnexosService.formatarTamanho(tamanho450Kb)).toContain('0.4 MB');
+
+    // Arquivo pequeno (5 KB = 5120 bytes)
+    const tamanho5Kb = 5 * 1024;
+    expect(AnexosService.formatarTamanho(tamanho5Kb)).toContain('5.0 KB');
+  });
 });
 
 

@@ -668,6 +668,10 @@ Módulo unificado de governança e custódia documental para agências de viagem
 - **Sincronização Inteligente entre Viagem e Ficha do Passageiro**:
   - Ao anexar documentos pessoais (`PASSAPORTE`, `RG`, `CNH`) dentro do modal de uma viagem ou na ficha do cliente, o serviço (`AnexosService`) sincroniza automaticamente as informações no cadastro do cliente (`clientes`), preenchendo número do documento e validade caso estejam pendentes.
 
+- **Formatação e Apresentação Human-Friendly de Tamanho dos Arquivos (MB & KB)**:
+  - O método unificado `AnexosService.formatarTamanho(bytes)` calcula e renderiza os tamanhos de forma legível e amigável para leitura humana imediata em todos os pontos do sistema (Upload em Lote, Galeria de Documentos do Cliente e Aba de Anexos da Viagem).
+  - Exibe valores de forma dual combinando Megabytes (MB) e Kilobytes (KB) (ex: `2.4 MB (2.441 KB)` ou `450 KB (0.4 MB)`), eliminando a complexidade de leitura de números brutos de KB ou bytes.
+
 - **Galeria Visual de Documentos e Ações Rápidas**:
   - Renderização em cards modernos com badges coloridos, data de envio, autor do upload e identificação do passageiro vinculado.
   - **Visualização Inline (Lightbox)**: Abertura imediata de PDFs e imagens com controles de ampliação e rotação sem sair da aplicação.

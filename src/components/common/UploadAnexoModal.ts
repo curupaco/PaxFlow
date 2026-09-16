@@ -124,8 +124,7 @@ export class UploadAnexoModal {
         <div class="p-5 space-y-4 overflow-y-auto flex-1 custom-scrollbar">
           ${this.itens.map((item, index) => {
             const isPessoal = ['PASSAPORTE', 'RG', 'CNH', 'VISTO'].includes(item.tipo);
-            const sizeInMb = item.file.size / (1024 * 1024);
-            const tamanhoFormatado = sizeInMb >= 1.0 ? `${sizeInMb.toFixed(1)} MB` : `${(item.file.size / 1024).toFixed(1)} KB`;
+            const tamanhoFormatado = AnexosService.formatarTamanho(item.file.size);
             const precisaOtimizar = PdfCompressorService.precisaComprimir(item.file);
 
             return `

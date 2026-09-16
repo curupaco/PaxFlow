@@ -1064,7 +1064,7 @@ export class ClientesPage {
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           ${anexos.map((doc) => {
             const badge = getBadgeEstilo(doc.tipo_documento);
-            const tamanhoKb = doc.tamanho_bytes ? (doc.tamanho_bytes / 1024).toFixed(1) + ' KB' : '';
+            const tamanhoFormatado = AnexosService.formatarTamanho(doc.tamanho_bytes);
             const podeExcluir = AnexosService.podeExcluirAnexo(doc, this.user?.id, this.perfil?.role);
 
             // Validação de SLA de validade se houver data
@@ -1089,7 +1089,7 @@ export class ClientesPage {
                     <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-extrabold uppercase tracking-wider border ${badge.cls}">
                       <span>${badge.icon}</span> ${badge.label}
                     </span>
-                    ${tamanhoKb ? `<span class="text-[10px] font-bold text-slate-400">${tamanhoKb}</span>` : ''}
+                    ${tamanhoFormatado ? `<span class="text-[10px] font-bold text-slate-400">${tamanhoFormatado}</span>` : ''}
                   </div>
 
                   <h4 class="text-xs font-black text-slate-900 dark:text-slate-100 truncate" title="${doc.rotulo}">

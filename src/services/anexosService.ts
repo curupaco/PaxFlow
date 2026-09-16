@@ -3,6 +3,25 @@ import { DocumentoAnexo, TipoDocumentoAnexo } from '../types';
 import { PdfCompressorService } from './pdfCompressorService';
 
 /**
+ * Formata bytes de forma amigável para humanos, exibindo KB e MB em conjunto.
+ * Ex: 97.8 MB (100.133 KB) ou 450 KB (0.4 MB) ou 32 KB (0.03 MB)
+ */
+export function formatarTamanhoArquivo(bytes?: number): string {
+  if (bytes === undefined || bytes === null || isNaN(bytes) || bytes <= 0) return '';
+  const kb = bytes / 1024;
+  const mb = kb / 1024;
+
+  if (mb >= 1.0) {
+    const kbInt = Math.round(kb).toLocaleString('pt-BR');
+    return `${mb.toFixed(1)} MB (${kbInt} KB)`;
+  }
+
+  const kbFormatado = kb < 10 ? kb.toFixed(1) : Math.round(kb).toLocaleString('pt-BR');
+  const mbFormatado = mb < 0.01 ? '< 0.01' : (mb < 0.1 ? mb.toFixed(2) : mb.toFixed(1));
+  return `${kbFormatado} KB (${mbFormatado} MB)`;
+}
+
+/**
  * Serviço completo para gerenciamento de múltiplos documentos e anexos no Supabase Storage.
  * Implementa o Padrão Zero-Break com resiliência estrita a schema drift (42P01, 42703, PGRST204, PGRST200).
  */
@@ -11,6 +30,13 @@ export class AnexosService {
   private static TABELA_SETTINGS = 'global_settings';
   private static CHAVE_FALLBACK = 'anexos_storage_cache_drift';
   private static BUCKET = 'documentos-clientes';
+
+  /**
+   * Formata bytes em string amigável contendo MB e KB para leitura humana imediata.
+   */
+  public static formatarTamanho(bytes?: number): string {
+    return formatarTamanhoArquivo(bytes);
+  }
 
   /**
    * Compacta imagens leves antes do envio se possível
