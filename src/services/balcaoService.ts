@@ -73,14 +73,24 @@ export class BalcaoService {
       if (!rpcErr && rpcData && Array.isArray(rpcData) && rpcData.length > 0) {
         return (rpcData as ResultadoBuscaBalcao[]).map(res => ({
           ...res,
-          viagens: (res.viagens || []).map(v => ({
-            ...v,
-            periodoFormatado: v.periodoFormatado || formatarPeriodoViagem(v.dataIda, v.dataVolta)
-          })),
-          orcamentos: (res.orcamentos || []).map(o => ({
-            ...o,
-            dataFormatada: o.dataFormatada || formatarDataSimplesBR(o.data)
-          }))
+          viagens: (res.viagens || []).map((v: any) => {
+            const dataIda = v.dataIda || v.data_ida || v.data_embarque || v.data_viagem || '';
+            const dataVolta = v.dataVolta || v.data_volta || v.data_retorno || '';
+            return {
+              ...v,
+              dataIda,
+              dataVolta,
+              periodoFormatado: v.periodoFormatado || formatarPeriodoViagem(dataIda, dataVolta)
+            };
+          }),
+          orcamentos: (res.orcamentos || []).map((o: any) => {
+            const dataOrigem = o.data || o.dataFormatada || o.data_origem || o.created_at || '';
+            return {
+              ...o,
+              data: dataOrigem,
+              dataFormatada: o.dataFormatada || formatarDataSimplesBR(dataOrigem)
+            };
+          })
         }));
       }
     } catch (e) {
@@ -214,8 +224,8 @@ export class BalcaoService {
               refCodeStr = `${pLoc}${pTipo}`;
             }
 
-            const dataIda = v.data_ida || v.data_viagem || '';
-            const dataVolta = v.data_volta || '';
+            const dataIda = v.data_ida || v.data_embarque || v.data_viagem || v.dataIda || '';
+            const dataVolta = v.data_volta || v.data_retorno || v.dataVolta || '';
 
             item.viagens.push({
               id: v.id,

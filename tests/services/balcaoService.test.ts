@@ -43,7 +43,19 @@ describe('BalcaoService - Testes Subcutâneos (Co-Piloto & Balcão)', () => {
       {
         cliente: { id: 'cli-10', nome: 'Eduardo Costa', cpf: '12345678900' },
         orcamentos: [],
-        viagens: [{ id: 'v-10', titulo: 'Viagem para Lisboa', consultorNome: 'Mariana', consultorId: 'u2', destino: 'Lisboa', status: 'ativa', periodoFormatado: '10/10/2026 a 20/10/2026' }],
+        viagens: [
+          {
+            id: 'v-10',
+            titulo: 'Viagem para Lisboa',
+            consultorNome: 'Mariana',
+            consultorId: 'u2',
+            destino: 'Lisboa',
+            status: 'ativa',
+            dataIda: '2026-10-10',
+            dataVolta: '2026-10-20',
+            periodoFormatado: '10/10/2026 a 20/10/2026'
+          }
+        ],
         reembolsos: [],
       },
     ];
@@ -397,5 +409,78 @@ describe('BalcaoService - Testes Subcutâneos (Co-Piloto & Balcão)', () => {
     expect(resultado[0].orcamentos).toHaveLength(1);
     expect(resultado[0].orcamentos[0].dataFormatada).toBe('12/09/2026');
     expect(resultado[0].orcamentos[0].total).toContain('15.400,00');
+  });
+
+  it('deve calcular periodoFormatado na resposta da RPC quando dataIda e dataVolta forem retornadas', async () => {
+    // Setup
+    const rpcMockData = [
+      {
+        cliente: { id: 'cli-rpc-date', nome: 'Lucas Silveira' },
+        orcamentos: [],
+        viagens: [
+          {
+            id: 'v-rpc-1',
+            titulo: 'Viagem para Paris',
+            consultorNome: 'Mariana',
+            consultorId: 'u2',
+            destino: 'Paris',
+            status: 'ativa',
+            dataIda: '2026-12-10',
+            dataVolta: '2026-12-24'
+          },
+          {
+            id: 'v-rpc-2',
+            titulo: 'Viagem para Roma',
+            consultorNome: 'Mariana',
+            consultorId: 'u2',
+            destino: 'Roma',
+            status: 'ativa',
+            data_ida: '2027-01-15'
+          }
+        ],
+        reembolsos: []
+      }
+    ];
+    vi.mocked(supabase.rpc).mockResolvedValue({ data: rpcMockData, error: null } as any);
+
+    // Action
+    const resultado = await BalcaoService.buscarMulticriterio('Lucas');
+
+    // Assert
+    expect(resultado).toHaveLength(1);
+    expect(resultado[0].viagens).toHaveLength(2);
+    expect(resultado[0].viagens[0].periodoFormatado).toBe('10/12/2026 a 24/12/2026');
+    expect(resultado[0].viagens[1].periodoFormatado).toBe('Ida: 15/01/2027');
+  });
+
+  it('deve ser resiliente a schema drift quando a RPC falhar com erro 42703 (coluna inexistente)', async () => {
+    // Setup
+    vi.mocked(supabase.rpc).mockResolvedValue({ data: null, error: { code: '42703', message: 'column does not exist' } } as any);
+
+    const clientesMock = [{ id: 'cli-resilient', nome: 'Patricia Abravanel' }];
+    const viagensMock = [
+      {
+        id: 'v-resilient',
+        cliente_id: 'cli-resilient',
+        destino: 'Cancun',
+        data_embarque: '2026-11-20',
+        data_retorno: '2026-11-28',
+        status: 'confirmada'
+      }
+    ];
+
+    vi.mocked(supabase.from).mockImplementation((table: string) => {
+      if (table === 'clientes') return { select: vi.fn().mockResolvedValue({ data: clientesMock }) } as any;
+      if (table === 'viagens') return { select: vi.fn().mockResolvedValue({ data: viagensMock }) } as any;
+      return { select: vi.fn().mockResolvedValue({ data: [] }) } as any;
+    });
+
+    // Action
+    const resultado = await BalcaoService.buscarMulticriterio('Patricia');
+
+    // Assert
+    expect(resultado).toHaveLength(1);
+    expect(resultado[0].viagens).toHaveLength(1);
+    expect(resultado[0].viagens[0].periodoFormatado).toBe('20/11/2026 a 28/11/2026');
   });
 });

@@ -980,11 +980,24 @@ BEGIN
             COALESCE((
                 SELECT JSON_AGG(JSON_BUILD_OBJECT(
                     'id', v.id,
-                    'titulo', COALESCE(v.destino, 'Viagem'),
+                    'titulo', COALESCE(
+                        (SELECT '[' || UPPER(pv.tipo) || ' LOC ' || pv.codigo_reserva || '] Viagem para ' || COALESCE(v.destino, 'Destino')
+                         FROM public.produtos_viagem pv 
+                         WHERE pv.viagem_id = v.id 
+                           AND (LOWER(COALESCE(pv.codigo_reserva, '')) LIKE '%' || raw_query || '%'
+                                OR LOWER(COALESCE(pv.descricao, '')) LIKE '%' || raw_query || '%'
+                                OR LOWER(COALESCE(pv.fornecedor, '')) LIKE '%' || raw_query || '%')
+                         LIMIT 1),
+                        COALESCE(v.destino, 'Viagem')
+                    ),
                     'consultorNome', COALESCE(p.nome, 'Consultor Titular'),
                     'consultorId', v.consultor_id,
                     'destino', COALESCE(v.destino, ''),
                     'status', v.status,
+                    'dataIda', CAST(v.data_ida AS TEXT),
+                    'dataVolta', CAST(v.data_volta AS TEXT),
+                    'data_ida', CAST(v.data_ida AS TEXT),
+                    'data_volta', CAST(v.data_volta AS TEXT),
                     'codigoRef', v.codigo_ref
                 ))
                 FROM public.viagens v
@@ -993,6 +1006,14 @@ BEGIN
                    OR LOWER(v.destino) LIKE '%' || raw_query || '%'
                    OR LOWER(COALESCE(v.codigo_localizador, '')) LIKE '%' || raw_query || '%'
                    OR LOWER(COALESCE(v.codigo_ref, '')) LIKE '%' || raw_query || '%'
+                   OR EXISTS (
+                        SELECT 1 FROM public.produtos_viagem pv 
+                        WHERE pv.viagem_id = v.id AND (
+                            LOWER(COALESCE(pv.codigo_reserva, '')) LIKE '%' || raw_query || '%'
+                            OR LOWER(COALESCE(pv.descricao, '')) LIKE '%' || raw_query || '%'
+                            OR LOWER(COALESCE(pv.fornecedor, '')) LIKE '%' || raw_query || '%'
+                        )
+                   )
             ), '[]'::json) AS viagens,
             COALESCE((
                 SELECT JSON_AGG(JSON_BUILD_OBJECT(
@@ -1024,6 +1045,14 @@ BEGIN
                     LOWER(v.destino) LIKE '%' || raw_query || '%' 
                     OR LOWER(COALESCE(v.codigo_localizador, '')) LIKE '%' || raw_query || '%'
                     OR LOWER(COALESCE(v.codigo_ref, '')) LIKE '%' || raw_query || '%'
+                    OR EXISTS (
+                        SELECT 1 FROM public.produtos_viagem pv 
+                        WHERE pv.viagem_id = v.id AND (
+                            LOWER(COALESCE(pv.codigo_reserva, '')) LIKE '%' || raw_query || '%'
+                            OR LOWER(COALESCE(pv.descricao, '')) LIKE '%' || raw_query || '%'
+                            OR LOWER(COALESCE(pv.fornecedor, '')) LIKE '%' || raw_query || '%'
+                        )
+                    )
                 )
            )
            OR EXISTS (
