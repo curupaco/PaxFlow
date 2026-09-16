@@ -2351,19 +2351,21 @@ export class RelatoriosPage {
       const formattedXp = c.xp.toLocaleString('pt-BR');
       
       return `
-        <tr class="border-b border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-300">
-          <td class="p-3 text-center ${rankColor}">${rankBadge}</td>
-          <td class="p-3 flex items-center gap-3">
-            <span class="text-xl">${c.prog.patenteEmoji}</span>
-            <div>
-              <p class="font-extrabold text-slate-800 dark:text-slate-100">${c.nome}</p>
-              <p class="text-[10px] text-slate-400 dark:text-slate-400 font-semibold">${c.email}</p>
+        <tr class="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50/50 dark:hover:bg-slate-800/10 transition-colors text-slate-600 dark:text-slate-300">
+          <td class="p-3 align-middle text-center ${rankColor}">${rankBadge}</td>
+          <td class="p-3 align-middle">
+            <div class="flex items-center gap-3">
+              <span class="text-xl shrink-0">${c.prog.patenteEmoji}</span>
+              <div class="min-w-0">
+                <p class="font-extrabold text-slate-800 dark:text-slate-100 truncate">${c.nome}</p>
+                <p class="text-[10px] text-slate-400 dark:text-slate-400 font-semibold truncate">${c.email}</p>
+              </div>
             </div>
           </td>
-          <td class="p-3 text-center font-extrabold text-indigo-600 dark:text-indigo-400">Nível ${c.nivel}</td>
-          <td class="p-3 font-semibold text-slate-600 dark:text-slate-400">${c.prog.patente}</td>
-          <td class="p-3 font-bold">${formattedXp} XP</td>
-          <td class="p-3 w-1/4">
+          <td class="p-3 align-middle text-center font-extrabold text-indigo-600 dark:text-indigo-400 whitespace-nowrap">Nível ${c.nivel}</td>
+          <td class="p-3 align-middle font-semibold text-slate-600 dark:text-slate-400 whitespace-nowrap">${c.prog.patente}</td>
+          <td class="p-3 align-middle font-bold whitespace-nowrap">${formattedXp} XP</td>
+          <td class="p-3 align-middle w-1/4">
             <div class="space-y-1">
               <div class="flex justify-between text-[10px] text-slate-400 font-bold">
                 <span>${c.prog.xpAtual} / ${c.prog.xpProximoNivel} XP</span>
@@ -2374,7 +2376,7 @@ export class RelatoriosPage {
               </div>
             </div>
           </td>
-          <td class="p-3 text-center font-black text-emerald-600">${c.badgesCount} conquistas</td>
+          <td class="p-3 align-middle text-center font-black text-emerald-600 whitespace-nowrap">${c.badgesCount} conquistas</td>
         </tr>
       `;
     }).join('');

@@ -2300,69 +2300,66 @@ export class ConfiguracoesPage {
           <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
               <thead>
-                <tr class="bg-slate-50 dark:bg-slate-800/60 text-[10px] text-slate-400 font-black uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
-                  <th class="py-4 px-5">Consultor</th>
-                  <th class="py-4 px-5">E-mail</th>
-                  <th class="py-4 px-5 text-center">Cargo</th>
-                  <th class="py-4 px-5 text-center">Status</th>
-                  <th class="py-4 px-5 text-center">Metas / KPIs</th>
-                  <th class="py-4 px-5 text-right">Ações</th>
+                <tr class="bg-slate-50/80 dark:bg-slate-800/60 text-[11px] text-slate-400 font-black uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
+                  <th class="py-3.5 px-5">Consultor</th>
+                  <th class="py-3.5 px-5">E-mail</th>
+                  <th class="py-3.5 px-5 text-center whitespace-nowrap">Nível de Acesso</th>
+                  <th class="py-3.5 px-5 text-center whitespace-nowrap">Status</th>
+                  <th class="py-3.5 px-5 text-center whitespace-nowrap">Metas & KPIs</th>
+                  <th class="py-3.5 px-5 text-right whitespace-nowrap">Ações</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-sm text-slate-700 dark:text-slate-300 font-semibold">
                 ${this.consultores.map(c => {
                   const isSelf = c.id === this.user?.id;
                   const statusBadge = c.ativo 
-                    ? `<span class="inline-flex px-2.5 py-0.5 bg-emerald-50 dark:bg-emerald-950/45 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/40 text-[10px] font-bold rounded">Ativo</span>` 
-                    : `<span class="inline-flex px-2.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-300 dark:border-slate-800 text-[10px] font-bold rounded">Inativo</span>`;
+                    ? `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 dark:bg-emerald-950/45 text-emerald-700 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-900/40 text-[10px] font-bold rounded-lg shadow-xs"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Ativo</span>` 
+                    : `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 text-[10px] font-bold rounded-lg shadow-xs"><span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span> Inativo</span>`;
                   const roleBadge = c.role === 'admin'
-                    ? `<span class="inline-flex px-2.5 py-0.5 bg-purple-50 dark:bg-purple-950/45 text-purple-700 dark:text-purple-400 border border-purple-100 dark:border-purple-900/40 text-[10px] font-bold rounded">ADMIN</span>`
-                    : `<span class="inline-flex px-2.5 py-0.5 bg-indigo-50 dark:bg-indigo-950/45 text-indigo-700 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/40 text-[10px] font-bold rounded">Consultor</span>`;
+                    ? `<span class="inline-flex items-center px-2.5 py-1 bg-purple-50 dark:bg-purple-950/45 text-purple-700 dark:text-purple-400 border border-purple-200/60 dark:border-purple-900/40 text-[10px] font-extrabold rounded-lg shadow-xs">👑 ADMIN</span>`
+                    : `<span class="inline-flex items-center px-2.5 py-1 bg-indigo-50 dark:bg-indigo-950/45 text-indigo-700 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-900/40 text-[10px] font-bold rounded-lg shadow-xs">💼 Consultor</span>`;
                   const metasBadge = c.participa_metricas !== false
-                    ? `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 bg-indigo-50 dark:bg-indigo-950/45 text-indigo-700 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/40 text-[10px] font-bold rounded" title="Participa de campanhas, metas e XP">🎯 Sim</span>`
-                    : `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700 text-[10px] font-bold rounded" title="Excluído de rankings, metas e XP">🚫 Não</span>`;
+                    ? `<span class="inline-flex items-center gap-1 px-2.5 py-1 bg-indigo-50 dark:bg-indigo-950/45 text-indigo-700 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-900/40 text-[10px] font-bold rounded-lg shadow-xs" title="Participa de campanhas, metas e XP">🎯 Sim</span>`
+                    : `<span class="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700 text-[10px] font-bold rounded-lg shadow-xs" title="Excluído de rankings, metas e XP">🚫 Não</span>`;
                   
                   return `
                     <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/10 transition-colors">
-                      <td class="py-4 px-5 flex items-center gap-3">
-                        ${getAvatarSvg(c.avatar_url, c.nome || 'C', 'w-8 h-8')}
-                        <div>
-                          <span class="block text-slate-800 dark:text-slate-200 font-bold">${c.nome}</span>
-                          ${isSelf ? '<span class="inline-block text-[8px] bg-slate-100 dark:bg-slate-800 text-slate-400 px-1 py-0.5 rounded uppercase tracking-wider font-extrabold">Você</span>' : ''}
+                      <td class="py-3.5 px-5 align-middle">
+                        <div class="flex items-center gap-3">
+                          ${getAvatarSvg(c.avatar_url, c.nome || 'C', 'w-9 h-9 rounded-xl shrink-0 shadow-xs')}
+                          <div class="min-w-0">
+                            <div class="flex items-center gap-2">
+                              <span class="text-slate-800 dark:text-slate-100 font-bold text-sm truncate">${c.nome}</span>
+                              ${isSelf ? '<span class="inline-block text-[9px] bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/50 px-1.5 py-0.5 rounded font-black tracking-wider uppercase shrink-0">Você</span>' : ''}
+                            </div>
+                          </div>
                         </div>
                       </td>
                       
-                      <td class="py-4 px-5 text-slate-500 dark:text-slate-400 font-medium">
+                      <td class="py-3.5 px-5 align-middle text-slate-500 dark:text-slate-400 font-medium text-xs">
                         ${c.email}
                       </td>
                       
-                      <td class="py-4 px-5 text-center">
+                      <td class="py-3.5 px-5 align-middle text-center whitespace-nowrap">
                         ${roleBadge}
                       </td>
                       
-                      <td class="py-4 px-5 text-center">
+                      <td class="py-3.5 px-5 align-middle text-center whitespace-nowrap">
                         ${statusBadge}
                       </td>
 
-                      <td class="py-4 px-5 text-center">
+                      <td class="py-3.5 px-5 align-middle text-center whitespace-nowrap">
                         ${metasBadge}
                       </td>
                       
-                      <td class="py-4 px-6 text-right">
-                        <div class="flex items-center justify-end gap-2.5 flex-wrap">
-                          <button data-id="${c.id}" class="btn-editar-user h-8 px-3.5 inline-flex items-center justify-center bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700 rounded-xl text-xs font-extrabold transition uppercase shadow-xs">
-                            Editar ✏️
+                      <td class="py-3.5 px-5 align-middle text-right whitespace-nowrap">
+                        <div class="inline-flex items-center justify-end gap-2">
+                          <button data-id="${c.id}" class="btn-editar-user h-8 px-3.5 inline-flex items-center gap-1.5 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold transition shadow-xs">
+                            <span>Editar</span> ✏️
                           </button>
                           
-                          ${isSelf ? `
-                            <span class="text-xs text-slate-400 font-bold italic px-2">Você</span>
-                          ` : `
-                            <select data-id="${c.id}" class="select-role-user h-8 px-3 border border-slate-200/80 dark:border-slate-700 rounded-xl text-xs font-bold bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-xs">
-                              <option value="consultor" ${c.role === 'consultor' ? 'selected' : ''}>Tornar Consultor</option>
-                              <option value="admin" ${c.role === 'admin' ? 'selected' : ''}>Tornar ADMIN</option>
-                            </select>
-                            
-                            <button data-id="${c.id}" data-active="${c.ativo}" class="btn-toggle-status-user h-8 px-3.5 inline-flex items-center justify-center rounded-xl text-xs font-extrabold transition border uppercase shadow-xs ${
+                          ${isSelf ? '' : `
+                            <button data-id="${c.id}" data-active="${c.ativo}" class="btn-toggle-status-user h-8 px-3.5 inline-flex items-center justify-center rounded-xl text-xs font-bold transition border shadow-xs ${
                               c.ativo 
                                 ? 'bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 border-amber-200/60 dark:border-amber-800/60' 
                                 : 'bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 border-emerald-200/60 dark:border-emerald-800/60'

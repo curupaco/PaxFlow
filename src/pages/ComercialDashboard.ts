@@ -1007,19 +1007,21 @@ export class ComercialDashboard {
               else if (index === 2 && r.valVendido > 0) placingIcon = `<span class="text-lg w-5 block text-center" title="Top 3 Vendedor">🥉</span>`;
 
               return `
-                <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors">
-                  <td class="py-3.5 flex items-center gap-2.5">
-                    ${placingIcon}
-                    ${getAvatarSvg(r.avatarUrl, r.nome, 'w-8 h-8')}
-                    <div>
-                      <span class="block font-black text-slate-700 dark:text-slate-200 leading-snug">${r.nome}</span>
-                      <span class="block text-[9px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wide leading-none mt-0.5">${r.email} &bull; ${r.xp} XP</span>
+                <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors border-b border-slate-100/60 dark:border-slate-800/60">
+                  <td class="py-3 px-4 align-middle">
+                    <div class="flex items-center gap-2.5">
+                      ${placingIcon}
+                      ${getAvatarSvg(r.avatarUrl, r.nome, 'w-8 h-8 shrink-0 rounded-xl')}
+                      <div class="min-w-0">
+                        <span class="block font-black text-slate-700 dark:text-slate-200 leading-snug truncate">${r.nome}</span>
+                        <span class="block text-[9px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wide leading-none mt-0.5 truncate">${r.email} &bull; ${r.xp} XP</span>
+                      </div>
                     </div>
                   </td>
-                  <td class="py-3.5 text-center text-slate-700 dark:text-slate-300">
+                  <td class="py-3 px-4 align-middle text-center text-slate-700 dark:text-slate-300">
                     ${r.orcCriados} criados
                   </td>
-                  <td class="py-3.5 text-center">
+                  <td class="py-3 px-4 align-middle text-center">
                     <span class="px-2 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider ${
                       conversion >= 50 
                         ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400 border border-emerald-100/30 dark:border-emerald-900/30'
@@ -1030,16 +1032,16 @@ export class ComercialDashboard {
                       ${conversion.toFixed(1)}%
                     </span>
                   </td>
-                  <td class="py-3.5 text-center text-slate-700 dark:text-slate-300 font-semibold">
+                  <td class="py-3 px-4 align-middle text-center text-slate-700 dark:text-slate-300 font-semibold">
                     ${r.tempoMedioDias > 0 ? `${r.tempoMedioDias.toFixed(1)} dias` : '—'}
                   </td>
-                  <td class="py-3.5 text-right text-slate-700 dark:text-slate-300">
+                  <td class="py-3 px-4 align-middle text-right text-slate-700 dark:text-slate-300">
                     R$ ${r.valProposto.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </td>
-                  <td class="py-3.5 text-right font-black text-indigo-600 dark:text-indigo-400">
+                  <td class="py-3 px-4 align-middle text-right font-black text-indigo-600 dark:text-indigo-400">
                     R$ ${r.valVendido.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </td>
-                  <td class="py-3.5 text-right font-black text-rose-600 dark:text-rose-400">
+                  <td class="py-3 px-4 align-middle text-right font-black text-rose-600 dark:text-rose-400">
                     R$ ${r.valGap.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </td>
                 </tr>
