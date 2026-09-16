@@ -10,6 +10,13 @@
   --sar: env(safe-area-inset-right, 0px);
 }
 
+/* Notificações e Toasts Globais - Camada Máxima Absoluta */
+#paxflow-toast,
+#paxflow-version-toast,
+.paxflow-toast-notification {
+  z-index: 99999 !important;
+}
+
 .pt-safe {
   padding-top: max(env(safe-area-inset-top, 0px), 0.75rem);
 }

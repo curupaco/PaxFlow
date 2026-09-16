@@ -1640,7 +1640,7 @@ export class StudioPage {
       document.body.appendChild(toast);
     }
     const isSuccess = type === 'success';
-    toast.className = `fixed bottom-20 right-6 px-5 py-3.5 rounded-2xl shadow-2xl text-white font-bold text-xs z-50 transition-all duration-300 transform translate-y-0 opacity-100 flex items-center gap-2 ${
+    toast.className = `fixed bottom-20 right-6 px-5 py-3.5 rounded-2xl shadow-2xl text-white font-bold text-xs z-[99999] transition-all duration-300 transform translate-y-0 opacity-100 flex items-center gap-2 ${
       isSuccess ? 'bg-emerald-600 shadow-emerald-600/30' : 'bg-rose-600 shadow-rose-600/30'
     }`;
     toast.innerHTML = `<span>${isSuccess ? '✅' : '⚠️'}</span> <span>${message}</span>`;
