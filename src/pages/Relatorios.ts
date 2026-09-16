@@ -766,7 +766,7 @@ export class RelatoriosPage {
               </thead>
               <tbody>
                 ${this.consultores
-                  .filter(c => c.ativo !== false && (this.consultorIdFilter === 'todos' || c.id === this.consultorIdFilter))
+                  .filter(c => c.ativo !== false && c.participa_metricas !== false && c.participaMetricas !== false && (this.consultorIdFilter === 'todos' || c.id === this.consultorIdFilter))
                   .map(c => {
                     const subOrc = data.orcamentos.filter((o: any) => (o.consultor_id || o.consultorId) === c.id);
                     const subVia = data.viagens.filter((v: any) => (v.consultor_id || v.consultorId) === c.id);
@@ -2270,10 +2270,11 @@ export class RelatoriosPage {
     }
 
     // Visão Completa de Administração
-    const totalConsultores = this.consultores.length || 1;
+    const consultoresParticipantes = this.consultores.filter(c => c.ativo !== false && c.participa_metricas !== false && c.participaMetricas !== false);
+    const totalConsultores = consultoresParticipantes.length || 1;
     
     // Process each consultant's progress and badges
-    const ranking = this.consultores.map((c: any) => {
+    const ranking = consultoresParticipantes.map((c: any) => {
       const xp = c.xp || 0;
       const prog = obterProgressoNivel(xp);
       const cBadges = (data.consultoresBadges || []).filter((b: any) => (b.profile_id || b.profileId) === c.id).map((b: any) => b.badge_key);
@@ -3673,7 +3674,8 @@ export class RelatoriosPage {
       });
     } else if (this.activeTab === 'gamificacao') {
       csvContent += 'Posição;Consultor;Nível;Patente;XP Total;Conquistas\n';
-      const ranking = this.consultores.map((c: any) => {
+      const consultoresParticipantes = this.consultores.filter(c => c.ativo !== false && c.participa_metricas !== false && c.participaMetricas !== false);
+      const ranking = consultoresParticipantes.map((c: any) => {
         const xp = c.xp || 0;
         const prog = obterProgressoNivel(xp);
         const cBadges = (data.consultoresBadges || []).filter((b: any) => (b.profile_id || b.profileId) === c.id).map((b: any) => b.badge_key);

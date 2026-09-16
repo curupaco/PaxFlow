@@ -327,6 +327,17 @@ export async function registrarXp(userId: string, acaoChave: string, xpGanho: nu
     const { user } = await getSessaoAtual();
     const activeUserId = user?.id || userId;
 
+    // Ignora se o perfil estiver configurado para não participar de métricas e gamificação
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('participa_metricas')
+      .eq('id', activeUserId)
+      .maybeSingle();
+
+    if (profile && profile.participa_metricas === false) {
+      return;
+    }
+
     const { error } = await supabase
       .from('profiles_xp_logs')
       .insert({
@@ -367,6 +378,17 @@ export async function obterMedalhasUsuario(userId: string): Promise<string[]> {
  */
 export async function concederMedalha(userId: string, badgeKey: string): Promise<boolean> {
   try {
+    // Ignora se o perfil estiver configurado para não participar de métricas e gamificação
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('participa_metricas')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (profile && profile.participa_metricas === false) {
+      return false;
+    }
+
     const { error } = await supabase
       .from('profiles_badges')
       .insert({

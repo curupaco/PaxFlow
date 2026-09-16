@@ -60,7 +60,18 @@ describe('Gamificação - Testes Subcutâneos', () => {
   it('deve registrar evento de XP inserindo na tabela profiles_xp_logs', async () => {
     // Setup
     const insertMock = vi.fn().mockResolvedValue({ error: null });
-    vi.mocked(supabase.from).mockReturnValue({ insert: insertMock } as any);
+    vi.mocked(supabase.from).mockImplementation((table: string) => {
+      if (table === 'profiles') {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              maybeSingle: vi.fn().mockResolvedValue({ data: { participa_metricas: true }, error: null })
+            })
+          })
+        } as any;
+      }
+      return { insert: insertMock } as any;
+    });
 
     // Action
     await registrarXp('user-auth-1', 'acao_venda_123', 50);
@@ -98,9 +109,22 @@ describe('Gamificação - Testes Subcutâneos', () => {
     const insertSucesso = vi.fn().mockResolvedValue({ error: null });
     const insertDuplicado = vi.fn().mockResolvedValue({ error: { code: '23505' } });
 
-    vi.mocked(supabase.from)
-      .mockReturnValueOnce({ insert: insertSucesso } as any)
-      .mockReturnValueOnce({ insert: insertDuplicado } as any);
+    let insertCallCount = 0;
+    vi.mocked(supabase.from).mockImplementation((table: string) => {
+      if (table === 'profiles') {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              maybeSingle: vi.fn().mockResolvedValue({ data: { participa_metricas: true }, error: null })
+            })
+          })
+        } as any;
+      }
+      insertCallCount++;
+      return {
+        insert: insertCallCount === 1 ? insertSucesso : insertDuplicado
+      } as any;
+    });
 
     // Action
     const resultadoNovo = await concederMedalha('user-1', 'COMPLIANCE_HERO');
@@ -153,7 +177,18 @@ describe('Gamificação - Testes Subcutâneos', () => {
   it('deve concluir silenciosamente sem travar fluxo quando o Supabase acusar ação de XP já pontuada (código 23505)', async () => {
     // Setup
     const insertDuplicado = vi.fn().mockResolvedValue({ error: { code: '23505', message: 'duplicate key' } });
-    vi.mocked(supabase.from).mockReturnValue({ insert: insertDuplicado } as any);
+    vi.mocked(supabase.from).mockImplementation((table: string) => {
+      if (table === 'profiles') {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              maybeSingle: vi.fn().mockResolvedValue({ data: { participa_metricas: true }, error: null })
+            })
+          })
+        } as any;
+      }
+      return { insert: insertDuplicado } as any;
+    });
 
     // Action & Assert
     await expect(registrarXp('user-1', 'acao_ja_pontuada', 25)).resolves.not.toThrow();

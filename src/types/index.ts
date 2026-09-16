@@ -16,6 +16,8 @@ export interface PerfilConsultor {
   ativo: boolean;
   participa_escala?: boolean; // Controla se o funcionário participa e aparece na escala
   participaEscala?: boolean; // Suporte camelCase
+  participa_metricas?: boolean; // Controla se o funcionário participa de rankings, metas e gamificação
+  participaMetricas?: boolean; // Suporte camelCase
   avatar_url?: string; // ID do avatar selecionado (panda, lion, fox, etc.)
   avatarUrl?: string; // Suporte camelCase
   createdAt?: string;

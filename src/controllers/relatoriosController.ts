@@ -56,13 +56,23 @@ export function agruparVendasPorCategoriaProduto(produtos: any[]): Record<string
   return categorias;
 }
 
-export function gerarRankingConsultores(viagens: any[]): Array<{ consultorId: string; consultorNome: string; totalVendas: number; totalViagens: number }> {
+export function gerarRankingConsultores(
+  viagens: any[],
+  consultores?: any[]
+): Array<{ consultorId: string; consultorNome: string; totalVendas: number; totalViagens: number }> {
   const consultoresMap = new Map<string, { consultorId: string; consultorNome: string; totalVendas: number; totalViagens: number }>();
+  const idsNaoParticipantes = new Set(
+    (consultores || [])
+      .filter(c => c.participa_metricas === false || c.participaMetricas === false)
+      .map(c => c.id)
+  );
 
   viagens.forEach((v) => {
     if (v.status === 'cancelado') return;
 
     const cId = v.consultor_id || v.consultorId || 'agencia';
+    if (idsNaoParticipantes.has(cId)) return;
+
     const cNome = v.consultor_nome || v.consultorNome || 'Consultor Não Identificado';
     const val = Number(v.valor_total || v.valorTotal || 0);
 

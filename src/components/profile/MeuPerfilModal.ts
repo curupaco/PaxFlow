@@ -251,18 +251,20 @@ export class MeuPerfilModal {
       try {
         const { data: profiles, error } = await supabase
           .from('profiles')
-          .select('id, nome, email, avatar_url, xp, nivel')
+          .select('id, nome, email, avatar_url, xp, nivel, participa_metricas')
           .eq('ativo', true)
           .order('xp', { ascending: false });
 
         if (error) throw error;
 
-        if (!profiles || profiles.length === 0) {
+        const perfisParticipantes = (profiles || []).filter((p: any) => p.participa_metricas !== false && p.participaMetricas !== false);
+
+        if (perfisParticipantes.length === 0) {
           leaderboardList.innerHTML = `<div class="text-center text-slate-400 dark:text-slate-400 text-xs font-medium italic py-2">Nenhum consultor ativo.</div>`;
           return;
         }
 
-        leaderboardList.innerHTML = profiles.map((p, idx) => {
+        leaderboardList.innerHTML = perfisParticipantes.map((p, idx) => {
           let badgePos = '';
           if (idx === 0) badgePos = '🥇';
           else if (idx === 1) badgePos = '🥈';

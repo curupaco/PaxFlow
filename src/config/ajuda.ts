@@ -500,6 +500,13 @@ export const HELP_ITEMS: HelpItem[] = [
     details: 'Na aba **Metas & Campanhas** (menu Relatórios -> Grupo 1: Gestão Comercial):\n\n1. **Seletor de Metas & Status Temporal**: Escolha qualquer meta ou campanha cadastrada. O seletor agrupa visualmente por `🟢 Ativas`, `⏳ Encerradas` e `📅 Futuras` com base na data atual.\n2. **4 Tipos de Métricas Suportadas**: Além de metas financeiras (`Faturamento Bruto R$` e `Rentabilidade / Lucro R$`), o sistema apura campanhas de volume como `Qtd. de Orçamentos Criados (Unidades)` (ex: Campanha "Boa viagem! - 40 orçamentos") e `Qtd. de Vendas Fechadas (Unidades)`.\n3. **KPIs Executivos da Agência**: Exibe a Meta Total Global, o Realizado pela Agência, a Taxa de Atingimento % e o Top Consultor da campanha.\n4. **Ranking & Desempenho da Equipe**: Tabela com barra de progresso visual, percentual atingido, valor/quantidade faltante e badge de faixa conquistada (Bronze, Prata, Ouro).\n5. **Auditoria Analítica com 1 Clique (🔍 Auditar)**: Administradores podem auditar cada consultor para visualizar a lista completa de orçamentos ou vendas que compõem o número apurado, com cliente, destino, data e valor.'
   },
   {
+    id: 'controle-participacao-metricas',
+    modulo: 'configuracoes',
+    label: '🎯 Controle de Participação em Métricas, Rankings e Campanhas (Interruptor de Usuários)',
+    description: 'Como excluir usuários específicos (ex: Administradores, Contas de Teste ou Diretoria) de rankings e metas sem impactar o total da agência.',
+    details: 'No menu **Configurações -> Aba Equipe de Consultores**:\n\n1. **Interruptor Dedicado**: Tanto no cadastro de novos consultores quanto no modal de edição de perfil, administradores podem alternar a opção `🎯 Participa de Campanhas, Metas e KPIs` (`Sim` / `Não`).\n2. **Isolamento de Disputas & Pódios**: Usuários com o interruptor desmarcado (`Não`) são automaticamente removidos de rankings individuais de vendas, tabelas comparativas de conversão comercial, disputas de metas de campanha e da gamificação/leaderboard de XP.\n3. **Fidelidade Financeira Global da Agência**: As vendas, viagens e orçamentos vinculados a esse usuário continuam sendo somados normalmente no faturamento bruto global da agência e relatórios gerenciais, garantindo conciliação financeira precisa.\n4. **Identificação Visual Instantânea**: A tabela de consultores exibe uma badge informativa com o status (`🎯 Sim` ou `🚫 Não`) para fácil governança da equipe.'
+  },
+  {
     id: 'auto-status-em-andamento',
     modulo: 'orcamentos',
     label: 'Automação: Início do Atendimento (Orçamentos)',

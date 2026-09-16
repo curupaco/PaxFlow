@@ -264,10 +264,11 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
   - E-mail de suporte e limite máximo de upload configurável (MB)
   - Parâmetros e testes de integração com a API Digisac
 - **Aba Consultores**:
-  - Lista completa com nome, e-mail, role (admin/consultor), status
+  - Lista completa com nome, e-mail, role (admin/consultor), status e indicador de participação em metas
   - Edição inline de role e alternador de ativar/desativar conta
-  - Cadastro de novo consultor com criação de credencial no Supabase Auth
-  - Modal de edição com troca de avatar e redefinição de senha
+  - Cadastro de novo consultor com criação de credencial no Supabase Auth e definição da flag `participa_metricas`
+  - Modal de edição com troca de avatar, redefinição de senha e interruptor `🎯 Participa de Campanhas, Metas e KPIs`
+  - **Governança de Métricas e Resiliência Zero-Break**: Usuários com `participa_metricas = false` são excluídos de rankings comerciais, metas de equipe e leaderboards de XP, mantendo o total financeiro da agência e contando com fallback nativo para erro `42703` (Schema Drift)
 - **Aba Importações**:
   - Área de upload drag-and-drop para arquivos CSV de chamados/oportunidades
   - Mapeador dinâmico De-Para de colunas e matching inteligente de atendentes

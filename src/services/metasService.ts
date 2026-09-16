@@ -736,13 +736,26 @@ export class MetasService {
     }>;
   } {
     let totalAgencia = 0;
-    const ranking = consultores.map(c => {
+    const ranking: Array<{
+      consultor: any;
+      totalAtingido: number;
+      itensAuditados: any[];
+      faixaAtual: MetaFaixa | null;
+      proximaFaixa: MetaFaixa | null;
+      percentualProgresso: number;
+    }> = [];
+
+    (consultores || []).forEach(c => {
       const prog = this.calcularProgressoConsultor(meta, c.id, orcamentos, viagens, locPagamentos, clientes, reembolsos);
       totalAgencia += prog.totalAtingido;
-      return {
-        consultor: c,
-        ...prog
-      };
+
+      const participa = (c.participa_metricas !== false) && (c.participaMetricas !== false);
+      if (participa) {
+        ranking.push({
+          consultor: c,
+          ...prog
+        });
+      }
     });
 
     ranking.sort((a, b) => b.totalAtingido - a.totalAtingido);

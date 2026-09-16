@@ -938,6 +938,14 @@ export class ConfiguracoesPage {
             </div>
           </div>
 
+          <div class="flex items-center justify-between p-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-800/40">
+            <div>
+              <label class="text-xs font-bold text-slate-700 dark:text-slate-200 block">🎯 Participa de Campanhas, Metas e KPIs</label>
+              <span class="text-[10px] text-slate-400 block">Permite que o usuário concorra a rankings, metas comerciais e pontuação de XP.</span>
+            </div>
+            <input type="checkbox" id="input-nc-participa-metricas" checked class="w-4 h-4 accent-indigo-600 rounded cursor-pointer" />
+          </div>
+
           <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
             <button id="btn-nc-cancel" type="button" class="px-4 py-2.5 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 text-slate-500 hover:text-slate-700 font-bold text-xs rounded-xl transition uppercase">
               Cancelar
@@ -973,6 +981,7 @@ export class ConfiguracoesPage {
       const email = (document.getElementById('input-nc-email') as HTMLInputElement).value;
       const role = (document.getElementById('select-nc-role') as HTMLSelectElement).value as 'admin' | 'consultor';
       const senha = (document.getElementById('input-nc-senha') as HTMLInputElement).value;
+      const participaMetricas = (document.getElementById('input-nc-participa-metricas') as HTMLInputElement)?.checked ?? true;
 
       submitBtn.disabled = true;
       submitBtn.textContent = 'Cadastrando...';
@@ -986,6 +995,14 @@ export class ConfiguracoesPage {
         });
 
         if (rpcError) throw rpcError;
+
+        if (userId) {
+          try {
+            await supabase.from('profiles').update({ participa_metricas: participaMetricas }).eq('id', userId);
+          } catch (errDrift: any) {
+            console.warn('[Schema Drift 42703] Não foi possível atualizar participa_metricas no cadastro inicial:', errDrift);
+          }
+        }
 
         this.showToast('Novo consultor cadastrado com sucesso!', 'success');
         this.fecharModalNovoConsultor();
@@ -1103,6 +1120,14 @@ export class ConfiguracoesPage {
             <input type="checkbox" id="input-ec-participa-escala" ${c.participa_escala !== false ? 'checked' : ''} class="w-4 h-4 accent-indigo-600 rounded cursor-pointer" />
           </div>
 
+          <div class="flex items-center justify-between p-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-800/40">
+            <div>
+              <label class="text-xs font-bold text-slate-700 dark:text-slate-200 block">🎯 Participa de Campanhas, Metas e KPIs</label>
+              <span class="text-[10px] text-slate-400 block">Permite que o usuário concorra a rankings, metas comerciais e pontuação de XP.</span>
+            </div>
+            <input type="checkbox" id="input-ec-participa-metricas" ${c.participa_metricas !== false ? 'checked' : ''} class="w-4 h-4 accent-indigo-600 rounded cursor-pointer" />
+          </div>
+
           <div class="border-t border-slate-100 dark:border-slate-800 pt-4">
             <h3 class="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-1.5">Alterar Senha do Consultor</h3>
             <p class="text-[10px] text-slate-400 dark:text-slate-400 mb-2 font-semibold italic">Nota de desenvolvimento: você pode alterar diretamente a senha do usuário preenchendo o campo abaixo.</p>
@@ -1183,6 +1208,7 @@ export class ConfiguracoesPage {
       const roleVal = (overlay.querySelector('#select-ec-role') as HTMLSelectElement).value as 'admin' | 'consultor';
       const ativoVal = (overlay.querySelector('#select-ec-ativo') as HTMLSelectElement).value === 'true';
       const participaEscalaVal = (overlay.querySelector('#input-ec-participa-escala') as HTMLInputElement).checked;
+      const participaMetricasVal = (overlay.querySelector('#input-ec-participa-metricas') as HTMLInputElement)?.checked ?? true;
       const senhaVal = (overlay.querySelector('#input-ec-senha') as HTMLInputElement).value;
 
       if (!nomeVal) return;
@@ -1197,19 +1223,34 @@ export class ConfiguracoesPage {
         salvarAvatarLocal(c.id, selectedAvatarId);
 
         if (!isOffline) {
-          // 1. Atualiza na tabela Profiles do Supabase
+          // 1. Atualiza na tabela Profiles do Supabase com tratamento de fallback schema drift (42703)
+          const updatePayload: any = {
+            nome: nomeVal,
+            role: roleVal,
+            ativo: ativoVal,
+            participa_escala: participaEscalaVal,
+            participa_metricas: participaMetricasVal,
+            avatar_url: selectedAvatarId
+          };
+
           const { error: profileErr } = await supabase
             .from('profiles')
-            .update({
-              nome: nomeVal,
-              role: roleVal,
-              ativo: ativoVal,
-              participa_escala: participaEscalaVal,
-              avatar_url: selectedAvatarId
-            })
+            .update(updatePayload)
             .eq('id', c.id);
 
-          if (profileErr) throw profileErr;
+          if (profileErr) {
+            if (profileErr.code === '42703' || profileErr.message?.includes('participa_metricas')) {
+              console.warn('[Schema Drift 42703] Coluna participa_metricas inexistente. Executando fallback.');
+              delete updatePayload.participa_metricas;
+              const { error: fallbackErr } = await supabase
+                .from('profiles')
+                .update(updatePayload)
+                .eq('id', c.id);
+              if (fallbackErr) throw fallbackErr;
+            } else {
+              throw profileErr;
+            }
+          }
 
           // 2. Se for a si mesmo, atualiza também a sessão ativa no auth
           if (isSelf) {
@@ -1242,6 +1283,10 @@ export class ConfiguracoesPage {
           this.consultores[idx].avatar_url = selectedAvatarId;
           this.consultores[idx].role = roleVal;
           this.consultores[idx].ativo = ativoVal;
+          this.consultores[idx].participa_escala = participaEscalaVal;
+          this.consultores[idx].participaEscala = participaEscalaVal;
+          this.consultores[idx].participa_metricas = participaMetricasVal;
+          this.consultores[idx].participaMetricas = participaMetricasVal;
         }
 
         // Se for a si mesmo, dispara o evento de sincronização geral do app
@@ -2260,6 +2305,7 @@ export class ConfiguracoesPage {
                   <th class="py-4 px-5">E-mail</th>
                   <th class="py-4 px-5 text-center">Cargo</th>
                   <th class="py-4 px-5 text-center">Status</th>
+                  <th class="py-4 px-5 text-center">Metas / KPIs</th>
                   <th class="py-4 px-5 text-right">Ações</th>
                 </tr>
               </thead>
@@ -2272,6 +2318,9 @@ export class ConfiguracoesPage {
                   const roleBadge = c.role === 'admin'
                     ? `<span class="inline-flex px-2.5 py-0.5 bg-purple-50 dark:bg-purple-950/45 text-purple-700 dark:text-purple-400 border border-purple-100 dark:border-purple-900/40 text-[10px] font-bold rounded">ADMIN</span>`
                     : `<span class="inline-flex px-2.5 py-0.5 bg-indigo-50 dark:bg-indigo-950/45 text-indigo-700 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/40 text-[10px] font-bold rounded">Consultor</span>`;
+                  const metasBadge = c.participa_metricas !== false
+                    ? `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 bg-indigo-50 dark:bg-indigo-950/45 text-indigo-700 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/40 text-[10px] font-bold rounded" title="Participa de campanhas, metas e XP">🎯 Sim</span>`
+                    : `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700 text-[10px] font-bold rounded" title="Excluído de rankings, metas e XP">🚫 Não</span>`;
                   
                   return `
                     <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/10 transition-colors">
@@ -2293,6 +2342,10 @@ export class ConfiguracoesPage {
                       
                       <td class="py-4 px-5 text-center">
                         ${statusBadge}
+                      </td>
+
+                      <td class="py-4 px-5 text-center">
+                        ${metasBadge}
                       </td>
                       
                       <td class="py-4 px-6 text-right">

@@ -876,7 +876,10 @@ export class ComercialDashboard {
    * Renders the consultant comparative performance table (exclusively for admins)
    */
   private renderConsultantPerformanceTable(orcamentos: Orcamento[], viagens: Viagem[]): string {
-    // Agrupar métricas por consultor
+    // Agrupar métricas exclusivamente por consultores participantes de métricas
+    const consultoresParticipantes = this.consultores.filter(c => c.participa_metricas !== false && c.participaMetricas !== false);
+    const idsParticipantes = new Set(consultoresParticipantes.map(c => c.id));
+
     const rankingMap = new Map<string, {
       nome: string;
       email: string;
@@ -891,8 +894,8 @@ export class ComercialDashboard {
       xp: number;
     }>();
 
-    // Inicializa a lista de consultores para que mesmo sem dados eles apareçam na lista
-    this.consultores.forEach(c => {
+    // Inicializa a lista de consultores participantes para que apareçam na lista mesmo zerados
+    consultoresParticipantes.forEach(c => {
       rankingMap.set(c.id, {
         nome: c.nome,
         email: c.email,
@@ -908,27 +911,12 @@ export class ComercialDashboard {
       });
     });
 
-    // 1. Processar dados de orçamentos por consultor
+    // 1. Processar dados de orçamentos por consultor participante
     orcamentos.forEach(o => {
-      if (!o.consultorId) return;
-      let metrics = rankingMap.get(o.consultorId);
-      if (!metrics) {
-        metrics = {
-          nome: 'Consultor Desconhecido',
-          email: '',
-          orcCriados: 0,
-          orcGanhos: 0,
-          orcConcluidos: 0,
-          valProposto: 0,
-          valVendido: 0,
-          valGap: 0,
-          tempoMedioDias: 0,
-          xp: 0
-        };
-        rankingMap.set(o.consultorId, metrics);
-      }
+      if (!o.consultorId || !idsParticipantes.has(o.consultorId)) return;
+      const m = rankingMap.get(o.consultorId);
+      if (!m) return;
       
-      const m = metrics!;
       m.orcCriados += 1;
       m.valProposto += o.valorProposta || 0;
 
@@ -942,27 +930,12 @@ export class ComercialDashboard {
       }
     });
 
-    // 2. Processar dados de vendas (viagens) por consultor
+    // 2. Processar dados de vendas (viagens) por consultor participante
     viagens.forEach(v => {
-      if (!v.consultorId || v.status === 'cancelada') return;
-      let metrics = rankingMap.get(v.consultorId);
-      if (!metrics) {
-        metrics = {
-          nome: 'Consultor Desconhecido',
-          email: '',
-          orcCriados: 0,
-          orcGanhos: 0,
-          orcConcluidos: 0,
-          valProposto: 0,
-          valVendido: 0,
-          valGap: 0,
-          tempoMedioDias: 0,
-          xp: 0
-        };
-        rankingMap.set(v.consultorId, metrics);
-      }
+      if (!v.consultorId || v.status === 'cancelada' || !idsParticipantes.has(v.consultorId)) return;
+      const m = rankingMap.get(v.consultorId);
+      if (!m) return;
       
-      const m = metrics!;
       const vPayments = this.locPagamentos.filter(p => 
         (p.viagem_id === v.id || p.viagemId === v.id) &&
         p.formas_recebimento &&
