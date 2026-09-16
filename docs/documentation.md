@@ -43,6 +43,7 @@
    - 3.30 [PaxFlow Studio™ (Criação de Propostas Digitais de Luxo & Cadernos de Viagem)](#330-paxflow-studio-criação-de-propostas-digitais-de-luxo--cadernos-de-viagem)
    - 3.31 [Gestão Inteligente de Anexos e Documentos (Clientes e Viagens)](#331-gestão-inteligente-de-anexos-e-documentos-clientes-e-viagens)
    - 3.32 [Melhorias de Usabilidade, Produtividade e Feedback Visual de UX (Plano 1)](#332-melhorias-de-usabilidade-produtividade-e-feedback-visual-de-ux-plano-1)
+   - 3.33 [Melhorias de Eficiência Operacional, Pipeline e Ações Rápidas de UX (Plano 2)](#333-melhorias-de-eficiência-operacional-pipeline-e-ações-rápidas-de-ux-plano-2)
 4. [Diferenciais Competitivos](#4-diferenciais-competitivos)
 5. [Arquitetura Tecnológica](#5-arquitetura-tecnológica)
 6. [Segurança e Conformidade](#6-segurança-e-conformidade)
@@ -738,6 +739,45 @@ Pacote de micro-interações, transparência de estado e aceleração de produti
 
 5. **Feedback Visual Inline no Botão Salvar**:
    - Ao salvar alterações no cadastro de viagens ou na edição de produtos, o botão de ação principal transiciona suavemente seu estado e cor para `✅ Salvo com Sucesso!` em verde esmeralda com sombra brilhante antes do recarregamento dos dados, fornecendo confirmação tátil e inequívoca da persistência no banco.
+
+### 3.33 Melhorias de Eficiência Operacional, Pipeline e Ações Rápidas de UX (Plano 2)
+
+O **Plano 2 de UX** expande o ganho de agilidade e a ergonomia de uso do PaxFlow em 6 pilares estratégicos:
+
+1. **Lead Aging (Tempo no Estágio) no Pipeline de Orçamentos**:
+   - Badges visuais calculam e exibem automaticamente o tempo em dias decorrido desde a última movimentação da proposta no Kanban:
+     - 🟢 **Recente**: Até 2 dias na etapa (ex: `🟢 Hoje`, `🟢 1d na etapa`).
+     - 🟡 **Moderado**: De 3 a 5 dias sem movimentação (ex: `🟡 4d na etapa`).
+     - 🔴 **Crítico**: Acima de 5 dias estagnado (ex: `🔴 8d na etapa`), acionando animação pulsante para chamar a atenção imediata do consultor.
+
+2. **Menu de Ações Rápidas nos Cards de Orçamento (`⋮`)**:
+   - Dropdown compacto no topo direito de cada card que permite executar ações imediatas sem precisar abrir o modal detalhado:
+     - **Alteração de Temperatura em 1-Toque**: Modifica a classificação comercial para 🔥 Quente, ⚡ Normal ou ❄️ Frio com persistência imediata no Supabase.
+     - **WhatsApp Direto**: Dispara o envio de mensagem pré-formatada.
+     - **Lembrete Rápido (+2 dias)**: Cria automaticamente um lembrete com agendamento no Inbox para daqui a 2 dias (turno manhã).
+     - **Ver Detalhes / Notas**: Abertura instantânea da ficha completa.
+
+3. **Abas Superiores com Contadores Dinâmicos na Central de Reembolsos**:
+   - Barra de navegação tipo *pills* no topo da tabela de reembolsos com contadores recalculados em tempo real:
+     - `Todos (N)`
+     - `⏳ Solicitados (N)` (englobando solicitações iniciais e aguardo de fornecedor)
+     - `🔍 Em Análise (N)`
+     - `✅ Aprovados / Pagos (N)`
+     - `❌ Recusados / Cancelados (N)`
+   - Permite alternar a visão da fila com 1 clique, mantendo a compatibilidade com a busca textual.
+
+4. **Sync Scroll Espelhado no PaxFlow Studio™**:
+   - Rolagem vertical sincronizada e proporcional entre a coluna do editor e a janela do **Live Preview** no modo desktop, garantindo que o consultor visualize no preview exatamente o dia ou serviço que está preenchendo no editor.
+
+5. **Drag & Drop de Vouchers Diretamente sobre o Produto**:
+   - Cards de produtos no modal de gerenciamento de viagens tornam-se zonas de soltura nativas HTML5.
+   - Ao arrastar um arquivo PDF ou imagem sobre o card, o produto recebe destaque visual com borda tracejada índigo e aciona a janela de upload do `UploadAnexoModal` com vínculo automático àquele produto e passageiro.
+
+6. **Atalho Universal de Teclado `Ctrl + Enter` / `Cmd + Enter`**:
+   - Padronização de atalho de teclado para submissão imediata em:
+     - Caixa de comentários e anotações (produtos, orçamentos e viagens).
+     - Modal de Nova Mensagem Direta do Inbox (campos de assunto e corpo).
+     - Formulário principal de Edição de Viagem e observações.
 
 ---
 

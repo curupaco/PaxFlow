@@ -20,6 +20,7 @@ export class StudioPage {
   private termoBuscaDrawer: string = '';
   private alteracoesNaoSalvas: boolean = false;
   private secaoIngestaoAberta: boolean = true;
+  private syncScrollHandler: any = null;
 
   // Estado para o Modal Focado de Atividade/Item
   private itemEmEdicao: {
@@ -138,7 +139,7 @@ export class StudioPage {
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           
           <!-- COLUNA ESQUERDA: EDITOR E FORMULÁRIOS ESTRUTURADOS (6 COLS) -->
-          <div class="lg:col-span-6 space-y-5">
+          <div id="studio-editor-column" class="lg:col-span-6 space-y-5">
 
             <!-- SEÇÃO 1: INGESTÃO DE DOCUMENTOS & TEXTO -->
             <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
@@ -1363,6 +1364,46 @@ export class StudioPage {
         }
       }
     });
+
+    // 19. Sync Scroll Espelhado entre Editor e Live Preview
+    this.setupSyncScroll();
+  }
+
+  /**
+   * Configura o scroll sincronizado e espelhado entre o editor e o Live Preview
+   */
+  private setupSyncScroll(): void {
+    const previewContainer = this.container.querySelector('#container-live-preview-content') as HTMLElement;
+    if (!previewContainer) return;
+
+    if (this.syncScrollHandler) {
+      window.removeEventListener('scroll', this.syncScrollHandler);
+      this.syncScrollHandler = null;
+    }
+
+    this.syncScrollHandler = () => {
+      // Ativo apenas no modo desktop com duas colunas lado a lado
+      if (window.innerWidth < 1024 || this.modoPreview === 'mobile') return;
+      const editorCol = this.container.querySelector('#studio-editor-column') as HTMLElement;
+      if (!editorCol || !previewContainer) return;
+
+      const editorRect = editorCol.getBoundingClientRect();
+      const editorHeight = editorCol.offsetHeight;
+      const windowHeight = window.innerHeight;
+
+      const totalScrollable = editorHeight - windowHeight + 120;
+      if (totalScrollable <= 0) return;
+
+      const currentScrolled = Math.max(0, -editorRect.top);
+      const scrollRatio = Math.min(1, Math.max(0, currentScrolled / totalScrollable));
+
+      const previewMaxScroll = previewContainer.scrollHeight - previewContainer.clientHeight;
+      if (previewMaxScroll > 0) {
+        previewContainer.scrollTop = scrollRatio * previewMaxScroll;
+      }
+    };
+
+    window.addEventListener('scroll', this.syncScrollHandler, { passive: true });
   }
 
   // ==========================================================================

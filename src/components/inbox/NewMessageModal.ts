@@ -250,6 +250,16 @@ export class NewMessageModal {
       setTimeout(() => modalOverlay.remove(), 200);
     };
 
+    // Atalho Ctrl+Enter / Cmd+Enter para envio rápido
+    const handleKeyShortcut = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        sendBtn?.click();
+      }
+    };
+    bodyInput?.addEventListener('keydown', handleKeyShortcut);
+    subjectInput?.addEventListener('keydown', handleKeyShortcut);
+
     // Close listeners
     document.getElementById('msg-close-btn')?.addEventListener('click', closeModal);
     document.getElementById('msg-cancel-btn')?.addEventListener('click', closeModal);

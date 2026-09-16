@@ -699,6 +699,41 @@ export const HELP_ITEMS: HelpItem[] = [
     label: '✨ PaxFlow Studio™ — Roteiros & Propostas Digitais de Luxo',
     description: 'Central em Split Screen para criação ágil de propostas com Live Preview em tempo real, lâminas de caderno em PDF e aprovação online.',
     details: 'O **PaxFlow Studio™** é a ferramenta de ponta a ponta do PaxFlow para elaboração de propostas comerciais e cadernos de viagem de alto impacto visual e rigor documental.\n\n### 🚀 Recursos & Inovações da Interface:\n1. **Modo Split Screen (Tela Dividida)**: Editor estruturado à esquerda e **Live Preview em Tempo Real** à direita. Qualquer alteração em dados do passageiro, capa ou atividades reflete imediatamente na proposta visual de luxo, sem refresh e sem perda de foco do teclado.\n2. **Controles de Visualização (Desktop & Mobile)**: Alterne no topo do Live Preview entre a visão de tela cheia ou o simulador de smartphone para garantir uma experiência perfeita ao cliente.\n3. **Barra Inferior Fixa & Atalho [Ctrl+S]**: Barra sempre visível no rodapé com indicador de status em tempo real (*Modificações pendentes* vs *Todas as alterações salvas no banco*), botão em destaque para salvar, impressão de Caderno PDF, cópia do Link do Cliente e efetivação direta em viagem confirmada.\n4. **Gaveta Lateral de Propostas (Drawer)**: Acesso instantâneo a todas as propostas salvas na agência com busca rápida por cliente ou destino pelo botão **Minhas Propostas**, mantendo sua área de edição 100% despoluída.\n5. **Modal Focado de Atividades**: Formulário dedicado e espaçoso para cada tipo de serviço (Voos com catálogo oficial de cias aéreas, Hotéis com regimes de alimentação, Transfers, Seguros e Passeios), eliminando sanfonas verticais confusas.\n6. **Ingestão com Fidelidade Estrita**: Arraste múltiplos PDFs de consolidadoras ou cole mensagens de WhatsApp para extrair automaticamente trechos, voos, hotéis e vouchers.'
+  },
+  {
+    id: 'lead-aging-quick-actions',
+    modulo: 'orcamentos',
+    label: '⏱️ Lead Aging e Menu de Ações Rápidas (⋮) nos Cards',
+    description: 'Como identificar leads estagnados por tempo na etapa e realizar ações de 1-toque no card.',
+    details: 'O Kanban de Orçamentos traz dois recursos para elevar a produtividade comercial:\n\n- **Lead Aging (Tempo na Etapa)**: Badges visuais calculam os dias corridos em que a oportunidade permanece no estágio atual: 🟢 **Recente** (até 2 dias), 🟡 **Moderado** (3 a 5 dias) e 🔴 **Crítico** (mais de 5 dias parado, com efeito pulsante).\n- **Menu de Ações Rápidas (⋮)**: No topo direito de cada card, o botão de três pontinhos abre um menu de atalhos rápidos: alteração de temperatura com 1-toque (🔥 Quente, ⚡ Normal, ❄️ Frio), disparo direto de WhatsApp, agendamento de lembrete automático para daqui a 2 dias e visualização de notas.'
+  },
+  {
+    id: 'abas-status-reembolsos',
+    modulo: 'reembolsos',
+    label: '📊 Abas de Status com Contadores Dinâmicos em Reembolsos',
+    description: 'Como filtrar processos de cancelamento e acompanhar volumetrias por etapa com 1-clique.',
+    details: 'A Central de Reembolsos conta com uma barra superior de abas dinâmicas que exibem a contagem em tempo real de cada estágio operacional:\n\n- **Todos (N)**: Visão consolidada de todas as solicitações da agência.\n- **⏳ Solicitados (N)**: Processos em abertura ou aguardando resposta inicial do fornecedor.\n- **🔍 Em Análise (N)**: Processos sob auditoria de tarifas, no-show ou multas de contrato.\n- **✅ Aprovados / Pagos (N)**: Reembolsos autorizados e liquidados financeiramente.\n- **❌ Recusados / Cancelados (N)**: Processos indeferidos ou cancelados.\n\nBasta clicar na aba desejada para filtrar a tabela instantaneamente, com suporte conjunto à barra de pesquisa em tempo real.'
+  },
+  {
+    id: 'studio-sync-scroll',
+    modulo: 'processos',
+    label: '🔄 Sync Scroll Espelhado no PaxFlow Studio™',
+    description: 'Rolagem sincronizada e suave entre o editor estruturado e o Live Preview em tempo real.',
+    details: 'Ao editar roteiros no PaxFlow Studio™ em telas amplas (desktop), o container do **Live Preview** espelha automaticamente a rolagem vertical da coluna de edição.\n\nConforme você rola a página para baixo para cadastrar o Dia 2, Dia 3 ou novos serviços, a prévia visual acompanha a mesma proporção de rolagem, permitindo inspecionar o resultado visual do caderno sem precisar alternar o foco manualmente.'
+  },
+  {
+    id: 'drag-drop-vouchers-produtos',
+    modulo: 'viagens',
+    label: '📂 Drag & Drop de Vouchers Diretamente sobre o Produto',
+    description: 'Como anexar bilhetes, apólices e confirmações arrastando arquivos sobre os cards de serviços.',
+    details: 'No modal de edição e gestão de produtos da viagem, você pode anexar documentos de forma imediata:\n\n1. Arraste qualquer arquivo PDF ou imagem do seu computador diretamente para o card do produto correspondente.\n2. O card exibirá uma borda tracejada em destaque índigo confirmando a zona de soltura.\n3. Ao soltar o arquivo, o PaxFlow abre imediatamente a janela de identificação com o produto e o passageiro pré-vinculados, permitindo salvar o voucher no Google Drive em 1-toque.'
+  },
+  {
+    id: 'atalho-ctrl-enter',
+    modulo: 'geral',
+    label: '⌨️ Atalho Universal [Ctrl + Enter] para Envio Rápido',
+    description: 'Economize tempo enviando comentários, mensagens da inbox, notas e salvando formulários pelo teclado.',
+    details: 'Em qualquer campo de texto ou formulário de notas e mensagens do PaxFlow, utilize o atalho de teclado:\n\n- **Windows/Linux**: `Ctrl + Enter`\n- **macOS**: `Cmd + Enter`\n\nDisponível na **Caixa de Comentários** (produtos, orçamentos e viagens), no modal de **Nova Mensagem da Inbox**, nos **Detalhes de Orçamento** e no formulário de **Edição de Viagem**.'
   }
 ];
 

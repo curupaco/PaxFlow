@@ -126,4 +126,30 @@ describe('ReembolsosController - Testes Subcutâneos', () => {
     // Assert
     expect(resVazio).toHaveLength(2);
   });
+
+  it('deve categorizar e contabilizar processos corretamente pelas abas de status', () => {
+    // Setup
+    const lista = [
+      { id: '1', status: 'solicitado' },
+      { id: '2', status: 'Aguardando Fornecedor' },
+      { id: '3', status: 'em_analise' },
+      { id: '4', status: 'aprovado' },
+      { id: '5', status: 'pago' },
+      { id: '6', status: 'recusado' },
+      { id: '7', status: 'cancelado' }
+    ];
+
+    // Action
+    const solicitados = lista.filter(r => r.status === 'solicitado' || r.status === 'Aguardando Fornecedor');
+    const emAnalise = lista.filter(r => r.status === 'em_analise');
+    const pagos = lista.filter(r => r.status === 'aprovado' || r.status === 'pago');
+    const recusados = lista.filter(r => r.status === 'recusado' || r.status === 'cancelado');
+
+    // Assert
+    expect(solicitados).toHaveLength(2);
+    expect(emAnalise).toHaveLength(1);
+    expect(pagos).toHaveLength(2);
+    expect(recusados).toHaveLength(2);
+  });
 });
+

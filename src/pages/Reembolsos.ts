@@ -47,6 +47,7 @@ export class ReembolsosPage {
   private reembolsos: any[] = [];
   private timerId: any = null;
   private buscaTermo: string = '';
+  private activeStatusTab: 'todos' | 'solicitados' | 'em_analise' | 'pagos' | 'recusados' = 'todos';
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -273,6 +274,19 @@ export class ReembolsosPage {
 
 
 
+    // Abas de Status com Contadores
+    const tabBtns = document.querySelectorAll('.tab-reembolso-btn');
+    tabBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tab = btn.getAttribute('data-status-tab') as any;
+        if (tab && this.activeStatusTab !== tab) {
+          this.activeStatusTab = tab;
+          this.render();
+          this.iniciarSlaTimer();
+        }
+      });
+    });
+
     // Campo de busca de reembolsos
     const searchInput = document.getElementById('input-busca-reembolso') as HTMLInputElement;
     searchInput?.addEventListener('input', (e) => {
@@ -384,8 +398,29 @@ export class ReembolsosPage {
    * Renderiza a página da central de reembolsos
    */
   private render(): void {
-    // Separa e filtra os reembolsos com base no termo de busca
+    // Cálculos de contagem por aba de status
+    const totalCount = this.reembolsos.length;
+    const solicitadosCount = this.reembolsos.filter(r => r.status === 'solicitado' || r.status === 'Aguardando Fornecedor').length;
+    const emAnaliseCount = this.reembolsos.filter(r => r.status === 'em_analise').length;
+    const pagosCount = this.reembolsos.filter(r => r.status === 'aprovado' || r.status === 'pago').length;
+    const recusadosCount = this.reembolsos.filter(r => r.status === 'recusado' || r.status === 'cancelado').length;
+
+    // Separa e filtra os reembolsos com base no termo de busca e na aba ativa
     const filtrados = this.reembolsos.filter(r => {
+      // Filtro por Aba de Status
+      if (this.activeStatusTab === 'solicitados' && !(r.status === 'solicitado' || r.status === 'Aguardando Fornecedor')) {
+        return false;
+      }
+      if (this.activeStatusTab === 'em_analise' && r.status !== 'em_analise') {
+        return false;
+      }
+      if (this.activeStatusTab === 'pagos' && !(r.status === 'aprovado' || r.status === 'pago')) {
+        return false;
+      }
+      if (this.activeStatusTab === 'recusados' && !(r.status === 'recusado' || r.status === 'cancelado')) {
+        return false;
+      }
+
       if (!this.buscaTermo) return true;
       const q = this.buscaTermo.toLowerCase().trim();
 
@@ -435,6 +470,14 @@ export class ReembolsosPage {
       const parts = dataApenas.split('-');
       if (parts.length !== 3) return dStr;
       return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    };
+
+    const renderTabClass = (tabName: string) => {
+      const isActive = this.activeStatusTab === tabName;
+      if (isActive) {
+        return 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20 font-black';
+      }
+      return 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/60 font-bold border border-slate-200 dark:border-slate-700';
     };
 
     this.container.innerHTML = `
@@ -490,14 +533,47 @@ export class ReembolsosPage {
             </div>
           </div>
 
-          <!-- Campo de Busca em Tempo Real -->
-          <div class="relative max-w-md">
-            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-400">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
+          <!-- Barra de Abas de Status e Busca -->
+          <div class="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+            
+            <!-- Abas Superiores com Contadores Dinâmicos -->
+            <div class="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 custom-scrollbar">
+              <button type="button" data-status-tab="todos" class="tab-reembolso-btn px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 transition cursor-pointer shrink-0 ${renderTabClass('todos')}">
+                <span>Todos</span>
+                <span class="px-1.5 py-0.5 rounded-md text-[10px] font-black ${this.activeStatusTab === 'todos' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'}">${totalCount}</span>
+              </button>
+
+              <button type="button" data-status-tab="solicitados" class="tab-reembolso-btn px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 transition cursor-pointer shrink-0 ${renderTabClass('solicitados')}">
+                <span>⏳ Solicitados</span>
+                <span class="px-1.5 py-0.5 rounded-md text-[10px] font-black ${this.activeStatusTab === 'solicitados' ? 'bg-white/20 text-white' : 'bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300'}">${solicitadosCount}</span>
+              </button>
+
+              <button type="button" data-status-tab="em_analise" class="tab-reembolso-btn px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 transition cursor-pointer shrink-0 ${renderTabClass('em_analise')}">
+                <span>🔍 Em Análise</span>
+                <span class="px-1.5 py-0.5 rounded-md text-[10px] font-black ${this.activeStatusTab === 'em_analise' ? 'bg-white/20 text-white' : 'bg-indigo-100 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300'}">${emAnaliseCount}</span>
+              </button>
+
+              <button type="button" data-status-tab="pagos" class="tab-reembolso-btn px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 transition cursor-pointer shrink-0 ${renderTabClass('pagos')}">
+                <span>✅ Aprovados / Pagos</span>
+                <span class="px-1.5 py-0.5 rounded-md text-[10px] font-black ${this.activeStatusTab === 'pagos' ? 'bg-white/20 text-white' : 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300'}">${pagosCount}</span>
+              </button>
+
+              <button type="button" data-status-tab="recusados" class="tab-reembolso-btn px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 transition cursor-pointer shrink-0 ${renderTabClass('recusados')}">
+                <span>❌ Recusados / Cancelados</span>
+                <span class="px-1.5 py-0.5 rounded-md text-[10px] font-black ${this.activeStatusTab === 'recusados' ? 'bg-white/20 text-white' : 'bg-rose-100 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300'}">${recusadosCount}</span>
+              </button>
             </div>
-            <input id="input-busca-reembolso" type="text" placeholder="Pesquisar por cliente, destino, localizador, fornecedor, status..." value="${this.buscaTermo}" class="h-10 w-full text-xs font-semibold pl-10 pr-4 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition flex items-center" />
+
+            <!-- Campo de Busca em Tempo Real -->
+            <div class="relative w-full md:w-80 shrink-0">
+              <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-400">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+              <input id="input-busca-reembolso" type="text" placeholder="Pesquisar cliente, destino, LOC, fornecedor..." value="${this.buscaTermo}" class="h-10 w-full text-xs font-semibold pl-10 pr-4 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition flex items-center" />
+            </div>
+
           </div>
 
           <!-- Tabela de Reembolsos -->
@@ -505,7 +581,7 @@ export class ReembolsosPage {
             <div class="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/40 dark:bg-slate-900/40">
               <h2 class="text-sm font-black text-slate-700 dark:text-slate-300 tracking-wider uppercase flex items-center gap-1.5">Fila de Reembolsos Ativos ${renderHelpIcon('status-reembolso')}</h2>
               <span class="px-2.5 py-1 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400 font-extrabold text-[10px] rounded border border-indigo-100 dark:border-indigo-900/40 uppercase tracking-wider">
-                ${this.buscaTermo ? `${filtrados.length} de ${totalReembolsos}` : totalReembolsos} solicitações
+                ${filtrados.length} de ${totalReembolsos} solicitações
               </span>
             </div>
 

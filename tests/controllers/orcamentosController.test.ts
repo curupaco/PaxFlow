@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import {
   agruparOrcamentosKanban,
-  calcularMetricasPipeline
+  calcularMetricasPipeline,
+  calcularLeadAgingInfo
 } from '../../src/controllers/orcamentosController';
 
 describe('OrcamentosController - Lógica Subcutânea de Pipeline e Kanban', () => {
@@ -94,4 +95,39 @@ describe('OrcamentosController - Lógica Subcutânea de Pipeline e Kanban', () =
     expect(kanban.SOLICITADO).toHaveLength(3); // s1, s2, s3 caem em SOLICITADO
     expect(kanban.EM_ANDAMENTO).toHaveLength(1); // s4 normalizado para maiúsculo
   });
+
+  it('deve calcular corretamente os níveis e badges de Lead Aging para datas recentes, moderadas e críticas', () => {
+    // Setup
+    const hoje = new Date().toISOString();
+    const ha3Dias = new Date(Date.now() - 3.5 * 24 * 60 * 60 * 1000).toISOString();
+    const ha7Dias = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const dataInvalida = 'data-invalida';
+
+    // Action
+    const infoHoje = calcularLeadAgingInfo(hoje);
+    const infoModerado = calcularLeadAgingInfo(ha3Dias);
+    const infoCritico = calcularLeadAgingInfo(ha7Dias);
+    const infoInvalida = calcularLeadAgingInfo(dataInvalida);
+    const infoVazia = calcularLeadAgingInfo(undefined);
+
+    // Assert
+    expect(infoHoje.nivel).toBe('recente');
+    expect(infoHoje.badgeHtml).toContain('🟢');
+    expect(infoHoje.badgeHtml).toContain('Hoje');
+
+    expect(infoModerado.nivel).toBe('moderado');
+    expect(infoModerado.dias).toBe(3);
+    expect(infoModerado.badgeHtml).toContain('🟡');
+
+    expect(infoCritico.nivel).toBe('critico');
+    expect(infoCritico.dias).toBe(7);
+    expect(infoCritico.badgeHtml).toContain('🔴');
+
+    expect(infoInvalida.nivel).toBe('recente');
+    expect(infoInvalida.badgeHtml).toBe('');
+
+    expect(infoVazia.nivel).toBe('recente');
+    expect(infoVazia.badgeHtml).toBe('');
+  });
 });
+

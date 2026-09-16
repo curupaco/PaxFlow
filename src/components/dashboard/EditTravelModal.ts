@@ -1304,6 +1304,14 @@ export class EditTravelModal {
       }
     });
 
+    // Atalho Ctrl+Enter / Cmd+Enter para salvar alterações da viagem
+    formEditar?.addEventListener('keydown', (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        formEditar.requestSubmit();
+      }
+    });
+
     // Evento para excluir a viagem
     const btnExcluirViagem = document.getElementById('btn-excluir-viagem');
     btnExcluirViagem?.addEventListener('click', async () => {
@@ -2992,6 +3000,38 @@ export class EditTravelModal {
           this.selectedProductId = prod.id;
           this.open(this.tripId, 'produtos');
         }
+      });
+
+      // Suporte Drag & Drop de Vouchers diretamente sobre o Produto
+      card.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        card.classList.add('border-dashed', 'border-2', 'border-indigo-500', 'bg-indigo-50', 'dark:bg-indigo-950/50', 'scale-[1.01]');
+      });
+
+      card.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        card.classList.remove('border-dashed', 'border-2', 'border-indigo-500', 'bg-indigo-50', 'dark:bg-indigo-950/50', 'scale-[1.01]');
+      });
+
+      card.addEventListener('drop', async (e: any) => {
+        e.preventDefault();
+        e.stopPropagation();
+        card.classList.remove('border-dashed', 'border-2', 'border-indigo-500', 'bg-indigo-50', 'dark:bg-indigo-950/50', 'scale-[1.01]');
+        
+        const files: File[] = Array.from(e.dataTransfer?.files || []);
+        if (files.length === 0) return;
+
+        const viagem = this.options.viagens.find(x => x.id === this.tripId);
+        if (!viagem) return;
+
+        await this.abrirModalIdentificacaoAnexos(
+          files,
+          viagem.id,
+          viagem.cliente_id || viagem.cliente?.id,
+          viagem.cliente?.nome
+        );
       });
     });
 

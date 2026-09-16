@@ -225,6 +225,14 @@ export class CommentsService {
 
     if (!textarea || !btnSubmit || !dropdown) return;
 
+    // Atalho Ctrl+Enter / Cmd+Enter para envio rápido da nota
+    textarea.addEventListener('keydown', (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        btnSubmit.click();
+      }
+    });
+
     const btnToggle = container.querySelector(`#btn-toggle-sched-${itemId}`) as HTMLButtonElement;
     const schedPanel = container.querySelector(`#sched-panel-${itemId}`) as HTMLDivElement;
     const schedDateInput = container.querySelector(`#sched-date-${itemId}`) as HTMLInputElement;

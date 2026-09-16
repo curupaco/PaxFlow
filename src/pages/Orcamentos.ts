@@ -275,6 +275,37 @@ export class OrcamentosPage {
   }
 
   /**
+   * Retorna informações visuais de Lead Aging (envelhecimento do lead no estágio)
+   */
+  public static calcularLeadAgingInfo(dateIso?: string): { dias: number; badgeHtml: string; nivel: 'recente' | 'moderado' | 'critico' } {
+    if (!dateIso) return { dias: 0, badgeHtml: '', nivel: 'recente' };
+    const criado = new Date(dateIso).getTime();
+    if (isNaN(criado)) return { dias: 0, badgeHtml: '', nivel: 'recente' };
+    const diffDias = Math.floor((Date.now() - criado) / (1000 * 60 * 60 * 24));
+
+    if (diffDias <= 2) {
+      const texto = diffDias === 0 ? 'Hoje' : `${diffDias}d na etapa`;
+      return {
+        dias: diffDias,
+        nivel: 'recente',
+        badgeHtml: `<span class="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-800/40" title="Lead recente na etapa (${diffDias}d)">🟢 ${texto}</span>`
+      };
+    } else if (diffDias <= 5) {
+      return {
+        dias: diffDias,
+        nivel: 'moderado',
+        badgeHtml: `<span class="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-200/50 dark:border-amber-800/40" title="Atenção: ${diffDias} dias nesta etapa">🟡 ${diffDias}d na etapa</span>`
+      };
+    } else {
+      return {
+        dias: diffDias,
+        nivel: 'critico',
+        badgeHtml: `<span class="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400 border border-rose-200/50 dark:border-rose-800/40 animate-pulse" title="Crítico: parado há ${diffDias} dias">🔴 ${diffDias}d na etapa</span>`
+      };
+    }
+  }
+
+  /**
    * Associa eventos gerais da página
    */
   private setupGlobalEventListeners(): void {
@@ -548,6 +579,77 @@ export class OrcamentosPage {
       });
     });
 
+    // Botão Alternar Menu de Ações Rápidas (⋮)
+    this.container.querySelectorAll('[data-action="toggle-quick-menu"]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        const id = (btn as HTMLElement).dataset.id;
+        if (!id) return;
+        const menu = document.getElementById(`quick-menu-${id}`);
+        // Fecha outros menus abertos
+        document.querySelectorAll('[id^="quick-menu-"]').forEach(m => {
+          if (m.id !== `quick-menu-${id}`) m.classList.add('hidden');
+        });
+        menu?.classList.toggle('hidden');
+      });
+    });
+
+    // Ação Rápida: Mudar Temperatura com 1-Toque
+    this.container.querySelectorAll('[data-action="quick-temp"]').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        const el = btn as HTMLElement;
+        const id = el.dataset.id;
+        const temp = el.dataset.temp as 'Frio' | 'Normal' | 'Quente';
+        if (!id || !temp) return;
+        
+        const orc = this.orcamentos.find(o => o.id === id);
+        if (orc) {
+          orc.temperatura = temp;
+          const success = await this.persistOrcamento(orc);
+          if (success) {
+            this.showToast(`Temperatura alterada para ${temp}!`, 'success');
+            await this.loadOrcamentos();
+            this.render();
+          }
+        }
+      });
+    });
+
+    // Ação Rápida: Criar Lembrete em 2 dias
+    this.container.querySelectorAll('[data-action="quick-lembrete-2d"]').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        const el = btn as HTMLElement;
+        const id = el.dataset.id;
+        if (!id) return;
+        
+        const dataAlvo = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        try {
+          await OrcamentosService.createReminder(
+            id,
+            this.user.id,
+            dataAlvo,
+            'MANHA'
+          );
+          this.showToast('Lembrete agendado para daqui a 2 dias (Manhã)!', 'success');
+        } catch (err: any) {
+          this.showToast('Erro ao criar lembrete.', 'error', err);
+        }
+      });
+    });
+
+    // Fechar menus de ações rápidas ao clicar fora
+    document.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('.quick-actions-container')) {
+        document.querySelectorAll('[id^="quick-menu-"]').forEach(m => m.classList.add('hidden'));
+      }
+    });
+
     // Click no Card inteiro (excluindo cliques em botões e ações do card) para abrir visualização/edição em qualquer coluna
     this.container.querySelectorAll('.card-orcamento').forEach(card => {
       card.addEventListener('click', (e) => {
@@ -557,6 +659,7 @@ export class OrcamentosPage {
           target.closest('button') || 
           target.closest('a') || 
           target.closest('[data-action]') ||
+          target.closest('.quick-actions-container') ||
           target.tagName === 'BUTTON' ||
           target.tagName === 'A'
         ) {
@@ -895,13 +998,14 @@ export class OrcamentosPage {
     // Data de criação e contadores
     const dataCriacaoFormato = o.createdAt ? new Date(o.createdAt).toLocaleDateString('pt-BR') : '';
     const tempoAguardando = o.createdAt ? this.calcularTempoAmigavel(o.createdAt) : '';
+    const agingInfo = OrcamentosPage.calcularLeadAgingInfo(o.updatedAt || o.createdAt);
 
     const isAdmin = this.perfil?.role === 'admin';
 
     return `
       <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/85 p-4 rounded-xl shadow-sm card-orcamento pf-card-hover pf-card-glass ${o.temperatura === 'Quente' ? 'pf-glow-hot' : ''} relative flex flex-col gap-3.5 select-none animate-card-in" data-id="${o.id}">
         
-        <!-- Topo do Card: Nome e Detalhes -->
+        <!-- Topo do Card: Nome, Lead Aging e Menu de Ações Rápidas -->
         <div class="flex items-start justify-between gap-2.5">
           <div class="overflow-hidden flex-1">
             <h4 class="text-xs font-black text-slate-800 dark:text-slate-100 leading-snug truncate">
@@ -922,18 +1026,51 @@ export class OrcamentosPage {
                 </button>
               ` : ''}
             </div>
-            ${o.origem ? `
-              <span class="inline-flex items-center gap-0.5 mt-1 px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-200/50 dark:border-slate-800/50">
-                📢 ${o.origem}
-              </span>
-            ` : ''}
+            <div class="flex items-center gap-1.5 mt-1 flex-wrap">
+              ${o.origem ? `
+                <span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-200/50 dark:border-slate-800/50">
+                  📢 ${o.origem}
+                </span>
+              ` : ''}
+              ${o.status !== 'CONCLUIDO' ? agingInfo.badgeHtml : ''}
+            </div>
           </div>
           
           <div class="flex flex-col items-end gap-1 shrink-0">
-            <!-- Seletor de Temperatura -->
-            <span class="h-5 px-2 rounded-md text-[9px] font-black uppercase tracking-wider inline-flex items-center ${tempClass}">
-              ${o.temperatura}
-            </span>
+            <div class="flex items-center gap-1">
+              <!-- Seletor de Temperatura -->
+              <span class="h-5 px-2 rounded-md text-[9px] font-black uppercase tracking-wider inline-flex items-center ${tempClass}">
+                ${o.temperatura}
+              </span>
+
+              <!-- Menu de Ações Rápidas (⋮) -->
+              <div class="relative quick-actions-container">
+                <button type="button" data-action="toggle-quick-menu" data-id="${o.id}" title="Ações Rápidas" class="w-5 h-5 flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition cursor-pointer">
+                  <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>
+                </button>
+                <!-- Popover Dropdown -->
+                <div id="quick-menu-${o.id}" class="hidden absolute right-0 top-6 z-30 w-48 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 py-1.5 text-xs text-slate-700 dark:text-slate-200">
+                  <div class="px-3 py-1 text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider border-b border-slate-100 dark:border-slate-700/50">Mudar Temperatura</div>
+                  <button type="button" data-action="quick-temp" data-id="${o.id}" data-temp="Quente" class="w-full text-left px-3 py-1.5 hover:bg-rose-50 dark:hover:bg-rose-950/30 flex items-center gap-2 text-rose-600 dark:text-rose-400 font-semibold cursor-pointer">
+                    🔥 Quente
+                  </button>
+                  <button type="button" data-action="quick-temp" data-id="${o.id}" data-temp="Normal" class="w-full text-left px-3 py-1.5 hover:bg-amber-50 dark:hover:bg-amber-950/30 flex items-center gap-2 text-amber-600 dark:text-amber-400 font-semibold cursor-pointer">
+                    ⚡ Normal
+                  </button>
+                  <button type="button" data-action="quick-temp" data-id="${o.id}" data-temp="Frio" class="w-full text-left px-3 py-1.5 hover:bg-sky-50 dark:hover:bg-sky-950/30 flex items-center gap-2 text-sky-600 dark:text-sky-400 font-semibold cursor-pointer">
+                    ❄️ Frio
+                  </button>
+                  <div class="my-1 border-t border-slate-100 dark:border-slate-700/50"></div>
+                  <button type="button" data-action="quick-lembrete-2d" data-id="${o.id}" class="w-full text-left px-3 py-1.5 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-semibold cursor-pointer">
+                    ⏰ Lembrar em 2 dias
+                  </button>
+                  <button type="button" data-action="ver-notas" data-id="${o.id}" class="w-full text-left px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2 text-slate-600 dark:text-slate-300 font-semibold cursor-pointer">
+                    👁️ Ver Detalhes / Notas
+                  </button>
+                </div>
+              </div>
+            </div>
+
             ${isAdmin ? `
               <span class="px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-wide bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-400 border border-indigo-100/30 dark:border-indigo-900/30" title="Consultor Responsável: ${dono?.nome || 'Consultor'}">
                 👤 ${(dono?.nome || 'Consultor').split(' ')[0]}
