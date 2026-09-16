@@ -19,6 +19,8 @@ export interface ViagemMock {
   consultor_id?: string;
   cliente?: { nome: string };
   destino?: string;
+  isFinanceiroConferido?: boolean;
+  isProcessoConferido?: boolean;
 }
 
 export function agruparViagensPorColuna(viagens: ViagemMock[]): Record<ViagemKanbanColumn, ViagemMock[]> {
@@ -64,9 +66,21 @@ export function calcularUrgenciaEmbarque(
   return 'normal';
 }
 
+export interface ConfFiltersInput {
+  finPendente?: boolean;
+  finOk?: boolean;
+  procPendente?: boolean;
+  procOk?: boolean;
+}
+
 export function filtrarViagensOperacionais(
   viagens: ViagemMock[],
-  filtros: { consultorId?: string; busca?: string; apenasAtivas?: boolean }
+  filtros: {
+    consultorId?: string;
+    busca?: string;
+    apenasAtivas?: boolean;
+    confFilters?: ConfFiltersInput;
+  }
 ): ViagemMock[] {
   return viagens.filter(v => {
     // Filtro por consultor
@@ -77,6 +91,19 @@ export function filtrarViagensOperacionais(
     // Filtro apenas ativas (exclui pos_viagem)
     if (filtros.apenasAtivas && v.status === 'pos_viagem') {
       return false;
+    }
+
+    // Filtro por conferência (Pills compostos com interseção)
+    if (filtros.confFilters) {
+      const { finPendente, finOk, procPendente, procOk } = filtros.confFilters;
+      const isFinOk = !!v.isFinanceiroConferido;
+      const isProcOk = !!v.isProcessoConferido;
+
+      if (finPendente && !finOk && isFinOk) return false;
+      if (finOk && !finPendente && !isFinOk) return false;
+
+      if (procPendente && !procOk && isProcOk) return false;
+      if (procOk && !procPendente && !isProcOk) return false;
     }
 
     // Filtro por busca

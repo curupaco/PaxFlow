@@ -111,7 +111,13 @@ export class Dashboard {
   private consultores: PerfilConsultor[] = [];
   private tiposProduto: any[] = [];
   private selectedConsultantId: string = 'todos';
-  private selectedConferenceFilter: 'todos' | 'nenhuma' | 'financeiro' | 'processo' | 'completo' = 'todos';
+  private confFilters = {
+    finPendente: false,
+    finOk: false,
+    procPendente: false,
+    procOk: false
+  };
+  private showConfPopover: boolean = false;
   private sortables: Sortable[] = [];
   private buscaTermo: string = '';
   private balcaoResultados: ResultadoBuscaBalcao[] = [];
@@ -1548,20 +1554,19 @@ export class Dashboard {
         if (v.status !== this.activeStatusTab) return false;
       }
 
-      // Filtro de Conferência (Apenas para Admins)
-      if (this.perfil?.role === 'admin' && this.selectedConferenceFilter !== 'todos') {
+      // Filtro de Conferência Avançado (Multi-Pills para Admins)
+      if (this.perfil?.role === 'admin') {
+        const { finPendente, finOk, procPendente, procOk } = this.confFilters;
         const isFinOk = !!v.isFinanceiroConferido;
         const isProcOk = !!v.isProcessoConferido;
 
-        if (this.selectedConferenceFilter === 'nenhuma') {
-          if (isFinOk || isProcOk) return false;
-        } else if (this.selectedConferenceFilter === 'financeiro') {
-          if (!isFinOk) return false;
-        } else if (this.selectedConferenceFilter === 'processo') {
-          if (!isProcOk) return false;
-        } else if (this.selectedConferenceFilter === 'completo') {
-          if (!isFinOk || !isProcOk) return false;
-        }
+        // Filtro Financeiro: se marcou apenas pendente ou apenas OK
+        if (finPendente && !finOk && isFinOk) return false;
+        if (finOk && !finPendente && !isFinOk) return false;
+
+        // Filtro Processo: se marcou apenas pendente ou apenas OK
+        if (procPendente && !procOk && isProcOk) return false;
+        if (procOk && !procPendente && !isProcOk) return false;
       }
 
       // Busca Textual Multicritério Global (Nome, CPF, Telefone, E-mail, Título, Destino, LOC, Produtos, Passageiros)
@@ -1784,15 +1789,68 @@ export class Dashboard {
                   ${this.consultores.map(c => `<option value="${c.id}" ${this.selectedConsultantId === c.id ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">${c.nome}</option>`).join('')}
                 </select>
               </div>
-              <div class="flex items-center gap-1.5 shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2.5 py-1.5 rounded-xl shadow-sm">
-                <span class="text-[10px] font-black uppercase text-slate-400 dark:text-slate-400 select-none">Conf.:</span>
-                <select id="select-dashboard-conferencia" class="text-xs font-bold bg-transparent text-slate-700 dark:text-slate-300 focus:outline-none cursor-pointer max-w-[130px]">
-                  <option value="todos" ${this.selectedConferenceFilter === 'todos' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Todas</option>
-                  <option value="nenhuma" ${this.selectedConferenceFilter === 'nenhuma' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Nenhuma</option>
-                  <option value="financeiro" ${this.selectedConferenceFilter === 'financeiro' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Financeiro</option>
-                  <option value="processo" ${this.selectedConferenceFilter === 'processo' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Processo</option>
-                  <option value="completo" ${this.selectedConferenceFilter === 'completo' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Completo</option>
-                </select>
+
+              <!-- Seletor Popover de Conferência Avançado com Pills -->
+              <div class="relative inline-block text-left shrink-0" id="container-conf-popover">
+                <button id="btn-toggle-conf-popover" type="button" class="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-slate-900 border ${
+                  (this.confFilters.finPendente || this.confFilters.finOk || this.confFilters.procPendente || this.confFilters.procOk)
+                    ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400 font-black shadow-sm ring-1 ring-indigo-500/30'
+                    : 'border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 font-bold'
+                } rounded-xl text-xs hover:bg-slate-50 dark:hover:bg-slate-800 transition">
+                  <span class="text-[10px] font-black uppercase text-slate-400 select-none">Conf.:</span>
+                  <span>${
+                    (this.confFilters.finPendente || this.confFilters.finOk || this.confFilters.procPendente || this.confFilters.procOk)
+                      ? `Ativo (${(this.confFilters.finPendente ? 1 : 0) + (this.confFilters.finOk ? 1 : 0) + (this.confFilters.procPendente ? 1 : 0) + (this.confFilters.procOk ? 1 : 0)})`
+                      : 'Todas'
+                  }</span>
+                  <span class="text-[8px] ml-0.5">${this.showConfPopover ? '▲' : '▼'}</span>
+                </button>
+
+                <!-- Popover Menu Suspenso com Pills -->
+                <div id="popover-conf-filter" class="${this.showConfPopover ? 'block' : 'hidden'} absolute right-0 mt-2 w-72 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl z-50 p-3.5 space-y-3 animate-fade-in font-sans">
+                  <div class="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+                    <span class="text-[11px] font-black uppercase text-slate-700 dark:text-slate-200 tracking-wider">Filtros de Conferência</span>
+                    <button id="btn-conf-limpar" type="button" class="text-[10px] font-bold text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 transition cursor-pointer">
+                      Limpar
+                    </button>
+                  </div>
+
+                  <!-- Seção Financeiro -->
+                  <div>
+                    <span class="block text-[9px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-1.5">💳 Conferência Financeira</span>
+                    <div class="flex flex-wrap gap-1.5">
+                      <button id="pill-conf-fin-pendente" type="button" class="px-2.5 py-1 text-xs font-bold rounded-lg border transition cursor-pointer ${this.confFilters.finPendente ? 'bg-amber-500 text-white border-amber-600 shadow-sm' : 'bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-amber-400'}">
+                        ⏳ Fin. Pendente
+                      </button>
+                      <button id="pill-conf-fin-ok" type="button" class="px-2.5 py-1 text-xs font-bold rounded-lg border transition cursor-pointer ${this.confFilters.finOk ? 'bg-emerald-600 text-white border-emerald-700 shadow-sm' : 'bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-emerald-400'}">
+                        ✅ Fin. OK
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Seção Processo -->
+                  <div>
+                    <span class="block text-[9px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-1.5">📋 Conferência de Processo</span>
+                    <div class="flex flex-wrap gap-1.5">
+                      <button id="pill-conf-proc-pendente" type="button" class="px-2.5 py-1 text-xs font-bold rounded-lg border transition cursor-pointer ${this.confFilters.procPendente ? 'bg-amber-500 text-white border-amber-600 shadow-sm' : 'bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-amber-400'}">
+                        ⏳ Proc. Pendente
+                      </button>
+                      <button id="pill-conf-proc-ok" type="button" class="px-2.5 py-1 text-xs font-bold rounded-lg border transition cursor-pointer ${this.confFilters.procOk ? 'bg-emerald-600 text-white border-emerald-700 shadow-sm' : 'bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-emerald-400'}">
+                        ✅ Proc. OK
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Atalhos Rápidos -->
+                  <div class="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+                    <button id="btn-conf-atalho-100" type="button" class="flex-1 py-1 px-2 text-[10px] font-bold bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 rounded-lg border border-indigo-200 dark:border-indigo-800/60 transition text-center">
+                      ✨ 100% OK
+                    </button>
+                    <button id="btn-conf-atalho-nenhum" type="button" class="flex-1 py-1 px-2 text-[10px] font-bold bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 dark:hover:bg-amber-900/40 text-amber-700 dark:text-amber-300 rounded-lg border border-amber-200 dark:border-amber-800/60 transition text-center">
+                      ⏳ Nenhum OK
+                    </button>
+                  </div>
+                </div>
               </div>
             ` : ''}
 
@@ -2493,11 +2551,69 @@ Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : '
       this.render();
     });
 
-    const selectConferencia = document.getElementById('select-dashboard-conferencia') as HTMLSelectElement;
-    selectConferencia?.addEventListener('change', () => {
-      this.selectedConferenceFilter = selectConferencia.value as any;
+    // 8. Eventos do Popover e Pills de Conferência
+    const btnToggleConf = document.getElementById('btn-toggle-conf-popover');
+    btnToggleConf?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.showConfPopover = !this.showConfPopover;
       this.render();
     });
+
+    document.getElementById('pill-conf-fin-pendente')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.confFilters.finPendente = !this.confFilters.finPendente;
+      this.render();
+    });
+
+    document.getElementById('pill-conf-fin-ok')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.confFilters.finOk = !this.confFilters.finOk;
+      this.render();
+    });
+
+    document.getElementById('pill-conf-proc-pendente')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.confFilters.procPendente = !this.confFilters.procPendente;
+      this.render();
+    });
+
+    document.getElementById('pill-conf-proc-ok')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.confFilters.procOk = !this.confFilters.procOk;
+      this.render();
+    });
+
+    document.getElementById('btn-conf-atalho-100')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.confFilters = { finPendente: false, finOk: true, procPendente: false, procOk: true };
+      this.render();
+    });
+
+    document.getElementById('btn-conf-atalho-nenhum')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.confFilters = { finPendente: true, finOk: false, procPendente: true, procOk: false };
+      this.render();
+    });
+
+    document.getElementById('btn-conf-limpar')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.confFilters = { finPendente: false, finOk: false, procPendente: false, procOk: false };
+      this.render();
+    });
+
+    // Fechar Popover ao clicar fora
+    if (this.showConfPopover) {
+      const popoverContainer = document.getElementById('container-conf-popover');
+      const handleOutsideConfClick = (e: MouseEvent) => {
+        if (this.showConfPopover && popoverContainer && !popoverContainer.contains(e.target as Node)) {
+          this.showConfPopover = false;
+          this.render();
+        }
+      };
+      setTimeout(() => {
+        document.addEventListener('click', handleOutsideConfClick, { once: true });
+      }, 50);
+    }
 
     // Evento de clique no PaxFlow Risk Score Badge
     this.container.querySelectorAll('.btn-open-risk-score').forEach(btn => {

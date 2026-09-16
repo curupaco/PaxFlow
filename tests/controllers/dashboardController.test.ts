@@ -120,5 +120,68 @@ describe('DashboardController - Testes Subcutâneos', () => {
     expect(resultado[0].id).toBe('1');
     expect(resultado[0].destino).toBe('Cancún');
   });
+
+  it('deve filtrar viagens com pendência financeira de forma precisa', () => {
+    // Setup
+    const viagens: ViagemMock[] = [
+      { id: '1', status: 'planejamento', isFinanceiroConferido: false, isProcessoConferido: true },
+      { id: '2', status: 'planejamento', isFinanceiroConferido: true, isProcessoConferido: true },
+      { id: '3', status: 'planejamento', isFinanceiroConferido: false, isProcessoConferido: false },
+    ];
+
+    // Action - Apenas pendentes de financeiro
+    const resultado = filtrarViagensOperacionais(viagens, {
+      confFilters: { finPendente: true }
+    });
+
+    // Assert
+    expect(resultado).toHaveLength(2);
+    expect(resultado.map(v => v.id)).toEqual(['1', '3']);
+  });
+
+  it('deve filtrar viagens combinando múltiplos critérios (Financeiro Pendente E Processo OK)', () => {
+    // Setup
+    const viagens: ViagemMock[] = [
+      { id: '1', status: 'planejamento', isFinanceiroConferido: false, isProcessoConferido: true }, // atende
+      { id: '2', status: 'planejamento', isFinanceiroConferido: true, isProcessoConferido: true },  // fin ok
+      { id: '3', status: 'planejamento', isFinanceiroConferido: false, isProcessoConferido: false }, // proc pendente
+    ];
+
+    // Action - Fin Pendente E Proc OK
+    const resultado = filtrarViagensOperacionais(viagens, {
+      confFilters: { finPendente: true, procOk: true }
+    });
+
+    // Assert
+    expect(resultado).toHaveLength(1);
+    expect(resultado[0].id).toBe('1');
+  });
+
+  it('deve filtrar viagens 100% conferidas e nenhuma conferida através dos atalhos compostos', () => {
+    // Setup
+    const viagens: ViagemMock[] = [
+      { id: '1', status: 'planejamento', isFinanceiroConferido: true, isProcessoConferido: true },   // 100% ok
+      { id: '2', status: 'planejamento', isFinanceiroConferido: false, isProcessoConferido: false }, // nenhum ok
+      { id: '3', status: 'planejamento', isFinanceiroConferido: true, isProcessoConferido: false },  // misto
+    ];
+
+    // Action - 100% OK
+    const res100 = filtrarViagensOperacionais(viagens, {
+      confFilters: { finOk: true, procOk: true }
+    });
+
+    // Action - Nenhum OK
+    const resNenhum = filtrarViagensOperacionais(viagens, {
+      confFilters: { finPendente: true, procPendente: true }
+    });
+
+    // Assert
+    expect(res100).toHaveLength(1);
+    expect(res100[0].id).toBe('1');
+
+    expect(resNenhum).toHaveLength(1);
+    expect(resNenhum[0].id).toBe('2');
+  });
 });
+
 
