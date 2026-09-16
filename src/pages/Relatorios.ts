@@ -2573,11 +2573,40 @@ export class RelatoriosPage {
       tipoCalculoBadge = '<span class="inline-flex px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/45 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/40 text-[10px] font-black uppercase rounded-lg">Rentabilidade Líquida</span>';
     }
 
-    // Alvo global / maior faixa
+    // Alvo global / maior faixa e apuração de progresso
     const sortedFaixas = [...(metaAtual.faixas || [])].sort((a, b) => a.valor_minimo - b.valor_minimo);
     const maiorFaixaVal = sortedFaixas.length > 0 ? sortedFaixas[sortedFaixas.length - 1].valor_minimo : (metaAtual.valor_meta || 0);
     const consultoresNoAlvo = apuracao.rankingConsultores.filter(r => r.faixaAtual !== null).length;
-    const pctGeral = maiorFaixaVal > 0 ? Math.min(Math.round((apuracao.totalAgencia / maiorFaixaVal) * 100), 100) : 0;
+    const totalConsultoresAvaliados = apuracao.rankingConsultores.length || this.consultores.length || 1;
+
+    let alvoExibido = maiorFaixaVal;
+    let alvoLabel = 'Alvo da Meta / Maior Faixa';
+    let alvoSubtexto = sortedFaixas.length > 0 ? `${sortedFaixas.length} faixas de premiação` : 'Meta global';
+    let pctGeral = 0;
+    let pctGeralLabel = 'Progresso Geral';
+    let pctGeralSubtexto = 'Desempenho consolidado';
+
+    if (metaAtual.is_meta_loja) {
+      // Meta Global / Loja
+      const alvoLoja = metaAtual.valor_meta || maiorFaixaVal || 0;
+      alvoExibido = alvoLoja;
+      alvoLabel = 'Alvo da Loja (Meta Global)';
+      alvoSubtexto = 'Meta unificada para toda a agência';
+      pctGeral = alvoLoja > 0 ? Math.min(Math.round((apuracao.totalAgencia / alvoLoja) * 100), 100) : 0;
+      pctGeralLabel = 'Progresso da Loja';
+      pctGeralSubtexto = `${formatarValorMetrica(apuracao.totalAgencia)} de ${formatarValorMetrica(alvoLoja)}`;
+    } else {
+      // Meta ou Campanha Individual por Consultor
+      const alvoTotalEquipe = maiorFaixaVal * totalConsultoresAvaliados;
+      alvoExibido = maiorFaixaVal;
+      alvoLabel = 'Alvo por Consultor / Maior Faixa';
+      alvoSubtexto = `Capacidade da equipe: ${formatarValorMetrica(alvoTotalEquipe)}`;
+      pctGeral = alvoTotalEquipe > 0 ? Math.min(Math.round((apuracao.totalAgencia / alvoTotalEquipe) * 100), 100) : 0;
+      pctGeralLabel = 'Progresso da Equipe';
+      pctGeralSubtexto = `${formatarValorMetrica(apuracao.totalAgencia)} de ${formatarValorMetrica(alvoTotalEquipe)}`;
+    }
+
+    const consultoresPremiadosPct = Math.round((consultoresNoAlvo / totalConsultoresAvaliados) * 100);
 
     return `
       <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-3xl p-6 shadow-sm flex flex-col gap-6 print-full-width">
@@ -2632,15 +2661,15 @@ export class RelatoriosPage {
           </div>
 
           <div class="bg-slate-50/60 dark:bg-slate-950/40 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 flex flex-col justify-between">
-            <span class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Alvo da Meta / Maior Faixa</span>
+            <span class="text-[10px] font-black text-slate-400 uppercase tracking-wider">${alvoLabel}</span>
             <div class="text-xl font-black text-indigo-600 dark:text-indigo-400 mt-2 truncate">
-              ${formatarValorMetrica(maiorFaixaVal)}
+              ${formatarValorMetrica(alvoExibido)}
             </div>
-            <span class="text-[11px] text-slate-400 font-semibold mt-1">${sortedFaixas.length > 0 ? `${sortedFaixas.length} faixas de premiação` : 'Meta global'}</span>
+            <span class="text-[11px] text-slate-400 font-semibold mt-1">${alvoSubtexto}</span>
           </div>
 
           <div class="bg-slate-50/60 dark:bg-slate-950/40 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 flex flex-col justify-between">
-            <span class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Progresso Geral</span>
+            <span class="text-[10px] font-black text-slate-400 uppercase tracking-wider">${pctGeralLabel}</span>
             <div class="text-xl font-black ${pctGeral >= 100 ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-800 dark:text-slate-100'} mt-2 flex items-center gap-2">
               <span>${pctGeral}%</span>
               ${pctGeral >= 100 ? '<span>🎉</span>' : ''}
@@ -2648,14 +2677,15 @@ export class RelatoriosPage {
             <div class="w-full bg-slate-200 dark:bg-slate-800 h-2 rounded-full overflow-hidden mt-1.5">
               <div class="h-full bg-gradient-to-r from-indigo-500 to-emerald-500 rounded-full transition-all duration-500" style="width: ${pctGeral}%"></div>
             </div>
+            <span class="text-[10px] text-slate-400 font-semibold mt-1 block truncate">${pctGeralSubtexto}</span>
           </div>
 
           <div class="bg-slate-50/60 dark:bg-slate-950/40 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 flex flex-col justify-between">
             <span class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Consultores Premiados</span>
             <div class="text-xl font-black text-emerald-600 dark:text-emerald-400 mt-2">
-              ${consultoresNoAlvo} <span class="text-xs text-slate-400 font-normal">/ ${this.consultores.length}</span>
+              ${consultoresNoAlvo} <span class="text-xs text-slate-400 font-normal">/ ${totalConsultoresAvaliados}</span>
             </div>
-            <span class="text-[11px] text-slate-400 font-semibold mt-1">Atingiram ao menos 1 faixa</span>
+            <span class="text-[11px] text-slate-400 font-semibold mt-1">${consultoresPremiadosPct}% da equipe atingiu faixa</span>
           </div>
         </div>
 

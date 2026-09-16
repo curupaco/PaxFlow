@@ -231,4 +231,90 @@ describe('MetasService & Relatório de Metas e Campanhas - Testes Subcutâneos',
     expect(campCarregada?.is_campanha).toBe(true);
     expect(campCarregada?.valor_meta).toBe(40);
   });
+
+  it('deve calcular corretamente o progresso da equipe em campanha individual (92/400 = 23%) e nao dar 100% quando nenhum consultor atingiu 40', () => {
+    // Setup: 10 consultores, meta individual de 40 orçamentos por consultor
+    const campanhaBoaViagem: MetaPeriodo = {
+      id: 'camp-boa-viagem-10',
+      nome: 'Boa viagem!',
+      data_inicio: '2026-09-01',
+      data_fim: '2026-09-30',
+      tipo_calculo: 'orcamentos',
+      is_campanha: true,
+      is_meta_loja: false,
+      valor_meta: 40,
+      faixas: [
+        { id: 'f1', periodo_id: 'camp-boa-viagem-10', nome: 'Ouro', valor_minimo: 40, bonus_xp: 2000, recompensa: 'Viagem', cor: '#10b981' }
+      ]
+    };
+
+    const consultores = Array.from({ length: 10 }, (_, i) => ({
+      id: `cons-${i + 1}`,
+      nome: `Consultor ${i + 1}`,
+      email: `consultor${i + 1}@agencia.com`
+    }));
+
+    // Cada consultor cadastrou entre 5 e 15 orçamentos (totalizando 92 orçamentos na agência, nenhum com 40)
+    const orcamentos: any[] = [];
+    const distribuicao = [12, 10, 15, 8, 9, 11, 7, 6, 8, 6]; // Soma = 92
+    distribuicao.forEach((qtd, idx) => {
+      for (let j = 0; j < qtd; j++) {
+        orcamentos.push({
+          id: `orc-${idx}-${j}`,
+          consultor_id: `cons-${idx + 1}`,
+          nome_cliente: `Cliente ${idx}-${j}`,
+          created_at: '2026-09-15T12:00:00Z'
+        });
+      }
+    });
+
+    // Action
+    const apuracao = MetasService.calcularProgressoAgencia(campanhaBoaViagem, consultores, orcamentos, []);
+    const totalConsultores = apuracao.rankingConsultores.length;
+    const consultoresNoAlvo = apuracao.rankingConsultores.filter(r => r.faixaAtual !== null).length;
+    const maiorFaixaVal = 40;
+    const alvoTotalEquipe = maiorFaixaVal * totalConsultores; // 40 * 10 = 400
+    const pctGeral = Math.min(Math.round((apuracao.totalAgencia / alvoTotalEquipe) * 100), 100);
+
+    // Assert
+    expect(apuracao.totalAgencia).toBe(92);
+    expect(consultoresNoAlvo).toBe(0); // Nenhum consultor atingiu 40 individualmente
+    expect(alvoTotalEquipe).toBe(400); // 10 consultores * 40
+    expect(pctGeral).toBe(23); // 92 / 400 = 23%
+    expect(pctGeral).not.toBe(100);
+  });
+
+  it('deve calcular progresso de meta global de loja considerando o alvo único para a soma da equipe', () => {
+    // Setup: Meta de loja de 40 orçamentos
+    const metaLoja: MetaPeriodo = {
+      id: 'meta-loja-set',
+      nome: 'Meta Global Setembro',
+      data_inicio: '2026-09-01',
+      data_fim: '2026-09-30',
+      tipo_calculo: 'orcamentos',
+      is_campanha: false,
+      is_meta_loja: true,
+      valor_meta: 40,
+      faixas: []
+    };
+
+    const consultores = [
+      { id: 'cons-1', nome: 'Amanda' },
+      { id: 'cons-2', nome: 'Bruno' }
+    ];
+
+    const orcamentos = [
+      ...Array.from({ length: 25 }, (_, i) => ({ id: `orc-1-${i}`, consultor_id: 'cons-1', created_at: '2026-09-10T00:00:00Z' })),
+      ...Array.from({ length: 20 }, (_, i) => ({ id: `orc-2-${i}`, consultor_id: 'cons-2', created_at: '2026-09-10T00:00:00Z' }))
+    ];
+
+    // Action
+    const apuracao = MetasService.calcularProgressoAgencia(metaLoja, consultores, orcamentos, []);
+    const alvoLoja = metaLoja.valor_meta || 40;
+    const pctLoja = Math.min(Math.round((apuracao.totalAgencia / alvoLoja) * 100), 100);
+
+    // Assert
+    expect(apuracao.totalAgencia).toBe(45); // 25 + 20
+    expect(pctLoja).toBe(100); // 45 / 40 = 100% batida
+  });
 });
