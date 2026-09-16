@@ -10,6 +10,7 @@ import { SendTemplateMessageModal } from './SendTemplateMessageModal';
 import { renderHelpIcon } from '../../utils/helpHelper';
 import { parsePnrText } from '../../utils/pnrParser';
 import { confirmUnsavedChanges } from '../common/UnsavedChangesModal';
+import { ClienteDetalhesModal } from '../common/ClienteDetalhesModal';
 import {
   renderCurrencyInputHTML,
   renderDateInputHTML,
@@ -568,9 +569,15 @@ export class EditTravelModal {
             <form id="form-editar-viagem" class="space-y-4">
               <div>
                 <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 font-sans">Passageiro / Cliente *</label>
-                <select id="edit-viagem-cliente" required ${viagemProcessoConferido ? 'disabled' : ''} class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm font-sans">
-                  ${clientes.map(c => `<option value="${c.id}" class="bg-white dark:bg-slate-800" ${c.id === v.cliente_id ? 'selected' : ''}>${c.nome}</option>`).join('')}
-                </select>
+                <div class="flex items-center gap-2">
+                  <select id="edit-viagem-cliente" required ${viagemProcessoConferido ? 'disabled' : ''} class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-medium text-sm font-sans">
+                    ${clientes.map(c => `<option value="${c.id}" class="bg-white dark:bg-slate-800" ${c.id === v.cliente_id ? 'selected' : ''}>${c.nome}</option>`).join('')}
+                  </select>
+                  <button id="btn-atalho-cliente-modal" type="button" class="shrink-0 px-3 py-2.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300 border border-indigo-200/80 dark:border-indigo-800/80 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-xs" title="Abrir cadastro completo do cliente">
+                    <span class="text-sm">👤</span>
+                    <span class="hidden sm:inline">Ver Ficha</span>
+                  </button>
+                </div>
               </div>
 
               <div>
@@ -1113,6 +1120,59 @@ export class EditTravelModal {
 
     editStatus?.addEventListener('change', updateEditFinRequired);
     updateEditFinRequired();
+
+    // Atalho para abrir o modal completo de cadastro do cliente
+    const btnAtalhoCliente = document.getElementById('btn-atalho-cliente-modal');
+    const selectCliente = document.getElementById('edit-viagem-cliente') as HTMLSelectElement;
+
+    const updateBtnAtalhoState = () => {
+      if (!btnAtalhoCliente || !selectCliente) return;
+      const temCliente = !!selectCliente.value;
+      if (temCliente) {
+        btnAtalhoCliente.removeAttribute('disabled');
+        btnAtalhoCliente.classList.remove('opacity-50', 'cursor-not-allowed');
+        btnAtalhoCliente.setAttribute('title', 'Abrir cadastro completo do cliente');
+      } else {
+        btnAtalhoCliente.setAttribute('disabled', 'true');
+        btnAtalhoCliente.classList.add('opacity-50', 'cursor-not-allowed');
+        btnAtalhoCliente.setAttribute('title', 'Selecione um cliente para abrir a ficha');
+      }
+    };
+
+    selectCliente?.addEventListener('change', updateBtnAtalhoState);
+    updateBtnAtalhoState();
+
+    btnAtalhoCliente?.addEventListener('click', async () => {
+      const clienteId = selectCliente?.value || v.cliente_id;
+      if (!clienteId) {
+        this.options.showToast('Selecione um cliente para visualizar o cadastro.', 'error');
+        return;
+      }
+
+      await ClienteDetalhesModal.abrir(clienteId, {
+        showToast: (msg, type, err) => this.options.showToast(msg, type === 'error' ? 'error' : 'success', err),
+        onSave: (clienteAtualizado) => {
+          // Atualizar o nome do cliente no option selecionado
+          const opt = selectCliente?.querySelector(`option[value="${clienteAtualizado.id}"]`) as HTMLOptionElement;
+          if (opt) {
+            opt.textContent = clienteAtualizado.nome;
+          }
+          if (this.currentLoadedViagem && (this.currentLoadedViagem.cliente_id === clienteAtualizado.id || this.currentLoadedViagem.cliente?.id === clienteAtualizado.id)) {
+            this.currentLoadedViagem.cliente = {
+              ...this.currentLoadedViagem.cliente,
+              nome: clienteAtualizado.nome,
+              email: clienteAtualizado.email,
+              telefone: clienteAtualizado.telefone,
+              documento: clienteAtualizado.documento
+            };
+          }
+          const idx = clientes.findIndex(c => c.id === clienteAtualizado.id);
+          if (idx !== -1) {
+            clientes[idx].nome = clienteAtualizado.nome;
+          }
+        }
+      });
+    });
 
     // Submissão do Formulário de Edição da Viagem
     const formEditar = document.getElementById('form-editar-viagem') as HTMLFormElement;

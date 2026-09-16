@@ -718,21 +718,31 @@ export class CadastrosPage {
                           return rec;
                         };
 
+                        const isMetricaNumerica = meta.tipo_calculo === 'orcamentos' || meta.tipo_calculo === 'qtd_orcamentos' || meta.tipo_calculo === 'vendas' || meta.tipo_calculo === 'qtd_vendas';
+                        const unidadeNome = (meta.tipo_calculo === 'orcamentos' || meta.tipo_calculo === 'qtd_orcamentos') ? 'orçamentos' : (isMetricaNumerica ? 'vendas' : 'R$');
+
                         const faixasHTML = meta.is_meta_loja
-                          ? '<div class="text-xs text-emerald-600 dark:text-emerald-400 font-black">Meta Alvo: R$ ' + (meta.valor_meta || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '</div>'
+                          ? '<div class="text-xs text-emerald-600 dark:text-emerald-400 font-black">Meta Alvo: ' + (isMetricaNumerica ? `${meta.valor_meta || 0} ${unidadeNome}` : 'R$ ' + (meta.valor_meta || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })) + '</div>'
                           : (meta.faixas && meta.faixas.length > 0 
                               ? meta.faixas.map(f => 
                                   '<div class="text-xs text-slate-600 dark:text-slate-400 font-bold mb-0.5 flex items-center gap-1.5">' +
                                   '<span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: ' + (f.cor || '#6366f1') + '"></span>' +
-                                  '• <span style="color: ' + (f.cor || '#6366f1') + '" class="font-black">' + f.nome + '</span>: >= R$ ' + f.valor_minimo.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) +
+                                  '• <span style="color: ' + (f.cor || '#6366f1') + '" class="font-black">' + f.nome + '</span>: >= ' + (isMetricaNumerica ? `${f.valor_minimo} ${unidadeNome}` : 'R$ ' + f.valor_minimo.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })) +
                                   (f.recompensa ? ' <span class="text-[10px] text-slate-400 dark:text-slate-400 font-normal italic">(' + formatRecompensa(f.recompensa) + ')</span>' : '') +
                                   '</div>'
                                 ).join('')
                               : '<span class="text-slate-400 text-xs italic">Nenhuma faixa cadastrada</span>');
 
-                        const tipoCalculoBadge = meta.tipo_calculo === 'bruto'
-                          ? '<span class="inline-flex px-2 py-0.5 bg-blue-50 dark:bg-blue-950/45 text-blue-700 dark:text-blue-400 border border-blue-100 dark:border-blue-900/40 text-[9px] font-black uppercase rounded">Faturamento Bruto</span>'
-                          : '<span class="inline-flex px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/45 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/40 text-[9px] font-black uppercase rounded">Rentabilidade</span>';
+                        let tipoCalculoBadge = '';
+                        if (meta.tipo_calculo === 'orcamentos' || meta.tipo_calculo === 'qtd_orcamentos') {
+                          tipoCalculoBadge = '<span class="inline-flex px-2 py-0.5 bg-amber-50 dark:bg-amber-950/45 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-900/40 text-[9px] font-black uppercase rounded">Qtd. Orçamentos</span>';
+                        } else if (meta.tipo_calculo === 'vendas' || meta.tipo_calculo === 'qtd_vendas') {
+                          tipoCalculoBadge = '<span class="inline-flex px-2 py-0.5 bg-sky-50 dark:bg-sky-950/45 text-sky-700 dark:text-sky-400 border border-sky-200 dark:border-sky-900/40 text-[9px] font-black uppercase rounded">Qtd. Vendas</span>';
+                        } else if (meta.tipo_calculo === 'bruto') {
+                          tipoCalculoBadge = '<span class="inline-flex px-2 py-0.5 bg-blue-50 dark:bg-blue-950/45 text-blue-700 dark:text-blue-400 border border-blue-100 dark:border-blue-900/40 text-[9px] font-black uppercase rounded">Faturamento Bruto</span>';
+                        } else {
+                          tipoCalculoBadge = '<span class="inline-flex px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/45 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/40 text-[9px] font-black uppercase rounded">Rentabilidade</span>';
+                        }
 
                         const tipoPeriodoBadge = meta.is_meta_loja
                           ? '<span class="inline-flex px-2 py-0.5 bg-teal-50 dark:bg-teal-950/45 text-teal-700 dark:text-teal-400 border border-teal-100 dark:border-teal-900/40 text-[9px] font-black uppercase rounded font-bold">Meta Loja</span>'
@@ -2347,8 +2357,10 @@ export class CadastrosPage {
             <div>
               <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Cálculo baseado em *</label>
               <select id="select-meta-calculo" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800 dark:text-slate-100 font-semibold text-sm">
-                <option value="bruto" selected class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Faturamento Bruto (Total das Vendas)</option>
-                <option value="lucro" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Rentabilidade</option>
+                <option value="bruto" selected class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Faturamento Bruto (Total das Vendas R$)</option>
+                <option value="lucro" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Rentabilidade (Comissão + Markup + RAV R$)</option>
+                <option value="orcamentos" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Qtd. de Orçamentos Criados (Unidades)</option>
+                <option value="vendas" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Qtd. de Vendas Fechadas (Unidades)</option>
               </select>
             </div>
 
@@ -2633,8 +2645,10 @@ export class CadastrosPage {
             <div>
               <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">Cálculo baseado em *</label>
               <select id="select-meta-calculo" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800 dark:text-slate-100 font-semibold text-sm">
-                <option value="bruto" ${meta.tipo_calculo === 'bruto' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Faturamento Bruto (Total das Vendas)</option>
-                <option value="lucro" ${meta.tipo_calculo === 'lucro' || (meta.tipo_calculo as string) === 'liquido' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Rentabilidade</option>
+                <option value="bruto" ${meta.tipo_calculo === 'bruto' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Faturamento Bruto (Total das Vendas R$)</option>
+                <option value="lucro" ${meta.tipo_calculo === 'lucro' || (meta.tipo_calculo as string) === 'liquido' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Rentabilidade (Comissão + Markup + RAV R$)</option>
+                <option value="orcamentos" ${meta.tipo_calculo === 'orcamentos' || meta.tipo_calculo === 'qtd_orcamentos' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Qtd. de Orçamentos Criados (Unidades)</option>
+                <option value="vendas" ${meta.tipo_calculo === 'vendas' || meta.tipo_calculo === 'qtd_vendas' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Qtd. de Vendas Fechadas (Unidades)</option>
               </select>
             </div>
 

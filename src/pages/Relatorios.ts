@@ -1,5 +1,5 @@
 import { supabase, getSessaoAtual } from '../services/supabase';
-import { PerfilConsultor } from '../types';
+import { PerfilConsultor, MetaPeriodo, MetaFaixa } from '../types';
 import { InboxService } from '../services/inboxService';
 import { formatBrDateToIso, formatIsoDateToBr } from '../utils/masks';
 import { obterProgressoNivel, BADGE_DEFINITIONS } from '../services/gamification';
@@ -10,6 +10,8 @@ import { ContatosEmbarqueService } from '../services/contatosEmbarqueService';
 import { confirmUnsavedChanges } from '../components/common/UnsavedChangesModal';
 import { ExtratoRecebimentosModal } from '../components/relatorios/ExtratoRecebimentosModal';
 import { processarExtratoRecebimentos } from '../controllers/relatoriosController';
+import { MetasService } from '../services/metasService';
+import { getAvatarSvg } from '../services/avatars';
 
 if (typeof document !== 'undefined') {
   const style = document.createElement('style');
@@ -57,7 +59,9 @@ export class RelatoriosPage {
   private container: HTMLElement;
   private user: any = null;
   private perfil: PerfilConsultor | null = null;
-  private activeTab: 'desempenho' | 'prazos' | 'faturamento' | 'perdas' | 'previsoes' | 'origens' | 'auditoria' | 'posvenda' | 'gamificacao' | 'embarques' | 'riscopreditivo' = 'desempenho';
+  private activeTab: 'desempenho' | 'prazos' | 'faturamento' | 'perdas' | 'previsoes' | 'origens' | 'auditoria' | 'posvenda' | 'gamificacao' | 'embarques' | 'riscopreditivo' | 'metas_campanhas' = 'desempenho';
+  private metas: MetaPeriodo[] = [];
+  private selectedMetaId: string = '';
 
   // Controle de estado para grupos colapsáveis da barra lateral
   private collapsedGroups: { [key: string]: boolean } = {
@@ -219,6 +223,17 @@ export class RelatoriosPage {
       // 12. Carregar tipos_produto
       const { data: tiposData } = await supabase.from('tipos_produto').select('*').order('nome');
       this.tiposProduto = tiposData || [];
+
+      // 13. Carregar Metas e Campanhas
+      try {
+        this.metas = await MetasService.obterMetaPeriodos();
+        if (this.metas.length > 0 && (!this.selectedMetaId || !this.metas.some(m => m.id === this.selectedMetaId))) {
+          const ativa = this.metas.find(m => MetasService.getStatusTemporal(m) === 'ativa');
+          this.selectedMetaId = ativa ? ativa.id : this.metas[0].id;
+        }
+      } catch (errM) {
+        console.warn('Erro ao carregar metas em RelatoriosPage:', errM);
+      }
     } catch (err) {
       console.warn('Erro ao ler tabelas de relatórios. Ativando mocks.', err);
       this.loadMockData();
@@ -496,6 +511,9 @@ export class RelatoriosPage {
                 <button data-tab="desempenho" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 ${this.activeTab === 'desempenho' ? 'report-tab-active' : 'text-slate-500'}">
                   🎯 Desempenho
                 </button>
+                <button data-tab="metas_campanhas" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 ${this.activeTab === 'metas_campanhas' ? 'report-tab-active' : 'text-slate-500'}">
+                  🏆 Metas & Campanhas
+                </button>
                 <button data-tab="origens" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 ${this.activeTab === 'origens' ? 'report-tab-active' : 'text-slate-500'}">
                   📢 Origem de Leads
                 </button>
@@ -603,6 +621,8 @@ export class RelatoriosPage {
         return this.renderEmbarques(data);
       case 'gamificacao':
         return this.renderGamificacao(data);
+      case 'metas_campanhas':
+        return this.renderMetasCampanhas(data);
       case 'riscopreditivo':
         return this.renderRiscoPreditivo(data);
       default:
@@ -2444,8 +2464,363 @@ export class RelatoriosPage {
   }
 
   // ==========================================
-  // EVENT LISTENERS & EXPORTS
+  // VIEW: RELATÓRIO DE METAS & CAMPANHAS
   // ==========================================
+  private renderMetasCampanhas(data: any): string {
+    const isAdmin = (this.perfil?.role || '').toLowerCase() === 'admin';
+
+    if (!this.metas || this.metas.length === 0) {
+      return `
+        <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-3xl p-8 shadow-sm flex flex-col items-center justify-center text-center space-y-4 min-h-[400px]">
+          <div class="w-16 h-16 bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 rounded-2xl flex items-center justify-center text-3xl">🏆</div>
+          <h3 class="text-base font-black text-slate-800 dark:text-slate-100">Nenhuma Meta ou Campanha Cadastrada</h3>
+          <p class="text-xs text-slate-400 max-w-md font-semibold">
+            Defina metas comerciais e crie campanhas de incentivo (por faturamento, rentabilidade ou quantidade de orçamentos/vendas) no menu Cadastros.
+          </p>
+          ${isAdmin ? `
+            <a href="#cadastros" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs rounded-xl shadow-md transition uppercase tracking-wider">
+              ➕ Cadastrar Nova Meta / Campanha
+            </a>
+          ` : ''}
+        </div>
+      `;
+    }
+
+    // Identificar meta selecionada
+    let metaAtual = this.metas.find(m => m.id === this.selectedMetaId);
+    if (!metaAtual) {
+      const ativa = this.metas.find(m => MetasService.getStatusTemporal(m) === 'ativa');
+      metaAtual = ativa || this.metas[0];
+      this.selectedMetaId = metaAtual.id;
+    }
+
+    const statusTemporal = MetasService.getStatusTemporal(metaAtual);
+    const tipoCalculo = (metaAtual.tipo_calculo || 'bruto').toLowerCase();
+    const isMetricaNumerica = tipoCalculo === 'orcamentos' || tipoCalculo === 'qtd_orcamentos' || tipoCalculo === 'vendas' || tipoCalculo === 'qtd_vendas';
+    const unidadeSufixo = (tipoCalculo === 'orcamentos' || tipoCalculo === 'qtd_orcamentos') ? 'orçamentos' : (isMetricaNumerica ? 'vendas' : 'R$');
+
+    const formatarValorMetrica = (val: number): string => {
+      if (isMetricaNumerica) {
+        return `${val} ${unidadeSufixo}`;
+      }
+      return 'R$ ' + (val || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    };
+
+    // Apuração do progresso da agência e ranking
+    const apuracao = MetasService.calcularProgressoAgencia(
+      metaAtual,
+      this.consultores,
+      this.orcamentos,
+      this.viagens,
+      this.locPagamentos
+    );
+
+    // Agrupamento de metas para o select
+    const metasAtivas = this.metas.filter(m => MetasService.getStatusTemporal(m) === 'ativa');
+    const metasPassadas = this.metas.filter(m => MetasService.getStatusTemporal(m) === 'passada');
+    const metasFuturas = this.metas.filter(m => MetasService.getStatusTemporal(m) === 'futura');
+
+    // Status temporal badge
+    let statusBadge = '';
+    if (statusTemporal === 'ativa') {
+      statusBadge = '<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">🟢 Em Andamento</span>';
+    } else if (statusTemporal === 'passada') {
+      statusBadge = '<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/20">⏳ Encerrada (Histórico)</span>';
+    } else {
+      statusBadge = '<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20">📅 Não Iniciada</span>';
+    }
+
+    // Tipo de cálculo badge
+    let tipoCalculoBadge = '';
+    if (tipoCalculo === 'orcamentos' || tipoCalculo === 'qtd_orcamentos') {
+      tipoCalculoBadge = '<span class="inline-flex px-2 py-0.5 bg-amber-50 dark:bg-amber-950/45 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-900/40 text-[10px] font-black uppercase rounded-lg">Qtd. Orçamentos Cadastrados</span>';
+    } else if (tipoCalculo === 'vendas' || tipoCalculo === 'qtd_vendas') {
+      tipoCalculoBadge = '<span class="inline-flex px-2 py-0.5 bg-sky-50 dark:bg-sky-950/45 text-sky-700 dark:text-sky-400 border border-sky-200 dark:border-sky-900/40 text-[10px] font-black uppercase rounded-lg">Qtd. Vendas Fechadas</span>';
+    } else if (tipoCalculo === 'bruto') {
+      tipoCalculoBadge = '<span class="inline-flex px-2 py-0.5 bg-blue-50 dark:bg-blue-950/45 text-blue-700 dark:text-blue-400 border border-blue-100 dark:border-blue-900/40 text-[10px] font-black uppercase rounded-lg">Faturamento Bruto</span>';
+    } else {
+      tipoCalculoBadge = '<span class="inline-flex px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/45 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/40 text-[10px] font-black uppercase rounded-lg">Rentabilidade</span>';
+    }
+
+    // Alvo global / maior faixa
+    const sortedFaixas = [...(metaAtual.faixas || [])].sort((a, b) => a.valor_minimo - b.valor_minimo);
+    const maiorFaixaVal = sortedFaixas.length > 0 ? sortedFaixas[sortedFaixas.length - 1].valor_minimo : (metaAtual.valor_meta || 0);
+    const consultoresNoAlvo = apuracao.rankingConsultores.filter(r => r.faixaAtual !== null).length;
+    const pctGeral = maiorFaixaVal > 0 ? Math.min(Math.round((apuracao.totalAgencia / maiorFaixaVal) * 100), 100) : 0;
+
+    return `
+      <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-3xl p-6 shadow-sm flex flex-col gap-6 print-full-width">
+        
+        <!-- Header com Seletor de Meta -->
+        <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 border-b border-slate-100 dark:border-slate-800 pb-5">
+          <div class="space-y-1">
+            <div class="flex items-center gap-2 flex-wrap">
+              <h2 class="text-lg font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                <span>🏆</span> ${metaAtual.nome}
+              </h2>
+              ${statusBadge}
+              ${metaAtual.is_campanha ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">Campanha</span>' : ''}
+              ${metaAtual.is_meta_loja ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/20">Meta Global</span>' : ''}
+            </div>
+            <p class="text-xs text-slate-400 font-semibold">
+              Período: <strong>${formatIsoDateToBr(metaAtual.data_inicio)}</strong> até <strong>${formatIsoDateToBr(metaAtual.data_fim)}</strong> • ${tipoCalculoBadge}
+            </p>
+          </div>
+
+          <!-- Seletor de Meta / Campanha -->
+          <div class="w-full lg:w-72">
+            <label for="select-relatorio-meta" class="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Selecionar Campanha / Meta:</label>
+            <select id="select-relatorio-meta" class="w-full px-3.5 py-2 text-xs font-bold border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100">
+              ${metasAtivas.length > 0 ? `
+                <optgroup label="🟢 Ativas / Em Andamento" class="bg-white dark:bg-slate-900 font-bold">
+                  ${metasAtivas.map(m => `<option value="${m.id}" ${m.id === metaAtual.id ? 'selected' : ''}>${m.nome} ${m.is_campanha ? '(Campanha)' : ''}</option>`).join('')}
+                </optgroup>
+              ` : ''}
+              ${metasPassadas.length > 0 ? `
+                <optgroup label="⏳ Encerradas / Histórico" class="bg-white dark:bg-slate-900 font-bold">
+                  ${metasPassadas.map(m => `<option value="${m.id}" ${m.id === metaAtual.id ? 'selected' : ''}>${m.nome} ${m.is_campanha ? '(Campanha)' : ''}</option>`).join('')}
+                </optgroup>
+              ` : ''}
+              ${metasFuturas.length > 0 ? `
+                <optgroup label="📅 Futuras / Programadas" class="bg-white dark:bg-slate-900 font-bold">
+                  ${metasFuturas.map(m => `<option value="${m.id}" ${m.id === metaAtual.id ? 'selected' : ''}>${m.nome}</option>`).join('')}
+                </optgroup>
+              ` : ''}
+            </select>
+          </div>
+        </div>
+
+        <!-- Cards de Resumo Executivo / KPIs -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="bg-slate-50/60 dark:bg-slate-950/40 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 flex flex-col justify-between">
+            <span class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Total Atingido pela Agência</span>
+            <div class="text-xl font-black text-slate-800 dark:text-slate-100 mt-2 truncate">
+              ${formatarValorMetrica(apuracao.totalAgencia)}
+            </div>
+            <span class="text-[11px] text-slate-400 font-semibold mt-1">Soma de toda a equipe</span>
+          </div>
+
+          <div class="bg-slate-50/60 dark:bg-slate-950/40 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 flex flex-col justify-between">
+            <span class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Alvo da Meta / Maior Faixa</span>
+            <div class="text-xl font-black text-indigo-600 dark:text-indigo-400 mt-2 truncate">
+              ${formatarValorMetrica(maiorFaixaVal)}
+            </div>
+            <span class="text-[11px] text-slate-400 font-semibold mt-1">${sortedFaixas.length > 0 ? `${sortedFaixas.length} faixas de premiação` : 'Meta global'}</span>
+          </div>
+
+          <div class="bg-slate-50/60 dark:bg-slate-950/40 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 flex flex-col justify-between">
+            <span class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Progresso Geral</span>
+            <div class="text-xl font-black ${pctGeral >= 100 ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-800 dark:text-slate-100'} mt-2 flex items-center gap-2">
+              <span>${pctGeral}%</span>
+              ${pctGeral >= 100 ? '<span>🎉</span>' : ''}
+            </div>
+            <div class="w-full bg-slate-200 dark:bg-slate-800 h-2 rounded-full overflow-hidden mt-1.5">
+              <div class="h-full bg-gradient-to-r from-indigo-500 to-emerald-500 rounded-full transition-all duration-500" style="width: ${pctGeral}%"></div>
+            </div>
+          </div>
+
+          <div class="bg-slate-50/60 dark:bg-slate-950/40 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 flex flex-col justify-between">
+            <span class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Consultores Premiados</span>
+            <div class="text-xl font-black text-emerald-600 dark:text-emerald-400 mt-2">
+              ${consultoresNoAlvo} <span class="text-xs text-slate-400 font-normal">/ ${this.consultores.length}</span>
+            </div>
+            <span class="text-[11px] text-slate-400 font-semibold mt-1">Atingiram ao menos 1 faixa</span>
+          </div>
+        </div>
+
+        <!-- Tabela de Ranking e Acompanhamento da Equipe -->
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider">Ranking da Equipe & Detalhamento Individual</h3>
+            <span class="text-[11px] text-slate-400 font-semibold">${apuracao.rankingConsultores.length} consultores avaliados</span>
+          </div>
+
+          <div class="overflow-x-auto custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl">
+            <table class="w-full text-left border-collapse text-xs font-semibold">
+              <thead>
+                <tr class="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-widest font-black">
+                  <th class="p-3 text-center w-12">Posição</th>
+                  <th class="p-3">Consultor</th>
+                  <th class="p-3">Realizado no Período</th>
+                  <th class="p-3">Faixa Atingida</th>
+                  <th class="p-3">Progresso</th>
+                  <th class="p-3 text-center">Registros</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 text-xs font-medium">
+                ${apuracao.rankingConsultores.map((r, idx) => {
+                  let posMedalha = `<span class="font-mono font-black text-slate-500">#${idx + 1}</span>`;
+                  if (idx === 0) posMedalha = '<span class="text-base" title="1º Lugar">🥇</span>';
+                  if (idx === 1) posMedalha = '<span class="text-base" title="2º Lugar">🥈</span>';
+                  if (idx === 2) posMedalha = '<span class="text-base" title="3º Lugar">🥉</span>';
+
+                  const faixaBadge = r.faixaAtual
+                    ? `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[10px] font-black uppercase text-white shadow-xs" style="background-color: ${r.faixaAtual.cor || '#6366f1'}">
+                        ⭐ ${r.faixaAtual.nome} ${r.faixaAtual.recompensa ? `(${r.faixaAtual.recompensa})` : ''}
+                      </span>`
+                    : '<span class="text-slate-400 text-[11px] italic font-medium">Em busca da 1ª faixa</span>';
+
+                  const proximaFaixaText = r.proximaFaixa
+                    ? `Falta ${formatarValorMetrica(Math.max(0, r.proximaFaixa.valor_minimo - r.totalAtingido))} para ${r.proximaFaixa.nome}`
+                    : (r.faixaAtual ? 'Faixa máxima conquistada! 🏆' : 'Sem faixa configurada');
+
+                  return `
+                    <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition">
+                      <td class="p-3 text-center">${posMedalha}</td>
+                      <td class="p-3">
+                        <div class="flex items-center gap-2.5">
+                          <div class="w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-black text-xs shrink-0 shadow-xs">
+                            ${(r.consultor.nome || 'CO').substring(0, 2).toUpperCase()}
+                          </div>
+                          <div class="min-w-0">
+                            <span class="font-black text-slate-800 dark:text-slate-100 block truncate">${r.consultor.nome || 'Consultor'}</span>
+                            <span class="text-[10px] text-slate-400 font-medium truncate block">${r.consultor.email || ''}</span>
+                          </div>
+                        </div>
+                      </td>
+                      <td class="p-3">
+                        <span class="font-black text-slate-900 dark:text-slate-100 text-sm block">
+                          ${formatarValorMetrica(r.totalAtingido)}
+                        </span>
+                      </td>
+                      <td class="p-3">${faixaBadge}</td>
+                      <td class="p-3">
+                        <div class="space-y-1 w-44">
+                          <div class="flex justify-between items-center text-[10px] font-bold">
+                            <span class="text-slate-500">${r.percentualProgresso}%</span>
+                          </div>
+                          <div class="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                            <div class="h-full bg-gradient-to-r from-indigo-500 to-emerald-500 rounded-full" style="width: ${r.percentualProgresso}%"></div>
+                          </div>
+                          <span class="text-[9px] text-slate-400 block truncate" title="${proximaFaixaText}">${proximaFaixaText}</span>
+                        </div>
+                      </td>
+                      <td class="p-3 text-center">
+                        <button type="button" class="btn-auditar-meta-consultor px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300 font-extrabold text-[10px] rounded-xl transition uppercase flex items-center gap-1 mx-auto shadow-xs" data-meta-id="${metaAtual.id}" data-consultor-id="${r.consultor.id}" data-consultor-nome="${r.consultor.nome}">
+                          <span>🔍</span> Auditar (${r.itensAuditados.length})
+                        </button>
+                      </td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    `;
+  }
+
+  /**
+   * Abre o modal popup de auditoria de registros da meta/campanha do consultor
+   */
+  private abrirModalAuditoriaMeta(metaId: string, consultorId: string, consultorNome: string): void {
+    const meta = this.metas.find(m => m.id === metaId);
+    if (!meta) return;
+
+    const tipo = (meta.tipo_calculo || 'bruto').toLowerCase();
+    const isOrcamento = tipo === 'orcamentos' || tipo === 'qtd_orcamentos';
+    const prog = MetasService.calcularProgressoConsultor(meta, consultorId, this.orcamentos, this.viagens, this.locPagamentos);
+
+    const overlay = document.createElement('div');
+    overlay.id = 'modal-overlay-auditoria-meta';
+    overlay.className = 'fixed inset-0 bg-slate-950/75 backdrop-blur-sm z-[60] flex items-center justify-center p-3 sm:p-5 animate-fadeIn font-sans';
+
+    const formatDataLocal = (dStr?: string) => {
+      if (!dStr) return '-';
+      const clean = dStr.includes('T') ? dStr.split('T')[0] : dStr.split(' ')[0];
+      const p = clean.split('-');
+      return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : dStr;
+    };
+
+    overlay.innerHTML = `
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-3xl rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden transform scale-95 transition-all duration-300">
+        
+        <!-- Header -->
+        <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3 bg-slate-50/50 dark:bg-slate-900/50">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-lg">🔍</span>
+              <h3 class="text-base font-black text-slate-800 dark:text-slate-100">
+                Auditoria de Registros • ${consultorNome}
+              </h3>
+            </div>
+            <p class="text-xs text-slate-400 font-semibold mt-0.5">
+              Meta: <strong>${meta.nome}</strong> (${formatDataLocal(meta.data_inicio)} a ${formatDataLocal(meta.data_fim)}) • <strong>${prog.itensAuditados.length}</strong> registros computados
+            </p>
+          </div>
+          <button id="btn-close-auditoria-meta" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-rose-50 hover:text-rose-600 dark:bg-slate-800 dark:hover:bg-rose-950/40 text-slate-400 flex items-center justify-center font-bold text-sm transition">
+            ✕
+          </button>
+        </div>
+
+        <!-- Lista de Registros -->
+        <div class="flex-1 overflow-y-auto custom-scrollbar p-6">
+          ${prog.itensAuditados.length === 0 ? `
+            <div class="p-8 text-center text-slate-400 text-xs font-semibold">
+              Nenhum registro computado para este consultor no período da meta.
+            </div>
+          ` : `
+            <div class="overflow-x-auto border border-slate-100 dark:border-slate-800 rounded-2xl">
+              <table class="w-full text-left border-collapse text-xs font-semibold">
+                <thead>
+                  <tr class="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-widest font-black">
+                    <th class="p-3">Data</th>
+                    <th class="p-3">${isOrcamento ? 'Cliente / Lead' : 'Passageiro'}</th>
+                    <th class="p-3">Destino</th>
+                    <th class="p-3">${isOrcamento ? 'Status / Proposta' : 'Valor Total'}</th>
+                    <th class="p-3 text-right">Referência</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
+                  ${prog.itensAuditados.map((item: any) => {
+                    const dataFormatada = formatDataLocal(item.data_financeiro || item.created_at || item.createdAt);
+                    const clienteNome = item.nome_cliente || item.nomeCliente || item.cliente?.nome || item.cliente_nome || 'Cliente';
+                    const destino = item.destino || 'Não especificado';
+                    const valorStr = isOrcamento 
+                      ? (item.valor_proposta ? 'R$ ' + Number(item.valor_proposta).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : (item.status || 'Orçamento'))
+                      : 'R$ ' + (Number(item.valor_total || item.valorTotal) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+                    const refCod = item.codigo_ref || item.codigo_localizador || (isOrcamento ? 'ORÇ' : 'VIA');
+
+                    return `
+                      <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition">
+                        <td class="p-3 font-mono text-[11px] text-slate-500">${dataFormatada}</td>
+                        <td class="p-3 font-bold text-slate-800 dark:text-slate-100">${clienteNome}</td>
+                        <td class="p-3 text-slate-600 dark:text-slate-300">${destino}</td>
+                        <td class="p-3 font-black text-slate-800 dark:text-slate-100">${valorStr}</td>
+                        <td class="p-3 text-right font-mono text-[10px] text-slate-400">${refCod}</td>
+                      </tr>
+                    `;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>
+          `}
+        </div>
+
+        <!-- Footer -->
+        <div class="px-6 py-3.5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/70 flex justify-end">
+          <button id="btn-fechar-auditoria-footer" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl transition">
+            Fechar Auditoria
+          </button>
+        </div>
+
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    const closeModal = () => {
+      overlay.remove();
+    };
+
+    overlay.querySelector('#btn-close-auditoria-meta')?.addEventListener('click', closeModal);
+    overlay.querySelector('#btn-fechar-auditoria-footer')?.addEventListener('click', closeModal);
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) closeModal();
+    });
+  }
   private setupEventListeners(): void {
     // 1. Collapsible category headers
     const groupHeaders = this.container.querySelectorAll('.report-group-header');
@@ -2807,6 +3182,29 @@ export class RelatoriosPage {
         e.stopPropagation();
         const forma = btn.getAttribute('data-forma') || 'TODAS';
         abrirExtratoRecebimentos(forma);
+      });
+    });
+
+    // 14. Seletor de Meta / Campanha na aba metas_campanhas
+    const selectMetaEl = document.getElementById('select-relatorio-meta') as HTMLSelectElement;
+    selectMetaEl?.addEventListener('change', () => {
+      this.selectedMetaId = selectMetaEl.value;
+      const viewContainer = document.getElementById('report-view-container');
+      if (viewContainer) {
+        viewContainer.innerHTML = this.renderActiveTabContent(this.getFilteredData());
+        this.setupEventListeners();
+      }
+    });
+
+    // 15. Botões de Auditoria de Registros de Metas
+    document.querySelectorAll('.btn-auditar-meta-consultor').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const metaId = btn.getAttribute('data-meta-id') || this.selectedMetaId;
+        const consultorId = btn.getAttribute('data-consultor-id') || '';
+        const consultorNome = btn.getAttribute('data-consultor-nome') || 'Consultor';
+        if (metaId && consultorId) {
+          this.abrirModalAuditoriaMeta(metaId, consultorId, consultorNome);
+        }
       });
     });
   }

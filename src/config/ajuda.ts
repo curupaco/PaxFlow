@@ -274,6 +274,13 @@ export const HELP_ITEMS: HelpItem[] = [
     description: 'Barra visual em tempo real para conferência de Tarifa, Taxas, Comissão, Markup e RAV.',
     details: 'Ao editar os valores de um produto ou serviço na viagem, a calculadora reativa atualiza instantaneamente:\n\n- **Total Distribuído vs Valor de Venda**: Comparativo automático entre o valor cobrado do cliente e o rateio de custos.\n- **Barra de Status do Detalhamento**: Exibe percentual de progresso (ex: `100% OK` em verde quando totalmente conciliado ou `⏳ 80% Detalhado` em âmbar com o saldo pendente restante).\n- **Feedback Visual no Botão Salvar**: O botão transiciona temporariamente para `✅ Salvo com Sucesso!` com fundo esmeralda para confirmar a persistência sem ambiguidades.'
   },
+  {
+    id: 'atalho-cadastro-cliente-venda',
+    modulo: 'viagens',
+    label: 'Atalho Rápido para Cadastro do Cliente no Detalhe da Venda',
+    description: 'Botão integrado ao campo de passageiro para visualização e edição instantânea da ficha cadastral.',
+    details: 'Ao abrir o detalhe de uma venda ou viagem, os consultores contam com o botão **👤 Ver Ficha** ao lado do seletor de cliente:\n\n- **Acesso Imediato**: Abre um modal sobreposto com todos os dados cadastrais (contato, endereço, CPF/CNPJ, passaportes com alerta de SLA de validade, preferências e observações).\n- **Edição Sem Sair da Venda**: Permite atualizar e salvar os dados do cliente diretamente no Supabase sem fechar nem perder o progresso da edição da viagem.\n- **Sincronização Automática**: Ao salvar, o nome e dados do cliente são atualizados em tempo real no formulário da venda.'
+  },
 
   // ==================== 4. Gestão de Viagens ====================
   {
@@ -484,6 +491,13 @@ export const HELP_ITEMS: HelpItem[] = [
     label: '🪙 Extrato Detalhado de Recebimentos por Meio de Pagamento & Drilldown',
     description: 'Como auditar detalhadamente quais viagens e produtos foram recebidos em cada meio de pagamento.',
     details: 'Na aba **Recebimentos & Auditoria** (menu Relatórios -> Grupo 2: Financeiro & Auditoria):\n\n1. **Drilldown em 1-Clique nas Barras**: Cada barra do card "Entradas por Meio de Pagamento" (Pix, Cartão, Boleto, etc.) é interativa. Clicar sobre ela abre o modal analítico com o extrato específico daquela modalidade financeira.\n2. **Botão "Extrato Completo ↗"**: No topo do card de entradas, permite visualizar de forma consolidada todos os lançamentos financeiros de todos os meios de uma só vez.\n3. **Mapeamento de Produtos por LOC**: Cada lançamento exibe o cliente, a viagem de destino, o Localizador (LOC copiável 📋) e a lista dos produtos/serviços específicos cobertos por aquele recebimento (ex: Voo, Hotel, Transfer) com seus respectivos valores.\n4. **Filtros e Busca em Tempo Real**: Permite filtrar por consultor titular, alternar a forma de recebimento e buscar por cliente, destino ou fornecedor diretamente no modal.\n5. **Exportação de Planilha CSV**: Gera um arquivo CSV (.csv compatível com Excel com acentuação UTF-8) com todas as colunas de auditoria contábil e conciliação bancária.'
+  },
+  {
+    id: 'relatorio-metas-campanhas',
+    modulo: 'clientes',
+    label: '🎯 Relatório de Metas Comerciais, Campanhas de Incentivo & Auditoria',
+    description: 'Acompanhamento executivo de metas ativas, encerradas e futuras com auditoria analítica por consultor.',
+    details: 'Na aba **Metas & Campanhas** (menu Relatórios -> Grupo 1: Gestão Comercial):\n\n1. **Seletor de Metas & Status Temporal**: Escolha qualquer meta ou campanha cadastrada. O seletor agrupa visualmente por `🟢 Ativas`, `⏳ Encerradas` e `📅 Futuras` com base na data atual.\n2. **4 Tipos de Métricas Suportadas**: Além de metas financeiras (`Faturamento Bruto R$` e `Rentabilidade / Lucro R$`), o sistema apura campanhas de volume como `Qtd. de Orçamentos Criados (Unidades)` (ex: Campanha "Boa viagem! - 40 orçamentos") e `Qtd. de Vendas Fechadas (Unidades)`.\n3. **KPIs Executivos da Agência**: Exibe a Meta Total Global, o Realizado pela Agência, a Taxa de Atingimento % e o Top Consultor da campanha.\n4. **Ranking & Desempenho da Equipe**: Tabela com barra de progresso visual, percentual atingido, valor/quantidade faltante e badge de faixa conquistada (Bronze, Prata, Ouro).\n5. **Auditoria Analítica com 1 Clique (🔍 Auditar)**: Administradores podem auditar cada consultor para visualizar a lista completa de orçamentos ou vendas que compõem o número apurado, com cliente, destino, data e valor.'
   },
   {
     id: 'auto-status-em-andamento',

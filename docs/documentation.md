@@ -45,6 +45,7 @@
    - 3.32 [Melhorias de Usabilidade, Produtividade e Feedback Visual de UX (Plano 1)](#332-melhorias-de-usabilidade-produtividade-e-feedback-visual-de-ux-plano-1)
    - 3.33 [Melhorias de Eficiência Operacional, Pipeline e Ações Rápidas de UX (Plano 2)](#333-melhorias-de-eficiência-operacional-pipeline-e-ações-rápidas-de-ux-plano-2)
    - 3.34 [Experiência Premium, Inteligência Relacional e Microinterações de UX (Plano 3)](#334-experiência-premium-inteligência-relacional-e-microinterações-de-ux-plano-3)
+   - 3.35 [Atalho Rápido e Modal de Cadastro do Cliente na Venda](#335-atalho-rápido-e-modal-de-cadastro-do-cliente-na-venda)
 4. [Diferenciais Competitivos](#4-diferenciais-competitivos)
 5. [Arquitetura Tecnológica](#5-arquitetura-tecnológica)
 6. [Segurança e Conformidade](#6-segurança-e-conformidade)
@@ -366,9 +367,10 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
   - **2. Prazos e SLAs**: Cronologia operacional de conformidade de SLA de documentos e reembolsos.
   - **3. Faturamento e Lucratividade**: Exibe faturamento bruto, markup, comissões de produtos e lucro líquido real distribuídos por tipo de serviço (voo, hotel, etc.).
   - **4. Recebimentos & Auditoria Operacional [NEW]**: Auditoria analítica de quitação por Localizador (LOC) e meios de pagamento cadastrados (Pix, Cartão, Boleto, etc.). Conta com **Drilldown Interativo em 1-Clique** nas barras de meios de pagamento e botão **Extrato Completo ↗**, abrindo o modal analítico de extrato detalhado com mapeamento de produtos vinculados aos LOCs, filtros dinâmicos por consultor e busca em tempo real, além de exportação completa para planilha CSV.
-  - **5. Fuga de Receita e Perdas**: Donut chart SVG dinâmico exibindo perdas percentuais classificadas por motivos de desistência (preço, concorrência, etc.).
-  - **6. Previsão de Fechamentos (Weighted Pipeline)**: Cálculo estatístico local que pondera o faturamento previsto do pipeline em aberto (solicitado = 15%, andamento = 45%, aguardando = 75%) e estima embarques iminentes.
-  - **7. Qualidade de Fornecedores e Incidentes**: Tabulação de reembolsos, volume vendido e score de risco por fornecedor.
+  - **5. Metas & Campanhas Comerciais [NEW]**: Acompanhamento executivo e ranking de equipe para metas financeiras e campanhas de incentivo (ativas, passadas e futuras). Suporta 4 métricas analíticas: Faturamento Bruto (R$), Rentabilidade / Lucro (R$), Quantidade de Orçamentos Criados (Unidades, ex: campanha de 40 orçamentos cadastrados) e Quantidade de Vendas Fechadas (Unidades). Inclui KPIs de agência, percentual atingido, projeções de faixas (Bronze, Prata, Ouro) e **Auditoria Analítica em 1-Clique (`🔍 Auditar`)** com drilldown direto nos orçamentos ou vendas que compõem o resultado do consultor.
+  - **6. Fuga de Receita e Perdas**: Donut chart SVG dinâmico exibindo perdas percentuais classificadas por motivos de desistência (preço, concorrência, etc.).
+  - **7. Previsão de Fechamentos (Weighted Pipeline)**: Cálculo estatístico local que pondera o faturamento previsto do pipeline em aberto (solicitado = 15%, andamento = 45%, aguardando = 75%) e estima embarques iminentes.
+  - **8. Qualidade de Fornecedores e Incidentes**: Tabulação de reembolsos, volume vendido e score de risco por fornecedor.
 - **Segurança de Acesso (RLS local)**: Consultores comuns têm visão bloqueada a seu próprio ID (o filtro é desativado). Apenas administradores auditam o consolidado e selecionam qualquer consultor da agência.
 - **Exportação e PDF**: Geração de arquivo **CSV** Excel compatível e folha de estilos de impressão `@media print` que esconde barras de navegação e filtros, permitindo salvar relatórios como PDFs corporativos limpos.
 - **KPIs Financeiros de Caixa**:
@@ -817,6 +819,27 @@ O **Plano 3 de UX** consolida a experiência de classe mundial do PaxFlow, integ
    - Suporte a gestos nativos de toque para smartphones e tablets:
      - 👉 **Deslizar para a Direita**: Dispara o envio imediato de mensagem pré-formatada no WhatsApp do passageiro.
      - 👈 **Deslizar para a Esquerda**: Abre a gaveta de detalhes operacionais da viagem.
+
+### 3.35 Atalho Rápido e Modal de Cadastro do Cliente na Venda
+
+O componente `ClienteDetalhesModal` resolve o atrito operacional de consulta e edição de dados de passageiros durante o atendimento e gestão de viagens ativas:
+
+1. **Botão de Atalho Integrado (`👤 Ver Ficha`)**:
+   - Localizado diretamente ao lado do campo de seleção de passageiro no modal de edição da venda (`EditTravelModal`).
+   - Habilita e desabilita dinamicamente conforme a seleção do cliente no formulário da viagem.
+
+2. **Modal Sobreposto (Camada Superior `z-[60]`)**:
+   - Abre sobre o modal da viagem em background sem fechar o formulário de edição nem descartar alterações não salvas de produtos, datas ou valores.
+   - Suporta fechamento por botão ✕, tecla `Escape` e clique no backdrop com animações suaves de escala e opacidade.
+
+3. **Edição Completa e Governança de Dados**:
+   - Permite visualizar e editar todos os campos cadastrais:
+     - **Dados Pessoais & Contato**: Nome Completo, E-mail, Telefone/WhatsApp, CPF/CNPJ (com validação e máscara), Data de Nascimento, Endereço e Origem do Lead.
+     - **Passaportes & SLA de Validade**: Controle de passaportes de titulares e acompanhantes com alertas visuais para prazos críticos (< 180 dias ou expirados).
+     - **Preferências & Observações**: Notas gerais, milhagem/programas de fidelidade e preferências de assentos/alimentação.
+
+4. **Sincronização em Tempo Real com a Venda**:
+   - Ao salvar as alterações, os dados são persistidos no Supabase e propagados imediatamente para o formulário da viagem em memória (atualizando o `<select>` de clientes e as referências do passageiro) sem recarregar a tela.
 
 ---
 

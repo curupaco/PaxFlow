@@ -585,8 +585,8 @@ export interface MetaPeriodo {
   dataInicio?: string;
   data_fim: string;
   dataFim?: string;
-  tipo_calculo: 'bruto' | 'lucro';
-  tipoCalculo?: 'bruto' | 'lucro';
+  tipo_calculo: 'bruto' | 'lucro' | 'orcamentos' | 'vendas' | string;
+  tipoCalculo?: 'bruto' | 'lucro' | 'orcamentos' | 'vendas' | string;
   is_campanha: boolean;
   isCampanha?: boolean;
   is_meta_loja?: boolean;

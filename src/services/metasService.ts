@@ -320,12 +320,14 @@ export class MetasService {
   // --- MOCK / FALLBACK LOCAL STORAGE IMPLEMENTATIONS ---
 
   private static obterMetasLocal(): MetaPeriodo[] {
-    const cached = localStorage.getItem('sandbox-meta-periodos');
-    if (cached) {
-      try {
-        return JSON.parse(cached);
-      } catch {
-        // Ignora erro de parse e re-inicializa
+    if (typeof localStorage !== 'undefined') {
+      const cached = localStorage.getItem('sandbox-meta-periodos');
+      if (cached) {
+        try {
+          return JSON.parse(cached);
+        } catch {
+          // Ignora erro de parse e re-inicializa
+        }
       }
     }
 
@@ -371,7 +373,9 @@ export class MetasService {
       }
     ];
 
-    localStorage.setItem('sandbox-meta-periodos', JSON.stringify(initialMetas));
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('sandbox-meta-periodos', JSON.stringify(initialMetas));
+    }
     return initialMetas;
   }
 
@@ -476,5 +480,178 @@ export class MetasService {
     list[index] = updatedPeriodo;
     localStorage.setItem('sandbox-meta-periodos', JSON.stringify(list));
     return updatedPeriodo;
+  }
+
+  /**
+   * Determina o status temporal de uma meta/campanha ('ativa' | 'passada' | 'futura')
+   */
+  public static getStatusTemporal(meta: MetaPeriodo): 'ativa' | 'passada' | 'futura' {
+    if (!meta.data_inicio || !meta.data_fim) return 'ativa';
+    const hoje = new Date();
+    const dtInicio = new Date(meta.data_inicio + 'T00:00:00');
+    const dtFim = new Date(meta.data_fim + 'T23:59:59');
+
+    if (hoje < dtInicio) return 'futura';
+    if (hoje > dtFim) return 'passada';
+    return 'ativa';
+  }
+
+  /**
+   * Verifica se uma data de registro pertence ao intervalo da meta
+   */
+  public static isDataNoPeriodo(dateStr: string | undefined | null, dataInicio: string, dataFim: string): boolean {
+    if (!dateStr) return false;
+    const cleanStr = dateStr.includes('T') ? dateStr : dateStr + 'T00:00:00';
+    const recDate = new Date(cleanStr);
+    const start = new Date(dataInicio + 'T00:00:00');
+    const end = new Date(dataFim + 'T23:59:59');
+    return recDate >= start && recDate <= end;
+  }
+
+  /**
+   * Calcula o progresso e lista de itens de auditoria para um consultor específico
+   */
+  public static calcularProgressoConsultor(
+    meta: MetaPeriodo,
+    consultorId: string,
+    orcamentos: any[],
+    viagens: any[],
+    locPagamentos: any[] = []
+  ): {
+    totalAtingido: number;
+    itensAuditados: any[];
+    faixaAtual: MetaFaixa | null;
+    proximaFaixa: MetaFaixa | null;
+    percentualProgresso: number;
+  } {
+    const tipo = (meta.tipo_calculo || 'bruto').toLowerCase();
+    let totalAtingido = 0;
+    let itensAuditados: any[] = [];
+
+    if (tipo === 'orcamentos' || tipo === 'qtd_orcamentos') {
+      itensAuditados = orcamentos.filter(o => {
+        const dono = o.consultor_id === consultorId || o.consultorId === consultorId;
+        const data = o.created_at || o.createdAt || o.data_criacao;
+        return dono && this.isDataNoPeriodo(data, meta.data_inicio, meta.data_fim);
+      });
+      totalAtingido = itensAuditados.length;
+
+    } else if (tipo === 'vendas' || tipo === 'qtd_vendas') {
+      itensAuditados = viagens.filter(v => {
+        const dono = v.consultor_id === consultorId || v.consultorId === consultorId;
+        const naoCancelada = v.status !== 'cancelada';
+        const data = v.data_financeiro || v.dataFinanceiro || v.created_at || v.createdAt;
+        return dono && naoCancelada && this.isDataNoPeriodo(data, meta.data_inicio, meta.data_fim);
+      });
+      totalAtingido = itensAuditados.length;
+
+    } else if (tipo === 'lucro' || tipo === 'liquido') {
+      const viagensDoConsultor = viagens.filter(v => {
+        const dono = v.consultor_id === consultorId || v.consultorId === consultorId;
+        const naoCancelada = v.status !== 'cancelada';
+        const data = v.data_financeiro || v.dataFinanceiro || v.created_at || v.createdAt;
+        return dono && naoCancelada && this.isDataNoPeriodo(data, meta.data_inicio, meta.data_fim);
+      });
+
+      itensAuditados = viagensDoConsultor;
+      viagensDoConsultor.forEach(v => {
+        const prods = (v as any).produtos || [];
+        prods.forEach((p: any) => {
+          totalAtingido += (Number(p.comissao) || 0) + (Number(p.markup) || 0) + ((Number(p.rav) || 0) * 0.88);
+        });
+      });
+
+    } else {
+      // Faturamento Bruto ('bruto')
+      const viagensDoConsultor = viagens.filter(v => {
+        const dono = v.consultor_id === consultorId || v.consultorId === consultorId;
+        const naoCancelada = v.status !== 'cancelada';
+        const data = v.data_financeiro || v.dataFinanceiro || v.created_at || v.createdAt;
+        return dono && naoCancelada && this.isDataNoPeriodo(data, meta.data_inicio, meta.data_fim);
+      });
+
+      itensAuditados = viagensDoConsultor;
+      const activeIds = new Set(viagensDoConsultor.map(v => v.id));
+      const pagsSub = locPagamentos.filter(p =>
+        activeIds.has(p.viagem_id || p.viagemId) &&
+        p.formas_recebimento &&
+        ['DESCONTO', 'PREJUÍZO'].includes((p.formas_recebimento.nome || '').trim().toUpperCase())
+      );
+      const totalSub = pagsSub.reduce((acc, p) => acc + (Number(p.valor) || 0), 0);
+      const somaBruta = viagensDoConsultor.reduce((acc, v) => acc + (Number(v.valor_total || v.valorTotal) || 0), 0);
+      totalAtingido = Math.max(0, somaBruta - totalSub);
+    }
+
+    // Apuração de Faixas
+    const sortedFaixas = [...(meta.faixas || [])].sort((a, b) => a.valor_minimo - b.valor_minimo);
+    let faixaAtual: MetaFaixa | null = null;
+    let proximaFaixa: MetaFaixa | null = null;
+
+    if (sortedFaixas.length > 0) {
+      for (let i = 0; i < sortedFaixas.length; i++) {
+        if (totalAtingido >= sortedFaixas[i].valor_minimo) {
+          faixaAtual = sortedFaixas[i];
+        } else {
+          proximaFaixa = sortedFaixas[i];
+          break;
+        }
+      }
+    }
+
+    // Percentual de progresso
+    let percentualProgresso = 0;
+    if (meta.is_meta_loja && meta.valor_meta && meta.valor_meta > 0) {
+      percentualProgresso = Math.min((totalAtingido / meta.valor_meta) * 100, 100);
+    } else if (proximaFaixa && proximaFaixa.valor_minimo > 0) {
+      percentualProgresso = Math.min((totalAtingido / proximaFaixa.valor_minimo) * 100, 100);
+    } else if (faixaAtual) {
+      percentualProgresso = 100;
+    }
+
+    return {
+      totalAtingido,
+      itensAuditados,
+      faixaAtual,
+      proximaFaixa,
+      percentualProgresso: Math.round(percentualProgresso)
+    };
+  }
+
+  /**
+   * Calcula o ranking e totalização geral da agência para a meta
+   */
+  public static calcularProgressoAgencia(
+    meta: MetaPeriodo,
+    consultores: any[],
+    orcamentos: any[],
+    viagens: any[],
+    locPagamentos: any[] = []
+  ): {
+    totalAgencia: number;
+    rankingConsultores: Array<{
+      consultor: any;
+      totalAtingido: number;
+      itensAuditados: any[];
+      faixaAtual: MetaFaixa | null;
+      proximaFaixa: MetaFaixa | null;
+      percentualProgresso: number;
+    }>;
+  } {
+    let totalAgencia = 0;
+    const ranking = consultores.map(c => {
+      const prog = this.calcularProgressoConsultor(meta, c.id, orcamentos, viagens, locPagamentos);
+      totalAgencia += prog.totalAtingido;
+      return {
+        consultor: c,
+        ...prog
+      };
+    });
+
+    ranking.sort((a, b) => b.totalAtingido - a.totalAtingido);
+
+    return {
+      totalAgencia,
+      rankingConsultores: ranking
+    };
   }
 }
