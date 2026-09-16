@@ -2,7 +2,8 @@ import { describe, it, expect } from 'vitest';
 import {
   agruparOrcamentosKanban,
   calcularMetricasPipeline,
-  calcularLeadAgingInfo
+  calcularLeadAgingInfo,
+  validarPassoWizardConversao
 } from '../../src/controllers/orcamentosController';
 
 describe('OrcamentosController - Lógica Subcutânea de Pipeline e Kanban', () => {
@@ -129,5 +130,67 @@ describe('OrcamentosController - Lógica Subcutânea de Pipeline e Kanban', () =
     expect(infoVazia.nivel).toBe('recente');
     expect(infoVazia.badgeHtml).toBe('');
   });
+
+  it('deve validar com precisão os dados do Passo 1 (Passageiro) do Mini-Wizard', () => {
+    // Setup - dados válidos e inválidos
+    const valido = {
+      nomeCliente: 'Lucas Ferreira',
+      email: 'lucas@email.com',
+      telefone: '11999998888',
+      documento: '12345678901',
+      dataNascimento: '1995-03-20'
+    };
+    const semEmail = {
+      nomeCliente: 'Lucas Ferreira',
+      email: '',
+      telefone: '11999998888',
+      documento: '12345678901',
+      dataNascimento: '1995-03-20'
+    };
+    const cpfSemNasc = {
+      nomeCliente: 'Lucas Ferreira',
+      email: 'lucas@email.com',
+      telefone: '11999998888',
+      documento: '12345678901',
+      dataNascimento: ''
+    };
+
+    // Action & Assert
+    expect(validarPassoWizardConversao(1, valido).valido).toBe(true);
+    expect(validarPassoWizardConversao(1, semEmail).valido).toBe(false);
+    expect(validarPassoWizardConversao(1, semEmail).erros).toContain('E-mail de Contato inválido ou ausente.');
+    expect(validarPassoWizardConversao(1, cpfSemNasc).valido).toBe(false);
+    expect(validarPassoWizardConversao(1, cpfSemNasc).erros).toContain('Data de Nascimento é obrigatória para Pessoa Física (CPF).');
+  });
+
+  it('deve validar com precisão os dados do Passo 2 (Roteiro & Finanças) do Mini-Wizard', () => {
+    // Setup - dados de nova viagem e viagem existente
+    const novaViagemValida = {
+      destino: 'Cancún All Inclusive',
+      dataIda: '2026-11-10',
+      valor: '15.000,00'
+    };
+    const novaViagemSemDestino = {
+      destino: '',
+      dataIda: '2026-11-10',
+      valor: 15000
+    };
+    const existenteValida = {
+      isViagemExistente: true,
+      viagemExistenteId: 'via-123'
+    };
+    const existenteSemId = {
+      isViagemExistente: true,
+      viagemExistenteId: ''
+    };
+
+    // Action & Assert
+    expect(validarPassoWizardConversao(2, novaViagemValida).valido).toBe(true);
+    expect(validarPassoWizardConversao(2, novaViagemSemDestino).valido).toBe(false);
+    expect(validarPassoWizardConversao(2, novaViagemSemDestino).erros).toContain('Destino da viagem é obrigatório.');
+    expect(validarPassoWizardConversao(2, existenteValida).valido).toBe(true);
+    expect(validarPassoWizardConversao(2, existenteSemId).valido).toBe(false);
+  });
 });
+
 

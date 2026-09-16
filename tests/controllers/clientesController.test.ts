@@ -3,7 +3,9 @@ import {
   normalizarPassaportesCliente,
   verificarAlertaValidadePassaporte,
   filtrarClientesCarteira,
-  gerenciarSelecaoEmMassa
+  gerenciarSelecaoEmMassa,
+  calcularCompletudeCadastral,
+  consolidarLinhaDoTempoCliente
 } from '../../src/controllers/clientesController';
 
 describe('ClientesController - Testes Subcutâneos', () => {
@@ -129,4 +131,74 @@ describe('ClientesController - Testes Subcutâneos', () => {
     selecao = gerenciarSelecaoEmMassa(selecao, 'limpar');
     expect(selecao.size).toBe(0);
   });
+
+  it('deve calcular a completude cadastral corretamente com pendencias e nivel', () => {
+    // Setup
+    const clienteIncompleto = {
+      nome: 'Carlos Viajante',
+      email: 'carlos@teste.com'
+    };
+
+    const clienteCompleto = {
+      nome: 'Mariana Souza',
+      email: 'mariana@teste.com',
+      telefone: '11999998888',
+      documento: '12345678901',
+      dataNascimento: '1990-05-15',
+      passaporteNumero: 'FP999888',
+      passaporteValidade: '2030-01-01'
+    };
+
+    // Action
+    const compIncompleto = calcularCompletudeCadastral(clienteIncompleto);
+    const compCompleto = calcularCompletudeCadastral(clienteCompleto);
+    const compNulo = calcularCompletudeCadastral(null);
+
+    // Assert
+    expect(compIncompleto.porcentagem).toBe(40);
+    expect(compIncompleto.nivel).toBe('baixo');
+    expect(compIncompleto.pendencias).toContain('Telefone/WhatsApp');
+    expect(compIncompleto.pendencias).toContain('CPF ou CNPJ');
+
+    expect(compCompleto.porcentagem).toBe(100);
+    expect(compCompleto.nivel).toBe('alto');
+    expect(compCompleto.concluidos).toHaveLength(6);
+    expect(compCompleto.pendencias).toHaveLength(0);
+
+    expect(compNulo.porcentagem).toBe(0);
+    expect(compNulo.nivel).toBe('baixo');
+  });
+
+  it('deve consolidar a linha do tempo Customer 360 em ordem cronológica decrescente', () => {
+    // Setup
+    const cliente = {
+      id: 'cli-100',
+      nome: 'Beatriz Reis',
+      createdAt: '2026-01-10T10:00:00Z'
+    };
+    const orcamentos = [
+      { id: 'orc-1', destino: 'Paris & Roma', valor_proposta: 18500, created_at: '2026-02-01T10:00:00Z', status: 'CONCLUIDO', sub_status: 'ACEITO' }
+    ];
+    const viagens = [
+      { id: 'via-1', destino: 'Paris & Roma', valor_total: 18500, status: 'fechado', created_at: '2026-02-15T10:00:00Z', codigo_localizador: 'LOC123' }
+    ];
+    const anexos = [
+      { id: 'anx-1', rotulo: 'Passaporte Beatriz', tipo_documento: 'PASSAPORTE', created_at: '2026-02-20T10:00:00Z' }
+    ];
+    const feedbacks = [
+      { id: 'nps-1', nota: 10, comentario: 'Viagem perfeita!', created_at: '2026-03-05T10:00:00Z' }
+    ];
+
+    // Action
+    const timeline = consolidarLinhaDoTempoCliente({ cliente, orcamentos, viagens, anexos, feedbacks });
+
+    // Assert
+    expect(timeline).toHaveLength(5);
+    // Primeiro evento deve ser o mais recente (NPS em 05/03/2026)
+    expect(timeline[0].tipo).toBe('nps');
+    expect(timeline[0].titulo).toContain('Nota 10/10');
+    // Último evento deve ser o cadastro do cliente em 10/01/2026
+    expect(timeline[timeline.length - 1].tipo).toBe('cadastro');
+  });
 });
+

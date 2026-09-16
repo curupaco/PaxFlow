@@ -91,3 +91,75 @@ export function calcularLeadAgingInfo(dateIso?: string): { dias: number; badgeHt
     };
   }
 }
+
+export interface WizardStepValidationResult {
+  valido: boolean;
+  erros: string[];
+}
+
+/**
+ * Valida os dados de cada passo do mini-wizard de conversão de orçamento em viagem
+ */
+export function validarPassoWizardConversao(
+  passo: 1 | 2,
+  dados: {
+    nomeCliente?: string;
+    email?: string;
+    telefone?: string;
+    documento?: string;
+    dataNascimento?: string;
+    destino?: string;
+    dataIda?: string;
+    valor?: number | string;
+    isViagemExistente?: boolean;
+    viagemExistenteId?: string;
+  }
+): WizardStepValidationResult {
+  const erros: string[] = [];
+
+  if (passo === 1) {
+    // Validação Passo 1: Ficha do Passageiro
+    if (!dados.nomeCliente || !dados.nomeCliente.trim()) {
+      erros.push('Nome Completo é obrigatório.');
+    }
+    if (!dados.email || !dados.email.includes('@')) {
+      erros.push('E-mail de Contato inválido ou ausente.');
+    }
+    const telDigits = (dados.telefone || '').replace(/\D/g, '');
+    if (telDigits.length < 8) {
+      erros.push('Telefone de Contato deve ter pelo menos 8 dígitos.');
+    }
+    const docDigits = (dados.documento || '').replace(/\D/g, '');
+    if (!docDigits || (docDigits.length !== 11 && docDigits.length !== 14)) {
+      erros.push('CPF (11 dígitos) ou CNPJ (14 dígitos) é obrigatório.');
+    }
+    // Se for CPF (Pessoa Física), data de nascimento é obrigatória
+    if (docDigits.length === 11 && (!dados.dataNascimento || !dados.dataNascimento.trim())) {
+      erros.push('Data de Nascimento é obrigatória para Pessoa Física (CPF).');
+    }
+  } else if (passo === 2) {
+    // Validação Passo 2: Dados Operacionais / Roteiro
+    if (dados.isViagemExistente) {
+      if (!dados.viagemExistenteId) {
+        erros.push('Selecione uma viagem existente para vincular o orçamento.');
+      }
+    } else {
+      if (!dados.destino || !dados.destino.trim()) {
+        erros.push('Destino da viagem é obrigatório.');
+      }
+      if (!dados.dataIda || !dados.dataIda.trim()) {
+        erros.push('Data de Ida / Embarque é obrigatória.');
+      }
+      const valNum = typeof dados.valor === 'number' ? dados.valor : parseFloat(String(dados.valor || '0').replace(/\./g, '').replace(',', '.'));
+      if (isNaN(valNum) || valNum <= 0) {
+        erros.push('Valor da Venda deve ser maior que zero.');
+      }
+    }
+  }
+
+  return {
+    valido: erros.length === 0,
+    erros
+  };
+}
+

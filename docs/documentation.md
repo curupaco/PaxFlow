@@ -44,6 +44,7 @@
    - 3.31 [Gestão Inteligente de Anexos e Documentos (Clientes e Viagens)](#331-gestão-inteligente-de-anexos-e-documentos-clientes-e-viagens)
    - 3.32 [Melhorias de Usabilidade, Produtividade e Feedback Visual de UX (Plano 1)](#332-melhorias-de-usabilidade-produtividade-e-feedback-visual-de-ux-plano-1)
    - 3.33 [Melhorias de Eficiência Operacional, Pipeline e Ações Rápidas de UX (Plano 2)](#333-melhorias-de-eficiência-operacional-pipeline-e-ações-rápidas-de-ux-plano-2)
+   - 3.34 [Experiência Premium, Inteligência Relacional e Microinterações de UX (Plano 3)](#334-experiência-premium-inteligência-relacional-e-microinterações-de-ux-plano-3)
 4. [Diferenciais Competitivos](#4-diferenciais-competitivos)
 5. [Arquitetura Tecnológica](#5-arquitetura-tecnológica)
 6. [Segurança e Conformidade](#6-segurança-e-conformidade)
@@ -778,6 +779,44 @@ O **Plano 2 de UX** expande o ganho de agilidade e a ergonomia de uso do PaxFlow
      - Caixa de comentários e anotações (produtos, orçamentos e viagens).
      - Modal de Nova Mensagem Direta do Inbox (campos de assunto e corpo).
      - Formulário principal de Edição de Viagem e observações.
+
+### 3.34 Experiência Premium, Inteligência Relacional e Microinterações de UX (Plano 3)
+
+O **Plano 3 de UX** consolida a experiência de classe mundial do PaxFlow, integrando governança cadastral, visão 360° do passageiro, assistentes de conversão e transições visuais de alta fidelidade:
+
+1. **Barra de Completude Cadastral (Profile Completeness na Ficha do Cliente)**:
+   - Indicador visual em anel/badge no topo da Ficha do Cliente que audita e quantifica o preenchimento de dados essenciais para viagens:
+     - 🔴 **< 50% (Baixo)**: Faltam dados críticos (contatos ou documentos).
+     - 🟡 **50% a 79% (Médio)**: Contatos básicos preenchidos, pendente passaporte ou data de nascimento.
+     - 🟢 **≥ 80% (Alto/Completo)**: Ficha com governança 100% apta para emissão nacional e internacional.
+   - Tooltip flutuante interativo que decompõe em tempo real os itens concluídos (`✅ Nome`, `✅ E-mail`, `✅ Telefone`, `✅ CPF/CNPJ`) e as pendências ativas (`⚠️ Data de Nascimento`, `⚠️ Passaporte e Validade`).
+
+2. **Linha do Tempo Unificada do Cliente (PaxFlow Customer 360°)**:
+   - Aba dedicada na Ficha do Cliente que agrega todos os pontos de contato e eventos históricos do passageiro em ordem cronológica reversa:
+     - 👤 **Cadastro Inicial**: Data de criação da ficha e canal de aquisição.
+     - 📋 **Orçamentos Solicitados**: Histórico de cotações, destinos e status de proposta.
+     - ✈️ **Viagens Operacionais**: Vendas confirmadas, localizadores (LOCs), datas de embarque e valores.
+     - 🪪 **Documentos Anexados**: Passaportes, vistos e vouchers arquivados no Google Drive.
+     - ⭐ **Feedbacks & Avaliações NPS**: Notas e depoimentos do pós-viagem.
+
+3. **Assistente Passo a Passo para Conversão de Orçamento em Viagem (Mini-Wizard)**:
+   - Transformação do fluxo de fechamento de vendas em um assistente guiado em 2 passos:
+     - **Passo 1 — Validação do Passageiro**: Confirmação do titular, contatos, validação estrita de CPF/CNPJ com máscara e obrigatoriedade condicional de Data de Nascimento (para pessoas físicas).
+     - **Passo 2 — Dados de Roteiro & Finanças**: Definição do destino com autocomplete inteligente, datas de ida/retorno, data do financeiro, valor total da venda e notas operacionais (ou vinculação direta a viagem existente).
+   - Stepper visual superior de progresso e validação de consistência entre etapas.
+
+4. **Reordenação Drag & Drop de Dias do Roteiro no PaxFlow Studio™**:
+   - Cada bloco de dia no editor estruturado de propostas conta com uma alça de arraste nativa (`⋮⋮`).
+   - Permite arrastar qualquer dia de viagem para uma nova posição cronológica com o mouse, acionando a renumeração sequencial automática (`diaNumero = index + 1`) e atualização instantânea do Live Preview e das lâminas do caderno em PDF.
+
+5. **Telas de Carregamento Esqueleto (Skeleton Screens)**:
+   - Eliminação de spinners estáticos convencionais por placeholders pulsantes estruturados (`animate-pulse`) via utilitário `skeletonHelper.ts`.
+   - Espelha com fidelidade geométrica o formato de tabelas, cards e fichas detalhadas durante o carregamento de dados do Supabase, prevenindo qualquer salto visual de layout (CLS).
+
+6. **Gestos de Deslizar nos Cards Mobile (Swipe Actions)**:
+   - Suporte a gestos nativos de toque para smartphones e tablets:
+     - 👉 **Deslizar para a Direita**: Dispara o envio imediato de mensagem pré-formatada no WhatsApp do passageiro.
+     - 👈 **Deslizar para a Esquerda**: Abre a gaveta de detalhes operacionais da viagem.
 
 ---
 

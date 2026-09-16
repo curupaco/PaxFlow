@@ -734,6 +734,42 @@ export const HELP_ITEMS: HelpItem[] = [
     label: '⌨️ Atalho Universal [Ctrl + Enter] para Envio Rápido',
     description: 'Economize tempo enviando comentários, mensagens da inbox, notas e salvando formulários pelo teclado.',
     details: 'Em qualquer campo de texto ou formulário de notas e mensagens do PaxFlow, utilize o atalho de teclado:\n\n- **Windows/Linux**: `Ctrl + Enter`\n- **macOS**: `Cmd + Enter`\n\nDisponível na **Caixa de Comentários** (produtos, orçamentos e viagens), no modal de **Nova Mensagem da Inbox**, nos **Detalhes de Orçamento** e no formulário de **Edição de Viagem**.'
+  },
+  {
+    id: 'completude-cadastral-cliente',
+    modulo: 'clientes',
+    label: '📊 Barra de Completude Cadastral (Profile Completeness)',
+    description: 'Auditoria proativa de dados e documentos dos viajantes com checklist de pendências.',
+    details: 'Na Ficha do Cliente, um indicador visual exibe o percentual de preenchimento dos dados cadastrais:\n\n- 🔴 **< 50% (Baixo)**: Faltam dados essenciais como documento ou telefone.\n- 🟡 **50% a 79% (Médio)**: Contatos básicos preenchidos, mas faltam dados como passaporte ou data de nascimento.\n- 🟢 **80%+ (Alto/Completo)**: Ficha com governança completa pronta para emissão internacional.\n\nPasse o mouse sobre o badge para visualizar a lista detalhada do que já foi concluído e quais itens estão pendentes de preenchimento.'
+  },
+  {
+    id: 'customer-360-timeline',
+    modulo: 'clientes',
+    label: '⏱️ Linha do Tempo Unificada do Cliente (Customer 360°)',
+    description: 'Histórico cronológico completo com todas as interações, orçamentos, viagens e documentos do passageiro.',
+    details: 'Na Ficha do Cliente, acesse a aba **Linha do Tempo 360°** para visualizar a jornada completa do viajante com a agência em ordem cronológica reversa:\n\n- 👤 **Cadastro Inicial**: Data de entrada do cliente na base.\n- 📋 **Orçamentos Criados**: Propostas solicitadas e status de negociação.\n- ✈️ **Viagens Operacionais**: Vendas confirmadas, localizadores (LOCs) e valores.\n- 🪪 **Documentos Anexados**: Passaportes, vistos e vouchers arquivados no Google Drive.\n- ⭐ **Avaliações NPS**: Notas e depoimentos recebidos no pós-viagem.'
+  },
+  {
+    id: 'wizard-conversao-orcamento',
+    modulo: 'orcamentos',
+    label: '🏆 Mini-Wizard de Conversão de Orçamento em Viagem',
+    description: 'Assistente passo a passo em 2 etapas intuitivas para formalização de vendas e emissão operacional.',
+    details: 'Ao clicar em **Vender 🏆** no card de orçamento em fase "Aguardando", o assistente passo a passo divide o processo em 2 etapas guiadas:\n\n1. **Passo 1 — Validação do Passageiro**: Valida e formata nome, e-mail, telefone/WhatsApp, CPF/CNPJ com máscara e data de nascimento.\n2. **Passo 2 — Dados de Roteiro & Finanças**: Define destino com busca inteligente, datas de embarque/retorno, valor da venda e notas operacionais (ou vinculação a viagem existente).\n\nAo concluir, a ficha única do passageiro e a viagem são emitidas automaticamente no sistema com zero retrabalho.'
+  },
+  {
+    id: 'studio-reordenacao-dias',
+    modulo: 'processos',
+    label: '🗺️ Reordenação Drag & Drop de Dias do Roteiro no Studio',
+    description: 'Como reorganizar a sequência dos dias de viagem arrastando os blocos pelo mouse.',
+    details: 'No editor do **PaxFlow Studio™**, cada bloco de dia do itinerário conta com uma alça de arraste (`⋮⋮`):\n\n1. Clique e segure na alça do dia que deseja mover (ex: Dia 3).\n2. Arraste até a nova posição desejada (ex: antes do Dia 1) e solte.\n3. O PaxFlow renumera automaticamente todos os dias sequencialmente (`diaNumero`), mantendo todas as atividades e refletindo a nova ordem no Live Preview em tempo real.'
+  },
+  {
+    id: 'swipe-actions-mobile',
+    modulo: 'dashboard',
+    label: '📱 Gestos de Deslizar nos Cards Mobile (Swipe Actions)',
+    description: 'Atalhos por gestos nativos de toque para atendimento rápido no smartphone.',
+    details: 'Ao acessar o PaxFlow no celular ou tablet, utilize gestos de toque sobre os cards de viagens:\n\n- 👉 **Deslizar para a Direita**: Abre imediatamente o atalho de mensagem de WhatsApp para o passageiro.\n- 👈 **Deslizar para a Esquerda**: Abre a gaveta de detalhes completos da viagem operacional.'
   }
 ];
+
 

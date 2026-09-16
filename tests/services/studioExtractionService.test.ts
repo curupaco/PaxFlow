@@ -150,4 +150,50 @@ describe('StudioExtractionService - Testes Subcutâneos de Extração e Linha do
     expect(item.destino).toBe('CDG');
     expect(item.localizador).toBe('AFR888');
   });
+
+  it('deve reordenar dias de itinerário e atualizar sequencialmente a propriedade diaNumero', () => {
+    // Setup - 3 dias de roteiro
+    const diasOriginais: any[] = [
+      { diaNumero: 1, tituloDia: 'Dia 1: Chegada em Roma', itens: [{ id: 'i1', titulo: 'Check-in Hotel' }] },
+      { diaNumero: 2, tituloDia: 'Dia 2: Coliseu & Fórum Romano', itens: [{ id: 'i2', titulo: 'Passeio Coliseu' }] },
+      { diaNumero: 3, tituloDia: 'Dia 3: Vaticano & Museus', itens: [{ id: 'i3', titulo: 'Tour Vaticano' }] },
+    ];
+
+    // Action - Mover Dia 3 (index 2) para a posição do Dia 1 (index 0)
+    const reordenados = StudioExtractionService.reordenarDiasItinerario(diasOriginais, 2, 0);
+
+    // Assert
+    expect(reordenados).toHaveLength(3);
+    // O antigo Dia 3 agora é o primeiro dia e seu diaNumero foi recalculado para 1
+    expect(reordenados[0].tituloDia).toBe('Dia 3: Vaticano & Museus');
+    expect(reordenados[0].diaNumero).toBe(1);
+    expect(reordenados[0].itens[0].id).toBe('i3');
+
+    // O antigo Dia 1 virou o segundo dia com diaNumero = 2
+    expect(reordenados[1].tituloDia).toBe('Dia 1: Chegada em Roma');
+    expect(reordenados[1].diaNumero).toBe(2);
+
+    // O antigo Dia 2 virou o terceiro dia com diaNumero = 3
+    expect(reordenados[2].tituloDia).toBe('Dia 2: Coliseu & Fórum Romano');
+    expect(reordenados[2].diaNumero).toBe(3);
+  });
+
+  it('deve reordenar itens/atividades dentro de um mesmo dia', () => {
+    // Setup
+    const itensOriginais: any[] = [
+      { id: 'a1', titulo: 'Café da manhã' },
+      { id: 'a2', titulo: 'City Tour' },
+      { id: 'a3', titulo: 'Jantar Romântico' }
+    ];
+
+    // Action - mover item 2 para o início
+    const reordenados = StudioExtractionService.reordenarItensDoDia(itensOriginais, 2, 0);
+
+    // Assert
+    expect(reordenados).toHaveLength(3);
+    expect(reordenados[0].id).toBe('a3');
+    expect(reordenados[1].id).toBe('a1');
+    expect(reordenados[2].id).toBe('a2');
+  });
 });
+

@@ -30,6 +30,7 @@ import {
 
 import { isNextTripEnabled, isRiskScoreEnabled, isUpsellEnabled } from '../utils/featureFlags';
 import { highlightMatch } from '../utils/textHelper';
+import { renderSkeletonTable } from '../utils/skeletonHelper';
 
 // Injeta estilos premium e animações micro-interativas para SLAs diretamente no DOM
 
@@ -1010,13 +1011,16 @@ export class Dashboard {
   }
 
   /**
-   * Exibe uma caixa flutuante de carregamento (Skeleton loader)
+   * Exibe uma caixa estruturada de carregamento (Skeleton loader)
    */
   private renderLoading(): void {
     this.container.innerHTML = `
-      <div class="min-h-screen bg-slate-50/50 p-8 flex flex-col items-center justify-center space-y-4">
-        <div class="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-        <p class="text-slate-500 font-semibold animate-pulse">Carregando painel operacional da agência...</p>
+      <div class="min-h-screen bg-slate-50/50 dark:bg-slate-950 p-6 space-y-6 font-sans">
+        <div class="h-16 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 animate-pulse flex items-center justify-between">
+          <div class="h-6 bg-slate-200 dark:bg-slate-700 rounded w-48"></div>
+          <div class="h-8 bg-slate-200 dark:bg-slate-700 rounded-xl w-36"></div>
+        </div>
+        ${renderSkeletonTable(8, 6)}
       </div>
     `;
   }
@@ -2375,7 +2379,7 @@ Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : '
     const risk = RiskScoreService.calculateTripRiskScore(v, v.cliente, v.produtos, this.settings, this.user, this.perfil);
 
     return `
-      <div class="${cardBg} border border-slate-200/60 dark:border-slate-800 border-l-4 ${cardBorder} rounded-2xl p-5 shadow-sm space-y-4">
+      <div class="dashboard-mobile-card ${cardBg} border border-slate-200/60 dark:border-slate-800 border-l-4 ${cardBorder} rounded-2xl p-5 shadow-sm space-y-4 relative overflow-hidden transition-transform duration-200" data-mobile-trip-id="${v.id}">
         <!-- Header: SLA + Risk Score + Cliente + LOC -->
         <div class="flex items-start justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
           <div class="space-y-1">
@@ -2931,6 +2935,60 @@ Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : '
         const viagem = this.viagens.find(v => v.id === tripId);
         if (viagem) {
           this.compartilharItinerarioMobile(viagem);
+        }
+      });
+    });
+
+    // 14. Gestos de Deslizar nos Cards Mobile (Swipe Actions)
+    this.setupMobileSwipeActions();
+  }
+
+  /**
+   * Configura suporte a gestos de swipe (deslizar) nos cards da visualização mobile
+   * - Deslizar para a direita ➔ Dispara WhatsApp
+   * - Deslizar para a esquerda ➔ Abre detalhes da viagem
+   */
+  private setupMobileSwipeActions(): void {
+    const cards = this.container.querySelectorAll('.dashboard-mobile-card');
+    cards.forEach((cardEl: any) => {
+      let touchStartX = 0;
+      let touchStartY = 0;
+      let currentX = 0;
+
+      cardEl.addEventListener('touchstart', (e: TouchEvent) => {
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+        currentX = touchStartX;
+        cardEl.style.transition = 'none';
+      }, { passive: true });
+
+      cardEl.addEventListener('touchmove', (e: TouchEvent) => {
+        currentX = e.touches[0].clientX;
+        const deltaX = currentX - touchStartX;
+        const deltaY = e.touches[0].clientY - touchStartY;
+
+        // Se for movimento primordialmente horizontal
+        if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 15) {
+          cardEl.style.transform = `translateX(${deltaX * 0.35}px)`;
+        }
+      }, { passive: true });
+
+      cardEl.addEventListener('touchend', () => {
+        cardEl.style.transition = 'transform 0.25s ease-out';
+        const deltaX = currentX - touchStartX;
+        cardEl.style.transform = 'translateX(0px)';
+
+        const tripId = cardEl.getAttribute('data-mobile-trip-id');
+        if (!tripId) return;
+
+        if (deltaX > 90) {
+          // Swipe Right: Dispara WhatsApp
+          const btnWhatsapp = cardEl.querySelector('.btn-action-whatsapp');
+          if (btnWhatsapp) btnWhatsapp.click();
+        } else if (deltaX < -90) {
+          // Swipe Left: Abre detalhes da viagem
+          const btnView = cardEl.querySelector('.btn-action-view');
+          if (btnView) btnView.click();
         }
       });
     });

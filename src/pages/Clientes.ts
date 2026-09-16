@@ -21,6 +21,12 @@ import {
   formatIsoDateToBr,
   formatCpfCnpj
 } from '../utils/masks';
+import {
+  calcularCompletudeCadastral,
+  consolidarLinhaDoTempoCliente,
+  TimelineEvent
+} from '../controllers/clientesController';
+import { renderSkeletonTable, renderSkeletonClientDetail } from '../utils/skeletonHelper';
 import './Clientes.css';
 
 export class ClientesPage {
@@ -33,6 +39,9 @@ export class ClientesPage {
   private carregandoUpload: boolean = false;
   private buscaTermo: string = '';
   private mobileDetailOpen: boolean = false;
+  private fichaTabAtiva: 'cadastro' | 'timeline' = 'cadastro';
+  private timelineCarregando: boolean = false;
+  private timelineEventos: TimelineEvent[] = [];
 
   // Variáveis para seleção em massa e limpeza de recursos
   private selectedClientIds: Set<string> = new Set();
@@ -1249,32 +1258,59 @@ export class ClientesPage {
     if (passSla.status === 'warning') passValidadeInputClass += ' passport-expired-alert text-amber-600 dark:text-amber-400';
 
     const isNew = !c.id;
+    const completude = calcularCompletudeCadastral(c);
 
     fichaEl.innerHTML = `
-      <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-4 sm:p-6 shadow-sm flex flex-col gap-6 min-w-0 max-w-full overflow-hidden">
+      <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-4 sm:p-6 shadow-sm flex flex-col gap-5 min-w-0 max-w-full overflow-hidden">
         
         <!-- Botão Voltar (Apenas Mobile) -->
-        <div class="lg:hidden flex items-center mb-2">
+        <div class="lg:hidden flex items-center mb-1">
           <button id="btn-voltar-lista-mobile" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-black rounded-xl flex items-center gap-1.5 transition">
             <span>←</span> Voltar para a lista
           </button>
         </div>
 
-        <!-- Topo da Ficha: Nome & Botão Google Drive -->
+        <!-- Topo da Ficha: Nome, Completude & Botão Google Drive -->
         <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-5 min-w-0 max-w-full">
           <div class="flex items-start sm:items-center gap-3 min-w-0 flex-1">
             <div class="w-12 h-12 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/40 text-indigo-600 dark:text-indigo-400 rounded-2xl flex items-center justify-center font-black text-base shadow-sm shrink-0">
               ${isNew ? 'NC' : (c.nome || 'NC').substring(0,2).toUpperCase()}
             </div>
             <div class="min-w-0 flex-1 overflow-hidden">
-              <h2 class="text-lg sm:text-xl font-black text-slate-800 dark:text-slate-100 leading-snug tracking-tight truncate">
-                ${isNew ? 'Novo Cliente / Passageiro' : c.nome}
-              </h2>
+              <div class="flex flex-wrap items-center gap-2">
+                <h2 class="text-lg sm:text-xl font-black text-slate-800 dark:text-slate-100 leading-snug tracking-tight truncate">
+                  ${isNew ? 'Novo Cliente / Passageiro' : c.nome}
+                </h2>
+                ${!isNew ? `
+                  <div class="relative group cursor-pointer inline-block">
+                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${completude.corBadge} transition">
+                      <span>${completude.porcentagem === 100 ? '⭐' : '📊'}</span>
+                      <span>${completude.porcentagem}% Preenchido</span>
+                    </span>
+                    <!-- Tooltip de Completude -->
+                    <div class="absolute left-0 top-full mt-1.5 hidden group-hover:block z-50 w-64 bg-slate-900/95 dark:bg-slate-800/95 backdrop-blur-md text-white p-3 rounded-xl shadow-2xl border border-slate-700 text-xs font-sans animate-fade-in pointer-events-none">
+                      <div class="font-extrabold text-[11px] mb-1.5 text-indigo-300">Auditoria Cadastral (${completude.porcentagem}%)</div>
+                      ${completude.concluidos.length > 0 ? `
+                        <div class="space-y-0.5 mb-1.5 text-[10px] text-emerald-400">
+                          ${completude.concluidos.map(item => `<div>✅ ${item}</div>`).join('')}
+                        </div>
+                      ` : ''}
+                      ${completude.pendencias.length > 0 ? `
+                        <div class="space-y-0.5 text-[10px] text-amber-400 border-t border-slate-700/60 pt-1">
+                          ${completude.pendencias.map(item => `<div>⚠️ Pendente: ${item}</div>`).join('')}
+                        </div>
+                      ` : ''}
+                    </div>
+                  </div>
+                ` : ''}
+              </div>
+
               <div class="text-xs text-slate-500 dark:text-slate-400 font-semibold flex flex-wrap items-center gap-1.5 mt-0.5">
                 <span>Ficha e Documentação</span>
                 ${c.codigoRef ? `<span class="font-mono text-indigo-600 dark:text-indigo-400 font-bold px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-950/40 rounded border border-indigo-100 dark:border-indigo-900/30">${c.codigoRef}</span>` : ''}
                 ${!isNew && c.email ? `<span class="text-slate-400">&bull;</span><span class="text-indigo-600 dark:text-indigo-400 font-bold truncate max-w-[200px] sm:max-w-xs inline-block align-bottom">${c.email}</span>` : ''}
               </div>
+
               ${!isNew && c.classificacoes && c.classificacoes.length > 0 ? `
                 <div class="flex flex-wrap gap-1.5 mt-2">
                   ${c.classificacoes.map(tag => `
@@ -1282,14 +1318,6 @@ export class ClientesPage {
                       <span>📢</span> ${tag}
                     </span>
                   `).join('')}
-                </div>
-              ` : ''}
-
-              ${!isNew && (c as any).viagens && (c as any).viagens.length > 0 ? `
-                <div class="mt-2.5">
-                  <span class="px-2.5 py-1 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 text-[10px] font-black uppercase tracking-wider inline-flex items-center gap-1">
-                    🎯 Next Trip Engine™: Recompra Recomendada
-                  </span>
                 </div>
               ` : ''}
             </div>
@@ -1318,7 +1346,21 @@ export class ClientesPage {
           `}
         </div>
 
-        <form id="form-cliente" class="space-y-6">
+        <!-- Abas da Ficha: Cadastro vs Linha do Tempo Customer 360° -->
+        ${!isNew ? `
+          <div class="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-2">
+            <button type="button" id="btn-tab-ficha-cadastro" class="px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition cursor-pointer flex items-center gap-1.5 ${this.fichaTabAtiva === 'cadastro' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 bg-slate-100/70 dark:bg-slate-800/70'}">
+              <span>📝</span> Ficha Cadastral
+            </button>
+            <button type="button" id="btn-tab-ficha-timeline" class="px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition cursor-pointer flex items-center gap-1.5 ${this.fichaTabAtiva === 'timeline' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 bg-slate-100/70 dark:bg-slate-800/70'}">
+              <span>⏱️</span> Linha do Tempo 360°
+            </button>
+          </div>
+        ` : ''}
+
+        <div id="ficha-tab-conteudo">
+          ${this.fichaTabAtiva === 'timeline' && !isNew ? this.renderTimelineClienteHTML() : `
+            <form id="form-cliente" class="space-y-6">
           
           <!-- Seção 1: Informações Pessoais -->
           <div>
@@ -1444,8 +1486,23 @@ export class ClientesPage {
           </div>
 
         </form>
+          `}
+        </div>
       </div>
     `;
+
+    // Listeners de alternância de abas da ficha
+    document.getElementById('btn-tab-ficha-cadastro')?.addEventListener('click', () => {
+      this.fichaTabAtiva = 'cadastro';
+      this.renderFichaDetalhada();
+      this.setupFormEventListeners();
+    });
+
+    document.getElementById('btn-tab-ficha-timeline')?.addEventListener('click', async () => {
+      this.fichaTabAtiva = 'timeline';
+      this.renderFichaDetalhada();
+      await this.carregarTimelineCliente();
+    });
   }
 
   /**
@@ -1475,13 +1532,106 @@ export class ClientesPage {
   }
 
   /**
+   * Renderiza o HTML da Linha do Tempo Customer 360°
+   */
+  private renderTimelineClienteHTML(): string {
+    if (this.timelineCarregando) {
+      return `
+        <div class="py-12 flex flex-col items-center justify-center space-y-3">
+          <div class="w-8 h-8 border-3 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+          <p class="text-xs text-slate-500 font-bold animate-pulse">Carregando histórico 360° do viajante...</p>
+        </div>
+      `;
+    }
+
+    if (this.timelineEventos.length === 0) {
+      return `
+        <div class="p-8 text-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl text-slate-400 space-y-2">
+          <span class="text-3xl block">⏱️</span>
+          <p class="text-xs font-bold text-slate-700 dark:text-slate-300">Nenhum evento registrado ainda.</p>
+          <p class="text-[11px] text-slate-400">Orçamentos, viagens e documentos vinculados aparecerão aqui em ordem cronológica.</p>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="space-y-4 py-2">
+        <div class="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+          <h3 class="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Jornada do Cliente (${this.timelineEventos.length} eventos)</h3>
+          <span class="text-[10px] text-indigo-600 dark:text-indigo-400 font-extrabold">PaxFlow Customer 360°</span>
+        </div>
+        <div class="relative pl-6 border-l-2 border-indigo-100 dark:border-slate-800 space-y-4 my-2">
+          ${this.timelineEventos.map(ev => `
+            <div class="relative">
+              <div class="absolute -left-[31px] top-1 w-5 h-5 rounded-full bg-white dark:bg-slate-900 border-2 border-indigo-500 flex items-center justify-center text-[10px] shadow-xs">
+                ${ev.icone}
+              </div>
+              <div class="p-3.5 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 space-y-1 hover:border-indigo-300 transition">
+                <div class="flex items-center justify-between gap-2 flex-wrap">
+                  <span class="text-xs font-black text-slate-800 dark:text-slate-200">${ev.titulo}</span>
+                  <span class="text-[10px] font-mono font-bold text-slate-400">${ev.data}</span>
+                </div>
+                <p class="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">${ev.descricao}</p>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  /**
+   * Carrega os dados vinculados do cliente e consolida a Linha do Tempo 360°
+   */
+  private async carregarTimelineCliente(): Promise<void> {
+    if (!this.clienteSelecionado?.id) return;
+    this.timelineCarregando = true;
+    const tabEl = document.getElementById('ficha-tab-conteudo');
+    if (tabEl) tabEl.innerHTML = this.renderTimelineClienteHTML();
+
+    try {
+      const cliId = this.clienteSelecionado.id;
+      const [resViagens, resOrcamentos, resAnexos] = await Promise.all([
+        supabase.from('viagens').select('*').eq('cliente_id', cliId),
+        supabase.from('orcamentos').select('*').or(`cliente_id.eq.${cliId},clienteId.eq.${cliId}`),
+        AnexosService.listarAnexos(undefined, cliId)
+      ]);
+
+      this.timelineEventos = consolidarLinhaDoTempoCliente({
+        cliente: this.clienteSelecionado,
+        viagens: resViagens.data || [],
+        orcamentos: resOrcamentos.data || [],
+        anexos: resAnexos || []
+      });
+    } catch (e) {
+      console.warn('Erro ao carregar timeline 360 do cliente:', e);
+    } finally {
+      this.timelineCarregando = false;
+      const tabElAtual = document.getElementById('ficha-tab-conteudo');
+      if (tabElAtual && this.fichaTabAtiva === 'timeline') {
+        tabElAtual.innerHTML = this.renderTimelineClienteHTML();
+      }
+    }
+  }
+
+  /**
    * Exibe tela de carregamento (Skeleton loader)
    */
   private renderLoading(): void {
     this.container.innerHTML = `
-      <div class="min-h-screen bg-slate-50/50 p-8 flex flex-col items-center justify-center space-y-4">
-        <div class="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-        <p class="text-slate-500 font-semibold animate-pulse">Carregando a ficha única do cliente...</p>
+      <div class="min-h-screen bg-slate-50/50 dark:bg-slate-950 p-6 space-y-6 font-sans">
+        <div class="h-12 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 animate-pulse flex items-center justify-between">
+          <div class="h-5 bg-slate-200 dark:bg-slate-700 rounded w-48"></div>
+          <div class="h-8 bg-slate-200 dark:bg-slate-700 rounded-xl w-32"></div>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div class="lg:col-span-4">
+            ${renderSkeletonTable(6, 2)}
+          </div>
+          <div class="lg:col-span-8">
+            ${renderSkeletonClientDetail()}
+          </div>
+        </div>
       </div>
     `;
   }

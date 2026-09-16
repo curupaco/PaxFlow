@@ -473,10 +473,13 @@ export class StudioPage {
     }
 
     return dias.map((dia, dIdx) => `
-      <div class="p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 space-y-3" data-dia-idx="${dIdx}">
-        <!-- CABEÇALHO DO DIA -->
+      <div class="dia-editor-card p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 space-y-3 transition" draggable="true" data-dia-idx="${dIdx}">
+        <!-- CABEÇALHO DO DIA COM DRAG HANDLE -->
         <div class="flex items-center justify-between gap-2 flex-wrap">
           <div class="flex items-center gap-2 flex-1 min-w-[200px]">
+            <span class="dia-drag-handle cursor-grab active:cursor-grabbing text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 select-none text-base px-1" title="Arraste para reordenar a sequência deste dia">
+              ⋮⋮
+            </span>
             <span class="px-2 py-0.5 rounded-lg text-[10px] font-black bg-indigo-600 text-white shrink-0">
               DIA ${dia.diaNumero}
             </span>
@@ -1190,6 +1193,46 @@ export class StudioPage {
           this.propostaAtual.itinerario_dias[dIdx].data = e.target.value;
           this.marcarAlteracaoPendente();
           this.atualizarLivePreview();
+        }
+      });
+    });
+
+    // 7.1 Drag & Drop para Reordenação de Dias do Roteiro
+    let draggedDiaIdx: number | null = null;
+    this.container.querySelectorAll('.dia-editor-card').forEach(card => {
+      card.addEventListener('dragstart', (e: any) => {
+        draggedDiaIdx = parseInt(card.getAttribute('data-dia-idx') || '0', 10);
+        e.dataTransfer.setData('text/plain', String(draggedDiaIdx));
+        card.classList.add('opacity-50', 'scale-[0.99]');
+      });
+
+      card.addEventListener('dragend', () => {
+        card.classList.remove('opacity-50', 'scale-[0.99]');
+        this.container.querySelectorAll('.dia-editor-card').forEach(c => c.classList.remove('border-indigo-500', 'ring-2', 'ring-indigo-500/20'));
+      });
+
+      card.addEventListener('dragover', (e: any) => {
+        e.preventDefault();
+        card.classList.add('border-indigo-500', 'ring-2', 'ring-indigo-500/20');
+      });
+
+      card.addEventListener('dragleave', () => {
+        card.classList.remove('border-indigo-500', 'ring-2', 'ring-indigo-500/20');
+      });
+
+      card.addEventListener('drop', (e: any) => {
+        e.preventDefault();
+        card.classList.remove('border-indigo-500', 'ring-2', 'ring-indigo-500/20');
+        const targetIdx = parseInt(card.getAttribute('data-dia-idx') || '0', 10);
+        if (draggedDiaIdx !== null && draggedDiaIdx !== targetIdx && this.propostaAtual.itinerario_dias) {
+          this.capturarDadosGeraisDoFormulario();
+          this.propostaAtual.itinerario_dias = StudioExtractionService.reordenarDiasItinerario(
+            this.propostaAtual.itinerario_dias,
+            draggedDiaIdx,
+            targetIdx
+          );
+          this.marcarAlteracaoPendente();
+          this.render();
         }
       });
     });

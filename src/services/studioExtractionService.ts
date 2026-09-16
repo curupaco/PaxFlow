@@ -723,6 +723,45 @@ export class StudioExtractionService {
   }
 
   /**
+   * Reordena os dias do itinerário garantindo a renumeração sequencial correta (diaNumero = index + 1)
+   */
+  public static reordenarDiasItinerario(
+    dias: StudioDiaItinerario[],
+    fromIndex: number,
+    toIndex: number
+  ): StudioDiaItinerario[] {
+    if (!Array.isArray(dias) || fromIndex < 0 || toIndex < 0 || fromIndex >= dias.length || toIndex >= dias.length) {
+      return dias || [];
+    }
+    const novoArray = dias.map(d => ({ ...d, itens: Array.isArray(d.itens) ? [...d.itens] : [] }));
+    const [removido] = novoArray.splice(fromIndex, 1);
+    novoArray.splice(toIndex, 0, removido);
+
+    // Atualiza numeração dos dias sequencialmente
+    return novoArray.map((dia, idx) => ({
+      ...dia,
+      diaNumero: idx + 1
+    }));
+  }
+
+  /**
+   * Reordena atividades dentro de um mesmo dia
+   */
+  public static reordenarItensDoDia(
+    itens: StudioItemItinerario[],
+    fromIndex: number,
+    toIndex: number
+  ): StudioItemItinerario[] {
+    if (!Array.isArray(itens) || fromIndex < 0 || toIndex < 0 || fromIndex >= itens.length || toIndex >= itens.length) {
+      return itens || [];
+    }
+    const novoArray = [...itens];
+    const [removido] = novoArray.splice(fromIndex, 1);
+    novoArray.splice(toIndex, 0, removido);
+    return novoArray;
+  }
+
+  /**
    * Calcula a quantidade de dias entre duas datas no formato YYYY-MM-DD.
    */
   private static calcularDiferencaDias(dataInicio: string, dataFim: string): number {
@@ -736,3 +775,5 @@ export class StudioExtractionService {
     }
   }
 }
+
+

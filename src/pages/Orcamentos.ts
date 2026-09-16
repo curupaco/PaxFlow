@@ -24,6 +24,8 @@ import {
   parsePhoneValue
 } from '../utils/masks';
 import { highlightMatch } from '../utils/textHelper';
+import { validarPassoWizardConversao } from '../controllers/orcamentosController';
+import { renderSkeletonCards } from '../utils/skeletonHelper';
 import './Orcamentos.css';
 
 export class OrcamentosPage {
@@ -1215,13 +1217,16 @@ export class OrcamentosPage {
   }
 
   /**
-   * Exibe indicador de carregamento
+   * Exibe indicador de carregamento estruturado (Skeleton Loader)
    */
   private renderLoading(): void {
     this.container.innerHTML = `
-      <div class="min-h-screen bg-slate-50/50 p-8 flex flex-col items-center justify-center space-y-4">
-        <div class="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-        <p class="text-slate-500 font-semibold animate-pulse">Carregando painel de orçamentos...</p>
+      <div class="min-h-screen bg-slate-50/50 dark:bg-slate-950 p-6 space-y-6 font-sans">
+        <div class="h-12 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 animate-pulse flex items-center justify-between">
+          <div class="h-5 bg-slate-200 dark:bg-slate-700 rounded w-48"></div>
+          <div class="h-8 bg-slate-200 dark:bg-slate-700 rounded-xl w-32"></div>
+        </div>
+        ${renderSkeletonCards(4)}
       </div>
     `;
   }
@@ -2105,25 +2110,35 @@ export class OrcamentosPage {
 
     modalContent.innerHTML = `
       <div class="p-6 max-h-[85vh] overflow-y-auto custom-scrollbar">
-        <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3 mb-5">
+        <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3 mb-4">
           <h3 class="text-lg font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
-            <span>🏆 Iniciar Negociação / Fechar Viagem</span>
+            <span>🏆 Conversão de Venda em Viagem</span>
           </h3>
-          <button id="btn-close-modal-x" class="text-slate-400 hover:text-rose-500 font-bold transition text-lg">&times;</button>
+          <button id="btn-close-modal-x" class="text-slate-400 hover:text-rose-500 font-bold transition text-lg cursor-pointer">&times;</button>
         </div>
 
-        <div class="p-4 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 border border-emerald-100/30 rounded-xl text-xs font-bold mb-5 leading-normal flex items-start gap-2">
-          <span class="text-base select-none">🎉</span>
-          <p>
-            Parabéns pela venda! Ao confirmar os dados abaixo, o PaxFlow criará **automaticamente** a ficha única do passageiro (se não houver) e vinculará a viagem ou adicionará os serviços/produtos à sacola da viagem selecionada.
-          </p>
+        <!-- Stepper Wizard Superior -->
+        <div class="flex items-center justify-between mb-5 bg-slate-50 dark:bg-slate-800/40 p-2.5 rounded-2xl border border-slate-200/60 dark:border-slate-800 text-xs font-bold">
+          <div id="step-indicator-1" class="flex-1 flex items-center justify-center gap-2 py-1.5 px-3 rounded-xl bg-indigo-600 text-white shadow-sm transition">
+            <span class="w-5 h-5 rounded-full bg-white/20 text-white flex items-center justify-center text-[10px] font-black">1</span>
+            <span>1. Passageiro</span>
+          </div>
+          <div class="px-2 text-slate-400 font-black select-none">➔</div>
+          <div id="step-indicator-2" class="flex-1 flex items-center justify-center gap-2 py-1.5 px-3 rounded-xl text-slate-400 dark:text-slate-400 transition">
+            <span class="w-5 h-5 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center text-[10px] font-black">2</span>
+            <span>2. Roteiro & Finanças</span>
+          </div>
         </div>
 
         <form id="form-fechar-viagem" class="space-y-6">
           
-          <!-- SEÇÃO 1: DADOS DO CLIENTE -->
-          <div>
-            <h4 class="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-3.5 border-b border-indigo-50/50 dark:border-slate-800 pb-1">1. Ficha Única do Passageiro</h4>
+          <!-- PASSO 1: DADOS DO CLIENTE / PASSAGEIRO -->
+          <div id="wizard-step-1" class="space-y-4">
+            <div class="p-3 bg-indigo-50/60 dark:bg-indigo-950/20 text-indigo-800 dark:text-indigo-300 border border-indigo-100/40 rounded-xl text-xs font-semibold leading-normal flex items-start gap-2">
+              <span class="text-base select-none">👤</span>
+              <p>Confirme os dados cadastrais do passageiro titular para geração automática da ficha única.</p>
+            </div>
+
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Nome Completo *</label>
@@ -2161,75 +2176,134 @@ export class OrcamentosPage {
                 </select>
               </div>
             </div>
+
+            <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">
+              <button id="btn-cancel-modal" type="button" class="h-10 px-5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs tracking-wider rounded-xl transition uppercase cursor-pointer">Cancelar</button>
+              <button id="btn-wizard-step1-next" type="button" class="h-10 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-md transition uppercase flex items-center gap-1.5 cursor-pointer">
+                <span>Próximo: Roteiro & Finanças</span> <span>➔</span>
+              </button>
+            </div>
           </div>
 
-          <!-- SEÇÃO DE ESCOLHA DE FLUXO (NOVA OU EXISTENTE) -->
-          ${activeTrips.length > 0 ? `
-            <div class="border-t border-slate-100 dark:border-slate-800 pt-5">
-              <h4 class="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-3.5 border-b border-indigo-50/50 dark:border-slate-800 pb-1">Destino do Orçamento</h4>
-              <div class="flex flex-col gap-3">
-                <div class="flex items-center gap-3">
-                  <label class="flex items-center gap-2 text-sm text-slate-800 dark:text-slate-200 font-semibold cursor-pointer">
-                    <input type="radio" id="radio-fluxo-nova" name="fluxo-viagem" value="nova" ${defaultFluxo === 'nova' ? 'checked' : ''} class="w-4 h-4 text-indigo-600 border-slate-300 focus:ring-indigo-500" />
-                    <span>Criar Nova Viagem</span>
-                  </label>
-                  <label class="flex items-center gap-2 text-sm text-slate-800 dark:text-slate-200 font-semibold cursor-pointer">
-                    <input type="radio" id="radio-fluxo-existente" name="fluxo-viagem" value="existente" ${defaultFluxo === 'existente' ? 'checked' : ''} class="w-4 h-4 text-indigo-600 border-slate-300 focus:ring-indigo-500" />
-                    <span>Adicionar à Viagem Existente</span>
-                  </label>
+          <!-- PASSO 2: DADOS DO ROTEIRO E FINANCEIRO -->
+          <div id="wizard-step-2" class="space-y-4 hidden">
+            <!-- SEÇÃO DE ESCOLHA DE FLUXO (NOVA OU EXISTENTE) -->
+            ${activeTrips.length > 0 ? `
+              <div>
+                <h4 class="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-2">Destino do Orçamento</h4>
+                <div class="flex flex-col gap-3">
+                  <div class="flex items-center gap-3">
+                    <label class="flex items-center gap-2 text-sm text-slate-800 dark:text-slate-200 font-semibold cursor-pointer">
+                      <input type="radio" id="radio-fluxo-nova" name="fluxo-viagem" value="nova" ${defaultFluxo === 'nova' ? 'checked' : ''} class="w-4 h-4 text-indigo-600 border-slate-300 focus:ring-indigo-500" />
+                      <span>Criar Nova Viagem</span>
+                    </label>
+                    <label class="flex items-center gap-2 text-sm text-slate-800 dark:text-slate-200 font-semibold cursor-pointer">
+                      <input type="radio" id="radio-fluxo-existente" name="fluxo-viagem" value="existente" ${defaultFluxo === 'existente' ? 'checked' : ''} class="w-4 h-4 text-indigo-600 border-slate-300 focus:ring-indigo-500" />
+                      <span>Adicionar à Viagem Existente</span>
+                    </label>
+                  </div>
+
+                  <div id="viagem-existente-container" class="${defaultFluxo === 'existente' ? '' : 'hidden'} mt-2">
+                    <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Selecione a Viagem Existente *</label>
+                    <select id="select-viagem-existente" class="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm">
+                      ${activeTrips.map(v => `<option value="${v.id}" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">${v.destino} (LOC: ${v.codigo_localizador || 'Sem LOC'}) - R$ ${Number(v.valor_total).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</option>`).join('')}
+                    </select>
+                  </div>
+                </div>
+              </div>
+            ` : `
+              <input type="radio" id="radio-fluxo-nova" name="fluxo-viagem" value="nova" checked class="hidden" />
+            `}
+
+            <!-- DADOS DA NOVA VIAGEM -->
+            <div id="secao-viagem-nova" class="${defaultFluxo === 'existente' ? 'hidden' : ''} space-y-4">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="md:col-span-2">
+                  <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Destino *</label>
+                  <input id="input-fechar-via-destino" type="text" required value="${orc.destino}" class="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
                 </div>
 
-                <div id="viagem-existente-container" class="${defaultFluxo === 'existente' ? '' : 'hidden'} mt-2">
-                  <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Selecione a Viagem Existente *</label>
-                  <select id="select-viagem-existente" class="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm">
-                    ${activeTrips.map(v => `<option value="${v.id}" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">${v.destino} (LOC: ${v.codigo_localizador || 'Sem LOC'}) - R$ ${Number(v.valor_total).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</option>`).join('')}
-                  </select>
+                <div>
+                  <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Data de Ida (DD/MM/AAAA) *</label>
+                  ${renderDateInputHTML('input-fechar-via-ida', orc.dataViagem || '')}
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Data de Volta (DD/MM/AAAA)</label>
+                  ${renderDateInputHTML('input-fechar-via-volta', '', 'DD/MM/AAAA', false)}
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Data Financeiro (DD/MM/AAAA)</label>
+                  ${renderDateInputHTML('input-fechar-via-data-financeiro', '', 'DD/MM/AAAA', false)}
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Valor da Venda (R$) *</label>
+                  ${renderCurrencyInputHTML('input-fechar-via-valor', orc.valorProposta || '')}
                 </div>
               </div>
-            </div>
-          ` : `
-            <input type="radio" id="radio-fluxo-nova" name="fluxo-viagem" value="nova" checked class="hidden" />
-          `}
-
-          <!-- SEÇÃO 2: DADOS DO KANBAN OPERACIONAL (VIAGENS) -->
-          <div id="secao-viagem-nova" class="${defaultFluxo === 'existente' ? 'hidden' : ''} border-t border-slate-100 dark:border-slate-800 pt-5">
-            <h4 class="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-3.5 border-b border-indigo-50/50 dark:border-slate-800 pb-1">2. Dados Operacionais da Viagem</h4>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div class="md:col-span-2">
-                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Destino *</label>
-                <input id="input-fechar-via-destino" type="text" required value="${orc.destino}" class="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" />
-              </div>
-
               <div>
-                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Data de Ida (DD/MM/AAAA) *</label>
-                ${renderDateInputHTML('input-fechar-via-ida', orc.dataViagem || '')}
-              </div>
-              <div>
-                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Data de Volta (DD/MM/AAAA)</label>
-                ${renderDateInputHTML('input-fechar-via-volta', '', 'DD/MM/AAAA', false)}
-              </div>
-              <div>
-                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Data Financeiro (DD/MM/AAAA)</label>
-                ${renderDateInputHTML('input-fechar-via-data-financeiro', '', 'DD/MM/AAAA', false)}
-              </div>
-              <div>
-                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Valor da Venda (R$) *</label>
-                ${renderCurrencyInputHTML('input-fechar-via-valor', orc.valorProposta || '')}
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Notas Operacionais</label>
+                <textarea id="textarea-fechar-via-obs" placeholder="Mais detalhes da viagem, observações importantes..." class="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm h-16 resize-none"></textarea>
               </div>
             </div>
-            <div class="mt-4">
-              <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Notas Operacionais</label>
-              <textarea id="textarea-fechar-via-obs" placeholder="Mais detalhes da viagem, observações importantes..." class="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm h-20 resize-none"></textarea>
+
+            <div class="flex items-center justify-between gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">
+              <button id="btn-wizard-step2-prev" type="button" class="h-10 px-5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs tracking-wider rounded-xl transition uppercase flex items-center gap-1 cursor-pointer">
+                <span>←</span> <span>Voltar ao Passageiro</span>
+              </button>
+              <button type="submit" id="btn-submit-fechar" class="h-10 px-6 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-emerald-600/10 transition uppercase flex items-center justify-center cursor-pointer">
+                Emitir Viagem &amp; Confirmar 🏆
+              </button>
             </div>
           </div>
 
-          <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
-            <button id="btn-cancel-modal" type="button" class="h-10 px-5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs tracking-wider rounded-xl transition uppercase flex items-center justify-center">Cancelar</button>
-            <button type="submit" id="btn-submit-fechar" class="h-10 px-6 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-emerald-600/10 transition uppercase flex items-center justify-center">Emitir Viagem & Confirmar 🏆</button>
-          </div>
         </form>
       </div>
     `;
+
+    // Configuração do Mini-Wizard (Alternância de Passos)
+    const step1El = document.getElementById('wizard-step-1');
+    const step2El = document.getElementById('wizard-step-2');
+    const ind1 = document.getElementById('step-indicator-1');
+    const ind2 = document.getElementById('step-indicator-2');
+
+    document.getElementById('btn-wizard-step1-next')?.addEventListener('click', () => {
+      const cNome = (document.getElementById('input-fechar-cli-nome') as HTMLInputElement)?.value;
+      const cEmail = (document.getElementById('input-fechar-cli-email') as HTMLInputElement)?.value;
+      const cTelefone = (document.getElementById('input-fechar-cli-telefone') as HTMLInputElement)?.value;
+      const cDoc = (document.getElementById('input-fechar-cli-doc') as HTMLInputElement)?.value;
+      const cNascRaw = (document.getElementById('input-fechar-cli-nascimento') as HTMLInputElement)?.value;
+
+      const validacaoPasso1 = validarPassoWizardConversao(1, {
+        nomeCliente: cNome,
+        email: cEmail,
+        telefone: cTelefone,
+        documento: cDoc,
+        dataNascimento: cNascRaw
+      });
+
+      if (!validacaoPasso1.valido) {
+        this.showToast(validacaoPasso1.erros[0] || 'Preencha os campos obrigatórios do passageiro.', 'error');
+        return;
+      }
+
+      step1El?.classList.add('hidden');
+      step2El?.classList.remove('hidden');
+
+      ind1?.classList.remove('bg-indigo-600', 'text-white', 'shadow-sm');
+      ind1?.classList.add('text-slate-400');
+      ind2?.classList.add('bg-indigo-600', 'text-white', 'shadow-sm');
+      ind2?.classList.remove('text-slate-400');
+    });
+
+    document.getElementById('btn-wizard-step2-prev')?.addEventListener('click', () => {
+      step2El?.classList.add('hidden');
+      step1El?.classList.remove('hidden');
+
+      ind2?.classList.remove('bg-indigo-600', 'text-white', 'shadow-sm');
+      ind2?.classList.add('text-slate-400');
+      ind1?.classList.add('bg-indigo-600', 'text-white', 'shadow-sm');
+      ind1?.classList.remove('text-slate-400');
+    });
 
     // Toggle de Fluxos Nova/Existente
     const radioNova = document.getElementById('radio-fluxo-nova') as HTMLInputElement;
