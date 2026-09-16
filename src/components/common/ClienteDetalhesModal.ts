@@ -31,9 +31,9 @@ export class ClienteDetalhesModal {
   /**
    * Abre o modal sobreposto para consulta e edição completa do cliente
    */
-  public static async abrir(clienteId: string, options: ClienteDetalhesModalOptions = {}): Promise<void> {
+  public static async abrir(clienteId: string, options: ClienteDetalhesModalOptions = {}, clienteInicial?: any): Promise<void> {
     this.options = options;
-    if (!clienteId) {
+    if (!clienteId && !clienteInicial) {
       this.notifyToast('Nenhum cliente selecionado.', 'warning');
       return;
     }
@@ -44,38 +44,49 @@ export class ClienteDetalhesModal {
       this.user = user;
       this.perfil = perfil;
 
-      // 2. Buscar dados do cliente no Supabase
-      const { data: rawCliente, error } = await supabase
-        .from('clientes')
-        .select('*')
-        .eq('id', clienteId)
-        .single();
+      let rawCliente: any = clienteInicial || null;
 
-      if (error || !rawCliente) {
-        console.error('Erro ao buscar cliente:', error);
-        this.notifyToast('Não foi possível carregar os dados do cliente.', 'error', error);
+      // 2. Buscar dados do cliente no Supabase
+      if (clienteId) {
+        try {
+          const query = supabase.from('clientes').select('*').eq('id', clienteId);
+          const { data, error } = typeof (query as any).maybeSingle === 'function'
+            ? await (query as any).maybeSingle()
+            : await query.single();
+
+          if (!error && data) {
+            rawCliente = data;
+          }
+        } catch (e) {
+          console.warn('Erro ao consultar cliente no Supabase:', e);
+        }
+      }
+
+      if (!rawCliente) {
+        console.error('Erro ao buscar cliente:', clienteId);
+        this.notifyToast('Não foi possível carregar os dados do cliente.', 'error');
         return;
       }
 
       // Mapear dados para a tipagem de Cliente
       this.currentClient = {
-        id: rawCliente.id,
-        nome: rawCliente.nome || '',
+        id: rawCliente.id || clienteId,
+        nome: rawCliente.nome || rawCliente.nomeCliente || '',
         email: rawCliente.email || '',
         telefone: rawCliente.telefone || '',
-        documento: rawCliente.documento || '',
-        dataNascimento: rawCliente.data_nascimento ? formatIsoDateToBr(rawCliente.data_nascimento) : '',
+        documento: rawCliente.documento || rawCliente.cpf || rawCliente.cnpj || '',
+        dataNascimento: rawCliente.data_nascimento ? formatIsoDateToBr(rawCliente.data_nascimento) : (rawCliente.dataNascimento || ''),
         endereco: rawCliente.endereco || '',
-        passaporteNumero: rawCliente.passaporte_numero || '',
-        passaporteValidade: rawCliente.passaporte_validade ? formatIsoDateToBr(rawCliente.passaporte_validade) : '',
+        passaporteNumero: rawCliente.passaporte_numero || rawCliente.passaporteNumero || '',
+        passaporteValidade: rawCliente.passaporte_validade ? formatIsoDateToBr(rawCliente.passaporte_validade) : (rawCliente.passaporteValidade || ''),
         passaportes: rawCliente.passaportes || [],
-        vistosInformacoes: rawCliente.vistos_informacoes || '',
-        googleDriveFolderUrl: rawCliente.google_drive_folder_url || '',
+        vistosInformacoes: rawCliente.vistos_informacoes || rawCliente.vistosInformacoes || '',
+        googleDriveFolderUrl: rawCliente.google_drive_folder_url || rawCliente.googleDriveFolderUrl || '',
         observacoes: rawCliente.observacoes || '',
         classificacoes: rawCliente.classificacoes || [],
-        consultorResponsavelId: rawCliente.consultor_responsavel_id,
-        createdAt: rawCliente.created_at,
-        updatedAt: rawCliente.updated_at
+        consultorResponsavelId: rawCliente.consultor_responsavel_id || rawCliente.consultorResponsavelId,
+        createdAt: rawCliente.created_at || rawCliente.createdAt,
+        updatedAt: rawCliente.updated_at || rawCliente.updatedAt
       };
 
       // Inicializar passaportes para edição
@@ -88,6 +99,13 @@ export class ClienteDetalhesModal {
       console.error('Erro ao abrir ClienteDetalhesModal:', err);
       this.notifyToast('Erro inesperado ao carregar cliente.', 'error', err);
     }
+  }
+
+  /**
+   * Retorna o cliente atualmente em edição no modal (para testes e inspeção de estado)
+   */
+  public static getClienteAtual(): Cliente | null {
+    return this.currentClient;
   }
 
   /**
@@ -160,7 +178,12 @@ export class ClienteDetalhesModal {
    * Renderiza a estrutura do modal
    */
   private static render(): void {
-    this.fechar();
+    if (typeof document === 'undefined') return;
+
+    if (this.activeModal) {
+      this.activeModal.remove();
+      this.activeModal = null;
+    }
 
     const c = this.currentClient;
     if (!c) return;

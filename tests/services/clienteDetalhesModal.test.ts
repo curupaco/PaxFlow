@@ -160,25 +160,33 @@ describe('ClienteDetalhesModal - Testes Subcutâneos', () => {
     expect(convertidaIso).toBe('1995-10-25');
   });
 
-  it('deve tratar erro 42703 (coluna inexistente / schema drift) de forma resiliente', async () => {
+  it('deve manter o cliente carregado no estado do modal sem resetar para null', async () => {
     // Setup
-    const erroSchemaDrift = { code: '42703', message: 'column "coluna_inexistente" does not exist' };
-    const singleMock = vi.fn().mockResolvedValue({ data: null, error: erroSchemaDrift });
-    const selectMock = vi.fn().mockReturnValue({ single: singleMock });
-    const eqMock = vi.fn().mockReturnValue({ select: selectMock });
-    const updateMock = vi.fn().mockReturnValue({ eq: eqMock });
-    (supabase.from as any).mockReturnValue({ update: updateMock });
+    const mockCliente = {
+      id: 'cli-silva-1',
+      nome: 'Primeiro Teste da Silva',
+      email: 'teste@silva.com',
+      telefone: '11977776666',
+      documento: '111.222.333-44'
+    };
+
+    const maybeSingleMock = vi.fn().mockResolvedValue({ data: mockCliente, error: null });
+    const eqMock = vi.fn().mockReturnValue({ maybeSingle: maybeSingleMock, single: maybeSingleMock });
+    const selectMock = vi.fn().mockReturnValue({ eq: eqMock });
+    (supabase.from as any).mockReturnValue({ select: selectMock });
 
     // Action
-    const { data, error } = await supabase
-      .from('clientes')
-      .update({ coluna_inexistente: 'teste' })
-      .eq('id', 'cli-123')
-      .select()
-      .single();
+    await ClienteDetalhesModal.abrir('cli-silva-1', {}, mockCliente);
 
     // Assert
-    expect(error?.code).toBe('42703');
-    expect(data).toBeNull();
+    const clienteCarregado = ClienteDetalhesModal.getClienteAtual();
+    expect(clienteCarregado).not.toBeNull();
+    expect(clienteCarregado?.id).toBe('cli-silva-1');
+    expect(clienteCarregado?.nome).toBe('Primeiro Teste da Silva');
+    expect(clienteCarregado?.email).toBe('teste@silva.com');
+
+    // Cleanup
+    ClienteDetalhesModal.fechar();
+    expect(ClienteDetalhesModal.getClienteAtual()).toBeNull();
   });
 });

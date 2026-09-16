@@ -1144,7 +1144,9 @@ export class EditTravelModal {
 
     btnAtalhoCliente?.addEventListener('click', async () => {
       const clienteId = selectCliente?.value || v.cliente_id;
-      if (!clienteId) {
+      const clienteEncontrado = clientes.find(c => c.id === clienteId) || v.cliente || (v.passageiro ? { id: clienteId, nome: v.passageiro } : undefined);
+
+      if (!clienteId && !clienteEncontrado) {
         this.options.showToast('Selecione um cliente para visualizar o cadastro.', 'error');
         return;
       }
@@ -1171,7 +1173,7 @@ export class EditTravelModal {
             clientes[idx].nome = clienteAtualizado.nome;
           }
         }
-      });
+      }, clienteEncontrado);
     });
 
     // Submissão do Formulário de Edição da Viagem
