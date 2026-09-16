@@ -2,6 +2,7 @@ import { supabase } from '../../services/supabase';
 import { PerfilConsultor } from '../../types';
 import { showCustomAlert } from '../../services/dialog';
 import { PushSenderService } from '../../services/pushSenderService';
+import { InboxService } from '../../services/inboxService';
 
 export interface NewMessageModalOptions {
   onSent: () => void;
@@ -484,108 +485,32 @@ export class NewMessageModal {
       `;
 
       try {
-        // 3. Database inserts
         const uniqueRecipients = Array.from(new Set([...paraSelected.map(p => p.id), ...ccSelected.map(p => p.id)]));
         if (uniqueRecipients.length === 0) {
           throw new Error('Selecione pelo menos um destinatário para enviar a mensagem.');
         }
 
-        // Criar registro da mensagem direta na tabela mensagens_diretas
-        const messagePayload: any = {
-          remetente_id: currentUser.id,
-          assunto,
-          conteudo,
-          parent_id: options.replyTo?.messageId || null,
-          thread_id: options.replyTo?.threadId || null
-        };
-
-        const { data: createdMsg, error: msgErr } = await supabase
-          .from('mensagens_diretas')
-          .insert(messagePayload)
-          .select()
-          .single();
-
-        if (msgErr) throw msgErr;
-        if (!createdMsg) throw new Error('Não foi possível registrar a mensagem.');
-
-        const commonThreadId = options.replyTo?.threadId || createdMsg.id;
-
-        // Se for nova conversa (sem thread_id prévio), define thread_id igual ao ID da mensagem raiz
-        if (!options.replyTo?.threadId) {
-          await supabase
-            .from('mensagens_diretas')
-            .update({ thread_id: commonThreadId })
-            .eq('id', createdMsg.id);
-        }
-
-        // Vincular destinatários na tabela mensagem_destinatarios
-        const recipientInserts = uniqueRecipients.map(recipientId => ({
-          mensagem_id: createdMsg.id,
-          destinatario_id: recipientId
-        }));
-
-        const { error: destErr } = await supabase
-          .from('mensagem_destinatarios')
-          .insert(recipientInserts);
-
-        if (destErr) {
-          console.warn('Aviso ao vincular mensagem_destinatarios:', destErr);
-        }
-
-        // Criar notificações individuais para cada destinatário
-        const notifInserts = uniqueRecipients.map(recipientId => ({
-          user_id: recipientId,
-          tipo_item: 'mensagem',
-          item_id: createdMsg.id,
-          parent_id: createdMsg.id,
-          mensagem_id: createdMsg.id,
-          lida: false,
-          arquivada: false
-        }));
-
-        const { data: createdNotifs, error: notifErr } = await supabase
-          .from('notificacoes')
-          .insert(notifInserts)
-          .select();
-
-        if (notifErr) {
-          console.warn('Aviso ao registrar notificações no Inbox:', notifErr);
-        }
-
-        // Dispara notificação Web Push no celular dos destinatários (mesmo com app fechado)
         const senderProfile = profiles.find(p => p.id === currentUser.id);
         const senderNome = senderProfile?.nome || 'Consultor';
-        for (const recipientId of uniqueRecipients) {
-          const userNotif = (createdNotifs || []).find(n => n.user_id === recipientId);
-          const notifTargetId = userNotif ? `mention-${userNotif.id}` : createdMsg.id;
-          PushSenderService.sendToUser(recipientId, {
-            title: `💬 Nova Mensagem: ${assunto}`,
-            body: `De: ${senderNome}`,
-            url: `/#inbox?extraId=${notifTargetId}`
-          });
-        }
 
-        // 3.5. If scheduling is enabled, insert lembretes
-        if (chkAgendar?.checked && dataLembrete) {
-          const orcamentoId = linkVal.startsWith('orcamento:') ? linkVal.split(':')[1] : null;
-          const viagemId = linkVal.startsWith('viagem:') ? linkVal.split(':')[1] : null;
+        const orcamentoId = linkVal.startsWith('orcamento:') ? linkVal.split(':')[1] : null;
+        const viagemId = linkVal.startsWith('viagem:') ? linkVal.split(':')[1] : null;
 
-          const lembreteInserts = paraSelected.map(p => ({
-            orcamento_id: orcamentoId,
-            viagem_id: viagemId,
-            consultor_id: p.id,
-            criador_id: currentUser.id,
-            data_lembrete: dataLembrete,
-            periodo: periodo,
-            arquivado: false
-          }));
-
-          const { error: lembreteErr } = await supabase
-            .from('lembretes')
-            .insert(lembreteInserts);
-
-          if (lembreteErr) throw lembreteErr;
-        }
+        await InboxService.sendDirectMessage({
+          remetenteId: currentUser.id,
+          senderNome,
+          recipients: uniqueRecipients,
+          assunto,
+          conteudo,
+          replyToMessageId: options.replyTo?.messageId,
+          replyToThreadId: options.replyTo?.threadId,
+          lembrete: (chkAgendar?.checked && dataLembrete) ? {
+            dataLembrete,
+            periodo,
+            orcamentoId,
+            viagemId
+          } : null
+        });
 
         // 4. Success Flow
         closeModal();

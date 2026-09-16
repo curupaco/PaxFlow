@@ -3,6 +3,7 @@ import { PerfilConsultor, AlertItem } from '../types';
 import { BADGE_DEFINITIONS } from './gamification';
 import { EscalaService, isSameConsultantName } from './escalaService';
 import { formatTipoSolicitacaoEscala, formatStatusEscala, formatReembolsoStatus, formatarDataBR, formatarPeriodoDataBR } from '../utils/messageFormatter';
+import { PushSenderService } from './pushSenderService';
 
 export class InboxService {
   /**
@@ -1672,6 +1673,185 @@ export class InboxService {
 
     return result;
   }
+
+  /**
+   * Envia uma mensagem direta com validação preventiva de FK e fallback resiliente
+   */
+  static async sendDirectMessage(params: SendDirectMessageParams): Promise<any> {
+    const {
+      remetenteId,
+      senderNome = 'Consultor',
+      recipients,
+      assunto,
+      conteudo,
+      replyToMessageId,
+      replyToThreadId,
+      lembrete
+    } = params;
+
+    const uniqueRecipients = Array.from(new Set(recipients)).filter(Boolean);
+    if (uniqueRecipients.length === 0) {
+      throw new Error('Selecione pelo menos um destinatário para enviar a mensagem.');
+    }
+
+    // Validar parent_id preventivamente na tabela mensagens_diretas (evitando erro 23503)
+    let validParentId: string | null = null;
+    let validThreadId: string | null = replyToThreadId || null;
+
+    if (replyToMessageId) {
+      try {
+        const { data: parentCheck } = await supabase
+          .from('mensagens_diretas')
+          .select('id, thread_id')
+          .eq('id', replyToMessageId)
+          .maybeSingle();
+
+        if (parentCheck) {
+          validParentId = parentCheck.id;
+          if (!validThreadId) validThreadId = parentCheck.thread_id || parentCheck.id;
+        }
+      } catch (e) {
+        console.warn('[InboxService] Mensagem pai não encontrada na tabela mensagens_diretas:', e);
+      }
+    }
+
+    // Criar registro da mensagem direta
+    const messagePayload: any = {
+      remetente_id: remetenteId,
+      assunto,
+      conteudo,
+      parent_id: validParentId,
+      thread_id: validThreadId
+    };
+
+    let { data: insertedMsg, error: msgErr } = await supabase
+      .from('mensagens_diretas')
+      .insert(messagePayload)
+      .select()
+      .single();
+
+    // Fallback resiliente caso ocorra erro 23503 (violação de foreign key no parent_id)
+    if (msgErr && msgErr.code === '23503' && messagePayload.parent_id) {
+      console.warn('[InboxService] parent_id inválido ou inexistente (23503). Retentando inserção com parent_id nulo...');
+      messagePayload.parent_id = null;
+      const retryRes = await supabase
+        .from('mensagens_diretas')
+        .insert(messagePayload)
+        .select()
+        .single();
+      insertedMsg = retryRes.data;
+      msgErr = retryRes.error;
+    }
+
+    if (msgErr) throw msgErr;
+    if (!insertedMsg) throw new Error('Não foi possível registrar a mensagem.');
+
+    const createdMsg = insertedMsg;
+    const commonThreadId = replyToThreadId || validThreadId || createdMsg.id;
+
+    if (!replyToThreadId && !validThreadId) {
+      await supabase
+        .from('mensagens_diretas')
+        .update({ thread_id: commonThreadId })
+        .eq('id', createdMsg.id);
+    }
+
+    // Vincular destinatários na tabela mensagem_destinatarios
+    const recipientInserts = uniqueRecipients.map(recipientId => ({
+      mensagem_id: createdMsg.id,
+      destinatario_id: recipientId
+    }));
+
+    const { error: destErr } = await supabase
+      .from('mensagem_destinatarios')
+      .insert(recipientInserts);
+
+    if (destErr) {
+      console.warn('Aviso ao vincular mensagem_destinatarios:', destErr);
+    }
+
+    // Criar notificações no Inbox para cada destinatário
+    const notifInserts = uniqueRecipients.map(recipientId => ({
+      user_id: recipientId,
+      tipo_item: 'mensagem',
+      item_id: createdMsg.id,
+      parent_id: createdMsg.id,
+      mensagem_id: createdMsg.id,
+      lida: false,
+      arquivada: false
+    }));
+
+    let { data: createdNotifs, error: notifErr } = await supabase
+      .from('notificacoes')
+      .insert(notifInserts)
+      .select();
+
+    if (notifErr && notifErr.code === '42703') {
+      // Fallback seguro caso coluna mensagem_id não exista em notificacoes
+      const fallbackNotifs = uniqueRecipients.map(recipientId => ({
+        user_id: recipientId,
+        tipo_item: 'mensagem',
+        item_id: createdMsg.id,
+        parent_id: createdMsg.id,
+        lida: false,
+        arquivada: false
+      }));
+      const fbRes = await supabase.from('notificacoes').insert(fallbackNotifs).select();
+      createdNotifs = fbRes.data;
+    } else if (notifErr) {
+      console.warn('Aviso ao registrar notificações no Inbox:', notifErr);
+    }
+
+    // Disparar Web Push para os destinatários
+    for (const recipientId of uniqueRecipients) {
+      const userNotif = (createdNotifs || []).find((n: any) => n.user_id === recipientId);
+      const notifTargetId = userNotif ? `mention-${userNotif.id}` : createdMsg.id;
+      PushSenderService.sendToUser(recipientId, {
+        title: `💬 Nova Mensagem: ${assunto}`,
+        body: `De: ${senderNome}`,
+        url: `/#inbox?extraId=${notifTargetId}`
+      });
+    }
+
+    // Agendamento de lembretes se fornecido
+    if (lembrete && lembrete.dataLembrete) {
+      const lembreteInserts = uniqueRecipients.map(recipientId => ({
+        orcamento_id: lembrete.orcamentoId || null,
+        viagem_id: lembrete.viagemId || null,
+        consultor_id: recipientId,
+        criador_id: remetenteId,
+        data_lembrete: lembrete.dataLembrete,
+        periodo: lembrete.periodo,
+        arquivado: false
+      }));
+
+      const { error: lembreteErr } = await supabase
+        .from('lembretes')
+        .insert(lembreteInserts);
+
+      if (lembreteErr) {
+        console.warn('Aviso ao registrar lembretes:', lembreteErr);
+      }
+    }
+
+    return createdMsg;
+  }
+}
+
+export interface SendDirectMessageParams {
+  remetenteId: string;
+  senderNome?: string;
+  recipients: string[];
+  assunto: string;
+  conteudo: string;
+  replyToMessageId?: string | null;
+  replyToThreadId?: string | null;
+  lembrete?: {
+    dataLembrete: string;
+    periodo: string;
+    orcamentoId?: string | null;
+    viagemId?: string | null;
+  } | null;
 }
 
 export interface FilterAlertsOptions {

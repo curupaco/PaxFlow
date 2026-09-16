@@ -1,7 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { InboxService } from '../../src/services/inboxService';
 import { supabase } from '../../src/services/supabase';
+import { PushSenderService } from '../../src/services/pushSenderService';
 import { createSupabaseQueryMock as createQueryMock } from '../mocks/supabaseMock';
+
+vi.mock('../../src/services/pushSenderService', () => ({
+  PushSenderService: {
+    sendToUser: vi.fn().mockResolvedValue({ success: true })
+  }
+}));
 
 vi.mock('../../src/services/supabase', () => {
   const mockFrom = vi.fn();
@@ -790,5 +797,271 @@ describe('InboxService Subcutaneous Flow Tests', () => {
     expect(passAlert?.arquivado).toBe(true);
 
     getArchivedSpy.mockRestore();
+  });
+
+  // ==========================================
+  // FLUXO 6: ENVIO DE MENSAGENS DIRETAS & RESILIÊNCIA FK/SCHEMA DRIFT
+  // ==========================================
+
+  it('deve enviar mensagem direta vinculando destinatarios, notificacoes e disparando push', async () => {
+    // Setup
+    const remetenteId = 'consultor-origem-1';
+    const recipientId = 'consultor-destino-2';
+    const msgId = 'msg-uuid-101';
+
+    let insertedMsgPayload: any = null;
+    let insertedDestPayload: any = null;
+    let insertedNotifPayload: any = null;
+
+    (supabase.from as any).mockImplementation((table: string) => {
+      if (table === 'mensagens_diretas') {
+        return {
+          insert: vi.fn((payload: any) => {
+            insertedMsgPayload = payload;
+            return {
+              select: vi.fn().mockReturnValue({
+                single: vi.fn().mockResolvedValue({
+                  data: { id: msgId, ...payload },
+                  error: null
+                })
+              })
+            };
+          }),
+          update: vi.fn().mockReturnValue({
+            eq: vi.fn().mockResolvedValue({ data: null, error: null })
+          })
+        };
+      }
+      if (table === 'mensagem_destinatarios') {
+        return {
+          insert: vi.fn((payload: any) => {
+            insertedDestPayload = payload;
+            return Promise.resolve({ data: null, error: null });
+          })
+        };
+      }
+      if (table === 'notificacoes') {
+        return {
+          insert: vi.fn((payload: any) => {
+            insertedNotifPayload = payload;
+            return {
+              select: vi.fn().mockResolvedValue({
+                data: payload.map((p: any, idx: number) => ({ id: `notif-${idx}`, ...p })),
+                error: null
+              })
+            };
+          })
+        };
+      }
+      return createQueryMock([]);
+    });
+
+    // Action
+    const result = await InboxService.sendDirectMessage({
+      remetenteId,
+      senderNome: 'Consultor Origem',
+      recipients: [recipientId],
+      assunto: 'Assunto Teste',
+      conteudo: 'Mensagem de teste unitário'
+    });
+
+    // Assert
+    expect(result).toBeDefined();
+    expect(result.id).toBe(msgId);
+    expect(insertedMsgPayload.remetente_id).toBe(remetenteId);
+    expect(insertedDestPayload).toEqual([{ mensagem_id: msgId, destinatario_id: recipientId }]);
+    expect(insertedNotifPayload).toHaveLength(1);
+    expect(insertedNotifPayload[0].user_id).toBe(recipientId);
+    expect(PushSenderService.sendToUser).toHaveBeenCalledWith(recipientId, expect.objectContaining({
+      title: '💬 Nova Mensagem: Assunto Teste'
+    }));
+  });
+
+  it('deve validar preventivamente se o replyToMessageId existe na tabela mensagens_diretas e anular parent_id se inexistente (evitando erro 23503)', async () => {
+    // Setup
+    const remetenteId = 'consultor-origem-1';
+    const recipientId = 'consultor-destino-2';
+    const invalidAlertId = 'solicitacao-escala-uuid-nao-mensagem';
+
+    let insertedMsgPayload: any = null;
+
+    (supabase.from as any).mockImplementation((table: string) => {
+      if (table === 'mensagens_diretas') {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null })
+            })
+          }),
+          insert: vi.fn((payload: any) => {
+            insertedMsgPayload = payload;
+            return {
+              select: vi.fn().mockReturnValue({
+                single: vi.fn().mockResolvedValue({
+                  data: { id: 'msg-nova-999', ...payload },
+                  error: null
+                })
+              })
+            };
+          }),
+          update: vi.fn().mockReturnValue({
+            eq: vi.fn().mockResolvedValue({ data: null, error: null })
+          })
+        };
+      }
+      if (table === 'mensagem_destinatarios' || table === 'notificacoes') {
+        return {
+          insert: vi.fn().mockReturnValue({
+            select: vi.fn().mockResolvedValue({ data: [], error: null })
+          })
+        };
+      }
+      return createQueryMock([]);
+    });
+
+    // Action
+    const result = await InboxService.sendDirectMessage({
+      remetenteId,
+      recipients: [recipientId],
+      assunto: 'Re: Solicitação de Escala',
+      conteudo: 'Respondendo alerta geral',
+      replyToMessageId: invalidAlertId
+    });
+
+    // Assert
+    expect(result).toBeDefined();
+    expect(insertedMsgPayload.parent_id).toBeNull();
+  });
+
+  it('deve executar fallback resiliente quando a insercao falhar com erro 23503 (violação de FK no parent_id)', async () => {
+    // Setup
+    const remetenteId = 'consultor-origem-1';
+    const recipientId = 'consultor-destino-2';
+    let insertAttempts = 0;
+    let finalPayload: any = null;
+
+    (supabase.from as any).mockImplementation((table: string) => {
+      if (table === 'mensagens_diretas') {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              maybeSingle: vi.fn().mockResolvedValue({ data: { id: 'parent-fantasma' }, error: null })
+            })
+          }),
+          insert: vi.fn((payload: any) => {
+            insertAttempts++;
+            finalPayload = payload;
+            if (insertAttempts === 1) {
+              return {
+                select: vi.fn().mockReturnValue({
+                  single: vi.fn().mockResolvedValue({
+                    data: null,
+                    error: {
+                      code: '23503',
+                      message: 'insert or update on table "mensagens_diretas" violates foreign key constraint "mensagens_diretas_parent_id_fkey"'
+                    }
+                  })
+                })
+              };
+            }
+            return {
+              select: vi.fn().mockReturnValue({
+                single: vi.fn().mockResolvedValue({
+                  data: { id: 'msg-recuperada-123', ...payload },
+                  error: null
+                })
+              })
+            };
+          }),
+          update: vi.fn().mockReturnValue({
+            eq: vi.fn().mockResolvedValue({ data: null, error: null })
+          })
+        };
+      }
+      if (table === 'mensagem_destinatarios' || table === 'notificacoes') {
+        return {
+          insert: vi.fn().mockReturnValue({
+            select: vi.fn().mockResolvedValue({ data: [], error: null })
+          })
+        };
+      }
+      return createQueryMock([]);
+    });
+
+    // Action
+    const result = await InboxService.sendDirectMessage({
+      remetenteId,
+      recipients: [recipientId],
+      assunto: 'Re: Teste FK Resiliente',
+      conteudo: 'Testando recuperação automática de erro 23503',
+      replyToMessageId: 'parent-fantasma'
+    });
+
+    // Assert
+    expect(insertAttempts).toBe(2);
+    expect(finalPayload.parent_id).toBeNull();
+    expect(result.id).toBe('msg-recuperada-123');
+  });
+
+  it('deve executar fallback resiliente quando a insercao em notificacoes falhar com erro 42703 (coluna mensagem_id inexistente)', async () => {
+    // Setup
+    const remetenteId = 'consultor-origem-1';
+    const recipientId = 'consultor-destino-2';
+    let notifInsertAttempts = 0;
+
+    (supabase.from as any).mockImplementation((table: string) => {
+      if (table === 'mensagens_diretas') {
+        return {
+          insert: vi.fn((payload: any) => ({
+            select: vi.fn().mockReturnValue({
+              single: vi.fn().mockResolvedValue({ data: { id: 'msg-schema-test', ...payload }, error: null })
+            })
+          })),
+          update: vi.fn().mockReturnValue({
+            eq: vi.fn().mockResolvedValue({ data: null, error: null })
+          })
+        };
+      }
+      if (table === 'mensagem_destinatarios') {
+        return {
+          insert: vi.fn().mockResolvedValue({ data: null, error: null })
+        };
+      }
+      if (table === 'notificacoes') {
+        return {
+          insert: vi.fn((payload: any) => {
+            notifInsertAttempts++;
+            if (notifInsertAttempts === 1) {
+              return {
+                select: vi.fn().mockResolvedValue({
+                  data: null,
+                  error: { code: '42703', message: 'column "mensagem_id" of relation "notificacoes" does not exist' }
+                })
+              };
+            }
+            return {
+              select: vi.fn().mockResolvedValue({
+                data: [{ id: 'notif-fallback-1', user_id: recipientId }],
+                error: null
+              })
+            };
+          })
+        };
+      }
+      return createQueryMock([]);
+    });
+
+    // Action
+    const result = await InboxService.sendDirectMessage({
+      remetenteId,
+      recipients: [recipientId],
+      assunto: 'Teste Schema Drift 42703',
+      conteudo: 'Verificando resiliência de schema na tabela de notificações'
+    });
+
+    // Assert
+    expect(notifInsertAttempts).toBe(2);
+    expect(result).toBeDefined();
+    expect(result.id).toBe('msg-schema-test');
   });
 });
