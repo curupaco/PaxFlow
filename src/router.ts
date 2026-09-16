@@ -9,6 +9,7 @@ import { CadastrosPage } from './pages/Cadastros';
 import { RelatoriosPage } from './pages/Relatorios';
 import { NextTripPage } from './pages/NextTripPage';
 import { StudioPage } from './pages/StudioPage';
+import { ConciliacaoPage } from './pages/Conciliacao';
 
 export class Router {
   private pageContentEl: HTMLElement;
@@ -81,6 +82,9 @@ export class Router {
         break;
       case 'studio':
         this.currentPageInstance = new StudioPage(this.pageContentEl);
+        break;
+      case 'conciliacao':
+        this.currentPageInstance = new ConciliacaoPage(this.pageContentEl);
         break;
       default:
         this.currentPageInstance = new InboxPage(this.pageContentEl);

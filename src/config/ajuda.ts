@@ -22,6 +22,7 @@ export const HELP_CATEGORIES: HelpCategory[] = [
   { id: 'viagens', title: 'Gestão de Viagens', icon: '✈️' },
   { id: 'orcamentos', title: 'Orçamentos & CRM', icon: '📄' },
   { id: 'reembolsos', title: 'Reembolsos & Financeiro', icon: '💰' },
+  { id: 'conciliacao', title: 'Conciliação Bancária (FinRecon™)', icon: '🪙' },
   { id: 'clientes', title: 'Clientes & Relatórios', icon: '👥' },
   { id: 'copiloto', title: 'Co-piloto de IA & Governança', icon: '🤖' },
   { id: 'realtime', title: 'Mensageria & Tempo Real', icon: '⚡' }
@@ -790,6 +791,27 @@ export const HELP_ITEMS: HelpItem[] = [
     label: '📱 Gestos de Deslizar nos Cards Mobile (Swipe Actions)',
     description: 'Atalhos por gestos nativos de toque para atendimento rápido no smartphone.',
     details: 'Ao acessar o PaxFlow no celular ou tablet, utilize gestos de toque sobre os cards de viagens:\n\n- 👉 **Deslizar para a Direita**: Abre imediatamente o atalho de mensagem de WhatsApp para o passageiro.\n- 👈 **Deslizar para a Esquerda**: Abre a gaveta de detalhes completos da viagem operacional.'
+  },
+  {
+    id: 'conciliacao-bancaria',
+    modulo: 'conciliacao',
+    label: '🪙 Visão Geral da Conciliação Bancária (FinRecon™)',
+    description: 'Casamento inteligente de extratos bancários com recebimentos de vendas e fechamento contábil.',
+    details: 'O módulo **PaxFlow FinRecon™** permite conciliar os lançamentos reais da conta bancária da agência com os recebimentos cadastrados nas viagens (LOCs):\n\n- 📁 **Importação de Extratos**: Suporte para arquivos `.ofx` e `.csv` dos principais bancos (Itaú, Bradesco, Santander, Inter, Nubank, BB, C6).\n- ⚡ **Smart Matching**: Algoritmo que calcula proximidade de valor (±0% a 5%), proximidade de data (±3 dias) e correspondência do código de localizador (LOC) ou nome do passageiro.\n- 🔗 **Casamento Flexível**: Conciliação 1:1 e 1:N (um único depósito liquidando múltiplas parcelas ou viagens).\n- 💳 **Taxa de Gateway / Cartão**: 1-clique para absorver a diferença líquida de taxas cobradas por maquininhas ou adquirentes.\n- 🔒 **Fechamento de Competência**: Trancamento do mês após validação financeira para proteção contra alterações retroativas.'
+  },
+  {
+    id: 'importar-extrato-bancario',
+    modulo: 'conciliacao',
+    label: '📥 Como Importar Extratos Bancários (OFX e CSV)',
+    description: 'Passo a passo para baixar e enviar o extrato do Internet Banking para o PaxFlow.',
+    details: '1. Acesse seu banco online e exporte o extrato do período desejado no formato **OFX** (preferencial) ou **CSV**.\n2. No PaxFlow, acesse **Conciliação** no menu lateral e clique em **📁 Importar Extrato**.\n3. Selecione o banco de origem e arraste o arquivo para a área de upload.\n4. O sistema processará as transações instantaneamente e apresentará a prévia antes de gravar no banco de dados com arquivamento seguro no Storage.'
+  },
+  {
+    id: 'justificar-entradas-bancarias',
+    modulo: 'conciliacao',
+    label: '🏷️ Justificar Entradas e Saídas Não Operacionais',
+    description: 'Como classificar aportes de sócios, rendimentos de investimentos e transferências entre contas.',
+    details: 'Nem toda entrada no banco é oriunda de vendas de viagens:\n\n1. Na aba **Pendentes no Extrato**, clique no botão **🏷️ (Justificar)** ao lado do lançamento.\n2. Escolha a categoria correspondente: *Aporte de Capital*, *Rendimento de Aplicação*, *Transferência entre Contas*, *Empréstimo* ou *Estorno de Fornecedor*.\n3. Insira uma breve observação explicativa e salve. O lançamento será conciliado e computado no saldo resolvido da agência.'
   }
 ];
 

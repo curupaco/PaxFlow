@@ -46,6 +46,7 @@
    - 3.33 [Melhorias de Eficiência Operacional, Pipeline e Ações Rápidas de UX (Plano 2)](#333-melhorias-de-eficiência-operacional-pipeline-e-ações-rápidas-de-ux-plano-2)
    - 3.34 [Experiência Premium, Inteligência Relacional e Microinterações de UX (Plano 3)](#334-experiência-premium-inteligência-relacional-e-microinterações-de-ux-plano-3)
    - 3.35 [Atalho Rápido e Modal de Cadastro do Cliente na Venda](#335-atalho-rápido-e-modal-de-cadastro-do-cliente-na-venda)
+   - 3.36 [PaxFlow FinRecon™ (Módulo de Conciliação Bancária & Fechamento Contábil)](#336-paxflow-finrecon-módulo-de-conciliação-bancária--fechamento-contábil)
 4. [Diferenciais Competitivos](#4-diferenciais-competitivos)
 5. [Arquitetura Tecnológica](#5-arquitetura-tecnológica)
 6. [Segurança e Conformidade](#6-segurança-e-conformidade)
@@ -846,6 +847,39 @@ O componente `ClienteDetalhesModal` resolve o atrito operacional de consulta e e
 
 4. **Sincronização em Tempo Real com a Venda**:
    - Ao salvar as alterações, os dados são persistidos no Supabase e propagados imediatamente para o formulário da viagem em memória (atualizando o `<select>` de clientes e as referências do passageiro) sem recarregar a tela.
+
+### 3.36 PaxFlow FinRecon™ (Módulo de Conciliação Bancária & Fechamento Contábil)
+
+O módulo **PaxFlow FinRecon™** (rota `#conciliacao`, restrito a Gestores e equipe Financeira) centraliza a governança e o cruzamento financeiro de extratos bancários com as vendas e recebimentos do sistema:
+
+1. **Importação Universal de Extratos (OFX e CSV)**:
+   - Suporte nativo para arquivos `.ofx` e `.csv` dos principais bancos brasileiros (Itaú, Bradesco, Santander, Banco Inter, Nubank, Banco do Brasil, C6 Bank e Caixa).
+   - Zona de dropzone com drag-and-drop, extração imediata das movimentações, prévia com resumo de créditos/débitos e gravação em lote.
+   - Arquivamento automático do arquivo original no bucket `extratos-bancarios` do Supabase Storage.
+
+2. **Motor de Casamento Inteligente (Smart Matching™)**:
+   - Algoritmo heurístico de pontuação (0 a 100 pontos) que compara as entradas bancárias com os recebimentos pendentes (`loc_pagamentos`):
+     - **Valor Exato (+60 pts)** ou **Variação de Taxa de Gateway <= 5% (+40 pts)**.
+     - **Proximidade de Data**: mesmo dia (+30 pts), ±1 dia (+25 pts) ou ±3 dias (+15 pts).
+     - **Correspondência Textual**: código do localizador (LOC) (+25 pts) ou primeiro nome do passageiro (+15 pts).
+   - Apresenta card com sugestões automáticas de alta confiança para **Conciliação em 1-Clique**.
+
+3. **Conciliação Flexível (1:1 e 1:N) & Absorção de Taxas**:
+   - **1:1**: Um lançamento bancário liquidando um recebimento de venda.
+   - **1:N**: Um único crédito bancário liquidando múltiplos recebimentos (ex: lote de cartão ou TED agrupada).
+   - **Absorção Automática de Taxas**: Checkbox inteligente para registrar a diferença de centavos ou percentuais como taxa de gateway/adquirente, sem gerar pendência residual.
+
+4. **Justificativa de Lançamentos Não Operacionais**:
+   - Classificação rápida de entradas e saídas que não pertencem a vendas de viagens (Aportes de Capital, Rendimentos de Aplicação, Transferências Entre Contas, Empréstimos e Estornos de Fornecedor), integrando-os ao saldo resolvido.
+
+5. **Fechamento de Competência Contábil (`🔒 Fechar Mês`)**:
+   - Trancamento de competências mensais (`YYYY-MM`) com consolidação de valores conciliados e observações de auditoria, protegendo os dados históricos contra edições indevidas.
+
+6. **Exportação Gerencial em Planilha**:
+   - Exportação em formato CSV padronizado (UTF-8 com BOM) para abertura perfeita no Microsoft Excel.
+
+7. **Arquitetura Zero-Break (Resiliência a Schema Drift)**:
+   - Tratamento nativo para ausência de tabelas ou colunas (`42P01` / `42703`), garantindo que a aplicação continue operando sem quebras ou travamentos mesmo antes de rodar migrações DDL no banco.
 
 ---
 
