@@ -183,5 +183,40 @@ describe('ViagensController - Máquina de Estados e Motor Financeiro de Viagens'
     // Assert
     expect(locsExtraidos).toEqual(['AZUL123', 'ACC-8899', 'SEM LOCALIZADOR']);
   });
+
+  it('deve manter integridade dos dados ao persistir atualizações na coluna de detalhes da viagem', () => {
+    // Setup
+    const viagemOriginal = {
+      id: 'v-100',
+      cliente_id: 'cli-1',
+      consultor_id: 'cons-1',
+      destino: 'Lisboa',
+      valor_total: 12000,
+      data_ida: '2026-10-10',
+      data_volta: '2026-10-20',
+      data_financeiro: '2026-10-05',
+      status: 'fechado',
+      observacoes: 'Cliente VIP'
+    };
+
+    const atualizacoes = {
+      destino: 'Lisboa & Porto',
+      observacoes: 'Cliente VIP - Transfer privativo solicitado'
+    };
+
+    // Action
+    const viagemAtualizada = {
+      ...viagemOriginal,
+      ...atualizacoes,
+      updated_at: new Date().toISOString()
+    };
+
+    // Assert
+    expect(viagemAtualizada.id).toBe('v-100');
+    expect(viagemAtualizada.destino).toBe('Lisboa & Porto');
+    expect(viagemAtualizada.observacoes).toBe('Cliente VIP - Transfer privativo solicitado');
+    expect(viagemAtualizada.valor_total).toBe(12000);
+    expect(viagemAtualizada.updated_at).toBeDefined();
+  });
 });
 

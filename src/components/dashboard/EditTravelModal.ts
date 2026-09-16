@@ -1286,8 +1286,8 @@ export class EditTravelModal {
         }
 
         this.options.showToast('Viagem atualizada com sucesso!', 'success');
-        this.closeModal();
         await this.options.onUpdate();
+        await this.open(v.id, 'detalhes');
       } catch (err: any) {
         console.error('Erro ao editar viagem:', err);
         this.options.showToast('Erro ao editar viagem.', 'error', err);
