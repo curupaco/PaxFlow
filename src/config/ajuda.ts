@@ -239,6 +239,13 @@ export const HELP_ITEMS: HelpItem[] = [
     description: 'Como o PaxFlow resolve desvios de datas nos relatórios de fechamento de mês.',
     details: 'Diferente de sistemas que registram datas em UTC puro (fazendo com que vendas lançadas no início da noite caiam no faturamento do dia anterior), o PaxFlow trata strings date-only (`YYYY-MM-DD`) fixadas no fuso horário local (`T00:00:00`). Isso garante precisão absoluta no cálculo de comissões e fechamento mensal.'
   },
+  {
+    id: 'filtros-conferencia-popover',
+    modulo: 'dashboard',
+    label: 'Filtros de Conferência (Financeiro e Processo com Pills)',
+    description: 'Menu popover no cabeçalho do Dashboard para auditoria e filtragem de pendências.',
+    details: 'O botão `Conf.` no cabeçalho permite aos administradores auditar viagens de forma combinada e precisa:\n\n- **Financeiro (`Fin. Pendente` / `Fin. OK`)**: Filtra viagens onde os produtos ainda não estão quitados/detalhados ou que já estão 100% conciliadas.\n- **Processo (`Proc. Pendente` / `Proc. OK`)**: Filtra viagens com conferência de processo pendente ou confirmada.\n- **Atalhos Rápidos**: Botões `✨ 100% OK` e `⏳ Nenhum OK` para aplicar filtros comuns com 1 clique.\n- **Interseção Lógica**: Permite combinar múltiplos pills (ex: buscar viagens com Financeiro Pendente e Processo OK ao mesmo tempo).'
+  },
 
   // ==================== 4. Gestão de Viagens ====================
   {

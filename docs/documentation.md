@@ -156,6 +156,7 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 - **Modal de Edição & Gerenciamento Avançado**:
   - Reestruturado em abas com layout ampliado de `max-w-2xl` para maior legibilidade.
   - **Dono e SLA no Topo**: A aba "Detalhes e Edição" possui agora um cabeçalho proeminente contendo a identificação do Consultor Responsável com seu avatar correspondente e um indicador pulsante de Alerta de SLA ativo (se aplicável), fornecendo visibilidade direta da urgência do card.
+  - **Persistência Contínua de Tela no Salvamento**: Ao salvar alterações na coluna esquerda da viagem (passageiro, destino, datas, valor total, status, observações), o modal agora **permanece aberto** na aba de Detalhes com os dados sincronizados em tempo real, só sendo fechado quando o usuário clicar explicitamente no botão de fechar (`✕` ou Cancelar) ou excluir o registro.
   - **Aba Dinâmica '💸 Histórico de Reembolsos'**: Fica visível apenas para cartões de viagem que possuam reembolsos associados no banco de dados. Exibe de forma organizada a listagem detalhada de cada solicitação vinculada: Produto afetado, Valor Solicitado, Valor Aprovado, Taxa de Retenção, Data de Solicitação e data de encerramento, Justificativa do Cancelamento e o Status do Reembolso com badges HSL temáticos.
 - **Produtos, Detalhamento de Valores e Rentabilidade (Novo Nível de Cadastro)**:
   - Permite gerenciar itens de viagem (voo, hotel, seguro, passeio, outro) preenchendo fornecedor, descrição, data do serviço, valor de venda, status e o **Código de Reserva (LOC)**.
@@ -175,6 +176,10 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
   - Controlado por um botão de toggle (`⚙️ Conferir Processo` / `✔️ Processo Conferido`) no topo direito (exclusivo para administradores; consultores visualizam como badge estático se ativo).
   - Bloqueia as edições dos campos cadastrais gerais da viagem (passageiro, destino, datas, valor, observações e botão excluir).
   - **Exceções operacionais:** O status da etapa permanece editável (habilitando botões de cancelar/salvar ao alterar), o anexo e download de documentos permanecem funcionais, a área de comentários permanece ativa e os produtos/serviços pertencentes a LOCs não conferidos financeiramente permanecem editáveis.
+- **Menu Popover de Conferência com Pills no Dashboard [NEW]**:
+  - Substituição do antigo select por um botão inteligente `Conf.` com indicador de quantidade de filtros ativos (`Ativo (X)`).
+  - Menu suspenso glassmorphic com pills clicáveis: `⏳ Fin. Pendente`, `✅ Fin. OK`, `⏳ Proc. Pendente`, `✅ Proc. OK`.
+  - Suporte a múltiplos filtros combinados via interseção lógica (`AND`) e atalhos rápidos (`✨ 100% OK`, `⏳ Nenhum OK` e `Limpar`).
 - **Trava de Segurança na Transição de Status**:
   - Ao arrastar ou alterar o status de uma viagem no Kanban para qualquer status posterior a "Fechado" (Pós-Venda, Pré-Embarque, Pós-Viagem ou Reembolso Solicitado), o PaxFlow realiza duas validações em tempo de execução:
     1. O valor total da viagem deve ser completamente coberto pelos produtos cadastrados (o saldo financeiro deve ser zero).
