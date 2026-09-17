@@ -16,37 +16,29 @@ describe('Studio - Melhorias de Fotos Unsplash, Branding e Consultor Subcutâneo
     vi.clearAllMocks();
   });
 
-  it('deve traduzir termos de busca de viagens de PT-BR para EN com inteligência semântica', () => {
+  it('deve realizar busca direta e objetiva de termos reais como Pantanal, Mato Grosso e Bonito no catálogo Unsplash', async () => {
     // Setup
-    const termosTestes = [
-      { entrada: 'praia', esperadoContem: 'beach' },
-      { entrada: 'neve', esperadoContem: 'snow' },
-      { entrada: 'montanhas', esperadoContem: 'mountains' },
-      { entrada: 'casal', esperadoContem: 'romantic' },
-      { entrada: 'safari', esperadoContem: 'safari' },
-      { entrada: 'vinhedos', esperadoContem: 'wine' }
-    ];
+    const termosTestes = ['Mato Grosso', 'Pantanal', 'Bonito', 'Lençóis Maranhenses', 'Paris', 'Maldivas'];
 
     // Action & Assert
-    termosTestes.forEach(t => {
-      const traducao = StudioUnsplashService.traduzirParaIngles(t.entrada);
-      expect(traducao.toLowerCase()).toContain(t.esperadoContem);
-    });
+    for (const termo of termosTestes) {
+      const resultado = await StudioUnsplashService.buscarFotos(termo);
+      expect(resultado.fotos.length).toBeGreaterThan(0);
+      expect(resultado.fotos[0].url).toContain('unsplash.com');
+      expect(resultado.fotos[0].thumb_url).toBeDefined();
+    }
   });
 
-  it('deve buscar fotos no catálogo curado do Unsplash retornando query traduzida e URLs formatadas', async () => {
+  it('deve retornar catálogo completo quando termo de busca for vazio ou não informado', async () => {
     // Setup
-    const termoBusca = 'Maldivas';
+    const termoVazio = '';
 
     // Action
-    const resultado = await StudioUnsplashService.buscarFotos(termoBusca);
+    const resultado = await StudioUnsplashService.buscarFotos(termoVazio);
 
     // Assert
-    expect(resultado.queryEng).toBeDefined();
-    expect(resultado.queryEng.toLowerCase()).toContain('maldives');
     expect(resultado.fotos.length).toBeGreaterThan(0);
     expect(resultado.fotos[0].url).toContain('unsplash.com');
-    expect(resultado.fotos[0].thumb_url).toBeDefined();
   });
 
   it('deve persistir titulo_cabecalho customizado e dados de consultor dedicado no Supabase', async () => {

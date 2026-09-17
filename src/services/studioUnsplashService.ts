@@ -1,7 +1,7 @@
 /**
- * Serviço de Busca e Tradução Semântica Unsplash para PaxFlow Studio™.
- * Traduz pesquisas em Português para Inglês para ampliar os resultados e
- * oferece um catálogo curado de fotos de luxo para viagens.
+ * Serviço de Busca Direta de Fotografias do Unsplash para o PaxFlow Studio™.
+ * Busca direta e objetiva por termos digitados pelo usuário, sem traduções artificiais
+ * e sem adição de termos forçados.
  */
 
 export interface UnsplashFoto {
@@ -16,508 +16,337 @@ export interface UnsplashFoto {
 
 export class StudioUnsplashService {
   /**
-   * Dicionário semântico de termos turísticos, destinos e atrações de PT-BR para EN.
+   * Catálogo de Fotografias de Destinos e Viagens.
    */
-  private static DICIONARIO_TRADUCAO: Record<string, string> = {
-    // Tipos de Destinos e Paisagens
-    'praia': 'tropical beach ocean luxury',
-    'praias': 'tropical beach ocean luxury',
-    'litoral': 'coastal luxury beach ocean',
-    'mar': 'ocean turquoise water coast',
-    'ilha': 'tropical island luxury resort',
-    'ilhas': 'tropical islands aerial view',
-    'montanha': 'majestic mountains landscape alpine',
-    'montanhas': 'majestic mountains landscape alpine',
-    'serra': 'mountain range scenic landscape',
-    'neve': 'snow winter ski luxury resort',
-    'frio': 'winter snow mountain cozy cabin',
-    'inverno': 'winter snowy mountains cozy luxury',
-    'esqui': 'ski resort winter alps luxury',
-    'floresta': 'rainforest nature lush green',
-    'natureza': 'nature landscape scenic outdoors',
-    'campo': 'countryside vineyard scenic hills',
-    'fazenda': 'countryside ranch luxury resort',
-    'hotel fazenda': 'luxury ranch countryside resort',
-    'deserto': 'desert dunes luxury tent glamping',
-    'dunas': 'sand dunes sunset landscape',
-    'cachoeira': 'waterfall tropical nature lush',
-    'lago': 'lake mountain reflection scenic',
-    'lagos': 'lakes mountains scenic landscape',
-    'canyon': 'canyon rock formation scenic',
-    'safari': 'safari wildlife luxury lodge kenya',
-    'safári': 'safari wildlife luxury lodge kenya',
+  public static CATALOGO_FOTOS: UnsplashFoto[] = [
+    // Brasil - Centro-Oeste / Pantanal / Mato Grosso / Bonito
+    {
+      id: 'pantanal-1',
+      titulo: 'Pantanal & Mato Grosso',
+      url: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1400&q=80',
+      thumb_url: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=400&q=80',
+      tags: ['mato grosso', 'pantanal', 'cuiaba', 'cuiabá', 'natureza', 'brasil', 'fauna', 'rio', 'aves', 'onca', 'onça']
+    },
+    {
+      id: 'bonito-1',
+      titulo: 'Bonito (Mato Grosso do Sul)',
+      url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1400&q=80',
+      thumb_url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=400&q=80',
+      tags: ['bonito', 'mato grosso', 'mato grosso do sul', 'ms', 'rio da prata', 'flutuacao', 'gruta', 'natureza', 'brasil']
+    },
+    {
+      id: 'chapada-1',
+      titulo: 'Chapada dos Guimarães (Mato Grosso)',
+      url: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1400&q=80',
+      thumb_url: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=400&q=80',
+      tags: ['chapada dos guimaraes', 'chapada dos guimarães', 'mato grosso', 'mt', 'canyon', 'cachoeira', 'brasil']
+    },
+    {
+      id: 'amazonia-1',
+      titulo: 'Floresta Amazônica & Rio Negro',
+      url: 'https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?auto=format&fit=crop&w=1400&q=80',
+      thumb_url: 'https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?auto=format&fit=crop&w=400&q=80',
+      tags: ['amazonia', 'amazônia', 'manaus', 'floresta', 'rio', 'natureza', 'brasil', 'selva']
+    },
 
-    // Estilos de Viagem & Luxo
-    'luxo': 'luxury travel 5 star hotel resort',
-    'resort': 'luxury resort infinity pool ocean',
-    'hotel': 'luxury boutique hotel interior pool',
-    'piscina': 'infinity pool luxury view sunset',
-    'casal': 'romantic couple getaway travel luxury',
-    'romantico': 'romantic sunset travel couple luxury',
-    'romântico': 'romantic sunset travel couple luxury',
-    'lua de mel': 'honeymoon luxury destination overwater',
-    'familia': 'family vacation luxury resort fun',
-    'família': 'family vacation luxury resort fun',
-    'cruzeiro': 'luxury cruise ship ocean navigation',
-    'iate': 'luxury yacht sailing sunset sea',
-    'barco': 'boat sailing turquoise clear water',
-    'gastronomia': 'fine dining gourmet cuisine wine luxury',
-    'restaurante': 'luxury fine dining restaurant view',
-    'vinho': 'vineyard winery tuscany wine luxury',
-    'vinhos': 'vineyard winery tuscany wine luxury',
-    'vinhedo': 'vineyard winery tuscany wine sunset',
-    'vinhedos': 'vineyard winery tuscany wine sunset',
-    'enoturismo': 'vineyard winery landscape wine tasting',
-    'aventura': 'adventure travel trekking hiking landscape',
-    'mergulho': 'scuba diving coral reef clear water',
-    'aurora boreal': 'northern lights aurora borealis norway',
-    'por do sol': 'golden sunset beach ocean tropical',
-    'pôr do sol': 'golden sunset beach ocean tropical',
-    'nascer do sol': 'sunrise morning mountain landscape',
-    'cidade': 'city skyline architecture urban night',
-    'metropole': 'metropolis city skyline architecture',
-    'metrópole': 'metropolis city skyline architecture',
+    // Brasil - Nordeste & Praias
+    {
+      id: 'noronha-1',
+      titulo: 'Fernando de Noronha',
+      url: 'https://images.unsplash.com/photo-1590523741831-ab7e8b8f9c7f?auto=format&fit=crop&w=1400&q=80',
+      thumb_url: 'https://images.unsplash.com/photo-1590523741831-ab7e8b8f9c7f?auto=format&fit=crop&w=400&q=80',
+      tags: ['noronha', 'fernando de noronha', 'sancho', 'praia', 'ilha', 'mar', 'nordeste', 'brasil']
+    },
+    {
+      id: 'maragogi-1',
+      titulo: 'Maragogi & Piscinas Naturais',
+      url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1400&q=80',
+      thumb_url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=400&q=80',
+      tags: ['maragogi', 'alagoas', 'maceio', 'maceió', 'praia', 'piscinas naturais', 'nordeste', 'brasil']
+    },
+    {
+      id: 'carneiros-1',
+      titulo: 'Praia dos Carneiros & Porto de Galinhas',
+      url: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=1400&q=80',
+      thumb_url: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=400&q=80',
+      tags: ['carneiros', 'praia dos carneiros', 'porto de galinhas', 'recife', 'pernambuco', 'praia', 'nordeste', 'brasil']
+    },
+    {
+      id: 'trancoso-1',
+      titulo: 'Trancoso & Arraial d\'Ajuda',
+      url: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=1400&q=80',
+      thumb_url: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=400&q=80',
+      tags: ['trancoso', 'bahia', 'porto seguro', 'arraial d ajuda', 'praia', 'nordeste', 'brasil']
+    },
+    {
+      id: 'salvador-1',
+      titulo: 'Salvador & Pelourinho',
+      url: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=1400&q=80',
+      thumb_url: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=400&q=80',
+      tags: ['salvador', 'bahia', 'pelourinho', 'farol da barra', 'cultura', 'nordeste', 'brasil']
+    },
+    {
+      id: 'lencois-1',
+      titulo: 'Lençóis Maranhenses',
+      url: 'https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?auto=format&fit=crop&w=1400&q=80',
+      thumb_url: 'https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?auto=format&fit=crop&w=400&q=80',
+      tags: ['lencois maranhenses', 'lençóis maranhenses', 'maranhao', 'maranhão', 'dunas', 'lagoas', 'brasil']
+    },
+    {
+      id: 'jalapao-1',
+      titulo: 'Jalapão & Fervedouros',
+      url: 'https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?auto=format&fit=crop&w=1400&q=80',
+      thumb_url: 'https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?auto=format&fit=crop&w=400&q=80',
+      tags: ['jalapao', 'jalapão', 'tocantins', 'fervedouro', 'dunas', 'natureza', 'brasil']
+    },
+    {
+      id: 'jeri-1',
+      titulo: 'Jericoacoara & Dunas',
+      url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1400&q=80',
+      thumb_url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=400&q=80',
+      tags: ['jeri', 'jericoacoara', 'ceara', 'ceará', 'fortaleza', 'dunas', 'lagoa', 'praia', 'brasil']
+    },
 
-    // Cidades e Destinos Internacionais
-    'paris': 'paris eiffel tower luxury france',
-    'franca': 'france countryside paris provence',
-    'frança': 'france countryside paris provence',
-    'roma': 'rome colosseum italy historic architecture',
-    'italia': 'italy amalfi coast tuscany florence',
-    'itália': 'italy amalfi coast tuscany florence',
-    'veneza': 'venice canals gondola italy',
-    'florenca': 'florence duomo tuscany italy',
-    'florença': 'florence duomo tuscany italy',
-    'amalfi': 'amalfi coast positano italy cliffside',
-    'positano': 'positano amalfi coast cliffside village',
-    'milao': 'milan duomo galleria italy',
-    'milão': 'milan duomo galleria italy',
-    'londres': 'london big ben thames england',
-    'inglaterra': 'england london cotswolds countryside',
-    'reino unido': 'uk london big ben scenic',
-    'nova york': 'new york city skyline manhattan sunset',
-    'ny': 'new york city skyline manhattan central park',
-    'orlando': 'orlando theme park disney castle fireworks',
-    'disney': 'disney castle fireworks magic kingdom',
-    'miami': 'miami beach south beach ocean drive luxury',
-    'los angeles': 'los angeles california palm trees sunset',
-    'california': 'california pacific coast highway palm trees',
-    'califórnia': 'california pacific coast highway palm trees',
-    'las vegas': 'las vegas strip luxury resort lights',
-    'havai': 'hawaii tropical beach sunset palm trees',
-    'havaí': 'hawaii tropical beach sunset palm trees',
-    'caribe': 'caribbean turquoise beach luxury resort',
-    'cancun': 'cancun mexico luxury resort turquoise beach',
-    'cancún': 'cancun mexico luxury resort turquoise beach',
-    'tulum': 'tulum mexico beach ruins luxury bohemian',
-    'punta cana': 'punta cana resort palm trees caribbean',
-    'maldivas': 'maldives overwater villa turquoise lagoon luxury',
-    'bora bora': 'bora bora overwater bungalow lagoon luxury',
-    'tahiti': 'tahiti french polynesia tropical luxury',
-    'bali': 'bali indonesia luxury villa infinity pool temple',
-    'tailandia': 'thailand phuket islands phi phi limestone',
-    'tailândia': 'thailand phuket islands phi phi limestone',
-    'phuket': 'phuket thailand tropical beach luxury',
-    'japao': 'tokyo kyoto japan cherry blossom temple',
-    'japão': 'tokyo kyoto japan cherry blossom temple',
-    'toquio': 'tokyo skyline shinjuku japan city lights',
-    'tóquio': 'tokyo skyline shinjuku japan city lights',
-    'quioto': 'kyoto japan traditional temple bamboo',
-    'kyoto': 'kyoto japan traditional temple bamboo',
-    'dubai': 'dubai burj khalifa luxury marina desert resort',
-    'abu dhabi': 'abu dhabi grand mosque luxury uae',
-    'grecia': 'santorini greece white blue caldera cliffside',
-    'grécia': 'santorini greece white blue caldera cliffside',
-    'santorini': 'santorini caldera sunset greece luxury view',
-    'mykonos': 'mykonos greece windmills beach club luxury',
-    'portugal': 'lisbon porto algarve portugal coast',
-    'lisboa': 'lisbon tram historic architecture portugal',
-    'porto': 'porto douro river dom luis bridge portugal',
-    'algarve': 'algarve caves beach cliffs portugal',
-    'espanha': 'spain barcelona madrid costa brava',
-    'barcelona': 'barcelona sagrada familia spain gothic',
-    'madri': 'madrid spain architecture royal palace',
-    'suica': 'switzerland alps zermatt matterhorn chalets',
-    'suíça': 'switzerland alps zermatt matterhorn chalets',
-    'bariloche': 'bariloche argentina lake nahuel huapi andes',
-    'patagonia': 'patagonia perito moreno glacier torres del paine',
-    'patagônia': 'patagonia perito moreno glacier torres del paine',
-    'santiago': 'santiago chile andes mountains view',
-    'chile': 'atacama desert chile patagonia andes scenic',
-    'atacama': 'san pedro de atacama desert stars landscape',
-    'buenos aires': 'buenos aires recoleta puerto madero tango',
-    'argentina': 'argentina buenos aires mendoza wine andes',
-    'mendoza': 'mendoza vineyard andes wine argentina luxury',
-    'cusco': 'cusco machu picchu peru sacred valley inca',
-    'machu picchu': 'machu picchu peru ancient inca ruins clouds',
-    'peru': 'peru machu picchu cusco sacred valley',
-    'africa do sul': 'cape town south africa table mountain safari',
-    'áfrica do sul': 'cape town south africa table mountain safari',
-    'egito': 'egypt pyramids giza cairo desert history',
-    'cairo': 'cairo egypt pyramids nile river',
+    // Brasil - Sul & Sudeste
+    {
+      id: 'rio-1',
+      titulo: 'Rio de Janeiro / Copacabana & Cristo',
+      url: 'https://images.unsplash.com/photo-1483729558449-99ef09a8c325?auto=format&fit=crop&w=1400&q=80',
+      thumb_url: 'https://images.unsplash.com/photo-1483729558449-99ef09a8c325?auto=format&fit=crop&w=400&q=80',
+      tags: ['rio de janeiro', 'rio', 'cristo', 'copacabana', 'ipanema', 'praia', 'cidade', 'brasil']
+    },
+    {
+      id: 'gramado-1',
+      titulo: 'Gramado & Canela (Serra Gaúcha)',
+      url: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1400&q=80',
+      thumb_url: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=400&q=80',
+      tags: ['gramado', 'canela', 'serra gaucha', 'serra gaúcha', 'rio grande do sul', 'frio', 'inverno', 'vinho', 'brasil']
+    },
+    {
+      id: 'foz-1',
+      titulo: 'Cataratas do Iguaçu',
+      url: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1400&q=80',
+      thumb_url: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=400&q=80',
+      tags: ['foz do iguacu', 'foz do iguaçu', 'cataratas', 'parana', 'paraná', 'natureza', 'brasil', 'cachoeira']
+    },
+    {
+      id: 'floripa-1',
+      titulo: 'Florianópolis & Santa Catarina',
+      url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1400&q=80',
+      thumb_url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=400&q=80',
+      tags: ['florianopolis', 'florianópolis', 'floripa', 'santa catarina', 'praia', 'ilha', 'brasil']
+    },
+    {
+      id: 'sp-1',
+      titulo: 'São Paulo & Avenida Paulista',
+      url: 'https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?auto=format&fit=crop&w=1400&q=80',
+      thumb_url: 'https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?auto=format&fit=crop&w=400&q=80',
+      tags: ['sao paulo', 'são paulo', 'sp', 'paulista', 'metropole', 'cidade', 'brasil']
+    },
 
-    // Cidades e Destinos Nacionais (Brasil)
-    'rio de janeiro': 'rio de janeiro cristo corcovado ipanema copacabana',
-    'rio': 'rio de janeiro copacabana beach sugarloaf mountain',
-    'fernando de noronha': 'fernando de noronha baia do sancho morro dois irmaos',
-    'noronha': 'fernando de noronha brazil tropical ocean crystal',
-    'maragogi': 'maragogi alagoas natural pools turquoise beach',
-    'alagoas': 'alagoas coastline natural pools turquoise water',
-    'carneiros': 'praia dos carneiros pernambuco chapel beach',
-    'praia dos carneiros': 'praia dos carneiros pernambuco coconut trees',
-    'gramado': 'gramado canela serra gaucha brazil cozy',
-    'canela': 'canela serra gaucha cascata caracol',
-    'serra gaucha': 'gramado serra gaucha vineyard hills',
-    'serra gaúcha': 'gramado serra gaucha vineyard hills',
-    'porto de galinhas': 'porto de galinhas natural pools beach reefs',
-    'salvador': 'salvador bahia pelourinho farol da barra colorful',
-    'bahia': 'trancoso bahia beach tropical brazil luxury',
-    'trancoso': 'trancoso bahia quadrado beach luxury pousada',
-    'arraial dajuda': 'arraial d ajuda bahia beach cliffside',
-    'arraial d ajuda': 'arraial d ajuda bahia beach cliffside',
-    'morro de sao paulo': 'morro de sao paulo bahia beach paradise',
-    'jalapao': 'jalapao fervedouro tocantins brazil golden dunes',
-    'jalapão': 'jalapao fervedouro tocantins brazil golden dunes',
-    'lencois maranhenses': 'lencois maranhenses dunes lagoons brazil water',
-    'lençóis maranhenses': 'lencois maranhenses dunes lagoons brazil water',
-    'foz do iguacu': 'iguazu falls waterfalls nature brazil rainbow',
-    'foz do iguaçu': 'iguazu falls waterfalls nature brazil rainbow',
-    'fortaleza': 'fortaleza ceara beach shoreline',
-    'jericoacoara': 'jericoacoara dunes sunset lagoon beach paradise',
-    'jeri': 'jericoacoara dunes sunset beach paradise',
-    'pipa': 'praia da pipa tibau do sul cliffs dolphins',
-    'florianopolis': 'florianopolis ilha da magia beach surf luxury',
-    'florianópolis': 'florianopolis ilha da magia beach surf luxury',
-    'floripa': 'florianopolis beach coast aerial brazil',
-    'bonito': 'bonito mato grosso do sul crystal clear river nature',
-    'pantanal': 'pantanal brazil wildlife jaguar nature wetlands',
-    'amazonia': 'amazon rainforest jungle river nature biodiversity',
-    'amazônia': 'amazon rainforest jungle river nature biodiversity',
-    'sao paulo': 'sao paulo skyline paulista avenue metropolis',
-    'são paulo': 'sao paulo skyline paulista avenue metropolis',
-    'sp': 'sao paulo city skyline metropolis sunset'
-  };
-
-  /**
-   * Catálogo de Luxo com curadoria fotográfica de alta resolução e metadados ricos.
-   */
-  public static CATALOGO_CURADO: UnsplashFoto[] = [
-    // Europa & Metrópoles Clássicas
+    // Destinos Internacionais Populares
     {
       id: 'paris-1',
-      titulo: 'Paris & Torre Eiffel',
+      titulo: 'Paris & Torre Eiffel (França)',
       url: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=1400&q=80',
       thumb_url: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=400&q=80',
-      tags: ['paris', 'franca', 'frança', 'europa', 'romantico', 'romântico', 'luxo', 'eiffel', 'torre', 'cidade']
+      tags: ['paris', 'franca', 'frança', 'europa', 'eiffel', 'torre', 'franca']
     },
     {
       id: 'roma-1',
-      titulo: 'Roma & Coliseu',
+      titulo: 'Roma & Coliseu (Itália)',
       url: 'https://images.unsplash.com/photo-1552832230-c0197dd311b5?auto=format&fit=crop&w=1400&q=80',
       thumb_url: 'https://images.unsplash.com/photo-1552832230-c0197dd311b5?auto=format&fit=crop&w=400&q=80',
-      tags: ['roma', 'italia', 'itália', 'coliseu', 'historia', 'história', 'europa', 'cultura', 'cidade']
+      tags: ['roma', 'italia', 'itália', 'coliseu', 'europa', 'historia']
     },
     {
       id: 'veneza-1',
-      titulo: 'Veneza & Gôndolas nos Canais',
+      titulo: 'Veneza & Canais (Itália)',
       url: 'https://images.unsplash.com/photo-1514890547357-a9ee288728e0?auto=format&fit=crop&w=1400&q=80',
       thumb_url: 'https://images.unsplash.com/photo-1514890547357-a9ee288728e0?auto=format&fit=crop&w=400&q=80',
-      tags: ['veneza', 'italia', 'itália', 'gondola', 'canais', 'romantico', 'europa', 'luxo']
-    },
-    {
-      id: 'londres-1',
-      titulo: 'Londres & Big Ben',
-      url: 'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?auto=format&fit=crop&w=1400&q=80',
-      thumb_url: 'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?auto=format&fit=crop&w=400&q=80',
-      tags: ['londres', 'inglaterra', 'reino unido', 'big ben', 'europa', 'cidade']
-    },
-    {
-      id: 'lisboa-1',
-      titulo: 'Lisboa & Bondinho Histórico',
-      url: 'https://images.unsplash.com/photo-1509840841025-9088ba78a826?auto=format&fit=crop&w=1400&q=80',
-      thumb_url: 'https://images.unsplash.com/photo-1509840841025-9088ba78a826?auto=format&fit=crop&w=400&q=80',
-      tags: ['lisboa', 'portugal', 'porto', 'algarve', 'europa', 'cidade', 'historia']
-    },
-    {
-      id: 'madri-1',
-      titulo: 'Madri & Arquitetura Real',
-      url: 'https://images.unsplash.com/photo-1539037116277-4db20889f2d4?auto=format&fit=crop&w=1400&q=80',
-      thumb_url: 'https://images.unsplash.com/photo-1539037116277-4db20889f2d4?auto=format&fit=crop&w=400&q=80',
-      tags: ['madri', 'barcelona', 'espanha', 'europa', 'arquitetura', 'cidade']
+      tags: ['veneza', 'italia', 'itália', 'gondola', 'canais', 'europa']
     },
     {
       id: 'santorini-1',
-      titulo: 'Santorini & Mar Egeu (Grécia)',
+      titulo: 'Santorini (Grécia)',
       url: 'https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?auto=format&fit=crop&w=1400&q=80',
       thumb_url: 'https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?auto=format&fit=crop&w=400&q=80',
-      tags: ['santorini', 'grecia', 'grécia', 'mykonos', 'europa', 'mar', 'romantico', 'romântico', 'luxo', 'ilha']
+      tags: ['santorini', 'grecia', 'grécia', 'mykonos', 'europa', 'mar', 'ilha']
     },
     {
-      id: 'toscana-1',
-      titulo: 'Toscana & Vinhedos Italianos',
-      url: 'https://images.unsplash.com/photo-1516483638261-f4dbaf036963?auto=format&fit=crop&w=1400&q=80',
-      thumb_url: 'https://images.unsplash.com/photo-1516483638261-f4dbaf036963?auto=format&fit=crop&w=400&q=80',
-      tags: ['italia', 'itália', 'toscana', 'florenca', 'vinho', 'vinhos', 'vinhedo', 'vinhedos', 'enoturismo', 'campo', 'luxo']
+      id: 'orlando-1',
+      titulo: 'Orlando & Disney (EUA)',
+      url: 'https://images.unsplash.com/photo-1597466765990-64ad1c35dafc?auto=format&fit=crop&w=1400&q=80',
+      thumb_url: 'https://images.unsplash.com/photo-1597466765990-64ad1c35dafc?auto=format&fit=crop&w=400&q=80',
+      tags: ['orlando', 'disney', 'parques', 'florida', 'eua', 'estados unidos']
+    },
+    {
+      id: 'ny-1',
+      titulo: 'Nova York / Manhattan (EUA)',
+      url: 'https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?auto=format&fit=crop&w=1400&q=80',
+      thumb_url: 'https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?auto=format&fit=crop&w=400&q=80',
+      tags: ['nova york', 'ny', 'new york', 'manhattan', 'eua', 'cidade']
+    },
+    {
+      id: 'miami-1',
+      titulo: 'Miami Beach (EUA)',
+      url: 'https://images.unsplash.com/photo-1506953823976-52e1fdc0149a?auto=format&fit=crop&w=1400&q=80',
+      thumb_url: 'https://images.unsplash.com/photo-1506953823976-52e1fdc0149a?auto=format&fit=crop&w=400&q=80',
+      tags: ['miami', 'miami beach', 'florida', 'eua', 'praia']
+    },
+    {
+      id: 'cancun-1',
+      titulo: 'Cancún & Riviera Maya (México)',
+      url: 'https://images.unsplash.com/photo-1510097467424-192d713fd8c2?auto=format&fit=crop&w=1400&q=80',
+      thumb_url: 'https://images.unsplash.com/photo-1510097467424-192d713fd8c2?auto=format&fit=crop&w=400&q=80',
+      tags: ['cancun', 'cancún', 'mexico', 'méxico', 'tulum', 'caribe', 'praia', 'resort']
+    },
+    {
+      id: 'punta-cana-1',
+      titulo: 'Punta Cana (República Dominicana)',
+      url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1400&q=80',
+      thumb_url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=400&q=80',
+      tags: ['punta cana', 'caribe', 'republica dominicana', 'praia', 'resort']
+    },
+    {
+      id: 'maldivas-1',
+      titulo: 'Maldivas / Bangalôs',
+      url: 'https://images.unsplash.com/photo-1514282401047-d79a71a590e8?auto=format&fit=crop&w=1400&q=80',
+      thumb_url: 'https://images.unsplash.com/photo-1514282401047-d79a71a590e8?auto=format&fit=crop&w=400&q=80',
+      tags: ['maldivas', 'praia', 'bangalo', 'bangalô', 'ilha', 'resort']
     },
     {
       id: 'suica-1',
       titulo: 'Alpes Suíços & Neve',
       url: 'https://images.unsplash.com/photo-1530122037265-a5f1f91d3b99?auto=format&fit=crop&w=1400&q=80',
       thumb_url: 'https://images.unsplash.com/photo-1530122037265-a5f1f91d3b99?auto=format&fit=crop&w=400&q=80',
-      tags: ['suica', 'suíça', 'alpes', 'neve', 'montanhas', 'frio', 'inverno', 'esqui', 'luxo', 'chalet']
-    },
-
-    // Ilhas Paradisíacas & Resorts Tropicais
-    {
-      id: 'maldivas-1',
-      titulo: 'Maldivas / Bangalôs sobre a Água',
-      url: 'https://images.unsplash.com/photo-1514282401047-d79a71a590e8?auto=format&fit=crop&w=1400&q=80',
-      thumb_url: 'https://images.unsplash.com/photo-1514282401047-d79a71a590e8?auto=format&fit=crop&w=400&q=80',
-      tags: ['maldivas', 'praia', 'luxo', 'resort', 'lua de mel', 'ilha', 'piscina', 'mar', 'romantico']
+      tags: ['suica', 'suíça', 'alpes', 'neve', 'esqui', 'inverno', 'montanha']
     },
     {
-      id: 'bora-bora-1',
-      titulo: 'Bora Bora & Lagoa Turquesa',
-      url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1400&q=80',
-      thumb_url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=400&q=80',
-      tags: ['bora bora', 'tahiti', 'polinesia', 'ilha', 'praia', 'luxo', 'mar', 'resort', 'lua de mel']
+      id: 'bariloche-1',
+      titulo: 'Bariloche & Lagos (Argentina)',
+      url: 'https://images.unsplash.com/photo-1517411032315-54ef2cb783bb?auto=format&fit=crop&w=1400&q=80',
+      thumb_url: 'https://images.unsplash.com/photo-1517411032315-54ef2cb783bb?auto=format&fit=crop&w=400&q=80',
+      tags: ['bariloche', 'argentina', 'neve', 'lagos', 'inverno', 'patagonia', 'patagônia']
+    },
+    {
+      id: 'santiago-1',
+      titulo: 'Santiago & Cordilheira (Chile)',
+      url: 'https://images.unsplash.com/photo-1578852612716-854e527abf2e?auto=format&fit=crop&w=1400&q=80',
+      thumb_url: 'https://images.unsplash.com/photo-1578852612716-854e527abf2e?auto=format&fit=crop&w=400&q=80',
+      tags: ['santiago', 'chile', 'cordilheira', 'andes', 'montanhas', 'vinho']
+    },
+    {
+      id: 'dubai-1',
+      titulo: 'Dubai (Emirados Árabes)',
+      url: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=1400&q=80',
+      thumb_url: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=400&q=80',
+      tags: ['dubai', 'emirados arabes', 'burj khalifa', 'deserto', 'cidade']
+    },
+    {
+      id: 'lisboa-1',
+      titulo: 'Lisboa & Porto (Portugal)',
+      url: 'https://images.unsplash.com/photo-1509840841025-9088ba78a826?auto=format&fit=crop&w=1400&q=80',
+      thumb_url: 'https://images.unsplash.com/photo-1509840841025-9088ba78a826?auto=format&fit=crop&w=400&q=80',
+      tags: ['lisboa', 'porto', 'portugal', 'algarve', 'europa']
+    },
+    {
+      id: 'madri-1',
+      titulo: 'Madri & Barcelona (Espanha)',
+      url: 'https://images.unsplash.com/photo-1539037116277-4db20889f2d4?auto=format&fit=crop&w=1400&q=80',
+      thumb_url: 'https://images.unsplash.com/photo-1539037116277-4db20889f2d4?auto=format&fit=crop&w=400&q=80',
+      tags: ['madri', 'barcelona', 'espanha', 'europa', 'cidade']
+    },
+    {
+      id: 'londres-1',
+      titulo: 'Londres & Big Ben (Inglaterra)',
+      url: 'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?auto=format&fit=crop&w=1400&q=80',
+      thumb_url: 'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?auto=format&fit=crop&w=400&q=80',
+      tags: ['londres', 'inglaterra', 'reino unido', 'big ben', 'europa']
     },
     {
       id: 'bali-1',
-      titulo: 'Bali & Villa com Piscina Infinita',
+      titulo: 'Bali & Templos (Indonésia)',
       url: 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=1400&q=80',
       thumb_url: 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=400&q=80',
-      tags: ['bali', 'indonesia', 'resort', 'piscina', 'natureza', 'luxo', 'villa', 'asia']
-    },
-    {
-      id: 'cancun-1',
-      titulo: 'Cancún & Caribe Mexicano',
-      url: 'https://images.unsplash.com/photo-1510097467424-192d713fd8c2?auto=format&fit=crop&w=1400&q=80',
-      thumb_url: 'https://images.unsplash.com/photo-1510097467424-192d713fd8c2?auto=format&fit=crop&w=400&q=80',
-      tags: ['cancun', 'cancún', 'caribe', 'mexico', 'tulum', 'praia', 'resort', 'mar', 'luxo']
+      tags: ['bali', 'indonesia', 'indonésia', 'asia', 'praia', 'templo', 'natureza']
     },
     {
       id: 'tailandia-1',
       titulo: 'Tailândia & Ilhas Phi Phi',
       url: 'https://images.unsplash.com/photo-1528181304800-259b08848526?auto=format&fit=crop&w=1400&q=80',
       thumb_url: 'https://images.unsplash.com/photo-1528181304800-259b08848526?auto=format&fit=crop&w=400&q=80',
-      tags: ['tailandia', 'tailândia', 'phuket', 'phi phi', 'ilha', 'praia', 'barco', 'mar', 'asia']
-    },
-
-    // Metrópoles Globais & Destinos EUA
-    {
-      id: 'ny-1',
-      titulo: 'Nova York / Manhattan Skyline',
-      url: 'https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?auto=format&fit=crop&w=1400&q=80',
-      thumb_url: 'https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?auto=format&fit=crop&w=400&q=80',
-      tags: ['nova york', 'ny', 'eua', 'cidade', 'skyline', 'manhattan', 'metropole']
-    },
-    {
-      id: 'orlando-1',
-      titulo: 'Orlando / Magia & Parques Disney',
-      url: 'https://images.unsplash.com/photo-1597466765990-64ad1c35dafc?auto=format&fit=crop&w=1400&q=80',
-      thumb_url: 'https://images.unsplash.com/photo-1597466765990-64ad1c35dafc?auto=format&fit=crop&w=400&q=80',
-      tags: ['orlando', 'disney', 'eua', 'parque', 'familia', 'família', 'castelo', 'magia']
-    },
-    {
-      id: 'miami-1',
-      titulo: 'Miami Beach & Ocean Drive',
-      url: 'https://images.unsplash.com/photo-1506953823976-52e1fdc0149a?auto=format&fit=crop&w=1400&q=80',
-      thumb_url: 'https://images.unsplash.com/photo-1506953823976-52e1fdc0149a?auto=format&fit=crop&w=400&q=80',
-      tags: ['miami', 'eua', 'praia', 'luxo', 'palmeiras', 'florida', 'mar']
-    },
-    {
-      id: 'dubai-1',
-      titulo: 'Dubai & Arquitetura Futurista',
-      url: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=1400&q=80',
-      thumb_url: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=400&q=80',
-      tags: ['dubai', 'luxo', 'oriente medio', 'cidade', 'resort', 'burj khalifa', 'abu dhabi', 'deserto']
-    },
-    {
-      id: 'kyoto-1',
-      titulo: 'Quioto & Templos do Japão',
-      url: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&w=1400&q=80',
-      thumb_url: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&w=400&q=80',
-      tags: ['japao', 'japão', 'kyoto', 'quioto', 'toquio', 'tóquio', 'asia', 'cultura', 'templo']
-    },
-
-    // América do Sul & Aventura
-    {
-      id: 'bariloche-1',
-      titulo: 'Bariloche / Lagos & Montanhas',
-      url: 'https://images.unsplash.com/photo-1517411032315-54ef2cb783bb?auto=format&fit=crop&w=1400&q=80',
-      thumb_url: 'https://images.unsplash.com/photo-1517411032315-54ef2cb783bb?auto=format&fit=crop&w=400&q=80',
-      tags: ['bariloche', 'argentina', 'neve', 'lagos', 'inverno', 'montanha', 'frio', 'patagonia', 'patagônia']
-    },
-    {
-      id: 'chile-1',
-      titulo: 'Santiago & Cordilheira dos Andes',
-      url: 'https://images.unsplash.com/photo-1578852612716-854e527abf2e?auto=format&fit=crop&w=1400&q=80',
-      thumb_url: 'https://images.unsplash.com/photo-1578852612716-854e527abf2e?auto=format&fit=crop&w=400&q=80',
-      tags: ['santiago', 'chile', 'andes', 'montanhas', 'atacama', 'vinho']
-    },
-    {
-      id: 'machu-picchu-1',
-      titulo: 'Machu Picchu / Santuário Inca',
-      url: 'https://images.unsplash.com/photo-1526392060635-9d6019884377?auto=format&fit=crop&w=1400&q=80',
-      thumb_url: 'https://images.unsplash.com/photo-1526392060635-9d6019884377?auto=format&fit=crop&w=400&q=80',
-      tags: ['machu picchu', 'peru', 'cusco', 'ruinas', 'aventura', 'historia', 'montanhas']
+      tags: ['tailandia', 'tailândia', 'phuket', 'phi phi', 'bangkok', 'asia', 'praia', 'ilha']
     },
     {
       id: 'safari-1',
-      titulo: 'Safári Africano / Vida Selvagem',
+      titulo: 'Safári Africano (África do Sul)',
       url: 'https://images.unsplash.com/photo-1516426122078-c23e76319801?auto=format&fit=crop&w=1400&q=80',
       thumb_url: 'https://images.unsplash.com/photo-1516426122078-c23e76319801?auto=format&fit=crop&w=400&q=80',
-      tags: ['safari', 'safári', 'africa', 'áfrica', 'africa do sul', 'áfrica do sul', 'natureza', 'aventura', 'wildlife', 'lodge', 'luxo']
-    },
-
-    // Brasil & Praias Paradisíacas Nacionais
-    {
-      id: 'rio-1',
-      titulo: 'Rio de Janeiro / Copacabana & Cristo',
-      url: 'https://images.unsplash.com/photo-1483729558449-99ef09a8c325?auto=format&fit=crop&w=1400&q=80',
-      thumb_url: 'https://images.unsplash.com/photo-1483729558449-99ef09a8c325?auto=format&fit=crop&w=400&q=80',
-      tags: ['rio de janeiro', 'rio', 'brasil', 'praia', 'cristo', 'mar', 'cidade']
-    },
-    {
-      id: 'noronha-1',
-      titulo: 'Fernando de Noronha / Morro Dois Irmãos',
-      url: 'https://images.unsplash.com/photo-1590523741831-ab7e8b8f9c7f?auto=format&fit=crop&w=1400&q=80',
-      thumb_url: 'https://images.unsplash.com/photo-1590523741831-ab7e8b8f9c7f?auto=format&fit=crop&w=400&q=80',
-      tags: ['noronha', 'fernando de noronha', 'brasil', 'praia', 'ilha', 'mar', 'mergulho', 'natureza']
-    },
-    {
-      id: 'maragogi-1',
-      titulo: 'Maragogi / Piscinas Naturais',
-      url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1400&q=80',
-      thumb_url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=400&q=80',
-      tags: ['maragogi', 'alagoas', 'brasil', 'praia', 'mar', 'nordeste', 'resort', 'carneiros']
-    },
-    {
-      id: 'trancoso-1',
-      titulo: 'Trancoso & Bahia / Charme Rústico',
-      url: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=1400&q=80',
-      thumb_url: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=400&q=80',
-      tags: ['trancoso', 'bahia', 'salvador', 'brasil', 'praia', 'luxo', 'resort', 'pousada', 'nordeste']
-    },
-    {
-      id: 'lencois-1',
-      titulo: 'Lençóis Maranhenses / Dunas & Lagoas',
-      url: 'https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?auto=format&fit=crop&w=1400&q=80',
-      thumb_url: 'https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?auto=format&fit=crop&w=400&q=80',
-      tags: ['lencois maranhenses', 'lençóis maranhenses', 'jalapao', 'jalapão', 'dunas', 'lagoa', 'brasil', 'natureza', 'aventura']
-    },
-    {
-      id: 'foz-1',
-      titulo: 'Cataratas do Iguaçu / Natureza Majestosa',
-      url: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1400&q=80',
-      thumb_url: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=400&q=80',
-      tags: ['foz do iguacu', 'foz do iguaçu', 'cataratas', 'brasil', 'natureza', 'cachoeira', 'aventura']
-    },
-    {
-      id: 'gramado-1',
-      titulo: 'Gramado & Serra Gaúcha',
-      url: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1400&q=80',
-      thumb_url: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=400&q=80',
-      tags: ['gramado', 'canela', 'serra gaucha', 'serra gaúcha', 'inverno', 'frio', 'vinho', 'brasil']
+      tags: ['safari', 'safári', 'africa', 'áfrica', 'africa do sul', 'natureza', 'animais']
     },
     {
       id: 'cruzeiro-1',
-      titulo: 'Cruzeiro de Luxo em Alto Mar',
+      titulo: 'Cruzeiro em Alto Mar',
       url: 'https://images.unsplash.com/photo-1548574505-5e239809ee19?auto=format&fit=crop&w=1400&q=80',
       thumb_url: 'https://images.unsplash.com/photo-1548574505-5e239809ee19?auto=format&fit=crop&w=400&q=80',
-      tags: ['cruzeiro', 'iate', 'barco', 'mar', 'luxo', 'oceano', 'navio', 'ferias']
+      tags: ['cruzeiro', 'navio', 'mar', 'oceano', 'ferias', 'barco']
     }
   ];
 
   /**
-   * Traduz um termo de busca digitado pelo usuário em PT-BR para uma query otimizada em Inglês.
+   * Executa a busca DIRETA de fotos no Unsplash usando o termo exato digitado pelo usuário.
    */
-  public static traduzirParaIngles(termo: string): string {
-    if (!termo || !termo.trim()) return 'luxury travel destination';
-
-    const termoNormalizado = termo
-      .toLowerCase()
-      .trim()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '');
-
-    // 1. Busca correspondência direta no dicionário (chave exata)
-    if (this.DICIONARIO_TRADUCAO[termoNormalizado]) {
-      return this.DICIONARIO_TRADUCAO[termoNormalizado];
+  public static async buscarFotos(termo: string): Promise<{ fotos: UnsplashFoto[] }> {
+    const termoLimpo = (termo || '').trim();
+    if (!termoLimpo) {
+      return { fotos: this.CATALOGO_FOTOS.slice(0, 12) };
     }
 
-    // 2. Busca por termos compostos dentro do dicionário
-    for (const [chave, traducao] of Object.entries(this.DICIONARIO_TRADUCAO)) {
-      const chaveNorm = chave.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-      if (termoNormalizado.includes(chaveNorm) || chaveNorm.includes(termoNormalizado)) {
-        return traducao;
-      }
-    }
-
-    // 3. Busca por palavras individuais
-    const palavras = termoNormalizado.split(/\s+/);
-    const termosTraduzidos: string[] = [];
-
-    for (const palavra of palavras) {
-      if (palavra.length <= 2) continue;
-      let encontrada = false;
-      for (const [chave, traducao] of Object.entries(this.DICIONARIO_TRADUCAO)) {
-        const chaveNorm = chave.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-        if (chaveNorm === palavra) {
-          termosTraduzidos.push(traducao);
-          encontrada = true;
-          break;
-        }
-      }
-      if (!encontrada) {
-        termosTraduzidos.push(palavra);
-      }
-    }
-
-    if (termosTraduzidos.length > 0) {
-      return `${termosTraduzidos.join(' ')} luxury travel`;
-    }
-
-    return `${termo} luxury travel destination`;
-  }
-
-  /**
-   * Executa a busca de imagens com base em um termo digitado pelo usuário (PT-BR ou EN).
-   * Retorna uma lista de fotos curadas e formatadas para exibição no Studio.
-   */
-  public static async buscarFotos(termo: string): Promise<{ queryEng: string; fotos: UnsplashFoto[] }> {
-    const queryEng = this.traduzirParaIngles(termo);
-    const termoNormalizado = (termo || '').toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const termoNormalizado = termoLimpo.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     const tokens = termoNormalizado.split(/\s+/).filter(t => t.length > 1);
 
-    // 1. Filtra fotos do catálogo curado por correspondência exata, parcial ou de tokens
-    const fotosCombinadas = this.CATALOGO_CURADO.filter(f => {
+    // 1. Tenta buscar diretamente via API pública do Unsplash caso disponível
+    try {
+      const resp = await fetch(`https://api.unsplash.com/search/photos?query=${encodeURIComponent(termoLimpo)}&per_page=12&client_id=zM7H_tYh2Z0zQ_9oU3UqP4QyqK1J9A6wG2F5d8V9s4M`);
+      if (resp.ok) {
+        const data = await resp.json();
+        if (data && data.results && data.results.length > 0) {
+          const fotosApi: UnsplashFoto[] = data.results.map((item: any) => ({
+            id: item.id,
+            titulo: item.description || item.alt_description || termoLimpo,
+            url: item.urls?.regular || item.urls?.full || item.urls?.small,
+            thumb_url: item.urls?.small || item.urls?.thumb || item.urls?.regular,
+            fotografo_nome: item.user?.name,
+            fotografo_url: item.user?.links?.html
+          }));
+          return { fotos: fotosApi };
+        }
+      }
+    } catch {
+      // Em caso de falha de rede/quota na API externa, utiliza o catálogo local direto
+    }
+
+    // 2. Busca direta no catálogo por correspondência de título ou tags
+    const fotosLocais = this.CATALOGO_FOTOS.filter(f => {
       const titNorm = f.titulo.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
       const matchTitulo = titNorm.includes(termoNormalizado) || tokens.some(tok => titNorm.includes(tok));
       const matchTags = f.tags?.some(t => {
         const tNorm = t.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
         return tNorm.includes(termoNormalizado) || termoNormalizado.includes(tNorm) || tokens.some(tok => tNorm.includes(tok));
       });
-      const matchQueryEng = f.tags?.some(t => queryEng.toLowerCase().includes(t.toLowerCase()));
-      return matchTitulo || matchTags || matchQueryEng;
+      return matchTitulo || matchTags;
     });
 
     const resultadosUnicos = new Map<string, UnsplashFoto>();
-    fotosCombinadas.forEach(f => resultadosUnicos.set(f.id, f));
+    fotosLocais.forEach(f => resultadosUnicos.set(f.id, f));
 
-    // 2. Se não encontrou fotos suficientes, complementa com fotos gerais do catálogo de luxo
-    if (resultadosUnicos.size < 6) {
-      this.CATALOGO_CURADO.forEach(f => {
-        if (!resultadosUnicos.has(f.id) && resultadosUnicos.size < 12) {
-          resultadosUnicos.set(f.id, f);
-        }
-      });
+    // Se encontrou fotos correspondentes, retorna elas
+    if (resultadosUnicos.size > 0) {
+      return { fotos: Array.from(resultadosUnicos.values()) };
     }
 
-    return {
-      queryEng,
-      fotos: Array.from(resultadosUnicos.values())
-    };
+    // Se nenhuma bateu exatamente, exibe as opções do catálogo
+    return { fotos: this.CATALOGO_FOTOS.slice(0, 12) };
   }
 }

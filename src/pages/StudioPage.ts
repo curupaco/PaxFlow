@@ -26,11 +26,10 @@ export class StudioPage {
   private secaoIngestaoAberta: boolean = true;
   private syncScrollHandler: any = null;
 
-  // Estado para a Busca Avançada no Unsplash com Tradução Semântica
+  // Estado para a Busca no Unsplash
   private modalUnsplashAberto: boolean = false;
   private termoBuscaUnsplash: string = '';
   private fotosUnsplashResultado: UnsplashFoto[] = [];
-  private queryEngUnsplash: string = '';
   private buscandoUnsplash: boolean = false;
   private debounceTimerUnsplash: any = null;
 
@@ -54,7 +53,7 @@ export class StudioPage {
   } | null = null;
 
   // Fotos de capa sugeridas com curadoria de luxo
-  private static FOTOS_CAPA = StudioUnsplashService.CATALOGO_CURADO.slice(0, 9).map(f => ({
+  private static FOTOS_CAPA = StudioUnsplashService.CATALOGO_FOTOS.slice(0, 9).map(f => ({
     nome: f.titulo.split('/')[0].split('&')[0].trim(),
     url: f.url
   }));
@@ -100,9 +99,9 @@ export class StudioPage {
 
         if (settingsData) {
           this.contatoPadraoAgencia = {
-            telefone: settingsData.agency_phone || settingsData.agencyPhone || settingsData.telefone || '',
-            whatsapp: settingsData.whatsapp_suporte || settingsData.agency_phone || settingsData.agencyPhone || '',
-            email: settingsData.emailSuporte || settingsData.email_suporte || ''
+            telefone: settingsData.agency_phone || settingsData.agencyPhone || settingsData.telefone || '(11) 3090-7070',
+            whatsapp: settingsData.whatsapp_suporte || settingsData.agency_phone || settingsData.agencyPhone || '(11) 3090-7070',
+            email: settingsData.emailSuporte || settingsData.email_suporte || 'contato@paxflow.com.br'
           };
         }
       } catch (errSettings) {
@@ -131,7 +130,7 @@ export class StudioPage {
   }
 
   private renderPreviewConsultorForm(): string {
-    const whatsExibicao = this.contatoPadraoAgencia.whatsapp || this.propostaAtual.consultor_whatsapp || '(11) 99999-9999';
+    const whatsExibicao = this.contatoPadraoAgencia.whatsapp || this.propostaAtual.consultor_whatsapp || '(11) 3090-7070';
     const telExibicao = this.contatoPadraoAgencia.telefone || this.propostaAtual.consultor_telefone || '(11) 3090-7070';
 
     if (!this.propostaAtual.consultor_nome) {
@@ -429,7 +428,7 @@ export class StudioPage {
                       <label class="block text-[10px] font-medium text-slate-500 dark:text-slate-400">WhatsApp de Atendimento</label>
                       <span class="text-[9px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 px-1.5 py-0.5 rounded-md">🔒 Loja Oficial</span>
                     </div>
-                    <input type="text" id="campo-consultor-whatsapp" value="${this.contatoPadraoAgencia.whatsapp || this.propostaAtual.consultor_whatsapp || '(11) 99999-9999'}" readonly class="w-full px-3 py-2 text-xs rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-semibold cursor-not-allowed select-none" />
+                    <input type="text" id="campo-consultor-whatsapp" value="${this.contatoPadraoAgencia.whatsapp || this.propostaAtual.consultor_whatsapp || '(11) 3090-7070'}" readonly class="w-full px-3 py-2 text-xs rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-semibold cursor-not-allowed select-none" />
                     <span class="text-[9px] text-slate-400 mt-0.5 block">Canal oficial institucional da agência / loja.</span>
                   </div>
 
@@ -1082,20 +1081,20 @@ export class StudioPage {
             <span class="text-xl">📸</span>
             <div>
               <h3 class="text-sm font-black text-slate-900 dark:text-white">
-                Galeria Unsplash™ - Fotos de Capa de Luxo
+                Galeria Unsplash™ - Fotos de Capa
               </h3>
               <p class="text-[11px] text-slate-500 dark:text-slate-400">
-                Busca inteligente com tradução semântica automática (PT-BR ➔ EN).
+                Busca direta de fotos de alta resolução para seu caderno de viagem.
               </p>
             </div>
           </div>
           <button id="btn-fechar-modal-unsplash" type="button" class="text-slate-400 hover:text-slate-600 text-sm font-bold cursor-pointer">✕</button>
         </div>
 
-        <!-- CAMPO DE BUSCA COM TRADUÇÃO -->
+        <!-- CAMPO DE BUSCA -->
         <div class="space-y-2 shrink-0">
           <div class="flex gap-2">
-            <input type="text" id="input-busca-unsplash" value="${this.termoBuscaUnsplash}" placeholder="Digite um destino ou tema (Ex: Maldivas, neve, praia, resort de luxo, toscana)..." class="flex-1 px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:border-indigo-500 font-medium" autocomplete="off" />
+            <input type="text" id="input-busca-unsplash" value="${this.termoBuscaUnsplash}" placeholder="Digite um destino ou tema (Ex: Pantanal, Mato Grosso, Maldivas, Paris)..." class="flex-1 px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:border-indigo-500 font-medium" autocomplete="off" />
             <button type="button" id="btn-executar-busca-unsplash" class="px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-xs transition cursor-pointer flex items-center gap-1.5 shrink-0">
               <span>🔍</span> Buscar
             </button>
@@ -1109,16 +1108,6 @@ export class StudioPage {
                 ${s.label}
               </button>
             `).join('')}
-          </div>
-
-          <!-- CONTAINER DO BADGE DE TRADUÇÃO -->
-          <div id="container-traducao-unsplash">
-            ${this.queryEngUnsplash ? `
-              <div class="px-3 py-1.5 rounded-xl bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/40 text-[11px] text-indigo-700 dark:text-indigo-300 flex items-center justify-between">
-                <span>✨ Termo traduzido para o Unsplash: <strong>"${this.queryEngUnsplash}"</strong></span>
-                <span class="text-[10px] opacity-75">${this.fotosUnsplashResultado.length} fotos prontas</span>
-              </div>
-            ` : ''}
           </div>
         </div>
 
@@ -2147,7 +2136,6 @@ export class StudioPage {
     try {
       const resultado = await StudioUnsplashService.buscarFotos(termo);
       this.fotosUnsplashResultado = resultado.fotos;
-      this.queryEngUnsplash = resultado.queryEng;
     } catch (err) {
       console.warn('[StudioPage] Falha na busca Unsplash:', err);
     } finally {
@@ -2156,17 +2144,6 @@ export class StudioPage {
       if (gridEl) {
         gridEl.innerHTML = this.renderGridFotosUnsplash();
         this.setupCardsUnsplashListeners();
-      }
-
-      // Atualiza a badge de tradução
-      const traducaoEl = this.container.querySelector('#container-traducao-unsplash');
-      if (traducaoEl) {
-        traducaoEl.innerHTML = this.queryEngUnsplash ? `
-          <div class="px-3 py-1.5 rounded-xl bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/40 text-[11px] text-indigo-700 dark:text-indigo-300 flex items-center justify-between">
-            <span>✨ Termo traduzido para o Unsplash: <strong>"${this.queryEngUnsplash}"</strong></span>
-            <span class="text-[10px] opacity-75">${this.fotosUnsplashResultado.length} fotos prontas</span>
-          </div>
-        ` : '';
       }
     }
   }
