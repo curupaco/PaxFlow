@@ -847,9 +847,9 @@ export class PublicViews {
     this.container.innerHTML = `
       <div class="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 antialiased pb-20">
         <!-- HERO BANNER CINEMATOGRÁFICO -->
-        <div class="relative h-80 md:h-96 w-full overflow-hidden flex flex-col justify-between p-6 md:p-12 text-white bg-slate-900">
+        <div class="relative min-h-[380px] md:min-h-[420px] w-full overflow-hidden flex flex-col justify-between p-6 md:p-12 pb-16 md:pb-14 text-white bg-slate-900">
           <img src="${capaUrl}" alt="${proposta.destino}" class="absolute inset-0 w-full h-full object-cover opacity-60 filter brightness-75 scale-105 transition-transform duration-700 hover:scale-100" />
-          <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent"></div>
+          <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/50 to-transparent"></div>
 
           <!-- TOP BAR BRAND -->
           <div class="relative z-10 flex items-center justify-between">
@@ -862,26 +862,26 @@ export class PublicViews {
           </div>
 
           <!-- HERO TITLE & DATES -->
-          <div class="relative z-10 max-w-3xl">
+          <div class="relative z-10 max-w-3xl pb-2">
             <h1 class="text-3xl md:text-5xl font-black tracking-tight drop-shadow-md">
               ${proposta.destino}
             </h1>
             <p class="text-base md:text-lg font-medium text-slate-200 mt-2">
               Planejado com exclusividade para <strong>${proposta.cliente_nome}</strong>
             </p>
-            <div class="flex flex-wrap items-center gap-4 mt-4 text-xs font-semibold text-slate-300">
-              <span class="flex items-center gap-1.5">
+            <div class="flex flex-wrap items-center gap-2.5 sm:gap-4 mt-4 text-xs font-semibold">
+              <span class="px-3 py-1.5 rounded-xl bg-slate-950/60 backdrop-blur-md border border-white/15 text-slate-200 flex items-center gap-1.5 shadow-sm">
                 📅 ${formatarData(proposta.data_ida)} a ${formatarData(proposta.data_volta) || 'A definir'}
               </span>
-              <span class="flex items-center gap-1.5">
-                💰 Investimento: <strong class="text-white font-bold">${formatarMoeda(proposta.valor_total)}</strong>
+              <span class="px-3 py-1.5 rounded-xl bg-slate-950/60 backdrop-blur-md border border-white/15 text-white flex items-center gap-1.5 shadow-sm">
+                💰 Investimento: <strong class="text-emerald-400 font-bold">${formatarMoeda(proposta.valor_total)}</strong>
               </span>
             </div>
           </div>
         </div>
 
         <!-- CONTEÚDO PRINCIPAL -->
-        <div class="max-w-4xl mx-auto px-4 -mt-8 relative z-20 space-y-6">
+        <div class="max-w-4xl mx-auto px-4 -mt-6 md:-mt-8 relative z-20 space-y-6">
           <!-- CARD DE STATUS / ACEITE FORMAL -->
           <div class="public-glass p-6 rounded-2xl shadow-xl border border-slate-200/80 dark:border-slate-800/80">
             ${isAprovada ? `

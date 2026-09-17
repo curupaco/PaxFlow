@@ -776,7 +776,7 @@ export class StudioPage {
       <div class="proposta-preview-document text-slate-900 dark:text-slate-100 font-sans">
         
         <!-- CAPA CINEMATOGRÁFICA DE LUXO -->
-        <div class="relative h-64 sm:h-72 w-full overflow-hidden flex flex-col justify-between p-6 bg-slate-900">
+        <div class="relative min-h-[270px] w-full overflow-hidden flex flex-col justify-between p-6 bg-slate-900">
           <img src="${capaUrl}" alt="${this.propostaAtual.destino || 'Destino'}" class="absolute inset-0 w-full h-full object-cover opacity-60" />
           <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-black/60"></div>
 
