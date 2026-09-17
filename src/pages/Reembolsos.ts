@@ -538,27 +538,27 @@ export class ReembolsosPage {
             
             <!-- Abas Superiores com Contadores Dinâmicos -->
             <div class="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 custom-scrollbar">
-              <button type="button" data-status-tab="todos" class="tab-reembolso-btn px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 transition cursor-pointer shrink-0 ${renderTabClass('todos')}">
+              <button type="button" data-status-tab="todos" class="tab-reembolso-btn px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 transition cursor-pointer shrink-0 whitespace-nowrap ${renderTabClass('todos')}">
                 <span>Todos</span>
                 <span class="px-1.5 py-0.5 rounded-md text-[10px] font-black ${this.activeStatusTab === 'todos' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'}">${totalCount}</span>
               </button>
 
-              <button type="button" data-status-tab="solicitados" class="tab-reembolso-btn px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 transition cursor-pointer shrink-0 ${renderTabClass('solicitados')}">
+              <button type="button" data-status-tab="solicitados" class="tab-reembolso-btn px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 transition cursor-pointer shrink-0 whitespace-nowrap ${renderTabClass('solicitados')}">
                 <span>⏳ Solicitados</span>
                 <span class="px-1.5 py-0.5 rounded-md text-[10px] font-black ${this.activeStatusTab === 'solicitados' ? 'bg-white/20 text-white' : 'bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300'}">${solicitadosCount}</span>
               </button>
 
-              <button type="button" data-status-tab="em_analise" class="tab-reembolso-btn px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 transition cursor-pointer shrink-0 ${renderTabClass('em_analise')}">
+              <button type="button" data-status-tab="em_analise" class="tab-reembolso-btn px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 transition cursor-pointer shrink-0 whitespace-nowrap ${renderTabClass('em_analise')}">
                 <span>🔍 Em Análise</span>
                 <span class="px-1.5 py-0.5 rounded-md text-[10px] font-black ${this.activeStatusTab === 'em_analise' ? 'bg-white/20 text-white' : 'bg-indigo-100 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300'}">${emAnaliseCount}</span>
               </button>
 
-              <button type="button" data-status-tab="pagos" class="tab-reembolso-btn px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 transition cursor-pointer shrink-0 ${renderTabClass('pagos')}">
+              <button type="button" data-status-tab="pagos" class="tab-reembolso-btn px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 transition cursor-pointer shrink-0 whitespace-nowrap ${renderTabClass('pagos')}">
                 <span>✅ Aprovados / Pagos</span>
                 <span class="px-1.5 py-0.5 rounded-md text-[10px] font-black ${this.activeStatusTab === 'pagos' ? 'bg-white/20 text-white' : 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300'}">${pagosCount}</span>
               </button>
 
-              <button type="button" data-status-tab="recusados" class="tab-reembolso-btn px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 transition cursor-pointer shrink-0 ${renderTabClass('recusados')}">
+              <button type="button" data-status-tab="recusados" class="tab-reembolso-btn px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 transition cursor-pointer shrink-0 whitespace-nowrap ${renderTabClass('recusados')}">
                 <span>❌ Recusados / Cancelados</span>
                 <span class="px-1.5 py-0.5 rounded-md text-[10px] font-black ${this.activeStatusTab === 'recusados' ? 'bg-white/20 text-white' : 'bg-rose-100 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300'}">${recusadosCount}</span>
               </button>
@@ -578,7 +578,7 @@ export class ReembolsosPage {
 
           <!-- Tabela de Reembolsos -->
           <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden flex flex-col">
-            <div class="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/40 dark:bg-slate-900/40">
+            <div class="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/40 dark:bg-slate-900/40">
               <h2 class="text-sm font-black text-slate-700 dark:text-slate-300 tracking-wider uppercase flex items-center gap-1.5">Fila de Reembolsos Ativos ${renderHelpIcon('status-reembolso')}</h2>
               <span class="px-2.5 py-1 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400 font-extrabold text-[10px] rounded border border-indigo-100 dark:border-indigo-900/40 uppercase tracking-wider">
                 ${filtrados.length} de ${totalReembolsos} solicitações
@@ -604,17 +604,17 @@ export class ReembolsosPage {
                 <table class="w-full text-left border-collapse">
                   <thead class="sticky top-0 z-20 backdrop-blur-md">
                     <tr class="bg-slate-50/90 dark:bg-slate-800/90 text-[10px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
-                      <th class="py-4 px-5">Cliente</th>
-                      <th class="py-4 px-5">Viagem / Localizador</th>
-                      <th class="py-4 px-5">Produto Cancelado</th>
-                      <th class="py-4 px-5">Fornecedor</th>
-                      <th class="py-4 px-5">Valor</th>
-                      <th class="py-4 px-5">Solicitação</th>
-                      <th class="py-4 px-5">SLA Cronômetro</th>
-                      <th class="py-4 px-5 text-center">Status / Ação</th>
+                      <th class="py-3 px-4">Cliente</th>
+                      <th class="py-3 px-4">Viagem / Localizador</th>
+                      <th class="py-3 px-4">Produto Cancelado</th>
+                      <th class="py-3 px-4">Fornecedor</th>
+                      <th class="py-3 px-4">Valor</th>
+                      <th class="py-3 px-4">Solicitação</th>
+                      <th class="py-3 px-4">SLA Cronômetro</th>
+                      <th class="py-3 px-4 text-center whitespace-nowrap">Status / Ação</th>
                     </tr>
                   </thead>
-                  <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-sm text-slate-700 dark:text-slate-400 font-semibold bg-white/50 dark:bg-slate-900/30">
+                  <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-xs text-slate-700 dark:text-slate-300 font-semibold bg-white/50 dark:bg-slate-900/30">
                     ${filtrados.map(r => {
                       const isPago = r.status === 'pago';
                       const dataAberturaStr = r.created_at || r.created_at_time;
@@ -622,8 +622,8 @@ export class ReembolsosPage {
                       return `
                         <tr class="table-row-hover transition duration-150">
                           <!-- Cliente -->
-                          <td class="py-4.5 px-5">
-                            <span class="block text-slate-800 dark:text-slate-200 font-bold">
+                          <td class="py-3 px-4 whitespace-nowrap">
+                            <span class="block text-slate-800 dark:text-slate-100 font-bold">
                               ${(r.codigo_ref || r.codigoRef) ? `<span class="mr-1 text-[10px] font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-1 py-0.5 rounded border border-slate-200/50 dark:border-slate-800">${highlightMatch(r.codigo_ref || r.codigoRef, this.buscaTermo)}</span>` : ''}
                               ${highlightMatch(r.viagem?.cliente?.nome || 'Cliente Desconhecido', this.buscaTermo)}
                             </span>
@@ -631,8 +631,8 @@ export class ReembolsosPage {
                           </td>
                           
                           <!-- Viagem / Localizador -->
-                          <td class="py-4.5 px-5">
-                            <span class="block text-slate-800 dark:text-slate-200 font-bold">✈️ ${highlightMatch(r.viagem?.destino || 'Sem Destino', this.buscaTermo)}</span>
+                          <td class="py-3 px-4 whitespace-nowrap">
+                            <span class="block text-slate-800 dark:text-slate-100 font-bold">✈️ ${highlightMatch(r.viagem?.destino || 'Sem Destino', this.buscaTermo)}</span>
                             <div class="flex items-center gap-1.5 mt-0.5">
                               ${(r.viagem?.codigo_ref || r.viagem?.codigoRef) ? `
                                 <span class="inline-block px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-650 dark:text-indigo-400 font-mono font-bold text-[9px] rounded uppercase border border-indigo-200/40 dark:border-indigo-850">
@@ -646,45 +646,45 @@ export class ReembolsosPage {
                           </td>
    
                           <!-- Produto Cancelado -->
-                          <td class="py-4.5 px-5">
-                            <span class="block text-slate-700 dark:text-slate-300 font-bold">[${(r.produto?.tipo || 'outro').toUpperCase()}]</span>
+                          <td class="py-3 px-4">
+                            <span class="block text-slate-700 dark:text-slate-200 font-bold">[${(r.produto?.tipo || 'outro').toUpperCase()}]</span>
                             <span class="block text-[11px] text-slate-400 dark:text-slate-400 font-medium truncate max-w-[160px]">${highlightMatch(r.produto?.descricao || 'Sem descrição', this.buscaTermo)}</span>
                           </td>
    
                           <!-- Fornecedor -->
-                          <td class="py-4.5 px-5">
-                            <span class="text-slate-600 dark:text-slate-400 font-bold">${highlightMatch(r.produto?.fornecedor || 'Fornecedor n/d', this.buscaTermo)}</span>
+                          <td class="py-3 px-4 whitespace-nowrap">
+                            <span class="text-slate-600 dark:text-slate-300 font-bold">${highlightMatch(r.produto?.fornecedor || 'Fornecedor n/d', this.buscaTermo)}</span>
                           </td>
    
                           <!-- Valor -->
-                          <td class="py-4.5 px-5">
-                            <span class="text-indigo-600 dark:text-indigo-400 font-black">
+                          <td class="py-3 px-4 whitespace-nowrap">
+                            <span class="text-indigo-600 dark:text-indigo-400 font-black font-mono">
                               R$ ${Number(r.valor_solicitado || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </span>
                           </td>
    
                           <!-- Solicitação -->
-                          <td class="py-4.5 px-5 text-slate-500 dark:text-slate-400 font-bold text-xs">
+                          <td class="py-3 px-4 whitespace-nowrap text-slate-500 dark:text-slate-400 font-bold text-xs">
                             ${formatarData(r.data_solicitacao)}
                           </td>
    
                           <!-- SLA Cronômetro -->
-                          <td class="py-4.5 px-5">
+                          <td class="py-3 px-4 whitespace-nowrap">
                             ${isPago ? `
-                              <span class="inline-block px-2.5 py-1 bg-emerald-50 dark:bg-emerald-950/45 text-emerald-700 dark:text-emerald-400 font-extrabold text-[10px] rounded-lg border border-emerald-100 dark:border-emerald-900/40 flex items-center gap-1 max-w-fit">
+                              <span class="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-50 dark:bg-emerald-950/45 text-emerald-700 dark:text-emerald-400 font-extrabold text-[10px] rounded-lg border border-emerald-100 dark:border-emerald-900/40">
                                 ✅ Concluído em ${formatarData(r.data_resolucao)}
                               </span>
                             ` : `
-                              <span class="sla-active-timer text-xs font-black text-rose-600 dark:text-rose-400 bg-rose-50/70 dark:bg-rose-950/20 border border-rose-100/50 dark:border-rose-900/30 px-2.5 py-1 rounded-lg max-w-fit flex items-center" data-created-at="${dataAberturaStr}">
+                              <span class="sla-active-timer text-xs font-black font-mono tabular-nums text-rose-600 dark:text-rose-400 bg-rose-50/70 dark:bg-rose-950/20 border border-rose-100/50 dark:border-rose-900/30 px-2.5 py-1 rounded-lg inline-flex items-center" data-created-at="${dataAberturaStr}">
                                 Calculando...
                               </span>
                             `}
                           </td>
    
                           <!-- Status / Ação -->
-                          <td class="py-4.5 px-6 text-center">
-                            <div class="flex items-center justify-center gap-2.5 flex-wrap">
-                              <select data-reembolso-id="${r.id}" class="select-status-reembolso h-8 px-3 py-1.5 border border-slate-200/80 dark:border-slate-700 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 cursor-pointer shadow-xs">
+                          <td class="py-3 px-4 text-center whitespace-nowrap">
+                            <div class="inline-flex items-center justify-center gap-1.5">
+                              <select data-reembolso-id="${r.id}" class="select-status-reembolso h-8 px-2.5 py-1 border border-slate-200/80 dark:border-slate-700 rounded-lg text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 cursor-pointer shadow-xs">
                                 <option value="solicitado" ${r.status === 'solicitado' || r.status === 'Aguardando Fornecedor' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Aguardando Fornecedor</option>
                                 <option value="em_analise" ${r.status === 'em_analise' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Em Análise</option>
                                 <option value="aprovado" ${r.status === 'aprovado' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Aprovado</option>
@@ -693,7 +693,7 @@ export class ReembolsosPage {
                                 <option value="cancelado" ${r.status === 'cancelado' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Cancelado</option>
                               </select>
                               ${this.perfil?.role === 'admin' ? `
-                                <button data-delete-reembolso-id="${r.id}" class="h-8 w-8 bg-slate-50 hover:bg-rose-50 dark:bg-slate-800 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-xl border border-slate-200/60 dark:border-slate-700/60 transition text-xs flex items-center justify-center shadow-xs" title="Excluir Reembolso">
+                                <button data-delete-reembolso-id="${r.id}" class="h-8 w-8 inline-flex items-center justify-center bg-slate-50 hover:bg-rose-50 dark:bg-slate-800 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-lg border border-slate-200/60 dark:border-slate-700/60 transition text-xs shadow-xs cursor-pointer" title="Excluir Reembolso">
                                   🗑️
                                 </button>
                               ` : ''}

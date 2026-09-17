@@ -47,6 +47,7 @@
    - 3.34 [Experiência Premium, Inteligência Relacional e Microinterações de UX (Plano 3)](#334-experiência-premium-inteligência-relacional-e-microinterações-de-ux-plano-3)
    - 3.35 [Atalho Rápido e Modal de Cadastro do Cliente na Venda](#335-atalho-rápido-e-modal-de-cadastro-do-cliente-na-venda)
    - 3.36 [PaxFlow FinRecon™ (Módulo de Conciliação Bancária & Fechamento Contábil)](#336-paxflow-finrecon-módulo-de-conciliação-bancária--fechamento-contábil)
+   - 3.37 [Design System de Tabelas, Proporções e Padronização Visual PaxFlow](#337-design-system-de-tabelas-proporções-e-padronização-visual-paxflow)
 4. [Diferenciais Competitivos](#4-diferenciais-competitivos)
 5. [Arquitetura Tecnológica](#5-arquitetura-tecnológica)
 6. [Segurança e Conformidade](#6-segurança-e-conformidade)
@@ -889,6 +890,21 @@ O módulo **PaxFlow FinRecon™** (rota `#conciliacao`, restrito a Gestores e eq
 
 7. **Arquitetura Zero-Break (Resiliência a Schema Drift)**:
    - Tratamento nativo para ausência de tabelas ou colunas (`42P01` / `42703`), garantindo que a aplicação continue operando sem quebras ou travamentos mesmo antes de rodar migrações DDL no banco.
+
+### 3.37 Design System de Tabelas, Proporções e Padronização Visual PaxFlow
+
+Com o objetivo de eliminar assimetrias, quebras desproporcionais de linha e elementos amontoados, o PaxFlow segue um padrão de densidade visual e proporções consistentes em todos os módulos:
+
+1. **Padrão de Tabelas e Grids**:
+   - **Cabeçalhos**: `text-[10px] font-bold text-slate-400 uppercase tracking-wider py-2.5 px-3.5 border-b`.
+   - **Células de Dados**: `py-2.5 px-3.5 text-xs font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap`.
+   - **Linhas com Divisores Suaves**: `divide-y divide-slate-100 dark:divide-slate-800`.
+   - **Valores Monetários e Prazos**: formatação com `font-mono tabular-nums`.
+
+2. **Alinhamento de Ações e Botões**:
+   - Ações em tabelas agrupadas com `<div class="inline-flex items-center justify-end gap-1.5 whitespace-nowrap">`.
+   - Botões de ação em linha: `h-7 px-2.5` ou `h-8 px-3` para ações de texto, e `w-7 h-7 inline-flex items-center justify-center rounded-lg` para botões com ícones.
+   - Modais de criação e edição com paleta de emojis rápidos compacta em grade equilibrada e preview instantâneo do item ativo.
 
 ---
 

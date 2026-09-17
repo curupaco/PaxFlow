@@ -1008,10 +1008,10 @@ export class OrcamentosPage {
                 <span class="px-2 py-0.5 bg-emerald-100 dark:bg-indigo-950/80 text-emerald-600 dark:text-emerald-400 rounded-full text-[10px] font-black">${concluido.length}</span>
               </div>
               <div class="flex items-center gap-1.5">
-                <button id="btn-toggle-concluidos-mes" class="p-1 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 hover:text-indigo-650 rounded-lg transition text-xs shrink-0 flex items-center justify-center focus:outline-none" title="${this.showAllConcluded ? 'Mostrar apenas mês corrente' : 'Mostrar todos históricos'}">
+                <button id="btn-toggle-concluidos-mes" class="w-7 h-7 inline-flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition text-xs shrink-0 focus:outline-none" title="${this.showAllConcluded ? 'Mostrar apenas mês corrente' : 'Mostrar todos históricos'}">
                   ${this.showAllConcluded ? '👁️' : '🙈'}
                 </button>
-                <select id="select-concluido-filtro" class="text-[9px] font-black uppercase bg-transparent text-slate-500 dark:text-slate-400 focus:outline-none cursor-pointer max-w-[100px] border border-slate-200 dark:border-slate-800 rounded px-1.5 py-0.5 bg-white dark:bg-slate-900">
+                <select id="select-concluido-filtro" class="h-7 text-[10px] font-bold uppercase bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 focus:outline-none cursor-pointer max-w-[105px] border border-slate-200 dark:border-slate-800 rounded-lg px-2">
                   <option value="todos" ${this.filterConcluido === 'todos' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Todos</option>
                   <option value="fechada" ${this.filterConcluido === 'fechada' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Fechadas</option>
                   <option value="desistencia" ${this.filterConcluido === 'desistencia' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Desistências</option>
@@ -1071,13 +1071,13 @@ export class OrcamentosPage {
             <div class="flex items-center gap-1.5 mt-0.5">
               <span class="text-[10px] text-slate-400 dark:text-slate-400 font-semibold truncate max-w-[150px]" title="${o.contato}">${highlightMatch(o.contato, this.buscaTermo)}</span>
               ${o.contato ? `
-                <button data-action="copiar-telefone" data-contato="${o.contato}" title="Copiar Telefone" class="p-0.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded transition flex items-center justify-center shrink-0">
+                <button data-action="copiar-telefone" data-contato="${o.contato}" title="Copiar Telefone" class="w-5 h-5 inline-flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded transition shrink-0">
                   <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                     <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
                   </svg>
                 </button>
-                <button data-action="whatsapp-template" data-cliente-nome="${o.nomeCliente}" data-contato="${o.contato}" title="Enviar WhatsApp" class="p-0.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 rounded transition flex items-center justify-center shrink-0">
+                <button data-action="whatsapp-template" data-cliente-nome="${o.nomeCliente}" data-contato="${o.contato}" title="Enviar WhatsApp" class="w-5 h-5 inline-flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 rounded transition shrink-0">
                   <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.724-1.455L0 24zm6.59-4.846c1.6.95 3.197 1.451 4.777 1.451 5.51 0 9.997-4.493 10-10.008.002-2.673-1.037-5.186-2.93-7.079-1.892-1.893-4.401-2.934-7.078-2.934-5.518 0-10.007 4.493-10.01 10.01-.001 1.708.455 3.377 1.32 4.887L1.134 22.84l4.513-1.186zm11.23-7.925c-.297-.149-1.758-.868-2.03-.967-.273-.099-.471-.148-.669.149-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.568-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/></svg>
                 </button>
               ` : ''}
@@ -1198,39 +1198,39 @@ export class OrcamentosPage {
         <div class="border-t border-slate-100 dark:border-slate-800 pt-3 mt-1 flex items-center justify-between gap-2">
           
           <!-- Grupo de Ícones de Suporte e Gestão (Esquerda) -->
-          <div class="flex items-center gap-1 shrink-0">
+          <div class="inline-flex items-center gap-1 shrink-0">
             <button data-action="mudar-consultor" data-id="${o.id}" title="Responsável: ${dono?.nome || 'Consultor'} (Clique para Reatribuir)" class="shrink-0 mr-0.5 hover:opacity-80 transition transform hover:scale-105 rounded-full focus:outline-none ring-2 ring-transparent hover:ring-indigo-500/50">
               ${getAvatarSvg(dono?.avatar_url, dono?.nome || 'Consultor', 'w-6 h-6')}
             </button>
-            <button data-action="editar-orcamento" data-id="${o.id}" title="Editar Orçamento (Data da Viagem, Destino, Cliente, Contato, Tags)" class="p-1 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg transition flex items-center justify-center shrink-0">
+            <button data-action="editar-orcamento" data-id="${o.id}" title="Editar Orçamento (Data da Viagem, Destino, Cliente, Contato, Tags)" class="w-7 h-7 inline-flex items-center justify-center hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg transition shrink-0">
               <svg width="14" height="14" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
               </svg>
             </button>
-            <button data-action="lembrar-depois" data-id="${o.id}" title="Me Lembre Depois" class="p-1 hover:bg-amber-50 dark:hover:bg-amber-950/40 text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 rounded-lg transition flex items-center justify-center shrink-0">
+            <button data-action="lembrar-depois" data-id="${o.id}" title="Me Lembre Depois" class="w-7 h-7 inline-flex items-center justify-center hover:bg-amber-50 dark:hover:bg-amber-950/40 text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 rounded-lg transition shrink-0">
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
               </svg>
             </button>
 
             ${o.status === 'EM_ANDAMENTO' ? `
-              <button data-action="voltar-solicitado" data-id="${o.id}" title="Voltar para Solicitado (Reiniciar tempo na etapa)" class="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg transition flex items-center justify-center text-xs shrink-0">
+              <button data-action="voltar-solicitado" data-id="${o.id}" title="Voltar para Solicitado (Reiniciar tempo na etapa)" class="w-7 h-7 inline-flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg transition text-xs shrink-0">
                 ↩️
               </button>
             ` : ''}
 
             ${o.status === 'AGUARDANDO' ? `
-              <button data-action="alterar" data-id="${o.id}" title="Alterar Proposta (Voltar para Solicitado)" class="p-1 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg transition flex items-center justify-center text-xs shrink-0">
+              <button data-action="alterar" data-id="${o.id}" title="Alterar Proposta (Voltar para Solicitado)" class="w-7 h-7 inline-flex items-center justify-center hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg transition text-xs shrink-0">
                 🔄
               </button>
-              <button data-action="desistir" data-id="${o.id}" title="Registrar Desistência" class="p-1 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-lg transition flex items-center justify-center text-xs shrink-0">
+              <button data-action="desistir" data-id="${o.id}" title="Registrar Desistência" class="w-7 h-7 inline-flex items-center justify-center hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 rounded-lg transition text-xs shrink-0">
                 🚫
               </button>
             ` : ''}
 
             ${isAdmin ? `
-              <button data-action="excluir" data-id="${o.id}" title="Excluir Orçamento (Admin Only)" class="p-1 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-lg transition flex items-center justify-center shrink-0">
+              <button data-action="excluir" data-id="${o.id}" title="Excluir Orçamento (Admin Only)" class="w-7 h-7 inline-flex items-center justify-center hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-lg transition shrink-0">
                 <svg width="14" height="14" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
@@ -1239,7 +1239,7 @@ export class OrcamentosPage {
           </div>
 
           <!-- AÇÃO PRINCIPAL DO FLUXO (Extrema direita) -->
-          <div class="flex items-center gap-1.5 shrink-0">
+          <div class="inline-flex items-center gap-1.5 shrink-0">
             ${o.status === 'SOLICITADO' ? `
               <button data-action="iniciar" data-id="${o.id}" class="h-8 px-3 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-black tracking-wider uppercase rounded-lg shadow-sm transition flex items-center justify-center gap-0.5">
                 Iniciar ▶️

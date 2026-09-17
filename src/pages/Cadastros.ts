@@ -682,18 +682,18 @@ export class CadastrosPage {
                   <table class="w-full text-left border-collapse">
                     <thead>
                       <tr class="bg-slate-600/5 dark:bg-slate-800/60 text-[10px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
-                        <th class="py-4 px-5">Título</th>
-                        <th class="py-4 px-5">Parâmetro de Meta</th>
-                        <th class="py-4 px-5 text-center">Período</th>
-                        <th class="py-4 px-5 text-center">Medalha</th>
-                        <th class="py-4 px-5 text-center">Status</th>
-                        <th class="py-4 px-5 text-right">Ações</th>
+                        <th class="py-2.5 px-3.5">Título</th>
+                        <th class="py-2.5 px-3.5">Parâmetro de Meta</th>
+                        <th class="py-2.5 px-3.5 text-center">Período</th>
+                        <th class="py-2.5 px-3.5 text-center">Medalha</th>
+                        <th class="py-2.5 px-3.5 text-center">Status</th>
+                        <th class="py-2.5 px-3.5 text-right">Ações</th>
                       </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-sm text-slate-700 dark:text-slate-300 font-semibold bg-white/50 dark:bg-slate-900/30">
+                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-xs text-slate-700 dark:text-slate-300 font-semibold bg-white/50 dark:bg-slate-900/30">
                       ${this.campaigns.length === 0 ? `
                         <tr>
-                          <td colspan="6" class="py-8 px-5 text-center text-slate-400 dark:text-slate-400 font-medium italic">
+                          <td colspan="6" class="py-8 px-3.5 text-center text-slate-400 dark:text-slate-400 font-medium italic">
                             Nenhuma campanha cadastrada até o momento.
                           </td>
                         </tr>
@@ -701,10 +701,10 @@ export class CadastrosPage {
                         const hoje = new Date().toISOString().split('T')[0];
                         const isExpired = cam.data_fim < hoje;
                         const statusBadge = cam.ativa && !isExpired
-                          ? `<span class="inline-flex px-2.5 py-0.5 bg-emerald-50 dark:bg-emerald-950/45 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/40 text-[10px] font-bold rounded">Ativa</span>`
+                          ? `<span class="inline-flex px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/45 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/40 text-[10px] font-bold rounded">Ativa</span>`
                           : isExpired
-                            ? `<span class="inline-flex px-2.5 py-0.5 bg-rose-50 dark:bg-rose-950/45 text-rose-700 dark:text-rose-400 border border-rose-100 dark:border-rose-900/40 text-[10px] font-bold rounded">Expirada</span>`
-                            : `<span class="inline-flex px-2.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-300 dark:border-slate-800 text-[10px] font-bold rounded">Inativa</span>`;
+                            ? `<span class="inline-flex px-2 py-0.5 bg-rose-50 dark:bg-rose-950/45 text-rose-700 dark:text-rose-400 border border-rose-100 dark:border-rose-900/40 text-[10px] font-bold rounded">Expirada</span>`
+                            : `<span class="inline-flex px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-300 dark:border-slate-800 text-[10px] font-bold rounded">Inativa</span>`;
                         
                         const badgeObj = BADGE_DEFINITIONS.find(b => b.key === cam.badge_key);
                         const badgeDisplay = badgeObj ? `${badgeObj.emoji} ${badgeObj.nome}` : 'Nenhuma';
@@ -726,35 +726,35 @@ export class CadastrosPage {
 
                         return `
                           <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/10 transition-colors">
-                            <td class="py-4 px-5">
+                            <td class="py-2.5 px-3.5">
                               <span class="block text-slate-800 dark:text-slate-200 font-bold">${cam.titulo}</span>
                               <span class="block text-[10px] text-slate-400 dark:text-slate-400 font-semibold max-w-[250px] truncate">${cam.descricao}</span>
                             </td>
-                            <td class="py-4 px-5 text-slate-600 dark:text-slate-400 font-medium">
+                            <td class="py-2.5 px-3.5 text-slate-600 dark:text-slate-400 font-medium">
                               ${metaLabel}
                             </td>
-                            <td class="py-4 px-5 text-center text-slate-500 dark:text-slate-400 text-xs font-semibold">
+                            <td class="py-2.5 px-3.5 text-center text-slate-500 dark:text-slate-400 text-xs font-semibold whitespace-nowrap">
                               ${formatarData(cam.data_inicio)} até ${formatarData(cam.data_fim)}
                             </td>
-                            <td class="py-4 px-5 text-center text-xs font-bold text-slate-700 dark:text-slate-300">
+                            <td class="py-2.5 px-3.5 text-center text-xs font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap">
                               ${badgeDisplay}
                             </td>
-                            <td class="py-4 px-5 text-center">
+                            <td class="py-2.5 px-3.5 text-center whitespace-nowrap">
                               ${statusBadge}
                             </td>
-                            <td class="py-4 px-6 text-right">
-                              <div class="flex items-center justify-end gap-2.5 flex-wrap">
-                                <button data-id="${cam.id}" class="btn-editar-campanha h-8 px-3.5 inline-flex items-center justify-center rounded-xl text-xs font-extrabold bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-300 transition border border-indigo-200/60 dark:border-indigo-800/60 uppercase shadow-xs">
+                            <td class="py-2.5 px-3.5 text-right whitespace-nowrap">
+                              <div class="inline-flex items-center justify-end gap-1.5">
+                                <button data-id="${cam.id}" class="btn-editar-campanha h-7 px-2.5 inline-flex items-center justify-center rounded-lg text-[11px] font-bold bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-300 transition border border-indigo-200/60 dark:border-indigo-800/60 uppercase">
                                   Editar
                                 </button>
-                                <button data-id="${cam.id}" data-active="${cam.ativa}" class="btn-toggle-status-campanha h-8 px-3.5 inline-flex items-center justify-center rounded-xl text-xs font-extrabold transition border uppercase shadow-xs ${
+                                <button data-id="${cam.id}" data-active="${cam.ativa}" class="btn-toggle-status-campanha h-7 px-2.5 inline-flex items-center justify-center rounded-lg text-[11px] font-bold transition border uppercase ${
                                   cam.ativa 
                                     ? 'bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 border-amber-200/60 dark:border-amber-800/60' 
                                     : 'bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 border-emerald-200/60 dark:border-emerald-800/60'
                                 }">
                                   ${cam.ativa ? 'Pausar' : 'Ativar'}
                                 </button>
-                                <button data-id="${cam.id}" class="btn-excluir-campanha h-8 px-3.5 inline-flex items-center justify-center rounded-xl text-xs font-extrabold bg-slate-50 hover:bg-rose-50 dark:bg-slate-800 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition border border-slate-200/60 dark:border-slate-700/60 uppercase shadow-xs">
+                                <button data-id="${cam.id}" class="btn-excluir-campanha h-7 px-2.5 inline-flex items-center justify-center rounded-lg text-[11px] font-bold bg-slate-50 hover:bg-rose-50 dark:bg-slate-800 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition border border-slate-200/60 dark:border-slate-700/60 uppercase">
                                   Excluir
                                 </button>
                               </div>
@@ -786,15 +786,15 @@ export class CadastrosPage {
                   <table class="w-full text-left border-collapse">
                     <thead>
                       <tr class="bg-slate-600/5 dark:bg-slate-800/60 text-[10px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
-                        <th class="py-4 px-5">Título / Descrição</th>
-                        <th class="py-4 px-5">Variáveis Mapeadas</th>
-                        <th class="py-4 px-5 text-right">Ações</th>
+                        <th class="py-2.5 px-3.5">Título / Descrição</th>
+                        <th class="py-2.5 px-3.5">Variáveis Mapeadas</th>
+                        <th class="py-2.5 px-3.5 text-right">Ações</th>
                       </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-sm text-slate-700 dark:text-slate-300 font-semibold bg-white/50 dark:bg-slate-900/30">
+                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-xs text-slate-700 dark:text-slate-300 font-semibold bg-white/50 dark:bg-slate-900/30">
                       ${this.templates.length === 0 ? `
                         <tr>
-                          <td colspan="3" class="py-8 px-5 text-center text-slate-400 dark:text-slate-400 font-medium italic">
+                          <td colspan="3" class="py-8 px-3.5 text-center text-slate-400 dark:text-slate-400 font-medium italic">
                             Nenhum modelo de mensagem cadastrado.
                           </td>
                         </tr>
@@ -805,21 +805,21 @@ export class CadastrosPage {
 
                         return `
                           <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/10 transition-colors">
-                            <td class="py-4 px-5">
+                            <td class="py-2.5 px-3.5">
                               <span class="block text-slate-800 dark:text-slate-200 font-bold">${tem.titulo}</span>
                               <span class="block text-[10px] text-slate-400 dark:text-slate-400 font-semibold max-w-[400px] truncate">${tem.descricao}</span>
                             </td>
-                            <td class="py-4 px-5 text-slate-600 dark:text-slate-400 font-medium">
+                            <td class="py-2.5 px-3.5 text-slate-600 dark:text-slate-400 font-medium">
                               <div class="flex flex-wrap gap-1">
                                 ${tagsHTML}
                               </div>
                             </td>
-                            <td class="py-4 px-6 text-right">
-                              <div class="flex items-center justify-end gap-2.5 flex-wrap">
-                                <button data-id="${tem.id}" class="btn-editar-template h-8 px-3.5 inline-flex items-center justify-center rounded-xl text-xs font-extrabold bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-300 transition border border-indigo-200/60 dark:border-indigo-800/60 uppercase shadow-xs">
+                            <td class="py-2.5 px-3.5 text-right whitespace-nowrap">
+                              <div class="inline-flex items-center justify-end gap-1.5">
+                                <button data-id="${tem.id}" class="btn-editar-template h-7 px-2.5 inline-flex items-center justify-center rounded-lg text-[11px] font-bold bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-300 transition border border-indigo-200/60 dark:border-indigo-800/60 uppercase">
                                   Editar
                                 </button>
-                                <button data-id="${tem.id}" class="btn-excluir-template h-8 px-3.5 inline-flex items-center justify-center rounded-xl text-xs font-extrabold bg-slate-50 hover:bg-rose-50 dark:bg-slate-800 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition border border-slate-200/60 dark:border-slate-700/60 uppercase shadow-xs">
+                                <button data-id="${tem.id}" class="btn-excluir-template h-7 px-2.5 inline-flex items-center justify-center rounded-lg text-[11px] font-bold bg-slate-50 hover:bg-rose-50 dark:bg-slate-800 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition border border-slate-200/60 dark:border-slate-700/60 uppercase">
                                   Excluir
                                 </button>
                               </div>
@@ -851,17 +851,17 @@ export class CadastrosPage {
                   <table class="w-full text-left border-collapse">
                     <thead>
                       <tr class="bg-slate-600/5 dark:bg-slate-800/60 text-[10px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
-                        <th class="py-4 px-5">Nome / Tipo</th>
-                        <th class="py-4 px-5">Período</th>
-                        <th class="py-4 px-5">Cálculo</th>
-                        <th class="py-4 px-5">Faixas de Premiação</th>
-                        <th class="py-4 px-5 text-right">Ações</th>
+                        <th class="py-2.5 px-3.5">Nome / Tipo</th>
+                        <th class="py-2.5 px-3.5">Período</th>
+                        <th class="py-2.5 px-3.5">Cálculo</th>
+                        <th class="py-2.5 px-3.5">Faixas de Premiação</th>
+                        <th class="py-2.5 px-3.5 text-right">Ações</th>
                       </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-sm text-slate-700 dark:text-slate-300 font-semibold bg-white/50 dark:bg-slate-900/30">
+                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-xs text-slate-700 dark:text-slate-300 font-semibold bg-white/50 dark:bg-slate-900/30">
                       ${this.metas.length === 0 ? 
                         '<tr>' +
-                          '<td colspan="5" class="py-8 px-5 text-center text-slate-400 dark:text-slate-400 font-medium italic">' +
+                          '<td colspan="5" class="py-8 px-3.5 text-center text-slate-400 dark:text-slate-400 font-medium italic">' +
                             'Nenhum período de metas cadastrado.' +
                           '</td>' +
                         '</tr>'
@@ -916,29 +916,29 @@ export class CadastrosPage {
                               : '<span class="inline-flex px-2 py-0.5 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 text-[9px] font-black uppercase rounded">Regular</span>');
 
                         return '<tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/10 transition-colors">' +
-                            '<td class="py-4 px-5">' +
+                            '<td class="py-2.5 px-3.5">' +
                               '<span class="block text-slate-800 dark:text-slate-200 font-bold">' + meta.nome + '</span>' +
                               '<div class="flex items-center gap-1.5 mt-1">' +
                                 tipoPeriodoBadge +
                               '</div>' +
                             '</td>' +
-                            '<td class="py-4 px-5 text-slate-600 dark:text-slate-400 font-semibold text-xs">' +
+                            '<td class="py-2.5 px-3.5 text-slate-600 dark:text-slate-400 font-semibold text-xs whitespace-nowrap">' +
                               formatarData(meta.data_inicio) + ' até ' + formatarData(meta.data_fim) +
                             '</td>' +
-                            '<td class="py-4 px-5">' +
+                            '<td class="py-2.5 px-3.5 whitespace-nowrap">' +
                               tipoCalculoBadge +
                             '</td>' +
-                            '<td class="py-4 px-5">' +
+                            '<td class="py-2.5 px-3.5">' +
                               '<div class="flex flex-col">' +
                                 faixasHTML +
                               '</div>' +
                             '</td>' +
-                            '<td class="py-4 px-6 text-right">' +
-                              '<div class="flex items-center justify-end gap-2.5 flex-wrap">' +
-                                '<button data-id="' + meta.id + '" class="btn-editar-meta h-8 px-3.5 inline-flex items-center justify-center rounded-xl text-xs font-extrabold bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-300 transition border border-indigo-200/60 dark:border-indigo-800/60 uppercase shadow-xs">' +
+                            '<td class="py-2.5 px-3.5 text-right whitespace-nowrap">' +
+                              '<div class="inline-flex items-center justify-end gap-1.5">' +
+                                '<button data-id="' + meta.id + '" class="btn-editar-meta h-7 px-2.5 inline-flex items-center justify-center rounded-lg text-[11px] font-bold bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-300 transition border border-indigo-200/60 dark:border-indigo-800/60 uppercase">' +
                                   'Editar' +
                                 '</button>' +
-                                '<button data-id="' + meta.id + '" class="btn-excluir-meta h-8 px-3.5 inline-flex items-center justify-center rounded-xl text-xs font-extrabold bg-slate-50 hover:bg-rose-50 dark:bg-slate-800 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition border border-slate-200/60 dark:border-slate-700/60 uppercase shadow-xs">' +
+                                '<button data-id="' + meta.id + '" class="btn-excluir-meta h-7 px-2.5 inline-flex items-center justify-center rounded-lg text-[11px] font-bold bg-slate-50 hover:bg-rose-50 dark:bg-slate-800 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition border border-slate-200/60 dark:border-slate-700/60 uppercase">' +
                                   'Excluir' +
                                 '</button>' +
                               '</div>' +
