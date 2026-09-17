@@ -1,5 +1,6 @@
 import { supabase } from '../services/supabase';
 import { showCustomAlert } from '../services/dialog';
+import { getAvatarSvg } from '../services/avatars';
 
 
 // Injeta estilos premium para as views públicas (itinerário e NPS) no DOM
@@ -1072,13 +1073,9 @@ export class PublicViews {
           ${proposta.consultor_nome ? `
             <div class="public-glass p-6 rounded-2xl shadow-lg border border-slate-200/80 dark:border-slate-800/80 space-y-4">
               <div class="flex items-center gap-4">
-                ${proposta.consultor_avatar ? `
-                  <img src="${proposta.consultor_avatar}" alt="${proposta.consultor_nome}" class="w-14 h-14 rounded-full object-cover border-2 border-indigo-500 shadow-md shrink-0" />
-                ` : `
-                  <div class="w-14 h-14 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 text-white font-black text-xl flex items-center justify-center shadow-md shrink-0">
-                    ${proposta.consultor_nome.charAt(0).toUpperCase()}
-                  </div>
-                `}
+                <div class="w-14 h-14 rounded-2xl overflow-hidden shadow-md shrink-0 flex items-center justify-center border-2 border-indigo-500/80 bg-white dark:bg-slate-900">
+                  ${getAvatarSvg(proposta.consultor_avatar || '', proposta.consultor_nome, 'w-full h-full')}
+                </div>
                 <div class="flex-1 min-w-0">
                   <span class="text-[10px] text-indigo-600 dark:text-indigo-400 font-bold uppercase tracking-wider block">Seu Consultor Dedicado</span>
                   <h4 class="text-base font-black text-slate-900 dark:text-white truncate">${proposta.consultor_nome}</h4>

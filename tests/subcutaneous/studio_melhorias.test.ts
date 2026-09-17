@@ -164,4 +164,29 @@ describe('Studio - Melhorias de Fotos Unsplash, Branding e Consultor Subcutâneo
     expect(resultado.destino).toBe('Santorini');
     expect(resultado.titulo_cabecalho).toBe('EXCLUSIVE TRAVEL');
   });
+
+  it('deve renderizar avatar de consultor com sucesso seja avatar animal SVG, foto externa ou iniciais', async () => {
+    // Setup
+    const { getAvatarSvg } = await import('../../src/services/avatars');
+
+    // Action & Assert
+    // 1. Avatar de animal (ex: lion, panda)
+    const svgLion = getAvatarSvg('lion', 'Marcos Silva', 'w-12 h-12');
+    expect(svgLion).toContain('<svg');
+    expect(svgLion).toContain('lionGrad');
+
+    const svgPanda = getAvatarSvg('panda', 'Ana Souza', 'w-12 h-12');
+    expect(svgPanda).toContain('<svg');
+    expect(svgPanda).toContain('pandaGrad');
+
+    // 2. Foto externa (URL HTTP)
+    const imgUrl = getAvatarSvg('https://images.unsplash.com/avatar-consultor.jpg', 'Juliana Lima', 'w-12 h-12');
+    expect(imgUrl).toContain('<img');
+    expect(imgUrl).toContain('https://images.unsplash.com/avatar-consultor.jpg');
+
+    // 3. Iniciais caso sem avatar
+    const initials = getAvatarSvg('', 'Carlos Ferreira', 'w-12 h-12');
+    expect(initials).toContain('CF');
+  });
 });
+
