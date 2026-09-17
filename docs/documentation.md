@@ -917,6 +917,11 @@ Para atender operações de agências de alto volume e demandas complexas de cru
 
 2. **Critérios Combinatórios Disponíveis**:
    - **Produtos / Serviços (Regra E vs OU)**: Multi-select em pills dinâmicos (Aéreo, Hotel, Seguro, Carro, Transfer, etc.). Suporte a alternância entre `Contém TODOS [E]` (interseção: a viagem precisa conter todos os produtos selecionados) e `Contém QUALQUER [OU]` (união: a viagem precisa conter pelo menos um dos produtos).
+   - **Consultores / Usuários Responsáveis**: Multi-select em pills interativos com avatar/iniciais circulares coloridas e nome do consultor, permitindo filtrar viagens de um ou múltiplos consultores simultaneamente para fechamentos e auditorias de equipes.
+   - **Formas de Recebimento (Meios de Pagamento)**: Pills com as formas cadastradas na agência (*Pix 🪙, Cartão de Crédito 💳, Boleto 📄, Faturado 💼, Dinheiro 💵, TED 🏦*), cruzando com os recebimentos registrados em `loc_pagamentos`.
+   - **Origem do Lead / Canais de Captação**: Pills com ícones e nomes das origens ativas (*WhatsApp 📱, Instagram 📸, Indicação 🤝, Google 🔍, Site 🌐, Loja 🏬, etc.*), filtrando pela origem do cliente titular da viagem.
+   - **Quantidade de Passageiros (PAX)**: Pills de faixas de capacidade operacional (*`👤 1 PAX`*, *`👥 2 PAX`*, *`👨‍👩‍👧 3 a 5 PAX`*, *`🚌 6+ PAX`*).
+   - **Tags / Classificações**: Pills multi-select com as tags do cliente e da viagem (*VIP, Corporativo, Família, Lua de Mel, Resort, Aventura, etc.*).
    - **Período e Atalho Rápido Mês/Ano**: Seletor rápido de competência (`YYYY-MM`, ex: `2026-02`) com aplicação instantânea, além de campos de Data Inicial e Data Final com escolha do tipo de data (`Data Criação`, `Data Financeiro`, `Data Ida`, `Data Volta`).
    - **Destinos Multi-Select**: Pills selecionáveis de todos os destinos cadastrados no sistema.
    - **Fornecedor / Cia Aérea / Consolidadora**: Campo de busca textual com auto-filtro instantâneo sobre fornecedores dos produtos das viagens.

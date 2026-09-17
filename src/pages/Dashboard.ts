@@ -28,6 +28,7 @@ import {
   renderLateralEditorPaneHTML
 } from '../components/dashboard/DashboardTemplates';
 
+import { ORIGENS_LEAD_PADRAO } from '../controllers/cadastrosController';
 import { isNextTripEnabled, isRiskScoreEnabled, isUpsellEnabled } from '../utils/featureFlags';
 import { highlightMatch } from '../utils/textHelper';
 import { renderSkeletonTable } from '../utils/skeletonHelper';
@@ -45,7 +46,7 @@ if (typeof document !== 'undefined') {
       0%, 100% { border-color: #f97316; box-shadow: 0 0 12px rgba(249, 115, 22, 0.4); }
       50% { border-color: #fdba74; box-shadow: 0 0 2px rgba(249, 115, 22, 0.1); }
     }
-    .animate-sla-urgent {
+    .animate-sla-critical {
       animation: borderPulseRed 2s infinite ease-in-out;
       border-width: 2px !important;
     }
@@ -127,6 +128,7 @@ export class Dashboard {
   private isFallbackMode: boolean = false;
   private realtimeChannel: any = null;
   private storageListener: ((e: StorageEvent) => void) | null = null;
+  private globalSearchListener: ((e: any) => void) | null = null;
   private selectedProductId: string | null = null;
   private destAutocomplete: DestinosAutocomplete | null = null;
 
@@ -150,6 +152,14 @@ export class Dashboard {
   private advAnexos: 'todos' | 'com_anexo' | 'sem_anexo' | 'com_voucher' | 'sem_voucher' = 'todos';
   private advSla: 'todos' | 'com_alerta' | 'sem_alerta' = 'todos';
   private advRiskScore: string[] = [];
+  private advConsultores: string[] = [];
+  private advFormasRecebimento: string[] = [];
+  private advOrigensLead: string[] = [];
+  private advPaxFaixas: string[] = [];
+  private advTags: string[] = [];
+  private formasRecebimento: any[] = [];
+  private origensLead: any[] = [];
+  private locPagamentosMap: Map<string, any[]> = new Map();
   private listaDestinosDisponiveis: Destino[] = [];
   private showFiltersPanel: boolean = false;
   private sortField: string = '';
@@ -286,7 +296,14 @@ export class Dashboard {
     // Sincronização via Supabase Realtime é a fonte de verdade
   }
 
-  private globalSearchListener: ((e: any) => void) | null = null;
+  /**
+   * Aplica termo de busca submetido via Caixa de Pesquisa Global
+   */
+  public aplicarBuscaGlobal(termo: string): void {
+    this.buscaTermo = termo;
+    this.balcaoResultados = [];
+    this.render();
+  }
 
   /**
    * Destrutor da página para limpar listeners globais e sortables
@@ -308,58 +325,39 @@ export class Dashboard {
       window.removeEventListener('paxflow-global-search-submit', this.globalSearchListener);
       this.globalSearchListener = null;
     }
+    if (this.balcaoSearchTimeout) {
+      clearTimeout(this.balcaoSearchTimeout);
+      this.balcaoSearchTimeout = null;
+    }
   }
 
   /**
-   * Aplica termo de busca submetido via Caixa de Pesquisa Global
-   */
-  public aplicarBuscaGlobal(termo: string): void {
-    this.buscaTermo = termo;
-    this.balcaoResultados = [];
-    this.render();
-  }
-
-  /**
-   * Busca as configurações globais de SLA
+   * Carrega configurações globais da agência
    */
   private async loadGlobalSettings(): Promise<void> {
     try {
       const { data, error } = await supabase
         .from('global_settings')
         .select('*')
-        .maybeSingle();
+        .single();
 
-      if (error) {
-        console.warn('Erro ao buscar global_settings (usando SLAs padrão):', error.message);
-        return;
-      }
-
+      if (error) throw error;
       if (data) {
         this.settings = {
-          ...data,
           id: data.id,
           agencyName: data.agency_name || data.agencyName || 'PaxFlow',
           taxaCancelamentoPadrao: data.taxa_cancelamento_padrao || 0,
           prazoReembolsoDias: data.prazo_reembolso_dias || 3,
           notificacoesAtivas: data.notificacoes_ativas ?? true,
           emailSuporte: data.email_suporte || 'suporte@paxflow.com.br',
-          googleRefreshToken: data.google_refresh_token,
-          slaPreEmbarqueDias: data.sla_pre_embarque_dias,
-          slaPosViagemDias: data.sla_pos_viagem_dias
+          slaPreEmbarqueDias: data.sla_pre_embarque_dias || 7,
+          slaPosViagemDias: data.sla_pos_viagem_dias || 3
         };
-        if (data.sla_pre_embarque_dias !== undefined) {
-          this.slaPreEmbarqueDias = Number(data.sla_pre_embarque_dias);
-        }
-        if (data.sla_pos_viagem_dias !== undefined) {
-          this.slaPosViagemDias = Number(data.sla_pos_viagem_dias);
-        }
-        if (data.permitir_consultor_criar_viagem !== undefined) {
-          this.settings.permitir_consultor_criar_viagem = data.permitir_consultor_criar_viagem;
-          this.settings.permitirConsultorCriarViagem = data.permitir_consultor_criar_viagem;
-        }
+        this.slaPreEmbarqueDias = data.sla_pre_embarque_dias || 7;
+        this.slaPosViagemDias = data.sla_pos_viagem_dias || 3;
       }
-    } catch (err) {
-      console.error('Falha ao carregar configurações de SLA:', err);
+    } catch (err: any) {
+      console.warn('Configurações globais não carregadas (usando defaults):', err.message);
     }
   }
 
@@ -461,6 +459,77 @@ export class Dashboard {
   }
 
   /**
+   * Carrega as formas de recebimento cadastradas no banco
+   */
+  private async loadFormasRecebimento(): Promise<void> {
+    const padroes = [
+      { id: 'pix', nome: 'Pix', icone: '🪙', ativo: true },
+      { id: 'cartao_credito', nome: 'Cartão de Crédito', icone: '💳', ativo: true },
+      { id: 'boleto', nome: 'Boleto', icone: '📄', ativo: true },
+      { id: 'faturado', nome: 'Faturado', icone: '💼', ativo: true },
+      { id: 'dinheiro', nome: 'Dinheiro', icone: '💵', ativo: true },
+      { id: 'transferencia', nome: 'Transferência / TED', icone: '🏦', ativo: true }
+    ];
+
+    try {
+      const { data, error } = await supabase
+        .from('formas_recebimento')
+        .select('*')
+        .eq('ativo', true)
+        .order('ordem', { ascending: true });
+
+      if (error) throw error;
+      this.formasRecebimento = data && data.length > 0 ? data : padroes;
+    } catch (err: any) {
+      console.warn('Erro ao carregar formas de recebimento (usando fallback padrão):', err.message);
+      this.formasRecebimento = padroes;
+    }
+  }
+
+  /**
+   * Carrega as origens de lead cadastradas no banco
+   */
+  private async loadOrigensLead(): Promise<void> {
+    try {
+      const { data, error } = await supabase
+        .from('origens_lead')
+        .select('*')
+        .eq('ativo', true)
+        .order('ordem', { ascending: true });
+
+      if (error) throw error;
+      this.origensLead = data && data.length > 0 ? data : ORIGENS_LEAD_PADRAO.filter(o => o.ativo);
+    } catch (err: any) {
+      console.warn('Erro ao carregar origens de lead (usando fallback padrão):', err.message);
+      this.origensLead = ORIGENS_LEAD_PADRAO.filter(o => o.ativo);
+    }
+  }
+
+  /**
+   * Retorna a lista consolidada de tags / classificações únicas presentes em clientes e viagens
+   */
+  private getListaTagsDisponiveis(): string[] {
+    const tagSet = new Set<string>();
+    const tagsPadroes = ['VIP', 'Corporativo', 'Família', 'Lua de Mel', 'Resort', 'Aventura', 'Grupo Disney', 'Exótico', 'Cruzeiro'];
+    tagsPadroes.forEach(t => tagSet.add(t));
+
+    this.viagens.forEach(v => {
+      if (Array.isArray(v.tags)) {
+        v.tags.forEach((t: any) => {
+          if (t && typeof t === 'string' && t.trim()) tagSet.add(t.trim());
+        });
+      }
+      if (v.cliente && Array.isArray(v.cliente.classificacoes)) {
+        v.cliente.classificacoes.forEach((t: any) => {
+          if (t && typeof t === 'string' && t.trim()) tagSet.add(t.trim());
+        });
+      }
+    });
+
+    return Array.from(tagSet).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  }
+
+  /**
    * Retorna a lista completa e normalizada de tipos de produtos disponíveis
    */
   private getListaTiposProdutoDisponiveis(): { id: string; nome: string; icone: string }[] {
@@ -513,6 +582,11 @@ export class Dashboard {
     if (this.advAnexos !== 'todos') count++;
     if (this.advSla !== 'todos') count++;
     count += this.advRiskScore.length;
+    count += this.advConsultores.length;
+    count += this.advFormasRecebimento.length;
+    count += this.advOrigensLead.length;
+    count += this.advPaxFaixas.length;
+    count += this.advTags.length;
     if (this.confFilters.finPendente) count++;
     if (this.confFilters.finOk) count++;
     if (this.confFilters.procPendente) count++;
@@ -535,6 +609,9 @@ export class Dashboard {
       'CPF/Doc',
       'Telefone',
       'Email',
+      'Origem do Lead',
+      'Qtd PAX',
+      'Tags / Classificações',
       'Destino',
       'Data Financeiro',
       'Embarque (Ida)',
@@ -542,6 +619,7 @@ export class Dashboard {
       'Produtos / Serviços',
       'Fornecedores',
       'Localizadores',
+      'Formas de Recebimento',
       'Valor Total Venda (R$)',
       'Rentabilidade (R$)',
       'Consultor Responsável',
@@ -569,12 +647,21 @@ export class Dashboard {
       const locs = Array.from(new Set(prods.map((p: any) => (p.codigo_reserva || '').trim()).filter(Boolean))).join(', ');
       const consultorNome = v.consultor_id === this.user.id ? 'Você' : (this.consultores.find(c => c.id === v.consultor_id)?.nome || 'Consultor');
 
+      const pags = this.locPagamentosMap.get(v.id) || [];
+      const formasNomes = Array.from(new Set(pags.map((p: any) => (p.forma_nome || p.forma_recebimento_id || '').trim()).filter(Boolean))).join(', ');
+      const origemLead = v.cliente?.lead_origin || v.lead_origin || '';
+      const paxCount = Array.isArray(v.passageiros) && v.passageiros.length > 0 ? v.passageiros.length : (Number(v.pax_count) || 1);
+      const tagsList = Array.from(new Set([...(v.cliente?.classificacoes || []), ...(v.tags || [])])).join(', ');
+
       return [
         escapeCsv(v.codigo_ref || v.id?.substring(0, 8) || ''),
         escapeCsv(v.cliente?.nome || 'Cliente não identificado'),
         escapeCsv(v.cliente?.documento || ''),
         escapeCsv(v.cliente?.telefone || ''),
         escapeCsv(v.cliente?.email || ''),
+        escapeCsv(origemLead),
+        escapeCsv(paxCount),
+        escapeCsv(tagsList),
         escapeCsv(v.destino || ''),
         escapeCsv(v.data_financeiro ? formatIsoDateToBr(v.data_financeiro) : ''),
         escapeCsv(v.data_ida ? formatIsoDateToBr(v.data_ida) : ''),
@@ -582,6 +669,7 @@ export class Dashboard {
         escapeCsv(prodNomes),
         escapeCsv(fornecedores),
         escapeCsv(locs),
+        escapeCsv(formasNomes),
         escapeCsv(formatMoedaCsv(Number(v.valor_total) || 0)),
         escapeCsv(formatMoedaCsv(Number(v.rentabilidade) || 0)),
         escapeCsv(consultorNome),
@@ -646,6 +734,29 @@ export class Dashboard {
           locConfsMap.set(vId, {});
         }
         locConfsMap.get(vId)![locKey] = row.conferido;
+      });
+
+      let locPags: any[] = [];
+      if (!this.isFallbackMode) {
+        try {
+          const { data: pagsData, error: pagsError } = await supabase
+            .from('loc_pagamentos')
+            .select('viagem_id, forma_recebimento_id, forma_nome, valor');
+          if (!pagsError && pagsData) {
+            locPags = pagsData;
+          }
+        } catch (errPags) {
+          console.warn('Erro ao carregar loc_pagamentos:', errPags);
+        }
+      }
+
+      this.locPagamentosMap = new Map<string, any[]>();
+      locPags.forEach((p: any) => {
+        const vId = p.viagem_id;
+        if (!this.locPagamentosMap.has(vId)) {
+          this.locPagamentosMap.set(vId, []);
+        }
+        this.locPagamentosMap.get(vId)!.push(p);
       });
 
       let comments: any[] = [];
@@ -1935,6 +2046,64 @@ export class Dashboard {
         if (!this.advRiskScore.includes(risk.nivel)) return false;
       }
 
+      // 13. Consultores (Pills Multi-Select)
+      if (this.advConsultores.length > 0) {
+        const matchesConsultant = this.advConsultores.includes(vConsultorId) || this.advConsultores.includes(vRespId);
+        if (!matchesConsultant) return false;
+      }
+
+      // 14. Formas de Recebimento
+      if (this.advFormasRecebimento.length > 0) {
+        const pags = this.locPagamentosMap.get(v.id) || [];
+        const matchesForma = this.advFormasRecebimento.some(f => {
+          const fLower = f.toLowerCase();
+          return pags.some((p: any) => {
+            const pId = (p.forma_recebimento_id || '').toLowerCase();
+            const pNome = (p.forma_nome || '').toLowerCase();
+            return pId === fLower || pNome.includes(fLower) || fLower.includes(pNome);
+          });
+        });
+        if (!matchesForma) return false;
+      }
+
+      // 15. Origem do Lead (Canal de Captação)
+      if (this.advOrigensLead.length > 0) {
+        const cliOrigem = (v.cliente?.lead_origin || v.lead_origin || '').toLowerCase();
+        const cliOrigemId = (v.cliente?.origem_lead_id || v.origem_lead_id || '').toLowerCase();
+        const matchesOrigem = this.advOrigensLead.some(o => {
+          const oLower = o.toLowerCase();
+          return (cliOrigem && (cliOrigem.includes(oLower) || oLower.includes(cliOrigem))) || (cliOrigemId && cliOrigemId === oLower);
+        });
+        if (!matchesOrigem) return false;
+      }
+
+      // 16. Quantidade de Passageiros (PAX)
+      if (this.advPaxFaixas.length > 0) {
+        const paxCount = Array.isArray(v.passageiros) && v.passageiros.length > 0 ? v.passageiros.length : (Number(v.pax_count) || 1);
+        const matchesPax = this.advPaxFaixas.some(faixa => {
+          if (faixa === '1') return paxCount === 1;
+          if (faixa === '2') return paxCount === 2;
+          if (faixa === '3-5') return paxCount >= 3 && paxCount <= 5;
+          if (faixa === '6+') return paxCount >= 6;
+          return false;
+        });
+        if (!matchesPax) return false;
+      }
+
+      // 17. Tags / Classificações
+      if (this.advTags.length > 0) {
+        const tripTags = [
+          ...(Array.isArray(v.tags) ? v.tags : []),
+          ...(v.cliente && Array.isArray(v.cliente.classificacoes) ? v.cliente.classificacoes : [])
+        ].map(t => (typeof t === 'string' ? t.trim().toLowerCase() : ''));
+
+        const matchesTag = this.advTags.some(wanted => {
+          const wantedLower = wanted.toLowerCase();
+          return tripTags.some(t => t.includes(wantedLower) || wantedLower.includes(t));
+        });
+        if (!matchesTag) return false;
+      }
+
       return true;
     });
 
@@ -2350,6 +2519,7 @@ export class Dashboard {
       monthOptions.push({ value: val, label });
     }
 
+    const tagsDisponiveis = this.getListaTagsDisponiveis();
     const totalAtivos = this.getActiveFiltersCount();
 
     return `
@@ -2443,7 +2613,161 @@ export class Dashboard {
             ` : ''}
           </div>
 
-          <!-- Bloco 3: Destinos & Fornecedores -->
+          <!-- Bloco 3: Consultores (Usuários) em Pills -->
+          <div class="bg-slate-50/70 dark:bg-slate-800/40 p-3.5 rounded-2xl border border-slate-200/60 dark:border-slate-800/60 space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-wider flex items-center gap-1.5">
+                <span>👤</span>
+                <span>Consultores (Usuários)</span>
+              </span>
+              ${this.advConsultores.length > 0 ? `
+                <button id="btn-clear-adv-consultores" type="button" class="text-[10px] text-rose-500 hover:underline font-bold cursor-pointer">Limpar</button>
+              ` : ''}
+            </div>
+
+            <div class="flex flex-wrap gap-1.5 max-h-[160px] overflow-y-auto custom-scrollbar pr-1">
+              ${this.consultores.map(c => {
+                const isSelected = this.advConsultores.includes(c.id);
+                const iniciais = (c.nome || 'C').split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase();
+                return `
+                  <button type="button" class="pill-adv-consultor px-2.5 py-1 text-xs font-bold rounded-lg border transition cursor-pointer flex items-center gap-1.5 ${
+                    isSelected
+                      ? 'bg-indigo-600 text-white border-indigo-700 shadow-sm ring-1 ring-indigo-500/30'
+                      : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-indigo-400'
+                  }" data-consultant-id="${c.id}">
+                    <span class="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-black ${isSelected ? 'bg-white text-indigo-700' : 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-300'}">${iniciais}</span>
+                    <span>${c.nome || 'Consultor'}</span>
+                  </button>
+                `;
+              }).join('')}
+            </div>
+            ${this.advConsultores.length > 0 ? `
+              <div class="text-[10px] text-indigo-600 dark:text-indigo-400 font-bold pt-1 border-t border-slate-200/50 dark:border-slate-700/50">
+                ${this.advConsultores.length} consultor(es) selecionado(s)
+              </div>
+            ` : ''}
+          </div>
+
+          <!-- Bloco 4: Formas de Recebimento -->
+          <div class="bg-slate-50/70 dark:bg-slate-800/40 p-3.5 rounded-2xl border border-slate-200/60 dark:border-slate-800/60 space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-wider flex items-center gap-1.5">
+                <span>🪙</span>
+                <span>Formas de Recebimento</span>
+              </span>
+              ${this.advFormasRecebimento.length > 0 ? `
+                <button id="btn-clear-adv-formas" type="button" class="text-[10px] text-rose-500 hover:underline font-bold cursor-pointer">Limpar</button>
+              ` : ''}
+            </div>
+
+            <div class="flex flex-wrap gap-1.5 max-h-[160px] overflow-y-auto custom-scrollbar pr-1">
+              ${(this.formasRecebimento || []).map(f => {
+                const fKey = f.id || f.nome;
+                const isSelected = this.advFormasRecebimento.includes(fKey) || this.advFormasRecebimento.includes(f.nome);
+                return `
+                  <button type="button" class="pill-adv-forma px-2.5 py-1 text-xs font-bold rounded-lg border transition cursor-pointer flex items-center gap-1 ${
+                    isSelected
+                      ? 'bg-indigo-600 text-white border-indigo-700 shadow-sm ring-1 ring-indigo-500/30'
+                      : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-indigo-400'
+                  }" data-forma-id="${fKey}" data-forma-nome="${f.nome}">
+                    <span>${f.icone || '🪙'}</span>
+                    <span>${f.nome}</span>
+                  </button>
+                `;
+              }).join('')}
+            </div>
+            ${this.advFormasRecebimento.length > 0 ? `
+              <div class="text-[10px] text-indigo-600 dark:text-indigo-400 font-bold pt-1 border-t border-slate-200/50 dark:border-slate-700/50">
+                ${this.advFormasRecebimento.length} forma(s) selecionada(s)
+              </div>
+            ` : ''}
+          </div>
+
+          <!-- Bloco 5: Origem do Lead & PAX -->
+          <div class="bg-slate-50/70 dark:bg-slate-800/40 p-3.5 rounded-2xl border border-slate-200/60 dark:border-slate-800/60 space-y-3">
+            <span class="text-[10px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-wider flex items-center gap-1.5">
+              <span>📣</span>
+              <span>Origem do Lead & Passageiros</span>
+            </span>
+
+            <!-- Origens de Lead -->
+            <div class="space-y-1">
+              <span class="text-[9px] font-extrabold text-slate-400 dark:text-slate-400 uppercase tracking-wider block">Canal de Captação</span>
+              <div class="flex flex-wrap gap-1 max-h-[100px] overflow-y-auto custom-scrollbar">
+                ${(this.origensLead || []).map(o => {
+                  const oKey = o.id || o.nome;
+                  const isSelected = this.advOrigensLead.includes(oKey) || this.advOrigensLead.includes(o.nome);
+                  return `
+                    <button type="button" class="pill-adv-origem px-2 py-0.5 text-xs font-bold rounded-lg border transition cursor-pointer flex items-center gap-1 ${
+                      isSelected
+                        ? 'bg-indigo-600 text-white border-indigo-700 shadow-xs'
+                        : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-indigo-400'
+                    }" data-origem-id="${oKey}" data-origem-nome="${o.nome}">
+                      <span>${o.icone || '📣'}</span>
+                      <span>${o.nome}</span>
+                    </button>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+
+            <!-- Quantidade de Passageiros (PAX) -->
+            <div class="space-y-1 pt-1 border-t border-slate-200/50 dark:border-slate-700/50">
+              <span class="text-[9px] font-extrabold text-slate-400 dark:text-slate-400 uppercase tracking-wider block">👥 Qtd de Passageiros (PAX)</span>
+              <div class="flex flex-wrap gap-1">
+                ${[
+                  { id: '1', label: '👤 1 PAX' },
+                  { id: '2', label: '👥 2 PAX' },
+                  { id: '3-5', label: '👨‍👩‍👧 3 a 5 PAX' },
+                  { id: '6+', label: '🚌 6+ PAX' }
+                ].map(pax => `
+                  <button type="button" class="pill-adv-pax px-2 py-0.5 text-xs font-bold rounded-lg border transition cursor-pointer ${
+                    this.advPaxFaixas.includes(pax.id)
+                      ? 'bg-indigo-600 text-white border-indigo-700 shadow-xs'
+                      : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-indigo-400'
+                  }" data-pax-key="${pax.id}">
+                    ${pax.label}
+                  </button>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+
+          <!-- Bloco 6: Tags & Classificações -->
+          <div class="bg-slate-50/70 dark:bg-slate-800/40 p-3.5 rounded-2xl border border-slate-200/60 dark:border-slate-800/60 space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-wider flex items-center gap-1.5">
+                <span>🏷️</span>
+                <span>Tags / Classificações</span>
+              </span>
+              ${this.advTags.length > 0 ? `
+                <button id="btn-clear-adv-tags" type="button" class="text-[10px] text-rose-500 hover:underline font-bold cursor-pointer">Limpar</button>
+              ` : ''}
+            </div>
+
+            <div class="flex flex-wrap gap-1.5 max-h-[160px] overflow-y-auto custom-scrollbar pr-1">
+              ${tagsDisponiveis.map(t => {
+                const isSelected = this.advTags.includes(t);
+                return `
+                  <button type="button" class="pill-adv-tag px-2.5 py-1 text-xs font-bold rounded-lg border transition cursor-pointer flex items-center gap-1 ${
+                    isSelected
+                      ? 'bg-indigo-600 text-white border-indigo-700 shadow-sm ring-1 ring-indigo-500/30'
+                      : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-indigo-400'
+                  }" data-tag-name="${t}">
+                    <span>🏷️</span>
+                    <span>${t}</span>
+                  </button>
+                `;
+              }).join('')}
+            </div>
+            ${this.advTags.length > 0 ? `
+              <div class="text-[10px] text-indigo-600 dark:text-indigo-400 font-bold pt-1 border-t border-slate-200/50 dark:border-slate-700/50">
+                ${this.advTags.length} tag(s) selecionada(s)
+              </div>
+            ` : ''}
+          </div>
+
+          <!-- Bloco 7: Destinos & Fornecedores -->
           <div class="bg-slate-50/70 dark:bg-slate-800/40 p-3.5 rounded-2xl border border-slate-200/60 dark:border-slate-800/60 space-y-3">
             <span class="text-[10px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-wider flex items-center gap-1.5">
               <span>📍</span>
@@ -2488,7 +2812,7 @@ export class Dashboard {
             </div>
           </div>
 
-          <!-- Bloco 4: Valores Financeiros & Rentabilidade -->
+          <!-- Bloco 8: Valores Financeiros & Rentabilidade -->
           <div class="bg-slate-50/70 dark:bg-slate-800/40 p-3.5 rounded-2xl border border-slate-200/60 dark:border-slate-800/60 space-y-3">
             <span class="text-[10px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-wider flex items-center gap-1.5">
               <span>💰</span>
@@ -2516,56 +2840,46 @@ export class Dashboard {
             </div>
           </div>
 
-          <!-- Bloco 5: Conferência, SLAs & Risk Score -->
-          <div class="bg-slate-50/70 dark:bg-slate-800/40 p-3.5 rounded-2xl border border-slate-200/60 dark:border-slate-800/60 space-y-3 md:col-span-2">
+          <!-- Bloco 9: Conferência, SLAs & Risk Score -->
+          <div class="bg-slate-50/70 dark:bg-slate-800/40 p-3.5 rounded-2xl border border-slate-200/60 dark:border-slate-800/60 space-y-3">
             <span class="text-[10px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-wider flex items-center gap-1.5">
               <span>🛡️</span>
-              <span>Conferência, SLAs & Risk Score</span>
+              <span>Conferência & SLAs</span>
             </span>
 
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div class="space-y-2">
               <!-- Conferência -->
               <div class="space-y-1">
                 <span class="text-[9px] font-extrabold text-slate-400 dark:text-slate-400 uppercase tracking-wider block">Conferência</span>
                 <div class="flex flex-wrap gap-1">
-                  <button type="button" class="pill-adv-conf-fin-ok px-2 py-1 text-xs font-bold rounded-lg border transition cursor-pointer ${this.confFilters.finOk ? 'bg-emerald-600 text-white border-emerald-700' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-emerald-400'}">
+                  <button type="button" class="pill-adv-conf-fin-ok px-2 py-0.5 text-xs font-bold rounded-lg border transition cursor-pointer ${this.confFilters.finOk ? 'bg-emerald-600 text-white border-emerald-700' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-emerald-400'}">
                     ✅ Fin. OK
                   </button>
-                  <button type="button" class="pill-adv-conf-fin-pendente px-2 py-1 text-xs font-bold rounded-lg border transition cursor-pointer ${this.confFilters.finPendente ? 'bg-amber-500 text-white border-amber-600' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-amber-400'}">
+                  <button type="button" class="pill-adv-conf-fin-pendente px-2 py-0.5 text-xs font-bold rounded-lg border transition cursor-pointer ${this.confFilters.finPendente ? 'bg-amber-500 text-white border-amber-600' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-amber-400'}">
                     ⏳ Fin. Pend.
                   </button>
-                  <button type="button" class="pill-adv-conf-proc-ok px-2 py-1 text-xs font-bold rounded-lg border transition cursor-pointer ${this.confFilters.procOk ? 'bg-emerald-600 text-white border-emerald-700' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-emerald-400'}">
+                  <button type="button" class="pill-adv-conf-proc-ok px-2 py-0.5 text-xs font-bold rounded-lg border transition cursor-pointer ${this.confFilters.procOk ? 'bg-emerald-600 text-white border-emerald-700' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-emerald-400'}">
                     ✅ Proc. OK
                   </button>
-                  <button type="button" class="pill-adv-conf-proc-pendente px-2 py-1 text-xs font-bold rounded-lg border transition cursor-pointer ${this.confFilters.procPendente ? 'bg-amber-500 text-white border-amber-600' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-amber-400'}">
+                  <button type="button" class="pill-adv-conf-proc-pendente px-2 py-0.5 text-xs font-bold rounded-lg border transition cursor-pointer ${this.confFilters.procPendente ? 'bg-amber-500 text-white border-amber-600' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-amber-400'}">
                     ⏳ Proc. Pend.
                   </button>
                 </div>
               </div>
 
-              <!-- Alertas de SLA -->
-              <div class="space-y-1">
-                <span class="text-[9px] font-extrabold text-slate-400 dark:text-slate-400 uppercase tracking-wider block">Alertas de SLA</span>
+              <!-- Alertas de SLA & Risk Score -->
+              <div class="space-y-1 pt-1 border-t border-slate-200/50 dark:border-slate-700/50">
+                <span class="text-[9px] font-extrabold text-slate-400 dark:text-slate-400 uppercase tracking-wider block">SLAs & Risco</span>
                 <div class="flex flex-wrap gap-1">
-                  <button type="button" class="pill-adv-sla-alerta px-2.5 py-1 text-xs font-bold rounded-lg border transition cursor-pointer ${this.advSla === 'com_alerta' ? 'bg-rose-600 text-white border-rose-700 shadow-xs' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-rose-400'}" data-sla-val="com_alerta">
-                    🚨 Com Alerta SLA
+                  <button type="button" class="pill-adv-sla-alerta px-2 py-0.5 text-xs font-bold rounded-lg border transition cursor-pointer ${this.advSla === 'com_alerta' ? 'bg-rose-600 text-white border-rose-700 shadow-xs' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-rose-400'}" data-sla-val="com_alerta">
+                    🚨 Alerta SLA
                   </button>
-                  <button type="button" class="pill-adv-sla-alerta px-2.5 py-1 text-xs font-bold rounded-lg border transition cursor-pointer ${this.advSla === 'sem_alerta' ? 'bg-indigo-600 text-white border-indigo-700 shadow-xs' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-indigo-400'}" data-sla-val="sem_alerta">
-                    🟢 SLA em Dia
-                  </button>
-                </div>
-              </div>
-
-              <!-- Risk Score Operacional -->
-              <div class="space-y-1">
-                <span class="text-[9px] font-extrabold text-slate-400 dark:text-slate-400 uppercase tracking-wider block">Risk Score Operacional</span>
-                <div class="flex flex-wrap gap-1">
                   ${[
                     { id: 'verde', label: '🟢 Verde', bg: 'bg-emerald-600 text-white border-emerald-700' },
                     { id: 'amarelo', label: '🟡 Amarelo', bg: 'bg-amber-500 text-white border-amber-600' },
                     { id: 'vermelho', label: '🔴 Vermelho', bg: 'bg-rose-600 text-white border-rose-700' }
                   ].map(r => `
-                    <button type="button" class="pill-adv-risk px-2.5 py-1 text-xs font-bold rounded-lg border transition cursor-pointer ${
+                    <button type="button" class="pill-adv-risk px-2 py-0.5 text-xs font-bold rounded-lg border transition cursor-pointer ${
                       this.advRiskScore.includes(r.id)
                         ? r.bg
                         : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-400'
@@ -2632,6 +2946,38 @@ export class Dashboard {
       const monthName = months[parseInt(m, 10) - 1] || m;
       chips.push({ key: 'adv-mes-ano', label: `Mês: ${monthName}/${y}`, icon: '📆' });
     }
+
+    this.advConsultores.forEach(cId => {
+      const consultor = this.consultores.find(c => c.id === cId);
+      const nome = consultor?.nome || (cId === this.user?.id ? 'Você' : 'Consultor');
+      chips.push({ key: `adv-consultor-${cId}`, label: `Consultor: ${nome}`, icon: '👤' });
+    });
+
+    this.advFormasRecebimento.forEach(fKey => {
+      const forma = this.formasRecebimento.find(f => f.id === fKey || f.nome === fKey);
+      const label = forma?.nome || fKey;
+      chips.push({ key: `adv-forma-${fKey}`, label: `Recebimento: ${label}`, icon: '🪙' });
+    });
+
+    this.advOrigensLead.forEach(oKey => {
+      const origem = this.origensLead.find(o => o.id === oKey || o.nome === oKey);
+      const label = origem?.nome || oKey;
+      chips.push({ key: `adv-origem-${oKey}`, label: `Origem: ${label}`, icon: '📣' });
+    });
+
+    this.advPaxFaixas.forEach(paxKey => {
+      const labelMap: Record<string, string> = {
+        '1': '1 PAX',
+        '2': '2 PAX',
+        '3-5': '3 a 5 PAX',
+        '6+': '6+ PAX'
+      };
+      chips.push({ key: `adv-pax-${paxKey}`, label: `PAX: ${labelMap[paxKey] || paxKey}`, icon: '👥' });
+    });
+
+    this.advTags.forEach(tag => {
+      chips.push({ key: `adv-tag-${tag}`, label: `Tag: ${tag}`, icon: '🏷️' });
+    });
 
     this.advProdutos.forEach(pId => {
       const icon = this.getIconForType(pId);
@@ -2713,7 +3059,7 @@ export class Dashboard {
             </button>
           </span>
         `).join('')}
-        <button id="btn-clear-all-chips" type="button" class="text-[10px] font-extrabold text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 uppercase tracking-wider px-2 py-1 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition cursor-pointer ml-1">
+        <button id="btn-clear-all-chips" type="button" class="text-xs font-extrabold text-rose-500 hover:text-rose-600 hover:underline cursor-pointer ml-1">
           Limpar Todos
         </button>
       </div>
@@ -3188,7 +3534,10 @@ Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : '
     // 2.2. Botão de Exportar CSV
     document.getElementById('btn-export-filtered-csv')?.addEventListener('click', () => {
       const filtrados = this.viagens.filter(v => {
-        if (this.selectedConsultantId !== 'todos' && v.consultor_id !== this.selectedConsultantId) return false;
+        const vConsultorId = v.consultor_id || (v as any).consultorId;
+        const vRespId = v.consultor_responsavel_id || (v as any).consultorResponsavelId;
+
+        if (this.selectedConsultantId !== 'todos' && vConsultorId !== this.selectedConsultantId && vRespId !== this.selectedConsultantId) return false;
         if (this.confFilters.finPendente && v.isFinanceiroConferido) return false;
         if (this.confFilters.finOk && !v.isFinanceiroConferido) return false;
         if (this.confFilters.procPendente && v.isProcessoConferido) return false;
@@ -3252,6 +3601,52 @@ Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : '
         if (this.advRiskScore.length > 0) {
           const risk = RiskScoreService.calculateTripRiskScore(v, v.cliente, v.produtos, this.settings, this.user, this.perfil);
           if (!this.advRiskScore.includes(risk.nivel)) return false;
+        }
+        if (this.advConsultores.length > 0) {
+          if (!this.advConsultores.includes(vConsultorId) && !this.advConsultores.includes(vRespId)) return false;
+        }
+        if (this.advFormasRecebimento.length > 0) {
+          const pags = this.locPagamentosMap.get(v.id) || [];
+          const matchesForma = this.advFormasRecebimento.some(f => {
+            const fLower = f.toLowerCase();
+            return pags.some((p: any) => {
+              const pId = (p.forma_recebimento_id || '').toLowerCase();
+              const pNome = (p.forma_nome || '').toLowerCase();
+              return pId === fLower || pNome.includes(fLower) || fLower.includes(pNome);
+            });
+          });
+          if (!matchesForma) return false;
+        }
+        if (this.advOrigensLead.length > 0) {
+          const cliOrigem = (v.cliente?.lead_origin || v.lead_origin || '').toLowerCase();
+          const cliOrigemId = (v.cliente?.origem_lead_id || v.origem_lead_id || '').toLowerCase();
+          const matchesOrigem = this.advOrigensLead.some(o => {
+            const oLower = o.toLowerCase();
+            return (cliOrigem && (cliOrigem.includes(oLower) || oLower.includes(cliOrigem))) || (cliOrigemId && cliOrigemId === oLower);
+          });
+          if (!matchesOrigem) return false;
+        }
+        if (this.advPaxFaixas.length > 0) {
+          const paxCount = Array.isArray(v.passageiros) && v.passageiros.length > 0 ? v.passageiros.length : (Number(v.pax_count) || 1);
+          const matchesPax = this.advPaxFaixas.some(faixa => {
+            if (faixa === '1') return paxCount === 1;
+            if (faixa === '2') return paxCount === 2;
+            if (faixa === '3-5') return paxCount >= 3 && paxCount <= 5;
+            if (faixa === '6+') return paxCount >= 6;
+            return false;
+          });
+          if (!matchesPax) return false;
+        }
+        if (this.advTags.length > 0) {
+          const tripTags = [
+            ...(Array.isArray(v.tags) ? v.tags : []),
+            ...(v.cliente && Array.isArray(v.cliente.classificacoes) ? v.cliente.classificacoes : [])
+          ].map(t => (typeof t === 'string' ? t.trim().toLowerCase() : ''));
+          const matchesTag = this.advTags.some(wanted => {
+            const wantedLower = wanted.toLowerCase();
+            return tripTags.some(t => t.includes(wantedLower) || wantedLower.includes(t));
+          });
+          if (!matchesTag) return false;
         }
         return true;
       });
@@ -3347,6 +3742,88 @@ Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : '
       });
     });
 
+    // 3.6.1. Pills de Consultores
+    this.container.querySelectorAll('.pill-adv-consultor').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const cId = btn.getAttribute('data-consultant-id');
+        if (!cId) return;
+        if (this.advConsultores.includes(cId)) {
+          this.advConsultores = this.advConsultores.filter(id => id !== cId);
+        } else {
+          this.advConsultores.push(cId);
+        }
+        this.render();
+      });
+    });
+    document.getElementById('btn-clear-adv-consultores')?.addEventListener('click', () => {
+      this.advConsultores = [];
+      this.render();
+    });
+
+    // 3.6.2. Pills de Formas de Recebimento
+    this.container.querySelectorAll('.pill-adv-forma').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const fKey = btn.getAttribute('data-forma-id') || btn.getAttribute('data-forma-nome');
+        if (!fKey) return;
+        if (this.advFormasRecebimento.includes(fKey)) {
+          this.advFormasRecebimento = this.advFormasRecebimento.filter(id => id !== fKey);
+        } else {
+          this.advFormasRecebimento.push(fKey);
+        }
+        this.render();
+      });
+    });
+    document.getElementById('btn-clear-adv-formas')?.addEventListener('click', () => {
+      this.advFormasRecebimento = [];
+      this.render();
+    });
+
+    // 3.6.3. Pills de Origem do Lead
+    this.container.querySelectorAll('.pill-adv-origem').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const oKey = btn.getAttribute('data-origem-id') || btn.getAttribute('data-origem-nome');
+        if (!oKey) return;
+        if (this.advOrigensLead.includes(oKey)) {
+          this.advOrigensLead = this.advOrigensLead.filter(id => id !== oKey);
+        } else {
+          this.advOrigensLead.push(oKey);
+        }
+        this.render();
+      });
+    });
+
+    // 3.6.4. Pills de Faixas de PAX
+    this.container.querySelectorAll('.pill-adv-pax').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const paxKey = btn.getAttribute('data-pax-key');
+        if (!paxKey) return;
+        if (this.advPaxFaixas.includes(paxKey)) {
+          this.advPaxFaixas = this.advPaxFaixas.filter(k => k !== paxKey);
+        } else {
+          this.advPaxFaixas.push(paxKey);
+        }
+        this.render();
+      });
+    });
+
+    // 3.6.5. Pills de Tags
+    this.container.querySelectorAll('.pill-adv-tag').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tagName = btn.getAttribute('data-tag-name');
+        if (!tagName) return;
+        if (this.advTags.includes(tagName)) {
+          this.advTags = this.advTags.filter(t => t !== tagName);
+        } else {
+          this.advTags.push(tagName);
+        }
+        this.render();
+      });
+    });
+    document.getElementById('btn-clear-adv-tags')?.addEventListener('click', () => {
+      this.advTags = [];
+      this.render();
+    });
+
     // 3.7. Pills de Anexos
     this.container.querySelectorAll('.pill-adv-anexo').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -3438,6 +3915,11 @@ Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : '
       this.advAnexos = 'todos';
       this.advSla = 'todos';
       this.advRiskScore = [];
+      this.advConsultores = [];
+      this.advFormasRecebimento = [];
+      this.advOrigensLead = [];
+      this.advPaxFaixas = [];
+      this.advTags = [];
       this.selectedConsultantId = 'todos';
       this.confFilters = {
         finPendente: false,
@@ -3483,6 +3965,21 @@ Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : '
         } else if (filterKey?.startsWith('adv-prod-')) {
           const pId = filterKey.replace('adv-prod-', '');
           this.advProdutos = this.advProdutos.filter(p => p !== pId);
+        } else if (filterKey?.startsWith('adv-consultor-')) {
+          const cId = filterKey.replace('adv-consultor-', '');
+          this.advConsultores = this.advConsultores.filter(id => id !== cId);
+        } else if (filterKey?.startsWith('adv-forma-')) {
+          const fKey = filterKey.replace('adv-forma-', '');
+          this.advFormasRecebimento = this.advFormasRecebimento.filter(id => id !== fKey);
+        } else if (filterKey?.startsWith('adv-origem-')) {
+          const oKey = filterKey.replace('adv-origem-', '');
+          this.advOrigensLead = this.advOrigensLead.filter(id => id !== oKey);
+        } else if (filterKey?.startsWith('adv-pax-')) {
+          const paxKey = filterKey.replace('adv-pax-', '');
+          this.advPaxFaixas = this.advPaxFaixas.filter(k => k !== paxKey);
+        } else if (filterKey?.startsWith('adv-tag-')) {
+          const tagName = filterKey.replace('adv-tag-', '');
+          this.advTags = this.advTags.filter(t => t !== tagName);
         } else if (filterKey?.startsWith('adv-dest-')) {
           const dest = filterKey.replace('adv-dest-', '');
           this.advDestinos = this.advDestinos.filter(d => d !== dest);
