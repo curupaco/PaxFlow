@@ -373,8 +373,8 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
   - **4. Recebimentos & Auditoria Operacional [NEW]**: Auditoria analítica de quitação por Localizador (LOC) e meios de pagamento cadastrados (Pix, Cartão, Boleto, etc.). Conta com **Drilldown Interativo em 1-Clique** nas barras de meios de pagamento e botão **Extrato Completo ↗**, abrindo o modal analítico de extrato detalhado com mapeamento de produtos vinculados aos LOCs, filtros dinâmicos por consultor e busca em tempo real, além de exportação completa para planilha CSV.
   - **5. Metas & Campanhas Comerciais [UPDATED]**: Acompanhamento executivo e ranking de equipe para metas financeiras e campanhas de incentivo (ativas, passadas e futuras). Suporta 4 métricas analíticas: Faturamento Bruto (R$), Rentabilidade / Lucro (R$), Quantidade de Orçamentos Criados (Unidades, ex: campanha de 40 orçamentos cadastrados) e Quantidade de Vendas Fechadas (Unidades).
     - **KPIs Executivos Inteligentes & Proporcionais**:
-      - *Meta Global de Loja*: O alvo e o percentual de progresso são calculados diretamente sobre a capacidade total unificada da agência (`totalAgencia / valorMetaLoja`).
-      - *Campanhas e Metas Individuais*: O alvo exibido destaca o valor individual por consultor e a capacidade consolidada da equipe (`alvoConsultor * totalConsultores`). O percentual de progresso reflete fielmente o avanço da equipe como um todo em direção ao potencial global da campanha, sem mascarar 100% caso nenhum consultor tenha atingido a faixa individual.
+      - _Meta Global de Loja_: O alvo e o percentual de progresso são calculados diretamente sobre a capacidade total unificada da agência (`totalAgencia / valorMetaLoja`).
+      - _Campanhas e Metas Individuais_: O alvo exibido destaca o valor individual por consultor e a capacidade consolidada da equipe (`alvoConsultor * totalConsultores`). O percentual de progresso reflete fielmente o avanço da equipe como um todo em direção ao potencial global da campanha, sem mascarar 100% caso nenhum consultor tenha atingido a faixa individual.
     - Inclui projeções de faixas (Bronze, Prata, Ouro) e **Auditoria Analítica em 1-Clique (`🔍 Auditar`)** com drilldown direto nos orçamentos ou vendas que compõem o resultado do consultor.
   - **6. Fuga de Receita e Perdas**: Donut chart SVG dinâmico exibindo perdas percentuais classificadas por motivos de desistência (preço, concorrência, etc.).
   - **7. Previsão de Fechamentos (Weighted Pipeline)**: Cálculo estatístico local que pondera o faturamento previsto do pipeline em aberto (solicitado = 15%, andamento = 45%, aguardando = 75%) e estima embarques iminentes.
@@ -757,21 +757,23 @@ Pacote de micro-interações, transparência de estado e aceleração de produti
 
 O **Plano 2 de UX** expande o ganho de agilidade e a ergonomia de uso do PaxFlow em 6 pilares estratégicos:
 
-1. **Lead Aging (Tempo no Estágio) no Pipeline de Orçamentos**:
+1. **Lead Aging (Tempo no Estágio) no Pipeline de Orçamentos [UPDATED]**:
    - Badges visuais calculam e exibem automaticamente o tempo em dias decorrido desde a última movimentação da proposta no Kanban:
      - 🟢 **Recente**: Até 2 dias na etapa (ex: `🟢 Hoje`, `🟢 1d na etapa`).
      - 🟡 **Moderado**: De 3 a 5 dias sem movimentação (ex: `🟡 4d na etapa`).
      - 🔴 **Crítico**: Acima de 5 dias estagnado (ex: `🔴 8d na etapa`), acionando animação pulsante para chamar a atenção imediata do consultor.
+   - **Reinicialização ao Retornar para Solicitado**: Ao retornar uma proposta de `EM_ANDAMENTO` ou `AGUARDANDO` para `SOLICITADO` (via botão `↩️`, `🔄` ou menu rápido), o timestamp `updated_at` é renovado para o momento atual no banco e na interface, reiniciando o contador de tempo na etapa para `🟢 Hoje`.
 
-2. **Menu de Ações Rápidas nos Cards de Orçamento (`⋮`)**:
+2. **Menu de Ações Rápidas nos Cards de Orçamento (`⋮`) & Ações de Transição [UPDATED]**:
    - Dropdown compacto no topo direito de cada card que permite executar ações imediatas sem precisar abrir o modal detalhado:
+     - **Voltar para Solicitado (`↩️`)**: Atalho direto tanto no menu rápido quanto no card para retroceder um orçamento em andamento ou aguardando para `SOLICITADO`, reiniciando seu Lead Aging.
      - **Alteração de Temperatura em 1-Toque**: Modifica a classificação comercial para 🔥 Quente, ⚡ Normal ou ❄️ Frio com persistência imediata no Supabase.
      - **WhatsApp Direto**: Dispara o envio de mensagem pré-formatada.
      - **Lembrete Rápido (+2 dias)**: Cria automaticamente um lembrete com agendamento no Inbox para daqui a 2 dias (turno manhã).
      - **Ver Detalhes / Notas**: Abertura instantânea da ficha completa.
 
 3. **Abas Superiores com Contadores Dinâmicos na Central de Reembolsos**:
-   - Barra de navegação tipo *pills* no topo da tabela de reembolsos com contadores recalculados em tempo real:
+   - Barra de navegação tipo _pills_ no topo da tabela de reembolsos com contadores recalculados em tempo real:
      - `Todos (N)`
      - `⏳ Solicitados (N)` (englobando solicitações iniciais e aguardo de fornecedor)
      - `🔍 Em Análise (N)`

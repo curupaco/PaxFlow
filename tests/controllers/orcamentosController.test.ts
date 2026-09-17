@@ -131,6 +131,33 @@ describe('OrcamentosController - Lógica Subcutânea de Pipeline e Kanban', () =
     expect(infoVazia.badgeHtml).toBe('');
   });
 
+  it('deve reiniciar o Lead Aging para 🟢 Hoje ao retornar orçamento de EM_ANDAMENTO para SOLICITADO', () => {
+    // Setup - Orçamento antigo com 10 dias em andamento
+    const orcamentoAntigo = {
+      id: 'orc-100',
+      status: 'EM_ANDAMENTO',
+      createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+      updatedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString()
+    };
+    const agingAntes = calcularLeadAgingInfo(orcamentoAntigo.updatedAt);
+    expect(agingAntes.dias).toBe(10);
+    expect(agingAntes.nivel).toBe('critico');
+
+    // Action - Retorno para SOLICITADO reinicia o timestamp updatedAt para now
+    const orcamentoRetornado = {
+      ...orcamentoAntigo,
+      status: 'SOLICITADO',
+      updatedAt: new Date().toISOString()
+    };
+    const agingDepois = calcularLeadAgingInfo(orcamentoRetornado.updatedAt);
+
+    // Assert
+    expect(agingDepois.dias).toBe(0);
+    expect(agingDepois.nivel).toBe('recente');
+    expect(agingDepois.badgeHtml).toContain('🟢');
+    expect(agingDepois.badgeHtml).toContain('Hoje');
+  });
+
   it('deve validar com precisão os dados do Passo 1 (Passageiro) do Mini-Wizard', () => {
     // Setup - dados válidos e inválidos
     const valido = {

@@ -2242,24 +2242,23 @@ Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : '
           <div class="font-extrabold text-slate-800 dark:text-slate-200 flex items-center gap-1">
             ✈️ ${highlightMatch(v.destino, this.buscaTermo)}
           </div>
-          <!-- Ícones dos Produtos -->
+          <!-- Localizadores dos Produtos -->
           ${v.produtos && v.produtos.length > 0 ? `
             <div class="flex flex-wrap gap-1 mt-1.5">
               ${(() => {
-                const counts: { [tipo: string]: number } = {};
-                v.produtos.forEach((p: any) => {
-                  const t = (p.tipo || 'outro').toLowerCase();
-                  counts[t] = (counts[t] || 0) + 1;
-                });
-                return Object.entries(counts).map(([tipo, count]) => {
-                  const icon = this.getIconForType(tipo);
-                  const suffix = count > 1 ? ` +${count - 1}` : '';
-                  return `
-                    <span class="inline-flex items-center px-1.5 py-0.5 rounded bg-slate-100/60 dark:bg-slate-800/60 border border-slate-200/30 dark:border-slate-700/30 text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider" title="${tipo}">
-                      <span>${icon}${suffix}</span>
-                    </span>
-                  `;
-                }).join('');
+                const locs: string[] = Array.from(new Set<string>(
+                  (v.produtos || [])
+                    .map((p: any) => (p.codigo_reserva || p.codigoReserva || '').trim().toUpperCase())
+                    .filter(Boolean)
+                ));
+                if (locs.length === 0) {
+                  return `<span class="inline-flex items-center px-1.5 py-0.5 rounded bg-slate-100/60 dark:bg-slate-800/60 border border-slate-200/30 dark:border-slate-700/30 text-[9px] font-mono font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">SEM LOC</span>`;
+                }
+                return locs.map((loc: string) => `
+                  <span class="inline-flex items-center px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700/60 text-[9px] font-mono font-bold text-slate-700 dark:text-slate-300 tracking-wider" title="Localizador: ${loc}">
+                    ${highlightMatch(loc, this.buscaTermo)}
+                  </span>
+                `).join('');
               })()}
             </div>
           ` : ''}
@@ -2418,24 +2417,23 @@ Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : '
             <div class="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1">
               ✈️ ${highlightMatch(v.destino, this.buscaTermo)}
             </div>
-            <!-- Ícones dos Produtos -->
+            <!-- Localizadores dos Produtos -->
             ${v.produtos && v.produtos.length > 0 ? `
               <div class="flex flex-wrap gap-1 mt-1">
                 ${(() => {
-                  const counts: { [tipo: string]: number } = {};
-                  v.produtos.forEach((p: any) => {
-                    const t = (p.tipo || 'outro').toLowerCase();
-                    counts[t] = (counts[t] || 0) + 1;
-                  });
-                  return Object.entries(counts).map(([tipo, count]) => {
-                    const icon = this.getIconForType(tipo);
-                    const suffix = count > 1 ? ` +${count - 1}` : '';
-                    return `
-                      <span class="inline-flex items-center px-1.5 py-0.5 rounded bg-slate-100/60 dark:bg-slate-800/60 border border-slate-200/30 dark:border-slate-700/30 text-[8px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider" title="${tipo}">
-                        <span>${icon}${suffix}</span>
-                      </span>
-                    `;
-                  }).join('');
+                  const locs: string[] = Array.from(new Set<string>(
+                    (v.produtos || [])
+                      .map((p: any) => (p.codigo_reserva || p.codigoReserva || '').trim().toUpperCase())
+                      .filter(Boolean)
+                  ));
+                  if (locs.length === 0) {
+                    return `<span class="inline-flex items-center px-1.5 py-0.5 rounded bg-slate-100/60 dark:bg-slate-800/60 border border-slate-200/30 dark:border-slate-700/30 text-[8px] font-mono font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">SEM LOC</span>`;
+                  }
+                  return locs.map((loc: string) => `
+                    <span class="inline-flex items-center px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700/60 text-[8px] font-mono font-bold text-slate-700 dark:text-slate-300 tracking-wider" title="Localizador: ${loc}">
+                      ${highlightMatch(loc, this.buscaTermo)}
+                    </span>
+                  `).join('');
                 })()}
               </div>
             ` : ''}

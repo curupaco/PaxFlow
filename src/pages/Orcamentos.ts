@@ -407,6 +407,7 @@ export class OrcamentosPage {
         const orc = this.orcamentos.find(o => o.id === id);
         if (orc) {
           orc.status = 'EM_ANDAMENTO';
+          orc.updatedAt = new Date().toISOString();
           const success = await this.persistOrcamento(orc);
           if (success) {
             this.showToast('Orçamento em andamento! Hora de criar a proposta.', 'success');
@@ -427,7 +428,28 @@ export class OrcamentosPage {
       });
     });
 
-    // Botões da coluna AGUARDANDO: ALTERAR
+    // Botão Voltar para Solicitado (de EM_ANDAMENTO ou Ações Rápidas)
+    this.container.querySelectorAll('[data-action="voltar-solicitado"], [data-action="quick-voltar-solicitado"]').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        const id = (btn as HTMLElement).dataset.id;
+        if (!id) return;
+        const orc = this.orcamentos.find(o => o.id === id);
+        if (orc) {
+          orc.status = 'SOLICITADO';
+          orc.updatedAt = new Date().toISOString();
+          const success = await this.persistOrcamento(orc);
+          if (success) {
+            this.showToast('Orçamento retornado para Solicitado! Tempo na etapa reiniciado.', 'success');
+            await this.loadOrcamentos();
+            this.render();
+          }
+        }
+      });
+    });
+
+    // Botões da coluna AGUARDANDO: ALTERAR (Voltar para Solicitado)
     this.container.querySelectorAll('[data-action="alterar"]').forEach(btn => {
       btn.addEventListener('click', async (e) => {
         e.stopPropagation();
@@ -437,9 +459,10 @@ export class OrcamentosPage {
         const orc = this.orcamentos.find(o => o.id === id);
         if (orc) {
           orc.status = 'SOLICITADO';
+          orc.updatedAt = new Date().toISOString();
           const success = await this.persistOrcamento(orc);
           if (success) {
-            this.showToast('Orçamento retornado para ajuste.', 'success');
+            this.showToast('Orçamento retornado para ajuste! Tempo na etapa reiniciado.', 'success');
             await this.loadOrcamentos();
             this.render();
           }
@@ -1063,6 +1086,11 @@ export class OrcamentosPage {
                     ❄️ Frio
                   </button>
                   <div class="my-1 border-t border-slate-100 dark:border-slate-700/50"></div>
+                  ${o.status === 'EM_ANDAMENTO' || o.status === 'AGUARDANDO' ? `
+                    <button type="button" data-action="quick-voltar-solicitado" data-id="${o.id}" class="w-full text-left px-3 py-1.5 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-semibold cursor-pointer">
+                      ↩️ Voltar para Solicitado
+                    </button>
+                  ` : ''}
                   <button type="button" data-action="quick-lembrete-2d" data-id="${o.id}" class="w-full text-left px-3 py-1.5 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-semibold cursor-pointer">
                     ⏰ Lembrar em 2 dias
                   </button>
@@ -1155,8 +1183,14 @@ export class OrcamentosPage {
               </svg>
             </button>
 
+            ${o.status === 'EM_ANDAMENTO' ? `
+              <button data-action="voltar-solicitado" data-id="${o.id}" title="Voltar para Solicitado (Reiniciar tempo na etapa)" class="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg transition flex items-center justify-center text-xs shrink-0">
+                ↩️
+              </button>
+            ` : ''}
+
             ${o.status === 'AGUARDANDO' ? `
-              <button data-action="alterar" data-id="${o.id}" title="Alterar Proposta" class="p-1 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg transition flex items-center justify-center text-xs shrink-0">
+              <button data-action="alterar" data-id="${o.id}" title="Alterar Proposta (Voltar para Solicitado)" class="p-1 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg transition flex items-center justify-center text-xs shrink-0">
                 🔄
               </button>
               <button data-action="desistir" data-id="${o.id}" title="Registrar Desistência" class="p-1 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-lg transition flex items-center justify-center text-xs shrink-0">

@@ -522,6 +522,20 @@ export const HELP_ITEMS: HelpItem[] = [
     details: 'Quando um novo orçamento (Lead) entra no sistema, ele inicia no estágio "Solicitado". Assim que qualquer consultor abre a ficha deste orçamento e adiciona a primeira anotação, observação interna ou envia uma mensagem na linha do tempo, o PaxFlow entende que o atendimento foi iniciado e altera o status do orçamento automaticamente para "Em Andamento".\n\nIsso evita que o consultor precise clicar manualmente para atualizar o estágio, mantendo o funil comercial preciso e gerando métricas corretas de tempo de resposta do primeiro atendimento.'
   },
   {
+    id: 'lead-aging-reinicio',
+    modulo: 'orcamentos',
+    label: '⏱️ Lead Aging & Reinício de Tempo na Etapa (Orçamentos)',
+    description: 'Como funciona o contador visual de tempo na etapa e seu reinício automático ao voltar para Solicitado.',
+    details: 'Cada card de orçamento exibe um badge visual de **Lead Aging** indicando o tempo decorrido desde a última movimentação:\n\n1. **Faixas Visuais**: `🟢 Recente` (até 2 dias na etapa, ex: "Hoje" ou "1d na etapa"), `🟡 Moderado` (3 a 5 dias) e `🔴 Crítico` (acima de 5 dias parado, com efeito pulsante).\n2. **Reinício Automático**: Ao voltar um orçamento de "Em Andamento" ou "Aguardando" para "Solicitado" (seja via botão de retorno `↩️`, botão `🔄` ou menu de ações rápidas `⋮`), o contador é reiniciado do zero imediatamente (`🟢 Hoje`), gravando o novo timestamp de atualização no banco de dados.'
+  },
+  {
+    id: 'localizadores-grid-viagens',
+    modulo: 'viagens',
+    label: '📋 Localizadores (LOCs) dos Produtos no Grid e Tabela de Viagens',
+    description: 'Visualização direta dos códigos de reserva e localizadores vinculados aos serviços da viagem.',
+    details: 'Tanto na visualização em Tabela quanto na visualização em Cards/Grid do painel de **Viagens**:\n\n1. **Listagem de LOCs**: Em vez de ícones genéricos, o sistema exibe os códigos de reserva / localizadores cadastrados nos produtos (ex: `AF9988`, `TRF123`, `MSC4411`).\n2. **Pesquisa Inteligente**: Os localizadores participam da busca em tempo real do cabeçalho com realce amarelo automático (`highlight`).\n3. **Ausência de Localizador**: Viagens com produtos sem localizador preenchido exibem a tag `SEM LOC` para fácil identificação da pendência operacional.'
+  },
+  {
     id: 'auto-status-desistencia',
     modulo: 'orcamentos',
     label: 'Automação: Desistência por Inatividade (Orçamentos)',

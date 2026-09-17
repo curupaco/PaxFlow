@@ -98,7 +98,8 @@ export class OrcamentosService {
       valor_proposta: o.valorProposta || null,
       valor_viagem: o.valorViagem || null,
       origem: o.origem || null,
-      documentos_url: o.documentosUrl || []
+      documentos_url: o.documentosUrl || [],
+      updated_at: o.updatedAt || new Date().toISOString()
     };
 
     const isNew = !o.id || o.id.startsWith('orc-');

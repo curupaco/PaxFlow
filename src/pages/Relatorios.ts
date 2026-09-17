@@ -99,13 +99,14 @@ export class RelatoriosPage {
   constructor(container: HTMLElement) {
     this.container = container;
     
-    // Set default date range to last 180 days (6 months)
+    // Set default date range: dia 01 do mês corrente até a data atual
     const hoje = new Date();
-    const inicio = new Date();
-    inicio.setDate(hoje.getDate() - 180);
+    const ano = hoje.getFullYear();
+    const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+    const dia = String(hoje.getDate()).padStart(2, '0');
     
-    this.dataInicio = inicio.toISOString().substring(0, 10);
-    this.dataFim = hoje.toISOString().substring(0, 10);
+    this.dataInicio = `${ano}-${mes}-01`;
+    this.dataFim = `${ano}-${mes}-${dia}`;
   }
 
   /**
@@ -2885,12 +2886,13 @@ export class RelatoriosPage {
     // 3. Clear filters
     document.getElementById('btn-limpar-filtros')?.addEventListener('click', () => {
       const hoje = new Date();
-      const inicio = new Date();
-      inicio.setDate(hoje.getDate() - 180);
+      const ano = hoje.getFullYear();
+      const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+      const dia = String(hoje.getDate()).padStart(2, '0');
       
       const isAdmin = (this.perfil?.role || '').toLowerCase() === 'admin';
-      this.dataInicio = inicio.toISOString().substring(0, 10);
-      this.dataFim = hoje.toISOString().substring(0, 10);
+      this.dataInicio = `${ano}-${mes}-01`;
+      this.dataFim = `${ano}-${mes}-${dia}`;
       this.consultorIdFilter = isAdmin ? 'todos' : (this.user?.id || '');
       
       this.render();
