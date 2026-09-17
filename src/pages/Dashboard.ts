@@ -1,6 +1,6 @@
 import Sortable from 'sortablejs';
 import { supabase, getSessaoAtual, logoutConsultor } from '../services/supabase';
-import { Viagem, Cliente, ProdutoViagem, GlobalSettings, PerfilConsultor } from '../types';
+import { Viagem, Cliente, ProdutoViagem, GlobalSettings, PerfilConsultor, Destino } from '../types';
 import { RiskScoreService } from '../services/riskScoreService';
 import { NextTripEngineService } from '../services/nextTripEngineService';
 import { NextTripDashboardWidget } from '../components/dashboard/NextTripDashboardWidget';
@@ -130,7 +130,7 @@ export class Dashboard {
   private selectedProductId: string | null = null;
   private destAutocomplete: DestinosAutocomplete | null = null;
 
-  // Propriedades para filtros de data e controle de abas de status
+  // Propriedades para filtros avançados e controle do painel
   private activeStatusTab: string = 'todos';
   private dataFinStart: string = '';
   private dataFinEnd: string = '';
@@ -138,6 +138,19 @@ export class Dashboard {
   private dataIdaEnd: string = '';
   private dataVoltaStart: string = '';
   private dataVoltaEnd: string = '';
+  private advMesAno: string = '';
+  private advProdutos: string[] = [];
+  private advProdutoMatchMode: 'AND' | 'OR' = 'AND';
+  private advDestinos: string[] = [];
+  private advFornecedor: string = '';
+  private advValorMin: number | null = null;
+  private advValorMax: number | null = null;
+  private advRentabilidadeMin: number | null = null;
+  private advRentabilidadeMax: number | null = null;
+  private advAnexos: 'todos' | 'com_anexo' | 'sem_anexo' | 'com_voucher' | 'sem_voucher' = 'todos';
+  private advSla: 'todos' | 'com_alerta' | 'sem_alerta' = 'todos';
+  private advRiskScore: string[] = [];
+  private listaDestinosDisponiveis: Destino[] = [];
   private showFiltersPanel: boolean = false;
   private sortField: string = '';
   private sortDirection: 'asc' | 'desc' = 'asc';
@@ -203,6 +216,7 @@ export class Dashboard {
 
       // Carregar tipos de produtos e serviços cadastrados no banco
       await this.loadTiposProduto();
+      await this.loadDestinos();
 
       // 4. Buscar viagens
       await this.loadViagens();
@@ -426,6 +440,170 @@ export class Dashboard {
       'outro': '📦'
     };
     return fallbackMap[cleanTipo] || '📦';
+  }
+
+  /**
+   * Carrega os destinos cadastrados no banco
+   */
+  private async loadDestinos(): Promise<void> {
+    try {
+      const { data, error } = await supabase
+        .from('destinos')
+        .select('*')
+        .order('nome', { ascending: true });
+
+      if (error) throw error;
+      this.listaDestinosDisponiveis = data || [];
+    } catch (err: any) {
+      console.warn('Erro ao carregar destinos cadastrados:', err.message);
+      this.listaDestinosDisponiveis = [];
+    }
+  }
+
+  /**
+   * Retorna a lista completa e normalizada de tipos de produtos disponíveis
+   */
+  private getListaTiposProdutoDisponiveis(): { id: string; nome: string; icone: string }[] {
+    const padroes = [
+      { id: 'aéreo facial', nome: 'Aéreo Facial', icone: '✈️' },
+      { id: 'aéreo operadora', nome: 'Aéreo Operadora', icone: '✈️' },
+      { id: 'hotel', nome: 'Hotel', icone: '🏨' },
+      { id: 'carro', nome: 'Carro', icone: '🚗' },
+      { id: 'seguro viagem', nome: 'Seguro Viagem', icone: '🛡️' },
+      { id: 'cruzeiro', nome: 'Cruzeiro', icone: '🚢' },
+      { id: 'passeios', nome: 'Passeios', icone: '🎟️' },
+      { id: 'transfer', nome: 'Transfer', icone: '🚐' },
+      { id: 'trem', nome: 'Trem', icone: '🚂' },
+      { id: 'ingressos', nome: 'Ingressos', icone: '🎫' },
+      { id: 'casas', nome: 'Casas', icone: '🏡' },
+      { id: 'circuito', nome: 'Circuito', icone: '🗺️' }
+    ];
+
+    const map = new Map<string, { id: string; nome: string; icone: string }>();
+    padroes.forEach(p => map.set(p.id.toLowerCase(), p));
+
+    (this.tiposProduto || []).forEach((t: any) => {
+      const key = (t.nome || '').trim().toLowerCase();
+      if (key) {
+        map.set(key, {
+          id: key,
+          nome: t.nome,
+          icone: t.icone || this.getIconForType(t.nome)
+        });
+      }
+    });
+
+    return Array.from(map.values());
+  }
+
+  /**
+   * Retorna a contagem total de critérios de filtro ativos no momento
+   */
+  private getActiveFiltersCount(): number {
+    let count = 0;
+    if (this.dataFinStart || this.dataFinEnd) count++;
+    if (this.dataIdaStart || this.dataIdaEnd) count++;
+    if (this.dataVoltaStart || this.dataVoltaEnd) count++;
+    if (this.advMesAno) count++;
+    count += this.advProdutos.length;
+    count += this.advDestinos.length;
+    if (this.advFornecedor.trim()) count++;
+    if (this.advValorMin !== null || this.advValorMax !== null) count++;
+    if (this.advRentabilidadeMin !== null || this.advRentabilidadeMax !== null) count++;
+    if (this.advAnexos !== 'todos') count++;
+    if (this.advSla !== 'todos') count++;
+    count += this.advRiskScore.length;
+    if (this.confFilters.finPendente) count++;
+    if (this.confFilters.finOk) count++;
+    if (this.confFilters.procPendente) count++;
+    if (this.confFilters.procOk) count++;
+    return count;
+  }
+
+  /**
+   * Exporta a lista atual de viagens filtradas para um arquivo CSV formatado para Excel (PT-BR)
+   */
+  private exportarViagensCsv(viagensParaExportar: any[]): void {
+    if (!viagensParaExportar || viagensParaExportar.length === 0) {
+      this.showToast('Nenhuma viagem para exportar com os filtros atuais.', 'error');
+      return;
+    }
+
+    const headers = [
+      'ID Ref',
+      'Cliente',
+      'CPF/Doc',
+      'Telefone',
+      'Email',
+      'Destino',
+      'Data Financeiro',
+      'Embarque (Ida)',
+      'Retorno (Volta)',
+      'Produtos / Serviços',
+      'Fornecedores',
+      'Localizadores',
+      'Valor Total Venda (R$)',
+      'Rentabilidade (R$)',
+      'Consultor Responsável',
+      'Fase / Status',
+      'Conf. Financeira',
+      'Conf. Processo',
+      'Voucher Geral Anexado'
+    ];
+
+    const escapeCsv = (val: any): string => {
+      if (val === null || val === undefined) return '""';
+      const str = String(val).replace(/"/g, '""');
+      return `"${str}"`;
+    };
+
+    const formatMoedaCsv = (val?: number): string => {
+      if (val === undefined || val === null || isNaN(val)) return '0,00';
+      return val.toFixed(2).replace('.', ',');
+    };
+
+    const rows = viagensParaExportar.map(v => {
+      const prods = Array.isArray(v.produtos) ? v.produtos : [];
+      const prodNomes = prods.map((p: any) => `${p.tipo || 'Item'}: ${p.descricao || p.nome || ''}`.trim()).join(' | ');
+      const fornecedores = Array.from(new Set(prods.map((p: any) => (p.fornecedor || '').trim()).filter(Boolean))).join(', ');
+      const locs = Array.from(new Set(prods.map((p: any) => (p.codigo_reserva || '').trim()).filter(Boolean))).join(', ');
+      const consultorNome = v.consultor_id === this.user.id ? 'Você' : (this.consultores.find(c => c.id === v.consultor_id)?.nome || 'Consultor');
+
+      return [
+        escapeCsv(v.codigo_ref || v.id?.substring(0, 8) || ''),
+        escapeCsv(v.cliente?.nome || 'Cliente não identificado'),
+        escapeCsv(v.cliente?.documento || ''),
+        escapeCsv(v.cliente?.telefone || ''),
+        escapeCsv(v.cliente?.email || ''),
+        escapeCsv(v.destino || ''),
+        escapeCsv(v.data_financeiro ? formatIsoDateToBr(v.data_financeiro) : ''),
+        escapeCsv(v.data_ida ? formatIsoDateToBr(v.data_ida) : ''),
+        escapeCsv(v.data_volta ? formatIsoDateToBr(v.data_volta) : ''),
+        escapeCsv(prodNomes),
+        escapeCsv(fornecedores),
+        escapeCsv(locs),
+        escapeCsv(formatMoedaCsv(Number(v.valor_total) || 0)),
+        escapeCsv(formatMoedaCsv(Number(v.rentabilidade) || 0)),
+        escapeCsv(consultorNome),
+        escapeCsv(v.status || ''),
+        escapeCsv(v.isFinanceiroConferido ? 'OK' : 'Pendente'),
+        escapeCsv(v.isProcessoConferido ? 'OK' : 'Pendente'),
+        escapeCsv(v.voucher_geral_anexado ? 'SIM' : 'NÃO')
+      ].join(';');
+    });
+
+    const csvContent = '\uFEFF' + [headers.join(';'), ...rows].join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    const dataHora = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
+    link.setAttribute('download', `PaxFlow_Viagens_Export_${dataHora}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    this.showToast(`Planilha exportada com sucesso! (${viagensParaExportar.length} viagens)`, 'success');
   }
 
   /**
@@ -1646,8 +1824,8 @@ export class Dashboard {
         if (!matches) return false;
       }
 
-      // Filtros de Data Avançados:
-      // Data Financeiro
+      // Filtros Avançados:
+      // 1. Data Financeiro
       if (this.dataFinStart) {
         if (!v.data_financeiro || v.data_financeiro < this.dataFinStart) return false;
       }
@@ -1655,7 +1833,7 @@ export class Dashboard {
         if (!v.data_financeiro || v.data_financeiro > this.dataFinEnd) return false;
       }
 
-      // Data Embarque Ida
+      // 2. Data Embarque Ida
       if (this.dataIdaStart) {
         if (!v.data_ida || v.data_ida < this.dataIdaStart) return false;
       }
@@ -1663,12 +1841,98 @@ export class Dashboard {
         if (!v.data_ida || v.data_ida > this.dataIdaEnd) return false;
       }
 
-      // Data Retorno Volta
+      // 3. Data Retorno Volta
       if (this.dataVoltaStart) {
         if (!v.data_volta || v.data_volta < this.dataVoltaStart) return false;
       }
       if (this.dataVoltaEnd) {
         if (!v.data_volta || v.data_volta > this.dataVoltaEnd) return false;
+      }
+
+      // 4. Atalho Mês/Ano específico (YYYY-MM)
+      if (this.advMesAno) {
+        const rawDate = v.data_financeiro || v.data_ida || v.created_at || '';
+        const tripMonth = rawDate.substring(0, 7);
+        if (tripMonth !== this.advMesAno) return false;
+      }
+
+      // 5. Produtos / Serviços (Multi-select com Regra E / OU)
+      if (this.advProdutos.length > 0) {
+        const prods = Array.isArray(v.produtos) ? v.produtos : [];
+        const tripProdTypes = prods.map((p: any) => (p.tipo || p.tipo_produto || '').trim().toLowerCase());
+
+        if (this.advProdutoMatchMode === 'AND') {
+          const hasAll = this.advProdutos.every(wanted =>
+            tripProdTypes.some((t: string) => t.includes(wanted) || wanted.includes(t))
+          );
+          if (!hasAll) return false;
+        } else {
+          const hasAny = this.advProdutos.some(wanted =>
+            tripProdTypes.some((t: string) => t.includes(wanted) || wanted.includes(t))
+          );
+          if (!hasAny) return false;
+        }
+      }
+
+      // 6. Destinos Selecionados
+      if (this.advDestinos.length > 0) {
+        const destNome = (v.destino || '').toLowerCase();
+        const destId = v.destino_id || v.destinoId || '';
+        const matchesDest = this.advDestinos.some(d => {
+          const dLower = d.toLowerCase();
+          return destNome.includes(dLower) || destId === d;
+        });
+        if (!matchesDest) return false;
+      }
+
+      // 7. Fornecedor / Companhia
+      if (this.advFornecedor.trim()) {
+        const fornQ = this.advFornecedor.trim().toLowerCase();
+        const prods = Array.isArray(v.produtos) ? v.produtos : [];
+        const matchesForn = prods.some((p: any) => (p.fornecedor || '').toLowerCase().includes(fornQ));
+        if (!matchesForn) return false;
+      }
+
+      // 8. Faixa de Valor de Venda
+      const valTotal = Number(v.valor_total) || 0;
+      if (this.advValorMin !== null && valTotal < this.advValorMin) return false;
+      if (this.advValorMax !== null && valTotal > this.advValorMax) return false;
+
+      // 9. Faixa de Rentabilidade
+      const valRent = Number(v.rentabilidade) || 0;
+      if (this.advRentabilidadeMin !== null && valRent < this.advRentabilidadeMin) return false;
+      if (this.advRentabilidadeMax !== null && valRent > this.advRentabilidadeMax) return false;
+
+      // 10. Status de Arquivos & Anexos
+      if (this.advAnexos !== 'todos') {
+        const prods = Array.isArray(v.produtos) ? v.produtos : [];
+        const hasVoucherGeral = !!v.voucher_geral_anexado;
+        const hasProductAnexo = prods.some((p: any) =>
+          p.dados_adicionais?.anexo_url ||
+          p.dados_adicionais?.voucher_url ||
+          p.dadosAdicionais?.anexo_url ||
+          p.dadosAdicionais?.voucher_url
+        );
+        const hasAnyAnexo = hasVoucherGeral || hasProductAnexo;
+
+        if (this.advAnexos === 'com_anexo' && !hasAnyAnexo) return false;
+        if (this.advAnexos === 'sem_anexo' && hasAnyAnexo) return false;
+        if (this.advAnexos === 'com_voucher' && !hasVoucherGeral) return false;
+        if (this.advAnexos === 'sem_voucher' && hasVoucherGeral) return false;
+      }
+
+      // 11. Status de SLA
+      if (this.advSla !== 'todos') {
+        const reembolsoConcluido = v.reembolsos && v.reembolsos.some((r: any) => r.status === 'pago');
+        const slaResult = reembolsoConcluido ? { alert: false } : this.checkSLA(v);
+        if (this.advSla === 'com_alerta' && !slaResult.alert) return false;
+        if (this.advSla === 'sem_alerta' && slaResult.alert) return false;
+      }
+
+      // 12. PaxFlow Risk Score™
+      if (this.advRiskScore.length > 0) {
+        const risk = RiskScoreService.calculateTripRiskScore(v, v.cliente, v.produtos, this.settings, this.user, this.perfil);
+        if (!this.advRiskScore.includes(risk.nivel)) return false;
       }
 
       return true;
@@ -1736,6 +2000,7 @@ export class Dashboard {
     const isSandbox = (window as any).paxflowSandbox;
     const desktopHeight = isSandbox ? 'calc(100vh - 36px)' : '100vh';
     const mobileHeight = isSandbox ? 'calc(100vh - 93px)' : 'calc(100vh - 57px)';
+    const totalFiltrosAtivos = this.getActiveFiltersCount();
 
     // 5. Renderizar o HTML base do painel operacional baseado em lista
     this.container.innerHTML = `
@@ -1779,9 +2044,9 @@ export class Dashboard {
               <span class="font-extrabold text-slate-600 dark:text-slate-300">SLAs: <strong class="${totalSlaAlerts > 0 ? 'text-rose-600 animate-pulse' : 'text-slate-900 dark:text-white'} font-black">${totalSlaAlerts}</strong></span>
             </div>
 
-            <!-- Botão de Filtros de Data -->
-            <button id="btn-toggle-filtros" class="px-3.5 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-extrabold text-xs rounded-xl border border-slate-200/60 dark:border-slate-700/60 flex items-center justify-center gap-1.5 transition shrink-0">
-              <span>📅 Data</span>
+            <!-- Botão de Filtros Avançados -->
+            <button id="btn-toggle-filtros" class="px-3.5 py-2 ${totalFiltrosAtivos > 0 ? 'bg-indigo-600 text-white font-black shadow-md shadow-indigo-600/20 ring-2 ring-indigo-400/30' : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-extrabold'} text-xs rounded-xl border ${totalFiltrosAtivos > 0 ? 'border-indigo-500' : 'border-slate-200/60 dark:border-slate-700/60'} flex items-center justify-center gap-1.5 transition shrink-0 cursor-pointer">
+              <span>🎛️ Avançado${totalFiltrosAtivos > 0 ? ` (${totalFiltrosAtivos})` : ''}</span>
               <span class="text-[9px]">${this.showFiltersPanel ? '▲' : '▼'}</span>
             </button>
 
@@ -1872,40 +2137,7 @@ export class Dashboard {
         </header>
 
         <!-- PAINEL DE FILTROS AVANÇADOS COLLAPSIBLE -->
-        <div id="advanced-filters-panel" class="${this.showFiltersPanel ? 'block' : 'hidden'} bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800/80 px-6 py-4 transition-colors duration-200">
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <!-- Data Financeiro -->
-            <div class="space-y-2">
-              <span class="text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider block">📅 Data Financeiro</span>
-              <div class="flex items-center gap-2">
-                <input id="filter-fin-start" type="text" data-mask="date" inputmode="numeric" maxlength="10" placeholder="DD/MM/AAAA" value="${this.dataFinStart ? formatIsoDateToBr(this.dataFinStart) : ''}" class="date-input w-full text-xs font-semibold px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500" />
-                <span class="text-xs text-slate-400">a</span>
-                <input id="filter-fin-end" type="text" data-mask="date" inputmode="numeric" maxlength="10" placeholder="DD/MM/AAAA" value="${this.dataFinEnd ? formatIsoDateToBr(this.dataFinEnd) : ''}" class="date-input w-full text-xs font-semibold px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500" />
-              </div>
-            </div>
-            <!-- Embarque Ida -->
-            <div class="space-y-2">
-              <span class="text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider block">✈️ Data de Embarque (Ida)</span>
-              <div class="flex items-center gap-2">
-                <input id="filter-ida-start" type="text" data-mask="date" inputmode="numeric" maxlength="10" placeholder="DD/MM/AAAA" value="${this.dataIdaStart ? formatIsoDateToBr(this.dataIdaStart) : ''}" class="date-input w-full text-xs font-semibold px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500" />
-                <span class="text-xs text-slate-400">a</span>
-                <input id="filter-ida-end" type="text" data-mask="date" inputmode="numeric" maxlength="10" placeholder="DD/MM/AAAA" value="${this.dataIdaEnd ? formatIsoDateToBr(this.dataIdaEnd) : ''}" class="date-input w-full text-xs font-semibold px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500" />
-              </div>
-            </div>
-            <!-- Embarque Volta -->
-            <div class="space-y-2">
-              <span class="text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider block">🚐 Data de Retorno (Volta)</span>
-              <div class="flex items-center gap-2">
-                <input id="filter-volta-start" type="text" data-mask="date" inputmode="numeric" maxlength="10" placeholder="DD/MM/AAAA" value="${this.dataVoltaStart ? formatIsoDateToBr(this.dataVoltaStart) : ''}" class="date-input w-full text-xs font-semibold px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500" />
-                <span class="text-xs text-slate-400">a</span>
-                <input id="filter-volta-end" type="text" data-mask="date" inputmode="numeric" maxlength="10" placeholder="DD/MM/AAAA" value="${this.dataVoltaEnd ? formatIsoDateToBr(this.dataVoltaEnd) : ''}" class="date-input w-full text-xs font-semibold px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500" />
-              </div>
-            </div>
-          </div>
-          <div class="flex justify-end gap-3 mt-4 border-t border-slate-100 dark:border-slate-800 pt-3">
-            <button id="btn-clear-date-filters" class="px-4 py-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-950 dark:hover:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-extrabold text-[10px] uppercase tracking-wider rounded-lg transition">Limpar Filtros</button>
-          </div>
-        </div>
+        ${this.renderAdvancedFiltersPanelHTML()}
 
         <!-- ABAS DE STATUS / FASES DE VENDA -->
         <div class="px-6 pt-4 bg-slate-50/50 dark:bg-slate-950">
@@ -1920,6 +2152,7 @@ export class Dashboard {
         </div>
 
         ${this.renderActiveFilterChipsHTML()}
+        ${this.renderFinancialSummaryBarHTML(filtrados)}
 
         <!-- CONTEÚDO PRINCIPAL (LISTA / TABELA) -->
         <main class="flex-1 p-6 flex flex-col min-h-0 bg-slate-50/50 dark:bg-slate-950 overflow-y-auto custom-scrollbar">
@@ -2047,6 +2280,325 @@ export class Dashboard {
   }
 
   /**
+   * Renderiza a barra com o resumo financeiro em tempo real e o botão de exportar CSV/Excel
+   */
+  private renderFinancialSummaryBarHTML(viagensFiltradas: any[]): string {
+    const totalViagens = viagensFiltradas.length;
+    const totalVendas = viagensFiltradas.reduce((acc, v) => acc + (Number(v.valor_total) || 0), 0);
+    const totalRentabilidade = viagensFiltradas.reduce((acc, v) => acc + (Number(v.rentabilidade) || 0), 0);
+    const ticketMedio = totalViagens > 0 ? totalVendas / totalViagens : 0;
+
+    return `
+      <div id="financial-summary-export-bar" class="px-6 py-2.5 bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800/80 flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div class="flex flex-wrap items-center gap-4">
+          <div class="flex items-center gap-1.5">
+            <span class="text-[10px] font-black uppercase text-slate-400 dark:text-slate-400 tracking-wider">Viagens:</span>
+            <span class="font-black text-slate-800 dark:text-slate-100">${totalViagens}</span>
+          </div>
+          <div class="h-3.5 w-px bg-slate-200 dark:bg-slate-800 hidden sm:block"></div>
+          <div class="flex items-center gap-1.5">
+            <span class="text-[10px] font-black uppercase text-slate-400 dark:text-slate-400 tracking-wider">Total Vendas:</span>
+            <span class="font-extrabold text-emerald-600 dark:text-emerald-400">R$ ${totalVendas.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+          </div>
+          <div class="h-3.5 w-px bg-slate-200 dark:bg-slate-800 hidden sm:block"></div>
+          <div class="flex items-center gap-1.5">
+            <span class="text-[10px] font-black uppercase text-slate-400 dark:text-slate-400 tracking-wider">Rentabilidade:</span>
+            <span class="font-extrabold text-indigo-600 dark:text-indigo-400">R$ ${totalRentabilidade.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+          </div>
+          <div class="h-3.5 w-px bg-slate-200 dark:bg-slate-800 hidden sm:block"></div>
+          <div class="flex items-center gap-1.5">
+            <span class="text-[10px] font-black uppercase text-slate-400 dark:text-slate-400 tracking-wider">Ticket Médio:</span>
+            <span class="font-extrabold text-slate-700 dark:text-slate-300">R$ ${ticketMedio.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+          </div>
+        </div>
+
+        <button id="btn-export-filtered-csv" type="button" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-extrabold text-xs rounded-xl border border-slate-200/80 dark:border-slate-700/80 flex items-center gap-1.5 transition shadow-xs cursor-pointer">
+          <svg class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+          </svg>
+          <span>Exportar CSV</span>
+        </button>
+      </div>
+    `;
+  }
+
+  /**
+   * Renderiza o Painel Completo de Filtros Avançados Expansível
+   */
+  private renderAdvancedFiltersPanelHTML(): string {
+    const tiposDisponiveis = this.getListaTiposProdutoDisponiveis();
+
+    const tripDestSet = new Set<string>();
+    this.viagens.forEach(v => {
+      if (v.destino && typeof v.destino === 'string') tripDestSet.add(v.destino.trim());
+    });
+    this.listaDestinosDisponiveis.forEach(d => {
+      if (d.nome) tripDestSet.add(`${d.nome}, ${d.pais}`.trim());
+    });
+    const destinosList = Array.from(tripDestSet).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+
+    const months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+    const now = new Date();
+    const curYear = now.getFullYear();
+    const curMonth = now.getMonth();
+
+    const monthOptions: { value: string; label: string }[] = [];
+    for (let i = -6; i <= 12; i++) {
+      const d = new Date(curYear, curMonth + i, 1);
+      const val = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      const label = `${months[d.getMonth()]}/${d.getFullYear()}`;
+      monthOptions.push({ value: val, label });
+    }
+
+    const totalAtivos = this.getActiveFiltersCount();
+
+    return `
+      <div id="advanced-filters-panel" class="${this.showFiltersPanel ? 'block' : 'hidden'} bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800/80 px-6 py-5 transition-colors duration-200 shadow-sm animate-fadeIn">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+          <!-- Bloco 1: Período & Datas -->
+          <div class="bg-slate-50/70 dark:bg-slate-800/40 p-3.5 rounded-2xl border border-slate-200/60 dark:border-slate-800/60 space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-wider flex items-center gap-1.5">
+                <span>📅</span>
+                <span>Período & Datas</span>
+              </span>
+              <!-- Atalho Mês/Ano -->
+              <select id="filter-adv-mes-ano" class="text-xs font-bold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer">
+                <option value="">Todos os Meses</option>
+                ${monthOptions.map(m => `<option value="${m.value}" ${this.advMesAno === m.value ? 'selected' : ''}>${m.label}</option>`).join('')}
+              </select>
+            </div>
+
+            <!-- Data Financeiro -->
+            <div class="space-y-1">
+              <span class="text-[9px] font-extrabold text-slate-400 dark:text-slate-400 uppercase tracking-wider block">Data Financeiro</span>
+              <div class="flex items-center gap-1.5">
+                <input id="filter-fin-start" type="text" data-mask="date" inputmode="numeric" maxlength="10" placeholder="DD/MM/AAAA" value="${this.dataFinStart ? formatIsoDateToBr(this.dataFinStart) : ''}" class="date-input w-full text-xs font-semibold px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                <span class="text-xs text-slate-400">a</span>
+                <input id="filter-fin-end" type="text" data-mask="date" inputmode="numeric" maxlength="10" placeholder="DD/MM/AAAA" value="${this.dataFinEnd ? formatIsoDateToBr(this.dataFinEnd) : ''}" class="date-input w-full text-xs font-semibold px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+              </div>
+            </div>
+
+            <!-- Embarque Ida -->
+            <div class="space-y-1">
+              <span class="text-[9px] font-extrabold text-slate-400 dark:text-slate-400 uppercase tracking-wider block">✈️ Embarque (Ida)</span>
+              <div class="flex items-center gap-1.5">
+                <input id="filter-ida-start" type="text" data-mask="date" inputmode="numeric" maxlength="10" placeholder="DD/MM/AAAA" value="${this.dataIdaStart ? formatIsoDateToBr(this.dataIdaStart) : ''}" class="date-input w-full text-xs font-semibold px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                <span class="text-xs text-slate-400">a</span>
+                <input id="filter-ida-end" type="text" data-mask="date" inputmode="numeric" maxlength="10" placeholder="DD/MM/AAAA" value="${this.dataIdaEnd ? formatIsoDateToBr(this.dataIdaEnd) : ''}" class="date-input w-full text-xs font-semibold px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+              </div>
+            </div>
+
+            <!-- Retorno Volta -->
+            <div class="space-y-1">
+              <span class="text-[9px] font-extrabold text-slate-400 dark:text-slate-400 uppercase tracking-wider block">🚐 Retorno (Volta)</span>
+              <div class="flex items-center gap-1.5">
+                <input id="filter-volta-start" type="text" data-mask="date" inputmode="numeric" maxlength="10" placeholder="DD/MM/AAAA" value="${this.dataVoltaStart ? formatIsoDateToBr(this.dataVoltaStart) : ''}" class="date-input w-full text-xs font-semibold px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                <span class="text-xs text-slate-400">a</span>
+                <input id="filter-volta-end" type="text" data-mask="date" inputmode="numeric" maxlength="10" placeholder="DD/MM/AAAA" value="${this.dataVoltaEnd ? formatIsoDateToBr(this.dataVoltaEnd) : ''}" class="date-input w-full text-xs font-semibold px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Bloco 2: Produtos & Serviços -->
+          <div class="bg-slate-50/70 dark:bg-slate-800/40 p-3.5 rounded-2xl border border-slate-200/60 dark:border-slate-800/60 space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-wider flex items-center gap-1.5">
+                <span>🏷️</span>
+                <span>Produtos & Serviços</span>
+              </span>
+              <!-- Toggle E / OU -->
+              <div class="inline-flex p-0.5 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 text-[10px] font-extrabold select-none">
+                <button id="btn-match-mode-and" type="button" class="px-2 py-0.5 rounded transition ${this.advProdutoMatchMode === 'AND' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'}">
+                  TODOS (E)
+                </button>
+                <button id="btn-match-mode-or" type="button" class="px-2 py-0.5 rounded transition ${this.advProdutoMatchMode === 'OR' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'}">
+                  QUALQUER (OU)
+                </button>
+              </div>
+            </div>
+
+            <!-- Grid de Pills de Produtos -->
+            <div class="flex flex-wrap gap-1.5 max-h-[160px] overflow-y-auto custom-scrollbar pr-1">
+              ${tiposDisponiveis.map(t => {
+                const isSelected = this.advProdutos.includes(t.id);
+                return `
+                  <button type="button" class="pill-adv-produto px-2.5 py-1 text-xs font-bold rounded-lg border transition cursor-pointer flex items-center gap-1 ${
+                    isSelected
+                      ? 'bg-indigo-600 text-white border-indigo-700 shadow-sm ring-1 ring-indigo-500/30'
+                      : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-indigo-400'
+                  }" data-prod-id="${t.id}">
+                    <span>${t.icone}</span>
+                    <span>${t.nome}</span>
+                  </button>
+                `;
+              }).join('')}
+            </div>
+            ${this.advProdutos.length > 0 ? `
+              <div class="text-[10px] text-indigo-600 dark:text-indigo-400 font-bold flex justify-between items-center pt-1 border-t border-slate-200/50 dark:border-slate-700/50">
+                <span>${this.advProdutos.length} produto(s) selecionado(s) (${this.advProdutoMatchMode === 'AND' ? 'precisa ter todos' : 'pelo menos um'})</span>
+                <button id="btn-clear-adv-produtos" type="button" class="text-rose-500 hover:underline cursor-pointer">Limpar</button>
+              </div>
+            ` : ''}
+          </div>
+
+          <!-- Bloco 3: Destinos & Fornecedores -->
+          <div class="bg-slate-50/70 dark:bg-slate-800/40 p-3.5 rounded-2xl border border-slate-200/60 dark:border-slate-800/60 space-y-3">
+            <span class="text-[10px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-wider flex items-center gap-1.5">
+              <span>📍</span>
+              <span>Destinos & Fornecedores</span>
+            </span>
+
+            <!-- Destino -->
+            <div class="space-y-1">
+              <span class="text-[9px] font-extrabold text-slate-400 dark:text-slate-400 uppercase tracking-wider block">Destino</span>
+              <select id="filter-adv-destino" class="w-full text-xs font-bold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer">
+                <option value="">Todos os Destinos</option>
+                ${destinosList.map(d => `<option value="${d}" ${this.advDestinos.includes(d) ? 'selected' : ''}>${d}</option>`).join('')}
+              </select>
+            </div>
+
+            <!-- Fornecedor -->
+            <div class="space-y-1">
+              <span class="text-[9px] font-extrabold text-slate-400 dark:text-slate-400 uppercase tracking-wider block">🏢 Fornecedor / Companhia</span>
+              <input id="filter-adv-fornecedor" type="text" placeholder="Ex: LATAM, Movida, Disney, Hotel..." value="${this.advFornecedor}" class="w-full text-xs font-semibold px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+            </div>
+
+            <!-- Status de Documentos / Anexos -->
+            <div class="space-y-1 pt-1">
+              <span class="text-[9px] font-extrabold text-slate-400 dark:text-slate-400 uppercase tracking-wider block">📎 Anexos & Vouchers</span>
+              <div class="flex flex-wrap gap-1">
+                ${[
+                  { id: 'todos', label: 'Todos' },
+                  { id: 'com_anexo', label: '📎 Com Anexos' },
+                  { id: 'sem_anexo', label: '🚫 Sem Anexos' },
+                  { id: 'com_voucher', label: '📑 Com Voucher Geral' },
+                  { id: 'sem_voucher', label: '⏳ Sem Voucher Geral' }
+                ].map(opt => `
+                  <button type="button" class="pill-adv-anexo px-2 py-0.5 text-[11px] font-bold rounded-lg border transition cursor-pointer ${
+                    this.advAnexos === opt.id
+                      ? 'bg-indigo-600 text-white border-indigo-700 shadow-xs'
+                      : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-indigo-400'
+                  }" data-anexo-val="${opt.id}">
+                    ${opt.label}
+                  </button>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+
+          <!-- Bloco 4: Valores Financeiros & Rentabilidade -->
+          <div class="bg-slate-50/70 dark:bg-slate-800/40 p-3.5 rounded-2xl border border-slate-200/60 dark:border-slate-800/60 space-y-3">
+            <span class="text-[10px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-wider flex items-center gap-1.5">
+              <span>💰</span>
+              <span>Faixas Financeiras</span>
+            </span>
+
+            <!-- Valor Total de Venda -->
+            <div class="space-y-1">
+              <span class="text-[9px] font-extrabold text-slate-400 dark:text-slate-400 uppercase tracking-wider block">Valor Total de Venda (R$)</span>
+              <div class="flex items-center gap-1.5">
+                <input id="filter-adv-valor-min" type="number" min="0" step="100" placeholder="Mínimo (R$)" value="${this.advValorMin !== null ? this.advValorMin : ''}" class="w-full text-xs font-semibold px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                <span class="text-xs text-slate-400">a</span>
+                <input id="filter-adv-valor-max" type="number" min="0" step="100" placeholder="Máximo (R$)" value="${this.advValorMax !== null ? this.advValorMax : ''}" class="w-full text-xs font-semibold px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+              </div>
+            </div>
+
+            <!-- Rentabilidade -->
+            <div class="space-y-1">
+              <span class="text-[9px] font-extrabold text-slate-400 dark:text-slate-400 uppercase tracking-wider block">Rentabilidade (R$)</span>
+              <div class="flex items-center gap-1.5">
+                <input id="filter-adv-rent-min" type="number" min="0" step="50" placeholder="Mínimo (R$)" value="${this.advRentabilidadeMin !== null ? this.advRentabilidadeMin : ''}" class="w-full text-xs font-semibold px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                <span class="text-xs text-slate-400">a</span>
+                <input id="filter-adv-rent-max" type="number" min="0" step="50" placeholder="Máximo (R$)" value="${this.advRentabilidadeMax !== null ? this.advRentabilidadeMax : ''}" class="w-full text-xs font-semibold px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Bloco 5: Conferência, SLAs & Risk Score -->
+          <div class="bg-slate-50/70 dark:bg-slate-800/40 p-3.5 rounded-2xl border border-slate-200/60 dark:border-slate-800/60 space-y-3 md:col-span-2">
+            <span class="text-[10px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-wider flex items-center gap-1.5">
+              <span>🛡️</span>
+              <span>Conferência, SLAs & Risk Score</span>
+            </span>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <!-- Conferência -->
+              <div class="space-y-1">
+                <span class="text-[9px] font-extrabold text-slate-400 dark:text-slate-400 uppercase tracking-wider block">Conferência</span>
+                <div class="flex flex-wrap gap-1">
+                  <button type="button" class="pill-adv-conf-fin-ok px-2 py-1 text-xs font-bold rounded-lg border transition cursor-pointer ${this.confFilters.finOk ? 'bg-emerald-600 text-white border-emerald-700' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-emerald-400'}">
+                    ✅ Fin. OK
+                  </button>
+                  <button type="button" class="pill-adv-conf-fin-pendente px-2 py-1 text-xs font-bold rounded-lg border transition cursor-pointer ${this.confFilters.finPendente ? 'bg-amber-500 text-white border-amber-600' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-amber-400'}">
+                    ⏳ Fin. Pend.
+                  </button>
+                  <button type="button" class="pill-adv-conf-proc-ok px-2 py-1 text-xs font-bold rounded-lg border transition cursor-pointer ${this.confFilters.procOk ? 'bg-emerald-600 text-white border-emerald-700' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-emerald-400'}">
+                    ✅ Proc. OK
+                  </button>
+                  <button type="button" class="pill-adv-conf-proc-pendente px-2 py-1 text-xs font-bold rounded-lg border transition cursor-pointer ${this.confFilters.procPendente ? 'bg-amber-500 text-white border-amber-600' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-amber-400'}">
+                    ⏳ Proc. Pend.
+                  </button>
+                </div>
+              </div>
+
+              <!-- Alertas de SLA -->
+              <div class="space-y-1">
+                <span class="text-[9px] font-extrabold text-slate-400 dark:text-slate-400 uppercase tracking-wider block">Alertas de SLA</span>
+                <div class="flex flex-wrap gap-1">
+                  <button type="button" class="pill-adv-sla-alerta px-2.5 py-1 text-xs font-bold rounded-lg border transition cursor-pointer ${this.advSla === 'com_alerta' ? 'bg-rose-600 text-white border-rose-700 shadow-xs' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-rose-400'}" data-sla-val="com_alerta">
+                    🚨 Com Alerta SLA
+                  </button>
+                  <button type="button" class="pill-adv-sla-alerta px-2.5 py-1 text-xs font-bold rounded-lg border transition cursor-pointer ${this.advSla === 'sem_alerta' ? 'bg-indigo-600 text-white border-indigo-700 shadow-xs' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-indigo-400'}" data-sla-val="sem_alerta">
+                    🟢 SLA em Dia
+                  </button>
+                </div>
+              </div>
+
+              <!-- Risk Score Operacional -->
+              <div class="space-y-1">
+                <span class="text-[9px] font-extrabold text-slate-400 dark:text-slate-400 uppercase tracking-wider block">Risk Score Operacional</span>
+                <div class="flex flex-wrap gap-1">
+                  ${[
+                    { id: 'verde', label: '🟢 Verde', bg: 'bg-emerald-600 text-white border-emerald-700' },
+                    { id: 'amarelo', label: '🟡 Amarelo', bg: 'bg-amber-500 text-white border-amber-600' },
+                    { id: 'vermelho', label: '🔴 Vermelho', bg: 'bg-rose-600 text-white border-rose-700' }
+                  ].map(r => `
+                    <button type="button" class="pill-adv-risk px-2.5 py-1 text-xs font-bold rounded-lg border transition cursor-pointer ${
+                      this.advRiskScore.includes(r.id)
+                        ? r.bg
+                        : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-400'
+                    }" data-risk-level="${r.id}">
+                      ${r.label}
+                    </button>
+                  `).join('')}
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Rodapé de Ações do Painel -->
+        <div class="flex items-center justify-between gap-3 mt-5 pt-3.5 border-t border-slate-200/80 dark:border-slate-800">
+          <div class="text-xs text-slate-500 dark:text-slate-400 font-bold">
+            ${totalAtivos > 0 ? `<span class="text-indigo-600 dark:text-indigo-400 font-extrabold">🎯 ${totalAtivos} critério(s) ativo(s)</span> &bull; Filtro reativo aplicado` : 'Nenhum filtro ativo selecionado'}
+          </div>
+          <div class="flex items-center gap-2">
+            <button id="btn-clear-all-adv-filters" type="button" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-extrabold text-xs uppercase tracking-wider rounded-xl border border-slate-200/80 dark:border-slate-700/80 transition cursor-pointer">
+              Limpar Todos os Filtros
+            </button>
+            <button id="btn-collapse-adv-panel" type="button" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-md shadow-indigo-600/20 transition cursor-pointer">
+              Recolher Painel ▲
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  /**
    * Renderiza a barra de chips com os filtros ativos para feedback visual imediato e desativação rápida em 1 clique
    */
   private renderActiveFilterChipsHTML(): string {
@@ -2073,6 +2625,56 @@ export class Dashboard {
       const endBr = this.dataVoltaEnd ? formatIsoDateToBr(this.dataVoltaEnd) : '...';
       chips.push({ key: 'dataVolta', label: `Retorno: ${startBr} a ${endBr}`, icon: '🚐' });
     }
+
+    if (this.advMesAno) {
+      const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+      const [y, m] = this.advMesAno.split('-');
+      const monthName = months[parseInt(m, 10) - 1] || m;
+      chips.push({ key: 'adv-mes-ano', label: `Mês: ${monthName}/${y}`, icon: '📆' });
+    }
+
+    this.advProdutos.forEach(pId => {
+      const icon = this.getIconForType(pId);
+      chips.push({ key: `adv-prod-${pId}`, label: `Produto: ${icon} ${pId.toUpperCase()}`, icon: '🏷️' });
+    });
+
+    this.advDestinos.forEach(d => {
+      chips.push({ key: `adv-dest-${d}`, label: `Destino: ${d}`, icon: '📍' });
+    });
+
+    if (this.advFornecedor.trim()) {
+      chips.push({ key: 'adv-fornecedor', label: `Fornecedor: "${this.advFornecedor}"`, icon: '🏢' });
+    }
+
+    if (this.advValorMin !== null || this.advValorMax !== null) {
+      const minStr = this.advValorMin !== null ? `R$ ${this.advValorMin}` : 'R$ 0';
+      const maxStr = this.advValorMax !== null ? `R$ ${this.advValorMax}` : '...';
+      chips.push({ key: 'adv-valor', label: `Venda: ${minStr} a ${maxStr}`, icon: '💰' });
+    }
+
+    if (this.advRentabilidadeMin !== null || this.advRentabilidadeMax !== null) {
+      const minStr = this.advRentabilidadeMin !== null ? `R$ ${this.advRentabilidadeMin}` : 'R$ 0';
+      const maxStr = this.advRentabilidadeMax !== null ? `R$ ${this.advRentabilidadeMax}` : '...';
+      chips.push({ key: 'adv-rent', label: `Rentabilidade: ${minStr} a ${maxStr}`, icon: '📈' });
+    }
+
+    if (this.advAnexos !== 'todos') {
+      const labelMap: Record<string, string> = {
+        com_anexo: 'Com Anexos',
+        sem_anexo: 'Sem Anexos',
+        com_voucher: 'Com Voucher Geral',
+        sem_voucher: 'Sem Voucher Geral'
+      };
+      chips.push({ key: 'adv-anexos', label: labelMap[this.advAnexos] || this.advAnexos, icon: '📎' });
+    }
+
+    if (this.advSla !== 'todos') {
+      chips.push({ key: 'adv-sla', label: this.advSla === 'com_alerta' ? 'Com Alerta SLA' : 'SLA em Dia', icon: '🚨' });
+    }
+
+    this.advRiskScore.forEach(r => {
+      chips.push({ key: `adv-risk-${r}`, label: `Risco ${r.toUpperCase()}`, icon: '🛡️' });
+    });
 
     if (this.selectedConsultantId !== 'todos') {
       const consultorNome = this.consultores.find(c => c.id === this.selectedConsultantId)?.nome || 'Consultor';
@@ -2571,10 +3173,89 @@ Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : '
       });
     });
 
-    // 2. Botão de Toggle Filtros de Data
+    // 2. Botão de Toggle Filtros Avançados
     document.getElementById('btn-toggle-filtros')?.addEventListener('click', () => {
       this.showFiltersPanel = !this.showFiltersPanel;
       this.render();
+    });
+
+    // 2.1. Botão de Recolher Painel
+    document.getElementById('btn-collapse-adv-panel')?.addEventListener('click', () => {
+      this.showFiltersPanel = false;
+      this.render();
+    });
+
+    // 2.2. Botão de Exportar CSV
+    document.getElementById('btn-export-filtered-csv')?.addEventListener('click', () => {
+      const filtrados = this.viagens.filter(v => {
+        if (this.selectedConsultantId !== 'todos' && v.consultor_id !== this.selectedConsultantId) return false;
+        if (this.confFilters.finPendente && v.isFinanceiroConferido) return false;
+        if (this.confFilters.finOk && !v.isFinanceiroConferido) return false;
+        if (this.confFilters.procPendente && v.isProcessoConferido) return false;
+        if (this.confFilters.procOk && !v.isProcessoConferido) return false;
+        if (this.viewModeMonth === 'current' && !this.isCurrentMonthTrip(v)) return false;
+        if (this.activeStatusTab !== 'todos' && (v.status || '').toLowerCase().trim() !== this.activeStatusTab.toLowerCase().trim()) return false;
+        if (this.dataFinStart && (!v.data_financeiro || v.data_financeiro < this.dataFinStart)) return false;
+        if (this.dataFinEnd && (!v.data_financeiro || v.data_financeiro > this.dataFinEnd)) return false;
+        if (this.dataIdaStart && (!v.data_ida || v.data_ida < this.dataIdaStart)) return false;
+        if (this.dataIdaEnd && (!v.data_ida || v.data_ida > this.dataIdaEnd)) return false;
+        if (this.dataVoltaStart && (!v.data_volta || v.data_volta < this.dataVoltaStart)) return false;
+        if (this.dataVoltaEnd && (!v.data_volta || v.data_volta > this.dataVoltaEnd)) return false;
+        if (this.advMesAno) {
+          const rawDate = v.data_financeiro || v.data_ida || v.created_at || '';
+          if (rawDate.substring(0, 7) !== this.advMesAno) return false;
+        }
+        if (this.advProdutos.length > 0) {
+          const prods = Array.isArray(v.produtos) ? v.produtos : [];
+          const tripProdTypes = prods.map((p: any) => (p.tipo || p.tipo_produto || '').trim().toLowerCase());
+          if (this.advProdutoMatchMode === 'AND') {
+            const hasAll = this.advProdutos.every(wanted => tripProdTypes.some((t: string) => t.includes(wanted) || wanted.includes(t)));
+            if (!hasAll) return false;
+          } else {
+            const hasAny = this.advProdutos.some(wanted => tripProdTypes.some((t: string) => t.includes(wanted) || wanted.includes(t)));
+            if (!hasAny) return false;
+          }
+        }
+        if (this.advDestinos.length > 0) {
+          const destNome = (v.destino || '').toLowerCase();
+          const destId = v.destino_id || v.destinoId || '';
+          const matchesDest = this.advDestinos.some(d => destNome.includes(d.toLowerCase()) || destId === d);
+          if (!matchesDest) return false;
+        }
+        if (this.advFornecedor.trim()) {
+          const fornQ = this.advFornecedor.trim().toLowerCase();
+          const prods = Array.isArray(v.produtos) ? v.produtos : [];
+          if (!prods.some((p: any) => (p.fornecedor || '').toLowerCase().includes(fornQ))) return false;
+        }
+        const valTotal = Number(v.valor_total) || 0;
+        if (this.advValorMin !== null && valTotal < this.advValorMin) return false;
+        if (this.advValorMax !== null && valTotal > this.advValorMax) return false;
+        const valRent = Number(v.rentabilidade) || 0;
+        if (this.advRentabilidadeMin !== null && valRent < this.advRentabilidadeMin) return false;
+        if (this.advRentabilidadeMax !== null && valRent > this.advRentabilidadeMax) return false;
+        if (this.advAnexos !== 'todos') {
+          const prods = Array.isArray(v.produtos) ? v.produtos : [];
+          const hasVoucherGeral = !!v.voucher_geral_anexado;
+          const hasProductAnexo = prods.some((p: any) => p.dados_adicionais?.anexo_url || p.dados_adicionais?.voucher_url || p.dadosAdicionais?.anexo_url || p.dadosAdicionais?.voucher_url);
+          const hasAnyAnexo = hasVoucherGeral || hasProductAnexo;
+          if (this.advAnexos === 'com_anexo' && !hasAnyAnexo) return false;
+          if (this.advAnexos === 'sem_anexo' && hasAnyAnexo) return false;
+          if (this.advAnexos === 'com_voucher' && !hasVoucherGeral) return false;
+          if (this.advAnexos === 'sem_voucher' && hasVoucherGeral) return false;
+        }
+        if (this.advSla !== 'todos') {
+          const reembolsoConcluido = v.reembolsos && v.reembolsos.some((r: any) => r.status === 'pago');
+          const slaResult = reembolsoConcluido ? { alert: false } : this.checkSLA(v);
+          if (this.advSla === 'com_alerta' && !slaResult.alert) return false;
+          if (this.advSla === 'sem_alerta' && slaResult.alert) return false;
+        }
+        if (this.advRiskScore.length > 0) {
+          const risk = RiskScoreService.calculateTripRiskScore(v, v.cliente, v.produtos, this.settings, this.user, this.perfil);
+          if (!this.advRiskScore.includes(risk.nivel)) return false;
+        }
+        return true;
+      });
+      this.exportarViagensCsv(filtrados);
     });
 
     // 3. Ouvintes para inputs de Filtro de Data
@@ -2594,16 +3275,183 @@ Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : '
     bindDateFilter('filter-volta-start', 'dataVoltaStart');
     bindDateFilter('filter-volta-end', 'dataVoltaEnd');
 
-    // 4. Botão de Limpar Filtros de Data
-    document.getElementById('btn-clear-date-filters')?.addEventListener('click', () => {
+    // 3.1. Atalho Mês/Ano
+    const selectMesAno = document.getElementById('filter-adv-mes-ano') as HTMLSelectElement;
+    selectMesAno?.addEventListener('change', () => {
+      this.advMesAno = selectMesAno.value;
+      this.render();
+    });
+
+    // 3.2. Destinos
+    const selectDest = document.getElementById('filter-adv-destino') as HTMLSelectElement;
+    selectDest?.addEventListener('change', () => {
+      const val = selectDest.value;
+      this.advDestinos = val ? [val] : [];
+      this.render();
+    });
+
+    // 3.3. Fornecedor
+    const inputForn = document.getElementById('filter-adv-fornecedor') as HTMLInputElement;
+    inputForn?.addEventListener('change', () => {
+      this.advFornecedor = inputForn.value.trim();
+      this.render();
+    });
+
+    // 3.4. Faixas Financeiras
+    const inputValMin = document.getElementById('filter-adv-valor-min') as HTMLInputElement;
+    inputValMin?.addEventListener('change', () => {
+      this.advValorMin = inputValMin.value ? Number(inputValMin.value) : null;
+      this.render();
+    });
+    const inputValMax = document.getElementById('filter-adv-valor-max') as HTMLInputElement;
+    inputValMax?.addEventListener('change', () => {
+      this.advValorMax = inputValMax.value ? Number(inputValMax.value) : null;
+      this.render();
+    });
+    const inputRentMin = document.getElementById('filter-adv-rent-min') as HTMLInputElement;
+    inputRentMin?.addEventListener('change', () => {
+      this.advRentabilidadeMin = inputRentMin.value ? Number(inputRentMin.value) : null;
+      this.render();
+    });
+    const inputRentMax = document.getElementById('filter-adv-rent-max') as HTMLInputElement;
+    inputRentMax?.addEventListener('change', () => {
+      this.advRentabilidadeMax = inputRentMax.value ? Number(inputRentMax.value) : null;
+      this.render();
+    });
+
+    // 3.5. Toggle Modo de Correspondência de Produtos (E vs OU)
+    document.getElementById('btn-match-mode-and')?.addEventListener('click', () => {
+      this.advProdutoMatchMode = 'AND';
+      this.render();
+    });
+    document.getElementById('btn-match-mode-or')?.addEventListener('click', () => {
+      this.advProdutoMatchMode = 'OR';
+      this.render();
+    });
+    document.getElementById('btn-clear-adv-produtos')?.addEventListener('click', () => {
+      this.advProdutos = [];
+      this.render();
+    });
+
+    // 3.6. Pills de Produtos
+    this.container.querySelectorAll('.pill-adv-produto').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const pId = btn.getAttribute('data-prod-id');
+        if (!pId) return;
+        if (this.advProdutos.includes(pId)) {
+          this.advProdutos = this.advProdutos.filter(p => p !== pId);
+        } else {
+          this.advProdutos.push(pId);
+        }
+        this.render();
+      });
+    });
+
+    // 3.7. Pills de Anexos
+    this.container.querySelectorAll('.pill-adv-anexo').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const anexoVal = btn.getAttribute('data-anexo-val') as any;
+        if (anexoVal) {
+          this.advAnexos = anexoVal;
+          this.render();
+        }
+      });
+    });
+
+    // 3.8. Pills de SLA
+    this.container.querySelectorAll('.pill-adv-sla-alerta').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const slaVal = btn.getAttribute('data-sla-val') as any;
+        if (slaVal) {
+          this.advSla = this.advSla === slaVal ? 'todos' : slaVal;
+          this.render();
+        }
+      });
+    });
+
+    // 3.9. Pills de Risk Score
+    this.container.querySelectorAll('.pill-adv-risk').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const level = btn.getAttribute('data-risk-level');
+        if (!level) return;
+        if (this.advRiskScore.includes(level)) {
+          this.advRiskScore = this.advRiskScore.filter(l => l !== level);
+        } else {
+          this.advRiskScore.push(level);
+        }
+        this.render();
+      });
+    });
+
+    // 3.10. Pills de Conferência no Painel
+    this.container.querySelectorAll('.pill-adv-conf-fin-ok').forEach(btn => {
+      btn.addEventListener('click', () => {
+        this.confFilters.finOk = !this.confFilters.finOk;
+        this.render();
+      });
+    });
+    this.container.querySelectorAll('.pill-adv-conf-fin-pendente').forEach(btn => {
+      btn.addEventListener('click', () => {
+        this.confFilters.finPendente = !this.confFilters.finPendente;
+        this.render();
+      });
+    });
+    this.container.querySelectorAll('.pill-adv-conf-proc-ok').forEach(btn => {
+      btn.addEventListener('click', () => {
+        this.confFilters.procOk = !this.confFilters.procOk;
+        this.render();
+      });
+    });
+    this.container.querySelectorAll('.pill-adv-conf-proc-pendente').forEach(btn => {
+      btn.addEventListener('click', () => {
+        this.confFilters.procPendente = !this.confFilters.procPendente;
+        this.render();
+      });
+    });
+
+    // 4. Botão de Limpar Todos os Filtros
+    const resetAllFilters = () => {
+      this.buscaTermo = '';
+      const searchInput = document.getElementById('input-busca-viagem') as HTMLInputElement;
+      if (searchInput) searchInput.value = '';
+      const globalInput = document.getElementById('global-header-search-input') as HTMLInputElement;
+      if (globalInput) {
+        globalInput.value = '';
+        const clearBtn = document.getElementById('btn-clear-global-search');
+        if (clearBtn) clearBtn.classList.add('hidden');
+      }
+      this.balcaoResultados = [];
       this.dataFinStart = '';
       this.dataFinEnd = '';
       this.dataIdaStart = '';
       this.dataIdaEnd = '';
       this.dataVoltaStart = '';
       this.dataVoltaEnd = '';
+      this.advMesAno = '';
+      this.advProdutos = [];
+      this.advDestinos = [];
+      this.advFornecedor = '';
+      this.advValorMin = null;
+      this.advValorMax = null;
+      this.advRentabilidadeMin = null;
+      this.advRentabilidadeMax = null;
+      this.advAnexos = 'todos';
+      this.advSla = 'todos';
+      this.advRiskScore = [];
+      this.selectedConsultantId = 'todos';
+      this.confFilters = {
+        finPendente: false,
+        finOk: false,
+        procPendente: false,
+        procOk: false
+      };
+      this.activeStatusTab = 'todos';
       this.render();
-    });
+    };
+
+    document.getElementById('btn-clear-date-filters')?.addEventListener('click', resetAllFilters);
+    document.getElementById('btn-clear-all-adv-filters')?.addEventListener('click', resetAllFilters);
+    document.getElementById('btn-clear-all-chips')?.addEventListener('click', resetAllFilters);
 
     // 4.1. Listeners dos Chips de Filtros Ativos
     this.container.querySelectorAll('[data-clear-filter]').forEach(btn => {
@@ -2630,6 +3478,29 @@ Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : '
         } else if (filterKey === 'dataVolta') {
           this.dataVoltaStart = '';
           this.dataVoltaEnd = '';
+        } else if (filterKey === 'adv-mes-ano') {
+          this.advMesAno = '';
+        } else if (filterKey?.startsWith('adv-prod-')) {
+          const pId = filterKey.replace('adv-prod-', '');
+          this.advProdutos = this.advProdutos.filter(p => p !== pId);
+        } else if (filterKey?.startsWith('adv-dest-')) {
+          const dest = filterKey.replace('adv-dest-', '');
+          this.advDestinos = this.advDestinos.filter(d => d !== dest);
+        } else if (filterKey === 'adv-fornecedor') {
+          this.advFornecedor = '';
+        } else if (filterKey === 'adv-valor') {
+          this.advValorMin = null;
+          this.advValorMax = null;
+        } else if (filterKey === 'adv-rent') {
+          this.advRentabilidadeMin = null;
+          this.advRentabilidadeMax = null;
+        } else if (filterKey === 'adv-anexos') {
+          this.advAnexos = 'todos';
+        } else if (filterKey === 'adv-sla') {
+          this.advSla = 'todos';
+        } else if (filterKey?.startsWith('adv-risk-')) {
+          const r = filterKey.replace('adv-risk-', '');
+          this.advRiskScore = this.advRiskScore.filter(l => l !== r);
         } else if (filterKey === 'consultor') {
           this.selectedConsultantId = 'todos';
         } else if (filterKey === 'conf-fin-pendente') {
@@ -2645,34 +3516,6 @@ Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : '
         }
         this.render();
       });
-    });
-
-    document.getElementById('btn-clear-all-chips')?.addEventListener('click', () => {
-      this.buscaTermo = '';
-      const searchInput = document.getElementById('input-busca-viagem') as HTMLInputElement;
-      if (searchInput) searchInput.value = '';
-      const globalInput = document.getElementById('global-header-search-input') as HTMLInputElement;
-      if (globalInput) {
-        globalInput.value = '';
-        const clearBtn = document.getElementById('btn-clear-global-search');
-        if (clearBtn) clearBtn.classList.add('hidden');
-      }
-      this.balcaoResultados = [];
-      this.dataFinStart = '';
-      this.dataFinEnd = '';
-      this.dataIdaStart = '';
-      this.dataIdaEnd = '';
-      this.dataVoltaStart = '';
-      this.dataVoltaEnd = '';
-      this.selectedConsultantId = 'todos';
-      this.confFilters = {
-        finPendente: false,
-        finOk: false,
-        procPendente: false,
-        procOk: false
-      };
-      this.activeStatusTab = 'todos';
-      this.render();
     });
 
     // 5. Clique nas Abas de Status

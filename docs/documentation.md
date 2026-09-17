@@ -48,6 +48,7 @@
    - 3.35 [Atalho Rápido e Modal de Cadastro do Cliente na Venda](#335-atalho-rápido-e-modal-de-cadastro-do-cliente-na-venda)
    - 3.36 [PaxFlow FinRecon™ (Módulo de Conciliação Bancária & Fechamento Contábil)](#336-paxflow-finrecon-módulo-de-conciliação-bancária--fechamento-contábil)
    - 3.37 [Design System de Tabelas, Proporções e Padronização Visual PaxFlow](#337-design-system-de-tabelas-proporções-e-padronização-visual-paxflow)
+   - 3.38 [Painel de Filtros Avançados Combináveis, Resumo Financeiro & Exportação CSV de Viagens](#338-painel-de-filtros-avançados-combináveis-resumo-financeiro--exportação-csv-de-viagens)
 4. [Diferenciais Competitivos](#4-diferenciais-competitivos)
 5. [Arquitetura Tecnológica](#5-arquitetura-tecnológica)
 6. [Segurança e Conformidade](#6-segurança-e-conformidade)
@@ -905,6 +906,40 @@ Com o objetivo de eliminar assimetrias, quebras desproporcionais de linha e elem
    - Ações em tabelas agrupadas com `<div class="inline-flex items-center justify-end gap-1.5 whitespace-nowrap">`.
    - Botões de ação em linha: `h-7 px-2.5` ou `h-8 px-3` para ações de texto, e `w-7 h-7 inline-flex items-center justify-center rounded-lg` para botões com ícones.
    - Modais de criação e edição com paleta de emojis rápidos compacta em grade equilibrada e preview instantâneo do item ativo.
+
+### 3.38 Painel de Filtros Avançados Combináveis, Resumo Financeiro & Exportação CSV de Viagens
+
+Para atender operações de agências de alto volume e demandas complexas de cruzamento operacional e contábil, a tela de Viagens (`Dashboard.ts`) conta com um sistema de **Filtros Avançados Combináveis Reativos** integrado a um painel de métricas financeiras e exportação para planilhas:
+
+1. **Botão e Painel Expansível `🎛️ Avançado (N)`**:
+   - Substitui o filtro simples de data por um botão dinâmico com badge indicativo da quantidade de critérios ativos em tempo real.
+   - Painel colapsável moderno com background card suave, bordas translúcidas e transição fluida.
+
+2. **Critérios Combinatórios Disponíveis**:
+   - **Produtos / Serviços (Regra E vs OU)**: Multi-select em pills dinâmicos (Aéreo, Hotel, Seguro, Carro, Transfer, etc.). Suporte a alternância entre `Contém TODOS [E]` (interseção: a viagem precisa conter todos os produtos selecionados) e `Contém QUALQUER [OU]` (união: a viagem precisa conter pelo menos um dos produtos).
+   - **Período e Atalho Rápido Mês/Ano**: Seletor rápido de competência (`YYYY-MM`, ex: `2026-02`) com aplicação instantânea, além de campos de Data Inicial e Data Final com escolha do tipo de data (`Data Criação`, `Data Financeiro`, `Data Ida`, `Data Volta`).
+   - **Destinos Multi-Select**: Pills selecionáveis de todos os destinos cadastrados no sistema.
+   - **Fornecedor / Cia Aérea / Consolidadora**: Campo de busca textual com auto-filtro instantâneo sobre fornecedores dos produtos das viagens.
+   - **Faixas Financeiras (R$)**: Sliders/inputs numéricos para `Valor Venda Mínimo/Máximo` e `Rentabilidade Mínima/Máxima`.
+   - **Vouchers / Anexos**: Filtro tri-state (`Todos`, `Com Vouchers / Anexos`, `Sem Vouchers / Anexos`).
+   - **Conferência & Processo**: Filtros para conferência de processo (`Todos`, `Conferidos`, `Pendentes`) e conferência financeira de LOCs.
+   - **Alertas Operacionais & Risco**: Filtro para viagens com alertas de SLA ativos ou classificação PaxFlow Risk Score™ (Crítico, Atenção, Saudável).
+
+3. **Barra de Resumo Financeiro em Tempo Real**:
+   - Localizada acima do grid de viagens, atualiza-se instantaneamente a cada tecla ou seleção:
+     - **Vendas Totais**: Soma dos valores de venda do conjunto filtrado.
+     - **Rentabilidade Acumulada**: Lucro bruto/comissões apuradas no recorte.
+     - **Ticket Médio**: Média monetária por viagem ativa no filtro.
+     - **Total de Viagens**: Contagem de passageiros/dossiês correspondentes.
+
+4. **Barra de Chips de Filtros Ativos**:
+   - Chips visuais no topo do grid para cada critério configurado com botão `✕` para remoção pontual sem necessidade de reabrir o painel.
+   - Botão `Limpar Todos` para reset total instantâneo dos filtros.
+
+5. **Exportação Formatada para Excel (CSV Brasil)**:
+   - Botão `📥 Exportar CSV` no cabeçalho operacional.
+   - Gera arquivo `.csv` codificado em UTF-8 com BOM (`\uFEFF`) e delimitador `;` (ponto e vírgula).
+   - Formatação monetária com vírgula decimal brasileira (`R$ 2.500,00` -> `2500,00`) e datas `DD/MM/AAAA`.
 
 ---
 

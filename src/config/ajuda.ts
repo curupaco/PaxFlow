@@ -340,6 +340,20 @@ export const HELP_ITEMS: HelpItem[] = [
     description: 'A página móvel externa para o passageiro acompanhar a viagem.',
     details: 'O PaxFlow gera um link exclusivo sem autenticação (`#itinerario?id=UUID`) para o cliente final. Na tela, o cliente tem acesso a um cronograma de reservas com contagem regressiva para o embarque. Por segurança, informações como custos internos, markups e comissões são 100% ocultadas.'
   },
+  {
+    id: 'filtros-avancados-painel',
+    modulo: 'viagens',
+    label: 'Painel de Filtros Avançados Combináveis & Resumo Financeiro',
+    description: 'Como filtrar viagens combinando múltiplos critérios simultâneos e visualizar totais em tempo real.',
+    details: 'No topo da tela de Viagens, o botão **🎛️ Avançado** abre um painel completo de filtros combináveis em tempo real:\n\n- **Produtos / Serviços**: Selecione múltiplos tipos (Aéreo, Hotel, Seguro, Carro, etc.) e escolha a lógica: **Contém TODOS [E]** (exige que a viagem tenha todos os produtos marcados simultaneamente) ou **Contém QUALQUER [OU]** (traz viagens que tenham ao menos um dos selecionados).\n- **Período e Atalho Mês/Ano**: Filtre por competência no seletor rápido `YYYY-MM` (ex: `2026-02`) ou informe datas personalizadas de Início e Fim por Criação, Data Financeiro, Embarque (Ida) ou Retorno (Volta).\n- **Destinos & Fornecedores**: Selecione múltiplos destinos cadastrados e filtre por fornecedor, consolidadora ou cia aérea (busca textual instantânea).\n- **Faixas Financeiras (R$)**: Defina limites de Valor de Venda Mín/Máx e Rentabilidade Mín/Máx.\n- **Vouchers e Anexos**: Filtre viagens com anexos pendentes ou já emitidos (`Com Vouchers`, `Sem Vouchers`, `Todos`).\n- **Conferência & SLA**: Filtre por status de conferência de processo (`Conferidos`, `Pendentes`), conferência financeira e alertas de SLA / Risk Score.\n- **Resumo Financeiro em Tempo Real**: Conforme você ajusta os filtros, uma barra no topo do grid exibe o **Total de Vendas**, **Rentabilidade Total**, **Ticket Médio** e a contagem de viagens do recorte atual.\n- **Chips de Filtros Ativos**: Cada critério aplicado vira um chip visual com botão de remoção individual (`✕`) e atalho `Limpar Todos`.'
+  },
+  {
+    id: 'exportacao-viagens-csv',
+    modulo: 'viagens',
+    label: 'Exportação de Viagens para CSV (Compatível com Excel Brasil)',
+    description: 'Como exportar o recorte filtrado de viagens com formatação brasileira e colunas detalhadas.',
+    details: 'Ao aplicar qualquer combinação de filtros ou visualizar a listagem completa de viagens, clique no botão **📥 Exportar CSV** no cabeçalho:\n\n- **Respeita os Filtros**: O arquivo gerado exporta exatamente o conjunto de viagens filtradas no momento.\n- **Padrão Brasileiro para Excel**: O arquivo é codificado em UTF-8 com BOM e usa ponto e vírgula (`;`) como delimitador, garantindo que o Excel no Brasil abra os dados diretamente em colunas corretas sem necessidade de conversão.\n- **Formatação Monetária e Datas**: Valores monetários são exportados com vírgula decimal (ex: `2500,00`) e datas no formato nacional `DD/MM/AAAA`.\n- **Colunas Incluídas**: Código (`VIA-XXXX`), Passageiro, Destino, Data Criação, Data Financeiro, Data Ida, Data Volta, Valor Total (R$), Rentabilidade (R$), Quantidade de Produtos, Tipos de Produtos, Conferência de Processo, Status e Consultor Responsável.'
+  },
 
   // ==================== 5. Orçamentos & CRM ====================
   {
