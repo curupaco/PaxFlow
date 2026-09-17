@@ -798,6 +798,11 @@ export interface StudioProposta {
   agencia_id?: string;
   consultor_id?: string;
   consultor_nome?: string;
+  consultor_avatar?: string;
+  consultor_whatsapp?: string;
+  consultor_telefone?: string;
+  consultor_email?: string;
+  titulo_cabecalho?: string;
   cliente_nome: string;
   cliente_whatsapp?: string;
   cliente_email?: string;

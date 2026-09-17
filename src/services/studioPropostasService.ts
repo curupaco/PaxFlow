@@ -30,6 +30,11 @@ export class StudioPropostasService {
       aceite_formal: proposta.aceite_formal || null,
       consultor_id: proposta.consultor_id || null,
       consultor_nome: proposta.consultor_nome || null,
+      consultor_avatar: proposta.consultor_avatar || null,
+      consultor_whatsapp: proposta.consultor_whatsapp || null,
+      consultor_telefone: proposta.consultor_telefone || null,
+      consultor_email: proposta.consultor_email || null,
+      titulo_cabecalho: proposta.titulo_cabecalho || 'PAXFLOW LUXURY TRAVEL',
       agencia_id: proposta.agencia_id || null
     };
 

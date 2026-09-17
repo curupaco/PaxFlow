@@ -853,7 +853,7 @@ export class PublicViews {
           <!-- TOP BAR BRAND -->
           <div class="relative z-10 flex items-center justify-between">
             <span class="px-3 py-1 rounded-full text-xs font-black tracking-wider uppercase bg-white/20 backdrop-blur-md border border-white/30 text-white">
-              Proposta Exclusiva
+              ${proposta.titulo_cabecalho || 'PAXFLOW LUXURY TRAVEL'}
             </span>
             <span class="text-xs font-bold tracking-wide uppercase opacity-90">
               ${proposta.consultor_nome ? `Consultor: ${proposta.consultor_nome}` : 'Sua Agência de Viagens'}
@@ -1068,9 +1068,48 @@ export class PublicViews {
             </div>
           </div>
 
+          <!-- CARD DO CONSULTOR DEDICADO NA PROPOSTA PÚBLICA -->
+          ${proposta.consultor_nome ? `
+            <div class="public-glass p-6 rounded-2xl shadow-lg border border-slate-200/80 dark:border-slate-800/80 space-y-4">
+              <div class="flex items-center gap-4">
+                ${proposta.consultor_avatar ? `
+                  <img src="${proposta.consultor_avatar}" alt="${proposta.consultor_nome}" class="w-14 h-14 rounded-full object-cover border-2 border-indigo-500 shadow-md shrink-0" />
+                ` : `
+                  <div class="w-14 h-14 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 text-white font-black text-xl flex items-center justify-center shadow-md shrink-0">
+                    ${proposta.consultor_nome.charAt(0).toUpperCase()}
+                  </div>
+                `}
+                <div class="flex-1 min-w-0">
+                  <span class="text-[10px] text-indigo-600 dark:text-indigo-400 font-bold uppercase tracking-wider block">Seu Consultor Dedicado</span>
+                  <h4 class="text-base font-black text-slate-900 dark:text-white truncate">${proposta.consultor_nome}</h4>
+                  <span class="text-xs text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1.5 mt-0.5">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    Atendimento Oficial: ${proposta.consultor_whatsapp || proposta.consultor_telefone || 'Disponível'}
+                  </span>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-200/60 dark:border-slate-800/60">
+                ${proposta.consultor_whatsapp ? `
+                  <a href="https://wa.me/55${proposta.consultor_whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(`Olá ${proposta.consultor_nome}! Estou visualizando a proposta para ${proposta.destino} e gostaria de tirar algumas dúvidas.`)}" target="_blank" rel="noopener noreferrer" class="py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl flex items-center justify-center gap-2 font-bold text-xs shadow-md shadow-emerald-600/20 transition active:scale-[0.98]">
+                    <svg class="w-4 h-4 fill-current shrink-0" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.724-1.455L0 24zm6.59-4.846c1.6.95 3.197 1.451 4.777 1.451 5.51 0 9.997-4.493 10-10.008.002-2.673-1.037-5.186-2.93-7.079-1.892-1.893-4.401-2.934-7.078-2.934-5.518 0-10.007 4.493-10.01 10.01-.001 1.708.455 3.377 1.32 4.887L1.134 22.84l4.513-1.186zm11.23-7.925c-.297-.149-1.758-.868-2.03-.967-.273-.099-.471-.148-.669.149-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.568-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/></svg>
+                    <span>Falar no WhatsApp</span>
+                  </a>
+                ` : ''}
+
+                ${proposta.consultor_telefone || proposta.consultor_whatsapp ? `
+                  <a href="tel:+55${(proposta.consultor_telefone || proposta.consultor_whatsapp || '').replace(/\D/g, '')}" class="py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl flex items-center justify-center gap-2 font-bold text-xs shadow-md shadow-indigo-600/20 transition active:scale-[0.98]">
+                    <svg class="w-4 h-4 fill-none stroke-current shrink-0" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z"/></svg>
+                    <span>Ligar para Consultor</span>
+                  </a>
+                ` : ''}
+              </div>
+            </div>
+          ` : ''}
+
           <!-- FOOTER -->
           <div class="text-center text-xs text-slate-400 py-6">
-            Proposta gerada através do <strong>PaxFlow Studio™</strong> · Todos os direitos reservados.
+            ${proposta.titulo_cabecalho || 'PaxFlow Studio™'} · Proposta personalizada · Todos os direitos reservados.
           </div>
         </div>
       </div>

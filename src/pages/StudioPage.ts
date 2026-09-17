@@ -1,6 +1,8 @@
 import { StudioExtractionService, CATALOGO_CIAS_AEREAS } from '../services/studioExtractionService';
 import { StudioPropostasService } from '../services/studioPropostasService';
+import { StudioUnsplashService, UnsplashFoto } from '../services/studioUnsplashService';
 import { StudioPdfGenerator } from '../components/studio/StudioPdfGenerator';
+import { supabase } from '../services/supabase';
 import { StudioProposta, StudioDiaItinerario, StudioItemItinerario } from '../types';
 
 export class StudioPage {
@@ -11,6 +13,7 @@ export class StudioPage {
     valor_total: 0,
     moeda: 'BRL',
     status: 'RASCUNHO',
+    titulo_cabecalho: 'PAXFLOW LUXURY TRAVEL',
     itinerario_dias: []
   };
   private propostasSalvas: StudioProposta[] = [];
@@ -22,6 +25,23 @@ export class StudioPage {
   private secaoIngestaoAberta: boolean = true;
   private syncScrollHandler: any = null;
 
+  // Estado para a Busca Avançada no Unsplash com Tradução Semântica
+  private modalUnsplashAberto: boolean = false;
+  private termoBuscaUnsplash: string = '';
+  private fotosUnsplashResultado: UnsplashFoto[] = [];
+  private queryEngUnsplash: string = '';
+  private buscandoUnsplash: boolean = false;
+
+  // Lista de Consultores da Agência
+  private consultoresDisponiveis: Array<{
+    id: string;
+    nome: string;
+    avatar_url?: string;
+    whatsapp?: string;
+    telefone?: string;
+    email?: string;
+  }> = [];
+
   // Estado para o Modal Focado de Atividade/Item
   private itemEmEdicao: {
     diaIdx: number;
@@ -31,17 +51,10 @@ export class StudioPage {
   } | null = null;
 
   // Fotos de capa sugeridas com curadoria de luxo
-  private static FOTOS_CAPA = [
-    { nome: 'Paris', url: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=1200&q=80' },
-    { nome: 'Roma', url: 'https://images.unsplash.com/photo-1552832230-c0197dd311b5?auto=format&fit=crop&w=1200&q=80' },
-    { nome: 'Nova York', url: 'https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?auto=format&fit=crop&w=1200&q=80' },
-    { nome: 'Orlando / Disney', url: 'https://images.unsplash.com/photo-1597466765990-64ad1c35dafc?auto=format&fit=crop&w=1200&q=80' },
-    { nome: 'Maldivas', url: 'https://images.unsplash.com/photo-1514282401047-d79a71a590e8?auto=format&fit=crop&w=1200&q=80' },
-    { nome: 'Santiago / Chile', url: 'https://images.unsplash.com/photo-1578852612716-854e527abf2e?auto=format&fit=crop&w=1200&q=80' },
-    { nome: 'Bariloche', url: 'https://images.unsplash.com/photo-1517411032315-54ef2cb783bb?auto=format&fit=crop&w=1200&q=80' },
-    { nome: 'Fernando de Noronha', url: 'https://images.unsplash.com/photo-1590523741831-ab7e8b8f9c7f?auto=format&fit=crop&w=1200&q=80' },
-    { nome: 'Rio de Janeiro', url: 'https://images.unsplash.com/photo-1483729558449-99ef09a8c325?auto=format&fit=crop&w=1200&q=80' }
-  ];
+  private static FOTOS_CAPA = StudioUnsplashService.CATALOGO_CURADO.slice(0, 9).map(f => ({
+    nome: f.titulo.split('/')[0].split('&')[0].trim(),
+    url: f.url
+  }));
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -49,7 +62,10 @@ export class StudioPage {
   }
 
   public async init(propostaId?: string): Promise<void> {
-    await this.carregarPropostas();
+    await Promise.all([
+      this.carregarPropostas(),
+      this.carregarConsultores()
+    ]);
 
     if (propostaId) {
       const encontrada = await StudioPropostasService.buscarPorId(propostaId);
@@ -57,11 +73,38 @@ export class StudioPage {
         this.propostaAtual = { ...encontrada };
         this.alteracoesNaoSalvas = false;
       }
-    } else if (!this.propostaAtual.foto_capa_url) {
-      this.propostaAtual.foto_capa_url = StudioPage.FOTOS_CAPA[0].url;
+    } else {
+      if (!this.propostaAtual.foto_capa_url) {
+        this.propostaAtual.foto_capa_url = StudioPage.FOTOS_CAPA[0].url;
+      }
+      if (!this.propostaAtual.titulo_cabecalho) {
+        this.propostaAtual.titulo_cabecalho = 'PAXFLOW LUXURY TRAVEL';
+      }
     }
 
     this.render();
+  }
+
+  private async carregarConsultores(): Promise<void> {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, nome, avatar_url, whatsapp, telefone, email')
+        .order('nome');
+
+      if (!error && data && data.length > 0) {
+        this.consultoresDisponiveis = data.map((p: any) => ({
+          id: p.id,
+          nome: p.nome || 'Consultor',
+          avatar_url: p.avatar_url || '',
+          whatsapp: p.whatsapp || '',
+          telefone: p.telefone || '',
+          email: p.email || ''
+        }));
+      }
+    } catch (err) {
+      console.warn('[StudioPage] Falha ao carregar consultores:', err);
+    }
   }
 
   private async carregarPropostas(): Promise<void> {
@@ -199,13 +242,19 @@ export class StudioPage {
               </div>
             </div>
 
-            <!-- SEÇÃO 2: DADOS DO PASSAGEIRO & FOTO DE CAPA -->
+            <!-- SEÇÃO 2: DADOS DO PASSAGEIRO, CAPA & CONSULTOR -->
             <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm space-y-4">
               <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
                 <h2 class="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-white flex items-center gap-2">
-                  <span>👤</span> 2. Dados do Passageiro &amp; Capa
+                  <span>👤</span> 2. Dados do Passageiro, Capa &amp; Consultor
                 </h2>
                 <span class="text-[11px] text-indigo-600 dark:text-indigo-400 font-bold">Live Sync Ativo</span>
+              </div>
+
+              <!-- BRANDING / TAGLINE DA CAPA -->
+              <div>
+                <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">🏷️ Título de Marca / Tagline da Capa (Branding)</label>
+                <input type="text" id="campo-titulo-cabecalho" value="${this.propostaAtual.titulo_cabecalho || 'PAXFLOW LUXURY TRAVEL'}" placeholder="Ex: PAXFLOW LUXURY TRAVEL, BORA VIAJAR, VIAGENS EXCLUSIVAS" class="input-sync w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:border-indigo-500 font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400" />
               </div>
 
               <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -254,9 +303,14 @@ export class StudioPage {
                 </div>
               </div>
 
-              <!-- FOTO DE CAPA -->
+              <!-- FOTO DE CAPA COM UNSPLASH -->
               <div>
-                <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1.5">Foto de Capa da Proposta</label>
+                <div class="flex items-center justify-between mb-1.5">
+                  <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300">🖼️ Foto de Capa da Proposta</label>
+                  <button type="button" id="btn-abrir-modal-unsplash" class="px-2.5 py-1 text-[11px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 rounded-lg transition border border-indigo-200 dark:border-indigo-800 cursor-pointer flex items-center gap-1.5 shadow-xs">
+                    <span>🔍</span> Buscar no Unsplash
+                  </button>
+                </div>
                 <div class="flex gap-2 overflow-x-auto pb-1.5 custom-scrollbar">
                   ${StudioPage.FOTOS_CAPA.map(foto => `
                     <button type="button" class="btn-selecionar-capa shrink-0 w-20 h-12 rounded-lg overflow-hidden border-2 ${this.propostaAtual.foto_capa_url === foto.url ? 'border-indigo-600 ring-2 ring-indigo-500/30' : 'border-transparent opacity-75 hover:opacity-100'} transition relative cursor-pointer" data-url="${foto.url}">
@@ -266,6 +320,50 @@ export class StudioPage {
                   `).join('')}
                 </div>
                 <input type="text" id="campo-foto-custom" value="${this.propostaAtual.foto_capa_url || ''}" placeholder="Ou cole o link direto da imagem de capa..." class="input-sync w-full mt-2 px-3 py-1.5 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:border-indigo-500" />
+              </div>
+
+              <!-- CONSULTOR RESPONSÁVEL & CONTATO -->
+              <div class="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-3">
+                <div class="flex items-center justify-between">
+                  <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300">👤 Consultor Responsável &amp; Contato Dedicado</label>
+                  <span class="text-[10px] text-slate-400">Card com foto e botões na proposta</span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div class="md:col-span-2">
+                    <label class="block text-[10px] font-medium text-slate-500 dark:text-slate-400 mb-1">Selecione da Equipe (Auto-preenchimento)</label>
+                    <select id="select-consultor" class="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:border-indigo-500 font-semibold">
+                      <option value="">-- Selecione um consultor cadastrado --</option>
+                      ${this.consultoresDisponiveis.map(c => `
+                        <option value="${c.id}" ${this.propostaAtual.consultor_id === c.id || this.propostaAtual.consultor_nome === c.nome ? 'selected' : ''}>
+                          ${c.nome} ${c.whatsapp ? `(${c.whatsapp})` : ''}
+                        </option>
+                      `).join('')}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label class="block text-[10px] font-medium text-slate-500 dark:text-slate-400 mb-1">Nome do Consultor</label>
+                    <input type="text" id="campo-consultor-nome" value="${this.propostaAtual.consultor_nome || ''}" placeholder="Ex: Ana Beatriz" class="input-sync w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:border-indigo-500 font-medium" />
+                  </div>
+
+                  <div>
+                    <label class="block text-[10px] font-medium text-slate-500 dark:text-slate-400 mb-1">WhatsApp de Atendimento</label>
+                    <input type="text" id="campo-consultor-whatsapp" value="${this.propostaAtual.consultor_whatsapp || ''}" placeholder="(11) 99999-9999" class="input-sync w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:border-indigo-500" />
+                  </div>
+
+                  <div>
+                    <label class="block text-[10px] font-medium text-slate-500 dark:text-slate-400 mb-1">Telefone Oficial (Ligação)</label>
+                    <input type="text" id="campo-consultor-telefone" value="${this.propostaAtual.consultor_telefone || ''}" placeholder="(11) 3090-7070" class="input-sync w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:border-indigo-500" />
+                  </div>
+
+                  <div>
+                    <label class="block text-[10px] font-medium text-slate-500 dark:text-slate-400 mb-1">E-mail Profissional</label>
+                    <input type="email" id="campo-consultor-email" value="${this.propostaAtual.consultor_email || ''}" placeholder="consultor@agencia.com" class="input-sync w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:border-indigo-500" />
+                  </div>
+
+                  <input type="hidden" id="campo-consultor-avatar" value="${this.propostaAtual.consultor_avatar || ''}" />
+                </div>
               </div>
             </div>
 
@@ -431,6 +529,11 @@ export class StudioPage {
               </button>
             </div>
           </div>
+        </div>
+
+        <!-- MODAL DA GALERIA UNSPLASH COM TRADUÇÃO PT-BR -> EN -->
+        <div id="modal-unsplash" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 ${this.modalUnsplashAberto ? '' : 'hidden'}">
+          ${this.modalUnsplashAberto ? this.renderModalUnsplash() : ''}
         </div>
 
         <!-- DATALIST COM COMPANHIAS AÉREAS OFICIAIS -->
@@ -600,8 +703,8 @@ export class StudioPage {
 
           <!-- TOPO DA CAPA -->
           <div class="relative z-10 flex items-center justify-between">
-            <span class="px-2.5 py-1 rounded-full text-[9px] font-black tracking-widest bg-white/20 backdrop-blur-md text-white uppercase border border-white/30">
-              PAXFLOW LUXURY TRAVEL
+            <span class="px-2.5 py-1 rounded-full text-[9px] font-black tracking-widest bg-white/20 backdrop-blur-md text-white uppercase border border-white/30 truncate max-w-[240px]">
+              ${this.propostaAtual.titulo_cabecalho || 'PAXFLOW LUXURY TRAVEL'}
             </span>
             <span class="px-2 py-0.5 rounded text-[9px] font-bold bg-amber-500/90 text-slate-950 uppercase font-mono">
               ${this.propostaAtual.status || 'RASCUNHO EXCLUSIVO'}
@@ -689,9 +792,55 @@ export class StudioPage {
             `).join('')}
           </div>
 
+          <!-- CARD DO CONSULTOR DEDICADO NO LIVE PREVIEW -->
+          ${this.propostaAtual.consultor_nome ? `
+            <div class="p-4 rounded-2xl bg-gradient-to-br from-slate-50 to-indigo-50/40 dark:from-slate-800/80 dark:to-indigo-950/30 border border-slate-200 dark:border-slate-700/80 shadow-xs space-y-3">
+              <div class="flex items-center gap-3">
+                ${this.propostaAtual.consultor_avatar ? `
+                  <img src="${this.propostaAtual.consultor_avatar}" alt="${this.propostaAtual.consultor_nome}" class="w-11 h-11 rounded-full object-cover border-2 border-indigo-500 shadow-xs shrink-0" />
+                ` : `
+                  <div class="w-11 h-11 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 text-white font-black text-sm flex items-center justify-center shadow-xs shrink-0">
+                    ${this.propostaAtual.consultor_nome.charAt(0).toUpperCase()}
+                  </div>
+                `}
+                <div class="flex-1 min-w-0">
+                  <span class="text-[9px] font-black uppercase tracking-wider text-indigo-600 dark:text-indigo-400">Consultor(a) Dedicado(a)</span>
+                  <h4 class="text-xs font-black text-slate-900 dark:text-white truncate">${this.propostaAtual.consultor_nome}</h4>
+                  <div class="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1 mt-0.5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    Atendimento Oficial: ${this.propostaAtual.consultor_whatsapp || this.propostaAtual.consultor_telefone || 'Disponível'}
+                  </div>
+                </div>
+              </div>
+
+              <!-- BOTÕES DE CONTATO RÁPIDO DO CONSULTOR -->
+              <div class="grid grid-cols-2 gap-2 pt-1 border-t border-slate-200/60 dark:border-slate-700/60">
+                ${this.propostaAtual.consultor_whatsapp ? `
+                  <a href="https://wa.me/55${this.propostaAtual.consultor_whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(`Olá ${this.propostaAtual.consultor_nome}! Gostaria de falar sobre a proposta de viagem para ${this.propostaAtual.destino || 'o destino'}.`)}" target="_blank" rel="noopener noreferrer" class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[11px] font-bold flex items-center justify-center gap-1.5 shadow-xs transition">
+                    <span>💬</span> WhatsApp
+                  </a>
+                ` : `
+                  <div class="px-2.5 py-1.5 bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 rounded-xl text-[11px] font-medium text-center">
+                    💬 WhatsApp
+                  </div>
+                `}
+
+                ${this.propostaAtual.consultor_telefone || this.propostaAtual.consultor_whatsapp ? `
+                  <a href="tel:+55${(this.propostaAtual.consultor_telefone || this.propostaAtual.consultor_whatsapp || '').replace(/\D/g, '')}" class="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-[11px] font-bold flex items-center justify-center gap-1.5 shadow-xs transition">
+                    <span>📞</span> Ligar
+                  </a>
+                ` : `
+                  <div class="px-2.5 py-1.5 bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 rounded-xl text-[11px] font-medium text-center">
+                    📞 Ligação
+                  </div>
+                `}
+              </div>
+            </div>
+          ` : ''}
+
           <!-- RODAPÉ DA PROPOSTA NO PREVIEW -->
           <div class="pt-6 border-t border-slate-200 dark:border-slate-800 text-center space-y-1 text-slate-400 text-[10px]">
-            <p class="font-bold text-slate-600 dark:text-slate-300">PaxFlow Luxury Travel • Sua Viagem Perfeita</p>
+            <p class="font-bold text-slate-600 dark:text-slate-300">${this.propostaAtual.titulo_cabecalho || 'PaxFlow Luxury Travel'} • Sua Viagem Perfeita</p>
             <p>Proposta gerada com fidelidade estrita às reservas dos fornecedores.</p>
           </div>
 
@@ -790,6 +939,109 @@ export class StudioPage {
         ${item.subtitulo ? `
           <p class="text-[11px] text-slate-600 dark:text-slate-400">${item.subtitulo}</p>
         ` : ''}
+      </div>
+    `;
+  }
+
+  // ==========================================================================
+  // MODAL DA GALERIA UNSPLASH COM TRADUÇÃO PT-BR -> EN
+  // ==========================================================================
+
+  private renderModalUnsplash(): string {
+    const sugestoesTemas = [
+      { label: '🏝️ Praias', termo: 'praias' },
+      { label: '🏔️ Neve & Montanhas', termo: 'neve montanhas' },
+      { label: '🏛️ Europa & Capitais', termo: 'paris roma' },
+      { label: '🏨 Resorts & Luxo', termo: 'resort luxo' },
+      { label: '🍷 Vinhedos', termo: 'vinho toscana' },
+      { label: '🦁 Safari', termo: 'safari' },
+      { label: '🌃 Metrópoles', termo: 'nova york dubai' },
+      { label: '🇧🇷 Brasil & Ilhas', termo: 'fernando de noronha' }
+    ];
+
+    return `
+      <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 max-w-3xl w-full p-6 shadow-2xl space-y-4 max-h-[90vh] flex flex-col">
+        <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 shrink-0">
+          <div class="flex items-center gap-2">
+            <span class="text-xl">📸</span>
+            <div>
+              <h3 class="text-sm font-black text-slate-900 dark:text-white">
+                Galeria Unsplash™ - Fotos de Capa de Luxo
+              </h3>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400">
+                Busca inteligente com tradução semântica automática (PT-BR ➔ EN).
+              </p>
+            </div>
+          </div>
+          <button id="btn-fechar-modal-unsplash" type="button" class="text-slate-400 hover:text-slate-600 text-sm font-bold cursor-pointer">✕</button>
+        </div>
+
+        <!-- CAMPO DE BUSCA COM TRADUÇÃO -->
+        <div class="space-y-2 shrink-0">
+          <div class="flex gap-2">
+            <input type="text" id="input-busca-unsplash" value="${this.termoBuscaUnsplash}" placeholder="Digite um destino ou tema (Ex: Maldivas, neve, praia, resort de luxo, toscana)..." class="flex-1 px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:border-indigo-500 font-medium" />
+            <button type="button" id="btn-executar-busca-unsplash" class="px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-xs transition cursor-pointer flex items-center gap-1.5 shrink-0">
+              <span>🔍</span> Buscar
+            </button>
+          </div>
+
+          <!-- SUGESTÕES RÁPIDAS EM PILLS -->
+          <div class="flex flex-wrap gap-1.5 items-center">
+            <span class="text-[10px] font-bold text-slate-400 mr-1">Sugestões:</span>
+            ${sugestoesTemas.map(s => `
+              <button type="button" class="btn-sugestao-unsplash px-2 py-0.5 rounded-lg text-[10px] font-bold bg-slate-100 dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 border border-slate-200 dark:border-slate-700 transition cursor-pointer" data-termo="${s.termo}">
+                ${s.label}
+              </button>
+            `).join('')}
+          </div>
+
+          ${this.queryEngUnsplash ? `
+            <div class="px-3 py-1.5 rounded-xl bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/40 text-[11px] text-indigo-700 dark:text-indigo-300 flex items-center justify-between">
+              <span>✨ Termo traduzido para o Unsplash: <strong>"${this.queryEngUnsplash}"</strong></span>
+              <span class="text-[10px] opacity-75">${this.fotosUnsplashResultado.length} fotos prontas</span>
+            </div>
+          ` : ''}
+        </div>
+
+        <!-- GRID RESPONSIVO DE IMAGENS -->
+        <div id="container-grid-unsplash" class="flex-1 overflow-y-auto custom-scrollbar pr-1 min-h-[260px]">
+          ${this.buscandoUnsplash ? `
+            <div class="flex flex-col items-center justify-center py-16 text-xs text-indigo-600 dark:text-indigo-400 font-bold gap-2">
+              <span class="text-2xl animate-spin">🔄</span>
+              <span>Buscando fotografias de alta resolução no Unsplash...</span>
+            </div>
+          ` : this.fotosUnsplashResultado.length === 0 ? `
+            <div class="text-center py-16 text-xs text-slate-400">
+              Digite um termo ou clique em uma sugestão acima para buscar imagens.
+            </div>
+          ` : `
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              ${this.fotosUnsplashResultado.map(foto => `
+                <div class="group relative rounded-2xl overflow-hidden border-2 ${this.propostaAtual.foto_capa_url === foto.url ? 'border-indigo-600 ring-2 ring-indigo-500/30' : 'border-slate-200 dark:border-slate-800'} bg-slate-100 dark:bg-slate-800 aspect-video cursor-pointer btn-selecionar-foto-unsplash transition hover:shadow-lg" data-url="${foto.url}">
+                  <img src="${foto.thumb_url || foto.url}" alt="${foto.titulo}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" loading="lazy" />
+                  <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-80 group-hover:opacity-95 transition flex flex-col justify-between p-2.5">
+                    <div class="flex justify-end">
+                      ${this.propostaAtual.foto_capa_url === foto.url ? `
+                        <span class="px-1.5 py-0.5 rounded-full bg-emerald-500 text-white text-[9px] font-black">✓ Capa Ativa</span>
+                      ` : ''}
+                    </div>
+                    <div>
+                      <div class="text-white font-bold text-xs truncate drop-shadow-sm">${foto.titulo}</div>
+                      <div class="text-[10px] text-indigo-200 font-medium">Clique para selecionar</div>
+                    </div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          `}
+        </div>
+
+        <div class="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0">
+          <span class="text-[10px] text-slate-400">Fotos com curadoria e alta fidelidade visual</span>
+          <button id="btn-fechar-modal-unsplash-rodape" type="button" class="px-4 py-1.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition cursor-pointer">
+            Fechar Galeria
+          </button>
+        </div>
       </div>
     `;
   }
@@ -1119,7 +1371,11 @@ export class StudioPage {
       await this.processarTextoColado(texto);
     });
 
-    // 4. Seletor de fotos de capa
+    // 4. Seletor de fotos de capa e Unsplash
+    this.container.querySelector('#btn-abrir-modal-unsplash')?.addEventListener('click', async () => {
+      await this.abrirModalUnsplash();
+    });
+
     this.container.querySelectorAll('.btn-selecionar-capa').forEach(btn => {
       btn.addEventListener('click', () => {
         const url = btn.getAttribute('data-url');
@@ -1135,7 +1391,37 @@ export class StudioPage {
       });
     });
 
-    // 5. Sincronização em tempo real dos dados gerais (Passageiro, Destino, Datas, Valores)
+    // 4.1 Seletor de Consultor da Equipe (Auto-preenchimento)
+    const selectConsultor = this.container.querySelector('#select-consultor') as HTMLSelectElement | null;
+    selectConsultor?.addEventListener('change', () => {
+      const selectedId = selectConsultor.value;
+      const consultor = this.consultoresDisponiveis.find(c => c.id === selectedId);
+      if (consultor) {
+        this.propostaAtual.consultor_id = consultor.id;
+        this.propostaAtual.consultor_nome = consultor.nome;
+        this.propostaAtual.consultor_whatsapp = consultor.whatsapp || this.propostaAtual.consultor_whatsapp;
+        this.propostaAtual.consultor_telefone = consultor.telefone || this.propostaAtual.consultor_telefone;
+        this.propostaAtual.consultor_email = consultor.email || this.propostaAtual.consultor_email;
+        this.propostaAtual.consultor_avatar = consultor.avatar_url || this.propostaAtual.consultor_avatar;
+
+        const inputNome = this.container.querySelector('#campo-consultor-nome') as HTMLInputElement;
+        const inputWhats = this.container.querySelector('#campo-consultor-whatsapp') as HTMLInputElement;
+        const inputTel = this.container.querySelector('#campo-consultor-telefone') as HTMLInputElement;
+        const inputEmail = this.container.querySelector('#campo-consultor-email') as HTMLInputElement;
+        const inputAvatar = this.container.querySelector('#campo-consultor-avatar') as HTMLInputElement;
+
+        if (inputNome) inputNome.value = consultor.nome;
+        if (inputWhats) inputWhats.value = consultor.whatsapp || '';
+        if (inputTel) inputTel.value = consultor.telefone || '';
+        if (inputEmail) inputEmail.value = consultor.email || '';
+        if (inputAvatar) inputAvatar.value = consultor.avatar_url || '';
+
+        this.marcarAlteracaoPendente();
+        this.atualizarLivePreview();
+      }
+    });
+
+    // 5. Sincronização em tempo real dos dados gerais (Passageiro, Destino, Branding, Consultor, Datas, Valores)
     this.container.querySelectorAll('.input-sync').forEach(el => {
       el.addEventListener('input', () => {
         this.capturarDadosGeraisDoFormulario();
@@ -1670,6 +1956,108 @@ export class StudioPage {
   }
 
   // ==========================================================================
+  // CONTROLE DO MODAL UNSPLASH & BUSCA SEMÂNTICA
+  // ==========================================================================
+
+  private async abrirModalUnsplash(): Promise<void> {
+    this.modalUnsplashAberto = true;
+    const modalEl = this.container.querySelector('#modal-unsplash');
+    if (modalEl) {
+      modalEl.classList.remove('hidden');
+      modalEl.innerHTML = this.renderModalUnsplash();
+      this.setupModalUnsplashListeners();
+
+      const termoInicial = this.termoBuscaUnsplash || this.propostaAtual.destino || 'luxo';
+      const inputBusca = modalEl.querySelector('#input-busca-unsplash') as HTMLInputElement | null;
+      if (inputBusca) {
+        inputBusca.value = termoInicial;
+        inputBusca.focus();
+      }
+      await this.executarBuscaUnsplash(termoInicial);
+    }
+  }
+
+  private fecharModalUnsplash(): void {
+    this.modalUnsplashAberto = false;
+    const modalEl = this.container.querySelector('#modal-unsplash');
+    if (modalEl) {
+      modalEl.classList.add('hidden');
+      modalEl.innerHTML = '';
+    }
+  }
+
+  private async executarBuscaUnsplash(termoParam?: string): Promise<void> {
+    const inputBusca = this.container.querySelector('#input-busca-unsplash') as HTMLInputElement | null;
+    const termo = termoParam !== undefined ? termoParam : (inputBusca?.value || '').trim();
+    if (!termo) return;
+
+    this.termoBuscaUnsplash = termo;
+    this.buscandoUnsplash = true;
+
+    const modalEl = this.container.querySelector('#modal-unsplash');
+    if (modalEl) {
+      modalEl.innerHTML = this.renderModalUnsplash();
+      this.setupModalUnsplashListeners();
+    }
+
+    try {
+      const resultado = await StudioUnsplashService.buscarFotos(termo);
+      this.fotosUnsplashResultado = resultado.fotos;
+      this.queryEngUnsplash = resultado.queryEng;
+    } catch (err) {
+      console.warn('[StudioPage] Falha na busca Unsplash:', err);
+    } finally {
+      this.buscandoUnsplash = false;
+      if (modalEl) {
+        modalEl.innerHTML = this.renderModalUnsplash();
+        this.setupModalUnsplashListeners();
+      }
+    }
+  }
+
+  private setupModalUnsplashListeners(): void {
+    const modalEl = this.container.querySelector('#modal-unsplash');
+    if (!modalEl) return;
+
+    modalEl.querySelector('#btn-fechar-modal-unsplash')?.addEventListener('click', () => this.fecharModalUnsplash());
+    modalEl.querySelector('#btn-fechar-modal-unsplash-rodape')?.addEventListener('click', () => this.fecharModalUnsplash());
+
+    const inputBusca = modalEl.querySelector('#input-busca-unsplash') as HTMLInputElement | null;
+    const btnBusca = modalEl.querySelector('#btn-executar-busca-unsplash');
+
+    btnBusca?.addEventListener('click', () => this.executarBuscaUnsplash());
+    inputBusca?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        this.executarBuscaUnsplash();
+      }
+    });
+
+    modalEl.querySelectorAll('.btn-sugestao-unsplash').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const termo = btn.getAttribute('data-termo') || '';
+        if (inputBusca) inputBusca.value = termo;
+        this.executarBuscaUnsplash(termo);
+      });
+    });
+
+    modalEl.querySelectorAll('.btn-selecionar-foto-unsplash').forEach(card => {
+      card.addEventListener('click', () => {
+        const url = card.getAttribute('data-url');
+        if (url) {
+          this.propostaAtual.foto_capa_url = url;
+          const inputCustom = this.container.querySelector('#campo-foto-custom') as HTMLInputElement | null;
+          if (inputCustom) inputCustom.value = url;
+          this.fecharModalUnsplash();
+          this.marcarAlteracaoPendente();
+          this.render();
+          this.showToast('Foto de capa selecionada com sucesso!', 'success');
+        }
+      });
+    });
+  }
+
+  // ==========================================================================
   // CAPTURA E PERSISTÊNCIA NO BANCO (SUPABASE)
   // ==========================================================================
 
@@ -1685,6 +2073,17 @@ export class StudioPage {
     this.propostaAtual.valor_total = parseFloat(getVal('campo-valor-total')) || 0;
     this.propostaAtual.moeda = getVal('campo-moeda') || 'BRL';
     this.propostaAtual.foto_capa_url = getVal('campo-foto-custom') || this.propostaAtual.foto_capa_url;
+    this.propostaAtual.titulo_cabecalho = getVal('campo-titulo-cabecalho') || 'PAXFLOW LUXURY TRAVEL';
+    this.propostaAtual.consultor_nome = getVal('campo-consultor-nome') || undefined;
+    this.propostaAtual.consultor_whatsapp = getVal('campo-consultor-whatsapp') || undefined;
+    this.propostaAtual.consultor_telefone = getVal('campo-consultor-telefone') || undefined;
+    this.propostaAtual.consultor_email = getVal('campo-consultor-email') || undefined;
+    this.propostaAtual.consultor_avatar = getVal('campo-consultor-avatar') || undefined;
+
+    const selectConsultor = this.container.querySelector('#select-consultor') as HTMLSelectElement | null;
+    if (selectConsultor && selectConsultor.value) {
+      this.propostaAtual.consultor_id = selectConsultor.value;
+    }
   }
 
   private async salvarPropostaAtual(): Promise<void> {

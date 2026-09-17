@@ -256,7 +256,7 @@ export class StudioPdfGenerator {
         <!-- CAPA DO CADERNO -->
         <div class="capa-container">
           <div class="capa-header">
-            <span class="tag-luxo">PaxFlow Studio™ · Caderno de Viagem</span>
+            <span class="tag-luxo">${proposta.titulo_cabecalho || 'PaxFlow Studio™ · Caderno de Viagem'}</span>
             <span style="font-weight: 700; font-size: 12pt;">AGÊNCIA DE VIAGENS</span>
           </div>
 
@@ -274,6 +274,11 @@ export class StudioPdfGenerator {
               <div class="info-bloco">
                 <span>Consultor Responsável</span>
                 <strong>${proposta.consultor_nome || 'Consultoria Especializada'}</strong>
+                ${proposta.consultor_whatsapp || proposta.consultor_telefone ? `
+                  <div style="font-size: 8.5pt; font-weight: 600; opacity: 0.9; margin-top: 2px;">
+                    📞 ${proposta.consultor_whatsapp || proposta.consultor_telefone}
+                  </div>
+                ` : ''}
               </div>
               <div class="info-bloco">
                 <span>Investimento Total</span>
