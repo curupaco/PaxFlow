@@ -2,7 +2,8 @@ import { describe, it, expect } from 'vitest';
 import {
   normalizarTipoProduto,
   sanitizarCadastroFornecedor,
-  verificarDuplicidadeFornecedor
+  verificarDuplicidadeFornecedor,
+  sanitizarTipoProduto
 } from '../../src/controllers/cadastrosController';
 
 describe('CadastrosController - Gestão e Consistência Cadastral de Fornecedores e Produtos', () => {
@@ -112,5 +113,56 @@ describe('CadastrosController - Gestão e Consistência Cadastral de Fornecedore
     expect(dupNome.motivo).toContain('Já existe um fornecedor cadastrado com o nome');
 
     expect(semDup.duplicado).toBe(false);
+  });
+
+  describe('sanitizarTipoProduto - Validação e Resiliência de Ícones', () => {
+    it('deve aplicar ícone fallback padrão quando o ícone estiver vazio ou em branco', () => {
+      // Setup
+      const tipoSemIcone = {
+        nome: 'Passeio Panorâmico',
+        icone: '   ',
+        ativo: true,
+      };
+
+      // Action
+      const resultado = sanitizarTipoProduto(tipoSemIcone);
+
+      // Assert
+      expect(resultado.valido).toBe(true);
+      expect(resultado.nome).toBe('Passeio Panorâmico');
+      expect(resultado.icone).toBe('📦');
+    });
+
+    it('deve rejeitar tipo de produto sem nome', () => {
+      // Setup
+      const tipoSemNome = {
+        nome: '',
+        icone: '✈️',
+      };
+
+      // Action
+      const resultado = sanitizarTipoProduto(tipoSemNome);
+
+      // Assert
+      expect(resultado.valido).toBe(false);
+      expect(resultado.erro).toContain('nome do tipo de produto/serviço é obrigatório');
+    });
+
+    it('deve preservar o emoji selecionado quando informado', () => {
+      // Setup
+      const tipoValido = {
+        nome: 'Cruzeiro Fluvial',
+        icone: '🚢',
+        ativo: true,
+      };
+
+      // Action
+      const resultado = sanitizarTipoProduto(tipoValido);
+
+      // Assert
+      expect(resultado.valido).toBe(true);
+      expect(resultado.icone).toBe('🚢');
+      expect(resultado.ativo).toBe(true);
+    });
   });
 });

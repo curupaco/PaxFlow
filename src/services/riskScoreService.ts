@@ -267,53 +267,7 @@ export class RiskScoreService {
 
     // Checagem de Contato Pré-Embarque Crítico (< 24h)
     const contatosEmbarque = ContatosEmbarqueService.extrairContatos(viagem);
-    const embarquesViagem: { chave: string; rotulo: string; dataStr: string; horaStr?: string }[] = [];
-
-    if (viagem.data_ida) {
-      embarquesViagem.push({
-        chave: 'viagem-ida',
-        rotulo: `Ida da viagem para ${viagem.destino || 'o destino'}`,
-        dataStr: viagem.data_ida
-      });
-    }
-
-    if (viagem.data_volta) {
-      embarquesViagem.push({
-        chave: 'viagem-volta',
-        rotulo: `Volta da viagem (${viagem.destino || 'retorno'})`,
-        dataStr: viagem.data_volta
-      });
-    }
-
-    if (produtos && Array.isArray(produtos)) {
-      produtos.forEach((p: any) => {
-        const pTipoUpper = (p.tipo || '').trim().toUpperCase();
-        if (pTipoUpper.includes('AÉREO') || pTipoUpper.includes('VOO')) {
-          if (p.dados_adicionais && Array.isArray(p.dados_adicionais.trechos)) {
-            p.dados_adicionais.trechos.forEach((t: any, idx: number) => {
-              const trechoNome = t.origem && t.destino ? `${t.origem} ➔ ${t.destino}` : `Voo trecho ${idx + 1}`;
-              const prodId = p.id || '';
-              if (t.dataIda) {
-                embarquesViagem.push({
-                  chave: `seg-ida-${prodId}-${idx}`,
-                  rotulo: `${trechoNome} (Ida)`,
-                  dataStr: t.dataIda,
-                  horaStr: t.horarioIda || t.horaIda
-                });
-              }
-              if (t.dataVolta) {
-                embarquesViagem.push({
-                  chave: `seg-volta-${prodId}-${idx}`,
-                  rotulo: `${trechoNome} (Volta)`,
-                  dataStr: t.dataVolta,
-                  horaStr: t.horarioVolta || t.horaVolta
-                });
-              }
-            });
-          }
-        }
-      });
-    }
+    const embarquesViagem = ContatosEmbarqueService.obterEmbarquesViagem(viagem, produtos);
 
     const agora = new Date();
     const hojeAno = agora.getFullYear();

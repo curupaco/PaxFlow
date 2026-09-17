@@ -190,4 +190,93 @@ describe('ContatosEmbarqueService (Subcutâneo)', () => {
       observacoes: expect.stringContaining('[CONTATOS_EMBARQUE]:')
     });
   });
+
+  describe('obterEmbarquesViagem (Consolidação Sem Duplicação)', () => {
+    it('deve retornar ida e volta gerais quando não houver produtos aéreos com trechos', () => {
+      // Setup
+      const viagem = {
+        id: 'trip-hotel',
+        destino: 'Gramado, RS',
+        data_ida: '2026-11-01',
+        data_volta: '2026-11-06',
+        codigo_localizador: 'LOC-HOTEL',
+        produtos: [
+          { id: 'prod-1', tipo: 'HOTEL', fornecedor: 'Hotel Casa da Montanha' }
+        ]
+      };
+
+      // Action
+      const embarques = ContatosEmbarqueService.obterEmbarquesViagem(viagem);
+
+      // Assert
+      expect(embarques).toHaveLength(2);
+      expect(embarques[0]).toEqual(expect.objectContaining({
+        chave: 'viagem-ida',
+        tipo: 'ida',
+        dataStr: '2026-11-01',
+        loc: 'LOC-HOTEL',
+        destino: 'Gramado, RS'
+      }));
+      expect(embarques[1]).toEqual(expect.objectContaining({
+        chave: 'viagem-volta',
+        tipo: 'volta',
+        dataStr: '2026-11-06',
+        loc: 'LOC-HOTEL',
+        destino: 'Gramado, RS'
+      }));
+    });
+
+    it('deve priorizar exclusivamente os trechos de voo quando a viagem possuir produtos aéreos, eliminando duplicatas', () => {
+      // Setup
+      const viagem = {
+        id: 'trip-voo',
+        destino: 'Paris, França',
+        data_ida: '2026-12-13',
+        data_volta: '2026-12-20',
+        codigo_localizador: 'LOC-GERAL',
+        produtos: [
+          {
+            id: 'prod-aereo-latam',
+            tipo: 'AÉREO OPERADORA',
+            fornecedor: 'LATAM',
+            codigo_reserva: 'UQPUMY',
+            dados_adicionais: {
+              trechos: [
+                {
+                  origem: 'São Paulo, Brasil',
+                  destino: 'Paris, França',
+                  dataIda: '2026-12-13',
+                  dataVolta: '2026-12-20',
+                  horarioIda: '18:30',
+                  horarioVolta: '22:00'
+                }
+              ]
+            }
+          }
+        ]
+      };
+
+      // Action
+      const embarques = ContatosEmbarqueService.obterEmbarquesViagem(viagem);
+
+      // Assert
+      expect(embarques).toHaveLength(2); // Apenas os 2 trechos de voo, sem as 2 datas genéricas duplicadas
+      expect(embarques[0]).toEqual(expect.objectContaining({
+        chave: 'seg-ida-prod-aereo-latam-0',
+        tipo: 'segmento-ida',
+        tipoDesc: '✈️ Voo (Ida) - LATAM',
+        dataStr: '2026-12-13',
+        loc: 'UQPUMY',
+        destino: 'São Paulo, Brasil ➔ Paris, França'
+      }));
+      expect(embarques[1]).toEqual(expect.objectContaining({
+        chave: 'seg-volta-prod-aereo-latam-0',
+        tipo: 'segmento-volta',
+        tipoDesc: '✈️ Voo (Volta) - LATAM',
+        dataStr: '2026-12-20',
+        loc: 'UQPUMY',
+        destino: 'São Paulo, Brasil ➔ Paris, França'
+      }));
+    });
+  });
 });

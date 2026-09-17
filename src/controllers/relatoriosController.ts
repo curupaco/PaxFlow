@@ -197,3 +197,160 @@ export function processarExtratoRecebimentos(
   return itens.sort((a, b) => b.data.localeCompare(a.data));
 }
 
+export interface FiltrosFaturamento {
+  tipoProduto?: string;
+  filtroRav?: 'todos' | 'com_rav' | 'sem_rav';
+}
+
+export interface CategoriaFaturamentoStat {
+  tipo: string;
+  faturamento: number;
+  taxas: number;
+  comissao: number;
+  markup: number;
+  rav: number;
+  lucro: number;
+  margem: number;
+  quantidade: number;
+}
+
+export interface ResultadoFaturamentoLucratividade {
+  faturamentoBruto: number;
+  taxasTotal: number;
+  comissaoTotal: number;
+  markupTotal: number;
+  ravTotal: number;
+  lucroLiquidoReal: number;
+  margemMedia: number;
+  porCategoria: Record<string, CategoriaFaturamentoStat>;
+  categoriasLista: CategoriaFaturamentoStat[];
+  categorias: CategoriaFaturamentoStat[];
+  totalProdutosFiltrados: number;
+}
+
+/**
+ * Calcula os totalizadores e lucratividade por linha de produto com suporte a filtros
+ */
+export function calcularFaturamentoLucratividade(
+  viagens: any[],
+  locPagamentos: any[] = [],
+  filtros: FiltrosFaturamento = {}
+): ResultadoFaturamentoLucratividade {
+  const tipoFiltro = (filtros.tipoProduto || 'todos').trim().toLowerCase();
+  const filtroRav = filtros.filtroRav || 'todos';
+
+  let faturamentoBruto = 0;
+  let taxasTotal = 0;
+  let comissaoTotal = 0;
+  let markupTotal = 0;
+  let ravTotal = 0;
+  let totalSubtrair = 0;
+  let totalProdutosFiltrados = 0;
+
+  const porCategoria: Record<string, CategoriaFaturamentoStat> = {};
+  const isFiltroAtivo = tipoFiltro !== 'todos' || filtroRav !== 'todos';
+
+  (viagens || []).forEach((v: any) => {
+    if (v.status === 'cancelada' || v.status === 'cancelado') return;
+
+    const vPayments = (locPagamentos || []).filter((p: any) => 
+      (p.viagem_id === v.id || p.viagemId === v.id) &&
+      p.formas_recebimento &&
+      ['DESCONTO', 'PREJUÍZO'].includes((p.formas_recebimento.nome || '').trim().toUpperCase())
+    );
+    const subViagem = vPayments.reduce((s: number, p: any) => s + (Number(p.valor) || 0), 0);
+
+    const prods = (v.produtos || []).filter((p: any) => p.status !== 'cancelado');
+
+    prods.forEach((p: any) => {
+      const tipoProd = p.tipo || 'Outros';
+      const tipoProdLower = tipoProd.trim().toLowerCase();
+      const pRav = Number(p.rav) || 0;
+
+      // 1. Filtro por Produto / Categoria
+      if (tipoFiltro !== 'todos' && tipoProdLower !== tipoFiltro) {
+        return;
+      }
+
+      // 2. Filtro por RAV (<> 0)
+      if (filtroRav === 'com_rav' && pRav === 0) {
+        return;
+      }
+      if (filtroRav === 'sem_rav' && pRav !== 0) {
+        return;
+      }
+
+      totalProdutosFiltrados++;
+
+      const pVenda = Number(p.valor_venda ?? p.valorVenda ?? 0);
+      const pTaxa = Number(p.taxa) || 0;
+      const pComissao = Number(p.comissao) || 0;
+      const pMarkup = Number(p.markup) || 0;
+      const pRavLiquido = pRav * 0.88;
+      const pLucro = pComissao + pMarkup + pRavLiquido;
+
+      taxasTotal += pTaxa;
+      comissaoTotal += pComissao;
+      markupTotal += pMarkup;
+      ravTotal += pRavLiquido;
+
+      if (!porCategoria[tipoProd]) {
+        porCategoria[tipoProd] = {
+          tipo: tipoProd,
+          faturamento: 0,
+          taxas: 0,
+          comissao: 0,
+          markup: 0,
+          rav: 0,
+          lucro: 0,
+          margem: 0,
+          quantidade: 0
+        };
+      }
+
+      porCategoria[tipoProd].faturamento += pVenda;
+      porCategoria[tipoProd].taxas += pTaxa;
+      porCategoria[tipoProd].comissao += pComissao;
+      porCategoria[tipoProd].markup += pMarkup;
+      porCategoria[tipoProd].rav += pRavLiquido;
+      porCategoria[tipoProd].lucro += pLucro;
+      porCategoria[tipoProd].quantidade += 1;
+
+      if (isFiltroAtivo) {
+        faturamentoBruto += pVenda;
+      }
+    });
+
+    if (!isFiltroAtivo) {
+      faturamentoBruto += Number(v.valor_total || v.valorTotal || 0);
+      totalSubtrair += subViagem;
+    }
+  });
+
+  if (!isFiltroAtivo) {
+    faturamentoBruto = Math.max(0, faturamentoBruto - totalSubtrair);
+  }
+
+  const lucroLiquidoReal = Math.max(0, comissaoTotal + markupTotal + ravTotal - (!isFiltroAtivo ? totalSubtrair : 0));
+  const margemMedia = faturamentoBruto > 0 ? Math.round((lucroLiquidoReal / faturamentoBruto) * 100) : 0;
+
+  const categoriasLista = Object.values(porCategoria).map(cat => ({
+    ...cat,
+    margem: cat.faturamento > 0 ? Math.round((cat.lucro / cat.faturamento) * 100) : 0
+  })).sort((a, b) => b.faturamento - a.faturamento);
+
+  return {
+    faturamentoBruto,
+    taxasTotal,
+    comissaoTotal,
+    markupTotal,
+    ravTotal,
+    lucroLiquidoReal,
+    margemMedia,
+    porCategoria,
+    categoriasLista,
+    categorias: categoriasLista,
+    totalProdutosFiltrados
+  };
+}
+

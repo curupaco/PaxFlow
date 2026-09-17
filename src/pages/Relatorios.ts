@@ -9,7 +9,7 @@ import { SendTemplateMessageModal } from '../components/dashboard/SendTemplateMe
 import { ContatosEmbarqueService } from '../services/contatosEmbarqueService';
 import { confirmUnsavedChanges } from '../components/common/UnsavedChangesModal';
 import { ExtratoRecebimentosModal } from '../components/relatorios/ExtratoRecebimentosModal';
-import { processarExtratoRecebimentos } from '../controllers/relatoriosController';
+import { processarExtratoRecebimentos, calcularFaturamentoLucratividade } from '../controllers/relatoriosController';
 import { MetasService } from '../services/metasService';
 import { getAvatarSvg } from '../services/avatars';
 
@@ -90,6 +90,8 @@ export class RelatoriosPage {
   private dataFim: string = '';
   private consultorIdFilter: string = 'todos';
   private filtroContatoEmbarque: 'todos' | 'feitos' | 'pendentes' = 'todos';
+  private filtroFaturamentoProduto: string = 'todos';
+  private filtroFaturamentoRav: 'todos' | 'com_rav' | 'sem_rav' = 'todos';
   
   private loading: boolean = false;
   private prazoReembolsoDias: number = 30;
@@ -886,75 +888,58 @@ export class RelatoriosPage {
   // ==========================================
   // VIEW: 3. FATURAMENTO E LUCRATIVIDADE
   // ==========================================
+  // RENDERIZAÇÃO: ABA FATURAMENTO E LUCRATIVIDADE
+  // ==========================================
   private renderFaturamento(data: any): string {
-    let faturamentoBruto = 0;
-    let taxasTotal = 0;
-    let custoTotal = 0;
-    let comissaoTotal = 0;
-    let markupTotal = 0;
-    let ravTotal = 0;
-    let totalSubtrair = 0;
-
-    data.viagens.forEach((v: any) => {
-      faturamentoBruto += (v.valor_total || v.valorTotal || 0);
-      
-      const vPayments = data.locPagamentos.filter((p: any) => 
-        (p.viagem_id === v.id || p.viagemId === v.id) &&
-        p.formas_recebimento &&
-        ['DESCONTO', 'PREJUÍZO'].includes((p.formas_recebimento.nome || '').trim().toUpperCase())
-      );
-      totalSubtrair += vPayments.reduce((s: number, p: any) => s + (Number(p.valor) || 0), 0);
-
-      if (v.produtos) {
-        v.produtos.forEach((p: any) => {
-          if (p.status !== 'cancelado') {
-            taxasTotal += (Number(p.taxa) || 0);
-            custoTotal += (p.valorCusto || p.valor_custo || 0);
-            comissaoTotal += (Number(p.comissao) || 0);
-            markupTotal += (Number(p.markup) || 0);
-            ravTotal += ((Number(p.rav) || 0) * 0.88);
-          }
-        });
-      }
+    const tiposUnicosSet = new Set<string>();
+    (this.tiposProduto || []).forEach(t => { if (t?.nome) tiposUnicosSet.add(t.nome.toUpperCase()); });
+    (data.viagens || []).forEach((v: any) => {
+      (v.produtos || []).forEach((p: any) => {
+        if (p.tipo) tiposUnicosSet.add(p.tipo.toUpperCase());
+      });
     });
+    const tiposUnicos = Array.from(tiposUnicosSet).sort();
 
-    faturamentoBruto = Math.max(0, faturamentoBruto - totalSubtrair);
-    const lucroLiquidoReal = Math.max(0, comissaoTotal + markupTotal + ravTotal - totalSubtrair);
-    const margemMedia = faturamentoBruto > 0 ? Math.round((lucroLiquidoReal / faturamentoBruto) * 100) : 0;
-
-    // Agrupamento por tipo/categoria de produto
-    const productTypes: Record<string, { faturamento: number, taxas: number, comissao: number, markup: number, rav: number, lucro: number }> = {};
-    data.viagens.forEach((v: any) => {
-      if (v.produtos) {
-        v.produtos.forEach((p: any) => {
-          if (p.status !== 'cancelado') {
-            const tipo = p.tipo || 'Outros';
-            if (!productTypes[tipo]) {
-              productTypes[tipo] = { faturamento: 0, taxas: 0, comissao: 0, markup: 0, rav: 0, lucro: 0 };
-            }
-            const pVenda = Number(p.valor_venda ?? p.valorVenda ?? 0);
-            const pTaxa = Number(p.taxa) || 0;
-            const pComissao = Number(p.comissao) || 0;
-            const pMarkup = Number(p.markup) || 0;
-            const pRav = (Number(p.rav) || 0) * 0.88;
-            const pLucro = pComissao + pMarkup + pRav;
-
-            productTypes[tipo].faturamento += pVenda;
-            productTypes[tipo].taxas += pTaxa;
-            productTypes[tipo].comissao += pComissao;
-            productTypes[tipo].markup += pMarkup;
-            productTypes[tipo].rav += pRav;
-            productTypes[tipo].lucro += pLucro;
-          }
-        });
-      }
+    const {
+      faturamentoBruto,
+      taxasTotal,
+      comissaoTotal,
+      markupTotal,
+      ravTotal,
+      lucroLiquidoReal,
+      margemMedia,
+      categorias
+    } = calcularFaturamentoLucratividade(data.viagens, data.locPagamentos, {
+      tipoProduto: this.filtroFaturamentoProduto,
+      filtroRav: this.filtroFaturamentoRav
     });
 
     return `
       <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-3xl p-6 shadow-sm flex flex-col gap-6 print-full-width">
-        <h2 class="text-lg font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
-          <span>💰 Faturamento e Lucratividade</span>
-        </h2>
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <h2 class="text-lg font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
+            <span>💰 Faturamento e Lucratividade</span>
+          </h2>
+          <div class="flex flex-wrap items-center gap-3">
+            <div class="flex items-center gap-2">
+              <label for="filtro-faturamento-produto" class="text-xs font-bold text-slate-500 dark:text-slate-400 whitespace-nowrap">Produto:</label>
+              <select id="filtro-faturamento-produto" class="px-3 py-1.5 text-xs font-semibold rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 cursor-pointer">
+                <option value="todos" ${this.filtroFaturamentoProduto === 'todos' ? 'selected' : ''}>Todos os Produtos</option>
+                ${tiposUnicos.map(tipo => `
+                  <option value="${tipo}" ${this.filtroFaturamentoProduto === tipo ? 'selected' : ''}>${tipo}</option>
+                `).join('')}
+              </select>
+            </div>
+            <div class="flex items-center gap-2">
+              <label for="filtro-faturamento-rav" class="text-xs font-bold text-slate-500 dark:text-slate-400 whitespace-nowrap">RAV:</label>
+              <select id="filtro-faturamento-rav" class="px-3 py-1.5 text-xs font-semibold rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 cursor-pointer">
+                <option value="todos" ${this.filtroFaturamentoRav === 'todos' ? 'selected' : ''}>Todos</option>
+                <option value="com_rav" ${this.filtroFaturamentoRav === 'com_rav' ? 'selected' : ''}>⚡ Apenas com RAV (RAV <> 0)</option>
+                <option value="sem_rav" ${this.filtroFaturamentoRav === 'sem_rav' ? 'selected' : ''}>Sem RAV (RAV = 0)</option>
+              </select>
+            </div>
+          </div>
+        </div>
 
         <!-- Metric Grid -->
         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2.5">
@@ -1006,23 +991,20 @@ export class RelatoriosPage {
                 </tr>
               </thead>
               <tbody>
-                ${Object.entries(productTypes).map(([tipo, vals]) => {
-                  const mPct = vals.faturamento > 0 ? Math.round((vals.lucro / vals.faturamento) * 100) : 0;
-                  return `
-                    <tr class="border-b border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-300">
-                      <td class="p-3 font-extrabold text-slate-800 dark:text-slate-100">${tipo}</td>
-                      <td class="p-3 font-bold text-slate-800 dark:text-slate-200">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(vals.faturamento)}</td>
-                      <td class="p-3 text-sky-600 dark:text-sky-400">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(vals.taxas)}</td>
-                      <td class="p-3 text-indigo-600 dark:text-indigo-400">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(vals.comissao)}</td>
-                      <td class="p-3 text-purple-600 dark:text-purple-400">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(vals.markup)}</td>
-                      <td class="p-3 text-amber-600 dark:text-amber-400">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(vals.rav)}</td>
-                      <td class="p-3 font-extrabold text-emerald-600">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(vals.lucro)}</td>
-                      <td class="p-3 font-extrabold">${mPct}%</td>
-                    </tr>
-                  `;
-                }).join('') || `
+                ${categorias.map(cat => `
+                  <tr class="border-b border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-300">
+                    <td class="p-3 font-extrabold text-slate-800 dark:text-slate-100">${cat.tipo}</td>
+                    <td class="p-3 font-bold text-slate-800 dark:text-slate-200">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(cat.faturamento)}</td>
+                    <td class="p-3 text-sky-600 dark:text-sky-400">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(cat.taxas)}</td>
+                    <td class="p-3 text-indigo-600 dark:text-indigo-400">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(cat.comissao)}</td>
+                    <td class="p-3 text-purple-600 dark:text-purple-400">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(cat.markup)}</td>
+                    <td class="p-3 text-amber-600 dark:text-amber-400">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(cat.rav)}</td>
+                    <td class="p-3 font-extrabold text-emerald-600">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(cat.lucro)}</td>
+                    <td class="p-3 font-extrabold">${cat.margem}%</td>
+                  </tr>
+                `).join('') || `
                   <tr>
-                    <td colspan="8" class="p-6 text-center text-slate-400 font-extrabold">Nenhum produto registrado ou faturado no período.</td>
+                    <td colspan="8" class="p-6 text-center text-slate-400 font-extrabold">Nenhum produto registrado ou faturado correspondente aos filtros selecionados.</td>
                   </tr>
                 `}
               </tbody>
@@ -1932,115 +1914,31 @@ export class RelatoriosPage {
       const clientName = v.cliente?.nome || 'Passageiro';
       const consultorName = this.consultores.find(c => c.id === v.consultor_id)?.nome || 'Consultor';
       const contatosViagem = ContatosEmbarqueService.extrairContatos(v);
+      const embarquesConsolidados = ContatosEmbarqueService.obterEmbarquesViagem(v);
 
-      // 1. Ida da Viagem Principal
-      if (v.data_ida && v.data_ida >= start && v.data_ida <= end) {
-        const hasAlert = this.lembretes.some((l: any) => l.viagem_id === v.id && l.data_lembrete === v.data_ida);
-        const trechoKey = 'viagem-ida';
-        const contatoRegistro = contatosViagem[trechoKey];
-        const contatoFeito = Boolean(contatoRegistro?.feito);
+      embarquesConsolidados.forEach((emb) => {
+        if (emb.dataStr && emb.dataStr >= start && emb.dataStr <= end) {
+          const hasAlert = this.lembretes.some((l: any) => l.viagem_id === v.id && l.data_lembrete === emb.dataStr);
+          const contatoRegistro = contatosViagem[emb.chave];
+          const contatoFeito = Boolean(contatoRegistro?.feito);
 
-        list.push({
-          data: v.data_ida,
-          cliente: clientName,
-          destino: v.destino,
-          tipo: '✈️ Ida da Viagem',
-          loc: v.codigo_localizador || 'S/ LOC',
-          consultor: consultorName,
-          hasAlert,
-          tripId: v.id,
-          productId: '',
-          tipoEmbarque: 'viagem-ida',
-          trechoKey,
-          contatoRegistro,
-          contatoFeito
-        });
-      }
-
-      // 2. Volta da Viagem Principal
-      if (v.data_volta && v.data_volta >= start && v.data_volta <= end) {
-        const hasAlert = this.lembretes.some((l: any) => l.viagem_id === v.id && l.data_lembrete === v.data_volta);
-        const trechoKey = 'viagem-volta';
-        const contatoRegistro = contatosViagem[trechoKey];
-        const contatoFeito = Boolean(contatoRegistro?.feito);
-
-        list.push({
-          data: v.data_volta,
-          cliente: clientName,
-          destino: v.destino,
-          tipo: '✈️ Volta da Viagem',
-          loc: v.codigo_localizador || 'S/ LOC',
-          consultor: consultorName,
-          hasAlert,
-          tripId: v.id,
-          productId: '',
-          tipoEmbarque: 'viagem-volta',
-          trechoKey,
-          contatoRegistro,
-          contatoFeito
-        });
-      }
-
-      // 3. Trechos Aéreos
-      if (v.produtos && Array.isArray(v.produtos)) {
-        v.produtos.forEach((p: any) => {
-          const pTipoUpper = (p.tipo || '').trim().toUpperCase();
-          if (pTipoUpper === 'AÉREO OPERADORA' || pTipoUpper === 'AÉREO FACIAL') {
-            if (p.dados_adicionais && Array.isArray(p.dados_adicionais.trechos)) {
-              p.dados_adicionais.trechos.forEach((t: any, idx: number) => {
-                const labelBase = `${t.origem} ➔ ${t.destino}`;
-                const prodId = p.id || '';
-
-                if (t.dataIda && t.dataIda >= start && t.dataIda <= end) {
-                  const hasAlert = this.lembretes.some((l: any) => l.viagem_id === v.id && l.data_lembrete === t.dataIda);
-                  const trechoKey = `seg-ida-${prodId}-${idx}`;
-                  const contatoRegistro = contatosViagem[trechoKey];
-                  const contatoFeito = Boolean(contatoRegistro?.feito);
-
-                  list.push({
-                    data: t.dataIda,
-                    cliente: clientName,
-                    destino: labelBase,
-                    tipo: `✈️ Voo (Ida) - ${p.fornecedor}`,
-                    loc: p.codigo_reserva || 'S/ LOC',
-                    consultor: consultorName,
-                    hasAlert,
-                    tripId: v.id,
-                    productId: p.id,
-                    tipoEmbarque: 'segmento-ida',
-                    trechoKey,
-                    contatoRegistro,
-                    contatoFeito
-                  });
-                }
-
-                if (t.dataVolta && t.dataVolta >= start && t.dataVolta <= end) {
-                  const hasAlert = this.lembretes.some((l: any) => l.viagem_id === v.id && l.data_lembrete === t.dataVolta);
-                  const trechoKey = `seg-volta-${prodId}-${idx}`;
-                  const contatoRegistro = contatosViagem[trechoKey];
-                  const contatoFeito = Boolean(contatoRegistro?.feito);
-
-                  list.push({
-                    data: t.dataVolta,
-                    cliente: clientName,
-                    destino: labelBase,
-                    tipo: `✈️ Voo (Volta) - ${p.fornecedor}`,
-                    loc: p.codigo_reserva || 'S/ LOC',
-                    consultor: consultorName,
-                    hasAlert,
-                    tripId: v.id,
-                    productId: p.id,
-                    tipoEmbarque: 'segmento-volta',
-                    trechoKey,
-                    contatoRegistro,
-                    contatoFeito
-                  });
-                }
-              });
-            }
-          }
-        });
-      }
+          list.push({
+            data: emb.dataStr,
+            cliente: clientName,
+            destino: emb.destino,
+            tipo: emb.tipoDesc,
+            loc: emb.loc,
+            consultor: consultorName,
+            hasAlert,
+            tripId: v.id,
+            productId: emb.productId || '',
+            tipoEmbarque: emb.tipo,
+            trechoKey: emb.chave,
+            contatoRegistro,
+            contatoFeito
+          });
+        }
+      });
     });
 
     list.sort((a, b) => a.data.localeCompare(b.data));
@@ -3009,7 +2907,34 @@ export class RelatoriosPage {
       window.print();
     });
 
-    // 6. Listeners para os botões do Relatório de Embarque
+    // 6. Listeners para a aba Faturamento e Lucratividade
+    if (this.activeTab === 'faturamento') {
+      const selectFiltroProduto = document.getElementById('filtro-faturamento-produto') as HTMLSelectElement;
+      if (selectFiltroProduto) {
+        selectFiltroProduto.addEventListener('change', () => {
+          this.filtroFaturamentoProduto = selectFiltroProduto.value || 'todos';
+          const container = document.getElementById('report-view-container');
+          if (container) {
+            container.innerHTML = this.renderFaturamento(this.getFilteredData());
+            this.setupEventListeners();
+          }
+        });
+      }
+
+      const selectFiltroRav = document.getElementById('filtro-faturamento-rav') as HTMLSelectElement;
+      if (selectFiltroRav) {
+        selectFiltroRav.addEventListener('change', () => {
+          this.filtroFaturamentoRav = (selectFiltroRav.value as any) || 'todos';
+          const container = document.getElementById('report-view-container');
+          if (container) {
+            container.innerHTML = this.renderFaturamento(this.getFilteredData());
+            this.setupEventListeners();
+          }
+        });
+      }
+    }
+
+    // 7. Listeners para os botões do Relatório de Embarque
     if (this.activeTab === 'embarques') {
       // Filtro de Contato Pré-Embarque
       const selectFiltroContato = document.getElementById('filtro-contato-embarque') as HTMLSelectElement;
@@ -3354,61 +3279,18 @@ export class RelatoriosPage {
     } else if (this.activeTab === 'faturamento') {
       csvContent += 'Categoria;Faturamento Venda;Taxas;Comissão da Agência;Markup;RAV;Lucro Líquido;Margem (%)\n';
       
-      let faturamentoBruto = 0, taxasTotal = 0, comissaoTotal = 0, markupTotal = 0, ravTotal = 0;
-      let totalSub = 0;
-      const catStats: Record<string, { faturamento: number, taxas: number, comissao: number, markup: number, rav: number, lucro: number }> = {};
-
-      data.viagens.forEach((v: any) => {
-        faturamentoBruto += (v.valor_total || v.valorTotal || 0);
-        
-        const vPayments = data.locPagamentos.filter((p: any) => 
-          (p.viagem_id === v.id || p.viagemId === v.id) &&
-          p.formas_recebimento &&
-          ['DESCONTO', 'PREJUÍZO'].includes((p.formas_recebimento.nome || '').trim().toUpperCase())
-        );
-        totalSub += vPayments.reduce((s: number, p: any) => s + (Number(p.valor) || 0), 0);
-
-        if (v.produtos) {
-          v.produtos.forEach((p: any) => {
-            if (p.status !== 'cancelado') {
-              const tipo = p.tipo || 'Outros';
-              if (!catStats[tipo]) {
-                catStats[tipo] = { faturamento: 0, taxas: 0, comissao: 0, markup: 0, rav: 0, lucro: 0 };
-              }
-              const pVenda = Number(p.valor_venda ?? p.valorVenda ?? 0);
-              const pTaxa = Number(p.taxa) || 0;
-              const pComissao = Number(p.comissao) || 0;
-              const pMarkup = Number(p.markup) || 0;
-              const pRav = (Number(p.rav) || 0) * 0.88;
-              const pLucro = pComissao + pMarkup + pRav;
-
-              taxasTotal += pTaxa;
-              comissaoTotal += pComissao;
-              markupTotal += pMarkup;
-              ravTotal += pRav;
-
-              catStats[tipo].faturamento += pVenda;
-              catStats[tipo].taxas += pTaxa;
-              catStats[tipo].comissao += pComissao;
-              catStats[tipo].markup += pMarkup;
-              catStats[tipo].rav += pRav;
-              catStats[tipo].lucro += pLucro;
-            }
-          });
-        }
+      const resFat = calcularFaturamentoLucratividade(data.viagens, data.locPagamentos, {
+        tipoProduto: this.filtroFaturamentoProduto,
+        filtroRav: this.filtroFaturamentoRav
       });
-      const netFaturamento = Math.max(0, faturamentoBruto - totalSub);
-      const netLucro = Math.max(0, (comissaoTotal + markupTotal + ravTotal) - totalSub);
-      const totalMargem = netFaturamento > 0 ? Math.round((netLucro / netFaturamento) * 100) : 0;
 
       // Linhas detalhadas por categoria
-      Object.entries(catStats).forEach(([tipo, c]) => {
-        const cMargem = c.faturamento > 0 ? Math.round((c.lucro / c.faturamento) * 100) : 0;
-        csvContent += `"${tipo}";${c.faturamento};${c.taxas};${c.comissao};${c.markup};${c.rav};${c.lucro};"${cMargem}%"\n`;
+      resFat.categorias.forEach(c => {
+        csvContent += `"${c.tipo}";${c.faturamento};${c.taxas};${c.comissao};${c.markup};${c.rav};${c.lucro};"${c.margem}%"\n`;
       });
 
       // Linha consolidada total
-      csvContent += `"CONSOLIDADO TOTAL";${netFaturamento};${taxasTotal};${comissaoTotal};${markupTotal};${ravTotal};${netLucro};"${totalMargem}%"\n`;
+      csvContent += `"CONSOLIDADO TOTAL";${resFat.faturamentoBruto};${resFat.taxasTotal};${resFat.comissaoTotal};${resFat.markupTotal};${resFat.ravTotal};${resFat.lucroLiquidoReal};"${resFat.margemMedia}%"\n`;
     } else if (this.activeTab === 'perdas') {
       csvContent += 'Cliente;Destino;Valor Cotacao;Motivo Desistencia\n';
       const perdidos = data.orcamentos.filter((o: any) => o.subStatus === 'DESISTENCIA' || o.sub_status === 'DESISTENCIA');
@@ -3595,77 +3477,24 @@ export class RelatoriosPage {
         const clientName = v.cliente?.nome || 'Passageiro';
         const consultorName = this.consultores.find(c => c.id === v.consultor_id)?.nome || 'Consultor';
         const contatosViagem = ContatosEmbarqueService.extrairContatos(v);
+        const embarquesConsolidados = ContatosEmbarqueService.obterEmbarquesViagem(v);
 
-        if (v.data_ida && v.data_ida >= start && v.data_ida <= end) {
-          const hasAlert = this.lembretes.some((l: any) => l.viagem_id === v.id && l.data_lembrete === v.data_ida);
-          const contatoFeito = Boolean(contatosViagem['viagem-ida']?.feito);
-          list.push({
-            data: v.data_ida,
-            cliente: clientName,
-            destino: v.destino,
-            tipo: 'Viagem (Ida)',
-            loc: v.codigo_localizador || 'S/ LOC',
-            consultor: consultorName,
-            hasAlert,
-            contatoFeito
-          });
-        }
-
-        if (v.data_volta && v.data_volta >= start && v.data_volta <= end) {
-          const hasAlert = this.lembretes.some((l: any) => l.viagem_id === v.id && l.data_lembrete === v.data_volta);
-          const contatoFeito = Boolean(contatosViagem['viagem-volta']?.feito);
-          list.push({
-            data: v.data_volta,
-            cliente: clientName,
-            destino: v.destino,
-            tipo: 'Viagem (Volta)',
-            loc: v.codigo_localizador || 'S/ LOC',
-            consultor: consultorName,
-            hasAlert,
-            contatoFeito
-          });
-        }
-
-        if (v.produtos && Array.isArray(v.produtos)) {
-          v.produtos.forEach((p: any) => {
-            const pTipoUpper = (p.tipo || '').trim().toUpperCase();
-            if (pTipoUpper === 'AÉREO OPERADORA' || pTipoUpper === 'AÉREO FACIAL') {
-              if (p.dados_adicionais && Array.isArray(p.dados_adicionais.trechos)) {
-                p.dados_adicionais.trechos.forEach((t: any, idx: number) => {
-                  const prodId = p.id || '';
-                  if (t.dataIda && t.dataIda >= start && t.dataIda <= end) {
-                    const hasAlert = this.lembretes.some((l: any) => l.viagem_id === v.id && l.data_lembrete === t.dataIda);
-                    const contatoFeito = Boolean(contatosViagem[`seg-ida-${prodId}-${idx}`]?.feito);
-                    list.push({
-                      data: t.dataIda,
-                      cliente: clientName,
-                      destino: `${t.origem} ➔ ${t.destino}`,
-                      tipo: `Voo (Ida) - ${p.fornecedor}`,
-                      loc: p.codigo_reserva || 'S/ LOC',
-                      consultor: consultorName,
-                      hasAlert,
-                      contatoFeito
-                    });
-                  }
-                  if (t.dataVolta && t.dataVolta >= start && t.dataVolta <= end) {
-                    const hasAlert = this.lembretes.some((l: any) => l.viagem_id === v.id && l.data_lembrete === t.dataVolta);
-                    const contatoFeito = Boolean(contatosViagem[`seg-volta-${prodId}-${idx}`]?.feito);
-                    list.push({
-                      data: t.dataVolta,
-                      cliente: clientName,
-                      destino: `${t.origem} ➔ ${t.destino}`,
-                      tipo: `Voo (Volta) - ${p.fornecedor}`,
-                      loc: p.codigo_reserva || 'S/ LOC',
-                      consultor: consultorName,
-                      hasAlert,
-                      contatoFeito
-                    });
-                  }
-                });
-              }
-            }
-          });
-        }
+        embarquesConsolidados.forEach((emb) => {
+          if (emb.dataStr && emb.dataStr >= start && emb.dataStr <= end) {
+            const hasAlert = this.lembretes.some((l: any) => l.viagem_id === v.id && l.data_lembrete === emb.dataStr);
+            const contatoFeito = Boolean(contatosViagem[emb.chave]?.feito);
+            list.push({
+              data: emb.dataStr,
+              cliente: clientName,
+              destino: emb.destino,
+              tipo: emb.tipoDesc,
+              loc: emb.loc,
+              consultor: consultorName,
+              hasAlert,
+              contatoFeito
+            });
+          }
+        });
       });
 
       list.sort((a, b) => a.data.localeCompare(b.data));

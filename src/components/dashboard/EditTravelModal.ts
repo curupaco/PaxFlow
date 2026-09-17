@@ -492,34 +492,7 @@ export class EditTravelModal {
 
             <!-- Identificação do Próximo Embarque e Contato -->
             ${(() => {
-              const todosEmbarquesViagem: { chave: string; rotulo: string; dataStr: string }[] = [];
-              if (v.data_ida) {
-                todosEmbarquesViagem.push({ chave: 'viagem-ida', rotulo: `Ida (${v.destino || 'Viagem'})`, dataStr: v.data_ida });
-              }
-              if (v.data_volta) {
-                todosEmbarquesViagem.push({ chave: 'viagem-volta', rotulo: `Volta (${v.destino || 'Retorno'})`, dataStr: v.data_volta });
-              }
-              if (v.produtos && Array.isArray(v.produtos)) {
-                v.produtos.forEach((p: any) => {
-                  const pTipoUpper = (p.tipo || '').trim().toUpperCase();
-                  if (pTipoUpper.includes('AÉREO') || pTipoUpper.includes('VOO')) {
-                    if (p.dados_adicionais && Array.isArray(p.dados_adicionais.trechos)) {
-                      p.dados_adicionais.trechos.forEach((t: any, idx: number) => {
-                        const trechoNome = t.origem && t.destino ? `${t.origem} ➔ ${t.destino}` : `Voo trecho ${idx + 1}`;
-                        const prodId = p.id || '';
-                        if (t.dataIda) {
-                          todosEmbarquesViagem.push({ chave: `seg-ida-${prodId}-${idx}`, rotulo: `${trechoNome} (Ida)`, dataStr: t.dataIda });
-                        }
-                        if (t.dataVolta) {
-                          todosEmbarquesViagem.push({ chave: `seg-volta-${prodId}-${idx}`, rotulo: `${trechoNome} (Volta)`, dataStr: t.dataVolta });
-                        }
-                      });
-                    }
-                  }
-                });
-              }
-
-              todosEmbarquesViagem.sort((a, b) => a.dataStr.localeCompare(b.dataStr));
+              const todosEmbarquesViagem = ContatosEmbarqueService.obterEmbarquesViagem(v);
               const contatosViagem = ContatosEmbarqueService.extrairContatos(v);
               const proximoPendente = todosEmbarquesViagem.find(emb => !contatosViagem[emb.chave]?.feito);
               const todosFeitos = todosEmbarquesViagem.length > 0 && !proximoPendente;
@@ -835,25 +808,7 @@ export class EditTravelModal {
 
     // Atalho Inteligente: Disparar Pré-Embarque (quando pendente)
     document.getElementById('btn-modal-pre-embarque')?.addEventListener('click', () => {
-      const todosEmbarquesViagem: { chave: string; rotulo: string; dataStr: string }[] = [];
-      if (v.data_ida) todosEmbarquesViagem.push({ chave: 'viagem-ida', rotulo: `Ida (${v.destino || 'Viagem'})`, dataStr: v.data_ida });
-      if (v.data_volta) todosEmbarquesViagem.push({ chave: 'viagem-volta', rotulo: `Volta (${v.destino || 'Retorno'})`, dataStr: v.data_volta });
-      if (v.produtos && Array.isArray(v.produtos)) {
-        v.produtos.forEach((p: any) => {
-          const pTipoUpper = (p.tipo || '').trim().toUpperCase();
-          if (pTipoUpper.includes('AÉREO') || pTipoUpper.includes('VOO')) {
-            if (p.dados_adicionais && Array.isArray(p.dados_adicionais.trechos)) {
-              p.dados_adicionais.trechos.forEach((t: any, idx: number) => {
-                const trechoNome = t.origem && t.destino ? `${t.origem} ➔ ${t.destino}` : `Voo trecho ${idx + 1}`;
-                const prodId = p.id || '';
-                if (t.dataIda) todosEmbarquesViagem.push({ chave: `seg-ida-${prodId}-${idx}`, rotulo: `${trechoNome} (Ida)`, dataStr: t.dataIda });
-                if (t.dataVolta) todosEmbarquesViagem.push({ chave: `seg-volta-${prodId}-${idx}`, rotulo: `${trechoNome} (Volta)`, dataStr: t.dataVolta });
-              });
-            }
-          }
-        });
-      }
-      todosEmbarquesViagem.sort((a, b) => a.dataStr.localeCompare(b.dataStr));
+      const todosEmbarquesViagem = ContatosEmbarqueService.obterEmbarquesViagem(v);
       const contatos = ContatosEmbarqueService.extrairContatos(v);
       const proximoPendente = todosEmbarquesViagem.find(emb => !contatos[emb.chave]?.feito);
       const trechoAlvo = proximoPendente ? proximoPendente.chave : 'viagem-ida';

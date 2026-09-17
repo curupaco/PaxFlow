@@ -261,17 +261,29 @@ export class CadastrosPage {
                       <input id="input-tipo-nome" type="text" required value="${tipoEmEdicao ? tipoEmEdicao.nome : ''}" ${tipoEmEdicao?.nome === 'MUDAR!' ? 'disabled' : ''} placeholder="ex: Circuito, Chip de Viagem" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs transition" />
                     </div>
 
-                    <div class="grid grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-1">Ícone / Emoji *</label>
-                        <input id="input-tipo-icone" type="text" required value="${tipoEmEdicao ? tipoEmEdicao.icone : ''}" placeholder="ex: ✈️, 🚢" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs text-center transition" />
+                        <input id="input-tipo-icone" type="text" required value="${tipoEmEdicao ? tipoEmEdicao.icone : '📦'}" placeholder="ex: ✈️, 🚢" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-bold text-base text-center transition" />
                       </div>
-                      <div class="flex items-center pt-5">
+                      <div class="flex items-center pt-2 sm:pt-5">
                         <label class="inline-flex items-center cursor-pointer select-none">
                           <input id="check-tipo-ativo" type="checkbox" ${tipoEmEdicao ? (tipoEmEdicao.ativo ? 'checked' : '') : 'checked'} class="sr-only peer" />
                           <div class="w-9 h-5 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500 relative"></div>
                           <span class="ml-2 text-xs font-bold text-slate-500 dark:text-slate-400">Ativo</span>
                         </label>
+                      </div>
+                    </div>
+
+                    <!-- Paleta de Emojis em 1-Clique -->
+                    <div class="space-y-1">
+                      <span class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider">Clique para escolher um ícone rápido:</span>
+                      <div class="flex flex-wrap gap-1 p-2 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200/60 dark:border-slate-700/60">
+                        ${['✈️', '🏨', '🚗', '🚢', '🎫', '🗺️', '🛡️', '🚐', '🚂', '📦', '🏖️', '🌴', '🎟️', '🧭', '🎒', '🎡', '🏙️', '🎿', '🎪', '🧳', '🪙', '🍽️', '🏷️', '⚓', '🏛️', '🏔️'].map(emoji => `
+                          <button type="button" class="btn-select-preset-icone p-1 hover:bg-white dark:hover:bg-slate-700 rounded text-base transition transform hover:scale-125 cursor-pointer shadow-xs" data-emoji="${emoji}" title="Selecionar ${emoji}">
+                            ${emoji}
+                          </button>
+                        `).join('')}
                       </div>
                     </div>
 
@@ -1007,6 +1019,18 @@ export class CadastrosPage {
         this.renderCamposAdicionaisList();
       });
 
+      // 1.1. Botões da Paleta Rápida de Emojis
+      this.container.querySelectorAll('.btn-select-preset-icone').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const emoji = btn.getAttribute('data-emoji');
+          const input = document.getElementById('input-tipo-icone') as HTMLInputElement;
+          if (emoji && input) {
+            input.value = emoji;
+            input.focus();
+          }
+        });
+      });
+
       // 2. Submissão do Formulário de Tipo
       const form = document.getElementById('form-cadastro-tipo') as HTMLFormElement;
       form?.addEventListener('submit', async (e) => {
@@ -1422,12 +1446,16 @@ export class CadastrosPage {
    */
   private async salvarTipoProduto(): Promise<void> {
     const nomeVal = (document.getElementById('input-tipo-nome') as HTMLInputElement).value.trim();
-    const iconeVal = (document.getElementById('input-tipo-icone') as HTMLInputElement).value.trim();
+    let iconeVal = (document.getElementById('input-tipo-icone') as HTMLInputElement).value.trim();
     const ativoVal = (document.getElementById('check-tipo-ativo') as HTMLInputElement).checked;
 
-    if (!nomeVal || !iconeVal) {
-      this.showToast('Por favor, preencha todos os campos obrigatórios.', 'error');
+    if (!nomeVal) {
+      this.showToast('Por favor, informe o nome do tipo de produto/serviço.', 'error');
       return;
+    }
+
+    if (!iconeVal) {
+      iconeVal = '📦';
     }
 
     // Validar slugs dos campos dinâmicos

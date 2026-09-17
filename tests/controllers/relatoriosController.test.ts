@@ -4,7 +4,8 @@ import {
   calcularTicketMedioPax,
   agruparVendasPorCategoriaProduto,
   gerarRankingConsultores,
-  processarExtratoRecebimentos
+  processarExtratoRecebimentos,
+  calcularFaturamentoLucratividade
 } from '../../src/controllers/relatoriosController';
 
 describe('RelatoriosController - Métricas Comerciais e Desempenho da Agência', () => {
@@ -197,3 +198,188 @@ describe('RelatoriosController - Métricas Comerciais e Desempenho da Agência',
     expect(itemAf?.dataFormatada).toBe('12/09/2026');
   });
 });
+
+describe('RelatoriosController - Faturamento e Lucratividade com Filtro de Produto e RAV', () => {
+  // Setup padrão para os testes
+  const mockViagens = [
+    {
+      id: 'v-1',
+      valor_total: 10000,
+      produtos: [
+        {
+          id: 'p-1',
+          tipo: 'AÉREO',
+          valor_venda: 6000,
+          taxa: 200,
+          comissao: 400,
+          markup: 100,
+          rav: 500, // 500 * 0.88 = 440
+          status: 'emitido'
+        },
+        {
+          id: 'p-2',
+          tipo: 'HOTEL',
+          valor_venda: 4000,
+          taxa: 50,
+          comissao: 300,
+          markup: 150,
+          rav: 0,
+          status: 'emitido'
+        }
+      ]
+    },
+    {
+      id: 'v-2',
+      valor_total: 8000,
+      produtos: [
+        {
+          id: 'p-3',
+          tipo: 'CRUZEIRO',
+          valor_venda: 8000,
+          taxa: 300,
+          comissao: 800,
+          markup: 200,
+          rav: 1000, // 1000 * 0.88 = 880
+          status: 'emitido'
+        },
+        {
+          id: 'p-cancel',
+          tipo: 'SEGURO',
+          valor_venda: 500,
+          taxa: 10,
+          comissao: 100,
+          markup: 0,
+          rav: 0,
+          status: 'cancelado' // Deve ser ignorado
+        }
+      ]
+    }
+  ];
+
+  const mockLocPagamentos = [
+    {
+      viagem_id: 'v-1',
+      valor: 200,
+      formas_recebimento: { nome: 'DESCONTO' }
+    },
+    {
+      viagem_id: 'v-2',
+      valor: 100,
+      formas_recebimento: { nome: 'PREJUÍZO' }
+    }
+  ];
+
+  it('deve consolidar faturamento e lucro total sem filtros (todos os produtos e RAV = todos)', () => {
+    // Setup
+    const filtros = { tipoProduto: 'todos', filtroRav: 'todos' as const };
+
+    // Action
+    const resultado = calcularFaturamentoLucratividade(mockViagens, mockLocPagamentos, filtros);
+
+    // Assert
+    // Faturamento Bruto: (10000 + 8000) - (200 + 100) = 17700
+    expect(resultado.faturamentoBruto).toBe(17700);
+    // Taxas: 200 + 50 + 300 = 550
+    expect(resultado.taxasTotal).toBe(550);
+    // Comissão: 400 + 300 + 800 = 1500
+    expect(resultado.comissaoTotal).toBe(1500);
+    // Markup: 100 + 150 + 200 = 450
+    expect(resultado.markupTotal).toBe(450);
+    // RAV: 440 + 0 + 880 = 1320
+    expect(resultado.ravTotal).toBe(1320);
+    // Lucro Líquido: (1500 + 450 + 1320) - 300 = 2970
+    expect(resultado.lucroLiquidoReal).toBe(2970);
+    // Margem Média: round((2970 / 17700) * 100) = round(16.7796%) = 17%
+    expect(resultado.margemMedia).toBe(17);
+    // Categorias: AÉREO, HOTEL, CRUZEIRO
+    expect(resultado.categorias).toHaveLength(3);
+    const catAereo = resultado.categorias.find(c => c.tipo === 'AÉREO');
+    expect(catAereo).toBeDefined();
+    expect(catAereo?.faturamento).toBe(6000);
+    expect(catAereo?.rav).toBe(440);
+    expect(catAereo?.lucro).toBe(400 + 100 + 440); // 940
+  });
+
+  it('deve filtrar faturamento e lucratividade por tipo de produto específico', () => {
+    // Setup
+    const filtros = { tipoProduto: 'HOTEL', filtroRav: 'todos' as const };
+
+    // Action
+    const resultado = calcularFaturamentoLucratividade(mockViagens, mockLocPagamentos, filtros);
+
+    // Assert
+    // Apenas produto HOTEL: valor_venda = 4000
+    expect(resultado.faturamentoBruto).toBe(4000);
+    expect(resultado.taxasTotal).toBe(50);
+    expect(resultado.comissaoTotal).toBe(300);
+    expect(resultado.markupTotal).toBe(150);
+    expect(resultado.ravTotal).toBe(0);
+    // Lucro: 300 + 150 = 450
+    expect(resultado.lucroLiquidoReal).toBe(450);
+    expect(resultado.categorias).toHaveLength(1);
+    expect(resultado.categorias[0].tipo).toBe('HOTEL');
+  });
+
+  it('deve filtrar faturamento e lucratividade por RAV <> 0 (apenas com RAV)', () => {
+    // Setup
+    const filtros = { tipoProduto: 'todos', filtroRav: 'com_rav' as const };
+
+    // Action
+    const resultado = calcularFaturamentoLucratividade(mockViagens, mockLocPagamentos, filtros);
+
+    // Assert
+    // Produtos com RAV: AÉREO (6000) e CRUZEIRO (8000) -> total venda = 14000
+    expect(resultado.faturamentoBruto).toBe(14000);
+    expect(resultado.taxasTotal).toBe(200 + 300); // 500
+    expect(resultado.comissaoTotal).toBe(400 + 800); // 1200
+    expect(resultado.markupTotal).toBe(100 + 200); // 300
+    expect(resultado.ravTotal).toBe(440 + 880); // 1320
+    expect(resultado.lucroLiquidoReal).toBe(1200 + 300 + 1320); // 2820
+    expect(resultado.categorias).toHaveLength(2);
+    expect(resultado.categorias.map(c => c.tipo).sort()).toEqual(['AÉREO', 'CRUZEIRO'].sort());
+  });
+
+  it('deve filtrar faturamento e lucratividade por RAV = 0 (sem RAV)', () => {
+    // Setup
+    const filtros = { tipoProduto: 'todos', filtroRav: 'sem_rav' as const };
+
+    // Action
+    const resultado = calcularFaturamentoLucratividade(mockViagens, mockLocPagamentos, filtros);
+
+    // Assert
+    // Produtos sem RAV: apenas HOTEL (4000)
+    expect(resultado.faturamentoBruto).toBe(4000);
+    expect(resultado.ravTotal).toBe(0);
+    expect(resultado.categorias).toHaveLength(1);
+    expect(resultado.categorias[0].tipo).toBe('HOTEL');
+  });
+
+  it('deve combinar filtro de produto e filtro de RAV com precisão', () => {
+    // Setup - Filtro de AÉREO com sem_rav (não existe no mock, pois AÉREO tem RAV=500)
+    const filtros = { tipoProduto: 'AÉREO', filtroRav: 'sem_rav' as const };
+
+    // Action
+    const resultado = calcularFaturamentoLucratividade(mockViagens, mockLocPagamentos, filtros);
+
+    // Assert
+    expect(resultado.faturamentoBruto).toBe(0);
+    expect(resultado.lucroLiquidoReal).toBe(0);
+    expect(resultado.categorias).toHaveLength(0);
+  });
+
+  it('deve retornar zeros com segurança para listas vazias ou nulas', () => {
+    // Setup & Action
+    const resultado = calcularFaturamentoLucratividade([], [], { tipoProduto: 'todos', filtroRav: 'todos' });
+
+    // Assert
+    expect(resultado.faturamentoBruto).toBe(0);
+    expect(resultado.taxasTotal).toBe(0);
+    expect(resultado.comissaoTotal).toBe(0);
+    expect(resultado.markupTotal).toBe(0);
+    expect(resultado.ravTotal).toBe(0);
+    expect(resultado.lucroLiquidoReal).toBe(0);
+    expect(resultado.margemMedia).toBe(0);
+    expect(resultado.categorias).toHaveLength(0);
+  });
+});
+

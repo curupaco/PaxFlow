@@ -367,8 +367,9 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 
 - **Painel Geral de Relatórios (Abas Estratégicas de Auditoria)**:
   - **1. Desempenho e Produtividade**: Rastreia orçamentos abertos, aceitos, taxa de conversão e tempo de fechamento médio. Exibe ranking de consultores em gráfico de barras SVG.
-  - **2. Prazos e SLAs**: Cronologia operacional de conformidade de SLA de documentos e reembolsos.
-  - **3. Faturamento e Lucratividade**: Exibe faturamento bruto, markup, comissões de produtos e lucro líquido real distribuídos por tipo de serviço (voo, hotel, etc.).
+  - **3. Faturamento e Lucratividade [UPDATED]**: Exibe faturamento bruto, taxas, comissões de produtos, markup, RAV líquido (com retenção de 12%) e lucro líquido real distribuídos por linha de serviço (aéreo, hospedagem, cruzeiro, seguro, etc.).
+    - **Filtro Dinâmico por Produto**: Permite isolar o relatório para um produto específico cadastrado (ex: `AÉREO OPERADORA`, `HOTEL`, `CRUZEIRO`, etc.) ou visualizar o consolidado global ("Todos os Produtos"), recalculando instantaneamente todos os KPIs de topo e a tabela discriminada.
+    - **Filtro de RAV (<> 0)**: Permite auditar com precisão receitas que possuem Remuneração Adicional de Venda (`⚡ Apenas com RAV (RAV <> 0)`), isolar produtos sem RAV (`Sem RAV (RAV = 0)`) ou visualizar todas as linhas (`Todos`), refletindo de imediato nos totais consolidados e na exportação CSV.
   - **4. Recebimentos & Auditoria Operacional [NEW]**: Auditoria analítica de quitação por Localizador (LOC) e meios de pagamento cadastrados (Pix, Cartão, Boleto, etc.). Conta com **Drilldown Interativo em 1-Clique** nas barras de meios de pagamento e botão **Extrato Completo ↗**, abrindo o modal analítico de extrato detalhado com mapeamento de produtos vinculados aos LOCs, filtros dinâmicos por consultor e busca em tempo real, além de exportação completa para planilha CSV.
   - **5. Metas & Campanhas Comerciais [UPDATED]**: Acompanhamento executivo e ranking de equipe para metas financeiras e campanhas de incentivo (ativas, passadas e futuras). Suporta 4 métricas analíticas: Faturamento Bruto (R$), Rentabilidade / Lucro (R$), Quantidade de Orçamentos Criados (Unidades, ex: campanha de 40 orçamentos cadastrados) e Quantidade de Vendas Fechadas (Unidades).
     - **KPIs Executivos Inteligentes & Proporcionais**:
@@ -569,8 +570,10 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 
 **Módulo operacional e analítico de controle de partidas e embarques**, desenhado para garantir que 100% dos passageiros recebam atendimento pré-embarque antes de se dirigirem ao aeroporto ou embarque rodoviário.
 
-- **Granularidade por Trecho Individual**:
-  - Cada viagem pode conter múltiplos eventos de partida: ida da viagem principal, volta e conexões/trechos aéreos individuais cadastrados nos produtos. O sistema audita cada trecho de forma independente no banco de dados (`viagens.contatos_embarque`).
+- **Granularidade e Consolidação Inteligente por Trecho**:
+  - Se a viagem possui **produtos aéreos cadastrados com trechos**, o relatório prioriza e exibe **exclusivamente os trechos de voo** (com Cia aérea, rota `Origem ➔ Destino` e código localizador/reserva), eliminando qualquer duplicidade visual com as datas gerais do card.
+  - Para viagens que **não possuem produtos aéreos** (ex: reservas apenas de hotel, rodoviário ou cruzeiro), o sistema utiliza automaticamente as datas gerais de Ida e Volta da viagem.
+  - O sistema audita o status de contato de cada trecho de forma independente no banco de dados (`viagens.contatos_embarque`).
 - **Coluna CONTATO com Botão Toggle em 1-Clique**:
   - Posicionada entre as colunas **Alerta** e **Ações**, exibe botões visuais interativos:
     - `⏳ Pendente`: estilo âmbar com ícone de relógio indicando pendência de contato.

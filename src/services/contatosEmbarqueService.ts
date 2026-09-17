@@ -1,11 +1,118 @@
 import { supabase } from './supabase';
 import { ContatoEmbarqueRegistro } from '../types';
 
+export interface ItemEmbarqueViagem {
+  chave: string;
+  rotulo: string;
+  dataStr: string;
+  horaStr?: string;
+  tipo: 'ida' | 'volta' | 'segmento-ida' | 'segmento-volta';
+  tipoDesc: string;
+  destino: string;
+  loc: string;
+  productId?: string;
+}
+
 /**
  * Serviço responsável pela persistência e leitura resiliente
  * de contatos de pré-embarque por trecho no Supabase (Fonte Única da Verdade).
  */
 export class ContatosEmbarqueService {
+  /**
+   * Obtém a lista consolidada de embarques da viagem.
+   * Regra de negócio: se a viagem possui produtos aéreos com trechos cadastrados,
+   * exibe estritamente os trechos de voo (com fornecedor, rota e LOC).
+   * Se não houver produtos aéreos com trechos (ex: só hotel/terrestre), utiliza as datas gerais da viagem.
+   */
+  public static obterEmbarquesViagem(viagem: any, produtosViagem?: any[]): ItemEmbarqueViagem[] {
+    if (!viagem) return [];
+    const items: ItemEmbarqueViagem[] = [];
+    const prods = produtosViagem || viagem.produtos || [];
+
+    // 1. Coletar trechos de produtos aéreos
+    const trechosAereos: { produto: any; trecho: any; idx: number }[] = [];
+    if (Array.isArray(prods)) {
+      prods.forEach((p: any) => {
+        const pTipoUpper = (p.tipo || '').trim().toUpperCase();
+        if (pTipoUpper.includes('AÉREO') || pTipoUpper.includes('VOO') || pTipoUpper === 'AEREO') {
+          if (p.dados_adicionais && Array.isArray(p.dados_adicionais.trechos)) {
+            p.dados_adicionais.trechos.forEach((t: any, idx: number) => {
+              if (t.dataIda || t.dataVolta) {
+                trechosAereos.push({ produto: p, trecho: t, idx });
+              }
+            });
+          }
+        }
+      });
+    }
+
+    // 2. Se houver trechos aéreos, prioriza exclusivamente os trechos de voo
+    if (trechosAereos.length > 0) {
+      trechosAereos.forEach(({ produto: p, trecho: t, idx }) => {
+        const prodId = p.id || '';
+        const fornecedor = p.fornecedor ? ` - ${p.fornecedor}` : '';
+        const rota = (t.origem && t.destino) ? `${t.origem} ➔ ${t.destino}` : (viagem.destino || 'Destino');
+        const loc = p.codigo_reserva || viagem.codigo_localizador || 'S/ LOC';
+
+        if (t.dataIda) {
+          items.push({
+            chave: `seg-ida-${prodId}-${idx}`,
+            rotulo: `${rota} (Ida)`,
+            dataStr: t.dataIda,
+            horaStr: t.horarioIda || t.horaIda,
+            tipo: 'segmento-ida',
+            tipoDesc: `✈️ Voo (Ida)${fornecedor}`,
+            destino: rota,
+            loc,
+            productId: prodId
+          });
+        }
+        if (t.dataVolta) {
+          items.push({
+            chave: `seg-volta-${prodId}-${idx}`,
+            rotulo: `${rota} (Volta)`,
+            dataStr: t.dataVolta,
+            horaStr: t.horarioVolta || t.horaVolta,
+            tipo: 'segmento-volta',
+            tipoDesc: `✈️ Voo (Volta)${fornecedor}`,
+            destino: rota,
+            loc,
+            productId: prodId
+          });
+        }
+      });
+    } else {
+      // 3. Caso não haja produtos aéreos cadastrados com trechos, usa as datas gerais da viagem
+      if (viagem.data_ida) {
+        items.push({
+          chave: 'viagem-ida',
+          rotulo: `Ida (${viagem.destino || 'Viagem'})`,
+          dataStr: viagem.data_ida,
+          tipo: 'ida',
+          tipoDesc: '✈️ Ida da Viagem',
+          destino: viagem.destino || 'Destino',
+          loc: viagem.codigo_localizador || 'S/ LOC',
+          productId: ''
+        });
+      }
+      if (viagem.data_volta) {
+        items.push({
+          chave: 'viagem-volta',
+          rotulo: `Volta (${viagem.destino || 'Retorno'})`,
+          dataStr: viagem.data_volta,
+          tipo: 'volta',
+          tipoDesc: '✈️ Volta da Viagem',
+          destino: viagem.destino || 'Destino',
+          loc: viagem.codigo_localizador || 'S/ LOC',
+          productId: ''
+        });
+      }
+    }
+
+    items.sort((a, b) => a.dataStr.localeCompare(b.dataStr));
+    return items;
+  }
+
   /**
    * Extrai o mapa de contatos da viagem (via coluna nativa ou via observações).
    */

@@ -69,3 +69,30 @@ export function verificarDuplicidadeFornecedor(
 
   return { duplicado: false };
 }
+
+export function sanitizarTipoProduto(dados: any): {
+  valido: boolean;
+  erro?: string;
+  nome: string;
+  icone: string;
+  ativo: boolean;
+} {
+  const nome = (dados?.nome || '').trim();
+  let icone = (dados?.icone || '').trim();
+  const ativo = dados?.ativo !== false;
+
+  if (!nome) {
+    return { valido: false, erro: 'O nome do tipo de produto/serviço é obrigatório.', nome: '', icone: '📦', ativo };
+  }
+
+  if (!icone) {
+    icone = '📦';
+  }
+
+  return {
+    valido: true,
+    nome,
+    icone,
+    ativo
+  };
+}
