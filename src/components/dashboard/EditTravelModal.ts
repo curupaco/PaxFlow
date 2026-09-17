@@ -1896,7 +1896,8 @@ export class EditTravelModal {
       { id: `edit-prod-venda-${prodId}`, type: 'currency' },
       { id: `edit-prod-taxa-${prodId}`, type: 'currency', required: false },
       { id: `edit-prod-comissao-${prodId}`, type: 'currency', required: false },
-      { id: `edit-prod-markup-${prodId}`, type: 'currency', required: false }
+      { id: `edit-prod-markup-${prodId}`, type: 'currency', required: false },
+      { id: `edit-prod-rav-${prodId}`, type: 'currency', required: false }
     ]);
 
     const editTipoSelect = document.getElementById(`edit-prod-tipo-${prodId}`) as HTMLSelectElement;
@@ -2061,13 +2062,14 @@ export class EditTravelModal {
     const editTaxaInput = document.getElementById(`edit-prod-taxa-${prodId}`) as HTMLInputElement;
     const editComissaoInput = document.getElementById(`edit-prod-comissao-${prodId}`) as HTMLInputElement;
     const editMarkupInput = document.getElementById(`edit-prod-markup-${prodId}`) as HTMLInputElement;
+    const editRavInput = document.getElementById(`edit-prod-rav-${prodId}`) as HTMLInputElement;
     const editTarifaInput = document.getElementById(`edit-prod-tarifa-${prodId}`) as HTMLInputElement;
     const totalDistEl = document.getElementById(`edit-det-total-distribuido-${prodId}`) as HTMLElement;
     const rentabilidadeEl = document.getElementById(`edit-det-rentabilidade-${prodId}`) as HTMLElement;
     const saldoPendEl = document.getElementById(`edit-det-saldo-pendente-${prodId}`) as HTMLElement;
 
     const toggleFieldsState = (enabled: boolean) => {
-      const fields = [editTaxaInput, editComissaoInput, editMarkupInput];
+      const fields = [editTaxaInput, editComissaoInput, editMarkupInput, editRavInput];
       fields.forEach(el => {
         if (!el) return;
         if (enabled) {
@@ -2083,22 +2085,23 @@ export class EditTravelModal {
     };
 
     const recalcularValoresLocais = () => {
-      if (!editVendaInput || !editTaxaInput || !editComissaoInput || !editMarkupInput || !editTarifaInput || !totalDistEl || !saldoPendEl || !rentabilidadeEl) return;
+      if (!editVendaInput || !editTaxaInput || !editComissaoInput || !editMarkupInput || !editRavInput || !editTarifaInput || !totalDistEl || !saldoPendEl || !rentabilidadeEl) return;
       const venda = parseDoubleBr(editVendaInput.value) || 0;
       const taxa = parseDoubleBr(editTaxaInput.value) || 0;
       const comissao = parseDoubleBr(editComissaoInput.value) || 0;
       const markup = parseDoubleBr(editMarkupInput.value) || 0;
+      const rav = parseDoubleBr(editRavInput.value) || 0;
 
-      let tarifa = venda - (taxa + comissao + markup);
+      let tarifa = venda - (taxa + comissao + markup + rav);
       if (Math.abs(tarifa) < 0.01) {
         tarifa = 0;
       }
-      const totalDist = tarifa + taxa + comissao + markup;
+      const totalDist = tarifa + taxa + comissao + markup + rav;
       let saldoPend = venda - totalDist;
       if (Math.abs(saldoPend) < 0.01) {
         saldoPend = 0;
       }
-      const rentabilidade = isNaN(comissao + markup) ? 0 : (comissao + markup);
+      const rentabilidade = isNaN(comissao + markup + (rav * 0.88)) ? 0 : (comissao + markup + (rav * 0.88));
       const totalDistVal = isNaN(totalDist) ? 0 : totalDist;
       const saldoPendVal = isNaN(saldoPend) ? 0 : saldoPend;
 
@@ -2151,7 +2154,7 @@ export class EditTravelModal {
       });
     }
 
-    [editTaxaInput, editComissaoInput, editMarkupInput].forEach(inp => {
+    [editTaxaInput, editComissaoInput, editMarkupInput, editRavInput].forEach(inp => {
       inp?.addEventListener('input', recalcularValoresLocais);
     });
 
@@ -2206,9 +2209,10 @@ export class EditTravelModal {
       const taxa = parseDoubleBr(editTaxaInput.value) || 0;
       const comissao = parseDoubleBr(editComissaoInput.value) || 0;
       const markup = parseDoubleBr(editMarkupInput.value) || 0;
-      const tarifa = venda - (taxa + comissao + markup);
+      const rav = parseDoubleBr(editRavInput.value) || 0;
+      const tarifa = venda - (taxa + comissao + markup + rav);
 
-      const totalDist = tarifa + taxa + comissao + markup;
+      const totalDist = tarifa + taxa + comissao + markup + rav;
       if (Math.abs(venda - totalDist) > 0.01) {
         this.options.showToast(`O valor total distribuído deve ser igual ao Valor de Venda do produto.`, 'error');
         return;
@@ -2316,6 +2320,7 @@ export class EditTravelModal {
         taxa: taxa,
         comissao: comissao,
         markup: markup,
+        rav: rav,
         status: editStatus,
         data_servico: editDataServico,
         datas_adicionais: editDatasAdicionais,
@@ -2423,8 +2428,9 @@ export class EditTravelModal {
     const viagem = this.options.viagens.find(x => x.id === tripId);
     const valorTotalViagem = viagem ? (Number(viagem.valor_total) || 0) : 0;
     const totalProdutos = produtos.reduce((sum, p) => sum + (Number(p.valor_venda) || 0), 0);
-    const totalRentabilidade = produtos.reduce((sum, p) => sum + (Number(p.comissao) || 0) + (Number(p.markup) || 0) + (Number(p.rav) || 0), 0);
+    const totalRentabilidade = produtos.reduce((sum, p) => sum + (Number(p.comissao) || 0) + (Number(p.markup) || 0) + ((Number(p.rav) || 0) * 0.88), 0);
     const totalMarkup = produtos.reduce((sum, p) => sum + (Number(p.markup) || 0), 0);
+    const totalRav = produtos.reduce((sum, p) => sum + (Number(p.rav) || 0), 0);
     let saldoPendente = valorTotalViagem - totalProdutos;
     if (Math.abs(saldoPendente) < 0.01) {
       saldoPendente = 0;
@@ -2500,8 +2506,8 @@ export class EditTravelModal {
     }
     const finValorMkpRav = document.getElementById('fin-valor-mkp-rav');
     if (finValorMkpRav) {
-      if (totalMarkup > 0) {
-        finValorMkpRav.textContent = `MKP: R$ ${totalMarkup.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      if (totalMarkup > 0 || totalRav > 0) {
+        finValorMkpRav.textContent = `MKP: R$ ${totalMarkup.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} | RAV: R$ ${totalRav.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
         finValorMkpRav.classList.remove('hidden');
       } else {
         finValorMkpRav.textContent = '';
@@ -2590,9 +2596,9 @@ export class EditTravelModal {
       const isProdDetalhado = Math.abs(Number(p.valor_venda || 0) - totalDet) < 0.01;
       
       produtosAgrupados[locKey].valorTaxasTotal += taxa;
-      produtosAgrupados[locKey].valorRentabilidadeTotal += comissao + markup + (Number(p.rav) || 0);
+      produtosAgrupados[locKey].valorRentabilidadeTotal += comissao + markup + (rav * 0.88);
       produtosAgrupados[locKey].valorMarkupTotal += markup;
-      produtosAgrupados[locKey].valorRavTotal += Number(p.rav) || 0;
+      produtosAgrupados[locKey].valorRavTotal += rav;
 
       if (!isProdDetalhado) {
         produtosAgrupados[locKey].isGroupDetalhado = false;
@@ -2715,9 +2721,9 @@ export class EditTravelModal {
               <span class="text-[10px] font-medium text-slate-400 dark:text-slate-400">
                 Rentabilidade: <span class="font-extrabold ${rentabilidadeColorClass}">R$ ${valorRentabilidadeTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </span>
-              ${grupo.valorMarkupTotal > 0 ? `
+              ${(grupo.valorMarkupTotal > 0 || grupo.valorRavTotal > 0) ? `
                 <span class="text-[9px] font-bold text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                  (MKP: R$ ${grupo.valorMarkupTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
+                  (MKP: R$ ${grupo.valorMarkupTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} | RAV: R$ ${grupo.valorRavTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
                 </span>
               ` : ''}
               

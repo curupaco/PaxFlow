@@ -1307,7 +1307,7 @@ export class ComercialDashboard {
         consultantVoyages.forEach(v => {
           const prods = (v as any).produtos || [];
           prods.forEach((p: any) => {
-            profit += (Number(p.comissao) || 0) + (Number(p.markup) || 0) + (Number(p.rav) || 0);
+            profit += (Number(p.comissao) || 0) + (Number(p.markup) || 0) + ((Number(p.rav) || 0) * 0.88);
           });
         });
         return profit;

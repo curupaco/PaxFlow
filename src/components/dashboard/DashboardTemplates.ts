@@ -355,6 +355,12 @@ export function renderLateralEditorPaneHTML(
                   ${renderCurrencyInputHTML(`edit-prod-markup-${selectedProduct.id}`, selectedProduct.markup || 0, '0,00', true, isLocConferido || !isVendaValid)}
                 </div>
                 <div>
+                  <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase mb-0.5 flex items-center">
+                    RAV ${renderHelpIcon('rav')}
+                  </label>
+                  ${renderCurrencyInputHTML(`edit-prod-rav-${selectedProduct.id}`, selectedProduct.rav || 0, '0,00', true, isLocConferido || !isVendaValid)}
+                </div>
+                <div>
                   <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase mb-0.5">Tarifa (Informação)</label>
                   ${renderCurrencyInputHTML(`edit-prod-tarifa-${selectedProduct.id}`, selectedProduct.tarifa || 0, '0,00', true, true)}
                 </div>

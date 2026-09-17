@@ -373,9 +373,9 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 
 - **Painel Geral de Relatórios (Abas Estratégicas de Auditoria)**:
   - **1. Desempenho e Produtividade**: Rastreia orçamentos abertos, aceitos, taxa de conversão e tempo de fechamento médio. Exibe ranking de consultores em gráfico de barras SVG.
-  - **3. Faturamento e Lucratividade [UPDATED]**: Exibe faturamento bruto, taxas, comissões de produtos, markup, lucro líquido real e margem média distribuídos por linha de serviço (aéreo, hospedagem, cruzeiro, seguro, RAV, etc.).
-    - **Filtro Dinâmico por Produto**: Permite isolar o relatório para um produto ou categoria específica cadastrada (ex: `AÉREO OPERADORA`, `HOTEL`, `CRUZEIRO`, `RAV`, etc.) ou visualizar o consolidado global ("Todos os Produtos"), recalculando instantaneamente todos os KPIs de topo e a tabela discriminada.
-    - **RAV como Linha de Produto Comercial**: A Remuneração de Agente de Viagens (RAV) integra o catálogo de serviços comerciais com 100% de margem (Venda = Comissão/Markup, Custo = 0), unificando a leitura de rentabilidade da agência sem fórmulas com deduções arbitrárias de 12%.
+  - **3. Faturamento e Lucratividade [UPDATED]**: Exibe faturamento bruto, taxas, comissões de produtos, markup, RAV líquido (com retenção de 12%) e lucro líquido real distribuídos por linha de serviço (aéreo, hospedagem, cruzeiro, seguro, etc.).
+    - **Filtro Dinâmico por Produto**: Permite isolar o relatório para um produto específico cadastrado (ex: `AÉREO OPERADORA`, `HOTEL`, `CRUZEIRO`, etc.) ou visualizar o consolidado global ("Todos os Produtos"), recalculando instantaneamente todos os KPIs de topo e a tabela discriminada.
+    - **Filtro de RAV (<> 0)**: Permite auditar com precisão receitas que possuem Remuneração Adicional de Venda (`⚡ Apenas com RAV (RAV <> 0)`), isolar produtos sem RAV (`Sem RAV (RAV = 0)`) ou visualizar todas as linhas (`Todos`), refletindo de imediato nos totais consolidados e na exportação CSV.
   - **4. Recebimentos & Auditoria Operacional [NEW]**: Auditoria analítica de quitação por Localizador (LOC) e meios de pagamento cadastrados (Pix, Cartão, Boleto, etc.). Conta com **Drilldown Interativo em 1-Clique** nas barras de meios de pagamento e botão **Extrato Completo ↗**, abrindo o modal analítico de extrato detalhado com mapeamento de produtos vinculados aos LOCs, filtros dinâmicos por consultor e busca em tempo real, além de exportação completa para planilha CSV.
   - **5. Metas & Campanhas Comerciais [UPDATED]**: Acompanhamento executivo e ranking de equipe para metas financeiras e campanhas de incentivo (ativas, passadas e futuras). Suporta 4 métricas analíticas: Faturamento Bruto (R$), Rentabilidade / Lucro (R$), Quantidade de Orçamentos Criados (Unidades, ex: campanha de 40 orçamentos cadastrados) e Quantidade de Vendas Fechadas (Unidades).
     - **KPIs Executivos Inteligentes & Proporcionais**:
@@ -759,7 +759,7 @@ Pacote de micro-interações, transparência de estado e aceleração de produti
 
 4. **Calculadora Reativa & Barra de Status de Detalhamento Financeiro de Produtos**:
    - Barra visual de status em tempo real integrada ao painel de edição de produtos da viagem (`EditTravelModal.ts` / `DashboardTemplates.ts`).
-   - Calcula em tempo real o percentual de conciliação entre o **Valor de Venda** e o rateio de custos (**Tarifa + Taxas + Comissão + Markup**).
+   - Calcula em tempo real o percentual de conciliação entre o **Valor de Venda** e o rateio de custos (**Tarifa + Taxas + Comissão + Markup + RAV**).
    - Exibe indicador visual dinâmico (`✅ 100% OK (Totalmente Detalhado)` em verde ou `⏳ X% Detalhado` em âmbar com indicação do saldo pendente).
 
 5. **Feedback Visual Inline no Botão Salvar**:

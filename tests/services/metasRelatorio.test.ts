@@ -121,7 +121,7 @@ describe('MetasService & Relatório de Metas e Campanhas - Testes Subcutâneos',
     expect(prog.itensAuditados).toHaveLength(3);
   });
 
-  it('deve calcular rentabilidade líquida acumulada (Comissão + Markup + RAV integral)', () => {
+  it('deve calcular rentabilidade líquida acumulada (Comissão + Markup + 88% da RAV)', () => {
     // Setup
     const metaRentabilidade: MetaPeriodo = {
       id: 'meta-rent-set',
@@ -142,7 +142,7 @@ describe('MetasService & Relatório de Metas e Campanhas - Testes Subcutâneos',
         status: 'fechado',
         data_financeiro: '2026-09-10',
         produtos: [
-          { comissao: 1000, markup: 500, rav: 100 }, // Lucro: 1000 + 500 + 100 = 1600
+          { comissao: 1000, markup: 500, rav: 100 }, // Lucro: 1000 + 500 + 88 = 1588
           { comissao: 2000, markup: 1000, rav: 0 }    // Lucro: 2000 + 1000 = 3000
         ]
       }
@@ -152,7 +152,7 @@ describe('MetasService & Relatório de Metas e Campanhas - Testes Subcutâneos',
     const prog = MetasService.calcularProgressoConsultor(metaRentabilidade, 'cons-1', [], viagens);
 
     // Assert
-    expect(prog.totalAtingido).toBe(4600);
+    expect(prog.totalAtingido).toBeCloseTo(4588, 2);
   });
 
   it('deve classificar status temporais de meta corretamente (ativa, passada, futura)', () => {

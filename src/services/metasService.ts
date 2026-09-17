@@ -653,7 +653,7 @@ export class MetasService {
       viagensDoConsultor.forEach(v => {
         const prods = (v as any).produtos || [];
         prods.forEach((p: any) => {
-          totalAtingido += (Number(p.comissao) || 0) + (Number(p.markup) || 0) + (Number(p.rav) || 0);
+          totalAtingido += (Number(p.comissao) || 0) + (Number(p.markup) || 0) + ((Number(p.rav) || 0) * 0.88);
         });
       });
 
