@@ -1,6 +1,6 @@
 import { supabase, getSessaoAtual } from '../services/supabase';
 import { uploadDocumentoCliente } from '../services/googleDrive';
-import { Orcamento, PerfilConsultor, ConvertToTripOptions } from '../types';
+import { Orcamento, PerfilConsultor, ConvertToTripOptions, OrigemLead } from '../types';
 import { OrcamentosService } from '../services/orcamentosService';
 import { DestinosAutocomplete } from '../components/DestinosAutocomplete';
 import { VerNotasModal } from '../components/orcamentos/VerNotasModal';
@@ -10,6 +10,7 @@ import { showCustomConfirm, showCustomAlert } from '../services/dialog';
 import { CommentsService } from '../services/comments';
 import { renderHelpIcon } from '../utils/helpHelper';
 import { UpsellEngineService } from '../services/upsellEngineService';
+import { ORIGENS_LEAD_PADRAO } from '../controllers/cadastrosController';
 import {
   renderPhoneInputHTML,
   renderEmailInputHTML,
@@ -35,6 +36,7 @@ export class OrcamentosPage {
   private orcamentos: Orcamento[] = [];
   private consultores: PerfilConsultor[] = [];
   private clientes: any[] = [];
+  private origensLead: OrigemLead[] = [];
   private selectedClienteId: string | null = null;
   private loading: boolean = false;
   private isFallbackMode: boolean = false;
@@ -109,10 +111,11 @@ export class OrcamentosPage {
 
 
 
-      // 2. Carregar dados (Orçamentos, Consultores e Clientes)
+      // 2. Carregar dados (Orçamentos, Consultores, Clientes e Origens de Lead)
       await this.loadConsultores();
       await this.loadOrcamentos();
       await this.loadClientes();
+      await this.loadOrigensLead();
 
       // 3. Renderizar interface principal (que já configura os ouvintes de eventos)
       this.render();
@@ -136,6 +139,34 @@ export class OrcamentosPage {
     } catch (err: any) {
       console.error('Erro na inicialização de OrcamentosPage:', err);
       this.renderAuthError(`Erro interno: ${err.message}`);
+    }
+  }
+
+  /**
+   * Busca as origens de lead cadastradas e ativas no Supabase com fallback zero-break
+   */
+  private async loadOrigensLead(): Promise<void> {
+    try {
+      const { data, error } = await supabase
+        .from('origens_lead')
+        .select('*')
+        .eq('ativo', true)
+        .order('ordem', { ascending: true })
+        .order('nome', { ascending: true });
+
+      if (error) {
+        if (error.code === '42703' || error.code === '42P01' || error.message?.includes('does not exist')) {
+          this.origensLead = ORIGENS_LEAD_PADRAO.filter(o => o.ativo);
+          return;
+        }
+        console.warn('Erro ao carregar origens de lead no Supabase:', error);
+        this.origensLead = ORIGENS_LEAD_PADRAO.filter(o => o.ativo);
+      } else {
+        this.origensLead = data && data.length > 0 ? data : ORIGENS_LEAD_PADRAO.filter(o => o.ativo);
+      }
+    } catch (err: any) {
+      console.warn('Erro ao carregar origens de lead:', err);
+      this.origensLead = ORIGENS_LEAD_PADRAO.filter(o => o.ativo);
     }
   }
 
@@ -1357,13 +1388,9 @@ export class OrcamentosPage {
               <label class="block text-[11px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Origem do Lead *</label>
               <select id="select-orc-origem" required class="h-10 w-full px-3.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs cursor-pointer">
                 <option value="" disabled selected class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Selecione a Origem...</option>
-                <option value="WhatsApp" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">WhatsApp</option>
-                <option value="Instagram" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Instagram</option>
-                <option value="Indicação" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Indicação</option>
-                <option value="Google" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Google</option>
-                <option value="Site" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Site</option>
-                <option value="Loja" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Loja</option>
-                <option value="Outros" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Outros</option>
+                ${(this.origensLead && this.origensLead.length > 0 ? this.origensLead : ORIGENS_LEAD_PADRAO.filter(o => o.ativo)).map(o => `
+                  <option value="${o.nome}" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">${o.icone ? o.icone + ' ' : ''}${o.nome}</option>
+                `).join('')}
               </select>
             </div>
           </div>
@@ -2142,6 +2169,16 @@ export class OrcamentosPage {
     const hasExistingBirth = !!(linkedClient && (linkedClient.dataNascimento || linkedClient.data_nascimento));
     const isBirthRequiredInitial = !isInitialCnpj && !hasExistingBirth;
 
+    // Garante que origens cadastradas ativas apareçam, e que a origem atual do orçamento não se perca se inativa
+    const origensBase = (this.origensLead && this.origensLead.length > 0) ? this.origensLead : ORIGENS_LEAD_PADRAO.filter(o => o.ativo);
+    const origensParaExibir = [...origensBase];
+    if (orc.origem) {
+      const origemNome = String(orc.origem);
+      if (!origensParaExibir.some(o => o.nome.toLowerCase() === origemNome.toLowerCase())) {
+        origensParaExibir.unshift({ id: 'current', nome: origemNome, icone: '📣', ativo: true, ordem: 0 });
+      }
+    }
+
     modalContent.innerHTML = `
       <div class="p-6 max-h-[85vh] overflow-y-auto custom-scrollbar">
         <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3 mb-4">
@@ -2200,13 +2237,9 @@ export class OrcamentosPage {
                 <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Origem do Lead *</label>
                 <select id="select-fechar-origem" required class="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm">
                   <option value="" disabled ${!orc.origem ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Selecione a Origem...</option>
-                  <option value="WhatsApp" ${orc.origem === 'WhatsApp' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">WhatsApp</option>
-                  <option value="Instagram" ${orc.origem === 'Instagram' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Instagram</option>
-                  <option value="Indicação" ${orc.origem === 'Indicação' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Indicação</option>
-                  <option value="Google" ${orc.origem === 'Google' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Google</option>
-                  <option value="Site" ${orc.origem === 'Site' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Site</option>
-                  <option value="Loja" ${orc.origem === 'Loja' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Loja</option>
-                  <option value="Outros" ${orc.origem === 'Outros' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Outros</option>
+                  ${origensParaExibir.map(o => `
+                    <option value="${o.nome}" ${orc.origem === o.nome ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">${o.icone ? o.icone + ' ' : ''}${o.nome}</option>
+                  `).join('')}
                 </select>
               </div>
             </div>

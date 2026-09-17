@@ -850,3 +850,19 @@ export interface DocumentoAnexo {
   created_by?: string;
 }
 
+/**
+ * Canal de captação e origem do lead/orçamento (cadastrável dinamicamente)
+ */
+export interface OrigemLead {
+  id: string;
+  nome: string;
+  icone: string;
+  ativo: boolean;
+  ordem?: number;
+  createdAt?: string;
+  updatedAt?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+

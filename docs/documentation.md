@@ -348,10 +348,14 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
   - Listagem com paginação e busca rápida.
   - Carga inicial automatizada de 188 destinos turísticos pré-higienizados.
   - Resguardo de histórico legado: destinos antigos inconsistentes são rotulados com o prefixo `ARRUMAR | [original]` para higienização manual posterior pelos gestores.
-- **Gestão de Formas de Recebimento [NEW]**: Terceira aba na central de cadastros.
+- **Gestão de Formas de Recebimento**: Aba na central de cadastros.
   - Cadastro dos tipos de recebimento acordados com os clientes (ex: "Cartão de Crédito", "Pix", "Boleto").
   - Formulário contendo nome do tipo de recebimento, seleção intuitiva de emoji/ícone em grid, botão de ativação/desativação e edição direta.
-  - Sincronização e fallback local com `localStorage` em caso de falha de conexão.
+- **Gestão de Origens de Lead [NEW]**: Aba dedicada ao gerenciamento dinâmico dos canais de captação comercial da agência (ex: WhatsApp, Instagram, Indicação, Google, Site, Loja, Feiras, TikTok, etc.).
+  - Cadastro com seletor de emojis/ícones visuais e ordenação flexível.
+  - Mecanismo de **Soft-Delete / Ativação**: canais inativados deixam de aparecer como opção em novos orçamentos, mas continuam íntegros nos orçamentos históricos e relatórios de inteligência.
+  - **Prevenção contra Exclusão Acidental**: o sistema trava a exclusão definitiva caso a origem já tenha sido utilizada em orçamentos cadastrados, orientando o gestor a utilizar a desativação.
+  - **Resiliência Zero-Break**: fallback automático para `ORIGENS_LEAD_PADRAO` em caso de instabilidade ou divergência de schema (PostgreSQL `42703`/`42P01`).
 - **Identidade de Cabeçalho Unificada**: O design e as transições do cabeçalho herdam o mesmo padrão premium das páginas operacionais, exibindo badges de identificação e descrições formatadas.
 
 ### 3.11 Localização de Erros e Tradutor Global (I18n)

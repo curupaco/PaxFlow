@@ -1,11 +1,12 @@
 import { supabase, getSessaoAtual } from '../services/supabase';
-import { TipoProduto, CampoAdicional, MetaPeriodo, MetaFaixa } from '../types';
+import { TipoProduto, CampoAdicional, MetaPeriodo, MetaFaixa, OrigemLead } from '../types';
 import { showCustomAlert, showCustomConfirm } from '../services/dialog';
 import { MetasService } from '../services/metasService';
 import { BADGE_DEFINITIONS } from '../services/gamification';
 import { parseBrFloat } from '../services/csvImporter';
 import { renderHelpIcon } from '../utils/helpHelper';
 import { attachCurrencyMask, formatBrDateToIso, formatIsoDateToBr } from '../utils/masks';
+import { ORIGENS_LEAD_PADRAO, sanitizarOrigemLead, verificarOrigemEmUso } from '../controllers/cadastrosController';
 
 export class CadastrosPage {
   private container: HTMLElement;
@@ -14,7 +15,7 @@ export class CadastrosPage {
   private tiposProduto: TipoProduto[] = [];
   
   // Gestão de Abas
-  private activeTab: 'tipos' | 'destinos' | 'formas' | 'campanhas' | 'templates' | 'metas' = 'tipos';
+  private activeTab: 'tipos' | 'destinos' | 'formas' | 'campanhas' | 'templates' | 'metas' | 'origens' = 'tipos';
 
   // Estado para formulário de cadastro/edição de Tipos
   private editandoTipoId: string | null = null;
@@ -30,6 +31,12 @@ export class CadastrosPage {
   private editandoFormaId: string | null = null;
   private selectedIconForma: string = '💵';
   private iconesFormaDisponiveis: string[] = ['💵', '💳', '🏦', '📱', '💰', '🪙', '🧾', '🔌', '⚡', '🔐'];
+
+  // Estado para Gestão de Origens de Lead
+  private origensLead: OrigemLead[] = [];
+  private editandoOrigemId: string | null = null;
+  private selectedIconOrigem: string = '📣';
+  private iconesOrigemDisponiveis: string[] = ['📣', '📱', '📸', '🤝', '🔍', '🌐', '🏬', '💬', '👥', '🎯', '✉️', '🚀', '💡', '📞', '🎟️'];
 
   // Estados migrados para Campanhas, Metas e Templates
   private campaigns: any[] = [];
@@ -65,6 +72,7 @@ export class CadastrosPage {
         this.loadTiposProduto(),
         this.loadDestinos(),
         this.loadFormasRecebimento(),
+        this.loadOrigensLead(),
         this.loadCampaigns(),
         this.loadTemplates(),
         this.loadMetas()
@@ -166,6 +174,7 @@ export class CadastrosPage {
                 { tab: 'tipos', label: 'Tipos de Serviços', sub: 'Produtos, cores e campos extras', icon: '📦', id: 'tab-tipos-servicos' },
                 { tab: 'destinos', label: 'Gestão de Destinos', sub: 'Cidades, países e higienização', icon: '📍', id: 'tab-gestao-destinos' },
                 { tab: 'formas', label: 'Formas de Recebimento', sub: 'Pix, cartões e parcelamentos', icon: '💰', id: 'tab-formas-recebimento' },
+                { tab: 'origens', label: 'Origens de Lead', sub: 'Canais de captação e conversão', icon: '📣', id: 'tab-origens-lead' },
                 { tab: 'campanhas', label: 'Campanhas de Vendas', sub: 'Incentivos, períodos e badges', icon: '🎯', id: 'tab-campanhas-btn' },
                 { tab: 'metas', label: 'Metas Financeiras', sub: 'Metas globais e rentabilidade', icon: '🏆', id: 'tab-metas-btn' },
                 { tab: 'templates', label: 'Modelos de Mensagem', sub: 'Templates WhatsApp e variáveis', icon: '💬', id: 'tab-templates-btn' }
@@ -501,6 +510,110 @@ export class CadastrosPage {
                       </button>
                       ${this.editandoFormaId ? `
                         <button type="button" id="btn-cancelar-forma-edicao" class="py-2.5 px-4 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-extrabold text-[10px] tracking-wider rounded-lg transition uppercase">
+                          Cancelar
+                        </button>
+                      ` : ''}
+                    </div>
+                  </form>
+                </div>
+              </div>
+              
+            </div>
+          ` : this.activeTab === 'origens' ? `
+            <!-- ABA: ORIGENS DE LEAD -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              
+              <!-- Coluna da Esquerda: Listagem de Origens (2/3) -->
+              <div class="lg:col-span-2 space-y-4">
+                <div class="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 rounded-2xl p-5 shadow-sm transition-colors">
+                  <div class="flex items-center justify-between mb-4">
+                    <div>
+                      <h2 class="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider">Origens de Lead Cadastradas</h2>
+                      <p class="text-xs text-slate-400 font-medium">Canais de captação disponíveis nos orçamentos e relatórios</p>
+                    </div>
+                  </div>
+                  
+                  <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                      <thead>
+                        <tr class="border-b border-slate-100 dark:border-slate-800 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                          <th class="py-3 px-4 w-20">Ícone</th>
+                          <th class="py-3 px-4">Canal / Origem</th>
+                          <th class="py-3 px-4 w-32">Status</th>
+                          <th class="py-3 px-4 text-right w-40">Ações</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${this.origensLead.length === 0 ? `
+                          <tr>
+                            <td colspan="4" class="py-8 text-center text-xs text-slate-400 dark:text-slate-400 font-semibold">
+                              Nenhuma origem de lead cadastrada.
+                            </td>
+                          </tr>
+                        ` : this.origensLead.map(o => {
+                          return `
+                            <tr class="border-b border-slate-100/50 dark:border-slate-800/50 hover:bg-slate-50/50 dark:hover:bg-slate-800/20 text-xs font-semibold text-slate-700 dark:text-slate-300 transition-colors">
+                              <td class="py-3 px-4 text-base">${o.icone}</td>
+                              <td class="py-3 px-4 font-bold text-slate-800 dark:text-slate-100">${o.nome}</td>
+                              <td class="py-3 px-4">
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${o.ativo ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}">
+                                  ${o.ativo ? '🟢 Ativo' : '⚪ Inativo'}
+                                </span>
+                              </td>
+                              <td class="py-3 px-4 text-right space-x-2">
+                                <button data-id="${o.id}" class="btn-editar-origem p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition" title="Editar Origem">
+                                  ✏️
+                                </button>
+                                <button data-id="${o.id}" class="btn-toggle-ativo-origem p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 transition" title="${o.ativo ? 'Desativar Canal' : 'Ativar Canal'}">
+                                  ${o.ativo ? '🔴 Desativar' : '🟢 Ativar'}
+                                </button>
+                                <button data-id="${o.id}" class="btn-excluir-origem p-1.5 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition" title="Excluir Origem">
+                                  🗑️
+                                </button>
+                              </td>
+                            </tr>
+                          `;
+                        }).join('')}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Coluna da Direita: Formulário de Cadastro/Edição (1/3) -->
+              <div class="lg:col-span-1">
+                <div class="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 rounded-2xl p-5 shadow-sm transition-colors sticky top-24">
+                  <h2 class="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider mb-4">
+                    ${this.editandoOrigemId ? 'Editar Origem do Lead' : 'Nova Origem do Lead'}
+                  </h2>
+                  
+                  <form id="form-cadastro-origem" class="space-y-4">
+                    <div>
+                      <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Nome da Origem *</label>
+                      <input id="input-origem-nome" type="text" required value="${this.editandoOrigemId ? (this.origensLead.find(o => o.id === this.editandoOrigemId)?.nome || '') : ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs" placeholder="ex: TikTok, Feira de Noivas, etc." />
+                    </div>
+                    
+                    <div>
+                      <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">Ícone / Emoji *</label>
+                      <div class="grid grid-cols-5 gap-2" id="grid-origem-icones">
+                        ${this.iconesOrigemDisponiveis.map(ico => {
+                          const isSelected = this.selectedIconOrigem === ico;
+                          return `
+                            <button type="button" data-icon="${ico}" class="btn-select-icone-origem p-2.5 border text-base rounded-xl transition ${isSelected ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 ring-2 ring-indigo-500/20 font-bold' : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300'}" style="outline: none;">
+                              ${ico}
+                            </button>
+                          `;
+                        }).join('')}
+                      </div>
+                      <input type="hidden" id="input-origem-icone" value="${this.selectedIconOrigem}" />
+                    </div>
+                    
+                    <div class="flex gap-2 pt-2">
+                      <button type="submit" class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-[10px] tracking-wider rounded-lg shadow-sm transition uppercase">
+                        ${this.editandoOrigemId ? 'Salvar Alterações' : 'Cadastrar Origem'}
+                      </button>
+                      ${this.editandoOrigemId ? `
+                        <button type="button" id="btn-cancelar-origem-edicao" class="py-2.5 px-4 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-extrabold text-[10px] tracking-wider rounded-lg transition uppercase">
                           Cancelar
                         </button>
                       ` : ''}
@@ -976,6 +1089,12 @@ export class CadastrosPage {
       this.setupEventListeners();
     });
 
+    document.getElementById('tab-origens-lead')?.addEventListener('click', () => {
+      this.activeTab = 'origens';
+      this.render();
+      this.setupEventListeners();
+    });
+
     document.getElementById('tab-campanhas-btn')?.addEventListener('click', () => {
       this.activeTab = 'campanhas';
       this.render();
@@ -1154,6 +1273,63 @@ export class CadastrosPage {
           const forma = this.formasRecebimento.find(f => f.id === id);
           if (forma) {
             await this.toggleAtivoForma(forma);
+          }
+        });
+      });
+    } else if (this.activeTab === 'origens') {
+      // 1. Seleção de ícones no grid
+      this.container.querySelectorAll('.btn-select-icone-origem').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const ico = btn.getAttribute('data-icon') || '📣';
+          this.selectedIconOrigem = ico;
+          const inputIcone = document.getElementById('input-origem-icone') as HTMLInputElement;
+          if (inputIcone) inputIcone.value = ico;
+          this.render();
+          this.setupEventListeners();
+        });
+      });
+
+      // 2. Submissão do formulário de origem
+      const formOrigem = document.getElementById('form-cadastro-origem') as HTMLFormElement;
+      formOrigem?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        await this.salvarOrigemLead();
+      });
+
+      // 3. Cancelar Edição de Origem
+      document.getElementById('btn-cancelar-origem-edicao')?.addEventListener('click', () => {
+        this.cancelarEdicaoOrigem();
+      });
+
+      // 4. Botão Editar Origem
+      this.container.querySelectorAll('.btn-editar-origem').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-id');
+          const origem = this.origensLead.find(o => o.id === id);
+          if (origem) {
+            this.prepararEdicaoOrigem(origem);
+          }
+        });
+      });
+
+      // 5. Botão Toggle Ativo Origem
+      this.container.querySelectorAll('.btn-toggle-ativo-origem').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const id = btn.getAttribute('data-id');
+          const origem = this.origensLead.find(o => o.id === id);
+          if (origem) {
+            await this.toggleAtivoOrigem(origem);
+          }
+        });
+      });
+
+      // 6. Botão Excluir Origem
+      this.container.querySelectorAll('.btn-excluir-origem').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const id = btn.getAttribute('data-id');
+          const origem = this.origensLead.find(o => o.id === id);
+          if (origem) {
+            await this.excluirOrigem(origem);
           }
         });
       });
@@ -1412,6 +1588,170 @@ export class CadastrosPage {
   private prepararEdicaoForma(forma: any): void {
     this.editandoFormaId = forma.id;
     this.selectedIconForma = forma.icone;
+    this.render();
+    this.setupEventListeners();
+  }
+
+  // ==========================================
+  // GESTÃO DE ORIGENS DE LEAD
+  // ==========================================
+
+  private async loadOrigensLead(): Promise<void> {
+    try {
+      const { data, error } = await supabase
+        .from('origens_lead')
+        .select('*')
+        .order('ordem', { ascending: true })
+        .order('nome', { ascending: true });
+
+      if (error) {
+        // Fallback Zero-Break caso a migration ainda não tenha sido executada
+        if (error.code === '42703' || error.code === '42P01' || error.message?.includes('does not exist')) {
+          console.warn('Tabela origens_lead não encontrada no banco. Usando dados padrão.', error);
+          this.origensLead = [...ORIGENS_LEAD_PADRAO];
+          return;
+        }
+        console.error('Erro ao carregar origens de lead:', error);
+        this.origensLead = [...ORIGENS_LEAD_PADRAO];
+        this.showToast('Aviso: usando origens padrão devido a erro na consulta.', 'error');
+      } else {
+        this.origensLead = data && data.length > 0 ? data : [...ORIGENS_LEAD_PADRAO];
+      }
+    } catch (err: any) {
+      console.error('Erro ao buscar origens de lead:', err);
+      this.origensLead = [...ORIGENS_LEAD_PADRAO];
+    }
+  }
+
+  private async salvarOrigemLead(): Promise<void> {
+    const inputNome = document.getElementById('input-origem-nome') as HTMLInputElement;
+    const nomeVal = inputNome?.value || '';
+    const iconeVal = this.selectedIconOrigem || '📣';
+
+    const validacao = sanitizarOrigemLead(nomeVal, iconeVal, this.origensLead, this.editandoOrigemId || undefined);
+    if (!validacao.valido) {
+      this.showToast(validacao.erro || 'Erro na validação da origem.', 'error');
+      return;
+    }
+
+    try {
+      if (this.editandoOrigemId) {
+        const payload = {
+          nome: validacao.nome,
+          icone: validacao.icone,
+          updated_at: new Date().toISOString()
+        };
+        const { error } = await supabase
+          .from('origens_lead')
+          .update(payload)
+          .eq('id', this.editandoOrigemId);
+
+        if (error) {
+          if (error.code === '42703' || error.code === '42P01') {
+            this.showToast('Banco não migrado. Execute a migration SQL no Supabase.', 'error');
+            return;
+          }
+          throw error;
+        }
+        this.showToast('Origem de lead atualizada com sucesso!', 'success');
+      } else {
+        const maxOrdem = this.origensLead.reduce((max, item) => Math.max(max, item.ordem || 0), 0);
+        const payload = {
+          nome: validacao.nome,
+          icone: validacao.icone,
+          ativo: true,
+          ordem: maxOrdem + 10
+        };
+        const { error } = await supabase
+          .from('origens_lead')
+          .insert(payload);
+
+        if (error) {
+          if (error.code === '42703' || error.code === '42P01') {
+            this.showToast('Banco não migrado. Execute a migration SQL no Supabase.', 'error');
+            return;
+          }
+          throw error;
+        }
+        this.showToast('Origem de lead cadastrada com sucesso!', 'success');
+      }
+
+      this.editandoOrigemId = null;
+      this.selectedIconOrigem = '📣';
+      await this.loadOrigensLead();
+      this.render();
+      this.setupEventListeners();
+    } catch (err: any) {
+      console.error('Erro ao salvar origem de lead:', err);
+      this.showToast('Erro ao salvar origem de lead no banco.', 'error', err);
+    }
+  }
+
+  private async toggleAtivoOrigem(origem: OrigemLead): Promise<void> {
+    const novoStatus = !origem.ativo;
+    try {
+      const { error } = await supabase
+        .from('origens_lead')
+        .update({ ativo: novoStatus, updated_at: new Date().toISOString() })
+        .eq('id', origem.id);
+
+      if (error) throw error;
+      this.showToast(`Origem "${origem.nome}" ${novoStatus ? 'ativada' : 'desativada'} com sucesso!`, 'success');
+      await this.loadOrigensLead();
+      this.render();
+      this.setupEventListeners();
+    } catch (err: any) {
+      console.error('Erro ao alternar status da origem:', err);
+      this.showToast('Erro ao atualizar status da origem.', 'error', err);
+    }
+  }
+
+  private async excluirOrigem(origem: OrigemLead): Promise<void> {
+    try {
+      // 1. Checar se está em uso em orçamentos
+      const checagemUso = await verificarOrigemEmUso(supabase, origem.nome);
+      if (checagemUso.emUso) {
+        await showCustomAlert(
+          `A origem "${origem.nome}" não pode ser excluída porque já foi utilizada em ${checagemUso.totalUso > 1 ? checagemUso.totalUso + ' orçamentos' : 'orçamento existente'}. Você pode desativá-la para não aparecer em novos orçamentos.`,
+          'Origem em Uso'
+        );
+        return;
+      }
+
+      const confirmou = await showCustomConfirm(
+        `Tem certeza que deseja excluir permanentemente a origem "${origem.nome}"?`,
+        'Excluir Origem de Lead',
+        { confirmText: 'Excluir', cancelText: 'Cancelar', isDestructive: true }
+      );
+
+      if (!confirmou) return;
+
+      const { error } = await supabase
+        .from('origens_lead')
+        .delete()
+        .eq('id', origem.id);
+
+      if (error) throw error;
+      this.showToast(`Origem "${origem.nome}" excluída com sucesso!`, 'success');
+      await this.loadOrigensLead();
+      this.render();
+      this.setupEventListeners();
+    } catch (err: any) {
+      console.error('Erro ao excluir origem:', err);
+      this.showToast('Erro ao excluir origem de lead.', 'error', err);
+    }
+  }
+
+  private prepararEdicaoOrigem(origem: OrigemLead): void {
+    this.editandoOrigemId = origem.id;
+    this.selectedIconOrigem = origem.icone || '📣';
+    this.render();
+    this.setupEventListeners();
+  }
+
+  private cancelarEdicaoOrigem(): void {
+    this.editandoOrigemId = null;
+    this.selectedIconOrigem = '📣';
     this.render();
     this.setupEventListeners();
   }

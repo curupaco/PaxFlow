@@ -585,11 +585,18 @@ export const HELP_ITEMS: HelpItem[] = [
     details: 'Se a sua agência possui a integração do Digisac habilitada (com token, domínio e ID de serviço configurados), a tela de disparo de mensagens de templates exibe um painel lateral em tela dividida (Split-screen) com o histórico de mensagens.\n\n* **Carregamento Automático**: O sistema busca as últimas mensagens trocadas com o telefone do cliente no canal do Digisac na hora em que o modal de envio é aberto.\n* **Atualização Manual**: Você pode clicar em "Atualizar 🔄" no canto superior do histórico de conversas para carregar novas mensagens enviadas ou recebidas.\n* **Fallback Modo Demonstração**: Se a API do Digisac estiver offline ou houver restrições locais de conexão de rede, a tela exibirá uma simulação das últimas mensagens (modo demonstração) de forma a garantir a estabilidade da interface.'
   },
   {
+    id: 'origens-lead-modulo',
+    modulo: 'cadastros',
+    label: '📣 Gestão de Origens de Lead (Canais de Captação)',
+    description: 'Como cadastrar, ativar/desativar e gerenciar canais de captação de clientes.',
+    details: 'A aba "Origens de Lead" permite que a agência cadastre canais de entrada de forma dinâmica (ex: TikTok, Google Ads, Feiras, WhatsApp, Indicação):\n\n1. **Cadastro com Emojis**: Crie novos canais definindo o nome e selecionando um emoji representativo.\n2. **Ativação / Desativação (Soft-Delete)**: Origens inativas não aparecem na criação de novos orçamentos, mas são preservadas para consulta em orçamentos antigos e relatórios de inteligência.\n3. **Bloqueio de Exclusão Física**: Se uma origem já tiver sido utilizada em orçamentos, o sistema bloqueia sua exclusão permanente para manter a integridade dos dados históricos, sugerindo a desativação.'
+  },
+  {
     id: 'central-de-cadastros-modulo',
     modulo: 'cadastros',
-    label: 'Estrutura da Central de Cadastros (6 Módulos / Navegação Lateral)',
+    label: 'Estrutura da Central de Cadastros (7 Módulos / Navegação Lateral)',
     description: 'Conheça o menu unificado de Cadastros com navegação em barra lateral para administradores.',
-    details: 'A Central de Cadastros reestruturada reúne todas as definições operacionais da agência em 6 módulos organizados na barra lateral (Sidebar):\n\n1. **📦 Tipos de Serviços**: cadastro dinâmico de produtos, cores e campos extras.\n2. **📍 Gestão de Destinos**: cadastro e higienização de cidades e países de viagens.\n3. **💰 Formas de Recebimento**: gestão de opções de pagamento (Pix, Cartão, Dinheiro).\n4. **🎯 Campanhas de Vendas**: criação e controle de campanhas internas de incentivo por período.\n5. **🏆 Metas Financeiras**: parametrização de metas (Faturamento Bruto ou Rentabilidade) e faixas de premiação (opcionais para metas de loja).\n6. **💬 Modelos de Mensagem**: templates para WhatsApp com variáveis reativas, pílulas interativas e histórico Digisac.'
+    details: 'A Central de Cadastros reúne todas as definições operacionais da agência em 7 módulos organizados na barra lateral (Sidebar):\n\n1. **📦 Tipos de Serviços**: cadastro dinâmico de produtos, cores e campos extras.\n2. **📍 Gestão de Destinos**: cadastro e higienização de cidades e países de viagens.\n3. **💰 Formas de Recebimento**: gestão de opções de pagamento (Pix, Cartão, Dinheiro).\n4. **📣 Origens de Lead**: cadastro dinâmico de canais de captação (WhatsApp, Instagram, Loja, Google, etc.).\n5. **🎯 Campanhas de Vendas**: criação e controle de campanhas internas de incentivo por período.\n6. **🏆 Metas Financeiras**: parametrização de metas (Faturamento Bruto ou Rentabilidade) e faixas de premiação.\n7. **💬 Modelos de Mensagem**: templates para WhatsApp com variáveis reativas, pílulas interativas e histórico Digisac.'
   },
   // ==================== 10. Escala de Funcionários ====================
   {

@@ -96,3 +96,128 @@ export function sanitizarTipoProduto(dados: any): {
     ativo
   };
 }
+
+// ============================================================================
+// ORIGENS DE LEAD
+// ============================================================================
+
+export const ORIGENS_LEAD_PADRAO: Array<{ id: string; nome: string; icone: string; ativo: boolean; ordem: number }> = [
+  { id: 'padrao-whatsapp', nome: 'WhatsApp', icone: '📱', ativo: true, ordem: 1 },
+  { id: 'padrao-instagram', nome: 'Instagram', icone: '📸', ativo: true, ordem: 2 },
+  { id: 'padrao-indicacao', nome: 'Indicação', icone: '🤝', ativo: true, ordem: 3 },
+  { id: 'padrao-google', nome: 'Google', icone: '🔍', ativo: true, ordem: 4 },
+  { id: 'padrao-site', nome: 'Site', icone: '🌐', ativo: true, ordem: 5 },
+  { id: 'padrao-loja', nome: 'Loja', icone: '🏬', ativo: true, ordem: 6 },
+  { id: 'padrao-outros', nome: 'Outros', icone: '📣', ativo: true, ordem: 7 }
+];
+
+export function sanitizarOrigemLead(
+  dados: { nome?: string; icone?: string; id?: string; ativo?: boolean; ordem?: number } | string,
+  existentesOuIcone?: any[] | string,
+  existentesArg?: any[],
+  idAtualArg?: string
+): {
+  valido: boolean;
+  erro?: string;
+  nome: string;
+  icone: string;
+  ativo: boolean;
+  ordem: number;
+} {
+  let nome = '';
+  let icone = '📣';
+  let ativo = true;
+  let ordem = 0;
+  let idAtual: string | undefined = undefined;
+  let existentes: any[] = [];
+
+  if (typeof dados === 'string') {
+    nome = dados.trim();
+    if (typeof existentesOuIcone === 'string') {
+      icone = existentesOuIcone.trim() || '📣';
+      existentes = existentesArg || [];
+      idAtual = idAtualArg;
+    } else {
+      existentes = (existentesOuIcone as any[]) || [];
+      idAtual = idAtualArg;
+    }
+  } else {
+    nome = (dados?.nome || '').trim();
+    icone = (dados?.icone || '').trim() || '📣';
+    ativo = dados?.ativo !== false;
+    ordem = Number(dados?.ordem) || 0;
+    idAtual = dados?.id;
+    existentes = (existentesOuIcone as any[]) || [];
+  }
+
+  if (!nome) {
+    return { valido: false, erro: 'O nome da origem do lead é obrigatório.', nome: '', icone, ativo, ordem };
+  }
+
+  const nomeLower = nome.toLowerCase();
+  const duplicado = existentes.some(
+    (e: any) => e.id !== idAtual && (e.nome || '').trim().toLowerCase() === nomeLower
+  );
+
+  if (duplicado) {
+    return {
+      valido: false,
+      erro: `Já existe uma origem cadastrada com o nome "${nome}".`,
+      nome,
+      icone,
+      ativo,
+      ordem
+    };
+  }
+
+  return {
+    valido: true,
+    nome,
+    icone,
+    ativo,
+    ordem
+  };
+}
+
+export async function verificarOrigemEmUso(
+  supabaseOuNome: any,
+  nomeOuOrcamentos?: any
+): Promise<{ emUso: boolean; totalUso: number }> {
+  // Se chamado com (supabaseClient, nomeOrigem)
+  if (supabaseOuNome && typeof supabaseOuNome.from === 'function') {
+    const nome = String(nomeOuOrcamentos || '').trim();
+    if (!nome) return { emUso: false, totalUso: 0 };
+    try {
+      const { data, error } = await supabaseOuNome
+        .from('orcamentos')
+        .select('id, origem')
+        .eq('origem', nome)
+        .limit(1);
+
+      if (error) {
+        console.warn('Erro ao checar uso da origem em orçamentos:', error);
+        return { emUso: false, totalUso: 0 };
+      }
+      const total = (data || []).length;
+      return { emUso: total > 0, totalUso: total };
+    } catch (e) {
+      return { emUso: false, totalUso: 0 };
+    }
+  }
+
+  // Se chamado como função pura (nomeOrigem, listaOrcamentos)
+  const nomeNorm = String(supabaseOuNome || '').trim().toLowerCase();
+  if (!nomeNorm) return { emUso: false, totalUso: 0 };
+
+  const orcamentos = Array.isArray(nomeOuOrcamentos) ? nomeOuOrcamentos : [];
+  const total = orcamentos.filter((o: any) => {
+    const orig = (o.origem || '').trim().toLowerCase();
+    return orig === nomeNorm;
+  }).length;
+
+  return {
+    emUso: total > 0,
+    totalUso: total
+  };
+}
+
