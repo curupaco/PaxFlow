@@ -213,7 +213,7 @@ describe('RelatoriosController - Faturamento e Lucratividade com Filtro de Produ
           taxa: 200,
           comissao: 400,
           markup: 100,
-          rav: 500, // 500 * 0.88 = 440
+          rav: 500,
           status: 'emitido'
         },
         {
@@ -239,7 +239,7 @@ describe('RelatoriosController - Faturamento e Lucratividade com Filtro de Produ
           taxa: 300,
           comissao: 800,
           markup: 200,
-          rav: 1000, // 1000 * 0.88 = 880
+          rav: 1000,
           status: 'emitido'
         },
         {
@@ -285,19 +285,19 @@ describe('RelatoriosController - Faturamento e Lucratividade com Filtro de Produ
     expect(resultado.comissaoTotal).toBe(1500);
     // Markup: 100 + 150 + 200 = 450
     expect(resultado.markupTotal).toBe(450);
-    // RAV: 440 + 0 + 880 = 1320
-    expect(resultado.ravTotal).toBe(1320);
-    // Lucro Líquido: (1500 + 450 + 1320) - 300 = 2970
-    expect(resultado.lucroLiquidoReal).toBe(2970);
-    // Margem Média: round((2970 / 17700) * 100) = round(16.7796%) = 17%
-    expect(resultado.margemMedia).toBe(17);
+    // RAV Integral: 500 + 0 + 1000 = 1500
+    expect(resultado.ravTotal).toBe(1500);
+    // Lucro Líquido: (1500 + 450 + 1500) - 300 = 3150
+    expect(resultado.lucroLiquidoReal).toBe(3150);
+    // Margem Média: round((3150 / 17700) * 100) = round(17.7966%) = 18%
+    expect(resultado.margemMedia).toBe(18);
     // Categorias: AÉREO, HOTEL, CRUZEIRO
     expect(resultado.categorias).toHaveLength(3);
     const catAereo = resultado.categorias.find(c => c.tipo === 'AÉREO');
     expect(catAereo).toBeDefined();
     expect(catAereo?.faturamento).toBe(6000);
-    expect(catAereo?.rav).toBe(440);
-    expect(catAereo?.lucro).toBe(400 + 100 + 440); // 940
+    expect(catAereo?.rav).toBe(500);
+    expect(catAereo?.lucro).toBe(400 + 100 + 500); // 1000
   });
 
   it('deve filtrar faturamento e lucratividade por tipo de produto específico', () => {
@@ -333,8 +333,8 @@ describe('RelatoriosController - Faturamento e Lucratividade com Filtro de Produ
     expect(resultado.taxasTotal).toBe(200 + 300); // 500
     expect(resultado.comissaoTotal).toBe(400 + 800); // 1200
     expect(resultado.markupTotal).toBe(100 + 200); // 300
-    expect(resultado.ravTotal).toBe(440 + 880); // 1320
-    expect(resultado.lucroLiquidoReal).toBe(1200 + 300 + 1320); // 2820
+    expect(resultado.ravTotal).toBe(500 + 1000); // 1500
+    expect(resultado.lucroLiquidoReal).toBe(1200 + 300 + 1500); // 3000
     expect(resultado.categorias).toHaveLength(2);
     expect(resultado.categorias.map(c => c.tipo).sort()).toEqual(['AÉREO', 'CRUZEIRO'].sort());
   });

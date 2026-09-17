@@ -479,7 +479,6 @@ export class OrcamentosService {
               taxa: 0,
               comissao: 0,
               markup: 0,
-              rav: 0,
               status: 'reservado',
               data_servico: vIda || new Date().toISOString().split('T')[0]
             });
@@ -522,7 +521,6 @@ export class OrcamentosService {
             taxa: 0,
             comissao: 0,
             markup: 0,
-            rav: 0,
             status: 'reservado',
             data_servico: new Date().toISOString().split('T')[0]
           });

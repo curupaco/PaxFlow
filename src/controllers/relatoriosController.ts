@@ -286,7 +286,7 @@ export function calcularFaturamentoLucratividade(
       const pTaxa = Number(p.taxa) || 0;
       const pComissao = Number(p.comissao) || 0;
       const pMarkup = Number(p.markup) || 0;
-      const pRavLiquido = pRav * 0.88;
+      const pRavLiquido = pRav; // Compatibilidade com histórico
       const pLucro = pComissao + pMarkup + pRavLiquido;
 
       taxasTotal += pTaxa;

@@ -91,7 +91,6 @@ export class RelatoriosPage {
   private consultorIdFilter: string = 'todos';
   private filtroContatoEmbarque: 'todos' | 'feitos' | 'pendentes' = 'todos';
   private filtroFaturamentoProduto: string = 'todos';
-  private filtroFaturamentoRav: 'todos' | 'com_rav' | 'sem_rav' = 'todos';
   
   private loading: boolean = false;
   private prazoReembolsoDias: number = 30;
@@ -906,13 +905,11 @@ export class RelatoriosPage {
       taxasTotal,
       comissaoTotal,
       markupTotal,
-      ravTotal,
       lucroLiquidoReal,
       margemMedia,
       categorias
     } = calcularFaturamentoLucratividade(data.viagens, data.locPagamentos, {
-      tipoProduto: this.filtroFaturamentoProduto,
-      filtroRav: this.filtroFaturamentoRav
+      tipoProduto: this.filtroFaturamentoProduto
     });
 
     return `
@@ -931,19 +928,11 @@ export class RelatoriosPage {
                 `).join('')}
               </select>
             </div>
-            <div class="flex items-center gap-2">
-              <label for="filtro-faturamento-rav" class="text-xs font-bold text-slate-500 dark:text-slate-400 whitespace-nowrap">RAV:</label>
-              <select id="filtro-faturamento-rav" class="px-3 py-1.5 text-xs font-semibold rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 cursor-pointer">
-                <option value="todos" ${this.filtroFaturamentoRav === 'todos' ? 'selected' : ''}>Todos</option>
-                <option value="com_rav" ${this.filtroFaturamentoRav === 'com_rav' ? 'selected' : ''}>⚡ Apenas com RAV (RAV <> 0)</option>
-                <option value="sem_rav" ${this.filtroFaturamentoRav === 'sem_rav' ? 'selected' : ''}>Sem RAV (RAV = 0)</option>
-              </select>
-            </div>
           </div>
         </div>
 
         <!-- Metric Grid -->
-        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2.5">
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
           <div class="bg-slate-50 dark:bg-slate-950 p-3.5 rounded-2xl border border-slate-100 dark:border-slate-800 text-center">
             <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">FATURAMENTO VENDA</p>
             <p class="text-sm sm:text-base font-black text-slate-800 dark:text-slate-200 mt-1">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(faturamentoBruto)}</p>
@@ -961,14 +950,10 @@ export class RelatoriosPage {
             <p class="text-sm sm:text-base font-black text-purple-600 dark:text-purple-400 mt-1">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(markupTotal)}</p>
           </div>
           <div class="bg-slate-50 dark:bg-slate-950 p-3.5 rounded-2xl border border-slate-100 dark:border-slate-800 text-center">
-            <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">RAV</p>
-            <p class="text-sm sm:text-base font-black text-amber-600 dark:text-amber-400 mt-1">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(ravTotal)}</p>
-          </div>
-          <div class="bg-slate-50 dark:bg-slate-950 p-3.5 rounded-2xl border border-slate-100 dark:border-slate-800 text-center">
             <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">LUCRO LÍQUIDO</p>
             <p class="text-sm sm:text-base font-black text-emerald-600 mt-1">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(lucroLiquidoReal)}</p>
           </div>
-          <div class="bg-slate-50 dark:bg-slate-950 p-3.5 rounded-2xl border border-slate-100 dark:border-slate-800 text-center col-span-2 sm:col-span-1">
+          <div class="bg-slate-50 dark:bg-slate-950 p-3.5 rounded-2xl border border-slate-100 dark:border-slate-800 text-center">
             <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">MARGEM MÉDIA</p>
             <p class="text-sm sm:text-base font-black text-slate-700 dark:text-slate-200 mt-1">${margemMedia}%</p>
           </div>
@@ -986,7 +971,6 @@ export class RelatoriosPage {
                   <th class="p-3">Taxas</th>
                   <th class="p-3">Comissão da Agência</th>
                   <th class="p-3">Markup</th>
-                  <th class="p-3">RAV</th>
                   <th class="p-3">Lucro Líquido</th>
                   <th class="p-3">Margem (%)</th>
                 </tr>
@@ -999,13 +983,12 @@ export class RelatoriosPage {
                     <td class="p-3 text-sky-600 dark:text-sky-400">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(cat.taxas)}</td>
                     <td class="p-3 text-indigo-600 dark:text-indigo-400">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(cat.comissao)}</td>
                     <td class="p-3 text-purple-600 dark:text-purple-400">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(cat.markup)}</td>
-                    <td class="p-3 text-amber-600 dark:text-amber-400">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(cat.rav)}</td>
                     <td class="p-3 font-extrabold text-emerald-600">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(cat.lucro)}</td>
                     <td class="p-3 font-extrabold">${cat.margem}%</td>
                   </tr>
                 `).join('') || `
                   <tr>
-                    <td colspan="8" class="p-6 text-center text-slate-400 font-extrabold">Nenhum produto registrado ou faturado correspondente aos filtros selecionados.</td>
+                    <td colspan="7" class="p-6 text-center text-slate-400 font-extrabold">Nenhum produto registrado ou faturado correspondente aos filtros selecionados.</td>
                   </tr>
                 `}
               </tbody>
@@ -2923,17 +2906,6 @@ export class RelatoriosPage {
         });
       }
 
-      const selectFiltroRav = document.getElementById('filtro-faturamento-rav') as HTMLSelectElement;
-      if (selectFiltroRav) {
-        selectFiltroRav.addEventListener('change', () => {
-          this.filtroFaturamentoRav = (selectFiltroRav.value as any) || 'todos';
-          const container = document.getElementById('report-view-container');
-          if (container) {
-            container.innerHTML = this.renderFaturamento(this.getFilteredData());
-            this.setupEventListeners();
-          }
-        });
-      }
     }
 
     // 7. Listeners para os botões do Relatório de Embarque
@@ -3279,20 +3251,19 @@ export class RelatoriosPage {
         csvContent += `"${a.title}";"${a.consultorNome}";"${a.dateStr}";"${a.arquivado ? 'Arquivado' : 'Ativo'}"\n`;
       });
     } else if (this.activeTab === 'faturamento') {
-      csvContent += 'Categoria;Faturamento Venda;Taxas;Comissão da Agência;Markup;RAV;Lucro Líquido;Margem (%)\n';
+      csvContent += 'Categoria;Faturamento Venda;Taxas;Comissão da Agência;Markup;Lucro Líquido;Margem (%)\n';
       
       const resFat = calcularFaturamentoLucratividade(data.viagens, data.locPagamentos, {
-        tipoProduto: this.filtroFaturamentoProduto,
-        filtroRav: this.filtroFaturamentoRav
+        tipoProduto: this.filtroFaturamentoProduto
       });
 
       // Linhas detalhadas por categoria
       resFat.categorias.forEach(c => {
-        csvContent += `"${c.tipo}";${c.faturamento};${c.taxas};${c.comissao};${c.markup};${c.rav};${c.lucro};"${c.margem}%"\n`;
+        csvContent += `"${c.tipo}";${c.faturamento};${c.taxas};${c.comissao};${c.markup};${c.lucro};"${c.margem}%"\n`;
       });
 
       // Linha consolidada total
-      csvContent += `"CONSOLIDADO TOTAL";${resFat.faturamentoBruto};${resFat.taxasTotal};${resFat.comissaoTotal};${resFat.markupTotal};${resFat.ravTotal};${resFat.lucroLiquidoReal};"${resFat.margemMedia}%"\n`;
+      csvContent += `"CONSOLIDADO TOTAL";${resFat.faturamentoBruto};${resFat.taxasTotal};${resFat.comissaoTotal};${resFat.markupTotal};${resFat.lucroLiquidoReal};"${resFat.margemMedia}%"\n`;
     } else if (this.activeTab === 'perdas') {
       csvContent += 'Cliente;Destino;Valor Cotacao;Motivo Desistencia\n';
       const perdidos = data.orcamentos.filter((o: any) => o.subStatus === 'DESISTENCIA' || o.sub_status === 'DESISTENCIA');

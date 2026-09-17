@@ -210,7 +210,7 @@ export const HELP_ITEMS: HelpItem[] = [
     modulo: 'dashboard',
     label: 'Cálculo da Meta (Faturamento Bruto vs Rentabilidade)',
     description: 'Forma como o progresso das metas financeiras é medido (Faturamento Bruto ou Rentabilidade).',
-    details: 'As campanhas de metas podem ser configuradas de duas formas:\n\n1. **Faturamento Bruto**: Soma de todos os valores totais de venda das viagens menos descontos e prejuízos.\n2. **Rentabilidade**: Soma do lucro estimado e rentabilidade real da operação (Markup + Comissões + 88% do RAV/taxa de serviço).'
+    details: 'As campanhas de metas podem ser configuradas de duas formas:\n\n1. **Faturamento Bruto**: Soma de todos os valores totais de venda das viagens menos descontos e prejuízos.\n2. **Rentabilidade**: Soma do lucro líquido e rentabilidade real da operação (Markup + Comissões de produtos normais e produtos de consultoria/RAV).'
   },
   {
     id: 'acumulado-equipe',
@@ -309,8 +309,8 @@ export const HELP_ITEMS: HelpItem[] = [
     id: 'rav',
     modulo: 'viagens',
     label: 'RAV (Remuneração de Agente de Viagens)',
-    description: 'Taxa de serviço cobrada diretamente do cliente pela emissão ou consultoria.',
-    details: 'A RAV é a taxa de emissão de passagens ou taxa de serviço cobrada do cliente. No cálculo da Rentabilidade do PaxFlow, a RAV é contabilizada com um fator de 88% para descontar taxas fiscais e administrativas padrão (ex: impostos e taxas de cartão).'
+    description: 'Taxa de serviço ou assessoria cobrada diretamente do cliente como produto comercial da agência.',
+    details: 'A RAV é cadastrada como um produto/serviço comercial no PaxFlow. Ao adicionar um item do tipo RAV à viagem, seu valor de venda corresponde integralmente à margem da agência (Comissão/Markup), gerando rentabilidade direta de 100% sem tarifa de custo.'
   },
   {
     id: 'pax',
@@ -510,9 +510,9 @@ export const HELP_ITEMS: HelpItem[] = [
   {
     id: 'relatorio-faturamento-lucratividade',
     modulo: 'clientes',
-    label: '💰 Relatório de Faturamento e Lucratividade (Filtros por Produto & RAV)',
-    description: 'Como auditar faturamento, taxas, comissão, markup, RAV líquido e lucratividade discriminados por produto ou RAV.',
-    details: 'Na aba **Faturamento e Lucratividade** (menu Relatórios -> Grupo 2: Financeiro & Auditoria):\n\n1. **Filtro de Produto / Linha de Serviço**: Permite selecionar um produto específico (ex: `AÉREO OPERADORA`, `HOTEL`, `CRUZEIRO`, etc.) ou a visão consolidada `Todos os Produtos`. Os cartões de topo (Faturamento Venda, Taxas, Comissão, Markup, RAV, Lucro Líquido e Margem Média) recalculam imediatamente apenas para os serviços filtrados.\n2. **Filtro de RAV (<> 0)**: Permite auditar receitas com Remuneração Adicional de Venda escolhendo `⚡ Apenas com RAV (RAV <> 0)`, visualizar itens sem RAV (`Sem RAV (RAV = 0)`) ou todos (`Todos`).\n3. **Cálculo de Lucro Líquido Real & Retenção de RAV**: O RAV exibido já aplica a retenção líquida de 12% (RAV * 0.88), e o lucro líquido real consolida comissões + markup + RAV líquido deduzindo eventuais descontos e prejuízos cadastrados.\n4. **Exportação CSV Dinâmica**: O botão "Exportar CSV" exporta a tabela respeitando rigorosamente os filtros de Produto e RAV ativos na tela.'
+    label: '💰 Relatório de Faturamento e Lucratividade por Linha de Produto',
+    description: 'Como auditar faturamento, taxas, comissão, markup, lucro líquido e margem média discriminados por produto.',
+    details: 'Na aba **Faturamento e Lucratividade** (menu Relatórios -> Grupo 2: Financeiro & Auditoria):\n\n1. **Filtro de Produto / Linha de Serviço**: Permite selecionar uma categoria específica (ex: `AÉREO OPERADORA`, `HOTEL`, `CRUZEIRO`, `RAV`, etc.) ou a visão consolidada `Todos os Produtos`. Os cartões de topo (Faturamento Venda, Taxas, Comissão, Markup, Lucro Líquido e Margem Média) recalculam imediatamente apenas para os serviços filtrados.\n2. **Linha de Produto RAV**: As receitas de RAV agora constam diretamente na listagem e nos filtros de categorias, refletindo 100% de margem líquida para a agência.\n3. **Cálculo de Lucro Líquido Real**: Consolida comissões + markup deduzindo eventuais descontos e prejuízos cadastrados.\n4. **Exportação CSV Dinâmica**: O botão "Exportar CSV" exporta a tabela de lucratividade por categoria respeitando o filtro ativo na tela.'
   },
   {
     id: 'relatorio-metas-campanhas',
