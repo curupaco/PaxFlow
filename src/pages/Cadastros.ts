@@ -521,7 +521,7 @@ export class CadastrosPage {
             </div>
           ` : this.activeTab === 'origens' ? `
             <!-- ABA: ORIGENS DE LEAD -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
               
               <!-- Coluna da Esquerda: Listagem de Origens (2/3) -->
               <div class="lg:col-span-2 space-y-4">
@@ -531,19 +531,22 @@ export class CadastrosPage {
                       <h2 class="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider">Origens de Lead Cadastradas</h2>
                       <p class="text-xs text-slate-400 font-medium">Canais de captação disponíveis nos orçamentos e relatórios</p>
                     </div>
+                    <span class="text-xs font-bold px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-full">
+                      ${this.origensLead.length} ${this.origensLead.length === 1 ? 'origem' : 'origens'}
+                    </span>
                   </div>
                   
                   <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse">
                       <thead>
                         <tr class="border-b border-slate-100 dark:border-slate-800 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                          <th class="py-3 px-4 w-20">Ícone</th>
-                          <th class="py-3 px-4">Canal / Origem</th>
-                          <th class="py-3 px-4 w-32">Status</th>
-                          <th class="py-3 px-4 text-right w-40">Ações</th>
+                          <th class="py-2.5 px-3 w-14 text-center">Ícone</th>
+                          <th class="py-2.5 px-3">Canal / Origem</th>
+                          <th class="py-2.5 px-3 w-28 text-center">Status</th>
+                          <th class="py-2.5 px-3 text-right w-40 whitespace-nowrap">Ações</th>
                         </tr>
                       </thead>
-                      <tbody>
+                      <tbody class="divide-y divide-slate-100/60 dark:divide-slate-800/60">
                         ${this.origensLead.length === 0 ? `
                           <tr>
                             <td colspan="4" class="py-8 text-center text-xs text-slate-400 dark:text-slate-400 font-semibold">
@@ -552,24 +555,27 @@ export class CadastrosPage {
                           </tr>
                         ` : this.origensLead.map(o => {
                           return `
-                            <tr class="border-b border-slate-100/50 dark:border-slate-800/50 hover:bg-slate-50/50 dark:hover:bg-slate-800/20 text-xs font-semibold text-slate-700 dark:text-slate-300 transition-colors">
-                              <td class="py-3 px-4 text-base">${o.icone}</td>
-                              <td class="py-3 px-4 font-bold text-slate-800 dark:text-slate-100">${o.nome}</td>
-                              <td class="py-3 px-4">
-                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${o.ativo ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}">
-                                  ${o.ativo ? '🟢 Ativo' : '⚪ Inativo'}
+                            <tr class="hover:bg-slate-50/60 dark:hover:bg-slate-800/30 text-xs font-semibold text-slate-700 dark:text-slate-300 transition-colors">
+                              <td class="py-2.5 px-3 text-center text-lg leading-none">${o.icone || '📣'}</td>
+                              <td class="py-2.5 px-3 font-bold text-slate-800 dark:text-slate-100 whitespace-nowrap">${o.nome}</td>
+                              <td class="py-2.5 px-3 text-center whitespace-nowrap">
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${o.ativo ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-800/50' : 'bg-slate-100 dark:bg-slate-800 text-slate-400 border border-slate-200 dark:border-slate-700'}">
+                                  <span class="w-1.5 h-1.5 rounded-full ${o.ativo ? 'bg-emerald-500' : 'bg-slate-400'}"></span>
+                                  ${o.ativo ? 'Ativo' : 'Inativo'}
                                 </span>
                               </td>
-                              <td class="py-3 px-4 text-right space-x-2">
-                                <button data-id="${o.id}" class="btn-editar-origem p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition" title="Editar Origem">
-                                  ✏️
-                                </button>
-                                <button data-id="${o.id}" class="btn-toggle-ativo-origem p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 transition" title="${o.ativo ? 'Desativar Canal' : 'Ativar Canal'}">
-                                  ${o.ativo ? '🔴 Desativar' : '🟢 Ativar'}
-                                </button>
-                                <button data-id="${o.id}" class="btn-excluir-origem p-1.5 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition" title="Excluir Origem">
-                                  🗑️
-                                </button>
+                              <td class="py-2.5 px-3 text-right whitespace-nowrap">
+                                <div class="inline-flex items-center justify-end gap-1.5">
+                                  <button data-id="${o.id}" class="btn-editar-origem h-8 w-8 inline-flex items-center justify-center hover:bg-indigo-50 dark:hover:bg-indigo-950/40 rounded-lg text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition cursor-pointer" title="Editar Origem">
+                                    ✏️
+                                  </button>
+                                  <button data-id="${o.id}" class="btn-toggle-ativo-origem h-8 px-2.5 text-[11px] font-bold rounded-lg transition cursor-pointer ${o.ativo ? 'bg-amber-50 hover:bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 dark:hover:bg-amber-900/40' : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 dark:hover:bg-emerald-900/40'}" title="${o.ativo ? 'Desativar Canal' : 'Ativar Canal'}">
+                                    ${o.ativo ? 'Desativar' : 'Ativar'}
+                                  </button>
+                                  <button data-id="${o.id}" class="btn-excluir-origem h-8 w-8 inline-flex items-center justify-center hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition cursor-pointer" title="Excluir Origem">
+                                    🗑️
+                                  </button>
+                                </div>
                               </td>
                             </tr>
                           `;
@@ -590,16 +596,19 @@ export class CadastrosPage {
                   <form id="form-cadastro-origem" class="space-y-4">
                     <div>
                       <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Nome da Origem *</label>
-                      <input id="input-origem-nome" type="text" required value="${this.editandoOrigemId ? (this.origensLead.find(o => o.id === this.editandoOrigemId)?.nome || '') : ''}" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs" placeholder="ex: TikTok, Feira de Noivas, etc." />
+                      <input id="input-origem-nome" type="text" required value="${this.editandoOrigemId ? (this.origensLead.find(o => o.id === this.editandoOrigemId)?.nome || '') : ''}" class="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs" placeholder="ex: TikTok, Feira de Noivas..." />
                     </div>
                     
                     <div>
-                      <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">Ícone / Emoji *</label>
-                      <div class="grid grid-cols-5 gap-2" id="grid-origem-icones">
+                      <div class="flex items-center justify-between mb-1.5">
+                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Ícone / Emoji *</label>
+                        <span class="text-xs font-bold text-slate-400">Selecionado: <span class="text-base font-normal ml-0.5">${this.selectedIconOrigem}</span></span>
+                      </div>
+                      <div class="grid grid-cols-5 gap-1.5 p-2 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/60 dark:border-slate-800" id="grid-origem-icones">
                         ${this.iconesOrigemDisponiveis.map(ico => {
                           const isSelected = this.selectedIconOrigem === ico;
                           return `
-                            <button type="button" data-icon="${ico}" class="btn-select-icone-origem p-2.5 border text-base rounded-xl transition ${isSelected ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 ring-2 ring-indigo-500/20 font-bold' : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300'}" style="outline: none;">
+                            <button type="button" data-icon="${ico}" class="btn-select-icone-origem h-9 w-full flex items-center justify-center text-base rounded-lg transition ${isSelected ? 'border-2 border-indigo-600 bg-indigo-50 dark:bg-indigo-950/60 shadow-sm scale-105' : 'border border-transparent hover:border-slate-200 dark:hover:border-slate-700 hover:bg-white dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'}" style="outline: none;">
                               ${ico}
                             </button>
                           `;
@@ -608,12 +617,12 @@ export class CadastrosPage {
                       <input type="hidden" id="input-origem-icone" value="${this.selectedIconOrigem}" />
                     </div>
                     
-                    <div class="flex gap-2 pt-2">
-                      <button type="submit" class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-[10px] tracking-wider rounded-lg shadow-sm transition uppercase">
+                    <div class="flex gap-2 pt-1">
+                      <button type="submit" class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-[10px] tracking-wider rounded-lg shadow-sm transition uppercase cursor-pointer">
                         ${this.editandoOrigemId ? 'Salvar Alterações' : 'Cadastrar Origem'}
                       </button>
                       ${this.editandoOrigemId ? `
-                        <button type="button" id="btn-cancelar-origem-edicao" class="py-2.5 px-4 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-extrabold text-[10px] tracking-wider rounded-lg transition uppercase">
+                        <button type="button" id="btn-cancelar-origem-edicao" class="py-2.5 px-4 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-extrabold text-[10px] tracking-wider rounded-lg transition uppercase cursor-pointer">
                           Cancelar
                         </button>
                       ` : ''}
