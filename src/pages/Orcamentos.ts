@@ -1195,69 +1195,72 @@ export class OrcamentosPage {
         ` : ''}
 
         <!-- Rodapé do Card: Responsável, Ações Secundárias e Ação Principal -->
-        <div class="border-t border-slate-100 dark:border-slate-800 pt-3 mt-1 flex items-center justify-between gap-2">
+        <div class="border-t border-slate-100 dark:border-slate-800 pt-2.5 mt-2 space-y-2">
           
-          <!-- Grupo de Ícones de Suporte e Gestão (Esquerda) -->
-          <div class="inline-flex items-center gap-1 shrink-0">
-            <button data-action="mudar-consultor" data-id="${o.id}" title="Responsável: ${dono?.nome || 'Consultor'} (Clique para Reatribuir)" class="shrink-0 mr-0.5 hover:opacity-80 transition transform hover:scale-105 rounded-full focus:outline-none ring-2 ring-transparent hover:ring-indigo-500/50">
+          <!-- Linha 1: Avatar do Responsável e Ícones de Gestão Secundária -->
+          <div class="flex items-center justify-between gap-1">
+            <!-- Esquerda: Avatar do Consultor -->
+            <button data-action="mudar-consultor" data-id="${o.id}" title="Responsável: ${dono?.nome || 'Consultor'} (Clique para Reatribuir)" class="shrink-0 hover:opacity-80 transition transform hover:scale-105 rounded-full focus:outline-none ring-2 ring-transparent hover:ring-indigo-500/50">
               ${getAvatarSvg(dono?.avatar_url, dono?.nome || 'Consultor', 'w-6 h-6')}
             </button>
-            <button data-action="editar-orcamento" data-id="${o.id}" title="Editar Orçamento (Data da Viagem, Destino, Cliente, Contato, Tags)" class="w-7 h-7 inline-flex items-center justify-center hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg transition shrink-0">
-              <svg width="14" height="14" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-              </svg>
-            </button>
-            <button data-action="lembrar-depois" data-id="${o.id}" title="Me Lembre Depois" class="w-7 h-7 inline-flex items-center justify-center hover:bg-amber-50 dark:hover:bg-amber-950/40 text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 rounded-lg transition shrink-0">
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-              </svg>
-            </button>
 
-            ${o.status === 'EM_ANDAMENTO' ? `
-              <button data-action="voltar-solicitado" data-id="${o.id}" title="Voltar para Solicitado (Reiniciar tempo na etapa)" class="w-7 h-7 inline-flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg transition text-xs shrink-0">
-                ↩️
-              </button>
-            ` : ''}
-
-            ${o.status === 'AGUARDANDO' ? `
-              <button data-action="alterar" data-id="${o.id}" title="Alterar Proposta (Voltar para Solicitado)" class="w-7 h-7 inline-flex items-center justify-center hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg transition text-xs shrink-0">
-                🔄
-              </button>
-              <button data-action="desistir" data-id="${o.id}" title="Registrar Desistência" class="w-7 h-7 inline-flex items-center justify-center hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 rounded-lg transition text-xs shrink-0">
-                🚫
-              </button>
-            ` : ''}
-
-            ${isAdmin ? `
-              <button data-action="excluir" data-id="${o.id}" title="Excluir Orçamento (Admin Only)" class="w-7 h-7 inline-flex items-center justify-center hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-lg transition shrink-0">
-                <svg width="14" height="14" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            <!-- Direita: Ações Secundárias Rápidas -->
+            <div class="inline-flex items-center gap-0.5">
+              <button data-action="editar-orcamento" data-id="${o.id}" title="Editar Orçamento (Data da Viagem, Destino, Cliente, Contato, Tags)" class="w-7 h-7 inline-flex items-center justify-center hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg transition shrink-0">
+                <svg width="14" height="14" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                 </svg>
               </button>
-            ` : ''}
+              <button data-action="lembrar-depois" data-id="${o.id}" title="Me Lembre Depois" class="w-7 h-7 inline-flex items-center justify-center hover:bg-amber-50 dark:hover:bg-amber-950/40 text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 rounded-lg transition shrink-0">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+              </button>
+
+              ${o.status === 'EM_ANDAMENTO' ? `
+                <button data-action="voltar-solicitado" data-id="${o.id}" title="Voltar para Solicitado (Reiniciar tempo na etapa)" class="w-7 h-7 inline-flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg transition text-xs shrink-0">
+                  ↩️
+                </button>
+              ` : ''}
+
+              ${o.status === 'AGUARDANDO' ? `
+                <button data-action="alterar" data-id="${o.id}" title="Alterar Proposta (Voltar para Solicitado)" class="w-7 h-7 inline-flex items-center justify-center hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg transition text-xs shrink-0">
+                  🔄
+                </button>
+                <button data-action="desistir" data-id="${o.id}" title="Registrar Desistência" class="w-7 h-7 inline-flex items-center justify-center hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 rounded-lg transition text-xs shrink-0">
+                  🚫
+                </button>
+              ` : ''}
+
+              ${isAdmin ? `
+                <button data-action="excluir" data-id="${o.id}" title="Excluir Orçamento (Admin Only)" class="w-7 h-7 inline-flex items-center justify-center hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-lg transition shrink-0">
+                  <svg width="14" height="14" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+              ` : ''}
+            </div>
           </div>
 
-          <!-- AÇÃO PRINCIPAL DO FLUXO (Extrema direita) -->
-          <div class="inline-flex items-center gap-1.5 shrink-0">
-            ${o.status === 'SOLICITADO' ? `
-              <button data-action="iniciar" data-id="${o.id}" class="h-8 px-3 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-black tracking-wider uppercase rounded-lg shadow-sm transition flex items-center justify-center gap-0.5">
-                Iniciar ▶️
-              </button>
-            ` : ''}
+          <!-- Linha 2: Ação Principal de Avanço da Etapa (Largura Total w-full) -->
+          ${o.status === 'SOLICITADO' ? `
+            <button data-action="iniciar" data-id="${o.id}" class="w-full h-8 px-3 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white text-[11px] font-black tracking-wider uppercase rounded-xl shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer">
+              <span>Iniciar</span> <span>▶️</span>
+            </button>
+          ` : ''}
 
-            ${o.status === 'EM_ANDAMENTO' ? `
-              <button data-action="inserir-proposta" data-id="${o.id}" class="h-8 px-3 bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-black tracking-wider uppercase rounded-lg shadow-sm transition flex items-center justify-center gap-0.5">
-                Enviar Proposta 📤
-              </button>
-            ` : ''}
+          ${o.status === 'EM_ANDAMENTO' ? `
+            <button data-action="inserir-proposta" data-id="${o.id}" class="w-full h-8 px-3 bg-amber-500 hover:bg-amber-600 active:scale-[0.98] text-white text-[11px] font-black tracking-wider uppercase rounded-xl shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer">
+              <span>Enviar Proposta</span> <span>📤</span>
+            </button>
+          ` : ''}
 
-            ${o.status === 'AGUARDANDO' ? `
-              <button data-action="aceitar" data-id="${o.id}" class="h-8 px-3 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black tracking-wider uppercase rounded-lg shadow-sm transition flex items-center justify-center gap-0.5">
-                Vender 🏆
-              </button>
-            ` : ''}
-          </div>
+          ${o.status === 'AGUARDANDO' ? `
+            <button data-action="aceitar" data-id="${o.id}" class="w-full h-8 px-3 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white text-[11px] font-black tracking-wider uppercase rounded-xl shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer">
+              <span>Vender</span> <span>🏆</span>
+            </button>
+          ` : ''}
         </div>
 
       </div>
