@@ -188,5 +188,39 @@ describe('Studio - Melhorias de Fotos Unsplash, Branding e Consultor Subcutâneo
     const initials = getAvatarSvg('', 'Carlos Ferreira', 'w-12 h-12');
     expect(initials).toContain('CF');
   });
+
+  it('deve garantir que os canais de WhatsApp e Telefone sejam padronizados com a loja e o e-mail seja do consultor', async () => {
+    // Setup
+    const propostaComCanaisLoja: Partial<StudioProposta> = {
+      cliente_nome: 'Roberto Justus',
+      destino: 'Dubai & Abu Dhabi',
+      valor_total: 45000,
+      consultor_id: 'usr-999',
+      consultor_nome: 'Camila Pitanga',
+      consultor_email: 'camila.pitanga@agencia.com',
+      consultor_whatsapp: '(11) 99999-9999', // WhatsApp institucional da loja
+      consultor_telefone: '(11) 3090-7070'   // Telefone fixo oficial da loja
+    };
+
+    const retornoMock = {
+      id: 'prop-loja-1',
+      ...propostaComCanaisLoja,
+      created_at: new Date().toISOString()
+    };
+
+    const singleMock = vi.fn().mockResolvedValue({ data: retornoMock, error: null });
+    const selectMock = vi.fn().mockReturnValue({ single: singleMock });
+    const upsertMock = vi.fn().mockReturnValue({ select: selectMock });
+    (supabase.from as any).mockReturnValue({ upsert: upsertMock });
+
+    // Action
+    const resultado = await StudioPropostasService.salvarProposta(propostaComCanaisLoja);
+
+    // Assert
+    expect(resultado.consultor_email).toBe('camila.pitanga@agencia.com');
+    expect(resultado.consultor_whatsapp).toBe('(11) 99999-9999');
+    expect(resultado.consultor_telefone).toBe('(11) 3090-7070');
+  });
 });
+
 

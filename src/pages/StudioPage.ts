@@ -131,35 +131,39 @@ export class StudioPage {
   }
 
   private renderPreviewConsultorForm(): string {
+    const whatsExibicao = this.contatoPadraoAgencia.whatsapp || this.propostaAtual.consultor_whatsapp || '(11) 99999-9999';
+    const telExibicao = this.contatoPadraoAgencia.telefone || this.propostaAtual.consultor_telefone || '(11) 3090-7070';
+
     if (!this.propostaAtual.consultor_nome) {
       return `
-        <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-dashed border-slate-200 dark:border-slate-700 flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-slate-200 dark:bg-slate-700 text-slate-400 flex items-center justify-center text-sm font-bold shrink-0">
-            👤
-          </div>
-          <div>
-            <div class="text-xs font-bold text-slate-600 dark:text-slate-300">Nenhum consultor selecionado</div>
-            <div class="text-[10px] text-slate-400">Escolha um consultor no dropdown abaixo ou preencha manualmente.</div>
+        <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-dashed border-slate-200 dark:border-slate-700 flex items-center justify-between gap-3">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-slate-200 dark:bg-slate-700 text-slate-400 flex items-center justify-center text-sm font-bold shrink-0">
+              👤
+            </div>
+            <div>
+              <div class="text-xs font-bold text-slate-600 dark:text-slate-300">Nenhum consultor atribuído</div>
+              <div class="text-[10px] text-slate-400">Selecione um consultor da equipe abaixo. O e-mail será o dele e os telefones serão sempre os canais oficiais da loja.</div>
+            </div>
           </div>
         </div>
       `;
     }
 
     return `
-      <div class="p-3 rounded-xl bg-indigo-50/60 dark:bg-indigo-950/30 border border-indigo-200/80 dark:border-indigo-900/60 flex items-center justify-between gap-3">
+      <div class="p-3.5 rounded-xl bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-200/80 dark:border-indigo-900/60 flex items-center justify-between gap-3">
         <div class="flex items-center gap-3 min-w-0">
           <div class="w-11 h-11 rounded-xl overflow-hidden shadow-xs shrink-0 flex items-center justify-center border border-indigo-400/50 bg-white dark:bg-slate-900">
             ${getAvatarSvg(this.propostaAtual.consultor_avatar || '', this.propostaAtual.consultor_nome, 'w-full h-full')}
           </div>
           <div class="min-w-0">
             <div class="flex items-center gap-1.5">
-              <span class="text-[9px] font-black uppercase tracking-wider text-indigo-600 dark:text-indigo-400 bg-indigo-100/80 dark:bg-indigo-900/60 px-1.5 py-0.5 rounded-md">Ativo na Proposta</span>
+              <span class="text-[9px] font-black uppercase tracking-wider text-indigo-600 dark:text-indigo-400 bg-indigo-100/80 dark:bg-indigo-900/60 px-1.5 py-0.5 rounded-md">Consultor Responsável</span>
             </div>
             <div class="text-xs font-black text-slate-900 dark:text-white truncate mt-0.5">${this.propostaAtual.consultor_nome}</div>
-            <div class="text-[10px] text-slate-500 dark:text-slate-400 truncate">
-              ${this.propostaAtual.consultor_whatsapp ? `💬 ${this.propostaAtual.consultor_whatsapp}` : ''} 
-              ${this.propostaAtual.consultor_telefone ? `· 📞 ${this.propostaAtual.consultor_telefone}` : ''}
-              ${this.propostaAtual.consultor_email ? `· ✉️ ${this.propostaAtual.consultor_email}` : ''}
+            <div class="text-[10px] text-slate-500 dark:text-slate-400 truncate flex flex-wrap gap-x-2 gap-y-0.5 mt-0.5">
+              ${this.propostaAtual.consultor_email ? `<span class="text-indigo-600 dark:text-indigo-400 font-semibold">✉️ ${this.propostaAtual.consultor_email}</span>` : ''}
+              <span class="text-slate-500 font-medium">🏢 Loja: 💬 ${whatsExibicao} · 📞 ${telExibicao}</span>
             </div>
           </div>
         </div>
@@ -416,18 +420,26 @@ export class StudioPage {
                   </div>
 
                   <div>
-                    <label class="block text-[10px] font-medium text-slate-500 dark:text-slate-400 mb-1">WhatsApp de Atendimento</label>
-                    <input type="text" id="campo-consultor-whatsapp" value="${this.propostaAtual.consultor_whatsapp || ''}" placeholder="(11) 99999-9999" class="input-sync input-consultor-sync w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:border-indigo-500" />
+                    <label class="block text-[10px] font-medium text-slate-500 dark:text-slate-400 mb-1">E-mail Profissional do Consultor</label>
+                    <input type="email" id="campo-consultor-email" value="${this.propostaAtual.consultor_email || ''}" placeholder="consultor@agencia.com" class="input-sync input-consultor-sync w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:border-indigo-500 font-medium" />
                   </div>
 
                   <div>
-                    <label class="block text-[10px] font-medium text-slate-500 dark:text-slate-400 mb-1">Telefone Oficial (Ligação)</label>
-                    <input type="text" id="campo-consultor-telefone" value="${this.propostaAtual.consultor_telefone || ''}" placeholder="(11) 3090-7070" class="input-sync input-consultor-sync w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:border-indigo-500" />
+                    <div class="flex items-center justify-between mb-1">
+                      <label class="block text-[10px] font-medium text-slate-500 dark:text-slate-400">WhatsApp de Atendimento</label>
+                      <span class="text-[9px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 px-1.5 py-0.5 rounded-md">🔒 Loja Oficial</span>
+                    </div>
+                    <input type="text" id="campo-consultor-whatsapp" value="${this.contatoPadraoAgencia.whatsapp || this.propostaAtual.consultor_whatsapp || '(11) 99999-9999'}" readonly class="w-full px-3 py-2 text-xs rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-semibold cursor-not-allowed select-none" />
+                    <span class="text-[9px] text-slate-400 mt-0.5 block">Canal oficial institucional da agência / loja.</span>
                   </div>
 
                   <div>
-                    <label class="block text-[10px] font-medium text-slate-500 dark:text-slate-400 mb-1">E-mail Profissional</label>
-                    <input type="email" id="campo-consultor-email" value="${this.propostaAtual.consultor_email || ''}" placeholder="consultor@agencia.com" class="input-sync input-consultor-sync w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:border-indigo-500" />
+                    <div class="flex items-center justify-between mb-1">
+                      <label class="block text-[10px] font-medium text-slate-500 dark:text-slate-400">Telefone Oficial (Ligação)</label>
+                      <span class="text-[9px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 px-1.5 py-0.5 rounded-md">🔒 Loja Oficial</span>
+                    </div>
+                    <input type="text" id="campo-consultor-telefone" value="${this.contatoPadraoAgencia.telefone || this.propostaAtual.consultor_telefone || '(11) 3090-7070'}" readonly class="w-full px-3 py-2 text-xs rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-semibold cursor-not-allowed select-none" />
+                    <span class="text-[9px] text-slate-400 mt-0.5 block">Linha telefônica oficial da agência / loja.</span>
                   </div>
 
                   <input type="hidden" id="campo-consultor-avatar" value="${this.propostaAtual.consultor_avatar || ''}" />
@@ -2239,14 +2251,16 @@ export class StudioPage {
     this.propostaAtual.foto_capa_url = getVal('campo-foto-custom') || this.propostaAtual.foto_capa_url;
     this.propostaAtual.titulo_cabecalho = getVal('campo-titulo-cabecalho') || 'PAXFLOW LUXURY TRAVEL';
     this.propostaAtual.consultor_nome = getVal('campo-consultor-nome') || undefined;
-    this.propostaAtual.consultor_whatsapp = getVal('campo-consultor-whatsapp') || undefined;
-    this.propostaAtual.consultor_telefone = getVal('campo-consultor-telefone') || undefined;
+    this.propostaAtual.consultor_whatsapp = this.contatoPadraoAgencia.whatsapp || this.propostaAtual.consultor_whatsapp || undefined;
+    this.propostaAtual.consultor_telefone = this.contatoPadraoAgencia.telefone || this.propostaAtual.consultor_telefone || undefined;
     this.propostaAtual.consultor_email = getVal('campo-consultor-email') || undefined;
     this.propostaAtual.consultor_avatar = getVal('campo-consultor-avatar') || undefined;
 
     const selectConsultor = this.container.querySelector('#select-consultor') as HTMLSelectElement | null;
     if (selectConsultor && selectConsultor.value) {
       this.propostaAtual.consultor_id = selectConsultor.value;
+    } else {
+      this.propostaAtual.consultor_id = undefined;
     }
   }
 

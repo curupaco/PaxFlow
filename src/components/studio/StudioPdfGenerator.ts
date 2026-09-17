@@ -274,9 +274,14 @@ export class StudioPdfGenerator {
               <div class="info-bloco">
                 <span>Consultor Responsável</span>
                 <strong>${proposta.consultor_nome || 'Consultoria Especializada'}</strong>
+                ${proposta.consultor_email ? `
+                  <div style="font-size: 8.5pt; font-weight: 600; opacity: 0.9; margin-top: 1px;">
+                    ✉️ ${proposta.consultor_email}
+                  </div>
+                ` : ''}
                 ${proposta.consultor_whatsapp || proposta.consultor_telefone ? `
-                  <div style="font-size: 8.5pt; font-weight: 600; opacity: 0.9; margin-top: 2px;">
-                    📞 ${proposta.consultor_whatsapp || proposta.consultor_telefone}
+                  <div style="font-size: 8pt; font-weight: 600; opacity: 0.85; margin-top: 1px;">
+                    🏢 Loja: 📞 ${proposta.consultor_whatsapp || proposta.consultor_telefone}
                   </div>
                 ` : ''}
               </div>

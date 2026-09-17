@@ -654,13 +654,14 @@ Módulo avançado de orquestração visual e documental da agência, permitindo 
     - **2. Dados do Passageiro, Capa & Consultor**:
       - **Branding / Tagline da Capa**: Campo editável para personalizar o título de marca (padrão *"PAXFLOW LUXURY TRAVEL"*) para o nome da agência ou slogan da proposta.
       - **Galeria Unsplash™ com Tradução Semântica**: Motor de busca com tradução automática PT-BR ➔ EN (ex: *praia -> tropical beach*, *neve -> snow*, *safari*, *vinhedos -> wine*) e pills temáticas rápidas.
-      - **Consultor Dedicado**: Seletor integrado à equipe cadastrada com auto-preenchimento de foto/avatar, cargo, WhatsApp e telefone oficial de suporte.
+      - **Governança de Canais de Atendimento**: O telefone fixo e WhatsApp vinculados à proposta são **estritamente institucionais e padronizados da agência / loja** (campos travados para leitura), garantindo que nenhum consultor informe números pessoais aos clientes. O e-mail profissional de atendimento é sempre o do consultor atribuído.
+      - **Consultor Dedicado**: Seletor integrado à equipe cadastrada com auto-preenchimento de foto/avatar via `getAvatarSvg` (suporte a animais do PaxFlow, fotos de perfil ou iniciais estilizadas), nome, e-mail profissional e preview visual imediato.
       - **Cotação e Datas**: Definição de moeda (BRL/USD/EUR), valor total e datas de ida e volta.
     - **3. Roteiro & Atividades**: Lista de dias sequenciais com cartões compactos de atividades (voos, hotéis, transfers, passeios e seguros) com badges visuais de localizador, companhia aérea e horários.
   - **Coluna da Direita (Live Preview em Tempo Real)**:
     - Prévia fidedigna da proposta de luxo com renderização instantânea a cada caractere digitado pelo consultor.
     - Seletores de visualização `Desktop` (largura total) e `Mobile` (simulador realista de smartphone).
-    - **Card do Consultor Dedicado**: Exibição do consultor com foto/iniciais, status online e botões funcionais de WhatsApp e ligação direta.
+    - **Card do Consultor Dedicado**: Exibição do consultor com foto/iniciais, status online e botões funcionais de WhatsApp e ligação direta direcionando sempre para a central oficial da loja.
 - **Barra Inferior Fixa de Salvamento & Aplicação**:
   - Posicionada permanentemente na base da tela com indicador reativo de status (`Modificações pendentes` com alerta âmbar pulsante vs `Todas as alterações salvas no banco` com selo verde de conformidade).
   - Botão de ação em destaque `Salvar Proposta`, com atalho de teclado global **`Ctrl+S`** / **`Cmd+S`**.
