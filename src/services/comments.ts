@@ -155,7 +155,7 @@ export class CommentsService {
           <textarea id="comment-textarea-${itemId}" rows="2" placeholder="Escreva uma nota... Use @ para mencionar colegas" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 text-xs font-medium resize-none custom-scrollbar"></textarea>
           
           <!-- Dropdown Autocomplete de Menções -->
-          <div id="mentions-dropdown-${itemId}" class="hidden absolute z-50 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl max-h-40 overflow-y-auto p-1.5 min-w-[200px] text-xs font-semibold"></div>
+          <div id="mentions-dropdown-${itemId}" class="hidden absolute z-[70] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl max-h-40 overflow-y-auto p-1.5 min-w-[200px] text-xs font-semibold"></div>
 
           <!-- Painel colapsado do Agendador (Posicionado ACIMA dos botões de ação) -->
           <div id="sched-panel-${itemId}" class="hidden border border-indigo-100 dark:border-indigo-900/40 rounded-xl p-3 bg-indigo-50/30 dark:bg-slate-900/30 space-y-2.5 transition-all duration-200">
@@ -398,7 +398,7 @@ export class CommentsService {
             });
 
             // Posicionar o dropdown logo acima ou abaixo do textarea
-            dropdown.className = "absolute z-50 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl max-h-40 overflow-y-auto p-1.5 min-w-[200px] text-xs font-semibold left-0 bottom-full mb-1";
+            dropdown.className = "absolute z-[70] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl max-h-40 overflow-y-auto p-1.5 min-w-[200px] text-xs font-semibold left-0 bottom-full mb-1";
             showDropdown();
           } else {
             hideDropdown();

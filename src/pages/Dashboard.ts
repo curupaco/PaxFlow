@@ -2246,7 +2246,7 @@ export class Dashboard {
                 </button>
 
                 <!-- Popover Menu Suspenso com Pills -->
-                <div id="popover-conf-filter" class="${this.showConfPopover ? 'block' : 'hidden'} absolute right-0 mt-2 w-72 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl z-50 p-3.5 space-y-3 animate-fade-in font-sans">
+                <div id="popover-conf-filter" class="${this.showConfPopover ? 'block' : 'hidden'} absolute right-0 mt-2 w-72 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl z-[70] p-3.5 space-y-3 animate-fade-in font-sans">
                   <div class="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
                     <span class="text-[11px] font-black uppercase text-slate-700 dark:text-slate-200 tracking-wider">Filtros de Conferência</span>
                     <button id="btn-conf-limpar" type="button" class="text-[10px] font-bold text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 transition cursor-pointer">

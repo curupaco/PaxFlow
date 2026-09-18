@@ -108,7 +108,7 @@ export class NewMessageModal {
               <input id="para-input" type="text" placeholder="${paraSelected.length === 0 ? 'Selecione destinatários...' : ''}" class="flex-grow bg-transparent border-none focus:ring-0 text-sm font-semibold text-slate-700 dark:text-slate-300 focus:outline-none min-w-[150px]">
             </div>
             <!-- Dropdown -->
-            <div id="para-dropdown" class="hidden absolute left-0 right-0 top-full mt-1 max-h-48 overflow-y-auto bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg z-50 py-1"></div>
+            <div id="para-dropdown" class="hidden absolute left-0 right-0 top-full mt-1 max-h-48 overflow-y-auto bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg z-[70] py-1"></div>
           </div>
 
           <!-- CC FIELD -->
@@ -119,7 +119,7 @@ export class NewMessageModal {
               <input id="cc-input" type="text" placeholder="${ccSelected.length === 0 ? 'Selecione cópias (opcional)...' : ''}" class="flex-grow bg-transparent border-none focus:ring-0 text-sm font-semibold text-slate-700 dark:text-slate-300 focus:outline-none min-w-[150px]">
             </div>
             <!-- Dropdown -->
-            <div id="cc-dropdown" class="hidden absolute left-0 right-0 top-full mt-1 max-h-48 overflow-y-auto bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg z-50 py-1"></div>
+            <div id="cc-dropdown" class="hidden absolute left-0 right-0 top-full mt-1 max-h-48 overflow-y-auto bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg z-[70] py-1"></div>
           </div>
 
           <!-- SUBJECT FIELD -->

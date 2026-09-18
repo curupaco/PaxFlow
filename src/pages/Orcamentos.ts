@@ -1105,7 +1105,7 @@ export class OrcamentosPage {
                   <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>
                 </button>
                 <!-- Popover Dropdown -->
-                <div id="quick-menu-${o.id}" class="hidden absolute right-0 top-6 z-30 w-48 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 py-1.5 text-xs text-slate-700 dark:text-slate-200">
+                <div id="quick-menu-${o.id}" class="hidden absolute right-0 top-6 z-[60] w-48 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 py-1.5 text-xs text-slate-700 dark:text-slate-200">
                   <div class="px-3 py-1 text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider border-b border-slate-100 dark:border-slate-700/50">Mudar Temperatura</div>
                   <button type="button" data-action="quick-temp" data-id="${o.id}" data-temp="Quente" class="w-full text-left px-3 py-1.5 hover:bg-rose-50 dark:hover:bg-rose-950/30 flex items-center gap-2 text-rose-600 dark:text-rose-400 font-semibold cursor-pointer">
                     🔥 Quente
@@ -1498,7 +1498,7 @@ export class OrcamentosPage {
 
       const dropdown = document.createElement('div');
       dropdown.id = 'cliente-autocomplete-dropdown';
-      dropdown.className = 'absolute left-0 right-0 z-50 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl max-h-60 overflow-y-auto mt-1 divide-y divide-slate-100 dark:divide-slate-700/50 animate-slide-up';
+      dropdown.className = 'absolute left-0 right-0 z-[70] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl max-h-60 overflow-y-auto mt-1 divide-y divide-slate-100 dark:divide-slate-700/50 animate-slide-up';
       
       matches.forEach(c => {
         const item = document.createElement('button');

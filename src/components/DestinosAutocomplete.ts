@@ -184,7 +184,7 @@ export class DestinosAutocomplete {
     }
 
     this.dropdown = document.createElement('div');
-    this.dropdown.className = 'absolute left-0 right-0 mt-1 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200/80 dark:border-slate-800/80 rounded-xl shadow-2xl z-50 transition-all duration-200 custom-scrollbar overflow-hidden';
+    this.dropdown.className = 'absolute left-0 right-0 mt-1 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200/80 dark:border-slate-800/80 rounded-xl shadow-2xl z-[70] transition-all duration-200 custom-scrollbar overflow-hidden';
     
     // Posicionamento absoluto sob o input
     this.dropdown.style.top = `${this.input.offsetTop + this.input.offsetHeight}px`;
