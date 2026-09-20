@@ -406,16 +406,6 @@ export class EditTravelModal {
             </h3>
             <p class="text-xs text-slate-400 dark:text-slate-400 font-semibold flex items-center flex-wrap gap-1">
               <span>Destino: <span class="font-bold text-slate-600 dark:text-slate-300">${v.destino}</span></span>
-              <span>&bull;</span>
-              <span class="flex items-center gap-1">
-                <span>Loc:</span>
-                ${v.codigo_localizador ? `
-                  <button type="button" class="btn-copy-loc inline-flex items-center gap-1 font-bold text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-400 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700 transition font-mono text-[11px] cursor-pointer active:scale-95" data-copy-loc="${v.codigo_localizador}" title="Clique para copiar o Localizador">
-                    <span>${v.codigo_localizador}</span>
-                    <span class="copy-icon text-[10px]">📋</span>
-                  </button>
-                ` : '<span class="font-bold text-slate-600 dark:text-slate-300">Sem LOC</span>'}
-              </span>
             </p>
           </div>
           <div class="flex items-center justify-between sm:justify-end gap-2 flex-wrap">
