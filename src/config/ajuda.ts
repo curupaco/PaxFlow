@@ -288,7 +288,7 @@ export const HELP_ITEMS: HelpItem[] = [
     id: 'markup',
     modulo: 'viagens',
     label: 'Markup',
-    description: 'Valor de lucro líquido adicionado sobre o custo fornecido pelos parceiros.',
+    description: 'Valor de rentabilidade adicionado sobre o custo fornecido pelos parceiros.',
     details: 'O Markup representa a margem agregada diretamente ao valor de custo do produto para compor o preço final de venda ao passageiro. No PaxFlow, ele é configurado individualmente em cada produto da viagem.'
   },
   {
@@ -510,9 +510,9 @@ export const HELP_ITEMS: HelpItem[] = [
   {
     id: 'relatorio-faturamento-lucratividade',
     modulo: 'clientes',
-    label: '💰 Relatório de Faturamento e Lucratividade (Filtros por Produto & RAV)',
-    description: 'Como auditar faturamento, taxas, comissão, markup, RAV líquido e lucratividade discriminados por produto ou RAV.',
-    details: 'Na aba **Faturamento e Lucratividade** (menu Relatórios -> Grupo 2: Financeiro & Auditoria):\n\n1. **Filtro de Produto / Linha de Serviço**: Permite selecionar um produto específico (ex: `AÉREO OPERADORA`, `HOTEL`, `CRUZEIRO`, etc.) ou a visão consolidada `Todos os Produtos`. Os cartões de topo (Faturamento Venda, Taxas, Comissão, Markup, RAV, Lucro Líquido e Margem Média) recalculam imediatamente apenas para os serviços filtrados.\n2. **Filtro de RAV (<> 0)**: Permite auditar receitas com Remuneração Adicional de Venda escolhendo `⚡ Apenas com RAV (RAV <> 0)`, visualizar itens sem RAV (`Sem RAV (RAV = 0)`) ou todos (`Todos`).\n3. **Cálculo de Lucro Líquido Real & Retenção de RAV**: O RAV exibido já aplica a retenção líquida de 12% (RAV * 0.88), e o lucro líquido real consolida comissões + markup + RAV líquido deduzindo eventuais descontos e prejuízos cadastrados.\n4. **Exportação CSV Dinâmica**: O botão "Exportar CSV" exporta a tabela respeitando rigorosamente os filtros de Produto e RAV ativos na tela.'
+    label: '💰 Relatório de Faturamento e Rentabilidade (Filtros por Produto & RAV)',
+    description: 'Como auditar faturamento, taxas, comissão, markup, RAV líquido e rentabilidade discriminados por produto ou RAV.',
+    details: 'Na aba **Faturamento e Rentabilidade** (menu Relatórios -> Grupo 2: Financeiro & Auditoria):\n\n1. **Filtro de Produto / Linha de Serviço**: Permite selecionar um produto específico (ex: `AÉREO OPERADORA`, `HOTEL`, `CRUZEIRO`, etc.) ou a visão consolidada `Todos os Produtos`. Os cartões de topo (Faturamento Venda, Taxas, Comissão, Markup, RAV, Rentabilidade Total e Margem Média) recalculam imediatamente apenas para os serviços filtrados.\n2. **Filtro de RAV (<> 0)**: Permite auditar receitas com Remuneração Adicional de Venda escolhendo `⚡ Apenas com RAV (RAV <> 0)`, visualizar itens sem RAV (`Sem RAV (RAV = 0)`) ou todos (`Todos`).\n3. **Cálculo de Rentabilidade Total Real & Retenção de RAV**: O RAV exibido já aplica a retenção líquida de 12% (RAV * 0.88), e a rentabilidade total real consolida comissões + markup + RAV líquido deduzindo eventuais descontos e prejuízos cadastrados.\n4. **Exportação CSV Dinâmica**: O botão "Exportar CSV" exporta a tabela respeitando rigorosamente os filtros de Produto e RAV ativos na tela.'
   },
   {
     id: 'relatorio-metas-campanhas',

@@ -965,7 +965,7 @@ export class RelatoriosPage {
             <p class="text-sm sm:text-base font-black text-amber-600 dark:text-amber-400 mt-1">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(ravTotal)}</p>
           </div>
           <div class="bg-slate-50 dark:bg-slate-950 p-3.5 rounded-2xl border border-slate-100 dark:border-slate-800 text-center">
-            <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">LUCRO LÍQUIDO</p>
+            <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">RENTABILIDADE TOTAL</p>
             <p class="text-sm sm:text-base font-black text-emerald-600 mt-1">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(lucroLiquidoReal)}</p>
           </div>
           <div class="bg-slate-50 dark:bg-slate-950 p-3.5 rounded-2xl border border-slate-100 dark:border-slate-800 text-center col-span-2 sm:col-span-1">
@@ -976,7 +976,7 @@ export class RelatoriosPage {
 
         <!-- Profit by category table -->
         <div class="space-y-3">
-          <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider">Lucratividade por Linha de Produto</h3>
+          <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider">Rentabilidade por Linha de Produto</h3>
           <div class="overflow-x-auto custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl">
             <table class="w-full text-left border-collapse text-xs font-semibold">
               <thead>
@@ -987,7 +987,7 @@ export class RelatoriosPage {
                   <th class="p-3">Comissão da Agência</th>
                   <th class="p-3">Markup</th>
                   <th class="p-3">RAV</th>
-                  <th class="p-3">Lucro Líquido</th>
+                  <th class="p-3">Rentabilidade Total</th>
                   <th class="p-3">Margem (%)</th>
                 </tr>
               </thead>
@@ -3279,7 +3279,7 @@ export class RelatoriosPage {
         csvContent += `"${a.title}";"${a.consultorNome}";"${a.dateStr}";"${a.arquivado ? 'Arquivado' : 'Ativo'}"\n`;
       });
     } else if (this.activeTab === 'faturamento') {
-      csvContent += 'Categoria;Faturamento Venda;Taxas;Comissão da Agência;Markup;RAV;Lucro Líquido;Margem (%)\n';
+      csvContent += 'Categoria;Faturamento Venda;Taxas;Comissão da Agência;Markup;RAV;Rentabilidade Total;Margem (%)\n';
       
       const resFat = calcularFaturamentoLucratividade(data.viagens, data.locPagamentos, {
         tipoProduto: this.filtroFaturamentoProduto,

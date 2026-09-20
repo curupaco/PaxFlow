@@ -287,7 +287,7 @@ describe('RelatoriosController - Faturamento e Lucratividade com Filtro de Produ
     expect(resultado.markupTotal).toBe(450);
     // RAV: 440 + 0 + 880 = 1320
     expect(resultado.ravTotal).toBe(1320);
-    // Lucro Líquido: (1500 + 450 + 1320) - 300 = 2970
+    // Rentabilidade Total: (1500 + 450 + 1320) - 300 = 2970
     expect(resultado.lucroLiquidoReal).toBe(2970);
     // Margem Média: round((2970 / 17700) * 100) = round(16.7796%) = 17%
     expect(resultado.margemMedia).toBe(17);

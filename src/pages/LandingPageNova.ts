@@ -645,7 +645,7 @@ export class LandingPageNova {
                   </span>
                   <h3 class="text-sm sm:text-lg font-black text-teal-200">Recompra Ativa &amp; Crescimento</h3>
                 </div>
-                <span class="text-[9px] sm:text-[10px] font-extrabold uppercase px-2 py-0.5 sm:px-2.5 sm:py-1 rounded bg-teal-500/20 text-teal-300">Mais Lucro</span>
+                <span class="text-[9px] sm:text-[10px] font-extrabold uppercase px-2 py-0.5 sm:px-2.5 sm:py-1 rounded bg-teal-500/20 text-teal-300">Mais Rentabilidade</span>
               </div>
               <ul class="space-y-3 sm:space-y-4 text-xs sm:text-sm text-slate-200 font-medium">
                 <li class="flex items-start gap-2.5 sm:gap-3">
