@@ -2549,8 +2549,8 @@ export class Dashboard {
     const totalAtivos = this.getActiveFiltersCount();
 
     return `
-      <div id="advanced-filters-panel" class="${this.showFiltersPanel ? 'block' : 'hidden'} bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800/80 px-6 py-5 transition-colors duration-200 shadow-sm animate-fadeIn">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div id="advanced-filters-panel" class="${this.showFiltersPanel ? 'flex' : 'hidden'} flex-col max-h-[75vh] md:max-h-[70vh] overflow-y-auto custom-scrollbar bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800/80 px-4 md:px-6 py-4 md:py-5 transition-colors duration-200 shadow-xl z-30 animate-fadeIn shrink-0">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6 pb-2">
 
           <!-- Bloco 1: Período & Datas -->
           <div class="bg-slate-50/70 dark:bg-slate-800/40 p-3.5 rounded-2xl border border-slate-200/60 dark:border-slate-800/60 space-y-3">
@@ -2963,8 +2963,8 @@ export class Dashboard {
 
         </div>
 
-        <!-- Rodapé de Ações do Painel -->
-        <div class="flex items-center justify-between gap-3 mt-5 pt-3.5 border-t border-slate-200/80 dark:border-slate-800">
+        <!-- Rodapé de Ações do Painel (Sticky) -->
+        <div class="sticky bottom-0 -mx-4 md:-mx-6 -mb-4 md:-mb-5 px-4 md:px-6 py-3 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200/80 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 mt-4 z-10 shadow-sm">
           <div class="text-xs text-slate-500 dark:text-slate-400 font-bold">
             ${totalAtivos > 0 ? `<span class="text-indigo-600 dark:text-indigo-400 font-extrabold">🎯 ${totalAtivos} critério(s) ativo(s)</span> &bull; Filtro reativo aplicado` : 'Nenhum filtro ativo selecionado'}
           </div>
