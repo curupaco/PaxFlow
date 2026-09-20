@@ -149,6 +149,11 @@ export class Dashboard {
   private advValorMax: number | null = null;
   private advRentabilidadeMin: number | null = null;
   private advRentabilidadeMax: number | null = null;
+  private advMarkupRav: 'todos' | 'com_markup' | 'com_rav' | 'com_markup_ou_rav' | 'com_markup_e_rav' | 'sem_markup_rav' = 'todos';
+  private advMarkupMin: number | null = null;
+  private advMarkupMax: number | null = null;
+  private advRavMin: number | null = null;
+  private advRavMax: number | null = null;
   private advAnexos: 'todos' | 'com_anexo' | 'sem_anexo' | 'com_voucher' | 'sem_voucher' = 'todos';
   private advSla: 'todos' | 'com_alerta' | 'sem_alerta' = 'todos';
   private advRiskScore: string[] = [];
@@ -579,6 +584,9 @@ export class Dashboard {
     if (this.advFornecedor.trim()) count++;
     if (this.advValorMin !== null || this.advValorMax !== null) count++;
     if (this.advRentabilidadeMin !== null || this.advRentabilidadeMax !== null) count++;
+    if (this.advMarkupRav !== 'todos') count++;
+    if (this.advMarkupMin !== null || this.advMarkupMax !== null) count++;
+    if (this.advRavMin !== null || this.advRavMax !== null) count++;
     if (this.advAnexos !== 'todos') count++;
     if (this.advSla !== 'todos') count++;
     count += this.advRiskScore.length;
@@ -2014,6 +2022,24 @@ export class Dashboard {
       if (this.advRentabilidadeMin !== null && valRent < this.advRentabilidadeMin) return false;
       if (this.advRentabilidadeMax !== null && valRent > this.advRentabilidadeMax) return false;
 
+      // 9.1. Filtros de Produtos com Markup e/ou RAV
+      const prodsMarkupRav = Array.isArray(v.produtos) ? v.produtos : [];
+      const totalTripMarkup = prodsMarkupRav.reduce((sum: number, p: any) => sum + (Number(p.markup) || 0), 0);
+      const totalTripRav = prodsMarkupRav.reduce((sum: number, p: any) => sum + (Number(p.rav) || 0), 0);
+
+      if (this.advMarkupRav !== 'todos') {
+        if (this.advMarkupRav === 'com_markup' && totalTripMarkup <= 0) return false;
+        if (this.advMarkupRav === 'com_rav' && totalTripRav <= 0) return false;
+        if (this.advMarkupRav === 'com_markup_ou_rav' && totalTripMarkup <= 0 && totalTripRav <= 0) return false;
+        if (this.advMarkupRav === 'com_markup_e_rav' && (totalTripMarkup <= 0 || totalTripRav <= 0)) return false;
+        if (this.advMarkupRav === 'sem_markup_rav' && (totalTripMarkup > 0 || totalTripRav > 0)) return false;
+      }
+
+      if (this.advMarkupMin !== null && totalTripMarkup < this.advMarkupMin) return false;
+      if (this.advMarkupMax !== null && totalTripMarkup > this.advMarkupMax) return false;
+      if (this.advRavMin !== null && totalTripRav < this.advRavMin) return false;
+      if (this.advRavMax !== null && totalTripRav > this.advRavMax) return false;
+
       // 10. Status de Arquivos & Anexos
       if (this.advAnexos !== 'todos') {
         const prods = Array.isArray(v.produtos) ? v.produtos : [];
@@ -2831,11 +2857,54 @@ export class Dashboard {
 
             <!-- Rentabilidade -->
             <div class="space-y-1">
-              <span class="text-[9px] font-extrabold text-slate-400 dark:text-slate-400 uppercase tracking-wider block">Rentabilidade (R$)</span>
+              <span class="text-[9px] font-extrabold text-slate-400 dark:text-slate-400 uppercase tracking-wider block">Rentabilidade Total (R$)</span>
               <div class="flex items-center gap-1.5">
                 <input id="filter-adv-rent-min" type="number" min="0" step="50" placeholder="Mínimo (R$)" value="${this.advRentabilidadeMin !== null ? this.advRentabilidadeMin : ''}" class="w-full text-xs font-semibold px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500" />
                 <span class="text-xs text-slate-400">a</span>
                 <input id="filter-adv-rent-max" type="number" min="0" step="50" placeholder="Máximo (R$)" value="${this.advRentabilidadeMax !== null ? this.advRentabilidadeMax : ''}" class="w-full text-xs font-semibold px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+              </div>
+            </div>
+
+            <!-- Filtro de Produtos com Markup & RAV -->
+            <div class="space-y-1.5 pt-1 border-t border-slate-200/50 dark:border-slate-700/50">
+              <span class="text-[9px] font-extrabold text-slate-400 dark:text-slate-400 uppercase tracking-wider block">💎 Markup & RAV por Produto</span>
+              <div class="flex flex-wrap gap-1">
+                ${[
+                  { id: 'todos', label: 'Todos' },
+                  { id: 'com_markup', label: '💎 Com Markup' },
+                  { id: 'com_rav', label: '⚡ Com RAV' },
+                  { id: 'com_markup_ou_rav', label: '💎⚡ Markup OU RAV' },
+                  { id: 'com_markup_e_rav', label: '✨ Ambos (MKP + RAV)' },
+                  { id: 'sem_markup_rav', label: '🚫 Sem MKP/RAV' }
+                ].map(opt => `
+                  <button type="button" class="pill-adv-markup-rav px-2 py-0.5 text-[10px] font-bold rounded-lg border transition cursor-pointer ${
+                    this.advMarkupRav === opt.id
+                      ? 'bg-purple-600 text-white border-purple-700 shadow-xs ring-1 ring-purple-400/30'
+                      : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-purple-400'
+                  }" data-markup-rav-val="${opt.id}">
+                    ${opt.label}
+                  </button>
+                `).join('')}
+              </div>
+
+              <!-- Faixas específicas de Markup e RAV -->
+              <div class="grid grid-cols-2 gap-2 pt-1">
+                <div class="space-y-0.5">
+                  <span class="text-[8px] font-bold text-slate-400 dark:text-slate-400 uppercase">Markup (R$)</span>
+                  <div class="flex items-center gap-1">
+                    <input id="filter-adv-markup-min" type="number" min="0" step="50" placeholder="Min" value="${this.advMarkupMin !== null ? this.advMarkupMin : ''}" class="w-full text-[11px] font-semibold px-2 py-1 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500" />
+                    <span class="text-[10px] text-slate-400">-</span>
+                    <input id="filter-adv-markup-max" type="number" min="0" step="50" placeholder="Max" value="${this.advMarkupMax !== null ? this.advMarkupMax : ''}" class="w-full text-[11px] font-semibold px-2 py-1 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500" />
+                  </div>
+                </div>
+                <div class="space-y-0.5">
+                  <span class="text-[8px] font-bold text-slate-400 dark:text-slate-400 uppercase">RAV (R$)</span>
+                  <div class="flex items-center gap-1">
+                    <input id="filter-adv-rav-min" type="number" min="0" step="50" placeholder="Min" value="${this.advRavMin !== null ? this.advRavMin : ''}" class="w-full text-[11px] font-semibold px-2 py-1 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-md focus:outline-none focus:ring-1 focus:ring-amber-500" />
+                    <span class="text-[10px] text-slate-400">-</span>
+                    <input id="filter-adv-rav-max" type="number" min="0" step="50" placeholder="Max" value="${this.advRavMax !== null ? this.advRavMax : ''}" class="w-full text-[11px] font-semibold px-2 py-1 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-md focus:outline-none focus:ring-1 focus:ring-amber-500" />
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -3002,6 +3071,29 @@ export class Dashboard {
       const minStr = this.advRentabilidadeMin !== null ? `R$ ${this.advRentabilidadeMin}` : 'R$ 0';
       const maxStr = this.advRentabilidadeMax !== null ? `R$ ${this.advRentabilidadeMax}` : '...';
       chips.push({ key: 'adv-rent', label: `Rentabilidade: ${minStr} a ${maxStr}`, icon: '📈' });
+    }
+
+    if (this.advMarkupRav !== 'todos') {
+      const labelMap: Record<string, string> = {
+        com_markup: 'Com Markup',
+        com_rav: 'Com RAV',
+        com_markup_ou_rav: 'Markup OU RAV',
+        com_markup_e_rav: 'Markup + RAV',
+        sem_markup_rav: 'Sem Markup/RAV'
+      };
+      chips.push({ key: 'adv-markup-rav', label: labelMap[this.advMarkupRav] || this.advMarkupRav, icon: '💎' });
+    }
+
+    if (this.advMarkupMin !== null || this.advMarkupMax !== null) {
+      const minStr = this.advMarkupMin !== null ? `R$ ${this.advMarkupMin}` : 'R$ 0';
+      const maxStr = this.advMarkupMax !== null ? `R$ ${this.advMarkupMax}` : '...';
+      chips.push({ key: 'adv-markup-val', label: `Markup: ${minStr} a ${maxStr}`, icon: '💎' });
+    }
+
+    if (this.advRavMin !== null || this.advRavMax !== null) {
+      const minStr = this.advRavMin !== null ? `R$ ${this.advRavMin}` : 'R$ 0';
+      const maxStr = this.advRavMax !== null ? `R$ ${this.advRavMax}` : '...';
+      chips.push({ key: 'adv-rav-val', label: `RAV: ${minStr} a ${maxStr}`, icon: '⚡' });
     }
 
     if (this.advAnexos !== 'todos') {
@@ -3582,6 +3674,23 @@ Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : '
         const valRent = Number(v.rentabilidade) || 0;
         if (this.advRentabilidadeMin !== null && valRent < this.advRentabilidadeMin) return false;
         if (this.advRentabilidadeMax !== null && valRent > this.advRentabilidadeMax) return false;
+
+        const prodsMarkupRav = Array.isArray(v.produtos) ? v.produtos : [];
+        const totalTripMarkup = prodsMarkupRav.reduce((sum: number, p: any) => sum + (Number(p.markup) || 0), 0);
+        const totalTripRav = prodsMarkupRav.reduce((sum: number, p: any) => sum + (Number(p.rav) || 0), 0);
+
+        if (this.advMarkupRav !== 'todos') {
+          if (this.advMarkupRav === 'com_markup' && totalTripMarkup <= 0) return false;
+          if (this.advMarkupRav === 'com_rav' && totalTripRav <= 0) return false;
+          if (this.advMarkupRav === 'com_markup_ou_rav' && totalTripMarkup <= 0 && totalTripRav <= 0) return false;
+          if (this.advMarkupRav === 'com_markup_e_rav' && (totalTripMarkup <= 0 || totalTripRav <= 0)) return false;
+          if (this.advMarkupRav === 'sem_markup_rav' && (totalTripMarkup > 0 || totalTripRav > 0)) return false;
+        }
+
+        if (this.advMarkupMin !== null && totalTripMarkup < this.advMarkupMin) return false;
+        if (this.advMarkupMax !== null && totalTripMarkup > this.advMarkupMax) return false;
+        if (this.advRavMin !== null && totalTripRav < this.advRavMin) return false;
+        if (this.advRavMax !== null && totalTripRav > this.advRavMax) return false;
         if (this.advAnexos !== 'todos') {
           const prods = Array.isArray(v.produtos) ? v.produtos : [];
           const hasVoucherGeral = !!v.voucher_geral_anexado;
@@ -3712,6 +3821,39 @@ Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : '
     inputRentMax?.addEventListener('change', () => {
       this.advRentabilidadeMax = inputRentMax.value ? Number(inputRentMax.value) : null;
       this.render();
+    });
+
+    // 3.4.1. Faixas de Markup e RAV
+    const inputMarkupMin = document.getElementById('filter-adv-markup-min') as HTMLInputElement;
+    inputMarkupMin?.addEventListener('change', () => {
+      this.advMarkupMin = inputMarkupMin.value ? Number(inputMarkupMin.value) : null;
+      this.render();
+    });
+    const inputMarkupMax = document.getElementById('filter-adv-markup-max') as HTMLInputElement;
+    inputMarkupMax?.addEventListener('change', () => {
+      this.advMarkupMax = inputMarkupMax.value ? Number(inputMarkupMax.value) : null;
+      this.render();
+    });
+    const inputRavMin = document.getElementById('filter-adv-rav-min') as HTMLInputElement;
+    inputRavMin?.addEventListener('change', () => {
+      this.advRavMin = inputRavMin.value ? Number(inputRavMin.value) : null;
+      this.render();
+    });
+    const inputRavMax = document.getElementById('filter-adv-rav-max') as HTMLInputElement;
+    inputRavMax?.addEventListener('change', () => {
+      this.advRavMax = inputRavMax.value ? Number(inputRavMax.value) : null;
+      this.render();
+    });
+
+    // 3.4.2. Pills de Produtos com Markup & RAV
+    this.container.querySelectorAll('.pill-adv-markup-rav').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const val = btn.getAttribute('data-markup-rav-val') as any;
+        if (val) {
+          this.advMarkupRav = val;
+          this.render();
+        }
+      });
     });
 
     // 3.5. Toggle Modo de Correspondência de Produtos (E vs OU)
@@ -3912,6 +4054,11 @@ Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : '
       this.advValorMax = null;
       this.advRentabilidadeMin = null;
       this.advRentabilidadeMax = null;
+      this.advMarkupRav = 'todos';
+      this.advMarkupMin = null;
+      this.advMarkupMax = null;
+      this.advRavMin = null;
+      this.advRavMax = null;
       this.advAnexos = 'todos';
       this.advSla = 'todos';
       this.advRiskScore = [];
@@ -3991,6 +4138,14 @@ Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : '
         } else if (filterKey === 'adv-rent') {
           this.advRentabilidadeMin = null;
           this.advRentabilidadeMax = null;
+        } else if (filterKey === 'adv-markup-rav') {
+          this.advMarkupRav = 'todos';
+        } else if (filterKey === 'adv-markup-val') {
+          this.advMarkupMin = null;
+          this.advMarkupMax = null;
+        } else if (filterKey === 'adv-rav-val') {
+          this.advRavMin = null;
+          this.advRavMax = null;
         } else if (filterKey === 'adv-anexos') {
           this.advAnexos = 'todos';
         } else if (filterKey === 'adv-sla') {
