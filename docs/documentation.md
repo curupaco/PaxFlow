@@ -155,7 +155,29 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 | Pós-Viagem | Cliente já viajou | Alerta crítico 🚨 se sem contato pós-viagem > N dias |
 | Reembolso Solicitado | Cancelamento ou devolução em andamento | — |
 
-- **Filtros Avançados por Período**: Painel colapsável de filtros que permite segmentar viagens por intervalos de data financeira, data de embarque ida e data de retorno volta.
+- **Painel de Filtros Avançados Combináveis & Resumo Financeiro em Tempo Real [UPDATED]**:
+  - Painel colapsável acionado pelo botão **🎛️ Avançado (N)** com contagem dinâmica de critérios ativos e rolagem interna suave (`overflow-y-auto max-h-[75vh]`).
+  - **Filtro de Produtos / Serviços Multi-Select**: Seleção combinada com alternância de operadores booleanos (**Contém TODOS [E]** vs **Contém QUALQUER [OU]**).
+  - **Filtros de Markup & RAV por Produto**: Pills reativas de categorização (`Todos`, `💎 Com Markup` [produtos com Markup > 0], `⚡ Com RAV` [produtos com RAV > 0], `💎⚡ Markup OU RAV` [produtos com Markup > 0 ou RAV > 0], `✨ Ambos (MKP + RAV)` [viagens que possuem simultaneamente produtos com Markup e RAV], `💼 Apenas Comissão` [comissão pura sem markup nem rav] e `🚫 Sem MKP/RAV`).
+  - **Filtro por Todos os Valores Financeiros do Produto (R$)**: Faixas numéricas combinadas de valor Mínimo e Máximo para cada componente dos produtos da viagem:
+    - **Tarifa Base Líquida (Custo)**: `advTarifaMin` e `advTarifaMax`.
+    - **Taxas de Embarque / Serviço**: `advTaxaMin` e `advTaxaMax`.
+    - **Comissão de Fornecedor**: `advComissaoMin` e `advComissaoMax`.
+    - **Markup / Margem Própria**: `advMarkupMin` e `advMarkupMax`.
+    - **RAV Bruta**: `advRavMin` e `advRavMax`.
+    - **Rentabilidade Líquida Total** (`Comissão + Markup + 88% RAV`): `advRentabilidadeMin` e `advRentabilidadeMax`.
+    - **Valor Total de Venda da Viagem**: `advValorMin` e `advValorMax`.
+  - **Consultores / Equipe**: Pills multi-select com avatar e iniciais dos membros da agência.
+  - **Formas de Recebimento**: Pills integradas aos lançamentos de `loc_pagamentos` (Pix, Cartão de Crédito, Boleto, Faturado, Dinheiro, TED).
+  - **Origem do Lead**: Pills categorizadas pelo canal de captação do cliente titular (WhatsApp, Instagram, Google, Indicação, etc.).
+  - **Faixas de Passageiros (PAX)**: Pills operacionais rápidas (1 PAX Individual, 2 PAX Casal, 3 a 5 PAX Família, 6+ PAX Grupo).
+  - **Tags e Classificações**: Multi-select consolidado de etiquetas da viagem e do cliente titular.
+  - **Período e Seletor de Competência**: Mês/Ano rápido (`YYYY-MM`) ou intervalo de datas personalizadas (Criação, Financeiro, Ida, Volta).
+  - **Destinos & Fornecedores**: Multi-select de destinos turísticos e busca textual instantânea por fornecedor, consolidadora ou cia aérea.
+  - **Vouchers / Anexos**: Tri-state para viagens com ou sem documentos emitidos.
+  - **Barra de Resumo Financeiro Reativa**: Atualiza em tempo real exibindo Faturamento Total, Rentabilidade Total, Ticket Médio e Quantidade de Viagens do recorte atual.
+  - **Chips de Filtros Ativos**: Tags visuais abaixo das abas com remoção individual (`✕`) e limpeza total em 1 clique (`Limpar Todos`).
+  - **Exportação CSV Formatada para Excel Brasil**: Exporta com fidelidade o recorte filtrado em UTF-8 com BOM e delimitador `;`.
 - **Abas de Status Rápidas**: Seletores de fase no topo da lista com contadores consolidados de viagens de forma dinâmica.
 - **Fácil Atualização de Fases**: Dropdown inline para transição rápida de status para cada linha de viagem cadastrada.
 - **SLAs Visuais**: Indicadores icônicos na tabela (🟢 Normal, ⚠️ Pré-Embarque Próximo, 🚨 Pós-Viagem Pendente, ✅ Reembolso Finalizado) baseados nos prazos de alerta.

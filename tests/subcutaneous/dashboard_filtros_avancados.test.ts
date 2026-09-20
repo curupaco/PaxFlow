@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 
 describe('Dashboard - Painel de Filtros Avançados Subcutâneo', () => {
-  // Mock dataset de viagens operacionais com produtos, valores, markup, rav, pagamentos, origens, pax e tags
+  // Mock dataset de viagens operacionais com produtos, valores financeiros completos, pagamentos, origens, pax e tags
   const mockViagens = [
     {
       id: 'viagem-1',
@@ -14,15 +14,15 @@ describe('Dashboard - Painel de Filtros Avançados Subcutâneo', () => {
       data_ida: '2026-02-15',
       data_volta: '2026-02-25',
       valor_total: 5500,
-      rentabilidade: 1200,
+      rentabilidade: 550,
       status: 'pos_venda',
       voucher_geral_anexado: true,
       tags: ['Família', 'Resort'],
       passageiros: [{ nome: 'Carlos Eduardo' }, { nome: 'Carla Silva' }, { nome: 'Lucas Silva' }, { nome: 'Ana Silva' }],
       cliente: { nome: 'Carlos Eduardo', documento: '12345678900', lead_origin: 'Instagram', classificacoes: ['VIP'] },
       produtos: [
-        { id: 'p1', tipo: 'Aéreo Facial', fornecedor: 'LATAM', valor_venda: 3000, markup: 200, rav: 0, comissao: 100 },
-        { id: 'p2', tipo: 'Carro', fornecedor: 'Movida', valor_venda: 2500, markup: 0, rav: 0, comissao: 250 }
+        { id: 'p1', tipo: 'Aéreo Facial', fornecedor: 'LATAM', valor_venda: 3000, tarifa: 2500, taxa: 200, markup: 200, rav: 0, comissao: 100 },
+        { id: 'p2', tipo: 'Carro', fornecedor: 'Movida', valor_venda: 2500, tarifa: 2200, taxa: 50, markup: 0, rav: 0, comissao: 250 }
       ],
       pagamentos: [
         { forma_recebimento_id: 'pix', forma_nome: 'Pix', valor: 3000 },
@@ -40,14 +40,14 @@ describe('Dashboard - Painel de Filtros Avançados Subcutâneo', () => {
       data_ida: '2026-03-01',
       data_volta: '2026-03-10',
       valor_total: 1800,
-      rentabilidade: 350,
+      rentabilidade: 282,
       status: 'fechado',
       voucher_geral_anexado: false,
       tags: ['Lua de Mel'],
       passageiros: [{ nome: 'Mariana Lima' }, { nome: 'Pedro Lima' }],
       cliente: { nome: 'Mariana Lima', documento: '98765432100', lead_origin: 'Indicação', classificacoes: ['Casal'] },
       produtos: [
-        { id: 'p3', tipo: 'Aéreo Facial', fornecedor: 'Air France', valor_venda: 1800, markup: 0, rav: 150, comissao: 150 }
+        { id: 'p3', tipo: 'Aéreo Facial', fornecedor: 'Air France', valor_venda: 1800, tarifa: 1400, taxa: 100, markup: 0, rav: 150, comissao: 150 }
       ],
       pagamentos: [
         { forma_recebimento_id: 'boleto', forma_nome: 'Boleto', valor: 1800 }
@@ -64,15 +64,15 @@ describe('Dashboard - Painel de Filtros Avançados Subcutâneo', () => {
       data_ida: '2026-05-10',
       data_volta: '2026-05-20',
       valor_total: 8900,
-      rentabilidade: 2100,
+      rentabilidade: 1554,
       status: 'pre_embarque',
       voucher_geral_anexado: false,
       tags: ['Corporativo', 'VIP'],
       passageiros: [{ nome: 'Roberto Silva' }],
       cliente: { nome: 'Roberto Silva', documento: '11122233344', lead_origin: 'Google', classificacoes: ['Corporativo'] },
       produtos: [
-        { id: 'p4', tipo: 'Hotel', fornecedor: 'Resort Cancún Palace', valor_venda: 6000, markup: 500, rav: 300, comissao: 400 },
-        { id: 'p5', tipo: 'Carro', fornecedor: 'Hertz', valor_venda: 2900, markup: 100, rav: 0, comissao: 290 }
+        { id: 'p4', tipo: 'Hotel', fornecedor: 'Resort Cancún Palace', valor_venda: 6000, tarifa: 4500, taxa: 300, markup: 500, rav: 300, comissao: 400 },
+        { id: 'p5', tipo: 'Carro', fornecedor: 'Hertz', valor_venda: 2900, tarifa: 2400, taxa: 110, markup: 100, rav: 0, comissao: 290 }
       ],
       pagamentos: [
         { forma_recebimento_id: 'faturado', forma_nome: 'Faturado', valor: 8900 }
@@ -89,21 +89,86 @@ describe('Dashboard - Painel de Filtros Avançados Subcutâneo', () => {
       data_ida: '2026-07-01',
       data_volta: '2026-07-10',
       valor_total: 15000,
-      rentabilidade: 3200,
+      rentabilidade: 1500,
       status: 'fechado',
       voucher_geral_anexado: true,
       tags: ['Grupo Disney', 'Aventura'],
       passageiros: [{ nome: 'P1' }, { nome: 'P2' }, { nome: 'P3' }, { nome: 'P4' }, { nome: 'P5' }, { nome: 'P6' }, { nome: 'P7' }],
       cliente: { nome: 'Grupo Neve 2026', documento: '55566677788', lead_origin: 'WhatsApp', classificacoes: ['Grupo'] },
       produtos: [
-        { id: 'p6', tipo: 'Aéreo Operadora', fornecedor: 'Aerolíneas Argentinas', valor_venda: 9000, markup: 0, rav: 0, comissao: 900 },
-        { id: 'p7', tipo: 'Hotel', fornecedor: 'Llao Llao Resort', valor_venda: 6000, markup: 0, rav: 0, comissao: 600 }
+        { id: 'p6', tipo: 'Aéreo Operadora', fornecedor: 'Aerolíneas Argentinas', valor_venda: 9000, tarifa: 7500, taxa: 600, markup: 0, rav: 0, comissao: 900 },
+        { id: 'p7', tipo: 'Hotel', fornecedor: 'Llao Llao Resort', valor_venda: 6000, tarifa: 5000, taxa: 400, markup: 0, rav: 0, comissao: 600 }
       ],
       pagamentos: [
         { forma_recebimento_id: 'pix', forma_nome: 'Pix', valor: 15000 }
       ]
     }
   ];
+
+  function parseFinancialNumber(val: any): number {
+    if (val === null || val === undefined || val === '') return 0;
+    if (typeof val === 'number') return isNaN(val) ? 0 : val;
+    if (typeof val === 'string') {
+      const cleaned = val.replace(/\s/g, '').replace('R$', '').trim();
+      if (cleaned.includes(',') && cleaned.includes('.')) {
+        return parseFloat(cleaned.replace(/\./g, '').replace(',', '.')) || 0;
+      }
+      if (cleaned.includes(',')) {
+        return parseFloat(cleaned.replace(',', '.')) || 0;
+      }
+      return parseFloat(cleaned) || 0;
+    }
+    return 0;
+  }
+
+  function getTripFinancialTotals(v: any) {
+    const prods = Array.isArray(v.produtos) ? v.produtos : [];
+    let totalTarifa = 0;
+    let totalTaxa = 0;
+    let totalComissao = 0;
+    let totalMarkup = 0;
+    let totalRav = 0;
+    let totalVenda = 0;
+    let totalRentabilidade = 0;
+
+    if (prods.length > 0) {
+      prods.forEach((p: any) => {
+        const tarifa = parseFinancialNumber(p.tarifa);
+        const taxa = parseFinancialNumber(p.taxa);
+        const comissao = parseFinancialNumber(p.comissao);
+        const markup = parseFinancialNumber(p.markup);
+        const rav = parseFinancialNumber(p.rav);
+        const venda = parseFinancialNumber(p.valor_venda);
+
+        totalTarifa += tarifa;
+        totalTaxa += taxa;
+        totalComissao += comissao;
+        totalMarkup += markup;
+        totalRav += rav;
+        totalVenda += venda;
+        totalRentabilidade += comissao + markup + (rav * 0.88);
+      });
+
+      if (totalVenda === 0) {
+        totalVenda = parseFinancialNumber(v.valor_total);
+      }
+    } else {
+      totalVenda = parseFinancialNumber(v.valor_total);
+      totalRentabilidade = parseFinancialNumber(v.rentabilidade);
+    }
+
+    return {
+      totalVenda,
+      totalTarifa,
+      totalTaxa,
+      totalComissao,
+      totalMarkup,
+      totalRav,
+      totalRavLiquido: totalRav * 0.88,
+      totalRentabilidade,
+      hasProdutos: prods.length > 0
+    };
+  }
 
   // Função pura de filtragem subcutânea espelhando as regras implementadas no Dashboard
   function filtrarViagensSubcutaneo(viagens: any[], filtros: {
@@ -113,13 +178,19 @@ describe('Dashboard - Painel de Filtros Avançados Subcutâneo', () => {
     advFornecedor?: string;
     advValorMin?: number | null;
     advValorMax?: number | null;
-    advRentabilidadeMin?: number | null;
-    advRentabilidadeMax?: number | null;
-    advMarkupRav?: 'todos' | 'com_markup' | 'com_rav' | 'com_markup_ou_rav' | 'com_markup_e_rav' | 'sem_markup_rav';
+    advTarifaMin?: number | null;
+    advTarifaMax?: number | null;
+    advTaxaMin?: number | null;
+    advTaxaMax?: number | null;
+    advComissaoMin?: number | null;
+    advComissaoMax?: number | null;
     advMarkupMin?: number | null;
     advMarkupMax?: number | null;
     advRavMin?: number | null;
     advRavMax?: number | null;
+    advRentabilidadeMin?: number | null;
+    advRentabilidadeMax?: number | null;
+    advMarkupRav?: 'todos' | 'com_markup' | 'com_rav' | 'com_markup_ou_rav' | 'com_markup_e_rav' | 'apenas_comissao' | 'sem_markup_rav';
     advAnexos?: 'todos' | 'com_anexo' | 'sem_anexo' | 'com_voucher' | 'sem_voucher';
     advMesAno?: string;
     advConsultores?: string[];
@@ -141,13 +212,19 @@ describe('Dashboard - Painel de Filtros Avançados Subcutâneo', () => {
       advFornecedor = '',
       advValorMin = null,
       advValorMax = null,
-      advRentabilidadeMin = null,
-      advRentabilidadeMax = null,
-      advMarkupRav = 'todos',
+      advTarifaMin = null,
+      advTarifaMax = null,
+      advTaxaMin = null,
+      advTaxaMax = null,
+      advComissaoMin = null,
+      advComissaoMax = null,
       advMarkupMin = null,
       advMarkupMax = null,
       advRavMin = null,
       advRavMax = null,
+      advRentabilidadeMin = null,
+      advRentabilidadeMax = null,
+      advMarkupRav = 'todos',
       advAnexos = 'todos',
       advMesAno = '',
       advConsultores = [],
@@ -213,32 +290,33 @@ describe('Dashboard - Painel de Filtros Avançados Subcutâneo', () => {
         if (!prods.some((p: any) => (p.fornecedor || '').toLowerCase().includes(fornQ))) return false;
       }
 
-      // Valores Financeiros
-      const valTotal = Number(v.valor_total) || 0;
-      if (advValorMin !== null && valTotal < advValorMin) return false;
-      if (advValorMax !== null && valTotal > advValorMax) return false;
+      // Valores Financeiros dos Produtos & Viagem
+      const totals = getTripFinancialTotals(v);
 
-      const valRent = Number(v.rentabilidade) || 0;
-      if (advRentabilidadeMin !== null && valRent < advRentabilidadeMin) return false;
-      if (advRentabilidadeMax !== null && valRent > advRentabilidadeMax) return false;
+      if (advValorMin !== null && totals.totalVenda < advValorMin) return false;
+      if (advValorMax !== null && totals.totalVenda > advValorMax) return false;
+      if (advTarifaMin !== null && totals.totalTarifa < advTarifaMin) return false;
+      if (advTarifaMax !== null && totals.totalTarifa > advTarifaMax) return false;
+      if (advTaxaMin !== null && totals.totalTaxa < advTaxaMin) return false;
+      if (advTaxaMax !== null && totals.totalTaxa > advTaxaMax) return false;
+      if (advComissaoMin !== null && totals.totalComissao < advComissaoMin) return false;
+      if (advComissaoMax !== null && totals.totalComissao > advComissaoMax) return false;
+      if (advMarkupMin !== null && totals.totalMarkup < advMarkupMin) return false;
+      if (advMarkupMax !== null && totals.totalMarkup > advMarkupMax) return false;
+      if (advRavMin !== null && totals.totalRav < advRavMin) return false;
+      if (advRavMax !== null && totals.totalRav > advRavMax) return false;
+      if (advRentabilidadeMin !== null && totals.totalRentabilidade < advRentabilidadeMin) return false;
+      if (advRentabilidadeMax !== null && totals.totalRentabilidade > advRentabilidadeMax) return false;
 
-      // Produtos com Markup & RAV
-      const prodsMarkupRav = Array.isArray(v.produtos) ? v.produtos : [];
-      const totalTripMarkup = prodsMarkupRav.reduce((sum: number, p: any) => sum + (Number(p.markup) || 0), 0);
-      const totalTripRav = prodsMarkupRav.reduce((sum: number, p: any) => sum + (Number(p.rav) || 0), 0);
-
+      // Presença de Margens de Rentabilidade
       if (advMarkupRav !== 'todos') {
-        if (advMarkupRav === 'com_markup' && totalTripMarkup <= 0) return false;
-        if (advMarkupRav === 'com_rav' && totalTripRav <= 0) return false;
-        if (advMarkupRav === 'com_markup_ou_rav' && totalTripMarkup <= 0 && totalTripRav <= 0) return false;
-        if (advMarkupRav === 'com_markup_e_rav' && (totalTripMarkup <= 0 || totalTripRav <= 0)) return false;
-        if (advMarkupRav === 'sem_markup_rav' && (totalTripMarkup > 0 || totalTripRav > 0)) return false;
+        if (advMarkupRav === 'com_markup' && totals.totalMarkup <= 0) return false;
+        if (advMarkupRav === 'com_rav' && totals.totalRav <= 0) return false;
+        if (advMarkupRav === 'com_markup_ou_rav' && totals.totalMarkup <= 0 && totals.totalRav <= 0) return false;
+        if (advMarkupRav === 'com_markup_e_rav' && (totals.totalMarkup <= 0 || totals.totalRav <= 0)) return false;
+        if (advMarkupRav === 'apenas_comissao' && (totals.totalComissao <= 0 || totals.totalMarkup > 0 || totals.totalRav > 0)) return false;
+        if (advMarkupRav === 'sem_markup_rav' && (totals.totalMarkup > 0 || totals.totalRav > 0)) return false;
       }
-
-      if (advMarkupMin !== null && totalTripMarkup < advMarkupMin) return false;
-      if (advMarkupMax !== null && totalTripMarkup > advMarkupMax) return false;
-      if (advRavMin !== null && totalTripRav < advRavMin) return false;
-      if (advRavMax !== null && totalTripRav > advRavMax) return false;
 
       // Anexos & Vouchers
       if (advAnexos !== 'todos') {
@@ -432,60 +510,67 @@ describe('Dashboard - Painel de Filtros Avançados Subcutâneo', () => {
     expect(resultado[0].id).toBe('viagem-3');
   });
 
-  // 10. Teste de Viagens Sem Markup nem RAV (sem_markup_rav)
-  it('deve filtrar viagens que NÃO possuem nem Markup nem RAV (apenas comissão)', () => {
+  // 10. Teste de Viagens com Apenas Comissão (apenas_comissao)
+  it('deve filtrar viagens que possuem apenas comissão pura (sem markup nem rav)', () => {
     // Setup
-    const filtros = { advMarkupRav: 'sem_markup_rav' as const };
+    const filtros = { advMarkupRav: 'apenas_comissao' as const };
 
     // Action
     const resultado = filtrarViagensSubcutaneo(mockViagens, filtros);
 
-    // Assert (Apenas viagem-4 não tem markup nem rav)
+    // Assert (Apenas viagem-4 tem comissao 1500 e zero markup/rav)
     expect(resultado).toHaveLength(1);
     expect(resultado[0].id).toBe('viagem-4');
   });
 
-  // 11. Teste de Faixas Numéricas de Markup e RAV (advMarkupMin / advRavMin)
-  it('deve filtrar viagens por faixas numéricas de Markup e RAV', () => {
-    // Setup: Viagens com Markup >= R$ 500
-    const filtrosMarkupAlto = { advMarkupMin: 500 };
-    // Setup: Viagens com RAV entre R$ 100 e R$ 200
-    const filtrosRavFaixa = { advRavMin: 100, advRavMax: 200 };
+  // 11. Teste de Filtros por Todos os Valores Financeiros do Produto (Tarifa, Taxa, Comissão)
+  it('deve filtrar viagens por faixas de Tarifa Base, Taxas e Comissão dos produtos', () => {
+    // Setup: Viagens com Tarifa total > R$ 10.000
+    const filtrosTarifaAlta = { advTarifaMin: 10000 };
+    // Setup: Viagens com Taxa total entre R$ 300 e R$ 500
+    const filtrosTaxaFaixa = { advTaxaMin: 300, advTaxaMax: 500 };
+    // Setup: Viagens com Comissão total >= R$ 1.000
+    const filtrosComissaoAlta = { advComissaoMin: 1000 };
 
     // Action
-    const resMarkup = filtrarViagensSubcutaneo(mockViagens, filtrosMarkupAlto);
-    const resRav = filtrarViagensSubcutaneo(mockViagens, filtrosRavFaixa);
+    const resTarifa = filtrarViagensSubcutaneo(mockViagens, filtrosTarifaAlta);
+    const resTaxa = filtrarViagensSubcutaneo(mockViagens, filtrosTaxaFaixa);
+    const resComissao = filtrarViagensSubcutaneo(mockViagens, filtrosComissaoAlta);
 
     // Assert
-    expect(resMarkup).toHaveLength(1);
-    expect(resMarkup[0].id).toBe('viagem-3'); // Markup total = 600
+    expect(resTarifa).toHaveLength(1);
+    expect(resTarifa[0].id).toBe('viagem-4'); // Tarifa = 12500
 
-    expect(resRav).toHaveLength(1);
-    expect(resRav[0].id).toBe('viagem-2'); // RAV total = 150
+    expect(resTaxa).toHaveLength(1);
+    expect(resTaxa[0].id).toBe('viagem-3'); // Taxa = 410
+
+    expect(resComissao).toHaveLength(1);
+    expect(resComissao[0].id).toBe('viagem-4'); // Comissao = 1500
   });
 
-  // 12. Teste de Combinação Extrema com Resumo Financeiro
-  it('deve combinar múltiplos critérios novos (Consultor Ana + Origem Instagram + 3-5 PAX + Tag VIP + Com Markup)', () => {
-    // Setup
+  // 12. Teste de Combinação Extrema com Todos os Valores Financeiros
+  it('deve combinar múltiplos critérios financeiros e operacionais com exatidão', () => {
+    // Setup: Consultor Ana + Com Markup + Tarifa Min 4000 + Venda Min 5000
     const filtros = {
       advConsultores: ['user-ana'],
-      advOrigensLead: ['Instagram'],
-      advPaxFaixas: ['3-5'],
-      advTags: ['VIP'],
-      advMarkupRav: 'com_markup' as const
+      advMarkupRav: 'com_markup' as const,
+      advTarifaMin: 4000,
+      advValorMin: 5000
     };
 
     // Action
     const filtrados = filtrarViagensSubcutaneo(mockViagens, filtros);
-    const totalVendas = filtrados.reduce((acc, v) => acc + (v.valor_total || 0), 0);
-    const rentabilidadeTotal = filtrados.reduce((acc, v) => acc + (v.rentabilidade || 0), 0);
-    const ticketMedio = filtrados.length > 0 ? totalVendas / filtrados.length : 0;
+    const totals = getTripFinancialTotals(filtrados[0]);
 
     // Assert
     expect(filtrados).toHaveLength(1);
     expect(filtrados[0].id).toBe('viagem-1');
-    expect(totalVendas).toBe(5500);
-    expect(rentabilidadeTotal).toBe(1200);
-    expect(ticketMedio).toBe(5500);
+    expect(totals.totalVenda).toBe(5500);
+    expect(totals.totalTarifa).toBe(4700);
+    expect(totals.totalTaxa).toBe(250);
+    expect(totals.totalComissao).toBe(350);
+    expect(totals.totalMarkup).toBe(200);
+    expect(totals.totalRav).toBe(0);
+    expect(totals.totalRentabilidade).toBe(550);
   });
 });

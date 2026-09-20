@@ -147,13 +147,19 @@ export class Dashboard {
   private advFornecedor: string = '';
   private advValorMin: number | null = null;
   private advValorMax: number | null = null;
-  private advRentabilidadeMin: number | null = null;
-  private advRentabilidadeMax: number | null = null;
-  private advMarkupRav: 'todos' | 'com_markup' | 'com_rav' | 'com_markup_ou_rav' | 'com_markup_e_rav' | 'sem_markup_rav' = 'todos';
+  private advTarifaMin: number | null = null;
+  private advTarifaMax: number | null = null;
+  private advTaxaMin: number | null = null;
+  private advTaxaMax: number | null = null;
+  private advComissaoMin: number | null = null;
+  private advComissaoMax: number | null = null;
   private advMarkupMin: number | null = null;
   private advMarkupMax: number | null = null;
   private advRavMin: number | null = null;
   private advRavMax: number | null = null;
+  private advRentabilidadeMin: number | null = null;
+  private advRentabilidadeMax: number | null = null;
+  private advMarkupRav: 'todos' | 'com_markup' | 'com_rav' | 'com_markup_ou_rav' | 'com_markup_e_rav' | 'apenas_comissao' | 'sem_markup_rav' = 'todos';
   private advAnexos: 'todos' | 'com_anexo' | 'sem_anexo' | 'com_voucher' | 'sem_voucher' = 'todos';
   private advSla: 'todos' | 'com_alerta' | 'sem_alerta' = 'todos';
   private advRiskScore: string[] = [];
@@ -173,6 +179,87 @@ export class Dashboard {
 
   constructor(container: HTMLElement) {
     this.container = container;
+  }
+
+  /**
+   * Converte com segurança qualquer valor monetário (número ou string formatada pt-BR) para float
+   */
+  private parseFinancialNumber(val: any): number {
+    if (val === null || val === undefined || val === '') return 0;
+    if (typeof val === 'number') return isNaN(val) ? 0 : val;
+    if (typeof val === 'string') {
+      const cleaned = val.replace(/\s/g, '').replace('R$', '').trim();
+      if (cleaned.includes(',') && cleaned.includes('.')) {
+        return parseFloat(cleaned.replace(/\./g, '').replace(',', '.')) || 0;
+      }
+      if (cleaned.includes(',')) {
+        return parseFloat(cleaned.replace(',', '.')) || 0;
+      }
+      return parseFloat(cleaned) || 0;
+    }
+    return 0;
+  }
+
+  /**
+   * Consolida todos os valores financeiros dos produtos e da viagem de forma padronizada
+   */
+  private getTripFinancialTotals(v: any): {
+    totalVenda: number;
+    totalTarifa: number;
+    totalTaxa: number;
+    totalComissao: number;
+    totalMarkup: number;
+    totalRav: number;
+    totalRavLiquido: number;
+    totalRentabilidade: number;
+    hasProdutos: boolean;
+  } {
+    const prods = Array.isArray(v.produtos) ? v.produtos : [];
+    let totalTarifa = 0;
+    let totalTaxa = 0;
+    let totalComissao = 0;
+    let totalMarkup = 0;
+    let totalRav = 0;
+    let totalVenda = 0;
+    let totalRentabilidade = 0;
+
+    if (prods.length > 0) {
+      prods.forEach((p: any) => {
+        const tarifa = this.parseFinancialNumber(p.tarifa);
+        const taxa = this.parseFinancialNumber(p.taxa);
+        const comissao = this.parseFinancialNumber(p.comissao);
+        const markup = this.parseFinancialNumber(p.markup);
+        const rav = this.parseFinancialNumber(p.rav);
+        const venda = this.parseFinancialNumber(p.valor_venda);
+
+        totalTarifa += tarifa;
+        totalTaxa += taxa;
+        totalComissao += comissao;
+        totalMarkup += markup;
+        totalRav += rav;
+        totalVenda += venda;
+        totalRentabilidade += comissao + markup + (rav * 0.88);
+      });
+
+      if (totalVenda === 0) {
+        totalVenda = this.parseFinancialNumber(v.valor_total);
+      }
+    } else {
+      totalVenda = this.parseFinancialNumber(v.valor_total);
+      totalRentabilidade = this.parseFinancialNumber(v.rentabilidade);
+    }
+
+    return {
+      totalVenda,
+      totalTarifa,
+      totalTaxa,
+      totalComissao,
+      totalMarkup,
+      totalRav,
+      totalRavLiquido: totalRav * 0.88,
+      totalRentabilidade,
+      hasProdutos: prods.length > 0
+    };
   }
 
   private getFormattedCurrentMonthLabel(): string {
@@ -583,10 +670,13 @@ export class Dashboard {
     count += this.advDestinos.length;
     if (this.advFornecedor.trim()) count++;
     if (this.advValorMin !== null || this.advValorMax !== null) count++;
-    if (this.advRentabilidadeMin !== null || this.advRentabilidadeMax !== null) count++;
-    if (this.advMarkupRav !== 'todos') count++;
+    if (this.advTarifaMin !== null || this.advTarifaMax !== null) count++;
+    if (this.advTaxaMin !== null || this.advTaxaMax !== null) count++;
+    if (this.advComissaoMin !== null || this.advComissaoMax !== null) count++;
     if (this.advMarkupMin !== null || this.advMarkupMax !== null) count++;
     if (this.advRavMin !== null || this.advRavMax !== null) count++;
+    if (this.advRentabilidadeMin !== null || this.advRentabilidadeMax !== null) count++;
+    if (this.advMarkupRav !== 'todos') count++;
     if (this.advAnexos !== 'todos') count++;
     if (this.advSla !== 'todos') count++;
     count += this.advRiskScore.length;
@@ -2012,33 +2102,46 @@ export class Dashboard {
         if (!matchesForn) return false;
       }
 
-      // 8. Faixa de Valor de Venda
-      const valTotal = Number(v.valor_total) || 0;
-      if (this.advValorMin !== null && valTotal < this.advValorMin) return false;
-      if (this.advValorMax !== null && valTotal > this.advValorMax) return false;
+      // 8. Filtros de Valores Financeiros Completos dos Produtos & Viagem
+      const finTotals = this.getTripFinancialTotals(v);
 
-      // 9. Faixa de Rentabilidade
-      const valRent = Number(v.rentabilidade) || 0;
-      if (this.advRentabilidadeMin !== null && valRent < this.advRentabilidadeMin) return false;
-      if (this.advRentabilidadeMax !== null && valRent > this.advRentabilidadeMax) return false;
+      // 8.1. Valor Total de Venda
+      if (this.advValorMin !== null && finTotals.totalVenda < this.advValorMin) return false;
+      if (this.advValorMax !== null && finTotals.totalVenda > this.advValorMax) return false;
 
-      // 9.1. Filtros de Produtos com Markup e/ou RAV
-      const prodsMarkupRav = Array.isArray(v.produtos) ? v.produtos : [];
-      const totalTripMarkup = prodsMarkupRav.reduce((sum: number, p: any) => sum + (Number(p.markup) || 0), 0);
-      const totalTripRav = prodsMarkupRav.reduce((sum: number, p: any) => sum + (Number(p.rav) || 0), 0);
+      // 8.2. Tarifa Base / Custo
+      if (this.advTarifaMin !== null && finTotals.totalTarifa < this.advTarifaMin) return false;
+      if (this.advTarifaMax !== null && finTotals.totalTarifa > this.advTarifaMax) return false;
 
+      // 8.3. Taxas / Impostos
+      if (this.advTaxaMin !== null && finTotals.totalTaxa < this.advTaxaMin) return false;
+      if (this.advTaxaMax !== null && finTotals.totalTaxa > this.advTaxaMax) return false;
+
+      // 8.4. Comissão da Agência
+      if (this.advComissaoMin !== null && finTotals.totalComissao < this.advComissaoMin) return false;
+      if (this.advComissaoMax !== null && finTotals.totalComissao > this.advComissaoMax) return false;
+
+      // 8.5. Markup
+      if (this.advMarkupMin !== null && finTotals.totalMarkup < this.advMarkupMin) return false;
+      if (this.advMarkupMax !== null && finTotals.totalMarkup > this.advMarkupMax) return false;
+
+      // 8.6. RAV
+      if (this.advRavMin !== null && finTotals.totalRav < this.advRavMin) return false;
+      if (this.advRavMax !== null && finTotals.totalRav > this.advRavMax) return false;
+
+      // 8.7. Rentabilidade Líquida Total (Comissão + Markup + RAV * 0.88)
+      if (this.advRentabilidadeMin !== null && finTotals.totalRentabilidade < this.advRentabilidadeMin) return false;
+      if (this.advRentabilidadeMax !== null && finTotals.totalRentabilidade > this.advRentabilidadeMax) return false;
+
+      // 8.8. Tipo de Margem de Rentabilidade (Pills de Presença de Markup/RAV)
       if (this.advMarkupRav !== 'todos') {
-        if (this.advMarkupRav === 'com_markup' && totalTripMarkup <= 0) return false;
-        if (this.advMarkupRav === 'com_rav' && totalTripRav <= 0) return false;
-        if (this.advMarkupRav === 'com_markup_ou_rav' && totalTripMarkup <= 0 && totalTripRav <= 0) return false;
-        if (this.advMarkupRav === 'com_markup_e_rav' && (totalTripMarkup <= 0 || totalTripRav <= 0)) return false;
-        if (this.advMarkupRav === 'sem_markup_rav' && (totalTripMarkup > 0 || totalTripRav > 0)) return false;
+        if (this.advMarkupRav === 'com_markup' && finTotals.totalMarkup <= 0) return false;
+        if (this.advMarkupRav === 'com_rav' && finTotals.totalRav <= 0) return false;
+        if (this.advMarkupRav === 'com_markup_ou_rav' && finTotals.totalMarkup <= 0 && finTotals.totalRav <= 0) return false;
+        if (this.advMarkupRav === 'com_markup_e_rav' && (finTotals.totalMarkup <= 0 || finTotals.totalRav <= 0)) return false;
+        if (this.advMarkupRav === 'apenas_comissao' && (finTotals.totalComissao <= 0 || finTotals.totalMarkup > 0 || finTotals.totalRav > 0)) return false;
+        if (this.advMarkupRav === 'sem_markup_rav' && (finTotals.totalMarkup > 0 || finTotals.totalRav > 0)) return false;
       }
-
-      if (this.advMarkupMin !== null && totalTripMarkup < this.advMarkupMin) return false;
-      if (this.advMarkupMax !== null && totalTripMarkup > this.advMarkupMax) return false;
-      if (this.advRavMin !== null && totalTripRav < this.advRavMin) return false;
-      if (this.advRavMax !== null && totalTripRav > this.advRavMax) return false;
 
       // 10. Status de Arquivos & Anexos
       if (this.advAnexos !== 'todos') {
@@ -2479,8 +2582,19 @@ export class Dashboard {
    */
   private renderFinancialSummaryBarHTML(viagensFiltradas: any[]): string {
     const totalViagens = viagensFiltradas.length;
-    const totalVendas = viagensFiltradas.reduce((acc, v) => acc + (Number(v.valor_total) || 0), 0);
-    const totalRentabilidade = viagensFiltradas.reduce((acc, v) => acc + (Number(v.rentabilidade) || 0), 0);
+    let totalVendas = 0;
+    let totalRentabilidade = 0;
+    let totalMarkupAcumulado = 0;
+    let totalRavAcumulado = 0;
+
+    viagensFiltradas.forEach(v => {
+      const totals = this.getTripFinancialTotals(v);
+      totalVendas += totals.totalVenda;
+      totalRentabilidade += totals.totalRentabilidade;
+      totalMarkupAcumulado += totals.totalMarkup;
+      totalRavAcumulado += totals.totalRav;
+    });
+
     const ticketMedio = totalViagens > 0 ? totalVendas / totalViagens : 0;
 
     return `
@@ -2500,6 +2614,18 @@ export class Dashboard {
             <span class="text-[10px] font-black uppercase text-slate-400 dark:text-slate-400 tracking-wider">Rentabilidade:</span>
             <span class="font-extrabold text-indigo-600 dark:text-indigo-400">R$ ${totalRentabilidade.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
+          ${(totalMarkupAcumulado > 0 || totalRavAcumulado > 0) ? `
+            <div class="h-3.5 w-px bg-slate-200 dark:bg-slate-800 hidden sm:block"></div>
+            <div class="flex items-center gap-1.5">
+              <span class="text-[10px] font-black uppercase text-purple-600 dark:text-purple-400 tracking-wider">Markup:</span>
+              <span class="font-bold text-purple-600 dark:text-purple-400">R$ ${totalMarkupAcumulado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            </div>
+            <div class="h-3.5 w-px bg-slate-200 dark:bg-slate-800 hidden sm:block"></div>
+            <div class="flex items-center gap-1.5">
+              <span class="text-[10px] font-black uppercase text-amber-600 dark:text-amber-400 tracking-wider">RAV:</span>
+              <span class="font-bold text-amber-600 dark:text-amber-400">R$ ${totalRavAcumulado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            </div>
+          ` : ''}
           <div class="h-3.5 w-px bg-slate-200 dark:bg-slate-800 hidden sm:block"></div>
           <div class="flex items-center gap-1.5">
             <span class="text-[10px] font-black uppercase text-slate-400 dark:text-slate-400 tracking-wider">Ticket Médio:</span>
@@ -2838,36 +2964,21 @@ export class Dashboard {
             </div>
           </div>
 
-          <!-- Bloco 8: Valores Financeiros & Rentabilidade -->
+          <!-- Bloco 8: Valores Financeiros Detalhados dos Produtos & Viagem -->
           <div class="bg-slate-50/70 dark:bg-slate-800/40 p-3.5 rounded-2xl border border-slate-200/60 dark:border-slate-800/60 space-y-3">
-            <span class="text-[10px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-wider flex items-center gap-1.5">
-              <span>💰</span>
-              <span>Faixas Financeiras</span>
-            </span>
-
-            <!-- Valor Total de Venda -->
-            <div class="space-y-1">
-              <span class="text-[9px] font-extrabold text-slate-400 dark:text-slate-400 uppercase tracking-wider block">Valor Total de Venda (R$)</span>
-              <div class="flex items-center gap-1.5">
-                <input id="filter-adv-valor-min" type="number" min="0" step="100" placeholder="Mínimo (R$)" value="${this.advValorMin !== null ? this.advValorMin : ''}" class="w-full text-xs font-semibold px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500" />
-                <span class="text-xs text-slate-400">a</span>
-                <input id="filter-adv-valor-max" type="number" min="0" step="100" placeholder="Máximo (R$)" value="${this.advValorMax !== null ? this.advValorMax : ''}" class="w-full text-xs font-semibold px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500" />
-              </div>
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-wider flex items-center gap-1.5">
+                <span>💰</span>
+                <span>Valores Financeiros do Produto</span>
+              </span>
+              ${(this.advValorMin !== null || this.advValorMax !== null || this.advTarifaMin !== null || this.advTarifaMax !== null || this.advTaxaMin !== null || this.advTaxaMax !== null || this.advComissaoMin !== null || this.advComissaoMax !== null || this.advMarkupMin !== null || this.advMarkupMax !== null || this.advRavMin !== null || this.advRavMax !== null || this.advRentabilidadeMin !== null || this.advRentabilidadeMax !== null || this.advMarkupRav !== 'todos') ? `
+                <button id="btn-clear-adv-financas" type="button" class="text-[10px] text-rose-500 hover:underline font-bold cursor-pointer">Limpar</button>
+              ` : ''}
             </div>
 
-            <!-- Rentabilidade -->
+            <!-- Tipo de Margem / Rentabilidade -->
             <div class="space-y-1">
-              <span class="text-[9px] font-extrabold text-slate-400 dark:text-slate-400 uppercase tracking-wider block">Rentabilidade Total (R$)</span>
-              <div class="flex items-center gap-1.5">
-                <input id="filter-adv-rent-min" type="number" min="0" step="50" placeholder="Mínimo (R$)" value="${this.advRentabilidadeMin !== null ? this.advRentabilidadeMin : ''}" class="w-full text-xs font-semibold px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500" />
-                <span class="text-xs text-slate-400">a</span>
-                <input id="filter-adv-rent-max" type="number" min="0" step="50" placeholder="Máximo (R$)" value="${this.advRentabilidadeMax !== null ? this.advRentabilidadeMax : ''}" class="w-full text-xs font-semibold px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500" />
-              </div>
-            </div>
-
-            <!-- Filtro de Produtos com Markup & RAV -->
-            <div class="space-y-1.5 pt-1 border-t border-slate-200/50 dark:border-slate-700/50">
-              <span class="text-[9px] font-extrabold text-slate-400 dark:text-slate-400 uppercase tracking-wider block">💎 Markup & RAV por Produto</span>
+              <span class="text-[9px] font-extrabold text-slate-400 dark:text-slate-400 uppercase tracking-wider block">💎 Tipo de Margem / Rentabilidade</span>
               <div class="flex flex-wrap gap-1">
                 ${[
                   { id: 'todos', label: 'Todos' },
@@ -2875,6 +2986,7 @@ export class Dashboard {
                   { id: 'com_rav', label: '⚡ Com RAV' },
                   { id: 'com_markup_ou_rav', label: '💎⚡ Markup OU RAV' },
                   { id: 'com_markup_e_rav', label: '✨ Ambos (MKP + RAV)' },
+                  { id: 'apenas_comissao', label: '💰 Apenas Comissão' },
                   { id: 'sem_markup_rav', label: '🚫 Sem MKP/RAV' }
                 ].map(opt => `
                   <button type="button" class="pill-adv-markup-rav px-2 py-0.5 text-[10px] font-bold rounded-lg border transition cursor-pointer ${
@@ -2886,11 +2998,35 @@ export class Dashboard {
                   </button>
                 `).join('')}
               </div>
+            </div>
 
-              <!-- Faixas específicas de Markup e RAV -->
-              <div class="grid grid-cols-2 gap-2 pt-1">
+            <!-- Grade de Inputs de Faixas Financeiras (Tarifa, Taxa, Comissão, Markup, RAV, Venda, Rentabilidade) -->
+            <div class="space-y-2 pt-1 border-t border-slate-200/50 dark:border-slate-700/50">
+              
+              <!-- Linha 1: Valor Venda & Rentabilidade -->
+              <div class="grid grid-cols-2 gap-2">
                 <div class="space-y-0.5">
-                  <span class="text-[8px] font-bold text-slate-400 dark:text-slate-400 uppercase">Markup (R$)</span>
+                  <span class="text-[8px] font-bold text-slate-400 uppercase">Valor Venda Total (R$)</span>
+                  <div class="flex items-center gap-1">
+                    <input id="filter-adv-valor-min" type="number" min="0" step="100" placeholder="Min" value="${this.advValorMin !== null ? this.advValorMin : ''}" class="w-full text-[11px] font-semibold px-2 py-1 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                    <span class="text-[10px] text-slate-400">-</span>
+                    <input id="filter-adv-valor-max" type="number" min="0" step="100" placeholder="Max" value="${this.advValorMax !== null ? this.advValorMax : ''}" class="w-full text-[11px] font-semibold px-2 py-1 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                  </div>
+                </div>
+                <div class="space-y-0.5">
+                  <span class="text-[8px] font-bold text-slate-400 uppercase">Rentabilidade Total (R$)</span>
+                  <div class="flex items-center gap-1">
+                    <input id="filter-adv-rent-min" type="number" min="0" step="50" placeholder="Min" value="${this.advRentabilidadeMin !== null ? this.advRentabilidadeMin : ''}" class="w-full text-[11px] font-semibold px-2 py-1 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                    <span class="text-[10px] text-slate-400">-</span>
+                    <input id="filter-adv-rent-max" type="number" min="0" step="50" placeholder="Max" value="${this.advRentabilidadeMax !== null ? this.advRentabilidadeMax : ''}" class="w-full text-[11px] font-semibold px-2 py-1 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Linha 2: Markup & RAV -->
+              <div class="grid grid-cols-2 gap-2">
+                <div class="space-y-0.5">
+                  <span class="text-[8px] font-bold text-purple-600 dark:text-purple-400 uppercase">💎 Markup (R$)</span>
                   <div class="flex items-center gap-1">
                     <input id="filter-adv-markup-min" type="number" min="0" step="50" placeholder="Min" value="${this.advMarkupMin !== null ? this.advMarkupMin : ''}" class="w-full text-[11px] font-semibold px-2 py-1 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500" />
                     <span class="text-[10px] text-slate-400">-</span>
@@ -2898,7 +3034,7 @@ export class Dashboard {
                   </div>
                 </div>
                 <div class="space-y-0.5">
-                  <span class="text-[8px] font-bold text-slate-400 dark:text-slate-400 uppercase">RAV (R$)</span>
+                  <span class="text-[8px] font-bold text-amber-600 dark:text-amber-400 uppercase">⚡ RAV (R$)</span>
                   <div class="flex items-center gap-1">
                     <input id="filter-adv-rav-min" type="number" min="0" step="50" placeholder="Min" value="${this.advRavMin !== null ? this.advRavMin : ''}" class="w-full text-[11px] font-semibold px-2 py-1 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-md focus:outline-none focus:ring-1 focus:ring-amber-500" />
                     <span class="text-[10px] text-slate-400">-</span>
@@ -2906,6 +3042,37 @@ export class Dashboard {
                   </div>
                 </div>
               </div>
+
+              <!-- Linha 3: Comissão & Tarifa -->
+              <div class="grid grid-cols-2 gap-2">
+                <div class="space-y-0.5">
+                  <span class="text-[8px] font-bold text-slate-400 uppercase">💰 Comissão (R$)</span>
+                  <div class="flex items-center gap-1">
+                    <input id="filter-adv-comissao-min" type="number" min="0" step="50" placeholder="Min" value="${this.advComissaoMin !== null ? this.advComissaoMin : ''}" class="w-full text-[11px] font-semibold px-2 py-1 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                    <span class="text-[10px] text-slate-400">-</span>
+                    <input id="filter-adv-comissao-max" type="number" min="0" step="50" placeholder="Max" value="${this.advComissaoMax !== null ? this.advComissaoMax : ''}" class="w-full text-[11px] font-semibold px-2 py-1 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                  </div>
+                </div>
+                <div class="space-y-0.5">
+                  <span class="text-[8px] font-bold text-slate-400 uppercase">🏷️ Tarifa Custo (R$)</span>
+                  <div class="flex items-center gap-1">
+                    <input id="filter-adv-tarifa-min" type="number" min="0" step="100" placeholder="Min" value="${this.advTarifaMin !== null ? this.advTarifaMin : ''}" class="w-full text-[11px] font-semibold px-2 py-1 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                    <span class="text-[10px] text-slate-400">-</span>
+                    <input id="filter-adv-tarifa-max" type="number" min="0" step="100" placeholder="Max" value="${this.advTarifaMax !== null ? this.advTarifaMax : ''}" class="w-full text-[11px] font-semibold px-2 py-1 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Linha 4: Taxas / Impostos -->
+              <div class="space-y-0.5">
+                <span class="text-[8px] font-bold text-slate-400 uppercase">🧾 Taxas & Impostos (R$)</span>
+                <div class="flex items-center gap-1">
+                  <input id="filter-adv-taxa-min" type="number" min="0" step="50" placeholder="Min" value="${this.advTaxaMin !== null ? this.advTaxaMin : ''}" class="w-full text-[11px] font-semibold px-2 py-1 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                  <span class="text-[10px] text-slate-400">-</span>
+                  <input id="filter-adv-taxa-max" type="number" min="0" step="50" placeholder="Max" value="${this.advTaxaMax !== null ? this.advTaxaMax : ''}" class="w-full text-[11px] font-semibold px-2 py-1 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                </div>
+              </div>
+
             </div>
           </div>
 
@@ -3067,21 +3234,22 @@ export class Dashboard {
       chips.push({ key: 'adv-valor', label: `Venda: ${minStr} a ${maxStr}`, icon: '💰' });
     }
 
-    if (this.advRentabilidadeMin !== null || this.advRentabilidadeMax !== null) {
-      const minStr = this.advRentabilidadeMin !== null ? `R$ ${this.advRentabilidadeMin}` : 'R$ 0';
-      const maxStr = this.advRentabilidadeMax !== null ? `R$ ${this.advRentabilidadeMax}` : '...';
-      chips.push({ key: 'adv-rent', label: `Rentabilidade: ${minStr} a ${maxStr}`, icon: '📈' });
+    if (this.advTarifaMin !== null || this.advTarifaMax !== null) {
+      const minStr = this.advTarifaMin !== null ? `R$ ${this.advTarifaMin}` : 'R$ 0';
+      const maxStr = this.advTarifaMax !== null ? `R$ ${this.advTarifaMax}` : '...';
+      chips.push({ key: 'adv-tarifa-val', label: `Tarifa: ${minStr} a ${maxStr}`, icon: '🏷️' });
     }
 
-    if (this.advMarkupRav !== 'todos') {
-      const labelMap: Record<string, string> = {
-        com_markup: 'Com Markup',
-        com_rav: 'Com RAV',
-        com_markup_ou_rav: 'Markup OU RAV',
-        com_markup_e_rav: 'Markup + RAV',
-        sem_markup_rav: 'Sem Markup/RAV'
-      };
-      chips.push({ key: 'adv-markup-rav', label: labelMap[this.advMarkupRav] || this.advMarkupRav, icon: '💎' });
+    if (this.advTaxaMin !== null || this.advTaxaMax !== null) {
+      const minStr = this.advTaxaMin !== null ? `R$ ${this.advTaxaMin}` : 'R$ 0';
+      const maxStr = this.advTaxaMax !== null ? `R$ ${this.advTaxaMax}` : '...';
+      chips.push({ key: 'adv-taxa-val', label: `Taxas: ${minStr} a ${maxStr}`, icon: '🧾' });
+    }
+
+    if (this.advComissaoMin !== null || this.advComissaoMax !== null) {
+      const minStr = this.advComissaoMin !== null ? `R$ ${this.advComissaoMin}` : 'R$ 0';
+      const maxStr = this.advComissaoMax !== null ? `R$ ${this.advComissaoMax}` : '...';
+      chips.push({ key: 'adv-comissao-val', label: `Comissão: ${minStr} a ${maxStr}`, icon: '💰' });
     }
 
     if (this.advMarkupMin !== null || this.advMarkupMax !== null) {
@@ -3094,6 +3262,24 @@ export class Dashboard {
       const minStr = this.advRavMin !== null ? `R$ ${this.advRavMin}` : 'R$ 0';
       const maxStr = this.advRavMax !== null ? `R$ ${this.advRavMax}` : '...';
       chips.push({ key: 'adv-rav-val', label: `RAV: ${minStr} a ${maxStr}`, icon: '⚡' });
+    }
+
+    if (this.advRentabilidadeMin !== null || this.advRentabilidadeMax !== null) {
+      const minStr = this.advRentabilidadeMin !== null ? `R$ ${this.advRentabilidadeMin}` : 'R$ 0';
+      const maxStr = this.advRentabilidadeMax !== null ? `R$ ${this.advRentabilidadeMax}` : '...';
+      chips.push({ key: 'adv-rent', label: `Rentabilidade: ${minStr} a ${maxStr}`, icon: '📈' });
+    }
+
+    if (this.advMarkupRav !== 'todos') {
+      const labelMap: Record<string, string> = {
+        com_markup: 'Com Markup',
+        com_rav: 'Com RAV',
+        com_markup_ou_rav: 'Markup OU RAV',
+        com_markup_e_rav: 'Markup + RAV',
+        apenas_comissao: 'Apenas Comissão',
+        sem_markup_rav: 'Sem Markup/RAV'
+      };
+      chips.push({ key: 'adv-markup-rav', label: labelMap[this.advMarkupRav] || this.advMarkupRav, icon: '💎' });
     }
 
     if (this.advAnexos !== 'todos') {
@@ -3668,29 +3854,31 @@ Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : '
           const prods = Array.isArray(v.produtos) ? v.produtos : [];
           if (!prods.some((p: any) => (p.fornecedor || '').toLowerCase().includes(fornQ))) return false;
         }
-        const valTotal = Number(v.valor_total) || 0;
-        if (this.advValorMin !== null && valTotal < this.advValorMin) return false;
-        if (this.advValorMax !== null && valTotal > this.advValorMax) return false;
-        const valRent = Number(v.rentabilidade) || 0;
-        if (this.advRentabilidadeMin !== null && valRent < this.advRentabilidadeMin) return false;
-        if (this.advRentabilidadeMax !== null && valRent > this.advRentabilidadeMax) return false;
-
-        const prodsMarkupRav = Array.isArray(v.produtos) ? v.produtos : [];
-        const totalTripMarkup = prodsMarkupRav.reduce((sum: number, p: any) => sum + (Number(p.markup) || 0), 0);
-        const totalTripRav = prodsMarkupRav.reduce((sum: number, p: any) => sum + (Number(p.rav) || 0), 0);
+        // Filtros de Valores Financeiros Completos dos Produtos & Viagem
+        const finTotals = this.getTripFinancialTotals(v);
+        if (this.advValorMin !== null && finTotals.totalVenda < this.advValorMin) return false;
+        if (this.advValorMax !== null && finTotals.totalVenda > this.advValorMax) return false;
+        if (this.advTarifaMin !== null && finTotals.totalTarifa < this.advTarifaMin) return false;
+        if (this.advTarifaMax !== null && finTotals.totalTarifa > this.advTarifaMax) return false;
+        if (this.advTaxaMin !== null && finTotals.totalTaxa < this.advTaxaMin) return false;
+        if (this.advTaxaMax !== null && finTotals.totalTaxa > this.advTaxaMax) return false;
+        if (this.advComissaoMin !== null && finTotals.totalComissao < this.advComissaoMin) return false;
+        if (this.advComissaoMax !== null && finTotals.totalComissao > this.advComissaoMax) return false;
+        if (this.advMarkupMin !== null && finTotals.totalMarkup < this.advMarkupMin) return false;
+        if (this.advMarkupMax !== null && finTotals.totalMarkup > this.advMarkupMax) return false;
+        if (this.advRavMin !== null && finTotals.totalRav < this.advRavMin) return false;
+        if (this.advRavMax !== null && finTotals.totalRav > this.advRavMax) return false;
+        if (this.advRentabilidadeMin !== null && finTotals.totalRentabilidade < this.advRentabilidadeMin) return false;
+        if (this.advRentabilidadeMax !== null && finTotals.totalRentabilidade > this.advRentabilidadeMax) return false;
 
         if (this.advMarkupRav !== 'todos') {
-          if (this.advMarkupRav === 'com_markup' && totalTripMarkup <= 0) return false;
-          if (this.advMarkupRav === 'com_rav' && totalTripRav <= 0) return false;
-          if (this.advMarkupRav === 'com_markup_ou_rav' && totalTripMarkup <= 0 && totalTripRav <= 0) return false;
-          if (this.advMarkupRav === 'com_markup_e_rav' && (totalTripMarkup <= 0 || totalTripRav <= 0)) return false;
-          if (this.advMarkupRav === 'sem_markup_rav' && (totalTripMarkup > 0 || totalTripRav > 0)) return false;
+          if (this.advMarkupRav === 'com_markup' && finTotals.totalMarkup <= 0) return false;
+          if (this.advMarkupRav === 'com_rav' && finTotals.totalRav <= 0) return false;
+          if (this.advMarkupRav === 'com_markup_ou_rav' && finTotals.totalMarkup <= 0 && finTotals.totalRav <= 0) return false;
+          if (this.advMarkupRav === 'com_markup_e_rav' && (finTotals.totalMarkup <= 0 || finTotals.totalRav <= 0)) return false;
+          if (this.advMarkupRav === 'apenas_comissao' && (finTotals.totalComissao <= 0 || finTotals.totalMarkup > 0 || finTotals.totalRav > 0)) return false;
+          if (this.advMarkupRav === 'sem_markup_rav' && (finTotals.totalMarkup > 0 || finTotals.totalRav > 0)) return false;
         }
-
-        if (this.advMarkupMin !== null && totalTripMarkup < this.advMarkupMin) return false;
-        if (this.advMarkupMax !== null && totalTripMarkup > this.advMarkupMax) return false;
-        if (this.advRavMin !== null && totalTripRav < this.advRavMin) return false;
-        if (this.advRavMax !== null && totalTripRav > this.advRavMax) return false;
         if (this.advAnexos !== 'todos') {
           const prods = Array.isArray(v.produtos) ? v.produtos : [];
           const hasVoucherGeral = !!v.voucher_geral_anexado;
@@ -3801,47 +3989,47 @@ Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : '
       this.render();
     });
 
-    // 3.4. Faixas Financeiras
-    const inputValMin = document.getElementById('filter-adv-valor-min') as HTMLInputElement;
-    inputValMin?.addEventListener('change', () => {
-      this.advValorMin = inputValMin.value ? Number(inputValMin.value) : null;
-      this.render();
-    });
-    const inputValMax = document.getElementById('filter-adv-valor-max') as HTMLInputElement;
-    inputValMax?.addEventListener('change', () => {
-      this.advValorMax = inputValMax.value ? Number(inputValMax.value) : null;
-      this.render();
-    });
-    const inputRentMin = document.getElementById('filter-adv-rent-min') as HTMLInputElement;
-    inputRentMin?.addEventListener('change', () => {
-      this.advRentabilidadeMin = inputRentMin.value ? Number(inputRentMin.value) : null;
-      this.render();
-    });
-    const inputRentMax = document.getElementById('filter-adv-rent-max') as HTMLInputElement;
-    inputRentMax?.addEventListener('change', () => {
-      this.advRentabilidadeMax = inputRentMax.value ? Number(inputRentMax.value) : null;
-      this.render();
-    });
+    // 3.4. Faixas Financeiras Completas
+    const bindNumericFilter = (elementId: string, propertyName: string) => {
+      const el = document.getElementById(elementId) as HTMLInputElement;
+      el?.addEventListener('change', () => {
+        const val = el.value ? this.parseFinancialNumber(el.value) : null;
+        (this as any)[propertyName] = val;
+        this.render();
+      });
+    };
 
-    // 3.4.1. Faixas de Markup e RAV
-    const inputMarkupMin = document.getElementById('filter-adv-markup-min') as HTMLInputElement;
-    inputMarkupMin?.addEventListener('change', () => {
-      this.advMarkupMin = inputMarkupMin.value ? Number(inputMarkupMin.value) : null;
-      this.render();
-    });
-    const inputMarkupMax = document.getElementById('filter-adv-markup-max') as HTMLInputElement;
-    inputMarkupMax?.addEventListener('change', () => {
-      this.advMarkupMax = inputMarkupMax.value ? Number(inputMarkupMax.value) : null;
-      this.render();
-    });
-    const inputRavMin = document.getElementById('filter-adv-rav-min') as HTMLInputElement;
-    inputRavMin?.addEventListener('change', () => {
-      this.advRavMin = inputRavMin.value ? Number(inputRavMin.value) : null;
-      this.render();
-    });
-    const inputRavMax = document.getElementById('filter-adv-rav-max') as HTMLInputElement;
-    inputRavMax?.addEventListener('change', () => {
-      this.advRavMax = inputRavMax.value ? Number(inputRavMax.value) : null;
+    bindNumericFilter('filter-adv-valor-min', 'advValorMin');
+    bindNumericFilter('filter-adv-valor-max', 'advValorMax');
+    bindNumericFilter('filter-adv-tarifa-min', 'advTarifaMin');
+    bindNumericFilter('filter-adv-tarifa-max', 'advTarifaMax');
+    bindNumericFilter('filter-adv-taxa-min', 'advTaxaMin');
+    bindNumericFilter('filter-adv-taxa-max', 'advTaxaMax');
+    bindNumericFilter('filter-adv-comissao-min', 'advComissaoMin');
+    bindNumericFilter('filter-adv-comissao-max', 'advComissaoMax');
+    bindNumericFilter('filter-adv-markup-min', 'advMarkupMin');
+    bindNumericFilter('filter-adv-markup-max', 'advMarkupMax');
+    bindNumericFilter('filter-adv-rav-min', 'advRavMin');
+    bindNumericFilter('filter-adv-rav-max', 'advRavMax');
+    bindNumericFilter('filter-adv-rent-min', 'advRentabilidadeMin');
+    bindNumericFilter('filter-adv-rent-max', 'advRentabilidadeMax');
+
+    document.getElementById('btn-clear-adv-financas')?.addEventListener('click', () => {
+      this.advValorMin = null;
+      this.advValorMax = null;
+      this.advTarifaMin = null;
+      this.advTarifaMax = null;
+      this.advTaxaMin = null;
+      this.advTaxaMax = null;
+      this.advComissaoMin = null;
+      this.advComissaoMax = null;
+      this.advMarkupMin = null;
+      this.advMarkupMax = null;
+      this.advRavMin = null;
+      this.advRavMax = null;
+      this.advRentabilidadeMin = null;
+      this.advRentabilidadeMax = null;
+      this.advMarkupRav = 'todos';
       this.render();
     });
 
@@ -4052,13 +4240,19 @@ Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : '
       this.advFornecedor = '';
       this.advValorMin = null;
       this.advValorMax = null;
-      this.advRentabilidadeMin = null;
-      this.advRentabilidadeMax = null;
-      this.advMarkupRav = 'todos';
+      this.advTarifaMin = null;
+      this.advTarifaMax = null;
+      this.advTaxaMin = null;
+      this.advTaxaMax = null;
+      this.advComissaoMin = null;
+      this.advComissaoMax = null;
       this.advMarkupMin = null;
       this.advMarkupMax = null;
       this.advRavMin = null;
       this.advRavMax = null;
+      this.advRentabilidadeMin = null;
+      this.advRentabilidadeMax = null;
+      this.advMarkupRav = 'todos';
       this.advAnexos = 'todos';
       this.advSla = 'todos';
       this.advRiskScore = [];
@@ -4135,17 +4329,26 @@ Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : '
         } else if (filterKey === 'adv-valor') {
           this.advValorMin = null;
           this.advValorMax = null;
-        } else if (filterKey === 'adv-rent') {
-          this.advRentabilidadeMin = null;
-          this.advRentabilidadeMax = null;
-        } else if (filterKey === 'adv-markup-rav') {
-          this.advMarkupRav = 'todos';
+        } else if (filterKey === 'adv-tarifa-val') {
+          this.advTarifaMin = null;
+          this.advTarifaMax = null;
+        } else if (filterKey === 'adv-taxa-val') {
+          this.advTaxaMin = null;
+          this.advTaxaMax = null;
+        } else if (filterKey === 'adv-comissao-val') {
+          this.advComissaoMin = null;
+          this.advComissaoMax = null;
         } else if (filterKey === 'adv-markup-val') {
           this.advMarkupMin = null;
           this.advMarkupMax = null;
         } else if (filterKey === 'adv-rav-val') {
           this.advRavMin = null;
           this.advRavMax = null;
+        } else if (filterKey === 'adv-rent') {
+          this.advRentabilidadeMin = null;
+          this.advRentabilidadeMax = null;
+        } else if (filterKey === 'adv-markup-rav') {
+          this.advMarkupRav = 'todos';
         } else if (filterKey === 'adv-anexos') {
           this.advAnexos = 'todos';
         } else if (filterKey === 'adv-sla') {
