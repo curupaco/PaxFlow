@@ -1,5 +1,6 @@
 import { renderCurrencyInputHTML, renderDateInputHTML } from '../../utils/masks';
 import { renderHelpIcon } from '../../utils/helpHelper';
+import { isTipoRav, isTipoMarkup } from '../../utils/productFinancialHelper';
 
 export const formatarDataLocal = (dStr: string): string => {
   if (!dStr) return '';
@@ -334,36 +335,57 @@ export function renderLateralEditorPaneHTML(
               <div class="space-y-3.5 bg-slate-50/50 dark:bg-slate-900/40 p-3.5 rounded-xl border border-slate-100 dark:border-slate-800">
                 <span class="block text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wide border-b border-slate-100 dark:border-slate-800 pb-2 mb-1">Valores do Serviço</span>
                 
-                <div>
-                  <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase mb-0.5">Venda (R$) *</label>
-                  ${renderCurrencyInputHTML(`edit-prod-venda-${selectedProduct.id}`, selectedProduct.valor_venda || 0, '0,00', true, isLocConferido)}
-                </div>
-                <div>
-                  <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase mb-0.5">Taxas (Embarque/Serviço)</label>
-                  ${renderCurrencyInputHTML(`edit-prod-taxa-${selectedProduct.id}`, selectedProduct.taxa || 0, '0,00', true, isLocConferido || !isVendaValid)}
-                </div>
-                <div>
-                  <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase mb-0.5 flex items-center">
-                    Comissão da Agência ${renderHelpIcon('comissao')}
-                  </label>
-                  ${renderCurrencyInputHTML(`edit-prod-comissao-${selectedProduct.id}`, selectedProduct.comissao || 0, '0,00', true, isLocConferido || !isVendaValid)}
-                </div>
-                <div>
-                  <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase mb-0.5 flex items-center">
-                    Markup ${renderHelpIcon('markup')}
-                  </label>
-                  ${renderCurrencyInputHTML(`edit-prod-markup-${selectedProduct.id}`, selectedProduct.markup || 0, '0,00', true, isLocConferido || !isVendaValid)}
-                </div>
-                <div>
-                  <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase mb-0.5 flex items-center">
-                    RAV ${renderHelpIcon('rav')}
-                  </label>
-                  ${renderCurrencyInputHTML(`edit-prod-rav-${selectedProduct.id}`, selectedProduct.rav || 0, '0,00', true, isLocConferido || !isVendaValid)}
-                </div>
-                <div>
-                  <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase mb-0.5">Tarifa (Informação)</label>
-                  ${renderCurrencyInputHTML(`edit-prod-tarifa-${selectedProduct.id}`, selectedProduct.tarifa || 0, '0,00', true, true)}
-                </div>
+                ${(() => {
+                  const isRav = isTipoRav(selectedProduct.tipo);
+                  const isMkp = isTipoMarkup(selectedProduct.tipo);
+                  const isOutro = !isRav && !isMkp;
+                  const initialRavVal = isRav && (selectedProduct.rav === undefined || selectedProduct.rav === null || Number(selectedProduct.rav) === 0) ? (selectedProduct.valor_venda || 0) : (selectedProduct.rav || 0);
+                  const initialMkpVal = isMkp && (selectedProduct.markup === undefined || selectedProduct.markup === null || Number(selectedProduct.markup) === 0) ? (selectedProduct.valor_venda || 0) : (selectedProduct.markup || 0);
+
+                  return `
+                    <!-- Campo Venda (Presente em todos) -->
+                    <div id="container-campo-venda-${selectedProduct.id}">
+                      <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase mb-0.5">Venda (R$) *</label>
+                      ${renderCurrencyInputHTML(`edit-prod-venda-${selectedProduct.id}`, selectedProduct.valor_venda || 0, '0,00', true, isLocConferido)}
+                    </div>
+
+                    <!-- Campo Markup (Exclusivo para tipo MARKUP) -->
+                    <div id="container-campo-markup-${selectedProduct.id}" class="${isMkp ? '' : 'hidden'}">
+                      <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase mb-0.5 flex items-center">
+                        Markup ${renderHelpIcon('markup')}
+                      </label>
+                      ${renderCurrencyInputHTML(`edit-prod-markup-${selectedProduct.id}`, initialMkpVal, '0,00', true, isLocConferido || !isVendaValid)}
+                    </div>
+
+                    <!-- Campo RAV (Exclusivo para tipo RAV / RAV - 12%) -->
+                    <div id="container-campo-rav-${selectedProduct.id}" class="${isRav ? '' : 'hidden'}">
+                      <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase mb-0.5 flex items-center">
+                        RAV ${renderHelpIcon('rav')}
+                      </label>
+                      ${renderCurrencyInputHTML(`edit-prod-rav-${selectedProduct.id}`, initialRavVal, '0,00', true, isLocConferido || !isVendaValid)}
+                    </div>
+
+                    <!-- Campo Taxas (Para demais produtos) -->
+                    <div id="container-campo-taxa-${selectedProduct.id}" class="${isOutro ? '' : 'hidden'}">
+                      <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase mb-0.5">Taxas (Embarque/Serviço)</label>
+                      ${renderCurrencyInputHTML(`edit-prod-taxa-${selectedProduct.id}`, selectedProduct.taxa || 0, '0,00', true, isLocConferido || !isVendaValid)}
+                    </div>
+
+                    <!-- Campo Comissão (Para demais produtos) -->
+                    <div id="container-campo-comissao-${selectedProduct.id}" class="${isOutro ? '' : 'hidden'}">
+                      <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase mb-0.5 flex items-center">
+                        Comissão da Agência ${renderHelpIcon('comissao')}
+                      </label>
+                      ${renderCurrencyInputHTML(`edit-prod-comissao-${selectedProduct.id}`, selectedProduct.comissao || 0, '0,00', true, isLocConferido || !isVendaValid)}
+                    </div>
+
+                    <!-- Campo Tarifa (Para demais produtos) -->
+                    <div id="container-campo-tarifa-${selectedProduct.id}" class="${isOutro ? '' : 'hidden'}">
+                      <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase mb-0.5">Tarifa (Informação)</label>
+                      ${renderCurrencyInputHTML(`edit-prod-tarifa-${selectedProduct.id}`, selectedProduct.tarifa || 0, '0,00', true, true)}
+                    </div>
+                  `;
+                })()}
 
                 <!-- Totalizadores locais -->
                 <div class="p-3 bg-white dark:bg-slate-900/80 border border-slate-200/60 dark:border-slate-800 rounded-xl space-y-2 mt-4 shadow-sm">

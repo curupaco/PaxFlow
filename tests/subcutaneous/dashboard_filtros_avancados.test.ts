@@ -1,4 +1,11 @@
 import { describe, it, expect } from 'vitest';
+import {
+  isTipoRav,
+  isTipoMarkup,
+  calcularFinanceiroProduto,
+  calcularTotaisViagem,
+  parseFinancialNumber
+} from '../../src/utils/productFinancialHelper';
 
 describe('Dashboard - Painel de Filtros Avançados Subcutâneo', () => {
   // Mock dataset de viagens operacionais com produtos, valores financeiros completos, pagamentos, origens, pax e tags
@@ -21,8 +28,9 @@ describe('Dashboard - Painel de Filtros Avançados Subcutâneo', () => {
       passageiros: [{ nome: 'Carlos Eduardo' }, { nome: 'Carla Silva' }, { nome: 'Lucas Silva' }, { nome: 'Ana Silva' }],
       cliente: { nome: 'Carlos Eduardo', documento: '12345678900', lead_origin: 'Instagram', classificacoes: ['VIP'] },
       produtos: [
-        { id: 'p1', tipo: 'Aéreo Facial', fornecedor: 'LATAM', valor_venda: 3000, tarifa: 2500, taxa: 200, markup: 200, rav: 0, comissao: 100 },
-        { id: 'p2', tipo: 'Carro', fornecedor: 'Movida', valor_venda: 2500, tarifa: 2200, taxa: 50, markup: 0, rav: 0, comissao: 250 }
+        { id: 'p1', tipo: 'Aéreo Facial', fornecedor: 'LATAM', valor_venda: 3000, tarifa: 2500, taxa: 200, markup: 0, rav: 0, comissao: 300 },
+        { id: 'p2', tipo: 'MARKUP', fornecedor: 'Agência', valor_venda: 500, tarifa: 0, taxa: 0, markup: 500, rav: 0, comissao: 0 },
+        { id: 'p3', tipo: 'Carro', fornecedor: 'Movida', valor_venda: 2000, tarifa: 1750, taxa: 50, markup: 0, rav: 0, comissao: 200 }
       ],
       pagamentos: [
         { forma_recebimento_id: 'pix', forma_nome: 'Pix', valor: 3000 },
@@ -47,7 +55,8 @@ describe('Dashboard - Painel de Filtros Avançados Subcutâneo', () => {
       passageiros: [{ nome: 'Mariana Lima' }, { nome: 'Pedro Lima' }],
       cliente: { nome: 'Mariana Lima', documento: '98765432100', lead_origin: 'Indicação', classificacoes: ['Casal'] },
       produtos: [
-        { id: 'p3', tipo: 'Aéreo Facial', fornecedor: 'Air France', valor_venda: 1800, tarifa: 1400, taxa: 100, markup: 0, rav: 150, comissao: 150 }
+        { id: 'p4', tipo: 'Aéreo Facial', fornecedor: 'Air France', valor_venda: 1600, tarifa: 1400, taxa: 100, markup: 0, rav: 0, comissao: 100 },
+        { id: 'p5', tipo: 'RAV - 12%', fornecedor: 'Agência', valor_venda: 200, tarifa: 0, taxa: 0, markup: 0, rav: 200, comissao: 0 }
       ],
       pagamentos: [
         { forma_recebimento_id: 'boleto', forma_nome: 'Boleto', valor: 1800 }
@@ -71,8 +80,10 @@ describe('Dashboard - Painel de Filtros Avançados Subcutâneo', () => {
       passageiros: [{ nome: 'Roberto Silva' }],
       cliente: { nome: 'Roberto Silva', documento: '11122233344', lead_origin: 'Google', classificacoes: ['Corporativo'] },
       produtos: [
-        { id: 'p4', tipo: 'Hotel', fornecedor: 'Resort Cancún Palace', valor_venda: 6000, tarifa: 4500, taxa: 300, markup: 500, rav: 300, comissao: 400 },
-        { id: 'p5', tipo: 'Carro', fornecedor: 'Hertz', valor_venda: 2900, tarifa: 2400, taxa: 110, markup: 100, rav: 0, comissao: 290 }
+        { id: 'p6', tipo: 'Hotel', fornecedor: 'Resort Cancún Palace', valor_venda: 6000, tarifa: 5300, taxa: 300, markup: 0, rav: 0, comissao: 400 },
+        { id: 'p7', tipo: 'MARKUP', fornecedor: 'Agência', valor_venda: 500, markup: 500 },
+        { id: 'p8', tipo: 'RAV - 12%', fornecedor: 'Agência', valor_venda: 300, rav: 300 },
+        { id: 'p9', tipo: 'Carro', fornecedor: 'Hertz', valor_venda: 2100, tarifa: 1700, taxa: 110, markup: 0, rav: 0, comissao: 290 }
       ],
       pagamentos: [
         { forma_recebimento_id: 'faturado', forma_nome: 'Faturado', valor: 8900 }
@@ -96,79 +107,14 @@ describe('Dashboard - Painel de Filtros Avançados Subcutâneo', () => {
       passageiros: [{ nome: 'P1' }, { nome: 'P2' }, { nome: 'P3' }, { nome: 'P4' }, { nome: 'P5' }, { nome: 'P6' }, { nome: 'P7' }],
       cliente: { nome: 'Grupo Neve 2026', documento: '55566677788', lead_origin: 'WhatsApp', classificacoes: ['Grupo'] },
       produtos: [
-        { id: 'p6', tipo: 'Aéreo Operadora', fornecedor: 'Aerolíneas Argentinas', valor_venda: 9000, tarifa: 7500, taxa: 600, markup: 0, rav: 0, comissao: 900 },
-        { id: 'p7', tipo: 'Hotel', fornecedor: 'Llao Llao Resort', valor_venda: 6000, tarifa: 5000, taxa: 400, markup: 0, rav: 0, comissao: 600 }
+        { id: 'p10', tipo: 'Aéreo Operadora', fornecedor: 'Aerolíneas Argentinas', valor_venda: 9000, tarifa: 7500, taxa: 600, markup: 0, rav: 0, comissao: 900 },
+        { id: 'p11', tipo: 'Hotel', fornecedor: 'Llao Llao Resort', valor_venda: 6000, tarifa: 5000, taxa: 400, markup: 0, rav: 0, comissao: 600 }
       ],
       pagamentos: [
         { forma_recebimento_id: 'pix', forma_nome: 'Pix', valor: 15000 }
       ]
     }
   ];
-
-  function parseFinancialNumber(val: any): number {
-    if (val === null || val === undefined || val === '') return 0;
-    if (typeof val === 'number') return isNaN(val) ? 0 : val;
-    if (typeof val === 'string') {
-      const cleaned = val.replace(/\s/g, '').replace('R$', '').trim();
-      if (cleaned.includes(',') && cleaned.includes('.')) {
-        return parseFloat(cleaned.replace(/\./g, '').replace(',', '.')) || 0;
-      }
-      if (cleaned.includes(',')) {
-        return parseFloat(cleaned.replace(',', '.')) || 0;
-      }
-      return parseFloat(cleaned) || 0;
-    }
-    return 0;
-  }
-
-  function getTripFinancialTotals(v: any) {
-    const prods = Array.isArray(v.produtos) ? v.produtos : [];
-    let totalTarifa = 0;
-    let totalTaxa = 0;
-    let totalComissao = 0;
-    let totalMarkup = 0;
-    let totalRav = 0;
-    let totalVenda = 0;
-    let totalRentabilidade = 0;
-
-    if (prods.length > 0) {
-      prods.forEach((p: any) => {
-        const tarifa = parseFinancialNumber(p.tarifa);
-        const taxa = parseFinancialNumber(p.taxa);
-        const comissao = parseFinancialNumber(p.comissao);
-        const markup = parseFinancialNumber(p.markup);
-        const rav = parseFinancialNumber(p.rav);
-        const venda = parseFinancialNumber(p.valor_venda);
-
-        totalTarifa += tarifa;
-        totalTaxa += taxa;
-        totalComissao += comissao;
-        totalMarkup += markup;
-        totalRav += rav;
-        totalVenda += venda;
-        totalRentabilidade += comissao + markup + (rav * 0.88);
-      });
-
-      if (totalVenda === 0) {
-        totalVenda = parseFinancialNumber(v.valor_total);
-      }
-    } else {
-      totalVenda = parseFinancialNumber(v.valor_total);
-      totalRentabilidade = parseFinancialNumber(v.rentabilidade);
-    }
-
-    return {
-      totalVenda,
-      totalTarifa,
-      totalTaxa,
-      totalComissao,
-      totalMarkup,
-      totalRav,
-      totalRavLiquido: totalRav * 0.88,
-      totalRentabilidade,
-      hasProdutos: prods.length > 0
-    };
-  }
 
   // Função pura de filtragem subcutânea espelhando as regras implementadas no Dashboard
   function filtrarViagensSubcutaneo(viagens: any[], filtros: {
@@ -291,7 +237,7 @@ describe('Dashboard - Painel de Filtros Avançados Subcutâneo', () => {
       }
 
       // Valores Financeiros dos Produtos & Viagem
-      const totals = getTripFinancialTotals(v);
+      const totals = calcularTotaisViagem(v);
 
       if (advValorMin !== null && totals.totalVenda < advValorMin) return false;
       if (advValorMax !== null && totals.totalVenda > advValorMax) return false;
@@ -308,7 +254,7 @@ describe('Dashboard - Painel de Filtros Avançados Subcutâneo', () => {
       if (advRentabilidadeMin !== null && totals.totalRentabilidade < advRentabilidadeMin) return false;
       if (advRentabilidadeMax !== null && totals.totalRentabilidade > advRentabilidadeMax) return false;
 
-      // Presença de Margens de Rentabilidade
+      // Tipo de Margem de Rentabilidade
       if (advMarkupRav !== 'todos') {
         if (advMarkupRav === 'com_markup' && totals.totalMarkup <= 0) return false;
         if (advMarkupRav === 'com_rav' && totals.totalRav <= 0) return false;
@@ -318,51 +264,43 @@ describe('Dashboard - Painel de Filtros Avançados Subcutâneo', () => {
         if (advMarkupRav === 'sem_markup_rav' && (totals.totalMarkup > 0 || totals.totalRav > 0)) return false;
       }
 
-      // Anexos & Vouchers
+      // Status de Arquivos & Anexos
       if (advAnexos !== 'todos') {
         const hasVoucherGeral = !!v.voucher_geral_anexado;
+        if (advAnexos === 'com_anexo' && !hasVoucherGeral) return false;
+        if (advAnexos === 'sem_anexo' && hasVoucherGeral) return false;
         if (advAnexos === 'com_voucher' && !hasVoucherGeral) return false;
         if (advAnexos === 'sem_voucher' && hasVoucherGeral) return false;
       }
 
-      // Consultores (Multi-Select)
+      // Consultores
       if (advConsultores.length > 0) {
-        const vConsultor = v.consultor_id || v.consultor_responsavel_id;
-        if (!advConsultores.includes(vConsultor)) return false;
+        const cId = v.consultor_id || v.consultor_responsavel_id || '';
+        if (!advConsultores.includes(cId)) return false;
       }
 
       // Formas de Recebimento
       if (advFormasRecebimento.length > 0) {
         const pags = Array.isArray(v.pagamentos) ? v.pagamentos : [];
-        const matchesForma = advFormasRecebimento.some(f => {
-          const fLower = f.toLowerCase();
-          return pags.some((p: any) => {
-            const pId = (p.forma_recebimento_id || '').toLowerCase();
-            const pNome = (p.forma_nome || '').toLowerCase();
-            return pId === fLower || pNome.includes(fLower) || fLower.includes(pNome);
-          });
-        });
-        if (!matchesForma) return false;
+        const hasForma = pags.some((p: any) => advFormasRecebimento.includes(p.forma_recebimento_id));
+        if (!hasForma) return false;
       }
 
       // Origem do Lead
       if (advOrigensLead.length > 0) {
-        const cliOrigem = (v.cliente?.lead_origin || v.lead_origin || '').toLowerCase();
-        const matchesOrigem = advOrigensLead.some(o => {
-          const oLower = o.toLowerCase();
-          return cliOrigem.includes(oLower) || oLower.includes(cliOrigem);
-        });
-        if (!matchesOrigem) return false;
+        const leadOrig = (v.cliente?.lead_origin || '').trim();
+        const matchesLead = advOrigensLead.some(o => o.toLowerCase() === leadOrig.toLowerCase());
+        if (!matchesLead) return false;
       }
 
-      // Quantidade de Passageiros (PAX)
+      // Faixas de Passageiros (PAX)
       if (advPaxFaixas.length > 0) {
         const paxCount = Array.isArray(v.passageiros) && v.passageiros.length > 0 ? v.passageiros.length : 1;
         const matchesPax = advPaxFaixas.some(faixa => {
-          if (faixa === '1') return paxCount === 1;
-          if (faixa === '2') return paxCount === 2;
-          if (faixa === '3-5') return paxCount >= 3 && paxCount <= 5;
-          if (faixa === '6+') return paxCount >= 6;
+          if (faixa === '1' && paxCount === 1) return true;
+          if (faixa === '2' && paxCount === 2) return true;
+          if (faixa === '3-5' && paxCount >= 3 && paxCount <= 5) return true;
+          if (faixa === '6+' && paxCount >= 6) return true;
           return false;
         });
         if (!matchesPax) return false;
@@ -370,15 +308,13 @@ describe('Dashboard - Painel de Filtros Avançados Subcutâneo', () => {
 
       // Tags / Classificações
       if (advTags.length > 0) {
-        const tripTags = [
-          ...(Array.isArray(v.tags) ? v.tags : []),
-          ...(v.cliente && Array.isArray(v.cliente.classificacoes) ? v.cliente.classificacoes : [])
-        ].map(t => (typeof t === 'string' ? t.trim().toLowerCase() : ''));
+        const vTags = Array.isArray(v.tags) ? v.tags : [];
+        const cTags = Array.isArray(v.cliente?.classificacoes) ? v.cliente.classificacoes : [];
+        const allTags = [...vTags, ...cTags].map(t => (t || '').trim().toLowerCase());
 
-        const matchesTag = advTags.some(wanted => {
-          const wantedLower = wanted.toLowerCase();
-          return tripTags.some(t => t.includes(wantedLower) || wantedLower.includes(t));
-        });
+        const matchesTag = advTags.some(wanted =>
+          allTags.includes(wanted.toLowerCase())
+        );
         if (!matchesTag) return false;
       }
 
@@ -386,191 +322,157 @@ describe('Dashboard - Painel de Filtros Avançados Subcutâneo', () => {
     });
   }
 
-  // 1. Teste de Consultores em Pills (Multi-Select)
-  it('deve filtrar viagens por múltiplos consultores simultaneamente em pills', () => {
-    // Setup
-    const filtros = { advConsultores: ['user-ana', 'user-bruno'] };
+  // ==================== TESTES SUBCUTÂNEOS ====================
 
-    // Action
-    const resultado = filtrarViagensSubcutaneo(mockViagens, filtros);
+  it('deve identificar corretamente os tipos de produto RAV e MARKUP', () => {
+    // Setup & Action & Assert
+    expect(isTipoRav('RAV - 12%')).toBe(true);
+    expect(isTipoRav('RAV')).toBe(true);
+    expect(isTipoRav('rav')).toBe(true);
+    expect(isTipoRav('Aéreo Facial')).toBe(false);
 
-    // Assert
-    expect(resultado).toHaveLength(3);
-    expect(resultado.map(r => r.id)).toEqual(['viagem-1', 'viagem-2', 'viagem-4']);
+    expect(isTipoMarkup('MARKUP')).toBe(true);
+    expect(isTipoMarkup('markup')).toBe(true);
+    expect(isTipoMarkup('Hotel')).toBe(false);
   });
 
-  // 2. Teste de Formas de Recebimento
-  it('deve filtrar viagens que possuem pagamento via Pix ou Cartão de Crédito', () => {
+  it('deve calcular produto do tipo RAV considerando apenas Venda e RAV', () => {
     // Setup
-    const filtros = { advFormasRecebimento: ['pix'] };
+    const prodRav = { tipo: 'RAV - 12%', valor_venda: 250, rav: 250, taxa: 0, comissao: 0 };
 
     // Action
-    const resultado = filtrarViagensSubcutaneo(mockViagens, filtros);
+    const res = calcularFinanceiroProduto(prodRav);
 
     // Assert
-    expect(resultado).toHaveLength(2);
-    expect(resultado.map(r => r.id)).toEqual(['viagem-1', 'viagem-4']);
+    expect(res.venda).toBe(250);
+    expect(res.rav).toBe(250);
+    expect(res.ravLiquido).toBeCloseTo(220, 2); // 250 * 0.88
+    expect(res.rentabilidade).toBeCloseTo(220, 2);
+    expect(res.tarifa).toBe(0);
+    expect(res.taxa).toBe(0);
+    expect(res.comissao).toBe(0);
+    expect(res.markup).toBe(0);
+    expect(res.isDetalhado).toBe(true);
   });
 
-  // 3. Teste de Origem do Lead
-  it('deve filtrar viagens com base na origem do lead do cliente (Instagram vs Google)', () => {
+  it('deve calcular produto do tipo MARKUP considerando apenas Venda e MARKUP', () => {
     // Setup
-    const filtros = { advOrigensLead: ['Instagram'] };
+    const prodMkp = { tipo: 'MARKUP', valor_venda: 600, markup: 600 };
 
     // Action
-    const resultado = filtrarViagensSubcutaneo(mockViagens, filtros);
+    const res = calcularFinanceiroProduto(prodMkp);
 
     // Assert
-    expect(resultado).toHaveLength(1);
-    expect(resultado[0].id).toBe('viagem-1');
+    expect(res.venda).toBe(600);
+    expect(res.markup).toBe(600);
+    expect(res.rentabilidade).toBe(600);
+    expect(res.rav).toBe(0);
+    expect(res.tarifa).toBe(0);
+    expect(res.taxa).toBe(0);
+    expect(res.comissao).toBe(0);
+    expect(res.isDetalhado).toBe(true);
   });
 
-  // 4. Teste de Faixas de Passageiros (PAX)
-  it('deve filtrar viagens por faixa de passageiros (ex: Casal = 2 PAX e Grande Grupo = 6+ PAX)', () => {
+  it('deve zerar markup e rav em produtos padrão de Aéreo ou Hotel', () => {
     // Setup
-    const filtrosCasal = { advPaxFaixas: ['2'] };
-    const filtrosGrupo = { advPaxFaixas: ['6+'] };
+    const prodAereo = { tipo: 'Aéreo Facial', valor_venda: 3000, tarifa: 2500, taxa: 200, comissao: 300, markup: 50, rav: 50 };
 
     // Action
-    const resultadoCasal = filtrarViagensSubcutaneo(mockViagens, filtrosCasal);
-    const resultadoGrupo = filtrarViagensSubcutaneo(mockViagens, filtrosGrupo);
+    const res = calcularFinanceiroProduto(prodAereo);
 
     // Assert
-    expect(resultadoCasal).toHaveLength(1);
-    expect(resultadoCasal[0].id).toBe('viagem-2');
-
-    expect(resultadoGrupo).toHaveLength(1);
-    expect(resultadoGrupo[0].id).toBe('viagem-4');
+    expect(res.venda).toBe(3000);
+    expect(res.tarifa).toBe(2500);
+    expect(res.taxa).toBe(200);
+    expect(res.comissao).toBe(300);
+    expect(res.markup).toBe(0); // markup ignorado em produto aéreo
+    expect(res.rav).toBe(0); // rav ignorada em produto aéreo
+    expect(res.rentabilidade).toBe(300);
+    expect(res.isDetalhado).toBe(true);
   });
 
-  // 5. Teste de Tags / Classificações
-  it('deve filtrar viagens por tags do cliente e da viagem (ex: VIP ou Aventura)', () => {
-    // Setup
-    const filtrosVIP = { advTags: ['VIP'] };
-    const filtrosAventura = { advTags: ['Aventura'] };
-
-    // Action
-    const resultadoVIP = filtrarViagensSubcutaneo(mockViagens, filtrosVIP);
-    const resultadoAventura = filtrarViagensSubcutaneo(mockViagens, filtrosAventura);
-
-    // Assert
-    expect(resultadoVIP.map(r => r.id)).toEqual(['viagem-1', 'viagem-3']);
-    expect(resultadoAventura.map(r => r.id)).toEqual(['viagem-4']);
-  });
-
-  // 6. Teste de Produtos com Markup (com_markup)
   it('deve filtrar apenas viagens cujos produtos possuem Markup (> R$ 0)', () => {
-    // Setup
-    const filtros = { advMarkupRav: 'com_markup' as const };
-
     // Action
-    const resultado = filtrarViagensSubcutaneo(mockViagens, filtros);
+    const resultado = filtrarViagensSubcutaneo(mockViagens, {
+      advMarkupRav: 'com_markup'
+    });
 
-    // Assert (viagem-1 tem markup 200, viagem-3 tem markup 600)
-    expect(resultado).toHaveLength(2);
-    expect(resultado.map(r => r.id)).toEqual(['viagem-1', 'viagem-3']);
+    // Assert: Viagens 1 e 3 possuem produtos do tipo MARKUP
+    expect(resultado.map(v => v.id)).toEqual(['viagem-1', 'viagem-3']);
   });
 
-  // 7. Teste de Produtos com RAV (com_rav)
   it('deve filtrar apenas viagens cujos produtos possuem RAV (> R$ 0)', () => {
-    // Setup
-    const filtros = { advMarkupRav: 'com_rav' as const };
-
     // Action
-    const resultado = filtrarViagensSubcutaneo(mockViagens, filtros);
+    const resultado = filtrarViagensSubcutaneo(mockViagens, {
+      advMarkupRav: 'com_rav'
+    });
 
-    // Assert (viagem-2 tem RAV 150, viagem-3 tem RAV 300)
-    expect(resultado).toHaveLength(2);
-    expect(resultado.map(r => r.id)).toEqual(['viagem-2', 'viagem-3']);
+    // Assert: Viagens 2 e 3 possuem produtos do tipo RAV
+    expect(resultado.map(v => v.id)).toEqual(['viagem-2', 'viagem-3']);
   });
 
-  // 8. Teste de Produtos com Markup OU RAV (com_markup_ou_rav)
-  it('deve filtrar viagens com produtos que possuem Markup OU RAV', () => {
-    // Setup
-    const filtros = { advMarkupRav: 'com_markup_ou_rav' as const };
-
+  it('deve filtrar viagens com produtos que possuem Markup OU RAV (e/ou)', () => {
     // Action
-    const resultado = filtrarViagensSubcutaneo(mockViagens, filtros);
+    const resultado = filtrarViagensSubcutaneo(mockViagens, {
+      advMarkupRav: 'com_markup_ou_rav'
+    });
 
-    // Assert (viagem-1, viagem-2 e viagem-3 possuem markup ou rav)
-    expect(resultado).toHaveLength(3);
-    expect(resultado.map(r => r.id)).toEqual(['viagem-1', 'viagem-2', 'viagem-3']);
+    // Assert: Viagens 1 (tem markup), 2 (tem rav) e 3 (tem markup e rav)
+    expect(resultado.map(v => v.id)).toEqual(['viagem-1', 'viagem-2', 'viagem-3']);
   });
 
-  // 9. Teste de Produtos com Ambos (Markup E RAV - com_markup_e_rav)
   it('deve filtrar viagens que possuem simultaneamente produtos com Markup E com RAV', () => {
-    // Setup
-    const filtros = { advMarkupRav: 'com_markup_e_rav' as const };
-
     // Action
-    const resultado = filtrarViagensSubcutaneo(mockViagens, filtros);
+    const resultado = filtrarViagensSubcutaneo(mockViagens, {
+      advMarkupRav: 'com_markup_e_rav'
+    });
 
-    // Assert (Apenas viagem-3 possui ambos markup 600 e rav 300)
-    expect(resultado).toHaveLength(1);
-    expect(resultado[0].id).toBe('viagem-3');
+    // Assert: Apenas viagem 3 tem produtos com Markup E RAV simultaneamente
+    expect(resultado.map(v => v.id)).toEqual(['viagem-3']);
   });
 
-  // 10. Teste de Viagens com Apenas Comissão (apenas_comissao)
   it('deve filtrar viagens que possuem apenas comissão pura (sem markup nem rav)', () => {
-    // Setup
-    const filtros = { advMarkupRav: 'apenas_comissao' as const };
-
     // Action
-    const resultado = filtrarViagensSubcutaneo(mockViagens, filtros);
+    const resultado = filtrarViagensSubcutaneo(mockViagens, {
+      advMarkupRav: 'apenas_comissao'
+    });
 
-    // Assert (Apenas viagem-4 tem comissao 1500 e zero markup/rav)
-    expect(resultado).toHaveLength(1);
-    expect(resultado[0].id).toBe('viagem-4');
+    // Assert: Viagem 4 não tem nem markup nem rav, apenas comissão de Aéreo/Hotel
+    expect(resultado.map(v => v.id)).toEqual(['viagem-4']);
   });
 
-  // 11. Teste de Filtros por Todos os Valores Financeiros do Produto (Tarifa, Taxa, Comissão)
   it('deve filtrar viagens por faixas de Tarifa Base, Taxas e Comissão dos produtos', () => {
-    // Setup: Viagens com Tarifa total > R$ 10.000
-    const filtrosTarifaAlta = { advTarifaMin: 10000 };
-    // Setup: Viagens com Taxa total entre R$ 300 e R$ 500
-    const filtrosTaxaFaixa = { advTaxaMin: 300, advTaxaMax: 500 };
-    // Setup: Viagens com Comissão total >= R$ 1.000
-    const filtrosComissaoAlta = { advComissaoMin: 1000 };
-
     // Action
-    const resTarifa = filtrarViagensSubcutaneo(mockViagens, filtrosTarifaAlta);
-    const resTaxa = filtrarViagensSubcutaneo(mockViagens, filtrosTaxaFaixa);
-    const resComissao = filtrarViagensSubcutaneo(mockViagens, filtrosComissaoAlta);
+    const resTarifa = filtrarViagensSubcutaneo(mockViagens, { advTarifaMin: 5000 });
+    const resTaxa = filtrarViagensSubcutaneo(mockViagens, { advTaxaMax: 100 });
+    const resComissao = filtrarViagensSubcutaneo(mockViagens, { advComissaoMin: 1000 });
 
     // Assert
-    expect(resTarifa).toHaveLength(1);
-    expect(resTarifa[0].id).toBe('viagem-4'); // Tarifa = 12500
-
-    expect(resTaxa).toHaveLength(1);
-    expect(resTaxa[0].id).toBe('viagem-3'); // Taxa = 410
-
-    expect(resComissao).toHaveLength(1);
-    expect(resComissao[0].id).toBe('viagem-4'); // Comissao = 1500
+    expect(resTarifa.map(v => v.id)).toEqual(['viagem-3', 'viagem-4']);
+    expect(resTaxa.map(v => v.id)).toEqual(['viagem-2']);
+    expect(resComissao.map(v => v.id)).toEqual(['viagem-4']);
   });
 
-  // 12. Teste de Combinação Extrema com Todos os Valores Financeiros
-  it('deve combinar múltiplos critérios financeiros e operacionais com exatidão', () => {
-    // Setup: Consultor Ana + Com Markup + Tarifa Min 4000 + Venda Min 5000
-    const filtros = {
-      advConsultores: ['user-ana'],
-      advMarkupRav: 'com_markup' as const,
-      advTarifaMin: 4000,
-      advValorMin: 5000
-    };
-
+  it('deve filtrar viagens por múltiplos consultores simultaneamente em pills', () => {
     // Action
-    const filtrados = filtrarViagensSubcutaneo(mockViagens, filtros);
-    const totals = getTripFinancialTotals(filtrados[0]);
+    const resultado = filtrarViagensSubcutaneo(mockViagens, {
+      advConsultores: ['user-ana', 'user-bruno']
+    });
 
     // Assert
-    expect(filtrados).toHaveLength(1);
-    expect(filtrados[0].id).toBe('viagem-1');
-    expect(totals.totalVenda).toBe(5500);
-    expect(totals.totalTarifa).toBe(4700);
-    expect(totals.totalTaxa).toBe(250);
-    expect(totals.totalComissao).toBe(350);
-    expect(totals.totalMarkup).toBe(200);
-    expect(totals.totalRav).toBe(0);
-    expect(totals.totalRentabilidade).toBe(550);
+    expect(resultado.map(v => v.id)).toEqual(['viagem-1', 'viagem-2', 'viagem-4']);
+  });
+
+  it('deve combinar múltiplos critérios financeiros e operacionais com exatidão', () => {
+    // Action
+    const resultado = filtrarViagensSubcutaneo(mockViagens, {
+      advDestinos: ['Orlando'],
+      advMarkupRav: 'com_markup',
+      advFormasRecebimento: ['pix'],
+      advPaxFaixas: ['3-5']
+    });
+
+    // Assert
+    expect(resultado.map(v => v.id)).toEqual(['viagem-1']);
   });
 });

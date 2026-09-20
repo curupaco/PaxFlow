@@ -32,6 +32,13 @@ import { ORIGENS_LEAD_PADRAO } from '../controllers/cadastrosController';
 import { isNextTripEnabled, isRiskScoreEnabled, isUpsellEnabled } from '../utils/featureFlags';
 import { highlightMatch } from '../utils/textHelper';
 import { renderSkeletonTable } from '../utils/skeletonHelper';
+import {
+  isTipoRav,
+  isTipoMarkup,
+  calcularFinanceiroProduto,
+  calcularTotaisViagem,
+  parseFinancialNumber
+} from '../utils/productFinancialHelper';
 
 // Injeta estilos premium e animações micro-interativas para SLAs diretamente no DOM
 
@@ -185,19 +192,7 @@ export class Dashboard {
    * Converte com segurança qualquer valor monetário (número ou string formatada pt-BR) para float
    */
   private parseFinancialNumber(val: any): number {
-    if (val === null || val === undefined || val === '') return 0;
-    if (typeof val === 'number') return isNaN(val) ? 0 : val;
-    if (typeof val === 'string') {
-      const cleaned = val.replace(/\s/g, '').replace('R$', '').trim();
-      if (cleaned.includes(',') && cleaned.includes('.')) {
-        return parseFloat(cleaned.replace(/\./g, '').replace(',', '.')) || 0;
-      }
-      if (cleaned.includes(',')) {
-        return parseFloat(cleaned.replace(',', '.')) || 0;
-      }
-      return parseFloat(cleaned) || 0;
-    }
-    return 0;
+    return parseFinancialNumber(val);
   }
 
   /**
@@ -214,51 +209,17 @@ export class Dashboard {
     totalRentabilidade: number;
     hasProdutos: boolean;
   } {
-    const prods = Array.isArray(v.produtos) ? v.produtos : [];
-    let totalTarifa = 0;
-    let totalTaxa = 0;
-    let totalComissao = 0;
-    let totalMarkup = 0;
-    let totalRav = 0;
-    let totalVenda = 0;
-    let totalRentabilidade = 0;
-
-    if (prods.length > 0) {
-      prods.forEach((p: any) => {
-        const tarifa = this.parseFinancialNumber(p.tarifa);
-        const taxa = this.parseFinancialNumber(p.taxa);
-        const comissao = this.parseFinancialNumber(p.comissao);
-        const markup = this.parseFinancialNumber(p.markup);
-        const rav = this.parseFinancialNumber(p.rav);
-        const venda = this.parseFinancialNumber(p.valor_venda);
-
-        totalTarifa += tarifa;
-        totalTaxa += taxa;
-        totalComissao += comissao;
-        totalMarkup += markup;
-        totalRav += rav;
-        totalVenda += venda;
-        totalRentabilidade += comissao + markup + (rav * 0.88);
-      });
-
-      if (totalVenda === 0) {
-        totalVenda = this.parseFinancialNumber(v.valor_total);
-      }
-    } else {
-      totalVenda = this.parseFinancialNumber(v.valor_total);
-      totalRentabilidade = this.parseFinancialNumber(v.rentabilidade);
-    }
-
+    const totals = calcularTotaisViagem(v);
     return {
-      totalVenda,
-      totalTarifa,
-      totalTaxa,
-      totalComissao,
-      totalMarkup,
-      totalRav,
-      totalRavLiquido: totalRav * 0.88,
-      totalRentabilidade,
-      hasProdutos: prods.length > 0
+      totalVenda: totals.totalVenda,
+      totalTarifa: totals.totalTarifa,
+      totalTaxa: totals.totalTaxa,
+      totalComissao: totals.totalComissao,
+      totalMarkup: totals.totalMarkup,
+      totalRav: totals.totalRav,
+      totalRavLiquido: totals.totalRavLiquido,
+      totalRentabilidade: totals.totalRentabilidade,
+      hasProdutos: totals.hasProdutos
     };
   }
 
@@ -908,16 +869,7 @@ export class Dashboard {
         const saldoPendente = valorViagem - totalProdutos;
         const isSaldoZerado = Math.abs(saldoPendente) <= 0.01;
         const hasProdutos = produtos.length > 0;
-
-        const todosDetalhados = produtos.every((p: any) => {
-          const tarifa = Number(p.tarifa) || 0;
-          const taxa = Number(p.taxa) || 0;
-          const comissao = Number(p.comissao) || 0;
-          const markup = Number(p.markup) || 0;
-          const rav = Number(p.rav) || 0;
-          const totalDet = tarifa + taxa + comissao + markup + rav;
-          return Math.abs(Number(p.valor_venda || 0) - totalDet) < 0.01;
-        });
+        const todosDetalhados = produtos.every((p: any) => calcularFinanceiroProduto(p).isDetalhado);
 
         const locKeys = Array.from(new Set(produtos.map((p: any) => (p.codigo_reserva || 'SEM LOCALIZADOR').trim().toUpperCase())));
         const confMap = locConfsMap.get(v.id) || {};
@@ -2982,10 +2934,10 @@ export class Dashboard {
               <div class="flex flex-wrap gap-1">
                 ${[
                   { id: 'todos', label: 'Todos' },
+                  { id: 'com_markup_ou_rav', label: '💎⚡ Markup + RAV (e/ou)' },
                   { id: 'com_markup', label: '💎 Com Markup' },
                   { id: 'com_rav', label: '⚡ Com RAV' },
-                  { id: 'com_markup_ou_rav', label: '💎⚡ Markup OU RAV' },
-                  { id: 'com_markup_e_rav', label: '✨ Ambos (MKP + RAV)' },
+                  { id: 'com_markup_e_rav', label: '✨ Ambos (MKP e RAV)' },
                   { id: 'apenas_comissao', label: '💰 Apenas Comissão' },
                   { id: 'sem_markup_rav', label: '🚫 Sem MKP/RAV' }
                 ].map(opt => `
@@ -3274,10 +3226,10 @@ export class Dashboard {
       const labelMap: Record<string, string> = {
         com_markup: 'Com Markup',
         com_rav: 'Com RAV',
-        com_markup_ou_rav: 'Markup OU RAV',
-        com_markup_e_rav: 'Markup + RAV',
+        com_markup_ou_rav: 'Markup + RAV (e/ou)',
+        com_markup_e_rav: 'Ambos (MKP e RAV)',
         apenas_comissao: 'Apenas Comissão',
-        sem_markup_rav: 'Sem Markup/RAV'
+        sem_markup_rav: 'Sem MKP/RAV'
       };
       chips.push({ key: 'adv-markup-rav', label: labelMap[this.advMarkupRav] || this.advMarkupRav, icon: '💎' });
     }
