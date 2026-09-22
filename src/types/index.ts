@@ -297,6 +297,10 @@ export interface ContatoEmbarqueRegistro {
   data_contato?: string;
   consultor_id?: string;
   consultor_nome?: string;
+  validado_gestor?: boolean;
+  validado_gestor_em?: string;
+  gestor_id?: string;
+  gestor_nome?: string;
 }
 
 

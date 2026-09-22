@@ -854,6 +854,27 @@ export const HELP_ITEMS: HelpItem[] = [
     label: '🏷️ Justificar Entradas e Saídas Não Operacionais',
     description: 'Como classificar aportes de sócios, rendimentos de investimentos e transferências entre contas.',
     details: 'Nem toda entrada no banco é oriunda de vendas de viagens:\n\n1. Na aba **Pendentes no Extrato**, clique no botão **🏷️ (Justificar)** ao lado do lançamento.\n2. Escolha a categoria correspondente: *Aporte de Capital*, *Rendimento de Aplicação*, *Transferência entre Contas*, *Empréstimo* ou *Estorno de Fornecedor*.\n3. Insira uma breve observação explicativa e salve. O lançamento será conciliado e computado no saldo resolvido da agência.'
+  },
+  {
+    id: 'relatorio-desistencias-orcamento',
+    modulo: 'clientes',
+    label: '📉 Desistências: Acesso Direto a Orçamentos & WhatsApp',
+    description: 'Como navegar diretamente da lista de perdas e desistências para o orçamento correspondente ou abrir conversa no Digisac.',
+    details: 'Na aba **Desistências e Perdas** do módulo de Relatórios:\n\n- **Link Clicável**: Clique sobre o nome do cliente para abrir instantaneamente o orçamento em modo de inspeção.\n- **Botão 📄 Orçamento**: Localizado na coluna de Ações, direciona diretamente para `#orcamentos?id=...` preservando os filtros.\n- **Botão 💬 WhatsApp**: Abre a tela de conversa no Digisac com o passageiro em modo de visualização e controle, sem disparar mensagens automáticas.'
+  },
+  {
+    id: 'relatorio-embarques-validacao-gestor',
+    modulo: 'clientes',
+    label: '✈️ Embarques: Validação do Gestor & Ações Rápidas',
+    description: 'Governança de conferência de embarques restrita a administradores e atalhos para viagem e orçamento.',
+    details: 'Na aba **Embarques e Trechos** do módulo de Relatórios:\n\n- **Validação de Gestor (Exclusivo Administradores)**: Exibe a coluna interativa com botões `🛡️ Conferido` e `⏳ Pendente`. Permite que gestores auditem as saídas de voos e trechos com registro de autor e timestamp.\n- **Botão 🔍 Viagem**: Abre os detalhes operacionais da viagem (`EditTravelModal`).\n- **Botão 📄 Orçamento**: Direciona diretamente para o orçamento comercial vinculado ao cliente/viagem.\n- **Botão 💬 WhatsApp**: Abre a tela de conversa no Digisac com o passageiro.'
+  },
+  {
+    id: 'lembretes-descricao-detalhada',
+    modulo: 'processos',
+    label: '🔔 Lembretes: Campo de Descrição & Nome Fidedigno',
+    description: 'Como detalhar os motivos dos lembretes e identificar com precisão os passageiros titulares.',
+    details: 'No Mission Control e modais de agendamento:\n\n- **Campo de Descrição**: Permite inserir textos explicativos detalhando a ação a ser realizada (ex: "Confirmar assentos marcados e enviar voucher atualizado").\n- **Resolução de Nome Fidedigna**: O sistema localiza o nome real e completo do passageiro vinculado à viagem ou orçamento, eliminando nomenclaturas genéricas (como "CLIENTE VIAGEM").'
   }
 ];
 

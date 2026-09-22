@@ -49,6 +49,7 @@
    - 3.36 [PaxFlow FinRecon™ (Módulo de Conciliação Bancária & Fechamento Contábil)](#336-paxflow-finrecon-módulo-de-conciliação-bancária--fechamento-contábil)
    - 3.37 [Design System de Tabelas, Proporções e Padronização Visual PaxFlow](#337-design-system-de-tabelas-proporções-e-padronização-visual-paxflow)
    - 3.38 [Painel de Filtros Avançados Combináveis, Resumo Financeiro & Exportação CSV de Viagens](#338-painel-de-filtros-avançados-combináveis-resumo-financeiro--exportação-csv-de-viagens)
+   - 3.39 [Melhorias Estratégicas em Relatórios e Central de Lembretes](#339-melhorias-estratégicas-em-relatórios-e-central-de-lembretes)
 4. [Diferenciais Competitivos](#4-diferenciais-competitivos)
 5. [Arquitetura Tecnológica](#5-arquitetura-tecnológica)
 6. [Segurança e Conformidade](#6-segurança-e-conformidade)
@@ -985,6 +986,33 @@ Para atender operações de agências de alto volume e demandas complexas de cru
    - Botão `📥 Exportar CSV` no cabeçalho operacional.
    - Gera arquivo `.csv` codificado em UTF-8 com BOM (`\uFEFF`) e delimitador `;` (ponto e vírgula).
    - Formatação monetária com vírgula decimal brasileira (`R$ 2.500,00` -> `2500,00`) e datas `DD/MM/AAAA`.
+
+### 3.39 Melhorias Estratégicas em Relatórios e Central de Lembretes
+
+Para aprofundar o controle gerencial, a governança de auditoria e a agilidade nas rotinas de follow-up, o PaxFlow implementou uma série de melhorias fundamentais nas visões analíticas de Relatórios (`Relatorios.ts`) e no gerenciamento de Lembretes do Mission Control:
+
+1. **Relatório de Desistências e Perdas Comerciais**:
+   - **Navegação Direta para o Orçamento**: O nome do cliente agora é um link interativo e a tabela analítica conta com uma nova coluna de Ações contendo o botão `📄 Orçamento`. Ao clicar, o sistema navega imediatamente para `#orcamentos?id=...`, abrindo a proposta de origem com todas as cotações, notas e motivos catalogados.
+   - **Atalho de Conversa WhatsApp / Digisac**: Botão `💬 WhatsApp` na coluna de Ações que abre o modal de mensagens do Digisac em modo de visualização/controle com o histórico do cliente.
+
+2. **Relatório de Embarques & Governança de Validação do Gestor**:
+   - **Coluna Exclusiva para Administradores**: Exibe a coluna **Validação Gestor** estritamente quando o usuário logado possui a role `admin` (`perfil.role === 'admin'`). Para consultores comuns, a coluna é suprimida da tabela para manter a interface focada.
+   - **Alternância Interativa de Conferência (`🛡️ Conferido` / `⏳ Pendente`)**: Permite que o gestor marque a conferência operacional de cada trecho aéreo e partida de viagem em 1-clique. Registra o identificador do gestor (`gestor_id`), nome (`gestor_nome`) e timestamp (`validado_gestor_em`), exibidos em tooltip de auditoria.
+   - **Resiliência a Schema Drift (Zero-Break)**: O serviço `ContatosEmbarqueService` implementa persistência nativa na coluna `contatos_embarque` com fallback automático para `observacoes` caso a coluna não esteja migrada no banco (erro `42703`/`PGRST204`).
+   - **Botão Direto para Orçamento na Viagem**: Na coluna de Ações de Embarque, adicionado o botão `📄 Orçamento` ao lado do botão `🔍 Viagem`, permitindo ao operador consultar a negociação original com 1 clique.
+
+3. **Integração Global com WhatsApp / Digisac em Relatórios Analíticos**:
+   - Disponibilização do botão de conversa no Digisac (`SendTemplateMessageModal.open({ ... focusChatHistory: true })`) em todas as visões que possuem passageiros e clientes vinculados:
+     - Relatório de Desistências e Fuga de Receita
+     - Relatório de Embarques e Trechos de Voo
+     - Relatório de SLAs e Jornada de Pós-Venda
+     - Relatório de Validação de Documentos Iminentes (Passaportes em Risco)
+     - Painel Preditivo de Risco e Churn
+   - Abre a gaveta de chat para visualização rápida sem efetuar disparos automáticos indevidos.
+
+4. **Central de Lembretes com Descrição & Resolução de Nomes**:
+   - Adição de campo de texto dedicado (`descricao`) na criação e agendamento de lembretes, permitindo detalhar claramente o objetivo da tarefa (ex: "Conferir marcação de assentos e voucher").
+   - Resolução matemática precisa do nome do cliente titular vinculado ao orçamento ou viagem, eliminando de forma definitiva nomenclaturas genéricas (como "CLIENTE VIAGEM").
 
 ---
 

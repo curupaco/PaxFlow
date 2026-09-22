@@ -183,11 +183,14 @@ export class ContatosEmbarqueService {
           errMsg
         );
 
-        const { data: vData } = await supabase
+        const query = supabase
           .from('viagens')
           .select('observacoes')
-          .eq('id', viagemId)
-          .single();
+          .eq('id', viagemId);
+
+        const { data: vData } = typeof (query as any).maybeSingle === 'function'
+          ? await (query as any).maybeSingle()
+          : await (query as any).single();
 
         let currentObs = vData?.observacoes || '';
         currentObs = currentObs.replace(/\[CONTATOS_EMBARQUE\]:\s*\{.*\}\n?/g, '').trim();
@@ -209,5 +212,56 @@ export class ContatosEmbarqueService {
       console.error('Erro ao persistir contatos de pré-embarque:', err);
       throw err;
     }
+  }
+
+  /**
+   * Alterna o status de conferência/validação do gestor para um trecho específico de embarque.
+   * Exclusivo para administradores.
+   */
+  public static async alternarValidacaoGestor(
+    viagem: any,
+    trechoKey: string,
+    gestorId: string,
+    gestorNome: string,
+    statusDesejado?: boolean
+  ): Promise<{ sucesso: boolean; novoStatus: boolean; contatosAtualizados: Record<string, ContatoEmbarqueRegistro> }> {
+    const viagemId = typeof viagem === 'string' ? viagem : viagem?.id;
+
+    let contatos: Record<string, ContatoEmbarqueRegistro> = {};
+    if (typeof viagem === 'object' && viagem !== null) {
+      contatos = { ...this.extrairContatos(viagem) };
+    } else {
+      const q = supabase
+        .from('viagens')
+        .select('id, contatos_embarque, observacoes')
+        .eq('id', viagemId);
+
+      const { data } = typeof (q as any).maybeSingle === 'function'
+        ? await (q as any).maybeSingle()
+        : await (q as any).single();
+
+      if (data) {
+        contatos = { ...this.extrairContatos(data) };
+      }
+    }
+
+    const registroAtual = contatos[trechoKey] || { feito: false };
+    const novoStatus = statusDesejado !== undefined ? statusDesejado : !registroAtual.validado_gestor;
+
+    contatos[trechoKey] = {
+      ...registroAtual,
+      validado_gestor: novoStatus,
+      validado_gestor_em: novoStatus ? new Date().toISOString() : undefined,
+      gestor_id: novoStatus ? gestorId : undefined,
+      gestor_nome: novoStatus ? gestorNome : undefined
+    };
+
+    await this.salvarContatos(viagemId, contatos);
+
+    return {
+      sucesso: true,
+      novoStatus,
+      contatosAtualizados: contatos
+    };
   }
 }

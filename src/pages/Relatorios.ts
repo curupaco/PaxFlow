@@ -1124,23 +1124,42 @@ export class RelatoriosPage {
                   <th class="p-3">Destino</th>
                   <th class="p-3">Valor Proposta</th>
                   <th class="p-3">Motivo da Desistência</th>
+                  <th class="p-3 text-center">Ações</th>
                 </tr>
               </thead>
               <tbody>
                 ${perdidos.map((o: any) => {
                   const tagMotivo = o.tags?.find((t: string) => t.startsWith('Desistência:'));
                   const reason = tagMotivo ? tagMotivo.replace('Desistência: ', '').replace('Desistência:', '').trim() : 'Não informado';
+                  const cNome = o.nome_cliente || o.nomeCliente || 'Cliente';
+                  const cTelefone = o.telefone_cliente || o.telefoneCliente || o.telefone || (this.clientes.find(c => c.id === (o.cliente_id || o.clienteId))?.telefone) || '';
+                  const cConsultor = this.consultores.find(c => c.id === (o.consultor_id || o.consultorId))?.nome || 'Consultor';
+                  
                   return `
                     <tr class="border-b border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-300">
-                      <td class="p-3 font-extrabold text-slate-800 dark:text-slate-100">${o.nome_cliente || o.nomeCliente}</td>
+                      <td class="p-3 font-extrabold">
+                        <a href="#orcamentos?id=${o.id}" class="hover:underline text-indigo-600 dark:text-indigo-400 flex items-center gap-1 font-extrabold" title="Abrir Orçamento">
+                          <span>${cNome}</span>
+                        </a>
+                      </td>
                       <td class="p-3">${o.destino}</td>
                       <td class="p-3">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(o.valorProposta || o.valor_proposta || 0)}</td>
                       <td class="p-3 font-extrabold text-rose-500">${reason}</td>
+                      <td class="p-3 text-center">
+                        <div class="flex items-center justify-center gap-1.5 flex-wrap">
+                          <button class="btn-ir-orcamento px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-[10px] font-black rounded-lg transition uppercase tracking-wider flex items-center gap-1" data-orcamento-id="${o.id}" title="Ir direto para o Orçamento">
+                            📄 Orçamento
+                          </button>
+                          <button class="btn-chat-digisac px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-800/60 text-[10px] font-black rounded-lg transition uppercase tracking-wider flex items-center gap-1" data-cliente-nome="${cNome}" data-cliente-telefone="${cTelefone}" data-consultor-nome="${cConsultor}" data-destino="${o.destino || ''}" title="Abrir conversa no Digisac">
+                            💬 WhatsApp
+                          </button>
+                        </div>
+                      </td>
                     </tr>
                   `;
                 }).join('') || `
                   <tr>
-                    <td colspan="4" class="p-6 text-center text-slate-400 font-extrabold">Nenhuma desistência registrada no período.</td>
+                    <td colspan="5" class="p-6 text-center text-slate-400 font-extrabold">Nenhuma desistência registrada no período.</td>
                   </tr>
                 `}
               </tbody>
@@ -1707,8 +1726,8 @@ export class RelatoriosPage {
     const posViagemViagens: any[] = [];
 
     // Document and post-sale alerts lists
-    const docAlerts: { cliente: string, destino: string, dataIda: string, motivo: string }[] = [];
-    const posVendaPendente: { cliente: string, destino: string, dataVolta: string, consultor: string }[] = [];
+    const docAlerts: { cliente: string; clienteTelefone?: string; destino: string; dataIda: string; tripId?: string; consultorNome?: string; motivo: string }[] = [];
+    const posVendaPendente: { cliente: string; clienteTelefone?: string; destino: string; dataVolta: string; tripId?: string; consultor: string }[] = [];
 
     data.viagens.forEach((v: any) => {
       if (v.status === 'cancelada') return;
@@ -1742,8 +1761,11 @@ export class RelatoriosPage {
             const diffDays = Math.round((passVal.getTime() - dataIdaParaDoc.getTime()) / (1000 * 60 * 60 * 24));
             docAlerts.push({
               cliente: v.cliente?.nome || 'Cliente não informado',
+              clienteTelefone: v.cliente?.telefone || '',
               destino: v.destino,
               dataIda: dataIdaStr,
+              tripId: v.id,
+              consultorNome: this.consultores.find(c => c.id === (v.consultor_id || v.consultorId))?.nome || 'Consultor',
               motivo: `Passaporte expira em ${passValidadeStr.split('-').reverse().join('/')} (apenas ${diffDays} dias após embarque, exige-se 180 dias)`
             });
           }
@@ -1754,8 +1776,11 @@ export class RelatoriosPage {
           if (isInternacional) {
             docAlerts.push({
               cliente: v.cliente?.nome || 'Cliente não informado',
+              clienteTelefone: v.cliente?.telefone || '',
               destino: v.destino,
               dataIda: dataIdaStr,
+              tripId: v.id,
+              consultorNome: this.consultores.find(c => c.id === (v.consultor_id || v.consultorId))?.nome || 'Consultor',
               motivo: 'Viagem internacional pendente de passaporte cadastrado!'
             });
           }
@@ -1775,8 +1800,10 @@ export class RelatoriosPage {
         const cNome = this.consultores.find(c => c.id === (v.consultor_id || v.consultorId))?.nome || 'Não designado';
         posVendaPendente.push({
           cliente: v.cliente?.nome || 'Cliente não informado',
+          clienteTelefone: v.cliente?.telefone || '',
           destino: v.destino,
           dataVolta: dataVoltaStr,
+          tripId: v.id,
           consultor: cNome
         });
       }
@@ -1793,6 +1820,11 @@ export class RelatoriosPage {
             Alerta Crítico
           </span>
         </td>
+        <td class="p-3 text-center">
+          <button class="btn-chat-digisac px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-800/60 text-[10px] font-black rounded-lg transition uppercase tracking-wider flex items-center gap-1 mx-auto" data-cliente-nome="${a.cliente}" data-cliente-telefone="${a.clienteTelefone}" data-consultor-nome="${a.consultorNome}" data-trip-id="${a.tripId}" data-destino="${a.destino}" title="Abrir conversa no Digisac">
+            💬 WhatsApp
+          </button>
+        </td>
       </tr>
     `).join('');
 
@@ -1806,6 +1838,11 @@ export class RelatoriosPage {
           <span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-amber-50 text-amber-600 dark:bg-amber-950/30">
             Pós-Venda Pendente
           </span>
+        </td>
+        <td class="p-3 text-center">
+          <button class="btn-chat-digisac px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-800/60 text-[10px] font-black rounded-lg transition uppercase tracking-wider flex items-center gap-1 mx-auto" data-cliente-nome="${p.cliente}" data-cliente-telefone="${p.clienteTelefone}" data-consultor-nome="${p.consultor}" data-trip-id="${p.tripId}" data-destino="${p.destino}" title="Abrir conversa no Digisac">
+            💬 WhatsApp
+          </button>
         </td>
       </tr>
     `).join('');
@@ -1847,12 +1884,13 @@ export class RelatoriosPage {
                   <th class="p-3">Data Ida</th>
                   <th class="p-3">Problema de SLA Documental</th>
                   <th class="p-3 text-center">Risco</th>
+                  <th class="p-3 text-center">Ações</th>
                 </tr>
               </thead>
               <tbody>
                 ${docAlertsHtml || `
                   <tr>
-                    <td colspan="5" class="p-6 text-center text-slate-400 font-extrabold">🎉 Nenhum problema de SLA documental detectado para os próximos embarques.</td>
+                    <td colspan="6" class="p-6 text-center text-slate-400 font-extrabold">🎉 Nenhum problema de SLA documental detectado para os próximos embarques.</td>
                   </tr>
                 `}
               </tbody>
@@ -1875,12 +1913,13 @@ export class RelatoriosPage {
                   <th class="p-3">Data Retorno</th>
                   <th class="p-3">Consultor Responsável</th>
                   <th class="p-3 text-center">Status SLA</th>
+                  <th class="p-3 text-center">Ações</th>
                 </tr>
               </thead>
               <tbody>
                 ${posVendaHtml || `
                   <tr>
-                    <td colspan="5" class="p-6 text-center text-slate-400 font-extrabold">🎉 Todos os clientes retornados no período já receberam atendimento de pós-venda.</td>
+                    <td colspan="6" class="p-6 text-center text-slate-400 font-extrabold">🎉 Todos os clientes retornados no período já receberam atendimento de pós-venda.</td>
                   </tr>
                 `}
               </tbody>
@@ -1895,6 +1934,7 @@ export class RelatoriosPage {
     const start = this.dataInicio;
     const end = this.dataFim;
     const filterConsultorId = this.consultorIdFilter;
+    const isAdmin = (this.perfil?.role || '').toLowerCase() === 'admin';
 
     const list: any[] = [];
 
@@ -1913,30 +1953,42 @@ export class RelatoriosPage {
       }
 
       const clientName = v.cliente?.nome || 'Passageiro';
+      const clientPhone = v.cliente?.telefone || '';
       const consultorName = this.consultores.find(c => c.id === v.consultor_id)?.nome || 'Consultor';
       const contatosViagem = ContatosEmbarqueService.extrairContatos(v);
       const embarquesConsolidados = ContatosEmbarqueService.obterEmbarquesViagem(v);
+
+      // Localiza o ID do orçamento vinculado a esta viagem/cliente
+      const orcamentoId = v.orcamento_id || this.orcamentos.find(o => (o.cliente_id && o.cliente_id === v.cliente_id) || (o.clienteId && o.clienteId === v.cliente_id))?.id || '';
 
       embarquesConsolidados.forEach((emb) => {
         if (emb.dataStr && emb.dataStr >= start && emb.dataStr <= end) {
           const hasAlert = this.lembretes.some((l: any) => l.viagem_id === v.id && l.data_lembrete === emb.dataStr);
           const contatoRegistro = contatosViagem[emb.chave];
           const contatoFeito = Boolean(contatoRegistro?.feito);
+          const validadoGestor = Boolean(contatoRegistro?.validado_gestor);
+          const validadoGestorEm = contatoRegistro?.validado_gestor_em;
+          const gestorNome = contatoRegistro?.gestor_nome;
 
           list.push({
             data: emb.dataStr,
             cliente: clientName,
+            clienteTelefone: clientPhone,
             destino: emb.destino,
             tipo: emb.tipoDesc,
             loc: emb.loc,
             consultor: consultorName,
             hasAlert,
             tripId: v.id,
+            orcamentoId,
             productId: emb.productId || '',
             tipoEmbarque: emb.tipo,
             trechoKey: emb.chave,
             contatoRegistro,
-            contatoFeito
+            contatoFeito,
+            validadoGestor,
+            validadoGestorEm,
+            gestorNome
           });
         }
       });
@@ -1996,6 +2048,58 @@ export class RelatoriosPage {
         `;
       }
 
+      // Validação do Gestor (apenas Administrador)
+      let validacaoGestorHtml = '';
+      if (isAdmin) {
+        if (item.validadoGestor) {
+          const dHoraGestor = item.validadoGestorEm 
+            ? new Date(item.validadoGestorEm).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
+            : '';
+          const quemGestor = item.gestorNome || 'Gestor';
+          const tooltipGestor = `Conferido e validado por ${quemGestor} em ${dHoraGestor}. Clique para desmarcar se necessário.`;
+
+          validacaoGestorHtml = `
+            <td class="p-3 text-center">
+              <button class="btn-toggle-validacao-gestor px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-800/60 rounded-lg text-[10px] font-black uppercase tracking-wider transition flex items-center gap-1 mx-auto shadow-xs" 
+                data-trip-id="${item.tripId}" 
+                data-trecho-key="${item.trechoKey}" 
+                title="${tooltipGestor}">
+                <svg class="w-3 h-3 text-emerald-600 dark:text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" />
+                </svg>
+                <span>Conferido</span>
+              </button>
+            </td>
+          `;
+        } else {
+          validacaoGestorHtml = `
+            <td class="p-3 text-center">
+              <button class="btn-toggle-validacao-gestor px-2.5 py-1 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/30 dark:hover:bg-amber-900/40 text-amber-700 dark:text-amber-400 border border-amber-200/80 dark:border-amber-800/60 rounded-lg text-[10px] font-black uppercase tracking-wider transition flex items-center gap-1 mx-auto shadow-xs" 
+                data-trip-id="${item.tripId}" 
+                data-trecho-key="${item.trechoKey}" 
+                title="Conferência do gestor pendente. Clique para marcar como conferido.">
+                <svg class="w-3 h-3 text-amber-600 dark:text-amber-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>Pendente</span>
+              </button>
+            </td>
+          `;
+        }
+      }
+
+      const orcamentoBtn = item.orcamentoId ? `
+        <button class="btn-ir-orcamento px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-[10px] font-black rounded-lg transition uppercase tracking-wider flex items-center gap-1" data-orcamento-id="${item.orcamentoId}" title="Ir direto para o Orçamento">
+          📄 Orçamento
+        </button>
+      ` : '';
+
+      const whatsAppBtn = `
+        <button class="btn-chat-digisac px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-800/60 text-[10px] font-black rounded-lg transition uppercase tracking-wider flex items-center gap-1" data-cliente-nome="${item.cliente}" data-cliente-telefone="${item.clienteTelefone}" data-consultor-nome="${item.consultor}" data-trip-id="${item.tripId}" data-destino="${item.destino}" data-loc="${item.loc}" title="Abrir conversa no Digisac">
+          💬 WhatsApp
+        </button>
+      `;
+
       return `
         <tr class="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50/40 dark:hover:bg-slate-800/20 text-slate-600 dark:text-slate-300 transition-colors">
           <td class="p-3 font-extrabold text-slate-800 dark:text-slate-100">${formatarDataBr(item.data)}</td>
@@ -2006,14 +2110,21 @@ export class RelatoriosPage {
           <td class="p-3 font-semibold">${item.consultor}</td>
           <td class="p-3 text-center">${alertBadge}</td>
           <td class="p-3 text-center">${contatoBadge}</td>
+          ${validacaoGestorHtml}
           <td class="p-3 text-center">
-            <button class="btn-detalhes-viagem px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/30 dark:hover:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 text-[10px] font-black rounded-lg transition uppercase tracking-wider flex items-center gap-1 mx-auto" data-trip-id="${item.tripId}">
-              🔍 Detalhes
-            </button>
+            <div class="flex items-center justify-center gap-1.5 flex-wrap">
+              <button class="btn-detalhes-viagem px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/30 dark:hover:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 text-[10px] font-black rounded-lg transition uppercase tracking-wider flex items-center gap-1" data-trip-id="${item.tripId}" title="Ver detalhes da viagem">
+                🔍 Viagem
+              </button>
+              ${orcamentoBtn}
+              ${whatsAppBtn}
+            </div>
           </td>
         </tr>
       `;
     }).join('');
+
+    const colunasTotais = isAdmin ? 10 : 9;
 
     return `
       <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-3xl p-6 shadow-sm flex flex-col gap-6 print-full-width">
@@ -2022,7 +2133,7 @@ export class RelatoriosPage {
             <h2 class="text-lg font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
               <span>✈️ Relatório de Embarque e Trechos de Voo</span>
             </h2>
-            <p class="text-xs text-slate-400 font-semibold mt-0.5">Controle preventivo e auditoria de contatos pré-embarque de passageiros.</p>
+            <p class="text-xs text-slate-400 font-semibold mt-0.5">Controle preventivo, auditoria de contatos pré-embarque e conferência de gestão.</p>
           </div>
           <div class="flex items-center gap-3 flex-wrap">
             <div class="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/70 border border-slate-200/80 dark:border-slate-700 px-3 py-1.5 rounded-xl">
@@ -2050,13 +2161,14 @@ export class RelatoriosPage {
                 <th class="p-3">Consultor</th>
                 <th class="p-3 text-center">Alerta</th>
                 <th class="p-3 text-center">Contato</th>
+                ${isAdmin ? '<th class="p-3 text-center">Validação Gestor</th>' : ''}
                 <th class="p-3 text-center">Ações</th>
               </tr>
             </thead>
             <tbody>
               ${rowsHtml || `
                 <tr>
-                  <td colspan="9" class="p-8 text-center text-slate-400 font-extrabold italic">🎉 Nenhum embarque ou trecho de voo programado para o período ou filtro selecionado.</td>
+                  <td colspan="${colunasTotais}" class="p-8 text-center text-slate-400 font-extrabold italic">🎉 Nenhum embarque ou trecho de voo programado para o período ou filtro selecionado.</td>
                 </tr>
               `}
             </tbody>
@@ -3202,15 +3314,100 @@ export class RelatoriosPage {
       }
     });
 
-    // 15. Botões de Auditoria de Registros de Metas
-    document.querySelectorAll('.btn-auditar-meta-consultor').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const metaId = btn.getAttribute('data-meta-id') || this.selectedMetaId;
-        const consultorId = btn.getAttribute('data-consultor-id') || '';
-        const consultorNome = btn.getAttribute('data-consultor-nome') || 'Consultor';
-        if (metaId && consultorId) {
-          this.abrirModalAuditoriaMeta(metaId, consultorId, consultorNome);
+    // 16. Botão de Redirecionamento Direto para Orçamento
+    document.querySelectorAll('.btn-ir-orcamento').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const orcId = btn.getAttribute('data-orcamento-id');
+        if (orcId) {
+          window.location.hash = `#orcamentos?id=${orcId}`;
         }
+      });
+    });
+
+    // 17. Alternância de Validação de Embarque pelo Gestor (Apenas Administradores)
+    document.querySelectorAll('.btn-toggle-validacao-gestor').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        if ((this.perfil?.role || '').toLowerCase() !== 'admin') {
+          this.showToast('Apenas administradores podem validar conferências de embarque.', 'error');
+          return;
+        }
+
+        const tripId = btn.getAttribute('data-trip-id');
+        const trechoKey = btn.getAttribute('data-trecho-key');
+        if (!tripId || !trechoKey) return;
+
+        const viagem = this.viagens.find(v => v.id === tripId);
+        if (!viagem) return;
+
+        const contatos = ContatosEmbarqueService.extrairContatos(viagem);
+        const jaValidado = Boolean(contatos[trechoKey]?.validado_gestor);
+        const novoStatus = !jaValidado;
+        const gestorId = this.user?.id || '';
+        const gestorNome = this.perfil?.nome || this.user?.email || 'Gestor';
+
+        try {
+          const res = await ContatosEmbarqueService.alternarValidacaoGestor(
+            viagem,
+            trechoKey,
+            gestorId,
+            gestorNome,
+            novoStatus
+          );
+
+          // Atualizar estado em memória
+          viagem.contatos_embarque = res.contatosAtualizados;
+          if (!viagem.contatos_embarque) viagem.contatos_embarque = {};
+          if (!viagem.contatos_embarque[trechoKey]) {
+            viagem.contatos_embarque[trechoKey] = { feito: false };
+          }
+          viagem.contatos_embarque[trechoKey].validado_gestor = novoStatus;
+          viagem.contatos_embarque[trechoKey].validado_gestor_em = novoStatus ? new Date().toISOString() : undefined;
+          viagem.contatos_embarque[trechoKey].gestor_id = novoStatus ? gestorId : undefined;
+          viagem.contatos_embarque[trechoKey].gestor_nome = novoStatus ? gestorNome : undefined;
+
+          this.showToast(
+            novoStatus 
+              ? 'Embarque validado pelo gestor com sucesso!' 
+              : 'Validação de gestor removida.', 
+            'success'
+          );
+
+          // Re-renderizar o painel de embarques
+          const container = document.getElementById('report-view-container');
+          if (container) {
+            container.innerHTML = this.renderEmbarques({});
+            this.setupEventListeners();
+          }
+        } catch (err: any) {
+          console.error('Erro ao alternar validação de gestor:', err);
+          this.showToast('Erro ao salvar validação no banco de dados.', 'error');
+        }
+      });
+    });
+
+    // 18. Botão de WhatsApp / Visualização de Conversa no Digisac (Sem disparo automático)
+    document.querySelectorAll('.btn-chat-digisac').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const clienteNome = btn.getAttribute('data-cliente-nome') || '';
+        const clienteTelefone = btn.getAttribute('data-cliente-telefone') || '';
+        const consultorNome = btn.getAttribute('data-consultor-nome') || (this.perfil?.nome || this.user?.email || 'Consultor');
+        const destino = btn.getAttribute('data-destino') || undefined;
+        const localizador = btn.getAttribute('data-loc') || undefined;
+        const viagemId = btn.getAttribute('data-trip-id') || undefined;
+
+        SendTemplateMessageModal.open({
+          clienteNome,
+          clienteTelefone,
+          consultorNome,
+          destino,
+          localizador,
+          viagemId,
+          focusChatHistory: true,
+          showToast: (msg, type) => this.showToast(msg, type)
+        });
       });
     });
   }
