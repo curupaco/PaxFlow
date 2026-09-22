@@ -561,6 +561,38 @@ export class OrcamentosPage {
       });
     });
 
+    // Checkbox de contato com cliente em orçamentos desistidos (Admins)
+    this.container.querySelectorAll('[data-action="toggle-contato-desistencia"]').forEach(input => {
+      input.addEventListener('change', async (e) => {
+        e.stopPropagation();
+        const target = input as HTMLInputElement;
+        const id = target.dataset.id;
+        if (!id) return;
+        const checked = target.checked;
+        try {
+          const res = await OrcamentosService.alternarContatoDesistencia(id, checked, this.perfil);
+          if (res.success) {
+            this.showToast(checked ? 'Contato com cliente registrado!' : 'Contato desmarcado.', 'success');
+            await this.loadOrcamentos();
+            this.render();
+          }
+        } catch (err: any) {
+          this.showToast('Erro ao atualizar contato: ' + err.message, 'error');
+          target.checked = !checked;
+        }
+      });
+    });
+
+    // Botão de Reabrir Orçamento Desistido (🔄)
+    this.container.querySelectorAll('[data-action="reabrir-orcamento"]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        const id = (btn as HTMLElement).dataset.id;
+        if (id) this.openReabrirOrcamentoModal(id);
+      });
+    });
+
     // Botão Excluir (Disponível apenas para ADMIN)
     this.container.querySelectorAll('[data-action="excluir"]').forEach(btn => {
       btn.addEventListener('click', async (e) => {
@@ -1183,14 +1215,36 @@ export class OrcamentosPage {
 
         <!-- Informações Finais na Coluna CONCLUÍDO -->
         ${o.status === 'CONCLUIDO' ? `
-          <div class="border-t border-dashed border-slate-200 dark:border-slate-800 pt-2.5 flex items-center justify-between">
-            ${o.subStatus === 'ACEITO' 
-              ? `<span class="px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 border border-emerald-100/30 text-[9px] font-black uppercase tracking-wider rounded">Viagem Fechada! 🎉</span>` 
-              : `<span class="px-2 py-0.5 bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-400 border border-slate-200/20 text-[9px] font-black uppercase tracking-wider rounded">Desistência 🚫</span>`
-            }
-            <button data-action="ver-notas" data-id="${o.id}" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 font-black transition uppercase text-[9px] tracking-wider">
-              Ver Histórico
-            </button>
+          <div class="border-t border-dashed border-slate-200 dark:border-slate-800 pt-2.5 space-y-2">
+            <div class="flex items-center justify-between">
+              ${o.subStatus === 'ACEITO' 
+                ? `<span class="px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 border border-emerald-100/30 text-[9px] font-black uppercase tracking-wider rounded">Viagem Fechada! 🎉</span>` 
+                : `<span class="px-2 py-0.5 bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 border border-rose-100/30 text-[9px] font-black uppercase tracking-wider rounded">Desistência 🚫</span>`
+              }
+              <button data-action="ver-notas" data-id="${o.id}" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 font-black transition uppercase text-[9px] tracking-wider">
+                Ver Histórico
+              </button>
+            </div>
+
+            <!-- Checkbox de Contato com Cliente para Desistências -->
+            ${o.subStatus === 'DESISTENCIA' ? `
+              <div class="pt-1.5 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between gap-1 text-[10px]">
+                ${isAdmin ? `
+                  <label class="flex items-center gap-1.5 cursor-pointer select-none text-slate-600 dark:text-slate-300 font-bold" title="${o.contatoRealizado ? `Contato confirmado${o.contatoRealizadoPorNome ? ' por ' + o.contatoRealizadoPorNome : ''}${o.contatoRealizadoEm ? ' em ' + new Date(o.contatoRealizadoEm).toLocaleDateString('pt-BR') : ''}` : 'Marcar se a equipe/gestor já conversou com o cliente desistente'}">
+                    <input type="checkbox" data-action="toggle-contato-desistencia" data-id="${o.id}" ${o.contatoRealizado ? 'checked' : ''} class="w-3.5 h-3.5 rounded border-slate-300 dark:border-slate-700 text-indigo-600 focus:ring-indigo-500 cursor-pointer" />
+                    <span class="${o.contatoRealizado ? 'text-indigo-600 dark:text-indigo-400 font-black' : 'text-slate-500'}">Falamos c/ Cliente</span>
+                  </label>
+                ` : `
+                  <div class="flex items-center gap-1 font-bold ${o.contatoRealizado ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}">
+                    <span>${o.contatoRealizado ? '✅' : '⏳'}</span>
+                    <span>${o.contatoRealizado ? 'Falamos c/ Cliente' : 'Contato Pendente'}</span>
+                  </div>
+                `}
+                ${o.contatoRealizado && o.contatoRealizadoEm ? `
+                  <span class="text-[9px] text-slate-400" title="${o.contatoRealizadoPorNome ? 'Conferido por ' + o.contatoRealizadoPorNome : ''}">${new Date(o.contatoRealizadoEm).toLocaleDateString('pt-BR')}</span>
+                ` : ''}
+              </div>
+            ` : ''}
           </div>
         ` : ''}
 
@@ -1233,6 +1287,12 @@ export class OrcamentosPage {
                 </button>
               ` : ''}
 
+              ${(o.status === 'CONCLUIDO' && o.subStatus === 'DESISTENCIA') ? `
+                <button data-action="reabrir-orcamento" data-id="${o.id}" title="Reabrir Orçamento (Mover para Solicitado)" class="w-7 h-7 inline-flex items-center justify-center hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-slate-500 hover:text-emerald-600 dark:hover:text-emerald-400 rounded-lg transition text-xs shrink-0">
+                  🔄
+                </button>
+              ` : ''}
+
               ${isAdmin ? `
                 <button data-action="excluir" data-id="${o.id}" title="Excluir Orçamento (Admin Only)" class="w-7 h-7 inline-flex items-center justify-center hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-lg transition shrink-0">
                   <svg width="14" height="14" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
@@ -1259,6 +1319,12 @@ export class OrcamentosPage {
           ${o.status === 'AGUARDANDO' ? `
             <button data-action="aceitar" data-id="${o.id}" class="w-full h-8 px-3 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white text-[11px] font-black tracking-wider uppercase rounded-xl shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer">
               <span>Vender</span> <span>🏆</span>
+            </button>
+          ` : ''}
+
+          ${(o.status === 'CONCLUIDO' && o.subStatus === 'DESISTENCIA') ? `
+            <button data-action="reabrir-orcamento" data-id="${o.id}" class="w-full h-8 px-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 active:scale-[0.98] text-slate-700 dark:text-slate-200 text-[11px] font-black tracking-wider uppercase rounded-xl shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer">
+              <span>Reabrir Orçamento</span> <span>🔄</span>
             </button>
           ` : ''}
         </div>
@@ -3319,6 +3385,71 @@ export class OrcamentosPage {
 
       } catch (err: any) {
         showCustomAlert(`Erro ao registrar desistência:\n\n${err.message || err}`, 'Erro de Registro');
+      }
+    });
+  }
+
+  private openReabrirOrcamentoModal(id: string): void {
+    const orc = this.orcamentos.find(o => o.id === id);
+    if (!orc) return;
+
+    this.renderModalOverlay();
+    const portal = document.getElementById('orcamento-modal-portal');
+    const modalContent = document.getElementById('modal-content-container');
+    if (!modalContent || !portal) return;
+
+    modalContent.innerHTML = `
+      <div class="p-6">
+        <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3 mb-5">
+          <h3 class="text-lg font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+            <span>🔄 Reabrir Orçamento</span>
+          </h3>
+          <button id="btn-close-modal-x" class="text-slate-400 hover:text-rose-500 font-bold transition text-lg">&times;</button>
+        </div>
+
+        <p class="text-xs text-slate-500 dark:text-slate-400 mb-4 font-semibold">
+          Você está prestes a reabrir o orçamento de <strong class="text-slate-800 dark:text-slate-100">${orc.nomeCliente} - ${orc.destino}</strong>, movendo-o de volta para o status <strong>SOLICITADO</strong>. O histórico de negociação anterior será integralmente preservado.
+        </p>
+
+        <form id="form-reabrir-orcamento" class="space-y-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">
+              Motivo da Reabertura (Opcional)
+            </label>
+            <textarea id="input-motivo-reabertura" rows="3" placeholder="Ex: Cliente voltou a ter interesse na viagem, solicitou novas opções de datas..." class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs leading-relaxed resize-none"></textarea>
+          </div>
+
+          <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
+            <button id="btn-cancel-modal" type="button" class="h-10 px-5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs tracking-wider rounded-xl transition uppercase flex items-center justify-center">Cancelar</button>
+            <button type="submit" class="h-10 px-6 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-emerald-600/10 transition uppercase flex items-center justify-center gap-1.5">
+              <span>Reabrir Orçamento</span> <span>🔄</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    `;
+
+    const closeModal = () => this.closeModal();
+    document.getElementById('btn-close-modal-x')?.addEventListener('click', closeModal);
+    document.getElementById('btn-cancel-modal')?.addEventListener('click', closeModal);
+
+    const form = document.getElementById('form-reabrir-orcamento') as HTMLFormElement;
+    const inputMotivo = document.getElementById('input-motivo-reabertura') as HTMLTextAreaElement;
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const motivo = inputMotivo ? inputMotivo.value.trim() : '';
+
+      try {
+        const res = await OrcamentosService.reabrirOrcamento(orc.id, motivo, this.perfil);
+        if (res.success) {
+          this.showToast('Orçamento reaberto com sucesso e movido para Solicitado!', 'success');
+          this.closeModal();
+          await this.loadOrcamentos();
+          this.render();
+        }
+      } catch (err: any) {
+        showCustomAlert(`Erro ao reabrir orçamento:\n\n${err.message || err}`, 'Erro na Reabertura');
       }
     });
   }

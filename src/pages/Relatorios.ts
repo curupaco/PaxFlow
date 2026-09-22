@@ -13,6 +13,8 @@ import { processarExtratoRecebimentos, calcularFaturamentoLucratividade } from '
 import { MetasService } from '../services/metasService';
 import { getAvatarSvg } from '../services/avatars';
 import { VerNotasModal } from '../components/orcamentos/VerNotasModal';
+import { OrcamentosService } from '../services/orcamentosService';
+import { showCustomPrompt, showCustomAlert } from '../services/dialog';
 
 if (typeof document !== 'undefined') {
   const style = document.createElement('style');
@@ -1125,6 +1127,7 @@ export class RelatoriosPage {
                   <th class="p-3">Destino</th>
                   <th class="p-3">Valor Proposta</th>
                   <th class="p-3">Motivo da Desistência</th>
+                  <th class="p-3 text-center">Falamos c/ Cliente</th>
                   <th class="p-3 text-center">Ações</th>
                 </tr>
               </thead>
@@ -1135,6 +1138,14 @@ export class RelatoriosPage {
                   const cNome = o.nome_cliente || o.nomeCliente || 'Cliente';
                   const cTelefone = o.telefone_cliente || o.telefoneCliente || o.telefone || (this.clientes.find(c => c.id === (o.cliente_id || o.clienteId))?.telefone) || '';
                   const cConsultor = this.consultores.find(c => c.id === (o.consultor_id || o.consultorId))?.nome || 'Consultor';
+                  const isAdmin = (this.perfil?.role || '').toLowerCase() === 'admin';
+                  const cContatoRealizado = Boolean(o.contato_realizado || o.contatoRealizado);
+                  const cContatoEm = o.contato_realizado_em || o.contatoRealizadoEm;
+                  const cContatoPor = o.contato_realizado_por || o.contatoRealizadoPor;
+                  const cContatoPorNome = o.contato_realizado_por_profile?.nome || this.consultores.find(c => c.id === cContatoPor)?.nome || '';
+                  const tooltipContato = cContatoRealizado 
+                    ? `Contato realizado${cContatoPorNome ? ' por ' + cContatoPorNome : ''}${cContatoEm ? ' em ' + new Date(cContatoEm).toLocaleDateString('pt-BR') : ''}` 
+                    : 'Marcar se já houve contato com o cliente desistente';
                   
                   return `
                     <tr class="border-b border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-300">
@@ -1147,9 +1158,25 @@ export class RelatoriosPage {
                       <td class="p-3">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(o.valorProposta || o.valor_proposta || 0)}</td>
                       <td class="p-3 font-extrabold text-rose-500">${reason}</td>
                       <td class="p-3 text-center">
+                        ${isAdmin ? `
+                          <label class="inline-flex items-center gap-1.5 cursor-pointer select-none text-xs font-bold text-slate-700 dark:text-slate-300" title="${tooltipContato}">
+                            <input type="checkbox" class="checkbox-contato-desistencia w-4 h-4 rounded border-slate-300 dark:border-slate-700 text-indigo-600 focus:ring-indigo-500 cursor-pointer" data-orcamento-id="${o.id}" ${cContatoRealizado ? 'checked' : ''} />
+                            <span class="${cContatoRealizado ? 'text-indigo-600 dark:text-indigo-400 font-extrabold' : 'text-slate-400'}">${cContatoRealizado ? 'Sim' : 'Não'}</span>
+                          </label>
+                        ` : `
+                          <span class="inline-flex items-center gap-1 text-[11px] font-extrabold ${cContatoRealizado ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}" title="${tooltipContato}">
+                            <span>${cContatoRealizado ? '✅' : '⏳'}</span>
+                            <span>${cContatoRealizado ? 'Sim' : 'Pendente'}</span>
+                          </span>
+                        `}
+                      </td>
+                      <td class="p-3 text-center">
                         <div class="flex items-center justify-center gap-1.5 flex-wrap">
                           <button class="btn-ir-orcamento px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-[10px] font-black rounded-lg transition uppercase tracking-wider flex items-center gap-1" data-orcamento-id="${o.id}" title="Ir direto para o Orçamento">
                             📄 Orçamento
+                          </button>
+                          <button class="btn-reabrir-orcamento-relatorio px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-400 border border-indigo-200/80 dark:border-indigo-800/60 text-[10px] font-black rounded-lg transition uppercase tracking-wider flex items-center gap-1 cursor-pointer" data-orcamento-id="${o.id}" title="Reabrir Orçamento (Mover para Solicitado)">
+                            🔄 Reabrir
                           </button>
                           <button class="btn-chat-digisac px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-800/60 text-[10px] font-black rounded-lg transition uppercase tracking-wider flex items-center gap-1" data-cliente-nome="${cNome}" data-cliente-telefone="${cTelefone}" data-consultor-nome="${cConsultor}" data-destino="${o.destino || ''}" title="Abrir conversa no Digisac">
                             💬 WhatsApp
@@ -1160,7 +1187,7 @@ export class RelatoriosPage {
                   `;
                 }).join('') || `
                   <tr>
-                    <td colspan="5" class="p-6 text-center text-slate-400 font-extrabold">Nenhuma desistência registrada no período.</td>
+                    <td colspan="6" class="p-6 text-center text-slate-400 font-extrabold">Nenhuma desistência registrada no período.</td>
                   </tr>
                 `}
               </tbody>
@@ -3322,6 +3349,95 @@ export class RelatoriosPage {
         const orcId = btn.getAttribute('data-orcamento-id');
         if (orcId) {
           this.abrirModalOrcamento(orcId);
+        }
+      });
+    });
+
+    // 16.1. Alternância de Contato com o Cliente em Desistências (Apenas Administradores)
+    document.querySelectorAll('.checkbox-contato-desistencia').forEach(input => {
+      input.addEventListener('change', async (e) => {
+        e.stopPropagation();
+        if ((this.perfil?.role || '').toLowerCase() !== 'admin') {
+          this.showToast('Apenas administradores podem validar contatos de desistência.', 'error');
+          return;
+        }
+
+        const target = input as HTMLInputElement;
+        const orcId = target.getAttribute('data-orcamento-id');
+        if (!orcId) return;
+
+        const checked = target.checked;
+        try {
+          const res = await OrcamentosService.alternarContatoDesistencia(orcId, checked, this.perfil);
+          if (res.success) {
+            // Atualizar estado em memória
+            const orc = this.orcamentos.find(o => o.id === orcId);
+            if (orc) {
+              orc.contato_realizado = checked;
+              orc.contatoRealizado = checked;
+              orc.contato_realizado_em = res.contatoRealizadoEm;
+              orc.contatoRealizadoEm = res.contatoRealizadoEm;
+              orc.contato_realizado_por = res.contatoRealizadoPor;
+              orc.contatoRealizadoPor = res.contatoRealizadoPor;
+            }
+
+            this.showToast(checked ? 'Contato com cliente registrado com sucesso!' : 'Contato de desistência desmarcado.', 'success');
+            
+            // Re-renderizar tabela mantendo posição
+            const container = document.getElementById('report-view-container');
+            if (container && this.activeTab === 'perdas') {
+              container.innerHTML = this.renderPerdas(this.getFilteredData());
+              this.setupEventListeners();
+            }
+          }
+        } catch (err: any) {
+          console.error('Erro ao alternar contato com cliente:', err);
+          this.showToast('Erro ao atualizar status de contato.', 'error');
+          target.checked = !checked;
+        }
+      });
+    });
+
+    // 16.2. Botão de Reabrir Orçamento Desistido no Relatório
+    document.querySelectorAll('.btn-reabrir-orcamento-relatorio').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const orcId = btn.getAttribute('data-orcamento-id');
+        if (!orcId) return;
+
+        const orc = this.orcamentos.find(o => o.id === orcId);
+        const nomeCliente = orc?.nome_cliente || orc?.nomeCliente || 'Cliente';
+
+        const motivo = await showCustomPrompt(
+          `Informe o motivo da reabertura para o orçamento de ${nomeCliente} (opcional):`,
+          'Reabrir Orçamento',
+          'Ex: Cliente voltou a solicitar cotação...'
+        );
+        if (motivo === null) return; // Usuário cancelou
+
+        try {
+          const res = await OrcamentosService.reabrirOrcamento(orcId, motivo, this.perfil);
+          if (res.success) {
+            this.showToast('Orçamento reaberto com sucesso e movido para Solicitado!', 'success');
+            
+            // Atualizar registro em memória
+            if (orc) {
+              orc.status = 'SOLICITADO';
+              orc.sub_status = null;
+              orc.subStatus = undefined;
+              orc.contato_realizado = false;
+              orc.contatoRealizado = false;
+            }
+
+            // Recarregar painel
+            const container = document.getElementById('report-view-container');
+            if (container && this.activeTab === 'perdas') {
+              container.innerHTML = this.renderPerdas(this.getFilteredData());
+              this.setupEventListeners();
+            }
+          }
+        } catch (err: any) {
+          showCustomAlert(`Erro ao reabrir orçamento:\n\n${err.message || err}`, 'Erro na Reabertura');
         }
       });
     });

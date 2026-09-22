@@ -386,6 +386,9 @@ CREATE TABLE IF NOT EXISTS public.orcamentos (
     valor_viagem NUMERIC,
     documentos_url TEXT[] DEFAULT '{}'::TEXT[],
     origem TEXT,
+    contato_realizado BOOLEAN DEFAULT FALSE,
+    contato_realizado_por UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
+    contato_realizado_em TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );

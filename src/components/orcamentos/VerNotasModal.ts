@@ -1,9 +1,10 @@
 import { Orcamento, PerfilConsultor } from '../../types';
 import { getAvatarSvg } from '../../services/avatars';
 import { CommentsService } from '../../services/comments';
-import { showCustomConfirm } from '../../services/dialog';
+import { showCustomConfirm, showCustomPrompt } from '../../services/dialog';
 import { supabase } from '../../services/supabase';
 import { DestinosAutocomplete } from '../DestinosAutocomplete';
+import { OrcamentosService } from '../../services/orcamentosService';
 
 export interface VerNotasModalOptions {
   user: any;
@@ -234,6 +235,29 @@ export class VerNotasModal {
               </div>
             </div>
 
+            <!-- Conferência / Contato do Gestor (Desistência) -->
+            ${(orc.status === 'CONCLUIDO' && orc.subStatus === 'DESISTENCIA') ? `
+              <div class="bg-rose-50/50 dark:bg-rose-950/20 p-3 rounded-xl border border-rose-100/50 dark:border-rose-900/40 space-y-2">
+                <span class="block text-[10px] font-black text-rose-600 dark:text-rose-400 uppercase tracking-wider">Gestão de Desistência</span>
+                ${isAdmin ? `
+                  <label class="flex items-center gap-2 cursor-pointer select-none">
+                    <input type="checkbox" id="check-modal-contato-desistencia" ${orc.contatoRealizado ? 'checked' : ''} class="w-4 h-4 rounded border-rose-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer" />
+                    <span class="text-xs font-extrabold text-slate-700 dark:text-slate-200">Falamos com o Cliente</span>
+                  </label>
+                ` : `
+                  <div class="flex items-center gap-1.5 text-xs font-extrabold ${orc.contatoRealizado ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500'}">
+                    <span>${orc.contatoRealizado ? '✅' : '⏳'}</span>
+                    <span>${orc.contatoRealizado ? 'Falamos com o Cliente' : 'Contato Pendente'}</span>
+                  </div>
+                `}
+                ${orc.contatoRealizado && orc.contatoRealizadoEm ? `
+                  <p class="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
+                    Verificado em ${new Date(orc.contatoRealizadoEm).toLocaleDateString('pt-BR')} ${orc.contatoRealizadoPorNome ? ' por ' + orc.contatoRealizadoPorNome : ''}
+                  </p>
+                ` : ''}
+              </div>
+            ` : ''}
+
             <!-- Histórico de Datas -->
             <div class="border-t border-slate-200/50 dark:border-slate-800 pt-3 text-[10px] text-slate-400 dark:text-slate-400 font-bold space-y-1">
               <span class="block">Criado em: <strong class="text-slate-500 dark:text-slate-400 font-extrabold">${dataCriacao}</strong></span>
@@ -244,11 +268,17 @@ export class VerNotasModal {
         </div>
 
         <!-- Rodapé do Modal -->
-        <div class="flex items-center justify-between gap-3 pt-5 border-t border-slate-200 dark:border-slate-800 mt-4">
-          <div>
+        <div class="flex items-center justify-between gap-3 pt-5 border-t border-slate-200 dark:border-slate-800 mt-4 flex-wrap">
+          <div class="flex items-center gap-2">
             ${(options.perfil?.role === 'admin' && options.onDelete) ? `
               <button id="btn-excluir-orcamento" type="button" class="px-5 py-2.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-900/20 text-rose-600 dark:text-rose-400 font-extrabold text-xs tracking-wider rounded-xl transition uppercase">
                 Excluir Orçamento
+              </button>
+            ` : ''}
+
+            ${(orc.status === 'CONCLUIDO' && orc.subStatus === 'DESISTENCIA') ? `
+              <button id="btn-modal-reabrir-orcamento" type="button" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs tracking-wider rounded-xl transition uppercase flex items-center gap-1.5 shadow-sm cursor-pointer">
+                <span>Reabrir Orçamento</span> <span>🔄</span>
               </button>
             ` : ''}
           </div>
@@ -260,6 +290,51 @@ export class VerNotasModal {
     const handleClose = () => options.closeModal();
     document.getElementById('btn-close-modal-x')?.addEventListener('click', handleClose);
     document.getElementById('btn-close-modal')?.addEventListener('click', handleClose);
+
+    // Event listener para alternar contato com cliente (Admin)
+    const checkContatoDesistencia = document.getElementById('check-modal-contato-desistencia') as HTMLInputElement;
+    checkContatoDesistencia?.addEventListener('change', async () => {
+      const checked = checkContatoDesistencia.checked;
+      try {
+        const res = await OrcamentosService.alternarContatoDesistencia(orc.id, checked, options.perfil);
+        if (res.success) {
+          options.showToast(checked ? 'Contato com cliente registrado!' : 'Contato desmarcado.', 'success');
+          orc.contatoRealizado = checked;
+          orc.contato_realizado = checked;
+          orc.contatoRealizadoEm = res.contatoRealizadoEm;
+          orc.contatoRealizadoPor = res.contatoRealizadoPor;
+          orc.contatoRealizadoPorNome = res.contatoRealizadoPorNome;
+          if (options.onUpdate) await options.onUpdate(orc);
+        }
+      } catch (err: any) {
+        options.showToast('Erro ao atualizar contato: ' + err.message, 'error');
+        checkContatoDesistencia.checked = !checked;
+      }
+    });
+
+    // Event listener para reabrir orçamento desistido
+    const btnModalReabrir = document.getElementById('btn-modal-reabrir-orcamento');
+    btnModalReabrir?.addEventListener('click', async () => {
+      const motivo = await showCustomPrompt(
+        'Informe o motivo da reabertura do orçamento (opcional):',
+        'Reabrir Orçamento',
+        'Ex: Cliente voltou a solicitar cotação...'
+      );
+      if (motivo === null) return; // Usuário cancelou
+
+      try {
+        const res = await OrcamentosService.reabrirOrcamento(orc.id, motivo, options.perfil);
+        if (res.success) {
+          options.showToast('Orçamento reaberto com sucesso e movido para Solicitado!', 'success');
+          if (options.onUpdate && res.orcamentoAtualizado) {
+            await options.onUpdate(res.orcamentoAtualizado);
+          }
+          options.closeModal();
+        }
+      } catch (err: any) {
+        options.showToast('Erro ao reabrir orçamento: ' + err.message, 'error');
+      }
+    });
 
     // Event listener para excluir orçamento
     const btnExcluir = document.getElementById('btn-excluir-orcamento');

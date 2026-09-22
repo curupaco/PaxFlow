@@ -60,6 +60,13 @@ export class OrcamentosService {
       documentosUrl: d.documentos_url || [],
       codigo_ref: d.codigo_ref,
       codigoRef: d.codigo_ref,
+      contatoRealizado: d.contato_realizado ?? false,
+      contato_realizado: d.contato_realizado ?? false,
+      contatoRealizadoPor: d.contato_realizado_por,
+      contato_realizado_por: d.contato_realizado_por,
+      contatoRealizadoPorNome: d.contato_realizado_por_profile?.nome,
+      contatoRealizadoEm: d.contato_realizado_em,
+      contato_realizado_em: d.contato_realizado_em,
       createdAt: d.created_at,
       updatedAt: d.updated_at
     }));
@@ -98,6 +105,9 @@ export class OrcamentosService {
       valor_proposta: o.valorProposta || null,
       valor_viagem: o.valorViagem || null,
       origem: o.origem || null,
+      contato_realizado: o.contato_realizado ?? o.contatoRealizado ?? false,
+      contato_realizado_por: o.contato_realizado_por || o.contatoRealizadoPor || null,
+      contato_realizado_em: o.contato_realizado_em || o.contatoRealizadoEm || null,
       documentos_url: o.documentosUrl || [],
       updated_at: o.updatedAt || new Date().toISOString()
     };
@@ -140,11 +150,14 @@ export class OrcamentosService {
         (resError.message && resError.message.includes('column') && resError.message.includes('does not exist'));
 
       if (isMissingColumn) {
-        console.warn('Aviso: Colunas novas não encontradas no Supabase. Salvando sem valor_proposta/cliente_id/valor_viagem.');
+        console.warn('Aviso: Colunas novas não encontradas no Supabase. Removendo colunas recentes e aplicando fallback resiliente.');
         
         delete payload.valor_proposta;
         delete payload.cliente_id;
         delete payload.valor_viagem;
+        delete payload.contato_realizado;
+        delete payload.contato_realizado_por;
+        delete payload.contato_realizado_em;
         
         let retryError;
         if (o.id && !o.id.startsWith('orc-')) {
@@ -252,6 +265,156 @@ export class OrcamentosService {
       }
       throw error;
     }
+  }
+
+  /**
+   * Alterna a validação de contato com o cliente em orçamentos desistidos (exclusivo para gestores/admins).
+   * Possui fallback resiliente contra Schema Drift (código 42703).
+   */
+  static async alternarContatoDesistencia(
+    orcamentoId: string,
+    status: boolean,
+    userPerfil: PerfilConsultor | null
+  ): Promise<{ success: boolean; contatoRealizado: boolean; contatoRealizadoPor?: string; contatoRealizadoPorNome?: string; contatoRealizadoEm?: string }> {
+    const agora = new Date().toISOString();
+    const payload: Record<string, any> = status ? {
+      contato_realizado: true,
+      contato_realizado_por: userPerfil?.id || null,
+      contato_realizado_em: agora,
+      updated_at: agora
+    } : {
+      contato_realizado: false,
+      contato_realizado_por: null,
+      contato_realizado_em: null,
+      updated_at: agora
+    };
+
+    const { error } = await supabase
+      .from('orcamentos')
+      .update(payload)
+      .eq('id', orcamentoId);
+
+    if (error) {
+      // Tratamento de schema drift 42703
+      if (error.code === '42703' || (error.message && error.message.includes('column') && error.message.includes('does not exist'))) {
+        console.warn('Aviso: Colunas de contato_realizado não encontradas no Supabase (42703). Gravando observação de fallback.');
+        const carimbo = status 
+          ? `[Contato Gestor: Confirmado em ${new Date().toLocaleDateString('pt-BR')} por ${userPerfil?.nome || 'Admin'}]`
+          : `[Contato Gestor: Desmarcado em ${new Date().toLocaleDateString('pt-BR')} por ${userPerfil?.nome || 'Admin'}]`;
+        
+        const { data: currentOrc } = await supabase.from('orcamentos').select('notas_negociacao').eq('id', orcamentoId).single();
+        const notasAtuais = currentOrc?.notas_negociacao || '';
+        await supabase.from('orcamentos').update({
+          notas_negociacao: `${carimbo}\n${notasAtuais}`.trim(),
+          updated_at: agora
+        }).eq('id', orcamentoId);
+
+        return {
+          success: true,
+          contatoRealizado: status,
+          contatoRealizadoPor: userPerfil?.id,
+          contatoRealizadoPorNome: userPerfil?.nome,
+          contatoRealizadoEm: agora
+        };
+      }
+      throw error;
+    }
+
+    return {
+      success: true,
+      contatoRealizado: status,
+      contatoRealizadoPor: status ? userPerfil?.id : undefined,
+      contatoRealizadoPorNome: status ? userPerfil?.nome : undefined,
+      contatoRealizadoEm: status ? agora : undefined
+    };
+  }
+
+  /**
+   * Reabre um orçamento desistido, movendo-o para SOLICITADO e preservando histórico anterior.
+   */
+  static async reabrirOrcamento(
+    orcamentoId: string,
+    motivo: string,
+    userPerfil: PerfilConsultor | null
+  ): Promise<{ success: boolean; orcamentoAtualizado?: any }> {
+    // 1. Buscar os dados atuais do orçamento
+    const { data: orc, error: fetchErr } = await supabase
+      .from('orcamentos')
+      .select('*')
+      .eq('id', orcamentoId)
+      .single();
+
+    if (fetchErr) throw fetchErr;
+
+    const agora = new Date();
+    const dataFormatada = agora.toLocaleDateString('pt-BR') + ' às ' + agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    const nomeAutor = userPerfil?.nome || 'Administrador';
+    
+    const headerLog = `[Orçamento Reaberto em ${dataFormatada} por ${nomeAutor}]`;
+    const motivoLog = motivo && motivo.trim() ? `Motivo da Reabertura: ${motivo.trim()}` : 'Motivo da Reabertura: Não informado.';
+    const blocoLog = `${headerLog}\n${motivoLog}`;
+    const notasAnteriores = orc.notas_negociacao || '';
+    const novasNotas = notasAnteriores ? `${blocoLog}\n----------------------------------\n${notasAnteriores}` : blocoLog;
+
+    const payload: Record<string, any> = {
+      status: 'SOLICITADO',
+      sub_status: null,
+      contato_realizado: false,
+      contato_realizado_por: null,
+      contato_realizado_em: null,
+      notas_negociacao: novasNotas,
+      updated_at: agora.toISOString()
+    };
+
+    let { error: updateErr } = await supabase
+      .from('orcamentos')
+      .update(payload)
+      .eq('id', orcamentoId);
+
+    if (updateErr) {
+      // Fallback para Schema Drift caso colunas de contato_realizado não existam
+      if (updateErr.code === '42703' || (updateErr.message && updateErr.message.includes('column') && updateErr.message.includes('does not exist'))) {
+        delete payload.contato_realizado;
+        delete payload.contato_realizado_por;
+        delete payload.contato_realizado_em;
+
+        const { error: retryErr } = await supabase
+          .from('orcamentos')
+          .update(payload)
+          .eq('id', orcamentoId);
+
+        if (retryErr) throw retryErr;
+      } else {
+        throw updateErr;
+      }
+    }
+
+    // 2. Registrar comentário no histórico da proposta
+    try {
+      await supabase.from('comentarios').insert({
+        tipo_item: 'orcamento',
+        item_id: orcamentoId,
+        parent_id: orcamentoId,
+        usuario_id: userPerfil?.id || null,
+        conteudo: `🔄 Orçamento reaberto para a etapa SOLICITADO por ${nomeAutor}.${motivo && motivo.trim() ? ' Motivo: ' + motivo.trim() : ''}`
+      });
+    } catch (commentErr) {
+      console.warn('Aviso: Erro ao registrar comentário de reabertura:', commentErr);
+    }
+
+    return {
+      success: true,
+      orcamentoAtualizado: {
+        ...orc,
+        status: 'SOLICITADO',
+        sub_status: null,
+        subStatus: undefined,
+        contato_realizado: false,
+        contatoRealizado: false,
+        notas_negociacao: novasNotas,
+        notasNegociacao: novasNotas
+      }
+    };
   }
 
   /**

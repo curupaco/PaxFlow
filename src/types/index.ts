@@ -444,6 +444,13 @@ export interface Orcamento {
   codigoRef?: string;
   destino_ref?: Destino;
   destinoRef?: Destino;
+  contatoRealizado?: boolean;
+  contato_realizado?: boolean;
+  contatoRealizadoPor?: string;
+  contato_realizado_por?: string;
+  contatoRealizadoPorNome?: string;
+  contatoRealizadoEm?: string;
+  contato_realizado_em?: string;
 }
 
 /**

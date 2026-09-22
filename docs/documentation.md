@@ -48,8 +48,8 @@
    - 3.35 [Atalho Rápido e Modal de Cadastro do Cliente na Venda](#335-atalho-rápido-e-modal-de-cadastro-do-cliente-na-venda)
    - 3.36 [PaxFlow FinRecon™ (Módulo de Conciliação Bancária & Fechamento Contábil)](#336-paxflow-finrecon-módulo-de-conciliação-bancária--fechamento-contábil)
    - 3.37 [Design System de Tabelas, Proporções e Padronização Visual PaxFlow](#337-design-system-de-tabelas-proporções-e-padronização-visual-paxflow)
-   - 3.38 [Painel de Filtros Avançados Combináveis, Resumo Financeiro & Exportação CSV de Viagens](#338-painel-de-filtros-avançados-combináveis-resumo-financeiro--exportação-csv-de-viagens)
    - 3.39 [Melhorias Estratégicas em Relatórios e Central de Lembretes](#339-melhorias-estratégicas-em-relatórios-e-central-de-lembretes)
+   - 3.40 [Governança de Desistências, Check de Contato do Gestor & Reabertura de Orçamentos](#340-governança-de-desistências-check-de-contato-do-gestor--reabertura-de-orçamentos)
 4. [Diferenciais Competitivos](#4-diferenciais-competitivos)
 5. [Arquitetura Tecnológica](#5-arquitetura-tecnológica)
 6. [Segurança e Conformidade](#6-segurança-e-conformidade)
@@ -1013,6 +1013,23 @@ Para aprofundar o controle gerencial, a governança de auditoria e a agilidade n
 4. **Central de Lembretes com Descrição & Resolução de Nomes**:
    - Adição de campo de texto dedicado (`descricao`) na criação e agendamento de lembretes, permitindo detalhar claramente o objetivo da tarefa (ex: "Conferir marcação de assentos e voucher").
    - Resolução matemática precisa do nome do cliente titular vinculado ao orçamento ou viagem, eliminando de forma definitiva nomenclaturas genéricas (como "CLIENTE VIAGEM").
+
+### 3.40 Governança de Desistências, Check de Contato do Gestor & Reabertura de Orçamentos
+
+Para apoiar a retenção comercial, auditoria de perdas e recuperação de leads desengajados, o PaxFlow implementou uma arquitetura completa de governança para propostas finalizadas com sub-status **Desistência**:
+
+1. **Check de Contato do Gestor ("Falamos c/ Cliente") [Exclusivo Administradores]**:
+   - **Campos de Banco de Dados**: Colunas dedicadas `contato_realizado` (boolean), `contato_realizado_por` (UUID) e `contato_realizado_em` (timestamp com fuso horário) na tabela `orcamentos`.
+   - **Superfícies de Interação**:
+     - *Kanban de Orçamentos (`Orcamentos.ts`)*: No card da coluna Concluído (quando desistente), administradores podem marcar/desmarcar o checkbox com atualização em tempo real. Consultores visualizam o badge informativo (`✅ Sim` ou `⏳ Pendente`).
+     - *Modal de Detalhes (`VerNotasModal.ts`)*: Bloco destacado de Gestão de Desistência na sidebar lateral.
+     - *Relatório de Desistências & Perdas (`Relatorios.ts`)*: Coluna dedicada na tabela analítica com alternância direta em 1-clique e tooltip com data e nome de quem auditou.
+   - **Resiliência a Schema Drift (Zero-Break / Fallback 42703)**: O serviço `OrcamentosService.alternarContatoDesistencia` intercepta erros de coluna ausente gravando a observação em `notas_negociacao` sem travar a aplicação.
+
+2. **Reabertura de Orçamentos Desistidos com Histórico Preservado**:
+   - **Fluxo de Transição**: Movimentação do orçamento de volta para a etapa **SOLICITADO**, limpando o `sub_status = null` e resetando o check de desistência.
+   - **Modal de Confirmação & Motivo Opcional**: Ao acionar o botão `🔄 Reabrir Orçamento`, o usuário pode justificar a razão da retomada (ex: *"Cliente voltou a ter interesse e quer nova cotação"*).
+   - **Preservação Histórica Imutável**: Um registro estruturado com data/hora (`DD/MM/AAAA às HH:mm`), autor e justificativa é inserido no topo das notas de negociação (`notas_negociacao`) e registrado na timeline de comentários (`comentarios`) do orçamento.
 
 ---
 

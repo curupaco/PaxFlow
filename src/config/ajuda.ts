@@ -858,9 +858,23 @@ export const HELP_ITEMS: HelpItem[] = [
   {
     id: 'relatorio-desistencias-orcamento',
     modulo: 'clientes',
-    label: '📉 Desistências: Acesso Direto a Orçamentos & WhatsApp',
-    description: 'Como navegar diretamente da lista de perdas e desistências para o orçamento correspondente ou abrir conversa no Digisac.',
-    details: 'Na aba **Desistências e Perdas** do módulo de Relatórios:\n\n- **Link Clicável**: Clique sobre o nome do cliente para abrir instantaneamente o orçamento em modo de inspeção.\n- **Botão 📄 Orçamento**: Localizado na coluna de Ações, direciona diretamente para `#orcamentos?id=...` preservando os filtros.\n- **Botão 💬 WhatsApp**: Abre a tela de conversa no Digisac com o passageiro em modo de visualização e controle, sem disparar mensagens automáticas.'
+    label: '📉 Desistências: Acesso Direto a Orçamentos, WhatsApp & Reabertura',
+    description: 'Como navegar diretamente da lista de perdas para o orçamento, marcar contato realizado e reabrir negociações.',
+    details: 'Na aba **Desistências e Perdas** do módulo de Relatórios:\n\n- **Link Clicável**: Clique sobre o nome do cliente para abrir instantaneamente o orçamento em modo sobreposto sem sair do relatório.\n- **Falamos c/ Cliente (Check Exclusivo Gestores/Admins)**: Permite que administradores registrem se a agência realizou contato ativo com o cliente desistente, gravando data/hora e autor com tooltip explicativo.\n- **Botão 🔄 Reabrir**: Permite reabrir o orçamento diretamente da tabela com inserção opcional de motivo, movendo o card de volta para a etapa **Solicitado** e preservando todo o histórico anterior.\n- **Botão 📄 Orçamento**: Abre o modal de detalhes do orçamento sobreposto.\n- **Botão 💬 WhatsApp**: Abre a tela de conversa no Digisac com o passageiro em modo de visualização e controle.'
+  },
+  {
+    id: 'orcamentos-reabertura-historico',
+    modulo: 'orcamentos',
+    label: '🔄 Reabertura de Orçamentos Desistidos',
+    description: 'Como reativar um orçamento perdido de volta para a etapa Solicitado mantendo o histórico de negociação.',
+    details: 'Quando um cliente que havia desistido retoma o interesse na viagem:\n\n1. Localize o card de desistência no Kanban (coluna Concluído), no Modal de Detalhes ou no Relatório de Desistências.\n2. Clique no botão **🔄 Reabrir Orçamento**.\n3. Opcionalmente, informe o motivo da reabertura (ex: *"Cliente decidiu remarcar a viagem para o segundo semestre"*).\n4. O PaxFlow moverá o orçamento de volta para a etapa **Solicitado**, limpando o sub-status de desistência e registrando no histórico e nos comentários da proposta a data, a hora, o autor e a justificativa.'
+  },
+  {
+    id: 'orcamentos-check-contato-desistencia',
+    modulo: 'orcamentos',
+    label: '🛡️ Gestão de Desistências: Check de Contato do Gestor',
+    description: 'Controle de auditoria restrito a administradores para checar se a equipe falou com o cliente.',
+    details: 'Nos cards de desistência do Kanban, no Modal de Detalhes e na tabela de Relatórios:\n\n- **Exclusividade Admin**: Apenas usuários com perfil de Administrador podem marcar e desmarcar a confirmação *"Falamos c/ Cliente"*.\n- **Transparência Operacional**: Usuários consultores visualizam o status da verificação (`✅ Sim` ou `⏳ Pendente`) de forma transparente.\n- **Rastreabilidade**: Ao passar o cursor sobre a verificação, o sistema exibe quando e quem realizou a conferência do contato.'
   },
   {
     id: 'relatorio-embarques-validacao-gestor',
