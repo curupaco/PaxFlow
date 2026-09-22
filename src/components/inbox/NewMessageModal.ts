@@ -181,6 +181,11 @@ export class NewMessageModal {
               </div>
 
               <div class="space-y-1 sm:col-span-2">
+                <label class="block text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest">Descrição / Assunto do Lembrete (Opcional)</label>
+                <input id="msg-lembrete-descricao" type="text" placeholder="Deixe em branco para usar o assunto da mensagem..." class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs animate-fadeIn" />
+              </div>
+
+              <div class="space-y-1 sm:col-span-2">
                 <label class="block text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest">Vincular a Orçamento ou Viagem (Opcional)</label>
                 <select id="msg-lembrete-link" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-xs">
                   <option value="" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">-- Sem vínculo --</option>
@@ -455,6 +460,7 @@ export class NewMessageModal {
       let dataLembrete = '';
       let linkVal = '';
       let periodo = 'tarde';
+      let lembreteDescricao = '';
       
       if (chkAgendar?.checked) {
         const dataRaw = dataInput.value.trim();
@@ -471,6 +477,7 @@ export class NewMessageModal {
         dataLembrete = `${parts[2]}-${parts[1]}-${parts[0]}`;
         periodo = (modalOverlay.querySelector('#msg-lembrete-periodo') as HTMLSelectElement).value;
         linkVal = (modalOverlay.querySelector('#msg-lembrete-link') as HTMLSelectElement).value;
+        lembreteDescricao = (modalOverlay.querySelector('#msg-lembrete-descricao') as HTMLInputElement)?.value.trim() || '';
       }
 
       // 2. Submit loading UI
@@ -507,6 +514,7 @@ export class NewMessageModal {
           lembrete: (chkAgendar?.checked && dataLembrete) ? {
             dataLembrete,
             periodo,
+            descricao: lembreteDescricao || assunto,
             orcamentoId,
             viagemId
           } : null

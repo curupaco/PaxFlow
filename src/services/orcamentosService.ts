@@ -220,19 +220,38 @@ export class OrcamentosService {
     orcamentoId: string,
     userUserId: string,
     dataLembrete: string,
-    periodo: string
+    periodo: string,
+    descricao?: string
   ): Promise<void> {
+    const payload: Record<string, any> = {
+      orcamento_id: orcamentoId,
+      consultor_id: userUserId,
+      criador_id: userUserId,
+      data_lembrete: dataLembrete,
+      periodo: periodo,
+      arquivado: false
+    };
+
+    if (descricao && descricao.trim() !== '') {
+      payload.descricao = descricao.trim();
+    }
+
     const { error } = await supabase
       .from('lembretes')
-      .insert({
-        orcamento_id: orcamentoId,
-        consultor_id: userUserId,
-        data_lembrete: dataLembrete,
-        periodo: periodo,
-        arquivado: false
-      });
+      .insert(payload);
 
-    if (error) throw error;
+    if (error) {
+      // Fallback resiliente caso a coluna 'descricao' ainda não exista no banco (Postgres code 42703)
+      if (error.code === '42703' && payload.descricao) {
+        delete payload.descricao;
+        const { error: retryErr } = await supabase
+          .from('lembretes')
+          .insert(payload);
+        if (retryErr) throw retryErr;
+        return;
+      }
+      throw error;
+    }
   }
 
   /**

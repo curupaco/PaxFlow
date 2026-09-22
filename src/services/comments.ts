@@ -189,6 +189,10 @@ export class CommentsService {
                   ${consultoresAtivos.map(p => `<option value="${p.id}" ${p.id === currentUserId ? 'selected' : ''}>${p.id === currentUserId ? `Para mim (${p.nome})` : p.nome}</option>`).join('')}
                 </select>
               </div>
+              <div class="space-y-1 sm:col-span-3">
+                <label class="block text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Descrição do Lembrete (opcional)</label>
+                <input id="sched-desc-${itemId}" type="text" placeholder="Ex: Ligar para confirmar hotel, cobrar retorno da proposta..." class="w-full px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 text-xs font-medium" />
+              </div>
             </div>
           </div>
 
@@ -239,6 +243,7 @@ export class CommentsService {
     const schedNativeDateInput = container.querySelector(`#sched-native-date-${itemId}`) as HTMLInputElement;
     const schedPeriodSelect = container.querySelector(`#sched-period-${itemId}`) as HTMLSelectElement;
     const schedUserSelect = container.querySelector(`#sched-user-${itemId}`) as HTMLSelectElement;
+    const schedDescInput = container.querySelector(`#sched-desc-${itemId}`) as HTMLInputElement;
 
     const updateSubmitBtnText = () => {
       const isSchedOpen = schedPanel && !schedPanel.classList.contains('hidden');
@@ -488,7 +493,10 @@ export class CommentsService {
             } catch (e) {}
           }
 
-          const { error: errLembrete } = await supabase.from('lembretes').insert({
+          const customLembreteDesc = schedDescInput ? schedDescInput.value.trim() : '';
+          const finalDesc = customLembreteDesc || text;
+
+          const lembretePayload: Record<string, any> = {
             orcamento_id: orcamentoId,
             viagem_id: viagemId,
             consultor_id: targetUser,
@@ -496,7 +504,19 @@ export class CommentsService {
             data_lembrete: parsedDate.dataIso,
             periodo: periodo,
             arquivado: false
-          });
+          };
+
+          if (finalDesc) {
+            lembretePayload.descricao = finalDesc;
+          }
+
+          let { error: errLembrete } = await supabase.from('lembretes').insert(lembretePayload);
+
+          if (errLembrete && errLembrete.code === '42703' && lembretePayload.descricao) {
+            delete lembretePayload.descricao;
+            const resFallback = await supabase.from('lembretes').insert(lembretePayload);
+            errLembrete = resFallback.error;
+          }
 
           if (errLembrete) {
             console.error('Erro ao gravar lembrete no Supabase:', errLembrete);
@@ -899,15 +919,24 @@ export class CommentsService {
       }
     }
 
-    const { error: errLembrete } = await supabase.from('lembretes').insert({
+    const lembretePayload: Record<string, any> = {
       orcamento_id: orcamentoId,
       viagem_id: viagemId,
       consultor_id: targetConsultantId,
       criador_id: currentUserId,
       data_lembrete: dataParsed.dataIso,
       periodo: periodo,
+      descricao: texto.trim(),
       arquivado: false
-    });
+    };
+
+    let { error: errLembrete } = await supabase.from('lembretes').insert(lembretePayload);
+
+    if (errLembrete && errLembrete.code === '42703' && lembretePayload.descricao) {
+      delete lembretePayload.descricao;
+      const resFallback = await supabase.from('lembretes').insert(lembretePayload);
+      errLembrete = resFallback.error;
+    }
 
     if (errLembrete) {
       console.error('Erro ao registrar agendamento automático por texto:', errLembrete);

@@ -472,7 +472,7 @@ export class InboxService {
           .select(`
             *,
             orcamento:orcamentos (*),
-            viagem:viagens (*),
+            viagem:viagens (*, cliente:clientes(*)),
             consultor:profiles!lembretes_consultor_id_fkey (*)
           `)
           .order('created_at', { ascending: false });
@@ -511,20 +511,23 @@ export class InboxService {
       // Fetch lists for manual mock join resolution if needed (fallback for lenient local mock storage)
       const needsManualJoin = filteredLembretes.length > 0 && filteredLembretes.some((lem: any) => 
         (lem.orcamento_id && !lem.orcamento) || 
-        (lem.viagem_id && !lem.viagem) || 
+        (lem.viagem_id && (!lem.viagem || !lem.viagem.cliente)) || 
         (lem.consultor_id && !lem.consultor)
       );
 
       let orcamentosList: any[] = [];
       let viagensList: any[] = [];
+      let clientesList: any[] = [];
       let profilesList: any[] = [];
 
       if (needsManualJoin) {
         const { data: oList } = await supabase.from('orcamentos').select('*');
         const { data: vList } = await supabase.from('viagens').select('*, cliente:clientes(*)');
+        const { data: cList } = await supabase.from('clientes').select('*');
         const { data: pList } = await supabase.from('profiles').select('*');
         orcamentosList = oList || [];
         viagensList = vList || [];
+        clientesList = cList || [];
         profilesList = pList || [];
       } else {
         // Still load profiles if needed to translate criador_id name
@@ -539,6 +542,9 @@ export class InboxService {
         }
         if (!lem.viagem && lem.viagem_id) {
           lem.viagem = viagensList.find((v: any) => v.id === lem.viagem_id);
+        }
+        if (lem.viagem && !lem.viagem.cliente && lem.viagem.cliente_id) {
+          lem.viagem.cliente = clientesList.find((c: any) => c.id === lem.viagem.cliente_id);
         }
         if (!lem.consultor && lem.consultor_id) {
           lem.consultor = profilesList.find((p: any) => p.id === lem.consultor_id);
@@ -562,48 +568,74 @@ export class InboxService {
           ? (profilesList.find((p: any) => p.id === lem.criador_id)?.nome || 'Outro Consultor')
           : 'PaxFlow Reminders';
 
+        const customDesc = (lem.descricao && String(lem.descricao).trim() !== '') ? String(lem.descricao).trim() : null;
+        const descHighlight = customDesc ? `
+          <div class="p-3 mb-3 bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/60 rounded-xl text-slate-800 dark:text-slate-100 font-semibold text-xs leading-relaxed">
+            <span class="text-indigo-600 dark:text-indigo-400 font-black uppercase tracking-wider text-[10px] block mb-1">📝 Descrição do Lembrete:</span>
+            ${customDesc}
+          </div>
+        ` : '';
+
         if (lem.orcamento) {
           typeText = 'Orçamento';
           targetId = lem.orcamento.id;
           detailLink = `<a href="#" class="inbox-deep-link font-extrabold text-indigo-600 dark:text-indigo-400 hover:underline" data-orcamento-id="${lem.orcamento.id}">[${lem.orcamento.nome_cliente} - ${lem.orcamento.destino}]</a>`;
           
-          if (isCreatedByMe) {
-            subject = `Você agendou um lembrete para ${lem.consultor?.nome || 'Consultor'} sobre o orçamento de [${lem.orcamento.nome_cliente} - ${lem.orcamento.destino}].`;
-            body = `Você agendou um lembrete para <strong>${lem.consultor?.nome || 'Consultor'}</strong> sobre o orçamento ${detailLink} para o período da <strong>${periodoText}</strong> em <strong>${dataFormatada}</strong>.<br><br>Este item está delegado a ele(a).`;
-          } else if (isReceivedByMe) {
-            subject = `${criadorNome} agendou um lembrete para você sobre o orçamento de [${lem.orcamento.nome_cliente} - ${lem.orcamento.destino}].`;
-            body = `O consultor <strong>${criadorNome}</strong> agendou um lembrete para você sobre o orçamento ${detailLink} para o período da <strong>${periodoText}</strong> em <strong>${dataFormatada}</strong>.<br><br>Por favor, clique no link acima para abrir e editar a negociação correspondente.`;
+          if (customDesc) {
+            subject = isReceivedByMe ? `${criadorNome}: ${customDesc}` : customDesc;
           } else {
-            subject = `Você cadastrou um alerta sobre o orçamento de [${lem.orcamento.nome_cliente} - ${lem.orcamento.destino}].`;
-            body = `Você cadastrou um alerta sobre o orçamento ${detailLink} para o período da <strong>${periodoText}</strong> em <strong>${dataFormatada}</strong>.<br><br>Por favor, clique no link acima para abrir e editar a negociação correspondente.`;
+            if (isCreatedByMe) {
+              subject = `Você agendou um lembrete para ${lem.consultor?.nome || 'Consultor'} sobre o orçamento de [${lem.orcamento.nome_cliente} - ${lem.orcamento.destino}].`;
+            } else if (isReceivedByMe) {
+              subject = `${criadorNome} agendou um lembrete para você sobre o orçamento de [${lem.orcamento.nome_cliente} - ${lem.orcamento.destino}].`;
+            } else {
+              subject = `Você cadastrou um alerta sobre o orçamento de [${lem.orcamento.nome_cliente} - ${lem.orcamento.destino}].`;
+            }
+          }
+
+          if (isCreatedByMe) {
+            body = `${descHighlight}Você agendou um lembrete para <strong>${lem.consultor?.nome || 'Consultor'}</strong> sobre o orçamento ${detailLink} para o período da <strong>${periodoText}</strong> em <strong>${dataFormatada}</strong>.<br><br>Este item está delegado a ele(a).`;
+          } else if (isReceivedByMe) {
+            body = `${descHighlight}O consultor <strong>${criadorNome}</strong> agendou um lembrete para você sobre o orçamento ${detailLink} para o período da <strong>${periodoText}</strong> em <strong>${dataFormatada}</strong>.<br><br>Por favor, clique no link acima para abrir e editar a negociação correspondente.`;
+          } else {
+            body = `${descHighlight}Você cadastrou um alerta sobre o orçamento ${detailLink} para o período da <strong>${periodoText}</strong> em <strong>${dataFormatada}</strong>.<br><br>Por favor, clique no link acima para abrir e editar a negociação correspondente.`;
           }
         } else if (lem.viagem) {
           typeText = 'Viagem';
           targetId = lem.viagem.id;
           
-          // Try to fetch customer name from associated relation
-          let clientName = 'Viagem';
-          if (lem.viagem.cliente) {
+          // Obter nome real do passageiro titular da viagem
+          let clientName = 'Passageiro Titular';
+          if (lem.viagem.cliente && lem.viagem.cliente.nome) {
             clientName = lem.viagem.cliente.nome;
           } else if (lem.viagem.nome_cliente) {
             clientName = lem.viagem.nome_cliente;
-          } else {
-            // Find in fallback
-            const associatedClient = lem.viagem.cliente_id ? (orcamentosList.find(o => o.cliente_id === lem.viagem.cliente_id)?.nome_cliente) : null;
-            clientName = associatedClient || 'Cliente Viagem';
+          } else if (lem.viagem.cliente_id) {
+            const foundClient = clientesList.find(c => c.id === lem.viagem.cliente_id);
+            const associatedOrc = orcamentosList.find(o => o.cliente_id === lem.viagem.cliente_id);
+            clientName = foundClient?.nome || associatedOrc?.nome_cliente || 'Passageiro Titular';
           }
 
           detailLink = `<a href="#" class="inbox-deep-link font-extrabold text-indigo-600 dark:text-indigo-400 hover:underline" data-viagem-id="${lem.viagem.id}">[${clientName} - ${lem.viagem.destino}]</a>`;
 
-          if (isCreatedByMe) {
-            subject = `Você agendou um lembrete para ${lem.consultor?.nome || 'Consultor'} sobre a viagem de [${clientName} - ${lem.viagem.destino}].`;
-            body = `Você agendou um lembrete para <strong>${lem.consultor?.nome || 'Consultor'}</strong> sobre a viagem ${detailLink} para o período da <strong>${periodoText}</strong> em <strong>${dataFormatada}</strong>.<br><br>Este item está delegado a ele(a).`;
-          } else if (isReceivedByMe) {
-            subject = `${criadorNome} agendou um lembrete para você sobre a viagem de [${clientName} - ${lem.viagem.destino}].`;
-            body = `O consultor <strong>${criadorNome}</strong> agendou um lembrete para você sobre a viagem ${detailLink} para o período da <strong>${periodoText}</strong> em <strong>${dataFormatada}</strong>.<br><br>Por favor, clique no link acima para abrir e gerenciar a viagem correspondente.`;
+          if (customDesc) {
+            subject = isReceivedByMe ? `${criadorNome}: ${customDesc}` : customDesc;
           } else {
-            subject = `Você cadastrou um alerta sobre a viagem de [${clientName} - ${lem.viagem.destino}].`;
-            body = `Você cadastrou um alerta sobre a viagem ${detailLink} para o período da <strong>${periodoText}</strong> em <strong>${dataFormatada}</strong>.<br><br>Por favor, clique no link acima para abrir e gerenciar a viagem correspondente.`;
+            if (isCreatedByMe) {
+              subject = `Você agendou um lembrete para ${lem.consultor?.nome || 'Consultor'} sobre a viagem de [${clientName} - ${lem.viagem.destino}].`;
+            } else if (isReceivedByMe) {
+              subject = `${criadorNome} agendou um lembrete para você sobre a viagem de [${clientName} - ${lem.viagem.destino}].`;
+            } else {
+              subject = `Você cadastrou um alerta sobre a viagem de [${clientName} - ${lem.viagem.destino}].`;
+            }
+          }
+
+          if (isCreatedByMe) {
+            body = `${descHighlight}Você agendou um lembrete para <strong>${lem.consultor?.nome || 'Consultor'}</strong> sobre a viagem ${detailLink} para o período da <strong>${periodoText}</strong> em <strong>${dataFormatada}</strong>.<br><br>Este item está delegado a ele(a).`;
+          } else if (isReceivedByMe) {
+            body = `${descHighlight}O consultor <strong>${criadorNome}</strong> agendou um lembrete para você sobre a viagem ${detailLink} para o período da <strong>${periodoText}</strong> em <strong>${dataFormatada}</strong>.<br><br>Por favor, clique no link acima para abrir e gerenciar a viagem correspondente.`;
+          } else {
+            body = `${descHighlight}Você cadastrou um alerta sobre a viagem ${detailLink} para o período da <strong>${periodoText}</strong> em <strong>${dataFormatada}</strong>.<br><br>Por favor, clique no link acima para abrir e gerenciar a viagem correspondente.`;
           }
         } else {
           // General reminder (e.g. from direct message, or custom unlinked reminder)
@@ -611,15 +643,24 @@ export class InboxService {
           targetId = '';
           detailLink = '';
 
-          if (isCreatedByMe) {
-            subject = `Você agendou um lembrete para ${lem.consultor?.nome || 'Consultor'} [Lembrete Geral].`;
-            body = `Você agendou um lembrete para <strong>${lem.consultor?.nome || 'Consultor'}</strong> para o período da <strong>${periodoText}</strong> em <strong>${dataFormatada}</strong>.<br><br>Este item está delegado a ele(a).`;
-          } else if (isReceivedByMe) {
-            subject = `${criadorNome} agendou um lembrete para você [Lembrete Geral].`;
-            body = `O consultor <strong>${criadorNome}</strong> agendou um lembrete para você para o período da <strong>${periodoText}</strong> em <strong>${dataFormatada}</strong>.`;
+          if (customDesc) {
+            subject = isReceivedByMe ? `${criadorNome}: ${customDesc}` : customDesc;
           } else {
-            subject = `Você cadastrou um lembrete [Lembrete Geral].`;
-            body = `Você cadastrou um lembrete para o período da <strong>${periodoText}</strong> em <strong>${dataFormatada}</strong>.`;
+            if (isCreatedByMe) {
+              subject = `Você agendou um lembrete para ${lem.consultor?.nome || 'Consultor'} [Lembrete Geral].`;
+            } else if (isReceivedByMe) {
+              subject = `${criadorNome} agendou um lembrete para você [Lembrete Geral].`;
+            } else {
+              subject = `Você cadastrou um lembrete [Lembrete Geral].`;
+            }
+          }
+
+          if (isCreatedByMe) {
+            body = `${descHighlight}Você agendou um lembrete para <strong>${lem.consultor?.nome || 'Consultor'}</strong> para o período da <strong>${periodoText}</strong> em <strong>${dataFormatada}</strong>.<br><br>Este item está delegado a ele(a).`;
+          } else if (isReceivedByMe) {
+            body = `${descHighlight}O consultor <strong>${criadorNome}</strong> agendou um lembrete para você para o período da <strong>${periodoText}</strong> em <strong>${dataFormatada}</strong>.`;
+          } else {
+            body = `${descHighlight}Você cadastrou um lembrete para o período da <strong>${periodoText}</strong> em <strong>${dataFormatada}</strong>.`;
           }
         }
 
@@ -1815,22 +1856,40 @@ export class InboxService {
 
     // Agendamento de lembretes se fornecido
     if (lembrete && lembrete.dataLembrete) {
-      const lembreteInserts = uniqueRecipients.map(recipientId => ({
-        orcamento_id: lembrete.orcamentoId || null,
-        viagem_id: lembrete.viagemId || null,
-        consultor_id: recipientId,
-        criador_id: remetenteId,
-        data_lembrete: lembrete.dataLembrete,
-        periodo: lembrete.periodo,
-        arquivado: false
-      }));
+      const lembreteDesc = lembrete.descricao?.trim() || assunto.trim();
+      const lembreteInserts = uniqueRecipients.map(recipientId => {
+        const item: Record<string, any> = {
+          orcamento_id: lembrete.orcamentoId || null,
+          viagem_id: lembrete.viagemId || null,
+          consultor_id: recipientId,
+          criador_id: remetenteId,
+          data_lembrete: lembrete.dataLembrete,
+          periodo: lembrete.periodo,
+          arquivado: false
+        };
+        if (lembreteDesc) {
+          item.descricao = lembreteDesc;
+        }
+        return item;
+      });
 
       const { error: lembreteErr } = await supabase
         .from('lembretes')
         .insert(lembreteInserts);
 
       if (lembreteErr) {
-        console.warn('Aviso ao registrar lembretes:', lembreteErr);
+        if (lembreteErr.code === '42703') {
+          // Fallback resiliente caso a coluna 'descricao' não exista ainda no banco
+          const fallbackInserts = lembreteInserts.map(({ descricao, ...rest }) => rest);
+          const { error: retryErr } = await supabase
+            .from('lembretes')
+            .insert(fallbackInserts);
+          if (retryErr) {
+            console.warn('Aviso ao registrar lembretes com fallback:', retryErr);
+          }
+        } else {
+          console.warn('Aviso ao registrar lembretes:', lembreteErr);
+        }
       }
     }
 
@@ -1849,6 +1908,7 @@ export interface SendDirectMessageParams {
   lembrete?: {
     dataLembrete: string;
     periodo: string;
+    descricao?: string;
     orcamentoId?: string | null;
     viagemId?: string | null;
   } | null;

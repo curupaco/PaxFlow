@@ -108,7 +108,7 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 
 - **Alertas de passaporte**: monitora automaticamente a validade dos passaportes cadastrados e dispara alertas com 180 dias de antecedência (padrão internacional) ou quando expirados (mapeados no calendário na data de expiração).
 - **Alertas de SLA de reembolso**: notifica quando um reembolso ultrapassa o prazo configurado pela agência (mapeados no calendário na data exata em que o SLA estourou: Data de Criação + Prazo de SLA).
-- **Lembretes manuais ("Me Lembre Depois")**: agendados a partir do pipeline de orçamentos, com data e período (manhã/tarde/noite) (mapeados no calendário na data agendada).
+- **Lembretes manuais ("Me Lembre Depois")**: agendados a partir do pipeline de orçamentos, do painel de notas/comentários ou de mensagens diretas, com suporte a campo dedicado de **descrição/motivo do lembrete** (ex: *"Ligar para confirmar hotel"*), data, período (manhã/tarde/noite) e resolução fidedigna do passageiro titular da viagem/orçamento (`cliente.nome`), eliminando completamente fallbacks genéricos como "Cliente Viagem".
 - **Busca e Filtros Omnipresentes**:
   - Filtro por consultor (admin), por tipo de alerta, ativos/arquivados/todos.
   - **Filtro Rápido "Apenas Não Lidas" [NEW]**: Botão toggle contextual na barra superior de ferramentas do Inbox, permitindo focar instantaneamente nas pendências de leitura com badge numérico em tempo real.

@@ -3129,6 +3129,11 @@ export class OrcamentosPage {
             </select>
           </div>
 
+          <div>
+            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Descrição / Motivo do Lembrete (opcional)</label>
+            <textarea id="input-lembrete-descricao" rows="2" placeholder="Ex: Ligar para confirmar hotel, cobrar retorno da proposta..." class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm resize-none"></textarea>
+          </div>
+
           <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
             <button id="btn-cancel-modal" type="button" class="h-10 px-5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs tracking-wider rounded-xl transition uppercase flex items-center justify-center">Cancelar</button>
             <button type="submit" class="h-10 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/10 transition uppercase flex items-center justify-center">Agendar Alerta</button>
@@ -3161,6 +3166,7 @@ export class OrcamentosPage {
 
       const dataLembreteRaw = (document.getElementById('input-lembrete-data') as HTMLInputElement).value.trim();
       const periodo = (document.getElementById('select-lembrete-periodo') as HTMLSelectElement).value;
+      const descricao = (document.getElementById('input-lembrete-descricao') as HTMLTextAreaElement)?.value.trim() || undefined;
 
       if (!dataLembreteRaw || !periodo) return;
 
@@ -3175,7 +3181,7 @@ export class OrcamentosPage {
       const dataLembrete = `${parts[2]}-${parts[1]}-${parts[0]}`; // Converte para YYYY-MM-DD para o banco
 
       try {
-        await OrcamentosService.createReminder(id, this.user.id, dataLembrete, periodo);
+        await OrcamentosService.createReminder(id, this.user.id, dataLembrete, periodo, descricao);
 
         this.showToast('Lembrete agendado com sucesso!', 'success');
         this.closeModal();

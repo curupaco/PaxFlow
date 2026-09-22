@@ -179,19 +179,43 @@ describe('OrcamentosService - Testes Subcutâneos', () => {
     expect(deleteOrcamentoEq).toHaveBeenCalledWith('id', 'orc-alvo-delete');
   });
 
-  it('deve criar lembrete de acompanhamento vinculado ao orçamento', async () => {
+  it('deve criar lembrete de acompanhamento vinculado ao orçamento com descrição', async () => {
     // Setup
     const insertMock = vi.fn().mockResolvedValue({ error: null });
     vi.mocked(supabase.from).mockReturnValue({ insert: insertMock } as any);
 
     // Action
-    await OrcamentosService.createReminder('orc-999', 'user-consultor', '2026-10-15', 'MANHA');
+    await OrcamentosService.createReminder('orc-999', 'user-consultor', '2026-10-15', 'MANHA', 'Cobrar retorno do cliente');
 
     // Assert
     expect(supabase.from).toHaveBeenCalledWith('lembretes');
     expect(insertMock).toHaveBeenCalledWith({
       orcamento_id: 'orc-999',
       consultor_id: 'user-consultor',
+      criador_id: 'user-consultor',
+      data_lembrete: '2026-10-15',
+      periodo: 'MANHA',
+      descricao: 'Cobrar retorno do cliente',
+      arquivado: false,
+    });
+  });
+
+  it('deve executar fallback resiliente ao erro 42703 (coluna inexistente) ao criar lembrete', async () => {
+    // Setup
+    const insertMock = vi.fn()
+      .mockResolvedValueOnce({ error: { code: '42703', message: 'column descricao does not exist' } })
+      .mockResolvedValueOnce({ error: null });
+    vi.mocked(supabase.from).mockReturnValue({ insert: insertMock } as any);
+
+    // Action
+    await OrcamentosService.createReminder('orc-999', 'user-consultor', '2026-10-15', 'MANHA', 'Cobrar retorno');
+
+    // Assert
+    expect(insertMock).toHaveBeenCalledTimes(2);
+    expect(insertMock).toHaveBeenNthCalledWith(2, {
+      orcamento_id: 'orc-999',
+      consultor_id: 'user-consultor',
+      criador_id: 'user-consultor',
       data_lembrete: '2026-10-15',
       periodo: 'MANHA',
       arquivado: false,

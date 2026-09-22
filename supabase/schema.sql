@@ -401,6 +401,7 @@ CREATE TABLE IF NOT EXISTS public.lembretes (
     criador_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
     data_lembrete DATE NOT NULL,
     periodo VARCHAR(10) CHECK (periodo IN ('manha', 'tarde', 'noite')) NOT NULL,
+    descricao TEXT,
     arquivado BOOLEAN DEFAULT FALSE NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );

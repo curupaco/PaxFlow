@@ -458,6 +458,7 @@ export interface Lembrete {
   dataLembrete: string; // YYYY-MM-DD
   data_lembrete?: string;
   periodo: 'manha' | 'tarde' | 'noite';
+  descricao?: string;
   arquivado: boolean;
   createdAt?: string;
   created_at?: string;
