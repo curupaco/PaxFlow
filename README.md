@@ -20,8 +20,8 @@ Plataforma SaaS de gestão operacional e fluxo de passageiros no turismo: acompa
 
 ## Funcionalidades
 
-- **Melhorias Estratégicas no Módulo de Relatórios (Navegação, Validação de Gestor e Chat Digisac) [NEW]** — Evolução da inteligência e governança operacional nas visões analíticas de Relatórios (`src/pages/Relatorios.ts`):
-  - **Desistências**: Inclusão de link direto no nome do cliente e nova coluna de Ações com botão `📄 Orçamento` (direcionando para `#orcamentos?id=...`) e botão de conversa no WhatsApp/Digisac.
+- **Melhorias Estratégicas no Módulo de Relatórios (Modal de Orçamento Sobreposto, Validação de Gestor e Chat Digisac) [NEW]** — Evolução da inteligência e governança operacional nas visões analíticas de Relatórios (`src/pages/Relatorios.ts`):
+  - **Orçamentos Sobrepostos em Relatórios (Sem Troca de Rota)**: Links nos nomes de clientes e botões `📄 Orçamento` (em Desistências e Embarques) abrem o modal completo de visualização/edição do orçamento (`VerNotasModal`) diretamente sobre a tela de Relatórios, mantendo a aba ativa, filtros e posição intactos ao fechar.
   - **Embarques - Validação do Gestor**: Nova coluna "Validação Gestor" restrita exclusivamente a usuários com perfil de Administrador (`perfil.role === 'admin'`), permitindo marcar conferências de embarque em 1-clique (`🛡️ Conferido` / `⏳ Pendente`), com registro de autor, data/hora e persistência resiliente a Schema Drift.
   - **Embarques - Ações Rápidas**: Inclusão de botão dedicado `📄 Orçamento` ao lado de `🔍 Viagem` na coluna de Ações para abrir diretamente o orçamento vinculado.
   - **Integração Global com WhatsApp / Digisac**: Botão de WhatsApp padronizado em todas as tabelas analíticas com passageiros/clientes (Desistências, Embarques, Pós-Venda, SLAs Documentais e Risco), abrindo a tela de conversa no Digisac em modo de visualização/controle sem disparar mensagens automáticas.

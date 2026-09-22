@@ -1,5 +1,5 @@
 import { supabase, getSessaoAtual } from '../services/supabase';
-import { PerfilConsultor, MetaPeriodo, MetaFaixa } from '../types';
+import { PerfilConsultor, MetaPeriodo, MetaFaixa, Orcamento } from '../types';
 import { InboxService } from '../services/inboxService';
 import { formatBrDateToIso, formatIsoDateToBr } from '../utils/masks';
 import { obterProgressoNivel, BADGE_DEFINITIONS } from '../services/gamification';
@@ -12,6 +12,7 @@ import { ExtratoRecebimentosModal } from '../components/relatorios/ExtratoRecebi
 import { processarExtratoRecebimentos, calcularFaturamentoLucratividade } from '../controllers/relatoriosController';
 import { MetasService } from '../services/metasService';
 import { getAvatarSvg } from '../services/avatars';
+import { VerNotasModal } from '../components/orcamentos/VerNotasModal';
 
 if (typeof document !== 'undefined') {
   const style = document.createElement('style');
@@ -1138,9 +1139,9 @@ export class RelatoriosPage {
                   return `
                     <tr class="border-b border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-300">
                       <td class="p-3 font-extrabold">
-                        <a href="#orcamentos?id=${o.id}" class="hover:underline text-indigo-600 dark:text-indigo-400 flex items-center gap-1 font-extrabold" title="Abrir Orçamento">
+                        <button type="button" class="btn-ir-orcamento hover:underline text-indigo-600 dark:text-indigo-400 flex items-center gap-1 font-extrabold text-left cursor-pointer focus:outline-none" data-orcamento-id="${o.id}" title="Ver detalhes do Orçamento">
                           <span>${cNome}</span>
-                        </a>
+                        </button>
                       </td>
                       <td class="p-3">${o.destino}</td>
                       <td class="p-3">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(o.valorProposta || o.valor_proposta || 0)}</td>
@@ -3314,13 +3315,13 @@ export class RelatoriosPage {
       }
     });
 
-    // 16. Botão de Redirecionamento Direto para Orçamento
+    // 16. Botão de Visualização de Orçamento Sobreposto (Permanece no Relatório)
     document.querySelectorAll('.btn-ir-orcamento').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         const orcId = btn.getAttribute('data-orcamento-id');
         if (orcId) {
-          window.location.hash = `#orcamentos?id=${orcId}`;
+          this.abrirModalOrcamento(orcId);
         }
       });
     });
@@ -4002,6 +4003,177 @@ export class RelatoriosPage {
 
       </div>
     `;
+  }
+
+  /**
+   * Abre o Modal de Visualização/Edição de Orçamento diretamente sobre a tela de Relatórios
+   * sem navegar de rota, permitindo retornar exatamente ao mesmo estado ao fechar.
+   */
+  public async abrirModalOrcamento(id: string): Promise<void> {
+    let orc = this.orcamentos.find(o => o.id === id);
+
+    if (!orc) {
+      try {
+        const { data: d } = await supabase
+          .from('orcamentos')
+          .select('*, cliente:clientes(*)')
+          .eq('id', id)
+          .maybeSingle();
+
+        if (d) {
+          orc = {
+            id: d.id,
+            consultorId: d.consultor_id || d.consultorId,
+            clienteId: d.cliente_id || d.clienteId,
+            cliente_id: d.cliente_id || d.clienteId,
+            nomeCliente: d.nome_cliente || d.nomeCliente || d.cliente?.nome || 'Cliente',
+            contato: d.contato || d.cliente?.telefone || d.cliente?.email || '',
+            destino: d.destino || '',
+            dataViagem: d.data_viagem || d.dataViagem || '',
+            temperatura: d.temperatura || 'Frio',
+            tags: d.tags || [],
+            status: d.status || 'SOLICITADO',
+            subStatus: d.sub_status || d.subStatus || '',
+            notasNegociacao: d.notas_negociacao || d.notasNegociacao || '',
+            valorProposta: d.valor_proposta !== undefined ? Number(d.valor_proposta) : (d.valorProposta !== undefined ? Number(d.valorProposta) : undefined),
+            createdAt: d.created_at || d.createdAt,
+            updatedAt: d.updated_at || d.updatedAt
+          };
+          this.orcamentos.push(orc);
+        }
+      } catch (e) {
+        console.warn('Erro ao buscar orçamento por ID no banco:', e);
+      }
+    }
+
+    if (!orc) {
+      this.showToast('Orçamento não encontrado ou sem permissão de acesso.', 'error');
+      return;
+    }
+
+    // Normalização dos campos de orcamento para garantir compatibilidade
+    const orcNormalizado: Orcamento = {
+      id: orc.id,
+      consultorId: orc.consultorId || orc.consultor_id || this.user?.id || '',
+      clienteId: orc.clienteId || orc.cliente_id || '',
+      nomeCliente: orc.nomeCliente || orc.nome_cliente || orc.cliente?.nome || 'Cliente',
+      contato: orc.contato || orc.cliente?.telefone || orc.cliente?.email || '',
+      destino: orc.destino || '',
+      dataViagem: orc.dataViagem || orc.data_viagem || '',
+      temperatura: orc.temperatura || 'Normal',
+      tags: orc.tags || [],
+      status: orc.status || 'SOLICITADO',
+      subStatus: orc.subStatus || orc.sub_status || '',
+      notasNegociacao: orc.notasNegociacao || orc.notas_negociacao || '',
+      valorProposta: orc.valorProposta !== undefined ? Number(orc.valorProposta) : (orc.valor_proposta !== undefined ? Number(orc.valor_proposta) : undefined),
+      documentosUrl: orc.documentosUrl || orc.documentos_url || [],
+      createdAt: orc.createdAt || orc.created_at,
+      updatedAt: orc.updatedAt || orc.updated_at
+    };
+
+    // Garante o portal de modais de orçamento no DOM
+    let portal = document.getElementById('orcamento-modal-portal');
+    if (!portal) {
+      portal = document.createElement('div');
+      portal.id = 'orcamento-modal-portal';
+      document.body.appendChild(portal);
+    }
+
+    portal.innerHTML = `
+      <div id="modal-overlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9999] flex items-center justify-center opacity-0 transition-opacity duration-200">
+        <div id="modal-content-container" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden transform scale-95 transition-all duration-200 flex flex-col max-h-[90vh]">
+          <!-- Injetado dinamicamente -->
+        </div>
+      </div>
+    `;
+
+    setTimeout(() => {
+      const overlay = document.getElementById('modal-overlay');
+      const content = document.getElementById('modal-content-container');
+      if (overlay && content) {
+        overlay.classList.remove('opacity-0');
+        overlay.classList.add('opacity-100');
+        content.classList.remove('scale-95');
+        content.classList.add('scale-100');
+      }
+    }, 10);
+
+    const fecharModalOrcamento = () => {
+      const overlay = document.getElementById('modal-overlay');
+      const content = document.getElementById('modal-content-container');
+      if (overlay && content) {
+        overlay.classList.remove('opacity-100');
+        overlay.classList.add('opacity-0');
+        content.classList.remove('scale-100');
+        content.classList.add('scale-95');
+        setTimeout(() => {
+          if (portal) portal.innerHTML = '';
+        }, 200);
+      } else if (portal) {
+        portal.innerHTML = '';
+      }
+    };
+
+    VerNotasModal.open(orcNormalizado, {
+      user: this.user,
+      perfil: this.perfil,
+      consultores: this.consultores,
+      formatarDataBr: (dStr?: string) => formatIsoDateToBr(dStr || '') || dStr || '',
+      calcularTempoAmigavel: (dataIso: string) => {
+        if (!dataIso) return '';
+        const diff = Date.now() - new Date(dataIso).getTime();
+        const dias = Math.floor(diff / (1000 * 60 * 60 * 24));
+        if (dias === 0) return 'hoje';
+        if (dias === 1) return 'há 1 dia';
+        return `há ${dias} dias`;
+      },
+      closeModal: () => fecharModalOrcamento(),
+      showToast: (msg, type) => this.showToast(msg, type),
+      onUpdate: async (updatedOrc) => {
+        try {
+          const payload = {
+            consultor_id: updatedOrc.consultorId,
+            destino: updatedOrc.destino,
+            data_viagem: updatedOrc.dataViagem,
+            temperatura: updatedOrc.temperatura,
+            tags: updatedOrc.tags,
+            status: updatedOrc.status,
+            sub_status: updatedOrc.subStatus,
+            notas_negociacao: updatedOrc.notasNegociacao,
+            valor_proposta: updatedOrc.valorProposta,
+            documentos_url: updatedOrc.documentosUrl,
+            updated_at: new Date().toISOString()
+          };
+          const { error } = await supabase.from('orcamentos').update(payload).eq('id', updatedOrc.id);
+          if (error) throw error;
+
+          await this.loadData();
+          this.render();
+          this.setupEventListeners();
+          this.showToast('Orçamento atualizado com sucesso!', 'success');
+          return true;
+        } catch (e: any) {
+          console.error('Erro ao atualizar orçamento:', e);
+          this.showToast('Erro ao salvar alterações no orçamento.', 'error');
+          return false;
+        }
+      },
+      onDelete: async (idToDelete) => {
+        try {
+          const { error } = await supabase.from('orcamentos').delete().eq('id', idToDelete);
+          if (error) throw error;
+          await this.loadData();
+          this.render();
+          this.setupEventListeners();
+          this.showToast('Orçamento excluído com sucesso!', 'success');
+          return true;
+        } catch (e: any) {
+          console.error('Erro ao excluir orçamento:', e);
+          this.showToast('Erro ao excluir orçamento.', 'error');
+          return false;
+        }
+      }
+    });
   }
 
   private renderAuthError(msg: string): void {

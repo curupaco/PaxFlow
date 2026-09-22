@@ -162,4 +162,53 @@ describe('Relatórios - Melhorias Subcutâneas (Embarques, Desistências e Valid
     expect(result.contatosAtualizados['ida-0'].validado_gestor).toBe(true);
     expect(updateMock).toHaveBeenCalledTimes(2);
   });
+
+  it('deve buscar e normalizar dados de orçamento para o modal sobreposto de relatórios', async () => {
+    // Setup
+    const mockOrcamentoDb = {
+      id: 'orc-999',
+      consultor_id: 'user-777',
+      cliente_id: 'cli-888',
+      nome_cliente: 'Mariana Lima',
+      contato: '11999998888',
+      destino: 'Paris, França',
+      data_viagem: '2026-10-15',
+      temperatura: 'Quente',
+      tags: ['VIP', 'Europa'],
+      status: 'SOLICITADO',
+      sub_status: '',
+      notas_negociacao: 'Cliente quer hotel 5 estrelas',
+      valor_proposta: 25000,
+      documentos_url: ['https://storage.supabase.co/doc1.pdf'],
+      created_at: '2026-09-20T10:00:00Z',
+      updated_at: '2026-09-20T10:00:00Z'
+    };
+
+    const maybeSingleMock = vi.fn().mockResolvedValue({ data: mockOrcamentoDb, error: null });
+    const eqMock = vi.fn().mockReturnValue({ maybeSingle: maybeSingleMock });
+    const selectMock = vi.fn().mockReturnValue({ eq: eqMock });
+
+    vi.mocked(supabase.from).mockImplementation((table: string) => {
+      if (table === 'orcamentos') {
+        return {
+          select: selectMock
+        } as any;
+      }
+      return {} as any;
+    });
+
+    // Action
+    const { data: d } = await supabase
+      .from('orcamentos')
+      .select('*, cliente:clientes(*)')
+      .eq('id', 'orc-999')
+      .maybeSingle();
+
+    // Assert
+    expect(d).toBeDefined();
+    expect(d.id).toBe('orc-999');
+    expect(d.nome_cliente).toBe('Mariana Lima');
+    expect(d.destino).toBe('Paris, França');
+    expect(d.valor_proposta).toBe(25000);
+  });
 });
