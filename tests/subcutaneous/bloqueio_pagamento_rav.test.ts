@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { isTipoRav, isTipoMarkup, calcularFinanceiroProduto } from '../../src/utils/productFinancialHelper';
+import { isTipoRav, isTipoMarkup, calcularFinanceiroProduto, isLocBloqueadoPorEdicao } from '../../src/utils/productFinancialHelper';
 import { OrcamentosService } from '../../src/services/orcamentosService';
 import { supabase } from '../../src/services/supabase';
 
@@ -39,7 +39,7 @@ describe('Subcutaneous: Bloqueio de Recebimento e Consistência de RAVs/Markups'
     expect(fin.totalDistribuido).toBe(1000);
   });
 
-  it('deve validar bloqueio de pagamento para LOC com produto em edição no editor lateral', () => {
+  it('deve validar bloqueio de pagamento apenas se houver alterações não salvas (dirty), liberando quando salvo sem fechar o painel direito', () => {
     // Setup
     const selectedProductId = 'prod-123';
     const subProdutosLocA = [
@@ -50,13 +50,23 @@ describe('Subcutaneous: Bloqueio de Recebimento e Consistência de RAVs/Markups'
       { id: 'prod-789', tipo: 'AÉREO', codigo_reserva: 'LOC999', valor_venda: 1200 }
     ];
 
-    // Action
-    const isLocAEmEdicao = Boolean(selectedProductId && subProdutosLocA.some(p => p.id === selectedProductId));
-    const isLocBEmEdicao = Boolean(selectedProductId && subProdutosLocB.some(p => p.id === selectedProductId));
+    // Action 1: Produto aberto no editor com alterações pendentes (dirty = true)
+    const isLocABloqueadoDirty = isLocBloqueadoPorEdicao(selectedProductId, true, subProdutosLocA);
+    const isLocBBloqueadoDirty = isLocBloqueadoPorEdicao(selectedProductId, true, subProdutosLocB);
+
+    // Action 2: Produto aberto no editor, mas já SALVO com sucesso (dirty = false) -> NÃO bloqueia!
+    const isLocALiberadoSalvo = isLocBloqueadoPorEdicao(selectedProductId, false, subProdutosLocA);
+    const isLocBLiberadoSalvo = isLocBloqueadoPorEdicao(selectedProductId, false, subProdutosLocB);
+
+    // Action 3: Nenhum produto selecionado
+    const isLocASemSelecao = isLocBloqueadoPorEdicao(null, false, subProdutosLocA);
 
     // Assert
-    expect(isLocAEmEdicao).toBe(true);
-    expect(isLocBEmEdicao).toBe(false);
+    expect(isLocABloqueadoDirty).toBe(true);
+    expect(isLocBBloqueadoDirty).toBe(false);
+    expect(isLocALiberadoSalvo).toBe(false);
+    expect(isLocBLiberadoSalvo).toBe(false);
+    expect(isLocASemSelecao).toBe(false);
   });
 
   it('deve inicializar campos rav e markup na conversão de orçamento para viagem', async () => {

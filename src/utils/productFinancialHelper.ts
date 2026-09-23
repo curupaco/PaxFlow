@@ -39,6 +39,20 @@ export function isTipoMarkup(tipo: string): boolean {
   return t === 'MARKUP' || t.startsWith('MARKUP');
 }
 
+/**
+ * Verifica se um LOC possui produto com alterações pendentes não salvas no editor lateral
+ */
+export function isLocBloqueadoPorEdicao(
+  selectedProductId: string | null,
+  isDirty: boolean,
+  produtosLoc: any[]
+): boolean {
+  if (!selectedProductId || !isDirty || !Array.isArray(produtosLoc)) {
+    return false;
+  }
+  return produtosLoc.some(p => p && p.id === selectedProductId);
+}
+
 export interface ProdutoFinanceiroCalculado {
   venda: number;
   tarifa: number;

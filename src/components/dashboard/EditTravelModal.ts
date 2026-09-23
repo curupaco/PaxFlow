@@ -34,7 +34,8 @@ import {
   isTipoRav,
   isTipoMarkup,
   calcularFinanceiroProduto,
-  parseFinancialNumber
+  parseFinancialNumber,
+  isLocBloqueadoPorEdicao
 } from '../../utils/productFinancialHelper';
 
 export interface EditTravelModalOptions {
@@ -53,6 +54,7 @@ export class EditTravelModal {
   private options: EditTravelModalOptions;
   private tripId!: string;
   private selectedProductId: string | null = null;
+  private selectedProductDirty: boolean = false;
   private destAutocomplete: DestinosAutocomplete | null = null;
   private locConferenciasMap: { [locKey: string]: boolean } = {};
   private currentLoadedViagem: any = null;
@@ -1872,8 +1874,11 @@ export class EditTravelModal {
   }
 
   private setupProductEditor(selectedProduct: any, v: any): void {
+    this.selectedProductDirty = false;
+
     const closeEditor = () => {
       this.selectedProductId = null;
+      this.selectedProductDirty = false;
       this.open(v.id, 'produtos');
     };
     document.getElementById('btn-close-product-editor')?.addEventListener('click', closeEditor);
@@ -1883,6 +1888,16 @@ export class EditTravelModal {
     const prodId = prod.id;
     const formEditProd = document.getElementById(`form-editar-produto-lateral-${prodId}`) as HTMLFormElement;
     if (!formEditProd) return;
+
+    const marcarComoDirty = () => {
+      if (!this.selectedProductDirty) {
+        this.selectedProductDirty = true;
+        this.atualizarBotoesPagamentoLoc();
+      }
+    };
+
+    formEditProd.addEventListener('input', marcarComoDirty);
+    formEditProd.addEventListener('change', marcarComoDirty);
 
     const isLocConferido = !!this.locConferenciasMap[prod.codigo_reserva || ''];
 
@@ -2002,6 +2017,7 @@ export class EditTravelModal {
       document.getElementById(`edit-btn-add-trecho-${prodId}`)?.addEventListener('click', () => {
         const nextIndex = editContainerTrechos.querySelectorAll('.trecho-item-row').length;
         this.addNewTrechoRow(editContainerTrechos, nextIndex, '', '', '', '', isLocConferido);
+        marcarComoDirty();
       });
     }
 
@@ -2028,6 +2044,9 @@ export class EditTravelModal {
       `;
       editContainerDatas.appendChild(newRow);
 
+      const rotuloInput = newRow.querySelector('.edit-prod-adicional-rotulo') as HTMLInputElement;
+      rotuloInput?.addEventListener('input', marcarComoDirty);
+
       const dataInput = newRow.querySelector('.edit-prod-adicional-data') as HTMLInputElement;
       dataInput.addEventListener('input', (ev) => {
         const target = ev.target as HTMLInputElement;
@@ -2035,10 +2054,12 @@ export class EditTravelModal {
         let digits = val.replace(/\D/g, '');
         if (digits.length > 8) digits = digits.slice(0, 8);
         target.value = formatDateBr(digits);
+        marcarComoDirty();
       });
 
       newRow.querySelector('.edit-btn-remove-data-adicional')?.addEventListener('click', () => {
         newRow.remove();
+        marcarComoDirty();
       });
     };
 
@@ -2050,6 +2071,7 @@ export class EditTravelModal {
 
     document.getElementById(`edit-btn-add-data-adicional-${prodId}`)?.addEventListener('click', () => {
       addDateRow('', '');
+      marcarComoDirty();
     });
 
     const editVendaInput = document.getElementById(`edit-prod-venda-${prodId}`) as HTMLInputElement;
@@ -2419,6 +2441,7 @@ export class EditTravelModal {
 
         this.options.showToast('Produto atualizado com sucesso!', 'success');
         this.selectedProductId = prodId;
+        this.selectedProductDirty = false;
 
         await this.options.onUpdate();
         
@@ -2788,7 +2811,7 @@ export class EditTravelModal {
 
       const isAdmin = this.options.perfil?.role === 'admin';
 
-      const isLocEmEdicao = !!(this.selectedProductId && subProdutos.some(p => p.id === this.selectedProductId));
+      const isLocEmEdicao = isLocBloqueadoPorEdicao(this.selectedProductId, this.selectedProductDirty, subProdutos);
 
       return `
         <div class="loc-group border border-slate-200/80 dark:border-slate-800 rounded-xl overflow-hidden mb-2 shadow-sm">
@@ -2874,7 +2897,7 @@ export class EditTravelModal {
             this.options.showToast('Este LOC está conferido pelo financeiro e encontra-se bloqueado para alterações.', 'error');
             return;
           }
-          const isEmEdicao = !!(this.selectedProductId && produtosAgrupados[loc]?.produtos?.some(p => p.id === this.selectedProductId));
+          const isEmEdicao = isLocBloqueadoPorEdicao(this.selectedProductId, this.selectedProductDirty, produtosAgrupados[loc]?.produtos || []);
           if (isEmEdicao) {
             this.options.showToast('Salve as alterações deste produto no editor lateral antes de receber.', 'error');
             return;
@@ -3930,6 +3953,28 @@ export class EditTravelModal {
     });
 
     modal.open();
+  }
+
+  private atualizarBotoesPagamentoLoc(): void {
+    const container = document.getElementById('lista-produtos-viagem-container');
+    if (!container) return;
+
+    container.querySelectorAll('.btn-formas-pagamento-loc').forEach(btn => {
+      const loc = (btn.getAttribute('data-loc') || '').toUpperCase();
+      const isConferido = !!this.locConferenciasMap[loc];
+      const subProdutosLoc = (this.currentLoadedViagem?.produtos || []).filter(
+        (p: any) => (p.codigo_reserva || 'SEM_LOC').trim().toUpperCase() === loc
+      );
+      const isLocEmEdicao = isLocBloqueadoPorEdicao(this.selectedProductId, this.selectedProductDirty, subProdutosLoc);
+
+      if (isConferido || isLocEmEdicao) {
+        btn.classList.add('opacity-55', 'cursor-not-allowed');
+        btn.setAttribute('title', isConferido ? 'Bloqueado Financeiramente' : 'Salve as alterações deste produto no editor lateral antes de receber.');
+      } else {
+        btn.classList.remove('opacity-55', 'cursor-not-allowed');
+        btn.setAttribute('title', 'Definir Formas de Pagamento');
+      }
+    });
   }
 
   private closeModal(): void {
