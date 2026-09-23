@@ -666,18 +666,18 @@ export class EditTravelModal {
               <div>
                 <span class="block text-[10px] text-indigo-500 dark:text-indigo-400 font-bold uppercase tracking-wider leading-tight">Rentabilidade</span>
                 <strong id="fin-valor-rentabilidade" class="text-sm font-black text-indigo-600 dark:text-indigo-400">R$ 0,00</strong>
-                <span id="fin-valor-mkp-rav" class="block text-[9px] font-bold text-slate-500 dark:text-slate-400 mt-0.5 whitespace-nowrap hidden"></span>
+                <div id="fin-valor-mkp-rav" class="text-[8.5px] font-bold text-slate-500 dark:text-slate-400 mt-0.5 leading-tight flex flex-col gap-0.5 hidden"></div>
               </div>
             </div>
 
             <!-- Barra de Sincronização Inteligente (Aparece se houver diferença) -->
-            <div id="fin-sync-bar-container" class="hidden mb-4 p-3 bg-indigo-50/80 dark:bg-indigo-950/40 border border-indigo-200/80 dark:border-indigo-800/60 rounded-xl flex items-center justify-between gap-3 text-xs">
-              <div class="flex items-center gap-2 text-indigo-900 dark:text-indigo-200 font-semibold">
-                <span>⚡</span>
-                <span id="fin-sync-bar-text">A soma dos produtos difere do valor total da viagem.</span>
+            <div id="fin-sync-bar-container" class="hidden mb-4 p-3 bg-indigo-50/80 dark:bg-indigo-950/40 border border-indigo-200/80 dark:border-indigo-800/60 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+              <div class="flex items-start gap-2 text-indigo-900 dark:text-indigo-200 font-semibold leading-relaxed">
+                <span class="text-base shrink-0 mt-0.5">⚡</span>
+                <div id="fin-sync-bar-text" class="space-y-0.5 text-xs"></div>
               </div>
-              <button id="btn-sync-valor-viagem" type="button" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-[10px] uppercase tracking-wider rounded-lg transition shadow-sm whitespace-nowrap">
-                Sincronizar Total da Viagem
+              <button id="btn-sync-valor-viagem" type="button" class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-[10px] uppercase tracking-wider rounded-lg transition shadow-sm whitespace-nowrap self-end sm:self-center shrink-0 cursor-pointer">
+                Atualizar Valor da Viagem
               </button>
             </div>
             
@@ -1803,6 +1803,12 @@ export class EditTravelModal {
 
       if (!datesValid) return;
 
+      const isRav = isTipoRav(tipo);
+      const isMkp = isTipoMarkup(tipo);
+      const ravInicial = isRav ? venda : 0;
+      const markupInicial = isMkp ? venda : 0;
+      const tarifaInicial = (isRav || isMkp) ? 0 : venda;
+
       const payload = {
         viagem_id: v.id,
         tipo,
@@ -1811,11 +1817,11 @@ export class EditTravelModal {
         codigo_reserva: reserva || null,
         valor_custo: 0,
         valor_venda: venda,
-        tarifa: venda,
+        tarifa: tarifaInicial,
         taxa: 0,
         comissao: 0,
-        markup: 0,
-        rav: 0,
+        markup: markupInicial,
+        rav: ravInicial,
         status,
         data_servico: dataServico,
         datas_adicionais: datasAdicionais,
@@ -2542,7 +2548,16 @@ export class EditTravelModal {
         if (finLabelPendente) finLabelPendente.textContent = 'Excedente em Produtos';
         if (syncBar) {
           syncBar.classList.remove('hidden');
-          if (syncText) syncText.textContent = `Os produtos somam R$ ${totalProdutos.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (+ R$ ${excedente.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} acima do total estimado).`;
+          if (syncText) {
+            syncText.innerHTML = `
+              <span>A soma dos produtos cadastrados (<strong>R$ ${totalProdutos.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>) ultrapassa o valor total da viagem (<strong>R$ ${valorTotalViagem.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>) em <strong>R$ ${excedente.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>.</span>
+              <span class="block text-[11px] text-indigo-700/80 dark:text-indigo-300/80 font-normal">Ao clicar no botão, o valor da viagem no cabeçalho será ajustado de R$ ${valorTotalViagem.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} para R$ ${totalProdutos.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}.</span>
+            `;
+          }
+          if (btnSync) {
+            btnSync.textContent = `Atualizar Viagem para R$ ${totalProdutos.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            btnSync.title = `Atualizar valor da viagem de R$ ${valorTotalViagem.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} para R$ ${totalProdutos.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+          }
         }
       } else {
         finValorPendente.textContent = `Faltam R$ ${saldoPendente.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -2550,7 +2565,16 @@ export class EditTravelModal {
         if (finLabelPendente) finLabelPendente.textContent = 'Aguardando Alocação';
         if (syncBar && produtos.length > 0) {
           syncBar.classList.remove('hidden');
-          if (syncText) syncText.textContent = `Os produtos cadastrados somam R$ ${totalProdutos.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}. Deseja ajustar o total da viagem para este valor?`;
+          if (syncText) {
+            syncText.innerHTML = `
+              <span>O valor da viagem está em <strong>R$ ${valorTotalViagem.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>, mas os produtos somam apenas <strong>R$ ${totalProdutos.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong> (diferença de <strong>R$ ${saldoPendente.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>).</span>
+              <span class="block text-[11px] text-indigo-700/80 dark:text-indigo-300/80 font-normal">Deseja atualizar o valor da viagem de R$ ${valorTotalViagem.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} para R$ ${totalProdutos.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} para zerar a pendência?</span>
+            `;
+          }
+          if (btnSync) {
+            btnSync.textContent = `Atualizar Viagem para R$ ${totalProdutos.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            btnSync.title = `Atualizar valor da viagem de R$ ${valorTotalViagem.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} para R$ ${totalProdutos.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+          }
         } else if (syncBar) {
           syncBar.classList.add('hidden');
         }
@@ -2560,22 +2584,23 @@ export class EditTravelModal {
     if (btnSync && viagem) {
       btnSync.onclick = async () => {
         try {
+          const valorAnterior = valorTotalViagem;
           btnSync.setAttribute('disabled', 'true');
-          btnSync.textContent = 'Sincronizando...';
+          btnSync.textContent = 'Atualizando...';
           const { error } = await supabase.from('viagens').update({ valor_total: totalProdutos }).eq('id', viagem.id);
           if (error) throw error;
           viagem.valor_total = totalProdutos;
           const inputValor = document.getElementById('edit-viagem-valor') as HTMLInputElement;
           if (inputValor) inputValor.value = totalProdutos.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-          this.options.showToast('Valor total da viagem sincronizado com sucesso!', 'success');
+          this.options.showToast(`Valor da viagem atualizado de R$ ${valorAnterior.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} para R$ ${totalProdutos.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} com sucesso!`, 'success');
           await this.options.onUpdate();
           await this.loadAndRenderProdutosViagem(viagem.id);
         } catch (errSync: any) {
           console.error('Erro ao sincronizar:', errSync);
-          this.options.showToast('Erro ao sincronizar valor da viagem.', 'error', errSync);
+          this.options.showToast('Erro ao atualizar valor da viagem.', 'error', errSync);
         } finally {
           btnSync.removeAttribute('disabled');
-          btnSync.textContent = 'Sincronizar Total da Viagem';
+          btnSync.textContent = `Atualizar Viagem para R$ ${totalProdutos.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
         }
       };
     }
@@ -2585,10 +2610,17 @@ export class EditTravelModal {
     const finValorMkpRav = document.getElementById('fin-valor-mkp-rav');
     if (finValorMkpRav) {
       if (totalMarkup > 0 || totalRav > 0) {
-        finValorMkpRav.textContent = `MKP: R$ ${totalMarkup.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} | RAV: R$ ${totalRav.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        const parts: string[] = [];
+        if (totalMarkup > 0) {
+          parts.push(`MKP: R$ ${totalMarkup.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+        }
+        if (totalRav > 0) {
+          parts.push(`RAV: R$ ${totalRav.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+        }
+        finValorMkpRav.innerHTML = parts.map(p => `<span>${p}</span>`).join('');
         finValorMkpRav.classList.remove('hidden');
       } else {
-        finValorMkpRav.textContent = '';
+        finValorMkpRav.innerHTML = '';
         finValorMkpRav.classList.add('hidden');
       }
     }
@@ -2756,6 +2788,8 @@ export class EditTravelModal {
 
       const isAdmin = this.options.perfil?.role === 'admin';
 
+      const isLocEmEdicao = !!(this.selectedProductId && subProdutos.some(p => p.id === this.selectedProductId));
+
       return `
         <div class="loc-group border border-slate-200/80 dark:border-slate-800 rounded-xl overflow-hidden mb-2 shadow-sm">
           <div class="loc-header flex items-center justify-between p-2.5 bg-slate-100/50 dark:bg-slate-800/40 cursor-pointer hover:bg-slate-200/50 dark:hover:bg-slate-800/80 transition select-none" data-loc-key="${locKey}">
@@ -2776,7 +2810,7 @@ export class EditTravelModal {
                 </span>
               ` : '')}
 
-              <button class="btn-formas-pagamento-loc p-1 ${btnPagamentoClass} rounded-lg border transition text-[9px] font-bold flex items-center justify-center gap-1 shadow-sm font-sans ${isConferido ? 'opacity-55 cursor-not-allowed' : ''}" data-loc="${locKey}" title="${isConferido ? 'Bloqueado Financeiramente' : 'Definir Formas de Pagamento'}">
+              <button class="btn-formas-pagamento-loc p-1 ${btnPagamentoClass} rounded-lg border transition text-[9px] font-bold flex items-center justify-center gap-1 shadow-sm font-sans ${(isConferido || isLocEmEdicao) ? 'opacity-55 cursor-not-allowed' : ''}" data-loc="${locKey}" title="${isConferido ? 'Bloqueado Financeiramente' : (isLocEmEdicao ? 'Salve as alterações deste produto no editor lateral antes de receber.' : 'Definir Formas de Pagamento')}">
                 ${btnPagamentoContent}
               </button>
 
@@ -2838,6 +2872,11 @@ export class EditTravelModal {
           const isLocConferido = !!this.locConferenciasMap[loc.toUpperCase()];
           if (isLocConferido) {
             this.options.showToast('Este LOC está conferido pelo financeiro e encontra-se bloqueado para alterações.', 'error');
+            return;
+          }
+          const isEmEdicao = !!(this.selectedProductId && produtosAgrupados[loc]?.produtos?.some(p => p.id === this.selectedProductId));
+          if (isEmEdicao) {
+            this.options.showToast('Salve as alterações deste produto no editor lateral antes de receber.', 'error');
             return;
           }
           this.abrirModalPagamentoLoc(loc, produtosAgrupados[loc]?.valorVendaTotal || 0, formasAtivas, locPagamentos);

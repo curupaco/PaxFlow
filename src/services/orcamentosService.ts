@@ -1,6 +1,7 @@
 import { supabase } from './supabase';
 import { PerfilConsultor, Orcamento, Cliente, ConvertToTripOptions } from '../types';
 import { registrarXp } from './gamification';
+import { isTipoRav, isTipoMarkup } from '../utils/productFinancialHelper';
 
 export class OrcamentosService {
   /**
@@ -646,6 +647,12 @@ export class OrcamentosService {
         const prodTipoFinal = prodTipo || 'PACOTE';
         const prodFornFinal = prodFornecedor || 'OPERADORA';
         const prodDescFinal = prodDescricao || `Pacote ${vDestino || 'Viagem'}`;
+        const isRavIni = isTipoRav(prodTipoFinal);
+        const isMkpIni = isTipoMarkup(prodTipoFinal);
+        const ravIni = isRavIni ? vValor : 0;
+        const mkpIni = isMkpIni ? vValor : 0;
+        const tarifaIni = (isRavIni || isMkpIni) ? 0 : vValor;
+
         try {
           await supabase
             .from('produtos_viagem')
@@ -657,11 +664,11 @@ export class OrcamentosService {
               codigo_reserva: vLoc || null,
               valor_custo: 0,
               valor_venda: vValor,
-              tarifa: vValor,
+              tarifa: tarifaIni,
               taxa: 0,
               comissao: 0,
-              markup: 0,
-              rav: 0,
+              markup: mkpIni,
+              rav: ravIni,
               status: 'reservado',
               data_servico: vIda || new Date().toISOString().split('T')[0]
             });
@@ -689,6 +696,12 @@ export class OrcamentosService {
       const prodTipoFinal = prodTipo || 'OUTROS';
       const prodFornFinal = prodFornecedor || 'FORNECEDOR';
       const prodDescFinal = prodDescricao || 'Item Adicional Orçamento';
+      const isRavAdd = isTipoRav(prodTipoFinal);
+      const isMkpAdd = isTipoMarkup(prodTipoFinal);
+      const ravAdd = isRavAdd ? vValor : 0;
+      const mkpAdd = isMkpAdd ? vValor : 0;
+      const tarifaAdd = (isRavAdd || isMkpAdd) ? 0 : vValor;
+
       try {
         await supabase
           .from('produtos_viagem')
@@ -700,11 +713,11 @@ export class OrcamentosService {
             codigo_reserva: null,
             valor_custo: 0,
             valor_venda: vValor,
-            tarifa: vValor,
+            tarifa: tarifaAdd,
             taxa: 0,
             comissao: 0,
-            markup: 0,
-            rav: 0,
+            markup: mkpAdd,
+            rav: ravAdd,
             status: 'reservado',
             data_servico: new Date().toISOString().split('T')[0]
           });
