@@ -1,4 +1,5 @@
 import { supabase } from '../../services/supabase';
+import { escapeHtml } from '../../utils/textHelper';
 
 export interface SendTemplateMessageModalOptions {
   clienteNome: string;
@@ -314,7 +315,7 @@ export class SendTemplateMessageModal {
       selectedTemplateId = selectedId;
       const template = templates.find(t => t.id === selectedId);
       if (template) {
-        bubble.innerHTML = gerarPreviewTexto(template);
+        bubble.innerHTML = escapeHtml(gerarPreviewTexto(template));
       }
     };
 
@@ -409,7 +410,7 @@ export class SendTemplateMessageModal {
           return `
             <div class="flex flex-col ${isSent ? 'items-end' : 'items-start'} max-w-[85%] ${isSent ? 'self-end' : 'self-start'}">
               <div class="${isSent ? 'bg-[#d9fdd3] dark:bg-[#0b141a] border-emerald-100/30' : 'bg-white dark:bg-slate-900 border-slate-200/50'} dark:border-slate-800 text-slate-800 dark:text-slate-200 p-2.5 rounded-2xl ${isSent ? 'rounded-tr-none' : 'rounded-tl-none'} shadow-sm text-xs font-medium border leading-relaxed whitespace-pre-wrap">
-                ${m.text || m.body || ''}
+                ${escapeHtml(m.text || m.body || '')}
               </div>
               <span class="text-[8px] text-slate-400 mt-1 px-1 font-bold">${time}</span>
             </div>

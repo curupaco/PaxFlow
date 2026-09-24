@@ -23,6 +23,7 @@ import { LandingPage } from './pages/LandingPage';
 import { GlobalHeaderSearch } from './components/GlobalHeaderSearch';
 import { RealtimeMessagingService } from './services/realtimeMessaging';
 import { VersionChecker } from './services/versionChecker';
+import { escapeHtml } from './utils/textHelper';
 import { VersionToast } from './components/VersionToast';
 
 import { PushNotificationService } from './services/pushNotificationService';
@@ -168,7 +169,7 @@ class App {
         return;
       } catch (err: any) {
         console.error('Erro ao inicializar rota pública:', err);
-        this.container.innerHTML = `<div class="p-6 text-center text-rose-500">Erro ao carregar a página: ${err.message}</div>`;
+        this.container.innerHTML = `<div class="p-6 text-center text-rose-500">Erro ao carregar a página: ${escapeHtml(err?.message || 'Erro desconhecido')}</div>`;
         return;
       }
     }

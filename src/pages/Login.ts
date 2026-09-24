@@ -1,6 +1,7 @@
 import { loginConsultor, supabase } from '../services/supabase';
 import { PerfilConsultor } from '../types';
 import { traduzirErro } from '../utils/errorTranslator';
+import { escapeHtml } from '../utils/textHelper';
 
 export interface LoginPageOptions {
   onLoginSuccess: (user: any, perfil: PerfilConsultor | null) => void;
@@ -244,7 +245,7 @@ export class LoginPage {
             <div>
               <h4 class="text-sm font-black text-slate-800 dark:text-slate-100">Instruções Enviadas!</h4>
               <p class="text-xs text-slate-400 dark:text-slate-400 font-semibold mt-1">
-                Enviamos um e-mail de redefinição para <strong class="text-slate-700 dark:text-slate-300">${email}</strong> com o link seguro. Verifique também a pasta de spam.
+                Enviamos um e-mail de redefinição para <strong class="text-slate-700 dark:text-slate-300">${escapeHtml(email)}</strong> com o link seguro. Verifique também a pasta de spam.
               </p>
             </div>
             <button type="button" id="btn-success-back-to-login" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/10 transition uppercase">

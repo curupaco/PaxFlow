@@ -184,14 +184,8 @@ export class InboxService {
           .eq('id', tableId);
         if (error) throw error;
       } else if (item.type === 'escala_solicitacao' || item.type === 'atendimento_balcao') {
-        const tableId = item.targetId;
-        if (tableId) {
-          const { error } = await supabase
-            .from('escala_solicitacoes')
-            .delete()
-            .eq('id', tableId);
-          if (error) throw error;
-        }
+        // Alertas de solicitações de escala e balcão: arquiva no Inbox preservando o registro original de escala
+        await this.archiveAlert(item, true, resolvedUserId);
       } else if (item.id.startsWith('mention-') || item.type === 'campaign_notification' || item.type === 'mention') {
         const tableId = item.id.replace('mention-', '').replace('sent-', '');
         const { error } = await supabase

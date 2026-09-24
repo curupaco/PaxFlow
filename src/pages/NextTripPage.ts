@@ -5,6 +5,7 @@ import { SendTemplateMessageModal } from '../components/dashboard/SendTemplateMe
 import { renderHelpIcon } from '../utils/helpHelper';
 import { UpsellEngineService } from '../services/upsellEngineService';
 import { isNextTripEnabled } from '../utils/featureFlags';
+import { showCustomAlert } from '../services/dialog';
 
 export class NextTripPage {
   private container: HTMLElement;
@@ -445,6 +446,7 @@ export class NextTripPage {
             this.setupEventListeners();
           } catch (err) {
             console.error('Falha ao aplicar snooze:', err);
+            showCustomAlert('Não foi possível adiar o contato com este cliente. Verifique sua conexão e tente novamente.', 'Falha ao Adiar Contato');
           }
         }
       });

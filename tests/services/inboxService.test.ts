@@ -343,6 +343,38 @@ describe('InboxService Subcutaneous Flow Tests', () => {
     archiveSpy.mockRestore();
   });
 
+  it('deve arquivar alerta de solicitacao de escala sem apagar o registro da tabela escala_solicitacoes', async () => {
+    // Setup
+    const userId = 'user-consultor-123';
+    const solUUID = '77777777-8888-9999-aaaa-bbbbccccdddd';
+
+    const mockDelete = vi.fn().mockResolvedValue({ error: null });
+    const archiveSpy = vi.spyOn(InboxService, 'archiveAlert').mockResolvedValue(true);
+
+    (supabase.from as any).mockImplementation((table: string) => {
+      if (table === 'escala_solicitacoes') {
+        return { delete: mockDelete };
+      }
+      return createQueryMock([]);
+    });
+
+    const escalaItem: any = {
+      id: `escala-sol-${solUUID}-inbox`,
+      type: 'escala_solicitacao',
+      targetId: solUUID,
+    };
+
+    // Action
+    const result = await InboxService.deleteAlert(escalaItem, userId);
+
+    // Assert
+    expect(mockDelete).not.toHaveBeenCalled();
+    expect(archiveSpy).toHaveBeenCalledWith(escalaItem, true, userId);
+    expect(result).toBe(true);
+
+    archiveSpy.mockRestore();
+  });
+
   // ==========================================
   // FLUXO 3: COMPILAÇÃO E CARGA DE ALERTAS
   // ==========================================

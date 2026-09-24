@@ -1,6 +1,7 @@
 import { supabase } from '../services/supabase';
 import { showCustomAlert } from '../services/dialog';
 import { getAvatarSvg } from '../services/avatars';
+import { escapeHtml } from '../utils/textHelper';
 
 
 // Injeta estilos premium para as views públicas (itinerário e NPS) no DOM
@@ -334,8 +335,8 @@ export class PublicViews {
                 </span>
               </div>
               
-              <h4 class="text-sm font-black text-slate-800 dark:text-slate-200 tracking-tight">${p.fornecedor}</h4>
-              <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold mt-1 leading-relaxed">${p.descricao}</p>
+              <h4 class="text-sm font-black text-slate-800 dark:text-slate-200 tracking-tight">${escapeHtml(p.fornecedor)}</h4>
+              <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold mt-1 leading-relaxed">${escapeHtml(p.descricao)}</p>
               
               <!-- Selo de confirmação e emissão -->
               <div class="mt-3 flex items-center justify-between flex-wrap gap-2 pt-2 border-t border-slate-100 dark:border-slate-800/80">
@@ -347,8 +348,8 @@ export class PublicViews {
                 ${p.codigo_reserva ? `
                   <div class="flex items-center gap-1.5 ml-auto">
                     <span class="text-[9px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wider">Localizador:</span>
-                    <span id="loc-code-${idx}" class="text-xs font-black text-slate-800 dark:text-slate-300 font-mono tracking-wider bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md select-all">${p.codigo_reserva}</span>
-                    <button onclick="window.copiarTexto('${p.codigo_reserva}').then(() => showCustomAlert('Código localizador copiado para a área de transferência!', 'Copiado'));" class="p-1 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition" title="Copiar localizador">
+                    <span id="loc-code-${idx}" class="text-xs font-black text-slate-800 dark:text-slate-300 font-mono tracking-wider bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md select-all">${escapeHtml(p.codigo_reserva)}</span>
+                    <button onclick="window.copiarTexto('${escapeHtml(p.codigo_reserva)}').then(() => showCustomAlert('Código localizador copiado para a área de transferência!', 'Copiado'));" class="p-1 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition" title="Copiar localizador">
                       <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 7.5V6.108c0-1.135.845-2.098 1.976-2.192.373-.03.748-.057 1.123-.08M15.75 18H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08M15.75 18.75v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5A3.375 3.375 0 006.375 7.5H5.25m11.9-3.664A2.251 2.251 0 0015 2.25h-1.5a2.251 2.251 0 00-2.15 1.586m5.8 0c.065.21.1.433.1.664v.75h-6V4.5c0-.231.035-.454.1-.664M6.75 7.5H4.875c-.621 0-1.125.504-1.125 1.125v12c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V16.5a9 9 0 00-9-9z"/></svg>
                     </button>
                   </div>
@@ -371,7 +372,7 @@ export class PublicViews {
     if (data.consultor_nome) {
       const avatarSVG = data.consultor_avatar 
         ? `<img src="${data.consultor_avatar}" class="w-12 h-12 rounded-full object-cover border border-slate-200 dark:border-slate-800 shrink-0" />`
-        : `<div class="w-12 h-12 rounded-full bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-100 dark:border-indigo-900/40 text-indigo-600 dark:text-indigo-400 font-bold flex items-center justify-center text-lg shrink-0 select-none">${data.consultor_nome.charAt(0)}</div>`;
+        : `<div class="w-12 h-12 rounded-full bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-100 dark:border-indigo-900/40 text-indigo-600 dark:text-indigo-400 font-bold flex items-center justify-center text-lg shrink-0 select-none">${escapeHtml(data.consultor_nome.charAt(0))}</div>`;
 
       consultorHTML = `
         <div class="public-glass p-5 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 mt-6 flex flex-col gap-4">
@@ -379,10 +380,10 @@ export class PublicViews {
             ${avatarSVG}
             <div class="flex-1 min-w-0">
               <span class="text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wider block">Seu Consultor Dedicado</span>
-              <h4 class="text-sm font-black text-slate-800 dark:text-slate-200 truncate leading-snug">${data.consultor_nome}</h4>
+              <h4 class="text-sm font-black text-slate-800 dark:text-slate-200 truncate leading-snug">${escapeHtml(data.consultor_nome)}</h4>
               <span class="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1.5 mt-0.5">
                 <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse"></span>
-                Suporte Oficial: ${telExibicao}
+                Suporte Oficial: ${escapeHtml(telExibicao)}
               </span>
             </div>
           </div>
@@ -413,14 +414,14 @@ export class PublicViews {
               </div>
             ` : `
               <span class="text-xs font-black uppercase tracking-widest text-indigo-200/90 bg-indigo-900/40 px-3 py-1 rounded-full border border-indigo-500/20 mb-4 select-none">
-                ${settings?.agency_name || 'Itinerário de Viagem'}
+                ${escapeHtml(settings?.agency_name || 'Itinerário de Viagem')}
               </span>
             `}
-            <h1 class="text-3xl font-black tracking-tight">${data.destino}</h1>
+            <h1 class="text-3xl font-black tracking-tight">${escapeHtml(data.destino)}</h1>
             <p class="text-xs text-indigo-100/80 font-semibold mt-1">Período: ${formatarDataAmigavel(data.data_ida)} até ${formatarDataAmigavel(data.data_volta)}</p>
             ${data.codigo_localizador ? `
               <span class="inline-block mt-3 px-3 py-1 bg-white/10 backdrop-blur-md rounded-xl text-[10px] font-mono tracking-widest text-white border border-white/10 uppercase select-all">
-                LOC Geral: ${data.codigo_localizador}
+                LOC Geral: ${escapeHtml(data.codigo_localizador)}
               </span>
             ` : ''}
 
@@ -778,19 +779,19 @@ export class PublicViews {
         if (error) throw error;
 
         // Atualiza a viagem no banco com a nota NPS e finaliza o SLA pós-viagem
-        try {
-          await supabase
-            .from('viagens')
-            .update({
-              nps_nota: selectedScore,
-              nps_respondido: true,
-              nps_respondido_em: new Date().toISOString(),
-              pos_contato_concluido: true,
-              status: 'concluida',
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', viagemId);
-        } catch (vErr) {
+        const { error: vErr } = await supabase
+          .from('viagens')
+          .update({
+            nps_nota: selectedScore,
+            nps_respondido: true,
+            nps_respondido_em: new Date().toISOString(),
+            pos_contato_concluido: true,
+            status: 'concluida',
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', viagemId);
+        
+        if (vErr) {
           console.warn('Aviso ao atualizar viagem com resposta do NPS:', vErr);
         }
 
@@ -854,20 +855,20 @@ export class PublicViews {
           <!-- TOP BAR BRAND -->
           <div class="relative z-10 flex items-center justify-between">
             <span class="px-3 py-1 rounded-full text-xs font-black tracking-wider uppercase bg-white/20 backdrop-blur-md border border-white/30 text-white">
-              ${proposta.titulo_cabecalho || 'PAXFLOW LUXURY TRAVEL'}
+              ${escapeHtml(proposta.titulo_cabecalho || 'PAXFLOW LUXURY TRAVEL')}
             </span>
             <span class="text-xs font-bold tracking-wide uppercase opacity-90">
-              ${proposta.consultor_nome ? `Consultor: ${proposta.consultor_nome}` : 'Sua Agência de Viagens'}
+              ${proposta.consultor_nome ? `Consultor: ${escapeHtml(proposta.consultor_nome)}` : 'Sua Agência de Viagens'}
             </span>
           </div>
 
           <!-- HERO TITLE & DATES -->
           <div class="relative z-10 max-w-3xl pb-2">
             <h1 class="text-3xl md:text-5xl font-black tracking-tight drop-shadow-md">
-              ${proposta.destino}
+              ${escapeHtml(proposta.destino)}
             </h1>
             <p class="text-base md:text-lg font-medium text-slate-200 mt-2">
-              Planejado com exclusividade para <strong>${proposta.cliente_nome}</strong>
+              Planejado com exclusividade para <strong>${escapeHtml(proposta.cliente_nome)}</strong>
             </p>
             <div class="flex flex-wrap items-center gap-2.5 sm:gap-4 mt-4 text-xs font-semibold">
               <span class="px-3 py-1.5 rounded-xl bg-slate-950/60 backdrop-blur-md border border-white/15 text-slate-200 flex items-center gap-1.5 shadow-sm">
@@ -891,7 +892,7 @@ export class PublicViews {
                   <div class="font-extrabold text-sm">Proposta Aprovada Formalmente pelo Passageiro</div>
                   <div class="text-xs mt-1 text-slate-600 dark:text-slate-400">
                     Aceite registrado em: <strong>${new Date(proposta.aceite_formal?.data_aceite || proposta.updated_at || Date.now()).toLocaleString('pt-BR')}</strong><br>
-                    Titular: <strong>${proposta.aceite_formal?.cliente_nome || proposta.cliente_nome}</strong> ${proposta.aceite_formal?.documento ? `(Doc: ${proposta.aceite_formal.documento})` : ''}
+                    Titular: <strong>${escapeHtml(proposta.aceite_formal?.cliente_nome || proposta.cliente_nome)}</strong> ${proposta.aceite_formal?.documento ? `(Doc: ${escapeHtml(proposta.aceite_formal.documento)})` : ''}
                   </div>
                 </div>
               </div>

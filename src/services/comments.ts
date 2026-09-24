@@ -4,15 +4,11 @@ import { showCustomConfirm, showCustomAlert, showPaxFlowToast } from './dialog';
 import { Comentario, PerfilConsultor } from '../types';
 import { PushSenderService } from './pushSenderService';
 import { parseSmartDate } from '../utils/masks';
+import { escapeHtml } from '../utils/textHelper';
 
 function converterLinks(texto: string): string {
   if (!texto) return '';
-  const textoEscapado = texto
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
+  const textoEscapado = escapeHtml(texto);
   const urlRegex = /(https?:\/\/[^\s<]+[^#.,?;()\]\s<])/g;
   return textoEscapado.replace(urlRegex, (url) => {
     const label = url.length > 50 ? url.substring(0, 47) + '...' : url;
@@ -90,7 +86,7 @@ export class CommentsService {
       : comments.map(c => {
           const autor = c.autor;
           const autorAvatar = autor ? getAvatarSvg(autor.avatar_url, autor.nome, 'w-6 h-6') : '👤';
-          const autorNome = autor ? autor.nome : 'Removido';
+          const autorNome = autor ? escapeHtml(autor.nome) : 'Removido';
           const isOwner = c.autor_id === currentUserId;
 
           // Destacar menções @nome no texto do comentário
