@@ -234,6 +234,33 @@ export function parsePastedCurrency(text: string): number {
   return isNaN(num) ? 0 : num;
 }
 
+// Formatadores estáticos memoizados de alta performance para evitar recriação de instâncias Intl
+const cachedBrlNumberFormat = new Intl.NumberFormat('pt-BR', {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
+const cachedBrlCurrencyFormat = new Intl.NumberFormat('pt-BR', {
+  style: 'currency',
+  currency: 'BRL',
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
+/**
+ * Retorna o formatador memoizado pt-BR
+ */
+export function getBrlNumberFormatter(): Intl.NumberFormat {
+  return cachedBrlNumberFormat;
+}
+
+/**
+ * Retorna o formatador de moeda BRL memoizado
+ */
+export function getBrlCurrencyFormatter(): Intl.NumberFormat {
+  return cachedBrlCurrencyFormat;
+}
+
 /**
  * Formata um número ou string numérica para a máscara monetária brasileira 1.234,56
  */
@@ -245,7 +272,7 @@ export function formatCurrencyValue(val: string | number): string {
   } else {
     num = isNaN(val) ? 0 : val;
   }
-  return num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return cachedBrlNumberFormat.format(num);
 }
 
 /**
@@ -254,7 +281,7 @@ export function formatCurrencyValue(val: string | number): string {
 export function formatMoney(val: number | string | null | undefined): string {
   if (val === undefined || val === null || val === '') return '0,00';
   const num = typeof val === 'number' ? (isNaN(val) ? 0 : val) : parseDoubleBr(val);
-  return num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return cachedBrlNumberFormat.format(num);
 }
 
 /**

@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { highlightMatch, escapeHtml } from '../../src/utils/textHelper';
+import { describe, it, expect, vi } from 'vitest';
+import { highlightMatch, escapeHtml, debounce } from '../../src/utils/textHelper';
 
 describe('textHelper - highlightMatch e escapeHtml (Subcutâneo)', () => {
   // Setup & Action & Assert
@@ -76,4 +76,29 @@ describe('textHelper - highlightMatch e escapeHtml (Subcutâneo)', () => {
     const matches = (resultado.match(/<mark/g) || []).length;
     expect(matches).toBe(2);
   });
+
+  it('deve agrupar execuções rápidas e disparar debounce apenas após o intervalo especificado', () => {
+    // Setup
+    vi.useFakeTimers();
+    const spy = vi.fn();
+    const debounced = debounce(spy, 300);
+
+    // Action
+    debounced('a');
+    debounced('ab');
+    debounced('abc');
+
+    // Assert
+    expect(spy).not.toHaveBeenCalled();
+
+    vi.advanceTimersByTime(299);
+    expect(spy).not.toHaveBeenCalled();
+
+    vi.advanceTimersByTime(1);
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(spy).toHaveBeenCalledWith('abc');
+
+    vi.useRealTimers();
+  });
 });
+

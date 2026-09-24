@@ -6,6 +6,7 @@ import { renderHelpIcon } from '../utils/helpHelper';
 import { UpsellEngineService } from '../services/upsellEngineService';
 import { isNextTripEnabled } from '../utils/featureFlags';
 import { showCustomAlert } from '../services/dialog';
+import { debounce } from '../utils/textHelper';
 
 export class NextTripPage {
   private container: HTMLElement;
@@ -23,10 +24,23 @@ export class NextTripPage {
   private filterProntidao: string = 'todos';
   private filterCategoria: string = 'todos';
   private filterBusca: string = '';
+  private debouncedSearch: (val: string) => void;
+
 
   constructor(container: HTMLElement) {
     this.container = container;
+    this.debouncedSearch = debounce((val: string) => {
+      this.filterBusca = val;
+      this.render();
+      this.setupEventListeners();
+      const input = this.container?.querySelector('#input-busca-next-trip') as HTMLInputElement;
+      if (input) {
+        input.focus();
+        input.setSelectionRange(input.value.length, input.value.length);
+      }
+    }, 300);
   }
+
 
   public async init(): Promise<void> {
     try {
@@ -358,9 +372,7 @@ export class NextTripPage {
     // Busca textual
     const inputBusca = this.container.querySelector('#input-busca-next-trip') as HTMLInputElement;
     inputBusca?.addEventListener('input', (e: any) => {
-      this.filterBusca = e.target.value;
-      this.render();
-      this.setupEventListeners();
+      this.debouncedSearch(e.target.value);
     });
 
     // Filtros

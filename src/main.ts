@@ -265,6 +265,15 @@ class App {
         this.checarNotificacoesCampanhaLogin();
         PushNotificationService.checkAndPromptAutoPermission(user.id);
 
+        // Escuta mudanças de autenticação do Supabase (ex: logout em outra aba ou token expirado)
+        supabase.auth.onAuthStateChange((event, session) => {
+          if (event === 'SIGNED_OUT' || (!session && !isSandbox)) {
+            this.user = null;
+            this.perfil = null;
+            this.renderLogin();
+          }
+        });
+
         // Escuta mudanças de Hash em tempo real quando o usuário clica numa notificação Push com o app já aberto
         window.addEventListener('hashchange', () => {
           const h = window.location.hash;

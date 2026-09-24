@@ -3,7 +3,7 @@ import { PerfilConsultor, Reembolso } from '../types';
 import { getAvatarSvg } from '../services/avatars';
 import { showCustomConfirm } from '../services/dialog';
 import { renderHelpIcon } from '../utils/helpHelper';
-import { highlightMatch } from '../utils/textHelper';
+import { highlightMatch, debounce } from '../utils/textHelper';
 
 // Injeta estilos premium e customizações para a Central de Reembolsos no DOM
 if (typeof document !== 'undefined') {
@@ -48,9 +48,22 @@ export class ReembolsosPage {
   private timerId: any = null;
   private buscaTermo: string = '';
   private activeStatusTab: 'todos' | 'solicitados' | 'em_analise' | 'pagos' | 'recusados' = 'todos';
+  private debouncedSearch: (termo: string) => void;
 
   constructor(container: HTMLElement) {
     this.container = container;
+    this.debouncedSearch = debounce((termo: string) => {
+      this.buscaTermo = termo;
+      this.render();
+      this.iniciarSlaTimer();
+
+      // Restaura o foco e coloca o cursor no final
+      const input = document.getElementById('input-busca-reembolso') as HTMLInputElement;
+      if (input) {
+        input.focus();
+        input.setSelectionRange(input.value.length, input.value.length);
+      }
+    }, 300);
   }
 
   /**
@@ -295,16 +308,7 @@ export class ReembolsosPage {
     // Campo de busca de reembolsos
     const searchInput = document.getElementById('input-busca-reembolso') as HTMLInputElement;
     searchInput?.addEventListener('input', (e) => {
-      this.buscaTermo = (e.target as HTMLInputElement).value;
-      this.render();
-      this.iniciarSlaTimer();
-
-      // Restaura o foco e coloca o cursor no final
-      const input = document.getElementById('input-busca-reembolso') as HTMLInputElement;
-      if (input) {
-        input.focus();
-        input.setSelectionRange(input.value.length, input.value.length);
-      }
+      this.debouncedSearch((e.target as HTMLInputElement).value);
     });
   }
 

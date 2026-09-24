@@ -26,3 +26,17 @@ export function highlightMatch(text: string | null | undefined, query: string | 
 
   return safeText.replace(regex, '<mark class="bg-amber-200/80 dark:bg-amber-400/30 text-slate-900 dark:text-amber-200 px-1 py-0.5 rounded font-black">$1</mark>');
 }
+
+/**
+ * Utilitário puro de debounce para otimização de inputs de busca e filtragem contínua
+ */
+export function debounce<T extends (...args: any[]) => void>(func: T, waitMs: number = 300): (...args: Parameters<T>) => void {
+  let timeout: any = null;
+  return function(this: any, ...args: Parameters<T>) {
+    if (timeout) clearTimeout(timeout);
+    timeout = setTimeout(() => {
+      func.apply(this, args);
+    }, waitMs);
+  };
+}
+

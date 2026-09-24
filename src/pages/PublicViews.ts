@@ -36,10 +36,48 @@ export class PublicViews {
   }
 
   /**
+   * Atualiza dinamicamente as tags de metadados (SEO, Open Graph, Canonical e Title) nas rotas públicas
+   */
+  private updatePublicMetaTags(title: string, description: string, imageUrl?: string): void {
+    if (typeof document === 'undefined') return;
+    document.title = title;
+
+    const setMeta = (property: string, content: string) => {
+      let el = document.querySelector(`meta[property="${property}"]`) as HTMLMetaElement;
+      if (!el) {
+        el = document.createElement('meta');
+        el.setAttribute('property', property);
+        document.head.appendChild(el);
+      }
+      el.setAttribute('content', content);
+    };
+
+    setMeta('og:title', title);
+    setMeta('og:description', description);
+    setMeta('og:url', window.location.href);
+    if (imageUrl) {
+      setMeta('og:image', imageUrl);
+      setMeta('og:image:secure_url', imageUrl);
+    }
+
+    let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement;
+    if (canonical) {
+      canonical.href = window.location.href;
+    }
+  }
+
+  /**
    * Inicializa a visualização do itinerário público
    */
   public async initItinerario(viagemId: string): Promise<void> {
     this.renderLoading('Carregando seu itinerário...');
+
+    // Validação estrita de formato UUID
+    const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(viagemId);
+    if (!viagemId || !isValidUUID) {
+      this.renderError('Código de itinerário inválido.', 'O link informado não possui um formato válido de identificador de viagem.');
+      return;
+    }
 
     try {
       // Buscar configurações de marca da agência
@@ -61,6 +99,12 @@ export class PublicViews {
         throw new Error(error?.message || 'Viagem não encontrada ou código inválido.');
       }
 
+      const agencyName = settings?.agency_name || 'PaxFlow Travel';
+      this.updatePublicMetaTags(
+        `Itinerário de Viagem: ${data.destino || 'Viagem'} | ${agencyName}`,
+        `Confira seu roteiro detalhado, voos e reservas para ${data.destino || 'sua viagem'} organizado por ${agencyName}.`
+      );
+
       this.renderItinerario(data, settings);
     } catch (err: any) {
       console.error('Erro ao buscar itinerário público:', err);
@@ -73,6 +117,13 @@ export class PublicViews {
    */
   public async initNps(viagemId: string): Promise<void> {
     this.renderLoading('Carregando pesquisa...');
+
+    // Validação estrita de formato UUID
+    const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(viagemId);
+    if (!viagemId || !isValidUUID) {
+      this.renderError('Código de pesquisa inválido.', 'O link informado não possui um formato válido de identificador de viagem.');
+      return;
+    }
 
     try {
       // Buscar configurações de marca da agência
@@ -92,6 +143,12 @@ export class PublicViews {
       if (error || !data) {
         throw new Error(error?.message || 'Dados de viagem inválidos para esta pesquisa.');
       }
+
+      const agencyName = settings?.agency_name || 'PaxFlow Travel';
+      this.updatePublicMetaTags(
+        `Pesquisa de Satisfação: ${data.destino || 'Sua Viagem'} | ${agencyName}`,
+        `Sua opinião é fundamental para continuarmos proporcionando experiências memoráveis com a ${agencyName}.`
+      );
 
       this.renderNpsForm(data, viagemId, settings);
     } catch (err: any) {
@@ -810,7 +867,10 @@ export class PublicViews {
    * Inicializa a visualização pública de uma proposta de viagem criada no PaxFlow Studio™
    */
   public async initPropostaStudio(propostaId: string): Promise<void> {
-    this.renderLoading('Carregando sua proposta de viagem...');
+    if (!propostaId) {
+      this.renderError('Código de proposta inválido.', 'O link informado não possui um formato válido de proposta.');
+      return;
+    }
 
     try {
       const { StudioPropostasService } = await import('../services/studioPropostasService');
@@ -819,6 +879,12 @@ export class PublicViews {
       if (!proposta) {
         throw new Error('Proposta de viagem não localizada ou link expirado.');
       }
+
+      this.updatePublicMetaTags(
+        `Proposta de Viagem: ${proposta.destino || 'Viagem'} | ${proposta.titulo_cabecalho || 'PaxFlow Luxury Travel'}`,
+        `Roteiro personalizado e exclusivo para ${proposta.cliente_nome || 'você'} com destino a ${proposta.destino || 'sua próxima viagem'}.`,
+        proposta.foto_capa_url
+      );
 
       this.renderPropostaStudio(proposta);
     } catch (err: any) {
