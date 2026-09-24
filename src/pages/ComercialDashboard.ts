@@ -158,28 +158,36 @@ export class ComercialDashboard {
           'postgres_changes',
           { event: '*', schema: 'public', table: 'orcamentos' },
           async (payload: any) => {
-            if (this.perfil?.role !== 'admin') {
-              const rowConsultorId = payload.new?.consultor_id || payload.old?.consultor_id;
-              if (rowConsultorId && this.user?.id && rowConsultorId !== this.user.id) {
-                return;
+            try {
+              if (this.perfil?.role !== 'admin') {
+                const rowConsultorId = payload.new?.consultor_id || payload.old?.consultor_id;
+                if (rowConsultorId && this.user?.id && rowConsultorId !== this.user.id) {
+                  return;
+                }
               }
+              await this.loadData();
+              this.renderMetricsSection();
+            } catch (err) {
+              console.warn('[ComercialDashboard] Falha ao atualizar realtime de orçamentos:', err);
             }
-            await this.loadData();
-            this.renderMetricsSection();
           }
         )
         .on(
           'postgres_changes',
           { event: '*', schema: 'public', table: 'viagens' },
           async (payload: any) => {
-            if (this.perfil?.role !== 'admin') {
-              const rowConsultorId = payload.new?.consultor_id || payload.old?.consultor_id;
-              if (rowConsultorId && this.user?.id && rowConsultorId !== this.user.id) {
-                return;
+            try {
+              if (this.perfil?.role !== 'admin') {
+                const rowConsultorId = payload.new?.consultor_id || payload.old?.consultor_id;
+                if (rowConsultorId && this.user?.id && rowConsultorId !== this.user.id) {
+                  return;
+                }
               }
+              await this.loadData();
+              this.renderMetricsSection();
+            } catch (err) {
+              console.warn('[ComercialDashboard] Falha ao atualizar realtime de viagens:', err);
             }
-            await this.loadData();
-            this.renderMetricsSection();
           }
         )
         .subscribe();

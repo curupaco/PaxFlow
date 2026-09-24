@@ -3897,7 +3897,12 @@ export class EditTravelModal {
           const id = btn.getAttribute('data-id');
           const path = btn.getAttribute('data-path');
           if (!id) return;
-          if (confirm('Tem certeza de que deseja excluir este anexo? O arquivo será removido do sistema.')) {
+          const confirmou = await showCustomConfirm(
+            'Tem certeza de que deseja excluir este anexo? O arquivo será removido do sistema.',
+            'Excluir Documento',
+            { isDestructive: true, confirmText: 'Sim, Excluir' }
+          );
+          if (confirmou) {
             const { AnexosService } = await import('../../services/anexosService');
             await AnexosService.excluirAnexo(id, path || undefined);
             this.options.showToast('Documento removido com sucesso.', 'success');

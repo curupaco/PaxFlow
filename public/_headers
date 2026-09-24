@@ -1,4 +1,11 @@
-# Regras de Cache no Cloudflare Pages para o PaxFlow
+# Regras de Cache e Segurança no Cloudflare Pages para o PaxFlow
+
+# Headers Globais de Segurança
+/*
+  X-Frame-Options: SAMEORIGIN
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
 
 # Prevenir cache do HTML de entrada, Service Worker e arquivo de controle de versão
 /index.html

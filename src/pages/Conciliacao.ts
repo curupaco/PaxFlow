@@ -12,7 +12,7 @@ import { UploadExtratoModal } from '../components/conciliacao/UploadExtratoModal
 import { VincularRecebimentoModal } from '../components/conciliacao/VincularRecebimentoModal';
 import { JustificarEntradaModal } from '../components/conciliacao/JustificarEntradaModal';
 import { FecharMesModal } from '../components/conciliacao/FecharMesModal';
-import { showCustomAlert } from '../services/dialog';
+import { showCustomAlert, showCustomConfirm } from '../services/dialog';
 import { renderHelpIcon } from '../utils/helpHelper';
 
 export class ConciliacaoPage {
@@ -694,7 +694,12 @@ export class ConciliacaoPage {
         const id = btn.getAttribute('data-id');
         if (!id) return;
 
-        if (!confirm('Deseja realmente desfazer esta conciliação? Os recebimentos voltarão a ficar pendentes.')) {
+        const confirmou = await showCustomConfirm(
+          'Deseja realmente desfazer esta conciliação? Os recebimentos voltarão a ficar pendentes.',
+          'Desfazer Conciliação',
+          { isDestructive: true, confirmText: 'Sim, Desfazer' }
+        );
+        if (!confirmou) {
           return;
         }
 

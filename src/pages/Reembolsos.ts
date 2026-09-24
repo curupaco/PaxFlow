@@ -171,7 +171,12 @@ export class ReembolsosPage {
     this.destroy(); // Limpa seletores anteriores
 
     this.timerId = setInterval(() => {
-      const timers = document.querySelectorAll('.sla-active-timer');
+      if (!this.container || !this.container.isConnected) {
+        this.destroy();
+        return;
+      }
+      const timers = this.container.querySelectorAll('.sla-active-timer');
+      if (timers.length === 0) return;
       timers.forEach(el => {
         const createdAtStr = el.getAttribute('data-created-at');
         if (!createdAtStr) return;

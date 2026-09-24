@@ -230,18 +230,20 @@ export class AnexosService {
     const storagePathRelativo = `${pastaIdentificadora}/${Date.now()}_${sanitizedFileName}`;
 
     // 4. Upload no Storage
-    if (supabase && supabase.storage) {
-      const { error: uploadErr } = await supabase.storage
-        .from(this.BUCKET)
-        .upload(storagePathRelativo, finalFile, {
-          cacheControl: '3600',
-          upsert: true
-        });
+    if (!supabase || !supabase.storage) {
+      throw new Error('Serviço de armazenamento de arquivos indisponível no momento.');
+    }
 
-      if (uploadErr) {
-        console.error('[AnexosService] Erro ao enviar para o Storage:', uploadErr);
-        throw new Error(`Falha no armazenamento na nuvem: ${uploadErr.message}`);
-      }
+    const { error: uploadErr } = await supabase.storage
+      .from(this.BUCKET)
+      .upload(storagePathRelativo, finalFile, {
+        cacheControl: '3600',
+        upsert: true
+      });
+
+    if (uploadErr) {
+      console.error('[AnexosService] Erro ao enviar para o Storage:', uploadErr);
+      throw new Error(`Falha no armazenamento na nuvem: ${uploadErr.message}`);
     }
 
     const storagePathCompleto = `supabase-storage://${storagePathRelativo}`;

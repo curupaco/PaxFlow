@@ -77,7 +77,7 @@ Todas as propostas foram calibradas para **probabilidade mínima de regressão**
 | E08 | **Parser CSV: Suporte a formato internacional e aspas.** Valores como `1,250.50` e campos com vírgula interna tratados com precisão. | `src/services/csvExtratoParser.ts` | 🟠 Alto | **Baixo** | ✅ **Concluído (24/09/2026)** |
 | E09 | **Risk Score: Destino em branco tratado como desconhecido.** Exige validações de passaporte/visto se o destino não for confirmado como nacional. | `src/services/riskScoreService.ts` | 🟠 Alto | **Baixo** | ✅ **Concluído (24/09/2026)** |
 | E10 | **NextTrip Engine: Neutralidade em NPS ausente.** Clientes sem pesquisa não recebem nota 10 fictícia nem são descartados. | `src/services/nextTripEngineService.ts` | 🟠 Alto | **Baixo** | ✅ **Concluído (24/09/2026)** |
-| E11 | **`archiveAlert` pode retornar sucesso sem persistir.** Se `targetUUID` ou usuário não forem resolvidos, a UI remove o alerta sem gravar no banco. | `src/services/inboxService.ts:134` | 🟠 Alto | **Baixo** | Pendente |
+| E11 | **`archiveAlert` pode retornar sucesso sem persistir.** Se `targetUUID` ou usuário não forem resolvidos, a UI remove o alerta sem gravar no banco. | `src/services/inboxService.ts:134` | 🟠 Alto | **Baixo** | ✅ **Concluído (24/09/2026)** |
 
 ---
 
@@ -87,12 +87,12 @@ Todas as propostas foram calibradas para **probabilidade mínima de regressão**
 | --- | :--- | :--- | :---: | :---: | :---: |
 | E12 | **Pedido de permissão de push no boot da aplicação.** Solicita permissão ao carregar sem interação do usuário. | `src/main.ts:260` | 🟡 Médio | **Baixo** | Pendente |
 | E13 | **Reflected XSS em mensagem de erro e email de login.** Sanitização via `escapeHtml` nas telas de erro e login. | `src/main.ts`, `src/pages/Login.ts` | 🟡 Médio | **Baixo** | ✅ **Concluído (24/09/2026)** |
-| E14 | **Realtime callbacks sem try/catch defensivo.** Falha de conexão pode causar erro não tratado no console. | `Inbox.ts:249`, `ComercialDashboard.ts:160` | 🟡 Médio | **Baixo** | Pendente |
-| E15 | **`markAllAlertsAsRead` executa requisições sequenciais.** Loop faz 1 request por alerta em vez de batch. | `inboxService.ts:435-445` | 🟡 Médio | **Baixo** | Pendente |
+| E14 | **Realtime callbacks sem try/catch defensivo.** Falha de conexão pode causar erro não tratado no console. | `Inbox.ts:249`, `ComercialDashboard.ts:160` | 🟡 Médio | **Baixo** | ✅ **Concluído (24/09/2026)** |
+| E15 | **`markAllAlertsAsRead` executa requisições sequenciais.** Loop faz 1 request por alerta em vez de batch. | `inboxService.ts:435-445` | 🟡 Médio | **Baixo** | ✅ **Concluído (24/09/2026)** |
 | E16 | **Busca sem debounce em inputs de filtro.** Re-render acionado a cada tecla digitada sem intervalo mínimo. | `NextTripPage.ts:359`, `Reembolsos.ts:292` | 🟡 Médio | **Baixo** | Pendente |
-| E17 | **Timers e listeners órfãos em rotinas de background.** Timers de 1s executando `querySelectorAll` desnecessariamente. | `Reembolsos.ts:173`, `LandingPage.ts:178` | 🟡 Médio | **Baixo** | Pendente |
+| E17 | **Timers e listeners órfãos em rotinas de background.** Timers de 1s executando `querySelectorAll` desnecessariamente. | `Reembolsos.ts:173`, `LandingPage.ts:178` | 🟡 Médio | **Baixo** | ✅ **Concluído (24/09/2026)** |
 | E18 | **NPS público: Tratamento de retorno `{ error }` ao salvar viagem.** Feedback consistente ao cliente. | `src/pages/PublicViews.ts` | 🟡 Médio | **Baixo** | ✅ **Concluído (24/09/2026)** |
-| E19 | **Upload de anexo pode criar registro sem arquivo se o storage falhar.** | `src/services/anexosService.ts:233-245` | 🟡 Médio | **Baixo** | Pendente |
+| E19 | **Upload de anexo pode criar registro sem arquivo se o storage falhar.** | `src/services/anexosService.ts:233-245` | 🟡 Médio | **Baixo** | ✅ **Concluído (24/09/2026)** |
 | E20 | **`sw.js` validação de mesma origem no push click.** Impede redirecionamentos para origens não confiáveis ao clicar na notificação. | `public/sw.js` | 🟡 Médio | **Baixo** | ✅ **Concluído (24/09/2026)** |
 
 ---
@@ -102,7 +102,7 @@ Todas as propostas foram calibradas para **probabilidade mínima de regressão**
 | ID | Item (descrição) | Evidência | Criticidade | Consumo | Status |
 | --- | :--- | :--- | :---: | :---: | :---: |
 | E21 | **Toasts concorrentes sobrescrevem o anterior sem fila.** Dois toasts rápidos resultam no fechamento prematuro do segundo. | `src/services/dialog.ts` | 🟢 Baixo | **Baixo** | Pendente |
-| E22 | **Uso de `confirm()` nativo em ações destrutivas isoladas.** Substituir por `showCustomConfirm` para consistência visual. | `EditTravelModal.ts:3877`, `Conciliacao.ts:697` | 🟢 Baixo | **Baixo** | Pendente |
+| E22 | **Uso de `confirm()` nativo em ações destrutivas isoladas.** Substituir por `showCustomConfirm` para consistência visual. | `EditTravelModal.ts:3877`, `Conciliacao.ts:697` | 🟢 Baixo | **Baixo** | ✅ **Concluído (24/09/2026)** |
 | E23 | **Snooze do NextTrip com feedback visual amigável.** Exibe modal/toast claro em caso de falha de conexão. | `src/pages/NextTripPage.ts` | 🟢 Baixo | **Baixo** | ✅ **Concluído (24/09/2026)** |
 | E24 | **Dashboard: Validação estrita de datas no filtro de Mês Corrente.** Datas nulas ou corrompidas descartadas da contagem do mês. | `src/pages/Dashboard.ts` | 🟢 Baixo | **Baixo** | ✅ **Concluído (24/09/2026)** |
 | E25 | **Exclusão de viagem em cascata com feedback de pendências.** Exibir aviso claro caso alguma entidade filha não possa ser excluída. | `src/pages/Dashboard.ts:940-986` | 🟢 Baixo | **Baixo** | Pendente |
@@ -145,14 +145,14 @@ Todas as propostas foram calibradas para **probabilidade mínima de regressão**
 
 ## 4. Melhorias Recomendadas & Quick Wins
 
-| ID | Melhoria | Benefício | Consumo | Prob. Regressão |
-| --- | :--- | :--- | :---: | :---: |
-| Q1 | **Security Headers no `dist/_headers`** — `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff` e `Referrer-Policy`. | Proteção contra clickjacking e MIME sniffing | **Baixo** | 🟢 **Baixa (< 5%)** |
-| Q2 | **Ícone PNG no `manifest.json`** — Gerar `/icon-192.png` para o Service Worker do PWA. | Validação correta de push no Android/iOS | **Baixo** | 🟢 **Baixa (< 5%)** |
-| Q3 | **Handler global de erros assíncronos (`unhandledrejection`)** — Log centralizado sem quebrar telas. | Diagnóstico preciso de falhas em produção | **Baixo** | 🟢 **Baixa (< 10%)** |
-| Q4 | **Limpeza de sessão em `onAuthStateChange`** — Redirecionar ao login em caso de token expirado. | Previne telas congeladas por sessão inválida | **Baixo** | 🟢 **Baixa (10-15%)** |
-| Q5 | **Memoização de formatadores `Intl.NumberFormat`** — Reutilizar instâncias estáticas em tabelas densas. | Redução de consumo de CPU no client | **Baixo** | 🟢 **Baixa (< 5%)** |
-| Q6 | **Tags de metadados (`og:image`, `canonical`) nas rotas públicas** — Propostas e itinerários. | Compartilhamento profissional em mensageiros | **Baixo** | 🟢 **Baixa (< 5%)** |
+| ID | Melhoria | Benefício | Consumo | Prob. Regressão | Status |
+| --- | :--- | :--- | :---: | :---: | :---: |
+| Q1 | **Security Headers no `dist/_headers`** — `X-Frame-Options: SAMEORIGIN`, `X-Content-Type-Options: nosniff` e `Referrer-Policy`. | Proteção contra clickjacking e MIME sniffing | **Baixo** | 🟢 **Baixa (< 5%)** | ✅ **Concluído (24/09/2026)** |
+| Q2 | **Ícone PNG no `manifest.json`** — Gerar `/icon-192.png` para o Service Worker do PWA. | Validação correta de push no Android/iOS | **Baixo** | 🟢 **Baixa (< 5%)** | Pendente |
+| Q3 | **Handler global de erros assíncronos (`unhandledrejection`)** — Log centralizado sem quebrar telas. | Diagnóstico preciso de falhas em produção | **Baixo** | 🟢 **Baixa (< 10%)** | ✅ **Concluído (24/09/2026)** |
+| Q4 | **Limpeza de sessão em `onAuthStateChange`** — Redirecionar ao login em caso de token expirado. | Previne telas congeladas por sessão inválida | **Baixo** | 🟢 **Baixa (10-15%)** | Pendente |
+| Q5 | **Memoização de formatadores `Intl.NumberFormat`** — Reutilizar instâncias estáticas em tabelas densas. | Redução de consumo de CPU no client | **Baixo** | 🟢 **Baixa (< 5%)** | Pendente |
+| Q6 | **Tags de metadados (`og:image`, `canonical`) nas rotas públicas** — Propostas e itinerários. | Compartilhamento profissional em mensageiros | **Baixo** | 🟢 **Baixa (< 5%)** | Pendente |
 
 ---
 

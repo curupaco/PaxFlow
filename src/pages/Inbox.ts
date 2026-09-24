@@ -255,50 +255,40 @@ export class InboxPage {
         };
       }
 
+      const safeRefreshAlerts = async () => {
+        try {
+          await this.loadAndBuildAlerts();
+          this.render();
+          this.setupEventListeners();
+        } catch (err) {
+          console.warn('[Inbox Realtime] Aviso ao atualizar alertas:', err);
+        }
+      };
+
+      const safeRefreshEscala = async () => {
+        try {
+          await this.loadEscalaData();
+          this.render();
+          this.setupEventListeners();
+        } catch (err) {
+          console.warn('[Inbox Realtime] Aviso ao atualizar escala:', err);
+        }
+      };
+
       const channelName = `inbox-realtime-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
       this.realtimeChannel = supabase
         .channel(channelName)
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'notificacoes' }, async () => {
-          await this.loadAndBuildAlerts();
-          this.render();
-          this.setupEventListeners();
-        })
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'mensagens_diretas' }, async () => {
-          await this.loadAndBuildAlerts();
-          this.render();
-          this.setupEventListeners();
-        })
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'comentarios' }, async () => {
-          await this.loadAndBuildAlerts();
-          this.render();
-          this.setupEventListeners();
-        })
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'lembretes' }, async () => {
-          await this.loadAndBuildAlerts();
-          this.render();
-          this.setupEventListeners();
-        })
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'escala_banco_folgas' }, async () => {
-          await this.loadEscalaData();
-          this.render();
-          this.setupEventListeners();
-        })
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'escala_eventos' }, async () => {
-          await this.loadEscalaData();
-          this.render();
-          this.setupEventListeners();
-        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'notificacoes' }, safeRefreshAlerts)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'mensagens_diretas' }, safeRefreshAlerts)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'comentarios' }, safeRefreshAlerts)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'lembretes' }, safeRefreshAlerts)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'escala_banco_folgas' }, safeRefreshEscala)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'escala_eventos' }, safeRefreshEscala)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'escala_solicitacoes' }, async () => {
-          await this.loadAndBuildAlerts();
-          await this.loadEscalaData();
-          this.render();
-          this.setupEventListeners();
+          await safeRefreshAlerts();
+          await safeRefreshEscala();
         })
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'escala_diaria' }, async () => {
-          await this.loadEscalaData();
-          this.render();
-          this.setupEventListeners();
-        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'escala_diaria' }, safeRefreshEscala)
         .subscribe();
     } catch (err) {
       console.warn('Erro ao configurar realtime no inbox:', err);

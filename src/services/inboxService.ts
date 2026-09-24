@@ -131,7 +131,8 @@ export class InboxService {
         return true;
       }
 
-      return true;
+      console.warn('[InboxService] Não foi possível resolver targetUUID ou resolvedUserId para arquivamento:', { alertId, resolvedUserId, targetUUID });
+      return false;
     } catch (err) {
       console.error('[Supabase] Falha ao persistir status de arquivado no banco:', err);
       throw err;
@@ -424,14 +425,75 @@ export class InboxService {
   }
 
   /**
-   * Marca múltiplos alertas como lidos em massa diretamente no Supabase
+   * Marca múltiplos alertas como lidos em massa diretamente no Supabase em lote (Batch)
    */
   static async markAllAlertsAsRead(userId: string, alertIds: string[]): Promise<void> {
     if (!userId || !alertIds || alertIds.length === 0) return;
     try {
+      const mentionIds: string[] = [];
+      const itemUUIDs: string[] = [];
+
       for (const alertId of alertIds) {
-        await this.markAlertAsRead(userId, alertId);
+        if (alertId.startsWith('mention-') && !alertId.startsWith('mention-dm-direct-')) {
+          const notifId = alertId.replace('mention-', '');
+          if (this.extractUUIDFromAlertId(notifId)) {
+            mentionIds.push(notifId);
+          }
+        } else {
+          const targetUUID = this.extractUUIDFromAlertId(alertId);
+          if (targetUUID) {
+            itemUUIDs.push(targetUUID);
+          }
+        }
       }
+
+      // 1. Atualizar notificações diretas em lote
+      if (mentionIds.length > 0) {
+        await supabase
+          .from('notificacoes')
+          .update({ lida: true })
+          .in('id', mentionIds);
+      }
+
+      // 2. Processar alertas sintéticos vinculados a item_id em lote
+      if (itemUUIDs.length > 0) {
+        const uniqueUUIDs = Array.from(new Set(itemUUIDs));
+        const { data: existingList } = await supabase
+          .from('notificacoes')
+          .select('id, item_id')
+          .eq('user_id', userId)
+          .in('item_id', uniqueUUIDs);
+
+        const existingMap = new Map<string, string>();
+        if (existingList) {
+          existingList.forEach((row: any) => existingMap.set(row.item_id, row.id));
+        }
+
+        const toUpdateIds = Array.from(existingMap.values());
+        if (toUpdateIds.length > 0) {
+          await supabase
+            .from('notificacoes')
+            .update({ lida: true })
+            .in('id', toUpdateIds);
+        }
+
+        const toInsertUUIDs = uniqueUUIDs.filter(uuid => !existingMap.has(uuid));
+        if (toInsertUUIDs.length > 0) {
+          const insertRows = toInsertUUIDs.map(uuid => ({
+            user_id: userId,
+            tipo_item: 'mensagem',
+            item_id: uuid,
+            parent_id: uuid,
+            lida: true,
+            arquivada: false
+          }));
+
+          await supabase
+            .from('notificacoes')
+            .insert(insertRows);
+        }
+      }
+
       InboxService.notifyInboxUpdated();
     } catch (err) {
       console.error('Erro ao marcar alertas como lidos em massa no Supabase:', err);

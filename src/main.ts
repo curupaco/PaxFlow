@@ -42,6 +42,11 @@ window.addEventListener('vite:preloadError', (event) => {
   window.location.reload();
 });
 
+// Handler global para rejeições de promises não tratadas (defensivo contra crashes silenciosos)
+window.addEventListener('unhandledrejection', (event) => {
+  console.error('[PaxFlow Global Handler] Rejeição assíncrona não tratada:', event.reason);
+});
+
 // Inicializa mecanismo anti-cache e detector de novas versões
 VersionChecker.getInstance().init();
 VersionToast.init();

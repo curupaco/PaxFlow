@@ -154,6 +154,11 @@ export class LandingPage {
     if (!isReduced && !isMobile) {
       let ticking = false;
       const onScroll = (): void => {
+        if (!scope || !scope.isConnected) {
+          window.removeEventListener('scroll', onScroll);
+          window.removeEventListener('resize', onScroll);
+          return;
+        }
         if (ticking) return;
         ticking = true;
         window.requestAnimationFrame(() => {
@@ -179,9 +184,14 @@ export class LandingPage {
       window.addEventListener('resize', onScroll, { passive: true });
       onScroll();
     } else {
-      window.addEventListener('scroll', () => {
+      const onScrollFallback = (): void => {
+        if (!scope || !scope.isConnected) {
+          window.removeEventListener('scroll', onScrollFallback);
+          return;
+        }
         updateProgress(window.scrollY || 0);
-      }, { passive: true });
+      };
+      window.addEventListener('scroll', onScrollFallback, { passive: true });
     }
 
     // Smooth Scroll para Links Internos (#)

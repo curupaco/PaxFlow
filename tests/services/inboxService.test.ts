@@ -118,18 +118,31 @@ describe('InboxService Subcutaneous Flow Tests', () => {
     const userId = 'd11433e1-06c5-4002-be7e-0e2c44bc5782';
     const ids = [
       'escala-sol-c112f72b-5bde-4559-95b2-2a484ce10289-inbox',
-      'dm-direct-44146337-adc5-45c6-8966-eaf38abe8f05'
+      'mention-d11433e1-06c5-4002-be7e-0e2c44bc5782'
     ];
 
-    const markSingleSpy = vi.spyOn(InboxService, 'markAlertAsRead').mockResolvedValue();
+    const mockInsert = vi.fn().mockResolvedValue({ data: null, error: null });
+    const mockUpdate = vi.fn().mockReturnValue({
+      in: vi.fn().mockResolvedValue({ data: null, error: null })
+    });
+
+    (supabase.from as any).mockImplementation((table: string) => {
+      if (table === 'notificacoes') {
+        return {
+          ...createQueryMock([]),
+          update: mockUpdate,
+          insert: mockInsert
+        };
+      }
+      return createQueryMock([]);
+    });
 
     // Action
     await InboxService.markAllAlertsAsRead(userId, ids);
 
     // Assert
-    expect(markSingleSpy).toHaveBeenCalledTimes(2);
-    expect(markSingleSpy).toHaveBeenCalledWith(userId, ids[0]);
-    expect(markSingleSpy).toHaveBeenCalledWith(userId, ids[1]);
+    expect(mockUpdate).toHaveBeenCalledWith({ lida: true });
+    expect(mockInsert).toHaveBeenCalled();
   });
 
   // ==========================================
@@ -662,18 +675,28 @@ describe('InboxService Subcutaneous Flow Tests', () => {
 
   it('deve marcar multiplos alertas como lidos em massa chamando o banco', async () => {
     // Setup
-    const spyMark = vi.spyOn(InboxService, 'markAlertAsRead').mockResolvedValue(undefined as any);
+    const mockInsert = vi.fn().mockResolvedValue({ data: null, error: null });
+    const mockUpdate = vi.fn().mockReturnValue({
+      in: vi.fn().mockResolvedValue({ data: null, error: null })
+    });
+
+    (supabase.from as any).mockImplementation((table: string) => {
+      if (table === 'notificacoes') {
+        return {
+          ...createQueryMock([]),
+          update: mockUpdate,
+          insert: mockInsert
+        };
+      }
+      return createQueryMock([]);
+    });
 
     // Action
-    await InboxService.markAllAlertsAsRead('user-1', ['alert-1', 'alert-2', 'alert-3']);
+    await InboxService.markAllAlertsAsRead('user-1', ['mention-11111111-1111-1111-1111-111111111111', 'alert-22222222-2222-2222-2222-222222222222']);
 
     // Assert
-    expect(spyMark).toHaveBeenCalledTimes(3);
-    expect(spyMark).toHaveBeenCalledWith('user-1', 'alert-1');
-    expect(spyMark).toHaveBeenCalledWith('user-1', 'alert-2');
-    expect(spyMark).toHaveBeenCalledWith('user-1', 'alert-3');
-
-    spyMark.mockRestore();
+    expect(mockUpdate).toHaveBeenCalledWith({ lida: true });
+    expect(mockInsert).toHaveBeenCalled();
   });
 
   it('deve carregar mensagens de uma conversa por thread_id ordenadas cronologicamente', async () => {
