@@ -62,7 +62,10 @@ export class InboxService {
           console.error('[Supabase] Erro ao atualizar arquivamento de lembrete:', error);
           throw error;
         }
-        return Boolean(data && data.length > 0);
+        if (!data || data.length === 0) {
+          throw new Error(`Lembrete não encontrado no Supabase para arquivamento: ${tableId}`);
+        }
+        return true;
       }
 
       // 3. Notificação existente por ID na tabela 'notificacoes' (ex: mention-<id>)
@@ -79,60 +82,63 @@ export class InboxService {
             console.error('[Supabase] Erro ao atualizar arquivamento de notificação por ID:', error);
             throw error;
           }
-          if (data && data.length > 0) {
-            return true;
+          if (!data || data.length === 0) {
+            throw new Error(`Notificação não encontrada no Supabase para arquivamento: ${notifId}`);
           }
+          return true;
         }
       }
 
       // 4. Para todos os outros tipos ou alertas derivados/sintéticos:
       // Persistir em 'notificacoes' vinculado ao (user_id, item_id)
       const targetUUID = this.extractUUIDFromAlertId(alertId);
-      if (targetUUID && resolvedUserId) {
-        const { data: existing, error: selectErr } = await supabase
-          .from('notificacoes')
-          .select('id')
-          .eq('user_id', resolvedUserId)
-          .eq('item_id', targetUUID)
-          .maybeSingle();
-
-        if (selectErr) {
-          console.error('[Supabase] Erro ao verificar notificação para arquivamento:', selectErr);
-          throw selectErr;
-        }
-
-        if (existing?.id) {
-          const { error: updateErr } = await supabase
-            .from('notificacoes')
-            .update({ arquivada: shouldArchive })
-            .eq('id', existing.id);
-
-          if (updateErr) {
-            console.error('[Supabase] Erro ao atualizar status de arquivada:', updateErr);
-            throw updateErr;
-          }
-        } else {
-          const { error: insertErr } = await supabase
-            .from('notificacoes')
-            .insert({
-              user_id: resolvedUserId,
-              tipo_item: 'mensagem',
-              item_id: targetUUID,
-              parent_id: targetUUID,
-              lida: false,
-              arquivada: shouldArchive
-            });
-
-          if (insertErr) {
-            console.error('[Supabase] Erro ao inserir registro de arquivamento:', insertErr);
-            throw insertErr;
-          }
-        }
-        return true;
+      if (!resolvedUserId) {
+        throw new Error(`Usuário não autenticado ou não identificado para arquivar alerta: ${alertId}`);
+      }
+      if (!targetUUID) {
+        throw new Error(`Não foi possível extrair o identificador único para arquivar alerta: ${alertId}`);
       }
 
-      console.warn('[InboxService] Não foi possível resolver targetUUID ou resolvedUserId para arquivamento:', { alertId, resolvedUserId, targetUUID });
-      return false;
+      const { data: existing, error: selectErr } = await supabase
+        .from('notificacoes')
+        .select('id')
+        .eq('user_id', resolvedUserId)
+        .eq('item_id', targetUUID)
+        .maybeSingle();
+
+      if (selectErr) {
+        console.error('[Supabase] Erro ao verificar notificação para arquivamento:', selectErr);
+        throw selectErr;
+      }
+
+      if (existing?.id) {
+        const { error: updateErr } = await supabase
+          .from('notificacoes')
+          .update({ arquivada: shouldArchive })
+          .eq('id', existing.id);
+
+        if (updateErr) {
+          console.error('[Supabase] Erro ao atualizar status de arquivada:', updateErr);
+          throw updateErr;
+        }
+      } else {
+        const { error: insertErr } = await supabase
+          .from('notificacoes')
+          .insert({
+            user_id: resolvedUserId,
+            tipo_item: 'mensagem',
+            item_id: targetUUID,
+            parent_id: targetUUID,
+            lida: false,
+            arquivada: shouldArchive
+          });
+
+        if (insertErr) {
+          console.error('[Supabase] Erro ao inserir registro de arquivamento:', insertErr);
+          throw insertErr;
+        }
+      }
+      return true;
     } catch (err) {
       console.error('[Supabase] Falha ao persistir status de arquivado no banco:', err);
       throw err;

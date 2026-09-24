@@ -113,3 +113,86 @@ export function agruparViagensPorColunaKanban(viagens: any[]): Record<string, an
 
   return colunas;
 }
+
+export async function excluirViagemCascata(
+  supabaseClient: any,
+  tripId: string
+): Promise<{ success: boolean; error?: string }> {
+  if (!tripId) {
+    return { success: false, error: 'Identificador da viagem não fornecido.' };
+  }
+
+  try {
+    // 1. Comentários vinculados
+    const { error: errComments } = await supabaseClient
+      .from('comentarios')
+      .delete()
+      .eq('tipo_item', 'viagem')
+      .eq('item_id', tripId);
+    if (errComments) console.warn('[excluirViagemCascata] Aviso em comentarios:', errComments.message);
+
+    // 2. Notificações vinculadas
+    const { error: errNotifs } = await supabaseClient
+      .from('notificacoes')
+      .delete()
+      .eq('tipo_item', 'viagem')
+      .eq('parent_id', tripId);
+    if (errNotifs) console.warn('[excluirViagemCascata] Aviso em notificacoes:', errNotifs.message);
+
+    // 3. Pagamentos e Conferências
+    await supabaseClient.from('loc_pagamentos').delete().eq('viagem_id', tripId);
+    await supabaseClient.from('loc_conferencias').delete().eq('viagem_id', tripId);
+
+    // 4. Lembretes e Feedbacks NPS
+    await supabaseClient.from('lembretes').delete().eq('viagem_id', tripId);
+    await supabaseClient.from('feedbacks_nps').delete().eq('viagem_id', tripId);
+
+    // 5. Reembolsos
+    const { error: errRefunds } = await supabaseClient
+      .from('reembolsos')
+      .delete()
+      .eq('viagem_id', tripId);
+    if (errRefunds) console.warn('[excluirViagemCascata] Aviso em reembolsos:', errRefunds.message);
+
+    // 6. Tarefas vinculadas
+    try {
+      await supabaseClient.from('tarefas').delete().eq('viagem_id', tripId);
+    } catch (_) {}
+
+    // 7. Vínculos de passageiros
+    try {
+      await supabaseClient.from('viagens_passageiros').delete().eq('viagem_id', tripId);
+    } catch (_) {}
+
+    // 8. Produtos da viagem
+    const { error: errProducts } = await supabaseClient
+      .from('produtos_viagem')
+      .delete()
+      .eq('viagem_id', tripId);
+    if (errProducts) console.warn('[excluirViagemCascata] Aviso em produtos_viagem:', errProducts.message);
+
+    // 9. Deletar a viagem principal
+    const { error: errTrip } = await supabaseClient
+      .from('viagens')
+      .delete()
+      .eq('id', tripId);
+
+    if (errTrip) {
+      if (errTrip.code === '23503') {
+        return {
+          success: false,
+          error: 'Não foi possível excluir a viagem pois existem registros operacionais ou financeiros vinculados.'
+        };
+      }
+      throw errTrip;
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    console.error('[excluirViagemCascata] Erro ao excluir viagem:', err);
+    return {
+      success: false,
+      error: err?.message || 'Erro inesperado ao excluir viagem no banco de dados.'
+    };
+  }
+}

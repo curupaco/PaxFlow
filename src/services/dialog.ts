@@ -220,8 +220,10 @@ export function showCustomPrompt(
   });
 }
 
+let activeToastTimer: any = null;
+
 /**
- * Exibe um toast padronizado do PaxFlow em tela
+ * Exibe um toast padronizado do PaxFlow em tela com gerenciamento seguro de timers para notificações concorrentes
  */
 export function showPaxFlowToast(message: string, type: 'success' | 'error' = 'success'): void {
   if (typeof document === 'undefined') return;
@@ -235,6 +237,12 @@ export function showPaxFlowToast(message: string, type: 'success' | 'error' = 's
     document.body.appendChild(toast);
   }
 
+  // Cancela qualquer timeout pendente anterior para impedir fechamento prematuro
+  if (activeToastTimer) {
+    clearTimeout(activeToastTimer);
+    activeToastTimer = null;
+  }
+
   const isSuccess = type === 'success';
   toast.className = `fixed bottom-5 right-5 px-5 py-3.5 rounded-xl shadow-2xl text-white font-semibold text-sm z-[99999] transition-all duration-300 transform translate-y-0 opacity-100 flex items-center gap-2 ${
     isSuccess ? 'bg-emerald-600 shadow-emerald-600/20' : 'bg-rose-600 shadow-rose-600/20'
@@ -242,10 +250,12 @@ export function showPaxFlowToast(message: string, type: 'success' | 'error' = 's
   toast.innerHTML = `${isSuccess ? '✅' : '❌'} ${translatedMessage}`;
 
   const duration = isSuccess ? 3500 : 5500;
-  setTimeout(() => {
+  activeToastTimer = setTimeout(() => {
     if (toast) {
       toast.className = 'fixed bottom-5 right-5 px-5 py-3.5 rounded-xl shadow-2xl text-white font-semibold text-sm z-[99999] transition-all duration-300 transform translate-y-10 opacity-0 flex items-center gap-2 pointer-events-none';
     }
+    activeToastTimer = null;
   }, duration);
 }
+
 

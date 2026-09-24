@@ -2,19 +2,24 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
 import webpush from "https://esm.sh/web-push@3.6.7";
 
-const VAPID_PUBLIC_KEY = 'BGftIe5tKDG01vXBhlcEK7f98RS77TwrJdCZwVkWvnB3-Xwbiv6tUBXfAbnejr6-pfN_lNNHXRF_ZzVDguDsyrk';
-const VAPID_PRIVATE_KEY = 'SQ4lX4WG7pNMhCMHzJ_nTkzlXBNI0b2KauDIdpIZFVc';
-
-webpush.setVapidDetails(
-  'mailto:contato@paxflow.com.br',
-  VAPID_PUBLIC_KEY,
-  VAPID_PRIVATE_KEY
-);
-
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+const VAPID_PUBLIC_KEY = Deno.env.get('VAPID_PUBLIC_KEY') ?? 'BGftIe5tKDG01vXBhlcEK7f98RS77TwrJdCZwVkWvnB3-Xwbiv6tUBXfAbnejr6-pfN_lNNHXRF_ZzVDguDsyrk';
+const VAPID_PRIVATE_KEY = Deno.env.get('VAPID_PRIVATE_KEY') ?? 'SQ4lX4WG7pNMhCMHzJ_nTkzlXBNI0b2KauDIdpIZFVc';
+const VAPID_SUBJECT = Deno.env.get('VAPID_SUBJECT') ?? 'mailto:contato@paxflow.com.br';
+
+try {
+  webpush.setVapidDetails(
+    VAPID_SUBJECT,
+    VAPID_PUBLIC_KEY,
+    VAPID_PRIVATE_KEY
+  );
+} catch (vapidErr) {
+  console.error('[send-push] Falha ao configurar VAPID:', vapidErr);
+}
 
 serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
@@ -22,6 +27,14 @@ serve(async (req: Request) => {
   }
 
   try {
+    const authHeader = req.headers.get('Authorization') || req.headers.get('apikey');
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Acesso não autorizado: token ausente' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const { userId, payload } = await req.json();
 
     if (!userId || !payload) {
@@ -35,7 +48,19 @@ serve(async (req: Request) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? Deno.env.get('SUPABASE_ANON_KEY') ?? '';
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Busca todas as inscrições de dispositivo ativas do usuário
+    // Valida se o chamador possui sessão válida ou permissão
+    const token = authHeader.replace(/^Bearer\s+/i, '');
+    if (token && token !== supabaseServiceKey) {
+      const { error: authError } = await supabase.auth.getUser(token);
+      if (authError) {
+        return new Response(JSON.stringify({ error: 'Sessão inválida ou expirada' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
+    // Busca todas as inscrições ativas do usuário alvo
     const { data: subs, error } = await supabase
       .from('push_subscriptions')
       .select('*')

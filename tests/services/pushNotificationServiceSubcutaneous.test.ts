@@ -192,4 +192,32 @@ describe('PushNotificationService - Testes Subcutâneos', () => {
     expect(localStorage.getItem('paxflow_push_enabled')).toBe('false');
     expect(localStorage.getItem('paxflow_push_user_id')).toBeNull();
   });
+
+  it('não deve acionar subscribeUser no boot se a permissão de notificação for default', async () => {
+    // Setup
+    const userId = 'user-auto-1';
+    const subscribeSpy = vi.spyOn(PushNotificationService, 'subscribeUser').mockResolvedValue(true);
+    vi.spyOn(PushNotificationService, 'isSupported').mockReturnValue(true);
+    vi.spyOn(PushNotificationService, 'getPermissionStatus').mockReturnValue('default');
+
+    // Action
+    await PushNotificationService.checkAndPromptAutoPermission(userId);
+
+    // Assert
+    expect(subscribeSpy).not.toHaveBeenCalled();
+  });
+
+  it('deve sincronizar silenciosamente no boot se a permissão já estiver concedida (granted)', async () => {
+    // Setup
+    const userId = 'user-auto-2';
+    const subscribeSpy = vi.spyOn(PushNotificationService, 'subscribeUser').mockResolvedValue(true);
+    vi.spyOn(PushNotificationService, 'isSupported').mockReturnValue(true);
+    vi.spyOn(PushNotificationService, 'getPermissionStatus').mockReturnValue('granted');
+
+    // Action
+    await PushNotificationService.checkAndPromptAutoPermission(userId);
+
+    // Assert
+    expect(subscribeSpy).toHaveBeenCalledWith(userId);
+  });
 });

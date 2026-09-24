@@ -174,30 +174,20 @@ export class PushNotificationService {
   }
 
   /**
-   * Pede permissão de notificação automaticamente e re-vincula o dispositivo caso o usuário logado tenha mudado
+   * Sincroniza silenciosamente a inscrição de notificações push caso a permissão já tenha sido concedida previamente,
+   * evitando popups ou prompts intrusivos no boot da aplicação.
    */
   public static async checkAndPromptAutoPermission(userId: string): Promise<void> {
     if (!userId || !this.isSupported()) return;
 
-    const lastUser = localStorage.getItem('paxflow_push_user_id');
-    const alreadyPrompted = localStorage.getItem('paxflow_auto_push_prompted');
-
-    // Se o usuário logado mudou, resetamos a flag para garantir a sobrescrita do endpoint no Supabase com o novo user_id
-    if (lastUser && lastUser !== userId) {
-      localStorage.removeItem('paxflow_auto_push_prompted');
-    } else if (alreadyPrompted === 'true' && lastUser === userId) {
-      return;
-    }
-
-    localStorage.setItem('paxflow_auto_push_prompted', 'true');
-
     try {
       const permStatus = this.getPermissionStatus();
-      if (permStatus === 'granted' || permStatus === 'default') {
+      // Apenas re-vincula/sincroniza se o usuário já tiver concedido a permissão previamente
+      if (permStatus === 'granted') {
         await this.subscribeUser(userId);
       }
     } catch {
-      // Falha silenciosa na solicitação automática
+      // Falha silenciosa na sincronização em segundo plano
     }
   }
 }

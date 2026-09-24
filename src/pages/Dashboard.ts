@@ -39,6 +39,7 @@ import {
   calcularTotaisViagem,
   parseFinancialNumber
 } from '../utils/productFinancialHelper';
+import { excluirViagemCascata } from '../controllers/viagensController';
 
 // Injeta estilos premium e animações micro-interativas para SLAs diretamente no DOM
 
@@ -908,82 +909,19 @@ export class Dashboard {
   /**
    * Deleta uma viagem e todas as suas dependências (apenas Admins)
    */
-  private async deleteViagem(tripId: string): Promise<boolean> {
+  private async deleteViagem(tripId: string): Promise<{ success: boolean; error?: string }> {
     if (this.isFallbackMode) {
       this.viagens = this.viagens.filter(v => v.id !== tripId);
-      this.saveViagensToLocalStorage();
-      return true;
+      return { success: true };
     }
 
-    try {
-      // 1. Deletar comentários vinculados
-      const { error: errComments } = await supabase
-        .from('comentarios')
-        .delete()
-        .eq('tipo_item', 'viagem')
-        .eq('item_id', tripId);
-      if (errComments) console.warn('Aviso ao excluir comentários:', errComments.message);
-
-      // 2. Deletar notificações vinculadas
-      const { error: errNotifs } = await supabase
-        .from('notificacoes')
-        .delete()
-        .eq('tipo_item', 'viagem')
-        .eq('parent_id', tripId);
-      if (errNotifs) console.warn('Aviso ao excluir notificações:', errNotifs.message);
-
-      // 3. Deletar pagamentos e conferências de localizadores
-      const { error: errPags } = await supabase
-        .from('loc_pagamentos')
-        .delete()
-        .eq('viagem_id', tripId);
-      if (errPags) console.warn('Aviso ao excluir loc_pagamentos:', errPags.message);
-
-      const { error: errConfs } = await supabase
-        .from('loc_conferencias')
-        .delete()
-        .eq('viagem_id', tripId);
-      if (errConfs) console.warn('Aviso ao excluir loc_conferencias:', errConfs.message);
-
-      // 4. Deletar lembretes e NPS da viagem
-      try {
-        await supabase.from('lembretes').delete().eq('viagem_id', tripId);
-      } catch (e) {}
-
-      try {
-        await supabase.from('feedbacks_nps').delete().eq('viagem_id', tripId);
-      } catch (e) {}
-
-      // 5. Deletar reembolsos vinculados
-      const { error: errRefunds } = await supabase
-        .from('reembolsos')
-        .delete()
-        .eq('viagem_id', tripId);
-      if (errRefunds) console.warn('Aviso ao excluir reembolsos:', errRefunds.message);
-
-      // 6. Deletar produtos vinculados
-      const { error: errProducts } = await supabase
-        .from('produtos_viagem')
-        .delete()
-        .eq('viagem_id', tripId);
-      if (errProducts) console.warn('Aviso ao excluir produtos:', errProducts.message);
-
-      // 7. Deletar a viagem em si
-      const { error: errTrip } = await supabase
-        .from('viagens')
-        .delete()
-        .eq('id', tripId);
-
-      if (errTrip) throw errTrip;
-
+    const res = await excluirViagemCascata(supabase, tripId);
+    if (res.success) {
       this.viagens = this.viagens.filter(v => v.id !== tripId);
-      this.saveViagensToLocalStorage();
-      return true;
-    } catch (err: any) {
-      console.error('Erro ao deletar viagem:', err);
-      return false;
     }
+    return res;
   }
+
 
   /**
    * Calcula o status do SLA para uma determinada viagem
@@ -4491,13 +4429,13 @@ Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : '
         );
 
         if (confirmResult) {
-          const success = await this.deleteViagem(tripId);
-          if (success) {
+          const res = await this.deleteViagem(tripId);
+          if (res.success) {
             this.showToast('Viagem excluída com sucesso!', 'success');
             await this.loadViagens();
             this.render();
           } else {
-            this.showToast('Erro ao excluir viagem.', 'error');
+            this.showToast(res.error || 'Erro ao excluir viagem no banco de dados.', 'error');
           }
         }
       });

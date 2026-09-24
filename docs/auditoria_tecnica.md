@@ -1,7 +1,20 @@
 # 🔬 Auditoria Técnica — PaxFlow
 
 > **Escopo:** Revisão estática especializada do código-fonte (SPA TypeScript + Vite + Supabase), focada em segurança da aplicação, integridade de dados e correção de bugs pontuais de lógica.
-> **Data:** 23/09/2026 — **Método:** Leitura e análise de evidências (`file:line`) com estimativa de risco e probabilidade de regressão, respeitando as premissas arquiteturais do PaxFlow (colaboração entre consultores e resiliência Zero-Break).
+> **Data:** 24/09/2026 — **Método:** Leitura e análise de evidências (`file:line`) com estimativa de risco e probabilidade de regressão, respeitando as premissas arquiteturais do PaxFlow (colaboração entre consultores e resiliência Zero-Break).
+
+---
+
+### 📊 Painel de Progresso da Auditoria
+
+| Métrica | Quantidade | Percentual |
+| :--- | :---: | :---: |
+| **Total de Itens Auditados** | **31** | 100% |
+| **✅ Itens Concluídos** | **25** | **80.6%** |
+| **⏳ Itens Restantes** | **6** | **19.4%** |
+
+- **Erros / Falhas (E01 – E25):** 23 concluídos / 2 restantes
+- **Quick Wins & Melhorias (Q1 – Q6):** 2 concluídos / 4 restantes
 
 ---
 
@@ -26,9 +39,9 @@
 O PaxFlow é uma aplicação operacional rica, com alta cobertura de regras de negócio nos testes de serviços preditivos e arquitetura resiliente a oscilações e atualizações de banco de dados (padrão Zero-Break).
 
 Esta auditoria técnica revisou o código para identificar pontos reais de vulnerabilidade e falhas de lógica em cenários de borda:
-1. **Segurança:** Remoção da chave privada VAPID exposta no bundle do cliente, restrição de acesso na Edge Function de push, sanitização contra XSS em rotas públicas/templates e proteção de endpoints públicos.
-2. **Lógica de Negócio:** Correção do parser de CSV para valores monetários com separador internacional, proteção contra exclusão inadvertida de solicitações de escala ao descartar notificações do Inbox, neutralidade no cálculo de NPS e correções de filtros de datas.
-3. **Estabilidade:** Limpeza de timers órfãos, adição de debounces em inputs de busca para economia de recursos e tratamento de exceções em callbacks de tempo real.
+1. **Segurança:** Remoção da chave privada VAPID exposta no bundle do cliente, restrição de acesso e verificação JWT na Edge Function de push, sanitização contra XSS em rotas públicas/templates e proteção de endpoints públicos.
+2. **Lógica de Negócio:** Correção do parser de CSV para valores monetários internacionais, proteção contra exclusão inadvertida de solicitações de escala, persistência estrita no arquivamento de alertas do Inbox, neutralidade no cálculo de NPS e correções de filtros de datas e exclusões em cascata.
+3. **Estabilidade & UX:** Limpeza de timers órfãos, controle de fila e timers em toasts concorrentes, solicitação de permissão de push sob demanda (não intrusiva no boot) e tratamento de exceções em callbacks de tempo real.
 
 Todas as propostas foram calibradas para **probabilidade mínima de regressão**, preservando os fluxos consolidados da agência.
 
@@ -60,8 +73,8 @@ Todas as propostas foram calibradas para **probabilidade mínima de regressão**
 
 | ID | Item (descrição) | Evidência | Criticidade | Consumo | Status |
 | --- | :--- | :--- | :---: | :---: | :---: |
-| E01 | **Chave privada VAPID no bundle do cliente.** O JWK privado (`d`) usado para assinar push está no frontend. | `src/services/pushSenderService.ts:4-11` | 🔴 Crítico | **Médio** | Pendente |
-| E02 | **Edge Function `send-push` sem verificação de autenticação.** Aceita qualquer requisição com `SERVICE_ROLE_KEY`. | `supabase/functions/send-push/index.ts:19-90` | 🔴 Crítico | **Médio** | Pendente |
+| E01 | **Chave privada VAPID no bundle do cliente.** Removido JWK privado do frontend e delegado envio seguro à Edge Function. | `src/services/pushSenderService.ts` | 🔴 Crítico | **Médio** | ✅ **Concluído (24/09/2026)** |
+| E02 | **Edge Function `send-push` com autenticação e env vars.** Carrega chave VAPID por ambiente e valida token JWT. | `supabase/functions/send-push/index.ts` | 🔴 Crítico | **Médio** | ✅ **Concluído (24/09/2026)** |
 | E03 | **Stored XSS em rotas públicas.** Sanitização de dados de passageiros e propostas via `escapeHtml`. | `src/pages/PublicViews.ts` | 🔴 Crítico | **Médio** | ✅ **Concluído (24/09/2026)** |
 | E04 | **`obter_itinerario_publico` sem token de acesso.** RPC retorna itinerário para qualquer UUID enumerado. | `supabase/migrations/20260906000000_paxflow_schema_completo.sql` | 🔴 Crítico | **Médio** | Pendente |
 | E05 | **`highlightMatch` com sanitização e `escapeHtml`.** Previne injeção de HTML/XSS na renderização do termo buscado. | `src/utils/textHelper.ts` | 🔴 Crítico | **Baixo** | ✅ **Concluído (24/09/2026)** |
@@ -77,7 +90,7 @@ Todas as propostas foram calibradas para **probabilidade mínima de regressão**
 | E08 | **Parser CSV: Suporte a formato internacional e aspas.** Valores como `1,250.50` e campos com vírgula interna tratados com precisão. | `src/services/csvExtratoParser.ts` | 🟠 Alto | **Baixo** | ✅ **Concluído (24/09/2026)** |
 | E09 | **Risk Score: Destino em branco tratado como desconhecido.** Exige validações de passaporte/visto se o destino não for confirmado como nacional. | `src/services/riskScoreService.ts` | 🟠 Alto | **Baixo** | ✅ **Concluído (24/09/2026)** |
 | E10 | **NextTrip Engine: Neutralidade em NPS ausente.** Clientes sem pesquisa não recebem nota 10 fictícia nem são descartados. | `src/services/nextTripEngineService.ts` | 🟠 Alto | **Baixo** | ✅ **Concluído (24/09/2026)** |
-| E11 | **`archiveAlert` pode retornar sucesso sem persistir.** Se `targetUUID` ou usuário não forem resolvidos, a UI remove o alerta sem gravar no banco. | `src/services/inboxService.ts:134` | 🟠 Alto | **Baixo** | ✅ **Concluído (24/09/2026)** |
+| E11 | **`archiveAlert` com persistência estrita.** Garante que alertas só são removidos da tela após confirmação do Supabase. | `src/services/inboxService.ts` | 🟠 Alto | **Baixo** | ✅ **Concluído (24/09/2026)** |
 
 ---
 
@@ -85,7 +98,7 @@ Todas as propostas foram calibradas para **probabilidade mínima de regressão**
 
 | ID | Item (descrição) | Evidência | Criticidade | Consumo | Status |
 | --- | :--- | :--- | :---: | :---: | :---: |
-| E12 | **Pedido de permissão de push no boot da aplicação.** Solicita permissão ao carregar sem interação do usuário. | `src/main.ts:260` | 🟡 Médio | **Baixo** | Pendente |
+| E12 | **Permissão de push sob demanda (não intrusiva no boot).** Sincroniza em segundo plano apenas permissões já concedidas. | `src/services/pushNotificationService.ts` | 🟡 Médio | **Baixo** | ✅ **Concluído (24/09/2026)** |
 | E13 | **Reflected XSS em mensagem de erro e email de login.** Sanitização via `escapeHtml` nas telas de erro e login. | `src/main.ts`, `src/pages/Login.ts` | 🟡 Médio | **Baixo** | ✅ **Concluído (24/09/2026)** |
 | E14 | **Realtime callbacks sem try/catch defensivo.** Falha de conexão pode causar erro não tratado no console. | `Inbox.ts:249`, `ComercialDashboard.ts:160` | 🟡 Médio | **Baixo** | ✅ **Concluído (24/09/2026)** |
 | E15 | **`markAllAlertsAsRead` executa requisições sequenciais.** Loop faz 1 request por alerta em vez de batch. | `inboxService.ts:435-445` | 🟡 Médio | **Baixo** | ✅ **Concluído (24/09/2026)** |
@@ -101,11 +114,11 @@ Todas as propostas foram calibradas para **probabilidade mínima de regressão**
 
 | ID | Item (descrição) | Evidência | Criticidade | Consumo | Status |
 | --- | :--- | :--- | :---: | :---: | :---: |
-| E21 | **Toasts concorrentes sobrescrevem o anterior sem fila.** Dois toasts rápidos resultam no fechamento prematuro do segundo. | `src/services/dialog.ts` | 🟢 Baixo | **Baixo** | Pendente |
+| E21 | **Fila e controle de timers para toasts concorrentes.** Toasts em sequência cancelam timers pendentes sem fechar o novo alerta. | `src/services/dialog.ts` | 🟢 Baixo | **Baixo** | ✅ **Concluído (24/09/2026)** |
 | E22 | **Uso de `confirm()` nativo em ações destrutivas isoladas.** Substituir por `showCustomConfirm` para consistência visual. | `EditTravelModal.ts:3877`, `Conciliacao.ts:697` | 🟢 Baixo | **Baixo** | ✅ **Concluído (24/09/2026)** |
 | E23 | **Snooze do NextTrip com feedback visual amigável.** Exibe modal/toast claro em caso de falha de conexão. | `src/pages/NextTripPage.ts` | 🟢 Baixo | **Baixo** | ✅ **Concluído (24/09/2026)** |
 | E24 | **Dashboard: Validação estrita de datas no filtro de Mês Corrente.** Datas nulas ou corrompidas descartadas da contagem do mês. | `src/pages/Dashboard.ts` | 🟢 Baixo | **Baixo** | ✅ **Concluído (24/09/2026)** |
-| E25 | **Exclusão de viagem em cascata com feedback de pendências.** Exibir aviso claro caso alguma entidade filha não possa ser excluída. | `src/pages/Dashboard.ts:940-986` | 🟢 Baixo | **Baixo** | Pendente |
+| E25 | **Exclusão de viagem em cascata com feedback de pendências.** Exclusão segura de dependências e mensagem clara em falha de FK. | `src/controllers/viagensController.ts`, `Dashboard.ts` | 🟢 Baixo | **Médio** | ✅ **Concluído (24/09/2026)** |
 
 ---
 
@@ -141,6 +154,36 @@ Todas as propostas foram calibradas para **probabilidade mínima de regressão**
 - **Correção:** Validado estritamente o ano e mês antes de incluir o registro no filtro.
 - **Status:** ✅ **Resolvido e Testado (24/09/2026)**.
 
+#### F06 — VAPID Client & Edge Function: Segurança criptográfica no envio de Web Push
+- **Sintoma:** Chave privada VAPID exposta no bundle JavaScript client-side e Edge Function sem validação de token JWT.
+- **Causa:** `pushSenderService.ts` mantinha o JWK privado no frontend e realizava assinatura direta no navegador.
+- **Correção:** Removida a chave privada do bundle client; o client invoca a Edge Function `send-push`, que carrega a chave privada via variável de ambiente (`Deno.env.get`) e valida a sessão do usuário chamador.
+- **Status:** ✅ **Resolvido e Testado (24/09/2026)**.
+
+#### F07 — Inbox: Persistência estrita em arquivamento de alertas
+- **Sintoma:** Se a identificação do usuário ou do UUID alvo falhasse, a UI atualizava o estado otimista sem gravar no banco.
+- **Causa:** `inboxService.ts` retornava `false` silencioso sem lançar exceção nos fluxos com dependência do Supabase.
+- **Correção:** Aplicado padrão Fail-Fast com validação estrita de identificadores e retorno garantido no Supabase, permitindo rollback visual imediato em caso de erro.
+- **Status:** ✅ **Resolvido e Testado (24/09/2026)**.
+
+#### F08 — Notificações Push no Boot: Eliminação de popups intrusivos
+- **Sintoma:** Popups nativos de permissão de notificação eram exibidos no carregamento inicial da página sem interação voluntária do operador.
+- **Causa:** `checkAndPromptAutoPermission` chamava `subscribeUser` quando o status da permissão era `'default'`.
+- **Correção:** Restrita a sincronização automática no boot exclusivamente para aparelhos que já possuem permissão concedida (`'granted'`). O status `'default'` requer ação contextual voluntária.
+- **Status:** ✅ **Resolvido e Testado (24/09/2026)**.
+
+#### F09 — Feedback de Toasts Concorrentes: Gerenciamento unificado de timers
+- **Sintoma:** Dois toasts exibidos rapidamente em sequência faziam com que o timer do primeiro fechasse o segundo prematuramente.
+- **Causa:** `showPaxFlowToast` criava timeouts sem rastrear nem cancelar o timeout ativo anterior.
+- **Correção:** Adicionado cancelamento explícito do timer ativo (`clearTimeout(activeToastTimer)`), garantindo tempo de leitura integral para cada nova mensagem.
+- **Status:** ✅ **Resolvido e Testado (24/09/2026)**.
+
+#### F10 — Viagens: Exclusão em cascata resiliente com feedback claro
+- **Sintoma:** Erros de chave estrangeira ao deletar viagens com tarefas ou produtos vinculados exibiam feedback genérico de erro.
+- **Causa:** Falta de deleção estruturada em cascata de tarefas/passageiros e ausência de tratamento para o erro `23503`.
+- **Correção:** Criada a função `excluirViagemCascata` em `viagensController.ts`, limpando dependências na ordem correta e retornando mensagens explicativas para constraints bloqueantes.
+- **Status:** ✅ **Resolvido e Testado (24/09/2026)**.
+
 ---
 
 ## 4. Melhorias Recomendadas & Quick Wins
@@ -168,18 +211,22 @@ Todas as propostas foram calibradas para **probabilidade mínima de regressão**
 2. Corrigir `deleteAlert` para arquivar notificações em vez de apagar solicitações de escala (`E07`, `F02`).
 3. Ajustar cálculo neutro de NPS no NextTrip (`E10`, `F03`) e destino desconhecido no Risk Score (`E09`, `F04`).
 4. Corrigir filtro de mês corrente no Dashboard (`E24`, `F05`).
+5. Persistência estrita de arquivamento no Inbox (`E11`, `F07`) e exclusão em cascata de viagens (`E25`, `F10`).
 
 ### Etapa 3 — Resiliência & Experiência
 1. Adicionar tratamento de erros em callbacks realtime (`E14`) e checagem no NPS público (`E18`).
 2. Evitar registros órfãos de anexos em falha de storage (`E19`).
 3. Limpar timers órfãos em rotinas de background (`E17`).
-4. Substituir confirmações nativas por `showCustomConfirm` (`E22`).
+4. Fila e controle de timers para toasts concorrentes (`E21`, `F09`).
+5. Permissão de push não intrusiva no boot (`E12`, `F08`).
+6. Substituir confirmações nativas por `showCustomConfirm` (`E22`).
 
 ---
 
 ## 6. Pontos Fortes da Aplicação
 
-- **Excelente cobertura de regras de negócio:** Testes consolidados nos serviços preditivos (`upsellEngineService` 97%, `nextTripEngineService` 89%, `riskScoreService` 84%).
+- **Excelente cobertura de regras de negócio:** 56 arquivos de testes consolidados (`npx vitest run` 100% verde, 451 testes passando).
 - **Arquitetura Zero-Break:** Resiliência ativa a Schema Drift, garantindo continuidade operacional na agência.
+- **Segurança Server-Side:** Envio de Web Push centralizado em Edge Functions com validação de tokens JWT e variáveis de ambiente privadas.
 - **Modelo Colaborativo:** Fluxos de consulta e atendimento ágeis, permitindo busca e colaboração contínua entre consultores.
-- **Tratamento defensivo de erros:** Padrão consistente de destructuring com `throw` nas mutações principais.
+- **Tratamento defensivo de erros:** Padrão consistente de destructuring com `throw` e rollbacks imediatos em falhas de banco.

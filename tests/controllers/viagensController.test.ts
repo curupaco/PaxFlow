@@ -3,7 +3,8 @@ import {
   determinarStatusDinamicoViagem,
   calcularRentabilidadeViagem,
   validarConsistenciaFinanceiraViagem,
-  agruparViagensPorColunaKanban
+  agruparViagensPorColunaKanban,
+  excluirViagemCascata
 } from '../../src/controllers/viagensController';
 import { ProdutoViagem } from '../../src/types';
 
@@ -218,5 +219,88 @@ describe('ViagensController - Máquina de Estados e Motor Financeiro de Viagens'
     expect(viagemAtualizada.valor_total).toBe(12000);
     expect(viagemAtualizada.updated_at).toBeDefined();
   });
+
+  describe('excluirViagemCascata - Integridade e Resiliência', () => {
+    it('deve recusar exclusão se tripId for vazio ou nulo', async () => {
+      // Setup
+      const mockClient = { from: () => {} };
+
+      // Action
+      const res = await excluirViagemCascata(mockClient, '');
+
+      // Assert
+      expect(res.success).toBe(false);
+      expect(res.error).toBe('Identificador da viagem não fornecido.');
+    });
+
+    it('deve executar deleção em cascata de todas as dependências e da viagem com sucesso', async () => {
+      // Setup
+      const tripId = 'v-uuid-999';
+      const deletedTables: string[] = [];
+
+      const createDeleteMock = () => {
+        const queryObj: any = {
+          eq: vi.fn().mockImplementation(() => queryObj),
+          then: (resolve: any) => resolve({ error: null })
+        };
+        return queryObj;
+      };
+
+      const mockClient = {
+        from: (table: string) => {
+          deletedTables.push(table);
+          return {
+            delete: () => createDeleteMock()
+          };
+        }
+      };
+
+      // Action
+      const res = await excluirViagemCascata(mockClient, tripId);
+
+      // Assert
+      expect(res.success).toBe(true);
+      expect(deletedTables).toContain('comentarios');
+      expect(deletedTables).toContain('notificacoes');
+      expect(deletedTables).toContain('loc_pagamentos');
+      expect(deletedTables).toContain('loc_conferencias');
+      expect(deletedTables).toContain('lembretes');
+      expect(deletedTables).toContain('feedbacks_nps');
+      expect(deletedTables).toContain('reembolsos');
+      expect(deletedTables).toContain('tarefas');
+      expect(deletedTables).toContain('viagens_passageiros');
+      expect(deletedTables).toContain('produtos_viagem');
+      expect(deletedTables).toContain('viagens');
+    });
+
+    it('deve retornar mensagem explicativa de pendência ao capturar erro 23503 (violação de FK)', async () => {
+      // Setup
+      const tripId = 'v-uuid-com-fk';
+      const mockClient = {
+        from: (table: string) => {
+          const queryObj: any = {
+            eq: vi.fn().mockImplementation(() => queryObj),
+            then: (resolve: any) => {
+              if (table === 'viagens') {
+                return resolve({ error: { code: '23503', message: 'foreign key constraint violation' } });
+              }
+              return resolve({ error: null });
+            }
+          };
+          return {
+            delete: () => queryObj
+          };
+        }
+      };
+
+      // Action
+      const res = await excluirViagemCascata(mockClient, tripId);
+
+      // Assert
+      expect(res.success).toBe(false);
+      expect(res.error).toContain('existem registros operacionais ou financeiros vinculados');
+    });
+  });
 });
+
 

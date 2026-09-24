@@ -889,7 +889,22 @@ export const HELP_ITEMS: HelpItem[] = [
     label: '🔔 Lembretes: Campo de Descrição & Nome Fidedigno',
     description: 'Como detalhar os motivos dos lembretes e identificar com precisão os passageiros titulares.',
     details: 'No Mission Control e modais de agendamento:\n\n- **Campo de Descrição**: Permite inserir textos explicativos detalhando a ação a ser realizada (ex: "Confirmar assentos marcados e enviar voucher atualizado").\n- **Resolução de Nome Fidedigna**: O sistema localiza o nome real e completo do passageiro vinculado à viagem ou orçamento, eliminando nomenclaturas genéricas (como "CLIENTE VIAGEM").'
+  },
+  {
+    id: 'push-notificacoes-seguranca',
+    modulo: 'realtime',
+    label: '📱 Notificações Push Server-Side & Ativação sob Demanda',
+    description: 'Como funciona o recebimento seguro de notificações em segundo plano no celular e computador.',
+    details: 'O PaxFlow utiliza arquitetura de Web Push moderna e server-side:\n\n- **Ativação Não Intrusiva**: O aplicativo não dispara popups intrusivos ao entrar no sistema. Você pode ativar voluntariamente suas notificações no seu perfil ou nas configurações.\n- **Disparo Seguro Server-Side**: O despacho de alertas é processado de forma criptografada diretamente pelas Edge Functions do Supabase com validação de token JWT, sem expor chaves privadas no seu navegador.\n- **Sincronização em Segundo Plano**: Se você já concedeu permissão de notificações em um dispositivo, o PaxFlow sincroniza silenciosamente seu usuário ao fazer login.'
+  },
+  {
+    id: 'viagens-exclusao-cascata',
+    modulo: 'viagens',
+    label: '🗑️ Exclusão de Viagens em Cascata & Gestão de Pendências',
+    description: 'Como administradores podem remover viagens operacionais com integridade atômica.',
+    details: 'Ao excluir uma viagem no Dashboard operacional (ação restrita a Administradores):\n\n- **Limpeza Ordenada em Cascata**: O motor do PaxFlow remove automaticamente todas as entidades vinculadas à viagem (comentários, notificações, lembretes, reembolsos, pesquisas NPS, tarefas e produtos/serviços).\n- **Proteção contra Violações de Vínculo**: Caso existam dependências operacionais ou financeiras bloqueantes no Supabase, o sistema emite um aviso claro ao operador, preservando a integridade contábil da agência.'
   }
 ];
+
 
 

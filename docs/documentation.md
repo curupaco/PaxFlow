@@ -50,6 +50,7 @@
    - 3.37 [Design System de Tabelas, Proporções e Padronização Visual PaxFlow](#337-design-system-de-tabelas-proporções-e-padronização-visual-paxflow)
    - 3.39 [Melhorias Estratégicas em Relatórios e Central de Lembretes](#339-melhorias-estratégicas-em-relatórios-e-central-de-lembretes)
    - 3.40 [Governança de Desistências, Check de Contato do Gestor & Reabertura de Orçamentos](#340-governança-de-desistências-check-de-contato-do-gestor--reabertura-de-orçamentos)
+   - 3.41 [Arquitetura de Web Push Server-Side, Exclusão em Cascata & Integridade Transacional](#341-arquitetura-de-web-push-server-side-exclusão-em-cascata--integridade-transacional)
 4. [Diferenciais Competitivos](#4-diferenciais-competitivos)
 5. [Arquitetura Tecnológica](#5-arquitetura-tecnológica)
 6. [Segurança e Conformidade](#6-segurança-e-conformidade)
@@ -1032,6 +1033,23 @@ Para apoiar a retenção comercial, auditoria de perdas e recuperação de leads
    - **Fluxo de Transição**: Movimentação do orçamento de volta para a etapa **SOLICITADO**, limpando o `sub_status = null` e resetando o check de desistência.
    - **Modal de Confirmação & Motivo Opcional**: Ao acionar o botão `🔄 Reabrir Orçamento`, o usuário pode justificar a razão da retomada (ex: *"Cliente voltou a ter interesse e quer nova cotação"*).
    - **Preservação Histórica Imutável**: Um registro estruturado com data/hora (`DD/MM/AAAA às HH:mm`), autor e justificativa é inserido no topo das notas de negociação (`notas_negociacao`) e registrado na timeline de comentários (`comentarios`) do orçamento.
+
+### 3.41 Arquitetura de Web Push Server-Side, Exclusão em Cascata & Integridade Transacional
+
+Para consolidar as garantias de segurança cibernética, integridade referencial e confiabilidade do ecossistema:
+
+1. **Web Push 100% Server-Side via Edge Functions & Proteção VAPID**:
+   - **Isolamento de Credenciais**: A chave privada VAPID (`JWK / d`) foi removida do bundle JavaScript do frontend, passando a residir exclusivamente em variáveis de ambiente seguras (`Deno.env.get('VAPID_PRIVATE_KEY')`) na Edge Function `send-push`.
+   - **Validação de Autenticação**: Requisições de push exigem cabeçalho `Authorization: Bearer <JWT>` com validação de usuário no Supabase Auth antes do envio.
+   - **Sincronização Não Intrusiva**: A solicitação de permissão no navegador deixa de ser executada de forma automática no boot quando em estado `default`, sendo solicitada apenas mediante consentimento voluntário ou sincronizada silenciosamente quando já concedida (`granted`).
+
+2. **Exclusão de Viagens em Cascata com Integridade Referencial**:
+   - **Motor `excluirViagemCascata`**: Implementado em `viagensController.ts` para coordenar a remoção ordenada e segura de todas as 11 entidades dependentes (comentários, notificações, pagamentos, conferências, lembretes, feedbacks NPS, reembolsos, tarefas, passageiros e produtos).
+   - **Tratamento de Violações de Foreign Key (`23503`)**: Emissão de feedback amigável e explicativo na interface caso restrições de integridade bloqueiem a remoção, prevenindo falhas silenciosas e preservando a consistência dos dados contábeis.
+
+3. **Gerenciamento Unificado de Toasts & Fail-Fast no Inbox**:
+   - **Fila de Timers de Notificação (`dialog.ts`)**: O cancelamento explícito do timer ativo anterior (`clearTimeout(activeToastTimer)`) impede que alertas concorrentes fechem prematuramente a mensagem subsequente.
+   - **Persistência Estrita no `inboxService.ts`**: Validação estrita de identificadores e repasse de erros imediatos (`Fail-Fast`) para garantir que a UI apenas reflita estados após gravação confirmada no Supabase.
 
 ---
 
