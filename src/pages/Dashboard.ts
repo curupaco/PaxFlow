@@ -252,7 +252,7 @@ export class Dashboard {
       month = rawDate.getMonth() + 1;
     }
 
-    if (isNaN(year) || isNaN(month) || year === 0 || month === 0) return true;
+    if (isNaN(year) || isNaN(month) || year === 0 || month === 0) return false;
 
     return year === curYear && month === curMonth;
   }

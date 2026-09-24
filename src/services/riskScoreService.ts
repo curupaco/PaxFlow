@@ -65,7 +65,7 @@ export class RiskScoreService {
     const temTermoInternacional = termosInternacionais.some(d => destinoNome.includes(d));
     const temTermoNacional = termosNacionais.some(d => destinoNome.includes(d));
 
-    const isNacional = temTermoInternacional ? false : (temTermoNacional || destinoNome.length === 0);
+    const isNacional = temTermoInternacional ? false : Boolean(temTermoNacional && destinoNome.length > 0);
 
     
     const temVoo = produtos.some(p => (p.tipo || '').toLowerCase().includes('voo') || (p.tipo || '').toLowerCase().includes('aéreo'));

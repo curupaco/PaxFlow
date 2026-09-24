@@ -8,17 +8,27 @@ function parseValorMonetario(raw: string): number | null {
   const limpo = raw.replace(/[R$\s"']/g, '').trim();
   if (!limpo) return null;
 
-  // Formato brasileiro com vírgula decimal (ex: 3.500,00 ou 1250,50)
+  // Possui vírgula e ponto: decide com base em qual aparece por último
+  if (limpo.includes(',') && limpo.includes('.')) {
+    const lastComma = limpo.lastIndexOf(',');
+    const lastDot = limpo.lastIndexOf('.');
+    if (lastComma > lastDot) {
+      // Padrão brasileiro: 1.250,50 -> remove pontos, troca vírgula por ponto
+      const normalizado = limpo.replace(/\./g, '').replace(',', '.');
+      const parsed = parseFloat(normalizado);
+      return isNaN(parsed) ? null : parsed;
+    } else {
+      // Padrão internacional: 1,250.50 -> remove vírgulas
+      const normalizado = limpo.replace(/,/g, '');
+      const parsed = parseFloat(normalizado);
+      return isNaN(parsed) ? null : parsed;
+    }
+  }
+
+  // Formato brasileiro com apenas vírgula decimal (ex: 1250,50 ou -25,00)
   if (limpo.includes(',')) {
     const semPontos = limpo.replace(/\./g, '').replace(',', '.');
     const parsed = parseFloat(semPontos);
-    return isNaN(parsed) ? null : parsed;
-  }
-
-  // Formato internacional com vírgula de milhar e ponto decimal (ex: 1,250.50)
-  if (limpo.includes(',') && limpo.includes('.')) {
-    const semVirgula = limpo.replace(/,/g, '');
-    const parsed = parseFloat(semVirgula);
     return isNaN(parsed) ? null : parsed;
   }
 
@@ -52,11 +62,35 @@ export function parseCSVExtrato(conteudo: string): { transacoes: TransacaoOFX[];
   if (countTab > countPontoVirgula && countTab > countVirgula) delimitador = '\t';
   else if (countVirgula > countPontoVirgula) delimitador = ',';
 
+function splitLinhaCSV(linha: string, delimitador: string): string[] {
+  if (delimitador !== ',') {
+    return linha.split(delimitador).map(c => c.trim().replace(/^["']|["']$/g, ''));
+  }
+
+  const colunas: string[] = [];
+  let buffer = '';
+  let emAspas = false;
+
+  for (let i = 0; i < linha.length; i++) {
+    const ch = linha[i];
+    if (ch === '"') {
+      emAspas = !emAspas;
+    } else if (ch === ',' && !emAspas) {
+      colunas.push(buffer.trim().replace(/^["']|["']$/g, ''));
+      buffer = '';
+    } else {
+      buffer += ch;
+    }
+  }
+  colunas.push(buffer.trim().replace(/^["']|["']$/g, ''));
+  return colunas;
+}
+
   for (let i = 0; i < linhas.length; i++) {
     const linha = linhas[i].trim();
     if (!linha) continue;
 
-    const colunas = linha.split(delimitador).map(c => c.trim().replace(/^["']|["']$/g, ''));
+    const colunas = splitLinhaCSV(linha, delimitador);
     if (colunas.length < 2) continue;
 
     // Tenta encontrar coluna de data, descrição e valor

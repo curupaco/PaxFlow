@@ -58,88 +58,88 @@ Todas as propostas foram calibradas para **probabilidade mínima de regressão**
 
 ### 3.1 Críticos — Segurança da Aplicação
 
-| ID | Item (descrição) | Evidência | Criticidade | Consumo | Prob. Regressão |
+| ID | Item (descrição) | Evidência | Criticidade | Consumo | Status |
 | --- | :--- | :--- | :---: | :---: | :---: |
-| E01 | **Chave privada VAPID no bundle do cliente.** O JWK privado (`d`) usado para assinar push está no frontend. | `src/services/pushSenderService.ts:4-11` | 🔴 Crítico | **Médio** | 🟢 **Baixa (5-10%)** — Mover o disparo para a Edge Function sem alterar a interface do serviço. |
-| E02 | **Edge Function `send-push` sem verificação de autenticação.** Aceita qualquer requisição com `SERVICE_ROLE_KEY`. | `supabase/functions/send-push/index.ts:19-90` | 🔴 Crítico | **Médio** | 🟡 **Média (15-25%)** — Exigir token de autenticação e validar o usuário remetente. |
-| E03 | **Stored XSS em rotas públicas.** Interpolação direta de campos textuais do banco em `innerHTML` sem escape. | `src/pages/PublicViews.ts:337, 419, 867` | 🔴 Crítico | **Médio** | 🟢 **Baixa (5-10%)** — Uso de utilitário `escapeHtml` nas strings interpoladas. |
-| E04 | **`obter_itinerario_publico` sem token de acesso.** RPC retorna itinerário para qualquer UUID enumerado. | `supabase/migrations/20260906000000_paxflow_schema_completo.sql` | 🔴 Crítico | **Médio** | 🟡 **Média (15-25%)** — Implementar hash/token de segurança nos links públicos. |
-| E05 | **`highlightMatch` sem escape de HTML.** Envolve texto da busca em `<mark>` sem escapar tags prévias. | `src/utils/textHelper.ts:14` | 🔴 Crítico | **Baixo** | 🟢 **Baixa (5-10%)** — Sanitizar a entrada antes do destaque visual. |
-| E06 | **XSS em visualização de mensagens e dados.** Histórico do Digisac e comentários inseridos via `innerHTML`. | `SendTemplateMessageModal.ts:317`, `comments.ts` | 🔴 Crítico | **Médio** | 🟢 **Baixa (5-10%)** — Sanitização preventiva na renderização. |
+| E01 | **Chave privada VAPID no bundle do cliente.** O JWK privado (`d`) usado para assinar push está no frontend. | `src/services/pushSenderService.ts:4-11` | 🔴 Crítico | **Médio** | Pendente |
+| E02 | **Edge Function `send-push` sem verificação de autenticação.** Aceita qualquer requisição com `SERVICE_ROLE_KEY`. | `supabase/functions/send-push/index.ts:19-90` | 🔴 Crítico | **Médio** | Pendente |
+| E03 | **Stored XSS em rotas públicas.** Interpolação direta de campos textuais do banco em `innerHTML` sem escape. | `src/pages/PublicViews.ts:337, 419, 867` | 🔴 Crítico | **Médio** | Pendente |
+| E04 | **`obter_itinerario_publico` sem token de acesso.** RPC retorna itinerário para qualquer UUID enumerado. | `supabase/migrations/20260906000000_paxflow_schema_completo.sql` | 🔴 Crítico | **Médio** | Pendente |
+| E05 | **`highlightMatch` com sanitização e `escapeHtml`.** Previne injeção de HTML/XSS na renderização do termo buscado. | `src/utils/textHelper.ts` | 🔴 Crítico | **Baixo** | ✅ **Concluído (24/09/2026)** |
+| E06 | **XSS em visualização de mensagens e dados.** Histórico do Digisac e comentários inseridos via `innerHTML`. | `SendTemplateMessageModal.ts:317`, `comments.ts` | 🔴 Crítico | **Médio** | Pendente |
 
 ---
 
 ### 3.2 Altos — Bugs de Lógica & Integridade
 
-| ID | Item (descrição) | Evidência | Criticidade | Consumo | Prob. Regressão |
+| ID | Item (descrição) | Evidência | Criticidade | Consumo | Status |
 | --- | :--- | :--- | :---: | :---: | :---: |
-| E07 | **`deleteAlert` apaga solicitação de escala/balcão do banco.** Excluir a notificação no Inbox apaga a linha de `escala_solicitacoes`. | `src/services/inboxService.ts:186-194` | 🟠 Alto | **Baixo** | 🟢 **Baixa (5-10%)** — Apenas arquivar a notificação, mantendo a solicitação original intacta. |
-| E08 | **Parser CSV corrompe valores em formato internacional.** Formatos como `1,250.50` são tratados erroneamente como formato brasileiro. | `src/services/csvExtratoParser.ts:12-23` | 🟠 Alto | **Baixo** | 🟢 **Baixa (5-10%)** — Detectar ordem dos separadores (`,` e `.`) com testes unitários. |
-| E09 | **Risk Score assume destino vazio como viagem nacional.** Ignora checagens de visto/passaporte para viagens internacionais sem destino cadastrado. | `src/services/riskScoreService.ts:68` | 🟠 Alto | **Baixo** | 🟢 **Baixa (5-10%)** — Tratar destino vazio como desconhecido. |
-| E10 | **NextTrip assume NPS ausente como nota 10.** Cliente sem avaliação recebe pontuação máxima de promotor no score de recompra. | `src/services/nextTripEngineService.ts:182` | 🟠 Alto | **Baixo** | 🟢 **Baixa (5-10%)** — Tratar NPS nulo com neutralidade (pontuação neutra/0). |
-| E11 | **`archiveAlert` pode retornar sucesso sem persistir.** Se `targetUUID` ou usuário não forem resolvidos, a UI remove o alerta sem gravar no banco. | `src/services/inboxService.ts:134` | 🟠 Alto | **Baixo** | 🟢 **Baixa (5-10%)** — Retornar falha e exibir toast se o alerta não for persistido. |
+| E07 | **`deleteAlert` apaga solicitação de escala/balcão do banco.** Excluir a notificação no Inbox apaga a linha de `escala_solicitacoes`. | `src/services/inboxService.ts:186-194` | 🟠 Alto | **Baixo** | Pendente |
+| E08 | **Parser CSV: Suporte a formato internacional e aspas.** Valores como `1,250.50` e campos com vírgula interna tratados com precisão. | `src/services/csvExtratoParser.ts` | 🟠 Alto | **Baixo** | ✅ **Concluído (24/09/2026)** |
+| E09 | **Risk Score: Destino em branco tratado como desconhecido.** Exige validações de passaporte/visto se o destino não for confirmado como nacional. | `src/services/riskScoreService.ts` | 🟠 Alto | **Baixo** | ✅ **Concluído (24/09/2026)** |
+| E10 | **NextTrip Engine: Neutralidade em NPS ausente.** Clientes sem pesquisa não recebem nota 10 fictícia nem são descartados. | `src/services/nextTripEngineService.ts` | 🟠 Alto | **Baixo** | ✅ **Concluído (24/09/2026)** |
+| E11 | **`archiveAlert` pode retornar sucesso sem persistir.** Se `targetUUID` ou usuário não forem resolvidos, a UI remove o alerta sem gravar no banco. | `src/services/inboxService.ts:134` | 🟠 Alto | **Baixo** | Pendente |
 
 ---
 
 ### 3.3 Médios — Confiabilidade & Performance
 
-| ID | Item (descrição) | Evidência | Criticidade | Consumo | Prob. Regressão |
+| ID | Item (descrição) | Evidência | Criticidade | Consumo | Status |
 | --- | :--- | :--- | :---: | :---: | :---: |
-| E12 | **Pedido de permissão de push no boot da aplicação.** Solicita permissão ao carregar sem interação do usuário. | `src/main.ts:260` | 🟡 Médio | **Baixo** | 🟢 **Baixa (5-10%)** — Solicitar permissão apenas quando o usuário ativar a opção no painel. |
-| E13 | **Reflected XSS em mensagem de erro e email de login.** Interpolação direta de `err.message` e string de e-mail. | `src/main.ts:171`, `src/pages/Login.ts:247` | 🟡 Médio | **Baixo** | 🟢 **Baixa (5-10%)** — Renderizar via `textContent` ou `escapeHtml`. |
-| E14 | **Realtime callbacks sem try/catch defensivo.** Falha de conexão pode causar erro não tratado no console. | `Inbox.ts:249`, `ComercialDashboard.ts:160` | 🟡 Médio | **Baixo** | 🟢 **Baixa (5-10%)** — Envolver callbacks assíncronos em bloco de proteção `try/catch`. |
-| E15 | **`markAllAlertsAsRead` executa requisições sequenciais.** Loop faz 1 request por alerta em vez de batch. | `inboxService.ts:435-445` | 🟡 Médio | **Baixo** | 🟢 **Baixa (10-15%)** — Atualizar em lote com `.in('id', ids)`. |
-| E16 | **Busca sem debounce em inputs de filtro.** Re-render acionado a cada tecla digitada sem intervalo mínimo. | `NextTripPage.ts:359`, `Reembolsos.ts:292` | 🟡 Médio | **Baixo** | 🟡 **Média (15-20%)** — Adicionar debounce de 250ms preservando o foco do campo. |
-| E17 | **Timers e listeners órfãos em rotinas de background.** Timers de 1s executando `querySelectorAll` desnecessariamente. | `Reembolsos.ts:173`, `LandingPage.ts:178` | 🟡 Médio | **Baixo** | 🟢 **Baixa (10-15%)** — Limpar timers no ciclo `destroy()` dos componentes. |
-| E18 | **NPS público não trata retorno de `{ error }` ao salvar viagem.** Possibilidade de falha silenciosa no status final. | `src/pages/PublicViews.ts:781-795` | 🟡 Médio | **Baixo** | 🟢 **Baixa (5-10%)** — Checar erro e reportar feedback adequado ao usuário. |
-| E19 | **Upload de anexo pode criar registro sem arquivo se o storage falhar.** | `src/services/anexosService.ts:233-245` | 🟡 Médio | **Baixo** | 🟢 **Baixa (10-15%)** — Abortar a inclusão do registro se o envio ao storage falhar. |
-| E20 | **`sw.js` navega para URL do payload de push sem validar origem.** | `public/sw.js:48-67` | 🟡 Médio | **Baixo** | 🟢 **Baixa (5-10%)** — Checar se a URL pertence ao mesmo domínio da aplicação. |
+| E12 | **Pedido de permissão de push no boot da aplicação.** Solicita permissão ao carregar sem interação do usuário. | `src/main.ts:260` | 🟡 Médio | **Baixo** | Pendente |
+| E13 | **Reflected XSS em mensagem de erro e email de login.** Interpolação direta de `err.message` e string de e-mail. | `src/main.ts:171`, `src/pages/Login.ts:247` | 🟡 Médio | **Baixo** | Pendente |
+| E14 | **Realtime callbacks sem try/catch defensivo.** Falha de conexão pode causar erro não tratado no console. | `Inbox.ts:249`, `ComercialDashboard.ts:160` | 🟡 Médio | **Baixo** | Pendente |
+| E15 | **`markAllAlertsAsRead` executa requisições sequenciais.** Loop faz 1 request por alerta em vez de batch. | `inboxService.ts:435-445` | 🟡 Médio | **Baixo** | Pendente |
+| E16 | **Busca sem debounce em inputs de filtro.** Re-render acionado a cada tecla digitada sem intervalo mínimo. | `NextTripPage.ts:359`, `Reembolsos.ts:292` | 🟡 Médio | **Baixo** | Pendente |
+| E17 | **Timers e listeners órfãos em rotinas de background.** Timers de 1s executando `querySelectorAll` desnecessariamente. | `Reembolsos.ts:173`, `LandingPage.ts:178` | 🟡 Médio | **Baixo** | Pendente |
+| E18 | **NPS público não trata retorno de `{ error }` ao salvar viagem.** Possibilidade de falha silenciosa no status final. | `src/pages/PublicViews.ts:781-795` | 🟡 Médio | **Baixo** | Pendente |
+| E19 | **Upload de anexo pode criar registro sem arquivo se o storage falhar.** | `src/services/anexosService.ts:233-245` | 🟡 Médio | **Baixo** | Pendente |
+| E20 | **`sw.js` validação de mesma origem no push click.** Impede redirecionamentos para origens não confiáveis ao clicar na notificação. | `public/sw.js` | 🟡 Médio | **Baixo** | ✅ **Concluído (24/09/2026)** |
 
 ---
 
 ### 3.4 Baixos & UX Pontual
 
-| ID | Item (descrição) | Evidência | Criticidade | Consumo | Prob. Regressão |
+| ID | Item (descrição) | Evidência | Criticidade | Consumo | Status |
 | --- | :--- | :--- | :---: | :---: | :---: |
-| E21 | **Toasts concorrentes sobrescrevem o anterior sem fila.** Dois toasts rápidos resultam no fechamento prematuro do segundo. | `src/services/dialog.ts` | 🟢 Baixo | **Baixo** | 🟡 **Média (15-20%)** — Implementar temporizador cancelável / fila simples. |
-| E22 | **Uso de `confirm()` nativo em ações destrutivas isoladas.** Substituir por `showCustomConfirm` para consistência visual. | `EditTravelModal.ts:3877`, `Conciliacao.ts:697` | 🟢 Baixo | **Baixo** | 🟢 **Baixa (10-15%)** — Conversão para confirmação customizada assíncrona. |
-| E23 | **Snooze do NextTrip não exibe feedback em caso de falha.** Erro de rede fica restrito ao `console.error`. | `src/pages/NextTripPage.ts:398-402` | 🟢 Baixo | **Baixo** | 🟢 **Baixa (5-10%)** — Exibir toast de erro amigável ao consultor. |
-| E24 | **Filtro "Mês Corrente" inclui viagens com datas inválidas.** Datas nulas ou corrompidas eram computadas no mês atual. | `src/pages/Dashboard.ts:246-257` | 🟢 Baixo | **Baixo** | 🟢 **Baixa (5-10%)** — Tratar datas inválidas excluindo-as da contagem do mês. |
-| E25 | **Exclusão de viagem em cascata com feedback de pendências.** Exibir aviso claro caso alguma entidade filha não possa ser excluída. | `src/pages/Dashboard.ts:940-986` | 🟢 Baixo | **Baixo** | 🟢 **Baixa (10-15%)** — Relatar pendências de exclusão de forma transparente. |
+| E21 | **Toasts concorrentes sobrescrevem o anterior sem fila.** Dois toasts rápidos resultam no fechamento prematuro do segundo. | `src/services/dialog.ts` | 🟢 Baixo | **Baixo** | Pendente |
+| E22 | **Uso de `confirm()` nativo em ações destrutivas isoladas.** Substituir por `showCustomConfirm` para consistência visual. | `EditTravelModal.ts:3877`, `Conciliacao.ts:697` | 🟢 Baixo | **Baixo** | Pendente |
+| E23 | **Snooze do NextTrip não exibe feedback em caso de falha.** Erro de rede fica restrito ao `console.error`. | `src/pages/NextTripPage.ts:398-402` | 🟢 Baixo | **Baixo** | Pendente |
+| E24 | **Dashboard: Validação estrita de datas no filtro de Mês Corrente.** Datas nulas ou corrompidas descartadas da contagem do mês. | `src/pages/Dashboard.ts` | 🟢 Baixo | **Baixo** | ✅ **Concluído (24/09/2026)** |
+| E25 | **Exclusão de viagem em cascata com feedback de pendências.** Exibir aviso claro caso alguma entidade filha não possa ser excluída. | `src/pages/Dashboard.ts:940-986` | 🟢 Baixo | **Baixo** | Pendente |
 
 ---
 
 ### 3.5 Diagnóstico Detalhado de Falhas de Lógica
 
 #### F01 — Parser CSV: Tratamento incorreto de valores com vírgula internacional
-- **Sintoma:** Linhas de extrato contendo `1,250.50` são lidas como `1.2505`.
-- **Causa:** `csvExtratoParser.ts:12` captura qualquer string com vírgula no bloco de moeda brasileira.
-- **Correção:** Analisar a posição do último separador (se a vírgula vier antes do ponto, remover a vírgula; caso contrário, remover o ponto).
-- **Probabilidade de Regressão:** 🟢 **Baixa (< 10%)**.
+- **Sintoma:** Linhas de extrato contendo `1,250.50` eram lidas como `1.2505`.
+- **Causa:** `csvExtratoParser.ts` capturava qualquer string com vírgula no bloco de moeda brasileira.
+- **Correção:** Analisada a posição do último separador e suportadas aspas em campos CSV (`splitLinhaCSV`).
+- **Status:** ✅ **Resolvido e Testado (24/09/2026)**.
 
 #### F02 — Inbox: "Excluir alerta" apagando solicitação real de escala
 - **Sintoma:** O consultor descarta a notificação de solicitação de folga e a solicitação desaparece da escala.
 - **Causa:** `inboxService.ts:186-194` executa `delete` direto na tabela de negócio `escala_solicitacoes`.
 - **Correção:** Alterar a ação para arquivar a notificação, nunca excluindo a linha da solicitação.
-- **Probabilidade de Regressão:** 🟢 **Baixa (< 5%)**.
+- **Status:** ⏳ Pendente.
 
 #### F03 — NextTrip: NPS ausente computado como promotor (nota 10)
-- **Sintoma:** Clientes que nunca responderam à pesquisa de satisfação recebem nota máxima na fórmula preditiva.
-- **Causa:** `nextTripEngineService.ts:182` aplica fallback `?? 10`.
-- **Correção:** Tratar ausência de resposta como valor neutro (0 pontos ou exclusão do peso no vetor).
-- **Probabilidade de Regressão:** 🟢 **Baixa (< 5%)**.
+- **Sintoma:** Clientes que nunca responderam à pesquisa de satisfação recebiam nota máxima na fórmula preditiva.
+- **Causa:** `nextTripEngineService.ts:182` aplicava fallback `?? 10`.
+- **Correção:** Tratada ausência de resposta como valor neutro (15 pontos).
+- **Status:** ✅ **Resolvido e Testado (24/09/2026)**.
 
 #### F04 — Risk Score: Destino não preenchido tratado como viagem nacional
-- **Sintoma:** Viagem internacional criada sem o campo de destino preenchido não gera alertas de passaporte e visto.
-- **Causa:** `riskScoreService.ts:68` considera `destinoNome.length === 0` como `isNacional = true`.
-- **Correção:** Considerar destino vazio como desconhecido, acionando as verificações de documentação.
-- **Probabilidade de Regressão:** 🟢 **Baixa (< 10%)**.
+- **Sintoma:** Viagem internacional criada sem o campo de destino preenchido não gerava alertas de passaporte e visto.
+- **Causa:** `riskScoreService.ts:68` considerava `destinoNome.length === 0` como `isNacional = true`.
+- **Correção:** Destino não preenchido tratado como desconhecido, acionando as verificações de documentação.
+- **Status:** ✅ **Resolvido e Testado (24/09/2026)**.
 
 #### F05 — Dashboard: Filtro de Mês Corrente incluindo datas inválidas
 - **Sintoma:** Contador de viagens do mês corrente inflado com registros sem data definida.
-- **Causa:** `Dashboard.ts:246-257` retorna `true` quando `isNaN(year)`.
-- **Correção:** Validar estritamente o ano e mês antes de incluir o registro no filtro.
-- **Probabilidade de Regressão:** 🟢 **Baixa (< 5%)**.
+- **Causa:** `Dashboard.ts:246-257` retornava `true` quando `isNaN(year)`.
+- **Correção:** Validado estritamente o ano e mês antes de incluir o registro no filtro.
+- **Status:** ✅ **Resolvido e Testado (24/09/2026)**.
 
 ---
 

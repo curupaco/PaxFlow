@@ -1,8 +1,29 @@
 import { describe, it, expect } from 'vitest';
-import { highlightMatch } from '../../src/utils/textHelper';
+import { highlightMatch, escapeHtml } from '../../src/utils/textHelper';
 
-describe('textHelper - highlightMatch (Subcutâneo)', () => {
+describe('textHelper - highlightMatch e escapeHtml (Subcutâneo)', () => {
   // Setup & Action & Assert
+
+  it('deve escapar caracteres HTML perigosos contra ataques XSS', () => {
+    // Action & Assert
+    expect(escapeHtml('<script>alert("xss")</script>')).toBe('&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;');
+    expect(escapeHtml('Tom & Jerry "O Filme"')).toBe('Tom &amp; Jerry &quot;O Filme&quot;');
+    expect(escapeHtml(null)).toBe('');
+    expect(escapeHtml(undefined)).toBe('');
+  });
+
+  it('deve sanitizar texto contendo HTML antes de aplicar highlight', () => {
+    // Setup
+    const textoPerigoso = '<img src=x onerror=alert(1)> Viagem Paris';
+    const query = 'Paris';
+
+    // Action
+    const resultado = highlightMatch(textoPerigoso, query);
+
+    // Assert
+    expect(resultado).toContain('&lt;img src=x onerror=alert(1)&gt;');
+    expect(resultado).toContain('<mark class="bg-amber-200/80 dark:bg-amber-400/30 text-slate-900 dark:text-amber-200 px-1 py-0.5 rounded font-black">Paris</mark>');
+  });
 
   it('deve retornar texto vazio se o texto for nulo, indefinido ou vazio', () => {
     // Action & Assert

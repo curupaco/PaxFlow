@@ -179,14 +179,21 @@ export class NextTripEngineService {
       }
 
       // 2. NPS (25 pontos max)
-      const npsNota = ultimaViagem.nps_nota ?? ultimaViagem.npsNota ?? cliente.nps_nota ?? cliente.npsNota ?? 10;
-      if (npsNota >= 9) {
-        scoreNps = 25;
-      } else if (npsNota >= npsMinimo) {
-        scoreNps = 15;
+      let npsNota: number | null = null;
+      const rawNps = ultimaViagem.nps_nota ?? ultimaViagem.npsNota ?? (ultimaViagem as any).nps ?? cliente.nps_nota ?? cliente.npsNota;
+      if (rawNps !== undefined && rawNps !== null && rawNps !== '') {
+        npsNota = Number(rawNps);
+        if (npsNota >= 9) {
+          scoreNps = 25;
+        } else if (npsNota >= npsMinimo) {
+          scoreNps = 15;
+        } else {
+          scoreNps = 0;
+          return; // Não sugere recompra para detratores
+        }
       } else {
-        scoreNps = 0;
-        return; // Não sugere recompra para detratores
+        // NPS ausente: pontuação neutra sem descartar nem inflar como promotor
+        scoreNps = 15;
       }
 
       // 3. Perfil de Destino (20 pontos max)
@@ -241,7 +248,7 @@ export class NextTripEngineService {
       }
 
       let motivoSugestao = `Viajou para ${ultimaViagem.destino || 'último destino'} há ${diffMeses} meses.`;
-      if (npsNota >= 9) motivoSugestao += ` (Promotor NPS ${npsNota})`;
+      if (npsNota !== null && npsNota >= 9) motivoSugestao += ` (Promotor NPS ${npsNota})`;
       if (scoreMes === 15) motivoSugestao += ` • Período habitual de férias`;
 
       const dataStr = dataVolta.toLocaleDateString('pt-BR');
@@ -259,7 +266,7 @@ export class NextTripEngineService {
         categoriaDestino,
         ultimaViagemData: dataStr,
         ultimoDestino: ultimaViagem.destino || 'Destino Anterior',
-        npsNota,
+        npsNota: npsNota ?? undefined,
         motivoSugestao,
         statusAbordagem: isSnoozed ? 'snoozed' : 'pendente',
         snoozeAte: snoozeUntilStr || undefined,

@@ -105,15 +105,16 @@ NEWFILEFAIL:NONE
   it('deve extrair transações de extrato CSV delimitado por vírgula no formato padrão bancário internacional', () => {
     // Setup
     const csvContent = `"Date","Memo","Amount"
-"2026-10-20","TRANSFER TO ACCOUNT","5200.00"
+"2026-10-20","TRANSFER TO ACCOUNT","5,200.00"
 "2026-10-21","FEE PAYMENT","-45.00"
+"2026-10-22","INVOICE PAYMENT","1,250.50"
 `;
 
     // Action
     const resultado = parseCSVExtrato(csvContent);
 
     // Assert
-    expect(resultado.transacoes.length).toBe(2);
+    expect(resultado.transacoes.length).toBe(3);
     const transfer = resultado.transacoes.find(t => t.descricao === 'TRANSFER TO ACCOUNT');
     expect(transfer?.data).toBe('2026-10-20');
     expect(transfer?.valor).toBe(5200.00);
@@ -123,6 +124,11 @@ NEWFILEFAIL:NONE
     expect(fee?.data).toBe('2026-10-21');
     expect(fee?.valor).toBe(45.00);
     expect(fee?.tipo).toBe('DEBITO');
+
+    const invoice = resultado.transacoes.find(t => t.descricao === 'INVOICE PAYMENT');
+    expect(invoice?.data).toBe('2026-10-22');
+    expect(invoice?.valor).toBe(1250.50);
+    expect(invoice?.tipo).toBe('CREDITO');
   });
 
   it('deve retornar lista vazia graciosamente quando o conteúdo estiver vazio ou sem dados válidos', () => {

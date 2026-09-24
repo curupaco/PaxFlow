@@ -47,7 +47,18 @@ self.addEventListener('push', (event) => {
 // Responde ao clique na notificação nativa da tela de bloqueio do celular
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const targetUrl = event.notification.data?.url || '/#inbox';
+  const rawUrl = event.notification.data?.url || '/#inbox';
+  
+  // Valida e restringe a URL de destino à mesma origem
+  let targetUrl = '/#inbox';
+  try {
+    const parsed = new URL(rawUrl, self.location.origin);
+    if (parsed.origin === self.location.origin) {
+      targetUrl = parsed.pathname + parsed.search + parsed.hash;
+    }
+  } catch (e) {
+    targetUrl = '/#inbox';
+  }
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {

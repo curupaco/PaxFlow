@@ -130,6 +130,36 @@ describe('RiskScoreService - Testes Subcutâneos', () => {
     expect(resultado.itens.filter((i) => i.nivel === 'vermelho')).toHaveLength(0);
   });
 
+  it('deve exigir validação documental para viagem com destino não preenchido em vez de presumir nacional', () => {
+    // Setup
+    const dataProxima = new Date();
+    dataProxima.setDate(dataProxima.getDate() + 15);
+
+    const viagemSemDestino: any = {
+      id: 'v-sem-destino',
+      destino: '',
+      data_ida: dataProxima.toISOString().split('T')[0],
+      data_volta: dataProxima.toISOString().split('T')[0],
+      voucher_geral_anexado: true,
+      processo_conferido: true,
+      status: 'confirmada',
+    };
+
+    const clienteSemPassaporte: any = {
+      id: 'cli-sem-passaporte',
+      nome: 'Carlos Santos',
+      documento: '123.456.789-00',
+    };
+
+    // Action
+    const resultado = RiskScoreService.calculateTripRiskScore(viagemSemDestino, clienteSemPassaporte, []);
+
+    // Assert
+    // Como o destino não foi confirmado como nacional, deve gerar item documental
+    const itemPassaporte = resultado.itens.find(i => i.id === 'p1-passaporte-ausente');
+    expect(itemPassaporte).toBeDefined();
+  });
+
   it('deve acumular penalidades de múltiplos pilares e garantir que o score nunca seja inferior a 0', () => {
     // Setup
     const dataProxima = new Date();

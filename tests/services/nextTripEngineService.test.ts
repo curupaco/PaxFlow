@@ -123,6 +123,36 @@ describe('NextTripEngineService - Testes Subcutâneos', () => {
     expect(oportunidades[0].scoreProntidao).toBeGreaterThan(0);
   });
 
+  it('deve processar oportunidade de cliente sem NPS atribuindo pontuação neutra sem erro ou descarte', () => {
+    // Setup
+    const seisMesesAtras = new Date();
+    seisMesesAtras.setMonth(seisMesesAtras.getMonth() - 6);
+    const dataVoltaStr = seisMesesAtras.toISOString().split('T')[0];
+
+    const clientes = [
+      { id: 'cli-sem-nps', nome: 'Beatriz Ramos' },
+    ];
+    const viagens = [
+      {
+        id: 'viagem-sem-nps',
+        cliente_id: 'cli-sem-nps',
+        destino: 'Lisboa',
+        data_ida: dataVoltaStr,
+        data_volta: dataVoltaStr,
+        status: 'concluida',
+        nps_nota: null,
+      },
+    ];
+
+    // Action
+    const oportunidades = NextTripEngineService.calculateOpportunities(clientes, viagens, []);
+
+    // Assert
+    expect(oportunidades).toHaveLength(1);
+    expect(oportunidades[0].clienteId).toBe('cli-sem-nps');
+    expect(oportunidades[0].scoreProntidao).toBeGreaterThan(0);
+  });
+
   it('deve penalizar pilar de conformidade caso o cliente tenha reembolso pendente não concluído', () => {
     // Setup
     const seisMesesAtras = new Date();
