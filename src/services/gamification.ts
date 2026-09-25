@@ -463,12 +463,103 @@ export async function registrarCelebracaoConquista(celebration: {
 }
 
 /**
+ * Sincroniza retroativamente celebrações de metas já batidas por consultores em campanhas ativas
+ * Audita o progresso real de todos os consultores no banco e garante concessão de medalhas e celebrações.
+ */
+export async function sincronizarCelebracoesCampanhasAtivas(): Promise<void> {
+  try {
+    const campanhas = await obterCampanhasAtivas();
+    if (!campanhas || campanhas.length === 0) return;
+
+    // 1. Carregar perfis de consultores cadastrados
+    const { data: profiles, error: pErr } = await supabase
+      .from('profiles')
+      .select('id, nome_completo, participa_metricas')
+      .eq('ativo', true);
+
+    if (pErr && pErr.code !== '42703') {
+      console.warn('Aviso ao carregar perfis para sincronização de metas:', pErr.message);
+    }
+
+    const consultores = profiles || [];
+
+    for (const camp of campanhas) {
+      if (!camp.badge_key) continue;
+
+      const badgeObj = BADGE_DEFINITIONS.find(def => def.key === camp.badge_key);
+      const badgeNome = badgeObj ? badgeObj.nome : camp.badge_key;
+      const badgeEmoji = badgeObj ? badgeObj.emoji : '🏆';
+
+      // 2. Buscar celebrações já registradas para esse badge e campanha
+      const { data: existingCels, error: cErr } = await supabase
+        .from('gamification_celebrations')
+        .select('profile_id, badge_key')
+        .eq('badge_key', camp.badge_key);
+
+      if (cErr && (cErr.code === '42P01' || cErr.code === '42703')) {
+        return;
+      }
+
+      const registeredProfileIds = new Set((existingCels || []).map(c => c.profile_id));
+
+      // 3. Avaliar o progresso real de cada consultor
+      for (const consultor of consultores) {
+        if (consultor.participa_metricas === false) continue;
+
+        const prog = await obterProgressoCampanha(consultor.id, camp);
+        if (prog.concluida) {
+          // Garante a concessão da medalha no banco
+          await concederMedalha(consultor.id, camp.badge_key);
+
+          // Se ainda não gerou celebração global, registra no banco
+          if (!registeredProfileIds.has(consultor.id)) {
+            await registrarCelebracaoConquista({
+              profile_id: consultor.id,
+              badge_key: camp.badge_key,
+              badge_name: badgeNome,
+              badge_emoji: badgeEmoji,
+              campaign_id: camp.id,
+              campaign_titulo: camp.titulo
+            });
+            registeredProfileIds.add(consultor.id);
+          }
+        }
+      }
+
+      // 4. Fallback: buscar consultores que já possuem a medalha em profiles_badges
+      const { data: badges } = await supabase
+        .from('profiles_badges')
+        .select('profile_id, badge_key')
+        .eq('badge_key', camp.badge_key);
+
+      if (badges && badges.length > 0) {
+        for (const b of badges) {
+          if (!registeredProfileIds.has(b.profile_id)) {
+            await registrarCelebracaoConquista({
+              profile_id: b.profile_id,
+              badge_key: camp.badge_key,
+              badge_name: badgeNome,
+              badge_emoji: badgeEmoji,
+              campaign_id: camp.id,
+              campaign_titulo: camp.titulo
+            });
+            registeredProfileIds.add(b.profile_id);
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('Erro ao sincronizar celebrações de campanhas ativas:', err);
+  }
+}
+
+/**
  * Obtém a lista de celebrações de conquistas recentes que o usuário ainda não visualizou
  */
 export async function obterCelebracoesPendentes(userId: string): Promise<GamificationCelebration[]> {
   try {
-    // Busca celebrações das últimas 48h
-    const cutoff = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+    // Busca celebrações dos últimos 30 dias (cobrindo a vigência das campanhas)
+    const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
     
     // 1. Buscar celebrações recentes
     const { data: celebrations, error: cErr } = await supabase

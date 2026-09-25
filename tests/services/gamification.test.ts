@@ -317,4 +317,88 @@ describe('Gamificação - Testes Subcutâneos', () => {
     await expect(marcarCelebracaoVisualizada('cel-1', 'user-1')).resolves.not.toThrow();
     expect(supabase.from).toHaveBeenCalledWith('gamification_celebration_views');
   });
+
+  it('deve sincronizar retroativamente celebrações de medalhas existentes em campanhas ativas', async () => {
+    // Setup
+    const mockCampaigns = [
+      {
+        id: 'camp-1',
+        titulo: 'Campanha 40 Orçamentos',
+        badge_key: 'FAST_SALE',
+        ativa: true,
+        data_inicio: '2026-09-01',
+        data_fim: '2026-09-30'
+      }
+    ];
+
+    const mockBadges = [
+      { profile_id: 'user-consultor-1', badge_key: 'FAST_SALE' }
+    ];
+
+    const insertMock = vi.fn().mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        single: vi.fn().mockResolvedValue({ data: { id: 'cel-retro' }, error: null })
+      })
+    });
+
+    vi.mocked(supabase.from).mockImplementation((table: string) => {
+      if (table === 'campaigns') {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              lte: vi.fn().mockReturnValue({
+                gte: vi.fn().mockResolvedValue({ data: mockCampaigns, error: null })
+              })
+            })
+          })
+        } as any;
+      }
+      if (table === 'profiles') {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockResolvedValue({
+              data: [{ id: 'user-consultor-1', nome_completo: 'Consultor Teste', participa_metricas: true }],
+              error: null
+            })
+          })
+        } as any;
+      }
+      if (table === 'orcamentos') {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              gte: vi.fn().mockReturnValue({
+                lte: vi.fn().mockResolvedValue({ count: 40, error: null })
+              })
+            })
+          })
+        } as any;
+      }
+      if (table === 'profiles_badges') {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockResolvedValue({ data: mockBadges, error: null })
+          }),
+          insert: vi.fn().mockResolvedValue({ error: null })
+        } as any;
+      }
+      if (table === 'gamification_celebrations') {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockResolvedValue({ data: [], error: null }) // nenhuma ainda
+          }),
+          insert: insertMock
+        } as any;
+      }
+      return {} as any;
+    });
+
+    // Action
+    const { sincronizarCelebracoesCampanhasAtivas } = await import('../../src/services/gamification');
+    await sincronizarCelebracoesCampanhasAtivas();
+
+    // Assert
+    expect(supabase.from).toHaveBeenCalledWith('gamification_celebrations');
+    expect(insertMock).toHaveBeenCalled();
+  });
 });

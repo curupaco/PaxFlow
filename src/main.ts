@@ -15,7 +15,7 @@ import { MeuPerfilModal } from './components/profile/MeuPerfilModal';
 import { PerfilConsultor } from './types';
 import { getAvatarSvg } from './services/avatars';
 import { showCustomAlert, showCustomConfirm } from './services/dialog';
-import { obterProgressoNivel, obterCampanhasAtivas, obterProgressoCampanha, concederMedalha, obterMedalhasUsuario, BADGE_DEFINITIONS, registrarCelebracaoConquista, obterCelebracoesPendentes, marcarCelebracaoVisualizada } from './services/gamification';
+import { obterProgressoNivel, obterCampanhasAtivas, obterProgressoCampanha, concederMedalha, obterMedalhasUsuario, BADGE_DEFINITIONS, registrarCelebracaoConquista, obterCelebracoesPendentes, marcarCelebracaoVisualizada, sincronizarCelebracoesCampanhasAtivas } from './services/gamification';
 import { showBadgeCelebrationModal, showLevelUpModal } from './utils/celebrations';
 import { traduzirErro } from './utils/errorTranslator';
 import { Router } from './router';
@@ -238,14 +238,8 @@ class App {
       if (error || !user) {
         this.renderLogin();
       } else {
-        this.user = user;
-        this.perfil = perfil;
-        this.renderAppShell();
-        this.inicializarRealtimeProfile();
-        this.router = new Router(document.getElementById('page-content')!);
-
         // Detecção de rotas por hash na URL (ex: #inbox, #orcamentos, #inbox?extraId=xxx)
-        let initialPage = (this.perfil && this.perfil.role === 'admin') ? 'analytics' : 'inbox';
+        let initialPage = (perfil && perfil.role === 'admin') ? 'analytics' : 'inbox';
         let initialExtraId: string | undefined = undefined;
 
         const currentHash = window.location.hash;
@@ -261,10 +255,7 @@ class App {
           }
         }
 
-        this.navigate(initialPage, initialExtraId);
-        this.checarNotificacoesCampanhaLogin();
-        this.checarCelebracoesConquistasLogin();
-        PushNotificationService.checkAndPromptAutoPermission(user.id);
+        this.inicializarSessaoUsuario(user, perfil, initialPage, initialExtraId);
 
         // Escuta mudanças de autenticação do Supabase (ex: logout em outra aba ou token expirado)
         supabase.auth.onAuthStateChange((event, session) => {
@@ -426,21 +417,34 @@ class App {
   }
 
   /**
+   * Inicializa completamente a sessão do usuário com casca de navegação, realtime e celebrações
+   */
+  private inicializarSessaoUsuario(user: any, perfil: any, initialPage?: string, initialExtraId?: string): void {
+    this.user = user;
+    this.perfil = perfil;
+    this.renderAppShell();
+    this.inicializarRealtimeProfile();
+    this.router = new Router(document.getElementById('page-content')!);
+
+    const page = initialPage || ((this.perfil && this.perfil.role === 'admin') ? 'analytics' : 'inbox');
+    this.navigate(page, initialExtraId);
+
+    this.checarNotificacoesCampanhaLogin();
+    this.checarCelebracoesConquistasLogin();
+    PushNotificationService.checkAndPromptAutoPermission(user.id);
+  }
+
+  /**
    * Renderiza a tela de login premium com recuperação de senha
    */
   private renderLogin(): void {
     const loginPage = new LoginPage(this.container, {
       onLoginSuccess: async (user, perfil) => {
-        this.user = user;
-        this.perfil = perfil;
         try {
           const { data: sData } = await supabase.from('global_settings').select('*').limit(1).maybeSingle();
           this.settings = sData || null;
         } catch (e) {}
-        this.renderAppShell();
-        this.router = new Router(document.getElementById('page-content')!);
-        const defaultPage = (perfil && perfil.role === 'admin') ? 'analytics' : 'inbox';
-        this.navigate(defaultPage);
+        this.inicializarSessaoUsuario(user, perfil);
       },
       showToast: (message, type) => this.showToast(message, type)
     });
@@ -1099,6 +1103,10 @@ class App {
   private async checarCelebracoesConquistasLogin(): Promise<void> {
     if (!this.user) return;
     try {
+      // 1. Sincroniza retroativamente qualquer meta já batida em campanhas ativas
+      await sincronizarCelebracoesCampanhasAtivas();
+
+      // 2. Busca celebrações que este usuário ainda não viu
       const pendentes = await obterCelebracoesPendentes(this.user.id);
       if (pendentes.length > 0) {
         for (let i = 0; i < pendentes.length; i++) {
