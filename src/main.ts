@@ -1238,11 +1238,11 @@ class App {
           try {
             const { data: prof } = await supabase
               .from('profiles')
-              .select('nome_completo')
+              .select('nome')
               .eq('id', newCel.profile_id)
               .maybeSingle();
-            if (prof?.nome_completo) {
-              consultorNome = prof.nome_completo;
+            if (prof?.nome) {
+              consultorNome = prof.nome;
             }
           } catch (e) {}
 

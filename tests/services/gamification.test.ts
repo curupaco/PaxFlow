@@ -296,6 +296,19 @@ describe('Gamificação - Testes Subcutâneos', () => {
           })
         } as any;
       }
+      if (table === 'profiles') {
+        return {
+          select: vi.fn().mockReturnValue({
+            in: vi.fn().mockResolvedValue({
+              data: [
+                { id: 'user-alvo', nome: 'Aline Consultora' },
+                { id: 'user-outro', nome: 'Bruno Consultor' }
+              ],
+              error: null
+            })
+          })
+        } as any;
+      }
       return {} as any;
     });
 
@@ -356,10 +369,8 @@ describe('Gamificação - Testes Subcutâneos', () => {
       if (table === 'profiles') {
         return {
           select: vi.fn().mockReturnValue({
-            eq: vi.fn().mockResolvedValue({
-              data: [{ id: 'user-consultor-1', nome_completo: 'Consultor Teste', participa_metricas: true }],
-              error: null
-            })
+            data: [{ id: 'user-consultor-1', nome: 'Consultor Teste', participa_metricas: true }],
+            error: null
           })
         } as any;
       }

@@ -471,17 +471,26 @@ export async function sincronizarCelebracoesCampanhasAtivas(): Promise<void> {
     const campanhas = await obterCampanhasAtivas();
     if (!campanhas || campanhas.length === 0) return;
 
-    // 1. Carregar perfis de consultores cadastrados
-    const { data: profiles, error: pErr } = await supabase
-      .from('profiles')
-      .select('id, nome_completo, participa_metricas')
-      .eq('ativo', true);
+    // 1. Carregar perfis de consultores cadastrados de forma segura
+    let consultores: Array<{ id: string; nome?: string; participa_metricas?: boolean }> = [];
+    try {
+      const { data: profiles, error: pErr } = await supabase
+        .from('profiles')
+        .select('id, nome, participa_metricas');
 
-    if (pErr && pErr.code !== '42703') {
-      console.warn('Aviso ao carregar perfis para sincronização de metas:', pErr.message);
+      if (!pErr && profiles) {
+        consultores = profiles;
+      } else {
+        const { data: fallbackProfs } = await supabase
+          .from('profiles')
+          .select('id, nome');
+        if (fallbackProfs) {
+          consultores = fallbackProfs;
+        }
+      }
+    } catch (err) {
+      console.warn('Aviso ao carregar perfis para sincronização de metas:', err);
     }
-
-    const consultores = profiles || [];
 
     for (const camp of campanhas) {
       if (!camp.badge_key) continue;
@@ -561,10 +570,10 @@ export async function obterCelebracoesPendentes(userId: string): Promise<Gamific
     // Busca celebrações dos últimos 30 dias (cobrindo a vigência das campanhas)
     const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
     
-    // 1. Buscar celebrações recentes
+    // 1. Buscar celebrações recentes diretamente
     const { data: celebrations, error: cErr } = await supabase
       .from('gamification_celebrations')
-      .select('*, profiles:profile_id(nome_completo)')
+      .select('*')
       .gte('created_at', cutoff)
       .order('created_at', { ascending: true });
 
@@ -591,20 +600,42 @@ export async function obterCelebracoesPendentes(userId: string): Promise<Gamific
     }
 
     const viewedIds = new Set((views || []).map(v => v.celebration_id));
+    const pending = celebrations.filter(c => !viewedIds.has(c.id));
 
-    return celebrations
-      .filter(c => !viewedIds.has(c.id))
-      .map(c => ({
-        id: c.id,
-        profile_id: c.profile_id,
-        badge_key: c.badge_key,
-        badge_name: c.badge_name,
-        badge_emoji: c.badge_emoji,
-        campaign_id: c.campaign_id,
-        campaign_titulo: c.campaign_titulo,
-        created_at: c.created_at,
-        consultor_nome: (c.profiles as any)?.nome_completo || 'Consultor'
-      }));
+    if (pending.length === 0) {
+      return [];
+    }
+
+    // 3. Buscar nomes dos consultores de forma desacoplada na tabela profiles
+    const profileIds = Array.from(new Set(pending.map(c => c.profile_id)));
+    const nomeMap: Record<string, string> = {};
+    if (profileIds.length > 0) {
+      try {
+        const { data: profs } = await supabase
+          .from('profiles')
+          .select('id, nome')
+          .in('id', profileIds);
+        if (profs) {
+          profs.forEach(p => {
+            nomeMap[p.id] = p.nome || 'Consultor';
+          });
+        }
+      } catch (err) {
+        // Fallback seguro
+      }
+    }
+
+    return pending.map(c => ({
+      id: c.id,
+      profile_id: c.profile_id,
+      badge_key: c.badge_key,
+      badge_name: c.badge_name,
+      badge_emoji: c.badge_emoji,
+      campaign_id: c.campaign_id,
+      campaign_titulo: c.campaign_titulo,
+      created_at: c.created_at,
+      consultor_nome: nomeMap[c.profile_id] || 'Consultor'
+    }));
   } catch (err) {
     console.warn('Erro silencioso ao obter celebrações pendentes:', err);
     return [];
