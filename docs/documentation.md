@@ -798,6 +798,10 @@ Pacote de micro-interações, transparência de estado e aceleração de produti
 5. **Feedback Visual Inline no Botão Salvar**:
    - Ao salvar alterações no cadastro de viagens ou na edição de produtos, o botão de ação principal transiciona suavemente seu estado e cor para `✅ Salvo com Sucesso!` em verde esmeralda com sombra brilhante antes do recarregamento dos dados, fornecendo confirmação tátil e inequívoca da persistência no banco.
 
+6. **Painel Financeiro Limpo & Desacoplamento de Valores no Gerenciamento da Viagem (`EditTravelModal.ts`)**:
+   - Os totalizadores superiores (**Valor da Viagem**, **Total em Produtos**, **Alocação** e **Rentabilidade**) operam de forma 100% informativa e não intrusiva.
+   - O sistema elimina qualquer sobreposição ou sugestão automática de sobrescrita de valores, garantindo que o consultor tenha autonomia total para definir e ajustar os valores comerciais da viagem e o detalhamento individual de cada produto sem bloqueios desnecessários.
+
 ### 3.33 Melhorias de Eficiência Operacional, Pipeline e Ações Rápidas de UX (Plano 2)
 
 O **Plano 2 de UX** expande o ganho de agilidade e a ergonomia de uso do PaxFlow em 6 pilares estratégicos:

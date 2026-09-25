@@ -283,6 +283,13 @@ export const HELP_ITEMS: HelpItem[] = [
     details: 'Ao editar os valores de um produto ou serviço na viagem, a calculadora reativa atualiza instantaneamente:\n\n- **Total Distribuído vs Valor de Venda**: Comparativo automático entre o valor cobrado do cliente e o rateio de custos.\n- **Barra de Status do Detalhamento**: Exibe percentual de progresso (ex: `100% OK` em verde quando totalmente conciliado ou `⏳ 80% Detalhado` em âmbar com o saldo pendente restante).\n- **Feedback Visual no Botão Salvar**: O botão transiciona temporariamente para `✅ Salvo com Sucesso!` com fundo esmeralda para confirmar a persistência sem ambiguidades.'
   },
   {
+    id: 'painel-financeiro-viagem',
+    modulo: 'viagens',
+    label: 'Painel Financeiro & Totalizadores da Viagem',
+    description: 'Acompanhamento claro entre Valor da Viagem, Total em Produtos, Alocação e Rentabilidade.',
+    details: 'Na aba "Produtos e Serviços" do gerenciamento da viagem, o painel financeiro superior consolida em tempo real:\n\n- **Valor da Viagem**: O valor comercial total da viagem definido no cabeçalho pelo consultor.\n- **Total em Produtos**: A soma real dos valores de venda de todos os serviços cadastrados.\n- **Alocação de Produtos**: Indica de forma transparente se o valor está 100% alocado (R$ 0,00), se há saldo aguardando novos produtos ou se há excedente.\n- **Rentabilidade Líquida**: Totalização da margem da agência considerando Comissões + Markups + RAV Líquido (88%).\n\nO sistema mantém a autonomia total do consultor na definição dos valores, sem sobreposições ou ajustes forçados.'
+  },
+  {
     id: 'atalho-cadastro-cliente-venda',
     modulo: 'viagens',
     label: 'Atalho Rápido para Cadastro do Cliente no Detalhe da Venda',
