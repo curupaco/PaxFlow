@@ -368,7 +368,7 @@ export class MeuPerfilModal {
       const medalhasSet = new Set(medalhasConquistadas);
       const progresses = await Promise.all(activeCampaigns.map(cam => obterProgressoCampanha(perfil.id, cam)));
       const hoje = new Date().toISOString().split('T')[0];
-      const activeProgresses = progresses.filter(p => !medalhasSet.has(p.campaign.badge_key) && p.campaign.data_fim >= hoje);
+      const activeProgresses = progresses.filter(p => p.campaign.data_fim >= hoje);
 
       if (activeProgresses.length === 0) {
         listEl.innerHTML = `<div class="text-center text-slate-400 dark:text-slate-400 text-xs font-medium italic py-2">Sem campanhas ativas no momento.</div>`;
@@ -378,6 +378,7 @@ export class MeuPerfilModal {
       listEl.innerHTML = activeProgresses.map(p => {
         const badgeObj = BADGE_DEFINITIONS.find(b => b.key === p.campaign.badge_key);
         const badgeEmoji = badgeObj ? badgeObj.emoji : '🏆';
+        const isConcluida = p.concluida || medalhasSet.has(p.campaign.badge_key);
         
         let metaUnit = 'ações';
         if (p.campaign.tipo_meta === 'xp_acumulado') metaUnit = 'XP';
@@ -390,12 +391,12 @@ export class MeuPerfilModal {
         else if (p.campaign.tipo_meta === 'produto_detalhado') metaUnit = 'prod';
 
         return `
-          <div class="flex flex-col gap-1 p-2.5 rounded-xl bg-slate-50/50 dark:bg-slate-800/10 border border-slate-200/40 dark:border-slate-800/50 hover:border-indigo-500/30 transition duration-200">
+          <div class="flex flex-col gap-1 p-2.5 rounded-xl ${isConcluida ? 'bg-emerald-50/20 dark:bg-emerald-950/10 border border-emerald-400/40 dark:border-emerald-500/30' : 'bg-slate-50/50 dark:bg-slate-800/10 border border-slate-200/40 dark:border-slate-800/50'} hover:border-indigo-500/30 transition duration-200">
             <div class="flex items-center justify-between gap-1.5">
-              <span class="text-[10px] font-black text-slate-700 dark:text-slate-300 truncate max-w-[200px]" title="${p.campaign.titulo}">
+              <span class="text-[10px] font-black ${isConcluida ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-700 dark:text-slate-300'} truncate max-w-[200px]" title="${p.campaign.titulo}">
                 ${p.campaign.titulo}
               </span>
-              <span class="text-xs text-slate-400 dark:text-slate-400 font-bold shrink-0" title="${badgeObj ? badgeObj.nome : ''}">
+              <span class="text-xs ${isConcluida ? 'text-emerald-500 ring-1 ring-emerald-400/40 rounded-full px-1 bg-emerald-50 dark:bg-emerald-900/30' : 'text-slate-400 dark:text-slate-400'} font-bold shrink-0" title="${badgeObj ? badgeObj.nome : ''}">
                 ${badgeEmoji}
               </span>
             </div>
@@ -405,12 +406,18 @@ export class MeuPerfilModal {
             
             <!-- Progress Bar -->
             <div class="flex items-center gap-2 mt-1">
-              <div class="flex-1 h-1 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
-                <div class="h-full bg-gradient-to-r from-indigo-500 to-indigo-600 dark:from-indigo-400 dark:to-indigo-500 rounded-full transition-all duration-500" style="width: ${p.percent}%"></div>
+              <div class="flex-1 h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+                <div class="h-full ${isConcluida ? 'bg-gradient-to-r from-emerald-500 to-teal-500' : 'bg-gradient-to-r from-indigo-500 to-indigo-600 dark:from-indigo-400 dark:to-indigo-500'} rounded-full transition-all duration-500" style="width: ${p.percent}%"></div>
               </div>
-              <span class="text-[9px] text-indigo-600 dark:text-indigo-400 font-black shrink-0 whitespace-nowrap">
-                ${p.progresso}/${p.meta} <span class="text-[8px] text-slate-400 dark:text-slate-400 font-bold">${metaUnit}</span>
-              </span>
+              ${isConcluida ? `
+                <span class="text-[8px] text-emerald-600 dark:text-emerald-400 font-black shrink-0 whitespace-nowrap flex items-center gap-1">
+                  100% • Atingida! 🏆
+                </span>
+              ` : `
+                <span class="text-[9px] text-indigo-600 dark:text-indigo-400 font-black shrink-0 whitespace-nowrap">
+                  ${p.progresso}/${p.meta} <span class="text-[8px] text-slate-400 dark:text-slate-400 font-bold">${metaUnit}</span>
+                </span>
+              `}
             </div>
           </div>
         `;

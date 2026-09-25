@@ -410,6 +410,136 @@ export async function concederMedalha(userId: string, badgeKey: string): Promise
   }
 }
 
+export interface GamificationCelebration {
+  id: string;
+  profile_id: string;
+  badge_key: string;
+  badge_name: string;
+  badge_emoji: string;
+  campaign_id?: string | null;
+  campaign_titulo: string;
+  created_at: string;
+  consultor_nome?: string;
+}
+
+/**
+ * Registra um evento de celebração global quando uma meta é batida ou medalha concedida
+ */
+export async function registrarCelebracaoConquista(celebration: {
+  profile_id: string;
+  badge_key: string;
+  badge_name: string;
+  badge_emoji: string;
+  campaign_id?: string | null;
+  campaign_titulo: string;
+}): Promise<GamificationCelebration | null> {
+  try {
+    const { data, error } = await supabase
+      .from('gamification_celebrations')
+      .insert({
+        profile_id: celebration.profile_id,
+        badge_key: celebration.badge_key,
+        badge_name: celebration.badge_name,
+        badge_emoji: celebration.badge_emoji,
+        campaign_id: celebration.campaign_id || null,
+        campaign_titulo: celebration.campaign_titulo
+      })
+      .select()
+      .single();
+
+    if (error) {
+      if (error.code === '42P01' || error.code === '42703') {
+        console.warn('Tabela ou coluna de celebração ausente no Supabase (Schema Drift 42P01/42703). Operando com fallback gracioso.');
+        return null;
+      }
+      console.warn('Aviso ao registrar celebração:', error.message);
+      return null;
+    }
+    return data;
+  } catch (err) {
+    console.warn('Erro silencioso ao registrar celebração:', err);
+    return null;
+  }
+}
+
+/**
+ * Obtém a lista de celebrações de conquistas recentes que o usuário ainda não visualizou
+ */
+export async function obterCelebracoesPendentes(userId: string): Promise<GamificationCelebration[]> {
+  try {
+    // Busca celebrações das últimas 48h
+    const cutoff = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+    
+    // 1. Buscar celebrações recentes
+    const { data: celebrations, error: cErr } = await supabase
+      .from('gamification_celebrations')
+      .select('*, profiles:profile_id(nome_completo)')
+      .gte('created_at', cutoff)
+      .order('created_at', { ascending: true });
+
+    if (cErr) {
+      if (cErr.code === '42P01' || cErr.code === '42703') {
+        return [];
+      }
+      console.warn('Aviso ao buscar celebrações:', cErr.message);
+      return [];
+    }
+
+    if (!celebrations || celebrations.length === 0) {
+      return [];
+    }
+
+    // 2. Buscar quais já foram visualizadas por este usuário
+    const { data: views, error: vErr } = await supabase
+      .from('gamification_celebration_views')
+      .select('celebration_id')
+      .eq('viewer_profile_id', userId);
+
+    if (vErr && vErr.code !== '42P01' && vErr.code !== '42703') {
+      console.warn('Aviso ao buscar views de celebração:', vErr.message);
+    }
+
+    const viewedIds = new Set((views || []).map(v => v.celebration_id));
+
+    return celebrations
+      .filter(c => !viewedIds.has(c.id))
+      .map(c => ({
+        id: c.id,
+        profile_id: c.profile_id,
+        badge_key: c.badge_key,
+        badge_name: c.badge_name,
+        badge_emoji: c.badge_emoji,
+        campaign_id: c.campaign_id,
+        campaign_titulo: c.campaign_titulo,
+        created_at: c.created_at,
+        consultor_nome: (c.profiles as any)?.nome_completo || 'Consultor'
+      }));
+  } catch (err) {
+    console.warn('Erro silencioso ao obter celebrações pendentes:', err);
+    return [];
+  }
+}
+
+/**
+ * Marca uma celebração como visualizada pelo usuário no banco de dados
+ */
+export async function marcarCelebracaoVisualizada(celebrationId: string, userId: string): Promise<void> {
+  try {
+    const { error } = await supabase
+      .from('gamification_celebration_views')
+      .insert({
+        celebration_id: celebrationId,
+        viewer_profile_id: userId
+      });
+
+    if (error && error.code !== '23505' && error.code !== '42P01' && error.code !== '42703') {
+      console.warn('Aviso ao marcar celebração como visualizada:', error.message);
+    }
+  } catch (err) {
+    console.warn('Erro silencioso ao marcar celebração como visualizada:', err);
+  }
+}
+
 export interface Campaign {
   id: string;
   titulo: string;

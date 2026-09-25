@@ -197,6 +197,13 @@ export const HELP_ITEMS: HelpItem[] = [
     details: 'A Caixa de Pesquisa Global no topo permite:\n\n- **Modo Co-Piloto Instantâneo**: Ao digitar, abre dropdown com resultados de clientes, orçamentos e viagens de toda a agência em tempo real.\n- **Filtro Direto na Tela (Enter ou Lupa)**: Estando nas telas de **Viagens**, **Orçamentos** ou **Reembolsos**, pressionar `ENTER` ou clicar na **Lupa** aplica o filtro imediatamente na listagem/quadro abaixo, sincronizando os campos locais e fechando o dropdown suspenso.\n- **Limpeza Sincronizada (✕)**: Clicar no botão limpar restaura instantaneamente a visão completa dos dados da tela atual.'
   },
   {
+    id: 'gamificacao-celebracoes-globais',
+    modulo: 'geral',
+    label: 'Gamificação, Medalhas e Celebrações Globais em Tempo Real',
+    description: 'Como funciona o sistema de XP, conquistas de medalhas e comemorações de metas para toda a equipe.',
+    details: 'O PaxFlow conta com um motor completo de gamificação e celebrações para engajar a agência:\n\n1. **Níveis e Patentes**: Conforme você atua no sistema (cadastra clientes, avança orçamentos, detalha produtos e fecha vendas), você ganha XP e sobe de patente (Mochileiro, Explorador, Navegador, Guia de Elite e Embaixador do Turismo).\n2. **Celebração Coletiva em Tempo Real**: Quando qualquer consultor bate uma meta de campanha ou conquista uma medalha, o sistema dispara instantaneamente confetes, som triunfal e um modal de celebração para todos os usuários online no momento.\n3. **Reconhecimento no Próximo Login**: Usuários que estavam offline no momento da conquista recebem a celebração automaticamente assim que entrarem no sistema, garantindo que o sucesso do time seja visto e comemorado por todos.\n4. **Campanhas Ativas & Status Atingido**: Ao bater a meta de uma campanha, ela continua visível no painel lateral e no perfil até o término de sua vigência, exibindo com destaque o status de "100% • Meta Atingida! 🏆".'
+  },
+  {
     id: 'traducao-erros',
     modulo: 'geral',
     label: 'Tradução Automática de Erros do Sistema (I18n)',

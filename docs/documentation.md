@@ -355,15 +355,18 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 - **Evolução de Níveis e Patentes**:
   - O XP (Experiência) recompensa preenchimentos e processos corretos no sistema, calculados através de patentes: Mochileiro (Níveis 1-4), Explorador (Níveis 5-9), Navegador (Níveis 10-14), Guia de Elite (Níveis 15-19) e Embaixador do Turismo (Níveis 20+).
   - Curva de XP: Progressão baseada no nível do usuário, calculada e recalculada automaticamente por triggers do banco de dados (PL/pgSQL) ao lançar logs na tabela `public.profiles_xp_logs`.
-- **Mural de Medalhas (Badges)**:
+- **Mural de Medalhas (Badges) e Celebrações Globais Coletivas**:
   - 14 conquistas exclusivas que cobrem diferentes categorias operacionais (como Mestre dos Prazos, Organizador Implacável, Mestre dos Vouchers, Guardião do Reembolso, Caçador de Oportunidades, etc.).
   - Exibidas no modal "Meu Perfil" em formato de grade interativa. Medalhas não conquistadas são exibidas em escala de cinza e com opacidade reduzida, com Tooltips flutuantes (puramente em CSS Tailwind) que revelam o nome e os requisitos de desbloqueio ao passar o mouse.
+  - **Celebração em Tempo Real na Agência (Realtime Coletivo)**: Quando qualquer consultor bate uma meta ou recebe uma medalha, o evento é gravado na tabela `gamification_celebrations` e transmitido para todos os clientes online via Supabase Realtime, disparando confetes, som triunfal (Web Audio API) e o modal de conquista coletiva com o nome do consultor.
+  - **Fila de Celebrações Pendentes (Zero-LocalStorage)**: Usuários que estavam offline no momento da conquista têm suas pendências recuperadas através do cruzamento com `gamification_celebration_views` nas últimas 48h, sendo exibidas no próximo login.
+  - **Exibição Contínua de Campanhas Atingidas**: Campanhas cuja meta foi batida continuam visíveis na barra lateral e no perfil até o término da vigência (`data_fim >= hoje`), destacadas com o status `100% • Meta Atingida! 🏆` em tons esmeralda/dourado.
 - **Sincronização em Tempo Real via Supabase Realtime**:
-  - Inscrição reativa em tempo real (WebSockets) na tabela `profiles`. Qualquer alteração no XP ou nível do usuário logado causada por triggers do banco atualiza instantaneamente a interface e dispara as celebrações, sem necessidade de atualizar a página.
+  - Inscrição reativa em tempo real (WebSockets) nas tabelas `profiles` e `gamification_celebrations`. Qualquer alteração no XP ou nova comemoração de meta atualiza instantaneamente a interface de todos os usuários conectados sem necessidade de recarregar a página.
 - **Visualização de XP na Sidebar**:
   - O avatar na barra lateral é envolto por um anel circular dinâmico SVG que se preenche com base na porcentagem de XP para o próximo nível, acompanhado por um badge numérico flutuante do nível atual e patente exibida abaixo do nome do consultor.
 - **Comemorações e Efeitos Visuais/Sonoros**:
-  - **Level Up:** Dispara animações de confete (`canvas-confetti` carregado sob demanda via CDN) e sintetiza acordes musicais em tempo real usando a API nativa Web Audio API (sem carregar arquivos de áudio externos), abrindo também um modal glassmorphic premium em 3D.
+  - **Level Up e Conquistas de Metas:** Dispara animações de confete (`canvas-confetti` carregado sob demanda via CDN) e sintetiza acordes musicais em tempo real usando a API nativa Web Audio API (sem carregar arquivos de áudio externos), abrindo também um modal glassmorphic premium em 3D.
 - **Self-Service de Fotos de Perfil (Supabase Storage)**:
   - Integração direta com o bucket público `avatars` no Supabase Storage. O consultor pode subir sua própria foto a partir do modal de perfil.
   - **Compactação automática Canvas API:** Antes de enviar a imagem, o frontend a redimensiona para um quadrado perfeito de `200x200px` e a comprime para JPEG (qualidade 0.85), transformando arquivos pesados em blobs levíssimos de <50KB para economizar recursos e garantir carregamento instantâneo.

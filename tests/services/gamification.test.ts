@@ -4,6 +4,9 @@ import {
   registrarXp,
   obterMedalhasUsuario,
   concederMedalha,
+  registrarCelebracaoConquista,
+  obterCelebracoesPendentes,
+  marcarCelebracaoVisualizada,
 } from '../../src/services/gamification';
 import { supabase } from '../../src/services/supabase';
 
@@ -193,5 +196,125 @@ describe('Gamificação - Testes Subcutâneos', () => {
     // Action & Assert
     await expect(registrarXp('user-1', 'acao_ja_pontuada', 25)).resolves.not.toThrow();
     expect(supabase.from).toHaveBeenCalledWith('profiles_xp_logs');
+  });
+
+  it('deve registrar celebração de conquista na tabela gamification_celebrations', async () => {
+    // Setup
+    const celebrationPayload = {
+      profile_id: 'user-123',
+      badge_key: 'FAST_SALE',
+      badge_name: 'Venda Relâmpago',
+      badge_emoji: '⚡',
+      campaign_id: 'camp-1',
+      campaign_titulo: 'Campanha Orçamentos Ágeis'
+    };
+
+    const singleMock = vi.fn().mockResolvedValue({
+      data: { id: 'cel-1', ...celebrationPayload, created_at: new Date().toISOString() },
+      error: null
+    });
+    const selectMock = vi.fn().mockReturnValue({ single: singleMock });
+    const insertMock = vi.fn().mockReturnValue({ select: selectMock });
+    vi.mocked(supabase.from).mockReturnValue({ insert: insertMock } as any);
+
+    // Action
+    const resultado = await registrarCelebracaoConquista(celebrationPayload);
+
+    // Assert
+    expect(supabase.from).toHaveBeenCalledWith('gamification_celebrations');
+    expect(resultado).toBeDefined();
+    expect(resultado?.id).toBe('cel-1');
+    expect(resultado?.badge_name).toBe('Venda Relâmpago');
+  });
+
+  it('deve demonstrar resiliência Zero-Break (erro 42P01 / 42703) ao registrar celebração sem travar', async () => {
+    // Setup
+    const singleMock = vi.fn().mockResolvedValue({
+      data: null,
+      error: { code: '42P01', message: 'relation "gamification_celebrations" does not exist' }
+    });
+    const selectMock = vi.fn().mockReturnValue({ single: singleMock });
+    const insertMock = vi.fn().mockReturnValue({ select: selectMock });
+    vi.mocked(supabase.from).mockReturnValue({ insert: insertMock } as any);
+
+    // Action
+    const resultado = await registrarCelebracaoConquista({
+      profile_id: 'user-123',
+      badge_key: 'FAST_SALE',
+      badge_name: 'Venda Relâmpago',
+      badge_emoji: '⚡',
+      campaign_titulo: 'Campanha Orçamentos'
+    });
+
+    // Assert
+    expect(resultado).toBeNull();
+  });
+
+  it('deve obter celebrações pendentes não visualizadas pelo usuário', async () => {
+    // Setup
+    const mockCelebrations = [
+      {
+        id: 'cel-1',
+        profile_id: 'user-alvo',
+        badge_key: 'FAST_SALE',
+        badge_name: 'Venda Relâmpago',
+        badge_emoji: '⚡',
+        campaign_titulo: 'Campanha 40 Orçamentos',
+        created_at: new Date().toISOString(),
+        profiles: { nome_completo: 'Aline Consultora' }
+      },
+      {
+        id: 'cel-2',
+        profile_id: 'user-outro',
+        badge_key: 'DRIVE_MASTER',
+        badge_name: 'Organizador',
+        badge_emoji: '📁',
+        campaign_titulo: 'Campanha Docs',
+        created_at: new Date().toISOString(),
+        profiles: { nome_completo: 'Bruno Consultor' }
+      }
+    ];
+
+    const mockViews = [
+      { celebration_id: 'cel-1' } // Já visualizada
+    ];
+
+    vi.mocked(supabase.from).mockImplementation((table: string) => {
+      if (table === 'gamification_celebrations') {
+        return {
+          select: vi.fn().mockReturnValue({
+            gte: vi.fn().mockReturnValue({
+              order: vi.fn().mockResolvedValue({ data: mockCelebrations, error: null })
+            })
+          })
+        } as any;
+      }
+      if (table === 'gamification_celebration_views') {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockResolvedValue({ data: mockViews, error: null })
+          })
+        } as any;
+      }
+      return {} as any;
+    });
+
+    // Action
+    const pendentes = await obterCelebracoesPendentes('user-current');
+
+    // Assert
+    expect(pendentes.length).toBe(1);
+    expect(pendentes[0].id).toBe('cel-2');
+    expect(pendentes[0].consultor_nome).toBe('Bruno Consultor');
+  });
+
+  it('deve marcar celebração como visualizada no Supabase e ser tolerante a erros 23505 e 42P01', async () => {
+    // Setup
+    const insertMock = vi.fn().mockResolvedValue({ error: { code: '23505' } });
+    vi.mocked(supabase.from).mockReturnValue({ insert: insertMock } as any);
+
+    // Action & Assert
+    await expect(marcarCelebracaoVisualizada('cel-1', 'user-1')).resolves.not.toThrow();
+    expect(supabase.from).toHaveBeenCalledWith('gamification_celebration_views');
   });
 });

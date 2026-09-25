@@ -15,7 +15,7 @@ import { MeuPerfilModal } from './components/profile/MeuPerfilModal';
 import { PerfilConsultor } from './types';
 import { getAvatarSvg } from './services/avatars';
 import { showCustomAlert, showCustomConfirm } from './services/dialog';
-import { obterProgressoNivel, obterCampanhasAtivas, obterProgressoCampanha, concederMedalha, obterMedalhasUsuario, BADGE_DEFINITIONS } from './services/gamification';
+import { obterProgressoNivel, obterCampanhasAtivas, obterProgressoCampanha, concederMedalha, obterMedalhasUsuario, BADGE_DEFINITIONS, registrarCelebracaoConquista, obterCelebracoesPendentes, marcarCelebracaoVisualizada } from './services/gamification';
 import { showBadgeCelebrationModal, showLevelUpModal } from './utils/celebrations';
 import { traduzirErro } from './utils/errorTranslator';
 import { Router } from './router';
@@ -263,6 +263,7 @@ class App {
 
         this.navigate(initialPage, initialExtraId);
         this.checarNotificacoesCampanhaLogin();
+        this.checarCelebracoesConquistasLogin();
         PushNotificationService.checkAndPromptAutoPermission(user.id);
 
         // Escuta mudanças de autenticação do Supabase (ex: logout em outra aba ou token expirado)
@@ -903,21 +904,35 @@ class App {
           // Conceder medalha
           const concedeu = await concederMedalha(this.user.id, prog.campaign.badge_key);
           if (concedeu) {
-            // Disparar popup e confetes
             const badgeObj = BADGE_DEFINITIONS.find(b => b.key === prog.campaign.badge_key);
+            const badgeNome = badgeObj ? badgeObj.nome : prog.campaign.badge_key;
+            const badgeEmoji = badgeObj ? badgeObj.emoji : '🏆';
+
+            // Disparar popup e confetes para o próprio usuário
             showBadgeCelebrationModal(
-              badgeObj ? badgeObj.nome : prog.campaign.badge_key,
-              badgeObj ? badgeObj.emoji : '🏆',
-              prog.campaign.titulo
+              badgeNome,
+              badgeEmoji,
+              prog.campaign.titulo,
+              { isSelf: true }
             );
             medalhasSet.add(prog.campaign.badge_key);
+
+            // Registrar celebração no banco para todos os outros usuários logados ou futuros logins
+            await registrarCelebracaoConquista({
+              profile_id: this.user.id,
+              badge_key: prog.campaign.badge_key,
+              badge_name: badgeNome,
+              badge_emoji: badgeEmoji,
+              campaign_id: prog.campaign.id,
+              campaign_titulo: prog.campaign.titulo
+            });
           }
         }
       }
 
-      // Filtrar campanhas: ocultar as que já foram concluídas ou expiraram
+      // Manter campanhas ativas durante o período de vigência (mesmo se já concluídas)
       const hoje = new Date().toISOString().split('T')[0];
-      const activeProgresses = progresses.filter(p => !medalhasSet.has(p.campaign.badge_key) && p.campaign.data_fim >= hoje);
+      const activeProgresses = progresses.filter(p => p.campaign.data_fim >= hoje);
 
       if (activeProgresses.length === 0) {
         container.innerHTML = '';
@@ -941,6 +956,7 @@ class App {
             ${activeProgresses.map(p => {
               const badgeObj = BADGE_DEFINITIONS.find(b => b.key === p.campaign.badge_key);
               const badgeEmoji = badgeObj ? badgeObj.emoji : '🏆';
+              const isConcluida = p.concluida || medalhasSet.has(p.campaign.badge_key);
               
               let metaUnit = 'ações';
               if (p.campaign.tipo_meta === 'xp_acumulado') metaUnit = 'XP';
@@ -953,14 +969,14 @@ class App {
               else if (p.campaign.tipo_meta === 'produto_detalhado') metaUnit = 'prod';
 
               return `
-                <div class="flex flex-col gap-1 p-2 rounded-xl bg-slate-50/50 dark:bg-slate-800/10 border border-slate-200/40 dark:border-slate-800/50 hover:border-indigo-500/30 transition duration-200 group relative">
+                <div class="flex flex-col gap-1 p-2 rounded-xl ${isConcluida ? 'bg-emerald-50/20 dark:bg-emerald-950/10 border border-emerald-400/40 dark:border-emerald-500/30' : 'bg-slate-50/50 dark:bg-slate-800/10 border border-slate-200/40 dark:border-slate-800/50'} hover:border-indigo-500/30 transition duration-200 group relative">
                   <!-- Tooltip Card Flutuante no Hover -->
                   <div class="absolute bottom-full left-0 mb-2 w-64 p-3 bg-slate-900/95 dark:bg-slate-950/95 text-slate-100 rounded-2xl shadow-2xl border border-slate-700/80 backdrop-blur-md opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200 z-50 transform group-hover:translate-y-0 translate-y-1">
                     <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-2">
-                      <span class="text-xs font-black text-indigo-400 flex items-center gap-1.5 truncate max-w-[190px]">
+                      <span class="text-xs font-black ${isConcluida ? 'text-emerald-400' : 'text-indigo-400'} flex items-center gap-1.5 truncate max-w-[190px]">
                         🎯 ${p.campaign.titulo}
                       </span>
-                      <span class="text-xs shrink-0" title="${badgeObj ? badgeObj.nome : ''}">${badgeEmoji}</span>
+                      <span class="text-xs shrink-0 ${isConcluida ? 'text-emerald-400 ring-1 ring-emerald-400/40 rounded-full px-1 bg-emerald-900/40' : ''}" title="${badgeObj ? badgeObj.nome : ''}">${badgeEmoji}</span>
                     </div>
                     
                     <p class="text-[11px] text-slate-300 font-medium leading-relaxed mb-2.5">
@@ -973,17 +989,19 @@ class App {
                         <span class="text-slate-200">${p.campaign.data_inicio.split('-').reverse().join('/')} até ${p.campaign.data_fim.split('-').reverse().join('/')}</span>
                       </div>
                       <div class="flex justify-between">
-                        <span>📊 Meta Atual:</span>
-                        <span class="text-indigo-400 font-black">${p.progresso} / ${p.meta} ${metaUnit} (${Math.round(p.percent)}%)</span>
+                        <span>📊 Meta:</span>
+                        <span class="${isConcluida ? 'text-emerald-400' : 'text-indigo-400'} font-black">
+                          ${isConcluida ? `100% (Meta Atingida!) 🏆` : `${p.progresso} / ${p.meta} ${metaUnit} (${Math.round(p.percent)}%)`}
+                        </span>
                       </div>
                     </div>
                   </div>
 
                   <div class="flex items-center justify-between gap-1.5">
-                    <span class="text-[9px] font-black text-slate-700 dark:text-slate-300 truncate max-w-[125px] group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
+                    <span class="text-[9px] font-black ${isConcluida ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-700 dark:text-slate-300'} truncate max-w-[125px] group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
                       ${p.campaign.titulo}
                     </span>
-                    <span class="text-xs text-slate-400 dark:text-slate-400 font-bold shrink-0 leading-none" title="${badgeObj ? badgeObj.nome : ''}">
+                    <span class="text-xs ${isConcluida ? 'text-emerald-500 ring-1 ring-emerald-400/40 rounded-full px-0.5 bg-emerald-50 dark:bg-emerald-900/30' : 'text-slate-400 dark:text-slate-400'} font-bold shrink-0 leading-none" title="${badgeObj ? badgeObj.nome : ''}">
                       ${badgeEmoji}
                     </span>
                   </div>
@@ -991,11 +1009,17 @@ class App {
                   <!-- Progress Bar -->
                   <div class="flex items-center gap-2 mt-1">
                     <div class="flex-1 h-1 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
-                      <div class="h-full bg-gradient-to-r from-indigo-500 to-indigo-600 dark:from-indigo-400 dark:to-indigo-500 rounded-full transition-all duration-500" style="width: ${p.percent}%"></div>
+                      <div class="h-full ${isConcluida ? 'bg-gradient-to-r from-emerald-500 to-teal-500' : 'bg-gradient-to-r from-indigo-500 to-indigo-600 dark:from-indigo-400 dark:to-indigo-500'} rounded-full transition-all duration-500" style="width: ${p.percent}%"></div>
                     </div>
-                    <span class="text-[8px] text-indigo-600 dark:text-indigo-400 font-black shrink-0 whitespace-nowrap">
-                      ${p.progresso}/${p.meta} <span class="text-[7px] text-slate-400 dark:text-slate-400 font-bold">${metaUnit}</span>
-                    </span>
+                    ${isConcluida ? `
+                      <span class="text-[8px] text-emerald-600 dark:text-emerald-400 font-black shrink-0 whitespace-nowrap flex items-center gap-0.5">
+                        100% • Atingida! 🏆
+                      </span>
+                    ` : `
+                      <span class="text-[8px] text-indigo-600 dark:text-indigo-400 font-black shrink-0 whitespace-nowrap">
+                        ${p.progresso}/${p.meta} <span class="text-[7px] text-slate-400 dark:text-slate-400 font-bold">${metaUnit}</span>
+                      </span>
+                    `}
                   </div>
                 </div>
               `;
@@ -1066,6 +1090,37 @@ class App {
       }
     } catch (err) {
       console.error('Erro ao checar notificações de campanha no login:', err);
+    }
+  }
+
+  /**
+   * Verifica se existem celebrações de conquistas de metas/medalhas pendentes no login e as exibe
+   */
+  private async checarCelebracoesConquistasLogin(): Promise<void> {
+    if (!this.user) return;
+    try {
+      const pendentes = await obterCelebracoesPendentes(this.user.id);
+      if (pendentes.length > 0) {
+        for (let i = 0; i < pendentes.length; i++) {
+          const cel = pendentes[i];
+          const isSelf = cel.profile_id === this.user.id;
+          setTimeout(() => {
+            showBadgeCelebrationModal(
+              cel.badge_name,
+              cel.badge_emoji,
+              cel.campaign_titulo,
+              {
+                isSelf,
+                consultorNome: cel.consultor_nome
+              }
+            );
+          }, i * 1500);
+
+          await marcarCelebracaoVisualizada(cel.id, this.user.id);
+        }
+      }
+    } catch (err) {
+      console.warn('Erro ao checar celebrações de conquistas no login:', err);
     }
   }
 
@@ -1145,6 +1200,57 @@ class App {
           } else if (newXp > oldXp) {
             this.showToast(`+${newXp - oldXp} XP recebido!`, 'success');
           }
+        }
+      )
+      .subscribe();
+
+    // Inscrição em tempo real para celebrações globais de conquistas na agência
+    supabase.channel('global-celebrations-realtime').unsubscribe();
+    supabase
+      .channel('global-celebrations-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'gamification_celebrations'
+        },
+        async (payload: any) => {
+          const newCel = payload.new;
+          if (!newCel || !this.perfil) return;
+
+          // Se for o próprio usuário, ele já comemorou localmente no ato da conquista
+          if (newCel.profile_id === this.perfil.id) {
+            await marcarCelebracaoVisualizada(newCel.id, this.perfil.id);
+            return;
+          }
+
+          // Buscar nome do consultor que conquistou a meta
+          let consultorNome = 'Colega da agência';
+          try {
+            const { data: prof } = await supabase
+              .from('profiles')
+              .select('nome_completo')
+              .eq('id', newCel.profile_id)
+              .maybeSingle();
+            if (prof?.nome_completo) {
+              consultorNome = prof.nome_completo;
+            }
+          } catch (e) {}
+
+          // Disparar celebração com confetes e som na tela de todos os usuários logados
+          showBadgeCelebrationModal(
+            newCel.badge_name,
+            newCel.badge_emoji,
+            newCel.campaign_titulo,
+            {
+              isSelf: false,
+              consultorNome
+            }
+          );
+
+          // Marcar como visualizada imediatamente
+          await marcarCelebracaoVisualizada(newCel.id, this.perfil.id);
         }
       )
       .subscribe();
