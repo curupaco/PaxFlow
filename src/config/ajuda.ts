@@ -91,9 +91,9 @@ export const HELP_ITEMS: HelpItem[] = [
   {
     id: 'fluxo-reembolso-completo',
     modulo: 'processos',
-    label: 'Fluxo de Cancelamento e Solicitação de Reembolso',
-    description: 'Passo a passo operacional quando um cliente cancela um serviço.',
-    details: 'Ao receber uma solicitação de cancelamento:\n\n1. Acesse a Viagem do cliente, clique em editar e, na aba de produtos, selecione o produto cancelado.\n2. Clique em **Solicitar Reembolso**. O sistema abrirá um formulário específico puxando os dados do produto automaticamente.\n3. Preencha as multas e taxas de retenção cobradas pelo fornecedor.\n4. O status da viagem é movido automaticamente para **Reembolso Solicitado**, habilitando o cronômetro de SLA operacional.\n5. O processo passa a aparecer no menu **Reembolsos**, onde o financeiro acompanha o status (Aguardando Fornecedor, Em Análise, Aprovado, Pago) até o repasse final ao cliente.'
+    label: 'Fluxo de Cancelamento, Tratativa e Reembolso',
+    description: 'Passo a passo operacional para cancelamento de itens, controle de valores e tratativa.',
+    details: 'Ao receber uma solicitação de cancelamento de serviço ou produto da viagem:\n\n1. **Abertura do Processo**: Na viagem do cliente ou arrastando o card para a coluna de reembolso no Kanban, selecione o produto afetado. O sistema captura automaticamente o produto e seu **Valor de Venda Original**.\n2. **Acompanhamento Financeiro (3 Valores Chave)**:\n   - **Valor Solicitado**: Montante solicitado para estorno junto à operadora/fornecedor.\n   - **Valor Aprovado**: Valor efetivamente liberado e confirmado pela cia ou consolidadora.\n   - **Valor Utilizado pelo Pax**: Saldo de crédito já reutilizado pelo passageiro em nova compra ou compensação.\n   - **Saldo Restante**: Diferença calculada em tempo real (`Valor Aprovado - Valor Utilizado`).\n3. **Os 4 Status da Tratativa Operacional**:\n   - 🏢 **Reembolso pendente ação agência**: Aguarda envio de documentação ou conferência interna da equipe.\n   - ✈️ **Reembolso pendente ação fornecedor**: Em análise direta junto à companhia aérea, rede hoteleira ou consolidadora.\n   - 🌐 **Reembolso pendente ação Agaxtur**: Aguarda retorno ou repasse pela operadora Agaxtur.\n   - ✅ **Reembolso concluido**: Tratativa e liquidação financeira finalizadas com registro de data de conclusão.\n4. **Painel de Controle e Filtros**: Na Central de Reembolsos, filtre instantaneamente por qualquer status da tratativa e edite valores e observações a qualquer momento pelo botão `✏️ Valores`.'
   },
   {
     id: 'calendario-delegacao',

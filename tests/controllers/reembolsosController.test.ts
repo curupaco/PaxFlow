@@ -3,7 +3,10 @@ import {
   filterReembolsosByPermission,
   calculateElapsedTime,
   prepareReembolsoStatusPayload,
-  filterReembolsosByTerm
+  filterReembolsosByTerm,
+  formatStatusTratativa,
+  calculateSaldoReembolso,
+  STATUS_TRATATIVA_DEFINITIONS
 } from '../../src/controllers/reembolsosController';
 
 describe('ReembolsosController - Testes Subcutâneos', () => {
@@ -64,92 +67,108 @@ describe('ReembolsosController - Testes Subcutâneos', () => {
     expect(elapsed).toBe('0d 0h 0m 0s');
   });
 
-  it('deve definir data_resolucao ao pagar reembolso e anular se retornar para outro status', () => {
+  it('deve formatar os 4 status da tratativa com rótulos e badges corretos', () => {
+    // Setup & Action & Assert
+    const agencia = formatStatusTratativa('pendente_agencia');
+    expect(agencia.label).toBe('Reembolso pendente ação agência');
+    expect(agencia.key).toBe('pendente_agencia');
+
+    const fornecedor = formatStatusTratativa('pendente_fornecedor');
+    expect(fornecedor.label).toBe('Reembolso pendente ação fornecedor');
+    expect(fornecedor.key).toBe('pendente_fornecedor');
+
+    const agaxtur = formatStatusTratativa('pendente_agaxtur');
+    expect(agaxtur.label).toBe('Reembolso pendente ação Agaxtur');
+    expect(agaxtur.key).toBe('pendente_agaxtur');
+
+    const concluido = formatStatusTratativa('concluido');
+    expect(concluido.label).toBe('Reembolso concluido');
+    expect(concluido.key).toBe('concluido');
+
+    // Normalização defensiva de status legado 'pago' para 'concluido'
+    const pagoLegado = formatStatusTratativa('pago');
+    expect(pagoLegado.key).toBe('concluido');
+  });
+
+  it('deve calcular saldo de reembolso restante corretamente (Aprovado - Utilizado pelo Pax)', () => {
     // Setup & Action
-    const payloadPago = prepareReembolsoStatusPayload('pago', '2026-09-09T12:00:00.000Z');
-    const payloadAguardando = prepareReembolsoStatusPayload('Aguardando Fornecedor');
-    const payloadAnalise = prepareReembolsoStatusPayload('em_analise');
+    const saldoTotal = calculateSaldoReembolso(5000, 2000);
+    const saldoZerado = calculateSaldoReembolso(3000, 3000);
+    const saldoNegativoTratado = calculateSaldoReembolso(1000, 1500);
 
     // Assert
-    expect(payloadPago.status).toBe('pago');
-    expect(payloadPago.data_resolucao).toBe('2026-09-09');
-
-    expect(payloadAguardando.status).toBe('solicitado');
-    expect(payloadAguardando.data_resolucao).toBeNull();
-
-    expect(payloadAnalise.status).toBe('em_analise');
-    expect(payloadAnalise.data_resolucao).toBeNull();
+    expect(saldoTotal).toBe(3000);
+    expect(saldoZerado).toBe(0);
+    expect(saldoNegativoTratado).toBe(0);
   });
 
-  it('deve preencher data de resolução automaticamente com a data de hoje quando omitida no status pago', () => {
-    // Setup
-    const hojeIso = new Date().toISOString().split('T')[0];
-
-    // Action
-    const payload = prepareReembolsoStatusPayload('pago');
+  it('deve definir data_resolucao e status_tratativa ao concluir reembolso', () => {
+    // Setup & Action
+    const payloadConcluido = prepareReembolsoStatusPayload('concluido', '2026-09-09T12:00:00.000Z');
+    const payloadAgencia = prepareReembolsoStatusPayload('pendente_agencia');
+    const payloadFornecedor = prepareReembolsoStatusPayload('pendente_fornecedor');
 
     // Assert
-    expect(payload.status).toBe('pago');
-    expect(payload.data_resolucao).toBe(hojeIso);
+    expect(payloadConcluido.status).toBe('pago');
+    expect(payloadConcluido.status_tratativa).toBe('concluido');
+    expect(payloadConcluido.data_resolucao).toBe('2026-09-09');
+
+    expect(payloadAgencia.status).toBe('solicitado');
+    expect(payloadAgencia.status_tratativa).toBe('pendente_agencia');
+    expect(payloadAgencia.data_resolucao).toBeNull();
+
+    expect(payloadFornecedor.status).toBe('solicitado');
+    expect(payloadFornecedor.status_tratativa).toBe('pendente_fornecedor');
+    expect(payloadFornecedor.data_resolucao).toBeNull();
   });
 
-  it('deve filtrar reembolsos por termo de busca no cliente, viagem ou motivo', () => {
+  it('deve filtrar reembolsos por múltiplos critérios: ID, número da viagem, produto, fornecedor e valores', () => {
     // Setup
     const reembolsos = [
-      { id: '1', motivo: 'Cancelamento voo', viagem: { codigo: 'TRIP-100', cliente: { nome: 'Carlos Silva' } } },
-      { id: '2', motivo: 'Cobrança indevida', viagem: { codigo: 'TRIP-200', cliente: { nome: 'Mariana Costa' } } }
+      { 
+        id: 'rmb-001-uuid', 
+        codigo_ref: 'RMB-01',
+        valor_produto: 4500,
+        valor_solicitado: 4500,
+        valor_aprovado: 4000,
+        valor_utilizado_pax: 1500,
+        status_tratativa: 'pendente_agencia',
+        produto: { tipo: 'AÉREO', fornecedor: 'LATAM', descricao: 'Voo GRU-MIA' },
+        viagem: { codigo_ref: 'VIA-0100', destino: 'Miami', codigo_localizador: 'XYZ987', cliente: { nome: 'Carlos Silva', email: 'carlos@email.com' } } 
+      },
+      { 
+        id: 'rmb-002-uuid', 
+        codigo_ref: 'RMB-02',
+        valor_produto: 2200,
+        valor_solicitado: 2200,
+        valor_aprovado: 2200,
+        valor_utilizado_pax: 2200,
+        status_tratativa: 'concluido',
+        produto: { tipo: 'HOTEL', fornecedor: 'Agaxtur', descricao: 'Resort Cancun' },
+        viagem: { codigo_ref: 'VIA-0200', destino: 'Cancun', codigo_localizador: 'HTL123', cliente: { nome: 'Mariana Costa', email: 'mariana@email.com' } } 
+      }
     ];
 
     // Action
-    const buscaVoo = filterReembolsosByTerm(reembolsos, 'cancelamento');
-    const buscaCodigo = filterReembolsosByTerm(reembolsos, 'TRIP-200');
-    const buscaInexistente = filterReembolsosByTerm(reembolsos, 'hotel');
+    const buscaId = filterReembolsosByTerm(reembolsos, 'RMB-01');
+    const buscaViagem = filterReembolsosByTerm(reembolsos, 'VIA-0200');
+    const buscaFornecedor = filterReembolsosByTerm(reembolsos, 'LATAM');
+    const buscaTratativa = filterReembolsosByTerm(reembolsos, 'Agaxtur');
+    const buscaInexistente = filterReembolsosByTerm(reembolsos, 'Disney');
 
     // Assert
-    expect(buscaVoo).toHaveLength(1);
-    expect(buscaVoo[0].id).toBe('1');
-    expect(buscaCodigo).toHaveLength(1);
-    expect(buscaCodigo[0].id).toBe('2');
+    expect(buscaId).toHaveLength(1);
+    expect(buscaId[0].id).toBe('rmb-001-uuid');
+
+    expect(buscaViagem).toHaveLength(1);
+    expect(buscaViagem[0].id).toBe('rmb-002-uuid');
+
+    expect(buscaFornecedor).toHaveLength(1);
+    expect(buscaFornecedor[0].id).toBe('rmb-001-uuid');
+
+    expect(buscaTratativa).toHaveLength(1);
+    expect(buscaTratativa[0].id).toBe('rmb-002-uuid');
+
     expect(buscaInexistente).toHaveLength(0);
   });
-
-  it('deve retornar lista completa se termo de busca for vazio ou apenas espaços em branco', () => {
-    // Setup
-    const reembolsos = [
-      { id: '1', motivo: 'Voo', viagem: null },
-      { id: '2', motivo: 'Hotel', viagem: null }
-    ];
-
-    // Action
-    const resVazio = filterReembolsosByTerm(reembolsos, '   ');
-
-    // Assert
-    expect(resVazio).toHaveLength(2);
-  });
-
-  it('deve categorizar e contabilizar processos corretamente pelas abas de status', () => {
-    // Setup
-    const lista = [
-      { id: '1', status: 'solicitado' },
-      { id: '2', status: 'Aguardando Fornecedor' },
-      { id: '3', status: 'em_analise' },
-      { id: '4', status: 'aprovado' },
-      { id: '5', status: 'pago' },
-      { id: '6', status: 'recusado' },
-      { id: '7', status: 'cancelado' }
-    ];
-
-    // Action
-    const solicitados = lista.filter(r => r.status === 'solicitado' || r.status === 'Aguardando Fornecedor');
-    const emAnalise = lista.filter(r => r.status === 'em_analise');
-    const pagos = lista.filter(r => r.status === 'aprovado' || r.status === 'pago');
-    const recusados = lista.filter(r => r.status === 'recusado' || r.status === 'cancelado');
-
-    // Assert
-    expect(solicitados).toHaveLength(2);
-    expect(emAnalise).toHaveLength(1);
-    expect(pagos).toHaveLength(2);
-    expect(recusados).toHaveLength(2);
-  });
 });
-

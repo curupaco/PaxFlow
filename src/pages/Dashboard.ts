@@ -1207,11 +1207,13 @@ export class Dashboard {
       const selectProd = document.getElementById('select-produto') as HTMLSelectElement;
       const inputValor = document.getElementById('input-valor-reembolso') as HTMLInputElement;
       
+      let valorProdutoOriginal = 0;
       selectProd?.addEventListener('change', () => {
         const option = selectProd.options[selectProd.selectedIndex];
         const valorVenda = option.getAttribute('data-valor');
         if (valorVenda) {
-          inputValor.value = formatCurrencyValue(parseFloat(valorVenda));
+          valorProdutoOriginal = parseFloat(valorVenda) || 0;
+          inputValor.value = formatCurrencyValue(valorProdutoOriginal);
         }
       });
 
@@ -1239,18 +1241,44 @@ export class Dashboard {
         }
 
         try {
-          // 1. Criar a solicitação na tabela 'reembolsos'
-          const { error: errorReembolso } = await supabase
+          // 1. Criar a solicitação na tabela 'reembolsos' com resiliência a schema drift
+          const insertPayload: any = {
+            viagem_id: tripId,
+            produto_viagem_id: selectedProdId,
+            consultor_solicitante_id: this.user.id,
+            valor_produto: valorProdutoOriginal || valorReembolso,
+            valor_solicitado: valorReembolso,
+            valor_aprovado: 0,
+            valor_utilizado_pax: 0,
+            status_tratativa: 'pendente_agencia',
+            motivo_cancelamento: motivo,
+            status: 'solicitado',
+            data_solicitacao: new Date().toISOString().split('T')[0]
+          };
+
+          let { error: errorReembolso } = await supabase
             .from('reembolsos')
-            .insert({
+            .insert(insertPayload);
+
+          // Fallback defensivo caso colunas novas ainda não tenham sido migradas no banco (42703)
+          if (errorReembolso && (errorReembolso.code === '42703' || errorReembolso.message?.includes('does not exist'))) {
+            const fallbackPayload = {
               viagem_id: tripId,
               produto_viagem_id: selectedProdId,
               consultor_solicitante_id: this.user.id,
               valor_solicitado: valorReembolso,
               motivo_cancelamento: motivo,
+              observacoes_financeiras: JSON.stringify({
+                valor_produto: valorProdutoOriginal || valorReembolso,
+                valor_utilizado_pax: 0,
+                status_tratativa: 'pendente_agencia'
+              }),
               status: 'solicitado',
               data_solicitacao: new Date().toISOString().split('T')[0]
-            });
+            };
+            const fallbackRes = await supabase.from('reembolsos').insert(fallbackPayload);
+            errorReembolso = fallbackRes.error;
+          }
 
           if (errorReembolso) throw errorReembolso;
 

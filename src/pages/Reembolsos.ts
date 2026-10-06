@@ -1,9 +1,16 @@
 import { supabase, getSessaoAtual } from '../services/supabase';
 import { PerfilConsultor, Reembolso } from '../types';
-import { getAvatarSvg } from '../services/avatars';
 import { showCustomConfirm } from '../services/dialog';
 import { renderHelpIcon } from '../utils/helpHelper';
 import { highlightMatch, debounce } from '../utils/textHelper';
+import { 
+  formatStatusTratativa, 
+  STATUS_TRATATIVA_DEFINITIONS, 
+  calculateSaldoReembolso,
+  prepareReembolsoStatusPayload,
+  filterReembolsosByTerm 
+} from '../controllers/reembolsosController';
+import { renderCurrencyInputHTML, parseDoubleBr, formatCurrencyValue, setupFormValidation } from '../utils/masks';
 
 // Injeta estilos premium e customizações para a Central de Reembolsos no DOM
 if (typeof document !== 'undefined') {
@@ -47,8 +54,9 @@ export class ReembolsosPage {
   private reembolsos: any[] = [];
   private timerId: any = null;
   private buscaTermo: string = '';
-  private activeStatusTab: 'todos' | 'solicitados' | 'em_analise' | 'pagos' | 'recusados' = 'todos';
+  private activeStatusTab: 'todos' | 'pendente_agencia' | 'pendente_fornecedor' | 'pendente_agaxtur' | 'concluido' = 'todos';
   private debouncedSearch: (termo: string) => void;
+  private globalSearchListener: ((e: any) => void) | null = null;
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -80,8 +88,6 @@ export class ReembolsosPage {
       this.user = user;
       this.perfil = perfil;
 
-
-
       // 2. Buscar reembolsos
       await this.loadReembolsos();
 
@@ -108,8 +114,6 @@ export class ReembolsosPage {
       this.renderAuthError(`Erro interno: ${err.message}`);
     }
   }
-
-  private globalSearchListener: ((e: any) => void) | null = null;
 
   /**
    * Destrói instâncias ativas (limpa o cronômetro para evitar vazamento de memória)
@@ -181,7 +185,10 @@ export class ReembolsosPage {
    * Inicia o intervalo de 1 segundo para atualizar o cronômetro dos SLAs em tempo real na tela
    */
   private iniciarSlaTimer(): void {
-    this.destroy(); // Limpa seletores anteriores
+    if (this.timerId) {
+      clearInterval(this.timerId);
+      this.timerId = null;
+    }
 
     this.timerId = setInterval(() => {
       if (!this.container || !this.container.isConnected) {
@@ -234,33 +241,27 @@ export class ReembolsosPage {
         if (!reembolsoId) return;
 
         try {
-          const statusFinal = novoStatus === 'Aguardando Fornecedor' ? 'solicitado' : novoStatus;
-          const payload: any = { status: statusFinal };
+          const payload = prepareReembolsoStatusPayload(novoStatus);
 
-          // Se mudar para "pago" (Concluído), salva a data de conclusão
-          if (statusFinal === 'pago') {
-            payload.data_resolucao = new Date().toISOString().split('T')[0];
-          } else {
-            payload.data_resolucao = null;
-          }
-
-          const { error } = await supabase
+          let { error } = await supabase
             .from('reembolsos')
             .update(payload)
             .eq('id', reembolsoId);
 
+          // Fallback defensivo para schema drift caso a coluna status_tratativa não exista (42703)
+          if (error && (error.code === '42703' || error.message?.includes('does not exist'))) {
+            const fallbackPayload = {
+              status: payload.status,
+              data_resolucao: payload.data_resolucao,
+              observacoes_financeiras: `[Status Tratativa]: ${payload.status_tratativa}`
+            };
+            const fallbackRes = await supabase.from('reembolsos').update(fallbackPayload).eq('id', reembolsoId);
+            error = fallbackRes.error;
+          }
+
           if (error) throw error;
 
-          this.showToast('Status do reembolso atualizado com sucesso!', 'success');
-          
-          // Se o reembolso foi pago (Concluído), atualiza também o status da Viagem de volta
-          // para indicar finalização de fluxo operacional (ex: 'pos_viagem' ou mantém para histórico)
-          if (novoStatus === 'pago') {
-            const reembolso = this.reembolsos.find(r => r.id === reembolsoId);
-            if (reembolso && reembolso.viagem_id) {
-              // Mantém na mesma coluna ou finaliza, o card no Kanban mudará de cor automaticamente
-            }
-          }
+          this.showToast('Status da tratativa atualizado com sucesso!', 'success');
 
           // Recarrega os dados e atualiza a exibição da tabela
           await this.loadReembolsos();
@@ -270,7 +271,25 @@ export class ReembolsosPage {
         } catch (err: any) {
           console.error('Erro ao atualizar status do reembolso:', err);
           this.showToast('Falha ao atualizar o status no banco.', 'error', err);
-          this.init(); // Recarrega o estado anterior
+          this.init();
+        }
+      });
+    });
+
+    // Escuta cliques nos botões de editar valores
+    const editBtns = document.querySelectorAll('[data-edit-reembolso-id]');
+    editBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        let target = e.target as HTMLElement;
+        if (!target.hasAttribute('data-edit-reembolso-id')) {
+          target = target.closest('[data-edit-reembolso-id]') as HTMLElement;
+        }
+        const reembolsoId = target?.getAttribute('data-edit-reembolso-id');
+        if (reembolsoId) {
+          const reembolso = this.reembolsos.find(r => r.id === reembolsoId);
+          if (reembolso) {
+            this.abrirModalEditarValores(reembolso);
+          }
         }
       });
     });
@@ -290,8 +309,6 @@ export class ReembolsosPage {
       });
     });
 
-
-
     // Abas de Status com Contadores
     const tabBtns = document.querySelectorAll('.tab-reembolso-btn');
     tabBtns.forEach(btn => {
@@ -309,6 +326,178 @@ export class ReembolsosPage {
     const searchInput = document.getElementById('input-busca-reembolso') as HTMLInputElement;
     searchInput?.addEventListener('input', (e) => {
       this.debouncedSearch((e.target as HTMLInputElement).value);
+    });
+  }
+
+  /**
+   * Abre modal para edição completa de valores (Produto, Solicitado, Aprovado, Utilizado Pax) e Status da Tratativa
+   */
+  private abrirModalEditarValores(r: any): void {
+    const modalId = 'modal-editar-valores-reembolso';
+    document.getElementById(modalId)?.remove();
+
+    const idFormatado = r.codigo_ref || r.codigoRef || `#RMB-${r.id.slice(0, 6).toUpperCase()}`;
+    const valorProdutoAtual = Number(r.valor_produto || r.produto?.valor || r.produto?.valor_venda || 0);
+    const valorSolicitadoAtual = Number(r.valor_solicitado || 0);
+    const valorAprovadoAtual = Number(r.valor_aprovado || 0);
+    const valorUtilizadoPaxAtual = Number(r.valor_utilizado_pax || 0);
+    const tratativaAtual = formatStatusTratativa(r.status_tratativa || r.status).key;
+
+    const modalEl = document.createElement('div');
+    modalEl.id = modalId;
+    modalEl.className = 'fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 animate-fade-in font-sans';
+    modalEl.innerHTML = `
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-xl w-full shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        <!-- Cabeçalho do Modal -->
+        <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-950/50">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 rounded font-mono text-[10px] font-black bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 border border-indigo-200/50 dark:border-indigo-800/60">${idFormatado}</span>
+              <h3 class="text-base font-black text-slate-800 dark:text-slate-100">Atualizar Valores e Tratativa</h3>
+            </div>
+            <p class="text-xs text-slate-400 font-semibold mt-0.5">
+              Viagem ${r.viagem?.codigo_ref || r.viagem?.codigoRef || 'VIA'} · ${r.viagem?.cliente?.nome || 'Passageiro'}
+            </p>
+          </div>
+          <button id="btn-fechar-modal-valores" class="p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition text-lg">&times;</button>
+        </div>
+
+        <!-- Formulário -->
+        <form id="form-editar-valores-reembolso" class="p-6 space-y-4 overflow-y-auto custom-scrollbar">
+          <!-- Produto Vinculado -->
+          <div class="p-3 bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-700/60 rounded-xl space-y-1">
+            <span class="block text-[10px] font-black uppercase text-slate-400">Produto Afetado:</span>
+            <p class="text-xs font-bold text-slate-800 dark:text-slate-100">
+              [${(r.produto?.tipo || 'outro').toUpperCase()}] ${r.produto?.fornecedor || ''} - ${r.produto?.descricao || 'Produto da Viagem'}
+            </p>
+          </div>
+
+          <!-- Status da Tratativa -->
+          <div>
+            <label class="block text-xs font-black uppercase text-slate-500 dark:text-slate-400 mb-1.5">Status da Tratativa *</label>
+            <select id="modal-input-status-tratativa" class="w-full px-3.5 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer shadow-xs">
+              <option value="pendente_agencia" ${tratativaAtual === 'pendente_agencia' ? 'selected' : ''}>🏢 Reembolso pendente ação agência</option>
+              <option value="pendente_fornecedor" ${tratativaAtual === 'pendente_fornecedor' ? 'selected' : ''}>✈️ Reembolso pendente ação fornecedor</option>
+              <option value="pendente_agaxtur" ${tratativaAtual === 'pendente_agaxtur' ? 'selected' : ''}>🌐 Reembolso pendente ação Agaxtur</option>
+              <option value="concluido" ${tratativaAtual === 'concluido' ? 'selected' : ''}>✅ Reembolso concluido</option>
+            </select>
+          </div>
+
+          <!-- Grade de 4 Valores Financeiros -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
+            <div>
+              <label class="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1">Valor do Produto (R$)</label>
+              ${renderCurrencyInputHTML('modal-input-valor-produto', formatCurrencyValue(valorProdutoAtual))}
+            </div>
+
+            <div>
+              <label class="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1">Valor Solicitado (R$)</label>
+              ${renderCurrencyInputHTML('modal-input-valor-solicitado', formatCurrencyValue(valorSolicitadoAtual))}
+            </div>
+
+            <div>
+              <label class="block text-[11px] font-bold text-emerald-600 dark:text-emerald-400 mb-1">Valor Aprovado (R$)</label>
+              ${renderCurrencyInputHTML('modal-input-valor-aprovado', formatCurrencyValue(valorAprovadoAtual))}
+            </div>
+
+            <div>
+              <label class="block text-[11px] font-bold text-purple-600 dark:text-purple-400 mb-1">Valor Utilizado pelo Pax (R$)</label>
+              ${renderCurrencyInputHTML('modal-input-valor-utilizado-pax', formatCurrencyValue(valorUtilizadoPaxAtual))}
+            </div>
+          </div>
+
+          <!-- Observações Financeiras -->
+          <div>
+            <label class="block text-xs font-black uppercase text-slate-500 dark:text-slate-400 mb-1">Observações / Notas da Negociação</label>
+            <textarea id="modal-input-obs" rows="3" placeholder="Informações adicionais sobre cartas de crédito, números de protocolo ou compensações..." class="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500">${r.observacoes_financeiras || ''}</textarea>
+          </div>
+
+          <!-- Ações do Modal -->
+          <div class="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-100 dark:border-slate-800">
+            <button id="btn-cancelar-modal-valores" type="button" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-xl transition">
+              Cancelar
+            </button>
+            <button type="submit" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black uppercase rounded-xl transition shadow-md shadow-indigo-600/20">
+              Salvar Alterações
+            </button>
+          </div>
+        </form>
+      </div>
+    `;
+
+    document.body.appendChild(modalEl);
+
+    // Inicializa máscaras monetárias no modal
+    setupFormValidation('form-editar-valores-reembolso', [
+      { id: 'modal-input-valor-produto', type: 'currency' },
+      { id: 'modal-input-valor-solicitado', type: 'currency' },
+      { id: 'modal-input-valor-aprovado', type: 'currency' },
+      { id: 'modal-input-valor-utilizado-pax', type: 'currency' }
+    ]);
+
+    const fechar = () => modalEl.remove();
+    document.getElementById('btn-fechar-modal-valores')?.addEventListener('click', fechar);
+    document.getElementById('btn-cancelar-modal-valores')?.addEventListener('click', fechar);
+
+    const form = document.getElementById('form-editar-valores-reembolso') as HTMLFormElement;
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const novoStatusTratativa = (document.getElementById('modal-input-status-tratativa') as HTMLSelectElement).value;
+      const novoValorProduto = parseDoubleBr((document.getElementById('modal-input-valor-produto') as HTMLInputElement).value);
+      const novoValorSolicitado = parseDoubleBr((document.getElementById('modal-input-valor-solicitado') as HTMLInputElement).value);
+      const novoValorAprovado = parseDoubleBr((document.getElementById('modal-input-valor-aprovado') as HTMLInputElement).value);
+      const novoValorUtilizadoPax = parseDoubleBr((document.getElementById('modal-input-valor-utilizado-pax') as HTMLInputElement).value);
+      const novasObs = (document.getElementById('modal-input-obs') as HTMLTextAreaElement).value;
+
+      const basePayload = prepareReembolsoStatusPayload(novoStatusTratativa);
+
+      const updatePayload: any = {
+        ...basePayload,
+        valor_produto: novoValorProduto,
+        valor_solicitado: novoValorSolicitado,
+        valor_aprovado: novoValorAprovado,
+        valor_utilizado_pax: novoValorUtilizadoPax,
+        observacoes_financeiras: novasObs
+      };
+
+      try {
+        let { error } = await supabase
+          .from('reembolsos')
+          .update(updatePayload)
+          .eq('id', r.id);
+
+        // Fallback defensivo para schema drift (42703)
+        if (error && (error.code === '42703' || error.message?.includes('does not exist'))) {
+          const fallbackPayload = {
+            status: basePayload.status,
+            data_resolucao: basePayload.data_resolucao,
+            valor_solicitado: novoValorSolicitado,
+            valor_aprovado: novoValorAprovado,
+            observacoes_financeiras: JSON.stringify({
+              status_tratativa: basePayload.status_tratativa,
+              valor_produto: novoValorProduto,
+              valor_utilizado_pax: novoValorUtilizadoPax,
+              obs: novasObs,
+              atualizado_em: new Date().toISOString()
+            })
+          };
+          const fallbackRes = await supabase.from('reembolsos').update(fallbackPayload).eq('id', r.id);
+          error = fallbackRes.error;
+        }
+
+        if (error) throw error;
+
+        this.showToast('Reembolso atualizado com sucesso!', 'success');
+        fechar();
+        await this.loadReembolsos();
+        this.render();
+        this.iniciarSlaTimer();
+
+      } catch (err: any) {
+        console.error('Erro ao salvar valores do reembolso:', err);
+        this.showToast('Erro ao salvar alterações.', 'error', err);
+      }
     });
   }
 
@@ -407,71 +596,27 @@ export class ReembolsosPage {
    * Renderiza a página da central de reembolsos
    */
   private render(): void {
-    // Cálculos de contagem por aba de status
+    // Cálculos de contagem por aba de status de tratativa
     const totalCount = this.reembolsos.length;
-    const solicitadosCount = this.reembolsos.filter(r => r.status === 'solicitado' || r.status === 'Aguardando Fornecedor').length;
-    const emAnaliseCount = this.reembolsos.filter(r => r.status === 'em_analise').length;
-    const pagosCount = this.reembolsos.filter(r => r.status === 'aprovado' || r.status === 'pago').length;
-    const recusadosCount = this.reembolsos.filter(r => r.status === 'recusado' || r.status === 'cancelado').length;
+    const agenciaCount = this.reembolsos.filter(r => formatStatusTratativa(r.status_tratativa || r.status).key === 'pendente_agencia').length;
+    const fornecedorCount = this.reembolsos.filter(r => formatStatusTratativa(r.status_tratativa || r.status).key === 'pendente_fornecedor').length;
+    const agaxturCount = this.reembolsos.filter(r => formatStatusTratativa(r.status_tratativa || r.status).key === 'pendente_agaxtur').length;
+    const concluidoCount = this.reembolsos.filter(r => formatStatusTratativa(r.status_tratativa || r.status).key === 'concluido').length;
 
-    // Separa e filtra os reembolsos com base no termo de busca e na aba ativa
-    const filtrados = this.reembolsos.filter(r => {
-      // Filtro por Aba de Status
-      if (this.activeStatusTab === 'solicitados' && !(r.status === 'solicitado' || r.status === 'Aguardando Fornecedor')) {
-        return false;
-      }
-      if (this.activeStatusTab === 'em_analise' && r.status !== 'em_analise') {
-        return false;
-      }
-      if (this.activeStatusTab === 'pagos' && !(r.status === 'aprovado' || r.status === 'pago')) {
-        return false;
-      }
-      if (this.activeStatusTab === 'recusados' && !(r.status === 'recusado' || r.status === 'cancelado')) {
-        return false;
-      }
+    // Filtra por aba ativa
+    let filtradosPorAba = this.reembolsos;
+    if (this.activeStatusTab !== 'todos') {
+      filtradosPorAba = this.reembolsos.filter(r => formatStatusTratativa(r.status_tratativa || r.status).key === this.activeStatusTab);
+    }
 
-      if (!this.buscaTermo) return true;
-      const q = this.buscaTermo.toLowerCase().trim();
+    // Aplica busca multicritério
+    const filtrados = filterReembolsosByTerm(filtradosPorAba, this.buscaTermo);
 
-      const cliNome = r.viagem?.cliente?.nome?.toLowerCase() || '';
-      const cliEmail = r.viagem?.cliente?.email?.toLowerCase() || '';
-      const dest = r.viagem?.destino?.toLowerCase() || '';
-      const loc = r.viagem?.codigo_localizador?.toLowerCase() || '';
-      const refReembolso = (r.codigo_ref || r.codigoRef || '').toLowerCase();
-      const refViagem = (r.viagem?.codigo_ref || r.viagem?.codigoRef || '').toLowerCase();
-      const prodTipo = r.produto?.tipo?.toLowerCase() || '';
-      const prodForn = r.produto?.fornecedor?.toLowerCase() || '';
-      const prodDesc = r.produto?.descricao?.toLowerCase() || '';
-      const motivo = r.motivo_cancelamento?.toLowerCase() || '';
-      const status = r.status?.toLowerCase() || '';
-
-      const valorSolStr = Number(r.valor_solicitado || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).toLowerCase();
-      const valorAprovStr = r.valor_aprovado ? Number(r.valor_aprovado).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).toLowerCase() : '';
-
-      return (
-        cliNome.includes(q) ||
-        cliEmail.includes(q) ||
-        dest.includes(q) ||
-        loc.includes(q) ||
-        refReembolso.includes(q) ||
-        refViagem.includes(q) ||
-        prodTipo.includes(q) ||
-        prodForn.includes(q) ||
-        prodDesc.includes(q) ||
-        motivo.includes(q) ||
-        status.includes(q) ||
-        valorSolStr.includes(q) ||
-        valorAprovStr.includes(q)
-      );
-    });
-
-    // Cálculos rápidos de estatísticas
+    // Cálculos de totais financeiros
     const totalReembolsos = this.reembolsos.length;
-    const aguardandoFornecedor = this.reembolsos.filter(r => r.status === 'Aguardando Fornecedor' || r.status === 'solicitado').length;
-    const concluidos = this.reembolsos.filter(r => r.status === 'pago').length;
-    const somaTotalReembolsado = this.reembolsos
-      .filter(r => r.status === 'pago')
-      .reduce((acc, r) => acc + Number(r.valor_aprovado || r.valor_solicitado || 0), 0);
+    const somaTotalSolicitado = this.reembolsos.reduce((acc, r) => acc + Number(r.valor_solicitado || 0), 0);
+    const somaTotalAprovado = this.reembolsos.reduce((acc, r) => acc + Number(r.valor_aprovado || 0), 0);
+    const somaTotalUtilizado = this.reembolsos.reduce((acc, r) => acc + Number(r.valor_utilizado_pax || 0), 0);
 
     const formatarData = (dStr: string) => {
       if (!dStr) return '';
@@ -499,10 +644,9 @@ export class ReembolsosPage {
               <h1 class="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight flex items-center gap-1.5">
                 Reembolsos ${renderHelpIcon('fluxo-reembolso-completo')}
               </h1>
-              <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Controle de Cancelamentos e SLAs em Tempo Real</p>
+              <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Controle de Cancelamentos, Acompanhamento Financeiro e Tratativas</p>
             </div>
           </div>
-          
         </header>
 
         <main class="flex-1 p-6 flex flex-col gap-6">
@@ -511,7 +655,7 @@ export class ReembolsosPage {
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-5 rounded-2xl shadow-xs flex items-center justify-between">
               <div>
-                <span class="block text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-1">Total de Processos</span>
+                <span class="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Total de Processos</span>
                 <span class="text-2xl font-black text-slate-800 dark:text-slate-200">${totalReembolsos}</span>
               </div>
               <span class="w-10 h-10 bg-indigo-50 dark:bg-indigo-950/45 text-indigo-500 dark:text-indigo-400 rounded-xl text-base font-extrabold flex items-center justify-center shrink-0">📋</span>
@@ -519,68 +663,69 @@ export class ReembolsosPage {
 
             <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-5 rounded-2xl shadow-xs flex items-center justify-between">
               <div>
-                <span class="block text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-1">Aguardando Fornecedor</span>
-                <span class="text-2xl font-black text-amber-600 dark:text-amber-400">${aguardandoFornecedor}</span>
+                <span class="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Pendente Ação Agência</span>
+                <span class="text-2xl font-black text-amber-600 dark:text-amber-400">${agenciaCount}</span>
               </div>
-              <span class="w-10 h-10 bg-amber-50 dark:bg-amber-950/45 text-amber-500 dark:text-amber-400 rounded-xl text-base font-extrabold flex items-center justify-center shrink-0">⏳</span>
+              <span class="w-10 h-10 bg-amber-50 dark:bg-amber-950/45 text-amber-500 dark:text-amber-400 rounded-xl text-base font-extrabold flex items-center justify-center shrink-0">🏢</span>
             </div>
 
             <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-5 rounded-2xl shadow-xs flex items-center justify-between">
               <div>
-                <span class="block text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-1">Reembolsos Pagos</span>
-                <span class="text-2xl font-black text-emerald-600 dark:text-emerald-400">${concluidos}</span>
+                <span class="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Fornecedor / Agaxtur</span>
+                <span class="text-2xl font-black text-blue-600 dark:text-blue-400">${fornecedorCount + agaxturCount}</span>
               </div>
-              <span class="w-10 h-10 bg-emerald-50 dark:bg-emerald-950/45 text-emerald-500 dark:text-emerald-400 rounded-xl text-base font-extrabold flex items-center justify-center shrink-0">✅</span>
+              <span class="w-10 h-10 bg-blue-50 dark:bg-blue-950/45 text-blue-500 dark:text-blue-400 rounded-xl text-base font-extrabold flex items-center justify-center shrink-0">✈️</span>
             </div>
 
             <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-5 rounded-2xl shadow-xs flex items-center justify-between">
               <div>
-                <span class="block text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-1">Valor Pago (Aprovado)</span>
-                <span class="text-xl font-black text-indigo-600 dark:text-indigo-400">R$ ${somaTotalReembolsado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                <span class="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Valor Aprovado Total</span>
+                <span class="text-xl font-black text-emerald-600 dark:text-emerald-400">R$ ${somaTotalAprovado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                <span class="block text-[9px] text-slate-400 font-semibold mt-0.5">Utilizado: R$ ${somaTotalUtilizado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
               </div>
-              <span class="w-10 h-10 bg-indigo-50 dark:bg-indigo-950/45 text-indigo-600 dark:text-indigo-400 rounded-xl text-base font-extrabold flex items-center justify-center shrink-0">💰</span>
+              <span class="w-10 h-10 bg-emerald-50 dark:bg-emerald-950/45 text-emerald-600 dark:text-emerald-400 rounded-xl text-base font-extrabold flex items-center justify-center shrink-0">💰</span>
             </div>
           </div>
 
           <!-- Barra de Abas de Status e Busca -->
           <div class="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
             
-            <!-- Abas Superiores com Contadores Dinâmicos -->
+            <!-- Abas Superiores com os 4 Status da Tratativa -->
             <div class="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 custom-scrollbar">
               <button type="button" data-status-tab="todos" class="tab-reembolso-btn px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 transition cursor-pointer shrink-0 whitespace-nowrap ${renderTabClass('todos')}">
                 <span>Todos</span>
                 <span class="px-1.5 py-0.5 rounded-md text-[10px] font-black ${this.activeStatusTab === 'todos' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'}">${totalCount}</span>
               </button>
 
-              <button type="button" data-status-tab="solicitados" class="tab-reembolso-btn px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 transition cursor-pointer shrink-0 whitespace-nowrap ${renderTabClass('solicitados')}">
-                <span>⏳ Solicitados</span>
-                <span class="px-1.5 py-0.5 rounded-md text-[10px] font-black ${this.activeStatusTab === 'solicitados' ? 'bg-white/20 text-white' : 'bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300'}">${solicitadosCount}</span>
+              <button type="button" data-status-tab="pendente_agencia" class="tab-reembolso-btn px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 transition cursor-pointer shrink-0 whitespace-nowrap ${renderTabClass('pendente_agencia')}">
+                <span>🏢 Ação Agência</span>
+                <span class="px-1.5 py-0.5 rounded-md text-[10px] font-black ${this.activeStatusTab === 'pendente_agencia' ? 'bg-white/20 text-white' : 'bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300'}">${agenciaCount}</span>
               </button>
 
-              <button type="button" data-status-tab="em_analise" class="tab-reembolso-btn px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 transition cursor-pointer shrink-0 whitespace-nowrap ${renderTabClass('em_analise')}">
-                <span>🔍 Em Análise</span>
-                <span class="px-1.5 py-0.5 rounded-md text-[10px] font-black ${this.activeStatusTab === 'em_analise' ? 'bg-white/20 text-white' : 'bg-indigo-100 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300'}">${emAnaliseCount}</span>
+              <button type="button" data-status-tab="pendente_fornecedor" class="tab-reembolso-btn px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 transition cursor-pointer shrink-0 whitespace-nowrap ${renderTabClass('pendente_fornecedor')}">
+                <span>✈️ Ação Fornecedor</span>
+                <span class="px-1.5 py-0.5 rounded-md text-[10px] font-black ${this.activeStatusTab === 'pendente_fornecedor' ? 'bg-white/20 text-white' : 'bg-blue-100 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300'}">${fornecedorCount}</span>
               </button>
 
-              <button type="button" data-status-tab="pagos" class="tab-reembolso-btn px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 transition cursor-pointer shrink-0 whitespace-nowrap ${renderTabClass('pagos')}">
-                <span>✅ Aprovados / Pagos</span>
-                <span class="px-1.5 py-0.5 rounded-md text-[10px] font-black ${this.activeStatusTab === 'pagos' ? 'bg-white/20 text-white' : 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300'}">${pagosCount}</span>
+              <button type="button" data-status-tab="pendente_agaxtur" class="tab-reembolso-btn px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 transition cursor-pointer shrink-0 whitespace-nowrap ${renderTabClass('pendente_agaxtur')}">
+                <span>🌐 Ação Agaxtur</span>
+                <span class="px-1.5 py-0.5 rounded-md text-[10px] font-black ${this.activeStatusTab === 'pendente_agaxtur' ? 'bg-white/20 text-white' : 'bg-purple-100 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300'}">${agaxturCount}</span>
               </button>
 
-              <button type="button" data-status-tab="recusados" class="tab-reembolso-btn px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 transition cursor-pointer shrink-0 whitespace-nowrap ${renderTabClass('recusados')}">
-                <span>❌ Recusados / Cancelados</span>
-                <span class="px-1.5 py-0.5 rounded-md text-[10px] font-black ${this.activeStatusTab === 'recusados' ? 'bg-white/20 text-white' : 'bg-rose-100 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300'}">${recusadosCount}</span>
+              <button type="button" data-status-tab="concluido" class="tab-reembolso-btn px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 transition cursor-pointer shrink-0 whitespace-nowrap ${renderTabClass('concluido')}">
+                <span>✅ Concluídos</span>
+                <span class="px-1.5 py-0.5 rounded-md text-[10px] font-black ${this.activeStatusTab === 'concluido' ? 'bg-white/20 text-white' : 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300'}">${concluidoCount}</span>
               </button>
             </div>
 
             <!-- Campo de Busca em Tempo Real -->
             <div class="relative w-full md:w-80 shrink-0">
-              <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-400">
+              <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
               </div>
-              <input id="input-busca-reembolso" type="text" placeholder="Pesquisar cliente, destino, LOC, fornecedor..." value="${this.buscaTermo}" class="h-10 w-full text-xs font-semibold pl-10 pr-4 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition flex items-center" />
+              <input id="input-busca-reembolso" type="text" placeholder="Pesquisar viagem, ID, produto, cliente, status..." value="${this.buscaTermo}" class="h-10 w-full text-xs font-semibold pl-10 pr-4 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition flex items-center" />
             </div>
 
           </div>
@@ -588,7 +733,7 @@ export class ReembolsosPage {
           <!-- Tabela de Reembolsos -->
           <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden flex flex-col">
             <div class="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/40 dark:bg-slate-900/40">
-              <h2 class="text-sm font-black text-slate-700 dark:text-slate-300 tracking-wider uppercase flex items-center gap-1.5">Fila de Reembolsos Ativos ${renderHelpIcon('status-reembolso')}</h2>
+              <h2 class="text-sm font-black text-slate-700 dark:text-slate-300 tracking-wider uppercase flex items-center gap-1.5">Fila de Reembolsos e Tratativas ${renderHelpIcon('status-reembolso')}</h2>
               <span class="px-2.5 py-1 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400 font-extrabold text-[10px] rounded border border-indigo-100 dark:border-indigo-900/40 uppercase tracking-wider">
                 ${filtrados.length} de ${totalReembolsos} solicitações
               </span>
@@ -603,42 +748,49 @@ export class ReembolsosPage {
                 <p class="text-xs text-slate-400 dark:text-slate-400 font-medium max-w-sm mx-auto">Não encontramos nenhuma solicitação correspondente ao termo ou filtro selecionado.</p>
               </div>
             ` : `
-              <!-- Mobile View: Cards (Visible only on mobile portrait) -->
+              <!-- Mobile View: Cards -->
               <div class="block md:hidden p-4 space-y-4 max-h-[600px] overflow-y-auto custom-scrollbar">
                 ${filtrados.map(r => this.renderMobileCard(r)).join('')}
               </div>
 
-              <!-- Desktop View: Table (Hidden on mobile portrait) -->
+              <!-- Desktop View: Table -->
               <div class="hidden md:block overflow-x-auto custom-scrollbar">
                 <table class="w-full text-left border-collapse">
                   <thead class="sticky top-0 z-20 backdrop-blur-md">
                     <tr class="bg-slate-50/90 dark:bg-slate-800/90 text-[10px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
-                      <th class="py-3 px-4">Cliente</th>
+                      <th class="py-3 px-4">ID Reembolso</th>
                       <th class="py-3 px-4">Viagem / Localizador</th>
-                      <th class="py-3 px-4">Produto Cancelado</th>
-                      <th class="py-3 px-4">Fornecedor</th>
-                      <th class="py-3 px-4">Valor</th>
-                      <th class="py-3 px-4">Solicitação</th>
+                      <th class="py-3 px-4">Passageiro</th>
+                      <th class="py-3 px-4">Produto</th>
+                      <th class="py-3 px-4">Valor Produto</th>
+                      <th class="py-3 px-4">Valores (Sol. / Aprov. / Util.)</th>
                       <th class="py-3 px-4">SLA Cronômetro</th>
-                      <th class="py-3 px-4 text-center whitespace-nowrap">Status / Ação</th>
+                      <th class="py-3 px-4 text-center whitespace-nowrap">Status da Tratativa</th>
+                      <th class="py-3 px-4 text-center whitespace-nowrap">Ações</th>
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-xs text-slate-700 dark:text-slate-300 font-semibold bg-white/50 dark:bg-slate-900/30">
                     ${filtrados.map(r => {
-                      const isPago = r.status === 'pago';
+                      const idReembolsoCurto = r.codigo_ref || r.codigoRef || `#RMB-${r.id.slice(0, 6).toUpperCase()}`;
                       const dataAberturaStr = r.created_at || r.created_at_time;
-                      
+                      const tratativaInfo = formatStatusTratativa(r.status_tratativa || r.status);
+                      const isConcluido = tratativaInfo.key === 'concluido';
+
+                      const valorProduto = Number(r.valor_produto || r.produto?.valor || r.produto?.valor_venda || 0);
+                      const valorSol = Number(r.valor_solicitado || 0);
+                      const valorAprov = Number(r.valor_aprovado || 0);
+                      const valorUtil = Number(r.valor_utilizado_pax || 0);
+                      const saldo = calculateSaldoReembolso(valorAprov, valorUtil);
+
                       return `
                         <tr class="table-row-hover transition duration-150">
-                          <!-- Cliente -->
+                          <!-- ID Reembolso -->
                           <td class="py-3 px-4 whitespace-nowrap">
-                            <span class="block text-slate-800 dark:text-slate-100 font-bold">
-                              ${(r.codigo_ref || r.codigoRef) ? `<span class="mr-1 text-[10px] font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-1 py-0.5 rounded border border-slate-200/50 dark:border-slate-800">${highlightMatch(r.codigo_ref || r.codigoRef, this.buscaTermo)}</span>` : ''}
-                              ${highlightMatch(r.viagem?.cliente?.nome || 'Cliente Desconhecido', this.buscaTermo)}
+                            <span class="inline-block px-2 py-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono font-black text-xs rounded-lg border border-slate-200/60 dark:border-slate-700/60">
+                              ${highlightMatch(idReembolsoCurto, this.buscaTermo)}
                             </span>
-                            <span class="block text-[10px] text-slate-400 dark:text-slate-400 font-semibold">${r.viagem?.cliente?.email || 'Sem e-mail'}</span>
                           </td>
-                          
+
                           <!-- Viagem / Localizador -->
                           <td class="py-3 px-4 whitespace-nowrap">
                             <span class="block text-slate-800 dark:text-slate-100 font-bold">✈️ ${highlightMatch(r.viagem?.destino || 'Sem Destino', this.buscaTermo)}</span>
@@ -653,33 +805,50 @@ export class ReembolsosPage {
                               </span>
                             </div>
                           </td>
-   
-                          <!-- Produto Cancelado -->
+
+                          <!-- Passageiro -->
+                          <td class="py-3 px-4 whitespace-nowrap">
+                            <span class="block text-slate-800 dark:text-slate-100 font-bold">
+                              ${highlightMatch(r.viagem?.cliente?.nome || 'Cliente Desconhecido', this.buscaTermo)}
+                            </span>
+                            <span class="block text-[10px] text-slate-400 font-semibold">${r.viagem?.cliente?.email || 'Sem e-mail'}</span>
+                          </td>
+                          
+                          <!-- Produto -->
                           <td class="py-3 px-4">
-                            <span class="block text-slate-700 dark:text-slate-200 font-bold">[${(r.produto?.tipo || 'outro').toUpperCase()}]</span>
-                            <span class="block text-[11px] text-slate-400 dark:text-slate-400 font-medium truncate max-w-[160px]">${highlightMatch(r.produto?.descricao || 'Sem descrição', this.buscaTermo)}</span>
+                            <span class="block text-slate-700 dark:text-slate-200 font-bold">[${(r.produto?.tipo || 'outro').toUpperCase()}] ${highlightMatch(r.produto?.fornecedor || '', this.buscaTermo)}</span>
+                            <span class="block text-[11px] text-slate-400 font-medium truncate max-w-[160px]" title="${r.produto?.descricao || ''}">${highlightMatch(r.produto?.descricao || 'Sem descrição', this.buscaTermo)}</span>
                           </td>
-   
-                          <!-- Fornecedor -->
+
+                          <!-- Valor do Produto -->
                           <td class="py-3 px-4 whitespace-nowrap">
-                            <span class="text-slate-600 dark:text-slate-300 font-bold">${highlightMatch(r.produto?.fornecedor || 'Fornecedor n/d', this.buscaTermo)}</span>
-                          </td>
-   
-                          <!-- Valor -->
-                          <td class="py-3 px-4 whitespace-nowrap">
-                            <span class="text-indigo-600 dark:text-indigo-400 font-black font-mono">
-                              R$ ${Number(r.valor_solicitado || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            <span class="text-slate-700 dark:text-slate-300 font-mono font-bold">
+                              R$ ${valorProduto.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </span>
                           </td>
-   
-                          <!-- Solicitação -->
-                          <td class="py-3 px-4 whitespace-nowrap text-slate-500 dark:text-slate-400 font-bold text-xs">
-                            ${formatarData(r.data_solicitacao)}
+
+                          <!-- Valores: Solicitado / Aprovado / Utilizado -->
+                          <td class="py-3 px-4 whitespace-nowrap">
+                            <div class="space-y-0.5 text-[11px]">
+                              <div class="flex items-center gap-1.5">
+                                <span class="text-[9px] font-bold uppercase text-slate-400">Sol:</span>
+                                <strong class="text-indigo-600 dark:text-indigo-400 font-mono">R$ ${valorSol.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
+                              </div>
+                              <div class="flex items-center gap-1.5">
+                                <span class="text-[9px] font-bold uppercase text-slate-400">Apr:</span>
+                                <strong class="text-emerald-600 dark:text-emerald-400 font-mono">R$ ${valorAprov.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
+                              </div>
+                              <div class="flex items-center gap-1.5">
+                                <span class="text-[9px] font-bold uppercase text-slate-400">Pax:</span>
+                                <strong class="text-purple-600 dark:text-purple-400 font-mono">R$ ${valorUtil.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
+                                ${saldo > 0 ? `<span class="text-[9px] px-1 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 rounded font-black border border-amber-200/50">Saldo: R$ ${saldo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>` : ''}
+                              </div>
+                            </div>
                           </td>
-   
+
                           <!-- SLA Cronômetro -->
                           <td class="py-3 px-4 whitespace-nowrap">
-                            ${isPago ? `
+                            ${isConcluido ? `
                               <span class="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-50 dark:bg-emerald-950/45 text-emerald-700 dark:text-emerald-400 font-extrabold text-[10px] rounded-lg border border-emerald-100 dark:border-emerald-900/40">
                                 ✅ Concluído em ${formatarData(r.data_resolucao)}
                               </span>
@@ -689,20 +858,25 @@ export class ReembolsosPage {
                               </span>
                             `}
                           </td>
-   
-                          <!-- Status / Ação -->
+
+                          <!-- Status da Tratativa -->
+                          <td class="py-3 px-4 text-center whitespace-nowrap">
+                            <select data-reembolso-id="${r.id}" class="select-status-reembolso h-8 px-2.5 py-1 border border-slate-200/80 dark:border-slate-700 rounded-lg text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 cursor-pointer shadow-xs">
+                              <option value="pendente_agencia" ${tratativaInfo.key === 'pendente_agencia' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">🏢 Reembolso pendente ação agência</option>
+                              <option value="pendente_fornecedor" ${tratativaInfo.key === 'pendente_fornecedor' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">✈️ Reembolso pendente ação fornecedor</option>
+                              <option value="pendente_agaxtur" ${tratativaInfo.key === 'pendente_agaxtur' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">🌐 Reembolso pendente ação Agaxtur</option>
+                              <option value="concluido" ${tratativaInfo.key === 'concluido' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">✅ Reembolso concluido</option>
+                            </select>
+                          </td>
+
+                          <!-- Ações -->
                           <td class="py-3 px-4 text-center whitespace-nowrap">
                             <div class="inline-flex items-center justify-center gap-1.5">
-                              <select data-reembolso-id="${r.id}" class="select-status-reembolso h-8 px-2.5 py-1 border border-slate-200/80 dark:border-slate-700 rounded-lg text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 cursor-pointer shadow-xs">
-                                <option value="solicitado" ${r.status === 'solicitado' || r.status === 'Aguardando Fornecedor' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Aguardando Fornecedor</option>
-                                <option value="em_analise" ${r.status === 'em_analise' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Em Análise</option>
-                                <option value="aprovado" ${r.status === 'aprovado' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Aprovado</option>
-                                <option value="recusado" ${r.status === 'recusado' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Recusado</option>
-                                <option value="pago" ${r.status === 'pago' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">💸 Concluído / Pago</option>
-                                <option value="cancelado" ${r.status === 'cancelado' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Cancelado</option>
-                              </select>
+                              <button data-edit-reembolso-id="${r.id}" class="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-400 rounded-lg border border-indigo-200/80 dark:border-indigo-800/60 transition text-xs font-bold shadow-xs cursor-pointer" title="Editar Valores e Detalhes">
+                                ✏️ Valores
+                              </button>
                               ${this.perfil?.role === 'admin' ? `
-                                <button data-delete-reembolso-id="${r.id}" class="h-8 w-8 inline-flex items-center justify-center bg-slate-50 hover:bg-rose-50 dark:bg-slate-800 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-lg border border-slate-200/60 dark:border-slate-700/60 transition text-xs shadow-xs cursor-pointer" title="Excluir Reembolso">
+                                <button data-delete-reembolso-id="${r.id}" class="h-7 w-7 inline-flex items-center justify-center bg-slate-50 hover:bg-rose-50 dark:bg-slate-800 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-lg border border-slate-200/60 dark:border-slate-700/60 transition text-xs shadow-xs cursor-pointer" title="Excluir Reembolso">
                                   🗑️
                                 </button>
                               ` : ''}
@@ -728,111 +902,87 @@ export class ReembolsosPage {
    * Renderiza um card individual de reembolso para exibição em dispositivos móveis
    */
   private renderMobileCard(r: any): string {
-    const isPago = r.status === 'pago';
+    const idReembolsoCurto = r.codigo_ref || r.codigoRef || `#RMB-${r.id.slice(0, 6).toUpperCase()}`;
+    const tratativaInfo = formatStatusTratativa(r.status_tratativa || r.status);
+    const isConcluido = tratativaInfo.key === 'concluido';
     const dataAberturaStr = r.created_at || r.created_at_time;
-    const formatarData = (dStr: string) => {
-      if (!dStr) return '';
-      const dataApenas = dStr.includes('T') ? dStr.split('T')[0] : dStr.split(' ')[0];
-      const parts = dataApenas.split('-');
-      if (parts.length !== 3) return dStr;
-      return `${parts[2]}/${parts[1]}/${parts[0]}`;
-    };
+    
+    const valorProduto = Number(r.valor_produto || r.produto?.valor || r.produto?.valor_venda || 0);
+    const valorSol = Number(r.valor_solicitado || 0);
+    const valorAprov = Number(r.valor_aprovado || 0);
+    const valorUtil = Number(r.valor_utilizado_pax || 0);
+    const saldo = calculateSaldoReembolso(valorAprov, valorUtil);
 
     return `
-      <div class="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-4">
-        <!-- Header: Client Info -->
-        <div class="flex items-start justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+      <div class="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-3.5">
+        <!-- Header: Client & ID Info -->
+        <div class="flex items-start justify-between border-b border-slate-100 dark:border-slate-800 pb-3 gap-2">
           <div class="space-y-1">
+            <span class="inline-block px-1.5 py-0.5 rounded font-mono text-[9px] font-black bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 border border-indigo-200/40">
+              ${idReembolsoCurto}
+            </span>
             <span class="block text-slate-800 dark:text-slate-200 font-bold">
-              ${(r.codigo_ref || r.codigoRef) ? `<span class="mr-1 text-[10px] font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-1 py-0.5 rounded border border-slate-200/50 dark:border-slate-800">${highlightMatch(r.codigo_ref || r.codigoRef, this.buscaTermo)}</span>` : ''}
               ${highlightMatch(r.viagem?.cliente?.nome || 'Cliente Desconhecido', this.buscaTermo)}
             </span>
-            <span class="block text-[10px] text-slate-400 dark:text-slate-400 font-semibold">${r.viagem?.cliente?.email || 'Sem e-mail'}</span>
+            <span class="block text-[10px] text-slate-400 font-semibold">${r.viagem?.cliente?.email || 'Sem e-mail'}</span>
           </div>
           <div>
-            ${isPago ? `
-              <span class="inline-block px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/45 text-emerald-700 dark:text-emerald-400 font-extrabold text-[9px] rounded border border-emerald-100 dark:border-emerald-900/40 uppercase">
-                Pago
-              </span>
-            ` : `
-              <span class="inline-block px-2 py-0.5 bg-amber-50 dark:bg-amber-950/45 text-amber-700 dark:text-amber-400 font-extrabold text-[9px] rounded border border-amber-100 dark:border-amber-900/40 uppercase">
-                Pendente
-              </span>
-            `}
+            <span class="inline-block px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider ${tratativaInfo.badgeClass}">
+              ${tratativaInfo.icon} ${tratativaInfo.label}
+            </span>
           </div>
         </div>
 
         <!-- Body: Travel + Product details -->
-        <div class="grid grid-cols-2 gap-4 text-xs">
+        <div class="grid grid-cols-2 gap-3 text-xs">
           <div class="space-y-1">
-            <span class="block text-[8px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider">Viagem & LOC</span>
+            <span class="block text-[8px] font-black text-slate-400 uppercase tracking-wider">Viagem & LOC</span>
             <span class="block text-slate-800 dark:text-slate-200 font-bold">✈️ ${highlightMatch(r.viagem?.destino || 'Sem Destino', this.buscaTermo)}</span>
-            <div class="flex items-center gap-1.5 mt-0.5">
+            <div class="flex items-center gap-1 mt-0.5">
               ${(r.viagem?.codigo_ref || r.viagem?.codigoRef) ? `
-                <span class="inline-block px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-650 dark:text-indigo-400 font-mono font-bold text-[9px] rounded uppercase border border-indigo-200/40 dark:border-indigo-850">
-                  ${highlightMatch(r.viagem?.codigo_ref || r.viagem?.codigoRef, this.buscaTermo)}
+                <span class="px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 font-mono font-bold text-[9px] rounded uppercase border border-indigo-200/40">
+                  ${r.viagem?.codigo_ref || r.viagem?.codigoRef}
                 </span>
               ` : ''}
-              <span class="inline-block px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-extrabold text-[9px] rounded uppercase border border-slate-200/50 dark:border-slate-800">
-                LOC: ${highlightMatch(r.viagem?.codigo_localizador || 'S/ LOC', this.buscaTermo)}
+              <span class="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 font-extrabold text-[9px] rounded uppercase">
+                LOC: ${r.viagem?.codigo_localizador || 'S/ LOC'}
               </span>
             </div>
           </div>
           <div class="space-y-1">
-            <span class="block text-[8px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider">Produto Cancelado</span>
-            <span class="block text-slate-700 dark:text-slate-300 font-bold">[${(r.produto?.tipo || 'outro').toUpperCase()}]</span>
-            <span class="block text-[10px] text-slate-400 dark:text-slate-400 font-medium truncate max-w-[130px]" title="${r.produto?.descricao || ''}">${r.produto?.descricao || 'Sem descrição'}</span>
+            <span class="block text-[8px] font-black text-slate-400 uppercase tracking-wider">Produto</span>
+            <span class="block text-slate-700 dark:text-slate-300 font-bold">[${(r.produto?.tipo || 'outro').toUpperCase()}] ${r.produto?.fornecedor || ''}</span>
+            <span class="block text-[10px] text-slate-400 truncate">${r.produto?.descricao || 'Sem descrição'}</span>
           </div>
         </div>
 
-        <!-- Row: Provider & Value -->
-        <div class="grid grid-cols-2 gap-4 bg-slate-50 dark:bg-slate-900/40 p-3 rounded-xl border border-slate-100 dark:border-slate-800/60 text-xs">
+        <!-- Row: Financial tracking -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-slate-50 dark:bg-slate-800/40 p-3 rounded-xl border border-slate-100 dark:border-slate-800 text-xs">
           <div>
-            <span class="block text-[8px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider">Fornecedor</span>
-            <span class="text-slate-700 dark:text-slate-300 font-bold">${r.produto?.fornecedor || 'Fornecedor n/d'}</span>
+            <span class="block text-[8px] font-black text-slate-400 uppercase">Valor Produto</span>
+            <strong class="text-slate-700 dark:text-slate-300 font-mono text-xs">R$ ${valorProduto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
           </div>
           <div>
-            <span class="block text-[8px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider">Valor Solicitado</span>
-            <span class="text-indigo-600 dark:text-indigo-400 font-black text-sm">
-              R$ ${Number(r.valor_solicitado || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </span>
+            <span class="block text-[8px] font-black text-slate-400 uppercase">Solicitado</span>
+            <strong class="text-indigo-600 dark:text-indigo-400 font-mono text-xs">R$ ${valorSol.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
+          </div>
+          <div>
+            <span class="block text-[8px] font-black text-slate-400 uppercase">Aprovado</span>
+            <strong class="text-emerald-600 dark:text-emerald-400 font-mono text-xs">R$ ${valorAprov.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
+          </div>
+          <div>
+            <span class="block text-[8px] font-black text-slate-400 uppercase">Utilizado Pax</span>
+            <strong class="text-purple-600 dark:text-purple-400 font-mono text-xs">R$ ${valorUtil.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
           </div>
         </div>
 
-        <!-- Row: Solicitation and SLA timer -->
-        <div class="flex items-center justify-between text-xs border-t border-slate-100 dark:border-slate-800/60 pt-3">
-          <div>
-            <span class="block text-[8px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider">Solicitação</span>
-            <span class="text-slate-500 dark:text-slate-400 font-semibold">${formatarData(r.data_solicitacao)}</span>
-          </div>
-          <div>
-            <span class="block text-[8px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider text-right mb-0.5">SLA Cronômetro</span>
-            ${isPago ? `
-              <span class="inline-block px-2.5 py-1 bg-emerald-50 dark:bg-emerald-950/45 text-emerald-700 dark:text-emerald-400 font-extrabold text-[9px] rounded-lg border border-emerald-100 dark:border-emerald-900/40">
-                ✅ Concluído em ${formatarData(r.data_resolucao)}
-              </span>
-            ` : `
-              <span class="sla-active-timer text-[10px] font-black text-rose-600 dark:text-rose-400 bg-rose-50/70 dark:bg-rose-950/20 border border-rose-100/50 dark:border-rose-900/30 px-2.5 py-0.5 rounded-lg flex items-center" data-created-at="${dataAberturaStr}">
-                Calculando...
-              </span>
-            `}
-          </div>
-        </div>
-
-        <!-- Action Section: Dropdown status + Delete -->
-        <div class="flex items-center gap-2 pt-1 border-t border-slate-100 dark:border-slate-800/60">
-          <div class="flex-1">
-            <select data-reembolso-id="${r.id}" class="select-status-reembolso w-full px-2.5 py-2 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 cursor-pointer">
-              <option value="solicitado" ${r.status === 'solicitado' || r.status === 'Aguardando Fornecedor' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Aguardando Fornecedor</option>
-              <option value="em_analise" ${r.status === 'em_analise' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Em Análise</option>
-              <option value="aprovado" ${r.status === 'aprovado' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Aprovado</option>
-              <option value="recusado" ${r.status === 'recusado' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Recusado</option>
-              <option value="pago" ${r.status === 'pago' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">💸 Concluído / Pago</option>
-              <option value="cancelado" ${r.status === 'cancelado' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Cancelado</option>
-            </select>
-          </div>
+        <!-- Action Section -->
+        <div class="flex items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+          <button data-edit-reembolso-id="${r.id}" class="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 text-xs font-bold rounded-xl border border-indigo-200/80 transition">
+            ✏️ Editar Valores
+          </button>
           ${this.perfil?.role === 'admin' ? `
-            <button data-delete-reembolso-id="${r.id}" class="p-2 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-900/30 text-rose-600 dark:text-rose-400 rounded-xl border border-rose-100/30 dark:border-rose-900/30 transition text-xs flex items-center justify-center shadow-sm w-9 h-9 shrink-0" title="Excluir Reembolso">
+            <button data-delete-reembolso-id="${r.id}" class="p-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl border border-rose-100 transition text-xs" title="Excluir Reembolso">
               🗑️
             </button>
           ` : ''}

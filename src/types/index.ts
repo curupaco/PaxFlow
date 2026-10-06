@@ -386,19 +386,25 @@ export interface InboxMessage {
  */
 export interface Reembolso {
   id: string;
-  viagemId?: string; // ID do viagem relacionada
+  viagemId?: string; // ID da viagem relacionada
   viagem_id?: string;
-  produtoViagemId?: string; // ID do produto específico (opcional, caso seja reembolso total da viagem)
+  produtoViagemId?: string; // ID do produto específico
   produto_viagem_id?: string;
   consultorSolicitanteId?: string; // ID do consultor que iniciou o reembolso
   consultor_solicitante_id?: string;
+  valorProduto?: number; // Valor original do produto na venda
+  valor_produto?: number;
   valorSolicitado?: number;
   valor_solicitado?: number;
   valorAprovado?: number; // Preenchido após análise do financeiro/fornecedor
   valor_aprovado?: number;
+  valorUtilizadoPax?: number; // Valor utilizado pelo passageiro como crédito/reutilização
+  valor_utilizado_pax?: number;
   taxaRetencao?: number; // Taxa cobrada pelo fornecedor/agência
   taxa_retencao?: number;
   status: 'solicitado' | 'em_analise' | 'aprovado' | 'recusado' | 'pago' | 'cancelado' | 'Aguardando Fornecedor';
+  statusTratativa?: 'pendente_agencia' | 'pendente_fornecedor' | 'pendente_agaxtur' | 'concluido' | string;
+  status_tratativa?: 'pendente_agencia' | 'pendente_fornecedor' | 'pendente_agaxtur' | 'concluido' | string;
   motivoCancelamento?: string;
   motivo_cancelamento?: string;
   observacoesFinanceiras?: string;

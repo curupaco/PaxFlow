@@ -821,14 +821,20 @@ O **Plano 2 de UX** expande o ganho de agilidade e a ergonomia de uso do PaxFlow
      - **Lembrete Rápido (+2 dias)**: Cria automaticamente um lembrete com agendamento no Inbox para daqui a 2 dias (turno manhã).
      - **Ver Detalhes / Notas**: Abertura instantânea da ficha completa.
 
-3. **Abas Superiores com Contadores Dinâmicos na Central de Reembolsos**:
-   - Barra de navegação tipo _pills_ no topo da tabela de reembolsos com contadores recalculados em tempo real:
+3. **Central de Reembolsos, Acompanhamento Financeiro & Tratativas Operacionais**:
+   - Barra de navegação tipo _pills_ no topo da tabela com contadores recalculados em tempo real segmentados pelos **4 Status da Tratativa**:
      - `Todos (N)`
-     - `⏳ Solicitados (N)` (englobando solicitações iniciais e aguardo de fornecedor)
-     - `🔍 Em Análise (N)`
-     - `✅ Aprovados / Pagos (N)`
-     - `❌ Recusados / Cancelados (N)`
-   - Permite alternar a visão da fila com 1 clique, mantendo a compatibilidade com a busca textual.
+     - `🏢 Ação Agência (N)` (`pendente_agencia`)
+     - `✈️ Ação Fornecedor (N)` (`pendente_fornecedor`)
+     - `🌐 Ação Agaxtur (N)` (`pendente_agaxtur`)
+     - `✅ Concluídos (N)` (`concluido`)
+   - **Campos e Rastreabilidade Completa**:
+     - **ID do Reembolso**: Identificador único com formatação e cópia rápida (`#RMB-XXXX`).
+     - **Viagem**: Código de referência (`VIA-XXXX`), Destino e Localizador (LOC).
+     - **Produto & Valor**: Tipo de produto, fornecedor, descrição e o **Valor Original do Produto** na venda.
+     - **Acompanhamento dos 3 Valores**: **Valor Solicitado**, **Valor Aprovado** e **Valor Utilizado pelo Pax**, com cálculo automático do Saldo Restante (`Aprovado - Utilizado`).
+     - **Modal de Edição Rápida de Valores (`✏️ Valores`)**: Permite ajustar a qualquer momento os valores aprovados, créditos utilizados e notas de negociação.
+   - **Resiliência a Schema Drift (Zero-Break)**: Fallback transparente para o campo `observacoes_financeiras` em caso de erro `42703`.
 
 4. **Sync Scroll Espelhado no PaxFlow Studio™**:
    - Rolagem vertical sincronizada e proporcional entre a coluna do editor e a janela do **Live Preview** no modo desktop, garantindo que o consultor visualize no preview exatamente o dia ou serviço que está preenchendo no editor.

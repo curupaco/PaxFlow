@@ -50,77 +50,81 @@ export function renderTimelineHTML(cronograma: any[]): string {
 /**
  * Renderiza a listagem de reembolsos
  */
+/**
+ * Renderiza a listagem de reembolsos
+ */
 export function renderReembolsosTabHTML(reembolsos: any[]): string {
   if (!reembolsos || reembolsos.length === 0) return '';
   return `
     <h4 class="text-xs font-black text-slate-400 dark:text-slate-400 uppercase tracking-wide mb-3">Solicitações de Reembolso nesta Viagem</h4>
     <div class="space-y-3">
       ${reembolsos.map((r: any) => {
-        let statusBadgeClass = 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300';
-        let statusLabel = r.status;
-        if (r.status === 'solicitado' || r.status === 'Aguardando Fornecedor') {
-          statusBadgeClass = 'bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400 border border-amber-100/30';
-          statusLabel = 'Aguardando Fornecedor';
-        } else if (r.status === 'em_analise') {
-          statusBadgeClass = 'bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400 border border-blue-100/30';
-          statusLabel = 'Em Análise';
-        } else if (r.status === 'aprovado') {
-          statusBadgeClass = 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/30 dark:text-indigo-400 border border-indigo-100/30';
-          statusLabel = 'Aprovado';
-        } else if (r.status === 'recusado') {
-          statusBadgeClass = 'bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-400 border border-rose-100/30';
-          statusLabel = 'Recusado';
-        } else if (r.status === 'pago') {
-          statusBadgeClass = 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400 border border-emerald-100/30';
-          statusLabel = '💸 Pago / Concluído';
-        } else if (r.status === 'cancelado') {
-          statusBadgeClass = 'bg-slate-50 text-slate-400 dark:bg-slate-800 dark:text-slate-400 border border-slate-200/50';
-          statusLabel = 'Cancelado';
+        const idCurto = r.codigo_ref || r.codigoRef || (r.id ? `#RMB-${r.id.slice(0, 5).toUpperCase()}` : 'Reembolso');
+        const tratativa = r.status_tratativa || r.status || 'pendente_agencia';
+        let statusBadgeClass = 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-200/80';
+        let statusLabel = 'Reembolso pendente ação agência';
+        let statusIcon = '🏢';
+
+        if (tratativa === 'pendente_fornecedor' || tratativa === 'solicitado') {
+          statusBadgeClass = 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400 border border-blue-200/80';
+          statusLabel = 'Reembolso pendente ação fornecedor';
+          statusIcon = '✈️';
+        } else if (tratativa === 'pendente_agaxtur') {
+          statusBadgeClass = 'bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-400 border border-purple-200/80';
+          statusLabel = 'Reembolso pendente ação Agaxtur';
+          statusIcon = '🌐';
+        } else if (tratativa === 'concluido' || tratativa === 'pago') {
+          statusBadgeClass = 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200/80';
+          statusLabel = 'Reembolso concluido';
+          statusIcon = '✅';
         }
 
         const dataSolicitacao = r.data_solicitacao ? new Date(r.data_solicitacao).toLocaleDateString('pt-BR') : '';
         const dataResolucao = r.data_resolucao ? new Date(r.data_resolucao).toLocaleDateString('pt-BR') : '';
+        const valorProd = Number(r.valor_produto || r.produto?.valor || r.produto?.valor_venda || 0);
+        const valorSol = Number(r.valor_solicitado || 0);
+        const valorAprov = Number(r.valor_aprovado || 0);
+        const valorUtil = Number(r.valor_utilizado_pax || 0);
+        const saldo = Math.max(0, valorAprov - valorUtil);
 
         return `
-          <div class="p-4 bg-slate-50/50 dark:bg-slate-800/20 rounded-xl border border-slate-200/60 dark:border-slate-800/80 space-y-2">
+          <div class="p-4 bg-slate-50/50 dark:bg-slate-800/20 rounded-xl border border-slate-200/60 dark:border-slate-800/80 space-y-2.5">
             <div class="flex items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-2">
-              <span class="text-xs font-black text-indigo-600 dark:text-indigo-400">Solicitação de Reembolso</span>
-              <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${statusBadgeClass}">
-                ${statusLabel}
+              <span class="text-xs font-black text-indigo-600 dark:text-indigo-400 flex items-center gap-1.5">
+                <span class="font-mono text-[10px] bg-indigo-50 dark:bg-indigo-950/50 px-1.5 py-0.5 rounded border border-indigo-200/40">${idCurto}</span>
+                <span>Solicitação de Reembolso</span>
+              </span>
+              <span class="px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider ${statusBadgeClass} flex items-center gap-1">
+                <span>${statusIcon}</span>
+                <span>${statusLabel}</span>
               </span>
             </div>
             
-            <div class="grid grid-cols-2 gap-2.5 text-xs text-slate-600 dark:text-slate-400">
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs text-slate-600 dark:text-slate-400">
               <div>
-                <span class="block text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase">Produto Afetado:</span>
-                <strong class="font-extrabold text-slate-800 dark:text-slate-200">${r.produto ? `[${(r.produto.tipo || 'outro').toUpperCase()}] ${r.produto.fornecedor}` : 'Viagem Integral'}</strong>
+                <span class="block text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase">Produto:</span>
+                <strong class="font-extrabold text-slate-800 dark:text-slate-200">${r.produto ? `[${(r.produto.tipo || 'outro').toUpperCase()}] ${r.produto.fornecedor || ''}` : 'Viagem Integral'}</strong>
+              </div>
+              <div>
+                <span class="block text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase">Valor do Produto:</span>
+                <strong class="text-slate-700 dark:text-slate-300">R$ ${valorProd.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
               </div>
               <div>
                 <span class="block text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase">Valor Solicitado:</span>
-                <strong class="text-slate-800 dark:text-slate-200">R$ ${Number(r.valor_solicitado || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+                <strong class="text-indigo-600 dark:text-indigo-400 font-black">R$ ${valorSol.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
               </div>
-              ${r.valor_aprovado ? `
-                <div>
-                  <span class="block text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase">Valor Aprovado:</span>
-                  <strong class="text-emerald-600 dark:text-emerald-400 font-black">R$ ${Number(r.valor_aprovado).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
-                </div>
-              ` : ''}
-              ${r.taxa_retencao ? `
-                <div>
-                  <span class="block text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase">Taxa Retenção:</span>
-                  <strong class="text-rose-600 dark:text-rose-400 font-bold">R$ ${Number(r.taxa_retencao).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
-                </div>
-              ` : ''}
               <div>
-                <span class="block text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase">Data Abertura:</span>
-                <span class="font-semibold text-slate-800 dark:text-slate-200">${dataSolicitacao}</span>
+                <span class="block text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase">Valor Aprovado:</span>
+                <strong class="text-emerald-600 dark:text-emerald-400 font-black">R$ ${valorAprov.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
               </div>
-              ${dataResolucao ? `
-                <div>
-                  <span class="block text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase">Data Conclusão:</span>
-                  <span class="font-semibold text-emerald-600 dark:text-emerald-400">${dataResolucao}</span>
-                </div>
-              ` : ''}
+              <div>
+                <span class="block text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase">Utilizado pelo Pax:</span>
+                <strong class="text-purple-600 dark:text-purple-400 font-black">R$ ${valorUtil.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+              </div>
+              <div>
+                <span class="block text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase">Saldo Restante:</span>
+                <strong class="${saldo > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-slate-500'} font-black">R$ ${saldo.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+              </div>
             </div>
 
             <div class="pt-1.5 border-t border-slate-100 dark:border-slate-800/80">
@@ -134,6 +138,11 @@ export function renderReembolsosTabHTML(reembolsos: any[]): string {
                 <p class="text-slate-600 dark:text-slate-400 font-medium mt-0.5">${r.observacoes_financeiras}</p>
               </div>
             ` : ''}
+
+            <div class="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800 text-[10px] text-slate-400 font-medium">
+              <span>Abertura: <strong>${dataSolicitacao || 'N/D'}</strong></span>
+              ${dataResolucao ? `<span>Conclusão: <strong>${dataResolucao}</strong></span>` : ''}
+            </div>
           </div>
         `;
       }).join('')}
