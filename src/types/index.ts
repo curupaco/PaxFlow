@@ -605,6 +605,35 @@ export interface ConvertToTripOptions {
   existingTripDataIda?: string;
 }
 
+/**
+ * Parâmetros para execução do assistente de remarcação de viagem
+ */
+export interface RemarcacaoViagemParams {
+  viagemId: string;
+  novaDataIda: string; // YYYY-MM-DD
+  novaDataVolta?: string | null; // YYYY-MM-DD
+  novosTrechos?: Array<{
+    origem: string;
+    destino: string;
+    dataIda: string;
+    dataVolta?: string;
+    horaIda?: string;
+    horaVolta?: string;
+  }>;
+  temTaxaRemarcacao: boolean;
+  taxaValor?: number;
+  taxaFornecedor?: string;
+  taxaTarifa?: number;
+  taxaTaxaEmbarque?: number;
+  taxaComissao?: number;
+  taxaMarkup?: number;
+  taxaRav?: number;
+  taxaTipo?: string;
+  motivoRemarcacao?: string;
+  consultorId: string;
+  consultorNome?: string;
+}
+
 export interface MetaPeriodo {
   id: string;
   nome: string;

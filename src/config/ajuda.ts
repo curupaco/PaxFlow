@@ -125,6 +125,13 @@ export const HELP_ITEMS: HelpItem[] = [
     details: 'A integridade da experiência do passageiro exige que todo cliente viaje com informações reconfirmadas (horários, terminais e vouchers):\n\n1. **A Janela Crítica de 24 Horas**: Quando faltam menos de 24 horas para qualquer embarque (ida principal, volta ou trecho de voo), o PaxFlow audita se o contato correspondente foi marcado como `Feito`.\n2. **Penalidade Crítica (-25 Pontos)**: Caso o contato esteja pendente, o PaxFlow Risk Score™ deduz 25 pontos no Pilar de Governança Operacional, disparando alerta visual de urgência no Dashboard.\n3. **Resolução Imediata**: Assim que o consultor realiza o contato (via WhatsApp ou Digisac) e marca como `Feito`, a pendência é instantaneamente resolvida e os 25 pontos são recuperados na pontuação da viagem.'
   },
   {
+    id: 'remarcacao-viagens-blindagem',
+    modulo: 'processos',
+    label: 'Assistente de Remarcação de Viagens e Blindagem Contábil',
+    description: 'Como remarcar datas e voos de uma viagem sem gerar duplicidade nem distorcer o financeiro.',
+    details: 'Ao remarcar uma viagem (mudança de data de ida, volta ou reemissão de voos), utilize o botão `🔁 Remarcar Viagem` dentro do modal Gerenciar Viagem:\n\n1. **Blindagem Contábil Estrita**: A `Data Financeiro` da venda original (mês da compra e comissões) permanece 100% intocada. O DRE, ranking e fechamento contábil do mês original não sofrem discrepâncias fiscais.\n2. **Sincronização do Relatório de Embarques**: As novas datas de ida, volta e trechos de voos são atualizadas no banco de dados. A data antiga é automaticamente desvinculada do relatório de embarques, eliminando duplicidades.\n3. **Taxa de Remarcação / Diferença Tarifária**: Se a cia aérea ou fornecedor cobrar multa ou diferença de tarifa, marque a opção "Houve cobrança de taxa de remarcação?". O sistema cadastra um novo produto complementar com data do dia atual e recalcula o valor total da viagem de forma transparente.\n4. **Auditoria e Timeline**: Cada remarcação registra automaticamente um comentário auditado na linha do tempo da viagem, contendo as datas anteriores, as novas datas, o motivo e as taxas cobradas.'
+  },
+  {
     id: 'faq-contatos-pre-embarque',
     modulo: 'processos',
     label: 'Perguntas Frequentes (FAQ): Contatos e Plantão de Embarques',

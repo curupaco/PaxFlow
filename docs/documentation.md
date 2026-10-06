@@ -52,6 +52,7 @@
    - 3.40 [Governança de Desistências, Check de Contato do Gestor & Reabertura de Orçamentos](#340-governança-de-desistências-check-de-contato-do-gestor--reabertura-de-orçamentos)
    - 3.41 [Arquitetura de Web Push Server-Side, Exclusão em Cascata & Integridade Transacional](#341-arquitetura-de-web-push-server-side-exclusão-em-cascata--integridade-transacional)
    - 3.42 [Agregação Segura de Produtos & Junção de Viagens com Proteção Contábil](#342-agregação-segura-de-produtos--junção-de-viagens-com-proteção-contábil)
+   - 3.43 [Assistente de Remarcação de Viagens com Blindagem Contábil em 1-Clique](#343-assistente-de-remarcação-de-viagens-com-blindagem-contábil-em-1-clique)
 4. [Diferenciais Competitivos](#4-diferenciais-competitivos)
 5. [Arquitetura Tecnológica](#5-arquitetura-tecnológica)
 6. [Segurança e Conformidade](#6-segurança-e-conformidade)
@@ -1077,6 +1078,25 @@ Para prevenir distorções no faturamento, fechamento de mês e estados de confe
 3. **Recálculo Atômico & Gestão de Pagamentos**:
    - O campo `valor_total` da viagem é recalculado de forma atômica pela soma real de seus produtos.
    - O sistema direciona o consultor para registrar a forma de pagamento e parcelamento referente ao valor adicional nos detalhes da viagem.
+
+### 3.43 Assistente de Remarcação de Viagens com Blindagem Contábil em 1-Clique
+
+Para solucionar o desafio operacional de passageiros que alteram as datas de suas viagens sem que isso gere discrepâncias fiscais e relatórios duplicados:
+
+1. **Blindagem Contábil e Fiscal**:
+   - A `data_financeiro` da viagem permanece estritamente intocada, preservando a competência fiscal original (DRE, comissões de consultores, rankings e metas mensais).
+   - Impede que vendas realizadas em um mês (ex: Outubro) sejam movidas para meses subsequentes (ex: Novembro) ao alterar as datas operacionais de embarque.
+
+2. **Sincronização Atômica do Relatório de Embarques (Zero Duplicidade)**:
+   - A alteração das datas de Ida (`data_ida`) e Volta (`data_volta`) atualiza de forma síncrona os trechos aéreos nos produtos da viagem.
+   - O `ContatosEmbarqueService` reflete de imediato as novas datas no Relatório de Embarques, removendo as datas antigas sem deixar registros órfãos ou duplicidades.
+
+3. **Cobrança de Taxas de Remarcação & Diferença Tarifária**:
+   - Modal interativo (`RemarcacaoModal`) com seletor opcional para registro de multas ou cobranças adicionais da cia aérea/fornecedor.
+   - Ao lançar taxa adicional, um novo produto do tipo correspondente é cadastrado com a data de venda do dia atual (`hoje`), mantendo a rastreabilidade financeira limpa e atualizando atomicamente o `valor_total` da viagem.
+
+4. **Auditoria e Timeline da Viagem**:
+   - Toda remarcação gera automaticamente um log de auditoria nos comentários da viagem com data/hora, identificação do operador, datas anteriores e novas datas de embarque.
 
 ---
 

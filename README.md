@@ -20,6 +20,11 @@ Plataforma SaaS de gestão operacional e fluxo de passageiros no turismo: acompa
 
 ## Funcionalidades
 
+- **Assistente de Remarcação de Viagens com Blindagem Contábil em 1-Clique [NEW]** — Módulo inteligente e seguro para alteração de datas operacionais e voos de viagens (`RemarcacaoModal` e `RemarcacaoService`):
+  - **Blindagem Contábil Estrita**: Preserva a `data_financeiro` original da venda, garantindo que o DRE, metas comerciais, rankings de consultores e o fechamento do mês da compra não sofram distorções retroativas.
+  - **Sincronização Atômica de Embarques & Zero Duplicidade**: Atualiza simultaneamente as datas de ida, volta e os trechos de voos nos produtos aéreos, removendo de imediato as datas antigas do Relatório de Embarques sem deixar duplicidades nem registros órfãos.
+  - **Tratamento de Taxa de Remarcação & Diferença Tarifária**: Suporta a cobrança de multas ou taxas de remarcação adicionais cadastradas com a competência do dia atual, recalculando atomicamente o `valor_total` da viagem.
+  - **Auditoria Automática**: Registra histórico completo na timeline/comentários da viagem com autor, motivo, datas anteriores e novas datas.
 - **Agregação Segura de Produtos & Junção de Viagens com Proteção Contábil [NEW]** — Sistema de governança contábil e orçamentária ao converter propostas ou anexar produtos a viagens existentes do mesmo passageiro:
   - **Trava Financeira para Pós-Venda e Itens Conferidos**: Bloqueia categoricamente a adição de novos produtos a viagens que já estejam na fase de Pós-Venda ou com conferência financeira validada, forçando a emissão de uma nova viagem independente para preservar a competência fiscal e a data de fechamento original.
   - **Detalhamento Mandatório de Margem**: Formulário completo no fluxo de agregação para cadastro de fornecedor, tipo de produto, localizador (LOC), data do serviço, tarifa, taxa de embarque, comissão e markup/RAV, evitando produtos com margem zerada.

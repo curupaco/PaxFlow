@@ -11,6 +11,7 @@ import { renderHelpIcon } from '../../utils/helpHelper';
 import { parsePnrText } from '../../utils/pnrParser';
 import { confirmUnsavedChanges } from '../common/UnsavedChangesModal';
 import { ClienteDetalhesModal } from '../common/ClienteDetalhesModal';
+import { RemarcacaoModal } from './RemarcacaoModal';
 import {
   renderCurrencyInputHTML,
   renderDateInputHTML,
@@ -504,6 +505,11 @@ export class EditTravelModal {
                     WhatsApp
                   </button>
 
+                  <!-- Botão de Remarcar Viagem com Blindagem Contábil -->
+                  <button id="btn-modal-remarcar-viagem" type="button" class="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/30 dark:hover:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200/80 dark:border-indigo-800/80 rounded-lg text-xs font-bold transition font-sans shadow-xs" title="Remarcar datas da viagem e sincronizar relatório de embarques com blindagem contábil">
+                    <span>🔁 Remarcar Viagem</span>
+                  </button>
+
                   <!-- Marcador de Contato Pré-Embarque -->
                   ${todosFeitos ? `
                     <button id="btn-modal-historico-digisac" type="button" class="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-900/40 rounded-lg text-xs font-bold transition font-sans" title="Todos os contatos de embarque foram realizados. Clique para abrir o histórico de conversa do Digisac.">
@@ -791,6 +797,21 @@ export class EditTravelModal {
         consultorNome: this.options.consultores.find(c => c.id === v.consultor_id)?.nome || this.options.perfil?.nome || 'Consultor',
         showToast: this.options.showToast
       });
+    });
+
+    // Atalho: Assistente de Remarcação de Viagem (Blindagem Contábil)
+    document.getElementById('btn-modal-remarcar-viagem')?.addEventListener('click', () => {
+      const modalRemarcacao = new RemarcacaoModal({
+        viagem: v,
+        consultorId: this.options.user?.id || v.consultor_id || '',
+        consultorNome: this.options.perfil?.nome || this.options.user?.email || 'Consultor',
+        showToast: (msg, tipo) => this.options.showToast(msg, tipo === 'error' ? 'error' : 'success'),
+        onSuccess: async () => {
+          await this.options.onUpdate();
+          await this.open(v.id, 'detalhes');
+        }
+      });
+      modalRemarcacao.open();
     });
 
     // Atalho Inteligente: Disparar Pré-Embarque (quando pendente)
