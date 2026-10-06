@@ -237,9 +237,14 @@ describe('OrcamentosService - Testes Subcutâneos', () => {
     const eqTripsMock = vi.fn().mockReturnValue({ not: notTripsMock });
     const selectTripsMock = vi.fn().mockReturnValue({ eq: eqTripsMock });
 
+    const confEqMock = vi.fn().mockResolvedValue({ data: [], error: null });
+    const confInMock = vi.fn().mockReturnValue({ eq: confEqMock });
+    const selectConfMock = vi.fn().mockReturnValue({ in: confInMock });
+
     vi.mocked(supabase.from).mockImplementation((table: string) => {
       if (table === 'clientes') return { select: selectCliMock } as any;
       if (table === 'viagens') return { select: selectTripsMock } as any;
+      if (table === 'loc_conferencias') return { select: selectConfMock } as any;
       return {} as any;
     });
 
@@ -248,7 +253,9 @@ describe('OrcamentosService - Testes Subcutâneos', () => {
 
     // Assert
     expect(linkedClient).toEqual(clienteMock);
-    expect(activeTrips).toEqual(viagensAtivasMock);
+    expect(activeTrips).toHaveLength(1);
+    expect(activeTrips[0].id).toBe('viagem-1');
+    expect(activeTrips[0].isElegivelAgregacao).toBe(true);
     expect(notTripsMock).toHaveBeenCalledWith('status', 'in', '("cancelada","concluida")');
   });
 
@@ -413,6 +420,12 @@ describe('OrcamentosService - Testes Subcutâneos', () => {
       origem: 'Google Ads',
     };
 
+    const selectViagemSingle = vi.fn().mockResolvedValue({
+      data: { id: 'viagem-existente-999', status: 'fechado', valor_total: 5000 },
+      error: null,
+    });
+    const selectViagemEq = vi.fn().mockReturnValue({ single: selectViagemSingle });
+
     const updateViagemEq = vi.fn().mockResolvedValue({ error: null });
     const updateViagem = vi.fn().mockReturnValue({ eq: updateViagemEq });
 
@@ -423,8 +436,14 @@ describe('OrcamentosService - Testes Subcutâneos', () => {
     const selectCli = vi.fn().mockReturnValue({ eq: selectCliEq });
 
     const insertProduto = vi.fn().mockResolvedValue({ error: null });
+    const selectProdutosEq = vi.fn().mockResolvedValue({
+      data: [{ valor_venda: 5000 }, { valor_venda: 2500 }],
+      error: null,
+    });
+
     const updateOrcEq = vi.fn().mockResolvedValue({ error: null });
     const updateOrc = vi.fn().mockReturnValue({ eq: updateOrcEq });
+    const insertOrc = vi.fn().mockResolvedValue({ error: null });
 
     vi.mocked(supabase.from).mockImplementation((table: string) => {
       if (table === 'clientes') {
@@ -433,9 +452,24 @@ describe('OrcamentosService - Testes Subcutâneos', () => {
           update: updateCli,
         } as any;
       }
-      if (table === 'viagens') return { update: updateViagem } as any;
-      if (table === 'produtos_viagem') return { insert: insertProduto } as any;
-      if (table === 'orcamentos') return { update: updateOrc } as any;
+      if (table === 'viagens') {
+        return {
+          select: vi.fn().mockReturnValue({ eq: selectViagemEq }),
+          update: updateViagem,
+        } as any;
+      }
+      if (table === 'produtos_viagem') {
+        return {
+          insert: insertProduto,
+          select: vi.fn().mockReturnValue({ eq: selectProdutosEq }),
+        } as any;
+      }
+      if (table === 'orcamentos') {
+        return {
+          update: updateOrc,
+          insert: insertOrc,
+        } as any;
+      }
       return {} as any;
     });
 
@@ -444,7 +478,7 @@ describe('OrcamentosService - Testes Subcutâneos', () => {
 
     // Assert
     expect(resultado.clienteId).toBe('cli-existente-1');
-    expect(resultado.newViagemId).toBeUndefined();
+    expect(resultado.newViagemId).toBe('viagem-existente-999');
     expect(updateViagem).toHaveBeenCalledWith(
       expect.objectContaining({
         valor_total: 7500,

@@ -447,7 +447,48 @@ export class OrcamentosService {
 
     if (tripsErr) throw tripsErr;
     if (tripsData) {
-      activeTrips = tripsData;
+      // Buscar conferências das viagens para validar elegibilidade financeira
+      const tripIds = tripsData.map(t => t.id);
+      let conferenciasMap: Record<string, boolean> = {};
+
+      if (tripIds.length > 0) {
+        try {
+          const { data: confData } = await supabase
+            .from('loc_conferencias')
+            .select('viagem_id, conferido')
+            .in('viagem_id', tripIds)
+            .eq('conferido', true);
+
+          if (confData) {
+            confData.forEach(c => {
+              if (c.viagem_id) conferenciasMap[c.viagem_id] = true;
+            });
+          }
+        } catch (eConf) {
+          console.warn('Aviso ao carregar conferências para verificação de elegibilidade:', eConf);
+        }
+      }
+
+      activeTrips = tripsData.map(trip => {
+        const isPosVenda = trip.status === 'pos_venda';
+        const isConferido = !!conferenciasMap[trip.id];
+        let isElegivelAgregacao = true;
+        let motivoIneligibilidade = '';
+
+        if (isPosVenda) {
+          isElegivelAgregacao = false;
+          motivoIneligibilidade = 'Viagem já está em Pós-Venda';
+        } else if (isConferido) {
+          isElegivelAgregacao = false;
+          motivoIneligibilidade = 'Financeiro já conferido/validado';
+        }
+
+        return {
+          ...trip,
+          isElegivelAgregacao,
+          motivoIneligibilidade
+        };
+      });
     }
 
     return { linkedClient, activeTrips };
@@ -481,6 +522,13 @@ export class OrcamentosService {
       prodTipo,
       prodFornecedor,
       prodDescricao,
+      prodTarifa,
+      prodTaxa,
+      prodComissao,
+      prodMarkup,
+      prodRav,
+      prodCodigoReserva,
+      prodDataServico,
       viagemId,
       existingTripValorTotal,
       existingTripDataIda
@@ -649,9 +697,11 @@ export class OrcamentosService {
         const prodDescFinal = prodDescricao || `Pacote ${vDestino || 'Viagem'}`;
         const isRavIni = isTipoRav(prodTipoFinal);
         const isMkpIni = isTipoMarkup(prodTipoFinal);
-        const ravIni = isRavIni ? vValor : 0;
-        const mkpIni = isMkpIni ? vValor : 0;
-        const tarifaIni = (isRavIni || isMkpIni) ? 0 : vValor;
+        const ravIni = prodRav !== undefined ? prodRav : (isRavIni ? vValor : 0);
+        const mkpIni = prodMarkup !== undefined ? prodMarkup : (isMkpIni ? vValor : 0);
+        const tarifaIni = prodTarifa !== undefined ? prodTarifa : ((isRavIni || isMkpIni) ? 0 : vValor);
+        const taxaIni = prodTaxa || 0;
+        const comissaoIni = prodComissao || 0;
 
         try {
           await supabase
@@ -661,16 +711,16 @@ export class OrcamentosService {
               tipo: prodTipoFinal,
               fornecedor: prodFornFinal,
               descricao: prodDescFinal,
-              codigo_reserva: vLoc || null,
+              codigo_reserva: prodCodigoReserva || vLoc || null,
               valor_custo: 0,
               valor_venda: vValor,
               tarifa: tarifaIni,
-              taxa: 0,
-              comissao: 0,
+              taxa: taxaIni,
+              comissao: comissaoIni,
               markup: mkpIni,
               rav: ravIni,
               status: 'reservado',
-              data_servico: vIda || new Date().toISOString().split('T')[0]
+              data_servico: prodDataServico || vIda || new Date().toISOString().split('T')[0]
             });
         } catch (errProd) {
           console.warn('Aviso ao criar produto inicial da viagem convertida:', errProd);
@@ -679,51 +729,86 @@ export class OrcamentosService {
     } else {
       // FLUXO: ADICIONAR À VIAGEM EXISTENTE
       if (!viagemId) throw new Error('A viagem selecionada não pôde ser encontrada.');
-      const novoTotal = (existingTripValorTotal || 0) + vValor;
 
-      // Atualizar o valor_total da viagem
-      const { error: errUpdate } = await supabase
+      // 1. Trava de segurança: Validar se a viagem de destino está apta para agregação
+      const { data: targetTrip, error: errTarget } = await supabase
         .from('viagens')
-        .update({ 
-          valor_total: novoTotal,
-          origem: origem || null
-        })
-        .eq('id', viagemId);
+        .select('id, status, valor_total, codigo_localizador')
+        .eq('id', viagemId)
+        .single();
 
-      if (errUpdate) throw errUpdate;
+      if (errTarget || !targetTrip) {
+        throw new Error('A viagem selecionada não foi encontrada no banco de dados.');
+      }
 
-      // Inserir produto adicional na viagem existente
+      if (targetTrip.status === 'pos_venda') {
+        throw new Error('Esta viagem já está na fase de Pós-Venda. Para manter a integridade fiscal e contábil, não é permitido agregar novos itens a uma viagem com financeiro fechado. Por favor, selecione "Criar Nova Viagem".');
+      }
+
+      // 2. Inserir produto adicional na viagem existente com detalhamento financeiro completo
       const prodTipoFinal = prodTipo || 'OUTROS';
       const prodFornFinal = prodFornecedor || 'FORNECEDOR';
       const prodDescFinal = prodDescricao || 'Item Adicional Orçamento';
       const isRavAdd = isTipoRav(prodTipoFinal);
       const isMkpAdd = isTipoMarkup(prodTipoFinal);
-      const ravAdd = isRavAdd ? vValor : 0;
-      const mkpAdd = isMkpAdd ? vValor : 0;
-      const tarifaAdd = (isRavAdd || isMkpAdd) ? 0 : vValor;
+      const ravAdd = prodRav !== undefined ? prodRav : (isRavAdd ? vValor : 0);
+      const mkpAdd = prodMarkup !== undefined ? prodMarkup : (isMkpAdd ? vValor : 0);
+      const tarifaAdd = prodTarifa !== undefined ? prodTarifa : ((isRavAdd || isMkpAdd) ? 0 : vValor);
+      const taxaAdd = prodTaxa || 0;
+      const comissaoAdd = prodComissao || 0;
+      const locAdd = prodCodigoReserva || null;
 
       try {
-        await supabase
+        const { error: errInsertProd } = await supabase
           .from('produtos_viagem')
           .insert({
             viagem_id: viagemId,
             tipo: prodTipoFinal,
             fornecedor: prodFornFinal,
             descricao: prodDescFinal,
-            codigo_reserva: null,
+            codigo_reserva: locAdd,
             valor_custo: 0,
             valor_venda: vValor,
             tarifa: tarifaAdd,
-            taxa: 0,
-            comissao: 0,
+            taxa: taxaAdd,
+            comissao: comissaoAdd,
             markup: mkpAdd,
             rav: ravAdd,
             status: 'reservado',
-            data_servico: new Date().toISOString().split('T')[0]
+            data_servico: prodDataServico || existingTripDataIda || new Date().toISOString().split('T')[0]
           });
+
+        if (errInsertProd) throw errInsertProd;
       } catch (errProd) {
         console.warn('Aviso ao criar produto adicional na viagem existente:', errProd);
+        throw errProd;
       }
+
+      // 3. Recalcular valor_total da viagem somando todos os produtos existentes
+      let totalCalculado = (Number(targetTrip.valor_total) || 0) + vValor;
+      try {
+        const { data: todosProdutos } = await supabase
+          .from('produtos_viagem')
+          .select('valor_venda')
+          .eq('viagem_id', viagemId);
+
+        if (todosProdutos && todosProdutos.length > 0) {
+          totalCalculado = todosProdutos.reduce((sum, p) => sum + (Number(p.valor_venda) || 0), 0);
+        }
+      } catch (eSum) {
+        console.warn('Erro ao recalcular soma dos produtos:', eSum);
+      }
+
+      const { error: errUpdate } = await supabase
+        .from('viagens')
+        .update({ 
+          valor_total: totalCalculado,
+          origem: origem || null
+        })
+        .eq('id', viagemId);
+
+      if (errUpdate) throw errUpdate;
+      newViagemId = viagemId;
     }
 
     // 3. Atualizar Orçamento para CONCLUÍDO (ACEITO)

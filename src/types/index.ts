@@ -592,6 +592,13 @@ export interface ConvertToTripOptions {
   prodTipo: string;
   prodFornecedor: string;
   prodDescricao: string;
+  prodTarifa?: number;
+  prodTaxa?: number;
+  prodComissao?: number;
+  prodMarkup?: number;
+  prodRav?: number;
+  prodCodigoReserva?: string;
+  prodDataServico?: string;
   // Se for viagem existente:
   viagemId?: string;
   existingTripValorTotal?: number;

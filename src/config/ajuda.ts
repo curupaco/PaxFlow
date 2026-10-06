@@ -917,6 +917,13 @@ export const HELP_ITEMS: HelpItem[] = [
     label: '🗑️ Exclusão de Viagens em Cascata & Gestão de Pendências',
     description: 'Como administradores podem remover viagens operacionais com integridade atômica.',
     details: 'Ao excluir uma viagem no Dashboard operacional (ação restrita a Administradores):\n\n- **Limpeza Ordenada em Cascata**: O motor do PaxFlow remove automaticamente todas as entidades vinculadas à viagem (comentários, notificações, lembretes, reembolsos, pesquisas NPS, tarefas e produtos/serviços).\n- **Proteção contra Violações de Vínculo**: Caso existam dependências operacionais ou financeiras bloqueantes no Supabase, o sistema emite um aviso claro ao operador, preservando a integridade contábil da agência.'
+  },
+  {
+    id: 'agregacao-produtos-viagem-segura',
+    modulo: 'orcamentos',
+    label: '📦 Agregação de Produtos & Junção Segura de Viagens',
+    description: 'Regras de integridade contábil, trava de segurança para Pós-Venda e detalhamento de margem.',
+    details: 'Ao fechar um orçamento ou vincular uma nova venda a um passageiro que já possui viagens cadastradas no PaxFlow:\n\n1. **Trava de Segurança Financeira**: Viagens que já avançaram para a etapa **Pós-Venda** ou que possuem conferência financeira/processos concluída **NÃO podem receber produtos adicionais**. Nesses casos, a opção de vinculação é bloqueada com badge explicativo (`🔒 Financeiro Fechado / Pós-Venda`), forçando a criação de uma nova viagem independente para preservar a competência fiscal e a data do faturamento original.\n2. **Detalhamento Financeiro Mandatório**: Em viagens elegíveis em aberto, o consultor preenche os dados completos do produto agregado (Tipo, Fornecedor, Localizador, Tarifa, Taxa, Comissão, Markup/RAV e Data do Serviço), garantindo que nenhum item entre com margem zerada ou descaracterizada.\n3. **Sincronização e Formas de Pagamento**: O valor total da viagem é recalculado e atualizado de forma atômica pela soma real dos produtos, e o consultor é orientado a registrar a nova condição de pagamento/parcelamento nos detalhes da viagem.'
   }
 ];
 

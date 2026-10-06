@@ -51,6 +51,7 @@
    - 3.39 [Melhorias Estratégicas em Relatórios e Central de Lembretes](#339-melhorias-estratégicas-em-relatórios-e-central-de-lembretes)
    - 3.40 [Governança de Desistências, Check de Contato do Gestor & Reabertura de Orçamentos](#340-governança-de-desistências-check-de-contato-do-gestor--reabertura-de-orçamentos)
    - 3.41 [Arquitetura de Web Push Server-Side, Exclusão em Cascata & Integridade Transacional](#341-arquitetura-de-web-push-server-side-exclusão-em-cascata--integridade-transacional)
+   - 3.42 [Agregação Segura de Produtos & Junção de Viagens com Proteção Contábil](#342-agregação-segura-de-produtos--junção-de-viagens-com-proteção-contábil)
 4. [Diferenciais Competitivos](#4-diferenciais-competitivos)
 5. [Arquitetura Tecnológica](#5-arquitetura-tecnológica)
 6. [Segurança e Conformidade](#6-segurança-e-conformidade)
@@ -1060,9 +1061,22 @@ Para consolidar as garantias de segurança cibernética, integridade referencial
    - **Motor `excluirViagemCascata`**: Implementado em `viagensController.ts` para coordenar a remoção ordenada e segura de todas as 11 entidades dependentes (comentários, notificações, pagamentos, conferências, lembretes, feedbacks NPS, reembolsos, tarefas, passageiros e produtos).
    - **Tratamento de Violações de Foreign Key (`23503`)**: Emissão de feedback amigável e explicativo na interface caso restrições de integridade bloqueiem a remoção, prevenindo falhas silenciosas e preservando a consistência dos dados contábeis.
 
-3. **Gerenciamento Unificado de Toasts & Fail-Fast no Inbox**:
-   - **Fila de Timers de Notificação (`dialog.ts`)**: O cancelamento explícito do timer ativo anterior (`clearTimeout(activeToastTimer)`) impede que alertas concorrentes fechem prematuramente a mensagem subsequente.
-   - **Persistência Estrita no `inboxService.ts`**: Validação estrita de identificadores e repasse de erros imediatos (`Fail-Fast`) para garantir que a UI apenas reflita estados após gravação confirmada no Supabase.
+### 3.42 Agregação Segura de Produtos & Junção de Viagens com Proteção Contábil
+
+Para prevenir distorções no faturamento, fechamento de mês e estados de conferência ao agregar produtos ou converter propostas comerciais para um passageiro que já possui viagens cadastradas:
+
+1. **Trava de Segurança Financeira para Pós-Venda e Itens Conferidos**:
+   - Viagens cujo status seja **`pos_venda`** ou que já possuam validações financeiras/gestor conferidas **ficam bloqueadas para agregação de novos produtos**.
+   - O seletor de viagens existentes desabilita a opção exibindo o selo explicativo `[🔒 Financeiro Fechado / Pós-Venda]`.
+   - O sistema orienta o consultor a selecionar a opção **Criar Nova Viagem**, preservando a competência fiscal e a data de fechamento contábil original.
+
+2. **Detalhamento Mandatório de Margem no Fluxo de Agregação**:
+   - Em viagens abertas elegíveis, o consultor informa detalhadamente os atributos do item agregado: Fornecedor, Tipo de Produto (Aéreo, Hotel, Pacote, Seguro, Cruzeiro, etc.), Localizador (LOC), Data do Serviço, Tarifa, Taxa de Embarque, Comissão e Markup/RAV.
+   - Elimina a inserção de produtos genéricos ou com rentabilidade zerada.
+
+3. **Recálculo Atômico & Gestão de Pagamentos**:
+   - O campo `valor_total` da viagem é recalculado de forma atômica pela soma real de seus produtos.
+   - O sistema direciona o consultor para registrar a forma de pagamento e parcelamento referente ao valor adicional nos detalhes da viagem.
 
 ---
 

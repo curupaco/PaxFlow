@@ -2221,10 +2221,11 @@ export class OrcamentosPage {
       }
     }
 
+    const eligibleTrips = (activeTrips || []).filter((v: any) => v.isElegivelAgregacao !== false);
     let defaultFluxo = 'nova';
-    if (cId && activeTrips && activeTrips.length > 0) {
+    if (cId && eligibleTrips.length > 0) {
       const vincular = await showCustomConfirm(
-        `O cliente "${orc.nomeCliente}" já possui viagens operacionais ativas (em andamento) no PaxFlow.\n\nDeseja vincular este orçamento aprovado a uma dessas viagens existentes?`,
+        `O cliente "${orc.nomeCliente}" possui ${eligibleTrips.length} viagem(ns) em aberto no PaxFlow.\n\nDeseja vincular este orçamento aprovado a uma dessas viagens existentes?`,
         'Viagem Ativa Encontrada',
         { confirmText: 'Sim, Vincular', cancelText: 'Não, Criar Nova' }
       );
@@ -2333,17 +2334,87 @@ export class OrcamentosPage {
                       <input type="radio" id="radio-fluxo-nova" name="fluxo-viagem" value="nova" ${defaultFluxo === 'nova' ? 'checked' : ''} class="w-4 h-4 text-indigo-600 border-slate-300 focus:ring-indigo-500" />
                       <span>Criar Nova Viagem</span>
                     </label>
-                    <label class="flex items-center gap-2 text-sm text-slate-800 dark:text-slate-200 font-semibold cursor-pointer">
-                      <input type="radio" id="radio-fluxo-existente" name="fluxo-viagem" value="existente" ${defaultFluxo === 'existente' ? 'checked' : ''} class="w-4 h-4 text-indigo-600 border-slate-300 focus:ring-indigo-500" />
+                    <label class="flex items-center gap-2 text-sm text-slate-800 dark:text-slate-200 font-semibold ${eligibleTrips.length === 0 ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}">
+                      <input type="radio" id="radio-fluxo-existente" name="fluxo-viagem" value="existente" ${defaultFluxo === 'existente' ? 'checked' : ''} ${eligibleTrips.length === 0 ? 'disabled' : ''} class="w-4 h-4 text-indigo-600 border-slate-300 focus:ring-indigo-500" />
                       <span>Adicionar à Viagem Existente</span>
                     </label>
                   </div>
 
-                  <div id="viagem-existente-container" class="${defaultFluxo === 'existente' ? '' : 'hidden'} mt-2">
-                    <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Selecione a Viagem Existente *</label>
-                    <select id="select-viagem-existente" class="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm">
-                      ${activeTrips.map(v => `<option value="${v.id}" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">${v.destino} (LOC: ${v.codigo_localizador || 'Sem LOC'}) - R$ ${Number(v.valor_total).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</option>`).join('')}
-                    </select>
+                  ${eligibleTrips.length === 0 ? `
+                    <div class="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 rounded-xl text-xs text-amber-700 dark:text-amber-300 flex items-center gap-2">
+                      <span>⚠️</span>
+                      <span>As viagens existentes deste passageiro já estão em <strong>Pós-Venda</strong> ou com o <strong>financeiro conferido</strong>. Para proteger a contabilidade, uma nova viagem deve ser criada.</span>
+                    </div>
+                  ` : ''}
+
+                  <div id="viagem-existente-container" class="${defaultFluxo === 'existente' ? '' : 'hidden'} mt-2 space-y-4">
+                    <div>
+                      <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Selecione a Viagem Existente *</label>
+                      <select id="select-viagem-existente" class="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm">
+                        ${activeTrips.map(v => `
+                          <option value="${v.id}" ${v.isElegivelAgregacao === false ? 'disabled class="text-slate-400 bg-slate-100 dark:bg-slate-900"' : 'class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100"'} ${v.id === eligibleTrips[0]?.id ? 'selected' : ''}>
+                            ${v.destino} (LOC: ${v.codigo_localizador || 'Sem LOC'}) - R$ ${Number(v.valor_total).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${v.isElegivelAgregacao === false ? `[🔒 ${v.motivoIneligibilidade}]` : ''}
+                          </option>
+                        `).join('')}
+                      </select>
+                    </div>
+
+                    <!-- FORMULÁRIO DE DETALHAMENTO DO PRODUTO AGREGADO -->
+                    <div class="p-4 bg-slate-50 dark:bg-slate-850/60 border border-slate-200 dark:border-slate-750 rounded-xl space-y-3">
+                      <div class="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-750">
+                        <span class="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">📦 Detalhamento do Produto Agregado</span>
+                        <span class="text-[10px] bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-bold px-2 py-0.5 rounded-md">Financeiro da Viagem</span>
+                      </div>
+
+                      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                          <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Fornecedor *</label>
+                          <input id="input-agregado-fornecedor" type="text" value="PaxFlow" class="w-full px-3 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg text-sm text-slate-800 dark:text-slate-100 font-semibold focus:ring-2 focus:ring-indigo-500" />
+                        </div>
+                        <div>
+                          <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Tipo de Produto *</label>
+                          <select id="select-agregado-tipo" class="w-full px-3 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg text-sm text-slate-800 dark:text-slate-100 font-semibold focus:ring-2 focus:ring-indigo-500">
+                            <option value="PACOTE" selected>PACOTE</option>
+                            <option value="AEREO">AÉREO</option>
+                            <option value="HOTEL">HOTEL</option>
+                            <option value="CRUZEIRO">CRUZEIRO</option>
+                            <option value="SEGURO">SEGURO</option>
+                            <option value="INGRESSO">INGRESSO</option>
+                            <option value="ALUGUEL_CARRO">ALUGUEL DE CARRO</option>
+                            <option value="DIVERSOS">DIVERSOS</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Cód. Reserva / Localizador (LOC)</label>
+                          <input id="input-agregado-loc" type="text" placeholder="Ex: ABC123" class="w-full px-3 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg text-sm text-slate-800 dark:text-slate-100 font-semibold focus:ring-2 focus:ring-indigo-500" />
+                        </div>
+                        <div>
+                          <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Data do Serviço (DD/MM/AAAA)</label>
+                          ${renderDateInputHTML('input-agregado-data-servico', orc.dataViagem || '', 'DD/MM/AAAA', false)}
+                        </div>
+                        <div>
+                          <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Valor do Produto (R$) *</label>
+                          ${renderCurrencyInputHTML('input-agregado-valor', orc.valorProposta || '')}
+                        </div>
+                        <div>
+                          <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Comissão (R$)</label>
+                          ${renderCurrencyInputHTML('input-agregado-comissao', '0,00')}
+                        </div>
+                        <div>
+                          <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Tarifa (R$)</label>
+                          ${renderCurrencyInputHTML('input-agregado-tarifa', orc.valorProposta || '')}
+                        </div>
+                        <div>
+                          <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Taxas de Embarque/Serviço (R$)</label>
+                          ${renderCurrencyInputHTML('input-agregado-taxa', '0,00')}
+                        </div>
+                      </div>
+
+                      <div class="pt-2 text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                        <span>💡</span>
+                        <span>O valor total da viagem será recalculado automaticamente e você poderá conferir o faturamento e parcelamento nos detalhes da viagem.</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -2566,20 +2637,47 @@ export class OrcamentosPage {
 
         const isNovaViagem = radioNova ? radioNova.checked : true;
 
-        // Default values for product since Section 3 (Sacola) was removed
-        const prodTipo = 'Diversos';
-        const prodFornecedor = 'PaxFlow';
-        const prodDescricao = `Serviço do orçamento para ${orc.destino}`;
+        let prodTipo = 'PACOTE';
+        let prodFornecedor = 'PaxFlow';
+        let prodDescricao = `Serviço do orçamento para ${orc.destino}`;
+        let prodTarifa: number | undefined;
+        let prodTaxa: number | undefined;
+        let prodComissao: number | undefined;
+        let prodMarkup: number | undefined;
+        let prodRav: number | undefined;
+        let prodCodigoReserva: string | undefined;
+        let prodDataServico: string | undefined;
 
         // Parse do valor da proposta
         let vValor = orc.valorProposta || 0;
         if (isNovaViagem) {
           const vValorRaw = (document.getElementById('input-fechar-via-valor') as HTMLInputElement).value.trim();
           vValor = parseDoubleBr(vValorRaw);
+        } else {
+          // Coletar campos detalhados do produto agregado
+          const fEl = document.getElementById('input-agregado-fornecedor') as HTMLInputElement;
+          const tEl = document.getElementById('select-agregado-tipo') as HTMLSelectElement;
+          const locEl = document.getElementById('input-agregado-loc') as HTMLInputElement;
+          const valEl = document.getElementById('input-agregado-valor') as HTMLInputElement;
+          const tarEl = document.getElementById('input-agregado-tarifa') as HTMLInputElement;
+          const taxEl = document.getElementById('input-agregado-taxa') as HTMLInputElement;
+          const comEl = document.getElementById('input-agregado-comissao') as HTMLInputElement;
+          const dataServRaw = (document.getElementById('input-agregado-data-servico') as HTMLInputElement)?.value?.trim();
+
+          if (fEl && fEl.value) prodFornecedor = fEl.value.trim();
+          if (tEl && tEl.value) prodTipo = tEl.value;
+          if (locEl && locEl.value) prodCodigoReserva = locEl.value.trim();
+          if (valEl && valEl.value) vValor = parseDoubleBr(valEl.value) || vValor;
+          if (tarEl && tarEl.value) prodTarifa = parseDoubleBr(tarEl.value);
+          if (taxEl && taxEl.value) prodTaxa = parseDoubleBr(taxEl.value);
+          if (comEl && comEl.value) prodComissao = parseDoubleBr(comEl.value);
+          if (dataServRaw) prodDataServico = formatBrDateToIso(dataServRaw) || undefined;
+          prodDescricao = `Serviço agregado para ${orc.destino}`;
         }
 
         let clienteId = cId || 'cli-mocked-' + Math.random().toString(36).substr(2, 9);
         let folderDriveUrl = orc.documentosUrl && orc.documentosUrl.length > 0 ? orc.documentosUrl[0] : '';
+        let resultViagemId: string | undefined;
 
         if (!this.isFallbackMode) {
           const options: ConvertToTripOptions = {
@@ -2594,7 +2692,14 @@ export class OrcamentosPage {
             origem,
             prodTipo,
             prodFornecedor,
-            prodDescricao
+            prodDescricao,
+            prodTarifa,
+            prodTaxa,
+            prodComissao,
+            prodMarkup,
+            prodRav,
+            prodCodigoReserva,
+            prodDataServico
           };
 
           if (isNovaViagem) {
@@ -2625,6 +2730,10 @@ export class OrcamentosPage {
             const selectedTrip = activeTrips.find(v => v.id === viagemId);
             if (!selectedTrip) throw new Error('A viagem selecionada não pôde ser encontrada.');
 
+            if (selectedTrip.isElegivelAgregacao === false) {
+              throw new Error(`Esta viagem não pode receber novos produtos: ${selectedTrip.motivoIneligibilidade}. Crie uma nova viagem para este passageiro.`);
+            }
+
             options.viagemId = viagemId;
             options.existingTripValorTotal = selectedTrip.valor_total || 0;
             options.existingTripDataIda = selectedTrip.data_ida || undefined;
@@ -2632,6 +2741,7 @@ export class OrcamentosPage {
 
           const convertRes = await OrcamentosService.convertToTrip(orc, options);
           clienteId = convertRes.clienteId;
+          resultViagemId = convertRes.newViagemId;
         } else {
           // Modo Offline (Fallback)
           if (!isNovaViagem) {
@@ -2652,7 +2762,12 @@ export class OrcamentosPage {
           await this.persistOrcamento(orc);
         }
 
-        this.showToast('Negócio Fechado! Cliente, Viagem e Produto processados com sucesso!', 'success');
+        this.showToast(
+          !isNovaViagem 
+            ? 'Produto agregado à viagem com sucesso! Abra os detalhes da viagem para registrar as formas de pagamento adicionais.' 
+            : 'Negócio Fechado! Cliente, Viagem e Produto processados com sucesso!', 
+          'success'
+        );
         this.closeModal();
         await this.loadOrcamentos();
         this.render();
