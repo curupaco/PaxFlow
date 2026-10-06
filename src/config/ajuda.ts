@@ -893,9 +893,9 @@ export const HELP_ITEMS: HelpItem[] = [
   {
     id: 'relatorio-embarques-validacao-gestor',
     modulo: 'clientes',
-    label: '✈️ Embarques: Validação do Gestor & Ações Rápidas',
-    description: 'Governança de conferência de embarques restrita a administradores e atalhos para viagem e orçamento.',
-    details: 'Na aba **Embarques e Trechos** do módulo de Relatórios:\n\n- **Validação de Gestor (Exclusivo Administradores)**: Exibe a coluna interativa com botões `🛡️ Conferido` e `⏳ Pendente`. Permite que gestores auditem as saídas de voos e trechos com registro de autor e timestamp.\n- **Botão 🔍 Viagem**: Abre os detalhes operacionais da viagem (`EditTravelModal`).\n- **Botão 📄 Orçamento**: Direciona diretamente para o orçamento comercial vinculado ao cliente/viagem.\n- **Botão 💬 WhatsApp**: Abre a tela de conversa no Digisac com o passageiro.'
+    label: '✈️ Embarques: Validação do Gestor & Coluna de Ações',
+    description: 'Governança de conferência de embarques restrita a administradores e atalhos na coluna final de Ações.',
+    details: 'Na aba **Embarques e Trechos** do módulo de Relatórios:\n\n- **Validação de Gestor (Exclusivo Administradores)**: Exibe a coluna interativa com botões `🛡️ Conferido` e `⏳ Pendente`. Permite que gestores auditem as saídas de voos e trechos com registro de autor e timestamp.\n- **Coluna Final AÇÕES**:\n  - **Botão 🔍 Detalhes**: Abre o modal com os detalhes completos da venda/viagem diretamente por cima do relatório.\n  - **Botão 📄 Orçamento**: Direciona diretamente para a proposta comercial de origem vinculada ao cliente/viagem.\n  - **Botão 💬 WhatsApp**: Abre a tela de conversa no Digisac com o passageiro titular.'
   },
   {
     id: 'lembretes-descricao-detalhada',

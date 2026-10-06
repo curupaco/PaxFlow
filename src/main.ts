@@ -695,7 +695,7 @@ class App {
 
         <!-- Área Principal de Exibição de Conteúdo (Com Cabeçalho Global) -->
         <div id="app-main-content" class="flex-1 flex flex-col min-w-0 max-w-full bg-slate-50/50 dark:bg-slate-950 ${this.sidebarCollapsed ? 'md:pl-20' : 'md:pl-64'} transition-all duration-300">
-          <div id="global-header-mount" class="w-full max-w-full relative z-30"></div>
+          <div id="global-header-mount" class="w-full max-w-full relative z-40"></div>
           <div id="page-content" class="flex-1 flex flex-col overflow-x-hidden min-w-0 max-w-full">
             <!-- Injetado dinamicamente via router -->
           </div>

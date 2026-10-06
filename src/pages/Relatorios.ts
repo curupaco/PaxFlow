@@ -2141,8 +2141,8 @@ export class RelatoriosPage {
           ${validacaoGestorHtml}
           <td class="p-3 text-center">
             <div class="flex items-center justify-center gap-1.5 flex-wrap">
-              <button class="btn-detalhes-viagem px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/30 dark:hover:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 text-[10px] font-black rounded-lg transition uppercase tracking-wider flex items-center gap-1" data-trip-id="${item.tripId}" title="Ver detalhes da viagem">
-                🔍 Viagem
+              <button class="btn-detalhes-viagem px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/30 dark:hover:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 text-[10px] font-black rounded-lg transition uppercase tracking-wider flex items-center gap-1" data-trip-id="${item.tripId}" title="Ver detalhes da venda">
+                🔍 Detalhes
               </button>
               ${orcamentoBtn}
               ${whatsAppBtn}

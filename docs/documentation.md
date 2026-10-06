@@ -1009,7 +1009,7 @@ Para aprofundar o controle gerencial, a governança de auditoria e a agilidade n
    - **Coluna Exclusiva para Administradores**: Exibe a coluna **Validação Gestor** estritamente quando o usuário logado possui a role `admin` (`perfil.role === 'admin'`). Para consultores comuns, a coluna é suprimida da tabela para manter a interface focada.
    - **Alternância Interativa de Conferência (`🛡️ Conferido` / `⏳ Pendente`)**: Permite que o gestor marque a conferência operacional de cada trecho aéreo e partida de viagem em 1-clique. Registra o identificador do gestor (`gestor_id`), nome (`gestor_nome`) e timestamp (`validado_gestor_em`), exibidos em tooltip de auditoria.
    - **Resiliência a Schema Drift (Zero-Break)**: O serviço `ContatosEmbarqueService` implementa persistência nativa na coluna `contatos_embarque` com fallback automático para `observacoes` caso a coluna não esteja migrada no banco (erro `42703`/`PGRST204`).
-   - **Botão Direto para Orçamento na Viagem**: Na coluna de Ações de Embarque, adicionado o botão `📄 Orçamento` ao lado do botão `🔍 Viagem`, permitindo ao operador consultar a negociação original com 1 clique.
+   - **Botão Direto de Detalhes da Venda**: Na coluna final de Ações de Embarque, disponibilizado o botão `🔍 Detalhes` (que abre a venda diretamente no modal de detalhes por cima do relatório), acompanhado de `📄 Orçamento` e `💬 WhatsApp`.
 
 3. **Integração Global com WhatsApp / Digisac em Relatórios Analíticos**:
    - Disponibilização do botão de conversa no Digisac (`SendTemplateMessageModal.open({ ... focusChatHistory: true })`) em todas as visões que possuem passageiros e clientes vinculados:

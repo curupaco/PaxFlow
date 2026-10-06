@@ -471,6 +471,7 @@ describe('RiskScoreService - Testes Subcutâneos', () => {
       destino: 'São Paulo',
       data_ida: '2026-12-01', // ida distante
       data_volta: '2026-12-10',
+      codigo_localizador: 'LOC123',
       processo_conferido: true,
       contatos_embarque: {
         'viagem-ida': { feito: true },
