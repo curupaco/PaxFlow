@@ -13,6 +13,7 @@ import {
 } from '../../utils/masks';
 import { calcularCompletudeCadastral } from '../../controllers/clientesController';
 import { renderHelpIcon } from '../../utils/helpHelper';
+import { ReembolsosService, ReembolsoPendenteResumo } from '../../services/reembolsosService';
 
 export interface ClienteDetalhesModalOptions {
   onSave?: (cliente: Cliente) => void;
@@ -27,6 +28,7 @@ export class ClienteDetalhesModal {
   private static user: any = null;
   private static perfil: PerfilConsultor | null = null;
   private static activeCleanups: (() => void)[] = [];
+  private static reembolsosPendentesCliente: ReembolsoPendenteResumo[] = [];
 
   /**
    * Abre o modal sobreposto para consulta e edição completa do cliente
@@ -91,6 +93,13 @@ export class ClienteDetalhesModal {
 
       // Inicializar passaportes para edição
       this.initPassaportesEdicao();
+
+      // Busca reembolsos pendentes do cliente para aviso transversal
+      try {
+        this.reembolsosPendentesCliente = await ReembolsosService.obterReembolsosPendentesPorCliente(this.currentClient.id);
+      } catch (eReemb) {
+        this.reembolsosPendentesCliente = [];
+      }
 
       // Renderizar o modal no DOM
       this.render();
@@ -213,6 +222,12 @@ export class ClienteDetalhesModal {
                   <span>${completude.porcentagem === 100 ? '⭐' : '📊'}</span>
                   <span>${completude.porcentagem}% Preenchido</span>
                 </span>
+                ${this.reembolsosPendentesCliente.length > 0 ? `
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-100 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300" title="Passageiro possui processo de reembolso em andamento">
+                    <span>💸</span>
+                    <span>${this.reembolsosPendentesCliente.length} Reembolso(s) Aberto(s)</span>
+                  </span>
+                ` : ''}
               </div>
               <p class="text-[11px] text-slate-400 dark:text-slate-400 font-medium truncate">
                 Ficha cadastral completa e documentação de viagem
@@ -226,6 +241,30 @@ export class ClienteDetalhesModal {
 
         <!-- Corpo do Formulário com Scroll -->
         <div class="flex-1 overflow-y-auto px-5 sm:px-6 py-5 space-y-6">
+          ${this.reembolsosPendentesCliente.length > 0 ? `
+            <div class="p-3.5 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/40 rounded-xl flex items-start gap-3 text-xs text-rose-800 dark:text-rose-200 animate-fade-in shadow-xs">
+              <span class="text-lg shrink-0">💸</span>
+              <div class="flex-1 space-y-1">
+                <div class="flex items-center justify-between flex-wrap gap-1">
+                  <span class="font-extrabold uppercase tracking-wide text-[11px] text-rose-700 dark:text-rose-400">
+                    Atenção: Reembolso em Andamento (${this.reembolsosPendentesCliente.length})
+                  </span>
+                  <span class="text-[10px] font-black px-2 py-0.5 rounded bg-rose-100 dark:bg-rose-900/60 text-rose-700 dark:text-rose-300">
+                    Total: R$ ${this.reembolsosPendentesCliente.reduce((sum, r) => sum + r.valor_solicitado, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                </div>
+                <div class="space-y-1">
+                  ${this.reembolsosPendentesCliente.map(r => `
+                    <div class="text-[11px] font-medium text-rose-900/80 dark:text-rose-300/80 flex items-center justify-between flex-wrap gap-1">
+                      <span>• Viagem <strong>${r.viagem_destino || 'Destino'}</strong> (${r.viagem_codigo_ref || 'Viagem'}): R$ ${r.valor_solicitado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${r.forma_devolucao || 'Estorno'})</span>
+                      <span class="italic text-[10px]">${r.motivo_cancelamento ? `"${r.motivo_cancelamento.substring(0, 45)}..."` : ''}</span>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            </div>
+          ` : ''}
+
           <form id="form-cliente-modal" class="space-y-6">
             
             <!-- Bloco 1: Informações Pessoais e Contato -->

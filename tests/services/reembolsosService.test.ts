@@ -272,4 +272,137 @@ describe('ReembolsosService - Testes Subcutâneos e Resiliência a Schema Drift 
     expect(mockUpdateProduto).toHaveBeenCalledWith({ status: 'reembolsado' });
     expect(mockUpdateViagem).toHaveBeenCalledWith({ status: 'reembolso_solicitado' });
   });
+
+  it('deve manter atualizarStatusViagem como false por padrão se não for informado', async () => {
+    // Setup
+    const mockReembolsoParcial = {
+      id: 'reemb-parcial-padrao',
+      viagem_id: 'trip-999',
+      produto_viagem_id: 'prod-888',
+      valor_solicitado: 500,
+      status: 'solicitado'
+    };
+
+    const mockInsert = vi.fn().mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        single: vi.fn().mockResolvedValue({ data: mockReembolsoParcial, error: null })
+      })
+    });
+
+    const mockUpdateProduto = vi.fn().mockReturnValue({
+      eq: vi.fn().mockResolvedValue({ data: null, error: null })
+    });
+
+    const mockUpdateViagem = vi.fn().mockReturnValue({
+      eq: vi.fn().mockResolvedValue({ data: null, error: null })
+    });
+
+    (supabase.from as any).mockImplementation((table: string) => {
+      if (table === 'reembolsos') return { insert: mockInsert };
+      if (table === 'produtos_viagem') return { update: mockUpdateProduto };
+      if (table === 'viagens') return { update: mockUpdateViagem };
+      return {};
+    });
+
+    // Action (sem passar atualizarStatusViagem explicitamente)
+    const resultado = await ReembolsosService.criarSolicitacao({
+      viagemId: 'trip-999',
+      produtoViagemId: 'prod-888',
+      consultorSolicitanteId: 'user-777',
+      valorSolicitado: 500,
+      motivoCancelamento: 'Cancelamento parcial de item'
+    });
+
+    // Assert
+    expect(resultado.sucesso).toBe(true);
+    expect(mockUpdateProduto).toHaveBeenCalledWith({ status: 'reembolsado' });
+    expect(mockUpdateViagem).not.toHaveBeenCalled();
+  });
+
+  it('deve obter reembolsos pendentes por cliente filtrando apenas processos ativos', async () => {
+    // Setup
+    const clienteId = 'cli-miriam-123';
+    const mockViagens = [
+      { id: 'trip-1', codigo_ref: 'VIA-0010', destino: 'Lisboa' },
+      { id: 'trip-2', codigo_ref: 'VIA-0011', destino: 'Paris' }
+    ];
+
+    const mockReembolsos = [
+      {
+        id: 'r1',
+        codigo_ref: 'RBS-0001',
+        viagem_id: 'trip-1',
+        valor_solicitado: 429.95,
+        status: 'solicitado',
+        forma_devolucao: 'Estorno Cartão de Crédito',
+        motivo_cancelamento: 'Táxi por erro de transfer'
+      },
+      {
+        id: 'r2',
+        codigo_ref: 'RBS-0002',
+        viagem_id: 'trip-2',
+        valor_solicitado: 1200,
+        status: 'pago', // Já concluído - deve ser filtrado fora
+        forma_devolucao: 'Pix'
+      },
+      {
+        id: 'r3',
+        codigo_ref: 'RBS-0003',
+        viagem_id: 'trip-2',
+        valor_solicitado: 350,
+        status: 'em_analise', // Ativo - deve ser incluído
+        forma_devolucao: 'Carta de Crédito',
+        motivo_cancelamento: 'Passeio cancelado'
+      }
+    ];
+
+    const mockSelectViagens = vi.fn().mockReturnValue({
+      eq: vi.fn().mockResolvedValue({ data: mockViagens, error: null })
+    });
+
+    const mockSelectReembolsos = vi.fn().mockReturnValue({
+      in: vi.fn().mockReturnValue({
+        order: vi.fn().mockResolvedValue({ data: mockReembolsos, error: null })
+      })
+    });
+
+    (supabase.from as any).mockImplementation((table: string) => {
+      if (table === 'viagens') return { select: mockSelectViagens };
+      if (table === 'reembolsos') return { select: mockSelectReembolsos };
+      return {};
+    });
+
+    // Action
+    const resultado = await ReembolsosService.obterReembolsosPendentesPorCliente(clienteId);
+
+    // Assert
+    expect(resultado).toHaveLength(2);
+    expect(resultado[0].id).toBe('r1');
+    expect(resultado[0].viagem_destino).toBe('Lisboa');
+    expect(resultado[0].viagem_codigo_ref).toBe('VIA-0010');
+    expect(resultado[0].valor_solicitado).toBe(429.95);
+
+    expect(resultado[1].id).toBe('r3');
+    expect(resultado[1].viagem_destino).toBe('Paris');
+    expect(resultado[1].viagem_codigo_ref).toBe('VIA-0011');
+    expect(resultado[1].status).toBe('em_analise');
+  });
+
+  it('deve retornar array vazio se clienteId não for fornecido ou se não houver viagens', async () => {
+    // Setup & Action 1: sem clienteId
+    const resVazio1 = await ReembolsosService.obterReembolsosPendentesPorCliente('');
+    expect(resVazio1).toEqual([]);
+
+    // Setup & Action 2: cliente sem viagens
+    const mockSelectViagens = vi.fn().mockReturnValue({
+      eq: vi.fn().mockResolvedValue({ data: [], error: null })
+    });
+    (supabase.from as any).mockImplementation((table: string) => {
+      if (table === 'viagens') return { select: mockSelectViagens };
+      return {};
+    });
+
+    const resVazio2 = await ReembolsosService.obterReembolsosPendentesPorCliente('cli-sem-viagens');
+    expect(resVazio2).toEqual([]);
+  });
 });

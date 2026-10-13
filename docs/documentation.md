@@ -288,6 +288,15 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 - **Alteração de status**: dropdown inline para avançar o fluxo (Aguardando Fornecedor → Em Análise → Aprovado → Pago).
 - **Métricas no topo**: total de processos, aguardando fornecedor, concluídos, valor total pago.
 - **Filtro automático**: consultor comum vê apenas seus reembolsos; admin vê todos.
+- **Desacoplamento do Ciclo de Vida da Viagem vs. Ciclo Financeiro**:
+  - Cancelamentos de produtos individuais não impedem que a viagem continue ocorrendo no mundo real.
+  - A viagem passa normalmente por Pós-Venda, Pré-Embarque e Pós-Viagem; o término da viagem nunca é bloqueado por processos de reembolso em andamento.
+  - O checkbox de alteração de status geral da viagem vem desmarcado por padrão (`atualizarStatusViagem: false`), reservado apenas para cancelamentos integrais da viagem como um todo.
+- **Arquitetura de Alertas Cross-Viagem & Ficha do Cliente**:
+  - Qualquer viagem de um cliente com processo financeiro aberto exibe banner de atenção âmbar no topo do editor de viagens (`EditTravelModal`).
+  - O cadastro do passageiro (`ClienteDetalhesModal`) estampa badge de contagem de reembolsos e banner financeiro com montantes e motivos.
+  - No Dashboard operacional, destinos com reembolsos ativos recebem badge visual `💸 Reembolso`.
+  - As notificações de prazos e SLAs permanecem ativas na Inbox e no Mission Control até a liquidação final.
 
 ### 3.6 Configurações
 
@@ -848,7 +857,8 @@ O **Plano 2 de UX** expande o ganho de agilidade e a ergonomia de uso do PaxFlow
      - **Forma de Devolução**: Coluna dedicada e badge no card exibindo modalidade (`Estorno Cartão de Crédito`, `Pix / Transferência Bancária`, `Carta de Crédito / Voucher Fornecedor`).
      - **Acompanhamento dos 4 Valores**: **Valor do Produto**, **Valor Solicitado**, **Valor Aprovado** e **Valor Utilizado pelo Pax**, com cálculo automático do Saldo Restante (`Aprovado - Utilizado`).
      - **Botão de Ação Direta no Card de Produto (`💸`)**: No modal de edição da viagem (`EditTravelModal`), cada produto possui botão de 1-clique para abrir a solicitação de reembolso pré-preenchida.
-     - **Automação de Mudança de Status da Viagem**: Ao selecionar `reembolso_solicitado` no status da viagem, o sistema aciona o `SolicitarReembolsoModal` para garantir abertura imediata da ficha detalhada sem registros órfãos.
+     - **Desacoplamento do Ciclo Operacional & Cancelamentos Parciais**: O checkbox de alteração de status geral da viagem no modal de solicitação vem desmarcado por padrão (`atualizarStatusViagem: false`). Apenas o produto individual tem status alterado para `reembolsado`, permitindo que a viagem continue ocorrendo no mundo real e alcance sua conclusão/pós-viagem normalmente sem ser travada. A marcação para alterar a viagem para `reembolso_solicitado` fica restrita a cancelamentos integrais da venda.
+     - **Alertas Cross-Viagem & Cadastro de Passageiro**: Se um passageiro tiver processos de reembolso em andamento, o sistema exibe alertas em todas as suas viagens abertas no `EditTravelModal` (com destino e código da viagem de origem) e na Ficha Cadastral (`ClienteDetalhesModal`), além de badge `💸 Reembolso` nos destinos do Dashboard.
      - **Alerta de Regularização em 1-Clique na Central de Reembolsos**: Se existirem viagens com status `reembolso_solicitado` sem linha na tabela `reembolsos`, a tela exibe card de alerta com botão `💸 Abrir Ficha` para resgate e regularização imediata.
      - **Modal de Edição Rápida de Valores (`✏️ Valores`)**: Permite ajustar a qualquer momento os valores aprovados, créditos utilizados e notas de negociação.
    - **Resiliência a Schema Drift (Zero-Break) & Integridade de Viagens**: Fallback transparente para o campo `observacoes_financeiras` em caso de erro `42703` na gravação de `forma_devolucao` ou outros campos novos, aliado à blindagem defensiva na sincronização de status da viagem e à migração DDL da coluna `updated_at` na tabela `viagens`.

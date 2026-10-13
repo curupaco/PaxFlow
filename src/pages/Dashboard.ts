@@ -3125,6 +3125,10 @@ export class Dashboard {
    */
   private renderTableRow(v: any): string {
     const reembolsoConcluido = v.reembolsos && v.reembolsos.some((r: any) => r.status === 'pago');
+    const temReembolsoPendente = v.reembolsos && v.reembolsos.some((r: any) => {
+      const st = String(r.status || '').toLowerCase();
+      return st !== 'pago' && st !== 'concluido' && st !== 'recusado' && st !== 'cancelado';
+    });
     const sla = reembolsoConcluido ? { alert: false, type: null, text: '' } : this.checkSLA(v);
 
     let slaIcon = '🟢';
@@ -3204,8 +3208,14 @@ Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : '
 
         <!-- Destino / Produtos -->
         <td class="px-5 py-4">
-          <div class="font-extrabold text-slate-800 dark:text-slate-200 flex items-center gap-1">
-            ✈️ ${highlightMatch(v.destino, this.buscaTermo)}
+          <div class="font-extrabold text-slate-800 dark:text-slate-200 flex items-center gap-1.5 flex-wrap">
+            <span>✈️ ${highlightMatch(v.destino, this.buscaTermo)}</span>
+            ${temReembolsoPendente ? `
+              <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 text-[10px] font-black text-rose-600 dark:text-rose-400 shrink-0" title="Existe processo de reembolso em andamento para esta viagem">
+                <span>💸</span>
+                <span>Reembolso</span>
+              </span>
+            ` : ''}
           </div>
           <!-- Localizadores dos Produtos -->
           ${v.produtos && v.produtos.length > 0 ? `
@@ -3379,8 +3389,17 @@ Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : '
         <div class="grid grid-cols-2 gap-3 text-xs">
           <div class="space-y-1">
             <span class="block text-[9px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider">Destino & Viagem</span>
-            <div class="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1">
-              ✈️ ${highlightMatch(v.destino, this.buscaTermo)}
+            <div class="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5 flex-wrap">
+              <span>✈️ ${highlightMatch(v.destino, this.buscaTermo)}</span>
+              ${(v.reembolsos && v.reembolsos.some((r: any) => {
+                const st = String(r.status || '').toLowerCase();
+                return st !== 'pago' && st !== 'concluido' && st !== 'recusado' && st !== 'cancelado';
+              })) ? `
+                <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 text-[9px] font-black text-rose-600 dark:text-rose-400 shrink-0">
+                  <span>💸</span>
+                  <span>Reembolso</span>
+                </span>
+              ` : ''}
             </div>
             <!-- Localizadores dos Produtos -->
             ${v.produtos && v.produtos.length > 0 ? `

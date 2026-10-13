@@ -136,16 +136,18 @@ export class SolicitarReembolsoModal {
           </div>
 
           <!-- Checkbox para Viagem -->
-          <div class="pt-1">
-            <label class="flex items-center gap-2 cursor-pointer select-none">
-              <input type="checkbox" id="modal-check-atualizar-viagem" checked class="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 border-slate-300 dark:border-slate-700 dark:bg-slate-800 cursor-pointer" />
-              <span class="text-xs text-slate-600 dark:text-slate-300 font-semibold">
-                Mudar status geral da viagem para "Reembolso Solicitado"
-              </span>
+          <div class="pt-1 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+            <label class="flex items-start gap-2.5 cursor-pointer select-none">
+              <input type="checkbox" id="modal-check-atualizar-viagem" class="w-4 h-4 mt-0.5 rounded text-rose-600 focus:ring-rose-500 border-slate-300 dark:border-slate-700 dark:bg-slate-800 cursor-pointer" />
+              <div class="space-y-0.5">
+                <span class="text-xs text-slate-700 dark:text-slate-200 font-semibold block">
+                  Marcar viagem inteira como "Reembolso Solicitado" (Apenas cancelamento total)
+                </span>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                  Deixe desmarcado se for cancelamento de item avulso (transfer, passeio, hotel). A viagem continuará seu fluxo normal de embarque e pós-venda.
+                </p>
+              </div>
             </label>
-            <p class="text-[11px] text-slate-400 dark:text-slate-400 ml-6 mt-0.5">
-              Desmarque apenas se for um cancelamento parcial e os demais produtos da viagem continuarem ativos.
-            </p>
           </div>
 
           <!-- Ações -->

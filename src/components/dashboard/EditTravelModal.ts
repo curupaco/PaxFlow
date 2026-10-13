@@ -13,6 +13,7 @@ import { confirmUnsavedChanges } from '../common/UnsavedChangesModal';
 import { ClienteDetalhesModal } from '../common/ClienteDetalhesModal';
 import { RemarcacaoModal } from './RemarcacaoModal';
 import { SolicitarReembolsoModal } from '../reembolsos/SolicitarReembolsoModal';
+import { ReembolsosService, ReembolsoPendenteResumo } from '../../services/reembolsosService';
 import {
   renderCurrencyInputHTML,
   renderDateInputHTML,
@@ -220,6 +221,17 @@ export class EditTravelModal {
 
       this.currentLoadedViagem = viagem;
 
+      // Carrega reembolsos pendentes do cliente (para alertas da própria viagem e cross-viagem)
+      let reembolsosCliente: ReembolsoPendenteResumo[] = [];
+      if (viagem && viagem.cliente_id && !this.options.isFallbackMode) {
+        try {
+          reembolsosCliente = await ReembolsosService.obterReembolsosPendentesPorCliente(viagem.cliente_id);
+        } catch (eReemb) {
+          console.warn('Erro ao carregar reembolsos do cliente para alertas:', eReemb);
+        }
+      }
+      (viagem as any)._reembolsosPendentesCliente = reembolsosCliente;
+
       // Busca lista de clientes
       const { data: clientesData } = await supabase
         .from('clientes')
@@ -395,6 +407,47 @@ export class EditTravelModal {
             <span class="px-2.5 py-1 rounded bg-amber-500/20 text-[10px] font-black uppercase tracking-wider shrink-0">Auditoria Ativa</span>
           </div>
         ` : ''}
+
+        <!-- Alertas de Reembolso (Própria Viagem ou Cross-Viagem) -->
+        ${(() => {
+          const pendentes = (v._reembolsosPendentesCliente || []) as ReembolsoPendenteResumo[];
+          const daPropriaViagem = pendentes.filter(r => r.viagem_id === v.id);
+          const deOutrasViagens = pendentes.filter(r => r.viagem_id !== v.id);
+
+          return `
+            ${daPropriaViagem.length > 0 ? `
+              <div class="mb-4 p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl flex items-center justify-between text-xs font-bold text-rose-700 dark:text-rose-300 animate-fade-in shadow-xs gap-3">
+                <div class="flex items-center gap-2.5 min-w-0">
+                  <span class="text-base shrink-0">💸</span>
+                  <div class="min-w-0">
+                    <span class="font-extrabold uppercase tracking-wide text-[11px] block">Reembolso em Andamento nesta Viagem</span>
+                    <p class="text-[11px] font-medium text-rose-600/90 dark:text-rose-300/90 leading-tight">
+                      Esta viagem possui <strong>${daPropriaViagem.length} solicitação(ões) de estorno</strong> no valor total de <strong>R$ ${daPropriaViagem.reduce((s, r) => s + r.valor_solicitado, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>. A viagem segue seu ciclo operacional normal até o retorno.
+                    </p>
+                  </div>
+                </div>
+                <button type="button" id="btn-ver-reembolsos-banner" class="px-2.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-black uppercase tracking-wider shrink-0 transition shadow-xs">
+                  Ver Reembolsos ↗
+                </button>
+              </div>
+            ` : ''}
+
+            ${deOutrasViagens.length > 0 ? `
+              <div class="mb-4 p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-center justify-between text-xs font-bold text-amber-700 dark:text-amber-300 animate-fade-in shadow-xs gap-3">
+                <div class="flex items-center gap-2.5 min-w-0">
+                  <span class="text-base shrink-0">⚠️</span>
+                  <div class="min-w-0">
+                    <span class="font-extrabold uppercase tracking-wide text-[11px] block">Atenção Financeira (Reembolso em Outra Viagem do Cliente)</span>
+                    <p class="text-[11px] font-medium text-amber-800/90 dark:text-amber-300/90 leading-tight">
+                      Este passageiro possui <strong>${deOutrasViagens.length} reembolso(s) em aberto</strong> na viagem <strong>${deOutrasViagens[0].viagem_destino || 'Viagem'}</strong> (${deOutrasViagens[0].viagem_codigo_ref || ''}) no valor de <strong>R$ ${deOutrasViagens[0].valor_solicitado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong> (${deOutrasViagens[0].forma_devolucao || 'Estorno'}).
+                    </p>
+                  </div>
+                </div>
+                <span class="px-2.5 py-1 rounded bg-amber-500/20 text-[10px] font-black uppercase tracking-wider shrink-0">Alerta de Passageiro</span>
+              </div>
+            ` : ''}
+          `;
+        })()}
 
         <!-- Topo com Título e Fechar -->
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 dark:border-slate-800 pb-3 mb-4 gap-3">
@@ -1060,6 +1113,16 @@ export class EditTravelModal {
       resetTabs();
       tabReembolsosBtn.className = 'border-b-2 border-indigo-600 dark:border-indigo-400 px-4 py-2 text-sm font-black text-indigo-600 dark:text-indigo-400 transition';
       tabReembolsosContent?.classList.remove('hidden');
+    });
+
+    const btnVerReembBanner = document.getElementById('btn-ver-reembolsos-banner');
+    btnVerReembBanner?.addEventListener('click', () => {
+      if (window.innerWidth < 1024 && tabReembolsosBtn) {
+        tabReembolsosBtn.click();
+      } else {
+        const wrapperDesktop = document.getElementById('reembolsos-wrapper-desktop');
+        wrapperDesktop?.scrollIntoView({ behavior: 'smooth' });
+      }
     });
 
     // Inicializa a validação do formulário de edição de viagem

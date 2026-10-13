@@ -18,6 +18,22 @@ export interface CriarReembolsoParams {
   atualizarStatusViagem?: boolean;
 }
 
+export interface ReembolsoPendenteResumo {
+  id: string;
+  codigo_ref?: string;
+  viagem_id: string;
+  viagem_codigo_ref?: string;
+  viagem_destino?: string;
+  valor_solicitado: number;
+  valor_aprovado?: number;
+  status: string;
+  status_tratativa?: string;
+  forma_devolucao?: string;
+  motivo_cancelamento?: string;
+  data_solicitacao?: string;
+  created_at?: string;
+}
+
 export interface ViagemOrfaReembolso {
   id: string;
   codigo_ref?: string;
@@ -49,7 +65,7 @@ export class ReembolsosService {
       valorProdutoOriginal,
       motivoCancelamento,
       formaDevolucao = 'Estorno Cartão de Crédito',
-      atualizarStatusViagem = true
+      atualizarStatusViagem = false
     } = params;
 
     if (!viagemId || !produtoViagemId || !valorSolicitado || !motivoCancelamento) {
@@ -217,6 +233,72 @@ export class ReembolsosService {
       return data;
     } catch (err) {
       console.warn('Erro ao obter reembolsos da viagem:', err);
+      return [];
+    }
+  }
+
+  /**
+   * Obtém todos os reembolsos pendentes (em andamento) de um determinado cliente,
+   * permitindo exibir alertas transversais no cadastro do passageiro e em outras viagens.
+   */
+  public static async obterReembolsosPendentesPorCliente(clienteId: string): Promise<ReembolsoPendenteResumo[]> {
+    if (!clienteId) return [];
+
+    try {
+      // 1. Busca os IDs e dados resumidos das viagens do cliente
+      const { data: viagensCliente, error: errViagens } = await supabase
+        .from('viagens')
+        .select('id, codigo_ref, destino')
+        .eq('cliente_id', clienteId);
+
+      if (errViagens || !viagensCliente || viagensCliente.length === 0) {
+        return [];
+      }
+
+      const viagemMap = new Map<string, { codigo_ref?: string; destino?: string }>();
+      const viagemIds: string[] = [];
+      viagensCliente.forEach((v: any) => {
+        viagemMap.set(v.id, { codigo_ref: v.codigo_ref, destino: v.destino });
+        viagemIds.push(v.id);
+      });
+
+      // 2. Busca os reembolsos dessas viagens
+      const { data: reembolsosData, error: errReemb } = await supabase
+        .from('reembolsos')
+        .select('*')
+        .in('viagem_id', viagemIds)
+        .order('created_at', { ascending: false });
+
+      if (errReemb || !reembolsosData) {
+        return [];
+      }
+
+      // Filtra apenas os que estão em andamento (não foram pagos, cancelados ou recusados)
+      const pendentes = reembolsosData.filter((r: any) => {
+        const st = String(r.status || '').toLowerCase();
+        return st !== 'pago' && st !== 'concluido' && st !== 'recusado' && st !== 'cancelado';
+      });
+
+      return pendentes.map((r: any) => {
+        const vInfo = viagemMap.get(r.viagem_id);
+        return {
+          id: r.id,
+          codigo_ref: r.codigo_ref,
+          viagem_id: r.viagem_id,
+          viagem_codigo_ref: vInfo?.codigo_ref,
+          viagem_destino: vInfo?.destino,
+          valor_solicitado: Number(r.valor_solicitado || 0),
+          valor_aprovado: Number(r.valor_aprovado || 0),
+          status: r.status,
+          status_tratativa: r.status_tratativa,
+          forma_devolucao: r.forma_devolucao,
+          motivo_cancelamento: r.motivo_cancelamento,
+          data_solicitacao: r.data_solicitacao,
+          created_at: r.created_at
+        };
+      });
+    } catch (err) {
+      console.warn('Erro ao obter reembolsos pendentes por cliente:', err);
       return [];
     }
   }
