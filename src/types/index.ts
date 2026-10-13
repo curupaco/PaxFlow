@@ -407,6 +407,8 @@ export interface Reembolso {
   status_tratativa?: 'pendente_agencia' | 'pendente_fornecedor' | 'pendente_agaxtur' | 'concluido' | string;
   motivoCancelamento?: string;
   motivo_cancelamento?: string;
+  formaDevolucao?: string;
+  forma_devolucao?: string;
   observacoesFinanceiras?: string;
   observacoes_financeiras?: string;
   dataSolicitacao?: string; // ISO String ou YYYY-MM-DD

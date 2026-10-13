@@ -8,6 +8,7 @@ import { DestinosAutocomplete } from '../components/DestinosAutocomplete';
 import { SendTemplateMessageModal } from '../components/dashboard/SendTemplateMessageModal';
 import { getAvatarSvg, mesclarAvataresLocais } from '../services/avatars';
 import { showCustomConfirm } from '../services/dialog';
+import { SolicitarReembolsoModal } from '../components/reembolsos/SolicitarReembolsoModal';
 import { CommentsService } from '../services/comments';
 import { BalcaoService, ResultadoBuscaBalcao } from '../services/balcaoService';
 import {
@@ -1122,197 +1123,17 @@ export class Dashboard {
    * Abre o Modal Dinâmico para solicitação de reembolso de um produto
    */
   private async openRefundModal(tripId: string, oldStatus: string): Promise<void> {
-    this.renderModalOverlay('max-w-lg');
-
-    const modalContent = document.getElementById('modal-content-container');
-    if (!modalContent) return;
-
-    try {
-      // Busca os produtos vinculados à viagem
-      const { data: produtos, error } = await supabase
-        .from('produtos_viagem')
-        .select('*')
-        .eq('viagem_id', tripId);
-
-      if (error) throw error;
-
-      if (!produtos || produtos.length === 0) {
-        modalContent.innerHTML = `
-          <div class="p-6 text-center">
-            <div class="text-amber-500 text-4xl mb-3">⚠️</div>
-            <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100 mb-2">Nenhum produto cadastrado</h3>
-            <p class="text-sm text-slate-500 dark:text-slate-400 mb-6 font-medium">Esta viagem não possui produtos/serviços vinculados para reembolso.</p>
-            <button id="btn-cancel-modal" class="px-5 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium rounded-lg transition">
-              Voltar
-            </button>
-          </div>
-        `;
-        document.getElementById('btn-cancel-modal')?.addEventListener('click', () => {
-          this.closeModal();
-          this.render();
-          this.setupDragAndDrop();
-        });
-        return;
+    const viagem = this.viagens.find(v => v.id === tripId);
+    await SolicitarReembolsoModal.abrir({
+      viagemId: tripId,
+      viagemDescricao: `${viagem?.destino || 'Viagem'} • ${viagem?.cliente?.nome || ''}`,
+      produtos: viagem?.produtos || [],
+      user: this.user,
+      showToast: (msg, type, err) => this.showToast(msg, type, err),
+      onSucesso: async () => {
+        await this.init();
       }
-
-      // Renderiza o formulário de reembolso no modal
-      modalContent.innerHTML = `
-        <div class="p-6">
-          <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4 mb-6">
-            <h3 class="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-              <span class="p-2 bg-rose-50 dark:bg-rose-950/40 text-rose-500 dark:text-rose-400 rounded-lg text-lg">💸</span>
-              Solicitar Reembolso / Cancelamento
-            </h3>
-            <button id="btn-close-x" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-400 transition text-lg">&times;</button>
-          </div>
-          
-          <form id="form-reembolso" class="space-y-5">
-            <div>
-              <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Selecione o Produto a Cancelar *</label>
-              <select id="select-produto" required class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-rose-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 font-medium">
-                <option value="" disabled selected class="text-slate-400 dark:text-slate-400">Escolha um produto da viagem...</option>
-                ${produtos.map(p => `
-                  <option value="${p.id}" data-valor="${p.valor_venda}" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">
-                    [${p.tipo.toUpperCase()}] ${p.fornecedor} - ${p.descricao} (Venda: R$ ${Number(p.valor_venda || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
-                  </option>
-                `).join('')}
-              </select>
-            </div>
-
-            <div>
-              <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Valor do Reembolso Solicitado (R$) *</label>
-              ${renderCurrencyInputHTML('input-valor-reembolso', '')}
-              <p class="text-xs text-slate-400 dark:text-slate-400 mt-1.5 font-medium">Sugerido por padrão o valor integral de venda do produto.</p>
-            </div>
-
-            <div>
-              <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Motivo / Justificativa do Cancelamento</label>
-              <textarea id="textarea-motivo" placeholder="Justifique o motivo do cancelamento para documentar o processo..." rows="3" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-rose-500 text-slate-800 dark:text-slate-100 text-sm font-medium"></textarea>
-            </div>
-
-            <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
-              <button id="btn-cancel-modal" type="button" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold rounded-xl transition uppercase text-xs tracking-wider">Cancelar</button>
-              <button type="submit" class="px-6 py-2.5 bg-rose-500 hover:bg-rose-600 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-rose-500/20 transition uppercase">Solicitar Reembolso</button>
-            </div>
-          </form>
-        </div>
-      `;
-
-      // Inicializa a validação do formulário de reembolso
-      setupFormValidation('form-reembolso', [
-        { id: 'input-valor-reembolso', type: 'currency' }
-      ]);
-
-      // Auto-preenche o valor do reembolso quando um produto é selecionado
-      const selectProd = document.getElementById('select-produto') as HTMLSelectElement;
-      const inputValor = document.getElementById('input-valor-reembolso') as HTMLInputElement;
-      
-      let valorProdutoOriginal = 0;
-      selectProd?.addEventListener('change', () => {
-        const option = selectProd.options[selectProd.selectedIndex];
-        const valorVenda = option.getAttribute('data-valor');
-        if (valorVenda) {
-          valorProdutoOriginal = parseFloat(valorVenda) || 0;
-          inputValor.value = formatCurrencyValue(valorProdutoOriginal);
-        }
-      });
-
-      const handleCancel = () => {
-        this.closeModal();
-        this.render();
-        this.setupDragAndDrop();
-      };
-      
-      document.getElementById('btn-close-x')?.addEventListener('click', handleCancel);
-      document.getElementById('btn-cancel-modal')?.addEventListener('click', handleCancel);
-
-      // Tratamento do envio do formulário
-      const form = document.getElementById('form-reembolso') as HTMLFormElement;
-      form?.addEventListener('submit', async (e) => {
-        e.preventDefault();
-
-        const selectedProdId = selectProd.value;
-        const valorReembolso = parseDoubleBr(inputValor.value);
-        const motivo = (document.getElementById('textarea-motivo') as HTMLTextAreaElement).value;
-
-        if (!selectedProdId || !valorReembolso || !motivo) {
-          this.showToast('Preencha todos os campos obrigatórios.', 'error');
-          return;
-        }
-
-        try {
-          // 1. Criar a solicitação na tabela 'reembolsos' com resiliência a schema drift
-          const insertPayload: any = {
-            viagem_id: tripId,
-            produto_viagem_id: selectedProdId,
-            consultor_solicitante_id: this.user.id,
-            valor_produto: valorProdutoOriginal || valorReembolso,
-            valor_solicitado: valorReembolso,
-            valor_aprovado: 0,
-            valor_utilizado_pax: 0,
-            status_tratativa: 'pendente_agencia',
-            motivo_cancelamento: motivo,
-            status: 'solicitado',
-            data_solicitacao: new Date().toISOString().split('T')[0]
-          };
-
-          let { error: errorReembolso } = await supabase
-            .from('reembolsos')
-            .insert(insertPayload);
-
-          // Fallback defensivo caso colunas novas ainda não tenham sido migradas no banco (42703)
-          if (errorReembolso && (errorReembolso.code === '42703' || errorReembolso.message?.includes('does not exist'))) {
-            const fallbackPayload = {
-              viagem_id: tripId,
-              produto_viagem_id: selectedProdId,
-              consultor_solicitante_id: this.user.id,
-              valor_solicitado: valorReembolso,
-              motivo_cancelamento: motivo,
-              observacoes_financeiras: JSON.stringify({
-                valor_produto: valorProdutoOriginal || valorReembolso,
-                valor_utilizado_pax: 0,
-                status_tratativa: 'pendente_agencia'
-              }),
-              status: 'solicitado',
-              data_solicitacao: new Date().toISOString().split('T')[0]
-            };
-            const fallbackRes = await supabase.from('reembolsos').insert(fallbackPayload);
-            errorReembolso = fallbackRes.error;
-          }
-
-          if (errorReembolso) throw errorReembolso;
-
-          // 2. Atualizar o status da Viagem para 'reembolso_solicitado'
-          const { error: errorViagem } = await supabase
-            .from('viagens')
-            .update({ status: 'reembolso_solicitado' })
-            .eq('id', tripId);
-
-          if (errorViagem) throw errorViagem;
-
-          // 3. Atualizar o status do Produto para 'cancelado' ou 'reembolsado'
-          const { error: errorProd } = await supabase
-            .from('produtos_viagem')
-            .update({ status: 'reembolsado' })
-            .eq('id', selectedProdId);
-
-          if (errorProd) throw errorProd;
-
-          this.showToast('Reembolso solicitado e cadastrado com sucesso!', 'success');
-          this.closeModal();
-          this.init(); // Recarrega o quadro atualizado
-        } catch (err: any) {
-          console.error('Erro ao processar reembolso:', err);
-          this.showToast('Erro interno ao processar solicitação de reembolso.', 'error', err);
-        }
-      });
-
-    } catch (err: any) {
-      console.error('Erro ao abrir modal:', err);
-      this.closeModal();
-      this.render();
-      this.setupDragAndDrop();
-    }
+    });
   }
 
   /**

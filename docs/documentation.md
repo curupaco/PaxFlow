@@ -845,18 +845,28 @@ O **Plano 2 de UX** expande o ganho de agilidade e a ergonomia de uso do PaxFlow
      - **ID do Reembolso**: Identificador único com formatação e cópia rápida (`#RMB-XXXX`).
      - **Viagem**: Código de referência (`VIA-XXXX`), Destino e Localizador (LOC).
      - **Produto & Valor**: Tipo de produto, fornecedor, descrição e o **Valor Original do Produto** na venda.
-     - **Acompanhamento dos 3 Valores**: **Valor Solicitado**, **Valor Aprovado** e **Valor Utilizado pelo Pax**, com cálculo automático do Saldo Restante (`Aprovado - Utilizado`).
+     - **Forma de Devolução**: Coluna dedicada e badge no card exibindo modalidade (`Estorno Cartão de Crédito`, `Pix / Transferência Bancária`, `Carta de Crédito / Voucher Fornecedor`).
+     - **Acompanhamento dos 4 Valores**: **Valor do Produto**, **Valor Solicitado**, **Valor Aprovado** e **Valor Utilizado pelo Pax**, com cálculo automático do Saldo Restante (`Aprovado - Utilizado`).
+     - **Botão de Ação Direta no Card de Produto (`💸`)**: No modal de edição da viagem (`EditTravelModal`), cada produto possui botão de 1-clique para abrir a solicitação de reembolso pré-preenchida.
+     - **Automação de Mudança de Status da Viagem**: Ao selecionar `reembolso_solicitado` no status da viagem, o sistema aciona o `SolicitarReembolsoModal` para garantir abertura imediata da ficha detalhada sem registros órfãos.
+     - **Alerta de Regularização em 1-Clique na Central de Reembolsos**: Se existirem viagens com status `reembolso_solicitado` sem linha na tabela `reembolsos`, a tela exibe card de alerta com botão `💸 Abrir Ficha` para resgate e regularização imediata.
      - **Modal de Edição Rápida de Valores (`✏️ Valores`)**: Permite ajustar a qualquer momento os valores aprovados, créditos utilizados e notas de negociação.
-   - **Resiliência a Schema Drift (Zero-Break)**: Fallback transparente para o campo `observacoes_financeiras` em caso de erro `42703`.
+   - **Resiliência a Schema Drift (Zero-Break)**: Fallback transparente para o campo `observacoes_financeiras` em caso de erro `42703` na gravação de `forma_devolucao` ou outros campos novos.
 
-4. **Sync Scroll Espelhado no PaxFlow Studio™**:
+4. **Upload Inteligente de Documentos com Triagem de Passageiro**:
+   - Diálogo de triagem operacional em todos os uploads da viagem (`UploadAnexoModal`):
+     - Opção 1: **Documento do Passageiro** (Passaporte, Visto, RG/CPF, Autorização). Em viagens com múltiplos passageiros, abre seletor dropdown para vincular exatamente ao passageiro titular ou dependente.
+     - Opção 2: **Documento da Viagem** (Vouchers gerais de hotel/aéreo, recibos de quitação e contratos da agência).
+   - Armazenamento em `documentos_anexos` com nova coluna `passageiro_nome`, indexada e persistida no Supabase Storage.
+
+5. **Sync Scroll Espelhado no PaxFlow Studio™**:
    - Rolagem vertical sincronizada e proporcional entre a coluna do editor e a janela do **Live Preview** no modo desktop, garantindo que o consultor visualize no preview exatamente o dia ou serviço que está preenchendo no editor.
 
-5. **Drag & Drop de Vouchers Diretamente sobre o Produto**:
+6. **Drag & Drop de Vouchers Diretamente sobre o Produto**:
    - Cards de produtos no modal de gerenciamento de viagens tornam-se zonas de soltura nativas HTML5.
    - Ao arrastar um arquivo PDF ou imagem sobre o card, o produto recebe destaque visual com borda tracejada índigo e aciona a janela de upload do `UploadAnexoModal` com vínculo automático àquele produto e passageiro.
 
-6. **Atalho Universal de Teclado `Ctrl + Enter` / `Cmd + Enter`**:
+7. **Atalho Universal de Teclado `Ctrl + Enter` / `Cmd + Enter`**:
    - Padronização de atalho de teclado para submissão imediata em:
      - Caixa de comentários e anotações (produtos, orçamentos e viagens).
      - Modal de Nova Mensagem Direta do Inbox (campos de assunto e corpo).

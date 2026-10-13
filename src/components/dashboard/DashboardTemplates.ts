@@ -54,11 +54,34 @@ export function renderTimelineHTML(cronograma: any[]): string {
  * Renderiza a listagem de reembolsos
  */
 export function renderReembolsosTabHTML(reembolsos: any[]): string {
-  if (!reembolsos || reembolsos.length === 0) return '';
+  const lista = Array.isArray(reembolsos) ? reembolsos : [];
+  
+  if (lista.length === 0) {
+    return `
+      <div class="flex items-center justify-between mb-3">
+        <h4 class="text-xs font-black text-slate-400 dark:text-slate-400 uppercase tracking-wide">Solicitações de Reembolso</h4>
+        <button type="button" id="btn-novo-reembolso-tab" class="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 font-bold text-[11px] rounded-lg border border-rose-200/60 dark:border-rose-900/40 transition flex items-center gap-1">
+          💸 Nova Solicitação
+        </button>
+      </div>
+      <div class="p-5 bg-slate-50/50 dark:bg-slate-800/20 rounded-xl border border-dashed border-slate-200 dark:border-slate-800 text-center space-y-3">
+        <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Nenhum processo de reembolso registrado para esta viagem.</p>
+        <button type="button" id="btn-novo-reembolso-empty" class="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white font-extrabold text-xs rounded-xl shadow-md shadow-rose-500/20 transition uppercase">
+          💸 Solicitar Reembolso
+        </button>
+      </div>
+    `;
+  }
+
   return `
-    <h4 class="text-xs font-black text-slate-400 dark:text-slate-400 uppercase tracking-wide mb-3">Solicitações de Reembolso nesta Viagem</h4>
+    <div class="flex items-center justify-between mb-3">
+      <h4 class="text-xs font-black text-slate-400 dark:text-slate-400 uppercase tracking-wide">Solicitações de Reembolso nesta Viagem</h4>
+      <button type="button" id="btn-novo-reembolso-tab" class="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 font-bold text-[11px] rounded-lg border border-rose-200/60 dark:border-rose-900/40 transition flex items-center gap-1">
+        💸 Nova Solicitação
+      </button>
+    </div>
     <div class="space-y-3">
-      ${reembolsos.map((r: any) => {
+      ${lista.map((r: any) => {
         const idCurto = r.codigo_ref || r.codigoRef || (r.id ? `#RMB-${r.id.slice(0, 5).toUpperCase()}` : 'Reembolso');
         const tratativa = r.status_tratativa || r.status || 'pendente_agencia';
         let statusBadgeClass = 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-200/80';
@@ -86,6 +109,7 @@ export function renderReembolsosTabHTML(reembolsos: any[]): string {
         const valorAprov = Number(r.valor_aprovado || 0);
         const valorUtil = Number(r.valor_utilizado_pax || 0);
         const saldo = Math.max(0, valorAprov - valorUtil);
+        const formaDevolucao = r.forma_devolucao || r.formaDevolucao || '';
 
         return `
           <div class="p-4 bg-slate-50/50 dark:bg-slate-800/20 rounded-xl border border-slate-200/60 dark:border-slate-800/80 space-y-2.5">
@@ -126,6 +150,15 @@ export function renderReembolsosTabHTML(reembolsos: any[]): string {
                 <strong class="${saldo > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-slate-500'} font-black">R$ ${saldo.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
               </div>
             </div>
+
+            ${formaDevolucao ? `
+              <div class="pt-1 text-xs">
+                <span class="block text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase">Forma de Devolução:</span>
+                <span class="inline-block mt-0.5 px-2 py-0.5 rounded text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                  💳 ${formaDevolucao}
+                </span>
+              </div>
+            ` : ''}
 
             <div class="pt-1.5 border-t border-slate-100 dark:border-slate-800/80">
               <span class="block text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase">Motivo / Justificativa:</span>

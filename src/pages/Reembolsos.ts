@@ -11,6 +11,8 @@ import {
   filterReembolsosByTerm 
 } from '../controllers/reembolsosController';
 import { renderCurrencyInputHTML, parseDoubleBr, formatCurrencyValue, setupFormValidation } from '../utils/masks';
+import { ReembolsosService, ViagemOrfaReembolso } from '../services/reembolsosService';
+import { SolicitarReembolsoModal } from '../components/reembolsos/SolicitarReembolsoModal';
 
 // Injeta estilos premium e customizações para a Central de Reembolsos no DOM
 if (typeof document !== 'undefined') {
@@ -52,6 +54,7 @@ export class ReembolsosPage {
   private user: any = null;
   private perfil: PerfilConsultor | null = null;
   private reembolsos: any[] = [];
+  private viagensOrfas: ViagemOrfaReembolso[] = [];
   private timerId: any = null;
   private buscaTermo: string = '';
   private activeStatusTab: 'todos' | 'pendente_agencia' | 'pendente_fornecedor' | 'pendente_agaxtur' | 'concluido' = 'todos';
@@ -174,9 +177,13 @@ export class ReembolsosPage {
       } else {
         this.reembolsos = rawData;
       }
+
+      // Busca viagens marcadas como 'reembolso_solicitado' que ainda não possuem registro na tabela 'reembolsos'
+      this.viagensOrfas = await ReembolsosService.buscarViagensOrfasReembolso();
     } catch (err: any) {
       console.error('Erro ao carregar reembolsos do servidor:', err.message);
       this.reembolsos = [];
+      this.viagensOrfas = [];
       this.showToast('Erro de conexão ao carregar os reembolsos do servidor.', 'error');
     }
   }
@@ -326,6 +333,29 @@ export class ReembolsosPage {
     const searchInput = document.getElementById('input-busca-reembolso') as HTMLInputElement;
     searchInput?.addEventListener('input', (e) => {
       this.debouncedSearch((e.target as HTMLInputElement).value);
+    });
+
+    // Regularização de viagens com Reembolso Solicitado sem registro
+    const regularizarBtns = document.querySelectorAll('[data-regularizar-viagem-id]');
+    regularizarBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tripId = btn.getAttribute('data-regularizar-viagem-id');
+        if (!tripId) return;
+
+        const viagemOrfa = this.viagensOrfas.find(v => v.id === tripId);
+        if (!viagemOrfa) return;
+
+        SolicitarReembolsoModal.abrir({
+          viagemId: viagemOrfa.id,
+          viagemDescricao: `${viagemOrfa.destino || 'Viagem'} • ${viagemOrfa.cliente?.nome || ''}`,
+          produtos: viagemOrfa.produtos || [],
+          user: this.user,
+          showToast: (msg, type, err) => this.showToast(msg, type, err),
+          onSucesso: async () => {
+            await this.init();
+          }
+        });
+      });
     });
   }
 
@@ -651,6 +681,46 @@ export class ReembolsosPage {
 
         <main class="flex-1 p-6 flex flex-col gap-6">
           
+          <!-- Alerta de Viagens Órfãs de Reembolso -->
+          ${this.viagensOrfas.length > 0 ? `
+            <div class="bg-amber-500/10 border border-amber-500/30 dark:bg-amber-950/30 dark:border-amber-900/60 p-4 sm:p-5 rounded-2xl shadow-sm space-y-3">
+              <div class="flex items-start sm:items-center justify-between gap-3 flex-wrap">
+                <div class="flex items-center gap-2.5">
+                  <span class="p-2 bg-amber-500/20 text-amber-600 dark:text-amber-400 rounded-xl text-lg">⚠️</span>
+                  <div>
+                    <h3 class="text-sm font-black text-amber-900 dark:text-amber-200">
+                      Regularização Pendente: ${this.viagensOrfas.length} Viagem(ns) com status "Reembolso Solicitado" sem Ficha Detalhada
+                    </h3>
+                    <p class="text-xs text-amber-700/80 dark:text-amber-400/80 font-medium">
+                      Estas viagens foram marcadas com reembolso solicitado, mas ainda não possuem produtos vinculados na Central de Reembolsos.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
+                ${this.viagensOrfas.map(v => `
+                  <div class="bg-white/80 dark:bg-slate-900/80 border border-amber-200/80 dark:border-amber-900/40 p-3.5 rounded-xl flex items-center justify-between gap-3">
+                    <div class="overflow-hidden">
+                      <span class="font-mono text-[10px] font-black text-amber-700 dark:text-amber-400 bg-amber-100/60 dark:bg-amber-950/60 px-1.5 py-0.5 rounded">
+                        ${v.codigo_ref || 'VIA'} ${v.codigo_localizador ? `• ${v.codigo_localizador}` : ''}
+                      </span>
+                      <strong class="block text-xs font-bold text-slate-800 dark:text-slate-100 truncate mt-1">
+                        ${v.destino || 'Destino não informado'}
+                      </strong>
+                      <span class="block text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                        ${v.cliente?.nome || 'Cliente não vinculado'}
+                      </span>
+                    </div>
+                    <button type="button" data-regularizar-viagem-id="${v.id}" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white font-extrabold text-[11px] rounded-lg shadow-sm transition uppercase whitespace-nowrap shrink-0">
+                      💸 Abrir Ficha
+                    </button>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          ` : ''}
+
           <!-- Cards de Métricas Premium -->
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-5 rounded-2xl shadow-xs flex items-center justify-between">
@@ -818,6 +888,11 @@ export class ReembolsosPage {
                           <td class="py-3 px-4">
                             <span class="block text-slate-700 dark:text-slate-200 font-bold">[${(r.produto?.tipo || 'outro').toUpperCase()}] ${highlightMatch(r.produto?.fornecedor || '', this.buscaTermo)}</span>
                             <span class="block text-[11px] text-slate-400 font-medium truncate max-w-[160px]" title="${r.produto?.descricao || ''}">${highlightMatch(r.produto?.descricao || 'Sem descrição', this.buscaTermo)}</span>
+                            ${(r.forma_devolucao || r.formaDevolucao) ? `
+                              <span class="inline-block mt-0.5 px-1.5 py-0.5 rounded text-[9px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/50 dark:border-slate-700/50">
+                                💳 ${r.forma_devolucao || r.formaDevolucao}
+                              </span>
+                            ` : ''}
                           </td>
 
                           <!-- Valor do Produto -->
@@ -953,6 +1028,11 @@ export class ReembolsosPage {
             <span class="block text-[8px] font-black text-slate-400 uppercase tracking-wider">Produto</span>
             <span class="block text-slate-700 dark:text-slate-300 font-bold">[${(r.produto?.tipo || 'outro').toUpperCase()}] ${r.produto?.fornecedor || ''}</span>
             <span class="block text-[10px] text-slate-400 truncate">${r.produto?.descricao || 'Sem descrição'}</span>
+            ${(r.forma_devolucao || r.formaDevolucao) ? `
+              <span class="inline-block mt-0.5 px-1.5 py-0.5 rounded text-[8px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/50 dark:border-slate-700/50">
+                💳 ${r.forma_devolucao || r.formaDevolucao}
+              </span>
+            ` : ''}
           </div>
         </div>
 

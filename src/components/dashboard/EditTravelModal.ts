@@ -12,6 +12,7 @@ import { parsePnrText } from '../../utils/pnrParser';
 import { confirmUnsavedChanges } from '../common/UnsavedChangesModal';
 import { ClienteDetalhesModal } from '../common/ClienteDetalhesModal';
 import { RemarcacaoModal } from './RemarcacaoModal';
+import { SolicitarReembolsoModal } from '../reembolsos/SolicitarReembolsoModal';
 import {
   renderCurrencyInputHTML,
   renderDateInputHTML,
@@ -440,11 +441,10 @@ export class EditTravelModal {
           <button id="tab-produtos-btn" class="border-b-2 ${activeTab === 'produtos' ? 'border-indigo-600 dark:border-indigo-400 text-indigo-600 dark:text-indigo-400 font-black' : 'border-transparent text-slate-400 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 font-semibold'} px-3 py-2 text-xs sm:text-sm transition shrink-0">
             🛍️ Produtos e Serviços
           </button>
-          ${v.reembolsos && v.reembolsos.length > 0 ? `
-            <button id="tab-reembolsos-btn" class="border-b-2 border-transparent px-3 py-2 text-xs sm:text-sm font-semibold text-slate-400 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition shrink-0">
-              💸 Histórico de Reembolsos
-            </button>
-          ` : ''}
+          <button id="tab-reembolsos-btn" class="border-b-2 border-transparent px-3 py-2 text-xs sm:text-sm font-semibold text-slate-400 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition shrink-0 flex items-center gap-1.5">
+            <span>💸 Reembolsos</span>
+            ${v.reembolsos && v.reembolsos.length > 0 ? `<span class="px-1.5 py-0.5 bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400 text-[10px] font-black rounded-full">${v.reembolsos.length}</span>` : ''}
+          </button>
         </div>
 
         <!-- CONTEÚDO PRINCIPAL (Grid 3 Colunas no Desktop) -->
@@ -748,11 +748,9 @@ export class EditTravelModal {
             </div>
 
             <!-- Histórico de Reembolsos (Desktop inline) -->
-            ${v.reembolsos && v.reembolsos.length > 0 ? `
-              <div id="reembolsos-wrapper-desktop" class="hidden lg:block border-t border-slate-100 dark:border-slate-800 pt-4 mt-4">
-                ${renderReembolsosHTML()}
-              </div>
-            ` : ''}
+            <div id="reembolsos-wrapper-desktop" class="hidden lg:block border-t border-slate-100 dark:border-slate-800 pt-4 mt-4">
+              ${renderReembolsosHTML()}
+            </div>
 
           </div>
 
@@ -768,11 +766,9 @@ export class EditTravelModal {
         </div>
 
         <!-- ABA 3: HISTÓRICO DE REEMBOLSOS (Apenas Mobile) -->
-        ${v.reembolsos && v.reembolsos.length > 0 ? `
-          <div id="tab-reembolsos-content" class="space-y-4 tab-pane-transition hidden lg:hidden">
-            ${renderReembolsosHTML()}
-          </div>
-        ` : ''}
+        <div id="tab-reembolsos-content" class="space-y-4 tab-pane-transition hidden lg:hidden">
+          ${renderReembolsosHTML()}
+        </div>
 
       </div>
     `;
@@ -976,6 +972,24 @@ export class EditTravelModal {
           
           btnCancelar?.setAttribute('disabled', 'true');
           btnCancelar?.classList.add('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
+        }
+      }
+
+      // Se alterou para Reembolso Solicitado e não existe processo na tabela reembolsos, dispara o modal detalhado
+      if (currentStatus === 'reembolso_solicitado') {
+        const temReembolso = v.reembolsos && v.reembolsos.length > 0;
+        if (!temReembolso) {
+          SolicitarReembolsoModal.abrir({
+            viagemId: v.id,
+            viagemDescricao: `${v.destino || 'Viagem'} • ${v.cliente?.nome || ''}`,
+            produtos: v.produtos || [],
+            user: this.options.user,
+            showToast: (msg, type, err) => this.options.showToast(msg, type, err),
+            onSucesso: async () => {
+              await this.open(v.id, 'produtos');
+              await this.options.onUpdate();
+            }
+          });
         }
       }
     });
@@ -2687,9 +2701,16 @@ export class EditTravelModal {
             <div class="flex items-start gap-2.5 overflow-hidden w-full">
               <span class="text-lg p-1 bg-white dark:bg-slate-700 border border-slate-100 dark:border-slate-700 rounded-lg shadow-sm flex items-center justify-center">${tipoIcon}</span>
               <div class="overflow-hidden flex-1 self-center text-left space-y-0.5">
-                <span class="block text-xs font-black text-slate-700 dark:text-slate-200 truncate leading-tight">
-                  ${p.tipo}
-                </span>
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <span class="block text-xs font-black text-slate-700 dark:text-slate-200 truncate leading-tight">
+                    ${p.tipo}
+                  </span>
+                  ${p.status === 'reembolsado' ? `
+                    <span class="inline-flex items-center gap-1 text-[9px] font-bold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 px-1.5 py-0.5 rounded border border-rose-200/50 dark:border-rose-900/40">
+                      💸 Reembolso Solicitado
+                    </span>
+                  ` : ''}
+                </div>
                 ${p.codigo_reserva ? `
                   <button type="button" class="btn-copy-loc inline-flex items-center gap-1 text-[9px] font-mono font-black text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 px-1.5 py-0.5 rounded border border-indigo-200/50 dark:border-indigo-800/40 transition cursor-pointer" data-copy-loc="${p.codigo_reserva}" title="Copiar LOC ${p.codigo_reserva}">
                     <span>LOC: ${p.codigo_reserva}</span>
@@ -2699,10 +2720,13 @@ export class EditTravelModal {
               </div>
             </div>
             
-            <div class="flex items-center gap-3.5">
+            <div class="flex items-center gap-2.5">
               <div class="text-right">
                 <span class="block text-xs font-black text-indigo-600 dark:text-indigo-400">R$ ${Number(p.valor_venda || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
+              <button type="button" data-refund-prod-id="${p.id}" class="p-1.5 hover:bg-rose-50 dark:hover:bg-rose-950/20 text-slate-300 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-md transition text-xs font-bold" title="Solicitar Reembolso deste Produto">
+                💸
+              </button>
               <button data-comments-prod-id="${p.id}" data-comments-prod-name="${p.fornecedor} - ${p.descricao}" class="p-1.5 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-slate-300 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-md transition text-xs font-bold flex items-center gap-1" title="Notas e Comentários">
                 💬 <span class="text-[10px]">${commentsCount}</span>
               </button>
@@ -2974,6 +2998,35 @@ export class EditTravelModal {
         }
       }
     }
+
+    // Ações de Solicitação de Reembolso
+    const abrirNovoReembolsoModal = (produtoId?: string) => {
+      SolicitarReembolsoModal.abrir({
+        viagemId: this.tripId,
+        viagemDescricao: `${this.currentLoadedViagem?.destino || 'Viagem'} • ${this.currentLoadedViagem?.cliente?.nome || ''}`,
+        produtos: produtos,
+        produtoPreselecionadoId: produtoId,
+        user: this.options.user,
+        showToast: (msg, type, err) => this.options.showToast(msg, type, err),
+        onSucesso: async () => {
+          await this.open(this.tripId, 'produtos');
+          await this.options.onUpdate();
+        }
+      });
+    };
+
+    container.querySelectorAll('[data-refund-prod-id]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const prodId = btn.getAttribute('data-refund-prod-id');
+        if (prodId) {
+          abrirNovoReembolsoModal(prodId);
+        }
+      });
+    });
+
+    document.getElementById('btn-novo-reembolso-tab')?.addEventListener('click', () => abrirNovoReembolsoModal());
+    document.getElementById('btn-novo-reembolso-empty')?.addEventListener('click', () => abrirNovoReembolsoModal());
 
     // Comentários produto
     container.querySelectorAll('[data-comments-prod-id]').forEach(btn => {
