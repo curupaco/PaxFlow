@@ -20,6 +20,10 @@ Plataforma SaaS de gestão operacional e fluxo de passageiros no turismo: acompa
 
 ## Funcionalidades
 
+- **Resiliência a Schema Drift em Viagens & Solicitações de Reembolso Zero-Break [NEW]** — Blindagem e tratamento contra divergências de schema no Supabase (`ReembolsosService` e migração `20261013195000_viagens_updated_at.sql`):
+  - **Coluna `updated_at` e Trigger Automatizada em `viagens`**: Provisionamento idempotente da coluna `updated_at` com índice e trigger `BEFORE UPDATE` para integridade operacional, permitindo que alterações de status da viagem e triggers do Postgres executem sem erro `42703`.
+  - **Padrão Zero-Break na Central de Reembolsos**: Se a atualização de status da viagem encontrar qualquer incompatibilidade transitória de schema, a gravação financeira do processo de reembolso é preservada com sucesso, evitando bloqueios de interface e toasts vermelhos indevidos na agência.
+  - **Sincronização em 1-Clique**: Preservação do vínculo automático entre produto reembolsado, status geral da viagem e ficha detalhada na Central de Reembolsos.
 - **Assistente de Remarcação de Viagens com Blindagem Contábil em 1-Clique [NEW]** — Módulo inteligente e seguro para alteração de datas operacionais e voos de viagens (`RemarcacaoModal` e `RemarcacaoService`):
   - **Blindagem Contábil Estrita**: Preserva a `data_financeiro` original da venda, garantindo que o DRE, metas comerciais, rankings de consultores e o fechamento do mês da compra não sofram distorções retroativas.
   - **Sincronização Atômica de Embarques & Zero Duplicidade**: Atualiza simultaneamente as datas de ida, volta e os trechos de voos nos produtos aéreos, removendo de imediato as datas antigas do Relatório de Embarques sem deixar duplicidades nem registros órfãos.

@@ -118,18 +118,34 @@ export class ReembolsosService {
         throw error;
       }
 
-      // 1. Atualizar o status do Produto para 'reembolsado'
-      await supabase
-        .from('produtos_viagem')
-        .update({ status: 'reembolsado' })
-        .eq('id', produtoViagemId);
+      // 1. Atualizar o status do Produto para 'reembolsado' de forma segura
+      try {
+        const { error: errProd } = await supabase
+          .from('produtos_viagem')
+          .update({ status: 'reembolsado' })
+          .eq('id', produtoViagemId);
 
-      // 2. Se habilitado, atualiza o status da Viagem para 'reembolso_solicitado'
+        if (errProd) {
+          console.warn('⚠️ PaxFlow ReembolsosService: Não foi possível atualizar status do produto:', errProd);
+        }
+      } catch (eProd) {
+        console.warn('⚠️ PaxFlow ReembolsosService: Exceção ao atualizar produto da viagem:', eProd);
+      }
+
+      // 2. Se habilitado, atualiza o status da Viagem para 'reembolso_solicitado' de forma segura e resiliente
       if (atualizarStatusViagem) {
-        await supabase
-          .from('viagens')
-          .update({ status: 'reembolso_solicitado' })
-          .eq('id', viagemId);
+        try {
+          const { error: errViagem } = await supabase
+            .from('viagens')
+            .update({ status: 'reembolso_solicitado' })
+            .eq('id', viagemId);
+
+          if (errViagem) {
+            console.warn('⚠️ PaxFlow ReembolsosService: Aviso não-bloqueante ao atualizar status da viagem para reembolso_solicitado:', errViagem);
+          }
+        } catch (eViagem) {
+          console.warn('⚠️ PaxFlow ReembolsosService: Exceção não-bloqueante ao atualizar status da viagem:', eViagem);
+        }
       }
 
       return { sucesso: true, data };

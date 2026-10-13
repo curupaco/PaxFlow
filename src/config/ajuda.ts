@@ -603,7 +603,7 @@ export const HELP_ITEMS: HelpItem[] = [
     modulo: 'reembolsos',
     label: 'Automação: Vínculo de Solicitação de Reembolso',
     description: 'A viagem é movida automaticamente para "Reembolso Solicitado" ao abrir um processo de estorno.',
-    details: 'Quando um cliente solicita o cancelamento parcial ou total de serviços de uma viagem contratada, o consultor cria um registro de reembolso. No exato instante em que essa ficha de reembolso é salva no sistema, o PaxFlow altera o status geral da viagem operacional para "Reembolso Solicitado".\n\nIsso sinaliza para os gestores e para o financeiro que existe um trâmite de crédito pendente de conciliação junto aos fornecedores (consolidadoras ou companhias aéreas) antes que a viagem possa ser definitivamente finalizada.'
+    details: 'Quando um cliente solicita o cancelamento parcial ou total de serviços de uma viagem contratada, o consultor cria um registro de reembolso. No exato instante em que essa ficha de reembolso é salva no sistema, o PaxFlow altera o status geral da viagem operacional para "Reembolso Solicitado".\n\nIsso sinaliza para os gestores e para o financeiro que existe um trâmite de crédito pendente de conciliação junto aos fornecedores (consolidadoras ou companhias aéreas) antes que a viagem possa ser definitivamente finalizada.\n\n🛡️ **Blindagem contra Schema Drift**: O sistema conta com tratamento nativo para atualizações de status e timestamps da viagem (`updated_at`), garantindo que o registro financeiro seja concluído sem erros de coluna inexistente (42703) mesmo em ambientes em atualização.'
   },
   {
     id: 'auto-reembolso-concluido',

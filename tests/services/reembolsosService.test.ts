@@ -218,4 +218,58 @@ describe('ReembolsosService - Testes Subcutâneos e Resiliência a Schema Drift 
     expect(orfas[0].codigo_ref).toBe('VIA-001');
     expect(orfas[0].cliente?.nome).toBe('João da Silva');
   });
+
+  it('deve manter padrão Zero-Break se atualização da viagem falhar com erro 42703 (updated_at inexistente)', async () => {
+    // Setup
+    const erroViagem42703 = {
+      code: '42703',
+      message: 'column "updated_at" of relation "viagens" does not exist'
+    };
+
+    const mockReembolsoCriado = {
+      id: 'reemb-zero-break-1',
+      viagem_id: 'trip-drift-777',
+      produto_viagem_id: 'prod-drift-888',
+      valor_solicitado: 429.95,
+      status: 'solicitado'
+    };
+
+    const mockInsert = vi.fn().mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        single: vi.fn().mockResolvedValue({ data: mockReembolsoCriado, error: null })
+      })
+    });
+
+    const mockUpdateProduto = vi.fn().mockReturnValue({
+      eq: vi.fn().mockResolvedValue({ data: null, error: null })
+    });
+
+    const mockUpdateViagem = vi.fn().mockReturnValue({
+      eq: vi.fn().mockResolvedValue({ data: null, error: erroViagem42703 })
+    });
+
+    (supabase.from as any).mockImplementation((table: string) => {
+      if (table === 'reembolsos') return { insert: mockInsert };
+      if (table === 'produtos_viagem') return { update: mockUpdateProduto };
+      if (table === 'viagens') return { update: mockUpdateViagem };
+      return {};
+    });
+
+    // Action
+    const resultado = await ReembolsosService.criarSolicitacao({
+      viagemId: 'trip-drift-777',
+      produtoViagemId: 'prod-drift-888',
+      consultorSolicitanteId: 'user-001',
+      valorSolicitado: 429.95,
+      motivoCancelamento: 'Pax precisou pagar táxi por erro de hotel',
+      formaDevolucao: 'Estorno Cartão de Crédito',
+      atualizarStatusViagem: true
+    });
+
+    // Assert
+    expect(resultado.sucesso).toBe(true);
+    expect(resultado.data?.id).toBe('reemb-zero-break-1');
+    expect(mockUpdateProduto).toHaveBeenCalledWith({ status: 'reembolsado' });
+    expect(mockUpdateViagem).toHaveBeenCalledWith({ status: 'reembolso_solicitado' });
+  });
 });

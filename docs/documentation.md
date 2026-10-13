@@ -851,7 +851,7 @@ O **Plano 2 de UX** expande o ganho de agilidade e a ergonomia de uso do PaxFlow
      - **Automação de Mudança de Status da Viagem**: Ao selecionar `reembolso_solicitado` no status da viagem, o sistema aciona o `SolicitarReembolsoModal` para garantir abertura imediata da ficha detalhada sem registros órfãos.
      - **Alerta de Regularização em 1-Clique na Central de Reembolsos**: Se existirem viagens com status `reembolso_solicitado` sem linha na tabela `reembolsos`, a tela exibe card de alerta com botão `💸 Abrir Ficha` para resgate e regularização imediata.
      - **Modal de Edição Rápida de Valores (`✏️ Valores`)**: Permite ajustar a qualquer momento os valores aprovados, créditos utilizados e notas de negociação.
-   - **Resiliência a Schema Drift (Zero-Break)**: Fallback transparente para o campo `observacoes_financeiras` em caso de erro `42703` na gravação de `forma_devolucao` ou outros campos novos.
+   - **Resiliência a Schema Drift (Zero-Break) & Integridade de Viagens**: Fallback transparente para o campo `observacoes_financeiras` em caso de erro `42703` na gravação de `forma_devolucao` ou outros campos novos, aliado à blindagem defensiva na sincronização de status da viagem e à migração DDL da coluna `updated_at` na tabela `viagens`.
 
 4. **Upload Inteligente de Documentos com Triagem de Passageiro**:
    - Diálogo de triagem operacional em todos os uploads da viagem (`UploadAnexoModal`):
