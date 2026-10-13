@@ -30,17 +30,21 @@ describe('PushNotificationService - Testes Subcutâneos', () => {
       Notification: { permission: 'default', requestPermission: vi.fn() }
     };
 
-    (global as any).navigator = {
-      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-      serviceWorker: {
-        ready: Promise.resolve({
-          pushManager: {
-            getSubscription: vi.fn().mockResolvedValue(null),
-            subscribe: vi.fn().mockResolvedValue(null)
-          }
-        })
-      }
-    };
+    Object.defineProperty(global, 'navigator', {
+      value: {
+        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+        serviceWorker: {
+          ready: Promise.resolve({
+            pushManager: {
+              getSubscription: vi.fn().mockResolvedValue(null),
+              subscribe: vi.fn().mockResolvedValue(null)
+            }
+          })
+        }
+      },
+      writable: true,
+      configurable: true
+    });
   });
 
   it('deve identificar corretamente suporte a push conforme APIs de navegador presentes', () => {
