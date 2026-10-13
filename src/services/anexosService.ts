@@ -186,10 +186,24 @@ export class AnexosService {
     data_validade?: string;
     viagem_id?: string;
     cliente_id?: string;
+    passageiro_nome?: string;
+    destino_tipo?: 'VIAGEM' | 'PASSAGEIRO';
     user_id?: string;
     onProgress?: (mensagem: string) => void;
   }): Promise<DocumentoAnexo> {
-    const { file, rotulo, tipo_documento, numero_documento, data_validade, viagem_id, cliente_id, user_id, onProgress } = params;
+    const {
+      file,
+      rotulo,
+      tipo_documento,
+      numero_documento,
+      data_validade,
+      viagem_id,
+      cliente_id,
+      passageiro_nome,
+      destino_tipo,
+      user_id,
+      onProgress
+    } = params;
 
     // 1. Obter limite de tamanho
     let maxMb = 25;
@@ -258,13 +272,26 @@ export class AnexosService {
     };
 
     const sanitizedViagemId = !isInvalidId(viagem_id) ? viagem_id!.trim() : undefined;
-    const sanitizedClienteId = !isInvalidId(cliente_id) ? cliente_id!.trim() : undefined;
+    
+    // Regra estrita: Se o destino for VIAGEM, cliente_id NUNCA é vinculado (zero ruído no CRM).
+    let sanitizedClienteId: string | undefined = undefined;
+    let sanitizedPassageiroNome: string | undefined = undefined;
+
+    if (destino_tipo === 'VIAGEM') {
+      sanitizedClienteId = undefined;
+      sanitizedPassageiroNome = undefined;
+    } else {
+      sanitizedClienteId = !isInvalidId(cliente_id) ? cliente_id!.trim() : undefined;
+      sanitizedPassageiroNome = passageiro_nome?.trim() || undefined;
+    }
+
     const sanitizedUserId = !isInvalidId(user_id) ? user_id!.trim() : undefined;
 
     // 5. Salva na tabela documentos_anexos com payload sanitizado
     const payload: Partial<DocumentoAnexo> = {
       viagem_id: sanitizedViagemId,
       cliente_id: sanitizedClienteId,
+      passageiro_nome: sanitizedPassageiroNome,
       rotulo: rotulo.trim() || finalFile.name,
       tipo_documento: tipo_documento || 'OUTROS',
       numero_documento: numero_documento?.trim() || undefined,
@@ -300,6 +327,7 @@ export class AnexosService {
           const payloadBase = { ...payload };
           delete payloadBase.numero_documento;
           delete payloadBase.data_validade;
+          delete payloadBase.passageiro_nome;
 
           const { data: dataBase, error: errBase } = await supabase
             .from(this.TABELA)
@@ -364,7 +392,11 @@ export class AnexosService {
    * Consulta a tabela documentos_anexos, faz fallback em viagens.observacoes e
    * inspeciona o Supabase Storage diretamente para nunca perder nenhum arquivo enviado.
    */
-  public static async listarAnexos(viagemId?: string, clienteId?: string): Promise<DocumentoAnexo[]> {
+  public static async listarAnexos(
+    viagemId?: string,
+    clienteId?: string,
+    opcoes?: { apenasPessoais?: boolean }
+  ): Promise<DocumentoAnexo[]> {
     const listaFinal: DocumentoAnexo[] = [];
     let tabelaExiste = true;
 
@@ -568,6 +600,20 @@ export class AnexosService {
           }
         }
       }
+    }
+
+    // 6. Filtro de documentos para a ficha do cliente: oculta vouchers/reservas de viagens legados
+    const tiposOperacionaisViagem: TipoDocumentoAnexo[] = [
+      'VOUCHER_AEREO',
+      'VOUCHER_HOTEL',
+      'VOUCHER_TRANSPORTE',
+      'INGRESSO',
+      'ROTEIRO',
+      'CONTRATO'
+    ];
+
+    if (opcoes?.apenasPessoais || (!viagemId && clienteIdEfetivo)) {
+      return listaFinal.filter(item => !tiposOperacionaisViagem.includes(item.tipo_documento));
     }
 
     return listaFinal;

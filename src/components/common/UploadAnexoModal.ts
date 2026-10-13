@@ -5,6 +5,7 @@ import { TipoDocumentoAnexo } from '../../types';
 export interface PassageiroOpcao {
   id: string;
   nome: string;
+  isTitular?: boolean;
 }
 
 export interface UploadAnexoModalOptions {
@@ -24,6 +25,8 @@ interface ItemArquivoEdicao {
   rotulo: string;
   numeroDocumento: string;
   dataValidade: string;
+  destino: 'VIAGEM' | 'PASSAGEIRO';
+  passageiroNome?: string;
   clienteIdVinculado?: string;
 }
 
@@ -39,8 +42,20 @@ export class UploadAnexoModal {
   }
 
   private inicializarItens(): void {
+    const isContextoViagem = !!this.options.viagemId;
+    const passageiros = this.options.passageiros || [];
+    const titular = passageiros.find(p => p.isTitular) || passageiros[0];
+
     this.itens = this.options.arquivos.map((file, idx) => {
       const { tipo, rotulo } = AnexosService.inferirTipoPorNome(file.name);
+      const isPessoal = ['PASSAPORTE', 'RG', 'CNH', 'VISTO'].includes(tipo);
+
+      // Inferência inteligente: documentos pessoais sugerem Passageiro; vouchers sugerem Viagem
+      let destino: 'VIAGEM' | 'PASSAGEIRO' = 'VIAGEM';
+      if (!isContextoViagem || isPessoal) {
+        destino = 'PASSAGEIRO';
+      }
+
       return {
         file,
         id: `anexo-item-${Date.now()}-${idx}`,
@@ -48,7 +63,9 @@ export class UploadAnexoModal {
         rotulo,
         numeroDocumento: '',
         dataValidade: '',
-        clienteIdVinculado: this.options.clienteId || undefined
+        destino,
+        passageiroNome: titular?.nome || undefined,
+        clienteIdVinculado: this.options.clienteId || titular?.id || undefined
       };
     });
   }
@@ -95,7 +112,10 @@ export class UploadAnexoModal {
     if (!this.modalEl) return;
 
     const totalArquivos = this.itens.length;
-    const temPassageiros = this.options.passageiros && this.options.passageiros.length > 0;
+    const isContextoViagem = !!this.options.viagemId;
+    const passageiros = this.options.passageiros || [];
+    const temMultiplosPax = passageiros.length > 1;
+    const titular = passageiros.find(p => p.isTitular) || passageiros[0];
 
     this.modalEl.innerHTML = `
       <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-2xl w-full border border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col max-h-[90vh] overflow-hidden my-auto">
@@ -111,7 +131,7 @@ export class UploadAnexoModal {
                 ${totalArquivos > 1 ? `Identificar ${totalArquivos} Anexos em Lote` : 'Identificar Documento / Anexo'}
               </h3>
               <p class="text-xs text-slate-400 dark:text-slate-400 font-medium">
-                Defina a categoria e rótulo para organização e sincronização automática.
+                Defina o destino do arquivo (Viagem ou Passageiro) e a categoria correspondente.
               </p>
             </div>
           </div>
@@ -126,6 +146,7 @@ export class UploadAnexoModal {
             const isPessoal = ['PASSAPORTE', 'RG', 'CNH', 'VISTO'].includes(item.tipo);
             const tamanhoFormatado = AnexosService.formatarTamanho(item.file.size);
             const precisaOtimizar = PdfCompressorService.precisaComprimir(item.file);
+            const destinoViagem = item.destino === 'VIAGEM';
 
             return `
               <div class="p-4 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 space-y-3.5" data-item-id="${item.id}">
@@ -149,6 +170,69 @@ export class UploadAnexoModal {
                     </span>
                   </div>
                 </div>
+
+                <!-- Pergunta de Destino: Viagem vs Passageiro (apenas no contexto de viagem) -->
+                ${isContextoViagem ? `
+                  <div class="p-3 bg-white dark:bg-slate-800/80 rounded-xl border border-slate-200/80 dark:border-slate-700/80 space-y-2">
+                    <div class="flex items-center justify-between">
+                      <span class="text-[11px] font-black text-slate-700 dark:text-slate-300 uppercase tracking-wide">
+                        Este documento é para quem? *
+                      </span>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                      <button type="button" class="btn-toggle-destino px-3 py-2 text-xs font-bold rounded-xl border transition flex items-center justify-center gap-1.5 ${destinoViagem ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm shadow-indigo-600/20' : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100'}" data-idx="${index}" data-destino="VIAGEM">
+                        <span>✈️</span>
+                        <span>Para a Viagem</span>
+                      </button>
+
+                      <button type="button" class="btn-toggle-destino px-3 py-2 text-xs font-bold rounded-xl border transition flex items-center justify-center gap-1.5 ${!destinoViagem ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm shadow-indigo-600/20' : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100'}" data-idx="${index}" data-destino="PASSAGEIRO">
+                        <span>👤</span>
+                        <span>Para o Passageiro</span>
+                      </button>
+                    </div>
+
+                    <!-- Mensagem ou Seletor conforme a escolha de destino -->
+                    <div id="container-destino-info-${index}">
+                      ${destinoViagem ? `
+                        <p class="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1 mt-1">
+                          <span>✅</span> Ficará vinculado exclusivamente a esta viagem (não aparecerá na ficha do cliente).
+                        </p>
+                      ` : (temMultiplosPax ? `
+                        <div class="mt-2 pt-2 border-t border-slate-100 dark:border-slate-700/60">
+                          <label class="block text-[10px] font-extrabold text-slate-600 dark:text-slate-300 uppercase mb-1">
+                            Selecione o Passageiro Responsável *
+                          </label>
+                          <select class="select-item-pax w-full px-3 py-1.5 text-xs rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-semibold text-slate-800 dark:text-slate-200" data-idx="${index}">
+                            ${passageiros.map(p => `
+                              <option value="${p.nome}" data-cliente-id="${p.id}" ${item.passageiroNome === p.nome ? 'selected' : ''}>
+                                👤 ${p.nome} ${p.isTitular ? '(Titular)' : '(Passageiro)'}
+                              </option>
+                            `).join('')}
+                          </select>
+                        </div>
+                      ` : `
+                        <p class="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-1 mt-1">
+                          <span>👤</span> Vinculado ao passageiro titular: <strong>${titular?.nome || 'Cliente'}</strong>.
+                        </p>
+                      `)}
+                    </div>
+                  </div>
+                ` : (temMultiplosPax ? `
+                  <!-- Seletor de passageiro/membro da família no contexto da ficha do cliente -->
+                  <div class="p-2.5 bg-white dark:bg-slate-800/80 rounded-xl border border-slate-200/80 dark:border-slate-700/80">
+                    <label class="block text-[10px] font-extrabold text-slate-600 dark:text-slate-300 uppercase mb-1">
+                      Membro da Família / Passageiro
+                    </label>
+                    <select class="select-item-pax w-full px-3 py-1.5 text-xs rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-semibold text-slate-800 dark:text-slate-200" data-idx="${index}">
+                      ${passageiros.map(p => `
+                        <option value="${p.nome}" data-cliente-id="${p.id}" ${item.passageiroNome === p.nome ? 'selected' : ''}>
+                          👤 ${p.nome} ${p.isTitular ? '(Titular)' : '(Dependente)'}
+                        </option>
+                      `).join('')}
+                    </select>
+                  </div>
+                ` : '')}
 
                 <!-- Campos de Classificação -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -185,23 +269,6 @@ export class UploadAnexoModal {
                   </div>
                 </div>
 
-                <!-- Seletor de Passageiro (Se no contexto de Viagem com múltiplos passageiros) -->
-                ${temPassageiros ? `
-                  <div class="pt-1">
-                    <label class="block text-[10px] font-extrabold text-slate-500 dark:text-slate-400 uppercase mb-1">
-                      Vincular a Passageiro Específico
-                    </label>
-                    <select class="select-item-passageiro w-full px-3 py-1.5 text-xs rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium" data-idx="${index}">
-                      <option value="" ${!item.clienteIdVinculado ? 'selected' : ''}>🌐 Geral da Viagem (Todos os Passageiros)</option>
-                      ${this.options.passageiros!.map(p => `
-                        <option value="${p.id}" ${item.clienteIdVinculado === p.id ? 'selected' : ''}>
-                          👤 ${p.nome}
-                        </option>
-                      `).join('')}
-                    </select>
-                  </div>
-                ` : ''}
-
               </div>
             `;
           }).join('')}
@@ -235,6 +302,75 @@ export class UploadAnexoModal {
     this.modalEl.querySelector('#btn-fechar-upload-modal')?.addEventListener('click', () => this.close());
     this.modalEl.querySelector('#btn-cancelar-upload')?.addEventListener('click', () => this.close());
 
+    const isContextoViagem = !!this.options.viagemId;
+    const passageiros = this.options.passageiros || [];
+    const temMultiplosPax = passageiros.length > 1;
+    const titular = passageiros.find(p => p.isTitular) || passageiros[0];
+
+    // Alternância de Destino: Viagem vs Passageiro
+    this.modalEl.querySelectorAll('.btn-toggle-destino').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        const target = e.currentTarget as HTMLButtonElement;
+        const idx = parseInt(target.getAttribute('data-idx') || '0', 10);
+        const novoDestino = target.getAttribute('data-destino') as 'VIAGEM' | 'PASSAGEIRO';
+
+        this.itens[idx].destino = novoDestino;
+
+        // Atualiza estilização dos botões daquele item
+        const cardItem = target.closest('[data-item-id]');
+        if (cardItem) {
+          cardItem.querySelectorAll('.btn-toggle-destino').forEach((b) => {
+            const bDestino = b.getAttribute('data-destino');
+            if (bDestino === novoDestino) {
+              b.className = 'btn-toggle-destino px-3 py-2 text-xs font-bold rounded-xl border transition flex items-center justify-center gap-1.5 bg-indigo-600 text-white border-indigo-600 shadow-sm shadow-indigo-600/20';
+            } else {
+              b.className = 'btn-toggle-destino px-3 py-2 text-xs font-bold rounded-xl border transition flex items-center justify-center gap-1.5 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100';
+            }
+          });
+
+          // Atualiza container explicativo / seletor de passageiro
+          const containerInfo = cardItem.querySelector(`#container-destino-info-${idx}`);
+          if (containerInfo) {
+            if (novoDestino === 'VIAGEM') {
+              containerInfo.innerHTML = `
+                <p class="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1 mt-1">
+                  <span>✅</span> Ficará vinculado exclusivamente a esta viagem (não aparecerá na ficha do cliente).
+                </p>
+              `;
+            } else if (temMultiplosPax) {
+              containerInfo.innerHTML = `
+                <div class="mt-2 pt-2 border-t border-slate-100 dark:border-slate-700/60">
+                  <label class="block text-[10px] font-extrabold text-slate-600 dark:text-slate-300 uppercase mb-1">
+                    Selecione o Passageiro Responsável *
+                  </label>
+                  <select class="select-item-pax w-full px-3 py-1.5 text-xs rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-semibold text-slate-800 dark:text-slate-200" data-idx="${idx}">
+                    ${passageiros.map(p => `
+                      <option value="${p.nome}" data-cliente-id="${p.id}" ${this.itens[idx].passageiroNome === p.nome ? 'selected' : ''}>
+                        👤 ${p.nome} ${p.isTitular ? '(Titular)' : '(Passageiro)'}
+                      </option>
+                    `).join('')}
+                  </select>
+                </div>
+              `;
+              const selectPax = containerInfo.querySelector('.select-item-pax') as HTMLSelectElement | null;
+              selectPax?.addEventListener('change', (ev) => {
+                const s = ev.target as HTMLSelectElement;
+                const opt = s.options[s.selectedIndex];
+                this.itens[idx].passageiroNome = s.value;
+                this.itens[idx].clienteIdVinculado = opt.getAttribute('data-cliente-id') || this.options.clienteId;
+              });
+            } else {
+              containerInfo.innerHTML = `
+                <p class="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-1 mt-1">
+                  <span>👤</span> Vinculado ao passageiro titular: <strong>${titular?.nome || 'Cliente'}</strong>.
+                </p>
+              `;
+            }
+          }
+        }
+      });
+    });
+
     // Atualização de Categoria
     this.modalEl.querySelectorAll('.select-item-categoria').forEach((el) => {
       el.addEventListener('change', (e) => {
@@ -243,13 +379,20 @@ export class UploadAnexoModal {
         this.itens[idx].tipo = target.value as TipoDocumentoAnexo;
 
         const camposPessoais = this.modalEl?.querySelector(`#campos-pessoais-${idx}`);
+        const isPessoal = ['PASSAPORTE', 'RG', 'CNH', 'VISTO'].includes(target.value);
         if (camposPessoais) {
-          const isPessoal = ['PASSAPORTE', 'RG', 'CNH', 'VISTO'].includes(target.value);
           if (isPessoal) {
             camposPessoais.classList.remove('hidden');
           } else {
             camposPessoais.classList.add('hidden');
           }
+        }
+
+        // Sugestão automática: se virou passaporte/rg/cnh/visto no contexto de viagem, sugere Passageiro
+        if (isPessoal && isContextoViagem && this.itens[idx].destino !== 'PASSAGEIRO') {
+          const cardItem = target.closest('[data-item-id]');
+          const btnPax = cardItem?.querySelector('.btn-toggle-destino[data-destino="PASSAGEIRO"]') as HTMLButtonElement | null;
+          btnPax?.click();
         }
       });
     });
@@ -282,11 +425,13 @@ export class UploadAnexoModal {
     });
 
     // Atualização de Passageiro
-    this.modalEl.querySelectorAll('.select-item-passageiro').forEach((el) => {
+    this.modalEl.querySelectorAll('.select-item-pax').forEach((el) => {
       el.addEventListener('change', (e) => {
         const target = e.target as HTMLSelectElement;
         const idx = parseInt(target.getAttribute('data-idx') || '0', 10);
-        this.itens[idx].clienteIdVinculado = target.value || undefined;
+        const opt = target.options[target.selectedIndex];
+        this.itens[idx].passageiroNome = target.value;
+        this.itens[idx].clienteIdVinculado = opt.getAttribute('data-cliente-id') || this.options.clienteId;
       });
     });
 
@@ -322,6 +467,15 @@ export class UploadAnexoModal {
           statusText.textContent = `Enviando "${item.rotulo}" (${i + 1}/${this.itens.length})...`;
         }
 
+        // Se for para a viagem, cliente_id NUNCA é enviado (zero ruído no CRM)
+        const clienteIdFinal = item.destino === 'PASSAGEIRO'
+          ? (item.clienteIdVinculado || this.options.clienteId)
+          : undefined;
+
+        const passageiroNomeFinal = item.destino === 'PASSAGEIRO'
+          ? (item.passageiroNome || undefined)
+          : undefined;
+
         await AnexosService.uploadAnexo({
           file: item.file,
           rotulo: item.rotulo.trim(),
@@ -329,7 +483,9 @@ export class UploadAnexoModal {
           numero_documento: item.numeroDocumento.trim() || undefined,
           data_validade: item.dataValidade.trim() || undefined,
           viagem_id: this.options.viagemId,
-          cliente_id: item.clienteIdVinculado || this.options.clienteId,
+          cliente_id: clienteIdFinal,
+          passageiro_nome: passageiroNomeFinal,
+          destino_tipo: item.destino,
           user_id: this.options.usuarioId,
           onProgress: (mensagem) => {
             if (statusText) {

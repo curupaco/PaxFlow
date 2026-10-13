@@ -681,6 +681,261 @@ describe('AnexosService - Testes Subcutâneos com Múltiplos Anexos e Resiliênc
     expect(passaporte?.tamanho_bytes).toBe(3145728);
     expect(AnexosService.formatarTamanho(passaporte?.tamanho_bytes)).toContain('3.0 MB');
   });
+
+  it('deve salvar documento com destino VIAGEM garantindo cliente_id nulo para não poluir o CRM do cliente', async () => {
+    // Setup
+    const mockFile = new File(['voucher content'], 'voucher_hotel.pdf', { type: 'application/pdf' });
+    let payloadEnviado: any = null;
+
+    const mockFrom = vi.fn().mockImplementation((tabela: string) => {
+      if (tabela === 'global_settings') {
+        return {
+          select: vi.fn().mockReturnValue({
+            maybeSingle: vi.fn().mockResolvedValue({ data: { limite_upload_mb: 25 }, error: null })
+          })
+        };
+      }
+      if (tabela === 'documentos_anexos') {
+        return {
+          insert: vi.fn().mockImplementation((payload) => {
+            payloadEnviado = payload;
+            return {
+              select: vi.fn().mockReturnValue({
+                single: vi.fn().mockResolvedValue({
+                  data: { id: 'doc-hotel-1', ...payload },
+                  error: null
+                })
+              })
+            };
+          })
+        };
+      }
+      return {};
+    });
+    (supabase.from as any) = mockFrom;
+
+    // Action
+    const resultado = await AnexosService.uploadAnexo({
+      file: mockFile,
+      rotulo: 'Voucher Hotel Copacabana',
+      tipo_documento: 'VOUCHER_HOTEL',
+      viagem_id: 'viagem-rio-01',
+      cliente_id: 'cliente-titular-99',
+      destino_tipo: 'VIAGEM'
+    });
+
+    // Assert
+    expect(resultado.id).toBe('doc-hotel-1');
+    expect(payloadEnviado).toBeDefined();
+    expect(payloadEnviado.viagem_id).toBe('viagem-rio-01');
+    expect(payloadEnviado.cliente_id).toBeUndefined();
+    expect(payloadEnviado.passageiro_nome).toBeUndefined();
+  });
+
+  it('deve salvar documento com destino PASSAGEIRO associando passageiro_nome, cliente_id e viagem_id', async () => {
+    // Setup
+    const mockFile = new File(['passaporte maria'], 'passaporte_maria.pdf', { type: 'application/pdf' });
+    let payloadEnviado: any = null;
+
+    const mockFrom = vi.fn().mockImplementation((tabela: string) => {
+      if (tabela === 'global_settings') {
+        return {
+          select: vi.fn().mockReturnValue({
+            maybeSingle: vi.fn().mockResolvedValue({ data: { limite_upload_mb: 25 }, error: null })
+          })
+        };
+      }
+      if (tabela === 'documentos_anexos') {
+        return {
+          insert: vi.fn().mockImplementation((payload) => {
+            payloadEnviado = payload;
+            return {
+              select: vi.fn().mockReturnValue({
+                single: vi.fn().mockResolvedValue({
+                  data: { id: 'doc-pax-1', ...payload },
+                  error: null
+                })
+              })
+            };
+          })
+        };
+      }
+      if (tabela === 'clientes') {
+        return {
+          update: vi.fn().mockReturnValue({
+            eq: vi.fn().mockResolvedValue({ data: null, error: null })
+          })
+        };
+      }
+      return {};
+    });
+    (supabase.from as any) = mockFrom;
+
+    // Action
+    const resultado = await AnexosService.uploadAnexo({
+      file: mockFile,
+      rotulo: 'Passaporte Maria Silva',
+      tipo_documento: 'PASSAPORTE',
+      viagem_id: 'viagem-europa-10',
+      cliente_id: 'cliente-titular-99',
+      passageiro_nome: 'Maria Silva',
+      destino_tipo: 'PASSAGEIRO'
+    });
+
+    // Assert
+    expect(resultado.id).toBe('doc-pax-1');
+    expect(payloadEnviado).toBeDefined();
+    expect(payloadEnviado.viagem_id).toBe('viagem-europa-10');
+    expect(payloadEnviado.cliente_id).toBe('cliente-titular-99');
+    expect(payloadEnviado.passageiro_nome).toBe('Maria Silva');
+  });
+
+  it('deve lidar com schema drift 42703 na coluna passageiro_nome fazendo fallback sem quebrar a operação', async () => {
+    // Setup
+    const mockFile = new File(['rg joao'], 'rg_joao.pdf', { type: 'application/pdf' });
+    let tentativasInsert = 0;
+    let payloadSegundoInsert: any = null;
+
+    const mockFrom = vi.fn().mockImplementation((tabela: string) => {
+      if (tabela === 'global_settings') {
+        return {
+          select: vi.fn().mockReturnValue({
+            maybeSingle: vi.fn().mockResolvedValue({ data: { limite_upload_mb: 25 }, error: null })
+          })
+        };
+      }
+      if (tabela === 'documentos_anexos') {
+        return {
+          insert: vi.fn().mockImplementation((payload) => {
+            tentativasInsert++;
+            if (tentativasInsert === 1) {
+              // Simula erro 42703 (coluna passageiro_nome não existe no schema do Supabase)
+              return {
+                select: vi.fn().mockReturnValue({
+                  single: vi.fn().mockResolvedValue({
+                    data: null,
+                    error: { code: '42703', message: 'column "passageiro_nome" of relation "documentos_anexos" does not exist' }
+                  })
+                })
+              };
+            }
+            // Segunda tentativa sem a coluna inexistente deve ter sucesso
+            payloadSegundoInsert = payload;
+            return {
+              select: vi.fn().mockReturnValue({
+                single: vi.fn().mockResolvedValue({
+                  data: { id: 'doc-drift-1', ...payload },
+                  error: null
+                })
+              })
+            };
+          })
+        };
+      }
+      if (tabela === 'clientes') {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              maybeSingle: vi.fn().mockResolvedValue({ data: { documento: '123' }, error: null })
+            })
+          })
+        };
+      }
+      return {};
+    });
+    (supabase.from as any) = mockFrom;
+
+    // Action
+    const resultado = await AnexosService.uploadAnexo({
+      file: mockFile,
+      rotulo: 'RG João Silva',
+      tipo_documento: 'RG',
+      viagem_id: 'viagem-sul-02',
+      cliente_id: 'cliente-55',
+      passageiro_nome: 'João Silva',
+      destino_tipo: 'PASSAGEIRO'
+    });
+
+    // Assert
+    expect(tentativasInsert).toBe(2);
+    expect(payloadSegundoInsert).toBeDefined();
+    expect(payloadSegundoInsert.passageiro_nome).toBeUndefined();
+    expect(resultado.id).toBe('doc-drift-1');
+  });
+
+  it('deve ocultar comprovantes e vouchers de viagens antigos ao listar anexos na ficha do cliente', async () => {
+    // Setup
+    const mockDocsNoBanco = [
+      {
+        id: 'doc-passaporte',
+        cliente_id: 'cli-77',
+        rotulo: 'Passaporte Titular',
+        tipo_documento: 'PASSAPORTE',
+        nome_original: 'passaporte.pdf',
+        storage_path: 'supabase-storage://cli-77/passaporte.pdf'
+      },
+      {
+        id: 'doc-cnh',
+        cliente_id: 'cli-77',
+        rotulo: 'CNH Titular',
+        tipo_documento: 'CNH',
+        nome_original: 'cnh.pdf',
+        storage_path: 'supabase-storage://cli-77/cnh.pdf'
+      },
+      {
+        id: 'doc-voucher-antigo',
+        cliente_id: 'cli-77',
+        viagem_id: 'via-antiga',
+        rotulo: 'Voucher Hotel Antigo',
+        tipo_documento: 'VOUCHER_HOTEL',
+        nome_original: 'hotel_antigo.pdf',
+        storage_path: 'supabase-storage://via-antiga/hotel_antigo.pdf'
+      },
+      {
+        id: 'doc-aereo-antigo',
+        cliente_id: 'cli-77',
+        viagem_id: 'via-antiga',
+        rotulo: 'Bilhete Latam',
+        tipo_documento: 'VOUCHER_AEREO',
+        nome_original: 'bilhete_antigo.pdf',
+        storage_path: 'supabase-storage://via-antiga/bilhete_antigo.pdf'
+      }
+    ];
+
+    const mockFrom = vi.fn().mockImplementation((tabela: string) => {
+      if (tabela === 'documentos_anexos') {
+        return {
+          select: vi.fn().mockReturnValue({
+            order: vi.fn().mockReturnValue({
+              eq: vi.fn().mockResolvedValue({ data: mockDocsNoBanco, error: null })
+            })
+          })
+        };
+      }
+      if (tabela === 'clientes') {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null })
+            })
+          })
+        };
+      }
+      return {};
+    });
+    (supabase.from as any) = mockFrom;
+
+    // Action: listagem na ficha do cliente (sem viagemId informado)
+    const anexosCliente = await AnexosService.listarAnexos(undefined, 'cli-77');
+
+    // Assert
+    expect(anexosCliente.length).toBe(2);
+    expect(anexosCliente.some(a => a.tipo_documento === 'VOUCHER_HOTEL')).toBe(false);
+    expect(anexosCliente.some(a => a.tipo_documento === 'VOUCHER_AEREO')).toBe(false);
+    expect(anexosCliente.some(a => a.tipo_documento === 'PASSAPORTE')).toBe(true);
+    expect(anexosCliente.some(a => a.tipo_documento === 'CNH')).toBe(true);
+  });
 });
+
 
 

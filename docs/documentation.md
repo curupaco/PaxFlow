@@ -747,7 +747,18 @@ Módulo unificado de governança e custódia documental para agências de viagem
   - **Visualização Inline (Lightbox)**: Abertura imediata de PDFs e imagens com controles de ampliação e rotação sem sair da aplicação.
   - **Download Seguro**: Acesso direto ao arquivo original armazenado no Supabase Storage.
   - **Compartilhamento WhatsApp com 1-Clique**: Gera mensagem profissional pré-formatada contendo o nome do passageiro, a descrição do documento e o link seguro de visualização para envio ao cliente.
-  - **Controle de Exclusão com Auditoria**: Apenas administradores ou o consultor autor do envio possuem autorização para excluir documentos anexados.
+- **Separação de Destino: Viagem vs. Passageiro (Fim do Ruído no CRM)**:
+  - **Seletor Dinâmico no Upload (`UploadAnexoModal`)**: Cada anexo enviado apresenta seletor segmentado com feedback visual em tempo real:
+    - **✈️ Para a Viagem**: Documento gravado com `viagem_id` e `cliente_id = null`. Fica restrito à viagem (vouchers de hospedagem, passagens aéreas gerais, transfers, seguro, ingressos, roteiros e contratos). **Nunca polui a ficha cadastral do cliente no CRM**.
+    - **👤 Para o Passageiro**: Documento gravado com `cliente_id` e `viagem_id` (e `passageiro_nome`). Fica registrado permanentemente na ficha do cliente e também visível na viagem identificando a quem pertence (`👤 Nome do Passageiro`).
+  - **Inferência Inteligente Contextual**: Documentos com nomes indicando identificação pessoal (`passaporte`, `rg`, `cnh`, `visto`) já são pré-selecionados automaticamente como **Passageiro**. Documentos com termos operacionais (`hotel`, `aereo`, `voo`, `reserva`, `voucher`, `seguro`) são pré-selecionados como **Viagem**. O consultor pode alternar a qualquer momento com 1-clique.
+  - **Suporte a Viagens com Múltiplos Passageiros (PAX)**:
+    - Quando a viagem possui múltiplos passageiros (titular + dependentes cadastrados em `passaportes`/família), a opção Passageiro abre o combo listando todos os membros para seleção imediata.
+    - Quando a viagem possui apenas 1 passageiro (apenas o titular), o sistema associa diretamente ao titular sem exibir campos redundantes.
+  - **Filtro Limpo na Ficha do Cliente (`/clientes`)**:
+    - O método `AnexosService.listarAnexos(undefined, clienteId, { apenasPessoais: true })` oculta automaticamente comprovantes, reservas e vouchers de viagens antigos que possam ter sido gravados antigamente associados ao cliente. A ficha exibe estritamente os documentos pessoais (`PASSAPORTE`, `RG`, `CNH`, `VISTO`).
+
+- **Controle de Exclusão com Auditoria**: Apenas administradores ou o consultor autor do envio possuem autorização para excluir documentos anexados.
 
 - **Integração com PaxFlow Risk Score™**:
   - Anexos categorizados como `VOUCHER_HOTEL`, `VOUCHER_AEREO`, `VOUCHER_TRANSPORTE` ou `SEGURO` abatem automaticamente pendências do pilar de Vouchers e Logística da viagem.
@@ -767,7 +778,7 @@ Módulo unificado de governança e custódia documental para agências de viagem
   - Sincroniza em tempo real a interface da Ficha do Cliente e do Gerenciador de Viagens, impedindo a exibição de documentos fantasmas ou links órfãos.
 
 - **Resiliência a Schema Drift (Padrão Zero-Break)**:
-  - O serviço `AnexosService` conta com tratamento nativo para erros de colunas inexistentes (`42703`), retrocedendo para o schema base sem travar a interface nem gerar mensagens de erro ao usuário caso a migração DDL ainda esteja em processo de aplicação no banco de dados.
+  - O serviço `AnexosService` conta com tratamento nativo para erros de colunas inexistentes (`42703`, `PGRST204` ou `PGRST200`), abrangendo as colunas `numero_documento`, `data_validade` e `passageiro_nome`. Caso a coluna ainda não tenha sido criada no Supabase, a gravação é retrocedida para o schema base de forma transparente, mantendo a operação da agência 100% ativa sem toasts vermelhos nem interrupções.
 
 ---
 

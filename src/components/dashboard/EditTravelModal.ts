@@ -3752,9 +3752,10 @@ export class EditTravelModal {
 
       container.innerHTML = anexos.map(anexo => {
         const info = obterIconeEBadge(anexo.tipo_documento);
+        const nomeExibicaoPax = anexo.passageiro_nome || (anexo.cliente_id && titularNome ? titularNome : '');
+        const isDocumentoViagem = !anexo.cliente_id;
         const tamanhoFormatado = AnexosService.formatarTamanho(anexo.tamanho_bytes);
         const podeExcluir = AnexosService.podeExcluirAnexo(anexo, this.options.user?.id, this.options.user?.role);
-        const vinculadoAoPassageiro = anexo.cliente_id && anexo.cliente_id === clienteId;
 
         return `
           <div class="flex items-center justify-between p-3 bg-slate-50/80 hover:bg-slate-100 dark:bg-slate-800/40 dark:hover:bg-slate-800/70 rounded-xl border border-slate-200/60 dark:border-slate-800/80 transition gap-2">
@@ -3770,11 +3771,15 @@ export class EditTravelModal {
                   <span class="px-1.5 py-0.2 rounded text-[9px] font-extrabold border ${info.cls}">
                     ${info.label}
                   </span>
-                  ${vinculadoAoPassageiro && titularNome ? `
+                  ${nomeExibicaoPax ? `
                     <span class="px-1.5 py-0.2 rounded text-[9px] font-extrabold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600">
-                      👤 ${titularNome}
+                      👤 ${nomeExibicaoPax}
                     </span>
-                  ` : ''}
+                  ` : (isDocumentoViagem ? `
+                    <span class="px-1.5 py-0.2 rounded text-[9px] font-extrabold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/80">
+                      ✈️ Viagem
+                    </span>
+                  ` : '')}
                 </div>
                 <div class="flex items-center gap-2 text-[10px] text-slate-400 truncate mt-0.5">
                   ${anexo.numero_documento ? `<span>Nº <strong>${anexo.numero_documento}</strong></span> &bull;` : ''}
@@ -3863,18 +3868,30 @@ export class EditTravelModal {
   ): Promise<void> {
     const { UploadAnexoModal } = await import('../common/UploadAnexoModal');
 
-    const listaPassageiros: { id: string; nome: string }[] = [];
+    const listaPassageiros: { id: string; nome: string; isTitular?: boolean }[] = [];
+    const titularNome = passageiroNome || this.currentLoadedViagem?.cliente?.nome || 'Passageiro Titular';
+
     if (clienteId) {
       listaPassageiros.push({
         id: clienteId,
-        nome: passageiroNome || this.currentLoadedViagem?.cliente?.nome || 'Passageiro Titular'
+        nome: titularNome,
+        isTitular: true
       });
     }
 
     if (this.currentLoadedViagem?.cliente?.passaportes && Array.isArray(this.currentLoadedViagem.cliente.passaportes)) {
       this.currentLoadedViagem.cliente.passaportes.forEach((p: any) => {
-        if (p.nome && p.nome !== passageiroNome) {
-          listaPassageiros.push({ id: clienteId || '', nome: p.nome });
+        if (p.nome && p.nome !== titularNome && !listaPassageiros.some(x => x.nome === p.nome)) {
+          listaPassageiros.push({ id: clienteId || '', nome: p.nome, isTitular: false });
+        }
+      });
+    }
+
+    if (this.currentLoadedViagem?.passageiros && Array.isArray(this.currentLoadedViagem.passageiros)) {
+      this.currentLoadedViagem.passageiros.forEach((p: any) => {
+        const nomePax = typeof p === 'string' ? p : (p?.nome || p?.name);
+        if (nomePax && !listaPassageiros.some(x => x.nome === nomePax)) {
+          listaPassageiros.push({ id: clienteId || '', nome: nomePax, isTitular: false });
         }
       });
     }

@@ -1003,9 +1003,25 @@ export class ClientesPage {
   private abrirModalUploadAnexo(files: File[]): void {
     if (!this.clienteSelecionado?.id || files.length === 0) return;
 
+    const listaPassageiros: { id: string; nome: string; isTitular?: boolean }[] = [];
+    listaPassageiros.push({
+      id: this.clienteSelecionado.id,
+      nome: this.clienteSelecionado.nome || 'Cliente Titular',
+      isTitular: true
+    });
+
+    if (this.clienteSelecionado.passaportes && Array.isArray(this.clienteSelecionado.passaportes)) {
+      this.clienteSelecionado.passaportes.forEach((p: any) => {
+        if (p.nome && p.nome !== this.clienteSelecionado!.nome && !listaPassageiros.some(x => x.nome === p.nome)) {
+          listaPassageiros.push({ id: this.clienteSelecionado!.id, nome: p.nome, isTitular: false });
+        }
+      });
+    }
+
     const modal = new UploadAnexoModal({
       arquivos: files,
       clienteId: this.clienteSelecionado.id,
+      passageiros: listaPassageiros,
       usuarioId: this.user?.id,
       showToast: (msg, tipo) => this.showToast(msg, tipo === 'error' ? 'error' : 'success'),
       onSuccess: async () => {
@@ -1031,7 +1047,7 @@ export class ClientesPage {
     if (!container) return;
 
     try {
-      const anexos = await AnexosService.listarAnexos(undefined, clienteId);
+      const anexos = await AnexosService.listarAnexos(undefined, clienteId, { apenasPessoais: true });
 
       if (!anexos || anexos.length === 0) {
         container.innerHTML = `
@@ -1095,10 +1111,17 @@ export class ClientesPage {
               <div class="p-3.5 bg-white dark:bg-slate-800/80 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm flex flex-col justify-between gap-3 hover:border-indigo-400/60 transition group">
                 <div class="space-y-1.5">
                   <div class="flex items-center justify-between gap-2">
-                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-extrabold uppercase tracking-wider border ${badge.cls}">
-                      <span>${badge.icon}</span> ${badge.label}
-                    </span>
-                    ${tamanhoFormatado ? `<span class="text-[10px] font-bold text-slate-400">${tamanhoFormatado}</span>` : ''}
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                      <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-extrabold uppercase tracking-wider border ${badge.cls}">
+                        <span>${badge.icon}</span> ${badge.label}
+                      </span>
+                      ${doc.passageiro_nome ? `
+                        <span class="px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600">
+                          👤 ${doc.passageiro_nome}
+                        </span>
+                      ` : ''}
+                    </div>
+                    ${tamanhoFormatado ? `<span class="text-[10px] font-bold text-slate-400 shrink-0">${tamanhoFormatado}</span>` : ''}
                   </div>
 
                   <h4 class="text-xs font-black text-slate-900 dark:text-slate-100 truncate" title="${doc.rotulo}">

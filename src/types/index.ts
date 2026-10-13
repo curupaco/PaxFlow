@@ -905,6 +905,7 @@ export interface DocumentoAnexo {
   storage_path: string;
   mime_type?: string;
   tamanho_bytes?: number;
+  passageiro_nome?: string; // Nome do passageiro (titular ou dependente)
   created_at?: string;
   created_by?: string;
 }
