@@ -324,7 +324,7 @@ export class EscalaService {
     }
   }
 
-  private static toValidUUID(str: string): string {
+  public static toValidUUID(str: string): string {
     if (!str) return '00000000-0000-4000-8000-000000000001';
     if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str)) {
       return str;

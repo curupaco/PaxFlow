@@ -53,7 +53,7 @@
    - 3.41 [Arquitetura de Web Push Server-Side, Exclusão em Cascata & Integridade Transacional](#341-arquitetura-de-web-push-server-side-exclusão-em-cascata--integridade-transacional)
    - 3.42 [Agregação Segura de Produtos & Junção de Viagens com Proteção Contábil](#342-agregação-segura-de-produtos--junção-de-viagens-com-proteção-contábil)
    - 3.43 [Assistente de Remarcação de Viagens com Blindagem Contábil em 1-Clique](#343-assistente-de-remarcação-de-viagens-com-blindagem-contábil-em-1-clique)
-   - 3.44 [Divisão de Viagens, Comissões e Parcerias entre Consultores](#344-divisão-de-viagens-comissões-e-parcerias-entre-consultores)
+   - 3.44 [Divisão de Viagens, Comissões e Parcerias entre Consultores (com Rateio de RAV Aérea)](#344-divisão-de-viagens-comissões-e-parcerias-entre-consultores-com-rateio-de-rav-aérea)
 4. [Diferenciais Competitivos](#4-diferenciais-competitivos)
 5. [Arquitetura Tecnológica](#5-arquitetura-tecnológica)
 6. [Segurança e Conformidade](#6-segurança-e-conformidade)
@@ -113,7 +113,7 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 
 - **Alertas de passaporte**: monitora automaticamente a validade dos passaportes cadastrados e dispara alertas com 180 dias de antecedência (padrão internacional) ou quando expirados (mapeados no calendário na data de expiração).
 - **Alertas de SLA de reembolso**: notifica quando um reembolso ultrapassa o prazo configurado pela agência (mapeados no calendário na data exata em que o SLA estourou: Data de Criação + Prazo de SLA).
-- **Lembretes manuais ("Me Lembre Depois")**: agendados a partir do pipeline de orçamentos, do painel de notas/comentários ou de mensagens diretas, com suporte a campo dedicado de **descrição/motivo do lembrete** (ex: *"Ligar para confirmar hotel"*), data, período (manhã/tarde/noite) e resolução fidedigna do passageiro titular da viagem/orçamento (`cliente.nome`), eliminando completamente fallbacks genéricos como "Cliente Viagem".
+- **Lembretes manuais ("Me Lembre Depois")**: agendados a partir do pipeline de orçamentos, do painel de notas/comentários ou de mensagens diretas, com suporte a campo dedicado de **descrição/motivo do lembrete** (ex: _"Ligar para confirmar hotel"_), data, período (manhã/tarde/noite) e resolução fidedigna do passageiro titular da viagem/orçamento (`cliente.nome`), eliminando completamente fallbacks genéricos como "Cliente Viagem".
 - **Busca e Filtros Omnipresentes**:
   - Filtro por consultor (admin), por tipo de alerta, ativos/arquivados/todos.
   - **Filtro Rápido "Apenas Não Lidas" [NEW]**: Botão toggle contextual na barra superior de ferramentas do Inbox, permitindo focar instantaneamente nas pendências de leitura com badge numérico em tempo real.
@@ -710,8 +710,8 @@ Módulo avançado de orquestração visual e documental da agência, permitindo 
   - **Coluna da Esquerda (Editor Estruturado)**:
     - **1. Ingestão de Documentos**: Dropzone de PDFs de consolidadoras e botão de colar texto livre de WhatsApp/e-mail com motor de extração documental com fidelidade estrita. Recolhível automaticamente para maximizar espaço.
     - **2. Dados do Passageiro, Capa & Consultor**:
-      - **Branding / Tagline da Capa**: Campo editável para personalizar o título de marca (padrão *"PAXFLOW LUXURY TRAVEL"*) para o nome da agência ou slogan da proposta.
-      - **Galeria Unsplash™ com Tradução Semântica**: Motor de busca com tradução automática PT-BR ➔ EN (ex: *praia -> tropical beach*, *neve -> snow*, *safari*, *vinhedos -> wine*) e pills temáticas rápidas.
+      - **Branding / Tagline da Capa**: Campo editável para personalizar o título de marca (padrão _"PAXFLOW LUXURY TRAVEL"_) para o nome da agência ou slogan da proposta.
+      - **Galeria Unsplash™ com Tradução Semântica**: Motor de busca com tradução automática PT-BR ➔ EN (ex: _praia -> tropical beach_, _neve -> snow_, _safari_, _vinhedos -> wine_) e pills temáticas rápidas.
       - **Governança de Canais de Atendimento**: O telefone fixo e WhatsApp vinculados à proposta são **estritamente institucionais e padronizados da agência / loja** (campos travados para leitura), garantindo que nenhum consultor informe números pessoais aos clientes. O e-mail profissional de atendimento é sempre o do consultor atribuído.
       - **Consultor Dedicado**: Seletor integrado à equipe cadastrada com auto-preenchimento de foto/avatar via `getAvatarSvg` (suporte a animais do PaxFlow, fotos de perfil ou iniciais estilizadas), nome, e-mail profissional e preview visual imediato.
       - **Cotação e Datas**: Definição de moeda (BRL/USD/EUR), valor total e datas de ida e volta.
@@ -1022,10 +1022,10 @@ Para atender operações de agências de alto volume e demandas complexas de cru
      - `🚫 Sem MKP/RAV`: Filtra viagens compostas apenas por comissão pura tradicional (`markup === 0 && rav === 0`).
      - **Faixas Numéricas de Markup e RAV (R$)**: Inputs numéricos para estipular valores mínimos e máximos em R$ tanto para o Markup acumulado quanto para o RAV total da viagem.
    - **Consultores / Usuários Responsáveis**: Multi-select em pills interativos com avatar/iniciais circulares coloridas e nome do consultor, permitindo filtrar viagens de um ou múltiplos consultores simultaneamente para fechamentos e auditorias de equipes.
-   - **Formas de Recebimento (Meios de Pagamento)**: Pills com as formas cadastradas na agência (*Pix 🪙, Cartão de Crédito 💳, Boleto 📄, Faturado 💼, Dinheiro 💵, TED 🏦*), cruzando com os recebimentos registrados em `loc_pagamentos`.
-   - **Origem do Lead / Canais de Captação**: Pills com ícones e nomes das origens ativas (*WhatsApp 📱, Instagram 📸, Indicação 🤝, Google 🔍, Site 🌐, Loja 🏬, etc.*), filtrando pela origem do cliente titular da viagem.
-   - **Quantidade de Passageiros (PAX)**: Pills de faixas de capacidade operacional (*`👤 1 PAX`*, *`👥 2 PAX`*, *`👨‍👩‍👧 3 a 5 PAX`*, *`🚌 6+ PAX`*).
-   - **Tags / Classificações**: Pills multi-select com as tags do cliente e da viagem (*VIP, Corporativo, Família, Lua de Mel, Resort, Aventura, etc.*).
+   - **Formas de Recebimento (Meios de Pagamento)**: Pills com as formas cadastradas na agência (_Pix 🪙, Cartão de Crédito 💳, Boleto 📄, Faturado 💼, Dinheiro 💵, TED 🏦_), cruzando com os recebimentos registrados em `loc_pagamentos`.
+   - **Origem do Lead / Canais de Captação**: Pills com ícones e nomes das origens ativas (_WhatsApp 📱, Instagram 📸, Indicação 🤝, Google 🔍, Site 🌐, Loja 🏬, etc._), filtrando pela origem do cliente titular da viagem.
+   - **Quantidade de Passageiros (PAX)**: Pills de faixas de capacidade operacional (_`👤 1 PAX`_, _`👥 2 PAX`_, _`👨‍👩‍👧 3 a 5 PAX`_, _`🚌 6+ PAX`_).
+   - **Tags / Classificações**: Pills multi-select com as tags do cliente e da viagem (_VIP, Corporativo, Família, Lua de Mel, Resort, Aventura, etc._).
    - **Período e Atalho Rápido Mês/Ano**: Seletor rápido de competência (`YYYY-MM`, ex: `2026-02`) com aplicação instantânea, além de campos de Data Inicial e Data Final com escolha do tipo de data (`Data Criação`, `Data Financeiro`, `Data Ida`, `Data Volta`).
    - **Destinos Multi-Select**: Pills selecionáveis de todos os destinos cadastrados no sistema.
    - **Fornecedor / Cia Aérea / Consolidadora**: Campo de busca textual com auto-filtro instantâneo sobre fornecedores dos produtos das viagens.
@@ -1084,14 +1084,14 @@ Para apoiar a retenção comercial, auditoria de perdas e recuperação de leads
 1. **Check de Contato do Gestor ("Falamos c/ Cliente") [Exclusivo Administradores]**:
    - **Campos de Banco de Dados**: Colunas dedicadas `contato_realizado` (boolean), `contato_realizado_por` (UUID) e `contato_realizado_em` (timestamp com fuso horário) na tabela `orcamentos`.
    - **Superfícies de Interação**:
-     - *Kanban de Orçamentos (`Orcamentos.ts`)*: No card da coluna Concluído (quando desistente), administradores podem marcar/desmarcar o checkbox com atualização em tempo real. Consultores visualizam o badge informativo (`✅ Sim` ou `⏳ Pendente`).
-     - *Modal de Detalhes (`VerNotasModal.ts`)*: Bloco destacado de Gestão de Desistência na sidebar lateral.
-     - *Relatório de Desistências & Perdas (`Relatorios.ts`)*: Coluna dedicada na tabela analítica com alternância direta em 1-clique e tooltip com data e nome de quem auditou.
+     - _Kanban de Orçamentos (`Orcamentos.ts`)_: No card da coluna Concluído (quando desistente), administradores podem marcar/desmarcar o checkbox com atualização em tempo real. Consultores visualizam o badge informativo (`✅ Sim` ou `⏳ Pendente`).
+     - _Modal de Detalhes (`VerNotasModal.ts`)_: Bloco destacado de Gestão de Desistência na sidebar lateral.
+     - _Relatório de Desistências & Perdas (`Relatorios.ts`)_: Coluna dedicada na tabela analítica com alternância direta em 1-clique e tooltip com data e nome de quem auditou.
    - **Resiliência a Schema Drift (Zero-Break / Fallback 42703)**: O serviço `OrcamentosService.alternarContatoDesistencia` intercepta erros de coluna ausente gravando a observação em `notas_negociacao` sem travar a aplicação.
 
 2. **Reabertura de Orçamentos Desistidos com Histórico Preservado**:
    - **Fluxo de Transição**: Movimentação do orçamento de volta para a etapa **SOLICITADO**, limpando o `sub_status = null` e resetando o check de desistência.
-   - **Modal de Confirmação & Motivo Opcional**: Ao acionar o botão `🔄 Reabrir Orçamento`, o usuário pode justificar a razão da retomada (ex: *"Cliente voltou a ter interesse e quer nova cotação"*).
+   - **Modal de Confirmação & Motivo Opcional**: Ao acionar o botão `🔄 Reabrir Orçamento`, o usuário pode justificar a razão da retomada (ex: _"Cliente voltou a ter interesse e quer nova cotação"_).
    - **Preservação Histórica Imutável**: Um registro estruturado com data/hora (`DD/MM/AAAA às HH:mm`), autor e justificativa é inserido no topo das notas de negociação (`notas_negociacao`) e registrado na timeline de comentários (`comentarios`) do orçamento.
 
 ### 3.41 Arquitetura de Web Push Server-Side, Exclusão em Cascata & Integridade Transacional
