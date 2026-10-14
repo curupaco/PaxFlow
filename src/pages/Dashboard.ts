@@ -835,13 +835,27 @@ export class Dashboard {
         }
       }
 
-      // Carrega divisões de parcerias entre consultores
+      // Carrega divisões de parcerias entre consultores (com resiliência a schema drift)
       const divisoesMap = new Map<string, any[]>();
       if (!this.isFallbackMode) {
         try {
-          const { data: divData, error: divError } = await supabase
+          let divData: any[] | null = null;
+          let divError: any = null;
+          
+          const primaryRes = await supabase
             .from('viagens_divisoes')
-            .select('viagem_id, consultor_id, percentual, is_titular');
+            .select('viagem_id, consultor_id, percentual, percentual_rav, is_titular');
+          divData = primaryRes.data;
+          divError = primaryRes.error;
+          
+          if (divError && (divError.code === '42703' || divError.message?.includes('percentual_rav'))) {
+            const fallbackRes = await supabase
+              .from('viagens_divisoes')
+              .select('viagem_id, consultor_id, percentual, is_titular');
+            divData = fallbackRes.data;
+            divError = fallbackRes.error;
+          }
+
           if (!divError && divData) {
             divData.forEach((row: any) => {
               const arr = divisoesMap.get(row.viagem_id) || [];
@@ -3296,16 +3310,22 @@ Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : '
         <!-- Consultor -->
         <td class="px-5 py-4 whitespace-nowrap text-slate-500 dark:text-slate-400 font-extrabold text-xs">
           ${(() => {
-            const minhaDivisao = Array.isArray(v.divisoes) ? v.divisoes.find((d: any) => d.consultor_id === this.user.id && !d.is_titular) : null;
-            if (minhaDivisao) {
+            const temParceria = Array.isArray(v.divisoes) && v.divisoes.length > 1;
+            const minhaDivisao = Array.isArray(v.divisoes) ? v.divisoes.find((d: any) => d.consultor_id === this.user.id) : null;
+            if (minhaDivisao && temParceria) {
+              const pctVenda = Math.round(minhaDivisao.percentual);
+              const rawRav = minhaDivisao.percentual_rav ?? minhaDivisao.percentualRav;
+              const pctRav = rawRav !== undefined && rawRav !== null ? Math.round(rawRav) : pctVenda;
+              const badgeTexto = pctRav !== pctVenda
+                ? `🤝 Parceria ${pctVenda}% • ✈️ RAV ${pctRav}%`
+                : `🤝 Parceria (${pctVenda}%)`;
               return `
                 <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-800 text-[10px] font-black">
-                  🤝 Parceria (${minhaDivisao.percentual}%)
+                  ${badgeTexto}
                 </span>
               `;
             }
             if (this.perfil?.role === 'admin') {
-              const temParceria = Array.isArray(v.divisoes) && v.divisoes.length > 1;
               const consultorNome = v.consultor_id === this.user.id ? 'Você' : (this.consultores.find(c => c.id === v.consultor_id)?.nome || 'Outro Consultor');
               return `
                 <span class="flex items-center gap-1">
@@ -3415,16 +3435,22 @@ Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : '
                 </span>
               ` : ''}
               ${(() => {
-                const minhaDivisao = Array.isArray(v.divisoes) ? v.divisoes.find((d: any) => d.consultor_id === this.user.id && !d.is_titular) : null;
-                if (minhaDivisao) {
+                const temParceria = Array.isArray(v.divisoes) && v.divisoes.length > 1;
+                const minhaDivisao = Array.isArray(v.divisoes) ? v.divisoes.find((d: any) => d.consultor_id === this.user.id) : null;
+                if (minhaDivisao && temParceria) {
+                  const pctVenda = Math.round(minhaDivisao.percentual);
+                  const rawRav = minhaDivisao.percentual_rav ?? minhaDivisao.percentualRav;
+                  const pctRav = rawRav !== undefined && rawRav !== null ? Math.round(rawRav) : pctVenda;
+                  const badgeTexto = pctRav !== pctVenda
+                    ? `🤝 Parceria ${pctVenda}% • ✈️ RAV ${pctRav}%`
+                    : `🤝 Parceria ${pctVenda}%`;
                   return `
                     <span class="text-[9px] text-indigo-700 dark:text-indigo-300 font-extrabold bg-indigo-50 dark:bg-indigo-950/50 px-1.5 py-0.5 rounded border border-indigo-200/50 dark:border-indigo-800/50">
-                      🤝 Parceria ${minhaDivisao.percentual}%
+                      ${badgeTexto}
                     </span>
                   `;
                 }
                 if (this.perfil?.role === 'admin') {
-                  const temParceria = Array.isArray(v.divisoes) && v.divisoes.length > 1;
                   return `
                     <span class="text-[9px] text-slate-400 font-bold bg-slate-100/50 dark:bg-slate-800/50 px-1.5 py-0.5 rounded border border-slate-200/20 dark:border-slate-700/20">
                       👤 ${v.consultor_id === this.user.id ? 'Você' : (this.consultores.find(c => c.id === v.consultor_id)?.nome?.split(' ')[0] || 'Outro')}

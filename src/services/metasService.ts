@@ -645,18 +645,21 @@ export class MetasService {
     } else if (tipo === 'lucro' || tipo === 'liquido') {
       const viagensDoConsultor = viagens.filter(v => {
         const fatia = ViagensDivisoesService.calcularParticipacaoConsultor(v, consultorId);
+        const fatiaRav = ViagensDivisoesService.calcularParticipacaoRavConsultor(v, consultorId);
         const naoCancelada = v.status !== 'cancelada';
         const data = v.data_financeiro || v.dataFinanceiro || v.created_at || v.createdAt;
-        return fatia > 0 && naoCancelada && this.isDataNoPeriodo(data, meta.data_inicio, meta.data_fim);
+        return (fatia > 0 || fatiaRav > 0) && naoCancelada && this.isDataNoPeriodo(data, meta.data_inicio, meta.data_fim);
       });
 
       itensAuditados = viagensDoConsultor;
       viagensDoConsultor.forEach(v => {
         const fatia = ViagensDivisoesService.calcularParticipacaoConsultor(v, consultorId);
+        const fatiaRav = ViagensDivisoesService.calcularParticipacaoRavConsultor(v, consultorId);
         const prods = (v as any).produtos || [];
         prods.forEach((p: any) => {
-          const lucroItem = (Number(p.comissao) || 0) + (Number(p.markup) || 0) + ((Number(p.rav) || 0) * 0.88);
-          totalAtingido += lucroItem * fatia;
+          const comissaoMarkup = ((Number(p.comissao) || 0) + (Number(p.markup) || 0)) * fatia;
+          const ravLiquida = ((Number(p.rav) || 0) * 0.88) * fatiaRav;
+          totalAtingido += comissaoMarkup + ravLiquida;
         });
       });
 

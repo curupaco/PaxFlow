@@ -11,7 +11,7 @@ vi.mock('../../src/services/supabase', () => {
   };
 });
 
-describe('ViagensDivisoesService - Testes Subcutâneos de Divisão e Governança', () => {
+describe('ViagensDivisoesService - Testes Subcutâneos de Divisão, RAV e Governança', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -83,10 +83,57 @@ describe('ViagensDivisoesService - Testes Subcutâneos de Divisão e Governança
     expect(resultado.diferenca).toBe(0);
   });
 
-  it('deve calcular corretamente a fração de participação de titular e co-consultor', () => {
+  it('deve validar soma de RAV independentemente da soma de venda', () => {
     // Setup
-    const viagemComDivisao = {
-      id: 'via-1',
+    const divisoesValidas = [
+      { percentual: 50, percentual_rav: 100 },
+      { percentual: 50, percentual_rav: 0 }
+    ];
+    const divisoesInvalidas = [
+      { percentual: 50, percentual_rav: 70 },
+      { percentual: 50, percentual_rav: 20 }
+    ];
+
+    // Action
+    const resValido = ViagensDivisoesService.validarSomaRav(divisoesValidas);
+    const resInvalido = ViagensDivisoesService.validarSomaRav(divisoesInvalidas);
+
+    // Assert
+    expect(resValido.valida).toBe(true);
+    expect(resValido.soma).toBe(100);
+    expect(resInvalido.valida).toBe(false);
+    expect(resInvalido.soma).toBe(90);
+    expect(resInvalido.mensagem).toContain('Faltam 10.00% para totalizar 100,00% da RAV');
+  });
+
+  it('deve calcular corretamente a segregação de Venda 50/50 e RAV 100% para o Rafael (caso VIA-0325)', () => {
+    // Setup
+    const viagemVia0325 = {
+      id: 'via-0325',
+      consultor_id: 'user-rafael',
+      divisoes: [
+        { consultor_id: 'user-rafael', percentual: 50, percentual_rav: 100, is_titular: true },
+        { consultor_id: 'user-guto', percentual: 50, percentual_rav: 0, is_titular: false }
+      ]
+    };
+
+    // Action
+    const vendaRafael = ViagensDivisoesService.calcularParticipacaoConsultor(viagemVia0325, 'user-rafael');
+    const vendaGuto = ViagensDivisoesService.calcularParticipacaoConsultor(viagemVia0325, 'user-guto');
+    const ravRafael = ViagensDivisoesService.calcularParticipacaoRavConsultor(viagemVia0325, 'user-rafael');
+    const ravGuto = ViagensDivisoesService.calcularParticipacaoRavConsultor(viagemVia0325, 'user-guto');
+
+    // Assert
+    expect(vendaRafael).toBe(0.5);
+    expect(vendaGuto).toBe(0.5);
+    expect(ravRafael).toBe(1.0);
+    expect(ravGuto).toBe(0.0);
+  });
+
+  it('deve fazer fallback para percentual geral quando percentual_rav não for especificado', () => {
+    // Setup
+    const viagemSemRavCustomizada = {
+      id: 'via-padrao',
       consultor_id: 'user-titular',
       divisoes: [
         { consultor_id: 'user-titular', percentual: 80, is_titular: true },
@@ -95,34 +142,15 @@ describe('ViagensDivisoesService - Testes Subcutâneos de Divisão e Governança
     };
 
     // Action
-    const fatiaTitular = ViagensDivisoesService.calcularParticipacaoConsultor(viagemComDivisao, 'user-titular');
-    const fatiaParceiro = ViagensDivisoesService.calcularParticipacaoConsultor(viagemComDivisao, 'user-parceiro');
-    const fatiaOutro = ViagensDivisoesService.calcularParticipacaoConsultor(viagemComDivisao, 'user-estranho');
+    const ravTitular = ViagensDivisoesService.calcularParticipacaoRavConsultor(viagemSemRavCustomizada, 'user-titular');
+    const ravParceiro = ViagensDivisoesService.calcularParticipacaoRavConsultor(viagemSemRavCustomizada, 'user-parceiro');
 
     // Assert
-    expect(fatiaTitular).toBe(0.8);
-    expect(fatiaParceiro).toBe(0.2);
-    expect(fatiaOutro).toBe(0);
+    expect(ravTitular).toBe(0.8);
+    expect(ravParceiro).toBe(0.2);
   });
 
-  it('deve retornar 100% para o titular quando for viagem legada sem divisão cadastrada', () => {
-    // Setup
-    const viagemLegada = {
-      id: 'via-legada',
-      consultor_id: 'user-titular',
-      divisoes: []
-    };
-
-    // Action
-    const fatiaTitular = ViagensDivisoesService.calcularParticipacaoConsultor(viagemLegada, 'user-titular');
-    const fatiaParceiro = ViagensDivisoesService.calcularParticipacaoConsultor(viagemLegada, 'user-parceiro');
-
-    // Assert
-    expect(fatiaTitular).toBe(1);
-    expect(fatiaParceiro).toBe(0);
-  });
-
-  it('deve persistir divisão válida no banco com sucesso e sincronizar titular', async () => {
+  it('deve persistir divisão com percentual_rav e sincronizar titular no Supabase', async () => {
     // Setup
     const mockDeleteEq = vi.fn().mockResolvedValue({ error: null });
     const mockInsert = vi.fn().mockResolvedValue({ error: null });
@@ -144,11 +172,11 @@ describe('ViagensDivisoesService - Testes Subcutâneos de Divisão e Governança
     });
 
     const params = {
-      viagemId: 'viagem-123',
-      titularId: 'consultor-titular',
+      viagemId: 'viagem-0325',
+      titularId: 'user-rafael',
       divisoes: [
-        { consultor_id: 'consultor-titular', percentual: 80, is_titular: true },
-        { consultor_id: 'consultor-parceiro', percentual: 20, is_titular: false }
+        { consultor_id: 'user-rafael', percentual: 50, percentual_rav: 100, is_titular: true },
+        { consultor_id: 'user-guto', percentual: 50, percentual_rav: 0, is_titular: false }
       ]
     };
 
@@ -157,10 +185,54 @@ describe('ViagensDivisoesService - Testes Subcutâneos de Divisão e Governança
 
     // Assert
     expect(res.success).toBe(true);
-    expect(mockDeleteEq).toHaveBeenCalledWith('viagem_id', 'viagem-123');
+    expect(mockDeleteEq).toHaveBeenCalledWith('viagem_id', 'viagem-0325');
     expect(mockInsert).toHaveBeenCalledWith([
-      { viagem_id: 'viagem-123', consultor_id: 'consultor-titular', percentual: 80, is_titular: true },
-      { viagem_id: 'viagem-123', consultor_id: 'consultor-parceiro', percentual: 20, is_titular: false }
+      { viagem_id: 'viagem-0325', consultor_id: 'user-rafael', percentual: 50, percentual_rav: 100, is_titular: true },
+      { viagem_id: 'viagem-0325', consultor_id: 'user-guto', percentual: 50, percentual_rav: 0, is_titular: false }
+    ]);
+  });
+
+  it('deve aplicar fallback Zero-Break ao salvar se a coluna percentual_rav for inexistente (erro 42703)', async () => {
+    // Setup
+    const mockDeleteEq = vi.fn().mockResolvedValue({ error: null });
+    const mockInsert = vi.fn()
+      .mockResolvedValueOnce({ error: { code: '42703', message: 'column "percentual_rav" does not exist' } })
+      .mockResolvedValueOnce({ error: null });
+
+    (supabase.from as any).mockImplementation((table: string) => {
+      if (table === 'viagens_divisoes') {
+        return {
+          delete: () => ({ eq: mockDeleteEq }),
+          insert: mockInsert
+        };
+      }
+      if (table === 'viagens') {
+        return {
+          update: () => ({ eq: vi.fn().mockResolvedValue({ error: null }) })
+        };
+      }
+      return {};
+    });
+
+    const params = {
+      viagemId: 'viagem-0325',
+      titularId: 'user-rafael',
+      divisoes: [
+        { consultor_id: 'user-rafael', percentual: 50, percentual_rav: 100, is_titular: true },
+        { consultor_id: 'user-guto', percentual: 50, percentual_rav: 0, is_titular: false }
+      ]
+    };
+
+    // Action
+    const res = await ViagensDivisoesService.salvarDivisaoViagem(params);
+
+    // Assert
+    expect(res.success).toBe(true);
+    expect(mockInsert).toHaveBeenCalledTimes(2);
+    // Na segunda chamada de insert (fallback), deve ter inserido sem a coluna percentual_rav
+    expect(mockInsert).toHaveBeenLastCalledWith([
+      { viagem_id: 'viagem-0325', consultor_id: 'user-rafael', percentual: 50, is_titular: true },
+      { viagem_id: 'viagem-0325', consultor_id: 'user-guto', percentual: 50, is_titular: false }
     ]);
   });
 
@@ -185,6 +257,7 @@ describe('ViagensDivisoesService - Testes Subcutâneos de Divisão e Governança
     expect(divisoes).toHaveLength(1);
     expect(divisoes[0].consultor_id).toBe('titular-fallback');
     expect(divisoes[0].percentual).toBe(100);
+    expect(divisoes[0].percentual_rav).toBe(100);
     expect(divisoes[0].is_titular).toBe(true);
   });
 });

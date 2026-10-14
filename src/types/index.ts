@@ -302,6 +302,8 @@ export interface ViagemDivisao {
   consultor_nome?: string;
   consultorNome?: string;
   percentual: number;
+  percentual_rav?: number | null;
+  percentualRav?: number | null;
   is_titular?: boolean;
   isTitular?: boolean;
   created_at?: string;

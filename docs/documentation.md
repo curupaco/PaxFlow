@@ -1130,40 +1130,45 @@ Para solucionar o desafio operacional de passageiros que alteram as datas de sua
 4. **Auditoria e Timeline da Viagem**:
    - Toda remarcação gera automaticamente um log de auditoria nos comentários da viagem com data/hora, identificação do operador, datas anteriores e novas datas de embarque.
 
-### 3.44 Divisão de Viagens, Comissões e Parcerias entre Consultores
+### 3.44 Divisão de Viagens, Comissões e Parcerias entre Consultores (com Rateio de RAV Aérea)
 
 Para viabilizar o trabalho colaborativo entre membros da equipe da agência (prospecção compartilhada, atendimento conjunto ou emissão dividida) com rigor contábil e de governança:
 
-1. **Validação Rígida de Soma de 100,00%**:
-   - A soma de todas as participações de consultores em uma viagem deve somar obrigatoriamente e exatamente **100,00%**.
+1. **Validação Rígida de Dupla Soma de 100,00% (Venda & RAV)**:
+   - A soma de todas as participações de consultores em uma viagem deve somar obrigatoriamente e exatamente **100,00%** tanto para a **Venda Geral** quanto para a **RAV Aérea**.
    - O algoritmo de validação opera em precisão centesimal (`Math.round(percentual * 100)`), eliminando erros de arredondamento de ponto flutuante do JavaScript.
-   - O botão de salvamento no modal `ViagemSplitEditor` permanece desabilitado enquanto a barra de progresso visual acusar qualquer divergência (ex: 99,99% ou 100,01%).
+   - O botão de salvamento no modal `ViagemSplitEditor` permanece desabilitado enquanto qualquer uma das duas barras acusar divergência.
 
-2. **Atalhos Rápidos de Rateio (1-Clique)**:
-   - O assistente disponibiliza atalhos instantâneos para os arranjos mais usuais da agência: `50/50`, `80/20`, `70/30` e `90/10` entre o consultor titular e o consultor parceiro, calculando e preenchendo as frações com um único clique.
+2. **Rateio Independente de Taxa de Serviço / RAV (Aéreo)**:
+   - Cada consultor possui campos numéricos lado a lado para `% Venda` e `% RAV`.
+   - Permite arranjos comerciais onde o faturamento e comissões normais são divididos (ex: 50/50), mas a taxa de emissão aérea (RAV) é creditada 100% ao consultor emissor (ex: Rafael 100% RAV e Guto 0% RAV).
+   - No cálculo de rentabilidade e metas de consultores, o lucro de produtos normais é ponderado pela fatia da venda e o lucro de RAV (`rav * 0.88`) é ponderado pela fatia específica de RAV.
 
-3. **Modelo Híbrido com Titular & Co-propriedade**:
+3. **Incremento Amigável de 1% em 1% (`step="1"`)**:
+   - Os controles numéricos de porcentagem avançam e recuam de 1 em 1 por cento, agilizando o preenchimento diário sem a lentidão do passo de 0,01. Digitação decimal livre permanece disponível.
+
+4. **Atalhos Rápidos de Rateio (1-Clique)**:
+   - O assistente disponibiliza atalhos instantâneos para os arranjos mais usuais da agência: `50/50`, `80/20`, `70/30`, `90/10`, `[⚡ Igualar RAV à Venda]` e `[✈️ RAV 100% Titular]`.
+
+5. **Modelo Híbrido com Titular & Co-propriedade**:
    - A viagem mantém sempre **1 Consultor Titular** responsável pelo canal de contato com o passageiro, emissão de alertas operacionais, pós-venda e NPS.
    - Os consultores parceiros cadastrados na divisão ganham privilégio de **co-proprietários** (`isOwner = true`), podendo editar a viagem e seus produtos sem serem rebaixados para o modo de visualização ou co-piloto/balcão.
 
-4. **Visibilidade Transversal no Dashboard & Kanban**:
+6. **Visibilidade Transversal no Dashboard & Kanban (Badges Inteligentes)**:
    - Viagens em parceria aparecem simultaneamente no pipeline (Kanban) e na visualização em tabela de **ambos os consultores** quando filtrados por seu próprio nome.
-   - Cards e linhas recebem o badge visual destacado `🤝 Parceria N%`, informando instantaneamente a fatia que cabe ao consultor visualizador.
+   - Quando a fatia de RAV for diferente da fatia de venda, o card e a tabela exibem o badge enriquecido `🤝 Parceria N% • ✈️ RAV M%`.
 
-5. **Consistência Contábil Sem Duplicidade (Metas & Relatórios)**:
+7. **Consistência Contábil Sem Duplicidade (Metas & Relatórios)**:
    - **No Consolidado da Agência**: A viagem é contabilizada uma única vez em faturamento e lucro (100%), garantindo que o DRE e os relatórios globais não sofram inflação ou duplicações.
    - **Nos Relatórios e Metas Individuais**: As metas de faturamento, lucro e contagem de vendas (`qtd_vendas`) computam frações proporcionais (`+0,8` e `+0,2` vendas, por exemplo), garantindo que rankings e comissionamentos individuais reflitam a exata entrega de cada profissional.
 
-6. **Governança & Trava Pós-Conferência**:
+8. **Governança & Trava Pós-Conferência**:
    - Caso o processo da viagem (`processo_conferido`) ou qualquer um de seus LOCs financeiros (`isFinanceiroConferido`) já tenham sido conferidos e auditados pela gestão, a edição das divisões é **automaticamente trancada** com ícone de cadeado (`🔒 Divisão Bloqueada`).
    - Consultores operacionais são impedidos de alterar participações já conferidas. Apenas usuários com perfil de **Administrador** possuem autorização para ajustar divisões de viagens conferidas.
 
-7. **Resiliência a Schema Drift (Padrão Zero-Break)**:
-   - A persistência é gerenciada na tabela dedicada `public.viagens_divisoes` com chave estrangeira `ON DELETE CASCADE`.
-   - Todas as consultas ao banco implementam fallback gracioso para o erro de tabela/coluna ausente (`42P01` / `42703`), garantindo que viagens legadas ou instâncias antes da migração continuem operando normalmente assumindo 100% de titularidade.
-
-8. **Mini-Wizard de Parceria no Fechamento de Venda**:
-   - Ao converter uma proposta para venda em `Orcamentos.ts`, o consultor pode marcar o checkbox "Venda em parceria", selecionando o consultor parceiro e escolhendo o rateio pré-definido antes de gerar o registro da viagem.
+9. **Resiliência a Schema Drift (Padrão Zero-Break)**:
+   - A persistência é gerenciada na tabela dedicada `public.viagens_divisoes` com chave estrangeira `ON DELETE CASCADE` e coluna `percentual_rav NUMERIC(5,2)`.
+   - Todas as consultas ao banco implementam fallback gracioso para erro de coluna ou tabela ausente (`42P01` / `42703`), garantindo que viagens legadas ou instâncias antes da migração continuem operando normalmente.
 
 ---
 
