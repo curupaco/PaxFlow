@@ -10,8 +10,7 @@
     "typecheck": "tsc --noEmit",
     "check": "tsc --noEmit && vitest run",
     "test": "vitest run",
-    "test:coverage": "vitest run --coverage",
-    "audit:supabase": "node scripts/auditQueries.mjs"
+    "test:coverage": "vitest run --coverage"
   },
   "keywords": [],
   "author": "",
