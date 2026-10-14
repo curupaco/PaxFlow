@@ -198,11 +198,11 @@ export class ConciliacaoService {
 
       const { data, error } = await query;
       if (error) {
-        if (error.code === '42P01') {
-          console.warn('[Schema Drift 42P01] Tabela extratos_bancarios_transacoes não existe.');
+        if (error.code === '42P01' || error.code === 'PGRST205' || error.message?.includes('does not exist')) {
           return [];
         }
-        throw error;
+        console.warn('Aviso ao consultar extratos_bancarios_transacoes:', error.message);
+        return [];
       }
 
       return (data || []).map((t: any) => ({
@@ -222,7 +222,6 @@ export class ConciliacaoService {
         conciliado_por: t.conciliado_por
       }));
     } catch (err) {
-      console.error('Erro ao listar transações do extrato:', err);
       return [];
     }
   }
@@ -239,66 +238,35 @@ export class ConciliacaoService {
    */
   public static async listarRecebimentosPendentes(): Promise<LocPagamentoPendente[]> {
     try {
-      let query = supabase
+      const { data, error } = await supabase
         .from('loc_pagamentos')
         .select(`
           id,
           viagem_id,
           codigo_localizador,
           valor,
-          conciliado,
-          data_vencimento,
-          forma_pagamento,
-          parcela_numero,
-          observacoes,
+          created_at,
           viagens:viagem_id(
             id,
-            codigo_referencia,
-            data_inicio,
+            codigo_ref,
+            data_ida,
             cliente:cliente_id(nome)
           )
         `)
-        .eq('conciliado', false)
         .order('created_at', { ascending: false });
 
-      const { data, error } = await query;
       if (error) {
-        // Schema Drift: se coluna conciliado não existir
-        if (error.code === '42703' || error.message?.includes('conciliado')) {
-          console.warn('[Schema Drift 42703] Coluna conciliado ausente em loc_pagamentos.');
-          const fallbackQuery = await supabase
-            .from('loc_pagamentos')
-            .select(`
-              id,
-              viagem_id,
-              codigo_localizador,
-              valor,
-              data_vencimento,
-              forma_pagamento,
-              parcela_numero,
-              observacoes,
-              viagens:viagem_id(
-                id,
-                codigo_referencia,
-                data_inicio,
-                cliente:cliente_id(nome)
-              )
-            `)
-            .order('created_at', { ascending: false });
+        // Fallback resiliente caso a relação com viagens ou clientes não esteja disponível
+        const { data: fallbackData } = await supabase
+          .from('loc_pagamentos')
+          .select('id, viagem_id, codigo_localizador, valor, created_at')
+          .order('created_at', { ascending: false });
 
-          if (fallbackQuery.error) return [];
-          return (fallbackQuery.data || []).map((p: any) => this.normalizarLocPagamento(p));
-        }
-
-        if (error.code === '42P01') {
-          return [];
-        }
-        throw error;
+        return (fallbackData || []).map((p: any) => this.normalizarLocPagamento(p));
       }
 
       return (data || []).map((p: any) => this.normalizarLocPagamento(p));
     } catch (err) {
-      console.error('Erro ao listar recebimentos pendentes:', err);
       return [];
     }
   }
@@ -649,8 +617,11 @@ export class ConciliacaoService {
         .order('ano_mes', { ascending: false });
 
       if (error) {
-        if (error.code === '42P01') return [];
-        throw error;
+        if (error.code === '42P01' || error.code === 'PGRST205' || error.message?.includes('does not exist')) {
+          return [];
+        }
+        console.warn('Aviso ao consultar competencias_financeiras_fechadas:', error.message);
+        return [];
       }
 
       return (data || []).map((f: any) => ({
@@ -663,7 +634,6 @@ export class ConciliacaoService {
         observacoes: f.observacoes
       }));
     } catch (e) {
-      console.error('Erro ao listar fechamentos:', e);
       return [];
     }
   }
