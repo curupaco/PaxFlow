@@ -15,6 +15,7 @@ export interface SolicitarReembolsoModalOptions {
   produtoPreselecionadoId?: string;
   user: any;
   onSucesso?: (reembolso: any) => void | Promise<void>;
+  onCancel?: () => void | Promise<void>;
   showToast: (msg: string, type: 'success' | 'error', err?: any) => void;
 }
 
@@ -22,7 +23,7 @@ export class SolicitarReembolsoModal {
   private static modalId = 'paxflow-solicitar-reembolso-modal';
 
   public static async abrir(options: SolicitarReembolsoModalOptions): Promise<void> {
-    const { viagemId, viagemDescricao, user, showToast, onSucesso } = options;
+    const { viagemId, viagemDescricao, user, showToast, onSucesso, onCancel } = options;
 
     // Remove modal anterior se ainda existir no DOM
     const existing = document.getElementById(this.modalId);
@@ -63,7 +64,10 @@ export class SolicitarReembolsoModal {
         </div>
       `;
       document.body.appendChild(modalEl);
-      document.getElementById('btn-close-modal-sem-prod')?.addEventListener('click', () => modalEl.remove());
+      document.getElementById('btn-close-modal-sem-prod')?.addEventListener('click', () => {
+        modalEl.remove();
+        if (onCancel) onCancel();
+      });
       return;
     }
 
@@ -186,9 +190,18 @@ export class SolicitarReembolsoModal {
       }
     });
 
-    const fechar = () => modalEl.remove();
-    document.getElementById('btn-fechar-modal-reembolso')?.addEventListener('click', fechar);
-    document.getElementById('modal-btn-cancelar-reembolso')?.addEventListener('click', fechar);
+    const fechar = (isCancel: boolean = false) => {
+      modalEl.remove();
+      if (isCancel && onCancel) {
+        try {
+          onCancel();
+        } catch (eCancel) {
+          console.warn('Erro ao executar callback onCancel:', eCancel);
+        }
+      }
+    };
+    document.getElementById('btn-fechar-modal-reembolso')?.addEventListener('click', () => fechar(true));
+    document.getElementById('modal-btn-cancelar-reembolso')?.addEventListener('click', () => fechar(true));
 
     const form = document.getElementById('form-solicitar-reembolso') as HTMLFormElement;
     form?.addEventListener('submit', async (e) => {

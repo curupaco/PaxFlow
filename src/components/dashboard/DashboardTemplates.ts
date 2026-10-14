@@ -173,8 +173,13 @@ export function renderReembolsosTabHTML(reembolsos: any[]): string {
             ` : ''}
 
             <div class="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800 text-[10px] text-slate-400 font-medium">
-              <span>Abertura: <strong>${dataSolicitacao || 'N/D'}</strong></span>
-              ${dataResolucao ? `<span>Conclusão: <strong>${dataResolucao}</strong></span>` : ''}
+              <div class="space-x-2">
+                <span>Abertura: <strong>${dataSolicitacao || 'N/D'}</strong></span>
+                ${dataResolucao ? `<span>• Conclusão: <strong>${dataResolucao}</strong></span>` : ''}
+              </div>
+              <button type="button" data-action-edit-reembolso="${r.id}" class="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-400 font-bold text-[10px] rounded-lg border border-indigo-200/80 dark:border-indigo-800/60 transition flex items-center gap-1 cursor-pointer shadow-2xs">
+                ✏️ Atualizar Tratativa
+              </button>
             </div>
           </div>
         `;

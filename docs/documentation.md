@@ -282,20 +282,28 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 **Painel dedicado** para acompanhamento de cancelamentos e reembolsos.
 
 - **Tabela completa** com cliente, destino, produto cancelado, fornecedor, valor solicitado.
-- **Busca em Tempo Real Dedicada**:
-  - Adicionado campo de busca instantânea acima da tabela de reembolsos.
-  - Filtro local em memória de alto desempenho (<1ms) cobrindo **nome e e-mail do cliente, destino, localizador da viagem, tipo de produto, fornecedor, descrição do item cancelado, justificativa da solicitação, status e valores monetários formatados**.
+- **Busca em Tempo Real Dedicada & Filtro por Forma de Devolução**:
+  - Campo de busca instantânea acima da tabela de reembolsos com filtro local em memória de alto desempenho (<1ms) cobrindo **nome e e-mail do cliente, destino, localizador da viagem, tipo de produto, fornecedor, descrição do item cancelado, justificativa da solicitação, status e valores monetários formatados**.
+  - **Filtro Financeiro por Forma de Devolução**: Seletor dropdown integrado permitindo filtrar por `Estorno Cartão de Crédito`, `Pix / Transferência Bancária` e `Carta de Crédito / Voucher Fornecedor`.
 - **Cronômetro SLA em tempo real**: mostra dias, horas, minutos e segundos decorridos desde a abertura da solicitação.
-- **Alteração de status**: dropdown inline para avançar o fluxo (Aguardando Fornecedor → Em Análise → Aprovado → Pago).
-- **Métricas no topo**: total de processos, aguardando fornecedor, concluídos, valor total pago.
-- **Filtro automático**: consultor comum vê apenas seus reembolsos; admin vê todos.
+- **Controle dos 4 Status da Tratativa**:
+  - 🏢 `Reembolso pendente ação agência`: aguardando documentação ou conferência interna da agência.
+  - ✈️ `Reembolso pendente ação fornecedor`: sob análise de tarifas/multas com cia aérea ou hotel.
+  - 🌐 `Reembolso pendente ação Agaxtur`: aguardando repasse financeiro pela operadora parceira.
+  - ✅ `Reembolso concluido`: tratativa e devolução finalizadas com registro de data de conclusão.
+- **Edição de Tratativas e Valores Diretamente na Viagem (`EditarReembolsoModal`)**:
+  - Na aba de Reembolsos dentro da viagem (`EditTravelModal`), cada card possui o botão `✏️ Atualizar Tratativa`, permitindo ajustar status, valor aprovado e saldo utilizado pelo passageiro sem sair da visualização da viagem.
+- **Exclusão Segura com Restauração Atômica de Produtos**:
+  - Ao excluir um processo de reembolso na Central de Reembolsos via `ReembolsosService.excluirReembolso`, o produto vinculado em `produtos_viagem` tem seu status restaurado automaticamente para `confirmado`. Se não restarem outros processos pendentes na viagem, o sistema orienta o retorno do status geral da viagem.
+- **Integridade de SLA para Múltiplos Reembolsos Simultâneos**:
+  - O motor de SLA no Dashboard e no Inbox utiliza a função pura `areAllReembolsosConcluidos`: uma viagem com 1 reembolso pago e outro reembolso pendente em atraso mantém o alerta de SLA ativo (🚨 Crítico), impedindo que reembolsos parciais silenciem atrasos graves de outros itens.
 - **Desacoplamento do Ciclo de Vida da Viagem vs. Ciclo Financeiro**:
   - Cancelamentos de produtos individuais não impedem que a viagem continue ocorrendo no mundo real.
   - A viagem passa normalmente por Pós-Venda, Pré-Embarque e Pós-Viagem; o término da viagem nunca é bloqueado por processos de reembolso em andamento.
   - O checkbox de alteração de status geral da viagem vem desmarcado por padrão (`atualizarStatusViagem: false`), reservado apenas para cancelamentos integrais da viagem como um todo.
 - **Arquitetura de Alertas Cross-Viagem & Ficha do Cliente**:
   - Qualquer viagem de um cliente com processo financeiro aberto exibe banner de atenção âmbar no topo do editor de viagens (`EditTravelModal`).
-  - O cadastro do passageiro (`ClienteDetalhesModal`) estampa badge de contagem de reembolsos e banner financeiro com montantes e motivos.
+  - O cadastro do passageiro (`ClienteDetalhesModal` e `Clientes.ts`) estampa badge de destaque `💸 Reembolso Aberto` na listagem e na ficha detalhada, com suporte a busca digitando "reembolso".
   - No Dashboard operacional, destinos com reembolsos ativos recebem badge visual `💸 Reembolso`.
   - As notificações de prazos e SLAs permanecem ativas na Inbox e no Mission Control até a liquidação final.
 

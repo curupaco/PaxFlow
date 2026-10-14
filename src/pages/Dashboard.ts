@@ -41,6 +41,7 @@ import {
   parseFinancialNumber
 } from '../utils/productFinancialHelper';
 import { excluirViagemCascata } from '../controllers/viagensController';
+import { areAllReembolsosConcluidos } from '../controllers/reembolsosController';
 
 // Injeta estilos premium e animações micro-interativas para SLAs diretamente no DOM
 
@@ -1055,8 +1056,43 @@ export class Dashboard {
       }
     }
 
+    // Regra de SLA para "Reembolso Solicitado" (avalia o processo mais antigo em aberto)
+    if (viagem.status === 'reembolso_solicitado') {
+      const pendentes = (viagem.reembolsos || []).filter((r: any) => {
+        const st = String(r.status || '').toLowerCase();
+        const trat = String(r.status_tratativa || '').toLowerCase();
+        return st !== 'pago' && st !== 'concluido' && st !== 'cancelado' && trat !== 'concluido';
+      });
+
+      if (pendentes.length > 0) {
+        let maisAntigoMs = hoje.getTime();
+        pendentes.forEach((r: any) => {
+          const dStr = r.data_solicitacao || r.created_at;
+          if (dStr) {
+            const dMs = new Date(dStr).getTime();
+            if (dMs < maisAntigoMs) maisAntigoMs = dMs;
+          }
+        });
+        const diasAbertos = Math.floor((hoje.getTime() - maisAntigoMs) / (1000 * 60 * 60 * 24));
+        const limiteDias = this.settings?.prazoReembolsoDias || 3;
+        if (diasAbertos >= limiteDias) {
+          return {
+            alert: true,
+            type: 'reembolso' as any,
+            text: `🚨 SLA Excedido! ${diasAbertos} dias em reembolso pendente.`
+          };
+        }
+      }
+    }
 
     return { alert: false, type: null, text: '' };
+  }
+
+  /**
+   * Helper para verificar se todos os reembolsos de uma viagem foram concluídos ou cancelados
+   */
+  private isTodosReembolsosConcluidos(viagem: any): boolean {
+    return areAllReembolsosConcluidos(viagem?.reembolsos);
   }
 
   /**
@@ -1093,7 +1129,7 @@ export class Dashboard {
       try {
         const { data, error } = await supabase
           .from('produtos_viagem')
-          .select('valor_venda, tarifa, taxa, comissao, markup, rav, fornecedor, descricao')
+          .select('valor_venda, tarifa, taxa, comissao, markup, rav, fornecedor, descricao, status')
           .eq('viagem_id', tripId);
         if (!error && data) {
           produtos = data;
@@ -1106,14 +1142,18 @@ export class Dashboard {
       produtos = viagem.produtos || [];
     }
 
+    // Produtos ativos (desconsidera itens cancelados/reembolsados para não bloquear o ciclo operacional da viagem)
+    const produtosAtivos = produtos.filter(p => String(p.status || '').toLowerCase() !== 'reembolsado');
+    const produtosParaCalculo = produtosAtivos.length > 0 ? produtosAtivos : produtos;
+
     // 3. Validar relação entre produtos e total da viagem
-    const totalProdutos = produtos.reduce((sum, p) => sum + (Number(p.valor_venda) || 0), 0);
+    const totalProdutos = produtosParaCalculo.reduce((sum, p) => sum + (Number(p.valor_venda) || 0), 0);
     const valorViagem = Number(viagem.valor_total) || 0;
     const pendente = valorViagem - totalProdutos;
 
-    if (produtos.length > 0 && Math.abs(pendente) > 0.01) {
+    if (produtosParaCalculo.length > 0 && Math.abs(pendente) > 0.01) {
       const confirmSync = await showCustomConfirm(
-        `O valor total da viagem (R$ ${valorViagem.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}) difere da soma dos produtos (R$ ${totalProdutos.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}). Deseja sincronizar automaticamente o valor da viagem com a soma dos produtos para avançar?`,
+        `O valor total da viagem (R$ ${valorViagem.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}) difere da soma dos produtos ativos (R$ ${totalProdutos.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}). Deseja sincronizar automaticamente o valor da viagem com a soma dos produtos para avançar?`,
         'Sincronizar Valor da Viagem'
       );
       if (confirmSync) {
@@ -1124,17 +1164,17 @@ export class Dashboard {
           console.warn('Falha ao sincronizar valor total da viagem:', syncErr);
         }
       } else {
-        this.showToast(`Existe uma diferença de R$ ${Math.abs(pendente).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} entre a viagem e os produtos. Ajuste os produtos ou o valor da viagem para prosseguir.`, 'error');
+        this.showToast(`Existe uma diferença de R$ ${Math.abs(pendente).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} entre a viagem e os produtos ativos. Ajuste os produtos ou o valor da viagem para prosseguir.`, 'error');
         return false;
       }
-    } else if (produtos.length === 0 && valorViagem > 0) {
-      this.showToast('Esta viagem ainda não possui produtos cadastrados. Adicione ao menos um produto na aba "Produtos e Serviços" para avançar.', 'error');
+    } else if (produtosParaCalculo.length === 0 && valorViagem > 0) {
+      this.showToast('Esta viagem ainda não possui produtos ativos cadastrados. Adicione ao menos um produto ativo na aba "Produtos e Serviços" para avançar.', 'error');
       return false;
     }
 
-    // 4. Validar se todos os produtos cadastrados estão detalhados ao avançar para Pós-Venda
+    // 4. Validar se todos os produtos ativos cadastrados estão detalhados ao avançar para Pós-Venda
     if (newStatus === 'pos_venda') {
-      const produtoNaoDetalhado = produtos.find(p => {
+      const produtoNaoDetalhado = produtosParaCalculo.find(p => {
         const tarifa = Number(p.tarifa) || 0;
         const taxa = Number(p.taxa) || 0;
         const comissao = Number(p.comissao) || 0;
@@ -1156,7 +1196,7 @@ export class Dashboard {
   /**
    * Abre o Modal Dinâmico para solicitação de reembolso de um produto
    */
-  private async openRefundModal(tripId: string, oldStatus: string): Promise<void> {
+  private async openRefundModal(tripId: string, oldStatus: string, selectEl?: HTMLSelectElement): Promise<void> {
     const viagem = this.viagens.find(v => v.id === tripId);
     await SolicitarReembolsoModal.abrir({
       viagemId: tripId,
@@ -1166,6 +1206,11 @@ export class Dashboard {
       showToast: (msg, type, err) => this.showToast(msg, type, err),
       onSucesso: async () => {
         await this.init();
+      },
+      onCancel: () => {
+        if (selectEl) {
+          selectEl.value = oldStatus;
+        }
       }
     });
   }
@@ -1948,8 +1993,9 @@ export class Dashboard {
 
       // 11. Status de SLA
       if (this.advSla !== 'todos') {
-        const reembolsoConcluido = v.reembolsos && v.reembolsos.some((r: any) => r.status === 'pago');
-        const slaResult = reembolsoConcluido ? { alert: false } : this.checkSLA(v);
+        const todosConcluidos = this.isTodosReembolsosConcluidos(v);
+        const isViagemReembolso = v.status === 'reembolso_solicitado';
+        const slaResult = (isViagemReembolso && todosConcluidos) ? { alert: false } : this.checkSLA(v);
         if (this.advSla === 'com_alerta' && !slaResult.alert) return false;
         if (this.advSla === 'sem_alerta' && slaResult.alert) return false;
       }
@@ -2028,20 +2074,23 @@ export class Dashboard {
         let valB: any = '';
 
         if (this.sortField === 'sla') {
-          const aReembolso = a.reembolsos && a.reembolsos.some((r: any) => r.status === 'pago');
-          const bReembolso = b.reembolsos && b.reembolsos.some((r: any) => r.status === 'pago');
-          const aSla = aReembolso ? { alert: false, type: null } : this.checkSLA(a);
-          const bSla = bReembolso ? { alert: false, type: null } : this.checkSLA(b);
+          const aConcluido = this.isTodosReembolsosConcluidos(a);
+          const bConcluido = this.isTodosReembolsosConcluidos(b);
+          const aIsReemb = a.status === 'reembolso_solicitado';
+          const bIsReemb = b.status === 'reembolso_solicitado';
+          const aSla = (aIsReemb && aConcluido) ? { alert: false, type: null } : this.checkSLA(a);
+          const bSla = (bIsReemb && bConcluido) ? { alert: false, type: null } : this.checkSLA(b);
 
           const getSlaPriority = (sla: any, reembolsado: boolean) => {
             if (reembolsado) return 0;
             if (!sla.alert) return 1;
             if (sla.type === 'pos-viagem') return 2;
             if (sla.type === 'pre-embarque') return 3;
+            if (sla.type === 'reembolso') return 4;
             return 1;
           };
-          valA = getSlaPriority(aSla, aReembolso);
-          valB = getSlaPriority(bSla, bReembolso);
+          valA = getSlaPriority(aSla, aIsReemb && aConcluido);
+          valB = getSlaPriority(bSla, bIsReemb && bConcluido);
         } else if (this.sortField === 'cliente') {
           valA = (a.cliente?.nome || '').toLowerCase();
           valB = (b.cliente?.nome || '').toLowerCase();
@@ -2076,8 +2125,9 @@ export class Dashboard {
     // 4. Contar alertas de SLA ativos no total do consultor ativo
     let totalSlaAlerts = 0;
     totalPorConsultor.forEach(v => {
-      const reembolsoConcluido = v.reembolsos && v.reembolsos.some((r: any) => r.status === 'pago');
-      if (!reembolsoConcluido && this.checkSLA(v).alert) totalSlaAlerts++;
+      const todosConcluidos = this.isTodosReembolsosConcluidos(v);
+      const isViagemReembolso = v.status === 'reembolso_solicitado';
+      if (!(isViagemReembolso && todosConcluidos) && this.checkSLA(v).alert) totalSlaAlerts++;
     });
 
     const isSandbox = (window as any).paxflowSandbox;
@@ -3170,17 +3220,15 @@ export class Dashboard {
    * Renderiza a linha de dados da tabela operacional
    */
   private renderTableRow(v: any): string {
-    const reembolsoConcluido = v.reembolsos && v.reembolsos.some((r: any) => r.status === 'pago');
-    const temReembolsoPendente = v.reembolsos && v.reembolsos.some((r: any) => {
-      const st = String(r.status || '').toLowerCase();
-      return st !== 'pago' && st !== 'concluido' && st !== 'recusado' && st !== 'cancelado';
-    });
-    const sla = reembolsoConcluido ? { alert: false, type: null, text: '' } : this.checkSLA(v);
+    const todosConcluidos = this.isTodosReembolsosConcluidos(v);
+    const isViagemReembolso = v.status === 'reembolso_solicitado';
+    const sla = (isViagemReembolso && todosConcluidos) ? { alert: false, type: null, text: '' } : this.checkSLA(v);
+    const temReembolsoPendente = !todosConcluidos && (isViagemReembolso || (v.reembolsos && v.reembolsos.length > 0));
 
     let slaIcon = '🟢';
     let rowBg = 'bg-white dark:bg-slate-900 hover:bg-slate-50/50 dark:hover:bg-slate-800/20';
 
-    if (reembolsoConcluido) {
+    if (isViagemReembolso && todosConcluidos) {
       slaIcon = '✅';
       rowBg = 'bg-emerald-50/10 dark:bg-emerald-950/5 hover:bg-emerald-50/20 dark:hover:bg-emerald-950/10';
     } else if (sla.alert) {
@@ -3190,6 +3238,9 @@ export class Dashboard {
       } else if (sla.type === 'pos-viagem') {
         slaIcon = '🚨';
         rowBg = 'bg-amber-50/15 dark:bg-amber-950/5 hover:bg-amber-50/25 dark:hover:bg-amber-950/10';
+      } else if (sla.type === 'reembolso') {
+        slaIcon = '🚨';
+        rowBg = 'bg-rose-50/20 dark:bg-rose-950/20 hover:bg-rose-50/30 dark:hover:bg-rose-950/30';
       }
     }
 
@@ -3229,7 +3280,7 @@ export class Dashboard {
 🚨 Atrasado (Pós-viagem excedido)
 ✅ Concluído (Reembolso pago)
 
-Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : 'SLA Normal')}">
+Atual: ${sla.alert ? sla.text : (isViagemReembolso && todosConcluidos ? 'Reembolso Concluído' : 'SLA Normal')}">
           <div class="flex items-center justify-center gap-2">
             <span class="text-base">${slaIcon}</span>
             ${isRiskScoreEnabled(this.user, this.perfil, this.settings) ? `
@@ -3373,14 +3424,15 @@ Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : '
    * Renderiza um card individual de viagem para exibição em dispositivos móveis
    */
   private renderMobileCard(v: any): string {
-    const reembolsoConcluido = v.reembolsos && v.reembolsos.some((r: any) => r.status === 'pago');
-    const sla = reembolsoConcluido ? { alert: false, type: null, text: '' } : this.checkSLA(v);
+    const todosConcluidos = this.isTodosReembolsosConcluidos(v);
+    const isViagemReembolso = v.status === 'reembolso_solicitado';
+    const sla = (isViagemReembolso && todosConcluidos) ? { alert: false, type: null, text: '' } : this.checkSLA(v);
 
     let slaIcon = '🟢';
     let cardBorder = 'border-l-emerald-500';
     let cardBg = 'bg-white dark:bg-slate-900';
 
-    if (reembolsoConcluido) {
+    if (isViagemReembolso && todosConcluidos) {
       slaIcon = '✅';
       cardBorder = 'border-l-emerald-500';
       cardBg = 'bg-emerald-50/5 dark:bg-emerald-950/5';
@@ -3393,6 +3445,10 @@ Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : '
         slaIcon = '🚨';
         cardBorder = 'border-l-amber-500';
         cardBg = 'bg-amber-50/5 dark:bg-amber-950/5';
+      } else if (sla.type === 'reembolso') {
+        slaIcon = '🚨';
+        cardBorder = 'border-l-rose-600';
+        cardBg = 'bg-rose-50/10 dark:bg-rose-950/10';
       }
     }
 
@@ -3469,7 +3525,7 @@ Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : '
                 <span>🛡️ ${risk.score}</span>
               </button>
             ` : ''}
-            <div class="flex flex-col items-end shrink-0" title="${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : 'SLA Normal')}">
+            <div class="flex flex-col items-end shrink-0" title="${sla.alert ? sla.text : (isViagemReembolso && todosConcluidos ? 'Reembolso Concluído' : 'SLA Normal')}">
               <span class="text-lg">${slaIcon}</span>
               ${sla.alert ? `<span class="text-[8px] font-black text-rose-600 dark:text-rose-400 uppercase tracking-widest mt-0.5">SLA ATIVO</span>` : ''}
             </div>
@@ -3739,8 +3795,9 @@ Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : '
           if (this.advAnexos === 'sem_voucher' && hasVoucherGeral) return false;
         }
         if (this.advSla !== 'todos') {
-          const reembolsoConcluido = v.reembolsos && v.reembolsos.some((r: any) => r.status === 'pago');
-          const slaResult = reembolsoConcluido ? { alert: false } : this.checkSLA(v);
+          const todosConcluidos = this.isTodosReembolsosConcluidos(v);
+          const isViagemReembolso = v.status === 'reembolso_solicitado';
+          const slaResult = (isViagemReembolso && todosConcluidos) ? { alert: false } : this.checkSLA(v);
           if (this.advSla === 'com_alerta' && !slaResult.alert) return false;
           if (this.advSla === 'sem_alerta' && slaResult.alert) return false;
         }
@@ -4412,7 +4469,7 @@ Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : '
 
         // Se for reembolso solicitado, chama o modal específico
         if (newStatus === 'reembolso_solicitado') {
-          await this.openRefundModal(tripId, oldStatus);
+          await this.openRefundModal(tripId, oldStatus, selectEl);
           return;
         }
 

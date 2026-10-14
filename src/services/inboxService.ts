@@ -796,13 +796,20 @@ export class InboxService {
             cliente:clientes (*)
           )
         `)
-        .not('status', 'in', '("pago","cancelado")')
+        .not('status', 'in', '("pago","cancelado","concluido","recusado")')
         .order('created_at', { ascending: false });
 
       const { data: reembolsosData } = await reembolsosQuery;
 
       (reembolsosData || []).forEach((rem: any) => {
         const consultorId = rem.viagem?.consultor_id || rem.consultor_solicitante_id;
+
+        // Desconsidera reembolsos já finalizados ou cancelados
+        const st = String(rem.status || '').toLowerCase();
+        const trat = String(rem.status_tratativa || '').toLowerCase();
+        if (st === 'pago' || st === 'concluido' || st === 'cancelado' || st === 'recusado' || trat === 'concluido') {
+          return;
+        }
 
         // Filter by consultant responsibility if not admin
         if (perfil && (perfil.role || '').toLowerCase() !== 'admin' && consultorId !== user.id) {
@@ -832,6 +839,11 @@ export class InboxService {
 
           const statusText = formatReembolsoStatus(rem.status);
 
+          let tratativaLabel = 'Ação Agência';
+          if (trat.includes('fornecedor')) tratativaLabel = 'Ação Fornecedor';
+          else if (trat.includes('agaxtur')) tratativaLabel = 'Ação Agaxtur';
+          else if (trat.includes('agencia') || trat.includes('agência')) tratativaLabel = 'Ação Agência';
+
           list.push({
             id: uniqueId,
             type: 'refund',
@@ -840,7 +852,7 @@ export class InboxService {
             senderAvatar: 'paxflow',
             dateStr: `${diasAbertos} dias aberto (${isAtrasado ? `${diasAbertos - prazoReembolsoDias}d de atraso` : 'no prazo'})`,
             subject: `Reembolso de ${clienteNome} (${destino}) - ${isAtrasado ? 'PRAZO EXCEDIDO' : 'PRESTES A VENCER'}`,
-            body: `O processo de reembolso referente à viagem de <strong>${clienteNome}</strong> para <strong>${destino}</strong> exige atenção da equipe financeira.<br><br>• <strong>Prazo da Agência:</strong> ${prazoReembolsoDias} dias.<br>• <strong>Tempo Decorrido:</strong> ${diasAbertos} dias (${isAtrasado ? `<span class="text-rose-600 font-extrabold">${diasAbertos - prazoReembolsoDias} dias de atraso</span>` : 'Prestes a vencer'}).<br>• <strong>Status Atual:</strong> ${statusText}<br>• <strong>Valor Solicitado:</strong> R$ ${Number(rem.valor_solicitado || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}<br><br><strong>Ação Exigida:</strong> Favor verificar junto ao financeiro ou fornecedor para efetuar a devolução ao cliente e evitar disputas.`,
+            body: `O processo de reembolso referente à viagem de <strong>${clienteNome}</strong> para <strong>${destino}</strong> exige atenção da equipe financeira.<br><br>• <strong>Prazo da Agência:</strong> ${prazoReembolsoDias} dias.<br>• <strong>Tempo Decorrido:</strong> ${diasAbertos} dias (${isAtrasado ? `<span class="text-rose-600 font-extrabold">${diasAbertos - prazoReembolsoDias} dias de atraso</span>` : 'Prestes a vencer'}).<br>• <strong>Pendência Atual:</strong> ${tratativaLabel}.<br>• <strong>Status Atual:</strong> ${statusText}<br>• <strong>Valor Solicitado:</strong> R$ ${Number(rem.valor_solicitado || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}<br><br><strong>Ação Exigida:</strong> Favor verificar junto ao financeiro ou fornecedor para efetuar a devolução ao cliente e evitar disputas.`,
             targetId: rem.id,
             arquivado: archivedSet.has(uniqueId),
             consultorId: consultorId || '',

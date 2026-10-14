@@ -45,6 +45,7 @@ export class ClientesPage {
 
   // Variáveis para seleção em massa e limpeza de recursos
   private selectedClientIds: Set<string> = new Set();
+  private clientesComReembolsoPendente: Set<string> = new Set();
   private activeCleanups: (() => void)[] = [];
 
   // Variáveis para paginação infinita
@@ -111,13 +112,69 @@ export class ClientesPage {
     }
     this.carregandoMais = true;
     try {
-      const { data, count } = await ClienteSearchService.buscarClientes({
-        termo: this.buscaTermo,
-        paginaAtual: this.paginaAtual,
-        limitePagina: this.limitePagina,
-        consultorId: this.user?.id,
-        isAdmin: this.perfil?.role === 'admin'
-      });
+      // 1. Carrega clientes com reembolsos pendentes para exibição de badge e filtro especializado
+      try {
+        const { data: remData } = await supabase
+          .from('reembolsos')
+          .select(`
+            id,
+            status,
+            status_tratativa,
+            viagem:viagens (cliente_id)
+          `);
+
+        const clientIdsSet = new Set<string>();
+        (remData || []).forEach((r: any) => {
+          const st = String(r.status || '').toLowerCase();
+          const trat = String(r.status_tratativa || '').toLowerCase();
+          const isPendente = st !== 'pago' && st !== 'concluido' && st !== 'cancelado' && st !== 'recusado' && trat !== 'concluido';
+          const cId = r.viagem?.cliente_id;
+          if (isPendente && cId) {
+            clientIdsSet.add(cId);
+          }
+        });
+        this.clientesComReembolsoPendente = clientIdsSet;
+      } catch (eRem) {
+        console.warn('Aviso não-bloqueante ao carregar reembolsos de clientes:', eRem);
+      }
+
+      let data: any[] = [];
+      let count: number = 0;
+
+      const termoLower = (this.buscaTermo || '').trim().toLowerCase();
+      const isBuscaReembolso = termoLower === 'reembolso' || termoLower === 'reembolsos' || termoLower === 'reembolso pendente';
+
+      if (isBuscaReembolso) {
+        if (this.clientesComReembolsoPendente.size === 0) {
+          data = [];
+          count = 0;
+        } else {
+          let q = supabase
+            .from('clientes')
+            .select('*', { count: 'exact' })
+            .in('id', Array.from(this.clientesComReembolsoPendente))
+            .order('nome', { ascending: true })
+            .range(this.paginaAtual * this.limitePagina, (this.paginaAtual + 1) * this.limitePagina - 1);
+
+          if (this.perfil?.role !== 'admin' && this.user?.id) {
+            q = q.eq('consultor_responsavel_id', this.user.id);
+          }
+          const res = await q;
+          if (res.error) throw res.error;
+          data = res.data || [];
+          count = res.count || 0;
+        }
+      } else {
+        const resBusca = await ClienteSearchService.buscarClientes({
+          termo: this.buscaTermo,
+          paginaAtual: this.paginaAtual,
+          limitePagina: this.limitePagina,
+          consultorId: this.user?.id,
+          isAdmin: this.perfil?.role === 'admin'
+        });
+        data = resBusca.data || [];
+        count = resBusca.count || 0;
+      }
 
       const mapped = (data || []).map(d => ({
         id: d.id,
@@ -277,12 +334,15 @@ export class ClientesPage {
               ? 'border-indigo-200 dark:border-indigo-500/30 bg-indigo-50/40 dark:bg-indigo-950/20 text-indigo-900 dark:text-indigo-200 shadow-sm' 
               : 'border-slate-100 dark:border-slate-800/80 hover:border-slate-200 dark:hover:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50/50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
           } transition flex items-center justify-between gap-3 ${borderSlaClass} group">
-            <div class="overflow-hidden">
+            <div class="overflow-hidden flex-1 min-w-0">
               <span class="block text-sm font-black truncate">
                 ${c.codigoRef ? `<span class="text-[10px] font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded mr-1.5">${c.codigoRef}</span>` : ''}
                 ${c.nome && c.nome !== 'NULL' ? c.nome : 'Cliente sem nome'}
               </span>
-              <span class="block text-[11px] text-slate-400 dark:text-slate-400 font-semibold truncate group-hover:text-slate-500 dark:group-hover:text-slate-400 transition">${contatoExibido}</span>
+              <div class="flex items-center gap-1.5 flex-wrap mt-0.5">
+                <span class="block text-[11px] text-slate-400 dark:text-slate-400 font-semibold truncate group-hover:text-slate-500 dark:group-hover:text-slate-400 transition">${contatoExibido}</span>
+                ${this.clientesComReembolsoPendente.has(c.id) ? `<span class="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 shrink-0" title="Passageiro com reembolso pendente de devolução ou tratativa">💸 Reembolso Aberto</span>` : ''}
+              </div>
             </div>
             <span class="text-xs">👤</span>
           </button>
@@ -1325,6 +1385,12 @@ export class ClientesPage {
                       ` : ''}
                     </div>
                   </div>
+                ` : ''}
+                ${!isNew && this.clientesComReembolsoPendente.has(c.id) ? `
+                  <a href="#/reembolsos" class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 hover:brightness-95 transition" title="Clique para ver os reembolsos no módulo financeiro">
+                    <span>💸</span>
+                    <span>Reembolso Aberto</span>
+                  </a>
                 ` : ''}
               </div>
 

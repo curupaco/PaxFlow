@@ -302,4 +302,63 @@ export class ReembolsosService {
       return [];
     }
   }
+
+  /**
+   * Exclui um processo de reembolso restaurando o status do produto vinculado para 'confirmado'
+   * caso não existam outras solicitações ativas para o mesmo produto.
+   */
+  public static async excluirReembolso(reembolsoId: string): Promise<{ sucesso: boolean; error?: any }> {
+    if (!reembolsoId) {
+      return { sucesso: false, error: new Error('ID do reembolso é obrigatório para exclusão.') };
+    }
+
+    try {
+      // 1. Busca os dados do reembolso para obter o produto_viagem_id
+      const { data: reembolso, error: errSelect } = await supabase
+        .from('reembolsos')
+        .select('id, produto_viagem_id, viagem_id')
+        .eq('id', reembolsoId)
+        .maybeSingle();
+
+      if (errSelect) {
+        console.warn('Erro ao consultar reembolso antes de excluir:', errSelect);
+      }
+
+      const produtoId = reembolso?.produto_viagem_id;
+
+      // 2. Remove o registro do reembolso
+      const { error: errDelete } = await supabase
+        .from('reembolsos')
+        .delete()
+        .eq('id', reembolsoId);
+
+      if (errDelete) throw errDelete;
+
+      // 3. Se houver produto vinculado, verifica se restou algum outro reembolso ativo para o mesmo produto
+      if (produtoId) {
+        try {
+          const { data: outrosReembolsos } = await supabase
+            .from('reembolsos')
+            .select('id')
+            .eq('produto_viagem_id', produtoId);
+
+          // Se não houver outros reembolsos para este produto, restaura status para 'confirmado'
+          if (!outrosReembolsos || outrosReembolsos.length === 0) {
+            await supabase
+              .from('produtos_viagem')
+              .update({ status: 'confirmado' })
+              .eq('id', produtoId);
+          }
+        } catch (errProd) {
+          console.warn('Aviso não-bloqueante ao restaurar status do produto após exclusão de reembolso:', errProd);
+        }
+      }
+
+      return { sucesso: true };
+    } catch (err: any) {
+      console.error('Erro ao excluir reembolso no serviço:', err);
+      return { sucesso: false, error: err };
+    }
+  }
 }
+

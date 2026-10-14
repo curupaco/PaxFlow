@@ -62,6 +62,18 @@ export function calculateSaldoReembolso(valorAprovado: number = 0, valorUtilizad
   return Math.max(0, saldo);
 }
 
+/**
+ * Verifica se todos os reembolsos de uma lista/viagem estão concluídos, pagos, cancelados ou recusados.
+ */
+export function areAllReembolsosConcluidos(reembolsos?: any[]): boolean {
+  if (!reembolsos || reembolsos.length === 0) return false;
+  return reembolsos.every((r: any) => {
+    const st = String(r.status || '').toLowerCase();
+    const trat = String(r.status_tratativa || '').toLowerCase();
+    return st === 'pago' || st === 'concluido' || st === 'cancelado' || st === 'recusado' || trat === 'concluido';
+  });
+}
+
 export function filterReembolsosByPermission(
   reembolsos: any[],
   userId: string,
@@ -110,11 +122,25 @@ export function prepareReembolsoStatusPayload(
   };
 }
 
-export function filterReembolsosByTerm(reembolsos: any[], termo: string): any[] {
-  if (!termo.trim()) return reembolsos;
+export function filterReembolsosByTerm(
+  reembolsos: any[],
+  termo: string,
+  formaDevolucao?: string
+): any[] {
+  let filtrados = reembolsos;
+
+  if (formaDevolucao && formaDevolucao !== 'todas') {
+    const formaNorm = formaDevolucao.toLowerCase().trim();
+    filtrados = filtrados.filter(r => {
+      const f = String(r.forma_devolucao || r.formaDevolucao || '').toLowerCase().trim();
+      return f.includes(formaNorm) || formaNorm.includes(f);
+    });
+  }
+
+  if (!termo.trim()) return filtrados;
   const t = termo.toLowerCase().trim();
 
-  return reembolsos.filter(r => {
+  return filtrados.filter(r => {
     const nomeCliente = r.viagem?.cliente?.nome?.toLowerCase() || '';
     const emailCliente = r.viagem?.cliente?.email?.toLowerCase() || '';
     const destino = r.viagem?.destino?.toLowerCase() || '';

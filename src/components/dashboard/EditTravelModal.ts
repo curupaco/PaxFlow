@@ -13,6 +13,7 @@ import { confirmUnsavedChanges } from '../common/UnsavedChangesModal';
 import { ClienteDetalhesModal } from '../common/ClienteDetalhesModal';
 import { RemarcacaoModal } from './RemarcacaoModal';
 import { SolicitarReembolsoModal } from '../reembolsos/SolicitarReembolsoModal';
+import { EditarReembolsoModal } from '../reembolsos/EditarReembolsoModal';
 import { ReembolsosService, ReembolsoPendenteResumo } from '../../services/reembolsosService';
 import {
   renderCurrencyInputHTML,
@@ -70,7 +71,7 @@ export class EditTravelModal {
   /**
    * Abre o modal buscando os dados atualizados da viagem
    */
-  public async open(tripId: string, activeTab: 'detalhes' | 'produtos' = 'detalhes'): Promise<void> {
+  public async open(tripId: string, activeTab: 'detalhes' | 'produtos' | 'reembolsos' = 'detalhes'): Promise<void> {
     this.tripId = tripId;
 
     // Destruir autocompletes ativos antes de reabrir/re-renderizar
@@ -270,7 +271,7 @@ export class EditTravelModal {
     }
   }
 
-  private renderEdicaoEProdutosModalContent(v: any, clientes: any[], activeTab: 'detalhes' | 'produtos' = 'detalhes'): void {
+  private renderEdicaoEProdutosModalContent(v: any, clientes: any[], activeTab: 'detalhes' | 'produtos' | 'reembolsos' = 'detalhes'): void {
     const modalContent = document.getElementById('modal-content-container');
     if (!modalContent) return;
 
@@ -504,7 +505,7 @@ export class EditTravelModal {
           <button id="tab-produtos-btn" class="border-b-2 ${activeTab === 'produtos' ? 'border-indigo-600 dark:border-indigo-400 text-indigo-600 dark:text-indigo-400 font-black' : 'border-transparent text-slate-400 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 font-semibold'} px-3 py-2 text-xs sm:text-sm transition shrink-0">
             🛍️ Produtos e Serviços
           </button>
-          <button id="tab-reembolsos-btn" class="border-b-2 border-transparent px-3 py-2 text-xs sm:text-sm font-semibold text-slate-400 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition shrink-0 flex items-center gap-1.5">
+          <button id="tab-reembolsos-btn" class="border-b-2 ${activeTab === 'reembolsos' ? 'border-indigo-600 dark:border-indigo-400 text-indigo-600 dark:text-indigo-400 font-black' : 'border-transparent text-slate-400 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 font-semibold'} px-3 py-2 text-xs sm:text-sm transition shrink-0 flex items-center gap-1.5">
             <span>💸 Reembolsos</span>
             ${v.reembolsos && v.reembolsos.length > 0 ? `<span class="px-1.5 py-0.5 bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400 text-[10px] font-black rounded-full">${v.reembolsos.length}</span>` : ''}
           </button>
@@ -514,7 +515,7 @@ export class EditTravelModal {
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           
           <!-- COLUNA DA ESQUERDA (Detalhes da Viagem e Cronograma) -->
-          <div id="tab-detalhes-content" class="space-y-4 ${activeTab === 'produtos' ? 'hidden lg:block' : ''} ${this.selectedProductId ? 'lg:col-span-4' : 'lg:col-span-5'}">
+          <div id="tab-detalhes-content" class="space-y-4 ${activeTab !== 'detalhes' ? 'hidden lg:block' : ''} ${this.selectedProductId ? 'lg:col-span-4' : 'lg:col-span-5'}">
             
             <!-- Perfil do Responsável, SLA e Risk Score -->
             <div class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/50 dark:border-slate-800 flex-wrap gap-2">
@@ -729,7 +730,7 @@ export class EditTravelModal {
           </div>
 
           <!-- COLUNA DO MEIO (Produtos e Serviços) -->
-          <div id="tab-produtos-content" class="space-y-5 tab-pane-transition ${activeTab === 'detalhes' || (this.selectedProductId && activeTab === 'produtos') ? 'hidden' : ''} ${this.selectedProductId ? 'lg:col-span-4 lg:!block' : 'lg:col-span-7 lg:!block'} lg:!mt-0">
+          <div id="tab-produtos-content" class="space-y-5 tab-pane-transition ${activeTab !== 'produtos' || (this.selectedProductId && activeTab === 'produtos') ? 'hidden' : ''} ${this.selectedProductId ? 'lg:col-span-4 lg:!block' : 'lg:col-span-7 lg:!block'} lg:!mt-0">
             
             <!-- Painel Financeiro (Totalizadores e Alocação dos Produtos) -->
             <div id="painel-financeiro-produtos" class="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3.5 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/50 dark:border-slate-800 mb-2">
@@ -840,7 +841,7 @@ export class EditTravelModal {
         </div>
 
         <!-- ABA 3: HISTÓRICO DE REEMBOLSOS (Apenas Mobile) -->
-        <div id="tab-reembolsos-content" class="space-y-4 tab-pane-transition hidden lg:hidden">
+        <div id="tab-reembolsos-content" class="space-y-4 tab-pane-transition ${activeTab === 'reembolsos' ? '' : 'hidden'} lg:hidden">
           ${renderReembolsosHTML()}
         </div>
 
@@ -1079,8 +1080,17 @@ export class EditTravelModal {
             user: this.options.user,
             showToast: (msg, type, err) => this.options.showToast(msg, type, err),
             onSucesso: async () => {
-              await this.open(v.id, 'produtos');
+              await this.open(v.id, 'reembolsos');
               await this.options.onUpdate();
+            },
+            onCancel: () => {
+              statusSelect.value = initialStatus;
+              if (viagemProcessoConferido) {
+                btnSalvar?.setAttribute('disabled', 'true');
+                btnSalvar?.classList.add('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
+                btnCancelar?.setAttribute('disabled', 'true');
+                btnCancelar?.classList.add('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
+              }
             }
           });
         }
@@ -1275,6 +1285,14 @@ export class EditTravelModal {
       if (v.status === 'fechado' && status === 'pos_venda') {
         this.options.showToast('Não é possível alterar o status manualmente de Fechado para Pós-Venda. Essa alteração ocorre automaticamente quando as validações Financeira e de Processo estiverem concluídas.', 'error');
         return;
+      }
+
+      if (status === 'reembolso_solicitado') {
+        const temReembolso = v.reembolsos && v.reembolsos.length > 0;
+        if (!temReembolso) {
+          this.options.showToast('Para salvar a viagem como "Reembolso Solicitado", abra uma solicitação detalhada na aba Reembolsos ou clique em Solicitar Reembolso no item cancelado.', 'error');
+          return;
+        }
       }
 
       if (!editarViagemValidator.validateAll()) {
@@ -3112,7 +3130,7 @@ export class EditTravelModal {
         user: this.options.user,
         showToast: (msg, type, err) => this.options.showToast(msg, type, err),
         onSucesso: async () => {
-          await this.open(this.tripId, 'produtos');
+          await this.open(this.tripId, 'reembolsos');
           await this.options.onUpdate();
         }
       });
@@ -3130,6 +3148,31 @@ export class EditTravelModal {
 
     document.getElementById('btn-novo-reembolso-tab')?.addEventListener('click', () => abrirNovoReembolsoModal());
     document.getElementById('btn-novo-reembolso-empty')?.addEventListener('click', () => abrirNovoReembolsoModal());
+
+    // Edição de Tratativas e Valores do Reembolso dentro da aba da viagem
+    container.querySelectorAll('[data-action-edit-reembolso]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const reembolsoId = btn.getAttribute('data-action-edit-reembolso');
+        if (!reembolsoId) return;
+
+        const viagemAtual = this.currentLoadedViagem || this.options.viagens.find(x => x.id === this.tripId);
+        const reembolsoObj = (viagemAtual?.reembolsos || []).find((r: any) => r.id === reembolsoId);
+        if (!reembolsoObj) return;
+
+        EditarReembolsoModal.abrir({
+          reembolso: {
+            ...reembolsoObj,
+            viagem: viagemAtual
+          },
+          showToast: (msg, type, err) => this.options.showToast(msg, type, err),
+          onSucesso: async () => {
+            await this.open(this.tripId, 'reembolsos');
+            await this.options.onUpdate();
+          }
+        });
+      });
+    });
 
     // Comentários produto
     container.querySelectorAll('[data-comments-prod-id]').forEach(btn => {
