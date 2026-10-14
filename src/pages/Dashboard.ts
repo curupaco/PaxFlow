@@ -803,9 +803,15 @@ export class Dashboard {
         try {
           const { data: pagsData, error: pagsError } = await supabase
             .from('loc_pagamentos')
-            .select('viagem_id, forma_recebimento_id, forma_nome, valor');
+            .select('viagem_id, forma_recebimento_id, valor, formas_recebimento(id, nome)');
           if (!pagsError && pagsData) {
             locPags = pagsData;
+          } else if (pagsError) {
+            // Fallback caso a relação com formas_recebimento não esteja disponível
+            const { data: fallbackData } = await supabase
+              .from('loc_pagamentos')
+              .select('viagem_id, forma_recebimento_id, valor');
+            if (fallbackData) locPags = fallbackData;
           }
         } catch (errPags) {
           console.warn('Erro ao carregar loc_pagamentos:', errPags);
@@ -818,7 +824,13 @@ export class Dashboard {
         if (!this.locPagamentosMap.has(vId)) {
           this.locPagamentosMap.set(vId, []);
         }
-        this.locPagamentosMap.get(vId)!.push(p);
+        const formaNome = (p.formas_recebimento && typeof p.formas_recebimento === 'object' && p.formas_recebimento.nome)
+          ? p.formas_recebimento.nome
+          : (p.forma_nome || '');
+        this.locPagamentosMap.get(vId)!.push({
+          ...p,
+          forma_nome: formaNome
+        });
       });
 
       let comments: any[] = [];
