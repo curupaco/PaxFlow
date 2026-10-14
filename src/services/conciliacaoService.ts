@@ -199,9 +199,10 @@ export class ConciliacaoService {
       const { data, error } = await query;
       if (error) {
         if (error.code === '42P01' || error.code === 'PGRST205' || error.message?.includes('does not exist')) {
+          console.warn('[Conciliação] Tabela extratos_bancarios_transacoes não encontrada no Supabase. Retornando lista vazia.');
           return [];
         }
-        console.warn('Aviso ao consultar extratos_bancarios_transacoes:', error.message);
+        console.error('[Conciliação] Falha ao consultar extratos_bancarios_transacoes:', error);
         return [];
       }
 
@@ -222,6 +223,7 @@ export class ConciliacaoService {
         conciliado_por: t.conciliado_por
       }));
     } catch (err) {
+      console.error('[Conciliação] Erro inesperado em listarTransacoesExtrato:', err);
       return [];
     }
   }
@@ -245,6 +247,7 @@ export class ConciliacaoService {
           viagem_id,
           codigo_localizador,
           valor,
+          conciliado,
           created_at,
           viagens:viagem_id(
             id,
@@ -256,17 +259,28 @@ export class ConciliacaoService {
         .order('created_at', { ascending: false });
 
       if (error) {
-        // Fallback resiliente caso a relação com viagens ou clientes não esteja disponível
-        const { data: fallbackData } = await supabase
-          .from('loc_pagamentos')
-          .select('id, viagem_id, codigo_localizador, valor, created_at')
-          .order('created_at', { ascending: false });
+        // Fallback defensivo caso a coluna conciliado ou relação com viagens ainda não exista
+        if (error.code === '42703' || error.message?.includes('conciliado') || error.message?.includes('relation')) {
+          console.warn('[Conciliação] Usando fallback resiliente para loc_pagamentos:', error.message);
+          const { data: fallbackData, error: fbErr } = await supabase
+            .from('loc_pagamentos')
+            .select('id, viagem_id, codigo_localizador, valor, created_at')
+            .order('created_at', { ascending: false });
 
-        return (fallbackData || []).map((p: any) => this.normalizarLocPagamento(p));
+          if (fbErr) {
+            console.error('[Conciliação] Falha crítica no fallback de loc_pagamentos:', fbErr);
+            return [];
+          }
+          return (fallbackData || []).map((p: any) => this.normalizarLocPagamento(p));
+        }
+
+        console.error('[Conciliação] Falha ao consultar loc_pagamentos:', error);
+        return [];
       }
 
       return (data || []).map((p: any) => this.normalizarLocPagamento(p));
     } catch (err) {
+      console.error('[Conciliação] Erro inesperado em listarRecebimentosPendentes:', err);
       return [];
     }
   }
