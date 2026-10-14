@@ -539,5 +539,180 @@ describe('EscalaService Subcutaneous Tests', () => {
     expect(sucesso).toBe(true);
     expect(mockDeleteEq).toHaveBeenCalledWith('id', 'evt-12345');
   });
+
+  // ==========================================
+  // FLUXO 4: ÚLTIMOS 3 FERIADOS AUTOMÁTICOS E AJUSTES
+  // ==========================================
+
+  it('deve identificar dinamicamente os 3 ultimos feriados ocorridos ate outubro de 2026', () => {
+    // Setup
+    const ano = 2026;
+    const mesOutubro = 10;
+
+    // Action
+    const ultimosTres = EscalaService.getUltimosTresFeriados(ano, mesOutubro);
+
+    // Assert
+    expect(ultimosTres.length).toBe(3);
+    expect(ultimosTres[0].data).toBe('09/07');
+    expect(ultimosTres[0].dataIso).toBe('2026-07-09');
+    expect(ultimosTres[1].data).toBe('07/09');
+    expect(ultimosTres[1].dataIso).toBe('2026-09-07');
+    expect(ultimosTres[2].data).toBe('12/10');
+    expect(ultimosTres[2].dataIso).toBe('2026-10-12');
+  });
+
+  it('deve identificar os 3 ultimos feriados ocorridos para meses anteriores como julho', () => {
+    // Setup
+    const ano = 2026;
+    const mesJulho = 7;
+
+    // Action
+    const ultimosTres = EscalaService.getUltimosTresFeriados(ano, mesJulho);
+
+    // Assert
+    expect(ultimosTres.length).toBe(3);
+    expect(ultimosTres[0].data).toBe('21/04');
+    expect(ultimosTres[1].data).toBe('01/05');
+    expect(ultimosTres[2].data).toBe('09/07');
+  });
+
+  it('deve carregar plantoes dos ultimos 3 feriados automaticamente a partir da escala_diaria', async () => {
+    // Setup
+    const ano = 2026;
+    const mes = 10;
+
+    const mockDadosEscala = [
+      { consultor_nome: 'Marinna', turno_codigo: '10-19', data: '2026-07-09' },
+      { consultor_nome: 'Aline', turno_codigo: 'Folga', data: '2026-07-09' },
+      { consultor_nome: 'Guto', turno_codigo: '12-21', data: '2026-09-07' },
+      { consultor_nome: 'Maria', turno_codigo: '10-19', data: '2026-09-07' },
+      { consultor_nome: 'Eduardo', turno_codigo: 'Folga', data: '2026-09-07' },
+      { consultor_nome: 'Guto', turno_codigo: '10-17', data: '2026-10-12' },
+      { consultor_nome: 'Marinna', turno_codigo: '10-17', data: '2026-10-12' },
+      { consultor_nome: 'Rafael', turno_codigo: '-', data: '2026-10-12' },
+    ];
+
+    (supabase.from as any).mockImplementation((table: string) => {
+      if (table === 'escala_diaria') {
+        return createQueryMock(mockDadosEscala);
+      }
+      if (table === 'escala_eventos') {
+        return createQueryMock([]); // sem ajustes manuais
+      }
+      return createQueryMock([]);
+    });
+
+    // Action
+    const feriados = await EscalaService.loadFeriadosPlantoes(ano, mes);
+
+    // Assert
+    expect(feriados.length).toBe(3);
+    // 09/07
+    expect(feriados[0].data).toBe('09/07');
+    expect(feriados[0].consultoresTrabalharam).toContain('Marinna');
+    expect(feriados[0].consultoresTrabalharam).not.toContain('Aline');
+
+    // 07/09
+    expect(feriados[1].data).toBe('07/09');
+    expect(feriados[1].consultoresTrabalharam).toContain('Guto');
+    expect(feriados[1].consultoresTrabalharam).toContain('Maria');
+    expect(feriados[1].consultoresTrabalharam).not.toContain('Eduardo');
+
+    // 12/10
+    expect(feriados[2].data).toBe('12/10');
+    expect(feriados[2].consultoresTrabalharam).toContain('Guto');
+    expect(feriados[2].consultoresTrabalharam).toContain('Marinna');
+    expect(feriados[2].consultoresTrabalharam).not.toContain('Rafael');
+  });
+
+  it('deve priorizar ajustes manuais de escala_eventos sobre a escala automatica', async () => {
+    // Setup
+    const ano = 2026;
+    const mes = 10;
+
+    // Escala_diaria tem Eduardo trabalhando em 12/10
+    const mockDadosEscala = [
+      { consultor_nome: 'Eduardo', turno_codigo: '10-19', data: '2026-10-12' },
+    ];
+
+    // Porém, o gestor salvou um ajuste manual definindo apenas 'Marinna' e 'Laura'
+    const mockAjusteManual = [
+      {
+        id: 'fp-2026-10-12',
+        titulo: 'PLANTÃO: Nsa. Sra. Aparecida',
+        data: '2026-10-12',
+        consultor_nome: 'Marinna, Laura'
+      }
+    ];
+
+    (supabase.from as any).mockImplementation((table: string) => {
+      if (table === 'escala_diaria') {
+        return createQueryMock(mockDadosEscala);
+      }
+      if (table === 'escala_eventos') {
+        return createQueryMock(mockAjusteManual);
+      }
+      return createQueryMock([]);
+    });
+
+    // Action
+    const feriados = await EscalaService.loadFeriadosPlantoes(ano, mes);
+
+    // Assert
+    const feriadoAparecida = feriados.find(f => f.data === '12/10');
+    expect(feriadoAparecida).toBeDefined();
+    expect(feriadoAparecida?.consultoresTrabalharam).toEqual(['Marinna', 'Laura']);
+    expect(feriadoAparecida?.consultoresTrabalharam).not.toContain('Eduardo');
+  });
+
+  it('deve salvar ajustes de plantoes na tabela escala_eventos com IDs canonicos', async () => {
+    // Setup
+    const itensSalvar = [
+      {
+        id: 'fp-2026-07-09',
+        data: '09/07',
+        dataIso: '2026-07-09',
+        nome: 'Revolução Constitucionalista',
+        nomeCurto: 'Rev. Constitucionalista',
+        consultoresTrabalharam: ['Marinna']
+      },
+      {
+        id: 'fp-2026-09-07',
+        data: '07/09',
+        dataIso: '2026-09-07',
+        nome: 'Independência do Brasil',
+        nomeCurto: 'Independência',
+        consultoresTrabalharam: ['Guto', 'Maria']
+      }
+    ];
+
+    let upsertPayload: any[] = [];
+    const mockUpsert = vi.fn().mockImplementation((rows) => {
+      upsertPayload = rows;
+      return Promise.resolve({ error: null });
+    });
+
+    (supabase.from as any).mockImplementation((table: string) => {
+      if (table === 'escala_eventos') {
+        return { upsert: mockUpsert };
+      }
+      return createQueryMock([]);
+    });
+
+    // Action
+    const sucesso = await EscalaService.salvarFeriadosPlantoes(itensSalvar);
+
+    // Assert
+    expect(sucesso).toBe(true);
+    expect(mockUpsert).toHaveBeenCalled();
+    expect(upsertPayload.length).toBe(2);
+    expect(upsertPayload[0].id).toBe(EscalaService.toValidUUID('plantao-2026-07-09'));
+    expect(upsertPayload[0].titulo).toBe('PLANTÃO: Revolução Constitucionalista');
+    expect(upsertPayload[0].consultor_nome).toBe('Marinna');
+    expect(upsertPayload[1].id).toBe(EscalaService.toValidUUID('plantao-2026-09-07'));
+    expect(upsertPayload[1].consultor_nome).toBe('Guto, Maria');
+  });
 });
+
 

@@ -662,6 +662,13 @@ export const HELP_ITEMS: HelpItem[] = [
     description: 'Controle de saldos de folgas compensatórias e compromissos da equipe.',
     details: 'Na parte inferior da tela de Escala, o PaxFlow disponibiliza dois painéis integrados:\n\n- **Banco de Folgas**: Acompanhe o saldo numérico de dias acumulados de cada funcionário com o histórico de justificativas e metas atingidas.\n- **Treinamentos · Coffee · Eventos**: Registre reuniões, treinamentos corporativos e eventos de franqueados especificando a data e o consultor ou equipe responsável.'
   },
+  {
+    id: 'escala-feriados-plantoes',
+    modulo: 'escala',
+    label: 'Feriados e Plantões: Automação dos Últimos 3 Feriados',
+    description: 'Preenchimento automático a partir da escala e suporte a ajustes manuais pelo gestor.',
+    details: 'O card "Feriados" no topo da Central de Escala oferece monitoramento contínuo da distribuição de plantões:\n\n- **Automação Inteligente dos Últimos 3 Feriados**: O sistema calcula dinamicamente quais são os 3 feriados mais recentes ocorridos até o mês em exibição (ex.: em outubro exibe 09/07, 07/09 e 12/10) e preenche automaticamente o status de cada consultor ("Sim" se trabalhou ou "Folga") consultando os turnos reais da escala diária no Supabase.\n- **Sem Trabalho Manual Repetitivo**: Conforme novos feriados ocorrem ou o mês avança, as 3 colunas são recalculadas e populadas automaticamente sem exigir preenchimento manual repetitivo.\n- **Botão Ajustar (Flexibilidade da Gestão)**: Caso haja necessidade de ajustes pontuais, permutas ou exceções, o gestor pode clicar em "Ajustar", marcar/desmarcar os consultores participantes e salvar as alterações com persistência imediata na nuvem.'
+  },
 
   // ==================== 11. Co-piloto de IA & Governança ====================
   {

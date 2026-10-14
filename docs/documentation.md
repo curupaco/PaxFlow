@@ -587,6 +587,11 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
 - **Banco de Folgas & Agenda de Treinamentos/Eventos**:
   - Painel com saldos de folgas compensatórias por consultor e histórico de justificativas.
   - Agenda de reuniões corporativas, coffees e treinamentos da franquia por data e responsável.
+- **Card de Feriados & Automação Inteligente dos Últimos 3 Feriados [NEW]**:
+  - **Identificação Dinâmica Retroativa**: O PaxFlow calcula automaticamente quais são os 3 feriados mais recentes ocorridos até o mês em exibição (ex.: em Outubro/2026, exibe exatamente **09/07 - Rev. Constitucionalista**, **07/09 - Independência** e **12/10 - Aparecida**).
+  - **Preenchimento Automático via Escala Diária**: O sistema consulta a tabela `escala_diaria` do Supabase para as 3 datas ISO e marca automaticamente os consultores como `"Sim"` (se exerceram turno ativo) ou `"Folga"`, eliminando a necessidade de cadastro e marcação manual repetitiva a cada novo feriado.
+  - **Cabeçalhos Limpos e Informativos**: Cada coluna exibe a data formatada (`DD/MM`) e o nome curto do feriado logo abaixo, com tooltip descritivo contendo o nome completo oficial.
+  - **Botão "Ajustar" (Precedência da Gestão)**: Permite que gestores e administradores façam correções manuais pontuais no modal de plantões. Os ajustes são gravados em `escala_eventos` com IDs canônicos determinísticos e sobrepõem os valores automáticos, mantendo flexibilidade total sem abrir mão da automação.
 
 ### 3.25 Redesenho de Usabilidade Mobile da Gestão de Viagens
 

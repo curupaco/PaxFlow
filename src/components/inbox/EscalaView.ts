@@ -179,8 +179,8 @@ export class EscalaView {
       });
       this.bancoFolgasData = cleanBancoData;
 
-      // Carrega plantões dos últimos 3 feriados
-      this.feriadosPlantoesData = await EscalaService.loadFeriadosPlantoes();
+      // Carrega plantões dos últimos 3 feriados dinamicamente
+      this.feriadosPlantoesData = await EscalaService.loadFeriadosPlantoes(this.escalaAno, this.escalaMes);
 
     } catch (err) {
       console.error('Erro ao carregar dados da escala:', err);
@@ -427,9 +427,9 @@ export class EscalaView {
                 <span class="w-[72px] shrink-0">Consultor</span>
                 <div class="grid grid-cols-3 gap-1.5 flex-1 text-center">
                   ${(this.feriadosPlantoesData || []).map(f => `
-                    <span title="${f.nome}" class="truncate min-w-0">
+                    <span title="${f.nome} (${f.data})" class="truncate min-w-0">
                       <strong class="block text-slate-700 dark:text-slate-300 font-extrabold text-[10px]">${f.data}</strong>
-                      <span class="block text-[8px] font-semibold text-slate-400 truncate">${f.nomeCurto ? f.nomeCurto.split(' ').slice(1).join(' ') : f.nome.split(' ')[0]}</span>
+                      <span class="block text-[8px] font-semibold text-slate-400 truncate">${f.nomeCurto || f.nome}</span>
                     </span>
                   `).join('')}
                 </div>
@@ -1288,11 +1288,14 @@ export class EscalaView {
 
     const feriadosList = (this.feriadosPlantoesData && this.feriadosPlantoesData.length > 0)
       ? [...this.feriadosPlantoesData]
-      : [
-          { id: 'fp-1', data: '09/07', nome: 'Revolução Constitucionalista (SP)', nomeCurto: '09/07 Rev. SP', consultoresTrabalharam: [] },
-          { id: 'fp-2', data: '01/05', nome: 'Dia do Trabalho', nomeCurto: '01/05 Trab.', consultoresTrabalharam: [] },
-          { id: 'fp-3', data: '21/04', nome: 'Tiradentes', nomeCurto: '21/04 Tirad.', consultoresTrabalharam: [] }
-        ];
+      : EscalaService.getUltimosTresFeriados(this.escalaAno, this.escalaMes).map(f => ({
+          id: `fp-${f.dataIso}`,
+          data: f.data,
+          dataIso: f.dataIso,
+          nome: f.nome,
+          nomeCurto: f.nomeCurto,
+          consultoresTrabalharam: []
+        }));
 
     const consultores = this.bancoFolgasData.map(b => b.consultor_nome);
 
@@ -1375,10 +1378,11 @@ export class EscalaView {
         });
 
         return {
-          id: f.id || `fp-${fIdx + 1}`,
+          id: f.id || `fp-${f.dataIso || fIdx + 1}`,
           data: dataVal,
+          dataIso: f.dataIso,
           nome: nomeVal,
-          nomeCurto: `${dataVal} ${nomeVal.split(' ')[0]}`,
+          nomeCurto: f.nomeCurto || nomeVal,
           consultoresTrabalharam
         };
       });

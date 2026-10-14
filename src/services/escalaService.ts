@@ -438,47 +438,165 @@ export class EscalaService {
   }
 
   /**
-   * Fetch Holiday Shifts (Strictly capped at 3 holidays)
+   * Retorna todos os feriados oficiais da agência para um ano específico
    */
-  public static async loadFeriadosPlantoes(): Promise<import('../types').FeriadoPlantaoInfo[]> {
-    try {
-      const { data, error } = await supabase
-        .from('escala_eventos')
-        .select('*');
+  public static getFeriadosOficiaisDoAno(ano: number): Array<{ dia: number; mes: number; data: string; dataIso: string; nome: string; nomeCurto: string }> {
+    const lista = [
+      { dia: 1, mes: 1, nome: 'Confraternização Universal', nomeCurto: 'Ano Novo' },
+      { dia: 25, mes: 1, nome: 'Aniversário de São Paulo (SP)', nomeCurto: 'Aniv. SP' },
+      { dia: 21, mes: 4, nome: 'Tiradentes', nomeCurto: 'Tiradentes' },
+      { dia: 1, mes: 5, nome: 'Dia do Trabalho', nomeCurto: 'Dia Trab.' },
+      { dia: 9, mes: 7, nome: 'Revolução Constitucionalista (SP)', nomeCurto: 'Rev. SP' },
+      { dia: 7, mes: 9, nome: 'Independência do Brasil', nomeCurto: 'Independência' },
+      { dia: 12, mes: 10, nome: 'Nsa. Sra. Aparecida', nomeCurto: 'Aparecida' },
+      { dia: 2, mes: 11, nome: 'Finados', nomeCurto: 'Finados' },
+      { dia: 15, mes: 11, nome: 'Proclamação da República', nomeCurto: 'Proclamação' },
+      { dia: 20, mes: 11, nome: 'Dia da Consciência Negra', nomeCurto: 'Consc. Negra' },
+      { dia: 25, mes: 12, nome: 'Natal', nomeCurto: 'Natal' }
+    ];
 
-      if (!error && data && data.length > 0) {
-        const plantaoEvents = data.filter(e => e.titulo && e.titulo.startsWith('PLANTÃO:')).slice(0, 3);
-        if (plantaoEvents.length > 0) {
-          return plantaoEvents.map(item => {
-            const rawTitle = item.titulo.replace(/^PLANTÃO:\s*/, '');
-            const consultoresList = item.consultor_nome ? item.consultor_nome.split(',').map((s: string) => s.trim()).filter(Boolean) : [];
-            return {
-              id: item.id,
-              data: item.data,
-              nome: rawTitle,
-              nomeCurto: rawTitle,
-              consultoresTrabalharam: consultoresList
-            };
-          });
-        }
-      }
-      if (error) throw error;
-    } catch (e) {
-      console.error('Erro ao carregar feriados/plantões do Supabase:', e);
-    }
-    return [];
+    return lista.map(item => {
+      const diaStr = String(item.dia).padStart(2, '0');
+      const mesStr = String(item.mes).padStart(2, '0');
+      return {
+        dia: item.dia,
+        mes: item.mes,
+        data: `${diaStr}/${mesStr}`,
+        dataIso: `${ano}-${mesStr}-${diaStr}`,
+        nome: item.nome,
+        nomeCurto: item.nomeCurto
+      };
+    });
   }
 
   /**
-   * Save / Update Holiday Shifts directly to Supabase (Strictly 3 holidays)
+   * Identifica dinamicamente os 3 últimos feriados ocorridos até o mês/ano de referência
+   */
+  public static getUltimosTresFeriados(ano?: number, mes?: number): Array<{ data: string; dataIso: string; nome: string; nomeCurto: string }> {
+    const hoje = new Date();
+    const targetAno = ano || hoje.getFullYear();
+    const targetMes = mes || (hoje.getMonth() + 1);
+
+    const feriadosAnoAnterior = this.getFeriadosOficiaisDoAno(targetAno - 1);
+    const feriadosAnoAtual = this.getFeriadosOficiaisDoAno(targetAno);
+    const todos = [...feriadosAnoAnterior, ...feriadosAnoAtual];
+
+    // Data limite: último dia do mês selecionado na escala (YYYY-MM-DD)
+    const ultimoDia = new Date(targetAno, targetMes, 0).getDate();
+    const dataLimiteIso = `${targetAno}-${String(targetMes).padStart(2, '0')}-${String(ultimoDia).padStart(2, '0')}`;
+
+    // Filtra feriados ocorridos até o final do mês selecionado
+    const ocorridos = todos.filter(f => f.dataIso <= dataLimiteIso);
+
+    if (ocorridos.length >= 3) {
+      return ocorridos.slice(-3);
+    }
+    return todos.slice(0, 3);
+  }
+
+  /**
+   * Carrega os plantões dos últimos 3 feriados, preenchendo automaticamente a partir da escala_diaria
+   * e preservando ajustes manuais salvos pelo administrador.
+   */
+  public static async loadFeriadosPlantoes(ano?: number, mes?: number): Promise<import('../types').FeriadoPlantaoInfo[]> {
+    const hoje = new Date();
+    const targetAno = ano || hoje.getFullYear();
+    const targetMes = mes || (hoje.getMonth() + 1);
+
+    const ultimosTres = this.getUltimosTresFeriados(targetAno, targetMes);
+    const datasIso = ultimosTres.map(f => f.dataIso);
+
+    // 1. Busca lançamentos reais de trabalho da escala_diaria
+    const mapaTrabalhoEscala = new Map<string, Set<string>>();
+    try {
+      const { data: dadosEscala, error: errEscala } = await supabase
+        .from('escala_diaria')
+        .select('consultor_nome, turno_codigo, data')
+        .in('data', datasIso);
+
+      if (!errEscala && dadosEscala) {
+        dadosEscala.forEach((row: any) => {
+          const turno = String(row.turno_codigo || '').trim().toLowerCase();
+          const isTrabalhou = turno &&
+            turno !== '-' &&
+            turno !== '—' &&
+            !turno.includes('folga') &&
+            !turno.includes('féria') &&
+            !turno.includes('feria');
+
+          if (isTrabalhou && row.consultor_nome) {
+            const dataKey = row.data;
+            if (!mapaTrabalhoEscala.has(dataKey)) {
+              mapaTrabalhoEscala.set(dataKey, new Set());
+            }
+            mapaTrabalhoEscala.get(dataKey)!.add(row.consultor_nome.trim());
+          }
+        });
+      }
+    } catch (eEscala) {
+      console.warn('Erro ao carregar escala_diaria para feriados:', eEscala);
+    }
+
+    // 2. Busca ajustes manuais salvos pelo admin em escala_eventos
+    const mapaAjustesManuais = new Map<string, { nome?: string; consultores: string[] }>();
+    try {
+      const { data: eventosData, error: errEventos } = await supabase
+        .from('escala_eventos')
+        .select('*');
+
+      if (!errEventos && eventosData && eventosData.length > 0) {
+        eventosData.forEach((item: any) => {
+          if (item.titulo && item.titulo.startsWith('PLANTÃO:')) {
+            const rawTitle = item.titulo.replace(/^PLANTÃO:\s*/, '').trim();
+            const consultoresList = item.consultor_nome
+              ? item.consultor_nome.split(',').map((s: string) => s.trim()).filter(Boolean)
+              : [];
+            
+            const itemDataNorm = String(item.data || '').trim();
+            mapaAjustesManuais.set(itemDataNorm, { nome: rawTitle, consultores: consultoresList });
+          }
+        });
+      }
+    } catch (eEventos) {
+      console.warn('Erro ao carregar ajustes manuais de escala_eventos:', eEventos);
+    }
+
+    // 3. Monta os 3 feriados: se houver ajuste manual para o feriado, prioriza o ajuste manual;
+    // senão, usa os dados automáticos da escala_diaria!
+    return ultimosTres.map((f) => {
+      const ajusteManual = mapaAjustesManuais.get(f.data) || mapaAjustesManuais.get(f.dataIso);
+
+      let consultoresFeriado: string[] = [];
+      if (ajusteManual) {
+        consultoresFeriado = ajusteManual.consultores;
+      } else {
+        const daEscala = mapaTrabalhoEscala.get(f.dataIso);
+        if (daEscala) {
+          consultoresFeriado = Array.from(daEscala);
+        }
+      }
+
+      return {
+        id: `fp-${f.dataIso}`,
+        data: f.data,
+        dataIso: f.dataIso,
+        nome: ajusteManual?.nome || f.nome,
+        nomeCurto: f.nomeCurto,
+        consultoresTrabalharam: consultoresFeriado
+      };
+    });
+  }
+
+  /**
+   * Salva ajustes de plantões em feriados diretamente no Supabase (restrito aos 3 feriados)
    */
   public static async salvarFeriadosPlantoes(items: import('../types').FeriadoPlantaoInfo[]): Promise<boolean> {
     try {
       const itemsToSave = (items || []).slice(0, 3);
       const payload = itemsToSave.map(fp => ({
-        id: this.toValidUUID(fp.id || fp.nome),
+        id: this.toValidUUID(`plantao-${fp.dataIso || fp.data || fp.id}`),
         data: fp.data,
-        titulo: `PLANTÃO: ${fp.nomeCurto || fp.nome}`,
+        titulo: `PLANTÃO: ${fp.nome}`,
         consultor_nome: (fp.consultoresTrabalharam || []).join(', ')
       }));
 
