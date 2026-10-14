@@ -2451,6 +2451,47 @@ export class OrcamentosPage {
                 <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Notas Operacionais</label>
                 <textarea id="textarea-fechar-via-obs" placeholder="Mais detalhes da viagem, observações importantes..." class="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm h-16 resize-none"></textarea>
               </div>
+
+              <!-- Opção de Parceria / Divisão da Venda -->
+              <div class="p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/40 space-y-3">
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" id="check-fechar-parceria" class="w-4 h-4 text-indigo-600 rounded border-slate-300 dark:border-slate-600 focus:ring-indigo-500 cursor-pointer" />
+                  <span class="text-xs font-bold text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
+                    <span>🤝</span> Venda realizada em parceria com outro consultor
+                  </span>
+                </label>
+
+                <div id="container-campos-parceria" class="hidden space-y-3 pt-2 border-t border-slate-200 dark:border-slate-700">
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                      <label class="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Consultor Parceiro</label>
+                      <select id="select-fechar-parceiro" class="w-full px-3 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg text-xs font-semibold text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500">
+                        <option value="">Selecione o consultor parceiro...</option>
+                        ${this.consultores.filter((c: any) => c.ativo !== false && c.id !== ((orc as any).consultor_id || orc.consultorId || this.user.id)).map((c: any) => `
+                          <option value="${c.id}">${c.nome}</option>
+                        `).join('')}
+                      </select>
+                    </div>
+                    <div>
+                      <label class="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Divisão (% Titular / % Parceiro)</label>
+                      <div class="flex items-center gap-2">
+                        <input type="number" id="input-fechar-pct-titular" min="1" max="99" value="50" class="w-16 px-2 py-1.5 text-right font-extrabold text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500" />
+                        <span class="text-xs font-bold text-slate-400">/</span>
+                        <input type="number" id="input-fechar-pct-parceiro" min="1" max="99" value="50" class="w-16 px-2 py-1.5 text-right font-extrabold text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500" />
+                        <span class="text-xs font-bold text-slate-500">%</span>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- Atalhos 1-clique -->
+                  <div class="flex items-center gap-1.5 flex-wrap">
+                    <span class="text-[10px] font-bold text-slate-400 uppercase mr-1">Atalhos:</span>
+                    <button type="button" class="btn-wizard-split-shortcut px-2 py-1 rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[10px] font-bold hover:border-indigo-500 hover:text-indigo-600 transition" data-titular="50" data-parceiro="50">50/50</button>
+                    <button type="button" class="btn-wizard-split-shortcut px-2 py-1 rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[10px] font-bold hover:border-indigo-500 hover:text-indigo-600 transition" data-titular="80" data-parceiro="20">80/20</button>
+                    <button type="button" class="btn-wizard-split-shortcut px-2 py-1 rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[10px] font-bold hover:border-indigo-500 hover:text-indigo-600 transition" data-titular="70" data-parceiro="30">70/30</button>
+                    <button type="button" class="btn-wizard-split-shortcut px-2 py-1 rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[10px] font-bold hover:border-indigo-500 hover:text-indigo-600 transition" data-titular="90" data-parceiro="10">90/10</button>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div class="flex items-center justify-between gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">
@@ -2600,6 +2641,31 @@ export class OrcamentosPage {
       }, selectedDestinoId);
     }
 
+    // Listener do checkbox de parceria de venda
+    const checkParceria = document.getElementById('check-fechar-parceria') as HTMLInputElement;
+    const containerParceria = document.getElementById('container-campos-parceria');
+    checkParceria?.addEventListener('change', () => {
+      if (containerParceria) {
+        if (checkParceria.checked) {
+          containerParceria.classList.remove('hidden');
+        } else {
+          containerParceria.classList.add('hidden');
+        }
+      }
+    });
+
+    // Atalhos 1-clique de divisão
+    document.querySelectorAll('.btn-wizard-split-shortcut').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tit = btn.getAttribute('data-titular') || '50';
+        const parc = btn.getAttribute('data-parceiro') || '50';
+        const inTit = document.getElementById('input-fechar-pct-titular') as HTMLInputElement;
+        const inParc = document.getElementById('input-fechar-pct-parceiro') as HTMLInputElement;
+        if (inTit) inTit.value = tit;
+        if (inParc) inParc.value = parc;
+      });
+    });
+
     // Fechamento de Modais
     const closeModal = () => {
       if (destAutocomplete) destAutocomplete.destroy();
@@ -2742,6 +2808,33 @@ export class OrcamentosPage {
           const convertRes = await OrcamentosService.convertToTrip(orc, options);
           clienteId = convertRes.clienteId;
           resultViagemId = convertRes.newViagemId;
+
+          // Se a venda foi configurada em parceria, persiste a divisão percentual
+          if (checkParceria && checkParceria.checked && resultViagemId) {
+            const selectParceiro = document.getElementById('select-fechar-parceiro') as HTMLSelectElement;
+            const inTit = document.getElementById('input-fechar-pct-titular') as HTMLInputElement;
+            const inParc = document.getElementById('input-fechar-pct-parceiro') as HTMLInputElement;
+
+            if (selectParceiro && selectParceiro.value) {
+              const titPct = parseFloat(inTit?.value || '50');
+              const parcPct = parseFloat(inParc?.value || '50');
+              const titularId = (orc as any).consultor_id || orc.consultorId || this.user.id;
+
+              try {
+                const { ViagensDivisoesService } = await import('../services/viagensDivisoesService');
+                await ViagensDivisoesService.salvarDivisaoViagem({
+                  viagemId: resultViagemId,
+                  titularId: titularId,
+                  divisoes: [
+                    { consultor_id: titularId, percentual: titPct, is_titular: true },
+                    { consultor_id: selectParceiro.value, percentual: parcPct, is_titular: false }
+                  ]
+                });
+              } catch (errSplit) {
+                console.warn('Aviso não-bloqueante ao salvar parceria da viagem:', errSplit);
+              }
+            }
+          }
         } else {
           // Modo Offline (Fallback)
           if (!isNovaViagem) {

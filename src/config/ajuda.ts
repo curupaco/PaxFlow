@@ -938,6 +938,20 @@ export const HELP_ITEMS: HelpItem[] = [
     label: '📦 Agregação de Produtos & Junção Segura de Viagens',
     description: 'Regras de integridade contábil, trava de segurança para Pós-Venda e detalhamento de margem.',
     details: 'Ao fechar um orçamento ou vincular uma nova venda a um passageiro que já possui viagens cadastradas no PaxFlow:\n\n1. **Trava de Segurança Financeira**: Viagens que já avançaram para a etapa **Pós-Venda** ou que possuem conferência financeira/processos concluída **NÃO podem receber produtos adicionais**. Nesses casos, a opção de vinculação é bloqueada com badge explicativo (`🔒 Financeiro Fechado / Pós-Venda`), forçando a criação de uma nova viagem independente para preservar a competência fiscal e a data do faturamento original.\n2. **Detalhamento Financeiro Mandatório**: Em viagens elegíveis em aberto, o consultor preenche os dados completos do produto agregado (Tipo, Fornecedor, Localizador, Tarifa, Taxa, Comissão, Markup/RAV e Data do Serviço), garantindo que nenhum item entre com margem zerada ou descaracterizada.\n3. **Sincronização e Formas de Pagamento**: O valor total da viagem é recalculado e atualizado de forma atômica pela soma real dos produtos, e o consultor é orientado a registrar a nova condição de pagamento/parcelamento nos detalhes da viagem.'
+  },
+  {
+    id: 'viagem-divisao-parceria',
+    modulo: 'viagens',
+    label: '🤝 Divisão de Viagens & Comissões entre Consultores (Parcerias)',
+    description: 'Como funciona o rateio de vendas, comissões e metas entre múltiplos consultores.',
+    details: 'Muitas vezes, uma venda ou operação de viagem é realizada em conjunto por dois ou mais consultores (ex: um prospecta e o outro emite):\n\n1. **Soma Rígida Obrigatória de 100,00%**: A soma de todas as participações deve bater exatamente 100,00%. O sistema valida os centavos de porcentagem e bloqueia o salvamento se a soma estiver acima ou abaixo de 100%.\n2. **Atalhos Rápidos de 1-Clique**: O modal de divisão conta com botões rápidos para rateios habituais como `50/50`, `80/20`, `70/30` e `90/10` entre o titular e o parceiro selecionado.\n3. **Modelo Híbrido com Titular**: A viagem mantém sempre 1 consultor titular para efeitos de canal primário com o cliente e alertas operacionais, mas o co-consultor parceiro passa a ter acesso total de co-proprietário da viagem.\n4. **Visibilidade Transversal no Dashboard**: A viagem é exibida no Kanban e na tabela tanto do consultor titular quanto do parceiro, com um badge visual destacado (ex: `🤝 Parceria 20%`).\n5. **Consistência Contábil Sem Duplicação**: No faturamento consolidado da agência, a viagem é computada apenas 1 vez (100%). Já nos relatórios individuais de consultores e no cálculo de metas, o faturamento, lucro e contagem de vendas são ponderados proporcionalmente pela fração de cada um (ex: 0,8 e 0,2 vendas).'
+  },
+  {
+    id: 'viagem-divisao-trava-conferencia',
+    modulo: 'viagens',
+    label: '🔒 Governança & Trava Pós-Conferência na Divisão de Vendas',
+    description: 'Proteção contra alterações indevidas de comissões após a conferência financeira da viagem.',
+    details: 'Para proteger a contabilidade da agência e evitar alterações arbitrárias de comissão:\n\n1. **Trava Automática de Auditoria**: Assim que o processo da viagem ou seus LOCs financeiros são marcados como **Conferidos** por um administrador, a divisão de vendas é automaticamente trancada com ícone de cadeado (`🔒 Divisão Bloqueada`).\n2. **Privilégio Exclusivo de Administrador**: Consultores comuns não conseguem alterar as porcentagens de uma viagem conferida. Apenas usuários com perfil de **Administrador** têm permissão para reabrir ou reajustar a divisão.\n3. **Abertura na Venda ou a Qualquer Momento**: A parceria pode ser definida no fechamento do orçamento (marcando "Venda em parceria") ou a qualquer momento nos detalhes da viagem pelo botão `🤝 Dividir Venda` no cabeçalho.'
   }
 ];
 

@@ -187,12 +187,22 @@ export class EditTravelModal {
 
       if (viagem) {
         viagem.processo_conferido = !!viagem.processo_conferido;
+
+        // Carrega divisões de consultores parceiros da viagem
+        try {
+          const { ViagensDivisoesService } = await import('../../services/viagensDivisoesService');
+          viagem.divisoes = await ViagensDivisoesService.obterDivisoesPorViagem(tripId, viagem.consultor_id);
+        } catch (errDiv) {
+          console.warn('Aviso ao carregar divisões da viagem:', errDiv);
+          viagem.divisoes = [];
+        }
       }
 
       // Verificação de Atendimento Presencial / Balcão (Modo Co-Piloto)
       const currentUserId = this.options.user?.id;
       const userRole = this.options.perfil?.role || 'consultor';
-      const isOwner = viagem && (viagem.consultor_id === currentUserId || viagem.consultor_responsavel_id === currentUserId);
+      const isParceiro = viagem && Array.isArray(viagem.divisoes) && viagem.divisoes.some((d: any) => (d.consultor_id || d.consultorId) === currentUserId);
+      const isOwner = viagem && (viagem.consultor_id === currentUserId || viagem.consultor_responsavel_id === currentUserId || isParceiro);
       const isCoPiloto = !isOwner && userRole !== 'admin';
 
       if (isCoPiloto && viagem) {
@@ -508,13 +518,24 @@ export class EditTravelModal {
             
             <!-- Perfil do Responsável, SLA e Risk Score -->
             <div class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/50 dark:border-slate-800 flex-wrap gap-2">
-              <div class="flex items-center gap-2">
+              <div class="flex items-center gap-2 flex-wrap">
                 <span class="text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider font-sans">Responsável:</span>
                 <select id="edit-viagem-consultor" ${!isAdmin ? 'disabled' : ''} class="text-xs font-extrabold bg-transparent text-slate-700 dark:text-slate-300 focus:outline-none cursor-pointer border border-slate-200/60 dark:border-slate-700 rounded-lg px-2 py-1 font-sans">
                   ${this.options.consultores.map(c => `
                     <option value="${c.id}" ${c.id === v.consultor_id ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">${c.nome}</option>
                   `).join('')}
                 </select>
+
+                <!-- Botão de Parceria / Divisão de Viagem -->
+                <button 
+                  type="button" 
+                  id="btn-abrir-split-viagem" 
+                  class="px-2.5 py-1 text-[11px] font-bold rounded-lg border transition flex items-center gap-1.5 shadow-2xs font-sans ${Array.isArray(v.divisoes) && v.divisoes.length > 1 ? 'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50'}"
+                  title="${viagemProcessoConferido && !isAdmin ? 'Viagem conferida pelo gestor (edição restrita a administradores)' : 'Configurar divisão de vendas e comissões entre consultores'}"
+                >
+                  <span>${viagemProcessoConferido && !isAdmin ? '🔒' : '🤝'}</span>
+                  <span>${Array.isArray(v.divisoes) && v.divisoes.length > 1 ? `Parceria (${v.divisoes.length})` : 'Dividir Venda'}</span>
+                </button>
               </div>
 
               <div class="flex items-center gap-2 flex-wrap">
@@ -962,6 +983,25 @@ export class EditTravelModal {
     };
     document.getElementById('btn-modal-risk-score-header')?.addEventListener('click', handleOpenRisk);
     document.getElementById('btn-modal-risk-score-panel')?.addEventListener('click', handleOpenRisk);
+
+    // Abrir Editor de Divisão de Viagem (Parceria)
+    document.getElementById('btn-abrir-split-viagem')?.addEventListener('click', async () => {
+      const { ViagemSplitEditor } = await import('../viagens/ViagemSplitEditor');
+      const splitEditor = new ViagemSplitEditor({
+        viagemId: v.id,
+        titularId: v.consultor_id,
+        consultores: this.options.consultores,
+        divisoesIniciais: v.divisoes,
+        bloqueadoPorConferencia: viagemProcessoConferido,
+        isGestorAdmin: isAdmin,
+        onSave: async (novasDivisoes) => {
+          v.divisoes = novasDivisoes;
+          await this.options.onUpdate();
+          await this.open(v.id, activeTab);
+        }
+      });
+      splitEditor.open();
+    });
 
     // Toggle Processo Global (topo)
     const btnProcessoGlobal = document.getElementById('btn-processo-global');

@@ -258,4 +258,6 @@ export function showPaxFlowToast(message: string, type: 'success' | 'error' = 's
   }, duration);
 }
 
+export { showPaxFlowToast as showToast };
+
 

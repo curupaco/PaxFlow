@@ -15,6 +15,7 @@ import { getAvatarSvg } from '../services/avatars';
 import { VerNotasModal } from '../components/orcamentos/VerNotasModal';
 import { OrcamentosService } from '../services/orcamentosService';
 import { showCustomPrompt, showCustomAlert } from '../services/dialog';
+import { ViagensDivisoesService } from '../services/viagensDivisoesService';
 
 if (typeof document !== 'undefined') {
   const style = document.createElement('style');
@@ -775,20 +776,21 @@ export class RelatoriosPage {
                   .filter(c => c.ativo !== false && c.participa_metricas !== false && c.participaMetricas !== false && (this.consultorIdFilter === 'todos' || c.id === this.consultorIdFilter))
                   .map(c => {
                     const subOrc = data.orcamentos.filter((o: any) => (o.consultor_id || o.consultorId) === c.id);
-                    const subVia = data.viagens.filter((v: any) => (v.consultor_id || v.consultorId) === c.id);
+                    const subVia = data.viagens.filter((v: any) => ViagensDivisoesService.calcularParticipacaoConsultor(v, c.id) > 0);
                     
                     const cAceito = subOrc.filter((o: any) => o.sub_status === 'ACEITO' || o.subStatus === 'ACEITO').length;
                     const cRecuso = subOrc.filter((o: any) => o.sub_status === 'DESISTENCIA' || o.subStatus === 'DESISTENCIA').length;
                     const cConv = (cAceito + cRecuso) > 0 ? Math.round((cAceito / (cAceito + cRecuso)) * 100) : 0;
                     
                     const cSales = subVia.reduce((sum: number, v: any) => {
+                      const fatia = ViagensDivisoesService.calcularParticipacaoConsultor(v, c.id);
                       const vPayments = data.locPagamentos.filter((p: any) => 
                         (p.viagem_id === v.id || p.viagemId === v.id) &&
                         p.formas_recebimento &&
                         ['DESCONTO', 'PREJUÍZO'].includes((p.formas_recebimento.nome || '').trim().toUpperCase())
                       );
                       const vSub = vPayments.reduce((s: number, p: any) => s + (Number(p.valor) || 0), 0);
-                      return sum + Math.max(0, (v.valor_total || v.valorTotal || 0) - vSub);
+                      return sum + (Math.max(0, (v.valor_total || v.valorTotal || 0) - vSub) * fatia);
                     }, 0);
                     
                     return `
@@ -3571,18 +3573,19 @@ export class RelatoriosPage {
       const filteredConsultores = this.consultores.filter(c => this.consultorIdFilter === 'todos' || c.id === this.consultorIdFilter);
       filteredConsultores.forEach(c => {
         const subOrc = data.orcamentos.filter((o: any) => (o.consultor_id || o.consultorId) === c.id);
-        const subVia = data.viagens.filter((v: any) => (v.consultor_id || v.consultorId) === c.id);
+        const subVia = data.viagens.filter((v: any) => ViagensDivisoesService.calcularParticipacaoConsultor(v, c.id) > 0);
         const cAceito = subOrc.filter((o: any) => o.sub_status === 'ACEITO' || o.subStatus === 'ACEITO').length;
         const cRecuso = subOrc.filter((o: any) => o.sub_status === 'DESISTENCIA' || o.subStatus === 'DESISTENCIA').length;
         const cConv = (cAceito + cRecuso) > 0 ? Math.round((cAceito / (cAceito + cRecuso)) * 100) : 0;
         const cSales = subVia.reduce((sum: number, v: any) => {
+          const fatia = ViagensDivisoesService.calcularParticipacaoConsultor(v, c.id);
           const vPayments = data.locPagamentos.filter((p: any) => 
             (p.viagem_id === v.id || p.viagemId === v.id) &&
             p.formas_recebimento &&
             ['DESCONTO', 'PREJUÍZO'].includes((p.formas_recebimento.nome || '').trim().toUpperCase())
           );
           const vSub = vPayments.reduce((s: number, p: any) => s + (Number(p.valor) || 0), 0);
-          return sum + Math.max(0, (v.valor_total || v.valorTotal || 0) - vSub);
+          return sum + (Math.max(0, (v.valor_total || v.valorTotal || 0) - vSub) * fatia);
         }, 0);
         
         csvContent += `"${c.nome}";${subOrc.length};${cAceito};"${cConv}%";${cSales}\n`;

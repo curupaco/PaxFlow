@@ -835,6 +835,25 @@ export class Dashboard {
         }
       }
 
+      // Carrega divisões de parcerias entre consultores
+      const divisoesMap = new Map<string, any[]>();
+      if (!this.isFallbackMode) {
+        try {
+          const { data: divData, error: divError } = await supabase
+            .from('viagens_divisoes')
+            .select('viagem_id, consultor_id, percentual, is_titular');
+          if (!divError && divData) {
+            divData.forEach((row: any) => {
+              const arr = divisoesMap.get(row.viagem_id) || [];
+              arr.push(row);
+              divisoesMap.set(row.viagem_id, arr);
+            });
+          }
+        } catch (errDiv) {
+          console.warn('Erro defensivo ao carregar viagens_divisoes no Dashboard:', errDiv);
+        }
+      }
+
       // Agrupa comentários por viagem relacionada
       const tripCommentsMap = new Map<string, string[]>();
       
@@ -865,6 +884,7 @@ export class Dashboard {
       });
 
       this.viagens = (data || []).map((v: any) => {
+        v.divisoes = divisoesMap.get(v.id) || [];
         const produtos = v.produtos || [];
         const totalProdutos = produtos.reduce((sum: number, p: any) => sum + (Number(p.valor_venda) || 0), 0);
         const valorViagem = Number(v.valor_total) || 0;
@@ -1640,11 +1660,17 @@ export class Dashboard {
     const totalPorConsultor = this.viagens.filter(v => {
       const vConsultorId = v.consultor_id || (v as any).consultorId;
       const vRespId = v.consultor_responsavel_id || (v as any).consultorResponsavelId;
+      const isParticipante = vConsultorId === this.user?.id || 
+                             vRespId === this.user?.id || 
+                             (Array.isArray(v.divisoes) && v.divisoes.some((d: any) => d.consultor_id === this.user?.id));
 
       if (this.perfil?.role !== 'admin') {
-        if (vConsultorId !== this.user?.id && vRespId !== this.user?.id) return false;
+        if (!isParticipante) return false;
       } else if (this.selectedConsultantId !== 'todos') {
-        if (vConsultorId !== this.selectedConsultantId && vRespId !== this.selectedConsultantId) return false;
+        const isMatchSelected = vConsultorId === this.selectedConsultantId || 
+                                vRespId === this.selectedConsultantId || 
+                                (Array.isArray(v.divisoes) && v.divisoes.some((d: any) => d.consultor_id === this.selectedConsultantId));
+        if (!isMatchSelected) return false;
       }
 
       if (!this.buscaTermo) {
@@ -1667,12 +1693,18 @@ export class Dashboard {
     const filtrados = this.viagens.filter(v => {
       const vConsultorId = v.consultor_id || (v as any).consultorId;
       const vRespId = v.consultor_responsavel_id || (v as any).consultorResponsavelId;
+      const isParticipante = vConsultorId === this.user?.id || 
+                             vRespId === this.user?.id || 
+                             (Array.isArray(v.divisoes) && v.divisoes.some((d: any) => d.consultor_id === this.user?.id));
 
       // Filtro de Consultor (aplica-se sempre, com ou sem busca textual)
       if (this.perfil?.role !== 'admin') {
-        if (vConsultorId !== this.user?.id && vRespId !== this.user?.id) return false;
+        if (!isParticipante) return false;
       } else if (this.selectedConsultantId !== 'todos') {
-        if (vConsultorId !== this.selectedConsultantId && vRespId !== this.selectedConsultantId) return false;
+        const isMatchSelected = vConsultorId === this.selectedConsultantId || 
+                                vRespId === this.selectedConsultantId || 
+                                (Array.isArray(v.divisoes) && v.divisoes.some((d: any) => d.consultor_id === this.selectedConsultantId));
+        if (!isMatchSelected) return false;
       }
 
       // Filtro de Mês Corrente (apenas quando não houver busca textual global)
@@ -2218,7 +2250,7 @@ export class Dashboard {
                       <th class="px-5 py-4">${this.renderSortHeader('Destino / Produtos', 'destino')}</th>
                       <th class="px-5 py-4">${this.renderSortHeader('Data Fin.', 'data_financeiro')}</th>
                       <th class="px-5 py-4">${this.renderSortHeader('Financeiro', 'financeiro')}</th>
-                      ${this.perfil?.role === 'admin' ? `<th class="px-5 py-4">${this.renderSortHeader('Consultor', 'consultor')}</th>` : ''}
+                      <th class="px-5 py-4">${this.renderSortHeader('Consultor', 'consultor')}</th>
                       <th class="px-5 py-4 w-[200px]">${this.renderSortHeader('Fase / Status', 'status')}</th>
                       <th class="px-5 py-4 w-[160px] text-center text-slate-400 dark:text-slate-400 tracking-wider text-[10px] font-black">Ações</th>
                     </tr>
@@ -3262,11 +3294,29 @@ Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : '
         </td>
 
         <!-- Consultor -->
-        ${this.perfil?.role === 'admin' ? `
-          <td class="px-5 py-4 whitespace-nowrap text-slate-500 dark:text-slate-400 font-extrabold">
-            ${v.consultor_id === this.user.id ? 'Você' : (this.consultores.find(c => c.id === v.consultor_id)?.nome || 'Outro Consultor')}
-          </td>
-        ` : ''}
+        <td class="px-5 py-4 whitespace-nowrap text-slate-500 dark:text-slate-400 font-extrabold text-xs">
+          ${(() => {
+            const minhaDivisao = Array.isArray(v.divisoes) ? v.divisoes.find((d: any) => d.consultor_id === this.user.id && !d.is_titular) : null;
+            if (minhaDivisao) {
+              return `
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-800 text-[10px] font-black">
+                  🤝 Parceria (${minhaDivisao.percentual}%)
+                </span>
+              `;
+            }
+            if (this.perfil?.role === 'admin') {
+              const temParceria = Array.isArray(v.divisoes) && v.divisoes.length > 1;
+              const consultorNome = v.consultor_id === this.user.id ? 'Você' : (this.consultores.find(c => c.id === v.consultor_id)?.nome || 'Outro Consultor');
+              return `
+                <span class="flex items-center gap-1">
+                  ${consultorNome}
+                  ${temParceria ? '<span class="text-xs" title="Venda compartilhada em parceria">🤝</span>' : ''}
+                </span>
+              `;
+            }
+            return '<span class="text-slate-400 text-[10px] font-bold">Titular</span>';
+          })()}
+        </td>
 
         <!-- Dropdown Fase/Status -->
         <td class="px-5 py-4">
@@ -3364,11 +3414,26 @@ Atual: ${sla.alert ? sla.text : (reembolsoConcluido ? 'Reembolso Concluído' : '
                   REF: ${highlightMatch(v.codigoRef, this.buscaTermo)}
                 </span>
               ` : ''}
-              ${this.perfil?.role === 'admin' ? `
-                <span class="text-[9px] text-slate-400 font-bold bg-slate-100/50 dark:bg-slate-800/50 px-1.5 py-0.5 rounded border border-slate-200/20 dark:border-slate-700/20">
-                  👤 ${v.consultor_id === this.user.id ? 'Você' : (this.consultores.find(c => c.id === v.consultor_id)?.nome?.split(' ')[0] || 'Outro')}
-                </span>
-              ` : ''}
+              ${(() => {
+                const minhaDivisao = Array.isArray(v.divisoes) ? v.divisoes.find((d: any) => d.consultor_id === this.user.id && !d.is_titular) : null;
+                if (minhaDivisao) {
+                  return `
+                    <span class="text-[9px] text-indigo-700 dark:text-indigo-300 font-extrabold bg-indigo-50 dark:bg-indigo-950/50 px-1.5 py-0.5 rounded border border-indigo-200/50 dark:border-indigo-800/50">
+                      🤝 Parceria ${minhaDivisao.percentual}%
+                    </span>
+                  `;
+                }
+                if (this.perfil?.role === 'admin') {
+                  const temParceria = Array.isArray(v.divisoes) && v.divisoes.length > 1;
+                  return `
+                    <span class="text-[9px] text-slate-400 font-bold bg-slate-100/50 dark:bg-slate-800/50 px-1.5 py-0.5 rounded border border-slate-200/20 dark:border-slate-700/20">
+                      👤 ${v.consultor_id === this.user.id ? 'Você' : (this.consultores.find(c => c.id === v.consultor_id)?.nome?.split(' ')[0] || 'Outro')}
+                      ${temParceria ? ' 🤝' : ''}
+                    </span>
+                  `;
+                }
+                return '';
+              })()}
             </div>
           </div>
 

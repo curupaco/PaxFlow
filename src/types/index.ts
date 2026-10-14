@@ -287,6 +287,25 @@ export interface Viagem {
   contatos_embarque?: Record<string, ContatoEmbarqueRegistro>;
   upsell_dispensados?: string[];
   upsellDispensados?: string[];
+  divisoes?: ViagemDivisao[];
+}
+
+/**
+ * Registro de divisão percentual de viagem e comissões entre consultores/parceiros.
+ */
+export interface ViagemDivisao {
+  id?: string;
+  viagem_id?: string;
+  viagemId?: string;
+  consultor_id: string;
+  consultorId?: string;
+  consultor_nome?: string;
+  consultorNome?: string;
+  percentual: number;
+  is_titular?: boolean;
+  isTitular?: boolean;
+  created_at?: string;
+  updated_at?: string;
 }
 
 /**

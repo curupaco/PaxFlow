@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { MetaPeriodo, MetaFaixa } from '../types';
+import { ViagensDivisoesService } from './viagensDivisoesService';
 
 export class MetasService {
   private static isSandbox(): boolean {
@@ -617,12 +618,12 @@ export class MetasService {
 
     } else if (tipo === 'vendas' || tipo === 'qtd_vendas' || tipo === 'venda_aceita' || tipo === 'orcamento_fechado') {
       itensAuditados = viagens.filter(v => {
-        const dono = v.consultor_id === consultorId || v.consultorId === consultorId;
+        const fatia = ViagensDivisoesService.calcularParticipacaoConsultor(v, consultorId);
         const naoCancelada = v.status !== 'cancelada';
         const data = v.data_financeiro || v.dataFinanceiro || v.created_at || v.createdAt;
-        return dono && naoCancelada && this.isDataNoPeriodo(data, meta.data_inicio, meta.data_fim);
+        return fatia > 0 && naoCancelada && this.isDataNoPeriodo(data, meta.data_inicio, meta.data_fim);
       });
-      totalAtingido = itensAuditados.length;
+      totalAtingido = itensAuditados.reduce((acc, v) => acc + ViagensDivisoesService.calcularParticipacaoConsultor(v, consultorId), 0);
 
     } else if (tipo === 'clientes' || tipo === 'cliente_criado') {
       itensAuditados = clientes.filter(c => {
@@ -643,27 +644,29 @@ export class MetasService {
 
     } else if (tipo === 'lucro' || tipo === 'liquido') {
       const viagensDoConsultor = viagens.filter(v => {
-        const dono = v.consultor_id === consultorId || v.consultorId === consultorId;
+        const fatia = ViagensDivisoesService.calcularParticipacaoConsultor(v, consultorId);
         const naoCancelada = v.status !== 'cancelada';
         const data = v.data_financeiro || v.dataFinanceiro || v.created_at || v.createdAt;
-        return dono && naoCancelada && this.isDataNoPeriodo(data, meta.data_inicio, meta.data_fim);
+        return fatia > 0 && naoCancelada && this.isDataNoPeriodo(data, meta.data_inicio, meta.data_fim);
       });
 
       itensAuditados = viagensDoConsultor;
       viagensDoConsultor.forEach(v => {
+        const fatia = ViagensDivisoesService.calcularParticipacaoConsultor(v, consultorId);
         const prods = (v as any).produtos || [];
         prods.forEach((p: any) => {
-          totalAtingido += (Number(p.comissao) || 0) + (Number(p.markup) || 0) + ((Number(p.rav) || 0) * 0.88);
+          const lucroItem = (Number(p.comissao) || 0) + (Number(p.markup) || 0) + ((Number(p.rav) || 0) * 0.88);
+          totalAtingido += lucroItem * fatia;
         });
       });
 
     } else {
       // Faturamento Bruto ('bruto')
       const viagensDoConsultor = viagens.filter(v => {
-        const dono = v.consultor_id === consultorId || v.consultorId === consultorId;
+        const fatia = ViagensDivisoesService.calcularParticipacaoConsultor(v, consultorId);
         const naoCancelada = v.status !== 'cancelada';
         const data = v.data_financeiro || v.dataFinanceiro || v.created_at || v.createdAt;
-        return dono && naoCancelada && this.isDataNoPeriodo(data, meta.data_inicio, meta.data_fim);
+        return fatia > 0 && naoCancelada && this.isDataNoPeriodo(data, meta.data_inicio, meta.data_fim);
       });
 
       itensAuditados = viagensDoConsultor;
@@ -674,7 +677,10 @@ export class MetasService {
         ['DESCONTO', 'PREJUÍZO'].includes((p.formas_recebimento.nome || '').trim().toUpperCase())
       );
       const totalSub = pagsSub.reduce((acc, p) => acc + (Number(p.valor) || 0), 0);
-      const somaBruta = viagensDoConsultor.reduce((acc, v) => acc + (Number(v.valor_total || v.valorTotal) || 0), 0);
+      const somaBruta = viagensDoConsultor.reduce((acc, v) => {
+        const fatia = ViagensDivisoesService.calcularParticipacaoConsultor(v, consultorId);
+        return acc + ((Number(v.valor_total || v.valorTotal) || 0) * fatia);
+      }, 0);
       totalAtingido = Math.max(0, somaBruta - totalSub);
     }
 

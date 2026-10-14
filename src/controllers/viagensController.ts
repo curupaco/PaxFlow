@@ -171,6 +171,11 @@ export async function excluirViagemCascata(
       .eq('viagem_id', tripId);
     if (errProducts) console.warn('[excluirViagemCascata] Aviso em produtos_viagem:', errProducts.message);
 
+    // 8.1 Divisões de parceria da viagem
+    try {
+      await supabaseClient.from('viagens_divisoes').delete().eq('viagem_id', tripId);
+    } catch (_) {}
+
     // 9. Deletar a viagem principal
     const { error: errTrip } = await supabaseClient
       .from('viagens')

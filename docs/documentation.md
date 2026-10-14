@@ -53,6 +53,7 @@
    - 3.41 [Arquitetura de Web Push Server-Side, Exclusão em Cascata & Integridade Transacional](#341-arquitetura-de-web-push-server-side-exclusão-em-cascata--integridade-transacional)
    - 3.42 [Agregação Segura de Produtos & Junção de Viagens com Proteção Contábil](#342-agregação-segura-de-produtos--junção-de-viagens-com-proteção-contábil)
    - 3.43 [Assistente de Remarcação de Viagens com Blindagem Contábil em 1-Clique](#343-assistente-de-remarcação-de-viagens-com-blindagem-contábil-em-1-clique)
+   - 3.44 [Divisão de Viagens, Comissões e Parcerias entre Consultores](#344-divisão-de-viagens-comissões-e-parcerias-entre-consultores)
 4. [Diferenciais Competitivos](#4-diferenciais-competitivos)
 5. [Arquitetura Tecnológica](#5-arquitetura-tecnológica)
 6. [Segurança e Conformidade](#6-segurança-e-conformidade)
@@ -1128,6 +1129,41 @@ Para solucionar o desafio operacional de passageiros que alteram as datas de sua
 
 4. **Auditoria e Timeline da Viagem**:
    - Toda remarcação gera automaticamente um log de auditoria nos comentários da viagem com data/hora, identificação do operador, datas anteriores e novas datas de embarque.
+
+### 3.44 Divisão de Viagens, Comissões e Parcerias entre Consultores
+
+Para viabilizar o trabalho colaborativo entre membros da equipe da agência (prospecção compartilhada, atendimento conjunto ou emissão dividida) com rigor contábil e de governança:
+
+1. **Validação Rígida de Soma de 100,00%**:
+   - A soma de todas as participações de consultores em uma viagem deve somar obrigatoriamente e exatamente **100,00%**.
+   - O algoritmo de validação opera em precisão centesimal (`Math.round(percentual * 100)`), eliminando erros de arredondamento de ponto flutuante do JavaScript.
+   - O botão de salvamento no modal `ViagemSplitEditor` permanece desabilitado enquanto a barra de progresso visual acusar qualquer divergência (ex: 99,99% ou 100,01%).
+
+2. **Atalhos Rápidos de Rateio (1-Clique)**:
+   - O assistente disponibiliza atalhos instantâneos para os arranjos mais usuais da agência: `50/50`, `80/20`, `70/30` e `90/10` entre o consultor titular e o consultor parceiro, calculando e preenchendo as frações com um único clique.
+
+3. **Modelo Híbrido com Titular & Co-propriedade**:
+   - A viagem mantém sempre **1 Consultor Titular** responsável pelo canal de contato com o passageiro, emissão de alertas operacionais, pós-venda e NPS.
+   - Os consultores parceiros cadastrados na divisão ganham privilégio de **co-proprietários** (`isOwner = true`), podendo editar a viagem e seus produtos sem serem rebaixados para o modo de visualização ou co-piloto/balcão.
+
+4. **Visibilidade Transversal no Dashboard & Kanban**:
+   - Viagens em parceria aparecem simultaneamente no pipeline (Kanban) e na visualização em tabela de **ambos os consultores** quando filtrados por seu próprio nome.
+   - Cards e linhas recebem o badge visual destacado `🤝 Parceria N%`, informando instantaneamente a fatia que cabe ao consultor visualizador.
+
+5. **Consistência Contábil Sem Duplicidade (Metas & Relatórios)**:
+   - **No Consolidado da Agência**: A viagem é contabilizada uma única vez em faturamento e lucro (100%), garantindo que o DRE e os relatórios globais não sofram inflação ou duplicações.
+   - **Nos Relatórios e Metas Individuais**: As metas de faturamento, lucro e contagem de vendas (`qtd_vendas`) computam frações proporcionais (`+0,8` e `+0,2` vendas, por exemplo), garantindo que rankings e comissionamentos individuais reflitam a exata entrega de cada profissional.
+
+6. **Governança & Trava Pós-Conferência**:
+   - Caso o processo da viagem (`processo_conferido`) ou qualquer um de seus LOCs financeiros (`isFinanceiroConferido`) já tenham sido conferidos e auditados pela gestão, a edição das divisões é **automaticamente trancada** com ícone de cadeado (`🔒 Divisão Bloqueada`).
+   - Consultores operacionais são impedidos de alterar participações já conferidas. Apenas usuários com perfil de **Administrador** possuem autorização para ajustar divisões de viagens conferidas.
+
+7. **Resiliência a Schema Drift (Padrão Zero-Break)**:
+   - A persistência é gerenciada na tabela dedicada `public.viagens_divisoes` com chave estrangeira `ON DELETE CASCADE`.
+   - Todas as consultas ao banco implementam fallback gracioso para o erro de tabela/coluna ausente (`42P01` / `42703`), garantindo que viagens legadas ou instâncias antes da migração continuem operando normalmente assumindo 100% de titularidade.
+
+8. **Mini-Wizard de Parceria no Fechamento de Venda**:
+   - Ao converter uma proposta para venda em `Orcamentos.ts`, o consultor pode marcar o checkbox "Venda em parceria", selecionando o consultor parceiro e escolhendo o rateio pré-definido antes de gerar o registro da viagem.
 
 ---
 
