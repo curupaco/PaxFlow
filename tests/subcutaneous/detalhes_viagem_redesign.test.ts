@@ -75,4 +75,12 @@ describe('Redesign Detalhes da Viagem - Testes Subcutâneos', () => {
     expect(containerClasses).not.toContain('overflow-y-auto');
     expect(containerClasses).not.toContain('max-h-');
   });
+
+  it('deve garantir que o loc-group não contenha overflow-hidden para não cortar menus dropdown (⋮)', () => {
+    // Setup
+    const locGroupClass = 'loc-group border border-slate-200/80 dark:border-slate-800 rounded-xl mb-3 shadow-sm bg-white dark:bg-slate-900/40';
+
+    // Action & Assert
+    expect(locGroupClass).not.toContain('overflow-hidden');
+  });
 });

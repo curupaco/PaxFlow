@@ -2842,7 +2842,7 @@ export class EditTravelModal {
           : 'border-slate-200/60 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 hover:bg-slate-100/50 dark:hover:bg-slate-800/80';
 
         return `
-          <div class="product-card-clickable flex items-center justify-between gap-3 p-3 ${selectedBorderClass} border rounded-xl transition cursor-pointer" data-product-id="${p.id}">
+          <div class="product-card-clickable relative flex items-center justify-between gap-3 p-3 ${selectedBorderClass} border rounded-xl transition cursor-pointer" data-product-id="${p.id}">
             <div class="flex items-start gap-2.5 overflow-hidden w-full">
               <span class="text-lg p-1 bg-white dark:bg-slate-700 border border-slate-100 dark:border-slate-700 rounded-lg shadow-sm flex items-center justify-center">${tipoIcon}</span>
               <div class="overflow-hidden flex-1 self-center text-left space-y-0.5">
@@ -2871,14 +2871,14 @@ export class EditTravelModal {
               </div>
 
               <!-- Menu Dropdown de Ações (⋮) -->
-              <div class="relative dropdown-product-wrapper">
+              <div class="relative dropdown-product-wrapper z-30">
                 <button type="button" 
                   class="btn-dropdown-prod-trigger p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-700/50 rounded-lg transition text-base font-bold flex items-center justify-center leading-none cursor-pointer"
                   title="Mais ações deste produto"
                   data-trigger-prod-id="${p.id}">
                   ⋮
                 </button>
-                <div id="dropdown-prod-menu-${p.id}" class="dropdown-prod-menu hidden absolute right-0 top-full mt-1 w-44 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200/80 dark:border-slate-700 py-1.5 z-30 font-sans">
+                <div id="dropdown-prod-menu-${p.id}" class="dropdown-prod-menu hidden absolute right-0 top-full mt-1 w-48 bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200/90 dark:border-slate-700 py-1.5 z-50 font-sans">
                   <button type="button" data-edit-prod-trigger="${p.id}" class="w-full text-left px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center gap-2 transition cursor-pointer">
                     <span>✏️</span> Editar Serviço
                   </button>
@@ -2937,8 +2937,8 @@ export class EditTravelModal {
       const isLocEmEdicao = isLocBloqueadoPorEdicao(this.selectedProductId, this.selectedProductDirty, subProdutos);
 
       return `
-        <div class="loc-group border border-slate-200/80 dark:border-slate-800 rounded-xl overflow-hidden mb-2 shadow-sm">
-          <div class="loc-header flex items-center justify-between p-2.5 bg-slate-100/50 dark:bg-slate-800/40 cursor-pointer hover:bg-slate-200/50 dark:hover:bg-slate-800/80 transition select-none" data-loc-key="${locKey}">
+        <div class="loc-group border border-slate-200/80 dark:border-slate-800 rounded-xl mb-3 shadow-sm bg-white dark:bg-slate-900/40">
+          <div class="loc-header flex items-center justify-between p-2.5 bg-slate-100/50 dark:bg-slate-800/40 rounded-t-xl cursor-pointer hover:bg-slate-200/50 dark:hover:bg-slate-800/80 transition select-none" data-loc-key="${locKey}">
             <div class="flex items-center flex-wrap gap-2.5">
               <span class="loc-chevron inline-block transition-transform duration-200 text-xs text-slate-400 dark:text-slate-400" style="transform: rotate(90deg);">▶</span>
               <button type="button" class="btn-copy-loc inline-flex items-center gap-1.5 px-2.5 py-0.5 text-[10px] font-black tracking-wider rounded-lg bg-indigo-100 hover:bg-indigo-200 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 uppercase border border-indigo-200/80 dark:border-indigo-800/60 transition cursor-pointer active:scale-95 shadow-xs" data-copy-loc="${locKey}" title="Clique para copiar o LOC ${locKey}">
@@ -2980,7 +2980,7 @@ export class EditTravelModal {
             </div>
           </div>
           
-          <div class="loc-body border-t border-slate-100 dark:border-slate-800/50 bg-slate-50/10 dark:bg-slate-900/5 p-2 pl-4 space-y-2 border-l-2 border-l-slate-200 dark:border-l-slate-700">
+          <div class="loc-body border-t border-slate-100 dark:border-slate-800/50 bg-slate-50/10 dark:bg-slate-900/5 p-2 pl-4 space-y-2 border-l-2 border-l-slate-200 dark:border-l-slate-700 rounded-b-xl">
             ${innerCardsHTML}
           </div>
         </div>
@@ -3358,18 +3358,28 @@ export class EditTravelModal {
     });
 
     // Eventos do Menu Dropdown (⋮) de ações de cada produto
+    const closeAllProdDropdowns = () => {
+      container.querySelectorAll('.dropdown-prod-menu').forEach(m => m.classList.add('hidden'));
+      container.querySelectorAll('.dropdown-product-wrapper').forEach(w => w.classList.remove('z-50'));
+      container.querySelectorAll('.product-card-clickable').forEach(c => c.classList.remove('z-40'));
+    };
+
     container.querySelectorAll('.btn-dropdown-prod-trigger').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         const prodId = btn.getAttribute('data-trigger-prod-id');
         const menu = document.getElementById(`dropdown-prod-menu-${prodId}`);
         const isHidden = menu?.classList.contains('hidden');
+        const wrapper = btn.closest('.dropdown-product-wrapper');
+        const card = btn.closest('.product-card-clickable');
         
         // Fecha todos os dropdowns abertos primeiro
-        container.querySelectorAll('.dropdown-prod-menu').forEach(m => m.classList.add('hidden'));
+        closeAllProdDropdowns();
 
-        if (isHidden) {
-          menu?.classList.remove('hidden');
+        if (isHidden && menu) {
+          menu.classList.remove('hidden');
+          wrapper?.classList.add('z-50');
+          card?.classList.add('z-40');
         }
       });
     });
@@ -3378,7 +3388,7 @@ export class EditTravelModal {
     container.querySelectorAll('[data-edit-prod-trigger]').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
-        container.querySelectorAll('.dropdown-prod-menu').forEach(m => m.classList.add('hidden'));
+        closeAllProdDropdowns();
         const prodId = btn.getAttribute('data-edit-prod-trigger');
         const prod = produtos.find(x => x.id === prodId);
         if (prod) {
@@ -3392,7 +3402,7 @@ export class EditTravelModal {
     document.addEventListener('click', (e: MouseEvent) => {
       const target = e.target as HTMLElement;
       if (!target.closest('.dropdown-product-wrapper')) {
-        container.querySelectorAll('.dropdown-prod-menu').forEach(m => m.classList.add('hidden'));
+        closeAllProdDropdowns();
       }
     });
 
