@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { AnexosService } from '../../src/services/anexosService';
+import { AnexosService, limparObservacoesTralha } from '../../src/services/anexosService';
 import { supabase } from '../../src/services/supabase';
 
 class MockFile {
@@ -142,10 +142,10 @@ describe('AnexosService - Testes Subcutâneos com Múltiplos Anexos e Resiliênc
     expect(resultado[1].rotulo).toBe('Passaporte Maria');
   });
 
-  it('deve ativar fallback resiliente persistindo em viagens.observacoes ao receber erro 42P01', async () => {
+  it('deve rejeitar upload com mensagem amigável sem poluir viagens.observacoes ao receber erro 42P01', async () => {
     // Setup
     const mockFile = new File(['passaporte data'], 'passaporte.jpg', { type: 'image/jpeg' });
-    let obsGravada = '';
+    let updateViagensChamado = false;
 
     const mockFrom = vi.fn().mockImplementation((tabela: string) => {
       if (tabela === 'documentos_anexos') {
@@ -165,40 +165,39 @@ describe('AnexosService - Testes Subcutâneos com Múltiplos Anexos e Resiliênc
       }
       if (tabela === 'viagens') {
         return {
-          select: vi.fn().mockReturnValue({
-            eq: vi.fn().mockReturnValue({
-              single: vi.fn().mockResolvedValue({
-                data: { observacoes: obsGravada },
-                error: null
-              })
-            })
-          }),
-          update: vi.fn().mockImplementation((payload: any) => ({
-            eq: vi.fn().mockImplementation(async () => {
-              obsGravada = payload.observacoes;
-              return { error: null };
-            })
-          }))
+          update: vi.fn().mockImplementation(() => {
+            updateViagensChamado = true;
+            return { eq: vi.fn().mockResolvedValue({ error: null }) };
+          })
         };
       }
       return {};
     });
     (supabase.from as any) = mockFrom;
 
+    // Action & Assert
+    await expect(
+      AnexosService.uploadAnexo({
+        file: mockFile,
+        rotulo: 'Passaporte Titular',
+        tipo_documento: 'PASSAPORTE',
+        viagem_id: 'viagem-drift'
+      })
+    ).rejects.toThrow('Não foi possível salvar o documento no sistema. O banco de dados recusou a gravação do anexo. Por favor, tente novamente ou contate o administrador.');
+
+    expect(updateViagensChamado).toBe(false);
+  });
+
+  it('deve higienizar campo observacoes removendo blocos de metadados legados PAXFLOW_ANEXOS', () => {
+    // Setup
+    const obsComTralha = 'Passageiro prefere assento na janela.\n<!-- PAXFLOW_ANEXOS:[{"id":"123","rotulo":"voucher"}] -->';
+    
     // Action
-    const resultado = await AnexosService.uploadAnexo({
-      file: mockFile,
-      rotulo: 'Passaporte Titular',
-      tipo_documento: 'PASSAPORTE',
-      viagem_id: 'viagem-drift'
-    });
+    const obsLimpa = limparObservacoesTralha(obsComTralha);
 
     // Assert
-    expect(resultado).toBeDefined();
-    expect(resultado.rotulo).toBe('Passaporte Titular');
-    expect(resultado.tipo_documento).toBe('PASSAPORTE');
-    expect(mockFrom).toHaveBeenCalledWith('viagens');
-    expect(obsGravada).toContain('PAXFLOW_ANEXOS');
+    expect(obsLimpa).toBe('Passageiro prefere assento na janela.');
+    expect(obsLimpa).not.toContain('PAXFLOW_ANEXOS');
   });
 
   it('deve listar arquivos existentes no Supabase Storage mesmo com tabela do banco ausente', async () => {

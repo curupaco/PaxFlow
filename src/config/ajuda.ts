@@ -522,6 +522,13 @@ export const HELP_ITEMS: HelpItem[] = [
     details: 'Você pode remover anexos e documentos cadastrados diretamente na ficha do cliente ou no modal de gerenciamento de viagem:\n\n1. **Permissão de Exclusão**: Apenas o consultor que enviou o arquivo ou usuários com perfil de Administrador podem excluir documentos.\n2. **Exclusão Segura**: Ao clicar no ícone de lixeira, uma janela de confirmação é exibida para evitar cliques acidentais.\n3. **Passaportes e Documentos Legados**: O sistema remove de forma unificada tanto arquivos novos do Supabase quanto passaportes legados vinculados à ficha do passageiro, limpando a referência no cadastro e liberando o espaço no Storage imediatamente.\n4. **Atualização Imediata**: A galeria de documentos anexados e a ficha detalhada do cliente se atualizam instantaneamente na tela após a exclusão.'
   },
   {
+    id: 'higienizacao-anexos-observacoes',
+    modulo: 'clientes',
+    label: '🛡️ Persistência de Anexos e Higienização de Observações',
+    description: 'Como o PaxFlow armazena anexos em tabela dedicada e mantém as observações da viagem 100% limpas de códigos técnicos.',
+    details: 'Para garantir organização visual e integridade de dados operacionais:\n\n1. **Tabela Dedicada (`documentos_anexos`)**: Todos os arquivos enviados (passagens, vouchers, contratos) são registrados em tabela própria no banco de dados e vinculados aos respectivos arquivos no Supabase Storage.\n2. **Fim de Textos Técnicos em Observações**: O campo de observações da viagem é reservado exclusivamente para anotações humanas e operacionais da equipe. Códigos como `<!-- PAXFLOW_ANEXOS:[...] -->` são automaticamente filtrados e higienizados na visualização e no salvamento.\n3. **Migração Transparente**: Quaisquer referências antigas gravadas em observações são convertidas de forma limpa para a tabela oficial de documentos assim que a viagem é consultada.'
+  },
+  {
     id: 'identidade-visual-branding',
     modulo: 'clientes',
     label: 'Configurações de Marca da Agência (White-Label & Open Graph)',

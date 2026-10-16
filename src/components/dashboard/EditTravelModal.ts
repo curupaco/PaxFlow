@@ -41,6 +41,7 @@ import {
   parseFinancialNumber,
   isLocBloqueadoPorEdicao
 } from '../../utils/productFinancialHelper';
+import { limparObservacoesTralha } from '../../services/anexosService';
 
 export interface EditTravelModalOptions {
   perfil: any;
@@ -657,7 +658,7 @@ export class EditTravelModal {
 
               <div>
                 <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 font-sans">Observações Operacionais</label>
-                <textarea id="edit-viagem-obs" rows="2.5" ${viagemProcessoConferido ? 'disabled' : ''} class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 text-sm font-medium font-sans">${v.observacoes || ''}</textarea>
+                <textarea id="edit-viagem-obs" rows="2.5" ${viagemProcessoConferido ? 'disabled' : ''} class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 text-sm font-medium font-sans">${limparObservacoesTralha(v.observacoes)}</textarea>
               </div>
 
               <!-- Rodapé Fixo (Sticky Footer) para Ações de Salvamento -->
@@ -1303,7 +1304,7 @@ export class EditTravelModal {
       const dataVoltaRaw = (document.getElementById('edit-viagem-volta') as HTMLInputElement).value.trim();
       const dataFinanceiroRaw = (document.getElementById('edit-viagem-data-financeiro') as HTMLInputElement).value.trim();
       const status = (document.getElementById('edit-viagem-status') as HTMLSelectElement).value;
-      const obs = (document.getElementById('edit-viagem-obs') as HTMLTextAreaElement).value;
+      const obs = limparObservacoesTralha((document.getElementById('edit-viagem-obs') as HTMLTextAreaElement).value);
 
       if (v.status === 'fechado' && status === 'pos_venda') {
         this.options.showToast('Não é possível alterar o status manualmente de Fechado para Pós-Venda. Essa alteração ocorre automaticamente quando as validações Financeira e de Processo estiverem concluídas.', 'error');

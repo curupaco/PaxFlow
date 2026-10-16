@@ -22,6 +22,15 @@ export function formatarTamanhoArquivo(bytes?: number): string {
 }
 
 /**
+ * Remove blocos de metadados legados de anexos (<!-- PAXFLOW_ANEXOS:... -->) que tenham
+ * sido gravados em viagens.observacoes no passado, retornando texto limpo para o consultor.
+ */
+export function limparObservacoesTralha(obs?: string | null): string {
+  if (!obs) return '';
+  return obs.replace(/<!-- PAXFLOW_ANEXOS:(.*?) -->/g, '').trim();
+}
+
+/**
  * Serviço completo para gerenciamento de múltiplos documentos e anexos no Supabase Storage.
  * Implementa o Padrão Zero-Break com resiliência estrita a schema drift (42P01, 42703, PGRST204, PGRST200).
  */
@@ -336,27 +345,24 @@ export class AnexosService {
             .single();
 
           if (errBase) {
-            documentoSalvo = await this.salvarFallbackDrift(payload as DocumentoAnexo);
+            console.error('[AnexosService] Falha técnica ao salvar anexo na tabela oficial com payload base:', errBase);
+            throw new Error('Não foi possível salvar o documento no sistema. O banco de dados recusou a gravação do anexo. Por favor, tente novamente ou contate o administrador.');
           } else {
             documentoSalvo = { ...dataBase, ...payload } as DocumentoAnexo;
           }
-        } else if (
-          dbErr.code === '42P01' ||
-          dbErr.code === 'PGRST116' ||
-          dbErr.message?.includes('does not exist')
-        ) {
-          console.warn('[AnexosService] Schema drift detectado em documentos_anexos. Ativando fallback resiliente.');
-          documentoSalvo = await this.salvarFallbackDrift(payload as DocumentoAnexo);
         } else {
-          console.warn('[AnexosService] Erro ao gravar em documentos_anexos. Ativando fallback resiliente:', dbErr);
-          documentoSalvo = await this.salvarFallbackDrift(payload as DocumentoAnexo);
+          console.error('[AnexosService] Falha técnica ao gravar em documentos_anexos:', dbErr);
+          throw new Error('Não foi possível salvar o documento no sistema. O banco de dados recusou a gravação do anexo. Por favor, tente novamente ou contate o administrador.');
         }
       } else {
         documentoSalvo = data as DocumentoAnexo;
       }
     } catch (err: any) {
-      console.warn('[AnexosService] Exceção capturada ao gravar anexo. Ativando fallback resiliente:', err);
-      documentoSalvo = await this.salvarFallbackDrift(payload as DocumentoAnexo);
+      if (err.message && err.message.includes('Não foi possível salvar o documento no sistema')) {
+        throw err;
+      }
+      console.error('[AnexosService] Exceção capturada ao gravar anexo:', err);
+      throw new Error('Não foi possível salvar o documento no sistema. O banco de dados recusou a gravação do anexo. Por favor, tente novamente ou contate o administrador.');
     }
 
     // 6. Sincronização retrocompatível com a ficha do cliente
@@ -445,8 +451,8 @@ export class AnexosService {
       tabelaExiste = false;
     }
 
-    // 2. Se a tabela ainda não tiver sido criada no Supabase, recupera de viagens.observacoes
-    if (!tabelaExiste && viagemId) {
+    // 2. Recuperação de anexos legados em viagens.observacoes e higienização automática do banco
+    if (viagemId) {
       try {
         const { data: vData } = await supabase
           .from('viagens')
@@ -454,16 +460,50 @@ export class AnexosService {
           .eq('id', viagemId)
           .single();
 
-        if (vData?.observacoes) {
+        if (vData?.observacoes && vData.observacoes.includes('<!-- PAXFLOW_ANEXOS:')) {
           const match = vData.observacoes.match(/<!-- PAXFLOW_ANEXOS:(.*?) -->/);
           if (match && match[1]) {
-            const parsed = JSON.parse(match[1]);
-            if (Array.isArray(parsed)) {
-              for (const item of parsed) {
-                if (!listaFinal.some(a => a.id === item.id || a.storage_path === item.storage_path)) {
-                  listaFinal.push(item);
+            try {
+              const parsed = JSON.parse(match[1]);
+              if (Array.isArray(parsed)) {
+                for (const item of parsed) {
+                  if (!listaFinal.some(a => a.id === item.id || a.storage_path === item.storage_path)) {
+                    listaFinal.push(item);
+                  }
+                  // Se a tabela oficial existe, migra o item legado para a tabela documentos_anexos
+                  if (tabelaExiste) {
+                    try {
+                      await supabase.from(this.TABELA).insert({
+                        viagem_id: viagemId,
+                        cliente_id: item.cliente_id,
+                        rotulo: item.rotulo || item.nome_original,
+                        tipo_documento: item.tipo_documento || 'OUTROS',
+                        nome_original: item.nome_original,
+                        storage_path: item.storage_path,
+                        mime_type: item.mime_type,
+                        tamanho_bytes: item.tamanho_bytes,
+                        created_by: item.created_by,
+                        created_at: item.created_at || new Date().toISOString()
+                      });
+                    } catch {}
+                  }
                 }
               }
+            } catch (errParse) {
+              console.warn('[AnexosService] Erro ao parsear anexo legado:', errParse);
+            }
+          }
+
+          // Se a tabela oficial está operando, remove a tag legada do banco de dados definitivamente
+          if (tabelaExiste) {
+            try {
+              const obsHigienizada = limparObservacoesTralha(vData.observacoes);
+              await supabase
+                .from('viagens')
+                .update({ observacoes: obsHigienizada })
+                .eq('id', viagemId);
+            } catch (errLimpeza) {
+              console.warn('[AnexosService] Aviso ao higienizar viagens.observacoes:', errLimpeza);
             }
           }
         }
@@ -745,51 +785,5 @@ export class AnexosService {
       return globalThis.crypto.randomUUID();
     }
     return `anexo-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-  }
-
-  private static async salvarFallbackDrift(anexo: DocumentoAnexo): Promise<DocumentoAnexo> {
-    const itemNormalizado: DocumentoAnexo = {
-      ...anexo,
-      id: anexo.id || this.gerarIdSeguro(),
-      created_at: anexo.created_at || new Date().toISOString()
-    };
-
-    if (itemNormalizado.viagem_id) {
-      try {
-        const { data: vData } = await supabase
-          .from('viagens')
-          .select('observacoes')
-          .eq('id', itemNormalizado.viagem_id)
-          .single();
-
-        let obs = vData?.observacoes || '';
-        let listaAnexosViagem: DocumentoAnexo[] = [];
-        const match = obs.match(/<!-- PAXFLOW_ANEXOS:(.*?) -->/);
-        if (match && match[1]) {
-          try {
-            listaAnexosViagem = JSON.parse(match[1]);
-          } catch {}
-        }
-
-        listaAnexosViagem = listaAnexosViagem.filter(item => item.id !== itemNormalizado.id);
-        listaAnexosViagem.unshift(itemNormalizado);
-
-        const blocoJson = `<!-- PAXFLOW_ANEXOS:${JSON.stringify(listaAnexosViagem)} -->`;
-        if (match) {
-          obs = obs.replace(/<!-- PAXFLOW_ANEXOS:(.*?) -->/, blocoJson);
-        } else {
-          obs = obs ? `${obs}\n${blocoJson}` : blocoJson;
-        }
-
-        await supabase
-          .from('viagens')
-          .update({ observacoes: obs })
-          .eq('id', itemNormalizado.viagem_id);
-      } catch (err) {
-        console.warn('[AnexosService] Falha ao persistir anexo em viagens.observacoes:', err);
-      }
-    }
-
-    return itemNormalizado;
   }
 }
