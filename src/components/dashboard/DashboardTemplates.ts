@@ -278,18 +278,20 @@ export function renderLateralEditorPaneHTML(
   const disabledAttr = isLocConferido ? 'disabled' : '';
 
   return `
-    <div id="selected-product-editor-pane" class="space-y-4 lg:col-span-4 border-t lg:border-t-0 lg:border-l border-slate-100 dark:border-slate-800 lg:pl-6 pt-4 lg:pt-0 ${activeTab === 'produtos' ? 'block fixed inset-0 z-50 bg-white dark:bg-slate-900 p-4 lg:relative lg:inset-auto lg:z-auto lg:p-0' : 'hidden lg:block'} max-h-[100dvh] lg:max-h-[80vh] overflow-y-auto custom-scrollbar">
-      <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 mb-2 sticky top-0 bg-white dark:bg-slate-900 z-10">
-        <h4 class="text-xs font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5 uppercase tracking-wide font-sans">
-          <span class="p-1 bg-indigo-50 dark:bg-indigo-950 text-indigo-500 rounded-lg text-xs flex items-center justify-center">${getIconForType(selectedProduct.tipo)}</span>
+    <!-- Painel Integrado de Edição do Serviço (Coluna Direita) -->
+    <div id="selected-product-editor-pane" class="bg-white dark:bg-slate-900 shadow-sm rounded-2xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-800 space-y-4 font-sans">
+      <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+        <h4 class="text-xs font-black text-slate-800 dark:text-slate-100 flex items-center gap-2 uppercase tracking-wide font-sans">
+          <span class="p-1.5 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-500 rounded-lg text-sm flex items-center justify-center">${getIconForType(selectedProduct.tipo)}</span>
           <span>Editar Serviço: ${selectedProduct.tipo}</span>
         </h4>
-        <button id="btn-close-product-editor" type="button" class="text-[10px] font-black text-white bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 px-3 py-1.5 rounded-xl transition uppercase tracking-wider font-sans shadow-sm flex items-center gap-1">
-          <span>← Voltar aos Produtos</span>
+        <button id="btn-close-product-editor" type="button" class="px-2.5 py-1 text-slate-500 hover:text-rose-600 dark:text-slate-400 dark:hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer" title="Fechar edição e voltar a adicionar produtos">
+          <span>✕</span>
+          <span class="text-[10px] uppercase font-black">Cancelar</span>
         </button>
       </div>
 
-      <div class="space-y-6 pb-4">
+      <div class="space-y-4">
         <div class="p-4 rounded-2xl border border-indigo-500 dark:border-indigo-400 ring-2 ring-indigo-500/20 shadow-md shadow-indigo-500/5 bg-indigo-50/5 dark:bg-indigo-950/5 space-y-4">
           <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 pb-2 mb-1">
             <span class="text-xs font-extrabold text-slate-700 dark:text-slate-200 font-sans">
@@ -480,9 +482,9 @@ export function renderLateralEditorPaneHTML(
         </div>
       </div>
 
-      <div class="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800 sticky bottom-0 bg-white dark:bg-slate-900 z-10 py-2">
-        <button id="edit-btn-cancelar-lateral" type="button" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs tracking-wider rounded-lg transition uppercase font-sans">
-          Voltar
+      <div class="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+        <button id="edit-btn-cancelar-lateral" type="button" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs tracking-wider rounded-lg transition uppercase font-sans cursor-pointer">
+          ✕ Cancelar Edição
         </button>
       </div>
     </div>

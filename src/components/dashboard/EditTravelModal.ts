@@ -63,6 +63,7 @@ export class EditTravelModal {
   private locConferenciasMap: { [locKey: string]: boolean } = {};
   private currentLoadedViagem: any = null;
   private globalSettings: any = null;
+  private currentActiveTab: 'detalhes' | 'produtos' | 'vouchers' | 'comentarios' | 'reembolsos' = 'detalhes';
 
   constructor(options: EditTravelModalOptions) {
     this.options = options;
@@ -71,8 +72,9 @@ export class EditTravelModal {
   /**
    * Abre o modal buscando os dados atualizados da viagem
    */
-  public async open(tripId: string, activeTab: 'detalhes' | 'produtos' | 'reembolsos' = 'detalhes'): Promise<void> {
+  public async open(tripId: string, activeTab: 'detalhes' | 'produtos' | 'vouchers' | 'comentarios' | 'reembolsos' = 'detalhes'): Promise<void> {
     this.tripId = tripId;
+    this.currentActiveTab = activeTab;
 
     // Destruir autocompletes ativos antes de reabrir/re-renderizar
     if (this.destAutocomplete) {
@@ -115,7 +117,7 @@ export class EditTravelModal {
     }
 
     try {
-      const modalWidthClass = this.selectedProductId ? 'max-w-[1380px]' : 'max-w-6xl';
+      const modalWidthClass = 'max-w-5xl lg:max-w-6xl xl:max-w-7xl';
       this.renderModalOverlay(modalWidthClass);
       
       const modalContent = document.getElementById('modal-content-container');
@@ -271,7 +273,7 @@ export class EditTravelModal {
     }
   }
 
-  private renderEdicaoEProdutosModalContent(v: any, clientes: any[], activeTab: 'detalhes' | 'produtos' | 'reembolsos' = 'detalhes'): void {
+  private renderEdicaoEProdutosModalContent(v: any, clientes: any[], activeTab: 'detalhes' | 'produtos' | 'vouchers' | 'comentarios' | 'reembolsos' = 'detalhes'): void {
     const modalContent = document.getElementById('modal-content-container');
     if (!modalContent) return;
 
@@ -497,25 +499,36 @@ export class EditTravelModal {
           </div>
         </div>
 
-        <!-- Seletor de Abas Premium (visível apenas no mobile) -->
-        <div class="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 mb-5 pb-px lg:hidden overflow-x-auto custom-scrollbar">
-          <button id="tab-detalhes-btn" class="border-b-2 ${activeTab === 'detalhes' ? 'border-indigo-600 dark:border-indigo-400 text-indigo-600 dark:text-indigo-400 font-black' : 'border-transparent text-slate-400 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 font-semibold'} px-3 py-2 text-xs sm:text-sm transition shrink-0">
-            📝 Detalhes e Edição
+        <!-- Seletor de Abas da Viagem (Desktop e Mobile) -->
+        <div class="flex items-center gap-1.5 sm:gap-2 border-b border-slate-200/80 dark:border-slate-800 mb-6 pb-px overflow-x-auto custom-scrollbar">
+          <button id="tab-detalhes-btn" type="button" class="border-b-2 ${activeTab === 'detalhes' ? 'border-indigo-600 dark:border-indigo-400 text-indigo-600 dark:text-indigo-400 font-black' : 'border-transparent text-slate-400 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 font-bold'} px-3 sm:px-4 py-2.5 text-xs sm:text-sm transition shrink-0 flex items-center gap-1.5 cursor-pointer">
+            <span>📝</span>
+            <span>Geral &amp; Passageiro</span>
           </button>
-          <button id="tab-produtos-btn" class="border-b-2 ${activeTab === 'produtos' ? 'border-indigo-600 dark:border-indigo-400 text-indigo-600 dark:text-indigo-400 font-black' : 'border-transparent text-slate-400 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 font-semibold'} px-3 py-2 text-xs sm:text-sm transition shrink-0">
-            🛍️ Produtos e Serviços
+          <button id="tab-produtos-btn" type="button" class="border-b-2 ${activeTab === 'produtos' ? 'border-indigo-600 dark:border-indigo-400 text-indigo-600 dark:text-indigo-400 font-black' : 'border-transparent text-slate-400 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 font-bold'} px-3 sm:px-4 py-2.5 text-xs sm:text-sm transition shrink-0 flex items-center gap-1.5 cursor-pointer">
+            <span>🛍️</span>
+            <span>Produtos &amp; Serviços</span>
           </button>
-          <button id="tab-reembolsos-btn" class="border-b-2 ${activeTab === 'reembolsos' ? 'border-indigo-600 dark:border-indigo-400 text-indigo-600 dark:text-indigo-400 font-black' : 'border-transparent text-slate-400 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 font-semibold'} px-3 py-2 text-xs sm:text-sm transition shrink-0 flex items-center gap-1.5">
-            <span>💸 Reembolsos</span>
+          <button id="tab-vouchers-btn" type="button" class="border-b-2 ${activeTab === 'vouchers' ? 'border-indigo-600 dark:border-indigo-400 text-indigo-600 dark:text-indigo-400 font-black' : 'border-transparent text-slate-400 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 font-bold'} px-3 sm:px-4 py-2.5 text-xs sm:text-sm transition shrink-0 flex items-center gap-1.5 cursor-pointer">
+            <span>🎫</span>
+            <span>Vouchers &amp; Documentos</span>
+          </button>
+          <button id="tab-comentarios-btn" type="button" class="border-b-2 ${activeTab === 'comentarios' ? 'border-indigo-600 dark:border-indigo-400 text-indigo-600 dark:text-indigo-400 font-black' : 'border-transparent text-slate-400 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 font-bold'} px-3 sm:px-4 py-2.5 text-xs sm:text-sm transition shrink-0 flex items-center gap-1.5 cursor-pointer">
+            <span>💬</span>
+            <span>Linha do Tempo &amp; Comentários</span>
+          </button>
+          <button id="tab-reembolsos-btn" type="button" class="border-b-2 ${activeTab === 'reembolsos' ? 'border-indigo-600 dark:border-indigo-400 text-indigo-600 dark:text-indigo-400 font-black' : 'border-transparent text-slate-400 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 font-bold'} px-3 sm:px-4 py-2.5 text-xs sm:text-sm transition shrink-0 flex items-center gap-1.5 cursor-pointer">
+            <span>💸</span>
+            <span>Reembolsos</span>
             ${v.reembolsos && v.reembolsos.length > 0 ? `<span class="px-1.5 py-0.5 bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400 text-[10px] font-black rounded-full">${v.reembolsos.length}</span>` : ''}
           </button>
         </div>
 
-        <!-- CONTEÚDO PRINCIPAL (Grid 3 Colunas no Desktop) -->
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <!-- CONTEÚDO PRINCIPAL (5 Abas Independentes e Espaçosas) -->
+        <div class="relative min-h-[350px]">
           
-          <!-- COLUNA DA ESQUERDA (Detalhes da Viagem e Cronograma) -->
-          <div id="tab-detalhes-content" class="space-y-4 ${activeTab !== 'detalhes' ? 'hidden lg:block' : ''} ${this.selectedProductId ? 'lg:col-span-4' : 'lg:col-span-5'}">
+          <!-- ABA 1: GERAL & PASSAGEIRO -->
+          <div id="tab-detalhes-content" class="space-y-5 ${activeTab === 'detalhes' ? '' : 'hidden'}">
             
             <!-- Perfil do Responsável, SLA e Risk Score -->
             <div class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/50 dark:border-slate-800 flex-wrap gap-2">
@@ -564,45 +577,18 @@ export class EditTravelModal {
               </div>
             </div>
 
-            <!-- Identificação do Próximo Embarque e Contato -->
-            ${(() => {
-              const todosEmbarquesViagem = ContatosEmbarqueService.obterEmbarquesViagem(v);
-              const contatosViagem = ContatosEmbarqueService.extrairContatos(v);
-              const proximoPendente = todosEmbarquesViagem.find(emb => !contatosViagem[emb.chave]?.feito);
-              const todosFeitos = todosEmbarquesViagem.length > 0 && !proximoPendente;
+            <!-- Atalhos de Comunicação -->
+            <div class="flex items-center gap-2 p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/50 dark:border-slate-800 mt-2 flex-wrap">
+              <span class="text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider font-sans">Comunicação:</span>
+              <button id="btn-modal-whatsapp" type="button" class="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/40 rounded-lg text-xs font-bold transition">
+                <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.724-1.455L0 24zm6.59-4.846c1.6.95 3.197 1.451 4.777 1.451 5.51 0 9.997-4.493 10-10.008.002-2.673-1.037-5.186-2.93-7.079-1.892-1.893-4.401-2.934-7.078-2.934-5.518 0-10.007 4.493-10.01 10.01-.001 1.708.455 3.377 1.32 4.887L1.134 22.84l4.513-1.186zm11.23-7.925c-.297-.149-1.758-.868-2.03-.967-.273-.099-.471-.148-.669.149-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.568-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/></svg>
+                WhatsApp
+              </button>
 
-              return `
-                <!-- Atalhos de Comunicação -->
-                <div class="flex items-center gap-2 p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/50 dark:border-slate-800 mt-2 flex-wrap">
-                  <span class="text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider font-sans">Comunicação:</span>
-                  <button id="btn-modal-whatsapp" type="button" class="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/40 rounded-lg text-xs font-bold transition">
-                    <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.724-1.455L0 24zm6.59-4.846c1.6.95 3.197 1.451 4.777 1.451 5.51 0 9.997-4.493 10-10.008.002-2.673-1.037-5.186-2.93-7.079-1.892-1.893-4.401-2.934-7.078-2.934-5.518 0-10.007 4.493-10.01 10.01-.001 1.708.455 3.377 1.32 4.887L1.134 22.84l4.513-1.186zm11.23-7.925c-.297-.149-1.758-.868-2.03-.967-.273-.099-.471-.148-.669.149-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.568-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/></svg>
-                    WhatsApp
-                  </button>
-
-                  <!-- Botão de Remarcar Viagem com Blindagem Contábil -->
-                  <button id="btn-modal-remarcar-viagem" type="button" class="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/30 dark:hover:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200/80 dark:border-indigo-800/80 rounded-lg text-xs font-bold transition font-sans shadow-xs" title="Remarcar datas da viagem e sincronizar relatório de embarques com blindagem contábil">
-                    <span>🔁 Remarcar Viagem</span>
-                  </button>
-
-                  <!-- Marcador de Contato Pré-Embarque -->
-                  ${todosFeitos ? `
-                    <button id="btn-modal-historico-digisac" type="button" class="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-900/40 rounded-lg text-xs font-bold transition font-sans" title="Todos os contatos de embarque foram realizados. Clique para abrir o histórico de conversa do Digisac.">
-                      <svg class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                      </svg>
-                      <span>Pré-Embarque: Feito ✅ (Digisac)</span>
-                    </button>
-                  ` : `
-                    <button id="btn-modal-pre-embarque" type="button" class="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/20 dark:hover:bg-amber-950/30 text-amber-700 dark:text-amber-400 border border-amber-200/80 dark:border-amber-900/40 rounded-lg text-xs font-bold transition font-sans" title="Contato pré-embarque pendente (${proximoPendente ? proximoPendente.rotulo : 'Próximo voo'}). Clique para disparar mensagem pré-selecionada.">
-                      <svg class="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <span>Pré-Embarque: Pendente ⏳</span>
-                    </button>
-                  `}
-              `;
-            })()}
+              <!-- Botão de Remarcar Viagem com Blindagem Contábil -->
+              <button id="btn-modal-remarcar-viagem" type="button" class="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/30 dark:hover:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200/80 dark:border-indigo-800/80 rounded-lg text-xs font-bold transition font-sans shadow-xs" title="Remarcar datas da viagem e sincronizar relatório de embarques com blindagem contábil">
+                <span>🔁 Remarcar Viagem</span>
+              </button>
               ${(v.pos_contato_concluido || v.nps_respondido || v.nps_nota !== undefined || v.npsNota !== undefined || v.status === 'concluida') ? `
                 <span class="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/40 font-sans flex items-center gap-1">
                   ✅ Pós-Contato Concluído ${v.nps_nota !== undefined && v.nps_nota !== null ? `(NPS: ${v.nps_nota}/10)` : ''}
@@ -688,25 +674,156 @@ export class EditTravelModal {
                   <button id="btn-close-edit-modal" type="button" class="flex-1 sm:flex-none px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold text-xs tracking-wider rounded-xl transition uppercase text-center">
                     Cancelar
                   </button>
-                  <button type="submit" class="flex-1 sm:flex-none px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/20 transition uppercase text-center">
+                  <button type="submit" class="flex-1 sm:flex-none px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs tracking-wider rounded-xl shadow-lg shadow-indigo-600/20 transition uppercase text-center cursor-pointer">
                     Salvar Alterações
                   </button>
                 </div>
               </div>
             </form>
 
-            <!-- Seção de Documentos e Vouchers da Viagem -->
-            <div class="mt-6 border-t border-slate-100 dark:border-slate-800/80 pt-4">
-              <div class="flex items-center justify-between mb-3">
+            <!-- Cronograma Geral de Datas -->
+            <div class="mt-4 border-t border-slate-100 dark:border-slate-800/80 pt-4">
+              ${cronogramaHTML}
+            </div>
+          </div>
+
+          <!-- ABA 2: PRODUTOS & SERVIÇOS (Layout Dividido em 2 Colunas no Desktop) -->
+          <div id="tab-produtos-content" class="${activeTab === 'produtos' ? '' : 'hidden'}">
+            
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+              
+              <!-- COLUNA DA ESQUERDA: LISTA & TOTALIZADORES (lg:col-span-7) -->
+              <div class="space-y-5 lg:col-span-7">
+                
+                <!-- Painel Financeiro (Totalizadores e Alocação dos Produtos) -->
+                <div id="painel-financeiro-produtos" class="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3.5 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/50 dark:border-slate-800 mb-2">
+                  <div>
+                    <span class="block text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wider leading-tight">Valor da Viagem</span>
+                    <strong id="fin-valor-venda" class="text-sm font-black text-slate-800 dark:text-slate-100">R$ 0,00</strong>
+                  </div>
+                  <div>
+                    <span class="block text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wider leading-tight">Total em Produtos</span>
+                    <strong id="fin-valor-produtos" class="text-sm font-black text-slate-800 dark:text-slate-100 font-bold">R$ 0,00</strong>
+                  </div>
+                  <div>
+                    <span id="fin-label-pendente" class="block text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wider leading-tight">Alocação de Produtos</span>
+                    <strong id="fin-valor-pendente" class="text-sm font-black text-emerald-600 dark:text-emerald-400">R$ 0,00</strong>
+                  </div>
+                  <div>
+                    <span class="block text-[10px] text-indigo-500 dark:text-indigo-400 font-bold uppercase tracking-wider leading-tight">Rentabilidade</span>
+                    <strong id="fin-valor-rentabilidade" class="text-sm font-black text-indigo-600 dark:text-indigo-400">R$ 0,00</strong>
+                    <div id="fin-valor-mkp-rav" class="text-[8.5px] font-bold text-slate-500 dark:text-slate-400 mt-0.5 leading-tight flex flex-col gap-0.5 hidden"></div>
+                  </div>
+                </div>
+                
+                <!-- Lista de Produtos Existentes (Rolagem Única do Modal) -->
                 <div>
-                  <h4 class="text-xs font-black text-slate-400 dark:text-slate-400 uppercase tracking-wide flex items-center gap-1.5">
+                  <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+                    <h4 class="text-xs font-black text-slate-400 dark:text-slate-400 uppercase tracking-wide">Produtos Cadastrados nesta Viagem</h4>
+                    ${selectedProduct ? `
+                      <button type="button" id="btn-novo-produto-trigger-topo" class="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 rounded-lg text-xs font-bold transition flex items-center gap-1 border border-indigo-200/60 dark:border-indigo-800/60 shadow-xs cursor-pointer" title="Limpar seleção e cadastrar um novo serviço">
+                        <span>➕</span>
+                        <span>Novo Serviço</span>
+                      </button>
+                    ` : ''}
+                  </div>
+                  <div id="lista-produtos-viagem-container" class="space-y-2.5">
+                    <p class="text-center text-xs text-slate-400 dark:text-slate-400 font-medium py-4">Buscando produtos...</p>
+                  </div>
+                </div>
+
+                ${showUpsell && upsellOps.length > 0 ? `
+                  <!-- BLOCO PREDIÇÃO PAXFLOW UPSELL ENGINE -->
+                  <div id="paxflow-upsell-container" class="p-4 bg-gradient-to-br from-indigo-50/90 via-purple-50/60 to-slate-50 border border-indigo-200/80 dark:from-indigo-950/80 dark:via-slate-900 dark:to-purple-950/80 dark:border-indigo-500/30 rounded-2xl text-slate-800 dark:text-white space-y-3 shadow-xs dark:shadow-md mt-4">
+                    <div class="flex items-center justify-between">
+                      <div class="flex items-center gap-2">
+                        <span class="text-base">🚀</span>
+                        <div>
+                          <h4 class="text-xs font-black uppercase tracking-wider text-indigo-900 dark:text-indigo-200 font-sans">PaxFlow Upsell Engine™ — Upgrades & Adicionais</h4>
+                          <p class="text-[10px] text-slate-600 dark:text-slate-300 font-medium">Oportunidades inteligentes para aumentar a margem e o conforto do cliente</p>
+                        </div>
+                      </div>
+                      <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase bg-indigo-100 text-indigo-700 border border-indigo-200 dark:bg-indigo-500/20 dark:text-indigo-300 dark:border-indigo-500/30 shrink-0 font-sans">Preditivo IA</span>
+                    </div>
+
+                    <div id="paxflow-upsell-cards-list" class="grid grid-cols-1 gap-2">
+                      ${upsellOps.map(u => `
+                        <div id="upsell-card-${u.id}" class="p-3 bg-white/90 hover:bg-white dark:bg-white/5 dark:hover:bg-white/10 rounded-xl border border-indigo-100/80 dark:border-white/10 shadow-xs dark:shadow-none flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all duration-300">
+                          <div class="space-y-0.5 flex-1 min-w-0">
+                            <div class="flex items-center gap-2 flex-wrap">
+                              <span class="text-xs font-black text-slate-900 dark:text-indigo-100 font-sans">${u.titulo}</span>
+                              <span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${u.corBadge} font-sans">${u.badgeTexto}</span>
+                            </div>
+                            <p class="text-[11px] text-slate-600 dark:text-slate-300 font-medium leading-relaxed">${u.descricao}</p>
+                            <span class="text-[10px] text-emerald-700 dark:text-emerald-300 font-extrabold block">+ R$ ${u.valorEstimado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} &bull; Sugestão: ${u.produtoSugerido}</span>
+                          </div>
+                          <div class="flex items-center gap-1.5 shrink-0 self-end sm:self-center">
+                            ${u.mensagemWhatsApp ? `
+                              <button type="button" 
+                                data-upsell-wa="${encodeURIComponent(u.mensagemWhatsApp)}" 
+                                class="btn-whatsapp-upsell px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/30 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 border border-emerald-300/50 dark:border-emerald-700/50 rounded-lg text-[10px] font-black uppercase transition flex items-center gap-1 font-sans shadow-xs cursor-pointer" 
+                                title="Enviar proposta comercial pré-formatada via WhatsApp">
+                                <span>📲 WhatsApp</span>
+                              </button>
+                            ` : ''}
+                            <button type="button" 
+                              data-upsell-tipo="${u.categoriaProduto}" 
+                              data-upsell-desc="${u.produtoSugerido}" 
+                              data-upsell-valor="${u.valorEstimado}" 
+                              class="btn-quick-add-upsell px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 dark:hover:bg-indigo-500 text-white rounded-lg text-[10px] font-black uppercase shrink-0 transition flex items-center gap-1 font-sans shadow-xs cursor-pointer"
+                              title="Preencher automaticamente formulário de novo produto">
+                              <span>+ Incluir</span>
+                            </button>
+                            <button type="button" 
+                              data-upsell-id="${u.id}"
+                              data-viagem-id="${v.id}"
+                              class="btn-dismiss-upsell p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg text-xs font-bold transition cursor-pointer"
+                              title="Dispensar sugestão para esta viagem">
+                              ✕
+                            </button>
+                          </div>
+                        </div>
+                      `).join('')}
+                    </div>
+                  </div>
+                ` : ''}
+
+              </div>
+
+              <!-- COLUNA DA DIREITA: FORMULÁRIO DINÂMICO (NOVO OU EDITAR) (lg:col-span-5) -->
+              <div id="coluna-formulario-produtos" class="space-y-4 lg:col-span-5 lg:sticky lg:top-2">
+                ${selectedProduct ? `
+                  ${renderLateralEditorPaneHTML(
+                    selectedProduct,
+                    activeTab,
+                    this.options.tiposProduto,
+                    (tipo) => this.getIconForType(tipo),
+                    isSelectedProductLocConferido
+                  )}
+                ` : `
+                  <div class="bg-white dark:bg-slate-900 shadow-sm rounded-2xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-800">
+                    ${renderNovoProdutoFormHTML(this.options.tiposProduto)}
+                  </div>
+                `}
+              </div>
+
+            </div>
+
+          </div>
+
+          <!-- ABA 3: VOUCHERS & DOCUMENTOS -->
+          <div id="tab-vouchers-content" class="space-y-4 ${activeTab === 'vouchers' ? '' : 'hidden'}">
+            <div class="p-4 sm:p-5 bg-slate-50/70 dark:bg-slate-800/40 rounded-2xl border border-slate-200/70 dark:border-slate-800 space-y-4">
+              <div class="flex items-center justify-between flex-wrap gap-2">
+                <div>
+                  <h4 class="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-wide flex items-center gap-1.5">
                     📁 Documentos &amp; Vouchers da Viagem
                   </h4>
-                  <span class="text-[10px] text-slate-400 font-medium">Passaportes, vistos, bilhetes e reservas anexadas</span>
+                  <span class="text-[11px] text-slate-400 font-medium">Passaportes, vistos, bilhetes e reservas anexadas a esta viagem</span>
                 </div>
                 <div>
                   <input type="file" id="input-viagem-upload-doc" class="hidden" accept="application/pdf,image/*" multiple />
-                  <button id="btn-viagem-upload-doc" type="button" class="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-[10px] tracking-wider rounded-lg shadow-sm transition uppercase flex items-center gap-1.5">
+                  <button id="btn-viagem-upload-doc" type="button" class="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs tracking-wider rounded-xl shadow-sm transition uppercase flex items-center gap-1.5 cursor-pointer">
                     <span>➕</span> Anexar Arquivos
                   </button>
                 </div>
@@ -721,128 +838,20 @@ export class EditTravelModal {
               </div>
               <div id="viagem-upload-status" class="mt-2 hidden"></div>
             </div>
-
-            <!-- Cronograma Geral de Datas -->
-            ${cronogramaHTML}
-
-            <!-- Container de Comentários da Viagem -->
-            <div id="viagem-comments-container" class="mt-6 border-t border-slate-100 dark:border-slate-800 pt-4"></div>
           </div>
 
-          <!-- COLUNA DO MEIO (Produtos e Serviços) -->
-          <div id="tab-produtos-content" class="space-y-5 tab-pane-transition ${activeTab !== 'produtos' || (this.selectedProductId && activeTab === 'produtos') ? 'hidden' : ''} ${this.selectedProductId ? 'lg:col-span-4 lg:!block' : 'lg:col-span-7 lg:!block'} lg:!mt-0">
-            
-            <!-- Painel Financeiro (Totalizadores e Alocação dos Produtos) -->
-            <div id="painel-financeiro-produtos" class="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3.5 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/50 dark:border-slate-800 mb-2">
-              <div>
-                <span class="block text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wider leading-tight">Valor da Viagem</span>
-                <strong id="fin-valor-venda" class="text-sm font-black text-slate-800 dark:text-slate-100">R$ 0,00</strong>
-              </div>
-              <div>
-                <span class="block text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wider leading-tight">Total em Produtos</span>
-                <strong id="fin-valor-produtos" class="text-sm font-black text-slate-800 dark:text-slate-100 font-bold">R$ 0,00</strong>
-              </div>
-              <div>
-                <span id="fin-label-pendente" class="block text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wider leading-tight">Alocação de Produtos</span>
-                <strong id="fin-valor-pendente" class="text-sm font-black text-emerald-600 dark:text-emerald-400">R$ 0,00</strong>
-              </div>
-              <div>
-                <span class="block text-[10px] text-indigo-500 dark:text-indigo-400 font-bold uppercase tracking-wider leading-tight">Rentabilidade</span>
-                <strong id="fin-valor-rentabilidade" class="text-sm font-black text-indigo-600 dark:text-indigo-400">R$ 0,00</strong>
-                <div id="fin-valor-mkp-rav" class="text-[8.5px] font-bold text-slate-500 dark:text-slate-400 mt-0.5 leading-tight flex flex-col gap-0.5 hidden"></div>
-              </div>
+          <!-- ABA 4: LINHA DO TEMPO & COMENTÁRIOS -->
+          <div id="tab-comentarios-content" class="space-y-4 ${activeTab === 'comentarios' ? '' : 'hidden'}">
+            <div class="p-4 sm:p-5 bg-slate-50/70 dark:bg-slate-800/40 rounded-2xl border border-slate-200/70 dark:border-slate-800">
+              <div id="viagem-comments-container"></div>
             </div>
-            
-            <!-- Lista de Produtos Existentes -->
-            <div>
-              <h4 class="text-xs font-black text-slate-400 dark:text-slate-400 uppercase tracking-wide mb-2.5">Produtos Cadastrados nesta Viagem</h4>
-              <div id="lista-produtos-viagem-container" class="space-y-2 max-h-[220px] lg:max-h-[350px] overflow-y-auto pr-1 custom-scrollbar">
-                <p class="text-center text-xs text-slate-400 dark:text-slate-400 font-medium py-4">Buscando produtos...</p>
-              </div>
-            </div>
-
-            ${showUpsell && upsellOps.length > 0 ? `
-              <!-- BLOCO PREDIÇÃO PAXFLOW UPSELL ENGINE -->
-              <div id="paxflow-upsell-container" class="p-4 bg-gradient-to-br from-indigo-50/90 via-purple-50/60 to-slate-50 border border-indigo-200/80 dark:from-indigo-950/80 dark:via-slate-900 dark:to-purple-950/80 dark:border-indigo-500/30 rounded-2xl text-slate-800 dark:text-white space-y-3 shadow-xs dark:shadow-md">
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center gap-2">
-                    <span class="text-base">🚀</span>
-                    <div>
-                      <h4 class="text-xs font-black uppercase tracking-wider text-indigo-900 dark:text-indigo-200 font-sans">PaxFlow Upsell Engine™ — Upgrades & Adicionais</h4>
-                      <p class="text-[10px] text-slate-600 dark:text-slate-300 font-medium">Oportunidades inteligentes para aumentar a margem e o conforto do cliente</p>
-                    </div>
-                  </div>
-                  <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase bg-indigo-100 text-indigo-700 border border-indigo-200 dark:bg-indigo-500/20 dark:text-indigo-300 dark:border-indigo-500/30 shrink-0 font-sans">Preditivo IA</span>
-                </div>
-
-                <div id="paxflow-upsell-cards-list" class="grid grid-cols-1 gap-2">
-                  ${upsellOps.map(u => `
-                    <div id="upsell-card-${u.id}" class="p-3 bg-white/90 hover:bg-white dark:bg-white/5 dark:hover:bg-white/10 rounded-xl border border-indigo-100/80 dark:border-white/10 shadow-xs dark:shadow-none flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all duration-300">
-                      <div class="space-y-0.5 flex-1 min-w-0">
-                        <div class="flex items-center gap-2 flex-wrap">
-                          <span class="text-xs font-black text-slate-900 dark:text-indigo-100 font-sans">${u.titulo}</span>
-                          <span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${u.corBadge} font-sans">${u.badgeTexto}</span>
-                        </div>
-                        <p class="text-[11px] text-slate-600 dark:text-slate-300 font-medium leading-relaxed">${u.descricao}</p>
-                        <span class="text-[10px] text-emerald-700 dark:text-emerald-300 font-extrabold block">+ R$ ${u.valorEstimado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} &bull; Sugestão: ${u.produtoSugerido}</span>
-                      </div>
-                      <div class="flex items-center gap-1.5 shrink-0 self-end sm:self-center">
-                        ${u.mensagemWhatsApp ? `
-                          <button type="button" 
-                            data-upsell-wa="${encodeURIComponent(u.mensagemWhatsApp)}" 
-                            class="btn-whatsapp-upsell px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/30 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 border border-emerald-300/50 dark:border-emerald-700/50 rounded-lg text-[10px] font-black uppercase transition flex items-center gap-1 font-sans shadow-xs cursor-pointer" 
-                            title="Enviar proposta comercial pré-formatada via WhatsApp">
-                            <span>📲 WhatsApp</span>
-                          </button>
-                        ` : ''}
-                        <button type="button" 
-                          data-upsell-tipo="${u.categoriaProduto}" 
-                          data-upsell-desc="${u.produtoSugerido}" 
-                          data-upsell-valor="${u.valorEstimado}" 
-                          class="btn-quick-add-upsell px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 dark:hover:bg-indigo-500 text-white rounded-lg text-[10px] font-black uppercase shrink-0 transition flex items-center gap-1 font-sans shadow-xs cursor-pointer"
-                          title="Preencher automaticamente formulário de novo produto">
-                          <span>+ Incluir</span>
-                        </button>
-                        <button type="button"
-                          data-upsell-id="${u.id}"
-                          data-viagem-id="${v.id}"
-                          class="btn-dismiss-upsell p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg text-xs font-bold transition cursor-pointer"
-                          title="Dispensar sugestão para esta viagem">
-                          ✕
-                        </button>
-                      </div>
-                    </div>
-                  `).join('')}
-                </div>
-              </div>
-            ` : ''}
-
-            <!-- Formulário de Novo Produto (Inline) -->
-            <div class="border-t border-slate-100 dark:border-slate-800 pt-4">
-              ${renderNovoProdutoFormHTML(this.options.tiposProduto)}
-            </div>
-
-            <!-- Histórico de Reembolsos (Desktop inline) -->
-            <div id="reembolsos-wrapper-desktop" class="hidden lg:block border-t border-slate-100 dark:border-slate-800 pt-4 mt-4">
-              ${renderReembolsosHTML()}
-            </div>
-
           </div>
 
-          <!-- COLUNA DO EDITOR LATERAL (Editor do Produto Selecionado) -->
-          ${renderLateralEditorPaneHTML(
-            selectedProduct,
-            activeTab,
-            this.options.tiposProduto,
-            (tipo) => this.getIconForType(tipo),
-            isSelectedProductLocConferido
-          )}
+          <!-- ABA 5: REEMBOLSOS -->
+          <div id="tab-reembolsos-content" class="space-y-4 ${activeTab === 'reembolsos' ? '' : 'hidden'}">
+            ${renderReembolsosHTML()}
+          </div>
 
-        </div>
-
-        <!-- ABA 3: HISTÓRICO DE REEMBOLSOS (Apenas Mobile) -->
-        <div id="tab-reembolsos-content" class="space-y-4 tab-pane-transition ${activeTab === 'reembolsos' ? '' : 'hidden'} lg:hidden">
-          ${renderReembolsosHTML()}
         </div>
 
       </div>
@@ -1128,50 +1137,64 @@ export class EditTravelModal {
       );
     }
 
-    // Seletores de Abas Premium
+    // Seletores de Abas da Viagem
     const tabDetalhesBtn = document.getElementById('tab-detalhes-btn');
     const tabProdutosBtn = document.getElementById('tab-produtos-btn');
+    const tabVouchersBtn = document.getElementById('tab-vouchers-btn');
+    const tabComentariosBtn = document.getElementById('tab-comentarios-btn');
     const tabReembolsosBtn = document.getElementById('tab-reembolsos-btn');
     
     const tabDetalhesContent = document.getElementById('tab-detalhes-content');
     const tabProdutosContent = document.getElementById('tab-produtos-content');
+    const tabVouchersContent = document.getElementById('tab-vouchers-content');
+    const tabComentariosContent = document.getElementById('tab-comentarios-content');
     const tabReembolsosContent = document.getElementById('tab-reembolsos-content');
 
-    const resetTabs = () => {
-      tabDetalhesBtn?.setAttribute('class', 'border-b-2 border-transparent px-4 py-2 text-sm font-semibold text-slate-400 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition');
-      tabProdutosBtn?.setAttribute('class', 'border-b-2 border-transparent px-4 py-2 text-sm font-semibold text-slate-400 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition');
-      tabReembolsosBtn?.setAttribute('class', 'border-b-2 border-transparent px-4 py-2 text-sm font-semibold text-slate-400 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition');
-      
-      tabDetalhesContent?.classList.add('hidden');
-      tabProdutosContent?.classList.add('hidden');
-      tabReembolsosContent?.classList.add('hidden');
+    const setActiveTab = (tab: 'detalhes' | 'produtos' | 'vouchers' | 'comentarios' | 'reembolsos') => {
+      this.currentActiveTab = tab;
+
+      const inativoClass = 'border-b-2 border-transparent text-slate-400 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 font-bold px-3 sm:px-4 py-2.5 text-xs sm:text-sm transition shrink-0 flex items-center gap-1.5 cursor-pointer';
+      const ativoClass = 'border-b-2 border-indigo-600 dark:border-indigo-400 text-indigo-600 dark:text-indigo-400 font-black px-3 sm:px-4 py-2.5 text-xs sm:text-sm transition shrink-0 flex items-center gap-1.5 cursor-pointer';
+
+      tabDetalhesBtn?.setAttribute('class', tab === 'detalhes' ? ativoClass : inativoClass);
+      tabProdutosBtn?.setAttribute('class', tab === 'produtos' ? ativoClass : inativoClass);
+      tabVouchersBtn?.setAttribute('class', tab === 'vouchers' ? ativoClass : inativoClass);
+      tabComentariosBtn?.setAttribute('class', tab === 'comentarios' ? ativoClass : inativoClass);
+      tabReembolsosBtn?.setAttribute('class', tab === 'reembolsos' ? ativoClass : inativoClass);
+
+      tabDetalhesContent?.classList.toggle('hidden', tab !== 'detalhes');
+      tabProdutosContent?.classList.toggle('hidden', tab !== 'produtos');
+      tabVouchersContent?.classList.toggle('hidden', tab !== 'vouchers');
+      tabComentariosContent?.classList.toggle('hidden', tab !== 'comentarios');
+      tabReembolsosContent?.classList.toggle('hidden', tab !== 'reembolsos');
     };
 
-    tabDetalhesBtn?.addEventListener('click', () => {
-      resetTabs();
-      tabDetalhesBtn.className = 'border-b-2 border-indigo-600 dark:border-indigo-400 px-4 py-2 text-sm font-black text-indigo-600 dark:text-indigo-400 transition';
-      tabDetalhesContent?.classList.remove('hidden');
-    });
-
-    tabProdutosBtn?.addEventListener('click', () => {
-      resetTabs();
-      tabProdutosBtn.className = 'border-b-2 border-indigo-600 dark:border-indigo-400 px-4 py-2 text-sm font-black text-indigo-600 dark:text-indigo-400 transition';
-      tabProdutosContent?.classList.remove('hidden');
-    });
-
-    tabReembolsosBtn?.addEventListener('click', () => {
-      resetTabs();
-      tabReembolsosBtn.className = 'border-b-2 border-indigo-600 dark:border-indigo-400 px-4 py-2 text-sm font-black text-indigo-600 dark:text-indigo-400 transition';
-      tabReembolsosContent?.classList.remove('hidden');
-    });
+    tabDetalhesBtn?.addEventListener('click', () => setActiveTab('detalhes'));
+    tabProdutosBtn?.addEventListener('click', () => setActiveTab('produtos'));
+    tabVouchersBtn?.addEventListener('click', () => setActiveTab('vouchers'));
+    tabComentariosBtn?.addEventListener('click', () => setActiveTab('comentarios'));
+    tabReembolsosBtn?.addEventListener('click', () => setActiveTab('reembolsos'));
 
     const btnVerReembBanner = document.getElementById('btn-ver-reembolsos-banner');
     btnVerReembBanner?.addEventListener('click', () => {
-      if (window.innerWidth < 1024 && tabReembolsosBtn) {
-        tabReembolsosBtn.click();
-      } else {
-        const wrapperDesktop = document.getElementById('reembolsos-wrapper-desktop');
-        wrapperDesktop?.scrollIntoView({ behavior: 'smooth' });
+      setActiveTab('reembolsos');
+    });
+
+    // Toggle do Formulário de Novo Produto na aba de Produtos
+    const btnToggleNovoProd = document.getElementById('btn-toggle-novo-produto');
+    const formNovoProdWrapper = document.getElementById('novo-produto-form-wrapper');
+    const btnToggleNovoProdIcon = document.getElementById('btn-toggle-novo-produto-icon');
+    const btnToggleNovoProdText = document.getElementById('btn-toggle-novo-produto-text');
+
+    btnToggleNovoProd?.addEventListener('click', () => {
+      if (!formNovoProdWrapper) return;
+      const isHidden = formNovoProdWrapper.classList.toggle('hidden');
+      if (btnToggleNovoProdIcon && btnToggleNovoProdText) {
+        btnToggleNovoProdIcon.textContent = isHidden ? '➕' : '✖️';
+        btnToggleNovoProdText.textContent = isHidden ? 'Novo Produto' : 'Fechar Formulário';
+      }
+      if (!isHidden) {
+        formNovoProdWrapper.scrollIntoView({ behavior: 'smooth' });
       }
     });
 
@@ -2010,6 +2033,7 @@ export class EditTravelModal {
     };
     document.getElementById('btn-close-product-editor')?.addEventListener('click', closeEditor);
     document.getElementById('edit-btn-cancelar-lateral')?.addEventListener('click', closeEditor);
+    document.getElementById('btn-novo-produto-trigger-topo')?.addEventListener('click', closeEditor);
 
     const prod = selectedProduct;
     const prodId = prod.id;
@@ -2841,19 +2865,38 @@ export class EditTravelModal {
               </div>
             </div>
             
-            <div class="flex items-center gap-2.5">
+            <div class="flex items-center gap-2 shrink-0">
               <div class="text-right">
                 <span class="block text-xs font-black text-indigo-600 dark:text-indigo-400">R$ ${Number(p.valor_venda || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
-              <button type="button" data-refund-prod-id="${p.id}" class="p-1.5 hover:bg-rose-50 dark:hover:bg-rose-950/20 text-slate-300 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-md transition text-xs font-bold" title="Solicitar Reembolso deste Produto">
-                💸
-              </button>
-              <button data-comments-prod-id="${p.id}" data-comments-prod-name="${p.fornecedor} - ${p.descricao}" class="p-1.5 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-slate-300 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-md transition text-xs font-bold flex items-center gap-1" title="Notas e Comentários">
-                💬 <span class="text-[10px]">${commentsCount}</span>
-              </button>
-              <button data-delete-prod-id="${p.id}" class="p-1.5 hover:bg-rose-50 dark:hover:bg-rose-950/20 text-slate-300 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-md transition text-xs font-bold ${isConferido ? 'hidden' : ''}" title="Remover Produto">
-                🗑️
-              </button>
+
+              <!-- Menu Dropdown de Ações (⋮) -->
+              <div class="relative dropdown-product-wrapper">
+                <button type="button" 
+                  class="btn-dropdown-prod-trigger p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-700/50 rounded-lg transition text-base font-bold flex items-center justify-center leading-none cursor-pointer"
+                  title="Mais ações deste produto"
+                  data-trigger-prod-id="${p.id}">
+                  ⋮
+                </button>
+                <div id="dropdown-prod-menu-${p.id}" class="dropdown-prod-menu hidden absolute right-0 top-full mt-1 w-44 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200/80 dark:border-slate-700 py-1.5 z-30 font-sans">
+                  <button type="button" data-edit-prod-trigger="${p.id}" class="w-full text-left px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center gap-2 transition cursor-pointer">
+                    <span>✏️</span> Editar Serviço
+                  </button>
+                  <button type="button" data-comments-prod-id="${p.id}" data-comments-prod-name="${p.fornecedor || p.tipo} - ${p.descricao || ''}" class="w-full text-left px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center justify-between transition cursor-pointer">
+                    <span class="flex items-center gap-2"><span>💬</span> Anotações</span>
+                    <span class="text-[10px] font-black px-1.5 py-0.5 rounded-full ${commentsCount > 0 ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-300' : 'bg-slate-100 text-slate-400 dark:bg-slate-700 dark:text-slate-400'}">${commentsCount}</span>
+                  </button>
+                  <button type="button" data-refund-prod-id="${p.id}" class="w-full text-left px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-amber-50 dark:hover:bg-amber-950/40 hover:text-amber-600 dark:hover:text-amber-400 flex items-center gap-2 transition cursor-pointer">
+                    <span>💸</span> Solicitar Reembolso
+                  </button>
+                  ${!isConferido ? `
+                    <div class="border-t border-slate-100 dark:border-slate-700 my-1"></div>
+                    <button type="button" data-delete-prod-id="${p.id}" class="w-full text-left px-3 py-2 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center gap-2 transition cursor-pointer">
+                      <span>🗑️</span> Excluir Produto
+                    </button>
+                  ` : ''}
+                </div>
+              </div>
             </div>
           </div>
         `;
@@ -2903,15 +2946,11 @@ export class EditTravelModal {
                 <span class="copy-icon text-[11px]">📋</span>
               </button>
               
-              ${isAdmin ? `
-                <button class="btn-conferir-loc p-1 rounded-lg border text-[9px] font-bold flex items-center justify-center gap-1 shadow-sm transition font-sans ${isConferido ? 'text-emerald-600 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/40' : 'text-slate-400 bg-slate-50 dark:text-slate-400 dark:bg-slate-800 border-slate-200 dark:border-slate-700'}" data-loc="${locKey}">
-                  ${isConferido ? '✔️ Conferido' : '⚙️ Conferir'}
-                </button>
-              ` : (isConferido ? `
-                <span class="px-1.5 py-1 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-600 dark:text-emerald-400 dark:bg-emerald-950/20 dark:border-emerald-900/40 text-[9px] font-bold flex items-center gap-1 shadow-sm font-sans">
+              ${isConferido ? `
+                <span class="px-1.5 py-1 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-600 dark:text-emerald-400 dark:bg-emerald-950/20 dark:border-emerald-900/40 text-[9px] font-bold flex items-center gap-1 shadow-sm font-sans" title="LOC conferido pelo gestor">
                   ✔️ Conferido
                 </span>
-              ` : '')}
+              ` : ''}
 
               <button class="btn-formas-pagamento-loc p-1 ${btnPagamentoClass} rounded-lg border transition text-[9px] font-bold flex items-center justify-center gap-1 shadow-sm font-sans ${(isConferido || isLocEmEdicao) ? 'opacity-55 cursor-not-allowed' : ''}" data-loc="${locKey}" title="${isConferido ? 'Bloqueado Financeiramente' : (isLocEmEdicao ? 'Salve as alterações deste produto no editor lateral antes de receber.' : 'Definir Formas de Pagamento')}">
                 ${btnPagamentoContent}
@@ -3318,6 +3357,45 @@ export class EditTravelModal {
       });
     });
 
+    // Eventos do Menu Dropdown (⋮) de ações de cada produto
+    container.querySelectorAll('.btn-dropdown-prod-trigger').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const prodId = btn.getAttribute('data-trigger-prod-id');
+        const menu = document.getElementById(`dropdown-prod-menu-${prodId}`);
+        const isHidden = menu?.classList.contains('hidden');
+        
+        // Fecha todos os dropdowns abertos primeiro
+        container.querySelectorAll('.dropdown-prod-menu').forEach(m => m.classList.add('hidden'));
+
+        if (isHidden) {
+          menu?.classList.remove('hidden');
+        }
+      });
+    });
+
+    // Clique em 'Editar Serviço' dentro do dropdown (⋮)
+    container.querySelectorAll('[data-edit-prod-trigger]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        container.querySelectorAll('.dropdown-prod-menu').forEach(m => m.classList.add('hidden'));
+        const prodId = btn.getAttribute('data-edit-prod-trigger');
+        const prod = produtos.find(x => x.id === prodId);
+        if (prod) {
+          this.selectedProductId = prod.id;
+          this.open(this.tripId, 'produtos');
+        }
+      });
+    });
+
+    // Fechar dropdowns de produtos ao clicar fora
+    document.addEventListener('click', (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('.dropdown-product-wrapper')) {
+        container.querySelectorAll('.dropdown-prod-menu').forEach(m => m.classList.add('hidden'));
+      }
+    });
+
     // Configura botões de cópia de LOC no container de produtos
     this.setupCopyLocListeners(container);
   }
@@ -3406,7 +3484,10 @@ export class EditTravelModal {
     const container = document.getElementById('modal-container');
     if (container) {
       container.className = container.className.replace(/\bmax-w-\S+/g, '');
-      container.classList.add(maxWidthClass);
+      const classes = maxWidthClass.split(/\s+/).filter(Boolean);
+      if (classes.length > 0) {
+        container.classList.add(...classes);
+      }
     }
     
     setTimeout(() => {

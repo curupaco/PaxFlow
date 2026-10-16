@@ -1553,7 +1553,10 @@ export class Dashboard {
     if (container) {
       // Remove any existing max-w- class and apply the new one
       container.className = container.className.replace(/\bmax-w-\S+/g, '');
-      container.classList.add(maxWidthClass);
+      const classes = maxWidthClass.split(/\s+/).filter(Boolean);
+      if (classes.length > 0) {
+        container.classList.add(...classes);
+      }
     }
     
     // Anima a abertura removendo as classes de fechamento e adicionando as de abertura

@@ -54,6 +54,7 @@
    - 3.42 [Agregação Segura de Produtos & Junção de Viagens com Proteção Contábil](#342-agregação-segura-de-produtos--junção-de-viagens-com-proteção-contábil)
    - 3.43 [Assistente de Remarcação de Viagens com Blindagem Contábil em 1-Clique](#343-assistente-de-remarcação-de-viagens-com-blindagem-contábil-em-1-clique)
    - 3.44 [Divisão de Viagens, Comissões e Parcerias entre Consultores (com Rateio de RAV Aérea)](#344-divisão-de-viagens-comissões-e-parcerias-entre-consultores-com-rateio-de-rav-aérea)
+   - 3.45 [Redesign e Organização em 5 Abas do Gerenciador de Viagens](#345-redesign-e-organização-em-5-abas-do-gerenciador-de-viagens)
 4. [Diferenciais Competitivos](#4-diferenciais-competitivos)
 5. [Arquitetura Tecnológica](#5-arquitetura-tecnológica)
 6. [Segurança e Conformidade](#6-segurança-e-conformidade)
@@ -1182,6 +1183,34 @@ Para viabilizar o trabalho colaborativo entre membros da equipe da agência (pro
 9. **Resiliência a Schema Drift (Padrão Zero-Break)**:
    - A persistência é gerenciada na tabela dedicada `public.viagens_divisoes` com chave estrangeira `ON DELETE CASCADE` e coluna `percentual_rav NUMERIC(5,2)`.
    - Todas as consultas ao banco implementam fallback gracioso para erro de coluna ou tabela ausente (`42P01` / `42703`), garantindo que viagens legadas ou instâncias antes da migração continuem operando normalmente.
+
+---
+
+### 3.45 Redesign e Organização em 5 Abas do Gerenciador de Viagens
+
+A tela de Gerenciar/Editar Viagem (`EditTravelModal` e `DashboardTemplates`) passou por uma reformulação completa de arquitetura de informação e usabilidade, eliminando o empilhamento desordenado de dezenas de campos simultâneos e estabelecendo um fluxo de trabalho focado e visualmente limpo:
+
+1. **Navegação em 5 Abas Especializadas (Desktop & Mobile)**:
+   - **📝 Geral & Passageiro**: Concentra a governança cadastral da viagem (Passageiro, Destino, Datas de Ida/Volta/Financeiro, Status Operacional, Valor Total, Observações e Divisão de Vendas). Apresenta a barra de atalhos rápidos com WhatsApp, Remarcação de Viagem e Pós-Contato.
+   - **🛍️ Produtos & Serviços**: Estruturada em layout de duas colunas balanceadas no desktop (`grid lg:grid-cols-12`):
+     - **Coluna Esquerda (`lg:col-span-7`)**: Visão financeira analítica (Venda, Total em Produtos, Alocação e Rentabilidade com detalhamento de MKP/RAV), lista de produtos cadastrados agrupada por Localizador (LOC) com menu de ações (`⋮`) e recomendações preditivas do *PaxFlow Upsell Engine™*.
+     - **Coluna Direita (`lg:col-span-5` com posicionamento ergonômico sticky)**: Formulário dinâmico embutido (por padrão exibe o formulário de cadastro de novo serviço; ao clicar em Editar em qualquer produto da lista, alterna para o formulário de edição com botão de retorno).
+   - **🎫 Vouchers & Documentos**: Módulo dedicado e isolado para upload, pré-visualização e download de bilhetes aéreos, vouchers de hotéis, apólices de seguro e vistos do passageiro.
+   - **💬 Linha do Tempo & Comentários**: Histórico auditado em tempo real com todas as anotações da equipe, registros de alterações e auditoria de remarcações.
+   - **💸 Reembolsos**: Painel de controle de solicitações de cancelamento e estornos vinculadas à viagem, com badge de quantidade exibido na aba.
+
+2. **Eliminação de Múltiplas Barras de Rolagem (Política de Rolagem Única)**:
+   - Eliminação de qualquer barra de rolagem interna aninhada (`overflow-y-auto` na lista e overlays sobrepostos). O modal opera com uma única barra de rolagem suave e uniforme no diálogo principal (`#modal-container`), garantindo fluidez e evitando travamento do scroll do mouse.
+
+3. **Cards de Produtos Despoluídos com Menu Dropdown (⋮)**:
+   - Os antigos botões dispersos de reembolso (`💸`), anotações (`💬`) e lixeira (`🗑️`) foram unificados em um menu flutuante discreto acionado pelo botão `⋮`.
+   - Clicar no menu abre opções claras: `✏️ Editar Serviço`, `💬 Anotações / Comentários` (com contador), `💸 Solicitar Reembolso` e `🗑️ Excluir Produto` (protegido se o LOC já estiver conferido).
+
+4. **Cabeçalho de LOC Minimalista**:
+   - O botão `⚙️ Conferir` foi ocultado da barra de título do agrupador de LOC. A conferência administrativa é realizada de forma integrada nas Formas de Pagamento, exibindo no cabeçalho apenas o selo elegante `✔️ Conferido` quando o localizador estiver quitado e validado.
+
+5. **Transição Fluida entre Novo Serviço e Edição**:
+   - A coluna direita da aba de produtos alterna instantaneamente entre o formulário de novo produto e a edição do serviço selecionado. O botão `✕ Cancelar Edição` e o atalho `➕ Novo Serviço` no topo da lista restabelecem imediatamente o formulário de criação sem necessidade de recarregar o diálogo.
 
 ---
 
