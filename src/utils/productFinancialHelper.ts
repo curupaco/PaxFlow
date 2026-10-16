@@ -196,3 +196,45 @@ export function calcularTotaisViagem(v: any): TotaisFinanceirosViagem {
     todosDetalhados
   };
 }
+
+/**
+ * Verifica se todos os produtos/serviços de uma viagem foram integralmente pagos.
+ * Regra de Negócio:
+ * - A viagem deve possuir ao menos 1 produto cadastrado.
+ * - Cada Localizador (LOC) da viagem deve possuir registro de quitação em loc_pagamentos.
+ * - O somatório dos pagamentos de cada LOC deve cobrir 100% do valor de venda dos produtos daquele LOC (com tolerância de R$ 0,01).
+ * - Caso ainda haja qualquer valor em aberto ou produto sem pagamento, retorna false.
+ */
+export function verificarViagemTotalmentePaga(produtos: any[], pagamentos: any[]): boolean {
+  if (!Array.isArray(produtos) || produtos.length === 0) {
+    return false;
+  }
+
+  const locKeys = Array.from(new Set(
+    produtos.map((p: any) => (p?.codigo_reserva || 'SEM LOCALIZADOR').trim().toUpperCase())
+  ));
+
+  if (locKeys.length === 0) {
+    return false;
+  }
+
+  const safePags = Array.isArray(pagamentos) ? pagamentos : [];
+
+  for (const locKey of locKeys) {
+    const prodsDoLoc = produtos.filter((p: any) => 
+      (p?.codigo_reserva || 'SEM LOCALIZADOR').trim().toUpperCase() === locKey
+    );
+    const totalVendaLoc = prodsDoLoc.reduce((acc, p) => acc + parseFinancialNumber(p?.valor_venda), 0);
+
+    const pagsDoLoc = safePags.filter((lp: any) => 
+      (lp?.codigo_localizador || '').trim().toUpperCase() === locKey
+    );
+    const totalPagoLoc = pagsDoLoc.reduce((acc, lp) => acc + parseFinancialNumber(lp?.valor), 0);
+
+    if (pagsDoLoc.length === 0 || totalPagoLoc < (totalVendaLoc - 0.01)) {
+      return false;
+    }
+  }
+
+  return true;
+}

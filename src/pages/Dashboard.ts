@@ -38,6 +38,7 @@ import {
   isTipoMarkup,
   calcularFinanceiroProduto,
   calcularTotaisViagem,
+  verificarViagemTotalmentePaga,
   parseFinancialNumber
 } from '../utils/productFinancialHelper';
 import { excluirViagemCascata } from '../controllers/viagensController';
@@ -803,14 +804,14 @@ export class Dashboard {
         try {
           const { data: pagsData, error: pagsError } = await supabase
             .from('loc_pagamentos')
-            .select('viagem_id, forma_recebimento_id, valor, formas_recebimento(id, nome)');
+            .select('viagem_id, codigo_localizador, forma_recebimento_id, valor, formas_recebimento(id, nome)');
           if (!pagsError && pagsData) {
             locPags = pagsData;
           } else if (pagsError) {
             // Fallback caso a relação com formas_recebimento não esteja disponível
             const { data: fallbackData } = await supabase
               .from('loc_pagamentos')
-              .select('viagem_id, forma_recebimento_id, valor');
+              .select('viagem_id, codigo_localizador, forma_recebimento_id, valor');
             if (fallbackData) locPags = fallbackData;
           }
         } catch (errPags) {
@@ -829,6 +830,7 @@ export class Dashboard {
           : (p.forma_nome || '');
         this.locPagamentosMap.get(vId)!.push({
           ...p,
+          codigo_localizador: p.codigo_localizador || '',
           forma_nome: formaNome
         });
       });
@@ -926,6 +928,8 @@ export class Dashboard {
 
         const financeiroOk = hasProdutos && isSaldoZerado && todosDetalhados && todosLocsConferidos;
         const processoOk = !!v.processo_conferido;
+        const pagsViagem = this.locPagamentosMap.get(v.id) || [];
+        const isTotalmentePago = verificarViagemTotalmentePaga(produtos, pagsViagem);
 
         return {
           ...v,
@@ -937,7 +941,8 @@ export class Dashboard {
           destinoRef: v.destino_ref,
           comentarios_busca: tripCommentsMap.get(v.id) || [],
           isFinanceiroConferido: financeiroOk,
-          isProcessoConferido: processoOk
+          isProcessoConferido: processoOk,
+          isTotalmentePago
         };
       });
     } catch (err: any) {
@@ -3360,8 +3365,15 @@ Atual: ${sla.alert ? sla.text : (isViagemReembolso && todosConcluidos ? 'Reembol
 
         <!-- Financeiro -->
         <td class="px-5 py-4 whitespace-nowrap">
-          <div class="font-black text-indigo-600 dark:text-indigo-400">
-            R$ ${valorVenda.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <span class="font-black text-indigo-600 dark:text-indigo-400">
+              R$ ${valorVenda.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </span>
+            ${v.isTotalmentePago ? `
+              <span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-black bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800 uppercase tracking-wider" title="Todos os produtos/serviços quitados (R$ ${valorVenda.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})">
+                ✔️ PAGO
+              </span>
+            ` : ''}
           </div>
           <div class="text-[10px] text-emerald-600 dark:text-emerald-400 font-extrabold mt-0.5" title="Rentabilidade Total (Venda - Custos de Fornecedor)">
             Rent: R$ ${rentabilidade.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}

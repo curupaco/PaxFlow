@@ -186,6 +186,7 @@ O PaxFlow atende **agências de viagem de pequeno e médio porte** que:
   - **Exportação CSV Formatada para Excel Brasil**: Exporta com fidelidade o recorte filtrado em UTF-8 com BOM e delimitador `;`.
 - **Abas de Status Rápidas**: Seletores de fase no topo da lista com contadores consolidados de viagens de forma dinâmica.
 - **Fácil Atualização de Fases**: Dropdown inline para transição rápida de status para cada linha de viagem cadastrada.
+- **Badge ✔️ PAGO na Coluna FINANCEIRO**: Na visualização em lista de viagens, exibe um badge visual verde suave (`✔️ PAGO`) com tooltip explicativo ao lado do valor de venda principal exclusivamente quando todos os produtos/serviços de cada Localizador (LOC) da viagem estiverem 100% quitados através dos registros de `loc_pagamentos`. Se houver qualquer valor pendente, produto sem pagamento ou a viagem não possuir produtos cadastrados, nenhum badge é exibido.
 - **SLAs Visuais**: Indicadores icônicos na tabela (🟢 Normal, ⚠️ Pré-Embarque Próximo, 🚨 Pós-Viagem Pendente, ✅ Reembolso Finalizado) baseados nos prazos de alerta.
 - **Busca Global**: Pesquisa instantânea por Destino, Código Localizador (LOC), dados do Cliente (nome, e-mail, telefone, CPF/CNPJ), observações operacionais e equipe de consultores.
 - **Modal de criação de viagem**: vinculação com cliente, datas no formato DD/MM/AAAA, valor em R$.
