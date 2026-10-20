@@ -48,67 +48,67 @@ export class ExtratoRecebimentosModal {
     });
 
     const modalHTML = `
-      <div id="modal-extrato-recebimentos" class="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-sm animate-fade-in font-sans">
-        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden text-slate-800 dark:text-slate-100">
+      <div id="modal-extrato-recebimentos" class="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 bg-slate-950/70 backdrop-blur-sm animate-fade-in font-sans">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl w-full max-w-[96vw] xl:max-w-7xl max-h-[94vh] flex flex-col overflow-hidden text-slate-800 dark:text-slate-100">
           
-          <!-- Cabeçalho -->
-          <div class="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-4 bg-slate-50/50 dark:bg-slate-800/40">
-            <div class="flex items-center gap-3">
-              <span class="text-2xl p-2 bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-800/50 rounded-xl">🪙</span>
-              <div>
-                <h3 class="text-base sm:text-lg font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
+          <!-- Cabeçalho Compacto -->
+          <div class="px-4 py-2.5 sm:px-5 sm:py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3 bg-slate-50/50 dark:bg-slate-800/40">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <span class="text-xl p-1.5 bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-800/50 rounded-xl shrink-0">🪙</span>
+              <div class="min-w-0">
+                <h3 class="text-sm sm:text-base font-black text-slate-800 dark:text-slate-100 flex items-center gap-2 truncate">
                   <span>Extrato de Recebimentos por Meio de Pagamento</span>
                 </h3>
-                <p class="text-xs text-slate-400 font-semibold">
+                <p class="text-[11px] text-slate-400 font-semibold truncate hidden sm:block">
                   Auditoria detalhada de entradas financeiras e produtos vinculados aos localizadores
                 </p>
               </div>
             </div>
             
-            <div class="flex items-center gap-2">
-              <button id="btn-exportar-csv-extrato" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black rounded-xl transition flex items-center gap-1.5 shadow-sm cursor-pointer">
-                <span>📥</span> Exportar CSV
+            <div class="flex items-center gap-2 shrink-0">
+              <button id="btn-exportar-csv-extrato" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black rounded-xl transition flex items-center gap-1.5 shadow-xs cursor-pointer">
+                <span>📥</span> <span>Exportar CSV</span>
               </button>
-              <button id="btn-close-extrato-recebimentos" class="p-1.5 text-slate-400 hover:text-rose-500 rounded-lg transition text-base font-bold cursor-pointer">
+              <button id="btn-close-extrato-recebimentos" class="p-1.5 text-slate-400 hover:text-rose-500 rounded-lg transition text-base font-bold cursor-pointer" title="Fechar">
                 ✕
               </button>
             </div>
           </div>
 
-          <!-- Barra de Filtros e Busca -->
-          <div class="p-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex flex-wrap items-center justify-between gap-3">
-            <div class="flex flex-wrap items-center gap-2.5 flex-1 min-w-[280px]">
+          <!-- Barra de Filtros e Busca Compacta -->
+          <div class="px-4 py-2 sm:px-5 sm:py-2.5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/50 flex flex-wrap items-center justify-between gap-2.5">
+            <div class="flex flex-wrap items-center gap-2 flex-1 min-w-[280px]">
               <!-- Busca textual -->
-              <div class="relative flex-1 min-w-[200px]">
-                <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 text-xs">🔍</span>
-                <input id="input-busca-extrato" type="text" placeholder="Buscar por cliente, destino, LOC ou fornecedor..." value="${this.termoBusca}" class="w-full pl-8 pr-3 py-2 text-xs border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 font-semibold text-slate-800 dark:text-slate-100 transition shadow-inner" />
+              <div class="relative flex-1 min-w-[200px] max-w-md">
+                <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400 text-xs">🔍</span>
+                <input id="input-busca-extrato" type="text" placeholder="Buscar por cliente, destino, LOC ou fornecedor..." value="${this.termoBusca}" class="w-full pl-8 pr-3 py-1.5 text-xs border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 font-semibold text-slate-800 dark:text-slate-100 transition shadow-inner" />
               </div>
 
               <!-- Filtro Meio de Pagamento -->
-              <select id="select-forma-extrato" class="px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-slate-700 dark:text-slate-200 transition">
-                <option value="TODAS" ${this.filtroForma === 'TODAS' ? 'selected' : ''}>🪙 Todos os Meios de Recebimento</option>
+              <select id="select-forma-extrato" class="px-2.5 py-1.5 text-xs border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-slate-700 dark:text-slate-200 transition">
+                <option value="TODAS" ${this.filtroForma === 'TODAS' ? 'selected' : ''}>🪙 Todos os Meios</option>
                 ${formasList.map(f => `<option value="${f}" ${this.filtroForma === f ? 'selected' : ''}>${f}</option>`).join('')}
               </select>
 
               <!-- Filtro Consultor -->
-              <select id="select-consultor-extrato" class="px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-slate-700 dark:text-slate-200 transition">
+              <select id="select-consultor-extrato" class="px-2.5 py-1.5 text-xs border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-slate-700 dark:text-slate-200 transition">
                 <option value="TODOS" ${this.filtroConsultor === 'TODOS' ? 'selected' : ''}>👤 Todos os Consultores</option>
                 ${Array.from(consultoresMap.entries()).map(([id, nome]) => `<option value="${id}" ${this.filtroConsultor === id ? 'selected' : ''}>${nome}</option>`).join('')}
               </select>
             </div>
 
-            <!-- Resumo Rápido -->
-            <div id="extrato-resumo-kpis" class="flex items-center gap-3"></div>
+            <!-- Resumo Rápido KPIs -->
+            <div id="extrato-resumo-kpis" class="flex items-center gap-2"></div>
           </div>
 
-          <!-- Tabela de Resultados com Scroll -->
-          <div class="flex-1 overflow-y-auto custom-scrollbar p-4" id="extrato-tabela-container">
+          <!-- Tabela de Resultados com Scroll Otimizado -->
+          <div class="flex-1 overflow-y-auto custom-scrollbar p-3 sm:p-4" id="extrato-tabela-container">
           </div>
 
-          <!-- Rodapé -->
-          <div class="p-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/20 flex justify-between items-center text-[11px] text-slate-400 font-semibold px-5">
-            <span>Dica: Clique no botão 📋 para copiar o Localizador ou em "Abrir ↗" para conferir a ficha da viagem.</span>
-            <button id="btn-fechar-extrato-rodape" class="px-4 py-1.5 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition cursor-pointer">
+          <!-- Rodapé Enxuto -->
+          <div class="px-4 py-2 sm:px-5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/20 flex justify-between items-center text-[11px] text-slate-400 font-semibold">
+            <span class="truncate">Dica: Clique no botão 📋 para copiar o Localizador ou em "Abrir ↗" para conferir a ficha da viagem.</span>
+            <button id="btn-fechar-extrato-rodape" class="px-3.5 py-1 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition cursor-pointer shrink-0 ml-2">
               Fechar
             </button>
           </div>
@@ -250,50 +250,50 @@ export class ExtratoRecebimentosModal {
 
       const prodsHTML = item.produtosVinculados.length > 0
         ? item.produtosVinculados.map(p => `
-            <div class="flex items-center gap-1.5 text-[10px] text-slate-600 dark:text-slate-300">
-              <span class="font-bold text-indigo-600 dark:text-indigo-400">[${p.tipo}]</span>
-              <span class="truncate max-w-[200px]">${p.fornecedor} ${p.descricao ? `· ${p.descricao}` : ''}</span>
-              <span class="text-slate-400 text-[9px]">(${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(p.valorVenda)})</span>
+            <div class="flex items-center gap-1.5 text-[10px] text-slate-600 dark:text-slate-300 leading-tight">
+              <span class="font-black text-indigo-600 dark:text-indigo-400 shrink-0">[${p.tipo}]</span>
+              <span class="truncate max-w-[280px] xl:max-w-[420px]" title="${p.fornecedor} ${p.descricao ? `· ${p.descricao}` : ''}">${p.fornecedor} ${p.descricao ? `· ${p.descricao}` : ''}</span>
+              <span class="text-slate-400 text-[9px] shrink-0 font-semibold">(${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(p.valorVenda)})</span>
             </div>
           `).join('')
         : `<span class="text-[10px] text-slate-400 italic">Nenhum produto associado ao LOC</span>`;
 
       rowsHTML += `
         <tr class="border-b border-slate-100 dark:border-slate-800/60 hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition">
-          <td class="p-3 align-top whitespace-nowrap">
-            <span class="text-xs font-bold text-slate-600 dark:text-slate-300 block">📅 ${item.dataFormatada}</span>
+          <td class="py-2 px-2.5 sm:px-3 align-top whitespace-nowrap">
+            <span class="text-xs font-bold text-slate-700 dark:text-slate-200 block">📅 ${item.dataFormatada}</span>
             <span class="text-[10px] text-slate-400 block">${item.consultorNome}</span>
           </td>
-          <td class="p-3 align-top min-w-[160px]">
-            <span class="font-extrabold text-xs text-slate-800 dark:text-slate-100 block truncate">👤 ${item.clienteNome}</span>
-            <span class="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-0.5">
+          <td class="py-2 px-2.5 sm:px-3 align-top min-w-[150px] max-w-[220px]">
+            <span class="font-extrabold text-xs text-slate-800 dark:text-slate-100 block truncate" title="${item.clienteNome}">👤 ${item.clienteNome}</span>
+            <span class="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-0.5 truncate">
               ${refBadge}
-              <span class="truncate">✈️ ${item.destino}</span>
+              <span class="truncate" title="${item.destino}">✈️ ${item.destino}</span>
             </span>
           </td>
-          <td class="p-3 align-top whitespace-nowrap">
+          <td class="py-2 px-2.5 sm:px-3 align-top whitespace-nowrap">
             <button type="button" class="btn-copy-extrato-loc inline-flex items-center gap-1 font-mono text-[10px] font-black px-2 py-0.5 rounded bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/50 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-800/60 transition cursor-pointer" data-loc="${item.codigoLocalizador}" title="Copiar Localizador">
               <span>${item.codigoLocalizador}</span>
               <span class="copy-icon text-[9px]">📋</span>
             </button>
           </td>
-          <td class="p-3 align-top min-w-[200px]">
+          <td class="py-2 px-2.5 sm:px-3 align-top min-w-[200px]">
             <div class="space-y-1">
               ${prodsHTML}
             </div>
           </td>
-          <td class="p-3 align-top whitespace-nowrap">
-            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-black bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
+          <td class="py-2 px-2.5 sm:px-3 align-top whitespace-nowrap">
+            <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-[10px] font-black bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
               <span>${item.formaRecebimentoIcone}</span>
-              <span>${item.formaRecebimentoNome}</span>
+              <span class="truncate max-w-[140px]">${item.formaRecebimentoNome}</span>
             </span>
           </td>
-          <td class="p-3 align-top text-right whitespace-nowrap">
+          <td class="py-2 px-2.5 sm:px-3 align-top text-right whitespace-nowrap">
             <span class="block text-xs font-black text-emerald-600 dark:text-emerald-400">
               ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.valor)}
             </span>
           </td>
-          <td class="p-3 align-top text-center whitespace-nowrap">
+          <td class="py-2 px-2.5 sm:px-3 align-top text-center whitespace-nowrap">
             <button type="button" class="btn-abrir-viagem-extrato px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[10px] font-black uppercase transition shadow-xs flex items-center gap-1 mx-auto cursor-pointer" data-trip-id="${item.viagemId}">
               Abrir ↗
             </button>
@@ -306,14 +306,14 @@ export class ExtratoRecebimentosModal {
       <div class="overflow-x-auto custom-scrollbar border border-slate-200/80 dark:border-slate-800 rounded-xl">
         <table class="w-full text-left border-collapse text-xs">
           <thead>
-            <tr class="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-widest font-black">
-              <th class="p-3">Data / Consultor</th>
-              <th class="p-3">Cliente & Viagem</th>
-              <th class="p-3">Localizador (LOC)</th>
-              <th class="p-3">Produtos Vinculados ao LOC</th>
-              <th class="p-3">Meio de Recebimento</th>
-              <th class="p-3 text-right">Valor Pago</th>
-              <th class="p-3 text-center">Ação</th>
+            <tr class="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-wider font-black">
+              <th class="py-2.5 px-2.5 sm:px-3">Data / Consultor</th>
+              <th class="py-2.5 px-2.5 sm:px-3">Cliente & Viagem</th>
+              <th class="py-2.5 px-2.5 sm:px-3">Localizador (LOC)</th>
+              <th class="py-2.5 px-2.5 sm:px-3">Produtos Vinculados ao LOC</th>
+              <th class="py-2.5 px-2.5 sm:px-3">Meio de Recebimento</th>
+              <th class="py-2.5 px-2.5 sm:px-3 text-right">Valor Pago</th>
+              <th class="py-2.5 px-2.5 sm:px-3 text-center">Ação</th>
             </tr>
           </thead>
           <tbody>
