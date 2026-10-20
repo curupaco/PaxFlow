@@ -483,4 +483,63 @@ describe('BalcaoService - Testes Subcutâneos (Co-Piloto & Balcão)', () => {
     expect(resultado[0].viagens).toHaveLength(1);
     expect(resultado[0].viagens[0].periodoFormatado).toBe('20/11/2026 a 28/11/2026');
   });
+
+  it('deve isolar estritamente viagens e orçamentos de cada cliente no fallback sem vazamento cruzado', async () => {
+    // Setup - Cenário com Gabriel Beltrame (2 viagens e 1 orçamento) e outros clientes com viagens no banco
+    vi.mocked(supabase.rpc).mockResolvedValue({ data: null, error: { message: 'fallback' } } as any);
+
+    const clientesMock = [
+      { id: 'cli-gabriel', nome: 'Gabriel Beltrame', email: 'gabriel@email.com', telefone: '11980541890' },
+      { id: 'cli-roberto', nome: 'Roberto Gonzalez', email: 'roberto@email.com', telefone: '11999998888' },
+      { id: 'cli-flavia', nome: 'Flavia Damiani', email: 'flavia@email.com', telefone: '11998230816' },
+    ];
+
+    const viagensMock = [
+      // Viagens legítimas do Gabriel (2 viagens)
+      { id: 'v-gab-1', cliente_id: 'cli-gabriel', destino: 'Roma', status: 'confirmada' },
+      { id: 'v-gab-2', cliente_id: 'cli-gabriel', destino: 'Roma', status: 'confirmada' },
+      // Viagem legítima do Roberto (1 viagem)
+      { id: 'v-rob-1', cliente_id: 'cli-roberto', destino: 'Jericoacoara', status: 'fechado' },
+      // Viagem legítima da Flavia (1 viagem)
+      { id: 'v-fla-1', cliente_id: 'cli-flavia', destino: 'Orlando', status: 'fechado' },
+    ];
+
+    const orcamentosMock = [
+      // Orçamento legítimo do Gabriel (1 orçamento)
+      { id: 'o-gab-1', cliente_id: 'cli-gabriel', destino: 'Roma', valor_proposta: 15000 },
+      // Orçamento do Roberto
+      { id: 'o-rob-1', cliente_id: 'cli-roberto', destino: 'Jericoacoara', valor_proposta: 8000 },
+    ];
+
+    vi.mocked(supabase.from).mockImplementation((table: string) => {
+      if (table === 'clientes') return { select: vi.fn().mockResolvedValue({ data: clientesMock }) } as any;
+      if (table === 'viagens') return { select: vi.fn().mockResolvedValue({ data: viagensMock }) } as any;
+      if (table === 'orcamentos') return { select: vi.fn().mockResolvedValue({ data: orcamentosMock }) } as any;
+      if (table === 'produtos_viagem') return { select: vi.fn().mockResolvedValue({ data: [] }) } as any;
+      if (table === 'profiles') return { select: vi.fn().mockResolvedValue({ data: [] }) } as any;
+      return { select: vi.fn().mockResolvedValue({ data: [] }) } as any;
+    });
+
+    // Action 1: Busca por "Gabriel"
+    const resGabriel = await BalcaoService.buscarMulticriterio('Gabriel');
+
+    // Assert 1: Deve retornar apenas Gabriel Beltrame, com EXATAMENTE 2 viagens e 1 orçamento (nada de Jericoacoara ou Orlando)
+    expect(resGabriel).toHaveLength(1);
+    expect(resGabriel[0].cliente.nome).toBe('Gabriel Beltrame');
+    expect(resGabriel[0].viagens).toHaveLength(2);
+    expect(resGabriel[0].viagens.map(v => v.id)).toEqual(['v-gab-1', 'v-gab-2']);
+    expect(resGabriel[0].orcamentos).toHaveLength(1);
+    expect(resGabriel[0].orcamentos[0].id).toBe('o-gab-1');
+
+    // Action 2: Busca por "Roberto"
+    const resRoberto = await BalcaoService.buscarMulticriterio('Roberto');
+
+    // Assert 2: Deve retornar apenas Roberto Gonzalez, com EXATAMENTE 1 viagem e 1 orçamento (sem vazamento de Gabriel ou Flavia)
+    expect(resRoberto).toHaveLength(1);
+    expect(resRoberto[0].cliente.nome).toBe('Roberto Gonzalez');
+    expect(resRoberto[0].viagens).toHaveLength(1);
+    expect(resRoberto[0].viagens[0].id).toBe('v-rob-1');
+    expect(resRoberto[0].orcamentos).toHaveLength(1);
+    expect(resRoberto[0].orcamentos[0].id).toBe('o-rob-1');
+  });
 });

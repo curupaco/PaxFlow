@@ -1007,17 +1007,26 @@ BEGIN
                 FROM public.viagens v
                 LEFT JOIN public.profiles p ON p.id = v.consultor_id
                 WHERE v.cliente_id = c.id 
-                   OR LOWER(v.destino) LIKE '%' || raw_query || '%'
-                   OR LOWER(COALESCE(v.codigo_localizador, '')) LIKE '%' || raw_query || '%'
-                   OR LOWER(COALESCE(v.codigo_ref, '')) LIKE '%' || raw_query || '%'
-                   OR EXISTS (
-                        SELECT 1 FROM public.produtos_viagem pv 
-                        WHERE pv.viagem_id = v.id AND (
-                            LOWER(COALESCE(pv.codigo_reserva, '')) LIKE '%' || raw_query || '%'
-                            OR LOWER(COALESCE(pv.descricao, '')) LIKE '%' || raw_query || '%'
-                            OR LOWER(COALESCE(pv.fornecedor, '')) LIKE '%' || raw_query || '%'
-                        )
-                   )
+                  AND (
+                      (
+                          LOWER(c.nome) LIKE '%' || raw_query || '%'
+                          OR LOWER(COALESCE(c.email, '')) LIKE '%' || raw_query || '%'
+                          OR LOWER(COALESCE(c.codigo_ref, '')) LIKE '%' || raw_query || '%'
+                          OR (LENGTH(clean_digits) >= 3 AND REGEXP_REPLACE(COALESCE(c.documento, ''), '\D', '', 'g') LIKE '%' || clean_digits || '%')
+                          OR (LENGTH(clean_digits) >= 3 AND REGEXP_REPLACE(COALESCE(c.telefone, ''), '\D', '', 'g') LIKE '%' || clean_digits || '%')
+                      )
+                      OR LOWER(v.destino) LIKE '%' || raw_query || '%'
+                      OR LOWER(COALESCE(v.codigo_localizador, '')) LIKE '%' || raw_query || '%'
+                      OR LOWER(COALESCE(v.codigo_ref, '')) LIKE '%' || raw_query || '%'
+                      OR EXISTS (
+                           SELECT 1 FROM public.produtos_viagem pv 
+                           WHERE pv.viagem_id = v.id AND (
+                               LOWER(COALESCE(pv.codigo_reserva, '')) LIKE '%' || raw_query || '%'
+                               OR LOWER(COALESCE(pv.descricao, '')) LIKE '%' || raw_query || '%'
+                               OR LOWER(COALESCE(pv.fornecedor, '')) LIKE '%' || raw_query || '%'
+                           )
+                      )
+                  )
             ), '[]'::json) AS viagens,
             COALESCE((
                 SELECT JSON_AGG(JSON_BUILD_OBJECT(
@@ -1032,9 +1041,18 @@ BEGIN
                 FROM public.orcamentos o
                 LEFT JOIN public.profiles p ON p.id = o.consultor_id
                 WHERE o.cliente_id = c.id 
-                   OR LOWER(COALESCE(o.destino, '')) LIKE '%' || raw_query || '%'
-                   OR LOWER(COALESCE(o.nome_cliente, '')) LIKE '%' || raw_query || '%'
-                   OR LOWER(COALESCE(o.codigo_ref, '')) LIKE '%' || raw_query || '%'
+                  AND (
+                      (
+                          LOWER(c.nome) LIKE '%' || raw_query || '%'
+                          OR LOWER(COALESCE(c.email, '')) LIKE '%' || raw_query || '%'
+                          OR LOWER(COALESCE(c.codigo_ref, '')) LIKE '%' || raw_query || '%'
+                          OR (LENGTH(clean_digits) >= 3 AND REGEXP_REPLACE(COALESCE(c.documento, ''), '\D', '', 'g') LIKE '%' || clean_digits || '%')
+                          OR (LENGTH(clean_digits) >= 3 AND REGEXP_REPLACE(COALESCE(c.telefone, ''), '\D', '', 'g') LIKE '%' || clean_digits || '%')
+                      )
+                      OR LOWER(COALESCE(o.destino, '')) LIKE '%' || raw_query || '%'
+                      OR LOWER(COALESCE(o.nome_cliente, '')) LIKE '%' || raw_query || '%'
+                      OR LOWER(COALESCE(o.codigo_ref, '')) LIKE '%' || raw_query || '%'
+                  )
             ), '[]'::json) AS orcamentos,
             '[]'::json AS reembolsos
         FROM public.clientes c

@@ -179,6 +179,9 @@ export class BalcaoService {
       console.warn('Erro ao buscar produtos_viagem via Supabase:', errProd);
     }
 
+    // Conjunto de IDs de clientes que deram match direto no critério primário (nome, e-mail, documento, telefone)
+    const clientesBuscadosIds = new Set<string>(resultadosMap.keys());
+
     // 3. Busca Viagens correspondentes
     try {
       const { data: viagensData } = await supabase.from('viagens').select('*');
@@ -195,7 +198,11 @@ export class BalcaoService {
           const produtosMatches = produtosPorViagemMap.get(v.id) || [];
           const hasProdutoMatch = produtosMatches.length > 0;
 
-          if ((cId && resultadosMap.has(cId)) || matchDestino || matchLoc || matchCodRef || hasProdutoMatch) {
+          // A viagem só é considerada se o cliente titular foi buscado OU se a própria viagem deu match
+          const clienteFoiBuscado = !!(cId && clientesBuscadosIds.has(cId));
+          const viagemDeuMatch = matchDestino || matchLoc || matchCodRef || hasProdutoMatch;
+
+          if (clienteFoiBuscado || viagemDeuMatch) {
             const cliInfo = cId ? clientesCacheMap.get(cId) : null;
             const key = cId || `viagem-${v.id}`;
 
@@ -259,7 +266,11 @@ export class BalcaoService {
           const matchCodRef = oCodRef.includes(rawQuery);
           const matchContato = oContato.includes(rawQuery);
 
-          if ((cId && resultadosMap.has(cId)) || matchNomeCli || matchDestino || matchCodRef || matchContato) {
+          // O orçamento só é considerado se o cliente titular foi buscado OU se o próprio orçamento deu match
+          const clienteFoiBuscado = !!(cId && clientesBuscadosIds.has(cId));
+          const orcDeuMatch = matchNomeCli || matchDestino || matchCodRef || matchContato;
+
+          if (clienteFoiBuscado || orcDeuMatch) {
             const cliInfo = cId ? clientesCacheMap.get(cId) : null;
             const key = cId || `orc-${o.id}`;
 
