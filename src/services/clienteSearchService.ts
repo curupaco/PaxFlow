@@ -72,34 +72,41 @@ export class ClienteSearchService {
       telefone?: string | null;
       codigo_ref?: string | null;
       codigoRef?: string | null;
+      cpf?: string | null;
+      documento_limpo?: string | null;
+      telefone_limpo?: string | null;
     },
     termo: string
   ): boolean {
     if (!termo || !termo.trim()) return true;
 
     const raw = termo.trim().toLowerCase();
+    const rawNormalized = raw.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     const cleanDigits = raw.replace(/\D/g, '');
+    const isNumericOrMask = /^[0-9.\-()/+ ]+$/.test(raw);
 
     const cNome = (cliente.nome || '').toLowerCase();
+    const cNomeNormalized = cNome.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     const cEmail = (cliente.email || '').toLowerCase();
     const cRef = (cliente.codigo_ref || cliente.codigoRef || '').toLowerCase();
-    const cDocRaw = (cliente.documento || '').toLowerCase();
+    const cDocRaw = (cliente.documento || cliente.cpf || '').toLowerCase();
     const cTelRaw = (cliente.telefone || '').toLowerCase();
 
-    // 1. Busca textual direta
-    if (cNome.includes(raw)) return true;
+    // 1. Busca textual direta e insensível a acentuação no nome
+    if (cNomeNormalized.includes(rawNormalized)) return true;
     if (cEmail && cEmail.includes(raw)) return true;
     if (cRef && cRef.includes(raw)) return true;
     if (cDocRaw && cDocRaw.includes(raw)) return true;
     if (cTelRaw && cTelRaw.includes(raw)) return true;
 
-    // 2. Busca por dígitos limpos (mínimo 3 números)
-    if (cleanDigits.length >= 3) {
-      const cDocClean = (cliente.documento || '').replace(/\D/g, '');
-      const cTelClean = (cliente.telefone || '').replace(/\D/g, '');
+    // 2. Busca por dígitos limpos (mínimo 3 números) apenas para termos numéricos/formatados
+    if (isNumericOrMask && cleanDigits.length >= 3) {
+      const cDocClean = (cliente.documento_limpo || cliente.documento || cliente.cpf || '').replace(/\D/g, '');
+      const cTelClean = (cliente.telefone_limpo || cliente.telefone || '').replace(/\D/g, '');
 
       if (cDocClean && cDocClean.includes(cleanDigits)) return true;
       if (cTelClean && cTelClean.includes(cleanDigits)) return true;
+      if (cleanDigits.length >= 8 && cTelClean && cTelClean.slice(-8).includes(cleanDigits.slice(-8))) return true;
     }
 
     return false;

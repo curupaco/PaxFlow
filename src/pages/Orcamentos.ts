@@ -2,6 +2,7 @@ import { supabase, getSessaoAtual } from '../services/supabase';
 import { uploadDocumentoCliente } from '../services/googleDrive';
 import { Orcamento, PerfilConsultor, ConvertToTripOptions, OrigemLead } from '../types';
 import { OrcamentosService } from '../services/orcamentosService';
+import { ClienteSearchService } from '../services/clienteSearchService';
 import { DestinosAutocomplete } from '../components/DestinosAutocomplete';
 import { VerNotasModal } from '../components/orcamentos/VerNotasModal';
 import { SendTemplateMessageModal } from '../components/dashboard/SendTemplateMessageModal';
@@ -1416,7 +1417,7 @@ export class OrcamentosPage {
           <div>
             <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">Nome Completo do Cliente *</label>
             <div class="relative">
-              <input id="input-orc-nome" type="text" required placeholder="ex: João da Silva" class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" autocomplete="off" />
+              <input id="input-orc-nome" type="text" required placeholder="Buscar por nome, CPF, e-mail ou telefone..." class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm" autocomplete="off" />
             </div>
           </div>
 
@@ -1536,29 +1537,40 @@ export class OrcamentosPage {
       document.getElementById('linked-client-badge')?.remove();
     };
 
-    const filterAndShowSuggestions = (inputEl: HTMLInputElement, field: 'nome' | 'telefone' | 'email') => {
-      const val = inputEl.value.trim().toLowerCase();
+    const filterAndShowSuggestions = async (inputEl: HTMLInputElement, field: 'nome' | 'telefone' | 'email') => {
+      const val = inputEl.value.trim();
       document.getElementById('cliente-autocomplete-dropdown')?.remove();
 
       if (!val || val.length < 2) {
         return;
       }
 
-      const matches = this.clientes.filter(c => {
-        if (field === 'nome') {
-          return c.nome?.toLowerCase().includes(val);
-        } else if (field === 'telefone') {
-          const digitsVal = val.replace(/\D/g, '');
-          if (!digitsVal) {
-            return c.telefone?.toLowerCase().includes(val);
+      // 1. Busca imediata em memória (Nome, CPF, E-mail, Telefone)
+      let matches = OrcamentosService.filtrarClientesRecomendados(this.clientes, val);
+
+      // 2. Se não encontrar localmente e houver ao menos 3 caracteres, busca no Supabase de forma resiliente
+      if (matches.length === 0 && val.length >= 3 && !this.isFallbackMode) {
+        try {
+          const resRemoto = await ClienteSearchService.buscarClientes({
+            termo: val,
+            limitePagina: 10,
+            isAdmin: true
+          });
+          if (resRemoto && resRemoto.data && resRemoto.data.length > 0) {
+            resRemoto.data.forEach(novoCli => {
+              if (!this.clientes.some(c => c.id === novoCli.id)) {
+                this.clientes.push(novoCli);
+              }
+            });
+            matches = OrcamentosService.filtrarClientesRecomendados(this.clientes, val);
           }
-          const digitsTel = c.telefone?.replace(/\D/g, '') || '';
-          return digitsTel.includes(digitsVal) || c.telefone?.toLowerCase().includes(val);
-        } else if (field === 'email') {
-          return c.email?.toLowerCase().includes(val);
+        } catch (e) {
+          console.warn('[Orcamentos] Falha na busca remota resiliente de clientes:', e);
         }
-        return false;
-      });
+      }
+
+      // Previne race condition se o usuário continuar digitando enquanto a busca remota roda
+      if (inputEl.value.trim() !== val) return;
 
       if (matches.length === 0) return;
 
@@ -1566,14 +1578,24 @@ export class OrcamentosPage {
       dropdown.id = 'cliente-autocomplete-dropdown';
       dropdown.className = 'absolute left-0 right-0 z-[70] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl max-h-60 overflow-y-auto mt-1 divide-y divide-slate-100 dark:divide-slate-700/50 animate-slide-up';
       
-      matches.forEach(c => {
+      matches.slice(0, 15).forEach(c => {
         const item = document.createElement('button');
         item.type = 'button';
         item.className = 'w-full text-left px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition flex flex-col gap-0.5 select-none focus:outline-none';
+
+        const detalhes: string[] = [];
+        const doc = c.documento || c.cpf;
+        if (doc) detalhes.push(`🆔 ${doc}`);
+        if (c.telefone) detalhes.push(`📞 ${c.telefone}`);
+        if (c.email) detalhes.push(`✉️ ${c.email}`);
+
         item.innerHTML = `
-          <span class="text-sm font-bold text-slate-800 dark:text-slate-100">${c.nome}</span>
-          <span class="text-xs text-slate-500 dark:text-slate-400 font-medium">
-            ${c.telefone ? `📞 ${c.telefone}` : ''} ${c.email ? ` | ✉️ ${c.email}` : ''}
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-sm font-bold text-slate-800 dark:text-slate-100">${c.nome}</span>
+            ${c.codigo_ref ? `<span class="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 px-1.5 py-0.5 rounded shrink-0">${c.codigo_ref}</span>` : ''}
+          </div>
+          <span class="text-xs text-slate-500 dark:text-slate-400 font-medium truncate">
+            ${detalhes.length > 0 ? detalhes.join(' | ') : 'Sem dados de contato'}
           </span>
         `;
         
@@ -1676,7 +1698,7 @@ export class OrcamentosPage {
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
 
-      const nomeVal = (document.getElementById('input-orc-nome') as HTMLInputElement).value;
+      let nomeVal = (document.getElementById('input-orc-nome') as HTMLInputElement).value;
       const telVal = getFormattedPhoneToDb('input-orc-telefone');
       const emailVal = (document.getElementById('input-orc-email') as HTMLInputElement).value.trim();
       const destinoVal = (document.getElementById('input-orc-destino') as HTMLInputElement).value;
@@ -1710,15 +1732,26 @@ export class OrcamentosPage {
       let finalClienteId = this.selectedClienteId;
       let isNewClientCreated = false;
       if (!finalClienteId) {
-        // 1. Tenta buscar na lista local de clientes (this.clientes) por e-mail, telefone ou nome exato
-        const matchedLocal = this.clientes.find(c => 
-          (emailVal && c.email?.toLowerCase().trim() === emailVal.toLowerCase().trim()) ||
-          (telVal && c.telefone?.replace(/\D/g, '') === telVal.replace(/\D/g, '')) ||
-          (nomeVal && c.nome?.toLowerCase().trim() === nomeVal.toLowerCase().trim())
-        );
+        // 1. Tenta buscar na lista local de clientes (this.clientes) por e-mail, telefone, CPF ou nome exato
+        const cleanDigitsNome = (nomeVal || '').replace(/\D/g, '');
+        const matchedLocal = this.clientes.find(c => {
+          const cDocClean = (c.documento_limpo || c.documento || c.cpf || '').replace(/\D/g, '');
+          const cTelClean = (c.telefone_limpo || c.telefone || '').replace(/\D/g, '');
+          const cEmailClean = (c.email || '').toLowerCase().trim();
+          const cNomeClean = (c.nome || '').toLowerCase().trim();
+
+          if (emailVal && cEmailClean === emailVal.toLowerCase().trim()) return true;
+          if (telVal && cTelClean === telVal.replace(/\D/g, '')) return true;
+          if (nomeVal && cNomeClean === nomeVal.toLowerCase().trim()) return true;
+          if (cleanDigitsNome.length >= 11 && cDocClean === cleanDigitsNome) return true;
+          return false;
+        });
 
         if (matchedLocal) {
           finalClienteId = matchedLocal.id;
+          if (matchedLocal.nome && (cleanDigitsNome.length >= 11 || nomeVal.includes('@'))) {
+            nomeVal = matchedLocal.nome;
+          }
         } else {
           // 2. Se não achar localmente, tenta no Supabase (se não estiver em fallback)
           if (!this.isFallbackMode) {
@@ -1733,6 +1766,9 @@ export class OrcamentosPage {
                 }
               }
               if (nomeVal) orQuery.push(`nome.eq.${nomeVal}`);
+              if (cleanDigitsNome.length >= 11) {
+                orQuery.push(`documento.ilike.%${cleanDigitsNome}%`);
+              }
               
               let existingCli: any[] = [];
               if (orQuery.length > 0) {

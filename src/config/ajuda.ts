@@ -42,7 +42,7 @@ export const HELP_ITEMS: HelpItem[] = [
     modulo: 'onboarding',
     label: 'Criando e Conduzindo seu Primeiro Orçamento',
     description: 'Como cadastrar um lead, pesquisar tarifas e movimentar a negociação no Kanban.',
-    details: 'Para iniciar uma nova prospecção de vendas:\n\n1. Acesse o menu **Orçamentos** e clique no botão de criação (+ Novo Orçamento).\n2. **Selecione o Cliente**: Comece a digitar o nome. Se ele já existe, o sistema autocompleta. Caso contrário, você pode cadastrá-lo na hora.\n3. **Defina a Temperatura**: Classifique o lead (❄️ Frio, ⚡ Normal, 🔥 Quente) para priorizar seu atendimento.\n4. **Adicione as Notas**: Registre o que o cliente busca (ex: "hotel 5 estrelas em Orlando, viagem em família").\n5. **Movimentação do Card**: Use os botões de ação ("Iniciar" -> "Enviar Proposta" -> "Aceitar/Desistir") para mover o card pelo funil. O PaxFlow não usa drag-and-drop para evitar erros acidentais.'
+    details: 'Para iniciar uma nova prospecção de vendas:\n\n1. Acesse o menu **Orçamentos** e clique no botão de criação (+ Novo Orçamento).\n2. **Busca e Recomendação de Clientes**: Comece a digitar o **Nome**, **CPF** (com ou sem pontuação), **E-mail** ou **Telefone** (com ou sem DDD). O sistema pesquisa instantaneamente e recomenda clientes cadastrados na base.\n3. **Seleção em 1-Clique**: Ao clicar no cliente sugerido, o PaxFlow preenche automaticamente o Nome Completo, Telefone (com DDI), E-mail e exibe a badge `✔️ Cliente Cadastrado` vinculada ao histórico da agência.\n4. **Defina a Temperatura**: Classifique o lead (❄️ Frio, ⚡ Normal, 🔥 Quente) para priorizar seu atendimento.\n5. **Adicione as Notas**: Registre o que o cliente busca (ex: "hotel 5 estrelas em Orlando, viagem em família").\n6. **Movimentação do Card**: Use os botões de ação ("Iniciar" -> "Enviar Proposta" -> "Aceitar/Desistir") para mover o card pelo funil. O PaxFlow não usa drag-and-drop para evitar erros acidentais.'
   },
   {
     id: 'fechar-primeira-venda',
@@ -391,6 +391,13 @@ export const HELP_ITEMS: HelpItem[] = [
   },
 
   // ==================== 5. Orçamentos & CRM ====================
+  {
+    id: 'busca-clientes-orcamento',
+    modulo: 'orcamentos',
+    label: 'Busca Inteligente de Clientes por Nome, CPF, E-mail ou Telefone',
+    description: 'Como funciona o autocomplete multi-critério para agilizar o cadastro de propostas e evitar duplicidades.',
+    details: 'Ao cadastrar um Novo Orçamento (`+ Novo Orçamento`), você não precisa memorizar a grafia exata do nome do passageiro:\n\n- **Busca por Qualquer Dado**: Digite o **Nome**, **CPF** (com ou sem pontos/traço), **E-mail** ou **Telefone** (com DDD, DDI ou apenas os números finais).\n- **Desconsideração de Acentos**: Termos como "Erica" encontram "Érica", e "João" encontra "Joao".\n- **Identificação Visual Completa**: Cada recomendação exibe o Nome do passageiro, Código de Referência (`CLI-XXXX`), Documento/CPF (`🆔`), Telefone (`📞`) e E-mail (`✉️`).\n- **Preenchimento Simultâneo**: Ao clicar no cliente sugerido, o PaxFlow preenche de uma vez o Nome Completo, Telefone (com DDI configurado) e E-mail, além de fixar o selo `✔️ Cliente Cadastrado`.\n- **Proteção Anti-Duplicidade**: Caso você cole o CPF ou telefone no campo de nome e envie o formulário, o sistema identifica o cliente no banco, restaura o nome original e vincula a proposta ao cadastro existente, prevenindo cadastros duplicados.'
+  },
   {
     id: 'temperatura-crm',
     modulo: 'orcamentos',

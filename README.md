@@ -20,6 +20,14 @@ Plataforma SaaS de gestão operacional e fluxo de passageiros no turismo: acompa
 
 ## Funcionalidades
 
+- **Busca e Recomendação Inteligente de Clientes por Nome, CPF, E-mail ou Telefone no Cadastro de Novo Orçamento [NEW]** — Otimização da agilidade operacional dos consultores no formulário de criação de novo orçamento (`OrcamentosPage` e `OrcamentosService`):
+  - **Pesquisa Multi-Critério Flexível no Campo de Nome**: O consultor pode iniciar a digitação por qualquer dado conhecido do passageiro (Nome, CPF com ou sem pontuação, E-mail ou Telefone com ou sem DDD/DDI) diretamente no primeiro campo ou nos campos de contato, localizando instantaneamente clientes recorrentes na base.
+  - **Matching Avançado com Normalização de Acentos**: Algoritmo robusto (`filtrarClientesRecomendados` e `matchCliente`) que desconsidera acentuação fonética (ex: "Erica" localiza "Érica", "Joao" localiza "João"), ignora pontuações de máscara (`.` `-` `/` `(` `)`) e reconhece dígitos parciais ou finais de telefone e documento.
+  - **Cards de Recomendação Ricos e Informativos**: O menu dropdown suspenso exibe com clareza o Nome, Código de Referência (`CLI-XXXX`), Documento/CPF (`🆔`), Telefone (`📞`) e E-mail (`✉️`), garantindo identificação imediata sem ambiguidade.
+  - **Preenchimento Automático em 1-Clique & Vínculo Cadastral**: Ao selecionar o cliente recomendado, o sistema preenche simultaneamente Nome Completo, Telefone (com separação inteligente do DDI no seletor), E-mail, exibe a badge verde animada `✔️ Cliente Cadastrado` e vincula o `cliente_id` à proposta.
+  - **Reconciliação Anti-Duplicidade no Salvamento**: Se o consultor colar o CPF ou telefone no campo de nome e submeter o formulário sem clicar no dropdown, o sistema identifica automaticamente o passageiro existente na base, restaura o nome original e associa o orçamento ao cliente existente, eliminando duplicidades e retrabalho na agência.
+  - **Resiliência e Busca Híbrida Remota**: Integração com `ClienteSearchService` em duas camadas (cache em memória para resposta instantânea em <1ms e fallback com busca no Supabase com proteção Zero-Break contra erro `42703`).
+
 - **Redesign e Organização em 5 Abas da Tela de Detalhes da Viagem [NEW]** — Reformulação completa da experiência de visualização e edição de viagens (`EditTravelModal` e `DashboardTemplates`), eliminando a sobrecarga visual e organizando o fluxo operacional em abas especializadas para desktop e mobile:
   - **Navegação em 5 Abas Independentes**: Substituição da antiga interface empilhada por 5 abas com foco exclusivo: `📝 Geral & Passageiro`, `🛍️ Produtos & Serviços`, `🎫 Vouchers & Documentos`, `💬 Linha do Tempo & Comentários` e `💸 Reembolsos`.
   - **Aba Produtos & Serviços Dividida em 2 Colunas no Desktop**: Layout perfeitamente balanceado na aba de produtos (`grid lg:grid-cols-12`):

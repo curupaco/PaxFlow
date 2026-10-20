@@ -87,6 +87,59 @@ export class OrcamentosService {
   }
 
   /**
+   * Filtra clientes existentes para recomendação instantânea no formulário de orçamentos.
+   * Suporta busca por Nome (com remoção de acentos), CPF/Documento (com ou sem pontuação),
+   * E-mail e Telefone (com ou sem DDD).
+   */
+  static filtrarClientesRecomendados(clientes: (Cliente | any)[], termo: string): (Cliente | any)[] {
+    if (!termo || !termo.trim()) return [];
+
+    const raw = termo.trim().toLowerCase();
+    const rawNormalized = raw.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const cleanDigits = raw.replace(/\D/g, '');
+    const isNumericOrMask = /^[0-9.\-()/+ ]+$/.test(raw);
+
+    return (clientes || []).filter(c => {
+      if (!c) return false;
+
+      // 1. Busca por Nome (insensível a maiúsculas e acentuação)
+      const nome = (c.nome || '').toLowerCase();
+      const nomeNormalized = nome.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      if (nomeNormalized.includes(rawNormalized)) return true;
+
+      // 2. Busca por E-mail
+      const email = (c.email || '').toLowerCase();
+      if (email.includes(raw)) return true;
+
+      // 3. Busca por Código de Referência (ex: CLI-0001)
+      const ref = (c.codigo_ref || c.codigoRef || '').toLowerCase();
+      if (ref && ref.includes(raw)) return true;
+
+      // 4. Busca por CPF / Documento
+      const docRaw = (c.documento || c.cpf || '').toLowerCase();
+      if (docRaw && docRaw.includes(raw)) return true;
+
+      if (isNumericOrMask && cleanDigits.length >= 3) {
+        const docClean = (c.documento_limpo || c.documento || c.cpf || '').replace(/\D/g, '');
+        if (docClean && docClean.includes(cleanDigits)) return true;
+      }
+
+      // 5. Busca por Telefone
+      const telRaw = (c.telefone || '').toLowerCase();
+      if (telRaw && telRaw.includes(raw)) return true;
+
+      if (isNumericOrMask && cleanDigits.length >= 3) {
+        const telClean = (c.telefone_limpo || c.telefone || '').replace(/\D/g, '');
+        if (telClean && telClean.includes(cleanDigits)) return true;
+        // Permite match pelos últimos 8 ou 9 dígitos sem o DDD ou DDI
+        if (cleanDigits.length >= 8 && telClean && telClean.slice(-8).includes(cleanDigits.slice(-8))) return true;
+      }
+
+      return false;
+    });
+  }
+
+  /**
    * Salva ou atualiza um orçamento no Supabase
    */
   static async persistOrcamento(o: Orcamento): Promise<{ success: boolean; dbVersionDegraded: boolean }> {
