@@ -176,13 +176,54 @@ export class RelatoriosPage {
       const { data: orcData } = await orcQuery;
       this.orcamentos = orcData || [];
 
-      // 4. Carregar viagens (estritamente do usuário se não for admin)
+      // 4. Carregar viagens (estritamente do usuário ou como parceiro em divisões se não for admin)
       let viaQuery = supabase.from('viagens').select('*, cliente:clientes(*), reembolsos(*), produtos:produtos_viagem(*), destino_ref:destinos(*)');
       if (!isAdmin) {
-        viaQuery = viaQuery.eq('consultor_id', this.user.id);
+        const parceiroViagemIds = await ViagensDivisoesService.obterViagensDivididasPorConsultor(this.user.id);
+        if (parceiroViagemIds.length > 0) {
+          viaQuery = viaQuery.or(`consultor_id.eq.${this.user.id},id.in.(${parceiroViagemIds.join(',')})`);
+        } else {
+          viaQuery = viaQuery.eq('consultor_id', this.user.id);
+        }
       }
       const { data: viaData } = await viaQuery;
-      this.viagens = viaData || [];
+      const rawViagens = viaData || [];
+
+      // 4.0. Carregar divisões de parcerias entre consultores (com resiliência a schema drift)
+      const divisoesMap = new Map<string, any[]>();
+      try {
+        let divData: any[] | null = null;
+        let divError: any = null;
+        
+        const primaryRes = await supabase
+          .from('viagens_divisoes')
+          .select('viagem_id, consultor_id, percentual, percentual_rav, is_titular');
+        divData = primaryRes.data;
+        divError = primaryRes.error;
+        
+        if (divError && (divError.code === '42703' || divError.message?.includes('percentual_rav'))) {
+          const fallbackRes = await supabase
+            .from('viagens_divisoes')
+            .select('viagem_id, consultor_id, percentual, is_titular');
+          divData = fallbackRes.data;
+          divError = fallbackRes.error;
+        }
+
+        if (!divError && divData) {
+          divData.forEach((row: any) => {
+            const arr = divisoesMap.get(row.viagem_id) || [];
+            arr.push(row);
+            divisoesMap.set(row.viagem_id, arr);
+          });
+        }
+      } catch (errDiv) {
+        console.warn('Erro defensivo ao carregar viagens_divisoes em Relatorios:', errDiv);
+      }
+
+      this.viagens = rawViagens.map((v: any) => ({
+        ...v,
+        divisoes: divisoesMap.get(v.id) || []
+      }));
 
       // 4.1 Carregar clientes
       let cliQuery = supabase.from('clientes').select('*');
@@ -393,9 +434,19 @@ export class RelatoriosPage {
       return id === effectiveConsultorFilter;
     };
 
+    // Helper para viagens: reconhece consultor titular OU consultor parceiro com cota na viagem
+    const matchViagemConsultant = (v: any) => {
+      const cId = v.consultor_id || v.consultorId;
+      if (!isAdmin) {
+        return cId === effectiveConsultorFilter || ViagensDivisoesService.calcularParticipacaoConsultor(v, effectiveConsultorFilter) > 0;
+      }
+      if (effectiveConsultorFilter === 'todos') return true;
+      return cId === effectiveConsultorFilter || ViagensDivisoesService.calcularParticipacaoConsultor(v, effectiveConsultorFilter) > 0;
+    };
+
     const filteredViagens = this.viagens.filter(v => {
       const date = v.data_financeiro || v.dataFinanceiro || v.data_ida || v.dataIda;
-      return inRange(date) && matchConsultant(v.consultor_id || v.consultorId);
+      return inRange(date) && matchViagemConsultant(v);
     });
     const travelIds = new Set(filteredViagens.map(v => v.id));
 
@@ -760,7 +811,7 @@ export class RelatoriosPage {
           </div>
 
           <!-- Table detailing data (Visível apenas para Administradores) -->
-          <div class="overflow-x-auto custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl">
+          <div class="overflow-x-auto scroll-indicator-fade custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl">
             <table class="w-full text-left border-collapse text-xs font-semibold">
               <thead>
                 <tr class="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-widest font-black">
@@ -769,6 +820,7 @@ export class RelatoriosPage {
                   <th class="p-3">Fechados (Sim)</th>
                   <th class="p-3">Taxa Conv.</th>
                   <th class="p-3">Total Vendido</th>
+                  <th class="p-3">RAV (Rateada)</th>
                 </tr>
               </thead>
               <tbody>
@@ -792,6 +844,13 @@ export class RelatoriosPage {
                       const vSub = vPayments.reduce((s: number, p: any) => s + (Number(p.valor) || 0), 0);
                       return sum + (Math.max(0, (v.valor_total || v.valorTotal || 0) - vSub) * fatia);
                     }, 0);
+
+                    const cRav = subVia.reduce((sum: number, v: any) => {
+                      const fatiaRav = ViagensDivisoesService.calcularParticipacaoRavConsultor(v, c.id);
+                      const prods = Array.isArray(v.produtos) ? v.produtos : [];
+                      const totalRavViagem = prods.reduce((accP: number, p: any) => accP + (Number(p.rav) || 0), 0);
+                      return sum + (totalRavViagem * fatiaRav);
+                    }, 0);
                     
                     return `
                     <tr class="border-b border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-300">
@@ -800,6 +859,7 @@ export class RelatoriosPage {
                       <td class="p-3">${cAceito}</td>
                       <td class="p-3 font-extrabold text-emerald-600">${cConv}%</td>
                       <td class="p-3 font-extrabold">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(cSales)}</td>
+                      <td class="p-3 font-extrabold text-amber-600 dark:text-amber-400">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(cRav)}</td>
                     </tr>
                   `;
                 }).join('')}
@@ -867,7 +927,7 @@ export class RelatoriosPage {
         <!-- Timeline / Detailed report table -->
         <div class="space-y-3">
           <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider">Registros de Alertas Recentes</h3>
-          <div class="overflow-x-auto custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl">
+          <div class="overflow-x-auto scroll-indicator-fade custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl">
             <table class="w-full text-left border-collapse text-xs font-semibold">
               <thead>
                 <tr class="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-widest font-black">
@@ -982,7 +1042,7 @@ export class RelatoriosPage {
         <!-- Profit by category table -->
         <div class="space-y-3">
           <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider">Rentabilidade por Linha de Produto</h3>
-          <div class="overflow-x-auto custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl">
+          <div class="overflow-x-auto scroll-indicator-fade custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl">
             <table class="w-full text-left border-collapse text-xs font-semibold">
               <thead>
                 <tr class="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-widest font-black">
@@ -1121,7 +1181,7 @@ export class RelatoriosPage {
         <!-- Table -->
         <div class="space-y-3">
           <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider">Lista Analítica de Ocorrências e Perdas</h3>
-          <div class="overflow-x-auto custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl">
+          <div class="overflow-x-auto scroll-indicator-fade custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl">
             <table class="w-full text-left border-collapse text-xs font-semibold">
               <thead>
                 <tr class="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-widest font-black">
@@ -1284,7 +1344,7 @@ export class RelatoriosPage {
         <!-- Funil preditivo -->
         <div class="space-y-3">
           <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider">Funil de Cotação Ativa (Pipeline Ponderado)</h3>
-          <div class="overflow-x-auto custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl">
+          <div class="overflow-x-auto scroll-indicator-fade custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl">
             <table class="w-full text-left border-collapse text-xs font-semibold">
               <thead>
                 <tr class="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-widest font-black">
@@ -1449,7 +1509,7 @@ export class RelatoriosPage {
         <!-- Table detailing data -->
         <div class="space-y-3">
           <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider">Performance por Origem de Leads</h3>
-          <div class="overflow-x-auto custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl">
+          <div class="overflow-x-auto scroll-indicator-fade custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl">
             <table class="w-full text-left border-collapse text-xs font-semibold">
               <thead>
                 <tr class="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-widest font-black">
@@ -1712,7 +1772,7 @@ export class RelatoriosPage {
         <!-- Table detailing warnings -->
         <div class="space-y-3">
           <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider">Fila de Pendências de Conciliação e Auditoria</h3>
-          <div class="overflow-x-auto custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl">
+          <div class="overflow-x-auto scroll-indicator-fade custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl">
             <table class="w-full text-left border-collapse text-xs font-semibold">
               <thead>
                 <tr class="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-widest font-black">
@@ -1905,7 +1965,7 @@ export class RelatoriosPage {
             <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider">Validação de Documentos de Embarque Iminente (90 dias)</h3>
             <span class="px-2 py-0.5 bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-450 rounded-lg text-[10px] font-black">${docAlerts.length} inconsistências</span>
           </div>
-          <div class="overflow-x-auto custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl">
+          <div class="overflow-x-auto scroll-indicator-fade custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl">
             <table class="w-full text-left border-collapse text-xs font-semibold">
               <thead>
                 <tr class="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-widest font-black">
@@ -1934,7 +1994,7 @@ export class RelatoriosPage {
             <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider">Fila de Contatos de Pós-Venda Pendentes (Retornos Recentes)</h3>
             <span class="px-2 py-0.5 bg-amber-50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-450 rounded-lg text-[10px] font-black">${posVendaPendente.length} pendentes</span>
           </div>
-          <div class="overflow-x-auto custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl">
+          <div class="overflow-x-auto scroll-indicator-fade custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl">
             <table class="w-full text-left border-collapse text-xs font-semibold">
               <thead>
                 <tr class="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-widest font-black">
@@ -2472,7 +2532,7 @@ export class RelatoriosPage {
         <!-- Section: Leaderboard -->
         <div class="space-y-3">
           <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider">Ranking Geral de Engajamento</h3>
-          <div class="overflow-x-auto custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl">
+          <div class="overflow-x-auto scroll-indicator-fade custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl">
             <table class="w-full text-left border-collapse text-xs font-semibold">
               <thead>
                 <tr class="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-widest font-black">
@@ -2495,7 +2555,7 @@ export class RelatoriosPage {
         <!-- Section: Badge Analytics -->
         <div class="space-y-3">
           <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider">Distribuição e Adoção de Medalhas (Badge Analytics)</h3>
-          <div class="overflow-x-auto custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl">
+          <div class="overflow-x-auto scroll-indicator-fade custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl">
             <table class="w-full text-left border-collapse text-xs font-semibold">
               <thead>
                 <tr class="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-widest font-black">
@@ -2740,7 +2800,7 @@ export class RelatoriosPage {
             <span class="text-[11px] text-slate-400 font-semibold">${apuracao.rankingConsultores.length} consultores avaliados</span>
           </div>
 
-          <div class="overflow-x-auto custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl">
+          <div class="overflow-x-auto scroll-indicator-fade custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl">
             <table class="w-full text-left border-collapse text-xs font-semibold">
               <thead>
                 <tr class="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-widest font-black">
@@ -3569,7 +3629,7 @@ export class RelatoriosPage {
     let filename = `relatorio-${this.activeTab}-${new Date().toISOString().slice(0,10)}.csv`;
 
     if (this.activeTab === 'desempenho') {
-      csvContent += 'Consultor;Orcamentos Criados;Fechados Aceitos;Taxa Conversao;Total Vendido (R$)\n';
+      csvContent += 'Consultor;Orcamentos Criados;Fechados Aceitos;Taxa Conversao;Total Vendido (R$);RAV Rateada (R$)\n';
       const filteredConsultores = this.consultores.filter(c => this.consultorIdFilter === 'todos' || c.id === this.consultorIdFilter);
       filteredConsultores.forEach(c => {
         const subOrc = data.orcamentos.filter((o: any) => (o.consultor_id || o.consultorId) === c.id);
@@ -3587,8 +3647,14 @@ export class RelatoriosPage {
           const vSub = vPayments.reduce((s: number, p: any) => s + (Number(p.valor) || 0), 0);
           return sum + (Math.max(0, (v.valor_total || v.valorTotal || 0) - vSub) * fatia);
         }, 0);
+        const cRav = subVia.reduce((sum: number, v: any) => {
+          const fatiaRav = ViagensDivisoesService.calcularParticipacaoRavConsultor(v, c.id);
+          const prods = Array.isArray(v.produtos) ? v.produtos : [];
+          const totalRavViagem = prods.reduce((accP: number, p: any) => accP + (Number(p.rav) || 0), 0);
+          return sum + (totalRavViagem * fatiaRav);
+        }, 0);
         
-        csvContent += `"${c.nome}";${subOrc.length};${cAceito};"${cConv}%";${cSales}\n`;
+        csvContent += `"${c.nome}";${subOrc.length};${cAceito};"${cConv}%";${cSales};${cRav}\n`;
       });
     } else if (this.activeTab === 'prazos') {
       csvContent += 'Alerta;Consultor;Data Evento;Status\n';

@@ -2374,8 +2374,8 @@ export class Dashboard {
             </div>
 
             <!-- Desktop View: Table Layout (Hidden on mobile portrait) -->
-            <div class="hidden md:flex bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xs overflow-hidden flex-1 flex-col min-h-0">
-              <div class="overflow-auto flex-1 min-h-0 custom-scrollbar">
+            <div class="hidden md:flex bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xs overflow-hidden flex-1 flex-col min-h-0 scroll-indicator-fade">
+              <div class="overflow-auto flex-1 min-h-0 custom-scrollbar pb-1">
                 <table class="w-full text-left border-collapse min-w-[1000px]">
                   <thead>
                     <tr class="bg-slate-50 dark:bg-slate-900 text-[10px] font-black uppercase text-slate-400 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10 shadow-xs">

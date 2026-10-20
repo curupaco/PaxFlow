@@ -961,7 +961,7 @@ export class OrcamentosPage {
         </div>
 
         <!-- Corpo Principal Kanban -->
-        <main class="flex-1 p-6 overflow-x-auto flex md:flex flex-col md:flex-row gap-6 items-stretch md:items-start custom-scrollbar">
+        <main class="flex-1 p-6 pb-8 overflow-x-auto flex md:flex flex-col md:flex-row gap-6 items-stretch md:items-start custom-scrollbar" style="scrollbar-gutter: stable;">
           
           <!-- Coluna 1: SOLICITADO -->
           <div class="w-full md:w-80 bg-slate-100/70 dark:bg-slate-900/40 border border-slate-200/50 dark:border-slate-800/80 border-t-4 border-t-indigo-500 rounded-2xl p-4 flex-col shrink-0 orcamentos-column ${this.activeColumnMobile === 'SOLICITADO' ? 'flex' : 'hidden md:flex'}">

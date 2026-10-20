@@ -55,6 +55,8 @@
    - 3.43 [Assistente de Remarcação de Viagens com Blindagem Contábil em 1-Clique](#343-assistente-de-remarcação-de-viagens-com-blindagem-contábil-em-1-clique)
    - 3.44 [Divisão de Viagens, Comissões e Parcerias entre Consultores (com Rateio de RAV Aérea)](#344-divisão-de-viagens-comissões-e-parcerias-entre-consultores-com-rateio-de-rav-aérea)
    - 3.45 [Redesign e Organização em 5 Abas do Gerenciador de Viagens](#345-redesign-e-organização-em-5-abas-do-gerenciador-de-viagens)
+   - 3.46 [Ergonomia Visual, Barras de Rolagem de Alto Contraste & Indicador de Transbordo (Scroll Fade)](#346-ergonomia-visual-barras-de-rolagem-de-alto-contraste--indicador-de-transbordo-scroll-fade)
+   - 3.47 [Rateio Integral de Parcerias e RAV no Módulo de Relatórios e Dashboard Comercial](#347-rateio-integral-de-parcerias-e-rav-no-módulo-de-relatórios-e-dashboard-comercial)
 4. [Diferenciais Competitivos](#4-diferenciais-competitivos)
 5. [Arquitetura Tecnológica](#5-arquitetura-tecnológica)
 6. [Segurança e Conformidade](#6-segurança-e-conformidade)
@@ -1215,11 +1217,51 @@ A tela de Gerenciar/Editar Viagem (`EditTravelModal` e `DashboardTemplates`) pas
    - Os antigos botões dispersos de reembolso (`💸`), anotações (`💬`) e lixeira (`🗑️`) foram unificados em um menu flutuante discreto acionado pelo botão `⋮`.
    - Clicar no menu abre opções claras: `✏️ Editar Serviço`, `💬 Anotações / Comentários` (com contador), `💸 Solicitar Reembolso` e `🗑️ Excluir Produto` (protegido se o LOC já estiver conferido).
 
-4. **Cabeçalho de LOC Minimalista**:
-   - O botão `⚙️ Conferir` foi ocultado da barra de título do agrupador de LOC. A conferência administrativa é realizada de forma integrada nas Formas de Pagamento, exibindo no cabeçalho apenas o selo elegante `✔️ Conferido` quando o localizador estiver quitado e validado.
+4. **Cabeçalho de LOC com Ação de Conferência**:
+   - Administradores contam com o botão dedicado `⚙️ Conferir` / `✔️ Conferido` posicionado diretamente ao lado do código da reserva (LOC). O sistema exige 100% de quitação antes de permitir a marcação e solicita confirmação via diálogo para remoção da conferência, enquanto consultores comuns visualizam apenas o selo informativo `✔️ Conferido` quando auditado pelo gestor.
 
 5. **Transição Fluida entre Novo Serviço e Edição**:
    - A coluna direita da aba de produtos alterna instantaneamente entre o formulário de novo produto e a edição do serviço selecionado. O botão `✕ Cancelar Edição` e o atalho `➕ Novo Serviço` no topo da lista restabelecem imediatamente o formulário de criação sem necessidade de recarregar o diálogo.
+
+---
+
+### 3.46 Ergonomia Visual, Barras de Rolagem de Alto Contraste & Indicador de Transbordo (Scroll Fade)
+
+A experiência de navegação horizontal e vertical foi otimizada para eliminar problemas comuns em monitores Full HD (1920x1080) e telas de notebooks convencionais (1366x768), onde elementos com rolagem lateral frequentemente pareciam "cortados" sem que o usuário percebesse a existência de conteúdo adicional:
+
+1. **Barras de Rolagem Universais Visíveis (8px)**:
+   - A classe `.custom-scrollbar` no `src/index.css` recebeu espessura de 8px (tanto para rolagem horizontal quanto vertical), com trilho bem delineado (`#f1f5f9` no modo claro e `#0f172a` no modo escuro) e thumb com cor sólida de alto contraste (`#94a3b8` / `#475569` com hover para `#64748b` / `#334155`), com cantos arredondados (`rounded-full`).
+
+2. **Indicador Visual de Transbordo Lateral (`scroll-indicator-fade`)**:
+   - Para evitar rolagem "cega", contêineres tabulares ganharam um efeito de sombreamento/gradiente sutil nas margens laterais que indica a continuidade de dados além da viewport visível.
+   - Aplicado no Extrato de Recebimentos, Tabela de Viagens do Dashboard, Abas de Edição de Viagem, Kanban de Orçamentos, Relatório de Rendimento da Equipe e Tabelas Analíticas de Relatórios.
+
+3. **Otimização de Largura do Modal de Extrato de Recebimentos**:
+   - Definição de `min-w-[780px]` para impedir a compressão indevida das colunas de valores e botões de ação `Abrir ↗`.
+
+4. **Estabilidade de Layout no Kanban de Orçamentos**:
+   - Aplicação de `scrollbar-gutter: stable` e padding inferior generoso (`pb-8`), garantindo que o scroll horizontal permaneça acessível sem sobrepor cartões de negociação nem provocar saltos de layout (CLS).
+
+---
+
+### 3.47 Rateio Integral de Parcerias e RAV no Módulo de Relatórios e Dashboard Comercial
+
+Expansão das regras de governança e cálculo proporcional de vendas divididas (`viagens_divisoes`) para todos os painéis analíticos e métricas comerciais da agência:
+
+1. **Visibilidade Abrangente para Não-Administradores**:
+   - Consultores que não possuem privilégio de administrador passam a ter em suas consultas (`Relatorios.ts` e `ComercialDashboard.ts`) tanto as viagens em que figuram como consultor titular quanto as viagens em que participam como consultor parceiro, via query combinada `consultor_id.eq.{id},id.in.({viagens_divididas})`.
+
+2. **Cálculo Fidedigno Sem Duplicação Contábil**:
+   - Eliminação definitiva da distorção que somava 100% da viagem para ambos os consultores.
+   - O volume vendido e o faturamento utilizam estritamente `ViagensDivisoesService.calcularParticipacaoConsultor(v, consultorId)`, dividindo o valor proporcionalmente (ex: 50% para cada).
+   - O consolidado geral da agência para administradores continua somando 100% da viagem apenas uma vez, mantendo a integridade fiscal da agência.
+
+3. **Ponderação Especializada de RAV Aérea**:
+   - Inclusão da taxa de emissão aérea segregada (`ViagensDivisoesService.calcularParticipacaoRavConsultor(v, consultorId)`), permitindo que consultores que emitiram o bilhete recebam a totalidade da RAV mesmo quando a venda tiver rateio 50/50.
+   - Nova coluna "RAV Rateada" na tabela de Desempenho e na exportação CSV para auditoria direta.
+
+4. **Metas de Vendas e Campanhas Fracionadas**:
+   - No Dashboard Comercial, as metas brutas e líquidas utilizam as fatias ponderadas por consultor, permitindo que vendas em parceria contribuam com frações exatas para o atingimento das metas individuais.
 
 ---
 

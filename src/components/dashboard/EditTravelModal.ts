@@ -501,28 +501,30 @@ export class EditTravelModal {
         </div>
 
         <!-- Seletor de Abas da Viagem (Desktop e Mobile) -->
-        <div class="flex items-center gap-1.5 sm:gap-2 border-b border-slate-200/80 dark:border-slate-800 mb-6 pb-px overflow-x-auto custom-scrollbar">
-          <button id="tab-detalhes-btn" type="button" class="border-b-2 ${activeTab === 'detalhes' ? 'border-indigo-600 dark:border-indigo-400 text-indigo-600 dark:text-indigo-400 font-black' : 'border-transparent text-slate-400 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 font-bold'} px-3 sm:px-4 py-2.5 text-xs sm:text-sm transition shrink-0 flex items-center gap-1.5 cursor-pointer">
-            <span>📝</span>
-            <span>Geral &amp; Passageiro</span>
-          </button>
-          <button id="tab-produtos-btn" type="button" class="border-b-2 ${activeTab === 'produtos' ? 'border-indigo-600 dark:border-indigo-400 text-indigo-600 dark:text-indigo-400 font-black' : 'border-transparent text-slate-400 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 font-bold'} px-3 sm:px-4 py-2.5 text-xs sm:text-sm transition shrink-0 flex items-center gap-1.5 cursor-pointer">
-            <span>🛍️</span>
-            <span>Produtos &amp; Serviços</span>
-          </button>
-          <button id="tab-vouchers-btn" type="button" class="border-b-2 ${activeTab === 'vouchers' ? 'border-indigo-600 dark:border-indigo-400 text-indigo-600 dark:text-indigo-400 font-black' : 'border-transparent text-slate-400 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 font-bold'} px-3 sm:px-4 py-2.5 text-xs sm:text-sm transition shrink-0 flex items-center gap-1.5 cursor-pointer">
-            <span>🎫</span>
-            <span>Vouchers &amp; Documentos</span>
-          </button>
-          <button id="tab-comentarios-btn" type="button" class="border-b-2 ${activeTab === 'comentarios' ? 'border-indigo-600 dark:border-indigo-400 text-indigo-600 dark:text-indigo-400 font-black' : 'border-transparent text-slate-400 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 font-bold'} px-3 sm:px-4 py-2.5 text-xs sm:text-sm transition shrink-0 flex items-center gap-1.5 cursor-pointer">
-            <span>💬</span>
-            <span>Linha do Tempo &amp; Comentários</span>
-          </button>
-          <button id="tab-reembolsos-btn" type="button" class="border-b-2 ${activeTab === 'reembolsos' ? 'border-indigo-600 dark:border-indigo-400 text-indigo-600 dark:text-indigo-400 font-black' : 'border-transparent text-slate-400 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 font-bold'} px-3 sm:px-4 py-2.5 text-xs sm:text-sm transition shrink-0 flex items-center gap-1.5 cursor-pointer">
-            <span>💸</span>
-            <span>Reembolsos</span>
-            ${v.reembolsos && v.reembolsos.length > 0 ? `<span class="px-1.5 py-0.5 bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400 text-[10px] font-black rounded-full">${v.reembolsos.length}</span>` : ''}
-          </button>
+        <div class="scroll-indicator-fade mb-6">
+          <div class="flex items-center gap-1.5 sm:gap-2 border-b border-slate-200/80 dark:border-slate-800 pb-px overflow-x-auto custom-scrollbar pb-1">
+            <button id="tab-detalhes-btn" type="button" class="border-b-2 ${activeTab === 'detalhes' ? 'border-indigo-600 dark:border-indigo-400 text-indigo-600 dark:text-indigo-400 font-black' : 'border-transparent text-slate-400 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 font-bold'} px-3 sm:px-4 py-2.5 text-xs sm:text-sm transition shrink-0 flex items-center gap-1.5 cursor-pointer">
+              <span>📝</span>
+              <span>Geral &amp; Passageiro</span>
+            </button>
+            <button id="tab-produtos-btn" type="button" class="border-b-2 ${activeTab === 'produtos' ? 'border-indigo-600 dark:border-indigo-400 text-indigo-600 dark:text-indigo-400 font-black' : 'border-transparent text-slate-400 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 font-bold'} px-3 sm:px-4 py-2.5 text-xs sm:text-sm transition shrink-0 flex items-center gap-1.5 cursor-pointer">
+              <span>🛍️</span>
+              <span>Produtos &amp; Serviços</span>
+            </button>
+            <button id="tab-vouchers-btn" type="button" class="border-b-2 ${activeTab === 'vouchers' ? 'border-indigo-600 dark:border-indigo-400 text-indigo-600 dark:text-indigo-400 font-black' : 'border-transparent text-slate-400 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 font-bold'} px-3 sm:px-4 py-2.5 text-xs sm:text-sm transition shrink-0 flex items-center gap-1.5 cursor-pointer">
+              <span>🎫</span>
+              <span>Vouchers &amp; Documentos</span>
+            </button>
+            <button id="tab-comentarios-btn" type="button" class="border-b-2 ${activeTab === 'comentarios' ? 'border-indigo-600 dark:border-indigo-400 text-indigo-600 dark:text-indigo-400 font-black' : 'border-transparent text-slate-400 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 font-bold'} px-3 sm:px-4 py-2.5 text-xs sm:text-sm transition shrink-0 flex items-center gap-1.5 cursor-pointer">
+              <span>💬</span>
+              <span>Linha do Tempo &amp; Comentários</span>
+            </button>
+            <button id="tab-reembolsos-btn" type="button" class="border-b-2 ${activeTab === 'reembolsos' ? 'border-indigo-600 dark:border-indigo-400 text-indigo-600 dark:text-indigo-400 font-black' : 'border-transparent text-slate-400 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 font-bold'} px-3 sm:px-4 py-2.5 text-xs sm:text-sm transition shrink-0 flex items-center gap-1.5 cursor-pointer">
+              <span>💸</span>
+              <span>Reembolsos</span>
+              ${v.reembolsos && v.reembolsos.length > 0 ? `<span class="px-1.5 py-0.5 bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400 text-[10px] font-black rounded-full">${v.reembolsos.length}</span>` : ''}
+            </button>
+          </div>
         </div>
 
         <!-- CONTEÚDO PRINCIPAL (5 Abas Independentes e Espaçosas) -->
@@ -2947,11 +2949,15 @@ export class EditTravelModal {
                 <span class="copy-icon text-[11px]">📋</span>
               </button>
               
-              ${isConferido ? `
-                <span class="px-1.5 py-1 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-600 dark:text-emerald-400 dark:bg-emerald-950/20 dark:border-emerald-900/40 text-[9px] font-bold flex items-center gap-1 shadow-sm font-sans" title="LOC conferido pelo gestor">
+              ${isAdmin ? `
+                <button type="button" class="btn-conferir-loc px-2 py-0.5 rounded-lg border text-[9px] font-bold flex items-center justify-center gap-1 shadow-xs transition font-sans cursor-pointer active:scale-95 ${isConferido ? 'text-emerald-700 bg-emerald-100/70 hover:bg-emerald-200/80 dark:text-emerald-300 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 border-emerald-300 dark:border-emerald-800' : 'text-slate-600 bg-slate-100 hover:bg-slate-200 dark:text-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 border-slate-200 dark:border-slate-700'}" data-loc="${locKey}" title="${isConferido ? 'LOC conferido pelo gestor (clique para remover conferência)' : 'Marcar conferência financeira deste LOC'}">
+                  ${isConferido ? '✔️ Conferido' : '⚙️ Conferir'}
+                </button>
+              ` : (isConferido ? `
+                <span class="px-2 py-0.5 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-600 dark:text-emerald-400 dark:bg-emerald-950/20 dark:border-emerald-900/40 text-[9px] font-bold flex items-center gap-1 shadow-xs font-sans" title="LOC conferido pelo gestor">
                   ✔️ Conferido
                 </span>
-              ` : ''}
+              ` : '')}
 
               <button class="btn-formas-pagamento-loc p-1 ${btnPagamentoClass} rounded-lg border transition text-[9px] font-bold flex items-center justify-center gap-1 shadow-sm font-sans ${(isConferido || isLocEmEdicao) ? 'opacity-55 cursor-not-allowed' : ''}" data-loc="${locKey}" title="${isConferido ? 'Bloqueado Financeiramente' : (isLocEmEdicao ? 'Salve as alterações deste produto no editor lateral antes de receber.' : 'Definir Formas de Pagamento')}">
                 ${btnPagamentoContent}
@@ -3046,6 +3052,13 @@ export class EditTravelModal {
             this.options.showToast('LOC com recebimento pendente.', 'error');
             return;
           }
+        } else {
+          const confirmRemover = await showCustomConfirm(
+            `Deseja realmente remover a conferência do LOC "${loc}"? Isso irá desbloquear as alterações deste grupo.`,
+            'Remover Conferência do LOC',
+            { isDestructive: true, confirmText: 'Remover Conferência', cancelText: 'Cancelar' }
+          );
+          if (!confirmRemover) return;
         }
 
         try {

@@ -7,6 +7,7 @@ import {
   processarExtratoRecebimentos,
   calcularFaturamentoLucratividade
 } from '../../src/controllers/relatoriosController';
+import { ViagensDivisoesService } from '../../src/services/viagensDivisoesService';
 
 describe('RelatoriosController - Métricas Comerciais e Desempenho da Agência', () => {
   it('deve calcular taxa de conversão do funil de vendas com proteção contra divisão por zero', () => {
@@ -381,5 +382,43 @@ describe('RelatoriosController - Faturamento e Lucratividade com Filtro de Produ
     expect(resultado.margemMedia).toBe(0);
     expect(resultado.categorias).toHaveLength(0);
   });
+
+  it('deve ponderar corretamente venda e RAV nas fatias de parcerias entre consultores', () => {
+    // Setup
+    const viagemDividida = {
+      id: 'via-split-99',
+      consultor_id: 'c-titular',
+      valor_total: 10000,
+      divisoes: [
+        { consultor_id: 'c-titular', percentual: 60, percentual_rav: 40, is_titular: true },
+        { consultor_id: 'c-parceiro', percentual: 40, percentual_rav: 60, is_titular: false }
+      ],
+      produtos: [
+        { tipo: 'Aéreo', valor_venda: 6000, rav: 1000 },
+        { tipo: 'Hotel', valor_venda: 4000, rav: 500 }
+      ]
+    };
+    const totalRav = 1500;
+
+    // Action
+    const fatiaVendaTitular = ViagensDivisoesService.calcularParticipacaoConsultor(viagemDividida, 'c-titular');
+    const fatiaVendaParceiro = ViagensDivisoesService.calcularParticipacaoConsultor(viagemDividida, 'c-parceiro');
+    const fatiaRavTitular = ViagensDivisoesService.calcularParticipacaoRavConsultor(viagemDividida, 'c-titular');
+    const fatiaRavParceiro = ViagensDivisoesService.calcularParticipacaoRavConsultor(viagemDividida, 'c-parceiro');
+
+    const vendaTitular = viagemDividida.valor_total * fatiaVendaTitular;
+    const vendaParceiro = viagemDividida.valor_total * fatiaVendaParceiro;
+    const ravTitular = totalRav * fatiaRavTitular;
+    const ravParceiro = totalRav * fatiaRavParceiro;
+
+    // Assert
+    expect(vendaTitular).toBe(6000);
+    expect(vendaParceiro).toBe(4000);
+    expect(ravTitular).toBe(600);
+    expect(ravParceiro).toBe(900);
+    expect(vendaTitular + vendaParceiro).toBe(viagemDividida.valor_total);
+    expect(ravTitular + ravParceiro).toBe(totalRav);
+  });
 });
+
 

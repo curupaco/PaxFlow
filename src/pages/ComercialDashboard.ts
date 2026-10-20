@@ -9,6 +9,7 @@ import { NextTripDashboardWidget } from '../components/dashboard/NextTripDashboa
 import { NextTripEngineService } from '../services/nextTripEngineService';
 import { SendTemplateMessageModal } from '../components/dashboard/SendTemplateMessageModal';
 import { UpsellEngineService } from '../services/upsellEngineService';
+import { ViagensDivisoesService } from '../services/viagensDivisoesService';
 
 // Injeta estilos específicos premium para o Dashboard de Relatórios
 if (typeof document !== 'undefined') {
@@ -289,13 +290,48 @@ export class ComercialDashboard {
         updatedAt: d.updated_at
       }));
 
-      // 2. Carregar Viagens do banco para busca Co-Piloto e relatorios
+      // 2. Carregar Viagens do banco para métricas comerciais e relatórios
       let queryVia = supabase.from('viagens').select('*, produtos:produtos_viagem(*)');
       if (this.perfil?.role !== 'admin' && this.user?.id) {
-        queryVia = queryVia.eq('consultor_id', this.user.id);
+        const parceiroViagemIds = await ViagensDivisoesService.obterViagensDivididasPorConsultor(this.user.id);
+        if (parceiroViagemIds.length > 0) {
+          queryVia = queryVia.or(`consultor_id.eq.${this.user.id},id.in.(${parceiroViagemIds.join(',')})`);
+        } else {
+          queryVia = queryVia.eq('consultor_id', this.user.id);
+        }
       }
       const { data: dataVia, error: errVia } = await queryVia;
       if (errVia) throw errVia;
+
+      // 2.1. Carrega divisões de parcerias entre consultores (com resiliência a schema drift)
+      const divisoesMap = new Map<string, any[]>();
+      try {
+        let divData: any[] | null = null;
+        let divError: any = null;
+        const res = await supabase
+          .from('viagens_divisoes')
+          .select('viagem_id, consultor_id, percentual, percentual_rav, is_titular');
+        divData = res.data;
+        divError = res.error;
+
+        if (divError && (divError.code === '42703' || divError.message?.includes('percentual_rav'))) {
+          const fallbackRes = await supabase
+            .from('viagens_divisoes')
+            .select('viagem_id, consultor_id, percentual, is_titular');
+          divData = fallbackRes.data;
+          divError = fallbackRes.error;
+        }
+
+        if (!divError && divData) {
+          divData.forEach((row: any) => {
+            const arr = divisoesMap.get(row.viagem_id) || [];
+            arr.push(row);
+            divisoesMap.set(row.viagem_id, arr);
+          });
+        }
+      } catch (errDiv) {
+        console.warn('Erro defensivo ao carregar viagens_divisoes no ComercialDashboard:', errDiv);
+      }
 
       this.viagens = (dataVia || []).map(d => ({
         ...d,
@@ -317,7 +353,8 @@ export class ComercialDashboard {
         updatedAt: d.updated_at,
         dataFinanceiro: d.data_financeiro,
         data_financeiro: d.data_financeiro,
-        produtos: d.produtos || []
+        produtos: d.produtos || [],
+        divisoes: divisoesMap.get(d.id) || []
       }));
 
       // 3. Carregar Pagamentos e Formas de Recebimento
@@ -356,7 +393,9 @@ export class ComercialDashboard {
         tempVia = tempVia.filter(v => {
           const vConsultorId = v.consultorId || (v as any).consultor_id;
           const vRespId = (v as any).consultorResponsavelId || (v as any).consultor_responsavel_id;
-          return vConsultorId === this.selectedConsultantId || vRespId === this.selectedConsultantId;
+          return vConsultorId === this.selectedConsultantId || 
+                 vRespId === this.selectedConsultantId ||
+                 ViagensDivisoesService.calcularParticipacaoConsultor(v, this.selectedConsultantId) > 0;
         });
       }
     } else {
@@ -366,7 +405,9 @@ export class ComercialDashboard {
       tempVia = tempVia.filter(v => {
         const vConsultorId = v.consultorId || (v as any).consultor_id;
         const vRespId = (v as any).consultorResponsavelId || (v as any).consultor_responsavel_id;
-        return vConsultorId === currentUserId || vRespId === currentUserId;
+        return vConsultorId === currentUserId || 
+               vRespId === currentUserId ||
+               ViagensDivisoesService.calcularParticipacaoConsultor(v, currentUserId) > 0;
       });
     }
 
@@ -526,15 +567,26 @@ export class ComercialDashboard {
     // A. Realizado (Viagens confirmadas/concluídas/planejadas - tirando as canceladas)
     const viagensAtivas = filteredVia.filter(v => v.status !== 'cancelada');
     
-    // Subtrair pagamentos de desconto/prejuízo
-    const activeViaIds = new Set(viagensAtivas.map(v => v.id));
-    const pagsSub = this.locPagamentos.filter(p => 
-      activeViaIds.has(p.viagem_id || p.viagemId) &&
-      p.formas_recebimento &&
-      ['DESCONTO', 'PREJUÍZO'].includes((p.formas_recebimento.nome || '').trim().toUpperCase())
-    );
-    const totalSub = pagsSub.reduce((acc, p) => acc + (Number(p.valor) || 0), 0);
-    const faturamentoRealizado = Math.max(0, viagensAtivas.reduce((acc, v) => acc + (v.valorTotal || 0), 0) - totalSub);
+    // Identificar se o filtro atual está restrito a um consultor
+    const targetConsultantId = this.perfil?.role !== 'admin'
+      ? this.user?.id
+      : (this.selectedConsultantId !== 'todos' ? this.selectedConsultantId : null);
+
+    const faturamentoRealizado = Math.max(0, viagensAtivas.reduce((acc, v) => {
+      const vPayments = this.locPagamentos.filter(p => 
+        (p.viagem_id === v.id || p.viagemId === v.id) &&
+        p.formas_recebimento &&
+        ['DESCONTO', 'PREJUÍZO'].includes((p.formas_recebimento.nome || '').trim().toUpperCase())
+      );
+      const vSub = vPayments.reduce((s, p) => s + (Number(p.valor) || 0), 0);
+      const valorLiquido = Math.max(0, (v.valorTotal || 0) - vSub);
+      
+      const fatia = targetConsultantId
+        ? ViagensDivisoesService.calcularParticipacaoConsultor(v, targetConsultantId)
+        : 1;
+
+      return acc + (valorLiquido * fatia);
+    }, 0));
 
     // B. Pipeline Ativo (Orçamentos em andamento/cotação)
     const orcamentosAtivos = filteredOrc.filter(o => o.status === 'SOLICITADO' || o.status === 'EM_ANDAMENTO' || o.status === 'AGUARDANDO');
@@ -940,9 +992,7 @@ export class ComercialDashboard {
 
     // 2. Processar dados de vendas (viagens) por consultor participante
     viagens.forEach(v => {
-      if (!v.consultorId || v.status === 'cancelada' || !idsParticipantes.has(v.consultorId)) return;
-      const m = rankingMap.get(v.consultorId);
-      if (!m) return;
+      if (v.status === 'cancelada') return;
       
       const vPayments = this.locPagamentos.filter(p => 
         (p.viagem_id === v.id || p.viagemId === v.id) &&
@@ -950,7 +1000,17 @@ export class ComercialDashboard {
         ['DESCONTO', 'PREJUÍZO'].includes((p.formas_recebimento.nome || '').trim().toUpperCase())
       );
       const vSub = vPayments.reduce((s, p) => s + (Number(p.valor) || 0), 0);
-      m.valVendido += Math.max(0, (v.valorTotal || 0) - vSub);
+      const valorLiquidoViagem = Math.max(0, (v.valorTotal || 0) - vSub);
+
+      idsParticipantes.forEach(consultorId => {
+        const fatia = ViagensDivisoesService.calcularParticipacaoConsultor(v, consultorId);
+        if (fatia > 0) {
+          const m = rankingMap.get(consultorId);
+          if (m) {
+            m.valVendido += valorLiquidoViagem * fatia;
+          }
+        }
+      });
     });
 
     // Calcular tempo médio de fechamento para cada consultor
@@ -958,7 +1018,10 @@ export class ComercialDashboard {
       let totalWonWithOrc = 0;
       let totalDays = 0;
 
-      const consultorViagens = viagens.filter(v => (v.consultorId === id || v.consultor_id === id) && v.status !== 'cancelada');
+      const consultorViagens = viagens.filter(v => 
+        ((v.consultorId === id || (v as any).consultor_id === id) || ViagensDivisoesService.calcularParticipacaoConsultor(v, id) > 0) && 
+        v.status !== 'cancelada'
+      );
       consultorViagens.forEach(v => {
         const oId = v.orcamentoId || v.orcamento_id;
         if (oId) {
@@ -984,7 +1047,7 @@ export class ComercialDashboard {
 
     return `
       <!-- TABELA DE RENDIMENTO DA EQUIPE -->
-      <section class="dashboard-glass rounded-3xl p-6 select-none overflow-x-auto">
+      <section class="dashboard-glass rounded-3xl p-6 select-none overflow-x-auto scroll-indicator-fade custom-scrollbar">
         <div class="mb-4">
           <h3 class="text-sm font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
             👥 Rendimento e Performance da Equipe
@@ -1297,7 +1360,7 @@ export class ComercialDashboard {
     const getConsultantMetricVal = (consultantId: string): number => {
       const consultantVoyages = this.viagens.filter(v => 
         v.status !== 'cancelada' && 
-        v.consultorId === consultantId && 
+        (v.consultorId === consultantId || (v as any).consultor_id === consultantId || ViagensDivisoesService.calcularParticipacaoConsultor(v, consultantId) > 0) && 
         filterByPeriodDates(v)
       );
 
@@ -1308,14 +1371,23 @@ export class ComercialDashboard {
           p.formas_recebimento &&
           ['DESCONTO', 'PREJUÍZO'].includes((p.formas_recebimento.nome || '').trim().toUpperCase())
         );
-        const totalSub = pagsSub.reduce((acc, p) => acc + (Number(p.valor) || 0), 0);
-        return Math.max(0, consultantVoyages.reduce((acc, v) => acc + (v.valorTotal || 0), 0) - totalSub);
+        return consultantVoyages.reduce((acc, v) => {
+          const fatia = ViagensDivisoesService.calcularParticipacaoConsultor(v, consultantId);
+          const vPayments = pagsSub.filter(p => (p.viagem_id === v.id || p.viagemId === v.id));
+          const vSub = vPayments.reduce((s, p) => s + (Number(p.valor) || 0), 0);
+          return acc + (Math.max(0, (v.valorTotal || 0) - vSub) * fatia);
+        }, 0);
       } else {
         let profit = 0;
         consultantVoyages.forEach(v => {
+          const fatia = ViagensDivisoesService.calcularParticipacaoConsultor(v, consultantId);
+          const fatiaRav = ViagensDivisoesService.calcularParticipacaoRavConsultor(v, consultantId);
           const prods = (v as any).produtos || [];
           prods.forEach((p: any) => {
-            profit += (Number(p.comissao) || 0) + (Number(p.markup) || 0) + ((Number(p.rav) || 0) * 0.88);
+            const pComissao = (Number(p.comissao) || 0) * fatia;
+            const pMarkup = (Number(p.markup) || 0) * fatia;
+            const pRavLiquido = ((Number(p.rav) || 0) * 0.88) * fatiaRav;
+            profit += pComissao + pMarkup + pRavLiquido;
           });
         });
         return profit;

@@ -61,30 +61,62 @@ html.dark body {
   animation: fadeInCard 0.25s ease-out forwards;
 }
 
-/* Scrollbars customizadas */
+/* Scrollbars customizadas visíveis e ergonômicas (Fim da rolagem invisível em telas convencionais) */
 .custom-scrollbar {
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #94a3b8 #f1f5f9;
 }
+html.dark .custom-scrollbar {
+  scrollbar-color: #475569 #0f172a;
+}
+
 .custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: #f1f5f9;
   border-radius: 9px;
 }
+html.dark .custom-scrollbar::-webkit-scrollbar-track {
+  background: #0f172a;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-radius: 9px;
+  border: 1.5px solid #f1f5f9;
+}
 html.dark .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: #475569;
+  border: 1.5px solid #0f172a;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #64748b;
 }
 html.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: #64748b;
+}
+
+/* Indicador visual de rolagem lateral (sombra suave na borda direita quando há mais conteúdo) */
+.scroll-indicator-fade {
+  position: relative;
+}
+.scroll-indicator-fade::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 24px;
+  pointer-events: none;
+  background: linear-gradient(to right, transparent, rgba(0, 0, 0, 0.06));
+  border-top-right-radius: inherit;
+  border-bottom-right-radius: inherit;
+}
+html.dark .scroll-indicator-fade::after {
+  background: linear-gradient(to right, transparent, rgba(0, 0, 0, 0.35));
 }
 
 /* Otimização de rolagem horizontal em dispositivos móveis */

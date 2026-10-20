@@ -303,23 +303,25 @@ export class ExtratoRecebimentosModal {
     });
 
     container.innerHTML = `
-      <div class="overflow-x-auto custom-scrollbar border border-slate-200/80 dark:border-slate-800 rounded-xl">
-        <table class="w-full text-left border-collapse text-xs">
-          <thead>
-            <tr class="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-wider font-black">
-              <th class="py-2.5 px-2.5 sm:px-3">Data / Consultor</th>
-              <th class="py-2.5 px-2.5 sm:px-3">Cliente & Viagem</th>
-              <th class="py-2.5 px-2.5 sm:px-3">Localizador (LOC)</th>
-              <th class="py-2.5 px-2.5 sm:px-3">Produtos Vinculados ao LOC</th>
-              <th class="py-2.5 px-2.5 sm:px-3">Meio de Recebimento</th>
-              <th class="py-2.5 px-2.5 sm:px-3 text-right">Valor Pago</th>
-              <th class="py-2.5 px-2.5 sm:px-3 text-center">Ação</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${rowsHTML}
-          </tbody>
-        </table>
+      <div class="scroll-indicator-fade rounded-xl overflow-hidden">
+        <div class="overflow-x-auto custom-scrollbar border border-slate-200/80 dark:border-slate-800 rounded-xl pb-1">
+          <table class="w-full text-left border-collapse text-xs min-w-[780px]">
+            <thead>
+              <tr class="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-wider font-black sticky top-0 z-10">
+                <th class="py-2.5 px-2.5 sm:px-3">Data / Consultor</th>
+                <th class="py-2.5 px-2.5 sm:px-3">Cliente & Viagem</th>
+                <th class="py-2.5 px-2.5 sm:px-3">Localizador (LOC)</th>
+                <th class="py-2.5 px-2.5 sm:px-3">Produtos Vinculados ao LOC</th>
+                <th class="py-2.5 px-2.5 sm:px-3">Meio de Recebimento</th>
+                <th class="py-2.5 px-2.5 sm:px-3 text-right">Valor Pago</th>
+                <th class="py-2.5 px-2.5 sm:px-3 text-center">Ação</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rowsHTML}
+            </tbody>
+          </table>
+        </div>
       </div>
     `;
 
