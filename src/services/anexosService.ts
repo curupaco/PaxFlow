@@ -332,17 +332,44 @@ export class AnexosService {
           dbErr.message?.includes('column');
 
         if (isColumnError) {
-          console.warn('[AnexosService] Colunas adicionais inexistentes ou erro de schema. Tentando payload base.');
+          console.warn('[AnexosService] Colunas adicionais inexistentes ou erro de schema. Tentando payload sem colunas estendidas.');
           const payloadBase = { ...payload };
           delete payloadBase.numero_documento;
           delete payloadBase.data_validade;
           delete payloadBase.passageiro_nome;
 
-          const { data: dataBase, error: errBase } = await supabase
+          // Se a mensagem mencionar explicitamente created_by ou se der novo erro, remove created_by
+          if (dbErr.message?.includes('created_by')) {
+            delete payloadBase.created_by;
+          }
+
+          let { data: dataBase, error: errBase } = await supabase
             .from(this.TABELA)
             .insert(payloadBase)
             .select()
             .single();
+
+          // Se ainda falhar por coluna inexistente (ex: created_by não existia no schema cache), tenta sem created_by
+          if (errBase && (
+            errBase.code === '42703' ||
+            errBase.code === 'PGRST204' ||
+            errBase.message?.includes('created_by') ||
+            errBase.message?.includes('schema cache') ||
+            errBase.message?.includes('column')
+          )) {
+            console.warn('[AnexosService] Tentando inserção essencial sem created_by e sem campos opcionais.');
+            const payloadEssencial = { ...payloadBase };
+            delete payloadEssencial.created_by;
+
+            const resEssencial = await supabase
+              .from(this.TABELA)
+              .insert(payloadEssencial)
+              .select()
+              .single();
+
+            dataBase = resEssencial.data;
+            errBase = resEssencial.error;
+          }
 
           if (errBase) {
             console.error('[AnexosService] Falha técnica ao salvar anexo na tabela oficial com payload base:', errBase);
@@ -473,7 +500,7 @@ export class AnexosService {
                   // Se a tabela oficial existe, migra o item legado para a tabela documentos_anexos
                   if (tabelaExiste) {
                     try {
-                      await supabase.from(this.TABELA).insert({
+                      const rowMigracao: any = {
                         viagem_id: viagemId,
                         cliente_id: item.cliente_id,
                         rotulo: item.rotulo || item.nome_original,
@@ -482,9 +509,16 @@ export class AnexosService {
                         storage_path: item.storage_path,
                         mime_type: item.mime_type,
                         tamanho_bytes: item.tamanho_bytes,
-                        created_by: item.created_by,
                         created_at: item.created_at || new Date().toISOString()
-                      });
+                      };
+                      if (item.created_by) {
+                        rowMigracao.created_by = item.created_by;
+                      }
+                      const { error: insErr } = await supabase.from(this.TABELA).insert(rowMigracao);
+                      if (insErr && (insErr.code === 'PGRST204' || insErr.message?.includes('created_by'))) {
+                        delete rowMigracao.created_by;
+                        await supabase.from(this.TABELA).insert(rowMigracao);
+                      }
                     } catch {}
                   }
                 }

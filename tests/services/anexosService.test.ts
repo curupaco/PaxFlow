@@ -934,6 +934,75 @@ describe('AnexosService - Testes Subcutâneos com Múltiplos Anexos e Resiliênc
     expect(anexosCliente.some(a => a.tipo_documento === 'PASSAPORTE')).toBe(true);
     expect(anexosCliente.some(a => a.tipo_documento === 'CNH')).toBe(true);
   });
+
+  it('deve contornar erro PGRST204 (coluna created_by ausente no schema cache) e salvar com sucesso via fallback Zero-Break', async () => {
+    // Setup
+    const mockFile = new File(['conteudo voucher'], 'voucher_seguro.pdf', { type: 'application/pdf' });
+    let insercoesFeitas: any[] = [];
+
+    const mockDocSucesso = {
+      id: 'doc-salvo-sem-created-by',
+      viagem_id: 'viagem-seguro',
+      rotulo: 'Apólice de Seguro',
+      tipo_documento: 'SEGURO_VIAGEM',
+      nome_original: 'voucher_seguro.pdf',
+      storage_path: 'supabase-storage://viagem-seguro/voucher_seguro.pdf',
+      mime_type: 'application/pdf',
+      tamanho_bytes: 2048
+    };
+
+    const mockFrom = vi.fn().mockImplementation((tabela: string) => {
+      if (tabela === 'documentos_anexos') {
+        return {
+          insert: vi.fn().mockImplementation((payloadInserido: any) => {
+            insercoesFeitas.push(payloadInserido);
+            // Se tiver created_by, simula a recusa do PostgREST (PGRST204)
+            if (payloadInserido.created_by !== undefined) {
+              return {
+                select: vi.fn().mockReturnValue({
+                  single: vi.fn().mockResolvedValue({
+                    data: null,
+                    error: {
+                      code: 'PGRST204',
+                      message: "Could not find the 'created_by' column of 'documentos_anexos' in the schema cache"
+                    }
+                  })
+                })
+              };
+            }
+            // Se não tiver created_by, grava normalmente com 200 OK
+            return {
+              select: vi.fn().mockReturnValue({
+                single: vi.fn().mockResolvedValue({
+                  data: mockDocSucesso,
+                  error: null
+                })
+              })
+            };
+          })
+        };
+      }
+      return {};
+    });
+    (supabase.from as any) = mockFrom;
+
+    // Action
+    const resultado = await AnexosService.uploadAnexo({
+      file: mockFile,
+      rotulo: 'Apólice de Seguro',
+      tipo_documento: 'SEGURO_VIAGEM',
+      viagem_id: 'viagem-seguro',
+      user_id: 'user-consultor-123'
+    });
+
+    // Assert
+    expect(resultado.id).toBe('doc-salvo-sem-created-by');
+    expect(resultado.rotulo).toBe('Apólice de Seguro');
+    // Houve fallback: a última inserção executada não enviou created_by
+    expect(insercoesFeitas.length).toBeGreaterThanOrEqual(2);
+    const ultimaTentativa = insercoesFeitas[insercoesFeitas.length - 1];
+    expect(ultimaTentativa.created_by).toBeUndefined();
+  });
 });
 
 
