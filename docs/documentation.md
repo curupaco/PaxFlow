@@ -1176,8 +1176,9 @@ Para viabilizar o trabalho colaborativo entre membros da equipe da agência (pro
    - A viagem mantém sempre **1 Consultor Titular** responsável pelo canal de contato com o passageiro, emissão de alertas operacionais, pós-venda e NPS.
    - Os consultores parceiros cadastrados na divisão ganham privilégio de **co-proprietários** (`isOwner = true`), podendo editar a viagem e seus produtos sem serem rebaixados para o modo de visualização ou co-piloto/balcão.
 
-6. **Visibilidade Transversal no Dashboard & Kanban (Badges Inteligentes)**:
-   - Viagens em parceria aparecem simultaneamente no pipeline (Kanban) e na visualização em tabela de **ambos os consultores** quando filtrados por seu próprio nome.
+6. **Visibilidade Transversal e Rateio Proporcional no Dashboard & Kanban**:
+   - Viagens em parceria aparecem simultaneamente no pipeline (Kanban) e na visualização em tabela de **ambos os consultores** quando filtrados por seu próprio nome ou no perfil do consultor logado.
+   - **Rateio Proporcional no Dashboard**: Ao visualizar a tela de um consultor específico, o **Total de Vendas**, a **Rentabilidade**, o **Markup** e a **RAV** (barra de resumo superior, cards da tabela e modal mobile) são rateados pela respectiva porcentagem (`percentual` para venda geral e `percentual_rav` para taxa de emissão aérea), impedindo que o valor integral seja somado para múltiplos consultores.
    - Quando a fatia de RAV for diferente da fatia de venda, o card e a tabela exibem o badge enriquecido `🤝 Parceria N% • ✈️ RAV M%`.
 
 7. **Consistência Contábil Sem Duplicidade (Metas & Relatórios)**:

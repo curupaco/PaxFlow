@@ -11,6 +11,7 @@ import { showCustomConfirm } from '../services/dialog';
 import { SolicitarReembolsoModal } from '../components/reembolsos/SolicitarReembolsoModal';
 import { CommentsService } from '../services/comments';
 import { BalcaoService, ResultadoBuscaBalcao } from '../services/balcaoService';
+import { ViagensDivisoesService } from '../services/viagensDivisoesService';
 import {
   renderCurrencyInputHTML,
   renderDateInputHTML,
@@ -200,9 +201,30 @@ export class Dashboard {
   }
 
   /**
-   * Consolida todos os valores financeiros dos produtos e da viagem de forma padronizada
+   * Obtém o ID do consultor atualmente sob visualização (filtro ou consultor logado)
    */
-  private getTripFinancialTotals(v: any): {
+  private getConsultorContextoAtivoId(): string | null {
+    if (this.perfil?.role !== 'admin') {
+      return this.user?.id || null;
+    }
+    if (this.selectedConsultantId && this.selectedConsultantId !== 'todos') {
+      return this.selectedConsultantId;
+    }
+    if (this.advConsultores.length === 1) {
+      return this.advConsultores[0];
+    }
+    return null;
+  }
+
+  /**
+   * Consolida todos os valores financeiros dos produtos e da viagem de forma padronizada.
+   * Se houver um consultor ativo em foco (perfil consultor ou filtro específico),
+   * aplica o rateio exato da cota de parceria:
+   * - Venda, Tarifa, Taxa, Comissão, Markup: multiplicados pela fração geral de venda (percentual / 100).
+   * - RAV e RAV Líquido: multiplicados pela fração específica de RAV (percentual_rav / 100).
+   * - Rentabilidade: recalculada de forma proporcional exata (comissão + markup + ravLiquido).
+   */
+  private getTripFinancialTotals(v: any, consultorContextoId?: string | null): {
     totalVenda: number;
     totalTarifa: number;
     totalTaxa: number;
@@ -212,18 +234,44 @@ export class Dashboard {
     totalRavLiquido: number;
     totalRentabilidade: number;
     hasProdutos: boolean;
+    fatiaVenda: number;
+    fatiaRav: number;
+    isDividida: boolean;
   } {
     const totals = calcularTotaisViagem(v);
+    const targetConsultorId = consultorContextoId !== undefined ? consultorContextoId : this.getConsultorContextoAtivoId();
+
+    let fatiaVenda = 1;
+    let fatiaRav = 1;
+    const temDivisoes = Array.isArray(v.divisoes) && v.divisoes.length > 0;
+
+    if (targetConsultorId && temDivisoes) {
+      fatiaVenda = ViagensDivisoesService.calcularParticipacaoConsultor(v, targetConsultorId);
+      fatiaRav = ViagensDivisoesService.calcularParticipacaoRavConsultor(v, targetConsultorId);
+    }
+
+    const totalVenda = totals.totalVenda * fatiaVenda;
+    const totalTarifa = totals.totalTarifa * fatiaVenda;
+    const totalTaxa = totals.totalTaxa * fatiaVenda;
+    const totalComissao = totals.totalComissao * fatiaVenda;
+    const totalMarkup = totals.totalMarkup * fatiaVenda;
+    const totalRav = totals.totalRav * fatiaRav;
+    const totalRavLiquido = totals.totalRavLiquido * fatiaRav;
+    const totalRentabilidade = (totals.totalComissao * fatiaVenda) + (totals.totalMarkup * fatiaVenda) + (totals.totalRavLiquido * fatiaRav);
+
     return {
-      totalVenda: totals.totalVenda,
-      totalTarifa: totals.totalTarifa,
-      totalTaxa: totals.totalTaxa,
-      totalComissao: totals.totalComissao,
-      totalMarkup: totals.totalMarkup,
-      totalRav: totals.totalRav,
-      totalRavLiquido: totals.totalRavLiquido,
-      totalRentabilidade: totals.totalRentabilidade,
-      hasProdutos: totals.hasProdutos
+      totalVenda,
+      totalTarifa,
+      totalTaxa,
+      totalComissao,
+      totalMarkup,
+      totalRav,
+      totalRavLiquido,
+      totalRentabilidade,
+      hasProdutos: totals.hasProdutos,
+      fatiaVenda,
+      fatiaRav,
+      isDividida: temDivisoes && (fatiaVenda < 1 || fatiaRav < 1)
     };
   }
 
@@ -716,6 +764,8 @@ export class Dashboard {
       const paxCount = Array.isArray(v.passageiros) && v.passageiros.length > 0 ? v.passageiros.length : (Number(v.pax_count) || 1);
       const tagsList = Array.from(new Set([...(v.cliente?.classificacoes || []), ...(v.tags || [])])).join(', ');
 
+      const finTotals = this.getTripFinancialTotals(v);
+
       return [
         escapeCsv(v.codigo_ref || v.id?.substring(0, 8) || ''),
         escapeCsv(v.cliente?.nome || 'Cliente não identificado'),
@@ -733,8 +783,8 @@ export class Dashboard {
         escapeCsv(fornecedores),
         escapeCsv(locs),
         escapeCsv(formasNomes),
-        escapeCsv(formatMoedaCsv(Number(v.valor_total) || 0)),
-        escapeCsv(formatMoedaCsv(Number(v.rentabilidade) || 0)),
+        escapeCsv(formatMoedaCsv(finTotals.totalVenda)),
+        escapeCsv(formatMoedaCsv(finTotals.totalRentabilidade)),
         escapeCsv(consultorNome),
         escapeCsv(v.status || ''),
         escapeCsv(v.isFinanceiroConferido ? 'OK' : 'Pendente'),
@@ -3272,21 +3322,12 @@ export class Dashboard {
       return `${parts[2]}/${parts[1]}/${parts[0]}`;
     };
 
-    // Calcular Rentabilidade (Comissão + Markup + RAV * 0.88), Markup e RAV brutos
-    let rentabilidade = 0;
-    let totalMarkup = 0;
-    let totalRav = 0;
-    if (v.produtos && Array.isArray(v.produtos)) {
-      v.produtos.forEach((p: any) => {
-        const comissao = Number(p.comissao) || 0;
-        const markup = Number(p.markup) || 0;
-        const rav = Number(p.rav) || 0;
-        totalMarkup += markup;
-        totalRav += rav;
-        rentabilidade += comissao + markup + (rav * 0.88);
-      });
-    }
-    const valorVenda = Number(v.valor_total) || 0;
+    // Obter totais financeiros já calculados e rateados proporcionalmente para o consultor em foco
+    const finTotals = this.getTripFinancialTotals(v);
+    const valorVenda = finTotals.totalVenda;
+    const rentabilidade = finTotals.totalRentabilidade;
+    const totalMarkup = finTotals.totalMarkup;
+    const totalRav = finTotals.totalRav;
 
     // Calcular PaxFlow Risk Score™
     const risk = RiskScoreService.calculateTripRiskScore(v, v.cliente, v.produtos, this.settings, this.user, this.perfil);
@@ -3369,8 +3410,13 @@ Atual: ${sla.alert ? sla.text : (isViagemReembolso && todosConcluidos ? 'Reembol
             <span class="font-black text-indigo-600 dark:text-indigo-400">
               R$ ${valorVenda.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
+            ${finTotals.isDividida ? `
+              <span class="inline-flex items-center gap-0.5 px-1 py-0.2 rounded text-[9px] font-black bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-800" title="Cota de Venda proporcional: ${Math.round(finTotals.fatiaVenda * 100)}%">
+                (${Math.round(finTotals.fatiaVenda * 100)}%)
+              </span>
+            ` : ''}
             ${v.isTotalmentePago ? `
-              <span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-black bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800 uppercase tracking-wider" title="Todos os produtos/serviços quitados (R$ ${valorVenda.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})">
+              <span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-black bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800 uppercase tracking-wider" title="Todos os produtos/serviços quitados">
                 ✔️ PAGO
               </span>
             ` : ''}
@@ -3381,6 +3427,11 @@ Atual: ${sla.alert ? sla.text : (isViagemReembolso && todosConcluidos ? 'Reembol
           ${(totalMarkup > 0 || totalRav > 0) ? `
             <div class="text-[9px] font-bold text-slate-500 dark:text-slate-400 mt-0.5 whitespace-nowrap">
               MKP: R$ ${totalMarkup.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} | RAV: R$ ${totalRav.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              ${finTotals.isDividida && finTotals.fatiaRav !== finTotals.fatiaVenda ? `
+                <span class="text-[8px] font-black text-amber-600 dark:text-amber-400 ml-0.5" title="Cota de RAV proporcional: ${Math.round(finTotals.fatiaRav * 100)}%">
+                  (${Math.round(finTotals.fatiaRav * 100)}% RAV)
+                </span>
+              ` : ''}
             </div>
           ` : ''}
         </td>
@@ -3388,8 +3439,9 @@ Atual: ${sla.alert ? sla.text : (isViagemReembolso && todosConcluidos ? 'Reembol
         <!-- Consultor -->
         <td class="px-5 py-4 whitespace-nowrap text-slate-500 dark:text-slate-400 font-extrabold text-xs">
           ${(() => {
+            const contextConsultorId = this.getConsultorContextoAtivoId() || this.user.id;
             const temParceria = Array.isArray(v.divisoes) && v.divisoes.length > 1;
-            const minhaDivisao = Array.isArray(v.divisoes) ? v.divisoes.find((d: any) => d.consultor_id === this.user.id) : null;
+            const minhaDivisao = Array.isArray(v.divisoes) ? v.divisoes.find((d: any) => d.consultor_id === contextConsultorId) : null;
             if (minhaDivisao && temParceria) {
               const pctVenda = Math.round(minhaDivisao.percentual);
               const rawRav = minhaDivisao.percentual_rav ?? minhaDivisao.percentualRav;
@@ -3487,20 +3539,12 @@ Atual: ${sla.alert ? sla.text : (isViagemReembolso && todosConcluidos ? 'Reembol
       return `${parts[2]}/${parts[1]}/${parts[0]}`;
     };
 
-    let rentabilidade = 0;
-    let totalMarkup = 0;
-    let totalRav = 0;
-    if (v.produtos && Array.isArray(v.produtos)) {
-      v.produtos.forEach((p: any) => {
-        const comissao = Number(p.comissao) || 0;
-        const markup = Number(p.markup) || 0;
-        const rav = Number(p.rav) || 0;
-        totalMarkup += markup;
-        totalRav += rav;
-        rentabilidade += comissao + markup + (rav * 0.88);
-      });
-    }
-    const valorVenda = Number(v.valor_total) || 0;
+    // Obter totais financeiros rateados proporcionalmente para o consultor em foco
+    const finTotals = this.getTripFinancialTotals(v);
+    const valorVenda = finTotals.totalVenda;
+    const rentabilidade = finTotals.totalRentabilidade;
+    const totalMarkup = finTotals.totalMarkup;
+    const totalRav = finTotals.totalRav;
 
     // Calcular PaxFlow Risk Score™
     const risk = RiskScoreService.calculateTripRiskScore(v, v.cliente, v.produtos, this.settings, this.user, this.perfil);
@@ -3518,8 +3562,9 @@ Atual: ${sla.alert ? sla.text : (isViagemReembolso && todosConcluidos ? 'Reembol
                 </span>
               ` : ''}
               ${(() => {
+                const contextConsultorId = this.getConsultorContextoAtivoId() || this.user.id;
                 const temParceria = Array.isArray(v.divisoes) && v.divisoes.length > 1;
-                const minhaDivisao = Array.isArray(v.divisoes) ? v.divisoes.find((d: any) => d.consultor_id === this.user.id) : null;
+                const minhaDivisao = Array.isArray(v.divisoes) ? v.divisoes.find((d: any) => d.consultor_id === contextConsultorId) : null;
                 if (minhaDivisao && temParceria) {
                   const pctVenda = Math.round(minhaDivisao.percentual);
                   const rawRav = minhaDivisao.percentual_rav ?? minhaDivisao.percentualRav;
@@ -3610,7 +3655,10 @@ Atual: ${sla.alert ? sla.text : (isViagemReembolso && todosConcluidos ? 'Reembol
         <div class="flex items-center justify-between bg-slate-50 dark:bg-slate-900/40 p-3 rounded-xl border border-slate-100 dark:border-slate-800/60 text-xs">
           <div>
             <span class="block text-[8px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider">Valor Venda</span>
-            <span class="font-black text-indigo-600 dark:text-indigo-400 text-sm">R$ ${valorVenda.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            <span class="font-black text-indigo-600 dark:text-indigo-400 text-sm">
+              R$ ${valorVenda.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              ${finTotals.isDividida ? `<span class="text-[9px] font-bold text-indigo-500"> (${Math.round(finTotals.fatiaVenda * 100)}%)</span>` : ''}
+            </span>
           </div>
           <div class="text-right">
             <span class="block text-[8px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider">Rentabilidade</span>
@@ -3618,6 +3666,7 @@ Atual: ${sla.alert ? sla.text : (isViagemReembolso && todosConcluidos ? 'Reembol
             ${(totalMarkup > 0 || totalRav > 0) ? `
               <span class="block text-[9px] font-bold text-slate-500 dark:text-slate-400 mt-0.5 whitespace-nowrap">
                 MKP: R$ ${totalMarkup.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} | RAV: R$ ${totalRav.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                ${finTotals.isDividida && finTotals.fatiaRav !== finTotals.fatiaVenda ? `<span class="text-[8px] font-black text-amber-500"> (${Math.round(finTotals.fatiaRav * 100)}% RAV)</span>` : ''}
               </span>
             ` : ''}
           </div>

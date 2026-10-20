@@ -260,4 +260,80 @@ describe('ViagensDivisoesService - Testes Subcutâneos de Divisão, RAV e Govern
     expect(divisoes[0].percentual_rav).toBe(100);
     expect(divisoes[0].is_titular).toBe(true);
   });
+
+  it('deve ratear proporcionalmente os totais de venda, rentabilidade e RAV quando filtrado por consultor', () => {
+    // Setup
+    const viagemVIA0325 = {
+      id: 'via-0325',
+      valor_total: 13644.66,
+      produtos: [
+        {
+          id: 'prod-1',
+          tipo: 'AÉREO',
+          valor_venda: 13644.66,
+          tarifa: 10000.00,
+          taxa: 1000.00,
+          comissao: 1616.11,
+          markup: 0,
+          rav: 1200.00
+        }
+      ],
+      divisoes: [
+        { consultor_id: 'user-rafael', percentual: 50, percentual_rav: 50, is_titular: true },
+        { consultor_id: 'user-guto', percentual: 50, percentual_rav: 50, is_titular: false }
+      ]
+    };
+
+    // Action
+    const fatiaVendaRafael = ViagensDivisoesService.calcularParticipacaoConsultor(viagemVIA0325, 'user-rafael');
+    const fatiaRavRafael = ViagensDivisoesService.calcularParticipacaoRavConsultor(viagemVIA0325, 'user-rafael');
+    const fatiaVendaGuto = ViagensDivisoesService.calcularParticipacaoConsultor(viagemVIA0325, 'user-guto');
+    const fatiaRavGuto = ViagensDivisoesService.calcularParticipacaoRavConsultor(viagemVIA0325, 'user-guto');
+
+    const totalVendaRafael = viagemVIA0325.valor_total * fatiaVendaRafael;
+    const totalRavRafael = 1200.00 * fatiaRavRafael;
+    const totalVendaGuto = viagemVIA0325.valor_total * fatiaVendaGuto;
+    const totalRavGuto = 1200.00 * fatiaRavGuto;
+
+    // Assert
+    expect(fatiaVendaRafael).toBe(0.5);
+    expect(fatiaRavRafael).toBe(0.5);
+    expect(totalVendaRafael).toBeCloseTo(6822.33, 2);
+    expect(totalRavRafael).toBeCloseTo(600.00, 2);
+    expect(fatiaVendaGuto).toBe(0.5);
+    expect(fatiaRavGuto).toBe(0.5);
+    expect(totalVendaGuto).toBeCloseTo(6822.33, 2);
+    expect(totalRavGuto).toBeCloseTo(600.00, 2);
+    expect(totalVendaRafael + totalVendaGuto).toBeCloseTo(viagemVIA0325.valor_total, 2);
+    expect(totalRavRafael + totalRavGuto).toBeCloseTo(1200.00, 2);
+  });
+
+  it('deve respeitar a divergência de cota entre percentual de Venda e percentual de RAV customizado', () => {
+    // Setup
+    const viagemDivisaoCustomizada = {
+      id: 'via-custom',
+      valor_total: 10000.00,
+      divisoes: [
+        { consultor_id: 'user-titular', percentual: 70, percentual_rav: 100, is_titular: true },
+        { consultor_id: 'user-parceiro', percentual: 30, percentual_rav: 0, is_titular: false }
+      ]
+    };
+    const ravBruta = 1000.00;
+
+    // Action
+    const cotaVendaTitular = ViagensDivisoesService.calcularParticipacaoConsultor(viagemDivisaoCustomizada, 'user-titular');
+    const cotaRavTitular = ViagensDivisoesService.calcularParticipacaoRavConsultor(viagemDivisaoCustomizada, 'user-titular');
+    const cotaVendaParceiro = ViagensDivisoesService.calcularParticipacaoConsultor(viagemDivisaoCustomizada, 'user-parceiro');
+    const cotaRavParceiro = ViagensDivisoesService.calcularParticipacaoRavConsultor(viagemDivisaoCustomizada, 'user-parceiro');
+
+    // Assert
+    expect(cotaVendaTitular).toBe(0.7);
+    expect(cotaRavTitular).toBe(1.0);
+    expect(cotaVendaParceiro).toBe(0.3);
+    expect(cotaRavParceiro).toBe(0.0);
+    expect(10000.00 * cotaVendaTitular).toBe(7000.00);
+    expect(ravBruta * cotaRavTitular).toBe(1000.00);
+    expect(10000.00 * cotaVendaParceiro).toBe(3000.00);
+    expect(ravBruta * cotaRavParceiro).toBe(0.00);
+  });
 });
