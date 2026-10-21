@@ -4214,6 +4214,8 @@ export class RelatoriosPage {
             nomeCliente: d.nome_cliente || d.nomeCliente || d.cliente?.nome || 'Cliente',
             contato: d.contato || d.cliente?.telefone || d.cliente?.email || '',
             destino: d.destino || '',
+            destino_id: d.destino_id || d.destinoId,
+            destinoId: d.destino_id || d.destinoId,
             dataViagem: d.data_viagem || d.dataViagem || '',
             temperatura: d.temperatura || 'Frio',
             tags: d.tags || [],
@@ -4221,6 +4223,18 @@ export class RelatoriosPage {
             subStatus: d.sub_status || d.subStatus || '',
             notasNegociacao: d.notas_negociacao || d.notasNegociacao || '',
             valorProposta: d.valor_proposta !== undefined ? Number(d.valor_proposta) : (d.valorProposta !== undefined ? Number(d.valorProposta) : undefined),
+            valorViagem: d.valor_viagem !== undefined ? Number(d.valor_viagem) : (d.valorViagem !== undefined ? Number(d.valorViagem) : undefined),
+            origem: d.origem,
+            codigoRef: d.codigo_ref || d.codigoRef,
+            codigo_ref: d.codigo_ref || d.codigoRef,
+            contatoRealizado: Boolean(d.contato_realizado || d.contatoRealizado),
+            contato_realizado: Boolean(d.contato_realizado || d.contatoRealizado),
+            contatoRealizadoEm: d.contato_realizado_em || d.contatoRealizadoEm,
+            contato_realizado_em: d.contato_realizado_em || d.contatoRealizadoEm,
+            contatoRealizadoPor: d.contato_realizado_por || d.contatoRealizadoPor,
+            contato_realizado_por: d.contato_realizado_por || d.contatoRealizadoPor,
+            contatoRealizadoPorNome: d.contato_realizado_por_profile?.nome,
+            documentosUrl: d.documentos_url || d.documentosUrl || [],
             createdAt: d.created_at || d.createdAt,
             updatedAt: d.updated_at || d.updatedAt
           };
@@ -4236,22 +4250,35 @@ export class RelatoriosPage {
       return;
     }
 
-    // Normalização dos campos de orcamento para garantir compatibilidade
+    // Normalização completa dos campos de orcamento para garantir compatibilidade e resiliência total
     const orcNormalizado: Orcamento = {
       id: orc.id,
       consultorId: orc.consultorId || orc.consultor_id || this.user?.id || '',
       clienteId: orc.clienteId || orc.cliente_id || '',
       nomeCliente: orc.nomeCliente || orc.nome_cliente || orc.cliente?.nome || 'Cliente',
-      contato: orc.contato || orc.cliente?.telefone || orc.cliente?.email || '',
+      contato: (typeof orc.contato === 'string' ? orc.contato : (orc.contato ? String(orc.contato) : '')) || orc.cliente?.telefone || orc.cliente?.email || '',
       destino: orc.destino || '',
+      destino_id: orc.destino_id || orc.destinoId,
+      destinoId: orc.destino_id || orc.destinoId,
       dataViagem: orc.dataViagem || orc.data_viagem || '',
       temperatura: orc.temperatura || 'Normal',
-      tags: orc.tags || [],
+      tags: Array.isArray(orc.tags) ? orc.tags : (typeof orc.tags === 'string' ? ((orc.tags as string).startsWith('{') ? (orc.tags as string).slice(1, -1).split(',').filter(Boolean) : [orc.tags]) : []),
       status: orc.status || 'SOLICITADO',
       subStatus: orc.subStatus || orc.sub_status || '',
       notasNegociacao: orc.notasNegociacao || orc.notas_negociacao || '',
       valorProposta: orc.valorProposta !== undefined ? Number(orc.valorProposta) : (orc.valor_proposta !== undefined ? Number(orc.valor_proposta) : undefined),
-      documentosUrl: orc.documentosUrl || orc.documentos_url || [],
+      valorViagem: orc.valorViagem !== undefined ? Number(orc.valorViagem) : (orc.valor_viagem !== undefined ? Number(orc.valor_viagem) : undefined),
+      origem: orc.origem,
+      codigoRef: orc.codigoRef || orc.codigo_ref,
+      codigo_ref: orc.codigoRef || orc.codigo_ref,
+      contatoRealizado: Boolean(orc.contatoRealizado || orc.contato_realizado),
+      contato_realizado: Boolean(orc.contatoRealizado || orc.contato_realizado),
+      contatoRealizadoEm: orc.contatoRealizadoEm || orc.contato_realizado_em,
+      contato_realizado_em: orc.contatoRealizadoEm || orc.contato_realizado_em,
+      contatoRealizadoPor: orc.contatoRealizadoPor || orc.contato_realizado_por,
+      contato_realizado_por: orc.contatoRealizadoPor || orc.contato_realizado_por,
+      contatoRealizadoPorNome: orc.contatoRealizadoPorNome || orc.contato_realizado_por_profile?.nome,
+      documentosUrl: Array.isArray(orc.documentosUrl) ? orc.documentosUrl : (Array.isArray(orc.documentos_url) ? orc.documentos_url : (typeof orc.documentosUrl === 'string' ? [orc.documentosUrl] : [])),
       createdAt: orc.createdAt || orc.created_at,
       updatedAt: orc.updatedAt || orc.updated_at
     };
@@ -4283,7 +4310,13 @@ export class RelatoriosPage {
       }
     }, 10);
 
+    let escListener: ((e: KeyboardEvent) => void) | null = null;
+
     const fecharModalOrcamento = () => {
+      if (escListener) {
+        window.removeEventListener('keydown', escListener);
+        escListener = null;
+      }
       const overlay = document.getElementById('modal-overlay');
       const content = document.getElementById('modal-content-container');
       if (overlay && content) {
@@ -4299,66 +4332,115 @@ export class RelatoriosPage {
       }
     };
 
-    VerNotasModal.open(orcNormalizado, {
-      user: this.user,
-      perfil: this.perfil,
-      consultores: this.consultores,
-      formatarDataBr: (dStr?: string) => formatIsoDateToBr(dStr || '') || dStr || '',
-      calcularTempoAmigavel: (dataIso: string) => {
-        if (!dataIso) return '';
-        const diff = Date.now() - new Date(dataIso).getTime();
-        const dias = Math.floor(diff / (1000 * 60 * 60 * 24));
-        if (dias === 0) return 'hoje';
-        if (dias === 1) return 'há 1 dia';
-        return `há ${dias} dias`;
-      },
-      closeModal: () => fecharModalOrcamento(),
-      showToast: (msg, type) => this.showToast(msg, type),
-      onUpdate: async (updatedOrc) => {
-        try {
-          const payload = {
-            consultor_id: updatedOrc.consultorId,
-            destino: updatedOrc.destino,
-            data_viagem: updatedOrc.dataViagem,
-            temperatura: updatedOrc.temperatura,
-            tags: updatedOrc.tags,
-            status: updatedOrc.status,
-            sub_status: updatedOrc.subStatus,
-            notas_negociacao: updatedOrc.notasNegociacao,
-            valor_proposta: updatedOrc.valorProposta,
-            documentos_url: updatedOrc.documentosUrl,
-            updated_at: new Date().toISOString()
-          };
-          const { error } = await supabase.from('orcamentos').update(payload).eq('id', updatedOrc.id);
-          if (error) throw error;
-
-          await this.loadData();
-          this.render();
-          this.setupEventListeners();
-          this.showToast('Orçamento atualizado com sucesso!', 'success');
-          return true;
-        } catch (e: any) {
-          console.error('Erro ao atualizar orçamento:', e);
-          this.showToast('Erro ao salvar alterações no orçamento.', 'error');
-          return false;
-        }
-      },
-      onDelete: async (idToDelete) => {
-        try {
-          const { error } = await supabase.from('orcamentos').delete().eq('id', idToDelete);
-          if (error) throw error;
-          await this.loadData();
-          this.render();
-          this.setupEventListeners();
-          this.showToast('Orçamento excluído com sucesso!', 'success');
-          return true;
-        } catch (e: any) {
-          console.error('Erro ao excluir orçamento:', e);
-          this.showToast('Erro ao excluir orçamento.', 'error');
-          return false;
-        }
+    // Fechar ao clicar no backdrop escuro
+    const overlayEl = document.getElementById('modal-overlay');
+    overlayEl?.addEventListener('click', (e) => {
+      if (e.target === overlayEl) {
+        fecharModalOrcamento();
       }
     });
+
+    // Fechar ao pressionar a tecla Escape
+    escListener = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        fecharModalOrcamento();
+      }
+    };
+    window.addEventListener('keydown', escListener);
+
+    const consultoresAtivos = (this.consultores && this.consultores.length > 0)
+      ? this.consultores
+      : (this.perfil ? [this.perfil] : []);
+
+    try {
+      VerNotasModal.open(orcNormalizado, {
+        user: this.user,
+        perfil: this.perfil,
+        consultores: consultoresAtivos,
+        formatarDataBr: (dStr?: string) => formatIsoDateToBr(dStr || '') || dStr || '',
+        calcularTempoAmigavel: (dataIso: string) => {
+          if (!dataIso) return '';
+          try {
+            const diff = Date.now() - new Date(dataIso).getTime();
+            if (isNaN(diff)) return '';
+            const dias = Math.floor(diff / (1000 * 60 * 60 * 24));
+            if (dias === 0) return 'hoje';
+            if (dias === 1) return 'há 1 dia';
+            return `há ${dias} dias`;
+          } catch {
+            return '';
+          }
+        },
+        closeModal: () => fecharModalOrcamento(),
+        showToast: (msg, type) => this.showToast(msg, type),
+        onUpdate: async (updatedOrc) => {
+          try {
+            const payload = {
+              consultor_id: updatedOrc.consultorId,
+              destino: updatedOrc.destino,
+              destino_id: updatedOrc.destino_id || null,
+              data_viagem: updatedOrc.dataViagem,
+              temperatura: updatedOrc.temperatura,
+              tags: updatedOrc.tags,
+              status: updatedOrc.status,
+              sub_status: updatedOrc.subStatus,
+              notas_negociacao: updatedOrc.notasNegociacao,
+              valor_proposta: updatedOrc.valorProposta,
+              valor_viagem: updatedOrc.valorViagem,
+              documentos_url: updatedOrc.documentosUrl,
+              updated_at: new Date().toISOString()
+            };
+            const { error } = await supabase.from('orcamentos').update(payload).eq('id', updatedOrc.id);
+            if (error) throw error;
+
+            // Atualiza o registro em memória local
+            const index = this.orcamentos.findIndex(o => o.id === updatedOrc.id);
+            if (index >= 0) {
+              this.orcamentos[index] = { ...this.orcamentos[index], ...payload, ...updatedOrc };
+            }
+
+            // Atualiza visualização da aba ativa se necessário
+            const container = document.getElementById('report-view-container');
+            if (container && this.activeTab === 'perdas') {
+              container.innerHTML = this.renderPerdas(this.getFilteredData());
+              this.setupEventListeners();
+            }
+
+            this.showToast('Orçamento atualizado com sucesso!', 'success');
+            return true;
+          } catch (e: any) {
+            console.error('Erro ao atualizar orçamento:', e);
+            this.showToast('Erro ao salvar alterações no orçamento.', 'error');
+            return false;
+          }
+        },
+        onDelete: async (idToDelete) => {
+          try {
+            const { error } = await supabase.from('orcamentos').delete().eq('id', idToDelete);
+            if (error) throw error;
+            this.orcamentos = this.orcamentos.filter(o => o.id !== idToDelete);
+            fecharModalOrcamento();
+
+            const container = document.getElementById('report-view-container');
+            if (container && this.activeTab === 'perdas') {
+              container.innerHTML = this.renderPerdas(this.getFilteredData());
+              this.setupEventListeners();
+            }
+
+            this.showToast('Orçamento excluído com sucesso!', 'success');
+            return true;
+          } catch (e: any) {
+            console.error('Erro ao excluir orçamento:', e);
+            this.showToast('Erro ao excluir orçamento.', 'error');
+            return false;
+          }
+        }
+      });
+    } catch (modalErr) {
+      console.error('Erro ao inicializar VerNotasModal em RelatoriosPage:', modalErr);
+      fecharModalOrcamento();
+      this.showToast('Não foi possível exibir o orçamento selecionado.', 'error');
+    }
   }
 
   private renderAuthError(msg: string): void {

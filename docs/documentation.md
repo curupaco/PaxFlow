@@ -1072,7 +1072,10 @@ Para atender operações de agências de alto volume e demandas complexas de cru
 Para aprofundar o controle gerencial, a governança de auditoria e a agilidade nas rotinas de follow-up, o PaxFlow implementou uma série de melhorias fundamentais nas visões analíticas de Relatórios (`Relatorios.ts`) e no gerenciamento de Lembretes do Mission Control:
 
 1. **Relatório de Desistências e Perdas Comerciais**:
-   - **Navegação Direta para o Orçamento**: O nome do cliente agora é um link interativo e a tabela analítica conta com uma nova coluna de Ações contendo o botão `📄 Orçamento`. Ao clicar, o sistema navega imediatamente para `#orcamentos?id=...`, abrindo a proposta de origem com todas as cotações, notas e motivos catalogados.
+   - **Orçamento Sobreposto com Zero-Crash**: O nome do cliente é um link clicável e a tabela analítica conta com a coluna de Ações com o botão `📄 Orçamento`. Ao clicar, o sistema abre diretamente o modal completo da proposta comercial (`VerNotasModal`) em modo sobreposto por cima da tela de Relatórios, sem desmanchar o estado dos filtros, da paginação ou da aba ativa.
+   - **Blindagem Defensiva Contra Dados Nulos & Resiliência**: O modal trata de forma segura orçamentos com dados parciais ou ausentes (como contato sem separador de barra, contatos nulos, ausência de tags ou documentos), eliminando qualquer risco de travamento de tela por exceção de JavaScript (`TypeError: split of null`).
+   - **Ergonomia e Fechamento Fluído**: O modal pode ser fechado a qualquer momento com a tecla `Escape`, clicando no botão `Fechar` (`✕`) ou clicando diretamente no backdrop escuro de fundo.
+   - **Hierarquia de Z-Index & Caixas de Diálogo Invioláveis**: O sistema eleva as caixas de alerta, confirmação e prompts interativos (`showCustomConfirm`, `showCustomPrompt`, `showCustomAlert`) para `z-[100000]`, garantindo que perguntas de confirmação (como justificativa na reabertura do orçamento) fiquem sempre acima do modal de visualização (`z-[9999]`), sem bloqueio de cliques.
    - **Atalho de Conversa WhatsApp / Digisac**: Botão `💬 WhatsApp` na coluna de Ações que abre o modal de mensagens do Digisac em modo de visualização/controle com o histórico do cliente.
 
 2. **Relatório de Embarques & Governança de Validação do Gestor**:
@@ -1223,8 +1226,12 @@ A tela de Gerenciar/Editar Viagem (`EditTravelModal` e `DashboardTemplates`) pas
    - Os antigos botões dispersos de reembolso (`💸`), anotações (`💬`) e lixeira (`🗑️`) foram unificados em um menu flutuante discreto acionado pelo botão `⋮`.
    - Clicar no menu abre opções claras: `✏️ Editar Serviço`, `💬 Anotações / Comentários` (com contador), `💸 Solicitar Reembolso` e `🗑️ Excluir Produto` (protegido se o LOC já estiver conferido).
 
-4. **Cabeçalho de LOC com Ação de Conferência**:
-   - Administradores contam com o botão dedicado `⚙️ Conferir` / `✔️ Conferido` posicionado diretamente ao lado do código da reserva (LOC). O sistema exige 100% de quitação antes de permitir a marcação e solicita confirmação via diálogo para remoção da conferência, enquanto consultores comuns visualizam apenas o selo informativo `✔️ Conferido` quando auditado pelo gestor.
+4. **Cabeçalho de LOC com Colapso Padrão, Badge de Volume e Ação de Conferência**:
+   - **Colapso Inicial Panorâmico**: Ao abrir o modal da viagem, todos os grupos de Localizador (LOC) iniciam colapsados por padrão (mesmo em viagens com um único LOC cadastrado). Essa abordagem oferece uma visualização financeira resumida e estruturada sem sobrecarregar a tela com dezenas de linhas de serviços abertos.
+   - **Badge de Contagem de Itens**: Cada cabeçalho de LOC estampa um badge visual indicando a quantidade de serviços vinculados (`📦 1 produto`, `📦 3 produtos`), permitindo identificar a composição do grupo antes de expandi-lo.
+   - **Ações em Massa (Expandir / Recolher Todos)**: Botões discretos e de alta usabilidade posicionados junto ao título "Produtos Cadastrados nesta Viagem" permitem abrir ou fechar todos os acordeões de LOC em um único clique.
+   - **Preservação de Sessão & Foco na Edição**: O modal memoriza os LOCs expandidos manualmente pelo operador durante a edição na mesma sessão e auto-expande o LOC correspondente ao produto selecionado ou recém-salvo no painel lateral.
+   - **Governança de Conferência**: Administradores contam com o botão dedicado `⚙️ Conferir` / `✔️ Conferido` posicionado diretamente ao lado do código da reserva (LOC). O sistema exige 100% de quitação antes de permitir a marcação e solicita confirmação via diálogo para remoção da conferência, enquanto consultores comuns visualizam apenas o selo informativo `✔️ Conferido` quando auditado pelo gestor.
 
 5. **Transição Fluida entre Novo Serviço e Edição**:
    - A coluna direita da aba de produtos alterna instantaneamente entre o formulário de novo produto e a edição do serviço selecionado. O botão `✕ Cancelar Edição` e o atalho `➕ Novo Serviço` no topo da lista restabelecem imediatamente o formulário de criação sem necessidade de recarregar o diálogo.

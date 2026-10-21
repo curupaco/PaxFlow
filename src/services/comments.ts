@@ -79,7 +79,7 @@ export class CommentsService {
     };
 
     // Filtra perfis ativos para o dropdown de menções
-    const consultoresAtivos = profiles.filter(p => p.ativo);
+    const consultoresAtivos = (profiles || []).filter(p => p && p.ativo);
 
     const commentsListHtml = comments.length === 0
       ? `<p class="text-center text-xs text-slate-400 dark:text-slate-400 font-medium py-4">Nenhum comentário inserido.</p>`
@@ -94,6 +94,7 @@ export class CommentsService {
           if (consultoresAtivos.length > 0) {
             const namesToCheck: string[] = [];
             for (const p of consultoresAtivos) {
+              if (!p || !p.nome) continue;
               namesToCheck.push(p.nome);
               const firstName = p.nome.split(' ')[0];
               if (firstName && firstName !== p.nome) {
@@ -101,13 +102,16 @@ export class CommentsService {
               }
             }
             const namesRegexPart = namesToCheck
+              .filter(Boolean)
               .map(n => n.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'))
               .sort((a, b) => b.length - a.length)
               .join('|');
-            const regex = new RegExp(`@(${namesRegexPart})(?=$|[\\s.,!?;:])`, 'gi');
-            textoFormatado = textoFormatado.replace(regex, (match) => {
-              return `<span class="bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 font-extrabold px-1 py-0.5 rounded text-[11px] border border-indigo-100/30 dark:border-indigo-900/30">${match}</span>`;
-            });
+            if (namesRegexPart) {
+              const regex = new RegExp(`@(${namesRegexPart})(?=$|[\\s.,!?;:])`, 'gi');
+              textoFormatado = textoFormatado.replace(regex, (match) => {
+                return `<span class="bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 font-extrabold px-1 py-0.5 rounded text-[11px] border border-indigo-100/30 dark:border-indigo-900/30">${match}</span>`;
+              });
+            }
           }
 
           const isReminder = c.texto.startsWith('📅') || c.texto.toLowerCase().includes('lembrete agendado');

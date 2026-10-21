@@ -43,8 +43,15 @@ export class VerNotasModal {
     modalContent.classList.remove('max-w-lg');
     modalContent.classList.add('max-w-2xl');
 
-    const filesHtml = orc.documentosUrl && orc.documentosUrl.length > 0 
-      ? orc.documentosUrl.map((url, index) => `
+    // Normalização defensiva de arrays e strings para evitar quebras em dados incompletos
+    const rawDocs: string[] = Array.isArray(orc.documentosUrl)
+      ? orc.documentosUrl
+      : (Array.isArray((orc as any).documentos_url)
+          ? (orc as any).documentos_url
+          : (typeof orc.documentosUrl === 'string' ? [orc.documentosUrl] : []));
+
+    const filesHtml = rawDocs.length > 0 
+      ? rawDocs.map((url, index) => `
           <a href="${url}" target="_blank" data-proposal-file-url="${url}" data-proposal-file-index="${index}" class="btn-view-proposal-file px-4 py-2.5 bg-indigo-50/50 hover:bg-indigo-100 dark:bg-indigo-950/20 dark:hover:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-xl border border-indigo-100/30 dark:border-indigo-900/30 text-xs font-black transition flex items-center justify-center gap-2 select-none uppercase tracking-wide">
             📄 Documento da Proposta #${index + 1}
           </a>
@@ -59,7 +66,7 @@ export class VerNotasModal {
     };
     const tempClass = temperaturaClasses[orc.temperatura] || temperaturaClasses.Normal;
 
-    let statusText: string = orc.status;
+    let statusText: string = orc.status || 'SOLICITADO';
     let statusClass = 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200/50';
     if (orc.status === 'SOLICITADO') {
       statusClass = 'bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400 border border-blue-100/30';
@@ -80,23 +87,58 @@ export class VerNotasModal {
       }
     }
 
-    const dono = options.consultores.find(c => c.id === orc.consultorId);
+    const consultoresList = Array.isArray(options.consultores) ? options.consultores : [];
+    const dono = consultoresList.find(c => c && c.id === orc.consultorId);
     const consultorAvatar = getAvatarSvg(dono?.avatar_url, dono?.nome || 'Consultor', 'w-6 h-6');
     const consultorNome = dono?.nome || 'Consultor';
 
-    const contacts = orc.contato.split('/');
+    const rawContato = typeof orc.contato === 'string' ? orc.contato : (orc.contato ? String(orc.contato) : '');
+    const contacts = rawContato ? rawContato.split('/') : [''];
     const phone = contacts[0] ? contacts[0].trim() : '';
     const email = contacts[1] ? contacts[1].trim() : '';
     const waLink = phone ? `https://wa.me/${phone.replace(/\D/g, '')}` : '';
     const mailLink = email ? `mailto:${email}` : '';
 
-    const tagsHtml = orc.tags && orc.tags.length > 0 
-      ? orc.tags.map(t => `<span class="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded font-black text-[9px] uppercase tracking-wide border border-slate-200/20 dark:border-slate-700/20">${t}</span>`).join('')
+    const rawTags: string[] = Array.isArray(orc.tags)
+      ? orc.tags
+      : (typeof orc.tags === 'string'
+          ? ((orc.tags as string).startsWith('{') ? (orc.tags as string).slice(1, -1).split(',').filter(Boolean) : [orc.tags])
+          : []);
+
+    const tagsHtml = rawTags.length > 0 
+      ? rawTags.map(t => `<span class="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded font-black text-[9px] uppercase tracking-wide border border-slate-200/20 dark:border-slate-700/20">${t.trim()}</span>`).join('')
       : '<span class="text-xs text-slate-400 dark:text-slate-400 font-semibold italic">Nenhuma tag cadastrada.</span>';
 
-    const dataCriacao = orc.createdAt ? new Date(orc.createdAt).toLocaleDateString('pt-BR') : 'Não informada';
-    const tempoAguardando = orc.createdAt ? options.calcularTempoAmigavel(orc.createdAt) : '';
+    let dataCriacao = 'Não informada';
+    if (orc.createdAt) {
+      try {
+        const d = new Date(orc.createdAt);
+        if (!isNaN(d.getTime())) {
+          dataCriacao = d.toLocaleDateString('pt-BR');
+        }
+      } catch {}
+    }
+
+    let tempoAguardando = '';
+    if (orc.createdAt && typeof options.calcularTempoAmigavel === 'function') {
+      try {
+        tempoAguardando = options.calcularTempoAmigavel(orc.createdAt);
+      } catch {}
+    }
+
     const isAdmin = options.perfil?.role === 'admin';
+    const isContatoRealizado = Boolean(orc.contatoRealizado || orc.contato_realizado);
+    const contatoRealizadoEm = orc.contatoRealizadoEm || orc.contato_realizado_em;
+    let contatoEmFormatado = '';
+    if (contatoRealizadoEm) {
+      try {
+        const d = new Date(contatoRealizadoEm);
+        if (!isNaN(d.getTime())) {
+          contatoEmFormatado = d.toLocaleDateString('pt-BR');
+        }
+      } catch {}
+    }
+    const contatoRealizadoPorNome = orc.contatoRealizadoPorNome || (orc as any).contato_realizado_por_profile?.nome || '';
 
     modalContent.innerHTML = `
       <div class="p-6 flex flex-col h-full max-h-[85vh]">
@@ -184,7 +226,7 @@ export class VerNotasModal {
               <span class="block text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-1.5">Consultor Responsável</span>
               ${options.perfil?.role === 'admin' ? `
                 <select id="select-detail-responsavel" class="w-full px-2.5 py-2 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-700 dark:text-slate-200 text-xs font-bold shadow-sm cursor-pointer">
-                  ${options.consultores.map(c => `<option value="${c.id}" ${c.id === orc.consultorId ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">${c.nome} (${c.role})</option>`).join('')}
+                  ${consultoresList.map(c => `<option value="${c.id}" ${c.id === orc.consultorId ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">${c.nome || 'Consultor'} (${c.role || 'consultor'})</option>`).join('')}
                 </select>
               ` : `
                 <div class="flex items-center gap-2 bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-200/50 dark:border-slate-800">
@@ -241,18 +283,18 @@ export class VerNotasModal {
                 <span class="block text-[10px] font-black text-rose-600 dark:text-rose-400 uppercase tracking-wider">Gestão de Desistência</span>
                 ${isAdmin ? `
                   <label class="flex items-center gap-2 cursor-pointer select-none">
-                    <input type="checkbox" id="check-modal-contato-desistencia" ${orc.contatoRealizado ? 'checked' : ''} class="w-4 h-4 rounded border-rose-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer" />
+                    <input type="checkbox" id="check-modal-contato-desistencia" ${isContatoRealizado ? 'checked' : ''} class="w-4 h-4 rounded border-rose-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer" />
                     <span class="text-xs font-extrabold text-slate-700 dark:text-slate-200">Falamos com o Cliente</span>
                   </label>
                 ` : `
-                  <div class="flex items-center gap-1.5 text-xs font-extrabold ${orc.contatoRealizado ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500'}">
-                    <span>${orc.contatoRealizado ? '✅' : '⏳'}</span>
-                    <span>${orc.contatoRealizado ? 'Falamos com o Cliente' : 'Contato Pendente'}</span>
+                  <div class="flex items-center gap-1.5 text-xs font-extrabold ${isContatoRealizado ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500'}">
+                    <span>${isContatoRealizado ? '✅' : '⏳'}</span>
+                    <span>${isContatoRealizado ? 'Falamos com o Cliente' : 'Contato Pendente'}</span>
                   </div>
                 `}
-                ${orc.contatoRealizado && orc.contatoRealizadoEm ? `
+                ${isContatoRealizado && contatoEmFormatado ? `
                   <p class="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
-                    Verificado em ${new Date(orc.contatoRealizadoEm).toLocaleDateString('pt-BR')} ${orc.contatoRealizadoPorNome ? ' por ' + orc.contatoRealizadoPorNome : ''}
+                    Verificado em ${contatoEmFormatado} ${contatoRealizadoPorNome ? ' por ' + contatoRealizadoPorNome : ''}
                   </p>
                 ` : ''}
               </div>
@@ -531,70 +573,78 @@ export class VerNotasModal {
     });
 
     // Event listener para alterar o Destino (Inline - Administrador)
-    const inputDestinoInline = document.getElementById('edit-orc-destino-inline') as HTMLInputElement;
-    const btnSaveDestinoInline = document.getElementById('btn-save-orc-destino-inline') as HTMLButtonElement;
-    let selectedDestinoIdInline = orc.destino_id || orc.destinoId || null;
+    try {
+      const inputDestinoInline = document.getElementById('edit-orc-destino-inline') as HTMLInputElement;
+      const btnSaveDestinoInline = document.getElementById('btn-save-orc-destino-inline') as HTMLButtonElement;
+      let selectedDestinoIdInline = orc.destino_id || orc.destinoId || null;
 
-    if (inputDestinoInline && btnSaveDestinoInline) {
-      const destAutocompleteInline = new DestinosAutocomplete(inputDestinoInline, (destino) => {
-        selectedDestinoIdInline = destino ? destino.id : null;
-      }, selectedDestinoIdInline);
+      if (inputDestinoInline && btnSaveDestinoInline) {
+        const destAutocompleteInline = new DestinosAutocomplete(inputDestinoInline, (destino) => {
+          selectedDestinoIdInline = destino ? destino.id : null;
+        }, selectedDestinoIdInline);
 
-      btnSaveDestinoInline.addEventListener('click', async () => {
-        const nextDestino = inputDestinoInline.value.trim();
-        if (!nextDestino) {
-          options.showToast('Por favor, insira um destino válido.', 'error');
-          return;
-        }
-
-        btnSaveDestinoInline.disabled = true;
-        btnSaveDestinoInline.textContent = '...';
-
-        try {
-          orc.destino = nextDestino;
-          orc.destino_id = selectedDestinoIdInline || undefined;
-          orc.destinoId = selectedDestinoIdInline || undefined;
-
-          // Se não estiver em fallback de sandbox, salva no banco
-          if (!(window as any).paxflowSandbox) {
-            const { error } = await supabase
-              .from('orcamentos')
-              .update({
-                destino: orc.destino,
-                destino_id: orc.destino_id || null
-              })
-              .eq('id', orc.id);
-
-            if (error) throw error;
+        btnSaveDestinoInline.addEventListener('click', async () => {
+          const nextDestino = inputDestinoInline.value.trim();
+          if (!nextDestino) {
+            options.showToast('Por favor, insira um destino válido.', 'error');
+            return;
           }
 
-          // Atualiza na memória local/Kanban
-          if (options.onUpdate) {
-            await options.onUpdate(orc);
-          }
+          btnSaveDestinoInline.disabled = true;
+          btnSaveDestinoInline.textContent = '...';
 
-          options.showToast('Destino atualizado com sucesso!', 'success');
-        } catch (err: any) {
-          console.error('Erro ao atualizar destino do orçamento:', err);
-          options.showToast('Erro ao atualizar o destino.', 'error');
-        } finally {
-          btnSaveDestinoInline.disabled = false;
-          btnSaveDestinoInline.textContent = 'Salvar';
-        }
-      });
+          try {
+            orc.destino = nextDestino;
+            orc.destino_id = selectedDestinoIdInline || undefined;
+            orc.destinoId = selectedDestinoIdInline || undefined;
+
+            // Se não estiver em fallback de sandbox, salva no banco
+            if (!(window as any).paxflowSandbox) {
+              const { error } = await supabase
+                .from('orcamentos')
+                .update({
+                  destino: orc.destino,
+                  destino_id: orc.destino_id || null
+                })
+                .eq('id', orc.id);
+
+              if (error) throw error;
+            }
+
+            // Atualiza na memória local/Kanban
+            if (options.onUpdate) {
+              await options.onUpdate(orc);
+            }
+
+            options.showToast('Destino atualizado com sucesso!', 'success');
+          } catch (err: any) {
+            console.error('Erro ao atualizar destino do orçamento:', err);
+            options.showToast('Erro ao atualizar o destino.', 'error');
+          } finally {
+            btnSaveDestinoInline.disabled = false;
+            btnSaveDestinoInline.textContent = 'Salvar';
+          }
+        });
+      }
+    } catch (errDestino) {
+      console.warn('Erro defensivo ao inicializar DestinosAutocomplete no modal:', errDestino);
     }
 
     // Inicializar comentários do orçamento
-    const commentsContainer = document.getElementById('orcamento-comments-container');
-    if (commentsContainer && options.user) {
-      CommentsService.renderCommentsSection(
-        commentsContainer,
-        'orcamento',
-        orc.id,
-        orc.id,
-        options.user.id,
-        options.consultores
-      );
+    try {
+      const commentsContainer = document.getElementById('orcamento-comments-container');
+      if (commentsContainer && options.user) {
+        CommentsService.renderCommentsSection(
+          commentsContainer,
+          'orcamento',
+          orc.id,
+          orc.id,
+          options.user.id,
+          consultoresList
+        );
+      }
+    } catch (errComments) {
+      console.warn('Erro defensivo ao inicializar comentários no modal:', errComments);
     }
   }
 }

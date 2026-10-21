@@ -65,6 +65,7 @@ export class EditTravelModal {
   private currentLoadedViagem: any = null;
   private globalSettings: any = null;
   private currentActiveTab: 'detalhes' | 'produtos' | 'vouchers' | 'comentarios' | 'reembolsos' = 'detalhes';
+  private expandedLocKeys: Set<string> = new Set<string>();
 
   constructor(options: EditTravelModalOptions) {
     this.options = options;
@@ -76,6 +77,7 @@ export class EditTravelModal {
   public async open(tripId: string, activeTab: 'detalhes' | 'produtos' | 'vouchers' | 'comentarios' | 'reembolsos' = 'detalhes'): Promise<void> {
     this.tripId = tripId;
     this.currentActiveTab = activeTab;
+    this.expandedLocKeys.clear();
 
     // Destruir autocompletes ativos antes de reabrir/re-renderizar
     if (this.destAutocomplete) {
@@ -722,7 +724,17 @@ export class EditTravelModal {
                 <!-- Lista de Produtos Existentes (Rolagem Única do Modal) -->
                 <div>
                   <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
-                    <h4 class="text-xs font-black text-slate-400 dark:text-slate-400 uppercase tracking-wide">Produtos Cadastrados nesta Viagem</h4>
+                    <div class="flex items-center gap-2.5 flex-wrap">
+                      <h4 class="text-xs font-black text-slate-400 dark:text-slate-400 uppercase tracking-wide">Produtos Cadastrados nesta Viagem</h4>
+                      <div class="flex items-center gap-1">
+                        <button type="button" id="btn-expandir-todos-locs" class="px-2 py-0.5 text-[10px] font-bold text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded transition cursor-pointer" title="Expandir todos os grupos de LOC">
+                          Expandir Todos
+                        </button>
+                        <button type="button" id="btn-recolher-todos-locs" class="px-2 py-0.5 text-[10px] font-bold text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded transition cursor-pointer" title="Recolher todos os grupos de LOC">
+                          Recolher Todos
+                        </button>
+                      </div>
+                    </div>
                     ${selectedProduct ? `
                       <button type="button" id="btn-novo-produto-trigger-topo" class="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 rounded-lg text-xs font-bold transition flex items-center gap-1 border border-indigo-200/60 dark:border-indigo-800/60 shadow-xs cursor-pointer" title="Limpar seleção e cadastrar um novo serviço">
                         <span>➕</span>
@@ -2827,6 +2839,15 @@ export class EditTravelModal {
       }
     });
 
+    // Auto-expande o LOC do produto selecionado/em foco (caso exista)
+    if (this.selectedProductId) {
+      const prodSelected = produtos.find(p => p.id === this.selectedProductId);
+      if (prodSelected) {
+        const selLocKey = (prodSelected.codigo_reserva || 'SEM LOCALIZADOR').trim().toUpperCase();
+        this.expandedLocKeys.add(selLocKey);
+      }
+    }
+
     container.innerHTML = Object.values(produtosAgrupados).map(grupo => {
       const locKey = grupo.loc;
       const isConferido = !!this.locConferenciasMap[locKey.toUpperCase()];
@@ -2938,16 +2959,25 @@ export class EditTravelModal {
       const isAdmin = this.options.perfil?.role === 'admin';
 
       const isLocEmEdicao = isLocBloqueadoPorEdicao(this.selectedProductId, this.selectedProductDirty, subProdutos);
+      const isExpanded = this.expandedLocKeys.has(locKey.toUpperCase());
+      const chevronStyle = isExpanded ? 'transform: rotate(90deg);' : 'transform: rotate(0deg);';
+      const bodyClass = isExpanded ? 'loc-body' : 'loc-body hidden';
+      const qtdProdutos = subProdutos.length;
+      const qtdLabel = `${qtdProdutos} ${qtdProdutos === 1 ? 'produto' : 'produtos'}`;
 
       return `
         <div class="loc-group border border-slate-200/80 dark:border-slate-800 rounded-xl mb-3 shadow-sm bg-white dark:bg-slate-900/40">
           <div class="loc-header flex items-center justify-between p-2.5 bg-slate-100/50 dark:bg-slate-800/40 rounded-t-xl cursor-pointer hover:bg-slate-200/50 dark:hover:bg-slate-800/80 transition select-none" data-loc-key="${locKey}">
             <div class="flex items-center flex-wrap gap-2.5">
-              <span class="loc-chevron inline-block transition-transform duration-200 text-xs text-slate-400 dark:text-slate-400" style="transform: rotate(90deg);">▶</span>
+              <span class="loc-chevron inline-block transition-transform duration-200 text-xs text-slate-400 dark:text-slate-400" style="${chevronStyle}">▶</span>
               <button type="button" class="btn-copy-loc inline-flex items-center gap-1.5 px-2.5 py-0.5 text-[10px] font-black tracking-wider rounded-lg bg-indigo-100 hover:bg-indigo-200 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 uppercase border border-indigo-200/80 dark:border-indigo-800/60 transition cursor-pointer active:scale-95 shadow-xs" data-copy-loc="${locKey}" title="Clique para copiar o LOC ${locKey}">
                 <span class="loc-text">${locKey}</span>
                 <span class="copy-icon text-[11px]">📋</span>
               </button>
+
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-bold text-slate-600 dark:text-slate-300 bg-slate-200/70 dark:bg-slate-700/60 rounded-md border border-slate-300/50 dark:border-slate-600/50 select-none" title="${qtdLabel} vinculados a este LOC">
+                📦 ${qtdLabel}
+              </span>
               
               ${isAdmin ? `
                 <button type="button" class="btn-conferir-loc px-2 py-0.5 rounded-lg border text-[9px] font-bold flex items-center justify-center gap-1 shadow-xs transition font-sans cursor-pointer active:scale-95 ${isConferido ? 'text-emerald-700 bg-emerald-100/70 hover:bg-emerald-200/80 dark:text-emerald-300 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 border-emerald-300 dark:border-emerald-800' : 'text-slate-600 bg-slate-100 hover:bg-slate-200 dark:text-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 border-slate-200 dark:border-slate-700'}" data-loc="${locKey}" title="${isConferido ? 'LOC conferido pelo gestor (clique para remover conferência)' : 'Marcar conferência financeira deste LOC'}">
@@ -2987,7 +3017,7 @@ export class EditTravelModal {
             </div>
           </div>
           
-          <div class="loc-body border-t border-slate-100 dark:border-slate-800/50 bg-slate-50/10 dark:bg-slate-900/5 p-2 pl-4 space-y-2 border-l-2 border-l-slate-200 dark:border-l-slate-700 rounded-b-xl">
+          <div class="${bodyClass} border-t border-slate-100 dark:border-slate-800/50 bg-slate-50/10 dark:bg-slate-900/5 p-2 pl-4 space-y-2 border-l-2 border-l-slate-200 dark:border-l-slate-700 rounded-b-xl">
             ${innerCardsHTML}
           </div>
         </div>
@@ -2999,18 +3029,48 @@ export class EditTravelModal {
       header.addEventListener('click', () => {
         const body = header.nextElementSibling as HTMLElement;
         const chevron = header.querySelector('.loc-chevron') as HTMLElement;
+        const locKey = (header.getAttribute('data-loc-key') || '').trim().toUpperCase();
         if (body && chevron) {
           const isHidden = body.classList.contains('hidden');
           if (isHidden) {
             body.classList.remove('hidden');
             chevron.style.transform = 'rotate(90deg)';
+            if (locKey) this.expandedLocKeys.add(locKey);
           } else {
             body.classList.add('hidden');
             chevron.style.transform = 'rotate(0deg)';
+            if (locKey) this.expandedLocKeys.delete(locKey);
           }
         }
       });
     });
+
+    // Botões globais Expandir / Recolher Todos os LOCs
+    const btnExpandirTodos = document.getElementById('btn-expandir-todos-locs');
+    if (btnExpandirTodos) {
+      btnExpandirTodos.onclick = () => {
+        Object.keys(produtosAgrupados).forEach(k => this.expandedLocKeys.add(k.toUpperCase()));
+        container.querySelectorAll('.loc-group').forEach(group => {
+          const body = group.querySelector('.loc-body') as HTMLElement;
+          const chevron = group.querySelector('.loc-chevron') as HTMLElement;
+          if (body) body.classList.remove('hidden');
+          if (chevron) chevron.style.transform = 'rotate(90deg)';
+        });
+      };
+    }
+
+    const btnRecolherTodos = document.getElementById('btn-recolher-todos-locs');
+    if (btnRecolherTodos) {
+      btnRecolherTodos.onclick = () => {
+        this.expandedLocKeys.clear();
+        container.querySelectorAll('.loc-group').forEach(group => {
+          const body = group.querySelector('.loc-body') as HTMLElement;
+          const chevron = group.querySelector('.loc-chevron') as HTMLElement;
+          if (body) body.classList.add('hidden');
+          if (chevron) chevron.style.transform = 'rotate(0deg)';
+        });
+      };
+    }
 
     // Formas de pagamento do LOC
     container.querySelectorAll('.btn-formas-pagamento-loc').forEach(btn => {

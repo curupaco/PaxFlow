@@ -10,7 +10,7 @@ export function showCustomAlert(message: string, title: string = 'Aviso'): Promi
   return new Promise((resolve) => {
     const overlay = document.createElement('div');
     overlay.id = 'paxflow-alert-overlay';
-    overlay.className = 'fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 transition-all duration-300 opacity-0';
+    overlay.className = 'fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100000] flex items-center justify-center p-4 transition-all duration-300 opacity-0';
     
     overlay.innerHTML = `
       <div class="bg-white dark:bg-slate-900 w-full max-w-[380px] rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 transform scale-95 transition-all duration-300 flex flex-col relative overflow-hidden" id="paxflow-custom-alert-card">
@@ -71,7 +71,7 @@ export function showCustomConfirm(
   return new Promise((resolve) => {
     const overlay = document.createElement('div');
     overlay.id = 'paxflow-confirm-overlay';
-    overlay.className = 'fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 transition-all duration-300 opacity-0';
+    overlay.className = 'fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100000] flex items-center justify-center p-4 transition-all duration-300 opacity-0';
     
     const confirmText = options?.confirmText || 'Confirmar';
     const cancelText = options?.cancelText || 'Cancelar';
@@ -154,7 +154,7 @@ export function showCustomPrompt(
   return new Promise((resolve) => {
     const overlay = document.createElement('div');
     overlay.id = 'paxflow-prompt-overlay';
-    overlay.className = 'fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 transition-all duration-300 opacity-0';
+    overlay.className = 'fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100000] flex items-center justify-center p-4 transition-all duration-300 opacity-0';
 
     overlay.innerHTML = `
       <div class="bg-white dark:bg-slate-900 w-full max-w-[420px] rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 transform scale-95 transition-all duration-300 flex flex-col relative overflow-hidden" id="paxflow-custom-prompt-card">
