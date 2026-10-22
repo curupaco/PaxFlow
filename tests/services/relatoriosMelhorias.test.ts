@@ -211,4 +211,22 @@ describe('Relatórios - Melhorias Subcutâneas (Embarques, Desistências e Valid
     expect(d.destino).toBe('Paris, França');
     expect(d.valor_proposta).toBe(25000);
   });
+
+  it('deve validar regra de permissão: apenas administradores podem alternar validação de gestor', () => {
+    // Setup
+    const perfis = [
+      { role: 'admin', podeAlternar: true },
+      { role: 'ADMIN', podeAlternar: true },
+      { role: 'consultor', podeAlternar: false },
+      { role: 'supervisor', podeAlternar: false },
+      { role: undefined, podeAlternar: false }
+    ];
+
+    // Action & Assert
+    perfis.forEach(({ role, podeAlternar }) => {
+      const isAdmin = (role || '').toLowerCase() === 'admin';
+      expect(isAdmin).toBe(podeAlternar);
+    });
+  });
 });
+

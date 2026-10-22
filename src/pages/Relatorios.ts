@@ -2024,7 +2024,8 @@ export class RelatoriosPage {
     const start = this.dataInicio;
     const end = this.dataFim;
     const filterConsultorId = this.consultorIdFilter;
-    const isAdmin = (this.perfil?.role || '').toLowerCase() === 'admin';
+    const userRole = this.perfil?.role || this.consultores.find(c => c.id === this.user?.id)?.role || this.user?.user_metadata?.role || '';
+    const isAdmin = String(userRole).trim().toLowerCase() === 'admin';
 
     const list: any[] = [];
 
@@ -2138,7 +2139,7 @@ export class RelatoriosPage {
         `;
       }
 
-      // Validação do Gestor (apenas Administrador)
+      // Validação do Gestor (Exclusiva para Administradores)
       let validacaoGestorHtml = '';
       if (isAdmin) {
         if (item.validadoGestor) {
@@ -2149,7 +2150,7 @@ export class RelatoriosPage {
           const tooltipGestor = `Conferido e validado por ${quemGestor} em ${dHoraGestor}. Clique para desmarcar se necessário.`;
 
           validacaoGestorHtml = `
-            <td class="p-3 text-center">
+            <td class="p-3 text-center whitespace-nowrap">
               <button class="btn-toggle-validacao-gestor px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-800/60 rounded-lg text-[10px] font-black uppercase tracking-wider transition flex items-center gap-1 mx-auto shadow-xs" 
                 data-trip-id="${item.tripId}" 
                 data-trecho-key="${item.trechoKey}" 
@@ -2163,7 +2164,7 @@ export class RelatoriosPage {
           `;
         } else {
           validacaoGestorHtml = `
-            <td class="p-3 text-center">
+            <td class="p-3 text-center whitespace-nowrap">
               <button class="btn-toggle-validacao-gestor px-2.5 py-1 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/30 dark:hover:bg-amber-900/40 text-amber-700 dark:text-amber-400 border border-amber-200/80 dark:border-amber-800/60 rounded-lg text-[10px] font-black uppercase tracking-wider transition flex items-center gap-1 mx-auto shadow-xs" 
                 data-trip-id="${item.tripId}" 
                 data-trecho-key="${item.trechoKey}" 
@@ -2179,31 +2180,31 @@ export class RelatoriosPage {
       }
 
       const orcamentoBtn = item.orcamentoId ? `
-        <button class="btn-ir-orcamento px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-[10px] font-black rounded-lg transition uppercase tracking-wider flex items-center gap-1" data-orcamento-id="${item.orcamentoId}" title="Ir direto para o Orçamento">
+        <button class="btn-ir-orcamento shrink-0 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-[10px] font-black rounded-lg transition uppercase tracking-wider flex items-center gap-1" data-orcamento-id="${item.orcamentoId}" title="Ir direto para o Orçamento">
           📄 Orçamento
         </button>
       ` : '';
 
       const whatsAppBtn = `
-        <button class="btn-chat-digisac px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-800/60 text-[10px] font-black rounded-lg transition uppercase tracking-wider flex items-center gap-1" data-cliente-nome="${item.cliente}" data-cliente-telefone="${item.clienteTelefone}" data-consultor-nome="${item.consultor}" data-trip-id="${item.tripId}" data-destino="${item.destino}" data-loc="${item.loc}" title="Abrir conversa no Digisac">
+        <button class="btn-chat-digisac shrink-0 px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-800/60 text-[10px] font-black rounded-lg transition uppercase tracking-wider flex items-center gap-1" data-cliente-nome="${item.cliente}" data-cliente-telefone="${item.clienteTelefone}" data-consultor-nome="${item.consultor}" data-trip-id="${item.tripId}" data-destino="${item.destino}" data-loc="${item.loc}" title="Abrir conversa no Digisac">
           💬 WhatsApp
         </button>
       `;
 
       return `
-        <tr class="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50/40 dark:hover:bg-slate-800/20 text-slate-600 dark:text-slate-300 transition-colors">
-          <td class="p-3 font-extrabold text-slate-800 dark:text-slate-100">${formatarDataBr(item.data)}</td>
-          <td class="p-3 font-extrabold text-slate-800 dark:text-slate-100">${item.cliente}</td>
-          <td class="p-3">${item.tipo}</td>
-          <td class="p-3 font-bold text-indigo-600 dark:text-indigo-400">${item.destino}</td>
-          <td class="p-3 font-mono font-bold text-[10px] tracking-wider uppercase">${item.loc}</td>
-          <td class="p-3 font-semibold">${item.consultor}</td>
-          <td class="p-3 text-center">${alertBadge}</td>
-          <td class="p-3 text-center">${contatoBadge}</td>
+        <tr class="group border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50/40 dark:hover:bg-slate-800/20 text-slate-600 dark:text-slate-300 transition-colors">
+          <td class="p-3 font-extrabold text-slate-800 dark:text-slate-100 whitespace-nowrap">${formatarDataBr(item.data)}</td>
+          <td class="p-3 font-extrabold text-slate-800 dark:text-slate-100 whitespace-nowrap">${item.cliente}</td>
+          <td class="p-3 whitespace-nowrap">${item.tipo}</td>
+          <td class="p-3 font-bold text-indigo-600 dark:text-indigo-400 whitespace-nowrap">${item.destino}</td>
+          <td class="p-3 font-mono font-bold text-[10px] tracking-wider uppercase whitespace-nowrap">${item.loc}</td>
+          <td class="p-3 font-semibold whitespace-nowrap">${item.consultor}</td>
+          <td class="p-3 text-center whitespace-nowrap">${alertBadge}</td>
+          <td class="p-3 text-center whitespace-nowrap">${contatoBadge}</td>
           ${validacaoGestorHtml}
-          <td class="p-3 text-center">
-            <div class="flex items-center justify-center gap-1.5 flex-wrap">
-              <button class="btn-detalhes-viagem px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/30 dark:hover:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 text-[10px] font-black rounded-lg transition uppercase tracking-wider flex items-center gap-1" data-trip-id="${item.tripId}" title="Ver detalhes da venda">
+          <td class="p-3 text-center sticky right-0 bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-800/80 z-10 shadow-[-6px_0_10px_-2px_rgba(0,0,0,0.06)] dark:shadow-[-6px_0_10px_-2px_rgba(0,0,0,0.4)] whitespace-nowrap min-w-[220px]">
+            <div class="flex items-center justify-center gap-1.5 whitespace-nowrap">
+              <button class="btn-detalhes-viagem shrink-0 px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/30 dark:hover:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 text-[10px] font-black rounded-lg transition uppercase tracking-wider flex items-center gap-1" data-trip-id="${item.tripId}" title="Ver detalhes da venda">
                 🔍 Detalhes
               </button>
               ${orcamentoBtn}
@@ -2239,20 +2240,20 @@ export class RelatoriosPage {
         </div>
 
         <!-- Embarques Table -->
-        <div class="overflow-x-auto custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl">
-          <table class="w-full text-left border-collapse text-xs font-semibold">
+        <div class="overflow-x-auto custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl relative">
+          <table class="w-full text-left border-collapse text-xs font-semibold min-w-[1100px]">
             <thead>
               <tr class="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-widest font-black">
-                <th class="p-3">Data</th>
-                <th class="p-3">Passageiro</th>
-                <th class="p-3">Tipo</th>
-                <th class="p-3">Destino/Trecho</th>
-                <th class="p-3">Código (LOC)</th>
-                <th class="p-3">Consultor</th>
-                <th class="p-3 text-center">Alerta</th>
-                <th class="p-3 text-center">Contato</th>
-                ${isAdmin ? '<th class="p-3 text-center">Validação Gestor</th>' : ''}
-                <th class="p-3 text-center">Ações</th>
+                <th class="p-3 whitespace-nowrap">Data</th>
+                <th class="p-3 whitespace-nowrap">Passageiro</th>
+                <th class="p-3 whitespace-nowrap">Tipo</th>
+                <th class="p-3 whitespace-nowrap">Destino/Trecho</th>
+                <th class="p-3 whitespace-nowrap">Código (LOC)</th>
+                <th class="p-3 whitespace-nowrap">Consultor</th>
+                <th class="p-3 text-center whitespace-nowrap">Alerta</th>
+                <th class="p-3 text-center whitespace-nowrap">Contato</th>
+                ${isAdmin ? '<th class="p-3 text-center whitespace-nowrap">Validação Gestor</th>' : ''}
+                <th class="p-3 text-center sticky right-0 bg-slate-50 dark:bg-slate-950 z-20 shadow-[-6px_0_10px_-2px_rgba(0,0,0,0.06)] dark:shadow-[-6px_0_10px_-2px_rgba(0,0,0,0.4)] whitespace-nowrap min-w-[220px]">Ações</th>
               </tr>
             </thead>
             <tbody>
@@ -3853,7 +3854,12 @@ export class RelatoriosPage {
         }
       });
     } else if (this.activeTab === 'embarques') {
-      csvContent += 'Data de Embarque;Cliente/Passageiro;Destino/Trecho;Tipo;Código (LOC);Consultor;Tem Alerta;Contato Pré-Embarque\n';
+      const userRole = this.perfil?.role || this.consultores.find(c => c.id === this.user?.id)?.role || this.user?.user_metadata?.role || '';
+      const isAdmin = String(userRole).trim().toLowerCase() === 'admin';
+
+      csvContent += isAdmin
+        ? 'Data de Embarque;Cliente/Passageiro;Destino/Trecho;Tipo;Código (LOC);Consultor;Tem Alerta;Contato Pré-Embarque;Validação Gestor\n'
+        : 'Data de Embarque;Cliente/Passageiro;Destino/Trecho;Tipo;Código (LOC);Consultor;Tem Alerta;Contato Pré-Embarque\n';
       const start = this.dataInicio;
       const end = this.dataFim;
       
@@ -3867,7 +3873,12 @@ export class RelatoriosPage {
         embarquesConsolidados.forEach((emb) => {
           if (emb.dataStr && emb.dataStr >= start && emb.dataStr <= end) {
             const hasAlert = this.lembretes.some((l: any) => l.viagem_id === v.id && l.data_lembrete === emb.dataStr);
-            const contatoFeito = Boolean(contatosViagem[emb.chave]?.feito);
+            const contatoRegistro = contatosViagem[emb.chave];
+            const contatoFeito = Boolean(contatoRegistro?.feito);
+            const validadoGestor = Boolean(contatoRegistro?.validado_gestor);
+            const gestorNome = contatoRegistro?.gestor_nome || '';
+            const statusGestor = validadoGestor ? (gestorNome ? `Conferido (${gestorNome})` : 'Conferido') : 'Pendente';
+
             list.push({
               data: emb.dataStr,
               cliente: clientName,
@@ -3876,7 +3887,8 @@ export class RelatoriosPage {
               loc: emb.loc,
               consultor: consultorName,
               hasAlert,
-              contatoFeito
+              contatoFeito,
+              statusGestor
             });
           }
         });
@@ -3886,7 +3898,11 @@ export class RelatoriosPage {
 
       list.forEach((item: any) => {
         const dateFormatted = item.data.split('-').reverse().join('/');
-        csvContent += `"${dateFormatted}";"${item.cliente}";"${item.destino}";"${item.tipo}";"${item.loc}";"${item.consultor}";"${item.hasAlert ? 'Sim' : 'Não'}";"${item.contatoFeito ? 'Feito' : 'Pendente'}"\n`;
+        if (isAdmin) {
+          csvContent += `"${dateFormatted}";"${item.cliente}";"${item.destino}";"${item.tipo}";"${item.loc}";"${item.consultor}";"${item.hasAlert ? 'Sim' : 'Não'}";"${item.contatoFeito ? 'Feito' : 'Pendente'}";"${item.statusGestor}"\n`;
+        } else {
+          csvContent += `"${dateFormatted}";"${item.cliente}";"${item.destino}";"${item.tipo}";"${item.loc}";"${item.consultor}";"${item.hasAlert ? 'Sim' : 'Não'}";"${item.contatoFeito ? 'Feito' : 'Pendente'}"\n`;
+        }
       });
     } else if (this.activeTab === 'gamificacao') {
       csvContent += 'Posição;Consultor;Nível;Patente;XP Total;Conquistas\n';
