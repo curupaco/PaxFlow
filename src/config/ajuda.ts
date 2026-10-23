@@ -994,6 +994,13 @@ export const HELP_ITEMS: HelpItem[] = [
     label: '🖥️ Ergonomia Visual e Barras de Rolagem em Monitores Convencionais',
     description: 'Recursos para navegação confortável em telas padrão Full HD e notebooks sem transbordo oculto.',
     details: 'Para eliminar problemas de corte lateral e conteúdos escondidos em telas convencionais:\n\n1. **Barras de Rolagem Nítidas (8px)**: O sistema adota barras universais com 8px de largura, trilho visível e alto contraste para que o usuário sempre identifique quando há rolagem horizontal ou vertical.\n2. **Efeito Visual Scroll-Fade**: As tabelas de relatórios, extrato de recebimentos, Kanban de orçamentos e listas operacionais possuem um gradiente suave nas laterais (`scroll-indicator-fade`), sinalizando de relance que há colunas adicionais para rolar.\n3. **Gutter Estável**: O Kanban de orçamentos utiliza espaçamento estável para evitar saltos visuais na tela ao carregar novos cartões.'
+  },
+  {
+    id: 'relatorios-campanhas-segmentacao',
+    modulo: 'clientes',
+    label: '🚀 Campanhas & Segmentação de Base Comercial',
+    description: 'Como filtrar orçamentos e viagens por destinos, fornecedores, ticket e NPS para ações ativas e Digisac.',
+    details: 'O PaxFlow disponibiliza no menu Relatórios a aba **Campanhas & Segmentação**, voltada para o time de gestão e consultores ativarem suas bases de clientes:\n\n1. **Matriz de Filtros Estratégicos**: É possível cruzar Orçamentos e Viagens Confirmadas, filtrando por Tipo de Destino (Nacional/Internacional), destinos múltiplos (ex: "Cuba, Cancun"), janelas de 3 a 24 meses, faixas de valor financeiro (R$ mín e máx), fornecedores/operadoras envolvidas, sazonalidade (mês previsto de embarque), status do orçamento e notas do NPS (Promotores, Neutros e Detratores).\n2. **Alternador de Modos de Visão**: Permite alternar entre *Visão por Oportunidade* (cada orçamento ou viagem linha a linha) e *Visão por Cliente Único* (deduplica contatos, consolida o histórico e soma o ticket financeiro de todas as viagens).\n3. **Integração com Digisac**: Cada linha conta com o botão verde `💬 Digisac`, que abre instantaneamente a tela de conversa no PaxFlow vinculada ao consultor responsável pelo atendimento.\n4. **Governança e Permissões (RBAC)**: Administradores possuem acesso total a toda a equipe, com permissão para **Exportar CSV**, **Copiar Telefones em Lote** e **Salvar Modelos de Campanhas (Presets)**. Já os consultores acessam a ferramenta com filtros travados exclusivamente em sua própria carteira e com ações em lote desabilitadas, garantindo total segurança de dados.'
   }
 ];
 

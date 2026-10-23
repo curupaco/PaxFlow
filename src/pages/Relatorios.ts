@@ -16,6 +16,7 @@ import { VerNotasModal } from '../components/orcamentos/VerNotasModal';
 import { OrcamentosService } from '../services/orcamentosService';
 import { showCustomPrompt, showCustomAlert } from '../services/dialog';
 import { ViagensDivisoesService } from '../services/viagensDivisoesService';
+import { CampanhasService, FiltrosCampanha, ItemSegmentacaoCampanha, PresetCampanha } from '../services/campanhasService';
 
 if (typeof document !== 'undefined') {
   const style = document.createElement('style');
@@ -63,9 +64,28 @@ export class RelatoriosPage {
   private container: HTMLElement;
   private user: any = null;
   private perfil: PerfilConsultor | null = null;
-  private activeTab: 'desempenho' | 'prazos' | 'faturamento' | 'perdas' | 'previsoes' | 'origens' | 'auditoria' | 'posvenda' | 'gamificacao' | 'embarques' | 'riscopreditivo' | 'metas_campanhas' = 'desempenho';
+  private activeTab: 'desempenho' | 'prazos' | 'faturamento' | 'perdas' | 'previsoes' | 'origens' | 'auditoria' | 'posvenda' | 'gamificacao' | 'embarques' | 'riscopreditivo' | 'metas_campanhas' | 'segmentacao_campanhas' = 'desempenho';
   private metas: MetaPeriodo[] = [];
   private selectedMetaId: string = '';
+
+  // Estado e filtros da aba Campanhas & Segmentação
+  private campanhasFiltros: FiltrosCampanha = {
+    origem: 'todos',
+    tipoVisao: 'oportunidade',
+    tipoDestino: 'todos',
+    destinoBusca: '',
+    periodoMeses: 12,
+    valorMinimo: undefined,
+    valorMaximo: undefined,
+    fornecedor: '',
+    mesEmbarque: undefined,
+    statusOrcamento: 'TODOS',
+    classificacaoNps: 'todos',
+    perfilPassageiro: 'todos',
+    consultorId: 'TODOS'
+  };
+  private campanhasPresets: PresetCampanha[] = [];
+  private feedbacksNps: any[] = [];
 
   // Controle de estado para grupos colapsáveis da barra lateral
   private collapsedGroups: { [key: string]: boolean } = {
@@ -295,6 +315,23 @@ export class RelatoriosPage {
         }
       } catch (errM) {
         console.warn('Erro ao carregar metas em RelatoriosPage:', errM);
+      }
+
+      // 14. Carregar Feedbacks NPS (para enriquecer segmentação de campanhas)
+      try {
+        const { data: npsData } = await supabase.from('feedbacks_nps').select('*');
+        this.feedbacksNps = npsData || [];
+      } catch (errNps) {
+        console.warn('Erro defensivo ao carregar feedbacks_nps em RelatoriosPage:', errNps);
+        this.feedbacksNps = [];
+      }
+
+      // 15. Carregar Presets de Campanhas salvos pela gestão
+      try {
+        this.campanhasPresets = await CampanhasService.listarPresets();
+      } catch (errPresets) {
+        console.warn('Erro defensivo ao carregar presets de campanhas em RelatoriosPage:', errPresets);
+        this.campanhasPresets = [];
       }
     } catch (err) {
       console.warn('Erro ao ler tabelas de relatórios. Ativando mocks.', err);
@@ -583,6 +620,9 @@ export class RelatoriosPage {
                 <button data-tab="desempenho" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 ${this.activeTab === 'desempenho' ? 'report-tab-active' : 'text-slate-500'}">
                   🎯 Desempenho
                 </button>
+                <button data-tab="segmentacao_campanhas" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 ${this.activeTab === 'segmentacao_campanhas' ? 'report-tab-active' : 'text-slate-500'}">
+                  🚀 Campanhas & Segmentação
+                </button>
                 <button data-tab="metas_campanhas" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 ${this.activeTab === 'metas_campanhas' ? 'report-tab-active' : 'text-slate-500'}">
                   🏆 Metas & Campanhas
                 </button>
@@ -695,6 +735,8 @@ export class RelatoriosPage {
         return this.renderGamificacao(data);
       case 'metas_campanhas':
         return this.renderMetasCampanhas(data);
+      case 'segmentacao_campanhas':
+        return this.renderSegmentacaoCampanhas(data);
       case 'riscopreditivo':
         return this.renderRiscoPreditivo(data);
       default:
@@ -2883,6 +2925,411 @@ export class RelatoriosPage {
     `;
   }
 
+  // ==========================================
+  // VIEW: 🚀 CAMPANHAS & SEGMENTAÇÃO DE BASE
+  // ==========================================
+  private renderSegmentacaoCampanhas(data: any): string {
+    const isAdmin = (this.perfil?.role || '').toLowerCase() === 'admin';
+    const usuarioLogado = {
+      id: this.user?.id || '',
+      nome: this.perfil?.nome || this.user?.email || 'Usuário',
+      role: this.perfil?.role || 'consultor'
+    };
+
+    // 1. Normalizar todos os dados disponíveis
+    const todosItens = CampanhasService.normalizarDados(data.viagens || [], data.orcamentos || [], this.feedbacksNps || []);
+
+    // 2. Se for consultor, travar o filtro de consultorId para si próprio
+    if (!isAdmin) {
+      this.campanhasFiltros.consultorId = usuarioLogado.id;
+    }
+
+    // 3. Filtrar itens conforme matriz
+    let itensFiltrados = CampanhasService.filtrarItens(todosItens, this.campanhasFiltros, usuarioLogado);
+
+    // 4. Se a visão for 'cliente_unico', agrupar e somar por cliente
+    if (this.campanhasFiltros.tipoVisao === 'cliente_unico') {
+      itensFiltrados = CampanhasService.agruparPorCliente(itensFiltrados);
+    }
+
+    // 5. Calcular KPIs
+    const kpis = CampanhasService.calcularMetricas(itensFiltrados);
+
+    const f = this.campanhasFiltros;
+
+    // Extrair lista de fornecedores únicos para o autocomplete / select
+    const todosFornecedores = Array.from(
+      new Set(todosItens.flatMap(i => i.fornecedores).filter(Boolean))
+    ).sort();
+
+    return `
+      <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-3xl p-6 shadow-sm flex flex-col gap-6 print-full-width animate-fadeIn">
+        
+        <!-- Header da Aba de Campanhas -->
+        <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-5">
+          <div class="space-y-1">
+            <div class="flex items-center gap-2">
+              <span class="text-2xl">🚀</span>
+              <h2 class="text-lg font-black text-slate-800 dark:text-slate-100">Campanhas & Segmentação Comercial</h2>
+              ${isAdmin ? `
+                <span class="px-2 py-0.5 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 text-[10px] font-black rounded-lg uppercase tracking-wider border border-indigo-200/60 dark:border-indigo-800/40">
+                  Visão Gestão / Admin
+                </span>
+              ` : `
+                <span class="px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 text-[10px] font-black rounded-lg uppercase tracking-wider border border-emerald-200/60 dark:border-emerald-800/40">
+                  Minha Carteira
+                </span>
+              `}
+            </div>
+            <p class="text-xs text-slate-400 font-semibold max-w-2xl">
+              Filtre viagens realizadas e orçamentos por destinos, ticket médio, fornecedores e NPS para estruturar campanhas ativas e ações diretas no Digisac.
+            </p>
+          </div>
+
+          <!-- Ações em Lote e Presets (Apenas Admin para ações em lote) -->
+          <div class="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+            ${isAdmin ? `
+              <!-- Salvar Filtro Atual como Preset -->
+              <button id="btn-campanha-salvar-preset" type="button" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-black rounded-xl transition flex items-center gap-1.5 shadow-xs" title="Salvar estes filtros como um modelo de campanha reutilizável">
+                <span>💾</span> Salvar Modelo
+              </button>
+
+              <!-- Copiar Telefones em Lote -->
+              <button id="btn-campanha-copiar-lote" type="button" class="px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200/80 dark:border-indigo-800/60 text-xs font-black rounded-xl transition flex items-center gap-1.5 shadow-xs" title="Copiar nomes e telefones únicos dos clientes filtrados">
+                <span>📋</span> Copiar Contatos (${kpis.totalClientesUnicos})
+              </button>
+
+              <!-- Exportar Planilha CSV -->
+              <button id="btn-campanha-exportar-csv" type="button" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black rounded-xl transition flex items-center gap-1.5 shadow-md shadow-emerald-600/10" title="Exportar tabela completa com todos os campos em formato CSV para Excel">
+                <span>📊</span> Exportar CSV
+              </button>
+            ` : `
+              <div class="text-[11px] font-bold text-slate-400 italic">
+                🔒 Ações de exportação em lote são restritas à gestão.
+              </div>
+            `}
+          </div>
+        </div>
+
+        <!-- Seção de Modelos / Presets Salvos -->
+        ${isAdmin && this.campanhasPresets.length > 0 ? `
+          <div class="p-3.5 bg-slate-50 dark:bg-slate-950/60 rounded-2xl border border-slate-100 dark:border-slate-800 flex flex-wrap items-center gap-2">
+            <span class="text-[10px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1 shrink-0">
+              <span>📂</span> Modelos Salvos:
+            </span>
+            ${this.campanhasPresets.map(p => `
+              <div class="inline-flex items-center gap-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-2.5 py-1 text-xs font-bold text-slate-700 dark:text-slate-200 shadow-2xs">
+                <button type="button" class="btn-carregar-preset hover:text-indigo-600 transition" data-preset-id="${p.id}" title="${p.descricao || 'Carregar este modelo'}">
+                  ${p.nome}
+                </button>
+                <button type="button" class="btn-excluir-preset text-slate-400 hover:text-rose-500 transition ml-1" data-preset-id="${p.id}" title="Excluir modelo">
+                  ✕
+                </button>
+              </div>
+            `).join('')}
+          </div>
+        ` : ''}
+
+        <!-- Painel de Filtros Estratégicos -->
+        <div class="bg-slate-50/70 dark:bg-slate-950/40 p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-4">
+          
+          <!-- Linha 1 de Filtros: Origem da Base, Alternador de Visão, Destino e Busca -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            
+            <!-- 1. Origem da Base -->
+            <div class="space-y-1">
+              <label class="text-[10px] font-black uppercase tracking-wider text-slate-400 block">Base de Dados</label>
+              <select id="filtro-campanha-origem" class="w-full text-xs font-bold p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <option value="todos" ${f.origem === 'todos' ? 'selected' : ''}>Ambos (Viagens + Orçamentos)</option>
+                <option value="viagens" ${f.origem === 'viagens' ? 'selected' : ''}>Apenas Viagens Confirmadas</option>
+                <option value="orcamentos" ${f.origem === 'orcamentos' ? 'selected' : ''}>Apenas Orçamentos (Leads)</option>
+              </select>
+            </div>
+
+            <!-- 2. Visão (Oportunidade vs Cliente Único) -->
+            <div class="space-y-1">
+              <label class="text-[10px] font-black uppercase tracking-wider text-slate-400 block">Modo de Exibição</label>
+              <select id="filtro-campanha-visao" class="w-full text-xs font-bold p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <option value="oportunidade" ${f.tipoVisao === 'oportunidade' ? 'selected' : ''}>Visão por Oportunidade (Linha a linha)</option>
+                <option value="cliente_unico" ${f.tipoVisao === 'cliente_unico' ? 'selected' : ''}>Visão por Cliente Único (Deduplicado)</option>
+              </select>
+            </div>
+
+            <!-- 3. Tipo de Destino -->
+            <div class="space-y-1">
+              <label class="text-[10px] font-black uppercase tracking-wider text-slate-400 block">Tipo de Destino</label>
+              <select id="filtro-campanha-tipo-destino" class="w-full text-xs font-bold p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <option value="todos" ${f.tipoDestino === 'todos' ? 'selected' : ''}>Nacionais & Internacionais</option>
+                <option value="internacional" ${f.tipoDestino === 'internacional' ? 'selected' : ''}>Apenas Internacionais</option>
+                <option value="nacional" ${f.tipoDestino === 'nacional' ? 'selected' : ''}>Apenas Nacionais</option>
+              </select>
+            </div>
+
+            <!-- 4. Busca por Destinos Específicos -->
+            <div class="space-y-1">
+              <label class="text-[10px] font-black uppercase tracking-wider text-slate-400 block">Destinos (ex: Cuba, Cancun)</label>
+              <input id="filtro-campanha-destino-busca" type="text" placeholder="Buscar destinos (separe por vírgula)..." value="${f.destinoBusca || ''}" class="w-full text-xs font-bold p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
+
+          </div>
+
+          <!-- Linha 2 de Filtros: Período, Valores e Fornecedor -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-1 border-t border-slate-100 dark:border-slate-800/60">
+            
+            <!-- Janela Temporal -->
+            <div class="space-y-1">
+              <label class="text-[10px] font-black uppercase tracking-wider text-slate-400 block">Janela de Tempo</label>
+              <select id="filtro-campanha-periodo-meses" class="w-full text-xs font-bold p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <option value="3" ${f.periodoMeses === 3 ? 'selected' : ''}>Últimos 3 meses</option>
+                <option value="6" ${f.periodoMeses === 6 ? 'selected' : ''}>Últimos 6 meses</option>
+                <option value="12" ${f.periodoMeses === 12 ? 'selected' : ''}>Últimos 12 meses (1 ano)</option>
+                <option value="24" ${f.periodoMeses === 24 ? 'selected' : ''}>Últimos 24 meses (2 anos)</option>
+                <option value="0" ${!f.periodoMeses ? 'selected' : ''}>Todo o histórico registrado</option>
+              </select>
+            </div>
+
+            <!-- Faixa de Valor Mínimo -->
+            <div class="space-y-1">
+              <label class="text-[10px] font-black uppercase tracking-wider text-slate-400 block">Valor Mínimo (R$)</label>
+              <input id="filtro-campanha-valor-min" type="number" placeholder="Ex: 5000" value="${f.valorMinimo !== undefined ? f.valorMinimo : ''}" class="w-full text-xs font-bold p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
+
+            <!-- Faixa de Valor Máximo -->
+            <div class="space-y-1">
+              <label class="text-[10px] font-black uppercase tracking-wider text-slate-400 block">Valor Máximo (R$)</label>
+              <input id="filtro-campanha-valor-max" type="number" placeholder="Ex: 50000" value="${f.valorMaximo !== undefined ? f.valorMaximo : ''}" class="w-full text-xs font-bold p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
+
+            <!-- Fornecedor / Cia / Operadora -->
+            <div class="space-y-1">
+              <label class="text-[10px] font-black uppercase tracking-wider text-slate-400 block">Fornecedor / Cia Aérea</label>
+              <input id="filtro-campanha-fornecedor" type="text" list="lista-fornecedores-sugeridos" placeholder="Ex: LATAM, Azul, CVC..." value="${f.fornecedor || ''}" class="w-full text-xs font-bold p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              <datalist id="lista-fornecedores-sugeridos">
+                ${todosFornecedores.map(forn => `<option value="${forn}"></option>`).join('')}
+              </datalist>
+            </div>
+
+          </div>
+
+          <!-- Linha 3 de Filtros: Mês de Embarque (Sazonalidade), Status, NPS e Consultor -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-1 border-t border-slate-100 dark:border-slate-800/60">
+            
+            <!-- Mês de Embarque -->
+            <div class="space-y-1">
+              <label class="text-[10px] font-black uppercase tracking-wider text-slate-400 block">Mês de Embarque (Sazonalidade)</label>
+              <select id="filtro-campanha-mes-embarque" class="w-full text-xs font-bold p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <option value="">Qualquer Mês</option>
+                <option value="1" ${f.mesEmbarque === 1 ? 'selected' : ''}>Janeiro (Férias)</option>
+                <option value="2" ${f.mesEmbarque === 2 ? 'selected' : ''}>Fevereiro (Carnaval)</option>
+                <option value="3" ${f.mesEmbarque === 3 ? 'selected' : ''}>Março</option>
+                <option value="4" ${f.mesEmbarque === 4 ? 'selected' : ''}>Abril (Páscoa/Tiradentes)</option>
+                <option value="5" ${f.mesEmbarque === 5 ? 'selected' : ''}>Maio</option>
+                <option value="6" ${f.mesEmbarque === 6 ? 'selected' : ''}>Junho</option>
+                <option value="7" ${f.mesEmbarque === 7 ? 'selected' : ''}>Julho (Férias de Inverno)</option>
+                <option value="8" ${f.mesEmbarque === 8 ? 'selected' : ''}>Agosto</option>
+                <option value="9" ${f.mesEmbarque === 9 ? 'selected' : ''}>Setembro</option>
+                <option value="10" ${f.mesEmbarque === 10 ? 'selected' : ''}>Outubro (Saco Cheio)</option>
+                <option value="11" ${f.mesEmbarque === 11 ? 'selected' : ''}>Novembro</option>
+                <option value="12" ${f.mesEmbarque === 12 ? 'selected' : ''}>Dezembro (Réveillon)</option>
+              </select>
+            </div>
+
+            <!-- Status de Orçamento -->
+            <div class="space-y-1">
+              <label class="text-[10px] font-black uppercase tracking-wider text-slate-400 block">Status do Orçamento</label>
+              <select id="filtro-campanha-status-orcamento" class="w-full text-xs font-bold p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <option value="TODOS" ${f.statusOrcamento === 'TODOS' ? 'selected' : ''}>Todos os Status</option>
+                <option value="SOLICITADO" ${f.statusOrcamento === 'SOLICITADO' ? 'selected' : ''}>Solicitado / Em aberto</option>
+                <option value="EM_ANDAMENTO" ${f.statusOrcamento === 'EM_ANDAMENTO' ? 'selected' : ''}>Em Andamento</option>
+                <option value="AGUARDANDO" ${f.statusOrcamento === 'AGUARDANDO' ? 'selected' : ''}>Aguardando Resposta</option>
+                <option value="DESISTENCIA" ${f.statusOrcamento === 'DESISTENCIA' ? 'selected' : ''}>Perdido / Desistência</option>
+              </select>
+            </div>
+
+            <!-- NPS -->
+            <div class="space-y-1">
+              <label class="text-[10px] font-black uppercase tracking-wider text-slate-400 block">Classificação NPS</label>
+              <select id="filtro-campanha-nps" class="w-full text-xs font-bold p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <option value="todos" ${f.classificacaoNps === 'todos' ? 'selected' : ''}>Todas as notas</option>
+                <option value="promotores" ${f.classificacaoNps === 'promotores' ? 'selected' : ''}>🟢 Promotores (9 - 10)</option>
+                <option value="neutros" ${f.classificacaoNps === 'neutros' ? 'selected' : ''}>🟡 Neutros (7 - 8)</option>
+                <option value="detratores" ${f.classificacaoNps === 'detratores' ? 'selected' : ''}>🔴 Detratores (0 - 6)</option>
+              </select>
+            </div>
+
+            <!-- Consultor Responsável -->
+            <div class="space-y-1">
+              <label class="text-[10px] font-black uppercase tracking-wider text-slate-400 block">Consultor Original</label>
+              ${isAdmin ? `
+                <select id="filtro-campanha-consultor" class="w-full text-xs font-bold p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                  <option value="TODOS" ${f.consultorId === 'TODOS' ? 'selected' : ''}>Toda a Equipe</option>
+                  ${this.consultores.map(c => `
+                    <option value="${c.id}" ${f.consultorId === c.id ? 'selected' : ''}>${c.nome}</option>
+                  `).join('')}
+                </select>
+              ` : `
+                <div class="w-full text-xs font-bold p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300">
+                  👤 ${usuarioLogado.nome} (Sua Carteira)
+                </div>
+              `}
+            </div>
+
+          </div>
+
+          <!-- Botões de Ação do Filtro -->
+          <div class="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800/60">
+            <span class="text-xs font-bold text-slate-500">
+              ⚡ Segmentação calculada: <strong class="text-slate-800 dark:text-slate-100">${itensFiltrados.length}</strong> itens encontrados
+            </span>
+            <div class="flex items-center gap-2">
+              <button id="btn-campanha-limpar-filtros" type="button" class="px-3.5 py-1.5 text-xs font-bold text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition">
+                Restaurar Padrão
+              </button>
+              <button id="btn-campanha-aplicar-filtros" type="button" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs rounded-xl shadow-md transition uppercase tracking-wider">
+                Atualizar Segmentação
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Cards de Indicadores / KPIs da Segmentação -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          
+          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 flex flex-col justify-between">
+            <span class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Clientes Únicos Mapeados</span>
+            <div class="text-2xl font-black text-slate-800 dark:text-slate-100 mt-2">
+              ${kpis.totalClientesUnicos}
+            </div>
+            <span class="text-[11px] text-slate-400 font-semibold mt-1">${kpis.totalRegistros} interações no filtro</span>
+          </div>
+
+          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 flex flex-col justify-between">
+            <span class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Volume Financeiro Segmentado</span>
+            <div class="text-2xl font-black text-indigo-600 dark:text-indigo-400 mt-2">
+              R$ ${kpis.valorTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </div>
+            <span class="text-[11px] text-slate-400 font-semibold mt-1">Valor negociado / viajado</span>
+          </div>
+
+          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 flex flex-col justify-between">
+            <span class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Ticket Médio</span>
+            <div class="text-2xl font-black text-slate-800 dark:text-slate-100 mt-2">
+              R$ ${kpis.ticketMedio.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </div>
+            <span class="text-[11px] text-slate-400 font-semibold mt-1">Por registro do filtro</span>
+          </div>
+
+          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 flex flex-col justify-between">
+            <span class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Termômetro NPS</span>
+            <div class="flex items-center gap-2 mt-2">
+              <span class="text-xs font-black text-emerald-600">🟢 ${kpis.promotoresCount}</span>
+              <span class="text-xs font-black text-amber-500">🟡 ${kpis.neutrosCount}</span>
+              <span class="text-xs font-black text-rose-500">🔴 ${kpis.detratoresCount}</span>
+            </div>
+            <span class="text-[11px] text-slate-400 font-semibold mt-1">Satisfação mapeada</span>
+          </div>
+
+        </div>
+
+        <!-- Tabela Rica de Resultados -->
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider">
+              Contatos Mapeados (${itensFiltrados.length})
+            </h3>
+            <span class="text-[11px] text-slate-400 font-semibold">
+              ${f.tipoVisao === 'cliente_unico' ? 'Modo: Cliente Único Consolidado' : 'Modo: Oportunidade Individual'}
+            </span>
+          </div>
+
+          <div class="overflow-x-auto scroll-indicator-fade custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl">
+            <table class="w-full text-left border-collapse text-xs font-semibold min-w-[1000px]">
+              <thead>
+                <tr class="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-widest font-black">
+                  <th class="p-3 text-center w-16">Tipo</th>
+                  <th class="p-3">Cliente</th>
+                  <th class="p-3">Destino(s)</th>
+                  <th class="p-3 text-center">Tipo Destino</th>
+                  <th class="p-3 text-right">Valor</th>
+                  <th class="p-3">Fornecedores</th>
+                  <th class="p-3">Consultor Original</th>
+                  <th class="p-3 text-center">NPS</th>
+                  <th class="p-3 text-center sticky right-0 bg-slate-50 dark:bg-slate-950 shadow-[-6px_0_10px_-2px_rgba(0,0,0,0.06)] min-w-[140px]">Ação</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
+                ${itensFiltrados.length === 0 ? `
+                  <tr>
+                    <td colspan="9" class="p-8 text-center text-slate-400 font-bold">
+                      Nenhum cliente ou oportunidade encontrada para esta combinação de filtros.
+                    </td>
+                  </tr>
+                ` : itensFiltrados.map(item => {
+                  const tagTipo = item.tipo === 'viagem'
+                    ? '<span class="px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 text-[9px] font-black rounded-md uppercase tracking-wider">Viagem</span>'
+                    : '<span class="px-2 py-0.5 bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 text-[9px] font-black rounded-md uppercase tracking-wider">Orçamento</span>';
+
+                  const badgeDestino = item.tipoDestino === 'internacional'
+                    ? '<span class="px-2 py-0.5 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 text-[10px] font-black rounded-md uppercase">🌍 Int.</span>'
+                    : '<span class="px-2 py-0.5 bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 text-[10px] font-black rounded-md uppercase">🇧🇷 Nac.</span>';
+
+                  let badgeNps = '<span class="text-slate-300 dark:text-slate-600 text-xs">-</span>';
+                  if (item.npsNota !== undefined) {
+                    if (item.npsCategoria === 'promotor') badgeNps = `<span class="px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 text-[10px] font-black rounded-md">🟢 ${item.npsNota}</span>`;
+                    else if (item.npsCategoria === 'neutro') badgeNps = `<span class="px-2 py-0.5 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 text-[10px] font-black rounded-md">🟡 ${item.npsNota}</span>`;
+                    else badgeNps = `<span class="px-2 py-0.5 bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 text-[10px] font-black rounded-md">🔴 ${item.npsNota}</span>`;
+                  }
+
+                  const fornTexto = item.fornecedores.length > 0
+                    ? item.fornecedores.slice(0, 2).join(', ') + (item.fornecedores.length > 2 ? ` (+${item.fornecedores.length - 2})` : '')
+                    : '<span class="text-slate-300 dark:text-slate-600 italic text-[11px]">N/D</span>';
+
+                  return `
+                    <tr class="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors">
+                      <td class="p-3 text-center align-middle">${tagTipo}</td>
+                      <td class="p-3 align-middle">
+                        <div class="min-w-0">
+                          <p class="font-extrabold text-slate-800 dark:text-slate-100 truncate">${item.clienteNome}</p>
+                          <p class="text-[11px] text-slate-400 font-semibold truncate">${item.clienteTelefone || item.clienteEmail || 'Sem contato cadastrado'}</p>
+                          ${item.totalOportunidadesCliente && item.totalOportunidadesCliente > 1 ? `
+                            <span class="text-[9px] font-black text-indigo-500 uppercase tracking-wider block mt-0.5">
+                              ⭐ ${item.totalOportunidadesCliente} viagens/orçamentos somados
+                            </span>
+                          ` : ''}
+                        </div>
+                      </td>
+                      <td class="p-3 align-middle max-w-[200px] truncate" title="${item.destino}">
+                        <span class="text-slate-700 dark:text-slate-200 font-bold">${item.destino}</span>
+                      </td>
+                      <td class="p-3 text-center align-middle">${badgeDestino}</td>
+                      <td class="p-3 text-right align-middle font-black text-slate-800 dark:text-slate-100 whitespace-nowrap">
+                        R$ ${item.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </td>
+                      <td class="p-3 align-middle text-slate-500 dark:text-slate-400 text-[11px] truncate max-w-[150px]" title="${item.fornecedores.join(', ')}">
+                        ${fornTexto}
+                      </td>
+                      <td class="p-3 align-middle text-slate-600 dark:text-slate-300 text-xs font-bold truncate max-w-[140px]">
+                        ${item.consultorNome}
+                      </td>
+                      <td class="p-3 text-center align-middle whitespace-nowrap">${badgeNps}</td>
+                      <td class="p-3 text-center align-middle sticky right-0 bg-white dark:bg-slate-900 shadow-[-6px_0_10px_-2px_rgba(0,0,0,0.06)] whitespace-nowrap">
+                        <button class="btn-chat-digisac px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-800/60 text-[10px] font-black rounded-lg transition uppercase tracking-wider flex items-center justify-center gap-1 mx-auto shadow-xs" data-cliente-nome="${item.clienteNome}" data-cliente-telefone="${item.clienteTelefone}" data-consultor-nome="${item.consultorNome}" data-destino="${item.destino}" title="Abrir conversa no Digisac">
+                          <span>💬</span> Digisac
+                        </button>
+                      </td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    `;
+  }
+
   /**
    * Abre o modal popup de auditoria de registros da meta/campanha do consultor
    */
@@ -3595,6 +4042,171 @@ export class RelatoriosPage {
         });
       });
     });
+
+    // 19. Eventos da Aba: 🚀 Campanhas & Segmentação de Base
+    if (this.activeTab === 'segmentacao_campanhas') {
+      const recarregarPainelCampanha = () => {
+        const container = document.getElementById('report-view-container');
+        if (container) {
+          container.innerHTML = this.renderSegmentacaoCampanhas(this.getFilteredData());
+          this.setupEventListeners();
+        }
+      };
+
+      // Atualizar Filtros ao clicar no botão
+      document.getElementById('btn-campanha-aplicar-filtros')?.addEventListener('click', () => {
+        const origem = (document.getElementById('filtro-campanha-origem') as HTMLSelectElement)?.value as any || 'todos';
+        const tipoVisao = (document.getElementById('filtro-campanha-visao') as HTMLSelectElement)?.value as any || 'oportunidade';
+        const tipoDestino = (document.getElementById('filtro-campanha-tipo-destino') as HTMLSelectElement)?.value as any || 'todos';
+        const destinoBusca = (document.getElementById('filtro-campanha-destino-busca') as HTMLInputElement)?.value || '';
+        const pMeses = Number((document.getElementById('filtro-campanha-periodo-meses') as HTMLSelectElement)?.value || 12);
+        
+        const valMinStr = (document.getElementById('filtro-campanha-valor-min') as HTMLInputElement)?.value;
+        const valMaxStr = (document.getElementById('filtro-campanha-valor-max') as HTMLInputElement)?.value;
+        const valorMinimo = valMinStr !== '' && !isNaN(Number(valMinStr)) ? Number(valMinStr) : undefined;
+        const valorMaximo = valMaxStr !== '' && !isNaN(Number(valMaxStr)) ? Number(valMaxStr) : undefined;
+
+        const fornecedor = (document.getElementById('filtro-campanha-fornecedor') as HTMLInputElement)?.value || '';
+        const mesEmbStr = (document.getElementById('filtro-campanha-mes-embarque') as HTMLSelectElement)?.value;
+        const mesEmbarque = mesEmbStr ? Number(mesEmbStr) : undefined;
+
+        const statusOrcamento = (document.getElementById('filtro-campanha-status-orcamento') as HTMLSelectElement)?.value || 'TODOS';
+        const classificacaoNps = (document.getElementById('filtro-campanha-nps') as HTMLSelectElement)?.value as any || 'todos';
+        const consultorSelect = (document.getElementById('filtro-campanha-consultor') as HTMLSelectElement)?.value;
+
+        const isAdmin = (this.perfil?.role || '').toLowerCase() === 'admin';
+
+        this.campanhasFiltros = {
+          origem,
+          tipoVisao,
+          tipoDestino,
+          destinoBusca,
+          periodoMeses: pMeses,
+          valorMinimo,
+          valorMaximo,
+          fornecedor,
+          mesEmbarque,
+          statusOrcamento,
+          classificacaoNps,
+          perfilPassageiro: 'todos',
+          consultorId: isAdmin ? (consultorSelect || 'TODOS') : (this.user?.id || '')
+        };
+
+        this.showToast('Segmentação atualizada com sucesso!', 'success');
+        recarregarPainelCampanha();
+      });
+
+      // Restaurar filtros padrão
+      document.getElementById('btn-campanha-limpar-filtros')?.addEventListener('click', () => {
+        const isAdmin = (this.perfil?.role || '').toLowerCase() === 'admin';
+        this.campanhasFiltros = {
+          origem: 'todos',
+          tipoVisao: 'oportunidade',
+          tipoDestino: 'todos',
+          destinoBusca: '',
+          periodoMeses: 12,
+          valorMinimo: undefined,
+          valorMaximo: undefined,
+          fornecedor: '',
+          mesEmbarque: undefined,
+          statusOrcamento: 'TODOS',
+          classificacaoNps: 'todos',
+          perfilPassageiro: 'todos',
+          consultorId: isAdmin ? 'TODOS' : (this.user?.id || '')
+        };
+        this.showToast('Filtros restaurados para o padrão.', 'success');
+        recarregarPainelCampanha();
+      });
+
+      // Exportar CSV
+      document.getElementById('btn-campanha-exportar-csv')?.addEventListener('click', () => {
+        this.exportToCSV();
+      });
+
+      // Copiar contatos em lote
+      document.getElementById('btn-campanha-copiar-lote')?.addEventListener('click', async () => {
+        const usuarioLogado = {
+          id: this.user?.id || '',
+          nome: this.perfil?.nome || this.user?.email || 'Usuário',
+          role: this.perfil?.role || 'consultor'
+        };
+        const todosItens = CampanhasService.normalizarDados(this.viagens, this.orcamentos, this.feedbacksNps);
+        let itensFiltrados = CampanhasService.filtrarItens(todosItens, this.campanhasFiltros, usuarioLogado);
+        if (this.campanhasFiltros.tipoVisao === 'cliente_unico') {
+          itensFiltrados = CampanhasService.agruparPorCliente(itensFiltrados);
+        }
+
+        const textoLote = CampanhasService.formatarListaContatosLote(itensFiltrados);
+        if (!textoLote) {
+          this.showToast('Nenhum telefone encontrado para copiar.', 'error');
+          return;
+        }
+
+        try {
+          await navigator.clipboard.writeText(textoLote);
+          this.showToast('Lista de contatos copiada para a área de transferência!', 'success');
+        } catch {
+          this.showToast('Falha ao acessar área de transferência.', 'error');
+        }
+      });
+
+      // Salvar Preset de Campanha
+      document.getElementById('btn-campanha-salvar-preset')?.addEventListener('click', async () => {
+        const nome = await showCustomPrompt(
+          'Dê um nome para este modelo de filtros (ex: "Campanha Cuba & Caribe 2026"):',
+          'Salvar Modelo de Campanha',
+          '',
+          'Nome do modelo...'
+        );
+
+        if (!nome || !nome.trim()) return;
+
+        const usuario = {
+          id: this.user?.id || '',
+          nome: this.perfil?.nome || this.user?.email || 'Gestor'
+        };
+
+        const res = await CampanhasService.salvarPreset(nome, this.campanhasFiltros, usuario);
+        if (res.sucesso && res.preset) {
+          this.campanhasPresets.unshift(res.preset);
+          this.showToast(res.aviso || 'Modelo de campanha salvo com sucesso!', 'success');
+          recarregarPainelCampanha();
+        } else {
+          this.showToast(res.aviso || 'Erro ao salvar modelo de campanha.', 'error');
+        }
+      });
+
+      // Carregar Preset
+      document.querySelectorAll('.btn-carregar-preset').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const presetId = btn.getAttribute('data-preset-id');
+          const preset = this.campanhasPresets.find(p => p.id === presetId);
+          if (preset) {
+            this.campanhasFiltros = { ...preset.filtros };
+            this.showToast(`Modelo "${preset.nome}" carregado com sucesso!`, 'success');
+            recarregarPainelCampanha();
+          }
+        });
+      });
+
+      // Excluir Preset
+      document.querySelectorAll('.btn-excluir-preset').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const presetId = btn.getAttribute('data-preset-id');
+          if (!presetId) return;
+
+          const sucesso = await CampanhasService.excluirPreset(presetId);
+          if (sucesso) {
+            this.campanhasPresets = this.campanhasPresets.filter(p => p.id !== presetId);
+            this.showToast('Modelo de campanha excluído.', 'success');
+            recarregarPainelCampanha();
+          } else {
+            this.showToast('Erro ao excluir modelo de campanha.', 'error');
+          }
+        });
+      });
+    }
   }
 
   private showToast(message: string, type: 'success' | 'error' = 'success', err?: any): void {
@@ -3931,6 +4543,18 @@ export class RelatoriosPage {
       ranking.forEach((c, index) => {
         csvContent += `${index + 1};"${c.nome}";${c.nivel};"${c.prog.patente}";${c.xp};${c.badgesCount}\n`;
       });
+    } else if (this.activeTab === 'segmentacao_campanhas') {
+      const usuarioLogado = {
+        id: this.user?.id || '',
+        nome: this.perfil?.nome || this.user?.email || 'Usuário',
+        role: this.perfil?.role || 'consultor'
+      };
+      const todosItens = CampanhasService.normalizarDados(data.viagens || [], data.orcamentos || [], this.feedbacksNps || []);
+      let itensFiltrados = CampanhasService.filtrarItens(todosItens, this.campanhasFiltros, usuarioLogado);
+      if (this.campanhasFiltros.tipoVisao === 'cliente_unico') {
+        itensFiltrados = CampanhasService.agruparPorCliente(itensFiltrados);
+      }
+      csvContent += CampanhasService.gerarCsv(itensFiltrados);
     }
 
     // Trigger file download

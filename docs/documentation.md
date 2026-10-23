@@ -57,6 +57,7 @@
    - 3.45 [Redesign e Organização em 5 Abas do Gerenciador de Viagens](#345-redesign-e-organização-em-5-abas-do-gerenciador-de-viagens)
    - 3.46 [Ergonomia Visual, Barras de Rolagem de Alto Contraste & Indicador de Transbordo (Scroll Fade)](#346-ergonomia-visual-barras-de-rolagem-de-alto-contraste--indicador-de-transbordo-scroll-fade)
    - 3.47 [Rateio Integral de Parcerias e RAV no Módulo de Relatórios e Dashboard Comercial](#347-rateio-integral-de-parcerias-e-rav-no-módulo-de-relatórios-e-dashboard-comercial)
+   - 3.48 [Módulo de Campanhas & Segmentação Comercial de Base](#348-módulo-de-campanhas--segmentação-comercial-de-base)
 4. [Diferenciais Competitivos](#4-diferenciais-competitivos)
 5. [Arquitetura Tecnológica](#5-arquitetura-tecnológica)
 6. [Segurança e Conformidade](#6-segurança-e-conformidade)
@@ -1280,6 +1281,35 @@ Expansão das regras de governança e cálculo proporcional de vendas divididas 
 
 4. **Metas de Vendas e Campanhas Fracionadas**:
    - No Dashboard Comercial, as metas brutas e líquidas utilizam as fatias ponderadas por consultor, permitindo que vendas em parceria contribuam com frações exatas para o atingimento das metas individuais.
+
+### 3.48 Módulo de Campanhas & Segmentação Comercial de Base
+
+Ferramenta de inteligência relacional e prospecção ativa posicionada na aba `🚀 Campanhas & Segmentação` do módulo de Relatórios (`Relatorios.ts` e `campanhasService.ts`):
+
+1. **Matriz de Filtros Estratégicos Combinados**:
+   - **Origem da Base**: Permite alternar entre *Ambos Unificados* (Viagens Confirmadas + Orçamentos/Leads), *Apenas Viagens Confirmadas* ou *Apenas Orçamentos*.
+   - **Destino e Internacionalidade**: Filtro por Tipo de Destino (Nacional vs Internacional via `classificarTipoDestino`) e multi-busca flexível por termos separados por vírgula (ex: "Cuba, Cancun, Miami").
+   - **Janela de Tempo**: Seleção de janelas dinâmicas dos últimos 3, 6, 12, 24 meses ou histórico completo.
+   - **Faixa Financeira**: Parâmetros de corte para valor mínimo (R$ acima de X) e máximo (R$ abaixo de Y).
+   - **Fornecedores & Cias Aéreas**: Busca por fornecedores cadastrados nos produtos das viagens (ex: LATAM, Azul, CVC, Coris, etc.).
+   - **Sazonalidade de Embarque**: Filtro por mês de ida/embarque (1 a 12), ideal para campanhas sazonais de férias e réveillon.
+   - **Status do Orçamento**: Segmentação de leads por etapa (Aberto, Em Andamento, Aguardando ou Desistência).
+   - **Termômetro NPS**: Filtragem cirúrgica por Promotores (notas 9-10), Neutros (7-8) ou Detratores (0-6).
+
+2. **Alternador de Modos de Visão (Oportunidade vs Cliente Único)**:
+   - **Visão por Oportunidade**: Cada orçamento ou viagem é exibido individualmente na tabela, detalhando o histórico específico do atendimento.
+   - **Visão por Cliente Único (`agruparPorCliente`)**: Deduplica a base por cliente (identificado por ID, telefone ou nome limpo), consolidando o somatório do ticket financeiro de todas as viagens e orçamentos, indicando o total de interações e unindo os destinos navegados pelo passageiro.
+
+3. **Controle de Acesso Baseado em Papéis (RBAC)**:
+   - **Administradores**: Acesso global irrestrito a todos os consultores, com botões para **Exportar CSV**, **Copiar Contatos em Lote** (nome, telefone formatado e destino) e **Salvar/Carregar Modelos de Presets**.
+   - **Consultores**: Filtro travado permanentemente em sua própria carteira (`consultorId = usuario.id`). Os botões de exportação e cópia em lote são omitidos para proteger a base de leads da agência, mantendo liberado o botão individual do Digisac.
+
+4. **Integração Operacional com Digisac**:
+   - Cada linha da tabela possui o botão dedicado `💬 Digisac` (`btn-chat-digisac`), abrindo o modal `SendTemplateMessageModal` com foco imediato no histórico de conversas do cliente, mantendo o consultor original registrado.
+
+5. **Persistência de Presets & Resiliência a Schema Drift (Zero-Break)**:
+   - Presets salvos pela gestão são gravados na tabela `campanhas_presets` no Supabase com identificador de autoria e payload JSONB de filtros.
+   - Tratamento automático para erros `42P01` (tabela inexistente) ou `42703` (coluna inexistente), ativando modo virtual na sessão sem interromper o trabalho da agência.
 
 ---
 
