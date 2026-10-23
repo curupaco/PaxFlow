@@ -2479,74 +2479,44 @@ export class RelatoriosPage {
         `;
       }
 
-      // Validação do Gestor (Exclusiva para Administradores)
-      let validacaoGestorHtml = '';
-      if (isAdmin) {
-        if (item.validadoGestor) {
-          const dHoraGestor = item.validadoGestorEm 
-            ? new Date(item.validadoGestorEm).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
-            : '';
-          const quemGestor = item.gestorNome || 'Gestor';
-          const tooltipGestor = `Conferido e validado por ${quemGestor} em ${dHoraGestor}. Clique para desmarcar se necessário.`;
-
-          validacaoGestorHtml = `
-            <td class="p-3 text-center whitespace-nowrap">
-              <button class="btn-toggle-validacao-gestor px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-800/60 rounded-lg text-[10px] font-black uppercase tracking-wider transition flex items-center gap-1 mx-auto shadow-xs" 
-                data-trip-id="${item.tripId}" 
-                data-trecho-key="${item.trechoKey}" 
-                title="${tooltipGestor}">
-                <svg class="w-3 h-3 text-emerald-600 dark:text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" />
-                </svg>
-                <span>Conferido</span>
-              </button>
-            </td>
-          `;
-        } else {
-          validacaoGestorHtml = `
-            <td class="p-3 text-center whitespace-nowrap">
-              <button class="btn-toggle-validacao-gestor px-2.5 py-1 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/30 dark:hover:bg-amber-900/40 text-amber-700 dark:text-amber-400 border border-amber-200/80 dark:border-amber-800/60 rounded-lg text-[10px] font-black uppercase tracking-wider transition flex items-center gap-1 mx-auto shadow-xs" 
-                data-trip-id="${item.tripId}" 
-                data-trecho-key="${item.trechoKey}" 
-                title="Conferência do gestor pendente. Clique para marcar como conferido.">
-                <svg class="w-3 h-3 text-amber-600 dark:text-amber-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span>Pendente</span>
-              </button>
-            </td>
-          `;
-        }
-      }
+      const detalhesBtn = `
+        <button class="btn-detalhes-viagem w-7 h-7 shrink-0 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 border border-indigo-200/80 dark:border-indigo-800/60 rounded-lg transition flex items-center justify-center shadow-xs cursor-pointer" data-trip-id="${item.tripId}" title="Ver detalhes da venda">
+          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+        </button>
+      `;
 
       const orcamentoBtn = item.orcamentoId ? `
-        <button class="btn-ir-orcamento shrink-0 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-[10px] font-black rounded-lg transition uppercase tracking-wider flex items-center gap-1" data-orcamento-id="${item.orcamentoId}" title="Ir direto para o Orçamento">
-          📄 Orçamento
+        <button class="btn-ir-orcamento w-7 h-7 shrink-0 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700/80 rounded-lg transition flex items-center justify-center shadow-xs cursor-pointer" data-orcamento-id="${item.orcamentoId}" title="Ir direto para o Orçamento">
+          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+          </svg>
         </button>
       ` : '';
 
       const whatsAppBtn = `
-        <button class="btn-chat-digisac shrink-0 px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-800/60 text-[10px] font-black rounded-lg transition uppercase tracking-wider flex items-center gap-1" data-cliente-nome="${item.cliente}" data-cliente-telefone="${item.clienteTelefone}" data-consultor-nome="${item.consultor}" data-trip-id="${item.tripId}" data-destino="${item.destino}" data-loc="${item.loc}" title="Abrir conversa no Digisac">
-          💬 WhatsApp
+        <button class="btn-chat-digisac w-7 h-7 shrink-0 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-800/60 rounded-lg transition flex items-center justify-center shadow-xs cursor-pointer" data-cliente-nome="${item.cliente}" data-cliente-telefone="${item.clienteTelefone}" data-consultor-nome="${item.consultor}" data-trip-id="${item.tripId}" data-destino="${item.destino}" data-loc="${item.loc}" title="Abrir conversa no Digisac (${item.cliente})">
+          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a.75.75 0 01-.84-.84c.148-.795.34-1.57.574-2.316C3.96 16.335 3 14.28 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
+          </svg>
         </button>
       `;
 
       return `
         <tr class="group border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50/40 dark:hover:bg-slate-800/20 text-slate-600 dark:text-slate-300 transition-colors">
-          <td class="p-3 font-extrabold text-slate-800 dark:text-slate-100 whitespace-nowrap">${formatarDataBr(item.data)}</td>
-          <td class="p-3 font-extrabold text-slate-800 dark:text-slate-100 whitespace-nowrap">${item.cliente}</td>
-          <td class="p-3 whitespace-nowrap">${item.tipo}</td>
-          <td class="p-3 font-bold text-indigo-600 dark:text-indigo-400 whitespace-nowrap">${item.destino}</td>
-          <td class="p-3 font-mono font-bold text-[10px] tracking-wider uppercase whitespace-nowrap">${item.loc}</td>
-          <td class="p-3 font-semibold whitespace-nowrap">${item.consultor}</td>
-          <td class="p-3 text-center whitespace-nowrap">${alertBadge}</td>
-          <td class="p-3 text-center whitespace-nowrap">${contatoBadge}</td>
-          ${validacaoGestorHtml}
-          <td class="p-3 text-center sticky right-0 bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-800/80 z-10 shadow-[-6px_0_10px_-2px_rgba(0,0,0,0.06)] dark:shadow-[-6px_0_10px_-2px_rgba(0,0,0,0.4)] whitespace-nowrap min-w-[220px]">
-            <div class="flex items-center justify-center gap-1.5 whitespace-nowrap">
-              <button class="btn-detalhes-viagem shrink-0 px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/30 dark:hover:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 text-[10px] font-black rounded-lg transition uppercase tracking-wider flex items-center gap-1" data-trip-id="${item.tripId}" title="Ver detalhes da venda">
-                🔍 Detalhes
-              </button>
+          <td class="p-2.5 font-extrabold text-slate-800 dark:text-slate-100 whitespace-nowrap w-24">${formatarDataBr(item.data)}</td>
+          <td class="p-2.5 font-extrabold text-slate-800 dark:text-slate-100 max-w-[150px] truncate" title="${item.cliente}">${item.cliente}</td>
+          <td class="p-2.5 whitespace-nowrap text-[11px] text-slate-500 w-20">${item.tipo}</td>
+          <td class="p-2.5 font-bold text-indigo-600 dark:text-indigo-400 max-w-[180px] truncate" title="${item.destino}">${item.destino}</td>
+          <td class="p-2.5 font-mono font-bold text-[10px] tracking-wider uppercase whitespace-nowrap w-24">${item.loc}</td>
+          <td class="p-2.5 font-semibold text-slate-700 dark:text-slate-200 max-w-[130px] truncate" title="${item.consultor}">${item.consultor}</td>
+          <td class="p-2.5 text-center whitespace-nowrap w-20">${alertBadge}</td>
+          <td class="p-2.5 text-center whitespace-nowrap w-24">${contatoBadge}</td>
+          <td class="p-2.5 text-center whitespace-nowrap w-28">
+            <div class="flex items-center justify-center gap-1">
+              ${detalhesBtn}
               ${orcamentoBtn}
               ${whatsAppBtn}
             </div>
@@ -2555,7 +2525,7 @@ export class RelatoriosPage {
       `;
     }).join('');
 
-    const colunasTotais = isAdmin ? 10 : 9;
+    const colunasTotais = 9;
 
     return `
       <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-3xl p-6 shadow-sm flex flex-col gap-6 print-full-width">
@@ -2564,7 +2534,7 @@ export class RelatoriosPage {
             <h2 class="text-lg font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
               <span>✈️ Relatório de Embarque e Trechos de Voo</span>
             </h2>
-            <p class="text-xs text-slate-400 font-semibold mt-0.5">Controle preventivo, auditoria de contatos pré-embarque e conferência de gestão.</p>
+            <p class="text-xs text-slate-400 font-semibold mt-0.5">Controle preventivo e auditoria de contatos pré-embarque.</p>
           </div>
           <div class="flex items-center gap-3 flex-wrap">
             <div class="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/70 border border-slate-200/80 dark:border-slate-700 px-3 py-1.5 rounded-xl">
@@ -2581,19 +2551,18 @@ export class RelatoriosPage {
 
         <!-- Embarques Table -->
         <div class="overflow-x-auto custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl relative">
-          <table class="w-full text-left border-collapse text-xs font-semibold min-w-[1100px]">
+          <table class="w-full text-left border-collapse text-xs font-semibold">
             <thead>
               <tr class="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-widest font-black">
-                <th class="p-3 whitespace-nowrap">Data</th>
-                <th class="p-3 whitespace-nowrap">Passageiro</th>
-                <th class="p-3 whitespace-nowrap">Tipo</th>
-                <th class="p-3 whitespace-nowrap">Destino/Trecho</th>
-                <th class="p-3 whitespace-nowrap">Código (LOC)</th>
-                <th class="p-3 whitespace-nowrap">Consultor</th>
-                <th class="p-3 text-center whitespace-nowrap">Alerta</th>
-                <th class="p-3 text-center whitespace-nowrap">Contato</th>
-                ${isAdmin ? '<th class="p-3 text-center whitespace-nowrap">Validação Gestor</th>' : ''}
-                <th class="p-3 text-center sticky right-0 bg-slate-50 dark:bg-slate-950 z-20 shadow-[-6px_0_10px_-2px_rgba(0,0,0,0.06)] dark:shadow-[-6px_0_10px_-2px_rgba(0,0,0,0.4)] whitespace-nowrap min-w-[220px]">Ações</th>
+                <th class="p-2.5 whitespace-nowrap w-24">Data</th>
+                <th class="p-2.5">Passageiro</th>
+                <th class="p-2.5 whitespace-nowrap w-20">Tipo</th>
+                <th class="p-2.5">Destino/Trecho</th>
+                <th class="p-2.5 whitespace-nowrap w-24">Código (LOC)</th>
+                <th class="p-2.5">Consultor</th>
+                <th class="p-2.5 text-center whitespace-nowrap w-20">Alerta</th>
+                <th class="p-2.5 text-center whitespace-nowrap w-24">Contato</th>
+                <th class="p-2.5 text-center whitespace-nowrap w-28">Ações</th>
               </tr>
             </thead>
             <tbody>
@@ -4800,12 +4769,7 @@ export class RelatoriosPage {
         }
       });
     } else if (this.activeTab === 'embarques') {
-      const userRole = this.perfil?.role || this.consultores.find(c => c.id === this.user?.id)?.role || this.user?.user_metadata?.role || '';
-      const isAdmin = String(userRole).trim().toLowerCase() === 'admin';
-
-      csvContent += isAdmin
-        ? 'Data de Embarque;Cliente/Passageiro;Destino/Trecho;Tipo;Código (LOC);Consultor;Tem Alerta;Contato Pré-Embarque;Validação Gestor\n'
-        : 'Data de Embarque;Cliente/Passageiro;Destino/Trecho;Tipo;Código (LOC);Consultor;Tem Alerta;Contato Pré-Embarque\n';
+      csvContent += 'Data de Embarque;Cliente/Passageiro;Destino/Trecho;Tipo;Código (LOC);Consultor;Tem Alerta;Contato Pré-Embarque\n';
       const start = this.dataInicio;
       const end = this.dataFim;
       
@@ -4821,9 +4785,6 @@ export class RelatoriosPage {
             const hasAlert = this.lembretes.some((l: any) => l.viagem_id === v.id && l.data_lembrete === emb.dataStr);
             const contatoRegistro = contatosViagem[emb.chave];
             const contatoFeito = Boolean(contatoRegistro?.feito);
-            const validadoGestor = Boolean(contatoRegistro?.validado_gestor);
-            const gestorNome = contatoRegistro?.gestor_nome || '';
-            const statusGestor = validadoGestor ? (gestorNome ? `Conferido (${gestorNome})` : 'Conferido') : 'Pendente';
 
             list.push({
               data: emb.dataStr,
@@ -4833,8 +4794,7 @@ export class RelatoriosPage {
               loc: emb.loc,
               consultor: consultorName,
               hasAlert,
-              contatoFeito,
-              statusGestor
+              contatoFeito
             });
           }
         });
@@ -4844,11 +4804,7 @@ export class RelatoriosPage {
 
       list.forEach((item: any) => {
         const dateFormatted = item.data.split('-').reverse().join('/');
-        if (isAdmin) {
-          csvContent += `"${dateFormatted}";"${item.cliente}";"${item.destino}";"${item.tipo}";"${item.loc}";"${item.consultor}";"${item.hasAlert ? 'Sim' : 'Não'}";"${item.contatoFeito ? 'Feito' : 'Pendente'}";"${item.statusGestor}"\n`;
-        } else {
-          csvContent += `"${dateFormatted}";"${item.cliente}";"${item.destino}";"${item.tipo}";"${item.loc}";"${item.consultor}";"${item.hasAlert ? 'Sim' : 'Não'}";"${item.contatoFeito ? 'Feito' : 'Pendente'}"\n`;
-        }
+        csvContent += `"${dateFormatted}";"${item.cliente}";"${item.destino}";"${item.tipo}";"${item.loc}";"${item.consultor}";"${item.hasAlert ? 'Sim' : 'Não'}";"${item.contatoFeito ? 'Feito' : 'Pendente'}"\n`;
       });
     } else if (this.activeTab === 'gamificacao') {
       csvContent += 'Posição;Consultor;Nível;Patente;XP Total;Conquistas\n';

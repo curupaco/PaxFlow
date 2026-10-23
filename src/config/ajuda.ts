@@ -933,11 +933,11 @@ export const HELP_ITEMS: HelpItem[] = [
     details: 'Nos cards de desistência do Kanban, no Modal de Detalhes e na tabela de Relatórios:\n\n- **Exclusividade Admin**: Apenas usuários com perfil de Administrador podem marcar e desmarcar a confirmação *"Falamos c/ Cliente"*.\n- **Transparência Operacional**: Usuários consultores visualizam o status da verificação (`✅ Sim` ou `⏳ Pendente`) de forma transparente.\n- **Rastreabilidade**: Ao passar o cursor sobre a verificação, o sistema exibe quando e quem realizou a conferência do contato.'
   },
   {
-    id: 'relatorio-embarques-validacao-gestor',
+    id: 'relatorio-embarques-ergonomia-acoes',
     modulo: 'clientes',
-    label: '✈️ Embarques: Validação do Gestor & Coluna de Ações',
-    description: 'Governança de conferência de embarques restrita a administradores e fixação lateral da coluna de Ações.',
-    details: 'Na aba **Embarques e Trechos** do módulo de Relatórios:\n\n- **Validação de Gestor (Exclusiva para Administradores)**: Exibe a coluna de validação estritamente para usuários com perfil de Administrador (`role === \'admin\'`), sendo omitida para consultores comuns. Permite ao gestor auditar em 1-clique (`🛡️ Conferido` ou `⏳ Pendente`), com registro de autor, data/hora e tooltip de auditoria.\n- **Coluna Final AÇÕES (Fixação Lateral Sticky)**: Posicionada de forma fixa à direita da tabela com sombra de profundidade (`sticky right-0`), garantindo que os botões fiquem 100% visíveis em qualquer monitor sem sumir por rolagem horizontal:\n  - **Botão 🔍 Detalhes**: Abre o modal com os detalhes completos da venda/viagem diretamente por cima do relatório.\n  - **Botão 📄 Orçamento**: Direciona diretamente para a proposta comercial de origem vinculada ao cliente/viagem.\n  - **Botão 💬 WhatsApp**: Abre a tela de conversa no Digisac com o passageiro titular.'
+    label: '✈️ Embarques: Layout Fluido & Ações Rápidas Compactas',
+    description: 'Tabela otimizada sem rolagem horizontal com botões de ação ultra-compactos e controle preventivo de contatos.',
+    details: 'Na aba **Embarques e Trechos de Voo** do módulo de Relatórios:\n\n- **Layout Fluido sem Rolagem Horizontal**: A tabela foi projetada para ocupar naturalmente a largura útil da tela sem barras de rolagem lateral em monitores convencionais.\n- **Controle de Contato Pré-Embarque**: Permite ao consultor ou atendente alternar em 1-clique o status entre `⏳ Pendente` e `✅ Feito`, com tooltip registrando o autor e data/hora do contato.\n- **Coluna de AÇÕES Compacta**: Botões quadrados enxutos com micro-tooltips para máxima produtividade:\n  - **Ícone 🔍 Detalhes**: Abre o modal com os dados completos da venda diretamente por cima do relatório.\n  - **Ícone 📄 Orçamento**: Direciona diretamente para a proposta comercial de origem vinculada ao cliente.\n  - **Ícone 💬 WhatsApp**: Abre a tela de conversa no Digisac com o passageiro titular.'
   },
   {
     id: 'lembretes-descricao-detalhada',

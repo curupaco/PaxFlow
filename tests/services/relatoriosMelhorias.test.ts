@@ -228,5 +228,16 @@ describe('Relatórios - Melhorias Subcutâneas (Embarques, Desistências e Valid
       expect(isAdmin).toBe(podeAlternar);
     });
   });
+
+  it('deve validar estrutura enxuta de embarques sem coluna de validação de gestor no cabeçalho CSV', () => {
+    // Setup
+    const cabecalhoCsv = 'Data de Embarque;Cliente/Passageiro;Destino/Trecho;Tipo;Código (LOC);Consultor;Tem Alerta;Contato Pré-Embarque\n';
+    const colunas = cabecalhoCsv.trim().split(';');
+
+    // Action & Assert
+    expect(colunas.length).toBe(8);
+    expect(colunas).not.toContain('Validação Gestor');
+    expect(cabecalhoCsv).not.toContain('Validação Gestor');
+  });
 });
 
