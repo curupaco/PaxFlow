@@ -561,20 +561,20 @@ export class RelatoriosPage {
         </div>
 
         <!-- Global Filters Bar (sticky/sticky-top) -->
-        <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-4 shadow-sm flex flex-col md:flex-row items-end md:items-center gap-4 global-filters-bar no-print">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-4 shadow-sm flex flex-col md:flex-row items-end gap-4 global-filters-bar no-print">
           
-          <div class="grid grid-cols-1 sm:grid-cols-2 md:flex items-center gap-4 flex-grow w-full md:w-auto">
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:flex items-end gap-4 flex-grow w-full md:w-auto">
             <!-- Date range start -->
             <div class="space-y-1 flex-1">
               <label class="block text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest">Data Início</label>
-              <input id="filter-data-inicio" type="text" data-mask="date" inputmode="numeric" maxlength="10" placeholder="DD/MM/AAAA" value="${this.dataInicio ? (this.dataInicio.includes('-') ? formatIsoDateToBr(this.dataInicio) : this.dataInicio) : ''}" class="date-input w-full text-xs font-bold px-3 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition duration-155" />
+              <input id="filter-data-inicio" type="text" data-mask="date" inputmode="numeric" maxlength="10" placeholder="DD/MM/AAAA" value="${this.dataInicio ? (this.dataInicio.includes('-') ? formatIsoDateToBr(this.dataInicio) : this.dataInicio) : ''}" class="date-input w-full text-xs font-bold px-3 py-2.5 h-[42px] border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold transition duration-155" />
               <p id="filter-data-inicio-error" class="hidden text-xs text-rose-500 font-bold mt-1.5"></p>
             </div>
 
             <!-- Date range end -->
             <div class="space-y-1 flex-1">
               <label class="block text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest">Data Fim</label>
-              <input id="filter-data-fim" type="text" data-mask="date" inputmode="numeric" maxlength="10" placeholder="DD/MM/AAAA" value="${this.dataFim ? (this.dataFim.includes('-') ? formatIsoDateToBr(this.dataFim) : this.dataFim) : ''}" class="date-input w-full text-xs font-bold px-3 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition duration-155" />
+              <input id="filter-data-fim" type="text" data-mask="date" inputmode="numeric" maxlength="10" placeholder="DD/MM/AAAA" value="${this.dataFim ? (this.dataFim.includes('-') ? formatIsoDateToBr(this.dataFim) : this.dataFim) : ''}" class="date-input w-full text-xs font-bold px-3 py-2.5 h-[42px] border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold transition duration-155" />
               <p id="filter-data-fim-error" class="hidden text-xs text-rose-500 font-bold mt-1.5"></p>
             </div>
 
@@ -582,7 +582,7 @@ export class RelatoriosPage {
             ${isAdmin ? `
               <div class="space-y-1 flex-1">
                 <label class="block text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest">Consultor / Equipe</label>
-                <select id="filter-consultores" class="w-full text-xs font-bold px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold text-sm transition duration-155">
+                <select id="filter-consultores" class="w-full text-xs font-bold px-3.5 py-2.5 h-[42px] border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-semibold transition duration-155">
                   <option value="todos" ${this.consultorIdFilter === 'todos' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Consolidado (Todos os Consultores)</option>
                   ${this.consultores.map(c => `<option value="${c.id}" ${this.consultorIdFilter === c.id ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">${c.nome}</option>`).join('')}
                 </select>
@@ -599,10 +599,10 @@ export class RelatoriosPage {
           </div>
           
           <div class="flex items-center gap-2 flex-shrink-0">
-            <button id="btn-limpar-filtros" class="px-4 py-2.5 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 text-xs font-black rounded-xl transition flex-shrink-0">
+            <button id="btn-limpar-filtros" class="px-4 h-[42px] border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-black rounded-xl transition flex items-center justify-center shadow-xs flex-shrink-0">
               Limpar
             </button>
-            <button id="btn-aplicar-filtros" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black rounded-xl transition shadow-md shadow-indigo-600/10 flex items-center justify-center gap-1.5 flex-shrink-0">
+            <button id="btn-aplicar-filtros" class="px-5 h-[42px] bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black rounded-xl transition shadow-md shadow-indigo-600/15 flex items-center justify-center gap-1.5 flex-shrink-0 cursor-pointer">
               🔍 Aplicar
             </button>
           </div>
@@ -2672,9 +2672,9 @@ export class RelatoriosPage {
           </div>
         </div>
 
-        <!-- Embarques Table -->
-        <div class="border border-slate-100 dark:border-slate-800 rounded-2xl relative overflow-hidden">
-          <table class="w-full text-left border-collapse text-xs font-semibold">
+        <!-- Embarques Table com rolagem defensiva para telas pequenas sem corte de dados -->
+        <div class="overflow-x-auto scroll-indicator-fade custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl relative">
+          <table class="w-full text-left border-collapse text-xs font-semibold min-w-[760px]">
             <thead>
               <tr class="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-widest font-black">
                 <th class="p-2.5 whitespace-nowrap w-24">Data</th>
@@ -3866,6 +3866,8 @@ export class RelatoriosPage {
         const tab = btn.getAttribute('data-tab') as any;
         if (tab) {
           this.activeTab = tab;
+          // Ao selecionar um relatório, colapsa automaticamente o menu lateral para maximizar a área de dados
+          this.menuLateralRecolhido = true;
           this.render();
           this.setupEventListeners();
         }
