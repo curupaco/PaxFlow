@@ -146,14 +146,28 @@ Para garantir estabilidade, zero tempo de indisponibilidade e economia de tokens
 
 ---
 
-### Fase 2: Decomposição do Dashboard Operacional (`Dashboard.ts` — 4.703 linhas)
-- **Objetivo:** Extrair painéis de controle, kanban de viagens e filtros avançados do Dashboard.
-- **Escopo de Decomposição:**
-  - Extrair o painel de filtros superiores para `src/components/dashboard/DashboardFilterBar.ts`.
-  - Isolar a tabela operacional de viagens e kanban em `src/components/dashboard/ViagensTable.ts` e `ViagensKanban.ts`.
-  - Desacoplar totalmente a injeção do `EditTravelModal.ts` e `RiskDiagnosisDrawer.ts`.
-- **Meta:** Reduzir `Dashboard.ts` para **< 600 linhas**.
-- **Risco de Regressão:** Médio (coberto por `dashboardController.test.ts`, `dashboard_filtros_avancados.test.ts` e `viagensController.test.ts`).
+### Fase 2: Decomposição do Dashboard Operacional (`Dashboard.ts` — 4.704 linhas)
+- **Objetivo:** Fracionar o coração operacional do sistema em componentes especialistas coesos e orquestrador enxuto, preservando 100% da reatividade, drag & drop, SLAs e atalhos.
+- **Rede de Segurança Prévia Implementada (Passo 1):** ✅
+  - Criada suíte subcutânea em `tests/subcutaneous/dashboard_regras_criticas.test.ts` (12 testes novos, 100% verdes).
+  - Cobertura de regras críticas congelada: transições de status com sincronização de produtos, bloqueio de cancelamento com pendências financeiras, SLAs temporais de pré-embarque e pós-viagem, e apuração proporcional de comissões/splits.
+- **Estratégia de Execução em 4 Subpacotes Cirúrgicos (Risco Blindado / Mínimo):**
+  - **Pacote 2.1: Barra de Filtros, Resumo Financeiro & Chips (`DashboardFilterBar.ts`)** ⏳ **PRÓXIMO PASSO**
+    - Extrair a barra de filtros superiores (`h-[42px]`), busca global, atalhos de status, seletor de consultor/equipe, chips de filtros ativos e faixa de resumo financeiro consolidado do topo.
+    - Componente: `src/components/dashboard/DashboardFilterBar.ts`.
+    - Meta: Reduzir ~1.000 linhas de `Dashboard.ts`.
+  - **Pacote 2.2: Tabela Operacional Desktop & Cards Mobile (`ViagensTableView.ts`)**
+    - Extrair a renderização densa da tabela de viagens (cabeçalhos com ordenação, badges de validação financeira/processo, status de pagamento, popover de ações) e visualização responsiva de cards mobile com gestos swipe.
+    - Componente: `src/components/dashboard/ViagensTableView.ts`.
+    - Meta: Reduzir ~1.500 linhas de `Dashboard.ts`.
+  - **Pacote 2.3: Kanban Operacional & Drag-and-Drop (`ViagensKanbanView.ts`)**
+    - Extrair colunas dinâmicas do Kanban, cards arrastáveis, integração com `Sortable.js`, feedback tátil/visual e modal de confirmação de avanço de fase.
+    - Componente: `src/components/dashboard/ViagensKanbanView.ts`.
+    - Meta: Reduzir ~1.200 linhas de `Dashboard.ts`.
+  - **Pacote 2.4: Orquestrador Enxuto do Dashboard (`Dashboard.ts`)**
+    - Injeção de dependências via contrato estrito `DashboardContext`, ciclo de vida limpo, realtime e gerenciamento de atalhos de teclado.
+    - Meta: Reduzir `Dashboard.ts` de **4.704 para < 600 linhas** (-4.100 linhas acumuladas).
+- **Risco de Regressão:** **Mínimo / Blindado** (protegido por 564 testes automatizados em `dashboard_regras_criticas.test.ts`, `dashboard_filtros_avancados.test.ts`, `dashboardController.test.ts` e `viagensController.test.ts`).
 
 ---
 
