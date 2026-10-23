@@ -131,15 +131,15 @@ export class ConciliacaoPage {
 
           <!-- Botões de Ação -->
           <div class="flex flex-wrap items-center gap-2">
-            <button id="btn-exportar-conciliacao" class="px-3.5 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl font-bold text-xs transition flex items-center gap-1.5 border border-slate-200/60 dark:border-slate-700">
+            <button id="btn-exportar-conciliacao" class="h-[42px] px-3.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl font-bold text-xs transition flex items-center gap-1.5 border border-slate-200/60 dark:border-slate-700 cursor-pointer">
               📥 Exportar
             </button>
 
-            <button id="btn-fechar-mes-modal" class="px-3.5 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl font-bold text-xs transition flex items-center gap-1.5 border border-slate-200/60 dark:border-slate-700">
+            <button id="btn-fechar-mes-modal" class="h-[42px] px-3.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl font-bold text-xs transition flex items-center gap-1.5 border border-slate-200/60 dark:border-slate-700 cursor-pointer">
               🔒 Fechar Mês
             </button>
 
-            <button id="btn-abrir-upload-extrato" class="px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl font-black text-xs shadow-lg shadow-emerald-500/20 transition transform active:scale-95 flex items-center gap-1.5">
+            <button id="btn-abrir-upload-extrato" class="h-[42px] px-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl font-black text-xs shadow-md shadow-emerald-500/20 transition transform active:scale-95 flex items-center gap-1.5 cursor-pointer">
               📁 Importar Extrato (OFX/CSV)
             </button>
           </div>
@@ -222,17 +222,17 @@ export class ConciliacaoPage {
           <!-- Barra de Abas e Filtros -->
           <div class="p-4 md:p-6 border-b border-slate-100 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <!-- Abas -->
-            <div class="flex flex-wrap items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-800/80 rounded-2xl w-fit">
-              <button class="tab-conciliacao px-4 py-2 rounded-xl text-xs font-bold transition ${this.activeTab === 'pendentes' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-sm' : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'}" data-tab="pendentes">
+            <div class="h-[42px] flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-800/80 rounded-xl w-fit overflow-x-auto custom-scrollbar">
+              <button class="tab-conciliacao h-full px-3.5 rounded-lg text-xs font-bold transition flex items-center whitespace-nowrap cursor-pointer ${this.activeTab === 'pendentes' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-sm' : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'}" data-tab="pendentes">
                 ⏳ Pendentes no Extrato (${this.resumo.qtdPendenteExtrato})
               </button>
-              <button class="tab-conciliacao px-4 py-2 rounded-xl text-xs font-bold transition ${this.activeTab === 'conciliados' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-sm' : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'}" data-tab="conciliados">
+              <button class="tab-conciliacao h-full px-3.5 rounded-lg text-xs font-bold transition flex items-center whitespace-nowrap cursor-pointer ${this.activeTab === 'conciliados' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-sm' : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'}" data-tab="conciliados">
                 ✅ Conciliados (${this.resumo.qtdConciliado})
               </button>
-              <button class="tab-conciliacao px-4 py-2 rounded-xl text-xs font-bold transition ${this.activeTab === 'sem_banco' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-sm' : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'}" data-tab="sem_banco">
+              <button class="tab-conciliacao h-full px-3.5 rounded-lg text-xs font-bold transition flex items-center whitespace-nowrap cursor-pointer ${this.activeTab === 'sem_banco' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-sm' : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'}" data-tab="sem_banco">
                 📋 LOCs em Aberto (${this.resumo.qtdRecebimentosSemBanco})
               </button>
-              <button class="tab-conciliacao px-4 py-2 rounded-xl text-xs font-bold transition ${this.activeTab === 'fechamentos' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-sm' : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'}" data-tab="fechamentos">
+              <button class="tab-conciliacao h-full px-3.5 rounded-lg text-xs font-bold transition flex items-center whitespace-nowrap cursor-pointer ${this.activeTab === 'fechamentos' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-sm' : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'}" data-tab="fechamentos">
                 🔒 Fechamentos (${this.fechamentos.length})
               </button>
             </div>
@@ -240,15 +240,15 @@ export class ConciliacaoPage {
             <!-- Filtros de Busca e Banco -->
             <div class="flex items-center gap-2">
               ${bancosDisponiveis.length > 1 ? `
-                <select id="select-filtro-banco" class="px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                <select id="select-filtro-banco" class="h-[42px] px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer">
                   <option value="todos">Todos os Bancos</option>
                   ${bancosDisponiveis.map(b => `<option value="${b}" ${this.filtroBanco === b ? 'selected' : ''}>${b}</option>`).join('')}
                 </select>
               ` : ''}
 
               <div class="relative">
-                <input type="text" id="input-busca-conciliacao" value="${this.filtroBusca}" placeholder="Filtrar por texto, valor ou código..." class="pl-8 pr-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 w-48 sm:w-64" />
-                <span class="absolute left-2.5 top-2.5 text-slate-400 text-xs">🔍</span>
+                <input type="text" id="input-busca-conciliacao" value="${this.filtroBusca}" placeholder="Filtrar por texto, valor ou código..." class="h-[42px] pl-8 pr-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 w-48 sm:w-64" />
+                <span class="absolute left-2.5 top-3.5 text-slate-400 text-xs">🔍</span>
               </div>
             </div>
           </div>
@@ -360,8 +360,8 @@ export class ConciliacaoPage {
       }
 
       return `
-        <table class="w-full text-left text-xs border-collapse">
-          <thead class="bg-slate-50 dark:bg-slate-800/80 text-[10px] uppercase font-black tracking-wider text-slate-400 border-b border-slate-200 dark:border-slate-800">
+        <table class="w-full text-left text-xs border-collapse min-w-[760px]">
+          <thead class="bg-slate-50 dark:bg-slate-950 text-[9px] uppercase font-black tracking-widest text-slate-400 border-b border-slate-100 dark:border-slate-800">
             <tr>
               <th class="p-4">Data / Banco</th>
               <th class="p-4">Descrição do Extrato</th>
@@ -431,8 +431,8 @@ export class ConciliacaoPage {
       }
 
       return `
-        <table class="w-full text-left text-xs border-collapse">
-          <thead class="bg-slate-50 dark:bg-slate-800/80 text-[10px] uppercase font-black tracking-wider text-slate-400 border-b border-slate-200 dark:border-slate-800">
+        <table class="w-full text-left text-xs border-collapse min-w-[760px]">
+          <thead class="bg-slate-50 dark:bg-slate-950 text-[9px] uppercase font-black tracking-widest text-slate-400 border-b border-slate-100 dark:border-slate-800">
             <tr>
               <th class="p-4">Data / Banco</th>
               <th class="p-4">Descrição do Lançamento</th>
@@ -502,8 +502,8 @@ export class ConciliacaoPage {
       }
 
       return `
-        <table class="w-full text-left text-xs border-collapse">
-          <thead class="bg-slate-50 dark:bg-slate-800/80 text-[10px] uppercase font-black tracking-wider text-slate-400 border-b border-slate-200 dark:border-slate-800">
+        <table class="w-full text-left text-xs border-collapse min-w-[760px]">
+          <thead class="bg-slate-50 dark:bg-slate-950 text-[9px] uppercase font-black tracking-widest text-slate-400 border-b border-slate-100 dark:border-slate-800">
             <tr>
               <th class="p-4">Vencimento / LOC</th>
               <th class="p-4">Cliente / Titular</th>
@@ -549,8 +549,8 @@ export class ConciliacaoPage {
       }
 
       return `
-        <table class="w-full text-left text-xs border-collapse">
-          <thead class="bg-slate-50 dark:bg-slate-800/80 text-[10px] uppercase font-black tracking-wider text-slate-400 border-b border-slate-200 dark:border-slate-800">
+        <table class="w-full text-left text-xs border-collapse min-w-[760px]">
+          <thead class="bg-slate-50 dark:bg-slate-950 text-[9px] uppercase font-black tracking-widest text-slate-400 border-b border-slate-100 dark:border-slate-800">
             <tr>
               <th class="p-4">Competência</th>
               <th class="p-4">Data do Fechamento</th>

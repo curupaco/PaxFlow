@@ -56,3 +56,18 @@ Sempre que fizermos novas features ou alterações relevantes na usabilidade, re
 2. **README (`README.md`)**: Atualizar a descrição de recursos e módulos do sistema com as novidades implementadas.
 3. **Módulo de Ajuda (`src/config/ajuda.ts`)**: Atualizar ou incluir os tópicos e instruções operacionais da central de ajuda interna do sistema.
 4. **Documentação Oficial (`docs/documentation.md`)**: Atualizar detalhadamente a arquitetura, regras de negócio, fluxos e especificações das telas modificadas.
+
+---
+
+## 🎨 PROTOCOLO MANDATÓRIO DE DESIGN TOKENS PAXFLOW (POLIMENTO & PADRÃO VISUAL)
+
+Em todas as interfaces, telas, tabelas e controles novos ou alterados, o assistente DEVE seguir estritamente o padrão de tokens do PaxFlow:
+1. **Altura Padrão de Controles**: `h-[42px]` para todos os inputs de texto, datas, seletores (`select`) e botões de ação de cabeçalho/filtros, alinhados com `items-end` quando houver rótulos (`labels`) superiores.
+2. **Raios de Borda**:
+   - Cards e painéis externos: `rounded-2xl` ou `rounded-3xl`.
+   - Botões, inputs, tags e selects: `rounded-xl`.
+   - Badges e pílulas compactas: `rounded-lg` ou `rounded-full`.
+3. **Cabeçalhos de Tabelas**: `text-[9px] uppercase tracking-widest font-black text-slate-400 bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800`.
+4. **Colunas de Ações em Tabelas**: Largura travada (`w-28 text-center` ou `w-32 text-center`), com botões agrupados em flex centralizado (`justify-center gap-1`), eliminando o efeito serrote.
+5. **Rolagem Defensiva**: Tabelas densas (> 5 colunas) devem usar invólucro com `overflow-x-auto custom-scrollbar scroll-indicator-fade min-w-[...]` para proteger contra corte de dados em telas menores (notebooks HD 1366x768 e tablets).
+6. **Sombras e Microinterações**: Botões primários com `shadow-md shadow-indigo-600/15 transition active:scale-95 cursor-pointer`, cards com `shadow-sm`.

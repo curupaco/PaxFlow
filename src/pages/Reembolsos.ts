@@ -665,27 +665,27 @@ export class ReembolsosPage {
             
             <!-- Abas Superiores com os 4 Status da Tratativa -->
             <div class="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 custom-scrollbar">
-              <button type="button" data-status-tab="todos" class="tab-reembolso-btn px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 transition cursor-pointer shrink-0 whitespace-nowrap ${renderTabClass('todos')}">
+              <button type="button" data-status-tab="todos" class="tab-reembolso-btn h-[42px] px-3.5 rounded-xl text-xs flex items-center gap-1.5 transition cursor-pointer shrink-0 whitespace-nowrap ${renderTabClass('todos')}">
                 <span>Todos</span>
                 <span class="px-1.5 py-0.5 rounded-md text-[10px] font-black ${this.activeStatusTab === 'todos' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'}">${totalCount}</span>
               </button>
 
-              <button type="button" data-status-tab="pendente_agencia" class="tab-reembolso-btn px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 transition cursor-pointer shrink-0 whitespace-nowrap ${renderTabClass('pendente_agencia')}">
+              <button type="button" data-status-tab="pendente_agencia" class="tab-reembolso-btn h-[42px] px-3.5 rounded-xl text-xs flex items-center gap-1.5 transition cursor-pointer shrink-0 whitespace-nowrap ${renderTabClass('pendente_agencia')}">
                 <span>🏢 Ação Agência</span>
                 <span class="px-1.5 py-0.5 rounded-md text-[10px] font-black ${this.activeStatusTab === 'pendente_agencia' ? 'bg-white/20 text-white' : 'bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300'}">${agenciaCount}</span>
               </button>
 
-              <button type="button" data-status-tab="pendente_fornecedor" class="tab-reembolso-btn px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 transition cursor-pointer shrink-0 whitespace-nowrap ${renderTabClass('pendente_fornecedor')}">
+              <button type="button" data-status-tab="pendente_fornecedor" class="tab-reembolso-btn h-[42px] px-3.5 rounded-xl text-xs flex items-center gap-1.5 transition cursor-pointer shrink-0 whitespace-nowrap ${renderTabClass('pendente_fornecedor')}">
                 <span>✈️ Ação Fornecedor</span>
                 <span class="px-1.5 py-0.5 rounded-md text-[10px] font-black ${this.activeStatusTab === 'pendente_fornecedor' ? 'bg-white/20 text-white' : 'bg-blue-100 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300'}">${fornecedorCount}</span>
               </button>
 
-              <button type="button" data-status-tab="pendente_agaxtur" class="tab-reembolso-btn px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 transition cursor-pointer shrink-0 whitespace-nowrap ${renderTabClass('pendente_agaxtur')}">
+              <button type="button" data-status-tab="pendente_agaxtur" class="tab-reembolso-btn h-[42px] px-3.5 rounded-xl text-xs flex items-center gap-1.5 transition cursor-pointer shrink-0 whitespace-nowrap ${renderTabClass('pendente_agaxtur')}">
                 <span>🌐 Ação Agaxtur</span>
                 <span class="px-1.5 py-0.5 rounded-md text-[10px] font-black ${this.activeStatusTab === 'pendente_agaxtur' ? 'bg-white/20 text-white' : 'bg-purple-100 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300'}">${agaxturCount}</span>
               </button>
 
-              <button type="button" data-status-tab="concluido" class="tab-reembolso-btn px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 transition cursor-pointer shrink-0 whitespace-nowrap ${renderTabClass('concluido')}">
+              <button type="button" data-status-tab="concluido" class="tab-reembolso-btn h-[42px] px-3.5 rounded-xl text-xs flex items-center gap-1.5 transition cursor-pointer shrink-0 whitespace-nowrap ${renderTabClass('concluido')}">
                 <span>✅ Concluídos</span>
                 <span class="px-1.5 py-0.5 rounded-md text-[10px] font-black ${this.activeStatusTab === 'concluido' ? 'bg-white/20 text-white' : 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300'}">${concluidoCount}</span>
               </button>
@@ -695,7 +695,7 @@ export class ReembolsosPage {
             <div class="flex items-center gap-2.5 w-full md:w-auto">
               <!-- Filtro de Forma de Devolução -->
               <div class="shrink-0">
-                <select id="select-filtro-forma-devolucao" class="h-10 px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer shadow-xs transition">
+                <select id="select-filtro-forma-devolucao" class="h-[42px] px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer shadow-xs transition">
                   <option value="todas" ${this.activeFormaDevolucaoFilter === 'todas' ? 'selected' : ''}>Todas as Formas</option>
                   <option value="Cartão" ${this.activeFormaDevolucaoFilter === 'Cartão' ? 'selected' : ''}>💳 Estorno Cartão</option>
                   <option value="Pix" ${this.activeFormaDevolucaoFilter === 'Pix' ? 'selected' : ''}>⚡ Pix / Transferência</option>
@@ -711,7 +711,7 @@ export class ReembolsosPage {
                     <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                 </div>
-                <input id="input-busca-reembolso" type="text" placeholder="Pesquisar viagem, ID, produto, cliente, status..." value="${this.buscaTermo}" class="h-10 w-full text-xs font-semibold pl-10 pr-4 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition flex items-center" />
+                <input id="input-busca-reembolso" type="text" placeholder="Pesquisar viagem, ID, produto, cliente, status..." value="${this.buscaTermo}" class="h-[42px] w-full text-xs font-semibold pl-10 pr-4 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition flex items-center" />
               </div>
             </div>
 
@@ -741,10 +741,10 @@ export class ReembolsosPage {
               </div>
 
               <!-- Desktop View: Table -->
-              <div class="hidden md:block overflow-x-auto custom-scrollbar">
-                <table class="w-full text-left border-collapse">
+              <div class="hidden md:block overflow-x-auto custom-scrollbar scroll-indicator-fade">
+                <table class="w-full text-left border-collapse min-w-[960px]">
                   <thead class="sticky top-0 z-20 backdrop-blur-md">
-                    <tr class="bg-slate-50/90 dark:bg-slate-800/90 text-[10px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
+                    <tr class="bg-slate-50 dark:bg-slate-950 text-[9px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-widest border-b border-slate-100 dark:border-slate-800">
                       <th class="py-3 px-4">ID Reembolso</th>
                       <th class="py-3 px-4">Viagem / Localizador</th>
                       <th class="py-3 px-4">Passageiro</th>

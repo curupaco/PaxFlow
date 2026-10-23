@@ -20,6 +20,12 @@ Plataforma SaaS de gestão operacional e fluxo de passageiros no turismo: acompa
 
 ## Funcionalidades
 
+- **Padronização Global de Design Tokens PaxFlow & Polimento Visual dos Módulos [NEW]** — Implantação mandatória do Design System unificado em todos os módulos do PaxFlow (Relatórios, Dashboard, Orçamentos, Inbox, Cadastros, Reembolsos, Conciliação e Clientes):
+  - **Altura Uniforme de Controles (`h-[42px]`)**: Todos os botões primários/secundários, inputs de texto, seletores de filtros, abas e buscas adotam a altura padrão de 42px com alinhamento uniforme na linha de base (`items-center` / `items-end`), extinguindo saltos e desalinhamentos de botões.
+  - **Cabeçalhos de Tabela Padronizados (`thead`)**: Tipografia e contraste unificados em todas as páginas com `text-[9px] uppercase tracking-widest font-black text-slate-400 bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800`.
+  - **Alinhamento Centralizado e Largura Fixa para Colunas de Ação**: Fim do "efeito serrote" em listas e cadastros com largura travada (`w-28` ou `w-32` text-center) e contêineres flex centralizados (`justify-center gap-1.5`).
+  - **Proteção de Transbordo com Scroll Fade**: Todas as tabelas ricas protegidas contra perda de dados com `overflow-x-auto custom-scrollbar scroll-indicator-fade min-w-[...]`.
+
 - **Painel de Relatórios Gerenciais com Menu Lateral Retrátil & Área de Dados Expandida [NEW]** — Otimização ergonômica completa do layout do módulo `Relatorios.ts` para máxima legibilidade de tabelas e gráficos:
   - **Menu Lateral Retrátil (Mini-Barra de Ícones)**: Botão de colapso rápido `[ ❮ ]` / `[ ❯ ]` que alterna a barra lateral entre o modo expandido padrão (`w-64` com nomes e categorias) e o modo mini-barra (`w-16` ultra-compacto com ícones destacados, tooltips no hover e divisores sutis por categoria).
   - **Expansão Horizontal Instantânea**: Liberação imediata de mais de 220px a 400px de largura horizontal para tabelas gerenciais e relatórios detalhados, com contêiner expandido (`w-full xl:px-8`) e área de dados flexível (`flex-1 min-w-0`), eliminando necessidade de scroll horizontal em resoluções Full HD e HD.

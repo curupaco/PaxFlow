@@ -1015,6 +1015,13 @@ export const HELP_ITEMS: HelpItem[] = [
     label: '⭐ Pesquisa de Satisfação & NPS Oficial',
     description: 'Como acompanhar o termômetro de lealdade, ranking de consultores e feedbacks qualitativos pós-viagem.',
     details: 'Na aba **⭐ Pesquisa de Satisfação (NPS)** em Relatórios, a gestão e a equipe contam com um painel completo de percepção de clientes:\n\n1. **Score NPS & Zonas de Mercado**: O sistema consolida automaticamente o índice oficial (% Promotores - % Detratores) e identifica se a agência está na Zona de Excelência (≥75), Qualidade (≥50), Aperfeiçoamento (≥0) ou Crítica (<0).\n2. **Mural de Depoimentos**: Visualize na íntegra as críticas e elogios deixados pelos clientes no formulário pós-viagem, com notas destacadas por badges coloridos (🟢 9-10, 🟡 7-8, 🔴 0-6).\n3. **Ranking por Atendente**: Acompanhe o desempenho de cada consultor com média de notas individual e total de avaliações recebidas.\n4. **Tratamento Rápido no Digisac**: Para qualquer nota baixa ou elogio, clique no botão `💬 Digisac` ao lado da avaliação para iniciar um contato imediato de acolhimento com o passageiro.\n5. **Exportação CSV**: Baixe relatórios tabulares completos para reuniões de alinhamento e auditorias de qualidade.'
+  },
+  {
+    id: 'design-tokens-paxflow',
+    modulo: 'geral',
+    label: '🎨 Design Tokens & Padronização Visual Global PaxFlow',
+    description: 'Conheça o padrão visual unificado do PaxFlow para botões, filtros, cabeçalhos de tabela e alinhamentos.',
+    details: 'O PaxFlow adota um sistema estrito de Design Tokens para assegurar máxima ergonomia e elegância em todas as telas:\n\n1. **Altura Padrão de 42px (`h-[42px]`)**: Todos os controles de topo (botões de ação, inputs de busca, seletores de filtros, seletores de equipe e abas de navegação) possuem rigorosamente 42px de altura e alinhamento pela linha de base, evitando botões desalinhados ou com alturas conflitantes.\n2. **Cabeçalhos de Tabela Unificados (`thead`)**: Todas as tabelas do sistema contam com estilo homogêneo (`text-[9px] font-black uppercase tracking-widest text-slate-400 bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800`), garantindo legibilidade imediata dos dados.\n3. **Colunas de Ação Centralizadas**: As colunas de ação possuem largura fixa (`w-28` ou `w-32`) e botões centralizados, eliminando o desalinhamento visual ("efeito serrote").\n4. **Proteção de Transbordo**: Tabelas amplas contam com barra de rolagem estilizada (`custom-scrollbar`) e efeito de fade lateral (`scroll-indicator-fade`), permitindo navegação fluida sem truncar dados.'
   }
 ];
 

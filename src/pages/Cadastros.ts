@@ -215,12 +215,12 @@ export class CadastrosPage {
                   <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse">
                       <thead>
-                        <tr class="border-b border-slate-100 dark:border-slate-800 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                        <tr class="border-b border-slate-100 dark:border-slate-800 text-[9px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 dark:bg-slate-950">
                           <th class="py-2.5 px-3 w-14 text-center">Ícone</th>
                           <th class="py-2.5 px-3">Nome do Tipo</th>
                           <th class="py-2.5 px-3 w-36 text-center">Campos Extras</th>
                           <th class="py-2.5 px-3 w-28 text-center">Status</th>
-                          <th class="py-2.5 px-3 text-right w-32 whitespace-nowrap">Ações</th>
+                          <th class="py-2.5 px-3 text-center w-28 whitespace-nowrap">Ações</th>
                         </tr>
                       </thead>
                       <tbody id="lista-tipos-body" class="divide-y divide-slate-100/60 dark:divide-slate-800/60">
@@ -247,8 +247,8 @@ export class CadastrosPage {
                                   ${t.ativo ? 'Ativo' : 'Inativo'}
                                 </span>
                               </td>
-                              <td class="py-2.5 px-3 text-right whitespace-nowrap">
-                                <div class="inline-flex items-center justify-end gap-1.5">
+                              <td class="py-2.5 px-3 text-center whitespace-nowrap">
+                                <div class="inline-flex items-center justify-center gap-1.5">
                                   <button data-id="${t.id}" class="btn-editar-tipo h-8 w-8 inline-flex items-center justify-center hover:bg-indigo-50 dark:hover:bg-indigo-950/40 rounded-lg text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition cursor-pointer" title="Editar Tipo">
                                     ✏️
                                   </button>
@@ -359,10 +359,10 @@ export class CadastrosPage {
                   <div class="overflow-x-auto max-h-[500px] overflow-y-auto custom-scrollbar">
                     <table class="w-full text-left border-collapse">
                       <thead>
-                        <tr class="border-b border-slate-100 dark:border-slate-800 text-[10px] font-bold text-slate-400 uppercase tracking-wider sticky top-0 bg-white dark:bg-slate-900 z-10">
+                        <tr class="border-b border-slate-100 dark:border-slate-800 text-[9px] font-black text-slate-400 uppercase tracking-widest sticky top-0 bg-slate-50 dark:bg-slate-950 z-10">
                           <th class="py-2.5 px-3">Cidade / Destino</th>
                           <th class="py-2.5 px-3">País</th>
-                          <th class="py-2.5 px-3 text-right w-28 whitespace-nowrap">Ações</th>
+                          <th class="py-2.5 px-3 text-center w-28 whitespace-nowrap">Ações</th>
                         </tr>
                       </thead>
                       <tbody id="lista-destinos-body" class="divide-y divide-slate-100/60 dark:divide-slate-800/60">
@@ -380,8 +380,8 @@ export class CadastrosPage {
                             <tr class="hover:bg-slate-50/60 dark:hover:bg-slate-800/30 text-xs font-semibold text-slate-700 dark:text-slate-300 transition-colors">
                               <td class="py-2.5 px-3 font-bold text-slate-800 dark:text-slate-100">${displayName}</td>
                               <td class="py-2.5 px-3">${displayPais}</td>
-                              <td class="py-2.5 px-3 text-right whitespace-nowrap">
-                                <div class="inline-flex items-center justify-end gap-1.5">
+                              <td class="py-2.5 px-3 text-center whitespace-nowrap">
+                                <div class="inline-flex items-center justify-center gap-1.5">
                                   <button data-id="${d.id}" class="btn-editar-destino h-8 w-8 inline-flex items-center justify-center hover:bg-indigo-50 dark:hover:bg-indigo-950/40 rounded-lg text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition cursor-pointer" title="Editar Destino">
                                     ✏️
                                   </button>
@@ -453,11 +453,11 @@ export class CadastrosPage {
                   <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse">
                       <thead>
-                        <tr class="border-b border-slate-100 dark:border-slate-800 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                        <tr class="border-b border-slate-100 dark:border-slate-800 text-[9px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 dark:bg-slate-950">
                           <th class="py-2.5 px-3 w-14 text-center">Ícone</th>
                           <th class="py-2.5 px-3">Tipo de Recebimento</th>
                           <th class="py-2.5 px-3 w-28 text-center">Status</th>
-                          <th class="py-2.5 px-3 text-right w-40 whitespace-nowrap">Ações</th>
+                          <th class="py-2.5 px-3 text-center w-36 whitespace-nowrap">Ações</th>
                         </tr>
                       </thead>
                       <tbody class="divide-y divide-slate-100/60 dark:divide-slate-800/60">
@@ -479,8 +479,8 @@ export class CadastrosPage {
                                   ${f.ativo ? 'Ativo' : 'Inativo'}
                                 </span>
                               </td>
-                              <td class="py-2.5 px-3 text-right whitespace-nowrap">
-                                <div class="inline-flex items-center justify-end gap-1.5">
+                              <td class="py-2.5 px-3 text-center whitespace-nowrap">
+                                <div class="inline-flex items-center justify-center gap-1.5">
                                   ${isFixo ? `
                                     <span class="text-[10px] text-slate-400 dark:text-slate-400 font-bold italic select-none pr-2">
                                       Fixo do Sistema
@@ -570,11 +570,11 @@ export class CadastrosPage {
                   <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse">
                       <thead>
-                        <tr class="border-b border-slate-100 dark:border-slate-800 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                        <tr class="border-b border-slate-100 dark:border-slate-800 text-[9px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 dark:bg-slate-950">
                           <th class="py-2.5 px-3 w-14 text-center">Ícone</th>
                           <th class="py-2.5 px-3">Canal / Origem</th>
                           <th class="py-2.5 px-3 w-28 text-center">Status</th>
-                          <th class="py-2.5 px-3 text-right w-40 whitespace-nowrap">Ações</th>
+                          <th class="py-2.5 px-3 text-center w-36 whitespace-nowrap">Ações</th>
                         </tr>
                       </thead>
                       <tbody class="divide-y divide-slate-100/60 dark:divide-slate-800/60">
@@ -595,8 +595,8 @@ export class CadastrosPage {
                                   ${o.ativo ? 'Ativo' : 'Inativo'}
                                 </span>
                               </td>
-                              <td class="py-2.5 px-3 text-right whitespace-nowrap">
-                                <div class="inline-flex items-center justify-end gap-1.5">
+                              <td class="py-2.5 px-3 text-center whitespace-nowrap">
+                                <div class="inline-flex items-center justify-center gap-1.5">
                                   <button data-id="${o.id}" class="btn-editar-origem h-8 w-8 inline-flex items-center justify-center hover:bg-indigo-50 dark:hover:bg-indigo-950/40 rounded-lg text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition cursor-pointer" title="Editar Origem">
                                     ✏️
                                   </button>
@@ -681,13 +681,13 @@ export class CadastrosPage {
                 <div class="overflow-x-auto">
                   <table class="w-full text-left border-collapse">
                     <thead>
-                      <tr class="bg-slate-600/5 dark:bg-slate-800/60 text-[10px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
+                      <tr class="bg-slate-50 dark:bg-slate-950 text-[9px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-widest border-b border-slate-100 dark:border-slate-800">
                         <th class="py-2.5 px-3.5">Título</th>
                         <th class="py-2.5 px-3.5">Parâmetro de Meta</th>
                         <th class="py-2.5 px-3.5 text-center">Período</th>
                         <th class="py-2.5 px-3.5 text-center">Medalha</th>
                         <th class="py-2.5 px-3.5 text-center">Status</th>
-                        <th class="py-2.5 px-3.5 text-right">Ações</th>
+                        <th class="py-2.5 px-3.5 text-center w-52">Ações</th>
                       </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-xs text-slate-700 dark:text-slate-300 font-semibold bg-white/50 dark:bg-slate-900/30">
@@ -742,8 +742,8 @@ export class CadastrosPage {
                             <td class="py-2.5 px-3.5 text-center whitespace-nowrap">
                               ${statusBadge}
                             </td>
-                            <td class="py-2.5 px-3.5 text-right whitespace-nowrap">
-                              <div class="inline-flex items-center justify-end gap-1.5">
+                            <td class="py-2.5 px-3.5 text-center whitespace-nowrap">
+                              <div class="inline-flex items-center justify-center gap-1.5">
                                 <button data-id="${cam.id}" class="btn-editar-campanha h-7 px-2.5 inline-flex items-center justify-center rounded-lg text-[11px] font-bold bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-300 transition border border-indigo-200/60 dark:border-indigo-800/60 uppercase">
                                   Editar
                                 </button>
@@ -785,10 +785,10 @@ export class CadastrosPage {
                 <div class="overflow-x-auto">
                   <table class="w-full text-left border-collapse">
                     <thead>
-                      <tr class="bg-slate-600/5 dark:bg-slate-800/60 text-[10px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
+                      <tr class="bg-slate-50 dark:bg-slate-950 text-[9px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-widest border-b border-slate-100 dark:border-slate-800">
                         <th class="py-2.5 px-3.5">Título / Descrição</th>
                         <th class="py-2.5 px-3.5">Variáveis Mapeadas</th>
-                        <th class="py-2.5 px-3.5 text-right">Ações</th>
+                        <th class="py-2.5 px-3.5 text-center w-36">Ações</th>
                       </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-xs text-slate-700 dark:text-slate-300 font-semibold bg-white/50 dark:bg-slate-900/30">
@@ -814,8 +814,8 @@ export class CadastrosPage {
                                 ${tagsHTML}
                               </div>
                             </td>
-                            <td class="py-2.5 px-3.5 text-right whitespace-nowrap">
-                              <div class="inline-flex items-center justify-end gap-1.5">
+                            <td class="py-2.5 px-3.5 text-center whitespace-nowrap">
+                              <div class="inline-flex items-center justify-center gap-1.5">
                                 <button data-id="${tem.id}" class="btn-editar-template h-7 px-2.5 inline-flex items-center justify-center rounded-lg text-[11px] font-bold bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-300 transition border border-indigo-200/60 dark:border-indigo-800/60 uppercase">
                                   Editar
                                 </button>
@@ -850,12 +850,12 @@ export class CadastrosPage {
                 <div class="overflow-x-auto">
                   <table class="w-full text-left border-collapse">
                     <thead>
-                      <tr class="bg-slate-600/5 dark:bg-slate-800/60 text-[10px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
+                      <tr class="bg-slate-50 dark:bg-slate-950 text-[9px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-widest border-b border-slate-100 dark:border-slate-800">
                         <th class="py-2.5 px-3.5">Nome / Tipo</th>
                         <th class="py-2.5 px-3.5">Período</th>
                         <th class="py-2.5 px-3.5">Cálculo</th>
                         <th class="py-2.5 px-3.5">Faixas de Premiação</th>
-                        <th class="py-2.5 px-3.5 text-right">Ações</th>
+                        <th class="py-2.5 px-3.5 text-center w-36">Ações</th>
                       </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-xs text-slate-700 dark:text-slate-300 font-semibold bg-white/50 dark:bg-slate-900/30">
@@ -933,8 +933,8 @@ export class CadastrosPage {
                                 faixasHTML +
                               '</div>' +
                             '</td>' +
-                            '<td class="py-2.5 px-3.5 text-right whitespace-nowrap">' +
-                              '<div class="inline-flex items-center justify-end gap-1.5">' +
+                            '<td class="py-2.5 px-3.5 text-center whitespace-nowrap">' +
+                              '<div class="inline-flex items-center justify-center gap-1.5">' +
                                 '<button data-id="' + meta.id + '" class="btn-editar-meta h-7 px-2.5 inline-flex items-center justify-center rounded-lg text-[11px] font-bold bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-300 transition border border-indigo-200/60 dark:border-indigo-800/60 uppercase">' +
                                   'Editar' +
                                 '</button>' +

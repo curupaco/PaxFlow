@@ -2231,31 +2231,31 @@ export class Dashboard {
           
           <div class="flex flex-wrap items-center gap-2.5 w-full lg:w-auto lg:justify-end py-0.5">
             <!-- Pill Switch Segmentado: Mês Corrente vs Ver Tudo -->
-            <div class="inline-flex p-1 bg-slate-100 dark:bg-slate-800/80 rounded-xl border border-slate-200/60 dark:border-slate-700/60 shrink-0 select-none">
-              <button id="btn-view-month-current" class="px-3 py-1.5 rounded-lg text-xs font-black transition ${this.viewModeMonth === 'current' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'}">
+            <div class="inline-flex h-[42px] p-1 bg-slate-100 dark:bg-slate-800/80 rounded-xl border border-slate-200/60 dark:border-slate-700/60 shrink-0 select-none items-center">
+              <button id="btn-view-month-current" class="px-3 h-full rounded-lg text-xs font-black transition flex items-center justify-center ${this.viewModeMonth === 'current' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'}">
                 📅 Mês Corrente (${this.getFormattedCurrentMonthLabel()})
               </button>
-              <button id="btn-view-month-all" class="px-3 py-1.5 rounded-lg text-xs font-black transition ${this.viewModeMonth === 'all' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'}">
+              <button id="btn-view-month-all" class="px-3 h-full rounded-lg text-xs font-black transition flex items-center justify-center ${this.viewModeMonth === 'all' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'}">
                 🌐 Ver Tudo
               </button>
             </div>
 
             <!-- Stats Rápidos em Linha Única -->
-            <div class="flex items-center gap-2 bg-slate-100/70 dark:bg-slate-800/50 px-3.5 py-2 rounded-xl border border-slate-200/50 dark:border-slate-700/50 shrink-0 text-xs">
+            <div class="flex items-center h-[42px] gap-2 bg-slate-100/70 dark:bg-slate-800/50 px-3.5 rounded-xl border border-slate-200/50 dark:border-slate-700/50 shrink-0 text-xs">
               <span class="font-extrabold text-slate-600 dark:text-slate-300">Viagens: <strong class="text-slate-900 dark:text-white font-black">${counts.todos}</strong></span>
               <span class="text-slate-300 dark:text-slate-700">&bull;</span>
               <span class="font-extrabold text-slate-600 dark:text-slate-300">SLAs: <strong class="${totalSlaAlerts > 0 ? 'text-rose-600 animate-pulse' : 'text-slate-900 dark:text-white'} font-black">${totalSlaAlerts}</strong></span>
             </div>
 
             <!-- Botão de Filtros Avançados -->
-            <button id="btn-toggle-filtros" class="px-3.5 py-2 ${totalFiltrosAtivos > 0 ? 'bg-indigo-600 text-white font-black shadow-md shadow-indigo-600/20 ring-2 ring-indigo-400/30' : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-extrabold'} text-xs rounded-xl border ${totalFiltrosAtivos > 0 ? 'border-indigo-500' : 'border-slate-200/60 dark:border-slate-700/60'} flex items-center justify-center gap-1.5 transition shrink-0 cursor-pointer">
+            <button id="btn-toggle-filtros" class="h-[42px] px-3.5 ${totalFiltrosAtivos > 0 ? 'bg-indigo-600 text-white font-black shadow-md shadow-indigo-600/20 ring-2 ring-indigo-400/30' : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-extrabold'} text-xs rounded-xl border ${totalFiltrosAtivos > 0 ? 'border-indigo-500' : 'border-slate-200/60 dark:border-slate-700/60'} flex items-center justify-center gap-1.5 transition shrink-0 cursor-pointer">
               <span>🎛️ Avançado${totalFiltrosAtivos > 0 ? ` (${totalFiltrosAtivos})` : ''}</span>
               <span class="text-[9px]">${this.showFiltersPanel ? '▲' : '▼'}</span>
             </button>
 
             <!-- Seletor de Consultores (Apenas para Admins) -->
             ${this.perfil?.role === 'admin' ? `
-              <div class="flex items-center gap-1.5 shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2.5 py-1.5 rounded-xl shadow-sm">
+              <div class="flex items-center h-[42px] gap-1.5 shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 rounded-xl shadow-xs">
                 <span class="text-[10px] font-black uppercase text-slate-400 dark:text-slate-400 select-none">Equipe:</span>
                 <select id="select-dashboard-consultor" class="text-xs font-bold bg-transparent text-slate-700 dark:text-slate-300 focus:outline-none cursor-pointer max-w-[130px]">
                   <option value="todos" ${this.selectedConsultantId === 'todos' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Todos</option>
@@ -2265,9 +2265,9 @@ export class Dashboard {
 
               <!-- Seletor Popover de Conferência Avançado com Pills -->
               <div class="relative inline-block text-left shrink-0" id="container-conf-popover">
-                <button id="btn-toggle-conf-popover" type="button" class="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-slate-900 border ${
+                <button id="btn-toggle-conf-popover" type="button" class="flex items-center h-[42px] gap-1.5 px-3 bg-white dark:bg-slate-900 border ${
                   (this.confFilters.finPendente || this.confFilters.finOk || this.confFilters.procPendente || this.confFilters.procOk)
-                    ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400 font-black shadow-sm ring-1 ring-indigo-500/30'
+                    ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400 font-black shadow-xs ring-1 ring-indigo-500/30'
                     : 'border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 font-bold'
                 } rounded-xl text-xs hover:bg-slate-50 dark:hover:bg-slate-800 transition">
                   <span class="text-[10px] font-black uppercase text-slate-400 select-none">Conf.:</span>
@@ -2378,15 +2378,15 @@ export class Dashboard {
               <div class="overflow-auto flex-1 min-h-0 custom-scrollbar pb-1">
                 <table class="w-full text-left border-collapse min-w-[1000px]">
                   <thead>
-                    <tr class="bg-slate-50 dark:bg-slate-900 text-[10px] font-black uppercase text-slate-400 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10 shadow-xs">
-                      <th class="px-5 py-4 w-[80px] text-center">${this.renderSortHeader('SLA', 'sla')}</th>
-                      <th class="px-5 py-4">${this.renderSortHeader('Cliente', 'cliente')}</th>
-                      <th class="px-5 py-4">${this.renderSortHeader('Destino / Produtos', 'destino')}</th>
-                      <th class="px-5 py-4">${this.renderSortHeader('Data Fin.', 'data_financeiro')}</th>
-                      <th class="px-5 py-4">${this.renderSortHeader('Financeiro', 'financeiro')}</th>
-                      <th class="px-5 py-4">${this.renderSortHeader('Consultor', 'consultor')}</th>
-                      <th class="px-5 py-4 w-[200px]">${this.renderSortHeader('Fase / Status', 'status')}</th>
-                      <th class="px-5 py-4 w-[160px] text-center text-slate-400 dark:text-slate-400 tracking-wider text-[10px] font-black">Ações</th>
+                    <tr class="bg-slate-50 dark:bg-slate-950 text-[9px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10 shadow-xs">
+                      <th class="px-5 py-3 w-[80px] text-center">${this.renderSortHeader('SLA', 'sla')}</th>
+                      <th class="px-5 py-3">${this.renderSortHeader('Cliente', 'cliente')}</th>
+                      <th class="px-5 py-3">${this.renderSortHeader('Destino / Produtos', 'destino')}</th>
+                      <th class="px-5 py-3">${this.renderSortHeader('Data Fin.', 'data_financeiro')}</th>
+                      <th class="px-5 py-3">${this.renderSortHeader('Financeiro', 'financeiro')}</th>
+                      <th class="px-5 py-3">${this.renderSortHeader('Consultor', 'consultor')}</th>
+                      <th class="px-5 py-3 w-[200px]">${this.renderSortHeader('Fase / Status', 'status')}</th>
+                      <th class="px-5 py-3 w-[160px] text-center text-slate-400 dark:text-slate-400 tracking-widest text-[9px] font-black uppercase">Ações</th>
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 text-xs font-semibold text-slate-600 dark:text-slate-300">

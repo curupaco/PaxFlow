@@ -1840,7 +1840,7 @@ export class ClientesPage {
                 </div>
               </div>
               
-              <button id="btn-novo-cliente" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-[11px] tracking-wider rounded-xl shadow-sm shadow-indigo-600/20 flex items-center justify-center gap-1 transition transform hover:-translate-y-0.5 uppercase shrink-0">
+              <button id="btn-novo-cliente" class="h-[42px] px-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs tracking-wider rounded-xl shadow-md shadow-indigo-600/20 flex items-center justify-center gap-1.5 transition transform active:scale-95 uppercase shrink-0 cursor-pointer">
                 <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                 </svg>
@@ -1850,14 +1850,14 @@ export class ClientesPage {
 
             <!-- Barra de Busca -->
             <div>
-              <label class="block text-xs font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wide mb-1.5">Pesquisar Cliente</label>
+              <label class="block text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest mb-1.5">Pesquisar Cliente</label>
               <div class="relative">
                 <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-400">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                 </div>
-                <input id="input-busca-cliente" type="text" placeholder="Nome, email ou CPF/RG..." class="w-full pl-10 pr-4 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 font-medium text-sm" />
+                <input id="input-busca-cliente" type="text" placeholder="Nome, email ou CPF/RG..." class="h-[42px] w-full pl-10 pr-4 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 font-medium text-xs rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition" />
               </div>
             </div>
 

@@ -1010,18 +1010,26 @@ O módulo **PaxFlow FinRecon™** (rota `#conciliacao`, restrito a Gestores e eq
 
 ### 3.37 Design System de Tabelas, Proporções e Padronização Visual PaxFlow
 
-Com o objetivo de eliminar assimetrias, quebras desproporcionais de linha e elementos amontoados, o PaxFlow segue um padrão de densidade visual e proporções consistentes em todos os módulos:
+Com o objetivo de eliminar assimetrias, alturas discrepantes e o desalinhamento visual ("efeito serrote"), o PaxFlow institui o protocolo mandatório **DESIGN TOKENS PAXFLOW** em todos os módulos da plataforma:
 
-1. **Padrão de Tabelas e Grids**:
-   - **Cabeçalhos**: `text-[10px] font-bold text-slate-400 uppercase tracking-wider py-2.5 px-3.5 border-b`.
-   - **Células de Dados**: `py-2.5 px-3.5 text-xs font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap`.
-   - **Linhas com Divisores Suaves**: `divide-y divide-slate-100 dark:divide-slate-800`.
-   - **Valores Monetários e Prazos**: formatação com `font-mono tabular-nums`.
+1. **Altura Uniforme de Controles (`h-[42px]`)**:
+   - Todos os botões de ação principais e secundários no topo das páginas (`Dashboard`, `Orcamentos`, `Relatorios`, `Inbox`, `Reembolsos`, `Conciliacao`, `Clientes` e `Cadastros`) utilizam estritamente `h-[42px]`.
+   - Campos de busca (`input`), seletores dropdown (`select`) e contêineres de abas (`div`) utilizam a mesma altura de 42px.
+   - Alinhamento vertical na mesma linha de base (`items-center` ou `items-end`), garantindo simetria absoluta e sem saltos visuais ao alternar opções.
 
-2. **Alinhamento de Ações e Botões**:
-   - Ações em tabelas agrupadas com `<div class="inline-flex items-center justify-end gap-1.5 whitespace-nowrap">`.
-   - Botões de ação em linha: `h-7 px-2.5` ou `h-8 px-3` para ações de texto, e `w-7 h-7 inline-flex items-center justify-center rounded-lg` para botões com ícones.
-   - Modais de criação e edição com paleta de emojis rápidos compacta em grade equilibrada e preview instantâneo do item ativo.
+2. **Cabeçalhos de Tabelas Unificados (`thead`)**:
+   - Todas as tabelas do sistema compartilham os mesmos tokens de contraste e tipografia:
+     `text-[9px] uppercase tracking-widest font-black text-slate-400 bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800`.
+   - Células de dados (`td`): `py-2.5 px-3.5 text-xs font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap`.
+   - Valores monetários e códigos: formatação monoespelhada com `font-mono tabular-nums`.
+
+3. **Eliminação do "Efeito Serrote" nas Colunas de Ação**:
+   - As colunas de ação recebem largura fixa (`w-28` ou `w-32`) e alinhamento centralizado (`text-center`).
+   - Os botões em linha são contidos em `<div class="inline-flex items-center justify-center gap-1.5 whitespace-nowrap">`, garantindo que os botões de todas as linhas fiquem perfeitamente empilhados na mesma vertical.
+   - Botões de ícones: `w-7 h-7` ou `w-8 h-8` com cantos `rounded-lg`, transição suave e escala ativa `active:scale-95`.
+
+4. **Proteção de Transbordo com Scroll Fade**:
+   - Todas as tabelas ricas contam com contêiner envolto em `overflow-x-auto custom-scrollbar scroll-indicator-fade min-w-[...]`, impedindo que colunas sejam ocultadas sem aviso visual ao usuário em telas menores ou monitores convencionais.
 
 ### 3.38 Painel de Filtros Avançados Combináveis, Resumo Financeiro & Exportação CSV de Viagens
 

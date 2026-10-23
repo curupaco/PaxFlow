@@ -179,166 +179,201 @@ export class RelatoriosPage {
   }
 
   /**
-   * Loads all tables from Supabase, applying fallbacks if offline or empty
+   * Loads all tables from Supabase in parallel via Promise.all, drastically reducing load time
    */
   private async loadData(): Promise<void> {
     try {
       const isAdmin = (this.perfil?.role || '').toLowerCase() === 'admin';
 
-      // 1. Obter consultores (Admin vê todos; consultor vê apenas a si mesmo)
-      if (isAdmin) {
-        const { data: profilesData } = await supabase.from('profiles').select('*').order('nome');
-        this.consultores = profilesData || [];
-      } else {
-        this.consultores = this.perfil ? [this.perfil] : [];
-      }
+      // 1. Preparar consultas paralelas independentes
+      const pProfiles = isAdmin
+        ? supabase.from('profiles').select('*').order('nome')
+        : Promise.resolve({ data: this.perfil ? [this.perfil] : [], error: null });
 
-      // 2. Obter configurações globais
-      const { data: settingsData } = await supabase.from('global_settings').select('*');
-      if (settingsData && settingsData.length > 0) {
-        this.prazoReembolsoDias = settingsData[0].prazoReembolsoDias || 30;
-      }
+      const pSettings = supabase.from('global_settings').select('*');
 
-      // 3. Carregar orcamentos (estritamente do usuário se não for admin)
       let orcQuery = supabase.from('orcamentos').select('*');
       if (!isAdmin) {
         orcQuery = orcQuery.eq('consultor_id', this.user.id);
       }
-      const { data: orcData } = await orcQuery;
-      this.orcamentos = orcData || [];
+      const pOrcamentos = orcQuery;
 
-      // 4. Carregar viagens (estritamente do usuário ou como parceiro em divisões se não for admin)
-      let viaQuery = supabase.from('viagens').select('*, cliente:clientes(*), reembolsos(*), produtos:produtos_viagem(*), destino_ref:destinos(*)');
+      let cliQuery = supabase.from('clientes').select('*');
       if (!isAdmin) {
-        const parceiroViagemIds = await ViagensDivisoesService.obterViagensDivididasPorConsultor(this.user.id);
-        if (parceiroViagemIds.length > 0) {
-          viaQuery = viaQuery.or(`consultor_id.eq.${this.user.id},id.in.(${parceiroViagemIds.join(',')})`);
-        } else {
-          viaQuery = viaQuery.eq('consultor_id', this.user.id);
-        }
+        cliQuery = cliQuery.eq('consultor_responsavel_id', this.user.id);
       }
-      const { data: viaData } = await viaQuery;
-      const rawViagens = viaData || [];
+      const pClientes = cliQuery;
 
-      // 4.0. Carregar divisões de parcerias entre consultores (com resiliência a schema drift)
-      const divisoesMap = new Map<string, any[]>();
-      try {
-        let divData: any[] | null = null;
-        let divError: any = null;
-        
-        const primaryRes = await supabase
-          .from('viagens_divisoes')
-          .select('viagem_id, consultor_id, percentual, percentual_rav, is_titular');
-        divData = primaryRes.data;
-        divError = primaryRes.error;
-        
-        if (divError && (divError.code === '42703' || divError.message?.includes('percentual_rav'))) {
-          const fallbackRes = await supabase
+      const pReembolsos = supabase.from('reembolsos').select('*, viagem:viagens(*), produto:produtos_viagem(*)');
+
+      const pPagamentos = supabase.from('loc_pagamentos').select('*, formas_recebimento(*)');
+
+      const pConferencias = supabase.from('loc_conferencias').select('*');
+
+      const pFormas = supabase.from('formas_recebimento').select('*');
+
+      let badgeQuery = supabase.from('profiles_badges').select('*');
+      if (!isAdmin) {
+        badgeQuery = badgeQuery.eq('profile_id', this.user.id);
+      }
+      const pBadges = badgeQuery;
+
+      let lembretesQuery = supabase.from('lembretes').select('*').eq('arquivado', false);
+      if (!isAdmin) {
+        lembretesQuery = lembretesQuery.eq('user_id', this.user.id);
+      }
+      const pLembretes = lembretesQuery;
+
+      const pTipos = supabase.from('tipos_produto').select('*').order('nome');
+
+      const pMetas = MetasService.obterMetaPeriodos().catch(err => {
+        console.warn('Erro defensivo ao carregar metas em RelatoriosPage:', err);
+        return [];
+      });
+
+      const pNps = (async () => {
+        try {
+          const res = await supabase.from('feedbacks_nps').select('*');
+          return res;
+        } catch (errNps) {
+          console.warn('Erro defensivo ao carregar feedbacks_nps em RelatoriosPage:', errNps);
+          return { data: [], error: null };
+        }
+      })();
+
+      const pPresets = CampanhasService.listarPresets().catch(err => {
+        console.warn('Erro defensivo ao carregar presets de campanhas em RelatoriosPage:', err);
+        return [];
+      });
+
+      const pDivisoes = (async () => {
+        try {
+          const primaryRes = await supabase
             .from('viagens_divisoes')
-            .select('viagem_id, consultor_id, percentual, is_titular');
-          divData = fallbackRes.data;
-          divError = fallbackRes.error;
+            .select('viagem_id, consultor_id, percentual, percentual_rav, is_titular');
+          if (primaryRes.error && (primaryRes.error.code === '42703' || primaryRes.error.message?.includes('percentual_rav'))) {
+            return await supabase
+              .from('viagens_divisoes')
+              .select('viagem_id, consultor_id, percentual, is_titular');
+          }
+          return primaryRes;
+        } catch (errDiv) {
+          console.warn('Erro defensivo ao carregar viagens_divisoes em Relatorios:', errDiv);
+          return { data: [], error: null };
         }
+      })();
 
-        if (!divError && divData) {
-          divData.forEach((row: any) => {
-            const arr = divisoesMap.get(row.viagem_id) || [];
-            arr.push(row);
-            divisoesMap.set(row.viagem_id, arr);
-          });
+      const pViagens = (async () => {
+        let viaQuery = supabase.from('viagens').select('*, cliente:clientes(*), reembolsos(*), produtos:produtos_viagem(*), destino_ref:destinos(*)');
+        if (!isAdmin) {
+          const parceiroViagemIds = await ViagensDivisoesService.obterViagensDivididasPorConsultor(this.user.id);
+          if (parceiroViagemIds.length > 0) {
+            viaQuery = viaQuery.or(`consultor_id.eq.${this.user.id},id.in.(${parceiroViagemIds.join(',')})`);
+          } else {
+            viaQuery = viaQuery.eq('consultor_id', this.user.id);
+          }
         }
-      } catch (errDiv) {
-        console.warn('Erro defensivo ao carregar viagens_divisoes em Relatorios:', errDiv);
+        return viaQuery;
+      })();
+
+      const pAlertas = InboxService.loadAndBuildAlerts(this.user, this.perfil, this.prazoReembolsoDias).catch(errA => {
+        console.warn('Erro defensivo ao carregar alertas em RelatoriosPage:', errA);
+        return [];
+      });
+
+      // 2. Executar TODAS as 17 consultas simultaneamente em paralelo via Promise.all!
+      const [
+        resProfiles,
+        resSettings,
+        resOrcamentos,
+        resClientes,
+        resReembolsos,
+        resPagamentos,
+        resConferencias,
+        resFormas,
+        resBadges,
+        resLembretes,
+        resTipos,
+        resMetas,
+        resNps,
+        resPresets,
+        resDivisoes,
+        resViagens,
+        resAlertas
+      ] = await Promise.all([
+        pProfiles,
+        pSettings,
+        pOrcamentos,
+        pClientes,
+        pReembolsos,
+        pPagamentos,
+        pConferencias,
+        pFormas,
+        pBadges,
+        pLembretes,
+        pTipos,
+        pMetas,
+        pNps,
+        pPresets,
+        pDivisoes,
+        pViagens,
+        pAlertas
+      ]);
+
+      // 3. Processar resultados
+      this.consultores = resProfiles.data || (this.perfil ? [this.perfil] : []);
+
+      if (resSettings.data && resSettings.data.length > 0) {
+        this.prazoReembolsoDias = resSettings.data[0].prazoReembolsoDias || 30;
       }
 
+      this.orcamentos = resOrcamentos.data || [];
+      this.clientes = resClientes.data || [];
+
+      // Mapear divisões
+      const divisoesMap = new Map<string, any[]>();
+      if (resDivisoes && resDivisoes.data) {
+        resDivisoes.data.forEach((row: any) => {
+          const arr = divisoesMap.get(row.viagem_id) || [];
+          arr.push(row);
+          divisoesMap.set(row.viagem_id, arr);
+        });
+      }
+
+      const rawViagens = resViagens.data || [];
       this.viagens = rawViagens.map((v: any) => ({
         ...v,
         divisoes: divisoesMap.get(v.id) || []
       }));
 
-      // 4.1 Carregar clientes
-      let cliQuery = supabase.from('clientes').select('*');
-      if (!isAdmin) {
-        cliQuery = cliQuery.eq('consultor_responsavel_id', this.user.id);
-      }
-      const { data: cliData } = await cliQuery;
-      this.clientes = cliData || [];
-
-      // 5. Carregar reembolsos (estritamente das viagens ou solicitações do consultor se não for admin)
-      let reemQuery = supabase.from('reembolsos').select('*, viagem:viagens(*), produto:produtos_viagem(*)');
-      const { data: reemData } = await reemQuery;
-      const rawReem = reemData || [];
+      const rawReem = resReembolsos.data || [];
       if (!isAdmin) {
         this.reembolsos = rawReem.filter((r: any) => r.viagem?.consultor_id === this.user.id || r.consultor_solicitante_id === this.user.id);
       } else {
         this.reembolsos = rawReem;
       }
 
-      // 6. Carregar alertas via InboxService (já filtrado pelo serviço)
-      this.alertas = await InboxService.loadAndBuildAlerts(this.user, this.perfil, this.prazoReembolsoDias);
-
-      // 7. Carregar loc_pagamentos (apenas das viagens visíveis para o usuário)
       const travelIds = new Set(this.viagens.map((v: any) => v.id));
-      const { data: pagsData } = await supabase.from('loc_pagamentos').select('*, formas_recebimento(*)');
-      const rawPags = pagsData || [];
+      const rawPags = resPagamentos.data || [];
       this.locPagamentos = isAdmin ? rawPags : rawPags.filter((p: any) => travelIds.has(p.viagem_id || p.viagemId));
 
-      // 8. Carregar loc_conferencias (apenas das viagens visíveis para o usuário)
-      const { data: confData } = await supabase.from('loc_conferencias').select('*');
-      const rawConf = confData || [];
+      const rawConf = resConferencias.data || [];
       this.locConferencias = isAdmin ? rawConf : rawConf.filter((c: any) => travelIds.has(c.viagem_id || c.viagemId));
 
-      // 9. Carregar formas_recebimento
-      const { data: formasData } = await supabase.from('formas_recebimento').select('*');
-      this.formasRecebimento = formasData || [];
+      this.formasRecebimento = resFormas.data || [];
+      this.consultoresBadges = resBadges.data || [];
+      this.lembretes = resLembretes.data || [];
+      this.tiposProduto = resTipos.data || [];
 
-      // 10. Carregar profiles_badges (apenas do próprio consultor se não for admin)
-      let badgeQuery = supabase.from('profiles_badges').select('*');
-      if (!isAdmin) {
-        badgeQuery = badgeQuery.eq('profile_id', this.user.id);
-      }
-      const { data: badgesData } = await badgeQuery;
-      this.consultoresBadges = badgesData || [];
-
-      // 11. Carregar lembretes
-      let lembretesQuery = supabase.from('lembretes').select('*').eq('arquivado', false);
-      if (!isAdmin) {
-        lembretesQuery = lembretesQuery.eq('user_id', this.user.id);
-      }
-      const { data: lembretesData } = await lembretesQuery;
-      this.lembretes = lembretesData || [];
-
-      // 12. Carregar tipos_produto
-      const { data: tiposData } = await supabase.from('tipos_produto').select('*').order('nome');
-      this.tiposProduto = tiposData || [];
-
-      // 13. Carregar Metas e Campanhas
-      try {
-        this.metas = await MetasService.obterMetaPeriodos();
-        if (this.metas.length > 0 && (!this.selectedMetaId || !this.metas.some(m => m.id === this.selectedMetaId))) {
-          const ativa = this.metas.find(m => MetasService.getStatusTemporal(m) === 'ativa');
-          this.selectedMetaId = ativa ? ativa.id : this.metas[0].id;
-        }
-      } catch (errM) {
-        console.warn('Erro ao carregar metas em RelatoriosPage:', errM);
+      this.metas = Array.isArray(resMetas) ? resMetas : [];
+      if (this.metas.length > 0 && (!this.selectedMetaId || !this.metas.some(m => m.id === this.selectedMetaId))) {
+        const ativa = this.metas.find(m => MetasService.getStatusTemporal(m) === 'ativa');
+        this.selectedMetaId = ativa ? ativa.id : this.metas[0].id;
       }
 
-      // 14. Carregar Feedbacks NPS (para enriquecer segmentação de campanhas)
-      try {
-        const { data: npsData } = await supabase.from('feedbacks_nps').select('*');
-        this.feedbacksNps = npsData || [];
-      } catch (errNps) {
-        console.warn('Erro defensivo ao carregar feedbacks_nps em RelatoriosPage:', errNps);
-        this.feedbacksNps = [];
-      }
-
-      // 15. Carregar Presets de Campanhas salvos pela gestão
-      try {
-        this.campanhasPresets = await CampanhasService.listarPresets();
-      } catch (errPresets) {
-        console.warn('Erro defensivo ao carregar presets de campanhas em RelatoriosPage:', errPresets);
-        this.campanhasPresets = [];
-      }
+      this.feedbacksNps = resNps?.data || [];
+      this.campanhasPresets = Array.isArray(resPresets) ? resPresets : [];
+      this.alertas = Array.isArray(resAlertas) ? resAlertas : [];
     } catch (err) {
       console.warn('Erro ao ler tabelas de relatórios. Ativando mocks.', err);
       this.loadMockData();

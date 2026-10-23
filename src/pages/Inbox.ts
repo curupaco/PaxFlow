@@ -633,8 +633,8 @@ export class InboxPage {
 
            <div class="flex flex-wrap items-center gap-3 w-full md:w-auto md:justify-end">
              <!-- Barra de Abas de Topo (Navegação Principal Unificada do Inbox) -->
-             <div class="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800/60 p-1.5 rounded-2xl border border-slate-200/50 dark:border-slate-700/50 shrink-0 max-w-full overflow-x-auto custom-scrollbar">
-               <button id="inbox-top-tab-lista" class="px-2.5 sm:px-3.5 py-2 rounded-xl text-xs font-black transition flex items-center gap-2 select-none whitespace-nowrap shrink-0 ${
+             <div class="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800/60 p-1 rounded-xl border border-slate-200/50 dark:border-slate-700/50 shrink-0 max-w-full overflow-x-auto custom-scrollbar h-[42px]">
+               <button id="inbox-top-tab-lista" class="h-full px-2.5 sm:px-3.5 rounded-lg text-xs font-black transition flex items-center gap-2 select-none whitespace-nowrap shrink-0 ${
                  this.activeTab !== 'escala' && this.currentView === 'list'
                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
                    : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-slate-700/50'
@@ -646,7 +646,7 @@ export class InboxPage {
                  }">${unreadAtivos > 0 ? `${unreadAtivos} / ${totalAtivos}` : `${totalAtivos}`}</span>
                </button>
 
-               <button id="inbox-top-tab-calendario" class="px-2.5 sm:px-3.5 py-2 rounded-xl text-xs font-black transition flex items-center gap-2 select-none whitespace-nowrap shrink-0 ${
+               <button id="inbox-top-tab-calendario" class="h-full px-2.5 sm:px-3.5 rounded-lg text-xs font-black transition flex items-center gap-2 select-none whitespace-nowrap shrink-0 ${
                  this.activeTab !== 'escala' && this.currentView === 'calendar'
                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
                    : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-slate-700/50'
@@ -655,7 +655,7 @@ export class InboxPage {
                  <span>Calendário</span>
                </button>
 
-               <button id="inbox-top-tab-escala" class="px-2.5 sm:px-3.5 py-2 rounded-xl text-xs font-black transition flex items-center gap-2 select-none whitespace-nowrap shrink-0 ${
+               <button id="inbox-top-tab-escala" class="h-full px-2.5 sm:px-3.5 rounded-lg text-xs font-black transition flex items-center gap-2 select-none whitespace-nowrap shrink-0 ${
                  this.activeTab === 'escala'
                    ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-md shadow-violet-600/20'
                    : 'bg-violet-50 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300 hover:bg-violet-100 dark:hover:bg-violet-900/50 border border-violet-200/40 dark:border-violet-800/40'
@@ -666,7 +666,7 @@ export class InboxPage {
 
             <!-- Seletor de Consultores (Apenas para Admins) -->
             ${this.perfil?.role === 'admin' ? `
-              <div class="flex items-center gap-1.5 shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2.5 py-1.5 rounded-xl shadow-sm">
+              <div class="h-[42px] flex items-center gap-2 shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 rounded-xl shadow-sm">
                 <span class="text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-400 select-none">Equipe:</span>
                 <select id="admin-consultant-select" class="text-xs font-bold bg-transparent text-slate-700 dark:text-slate-400 focus:outline-none cursor-pointer max-w-[150px]">
                   <option value="todos" ${this.selectedConsultantFilter === 'todos' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Todos os Consultores</option>
