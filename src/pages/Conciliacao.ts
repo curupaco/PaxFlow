@@ -253,8 +253,8 @@ export class ConciliacaoPage {
             </div>
           </div>
 
-          <!-- Conteúdo da Tabela por Aba -->
-          <div class="overflow-x-auto">
+          <!-- Conteúdo da Tabela por Aba com cabeçalho congelado -->
+          <div class="overflow-x-auto overflow-y-auto max-h-[600px] custom-scrollbar scroll-indicator-fade relative">
             ${this.renderTabelaPorAba()}
           </div>
 
@@ -361,7 +361,7 @@ export class ConciliacaoPage {
 
       return `
         <table class="w-full text-left text-xs border-collapse min-w-[760px]">
-          <thead class="bg-slate-50 dark:bg-slate-950 text-[9px] uppercase font-black tracking-widest text-slate-400 border-b border-slate-100 dark:border-slate-800">
+          <thead class="sticky top-0 z-10 bg-slate-50 dark:bg-slate-950 text-[9px] uppercase font-black tracking-widest text-slate-400 border-b border-slate-100 dark:border-slate-800 shadow-xs">
             <tr>
               <th class="p-4">Data / Banco</th>
               <th class="p-4">Descrição do Extrato</th>
@@ -432,7 +432,7 @@ export class ConciliacaoPage {
 
       return `
         <table class="w-full text-left text-xs border-collapse min-w-[760px]">
-          <thead class="bg-slate-50 dark:bg-slate-950 text-[9px] uppercase font-black tracking-widest text-slate-400 border-b border-slate-100 dark:border-slate-800">
+          <thead class="sticky top-0 z-10 bg-slate-50 dark:bg-slate-950 text-[9px] uppercase font-black tracking-widest text-slate-400 border-b border-slate-100 dark:border-slate-800 shadow-xs">
             <tr>
               <th class="p-4">Data / Banco</th>
               <th class="p-4">Descrição do Lançamento</th>
@@ -503,7 +503,7 @@ export class ConciliacaoPage {
 
       return `
         <table class="w-full text-left text-xs border-collapse min-w-[760px]">
-          <thead class="bg-slate-50 dark:bg-slate-950 text-[9px] uppercase font-black tracking-widest text-slate-400 border-b border-slate-100 dark:border-slate-800">
+          <thead class="sticky top-0 z-10 bg-slate-50 dark:bg-slate-950 text-[9px] uppercase font-black tracking-widest text-slate-400 border-b border-slate-100 dark:border-slate-800 shadow-xs">
             <tr>
               <th class="p-4">Vencimento / LOC</th>
               <th class="p-4">Cliente / Titular</th>
@@ -550,7 +550,7 @@ export class ConciliacaoPage {
 
       return `
         <table class="w-full text-left text-xs border-collapse min-w-[760px]">
-          <thead class="bg-slate-50 dark:bg-slate-950 text-[9px] uppercase font-black tracking-widest text-slate-400 border-b border-slate-100 dark:border-slate-800">
+          <thead class="sticky top-0 z-10 bg-slate-50 dark:bg-slate-950 text-[9px] uppercase font-black tracking-widest text-slate-400 border-b border-slate-100 dark:border-slate-800 shadow-xs">
             <tr>
               <th class="p-4">Competência</th>
               <th class="p-4">Data do Fechamento</th>

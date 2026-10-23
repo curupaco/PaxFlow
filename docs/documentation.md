@@ -1017,9 +1017,10 @@ Com o objetivo de eliminar assimetrias, alturas discrepantes e o desalinhamento 
    - Campos de busca (`input`), seletores dropdown (`select`) e contêineres de abas (`div`) utilizam a mesma altura de 42px.
    - Alinhamento vertical na mesma linha de base (`items-center` ou `items-end`), garantindo simetria absoluta e sem saltos visuais ao alternar opções.
 
-2. **Cabeçalhos de Tabelas Unificados (`thead`)**:
+2. **Cabeçalhos de Tabelas Unificados e Congelados (`sticky thead`)**:
    - Todas as tabelas do sistema compartilham os mesmos tokens de contraste e tipografia:
      `text-[9px] uppercase tracking-widest font-black text-slate-400 bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800`.
+   - **Cabeçalho Congelado no Topo**: Contêineres de tabelas extensas utilizam `overflow-y-auto max-h-[600px]` (ou `max-h-[650px]`) e cabeçalho `sticky top-0 z-10 bg-slate-50 dark:bg-slate-950 shadow-xs`, mantendo os títulos das colunas permanentemente visíveis enquanto o usuário rola o corpo de dados.
    - Células de dados (`td`): `py-2.5 px-3.5 text-xs font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap`.
    - Valores monetários e códigos: formatação monoespelhada com `font-mono tabular-nums`.
 

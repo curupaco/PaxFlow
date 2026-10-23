@@ -740,10 +740,10 @@ export class ReembolsosPage {
                 ${filtrados.map(r => this.renderMobileCard(r)).join('')}
               </div>
 
-              <!-- Desktop View: Table -->
-              <div class="hidden md:block overflow-x-auto custom-scrollbar scroll-indicator-fade">
+              <!-- Desktop View: Table com cabeçalho congelado -->
+              <div class="hidden md:block overflow-x-auto overflow-y-auto max-h-[650px] custom-scrollbar scroll-indicator-fade relative">
                 <table class="w-full text-left border-collapse min-w-[960px]">
-                  <thead class="sticky top-0 z-20 backdrop-blur-md">
+                  <thead class="sticky top-0 z-20 bg-slate-50 dark:bg-slate-950 shadow-xs">
                     <tr class="bg-slate-50 dark:bg-slate-950 text-[9px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-widest border-b border-slate-100 dark:border-slate-800">
                       <th class="py-3 px-4">ID Reembolso</th>
                       <th class="py-3 px-4">Viagem / Localizador</th>

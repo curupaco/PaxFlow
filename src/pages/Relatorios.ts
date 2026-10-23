@@ -991,9 +991,9 @@ export class RelatoriosPage {
           </div>
 
           <!-- Table detailing data (Visível apenas para Administradores) -->
-          <div class="overflow-x-auto scroll-indicator-fade custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl">
+          <div class="overflow-x-auto overflow-y-auto max-h-[600px] scroll-indicator-fade custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl relative">
             <table class="w-full text-left border-collapse text-xs font-semibold">
-              <thead>
+              <thead class="sticky top-0 z-10 bg-slate-50 dark:bg-slate-950 shadow-xs">
                 <tr class="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-widest font-black">
                   <th class="p-3">Consultor</th>
                   <th class="p-3">Orçamentos</th>
@@ -1107,9 +1107,9 @@ export class RelatoriosPage {
         <!-- Timeline / Detailed report table -->
         <div class="space-y-3">
           <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider">Registros de Alertas Recentes</h3>
-          <div class="overflow-x-auto scroll-indicator-fade custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl">
+          <div class="overflow-x-auto overflow-y-auto max-h-[600px] scroll-indicator-fade custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl relative">
             <table class="w-full text-left border-collapse text-xs font-semibold">
-              <thead>
+              <thead class="sticky top-0 z-10 bg-slate-50 dark:bg-slate-950 shadow-xs">
                 <tr class="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-widest font-black">
                   <th class="p-3">Alerta</th>
                   <th class="p-3">Consultor</th>
@@ -1222,9 +1222,9 @@ export class RelatoriosPage {
         <!-- Profit by category table -->
         <div class="space-y-3">
           <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider">Rentabilidade por Linha de Produto</h3>
-          <div class="overflow-x-auto scroll-indicator-fade custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl">
+          <div class="overflow-x-auto overflow-y-auto max-h-[600px] scroll-indicator-fade custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl relative">
             <table class="w-full text-left border-collapse text-xs font-semibold">
-              <thead>
+              <thead class="sticky top-0 z-10 bg-slate-50 dark:bg-slate-950 shadow-xs">
                 <tr class="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-widest font-black">
                   <th class="p-3">Categoria</th>
                   <th class="p-3">Faturamento Venda</th>
@@ -1361,9 +1361,9 @@ export class RelatoriosPage {
         <!-- Table -->
         <div class="space-y-3">
           <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider">Lista Analítica de Ocorrências e Perdas</h3>
-          <div class="overflow-x-auto scroll-indicator-fade custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl">
+          <div class="overflow-x-auto overflow-y-auto max-h-[600px] scroll-indicator-fade custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl relative">
             <table class="w-full text-left border-collapse text-xs font-semibold">
-              <thead>
+              <thead class="sticky top-0 z-10 bg-slate-50 dark:bg-slate-950 shadow-xs">
                 <tr class="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-widest font-black">
                   <th class="p-3">Cliente</th>
                   <th class="p-3">Destino</th>
@@ -1524,9 +1524,9 @@ export class RelatoriosPage {
         <!-- Funil preditivo -->
         <div class="space-y-3">
           <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider">Funil de Cotação Ativa (Pipeline Ponderado)</h3>
-          <div class="overflow-x-auto scroll-indicator-fade custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl">
+          <div class="overflow-x-auto overflow-y-auto max-h-[600px] scroll-indicator-fade custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl relative">
             <table class="w-full text-left border-collapse text-xs font-semibold">
-              <thead>
+              <thead class="sticky top-0 z-10 bg-slate-50 dark:bg-slate-950 shadow-xs">
                 <tr class="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-widest font-black">
                   <th class="p-3">Etapa/Status</th>
                   <th class="p-3 text-center">Quantidade</th>
@@ -1689,9 +1689,9 @@ export class RelatoriosPage {
         <!-- Table detailing data -->
         <div class="space-y-3">
           <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider">Performance por Origem de Leads</h3>
-          <div class="overflow-x-auto scroll-indicator-fade custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl">
+          <div class="overflow-x-auto overflow-y-auto max-h-[600px] scroll-indicator-fade custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl relative">
             <table class="w-full text-left border-collapse text-xs font-semibold">
-              <thead>
+              <thead class="sticky top-0 z-10 bg-slate-50 dark:bg-slate-950 shadow-xs">
                 <tr class="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-widest font-black">
                   <th class="p-3">Origem</th>
                   <th class="p-3 text-center">Total Leads</th>
@@ -1952,9 +1952,9 @@ export class RelatoriosPage {
         <!-- Table detailing warnings -->
         <div class="space-y-3">
           <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider">Fila de Pendências de Conciliação e Auditoria</h3>
-          <div class="overflow-x-auto scroll-indicator-fade custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl">
+          <div class="overflow-x-auto overflow-y-auto max-h-[600px] scroll-indicator-fade custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl relative">
             <table class="w-full text-left border-collapse text-xs font-semibold">
-              <thead>
+              <thead class="sticky top-0 z-10 bg-slate-50 dark:bg-slate-950 shadow-xs">
                 <tr class="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-widest font-black">
                   <th class="p-3">Cliente</th>
                   <th class="p-3">Destino</th>
@@ -2145,9 +2145,9 @@ export class RelatoriosPage {
             <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider">Validação de Documentos de Embarque Iminente (90 dias)</h3>
             <span class="px-2 py-0.5 bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-450 rounded-lg text-[10px] font-black">${docAlerts.length} inconsistências</span>
           </div>
-          <div class="overflow-x-auto scroll-indicator-fade custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl">
+          <div class="overflow-x-auto overflow-y-auto max-h-[600px] scroll-indicator-fade custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl relative">
             <table class="w-full text-left border-collapse text-xs font-semibold">
-              <thead>
+              <thead class="sticky top-0 z-10 bg-slate-50 dark:bg-slate-950 shadow-xs">
                 <tr class="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-widest font-black">
                   <th class="p-3">Cliente</th>
                   <th class="p-3">Destino</th>
@@ -2174,9 +2174,9 @@ export class RelatoriosPage {
             <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider">Fila de Contatos de Pós-Venda Pendentes (Retornos Recentes)</h3>
             <span class="px-2 py-0.5 bg-amber-50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-450 rounded-lg text-[10px] font-black">${posVendaPendente.length} pendentes</span>
           </div>
-          <div class="overflow-x-auto scroll-indicator-fade custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl">
+          <div class="overflow-x-auto overflow-y-auto max-h-[600px] scroll-indicator-fade custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl relative">
             <table class="w-full text-left border-collapse text-xs font-semibold">
-              <thead>
+              <thead class="sticky top-0 z-10 bg-slate-50 dark:bg-slate-950 shadow-xs">
                 <tr class="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-widest font-black">
                   <th class="p-3">Cliente</th>
                   <th class="p-3">Destino</th>
@@ -2364,9 +2364,9 @@ export class RelatoriosPage {
         ${isAdmin ? `
           <div class="space-y-3">
             <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider">Ranking de Satisfação por Consultor</h3>
-            <div class="overflow-x-auto scroll-indicator-fade custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl">
+            <div class="overflow-x-auto overflow-y-auto max-h-[600px] scroll-indicator-fade custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl relative">
               <table class="w-full text-left border-collapse text-xs font-semibold">
-                <thead>
+                <thead class="sticky top-0 z-10 bg-slate-50 dark:bg-slate-950 shadow-xs">
                   <tr class="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-widest font-black">
                     <th class="p-3 text-center w-12">Posição</th>
                     <th class="p-3">Consultor</th>
@@ -2413,9 +2413,9 @@ export class RelatoriosPage {
             <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider">Depoimentos & Notas Recebidas (${feedbacksFiltrados.length})</h3>
           </div>
 
-          <div class="overflow-x-auto scroll-indicator-fade custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl">
+          <div class="overflow-x-auto overflow-y-auto max-h-[600px] scroll-indicator-fade custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl relative">
             <table class="w-full text-left border-collapse text-xs font-semibold min-w-[900px]">
-              <thead>
+              <thead class="sticky top-0 z-10 bg-slate-50 dark:bg-slate-950 shadow-xs">
                 <tr class="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-widest font-black">
                   <th class="p-3 text-center w-20">Nota</th>
                   <th class="p-3">Passageiro</th>
@@ -2707,10 +2707,10 @@ export class RelatoriosPage {
           </div>
         </div>
 
-        <!-- Embarques Table com rolagem defensiva para telas pequenas sem corte de dados -->
-        <div class="overflow-x-auto scroll-indicator-fade custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl relative">
+        <!-- Embarques Table com cabeçalho congelado e rolagem defensiva -->
+        <div class="overflow-x-auto overflow-y-auto max-h-[650px] scroll-indicator-fade custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl relative">
           <table class="w-full text-left border-collapse text-xs font-semibold min-w-[760px]">
-            <thead>
+            <thead class="sticky top-0 z-10 bg-slate-50 dark:bg-slate-950 shadow-xs">
               <tr class="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-widest font-black">
                 <th class="p-2.5 whitespace-nowrap w-24">Data</th>
                 <th class="p-2.5">Passageiro</th>
@@ -2998,9 +2998,9 @@ export class RelatoriosPage {
         <!-- Section: Leaderboard -->
         <div class="space-y-3">
           <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider">Ranking Geral de Engajamento</h3>
-          <div class="overflow-x-auto scroll-indicator-fade custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl">
+          <div class="overflow-x-auto overflow-y-auto max-h-[600px] scroll-indicator-fade custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl relative">
             <table class="w-full text-left border-collapse text-xs font-semibold">
-              <thead>
+              <thead class="sticky top-0 z-10 bg-slate-50 dark:bg-slate-950 shadow-xs">
                 <tr class="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-widest font-black">
                   <th class="p-3 text-center w-12">Posição</th>
                   <th class="p-3">Consultor</th>
@@ -3021,9 +3021,9 @@ export class RelatoriosPage {
         <!-- Section: Badge Analytics -->
         <div class="space-y-3">
           <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider">Distribuição e Adoção de Medalhas (Badge Analytics)</h3>
-          <div class="overflow-x-auto scroll-indicator-fade custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl">
+          <div class="overflow-x-auto overflow-y-auto max-h-[600px] scroll-indicator-fade custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl relative">
             <table class="w-full text-left border-collapse text-xs font-semibold">
-              <thead>
+              <thead class="sticky top-0 z-10 bg-slate-50 dark:bg-slate-950 shadow-xs">
                 <tr class="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-widest font-black">
                   <th class="p-3 text-center w-12">Medalha</th>
                   <th class="p-3">Nome / Detalhe</th>
@@ -3266,9 +3266,9 @@ export class RelatoriosPage {
             <span class="text-[11px] text-slate-400 font-semibold">${apuracao.rankingConsultores.length} consultores avaliados</span>
           </div>
 
-          <div class="overflow-x-auto scroll-indicator-fade custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl">
+          <div class="overflow-x-auto overflow-y-auto max-h-[600px] scroll-indicator-fade custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl relative">
             <table class="w-full text-left border-collapse text-xs font-semibold">
-              <thead>
+              <thead class="sticky top-0 z-10 bg-slate-50 dark:bg-slate-950 shadow-xs">
                 <tr class="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-widest font-black">
                   <th class="p-3 text-center w-12">Posição</th>
                   <th class="p-3">Consultor</th>
@@ -3661,9 +3661,9 @@ export class RelatoriosPage {
             </span>
           </div>
 
-          <div class="overflow-x-auto scroll-indicator-fade custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl">
+          <div class="overflow-x-auto overflow-y-auto max-h-[650px] scroll-indicator-fade custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl relative">
             <table class="w-full text-left border-collapse text-xs font-semibold min-w-[1000px]">
-              <thead>
+              <thead class="sticky top-0 z-20 bg-slate-50 dark:bg-slate-950 shadow-xs">
                 <tr class="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-widest font-black">
                   <th class="p-3 text-center w-16">Tipo</th>
                   <th class="p-3">Cliente</th>
@@ -3800,9 +3800,9 @@ export class RelatoriosPage {
               Nenhum registro computado para este consultor no período da meta/campanha.
             </div>
           ` : `
-            <div class="overflow-x-auto border border-slate-100 dark:border-slate-800 rounded-2xl">
+            <div class="overflow-x-auto overflow-y-auto max-h-[600px] scroll-indicator-fade custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl relative">
               <table class="w-full text-left border-collapse text-xs font-semibold">
-                <thead>
+                <thead class="sticky top-0 z-10 bg-slate-50 dark:bg-slate-950 shadow-xs">
                   <tr class="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-widest font-black">
                     <th class="p-3">Data</th>
                     <th class="p-3">${isCliente ? 'Nome do Cliente' : isOrcamento ? 'Cliente / Lead' : isReembolso ? 'Titular / Passageiro' : 'Passageiro'}</th>
@@ -5231,10 +5231,10 @@ export class RelatoriosPage {
               ✅ Nenhuma cotação em risco de desistência no momento. Excelente trabalho da equipe!
             </div>
           ` : `
-            <div class="overflow-x-auto">
-              <table class="w-full text-left border-collapse">
-                <thead>
-                  <tr class="border-b border-slate-200 dark:border-slate-800 text-[10px] font-bold uppercase text-slate-400 tracking-wider">
+            <div class="overflow-x-auto overflow-y-auto max-h-[550px] custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl relative">
+              <table class="w-full text-left border-collapse text-xs font-semibold">
+                <thead class="sticky top-0 z-10 bg-slate-50 dark:bg-slate-950 shadow-xs">
+                  <tr class="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-widest font-black">
                     <th class="py-3 px-3">Cliente / Orçamento</th>
                     <th class="py-3 px-3">Temperatura</th>
                     <th class="py-3 px-3">Inatividade</th>
@@ -5292,10 +5292,10 @@ export class RelatoriosPage {
               ✅ Todas as viagens próximas do embarque estão 100% conferidas e em conformidade!
             </div>
           ` : `
-            <div class="overflow-x-auto">
-              <table class="w-full text-left border-collapse">
-                <thead>
-                  <tr class="border-b border-slate-200 dark:border-slate-800 text-[10px] font-bold uppercase text-slate-400 tracking-wider">
+            <div class="overflow-x-auto overflow-y-auto max-h-[550px] custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl relative">
+              <table class="w-full text-left border-collapse text-xs font-semibold">
+                <thead class="sticky top-0 z-10 bg-slate-50 dark:bg-slate-950 shadow-xs">
+                  <tr class="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-widest font-black">
                     <th class="py-3 px-3">Passageiro / Viagem</th>
                     <th class="py-3 px-3">Dias p/ Embarque</th>
                     <th class="py-3 px-3">Inconsistências Encontradas</th>
