@@ -935,9 +935,9 @@ export const HELP_ITEMS: HelpItem[] = [
   {
     id: 'relatorio-embarques-ergonomia-acoes',
     modulo: 'clientes',
-    label: '✈️ Embarques: Layout Fluido & Ações Rápidas Compactas',
-    description: 'Tabela otimizada sem rolagem horizontal com botões de ação ultra-compactos e controle preventivo de contatos.',
-    details: 'Na aba **Embarques e Trechos de Voo** do módulo de Relatórios:\n\n- **Layout Fluido sem Rolagem Horizontal**: A tabela foi projetada para ocupar naturalmente a largura útil da tela sem barras de rolagem lateral em monitores convencionais.\n- **Controle de Contato Pré-Embarque**: Permite ao consultor ou atendente alternar em 1-clique o status entre `⏳ Pendente` e `✅ Feito`, com tooltip registrando o autor e data/hora do contato.\n- **Coluna de AÇÕES Compacta**: Botões quadrados enxutos com micro-tooltips para máxima produtividade:\n  - **Ícone 🔍 Detalhes**: Abre o modal com os dados completos da venda diretamente por cima do relatório.\n  - **Ícone 📄 Orçamento**: Direciona diretamente para a proposta comercial de origem vinculada ao cliente.\n  - **Ícone 💬 WhatsApp**: Abre a tela de conversa no Digisac com o passageiro titular.'
+    label: '✈️ Embarques: Arquitetura Enxuta de 6 Colunas (Zero Scroll)',
+    description: 'Tabela fluida com 6 colunas, avatar de consultores, destino e trecho unificados e alertas integrados.',
+    details: 'Na aba **Embarques e Trechos de Voo** do módulo de Relatórios:\n\n- **Zero Scroll Horizontal**: Tabela compactada em 6 colunas de leitura imediata (`Data`, `Passageiro`, `Destino & Trecho`, `Consultor`, `Contato` e `Ações`).\n- **Foto/Avatar do Consultor**: O nome por extenso foi substituído pela foto/avatar circular com o nome completo exibido no hover, economizando mais de 100px.\n- **Destino e Trecho Unificados**: Exibe o destino em destaque com o trecho limpo logo abaixo (ex: `✈️ Ida` ou `✈️ Volta`), sem termos redundantes.\n- **Alerta 🚨 Integrado**: Notificações programadas aparecem como um ícone interativo discreto ao lado do passageiro.\n- **Navegação em 1-Clique**: Clicar no nome do passageiro ou no destino abre imediatamente a ficha detalhada da venda, além dos botões rápidos de ação (`🔍 Detalhes`, `📄 Orçamento` e `💬 WhatsApp`).'
   },
   {
     id: 'lembretes-descricao-detalhada',

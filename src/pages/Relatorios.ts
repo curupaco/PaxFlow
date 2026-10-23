@@ -2385,7 +2385,9 @@ export class RelatoriosPage {
 
       const clientName = v.cliente?.nome || 'Passageiro';
       const clientPhone = v.cliente?.telefone || '';
-      const consultorName = this.consultores.find(c => c.id === v.consultor_id)?.nome || 'Consultor';
+      const consultorObj = this.consultores.find(c => c.id === v.consultor_id);
+      const consultorName = consultorObj?.nome || 'Consultor';
+      const consultorAvatar = consultorObj?.avatar_url || consultorObj?.avatar || '';
       const contatosViagem = ContatosEmbarqueService.extrairContatos(v);
       const embarquesConsolidados = ContatosEmbarqueService.obterEmbarquesViagem(v);
 
@@ -2409,6 +2411,7 @@ export class RelatoriosPage {
             tipo: emb.tipoDesc,
             loc: emb.loc,
             consultor: consultorName,
+            consultorAvatar,
             hasAlert,
             tripId: v.id,
             orcamentoId,
@@ -2435,17 +2438,15 @@ export class RelatoriosPage {
       filteredList = list.filter(item => !item.contatoFeito);
     }
 
-    const rowsHtml = filteredList.map((item) => {
-      const alertBadge = item.hasAlert 
-        ? `<div class="flex items-center justify-center gap-1.5">
-             <span class="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 text-[10px] font-black uppercase tracking-wider rounded-md">SIM</span>
-             <button class="btn-alerta-viagem text-[10px] font-extrabold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-350 underline focus:outline-none" data-trip-id="${item.tripId}" data-product-id="${item.productId}" data-type="${item.tipoEmbarque}">Ver</button>
-           </div>`
-        : `<div class="flex items-center justify-center gap-1.5">
-             <span class="px-2 py-0.5 bg-slate-150 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[10px] font-black uppercase tracking-wider rounded-md">NÃO</span>
-             <button class="btn-alerta-viagem text-[10px] font-extrabold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-350 underline focus:outline-none" data-trip-id="${item.tripId}" data-product-id="${item.productId}" data-type="${item.tipoEmbarque}">Criar</button>
-           </div>`;
+    const limparTrecho = (tipo: string): string => {
+      if (!tipo) return '';
+      return tipo
+        .replace(/\s+da\s+viagem/gi, '')
+        .replace(/\s+de\s+viagem/gi, '')
+        .trim();
+    };
 
+    const rowsHtml = filteredList.map((item) => {
       let contatoBadge = '';
       if (item.contatoFeito) {
         const dHora = item.contatoRegistro?.data_contato 
@@ -2455,7 +2456,7 @@ export class RelatoriosPage {
         const tooltip = `Contato realizado por ${quem} em ${dHora}. Clique para desmarcar se necessário.`;
 
         contatoBadge = `
-          <button class="btn-toggle-contato px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-800/60 rounded-lg text-[10px] font-black uppercase tracking-wider transition flex items-center gap-1 mx-auto shadow-xs" 
+          <button class="btn-toggle-contato px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-800/60 rounded-lg text-[10px] font-black uppercase tracking-wider transition flex items-center gap-1 mx-auto shadow-xs cursor-pointer" 
             data-trip-id="${item.tripId}" 
             data-trecho-key="${item.trechoKey}" 
             title="${tooltip}">
@@ -2467,7 +2468,7 @@ export class RelatoriosPage {
         `;
       } else {
         contatoBadge = `
-          <button class="btn-toggle-contato px-2.5 py-1 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/30 dark:hover:bg-amber-900/40 text-amber-700 dark:text-amber-400 border border-amber-200/80 dark:border-amber-800/60 rounded-lg text-[10px] font-black uppercase tracking-wider transition flex items-center gap-1 mx-auto shadow-xs" 
+          <button class="btn-toggle-contato px-2.5 py-1 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/30 dark:hover:bg-amber-900/40 text-amber-700 dark:text-amber-400 border border-amber-200/80 dark:border-amber-800/60 rounded-lg text-[10px] font-black uppercase tracking-wider transition flex items-center gap-1 mx-auto shadow-xs cursor-pointer" 
             data-trip-id="${item.tripId}" 
             data-trecho-key="${item.trechoKey}" 
             title="Contato pré-embarque pendente. Clique para marcar como realizado.">
@@ -2504,16 +2505,49 @@ export class RelatoriosPage {
         </button>
       `;
 
+      const trechoDesc = limparTrecho(item.tipo);
+      const consultorAvatarHtml = `
+        <div class="inline-flex items-center justify-center cursor-pointer group relative mx-auto" title="Consultor: ${item.consultor}">
+          ${getAvatarSvg(item.consultorAvatar, 'w-7 h-7 rounded-full shadow-xs border border-slate-200 dark:border-slate-700', item.consultor)}
+        </div>
+      `;
+
       return `
         <tr class="group border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50/40 dark:hover:bg-slate-800/20 text-slate-600 dark:text-slate-300 transition-colors">
+          <!-- 1. DATA -->
           <td class="p-2.5 font-extrabold text-slate-800 dark:text-slate-100 whitespace-nowrap w-24">${formatarDataBr(item.data)}</td>
-          <td class="p-2.5 font-extrabold text-slate-800 dark:text-slate-100 max-w-[150px] truncate" title="${item.cliente}">${item.cliente}</td>
-          <td class="p-2.5 whitespace-nowrap text-[11px] text-slate-500 w-20">${item.tipo}</td>
-          <td class="p-2.5 font-bold text-indigo-600 dark:text-indigo-400 max-w-[180px] truncate" title="${item.destino}">${item.destino}</td>
-          <td class="p-2.5 font-mono font-bold text-[10px] tracking-wider uppercase whitespace-nowrap w-24">${item.loc}</td>
-          <td class="p-2.5 font-semibold text-slate-700 dark:text-slate-200 max-w-[130px] truncate" title="${item.consultor}">${item.consultor}</td>
-          <td class="p-2.5 text-center whitespace-nowrap w-20">${alertBadge}</td>
-          <td class="p-2.5 text-center whitespace-nowrap w-24">${contatoBadge}</td>
+
+          <!-- 2. PASSAGEIRO (+ ALERTA INTEGRADO SE HOUVER) -->
+          <td class="p-2.5">
+            <div class="flex items-center gap-1.5">
+              <button class="btn-detalhes-viagem text-left font-extrabold text-slate-800 dark:text-slate-100 hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline cursor-pointer truncate max-w-[200px]" data-trip-id="${item.tripId}" title="Ver detalhes de ${item.cliente}">
+                ${item.cliente}
+              </button>
+              ${item.hasAlert ? `
+                <button class="btn-alerta-viagem inline-flex items-center justify-center text-xs shrink-0 cursor-pointer hover:scale-110 transition active:scale-95" data-trip-id="${item.tripId}" data-product-id="${item.productId}" data-type="${item.tipoEmbarque}" title="Alerta programado ativo! Clique para visualizar">
+                  🚨
+                </button>
+              ` : ''}
+            </div>
+          </td>
+
+          <!-- 3. DESTINO & TRECHO UNIFICADO -->
+          <td class="p-2.5">
+            <button class="btn-detalhes-viagem text-left font-bold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 hover:underline cursor-pointer block truncate max-w-[220px]" data-trip-id="${item.tripId}" title="Ver detalhes da viagem: ${item.destino}">
+              ${item.destino}
+            </button>
+            ${trechoDesc ? `<span class="block text-[11px] font-semibold text-slate-400 dark:text-slate-500 mt-0.5">${trechoDesc}</span>` : ''}
+          </td>
+
+          <!-- 4. CONSULTOR (AVATAR COM NOME NO HOVER) -->
+          <td class="p-2.5 text-center whitespace-nowrap w-16">
+            ${consultorAvatarHtml}
+          </td>
+
+          <!-- 5. CONTATO -->
+          <td class="p-2.5 text-center whitespace-nowrap w-28">${contatoBadge}</td>
+
+          <!-- 6. AÇÕES -->
           <td class="p-2.5 text-center whitespace-nowrap w-28">
             <div class="flex items-center justify-center gap-1">
               ${detalhesBtn}
@@ -2525,7 +2559,7 @@ export class RelatoriosPage {
       `;
     }).join('');
 
-    const colunasTotais = 9;
+    const colunasTotais = 6;
 
     return `
       <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-3xl p-6 shadow-sm flex flex-col gap-6 print-full-width">
@@ -2550,18 +2584,15 @@ export class RelatoriosPage {
         </div>
 
         <!-- Embarques Table -->
-        <div class="overflow-x-auto custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl relative">
+        <div class="border border-slate-100 dark:border-slate-800 rounded-2xl relative overflow-hidden">
           <table class="w-full text-left border-collapse text-xs font-semibold">
             <thead>
               <tr class="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-widest font-black">
                 <th class="p-2.5 whitespace-nowrap w-24">Data</th>
                 <th class="p-2.5">Passageiro</th>
-                <th class="p-2.5 whitespace-nowrap w-20">Tipo</th>
-                <th class="p-2.5">Destino/Trecho</th>
-                <th class="p-2.5 whitespace-nowrap w-24">Código (LOC)</th>
-                <th class="p-2.5">Consultor</th>
-                <th class="p-2.5 text-center whitespace-nowrap w-20">Alerta</th>
-                <th class="p-2.5 text-center whitespace-nowrap w-24">Contato</th>
+                <th class="p-2.5">Destino &amp; Trecho</th>
+                <th class="p-2.5 text-center whitespace-nowrap w-16">Consultor</th>
+                <th class="p-2.5 text-center whitespace-nowrap w-28">Contato</th>
                 <th class="p-2.5 text-center whitespace-nowrap w-28">Ações</th>
               </tr>
             </thead>
@@ -4769,13 +4800,14 @@ export class RelatoriosPage {
         }
       });
     } else if (this.activeTab === 'embarques') {
-      csvContent += 'Data de Embarque;Cliente/Passageiro;Destino/Trecho;Tipo;Código (LOC);Consultor;Tem Alerta;Contato Pré-Embarque\n';
+      csvContent += 'Data de Embarque;Cliente/Passageiro;Telefone;Destino;Trecho/Tipo;Código (LOC);Consultor;Tem Alerta;Contato Pré-Embarque\n';
       const start = this.dataInicio;
       const end = this.dataFim;
       
       const list: any[] = [];
       this.viagens.forEach((v: any) => {
         const clientName = v.cliente?.nome || 'Passageiro';
+        const clientPhone = v.cliente?.telefone || '';
         const consultorName = this.consultores.find(c => c.id === v.consultor_id)?.nome || 'Consultor';
         const contatosViagem = ContatosEmbarqueService.extrairContatos(v);
         const embarquesConsolidados = ContatosEmbarqueService.obterEmbarquesViagem(v);
@@ -4789,6 +4821,7 @@ export class RelatoriosPage {
             list.push({
               data: emb.dataStr,
               cliente: clientName,
+              telefone: clientPhone,
               destino: emb.destino,
               tipo: emb.tipoDesc,
               loc: emb.loc,
@@ -4804,7 +4837,7 @@ export class RelatoriosPage {
 
       list.forEach((item: any) => {
         const dateFormatted = item.data.split('-').reverse().join('/');
-        csvContent += `"${dateFormatted}";"${item.cliente}";"${item.destino}";"${item.tipo}";"${item.loc}";"${item.consultor}";"${item.hasAlert ? 'Sim' : 'Não'}";"${item.contatoFeito ? 'Feito' : 'Pendente'}"\n`;
+        csvContent += `"${dateFormatted}";"${item.cliente}";"${item.telefone}";"${item.destino}";"${item.tipo}";"${item.loc}";"${item.consultor}";"${item.hasAlert ? 'Sim' : 'Não'}";"${item.contatoFeito ? 'Feito' : 'Pendente'}"\n`;
       });
     } else if (this.activeTab === 'gamificacao') {
       csvContent += 'Posição;Consultor;Nível;Patente;XP Total;Conquistas\n';

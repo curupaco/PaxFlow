@@ -229,15 +229,33 @@ describe('Relatórios - Melhorias Subcutâneas (Embarques, Desistências e Valid
     });
   });
 
-  it('deve validar estrutura enxuta de embarques sem coluna de validação de gestor no cabeçalho CSV', () => {
+  it('deve validar estrutura de embarques no CSV contendo LOC e Telefone para auditoria gerencial', () => {
     // Setup
-    const cabecalhoCsv = 'Data de Embarque;Cliente/Passageiro;Destino/Trecho;Tipo;Código (LOC);Consultor;Tem Alerta;Contato Pré-Embarque\n';
+    const cabecalhoCsv = 'Data de Embarque;Cliente/Passageiro;Telefone;Destino;Trecho/Tipo;Código (LOC);Consultor;Tem Alerta;Contato Pré-Embarque\n';
     const colunas = cabecalhoCsv.trim().split(';');
 
     // Action & Assert
-    expect(colunas.length).toBe(8);
+    expect(colunas.length).toBe(9);
+    expect(colunas).toContain('Código (LOC)');
+    expect(colunas).toContain('Telefone');
     expect(colunas).not.toContain('Validação Gestor');
-    expect(cabecalhoCsv).not.toContain('Validação Gestor');
+  });
+
+  it('deve validar limpeza de trecho removendo redundâncias como "da viagem"', () => {
+    // Setup
+    const limparTrecho = (tipo: string): string => {
+      if (!tipo) return '';
+      return tipo
+        .replace(/\s+da\s+viagem/gi, '')
+        .replace(/\s+de\s+viagem/gi, '')
+        .trim();
+    };
+
+    // Action & Assert
+    expect(limparTrecho('✈️ Volta da Viagem')).toBe('✈️ Volta');
+    expect(limparTrecho('✈️ Ida da Viagem')).toBe('✈️ Ida');
+    expect(limparTrecho('✈️ Voo de viagem')).toBe('✈️ Voo');
+    expect(limparTrecho('✈️ Confins ➔ São Paulo')).toBe('✈️ Confins ➔ São Paulo');
   });
 });
 

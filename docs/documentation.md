@@ -1080,11 +1080,13 @@ Para aprofundar o controle gerencial, a governança de auditoria e a agilidade n
    - **Hierarquia de Z-Index & Caixas de Diálogo Invioláveis**: O sistema eleva as caixas de alerta, confirmação e prompts interativos (`showCustomConfirm`, `showCustomPrompt`, `showCustomAlert`) para `z-[100000]`, garantindo que perguntas de confirmação (como justificativa na reabertura do orçamento) fiquem sempre acima do modal de visualização (`z-[9999]`), sem bloqueio de cliques.
    - **Atalho de Conversa WhatsApp / Digisac**: Botão `💬 WhatsApp` na coluna de Ações que abre o modal de mensagens do Digisac em modo de visualização/controle com o histórico do cliente.
 
-2. **Relatório de Embarques, Layout Fluido sem Scroll Horizontal & Ações Compactas**:
-   - **Tabela Fluida e Responsiva (Zero Scroll Horizontal)**: A tabela de embarques e trechos de voo foi redesenhada sem larguras mínimas forçadas (`min-w-[1100px]`), adaptando-se organicamente a 100% da largura útil da tela em monitores convencionais e laptops.
-   - **Remoção da Validação do Gestor na Tabela**: Foco simplificado e direto no controle de contato pré-embarque do consultor, alinhando a visualização na tela com o arquivo de exportação CSV.
-   - **Coluna de Ações Ultra-Compacta com Ícones**: Os botões de texto longo foram substituídos por botões de ícone compactos quadrados (`w-7 h-7`) com micro-tooltips (`🔍 Detalhes`, `📄 Orçamento` e `💬 WhatsApp`), reduzindo a largura necessária da coluna de 220px para ~110px.
-   - **Resiliência a Schema Drift (Zero-Break)**: O serviço `ContatosEmbarqueService` implementa persistência nativa na coluna `contatos_embarque` com fallback automático para `observacoes` caso a coluna não esteja migrada no banco (erro `42703`/`PGRST204`).
+2. **Relatório de Embarques, Arquitetura de 6 Colunas (Zero Scroll) & Ações Compactas**:
+   - **Tabela Fluida em 6 Colunas (Zero Scroll Horizontal)**: A tabela foi reestruturada para conter estritamente 6 colunas essenciais (`Data`, `Passageiro`, `Destino & Trecho`, `Consultor`, `Contato` e `Ações`), sem largura mínima forçada (`w-full`), encaixando-se perfeitamente no container em qualquer monitor ou notebook.
+   - **Remoção de Código (LOC) da Tela**: Coluna omitida na interface para ganho de espaço visual e preservada na exportação Excel (CSV) para auditoria contábil.
+   - **Avatar Redondo do Consultor**: Substituição do nome em texto por foto/avatar com nome completo no tooltip ao passar o mouse.
+   - **Destino e Trecho Unificados**: O destino ganha destaque visual como link clicável, com o trecho limpo logo abaixo sem redundâncias (ex: `✈️ Ida` ou `✈️ Volta`).
+   - **Alerta 🚨 Integrado**: Alertas operacionais vinculados ao embarque aparecem como badge compacto clicável diretamente ao lado do nome do passageiro.
+   - **Navegação Clicável Direta**: Tanto o nome do passageiro quanto o destino abrem instantaneamente os detalhes da venda.
 
 3. **Integração Global com WhatsApp / Digisac em Relatórios Analíticos**:
    - Disponibilização do botão de conversa no Digisac (`SendTemplateMessageModal.open({ ... focusChatHistory: true })`) em todas as visões que possuem passageiros e clientes vinculados:
