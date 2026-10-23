@@ -129,13 +129,54 @@ export class RelatoriosShellView {
           </div>
         </div>
 
+        <!-- Seletor Rápido de Relatórios para Dispositivos Móveis (Visível apenas em < lg) -->
+        <div class="block lg:hidden w-full no-print">
+          <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-3.5 shadow-sm flex flex-col gap-1.5">
+            <label for="select-relatorio-mobile" class="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center justify-between">
+              <span class="flex items-center gap-1.5">📑 Selecionar Relatório</span>
+              <span class="text-[9px] font-black text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 px-2 py-0.5 rounded-md">Mobile</span>
+            </label>
+            <div class="relative w-full">
+              <select id="select-relatorio-mobile" class="w-full h-[42px] pl-3.5 pr-10 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition appearance-none cursor-pointer">
+                <optgroup label="💼 GESTÃO COMERCIAL">
+                  <option value="desempenho" ${activeTab === 'desempenho' ? 'selected' : ''}>🎯 Desempenho e Produtividade</option>
+                  <option value="segmentacao_campanhas" ${activeTab === 'segmentacao_campanhas' ? 'selected' : ''}>🚀 Campanhas & Segmentação</option>
+                  <option value="metas_campanhas" ${activeTab === 'metas_campanhas' ? 'selected' : ''}>🏆 Metas & Campanhas</option>
+                  <option value="origens" ${activeTab === 'origens' ? 'selected' : ''}>📢 Origem de Leads</option>
+                  <option value="previsoes" ${activeTab === 'previsoes' ? 'selected' : ''}>🔮 Previsões Preditivas</option>
+                  <option value="riscopreditivo" ${activeTab === 'riscopreditivo' ? 'selected' : ''}>🚨 Previsão de Risco & Churn</option>
+                </optgroup>
+                <optgroup label="💰 FINANCEIRO & AUDITORIA">
+                  <option value="faturamento" ${activeTab === 'faturamento' ? 'selected' : ''}>💰 Faturamento</option>
+                  <option value="auditoria" ${activeTab === 'auditoria' ? 'selected' : ''}>🪙 Recebimentos & Auditoria</option>
+                  <option value="perdas" ${activeTab === 'perdas' ? 'selected' : ''}>📉 Desistências & Perdas</option>
+                </optgroup>
+                <optgroup label="✈️ OPERAÇÕES & SLAS">
+                  <option value="prazos" ${activeTab === 'prazos' ? 'selected' : ''}>⏰ Controle de SLAs</option>
+                  <option value="posvenda" ${activeTab === 'posvenda' ? 'selected' : ''}>✈️ Pós-Venda & SLAs</option>
+                  <option value="satisfacao" ${activeTab === 'satisfacao' ? 'selected' : ''}>⭐ Pesquisa de Satisfação (NPS)</option>
+                  <option value="embarques" ${activeTab === 'embarques' ? 'selected' : ''}>🛫 Relatório de Embarques e Voos</option>
+                </optgroup>
+                <optgroup label="👥 GESTÃO DE EQUIPE">
+                  <option value="gamificacao" ${activeTab === 'gamificacao' ? 'selected' : ''}>🏆 Gamificação & Ranking</option>
+                </optgroup>
+              </select>
+              <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3.5 text-slate-400">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Dashboard Workspace (Collapsible Left Menu & Dynamic Data Pane) -->
         <div class="flex flex-col lg:flex-row gap-6 items-start w-full print-full-width">
           
-          <!-- Navigation Sidebar (Full vs Mini-Bar mode) -->
+          <!-- Navigation Sidebar (Full vs Mini-Bar mode - visível apenas em telas grandes lg+) -->
           ${menuLateralRecolhido ? `
             <!-- Mini-Bar Recolhida (Economia máxima de espaço) -->
-            <div class="w-16 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl py-3 px-2 shadow-sm flex flex-col items-center gap-2 report-tabs-bar no-print flex-shrink-0 transition-all duration-200">
+            <div class="hidden lg:flex w-16 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl py-3 px-2 shadow-sm flex-col items-center gap-2 report-tabs-bar no-print flex-shrink-0 transition-all duration-200">
               <button id="btn-toggle-menu-lateral-relatorios" title="Expandir menu de relatórios" class="w-10 h-10 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 flex items-center justify-center transition mb-1 text-sm font-black border border-slate-200/60 dark:border-slate-700/60 shadow-xs cursor-pointer">
                 ❯
               </button>
@@ -209,7 +250,7 @@ export class RelatoriosShellView {
             </div>
           ` : `
             <!-- Menu Lateral Completo Expandido -->
-            <div class="w-full lg:w-64 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-4 shadow-sm flex flex-col gap-4 report-tabs-bar no-print flex-shrink-0 transition-all duration-200">
+            <div class="hidden lg:flex lg:w-64 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-4 shadow-sm flex-col gap-4 report-tabs-bar no-print flex-shrink-0 transition-all duration-200">
               
               <!-- Cabeçalho do menu com botão de recolher -->
               <div class="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
@@ -343,7 +384,7 @@ export class RelatoriosShellView {
       });
     });
 
-    // 2. Tab switches
+    // 2. Tab switches (Desktop sidebar buttons)
     const tabButtons = container.querySelectorAll('.report-tabs-bar button[data-tab]');
     tabButtons.forEach(btn => {
       btn.addEventListener('click', () => {
@@ -352,6 +393,15 @@ export class RelatoriosShellView {
           handlers.onSelectTab(tab);
         }
       });
+    });
+
+    // 2.1 Tab switches (Mobile select dropdown)
+    const selectRelatorioMobile = container.querySelector('#select-relatorio-mobile') as HTMLSelectElement | null;
+    selectRelatorioMobile?.addEventListener('change', () => {
+      const tab = selectRelatorioMobile.value as RelatorioTab;
+      if (tab) {
+        handlers.onSelectTab(tab);
+      }
     });
 
     // 3. Apply filters button

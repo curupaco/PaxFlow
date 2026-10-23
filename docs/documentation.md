@@ -1417,6 +1417,10 @@ Otimização ergonômica e de layout desenvolvida no módulo `Relatorios.ts` par
    - A área principal do relatório ativo utiliza dimensionamento flexível (`flex-1 min-w-0`), expandindo automaticamente e aproveitando os mais de 220px a 400px liberados pelo recolhimento do menu.
    - O contêiner geral foi adaptado de largura fixa (`max-w-7xl`) para largura total fluida (`max-w-full w-full xl:px-8`), permitindo que tabelas com múltiplas colunas (como o Relatório de Embarque, Faturamento, Desistências e Pesquisa NPS) respirem confortavelmente sem exigir rolagem horizontal indesejada.
 
+3. **Navegação Responsiva Mobile com Seletor Dropdown Agrupado**:
+   - Em smartphones e telas menores (`< lg`), as barras laterais verticais são ocultadas (`hidden lg:flex`), eliminando o empilhamento vertical que criava faixas vazias e empurrava o conteúdo para fora da primeira dobra.
+   - Um seletor nativo moderno (`#select-relatorio-mobile`) com altura padrão `h-[42px]` e bordas `rounded-xl` é posicionado no topo, estruturado com `<optgroup>` para as 4 categorias estratégicas, permitindo alternar qualquer relatório com 1 toque e mantendo os dados imediatamente visíveis na tela inicial.
+
 ---
 
 ## 4. Diferenciais Competitivos
