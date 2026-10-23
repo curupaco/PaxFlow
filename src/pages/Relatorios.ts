@@ -2594,11 +2594,7 @@ export class RelatoriosPage {
       `;
 
       const trechoDesc = limparTrecho(item.tipo);
-      const consultorAvatarHtml = `
-        <div class="inline-flex items-center justify-center cursor-pointer group relative mx-auto" title="Consultor: ${item.consultor}">
-          ${getAvatarSvg(item.consultorAvatar, 'w-7 h-7 rounded-full shadow-xs border border-slate-200 dark:border-slate-700', item.consultor)}
-        </div>
-      `;
+      const primeiroNomeConsultor = (item.consultor || 'Consultor').trim().split(' ')[0];
 
       return `
         <tr class="group border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50/40 dark:hover:bg-slate-800/20 text-slate-600 dark:text-slate-300 transition-colors">
@@ -2627,15 +2623,20 @@ export class RelatoriosPage {
             ${trechoDesc ? `<span class="block text-[11px] font-semibold text-slate-400 dark:text-slate-500 mt-0.5">${trechoDesc}</span>` : ''}
           </td>
 
-          <!-- 4. CONSULTOR (AVATAR COM NOME NO HOVER) -->
-          <td class="p-2.5 text-center whitespace-nowrap w-16">
-            ${consultorAvatarHtml}
+          <!-- 4. CÓDIGO (LOC) -->
+          <td class="p-2.5 whitespace-nowrap text-xs font-mono font-bold text-slate-500 dark:text-slate-400">
+            ${item.loc || '<span class="text-slate-300 dark:text-slate-600 font-normal italic">N/I</span>'}
           </td>
 
-          <!-- 5. CONTATO -->
+          <!-- 5. CONSULTOR (PRIMEIRO NOME) -->
+          <td class="p-2.5 whitespace-nowrap text-xs font-bold text-slate-700 dark:text-slate-200" title="Consultor: ${item.consultor}">
+            ${primeiroNomeConsultor}
+          </td>
+
+          <!-- 6. CONTATO -->
           <td class="p-2.5 text-center whitespace-nowrap w-28">${contatoBadge}</td>
 
-          <!-- 6. AÇÕES -->
+          <!-- 7. AÇÕES -->
           <td class="p-2.5 text-center whitespace-nowrap w-28">
             <div class="flex items-center justify-center gap-1">
               ${detalhesBtn}
@@ -2647,7 +2648,7 @@ export class RelatoriosPage {
       `;
     }).join('');
 
-    const colunasTotais = 6;
+    const colunasTotais = 7;
 
     return `
       <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-3xl p-6 shadow-sm flex flex-col gap-6 print-full-width">
@@ -2679,7 +2680,8 @@ export class RelatoriosPage {
                 <th class="p-2.5 whitespace-nowrap w-24">Data</th>
                 <th class="p-2.5">Passageiro</th>
                 <th class="p-2.5">Destino &amp; Trecho</th>
-                <th class="p-2.5 text-center whitespace-nowrap w-16">Consultor</th>
+                <th class="p-2.5 whitespace-nowrap">Código (LOC)</th>
+                <th class="p-2.5 whitespace-nowrap">Consultor</th>
                 <th class="p-2.5 text-center whitespace-nowrap w-28">Contato</th>
                 <th class="p-2.5 text-center whitespace-nowrap w-28">Ações</th>
               </tr>

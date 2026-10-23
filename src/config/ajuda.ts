@@ -942,9 +942,9 @@ export const HELP_ITEMS: HelpItem[] = [
   {
     id: 'relatorio-embarques-ergonomia-acoes',
     modulo: 'clientes',
-    label: '✈️ Embarques: Arquitetura Enxuta de 6 Colunas (Zero Scroll)',
-    description: 'Tabela fluida com 6 colunas, avatar de consultores, destino e trecho unificados e alertas integrados.',
-    details: 'Na aba **Embarques e Trechos de Voo** do módulo de Relatórios:\n\n- **Zero Scroll Horizontal**: Tabela compactada em 6 colunas de leitura imediata (`Data`, `Passageiro`, `Destino & Trecho`, `Consultor`, `Contato` e `Ações`).\n- **Foto/Avatar do Consultor**: O nome por extenso foi substituído pela foto/avatar circular com o nome completo exibido no hover, economizando mais de 100px.\n- **Destino e Trecho Unificados**: Exibe o destino em destaque com o trecho limpo logo abaixo (ex: `✈️ Ida` ou `✈️ Volta`), sem termos redundantes.\n- **Alerta 🚨 Integrado**: Notificações programadas aparecem como um ícone interativo discreto ao lado do passageiro.\n- **Navegação em 1-Clique**: Clicar no nome do passageiro ou no destino abre imediatamente a ficha detalhada da venda, além dos botões rápidos de ação (`🔍 Detalhes`, `📄 Orçamento` e `💬 WhatsApp`).'
+    label: '✈️ Embarques: Arquitetura Enxuta com LOC e Primeiro Nome',
+    description: 'Tabela fluida com Código LOC, primeiro nome do consultor, destino e trecho unificados e ações rápidas.',
+    details: 'Na aba **Embarques e Trechos de Voo** do módulo de Relatórios:\n\n- **Zero Scroll Horizontal & Máxima Leitura**: Tabela em 7 colunas perfeitamente balanceadas (`Data`, `Passageiro`, `Destino & Trecho`, `Código (LOC)`, `Consultor`, `Contato` e `Ações`).\n- **Primeiro Nome do Consultor**: Identificação direta e elegante pelo primeiro nome (ex: `Eduardo`, `Rafael`), garantindo clareza sem poluição visual.\n- **Código (LOC) Restaurado**: Exibição da reserva aérea ou do pacote em tipografia mono destacada.\n- **Destino e Trecho Unificados**: Exibe o destino em destaque com o trecho limpo logo abaixo (ex: `✈️ Ida` ou `✈️ Volta`), sem termos redundantes.\n- **Alerta 🚨 Integrado**: Notificações programadas aparecem como um ícone interativo discreto ao lado do passageiro.\n- **Navegação em 1-Clique**: Clicar no nome do passageiro ou no destino abre imediatamente a ficha detalhada da venda, além dos botões rápidos de ação (`🔍 Detalhes`, `📄 Orçamento` e `💬 WhatsApp`).'
   },
   {
     id: 'lembretes-descricao-detalhada',

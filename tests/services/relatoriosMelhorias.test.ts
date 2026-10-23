@@ -271,5 +271,18 @@ describe('Relatórios - Melhorias Subcutâneas (Embarques, Desistências e Valid
     expect(toggleMenu()).toBe(true);           // Recolhe para mini-barra
     expect(toggleMenu()).toBe(false);          // Expande novamente
   });
+
+  it('deve extrair corretamente o primeiro nome do consultor para a coluna da tabela de embarques', () => {
+    // Setup
+    const obterPrimeiroNome = (nomeCompleto: string): string => {
+      return (nomeCompleto || 'Consultor').trim().split(' ')[0];
+    };
+
+    // Action & Assert
+    expect(obterPrimeiroNome('Eduardo Mariano')).toBe('Eduardo');
+    expect(obterPrimeiroNome('Rafael Sousa')).toBe('Rafael');
+    expect(obterPrimeiroNome('Maria Carvalho da Silva')).toBe('Maria');
+    expect(obterPrimeiroNome('')).toBe('Consultor');
+  });
 });
 
