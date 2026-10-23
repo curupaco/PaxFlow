@@ -58,6 +58,7 @@
    - 3.46 [Ergonomia Visual, Barras de Rolagem de Alto Contraste & Indicador de Transbordo (Scroll Fade)](#346-ergonomia-visual-barras-de-rolagem-de-alto-contraste--indicador-de-transbordo-scroll-fade)
    - 3.47 [Rateio Integral de Parcerias e RAV no Módulo de Relatórios e Dashboard Comercial](#347-rateio-integral-de-parcerias-e-rav-no-módulo-de-relatórios-e-dashboard-comercial)
    - 3.48 [Módulo de Campanhas & Segmentação Comercial de Base](#348-módulo-de-campanhas--segmentação-comercial-de-base)
+   - 3.49 [Painel Analítico de Pesquisa de Satisfação (NPS)](#349-painel-analítico-de-pesquisa-de-satisfação-nps)
 4. [Diferenciais Competitivos](#4-diferenciais-competitivos)
 5. [Arquitetura Tecnológica](#5-arquitetura-tecnológica)
 6. [Segurança e Conformidade](#6-segurança-e-conformidade)
@@ -1310,6 +1311,31 @@ Ferramenta de inteligência relacional e prospecção ativa posicionada na aba `
 5. **Persistência de Presets & Resiliência a Schema Drift (Zero-Break)**:
    - Presets salvos pela gestão são gravados na tabela `campanhas_presets` no Supabase com identificador de autoria e payload JSONB de filtros.
    - Tratamento automático para erros `42P01` (tabela inexistente) ou `42703` (coluna inexistente), ativando modo virtual na sessão sem interromper o trabalho da agência.
+
+### 3.49 Painel Analítico de Pesquisa de Satisfação (NPS)
+
+Módulo visual de governança de qualidade posicionado na aba `⭐ Pesquisa de Satisfação (NPS)` em `Relatorios.ts`, integrando o motor matemático de `satisfacaoService.ts` aos feedbacks respondidos pós-viagem:
+
+1. **Métricas Oficiais do Net Promoter Score**:
+   - **Cálculo Oficial**: Índice NPS Score apurado por `% Promotores (notas 9-10) - % Detratores (notas 0-6)`, variando na escala clássica de -100 a +100.
+   - **Média Geral**: Média simples das notas de 0 a 10 atribuídas pelos viajantes.
+   - **Termômetro em Zonas de Mercado**:
+     - *Zona de Excelência 🌟*: Score $\ge 75$ (Padrão de referência internacional).
+     - *Zona de Qualidade 👍*: Score entre $50$ e $74$.
+     - *Zona de Aperfeiçoamento ⚠️*: Score entre $0$ e $49$.
+     - *Zona Crítica 🚨*: Score $< 0$ (Mais detratores que promotores).
+
+2. **Filtros e Segmentação Avançada**:
+   - Seletor de categorias para visualização instantânea de: *Todos*, *Promotores*, *Neutros*, *Detratores* ou *Com Depoimento*.
+   - Busca textual em tempo real cruzando nome do passageiro, destino, consultor ou palavras dentro do depoimento.
+   - Filtro de período por datas e segregação por consultor responsável.
+
+3. **Ranking de Satisfação por Atendente**:
+   - Apuração do volume de avaliações, média de notas e pontuação NPS consolidada individualmente para cada membro da equipe de vendas.
+
+4. **Mural de Depoimentos e Ação Rápida no Digisac**:
+   - Exibição de cards tabulares com o texto integral dos feedbacks e notas identificadas por emojis coloridos (`🟢`, `🟡`, `🔴`).
+   - Botão direto `💬 Digisac` em cada linha da tabela para contato imediato e resolução ágil de pós-venda.
 
 ---
 

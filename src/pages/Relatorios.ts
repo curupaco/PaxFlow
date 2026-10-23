@@ -17,6 +17,7 @@ import { OrcamentosService } from '../services/orcamentosService';
 import { showCustomPrompt, showCustomAlert } from '../services/dialog';
 import { ViagensDivisoesService } from '../services/viagensDivisoesService';
 import { CampanhasService, FiltrosCampanha, ItemSegmentacaoCampanha, PresetCampanha } from '../services/campanhasService';
+import { SatisfacaoService, FeedbackNpsItem } from '../services/satisfacaoService';
 
 if (typeof document !== 'undefined') {
   const style = document.createElement('style');
@@ -64,9 +65,13 @@ export class RelatoriosPage {
   private container: HTMLElement;
   private user: any = null;
   private perfil: PerfilConsultor | null = null;
-  private activeTab: 'desempenho' | 'prazos' | 'faturamento' | 'perdas' | 'previsoes' | 'origens' | 'auditoria' | 'posvenda' | 'gamificacao' | 'embarques' | 'riscopreditivo' | 'metas_campanhas' | 'segmentacao_campanhas' = 'desempenho';
+  private activeTab: 'desempenho' | 'prazos' | 'faturamento' | 'perdas' | 'previsoes' | 'origens' | 'auditoria' | 'posvenda' | 'gamificacao' | 'embarques' | 'riscopreditivo' | 'metas_campanhas' | 'segmentacao_campanhas' | 'satisfacao' = 'desempenho';
   private metas: MetaPeriodo[] = [];
   private selectedMetaId: string = '';
+
+  // Filtros da aba de Pesquisa de Satisfação
+  private satisfacaoFiltroCategoria: 'todos' | 'promotores' | 'neutros' | 'detratores' | 'com_comentario' = 'todos';
+  private satisfacaoBuscaTexto: string = '';
 
   // Estado e filtros da aba Campanhas & Segmentação
   private campanhasFiltros: FiltrosCampanha = {
@@ -674,6 +679,9 @@ export class RelatoriosPage {
                 <button data-tab="posvenda" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 ${this.activeTab === 'posvenda' ? 'report-tab-active' : 'text-slate-500'}">
                   ✈️ Pós-Venda & SLAs
                 </button>
+                <button data-tab="satisfacao" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 ${this.activeTab === 'satisfacao' ? 'report-tab-active' : 'text-slate-500'}">
+                  ⭐ Pesquisa de Satisfação (NPS)
+                </button>
                 <button data-tab="embarques" class="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition select-none flex items-center gap-2 border-l-4 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 ${this.activeTab === 'embarques' ? 'report-tab-active' : 'text-slate-500'}">
                   ✈️ Relatório de Embarque
                 </button>
@@ -729,6 +737,8 @@ export class RelatoriosPage {
         return this.renderAuditoria(data);
       case 'posvenda':
         return this.renderPosVenda(data);
+      case 'satisfacao':
+        return this.renderSatisfacao(data);
       case 'embarques':
         return this.renderEmbarques(data);
       case 'gamificacao':
@@ -2063,6 +2073,289 @@ export class RelatoriosPage {
             </table>
           </div>
         </div>
+      </div>
+    `;
+  }
+
+  // ==========================================
+  // VIEW: ⭐ PESQUISA DE SATISFAÇÃO (NPS)
+  // ==========================================
+  private renderSatisfacao(data: any): string {
+    const isAdmin = (this.perfil?.role || '').toLowerCase() === 'admin';
+    const effectiveConsultorId = isAdmin ? this.consultorIdFilter : (this.user?.id || '');
+
+    // 1. Mapear feedbacks brutos para o formato padronizado FeedbackNpsItem
+    const rawFeedbacks = this.feedbacksNps || [];
+    const feedbacksItem: FeedbackNpsItem[] = rawFeedbacks.map(f => {
+      const v = this.viagens.find(via => via.id === f.viagem_id);
+      const cli = this.clientes.find(c => c.id === f.cliente_id) || (v ? v.cliente : undefined);
+      const cons = this.consultores.find(c => c.id === (f.consultor_id || v?.consultor_id));
+
+      return {
+        id: f.id,
+        viagem_id: f.viagem_id,
+        cliente_id: f.cliente_id,
+        consultor_id: f.consultor_id || v?.consultor_id,
+        nps_rating: f.nps_rating !== undefined ? Number(f.nps_rating) : (f.nota !== undefined ? Number(f.nota) : 0),
+        comentarios: f.comentarios || f.comentario || '',
+        created_at: f.created_at || new Date().toISOString(),
+        cliente: {
+          id: cli?.id,
+          nome: cli?.nome || v?.cliente_nome || 'Cliente',
+          email: cli?.email || v?.cliente_email,
+          telefone: cli?.telefone || v?.cliente_telefone
+        },
+        viagem: {
+          id: v?.id,
+          destino: v?.destino || 'Destino Não Informado',
+          data_viagem: v?.data_ida || v?.dataIda,
+          data_retorno: v?.data_volta || v?.dataVolta,
+          consultor_id: v?.consultor_id || v?.consultorId
+        },
+        consultor: {
+          id: cons?.id,
+          nome: cons?.nome || v?.consultor_nome || 'Consultor',
+          avatar_url: cons?.avatar_url || cons?.avatarUrl
+        }
+      };
+    });
+
+    // 2. Aplicar filtros de período, consultor, categoria e busca
+    const feedbacksFiltrados = SatisfacaoService.filtrarFeedbacks(feedbacksItem, {
+      dataInicio: this.dataInicio,
+      dataFim: this.dataFim,
+      consultorId: effectiveConsultorId,
+      categoria: this.satisfacaoFiltroCategoria,
+      buscaTexto: this.satisfacaoBuscaTexto
+    });
+
+    // 3. Calcular métricas e termômetro
+    const metricas = SatisfacaoService.calcularMetricas(feedbacksFiltrados);
+
+    // 4. Calcular ranking por consultor
+    const rankingConsultores = SatisfacaoService.calcularPorConsultor(feedbacksFiltrados, this.consultores);
+
+    // Cor e badge da zona
+    let zonaBadgeClass = 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300';
+    if (metricas.zona === 'excelencia') zonaBadgeClass = 'bg-emerald-50 text-emerald-700 border border-emerald-200/80 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800/60';
+    else if (metricas.zona === 'qualidade') zonaBadgeClass = 'bg-blue-50 text-blue-700 border border-blue-200/80 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800/60';
+    else if (metricas.zona === 'aperfeicoamento') zonaBadgeClass = 'bg-amber-50 text-amber-700 border border-amber-200/80 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800/60';
+    else if (metricas.zona === 'critica') zonaBadgeClass = 'bg-rose-50 text-rose-700 border border-rose-200/80 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-800/60';
+
+    return `
+      <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-3xl p-6 shadow-sm flex flex-col gap-6 print-full-width animate-fadeIn">
+        
+        <!-- Header -->
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-5">
+          <div class="space-y-1">
+            <h2 class="text-lg font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
+              <span>⭐ Relatório de Pesquisa de Satisfação (NPS)</span>
+              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${zonaBadgeClass}">
+                ${metricas.zonaDescricao}
+              </span>
+            </h2>
+            <p class="text-xs text-slate-400 font-semibold max-w-2xl">
+              Monitore a percepção e lealdade dos passageiros pós-viagem através da métrica Net Promoter Score e feedbacks qualitativos.
+            </p>
+          </div>
+          <button id="btn-exportar-nps-csv" type="button" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl shadow-md transition flex items-center gap-1.5 uppercase tracking-wider shrink-0">
+            <span>📊</span> Exportar CSV
+          </button>
+        </div>
+
+        <!-- Cards de Indicadores do NPS -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          
+          <!-- Score NPS -->
+          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 flex flex-col justify-between">
+            <span class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Net Promoter Score (NPS)</span>
+            <div class="text-3xl font-black mt-2 ${metricas.npsScore >= 50 ? 'text-emerald-600 dark:text-emerald-400' : (metricas.npsScore >= 0 ? 'text-amber-500' : 'text-rose-500')}">
+              ${metricas.npsScore > 0 ? `+${metricas.npsScore}` : metricas.npsScore}
+            </div>
+            <div class="flex items-center gap-2 mt-2">
+              <span class="text-[10px] text-slate-400 font-bold">Média: <strong class="text-slate-700 dark:text-slate-200">${metricas.mediaNota} / 10</strong></span>
+              <span class="text-[10px] text-slate-400 font-semibold">(${metricas.total} avaliações)</span>
+            </div>
+          </div>
+
+          <!-- Promotores -->
+          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 flex flex-col justify-between border-l-4 border-l-emerald-500">
+            <span class="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Promotores (9 - 10) 🟢</span>
+            <div class="text-2xl font-black text-slate-800 dark:text-slate-100 mt-2">
+              ${metricas.promotores} <span class="text-xs text-slate-400 font-normal">(${metricas.percPromotores}%)</span>
+            </div>
+            <span class="text-[10px] text-slate-400 font-semibold mt-1">Clientes fiéis e defensores da marca</span>
+          </div>
+
+          <!-- Neutros -->
+          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 flex flex-col justify-between border-l-4 border-l-amber-500">
+            <span class="text-[10px] font-black text-amber-500 uppercase tracking-wider">Neutros (7 - 8) 🟡</span>
+            <div class="text-2xl font-black text-slate-800 dark:text-slate-100 mt-2">
+              ${metricas.neutros} <span class="text-xs text-slate-400 font-normal">(${metricas.percNeutros}%)</span>
+            </div>
+            <span class="text-[10px] text-slate-400 font-semibold mt-1">Satisfeitos, porém vulneráveis</span>
+          </div>
+
+          <!-- Detratores -->
+          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 flex flex-col justify-between border-l-4 border-l-rose-500">
+            <span class="text-[10px] font-black text-rose-500 uppercase tracking-wider">Detratores (0 - 6) 🔴</span>
+            <div class="text-2xl font-black text-slate-800 dark:text-slate-100 mt-2">
+              ${metricas.detratores} <span class="text-xs text-slate-400 font-normal">(${metricas.percDetratores}%)</span>
+            </div>
+            <span class="text-[10px] text-slate-400 font-semibold mt-1">Insatisfeitos que exigem atenção</span>
+          </div>
+
+        </div>
+
+        <!-- Barra de Filtros Internos da Pesquisa -->
+        <div class="bg-slate-50/70 dark:bg-slate-950/40 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3">
+          
+          <!-- Filtro de Categoria NPS -->
+          <div class="flex flex-wrap items-center gap-1.5 w-full sm:w-auto">
+            <button type="button" class="btn-nps-categoria px-3 py-1.5 rounded-xl text-xs font-black transition ${this.satisfacaoFiltroCategoria === 'todos' ? 'bg-indigo-600 text-white shadow-xs' : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100'}" data-categoria="todos">
+              Todos (${feedbacksItem.length})
+            </button>
+            <button type="button" class="btn-nps-categoria px-3 py-1.5 rounded-xl text-xs font-black transition ${this.satisfacaoFiltroCategoria === 'promotores' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50'}" data-categoria="promotores">
+              🟢 Promotores
+            </button>
+            <button type="button" class="btn-nps-categoria px-3 py-1.5 rounded-xl text-xs font-black transition ${this.satisfacaoFiltroCategoria === 'neutros' ? 'bg-amber-600 text-white shadow-xs' : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-amber-700 dark:text-amber-400 hover:bg-amber-50'}" data-categoria="neutros">
+              🟡 Neutros
+            </button>
+            <button type="button" class="btn-nps-categoria px-3 py-1.5 rounded-xl text-xs font-black transition ${this.satisfacaoFiltroCategoria === 'detratores' ? 'bg-rose-600 text-white shadow-xs' : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-rose-700 dark:text-rose-400 hover:bg-rose-50'}" data-categoria="detratores">
+              🔴 Detratores
+            </button>
+            <button type="button" class="btn-nps-categoria px-3 py-1.5 rounded-xl text-xs font-black transition ${this.satisfacaoFiltroCategoria === 'com_comentario' ? 'bg-purple-600 text-white shadow-xs' : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-purple-700 dark:text-purple-300 hover:bg-purple-50'}" data-categoria="com_comentario">
+              💬 Com Depoimento (${metricas.totalComComentarios})
+            </button>
+          </div>
+
+          <!-- Busca Textual -->
+          <div class="relative w-full sm:w-72">
+            <input id="input-nps-busca" type="text" placeholder="Buscar por cliente, destino ou texto..." value="${this.satisfacaoBuscaTexto}" class="w-full text-xs font-semibold pl-8 pr-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            <span class="absolute left-2.5 top-2.5 text-slate-400 text-xs">🔍</span>
+          </div>
+
+        </div>
+
+        <!-- Seção: Desempenho e Ranking NPS por Consultor -->
+        ${isAdmin ? `
+          <div class="space-y-3">
+            <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider">Ranking de Satisfação por Consultor</h3>
+            <div class="overflow-x-auto scroll-indicator-fade custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl">
+              <table class="w-full text-left border-collapse text-xs font-semibold">
+                <thead>
+                  <tr class="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-widest font-black">
+                    <th class="p-3 text-center w-12">Posição</th>
+                    <th class="p-3">Consultor</th>
+                    <th class="p-3 text-center">Score NPS</th>
+                    <th class="p-3 text-center">Média de Nota</th>
+                    <th class="p-3 text-center">Promotores</th>
+                    <th class="p-3 text-center">Detratores</th>
+                    <th class="p-3 text-center">Total de Avaliações</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
+                  ${rankingConsultores.length === 0 ? `
+                    <tr>
+                      <td colspan="7" class="p-6 text-center text-slate-400 font-bold">Nenhum feedback registrado para os consultores no período selecionado.</td>
+                    </tr>
+                  ` : rankingConsultores.map((r, idx) => `
+                    <tr class="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition">
+                      <td class="p-3 text-center font-black ${idx === 0 ? 'text-amber-500 text-sm' : 'text-slate-400'}">${idx === 0 ? '👑 #1' : `#${idx + 1}`}</td>
+                      <td class="p-3">
+                        <div class="flex items-center gap-2">
+                          <span class="font-extrabold text-slate-800 dark:text-slate-100">${r.consultorNome}</span>
+                        </div>
+                      </td>
+                      <td class="p-3 text-center">
+                        <span class="px-2 py-0.5 rounded-lg text-xs font-black ${r.npsScore >= 50 ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400' : (r.npsScore >= 0 ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400' : 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400')}">
+                          ${r.npsScore > 0 ? `+${r.npsScore}` : r.npsScore}
+                        </span>
+                      </td>
+                      <td class="p-3 text-center font-bold text-slate-700 dark:text-slate-200">${r.mediaNota} / 10</td>
+                      <td class="p-3 text-center text-emerald-600 font-extrabold">🟢 ${r.promotores}</td>
+                      <td class="p-3 text-center text-rose-600 font-extrabold">🔴 ${r.detratores}</td>
+                      <td class="p-3 text-center font-bold text-slate-500">${r.totalFeedbacks}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ` : ''}
+
+        <!-- Seção: Mural Detalhado de Feedbacks Recebidos -->
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider">Depoimentos & Notas Recebidas (${feedbacksFiltrados.length})</h3>
+          </div>
+
+          <div class="overflow-x-auto scroll-indicator-fade custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-2xl">
+            <table class="w-full text-left border-collapse text-xs font-semibold min-w-[900px]">
+              <thead>
+                <tr class="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[9px] tracking-widest font-black">
+                  <th class="p-3 text-center w-20">Nota</th>
+                  <th class="p-3">Passageiro</th>
+                  <th class="p-3">Destino</th>
+                  <th class="p-3">Consultor</th>
+                  <th class="p-3">Depoimento / Comentário</th>
+                  <th class="p-3 text-center">Data</th>
+                  <th class="p-3 text-center sticky right-0 bg-slate-50 dark:bg-slate-950 shadow-[-6px_0_10px_-2px_rgba(0,0,0,0.06)] min-w-[130px]">Ação</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
+                ${feedbacksFiltrados.length === 0 ? `
+                  <tr>
+                    <td colspan="7" class="p-8 text-center text-slate-400 font-bold">
+                      Nenhuma resposta de pesquisa de satisfação encontrada para os filtros aplicados.
+                    </td>
+                  </tr>
+                ` : feedbacksFiltrados.map(f => {
+                  const classificacao = SatisfacaoService.classificarNps(f.nps_rating);
+                  const dataFormatada = f.created_at ? f.created_at.slice(0, 10).split('-').reverse().join('/') : '-';
+
+                  return `
+                    <tr class="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition">
+                      <td class="p-3 text-center align-top">
+                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-black border ${classificacao.badgeClass}">
+                          <span>${classificacao.emoji}</span> ${f.nps_rating}
+                        </span>
+                      </td>
+                      <td class="p-3 align-top">
+                        <p class="font-extrabold text-slate-800 dark:text-slate-100 truncate">${f.cliente?.nome || 'Cliente'}</p>
+                        <p class="text-[11px] text-slate-400 font-semibold truncate">${f.cliente?.telefone || f.cliente?.email || ''}</p>
+                      </td>
+                      <td class="p-3 align-top font-bold text-slate-700 dark:text-slate-200">
+                        ${f.viagem?.destino || 'Viagem'}
+                      </td>
+                      <td class="p-3 align-top text-slate-600 dark:text-slate-300 font-semibold">
+                        ${f.consultor?.nome || 'Consultor'}
+                      </td>
+                      <td class="p-3 align-top max-w-[320px]">
+                        ${f.comentarios && f.comentarios.trim() ? `
+                          <p class="text-xs text-slate-700 dark:text-slate-200 italic font-medium leading-relaxed bg-slate-50 dark:bg-slate-950/60 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800/80">
+                            "${f.comentarios}"
+                          </p>
+                        ` : `
+                          <span class="text-slate-300 dark:text-slate-600 text-xs italic">Sem comentário adicional</span>
+                        `}
+                      </td>
+                      <td class="p-3 text-center align-top text-slate-400 font-semibold whitespace-nowrap">
+                        ${dataFormatada}
+                      </td>
+                      <td class="p-3 text-center align-top sticky right-0 bg-white dark:bg-slate-900 shadow-[-6px_0_10px_-2px_rgba(0,0,0,0.06)] whitespace-nowrap">
+                        <button class="btn-chat-digisac px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-800/60 text-[10px] font-black rounded-lg transition uppercase tracking-wider flex items-center justify-center gap-1 mx-auto shadow-xs" data-cliente-nome="${f.cliente?.nome || ''}" data-cliente-telefone="${f.cliente?.telefone || ''}" data-consultor-nome="${f.consultor?.nome || ''}" data-destino="${f.viagem?.destino || ''}" title="Abrir conversa no Digisac">
+                          <span>💬</span> Digisac
+                        </button>
+                      </td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
       </div>
     `;
   }
@@ -4207,6 +4500,42 @@ export class RelatoriosPage {
         });
       });
     }
+
+    // 20. Eventos da Aba: ⭐ Pesquisa de Satisfação (NPS)
+    if (this.activeTab === 'satisfacao') {
+      const recarregarPainelSatisfacao = () => {
+        const container = document.getElementById('report-view-container');
+        if (container) {
+          container.innerHTML = this.renderSatisfacao(this.getFilteredData());
+          this.setupEventListeners();
+        }
+      };
+
+      // Alternar Categoria NPS
+      document.querySelectorAll('.btn-nps-categoria').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const cat = btn.getAttribute('data-categoria') as any;
+          if (cat) {
+            this.satisfacaoFiltroCategoria = cat;
+            recarregarPainelSatisfacao();
+          }
+        });
+      });
+
+      // Busca Textual
+      const inputBusca = document.getElementById('input-nps-busca') as HTMLInputElement;
+      if (inputBusca) {
+        inputBusca.addEventListener('input', (e: any) => {
+          this.satisfacaoBuscaTexto = e.target.value;
+          recarregarPainelSatisfacao();
+        });
+      }
+
+      // Exportar CSV de NPS
+      document.getElementById('btn-exportar-nps-csv')?.addEventListener('click', () => {
+        this.exportToCSV();
+      });
+    }
   }
 
   private showToast(message: string, type: 'success' | 'error' = 'success', err?: any): void {
@@ -4555,6 +4884,61 @@ export class RelatoriosPage {
         itensFiltrados = CampanhasService.agruparPorCliente(itensFiltrados);
       }
       csvContent += CampanhasService.gerarCsv(itensFiltrados);
+    } else if (this.activeTab === 'satisfacao') {
+      csvContent += 'Nota;Categoria;Passageiro;Telefone;Destino;Consultor;Depoimento;Data\n';
+      const rawFeedbacks = this.feedbacksNps || [];
+      const feedbacksItem: FeedbackNpsItem[] = rawFeedbacks.map(f => {
+        const v = this.viagens.find(via => via.id === f.viagem_id);
+        const cli = this.clientes.find(c => c.id === f.cliente_id) || (v ? v.cliente : undefined);
+        const cons = this.consultores.find(c => c.id === (f.consultor_id || v?.consultor_id));
+        return {
+          id: f.id,
+          viagem_id: f.viagem_id,
+          cliente_id: f.cliente_id,
+          consultor_id: f.consultor_id || v?.consultor_id,
+          nps_rating: f.nps_rating !== undefined ? Number(f.nps_rating) : (f.nota !== undefined ? Number(f.nota) : 0),
+          comentarios: f.comentarios || f.comentario || '',
+          created_at: f.created_at || new Date().toISOString(),
+          cliente: {
+            id: cli?.id,
+            nome: cli?.nome || v?.cliente_nome || 'Cliente',
+            email: cli?.email || v?.cliente_email,
+            telefone: cli?.telefone || v?.cliente_telefone
+          },
+          viagem: {
+            id: v?.id,
+            destino: v?.destino || 'Destino Não Informado',
+            data_viagem: v?.data_ida || v?.dataIda,
+            data_retorno: v?.data_volta || v?.dataVolta,
+            consultor_id: v?.consultor_id || v?.consultorId
+          },
+          consultor: {
+            id: cons?.id,
+            nome: cons?.nome || v?.consultor_nome || 'Consultor',
+            avatar_url: cons?.avatar_url || cons?.avatarUrl
+          }
+        };
+      });
+
+      const effectiveConsultorId = ((this.perfil?.role || '').toLowerCase() === 'admin') ? this.consultorIdFilter : (this.user?.id || '');
+      const filtrados = SatisfacaoService.filtrarFeedbacks(feedbacksItem, {
+        dataInicio: this.dataInicio,
+        dataFim: this.dataFim,
+        consultorId: effectiveConsultorId,
+        categoria: this.satisfacaoFiltroCategoria,
+        buscaTexto: this.satisfacaoBuscaTexto
+      });
+
+      filtrados.forEach(f => {
+        const cat = SatisfacaoService.classificarNps(f.nps_rating).label;
+        const cNome = (f.cliente?.nome || '').replace(/"/g, '""');
+        const cTel = (f.cliente?.telefone || '').replace(/"/g, '""');
+        const vDest = (f.viagem?.destino || '').replace(/"/g, '""');
+        const consNome = (f.consultor?.nome || '').replace(/"/g, '""');
+        const com = (f.comentarios || '').replace(/"/g, '""').replace(/\r?\n/g, ' ');
+        const dt = f.created_at ? f.created_at.slice(0, 10).split('-').reverse().join('/') : '';
+        csvContent += `${f.nps_rating};"${cat}";"${cNome}";"${cTel}";"${vDest}";"${consNome}";"${com}";"${dt}"\n`;
+      });
     }
 
     // Trigger file download

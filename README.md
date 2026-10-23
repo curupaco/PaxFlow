@@ -20,6 +20,13 @@ Plataforma SaaS de gestão operacional e fluxo de passageiros no turismo: acompa
 
 ## Funcionalidades
 
+- **Relatório de Pesquisa de Satisfação (NPS) no Painel de Relatórios [NEW]** — Painel visual na aba `⭐ Pesquisa de Satisfação (NPS)` de `Relatorios.ts` para monitoramento de lealdade pós-viagem:
+  - **Métricas Oficiais do Net Promoter Score**: Cálculo automático do Score NPS (`% Promotores - % Detratores`, variando de -100 a +100), Média Simples de Notas (0 a 10) e classificação em Zonas de Mercado (*Zona de Excelência 🌟*, *Qualidade 👍*, *Aperfeiçoamento ⚠️* e *Crítica 🚨*).
+  - **Filtros e Segmentação Dinâmica**: Filtros rápidos por Categoria NPS (Promotores 9-10 🟢, Neutros 7-8 🟡, Detratores 0-6 🔴, ou apenas com depoimento em texto), período por datas e busca textual instantânea por nome do passageiro, destino ou comentário.
+  - **Ranking de Satisfação por Consultor**: Tabela comparativa para administradores com classificação ordinal (`👑 #1`, `#2`...), média individual de notas, score NPS e contagem de promotores vs detratores.
+  - **Mural de Feedbacks e Ação no Digisac**: Visualização de cada resposta com nota, depoimento em destaque e botão direto do Digisac para atendimento ou resolução de pós-venda em 1 clique.
+  - **Exportação CSV**: Download em formato compatível com Excel de todas as avaliações e comentários filtrados.
+
 - **Módulo de Campanhas & Segmentação de Base com Digisac e Presets [NEW]** — Ferramenta de inteligência comercial e segmentação na aba `🚀 Campanhas & Segmentação` de `Relatorios.ts` para prospecção ativa e negociação com fornecedores:
   - **Matriz de Filtros Estratégicos Combinados**: Filtros por Origem da Base (Ambos, Apenas Viagens Fechadas ou Apenas Orçamentos), Tipo de Destino (Nacional/Internacional), Multi-busca de destinos por vírgula (ex: *Cuba, Cancun, Portugal*), Janela de tempo (3, 6, 12, 24 meses ou histórico total), Faixa de valor financeiro (R$ mín e máx), Fornecedor/Cia aérea envolvida, Sazonalidade (mês previsto de embarque), Status do orçamento e Termômetro NPS (Promotores 9-10, Neutros 7-8, Detratores 0-6).
   - **Alternador de Modos de Visão**: Suporte a *Visão por Oportunidade* (cada viagem ou orçamento linha a linha) e *Visão por Cliente Único* (deduplicação automática por cliente com ticket financeiro consolidado, somatório de interações e união de destinos).
