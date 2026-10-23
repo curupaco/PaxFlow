@@ -36,8 +36,17 @@ function converterLinks(texto: string): string {
 export class VerNotasModal {
   static open(orc: Orcamento, options: VerNotasModalOptions): void {
     const portal = document.getElementById('orcamento-modal-portal');
-    const modalContent = document.getElementById('modal-content-container');
+    const modalContent = (portal?.querySelector('#modal-content-container') || document.getElementById('modal-content-container')) as HTMLElement | null;
     if (!modalContent || !portal) return;
+
+    // Garante que o overlay pai esteja ativo para cliques do mouse
+    const overlay = (portal.querySelector('#modal-overlay') || modalContent.closest('#modal-overlay') || document.getElementById('modal-overlay')) as HTMLElement | null;
+    if (overlay) {
+      overlay.classList.remove('pointer-events-none');
+      overlay.classList.add('pointer-events-auto');
+    }
+    modalContent.classList.remove('pointer-events-none');
+    modalContent.classList.add('pointer-events-auto');
 
     // Aumenta a largura do modal para acomodar o layout de duas colunas
     modalContent.classList.remove('max-w-lg');
@@ -330,11 +339,11 @@ export class VerNotasModal {
     `;
 
     const handleClose = () => options.closeModal();
-    document.getElementById('btn-close-modal-x')?.addEventListener('click', handleClose);
-    document.getElementById('btn-close-modal')?.addEventListener('click', handleClose);
+    modalContent.querySelector('#btn-close-modal-x')?.addEventListener('click', handleClose);
+    modalContent.querySelector('#btn-close-modal')?.addEventListener('click', handleClose);
 
     // Event listener para alternar contato com cliente (Admin)
-    const checkContatoDesistencia = document.getElementById('check-modal-contato-desistencia') as HTMLInputElement;
+    const checkContatoDesistencia = modalContent.querySelector('#check-modal-contato-desistencia') as HTMLInputElement | null;
     checkContatoDesistencia?.addEventListener('change', async () => {
       const checked = checkContatoDesistencia.checked;
       try {
@@ -355,7 +364,7 @@ export class VerNotasModal {
     });
 
     // Event listener para reabrir orçamento desistido
-    const btnModalReabrir = document.getElementById('btn-modal-reabrir-orcamento');
+    const btnModalReabrir = modalContent.querySelector('#btn-modal-reabrir-orcamento');
     btnModalReabrir?.addEventListener('click', async () => {
       const motivo = await showCustomPrompt(
         'Informe o motivo da reabertura do orçamento (opcional):',
@@ -379,7 +388,7 @@ export class VerNotasModal {
     });
 
     // Event listener para excluir orçamento
-    const btnExcluir = document.getElementById('btn-excluir-orcamento');
+    const btnExcluir = modalContent.querySelector('#btn-excluir-orcamento');
     btnExcluir?.addEventListener('click', async () => {
       const confirm = await showCustomConfirm(
         'Tem certeza de que deseja excluir permanentemente este orçamento? Esta ação não pode ser desfeita.',
@@ -399,18 +408,18 @@ export class VerNotasModal {
     });
 
     // Eventos de Upload de Documentos para o Orçamento
-    const btnUploadTrigger = document.getElementById('btn-orc-upload-doc') as HTMLButtonElement;
-    const inputUploadDoc = document.getElementById('input-orc-upload-doc') as HTMLInputElement;
-    const uploadStatus = document.getElementById('orc-upload-status') as HTMLElement;
-    const filesContainer = document.getElementById('orc-files-container') as HTMLElement;
+    const btnUploadTrigger = modalContent.querySelector('#btn-orc-upload-doc') as HTMLButtonElement | null;
+    const inputUploadDoc = modalContent.querySelector('#input-orc-upload-doc') as HTMLInputElement | null;
+    const uploadStatus = modalContent.querySelector('#orc-upload-status') as HTMLElement | null;
+    const filesContainer = modalContent.querySelector('#orc-files-container') as HTMLElement | null;
 
-    btnUploadTrigger?.addEventListener('click', () => inputUploadDoc.click());
+    btnUploadTrigger?.addEventListener('click', () => inputUploadDoc?.click());
 
     inputUploadDoc?.addEventListener('change', async () => {
       const file = inputUploadDoc.files?.[0];
       if (!file) return;
 
-      btnUploadTrigger.disabled = true;
+      if (btnUploadTrigger) btnUploadTrigger.disabled = true;
       if (uploadStatus) {
         uploadStatus.classList.remove('hidden');
         uploadStatus.innerHTML = `
@@ -488,7 +497,7 @@ export class VerNotasModal {
         console.error('Erro no upload de arquivo do orçamento:', err);
         options.showToast(`Erro no upload: ${err.message}`, 'error');
       } finally {
-        btnUploadTrigger.disabled = false;
+        if (btnUploadTrigger) btnUploadTrigger.disabled = false;
         if (uploadStatus) {
           uploadStatus.classList.add('hidden');
           uploadStatus.innerHTML = '';
@@ -498,7 +507,7 @@ export class VerNotasModal {
     });
 
     // Event listener para alterar temperatura
-    const selectTemp = document.getElementById('select-detail-temperatura') as HTMLSelectElement;
+    const selectTemp = modalContent.querySelector('#select-detail-temperatura') as HTMLSelectElement | null;
     selectTemp?.addEventListener('change', async () => {
       const newVal = selectTemp.value as 'Frio' | 'Normal' | 'Quente';
       orc.temperatura = newVal;
@@ -517,7 +526,7 @@ export class VerNotasModal {
     });
 
     // Event listener para alterar consultor responsável (apenas admin)
-    const selectResp = document.getElementById('select-detail-responsavel') as HTMLSelectElement;
+    const selectResp = modalContent.querySelector('#select-detail-responsavel') as HTMLSelectElement | null;
     selectResp?.addEventListener('change', async () => {
       const newVal = selectResp.value;
       orc.consultorId = newVal;
@@ -533,7 +542,7 @@ export class VerNotasModal {
     });
 
     // Event listener para alterar origem do lead
-    const selectOrigem = document.getElementById('select-detail-origem') as HTMLSelectElement;
+    const selectOrigem = modalContent.querySelector('#select-detail-origem') as HTMLSelectElement | null;
     selectOrigem?.addEventListener('change', async () => {
       const newVal = selectOrigem.value;
       orc.origem = newVal;
@@ -574,8 +583,8 @@ export class VerNotasModal {
 
     // Event listener para alterar o Destino (Inline - Administrador)
     try {
-      const inputDestinoInline = document.getElementById('edit-orc-destino-inline') as HTMLInputElement;
-      const btnSaveDestinoInline = document.getElementById('btn-save-orc-destino-inline') as HTMLButtonElement;
+      const inputDestinoInline = modalContent.querySelector('#edit-orc-destino-inline') as HTMLInputElement | null;
+      const btnSaveDestinoInline = modalContent.querySelector('#btn-save-orc-destino-inline') as HTMLButtonElement | null;
       let selectedDestinoIdInline = orc.destino_id || orc.destinoId || null;
 
       if (inputDestinoInline && btnSaveDestinoInline) {
@@ -632,7 +641,7 @@ export class VerNotasModal {
 
     // Inicializar comentários do orçamento
     try {
-      const commentsContainer = document.getElementById('orcamento-comments-container');
+      const commentsContainer = modalContent.querySelector('#orcamento-comments-container') as HTMLElement | null;
       if (commentsContainer && options.user) {
         CommentsService.renderCommentsSection(
           commentsContainer,

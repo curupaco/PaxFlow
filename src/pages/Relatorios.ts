@@ -145,7 +145,12 @@ export class RelatoriosPage {
     }
   }
 
-  public destroy(): void {}
+  public destroy(): void {
+    const portal = document.getElementById('orcamento-modal-portal');
+    if (portal) {
+      portal.innerHTML = '';
+    }
+  }
 
   /**
    * Loads all tables from Supabase, applying fallbacks if offline or empty
@@ -4306,23 +4311,25 @@ export class RelatoriosPage {
       portal.id = 'orcamento-modal-portal';
       document.body.appendChild(portal);
     }
+    portal.innerHTML = '';
 
     portal.innerHTML = `
-      <div id="modal-overlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9999] flex items-center justify-center opacity-0 transition-opacity duration-200">
-        <div id="modal-content-container" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden transform scale-95 transition-all duration-200 flex flex-col max-h-[90vh]">
+      <div id="modal-overlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9999] flex items-center justify-center opacity-0 pointer-events-auto transition-opacity duration-200">
+        <div id="modal-content-container" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden transform scale-95 transition-all duration-200 flex flex-col max-h-[90vh] pointer-events-auto">
           <!-- Injetado dinamicamente -->
         </div>
       </div>
     `;
 
+    const overlay = portal.querySelector('#modal-overlay') as HTMLElement | null;
+    const content = portal.querySelector('#modal-content-container') as HTMLElement | null;
+
     setTimeout(() => {
-      const overlay = document.getElementById('modal-overlay');
-      const content = document.getElementById('modal-content-container');
       if (overlay && content) {
-        overlay.classList.remove('opacity-0');
-        overlay.classList.add('opacity-100');
-        content.classList.remove('scale-95');
-        content.classList.add('scale-100');
+        overlay.classList.remove('opacity-0', 'pointer-events-none');
+        overlay.classList.add('opacity-100', 'pointer-events-auto');
+        content.classList.remove('scale-95', 'pointer-events-none');
+        content.classList.add('scale-100', 'pointer-events-auto');
       }
     }, 10);
 
@@ -4333,11 +4340,9 @@ export class RelatoriosPage {
         window.removeEventListener('keydown', escListener);
         escListener = null;
       }
-      const overlay = document.getElementById('modal-overlay');
-      const content = document.getElementById('modal-content-container');
       if (overlay && content) {
         overlay.classList.remove('opacity-100');
-        overlay.classList.add('opacity-0');
+        overlay.classList.add('opacity-0', 'pointer-events-none');
         content.classList.remove('scale-100');
         content.classList.add('scale-95');
         setTimeout(() => {
@@ -4349,9 +4354,8 @@ export class RelatoriosPage {
     };
 
     // Fechar ao clicar no backdrop escuro
-    const overlayEl = document.getElementById('modal-overlay');
-    overlayEl?.addEventListener('click', (e) => {
-      if (e.target === overlayEl) {
+    overlay?.addEventListener('click', (e) => {
+      if (e.target === overlay) {
         fecharModalOrcamento();
       }
     });

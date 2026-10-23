@@ -1114,6 +1114,11 @@ Para apoiar a retenção comercial, auditoria de perdas e recuperação de leads
    - **Modal de Confirmação & Motivo Opcional**: Ao acionar o botão `🔄 Reabrir Orçamento`, o usuário pode justificar a razão da retomada (ex: _"Cliente voltou a ter interesse e quer nova cotação"_).
    - **Preservação Histórica Imutável**: Um registro estruturado com data/hora (`DD/MM/AAAA às HH:mm`), autor e justificativa é inserido no topo das notas de negociação (`notas_negociacao`) e registrado na timeline de comentários (`comentarios`) do orçamento.
 
+3. **Arquitetura de Modal Sobreposto em Relatórios (Isolamento de Escopo & Blindagem de Ponteiro)**:
+   - **Isolamento de Seletores via Portal**: O componente `VerNotasModal` vincula seus ouvintes de evento (botão `Fechar`, `✕`, `Reabrir Orçamento`, checkbox `Falamos com o Cliente`, uploads e edição de destino) diretamente com escopo no nó raiz do container (`modalContent.querySelector`), prevenindo colisões quando outros modais ou overlays residem no DOM.
+   - **Garantia Ativa de `pointer-events-auto`**: Para eliminar o bloqueio de cliques quando o usuário navega entre o Dashboard e os Relatórios, o overlay sobreposto do portal (`orcamento-modal-portal`) remove explicitamente classes de bloqueio (`pointer-events-none`) e estabelece `pointer-events-auto`, permitindo clicar, rolar, selecionar e editar livremente todos os campos e notas sem travar a interface.
+   - **Fechamento e Limpeza no Desmonte**: O método `destroy()` de `RelatoriosPage` e a rotina `fecharModalOrcamento` limpam ativamente o conteúdo do portal e desvinculam o ouvinte de tecla `Escape`, assegurando integridade total do ciclo de vida da SPA.
+
 ### 3.41 Arquitetura de Web Push Server-Side, Exclusão em Cascata & Integridade Transacional
 
 Para consolidar as garantias de segurança cibernética, integridade referencial e confiabilidade do ecossistema:

@@ -170,4 +170,67 @@ describe('Subcutaneous: Relatório de Desistências - Abertura e Gestão de Prop
     expect(result.success).toBe(true);
     expect(updateMock).toHaveBeenCalledTimes(2);
   });
+
+  it('deve alternar status de contato com cliente desistente por administrador com sucesso', async () => {
+    // Setup
+    const orcId = 'orc-contato-1';
+    const perfilAdmin = { id: 'admin-1', nome: 'Admin PaxFlow', role: 'admin' } as any;
+
+    const updateEqMock = vi.fn().mockResolvedValue({ data: null, error: null });
+    const updateMock = vi.fn().mockReturnValue({ eq: updateEqMock });
+
+    vi.mocked(supabase.from).mockReturnValue({
+      update: updateMock,
+    } as any);
+
+    // Action
+    const result = await OrcamentosService.alternarContatoDesistencia(orcId, true, perfilAdmin);
+
+    // Assert
+    expect(result.success).toBe(true);
+    expect(result.contatoRealizado).toBe(true);
+    expect(result.contatoRealizadoPor).toBe('admin-1');
+    expect(updateMock).toHaveBeenCalledWith(expect.objectContaining({
+      contato_realizado: true,
+      contato_realizado_por: 'admin-1'
+    }));
+    expect(updateEqMock).toHaveBeenCalledWith('id', orcId);
+  });
+
+  it('deve alternar status de contato com fallback resiliente para schema drift 42703', async () => {
+    // Setup
+    const orcId = 'orc-contato-drift';
+    const perfilAdmin = { id: 'admin-1', nome: 'Admin PaxFlow', role: 'admin' } as any;
+
+    const schemaDriftError = {
+      code: '42703',
+      message: 'column "contato_realizado" does not exist'
+    };
+
+    const singleMock = vi.fn().mockResolvedValue({
+      data: { notas_negociacao: 'Nota anterior do cliente' },
+      error: null
+    });
+    const selectEqMock = vi.fn().mockReturnValue({ single: singleMock });
+    const selectMock = vi.fn().mockReturnValue({ eq: selectEqMock });
+
+    const updateEqMock = vi.fn()
+      .mockResolvedValueOnce({ data: null, error: schemaDriftError })
+      .mockResolvedValueOnce({ data: null, error: null });
+    const updateMock = vi.fn().mockReturnValue({ eq: updateEqMock });
+
+    vi.mocked(supabase.from).mockReturnValue({
+      select: selectMock,
+      update: updateMock,
+    } as any);
+
+    // Action
+    const result = await OrcamentosService.alternarContatoDesistencia(orcId, true, perfilAdmin);
+
+    // Assert
+    expect(result.success).toBe(true);
+    expect(result.contatoRealizado).toBe(true);
+    expect(updateMock).toHaveBeenCalledTimes(2);
+  });
 });
+
